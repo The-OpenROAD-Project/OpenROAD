@@ -96,14 +96,11 @@ proc save_image { args } {
   set resolution 0
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
-    set tech [ord::get_db_tech]
-    if { $tech == "NULL" } {
-      utl::error GUI 17 "No technology loaded."
-    }
-    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
+    set db [ord::get_db]
+    set resolution [expr $keys(-resolution) * [$db getDbuPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
+      set res_per_pixel [expr $resolution / [$db getDbuPerMicron]]
       utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
@@ -153,14 +150,11 @@ proc save_animated_gif { args } {
   set resolution 0
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
-    set tech [ord::get_db_tech]
-    if { $tech == "NULL" } {
-      utl::error GUI 52 "No technology loaded."
-    }
-    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
+    set db [ord::get_db]
+    set resolution [expr $keys(-resolution) * [$db getDbuPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
+      set res_per_pixel [expr $resolution / [$db getDbuPerMicron]]
       utl::warn GUI 55 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }

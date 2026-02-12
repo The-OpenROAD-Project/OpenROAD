@@ -302,6 +302,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
     int pass = 1;
     int decreasing_slack_passes = 0;
     resizer_->journalBegin();
+    bool journal_open = true;
     while (pass <= max_passes) {
       opto_iteration++;
       if (verbose || opto_iteration == 1) {
@@ -329,6 +330,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
         resizer_->journalRestore();
+        journal_open = false;
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -349,6 +351,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           resizer_->journalEnd();
         }
+        journal_open = false;
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at {}/{} "
                    "end_slack {} is larger than setup_slack_margin {}",
@@ -378,6 +381,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         } else {
           resizer_->journalEnd();
         }
+        journal_open = false;
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} no changes"
                    " after {} decreasing passes", end->name(network_),
@@ -410,8 +414,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         prev_worst_slack = worst_slack;
         decreasing_slack_passes = 0;
         resizer_->journalEnd();
-        // Progress, Save checkpoint so we can back up to here.
-        resizer_->journalBegin();
+        if (pass < max_passes) {
+          // Progress, Save checkpoint so we can back up to here.
+          resizer_->journalBegin();
+        } else {
+          journal_open = false;
+        }
       } else {
         fallback_ = true;
         // Allow slack to increase to get out of local minima.
@@ -433,6 +441,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
           resizer_->journalRestore();
+          journal_open = false;
           // clang-format off
           debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out {} decreasing"
                      " passes {} > decreasig pass limit {}", end->name(network_),
@@ -448,6 +457,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                    " over max area", end->name(network_));
         // clang-format on
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
       if (end_index == 1) {
@@ -456,9 +466,13 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       pass++;
       if (max_iterations > 0 && opto_iteration >= max_iterations) {
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
     }  // while pass <= max_passes
+    if (journal_open) {
+      resizer_->journalEnd();
+    }
     if (verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, false, num_viols);
     }
@@ -957,6 +971,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
     }
     int pass = 1;
     resizer_->journalBegin();
+    bool journal_open = true;
     while (pass <= max_last_gasp_passes_) {
       opto_iteration++;
       if (terminateProgress(opto_iteration,
@@ -972,6 +987,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
           prev_termination = true;
         }
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
       if (opto_iteration % opto_small_interval_ == 0) {
@@ -983,6 +999,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       if (end_slack > params.setup_slack_margin) {
         --num_viols;
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
       sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -996,6 +1013,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
         } else {
           resizer_->journalEnd();
         }
+        journal_open = false;
         break;
       }
       estimate_parasitics_->updateParasitics();
@@ -1019,15 +1037,21 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
           --num_viols;
         }
         resizer_->journalEnd();
-        resizer_->journalBegin();
+        if (pass < max_last_gasp_passes_) {
+          resizer_->journalBegin();
+        } else {
+          journal_open = false;
+        }
       } else {
         fallback_ = true;
         resizer_->journalRestore();
+        journal_open = false;
         break;
       }
 
       if (resizer_->overMaxArea()) {
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
       if (end_index == 1) {
@@ -1036,9 +1060,13 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       pass++;
       if (max_iterations > 0 && opto_iteration >= max_iterations) {
         resizer_->journalEnd();
+        journal_open = false;
         break;
       }
     }  // while pass <= max_last_gasp_passes_
+    if (journal_open) {
+      resizer_->journalEnd();
+    }
     if (params.verbose || opto_iteration == 1) {
       printProgress(opto_iteration, true, false, true, num_viols);
     }

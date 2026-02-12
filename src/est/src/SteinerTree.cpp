@@ -14,6 +14,7 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
+#include "sta/StringUtil.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 

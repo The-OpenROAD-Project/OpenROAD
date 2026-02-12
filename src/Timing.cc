@@ -19,6 +19,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
 #include "sta/Corner.hh"
+#include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"

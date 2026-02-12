@@ -60,9 +60,9 @@ tns max -10.567
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.676 |      -10.6 |     26 | u1/r21/D
-    final |       0 |      14 |        4 |      0 |     0 |    +9.4% |   -0.508 |      -10.5 |     26 | u1/r21/D
+    final |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |      -10.5 |     26 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 14 instances: 14 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

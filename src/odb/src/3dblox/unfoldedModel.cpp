@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2026, The OpenROAD Authors
 
-#include "unfoldedModel.h"
+#include "odb/unfoldedModel.h"
 
 #include <cstdint>
 #include <deque>

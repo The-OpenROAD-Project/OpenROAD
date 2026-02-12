@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "CommandLineProgress.h"
+#include "utl/Metrics.h"
 #if SPDLOG_VERSION < 10601
 #include "spdlog/details/pattern_formatter.h"
 #else

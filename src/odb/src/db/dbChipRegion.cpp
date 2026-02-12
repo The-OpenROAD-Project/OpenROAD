@@ -201,15 +201,7 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   _dbChip* _chip = (_dbChip*) chip;
   utl::Logger* logger = _chip->getImpl()->getLogger();
   if (layer != nullptr) {
-    if (chip->getBlock() == nullptr) {
-      logger->error(
-          utl::ODB,
-          508,
-          "Cannot create chip region {} for chip {} because chip has no block",
-          name,
-          chip->getName());
-    }
-    if (chip->getBlock()->getTech() != layer->getTech()) {
+    if (chip->getTech() != layer->getTech()) {
       logger->error(utl::ODB,
                     509,
                     "Cannot create chip region {} layer {} is not in the same "
@@ -227,7 +219,6 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
         name,
         chip->getName());
   }
-  _dbTechLayer* _layer = (_dbTechLayer*) layer;
 
   // Create a new chip region
   _dbChipRegion* chip_region = _chip->chip_region_tbl_->create();
@@ -235,34 +226,19 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   // Initialize the chip region
   chip_region->name_ = name;
   chip_region->side_ = static_cast<uint8_t>(side);
-  chip_region->layer_ = (_layer != nullptr) ? _layer->getOID() : 0;
+  chip_region->layer_ = (layer != nullptr) ? layer->getImpl()->getOID() : 0;
   chip_region->box_ = Rect();  // Initialize with empty rectangle
 
   const int chip_thickness = chip->getThickness();
-
-  if (layer != nullptr) {
-    dbTech* tech = layer->getTech();
-    for (dbTechLayer* l : tech->getLayers()) {
-      uint32_t thick = 0;
-      if (l->getThickness(thick)) {
-        chip_region->z_min_ = chip_region->z_max_;
-        chip_region->z_max_ += thick;
-        if (l == layer) {
-          break;
-        }
-      }
-    }
+  if (side == dbChipRegion::Side::FRONT) {
+    chip_region->z_min_ = chip_thickness;
+    chip_region->z_max_ = chip_thickness;
+  } else if (side == dbChipRegion::Side::BACK) {
+    chip_region->z_min_ = 0;
+    chip_region->z_max_ = 0;
   } else {
-    if (side == dbChipRegion::Side::FRONT) {
-      chip_region->z_min_ = chip_thickness;
-      chip_region->z_max_ = chip_thickness;
-    } else if (side == dbChipRegion::Side::BACK) {
-      chip_region->z_min_ = 0;
-      chip_region->z_max_ = 0;
-    } else {
-      chip_region->z_min_ = 0;
-      chip_region->z_max_ = chip_thickness;
-    }
+    chip_region->z_min_ = 0;
+    chip_region->z_max_ = chip_thickness;
   }
 
   return (dbChipRegion*) chip_region;

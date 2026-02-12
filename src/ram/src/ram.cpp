@@ -13,10 +13,16 @@
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
+#include "dpl/Opendp.h"
+#include "drt/TritonRoute.h"
+#include "grt/GlobalRouter.h"
 #include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/isotropy.h"
+#include "ord/OpenRoad.hh"
+#include "pdn/PdnGen.hh"
+#include "ppl/IOPlacer.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -41,8 +47,21 @@ using std::vector;
 
 RamGen::RamGen(sta::dbNetwork* network,
                odb::dbDatabase* db,
-               utl::Logger* logger)
-    : network_(network), db_(db), logger_(logger)
+               utl::Logger* logger,
+               pdn::PdnGen* pdngen,
+               ppl::IOPlacer* ioPlacer,
+               dpl::Opendp* opendp,
+               grt::GlobalRouter* global_router,
+               drt::TritonRoute* detailed_router)
+
+    : network_(network),
+      db_(db),
+      logger_(logger),
+      pdngen_(pdngen),
+      ioPlacer_(ioPlacer),
+      opendp_(opendp),
+      global_router_(global_router),
+      detailed_router_(detailed_router)
 {
 }
 
@@ -388,6 +407,158 @@ void RamGen::findMasters()
   }
 }
 
+void RamGen::ramPdngen(const char* power_pin,
+                       const char* ground_pin,
+                       const char* route_name,
+                       int route_width,
+                       const char* ver_name,
+                       int ver_width,
+                       int ver_pitch,
+                       const char* hor_name,
+                       int hor_width,
+                       int hor_pitch)
+{
+  // need parameters for power and ground nets
+  auto power_net = dbNet::create(block_, "VDD");
+  auto ground_net = dbNet::create(block_, "VSS");
+
+  power_net->setSpecial();
+  power_net->setSigType(odb::dbSigType::POWER);
+  ground_net->setSpecial();
+  ground_net->setSigType(odb::dbSigType::GROUND);
+
+  // find a way to get the power and ground net names associated with cells used
+  block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
+  block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
+
+  block_->globalConnect(false, false);
+
+  std::string grid_name = "ram_grid";
+  pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
+  pdngen_->makeCoreGrid(pdngen_->findDomain("Core"),
+                        grid_name,
+                        pdn::StartsWith::GROUND,
+                        {},
+                        {},
+                        nullptr,
+                        nullptr,
+                        "STAR",
+                        {});
+
+  // variables for convenience
+  auto pdn_tech = block_->getDb()->getTech();
+  auto grid = pdngen_->findGrid(grid_name).front();
+
+  // parameters are the same in the tcl script
+  // add_followpin
+  pdngen_->makeFollowpin(grid,
+                         pdn_tech->findLayer(route_name),
+                         route_width,
+                         pdn::ExtensionMode::BOUNDARY);
+
+  // add_pdn_stripe
+  pdngen_->makeStrap(grid,
+                     pdn_tech->findLayer(ver_name),
+                     ver_width,
+                     0,
+                     ver_pitch,
+                     0,
+                     0,
+                     false,
+                     pdn::StartsWith::GRID,
+                     pdn::ExtensionMode::BOUNDARY,
+                     {},
+                     false);
+  pdngen_->makeStrap(grid,
+                     pdn_tech->findLayer(hor_name),
+                     hor_width,
+                     0,
+                     hor_pitch,
+                     0,
+                     0,
+                     false,
+                     pdn::StartsWith::GRID,
+                     pdn::ExtensionMode::BOUNDARY,
+                     {},
+                     false);
+
+  // add_pdn_connect
+  pdngen_->makeConnect(grid,
+                       pdn_tech->findLayer(route_name),
+                       pdn_tech->findLayer(ver_name),
+                       0,
+                       0,
+                       {},
+                       {},
+                       0,
+                       0,
+                       {},
+                       {},
+                       "");
+  pdngen_->makeConnect(grid,
+                       pdn_tech->findLayer(ver_name),
+                       pdn_tech->findLayer(hor_name),
+                       0,
+                       0,
+                       {},
+                       {},
+                       0,
+                       0,
+                       {},
+                       {},
+                       "");
+
+  // pdngen
+  pdngen_->checkSetup();
+  pdngen_->buildGrids(true);
+  pdngen_->writeToDb(true, "");
+  pdngen_->resetShapes();
+}
+
+void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
+{
+  const odb::Rect& die_bounds = block_->getDieArea();
+  odb::Rect top_constraint = block_->findConstraintRegion(
+      odb::Direction2D::North, die_bounds.xMin(), die_bounds.xMax());
+  block_->addBTermConstraintByDirection(dbIoType::OUTPUT, top_constraint);
+
+  block_->addBTermsToConstraint(data_inputs_, top_constraint);
+  auto pin_tech = block_->getDb()->getTech();
+  ioPlacer_->addHorLayer(pin_tech->findLayer(hor_name));
+  ioPlacer_->addVerLayer(pin_tech->findLayer(ver_name));
+  ioPlacer_->runHungarianMatching();
+}
+
+void RamGen::ramFiller(const vector<std::string>& filler_cells)
+{
+  vector<odb::dbMaster*> filler_masters;
+  filler_masters.reserve(filler_cells.size());
+  for (const std::string& cell : filler_cells) {
+    filler_masters.push_back(db_->findMaster(cell.c_str()));
+  }
+  opendp_->fillerPlacement(filler_masters, "FILLER_", false);
+}
+
+void RamGen::ramRouting(int thread_count)
+{
+  const odb::Rect& die_bounds = block_->getDieArea();
+  global_router_->setGridOrigin(die_bounds.xMin(), die_bounds.yMin());
+  global_router_->setCongestionIterations(50);
+  global_router_->setCongestionReportIterStep(0);
+  global_router_->setAllowCongestion(false);
+  global_router_->setResistanceAware(false);
+  global_router_->globalRoute(true);
+  drt::ParamStruct params;
+  params.verbose = 0;
+  params.num_threads = thread_count;
+  params.enableViaGen = true;
+  params.orSeed = -1;
+  params.doPa = true;
+  detailed_router_->setParams(params);
+  detailed_router_->main();
+  detailed_router_->setDistributed(false);
+}
+
 void RamGen::generate(const int bytes_per_word,
                       const int word_count,
                       const int read_ports,
@@ -439,9 +610,9 @@ void RamGen::generate(const int bytes_per_word,
 
   // input bterms
   int num_inputs = std::ceil(std::log2(word_count));
-  vector<dbBTerm*> addr(num_inputs, nullptr);
   for (int i = 0; i < num_inputs; ++i) {
-    addr[i] = makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT);
+    addr_inputs_.push_back(
+        makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
   }
 
   // vector of nets storing inverter nets
@@ -455,13 +626,13 @@ void RamGen::generate(const int bytes_per_word,
                                             vector<dbNet*>(num_inputs));
   for (int word = 0; word < word_count; ++word) {
     int word_num = word;
-    for (int input = 0; input < num_inputs; ++input) {  // start at right most
-                                                        // bit
+    // start at right most bit
+    for (int input = 0; input < num_inputs; ++input) {
       if (word_num % 2 == 0) {
         // places inverted address for each input
         decoder_input_nets[word][input] = inv_addr[input];
       } else {  // puts original input in invert nets
-        decoder_input_nets[word][input] = addr[input]->getNet();
+        decoder_input_nets[word][input] = addr_inputs_[input]->getNet();
       }
       word_num /= 2;
     }
@@ -475,7 +646,7 @@ void RamGen::generate(const int bytes_per_word,
     auto decoder_name = fmt::format("decoder_{}", row);
 
     if (word_count == 2) {
-      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr[0]->getNet());
+      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr_inputs_[0]->getNet());
       for (int i = 0; i < read_ports; ++i) {
         word_decoder_nets[row].push_back(addr_net);
       }
@@ -494,15 +665,13 @@ void RamGen::generate(const int bytes_per_word,
 
   // create bytes within a word, shared decoder net for each word
   for (int col = 0; col < bytes_per_word; ++col) {
-    array<dbBTerm*, 8> D_bTerms;  // array for b-term for external inputs
-    array<dbNet*, 8> D_nets;      // net for buffers
+    array<dbNet*, 8> D_nets;  // net for buffers
     for (int bit = 0; bit < 8; ++bit) {
-      D_bTerms[bit]
-          = makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT);
+      data_inputs_.push_back(
+          makeBTerm(fmt::format("D[{}]", bit + col * 8), dbIoType::INPUT));
       D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit + col * 8), "net");
     }
 
-    vector<array<dbBTerm*, 8>> Q;
     // if readports == 1, only have Q outputs
     if (read_ports == 1) {
       array<dbBTerm*, 8> q_bTerms;
@@ -510,7 +679,7 @@ void RamGen::generate(const int bytes_per_word,
         auto out_name = fmt::format("Q[{}]", bit + col * 8);
         q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
       }
-      Q.push_back(q_bTerms);
+      q_outputs_.push_back(q_bTerms);
     } else {
       for (int read_port = 0; read_port < read_ports; ++read_port) {
         array<dbBTerm*, 8> q_bTerms;
@@ -518,7 +687,7 @@ void RamGen::generate(const int bytes_per_word,
           auto out_name = fmt::format("Q{}[{}]", read_port, bit + col * 8);
           q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
         }
-        Q.push_back(q_bTerms);
+        q_outputs_.push_back(q_bTerms);
       }
     }
 
@@ -533,7 +702,7 @@ void RamGen::generate(const int bytes_per_word,
                    write_enable[col]->getNet(),
                    word_decoder_nets[row],
                    D_nets,
-                   Q);
+                   q_outputs_);
     }
 
     for (int bit = 0; bit < 8; ++bit) {
@@ -542,7 +711,7 @@ void RamGen::generate(const int bytes_per_word,
                    "buffer",
                    fmt::format("in[{}]", bit + col * 8),
                    buffer_cell_,
-                   {{"A", D_bTerms[bit]->getNet()}, {"X", D_nets[bit]}});
+                   {{"A", data_inputs_[bit]->getNet()}, {"X", D_nets[bit]}});
       ram_grid.addCell(std::move(buffer_grid_cell), col * 9 + bit);
     }
   }
@@ -556,7 +725,7 @@ void RamGen::generate(const int bytes_per_word,
                    "decoder",
                    fmt::format("inv_{}", i),
                    inv_cell_,
-                   {{"A", addr[i]->getNet()}, {"Y", inv_addr[i]}});
+                   {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
       for (int filler_count = 0; filler_count < num_inputs - 1;
            ++filler_count) {
@@ -569,7 +738,7 @@ void RamGen::generate(const int bytes_per_word,
                  "decoder",
                  fmt::format("inv_{}", 0),
                  inv_cell_,
-                 {{"A", addr[0]->getNet()}, {"Y", inv_addr[0]}});
+                 {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 
