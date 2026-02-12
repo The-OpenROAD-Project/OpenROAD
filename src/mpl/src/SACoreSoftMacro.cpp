@@ -679,11 +679,11 @@ SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
   int num_y = grid.size();
   int num_x = grid.front().size();
 
-  NotchVicinity vicnity;
+  NotchVicinity vicinity;
   if (start_row > 0) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[start_row - 1][i]) {
-        vicnity.bottom = false;
+        vicinity.bottom = false;
         break;
       }
     }
@@ -691,7 +691,7 @@ SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
   if (end_row < num_y - 1) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[end_row + 1][i]) {
-        vicnity.top = false;
+        vicinity.top = false;
         break;
       }
     }
@@ -699,7 +699,7 @@ SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
   if (start_col > 0) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][start_col - 1]) {
-        vicnity.left = false;
+        vicinity.left = false;
         break;
       }
     }
@@ -707,13 +707,13 @@ SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
   if (end_col < num_x - 1) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][end_col + 1]) {
-        vicnity.right = false;
+        vicinity.right = false;
         break;
       }
     }
   }
 
-  return vicnity;
+  return vicinity;
 }
 
 bool SACoreSoftMacro::isRowEmpty(const std::vector<std::vector<bool>>& grid,

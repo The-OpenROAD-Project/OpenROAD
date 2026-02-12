@@ -74,7 +74,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void forceCentralization() { force_centralization_ = true; }
 
  private:
-  // Used to check the vicnity of candidate notches
+  // Used to check the vicinity of candidate notches
   struct NotchVicinity
   {
     bool top = true;
