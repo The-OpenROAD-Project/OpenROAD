@@ -20,6 +20,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/util.h"
+#include "sta/Debug.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
@@ -186,13 +187,13 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
-  logger_->info(IFP,
-                29,
-                "Defining die area: ({}, {}) to ({}, {}) DBU",
-                die.xMin(),
-                die.yMin(),
-                die.xMax(),
-                die.yMax());
+  if (logger_->debugCheck(IFP, "init", 1)) {
+    logger_->report("Defining die area: ({}, {}) to ({}, {}) DBU",
+                    die.xMin(),
+                    die.yMin(),
+                    die.xMax(),
+                    die.yMax());
+  }
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -425,13 +426,13 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 {
   checkGap(gap);
 
-  logger_->info(IFP,
-                31,
-                "Defining core area: ({}, {}) to ({}, {}) DBU",
-                core.xMin(),
-                core.yMin(),
-                core.xMax(),
-                core.yMax());
+  if (logger_->debugCheck(IFP, "init", 1)) {
+    logger_->report("Defining core area: ({}, {}) to ({}, {}) DBU",
+                    core.xMin(),
+                    core.yMin(),
+                    core.xMax(),
+                    core.yMax());
+  }
 
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
@@ -713,7 +714,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
   const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
 
-  auto make_rows = [&](dbSite* site) {
+  auto make_rows = [&](dbSite* site) -> int {
     const uint32_t site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
     bool flip = flipped_sites.find(site) != flipped_sites.end();
@@ -748,27 +749,38 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
                     site_dx);
       y += site_dy;
     }
-    logger_->info(IFP,
-                  1,
-                  "Added {} rows of {} site {}.",
-                  rows_y,
-                  rows_x,
-                  site->getName());
+    if (rows_y == 0) {
+      logger_->warn(IFP, 61, "No rows created for site {}.", site->getName());
+    } else {
+      logger_->info(IFP,
+                    1,
+                    "Added {} rows of {} site {}.",
+                    rows_y,
+                    rows_x,
+                    site->getName());
+    }
+    return rows_y;
   };
+
+  int total_rows = 0;
   for (const auto& [name, site] : sites_by_name) {
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
           IFP,
-          368,
+          54,
           "Site {} height {}um is not a multiple of site {} height {}um.",
           site->getName(),
           block_->dbuToMicrons(site->getHeight()),
           base_site->getName(),
           block_->dbuToMicrons(base_site->getHeight()));
     }
-    make_rows(site);
+    total_rows += make_rows(site);
   }
   block_->setCoreArea(block_->computeCoreArea());
+
+  if (total_rows == 0) {
+    logger_->error(IFP, 65, "No rows created in the core area.");
+  }
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
@@ -1403,7 +1415,7 @@ void InitFloorplan::reportAreas()
   logger_->info(IFP,
                 17,
                 "{:27} {:15.3f} um^2",
-                "Instances area:",
+                "Total instances area:",
                 block_->dbuAreaToMicrons(design_area));
   double core_area_um = block_->dbuAreaToMicrons(core.area());
   if (core_area_um > 0) {
