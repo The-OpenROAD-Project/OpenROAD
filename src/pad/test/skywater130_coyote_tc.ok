@@ -22,13 +22,11 @@
 [INFO ODB-0227] LEF file: skywater130_io_fd/lef/sky130_fd_io__top_power_lvc_wpad.lef, created 1 library cells
 [INFO ODB-0227] LEF file: skywater130_io_fd/lef/sky130_fd_io__top_xres4v2.lef, created 1 library cells
 [INFO ODB-0227] LEF file: skywater130_io_fd/lef/sky130io_fill.lef, created 2 library cells
-[INFO IFP-0029] Defining die area: (0, 0) to (5400000, 4616330) DBU
-[INFO IFP-0031] Defining core area: (200160, 203130) to (5199840, 4415580) DBU
 [INFO IFP-0001] Added 1265 rows of 10416 site unit.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 5400.000 4616.330 ) um
 [INFO IFP-0013] Core BBox: ( 200.160 203.130 ) ( 5199.840 4415.580 ) um
 [INFO IFP-0016] Core area:                     21060902.016 um^2
-[INFO IFP-0017] Instances area:                 2464000.000 um^2
+[INFO IFP-0017] Total instances area:           2464000.000 um^2
 [INFO IFP-0020] Result utilization:                   0.117
 [INFO IFP-0032] Number of instances:                    154
 [INFO PAD-0116] Creating terminal for clk_i on met5 at (306.345um, 52.985um) - (327.885um, 74.530um)

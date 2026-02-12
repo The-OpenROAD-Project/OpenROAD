@@ -4,13 +4,11 @@
 [INFO ODB-0131]     Created 21 components and 126 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 42 connections.
 [INFO ODB-0133]     Created 2 nets and 42 connections.
-[INFO IFP-0029] Defining die area: (0, 0) to (176000, 176000) DBU
-[INFO IFP-0031] Defining core area: (0, 0) to (176000, 176000) DBU
 [INFO IFP-0001] Added 62 rows of 463 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 88.000 88.000 ) um
 [INFO IFP-0013] Core BBox: (  0.000  0.000 ) ( 87.970 86.800 ) um
 [INFO IFP-0016] Core area:                         7635.796 um^2
-[INFO IFP-0017] Instances area:                      94.962 um^2
+[INFO IFP-0017] Total instances area:                94.962 um^2
 [INFO IFP-0020] Result utilization:                   0.012
 [INFO IFP-0032] Number of instances:                     21
 Placement Analysis

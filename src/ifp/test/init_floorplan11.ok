@@ -1,22 +1,18 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[INFO IFP-0029] Defining die area: (0, 0) to (2000000, 2000000) DBU
-[INFO IFP-0031] Defining core area: (220000, 220000) to (1800000, 1800000) DBU
 [WARNING IFP-0028] Core area lower left (110.000, 110.000) snapped to (110.010, 110.600).
 [INFO IFP-0001] Added 563 rows of 4157 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 1000.000 1000.000 ) um
 [INFO IFP-0013] Core BBox: ( 110.010 110.600 ) ( 899.840 898.800 ) um
 [INFO IFP-0016] Core area:                       622544.006 um^2
-[INFO IFP-0017] Instances area:                      15.428 um^2
+[INFO IFP-0017] Total instances area:                15.428 um^2
 [INFO IFP-0020] Result utilization:                   0.000
 [INFO IFP-0032] Number of instances:                      5
-[INFO IFP-0029] Defining die area: (0, 0) to (1000000, 1000000) DBU
-[INFO IFP-0031] Defining core area: (220000, 220000) to (980000, 980000) DBU
 [WARNING IFP-0028] Core area lower left (110.000, 110.000) snapped to (110.010, 110.600).
 [INFO IFP-0001] Added 271 rows of 1999 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 500.000 500.000 ) um
 [INFO IFP-0013] Core BBox: ( 110.010 110.600 ) ( 489.820 490.000 ) um
 [INFO IFP-0016] Core area:                       144099.914 um^2
-[INFO IFP-0017] Instances area:                      15.428 um^2
+[INFO IFP-0017] Total instances area:                15.428 um^2
 [INFO IFP-0020] Result utilization:                   0.000
 [INFO IFP-0032] Number of instances:                      5
 No differences found.

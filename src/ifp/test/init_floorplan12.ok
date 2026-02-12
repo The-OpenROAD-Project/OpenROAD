@@ -1,13 +1,6 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0025] Defining die area using utilization: 99.00% and aspect ratio: 0.2.
-[INFO IFP-0029] Defining die area: (0, 0) to (21654, 7531) DBU
-[INFO IFP-0031] Defining core area: (2000, 2000) to (19650, 5530) DBU
 [WARNING IFP-0028] Core area lower left (1.000, 1.000) snapped to (1.140, 1.400).
-[INFO IFP-0001] Added 0 rows of 45 site FreePDK45_38x28_10R_NP_162NW_34O.
-[INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 10.825  3.765 ) um
-[INFO IFP-0013] Core BBox: (  0.000  0.000 ) ( 10.825  3.765 ) um
-[INFO IFP-0016] Core area:                           40.756 um^2
-[INFO IFP-0017] Instances area:                      15.428 um^2
-[INFO IFP-0020] Result utilization:                   0.379
-[INFO IFP-0032] Number of instances:                      5
-
+[WARNING IFP-0061] No rows created for site FreePDK45_38x28_10R_NP_162NW_34O.
+[ERROR IFP-0065] No rows created in the core area.
+IFP-0065

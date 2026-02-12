@@ -1,12 +1,10 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-[INFO IFP-0029] Defining die area: (0, 0) to (80000, 2400000) DBU
-[INFO IFP-0031] Defining core area: (0, 0) to (80000, 2400000) DBU
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
 [INFO IFP-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
 [INFO IFP-0016] Core area:                        47872.020 um^2
-[INFO IFP-0017] Instances area:                      60.382 um^2
+[INFO IFP-0017] Total instances area:                60.382 um^2
 [INFO IFP-0020] Result utilization:                   0.001
 [INFO IFP-0032] Number of instances:                     21
 Found 0 macro blocks.

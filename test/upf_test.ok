@@ -1,14 +1,12 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd.tlef, created 13 layers, 25 vias
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd_merged.lef, created 437 library cells
 [INFO IFP-0025] Defining die area using utilization: 1.00% and aspect ratio: 1.
-[INFO IFP-0029] Defining die area: (0, 0) to (112449, 112449) DBU
-[INFO IFP-0031] Defining core area: (2000, 2000) to (110450, 110450) DBU
 [WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
 [INFO IFP-0001] Added 39 rows of 235 site unithd.
 [INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 112.450 112.450 ) um
 [INFO IFP-0013] Core BBox: (  2.300  2.720 ) ( 110.400 108.800 ) um
 [INFO IFP-0016] Core area:                        11467.248 um^2
-[INFO IFP-0017] Instances area:                     158.902 um^2
+[INFO IFP-0017] Total instances area:               158.902 um^2
 [INFO IFP-0020] Result utilization:                   0.014
 [INFO IFP-0032] Number of instances:                     22
 Found 0 macro blocks.
