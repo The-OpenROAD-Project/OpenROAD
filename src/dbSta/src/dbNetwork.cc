@@ -75,6 +75,8 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
+#include "sta/StringUtil.hh"
+#include "sta/VertexId.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 

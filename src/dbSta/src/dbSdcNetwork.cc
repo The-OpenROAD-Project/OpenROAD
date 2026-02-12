@@ -14,6 +14,7 @@
 #include "sta/ParseBus.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/SdcNetwork.hh"
+#include "sta/StringUtil.hh"
 
 namespace sta {
 
