@@ -21,11 +21,11 @@ class GeneticStrategy final : public SlackTuningStrategy
   explicit GeneticStrategy(sta::Corner* corner,
                            sta::Slack slack_threshold,
                            std::optional<std::mt19937::result_type> seed,
-                           unsigned pop_size,
-                           float mut_prob,
-                           float cross_prob,
-                           unsigned tourn_size,
-                           float tourn_prob,
+                           unsigned population_size,
+                           float mutation_probability,
+                           float crossover_probability,
+                           unsigned tournament_size,
+                           float tournament_probability,
                            unsigned iterations,
                            unsigned initial_ops)
       : SlackTuningStrategy(corner,
@@ -33,11 +33,11 @@ class GeneticStrategy final : public SlackTuningStrategy
                             seed,
                             iterations,
                             initial_ops),
-        pop_size_(pop_size),
-        mut_prob_(mut_prob),
-        cross_prob_(cross_prob),
-        tourn_size_(tourn_size),
-        tourn_prob_(tourn_prob)
+        population_size_(population_size),
+        mutation_probability_(mutation_probability),
+        crossover_probability_(crossover_probability),
+        tournament_size_(tournament_size),
+        tournament_probability_(tournament_probability)
   {
   }
 
@@ -51,11 +51,11 @@ class GeneticStrategy final : public SlackTuningStrategy
       utl::Logger* logger) override;
 
  private:
-  unsigned pop_size_;
-  float mut_prob_;
-  float cross_prob_;
-  unsigned tourn_size_;
-  float tourn_prob_;
+  unsigned population_size_;
+  float mutation_probability_;
+  float crossover_probability_;
+  unsigned tournament_size_;
+  float tournament_probability_;
 };
 
 }  // namespace rmp
