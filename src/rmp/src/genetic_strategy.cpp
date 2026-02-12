@@ -28,13 +28,14 @@ using utl::RMP;
 static void removeDuplicates(std::vector<SolutionSlack>& population,
                              utl::Logger* logger)
 {
-  std::unordered_set<SolutionSlack::Type, absl::Hash<SolutionSlack::Type>>
+  std::unordered_set<SolutionSlack::ResultOps,
+                     absl::Hash<SolutionSlack::ResultOps>>
       taken;
   population.erase(
       std::ranges::begin(std::ranges::remove_if(
           population,
           [&taken, logger](const SolutionSlack& s) {
-            if (!taken.insert(s.solution_).second) {
+            if (!taken.insert(s.Solution()).second) {
               debugPrint(
                   logger, RMP, "genetic", 2, "Removing: " + s.toString());
               return true;
@@ -66,10 +67,10 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
              "Generating and evaluating the initial population");
   std::vector<SolutionSlack> population(population_size_);
   for (auto& ind : population) {
-    ind.solution_.reserve(initial_ops_);
+    ind.Solution().reserve(initial_ops_);
     for (size_t i = 0; i < initial_ops_; i++) {
       const auto idx = absl::Uniform<int>(random_, 0, all_ops.size());
-      ind.solution_.push_back(all_ops[idx]);
+      ind.Solution().push_back(all_ops[idx]);
     }
   }
 
@@ -92,31 +93,27 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       if (rand1 == rand2) {
         continue;
       }
-      SolutionSlack::Type& parent1_sol = population[rand1].solution_;
-      SolutionSlack::Type& parent2_sol = population[rand2].solution_;
-      SolutionSlack::Type child_sol(
+      SolutionSlack::ResultOps& parent1_sol = population[rand1].Solution();
+      SolutionSlack::ResultOps& parent2_sol = population[rand2].Solution();
+      SolutionSlack::ResultOps child_sol(
           parent1_sol.begin(), parent1_sol.begin() + parent1_sol.size() / 2);
       child_sol.insert(child_sol.end(),
                        parent2_sol.begin() + parent2_sol.size() / 2,
                        parent2_sol.end());
-      SolutionSlack child_sol_slack;
-      child_sol_slack.solution_ = std::move(child_sol);
-      population.emplace_back(child_sol_slack);
+      population.emplace_back(std::move(child_sol));
     }
     // Mutations
     unsigned mut_size
         = std::max<unsigned>(mutation_probability_ * generation_size, 1);
     for (unsigned j = 0; j < mut_size; j++) {
-      SolutionSlack sol_slack;
       auto rand = absl::Uniform<int>(random_, 0, generation_size);
-      sol_slack.solution_
-          = population[rand].RandomNeighbor(all_ops, logger, random_);
-      population.emplace_back(sol_slack);
+      population.emplace_back(
+          population[rand].RandomNeighbor(all_ops, logger, random_));
     }
     removeDuplicates(population, logger);
     // Evaluation
     for (auto& sol_slack : population) {
-      if (sol_slack.worst_slack_) {
+      if (sol_slack.WorstSlack()) {
         continue;
       }
       sol_slack.Evaluate(candidate_vertices,
@@ -128,7 +125,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     }
     // Selection
     std::ranges::stable_sort(
-        population, std::greater{}, &SolutionSlack::worst_slack_);
+        population, std::ranges::greater{}, &SolutionSlack::WorstSlack);
     std::vector<SolutionSlack> newPopulation;
     newPopulation.reserve(population_size_);
     for (int j = 0; j < population_size_; j++) {
@@ -161,11 +158,11 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
   }
 
   auto best_it
-      = std::ranges::max_element(population, {}, &SolutionSlack::worst_slack_);
+      = std::ranges::max_element(population, {}, &SolutionSlack::WorstSlack);
   logger->info(RMP,
                66,
                "Resynthesis: Best result is of individual {}",
                std::distance(population.begin(), best_it));
-  return best_it->solution_;
+  return best_it->Solution();
 }
 }  // namespace rmp

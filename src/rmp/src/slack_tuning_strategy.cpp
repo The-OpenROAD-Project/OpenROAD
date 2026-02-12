@@ -53,12 +53,12 @@ std::string SolutionSlack::toString() const
   return resStream.str();
 }
 
-SolutionSlack::Type SolutionSlack::RandomNeighbor(
-    const SolutionSlack::Type& all_ops,
+SolutionSlack::ResultOps SolutionSlack::RandomNeighbor(
+    const SolutionSlack::ResultOps& all_ops,
     utl::Logger* logger,
     std::mt19937& random) const
 {
-  SolutionSlack::Type sol = solution_;
+  SolutionSlack::ResultOps sol = solution_;
   enum class Move : uint8_t
   {
     ADD,
