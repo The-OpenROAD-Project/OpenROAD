@@ -96,8 +96,16 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/l
 [WARNING ORD-2011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [WARNING ORD-2056] The following 1 liberty cell(s) do not have LEF masters and will be marked as dont-use:
   sky130_fd_io__top_gpiov2
+[INFO IFP-0029] Defining die area: (0, 0) to (3588000, 5188000) DBU
+[INFO IFP-0031] Defining core area: (250000, 250000) to (3338000, 4938000) DBU
 [WARNING IFP-0028] Core area lower left (250.000, 250.000) snapped to (250.240, 250.240).
 [INFO IFP-0001] Added 1723 rows of 6712 site unithd.
+[INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 3588.000 5188.000 ) um
+[INFO IFP-0013] Core BBox: ( 250.240 250.240 ) ( 3337.760 4936.800 ) um
+[INFO IFP-0016] Core area:                     14469847.731 um^2
+[INFO IFP-0017] Instances area:                 1188049.550 um^2
+[INFO IFP-0020] Result utilization:                   0.082
+[INFO IFP-0032] Number of instances:                     67
 [INFO PAD-0116] Creating terminal for clock on met5 at (988.200um, 32.990um) - (1050.800um, 95.440um)
 [INFO PAD-0116] Creating terminal for flash_clk on met5 at (1805.200um, 32.990um) - (1867.800um, 95.440um)
 [INFO PAD-0116] Creating terminal for flash_csb on met5 at (1531.200um, 32.990um) - (1593.800um, 95.440um)
