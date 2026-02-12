@@ -324,7 +324,6 @@ class HardMacro
   std::string getMasterName() const;
 
  private:
-<<<<<<< HEAD
   std::string name_;
 
   // Lower-left corner:

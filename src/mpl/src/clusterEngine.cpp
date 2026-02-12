@@ -2078,6 +2078,14 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
+      if (inst->getHalo() != nullptr) {
+        inst->setOrient(odb::dbOrientType::R0);
+        logger_->report("HALO R0 {}", inst->getHalo()->getBox());
+        inst->setOrient(odb::dbOrientType::MX);
+        logger_->report("HALO MX {}", inst->getHalo()->getBox());
+      }
+
+
       HardMacro::Halo halo
           = macro_to_halo_.contains(inst) ? macro_to_halo_.at(inst)
             : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getHalo())
