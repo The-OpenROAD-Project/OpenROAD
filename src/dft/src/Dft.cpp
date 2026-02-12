@@ -12,6 +12,7 @@
 #include "ClockDomain.hh"
 #include "DftConfig.hh"
 #include "ScanArchitect.hh"
+#include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "ScanCellFactory.hh"
 #include "ScanPin.hh"

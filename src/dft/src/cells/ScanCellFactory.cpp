@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "OneBitScanCell.hh"
 #include "ScanCell.hh"
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"

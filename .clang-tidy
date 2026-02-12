@@ -64,7 +64,7 @@ CheckOptions:
   - key:             google-runtime-int.TypeSuffix
     value:           _t
   - key:             misc-include-cleaner.IgnoreHeaders
-    value:           '.*/QtCore/.*;.*/QtGui/.*;.*/QtWidgets/.*;.*/spdlog/fmt/bundled/.*'
+    value:           '.*/QtCore/.*;.*/QtGui/.*;.*/QtWidgets/.*;.*/spdlog/fmt/bundled/.*;boost/.*'
   
 # All modules but sta
 # Exclude build as there is too much noise from swig generated code
