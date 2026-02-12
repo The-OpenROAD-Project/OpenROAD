@@ -109,11 +109,11 @@ void Restructure::resynthGenetic(sta::Corner* corner)
   GeneticStrategy genetic_strategy(corner,
                                    slack_threshold_,
                                    genetic_seed_,
-                                   genetic_pop_size_,
-                                   genetic_mut_prob_,
-                                   genetic_cross_prob_,
-                                   genetic_tourn_size_,
-                                   genetic_tourn_prob_,
+                                   genetic_population_size_,
+                                   genetic_mutation_probability_,
+                                   genetic_crossover_probability_,
+                                   genetic_tournament_size_,
+                                   genetic_tournament_probability_,
                                    genetic_iters_,
                                    genetic_init_ops_);
   genetic_strategy.OptimizeDesign(

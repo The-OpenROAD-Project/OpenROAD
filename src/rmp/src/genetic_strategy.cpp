@@ -54,7 +54,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     rsz::Resizer* resizer,
     utl::Logger* logger)
 {
-  if (pop_size_ <= 0) {
+  if (population_size_ <= 0) {
     logger->error(RMP, 64, "Population size should be greater than 0");
   }
 
@@ -64,7 +64,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
              "population",
              1,
              "Generating and evaluating the initial population");
-  std::vector<SolutionSlack> population(pop_size_);
+  std::vector<SolutionSlack> population(population_size_);
   for (auto& ind : population) {
     ind.solution_.reserve(initial_ops_);
     for (size_t i = 0; i < initial_ops_; i++) {
@@ -84,7 +84,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     logger->info(RMP, 65, "Resynthesis: Iteration {} of genetic algorithm", i);
     unsigned generation_size = population.size();
     // Crossover
-    unsigned cross_size = std::max<unsigned>(cross_prob_ * generation_size, 1);
+    unsigned cross_size
+        = std::max<unsigned>(crossover_probability_ * generation_size, 1);
     for (unsigned j = 0; j < cross_size; j++) {
       auto rand1 = absl::Uniform<int>(random_, 0, generation_size);
       auto rand2 = absl::Uniform<int>(random_, 0, generation_size);
@@ -103,7 +104,8 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       population.emplace_back(child_sol_slack);
     }
     // Mutations
-    unsigned mut_size = std::max<unsigned>(mut_prob_ * generation_size, 1);
+    unsigned mut_size
+        = std::max<unsigned>(mutation_probability_ * generation_size, 1);
     for (unsigned j = 0; j < mut_size; j++) {
       SolutionSlack sol_slack;
       auto rand = absl::Uniform<int>(random_, 0, generation_size);
@@ -128,17 +130,18 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     std::ranges::stable_sort(
         population, std::greater{}, &SolutionSlack::worst_slack_);
     std::vector<SolutionSlack> newPopulation;
-    newPopulation.reserve(pop_size_);
-    for (int j = 0; j < pop_size_; j++) {
-      std::vector<size_t> tournament(tourn_size_);
-      std::generate_n(tournament.begin(), tourn_size_, [&]() {
+    newPopulation.reserve(population_size_);
+    for (int j = 0; j < population_size_; j++) {
+      std::vector<size_t> tournament(tournament_size_);
+      std::generate_n(tournament.begin(), tournament_size_, [&]() {
         return absl::Uniform<int>(random_, 0, population.size());
       });
       std::ranges::stable_sort(tournament);
       tournament.erase(std::ranges::begin(std::ranges::unique(tournament)),
                        tournament.end());
       auto winner = std::ranges::find_if(tournament, [&](auto const& _) {
-        return absl::Bernoulli(random_, static_cast<double>(tourn_prob_));
+        return absl::Bernoulli(random_,
+                               static_cast<double>(tournament_probability_));
       });
       if (winner != tournament.end()) {
         newPopulation.emplace_back(population[*winner]);

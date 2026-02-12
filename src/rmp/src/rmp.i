@@ -85,33 +85,33 @@ set_genetic_seed(std::mt19937::result_type genetic_seed)
 }
 
 void
-set_genetic_pop_size(int genetic_pop_size)
+set_genetic_population_size(int genetic_population_size)
 {
-  getRestructure()->setGeneticPopSize(genetic_pop_size);
+  getRestructure()->setGeneticPopulationSize(genetic_population_size);
 }
 
 void
-  set_genetic_mut_prob(float genetic_mut_prob)
+  set_genetic_mutation_probability(float genetic_mutation_probability)
 {
-  getRestructure()->setGeneticMutProb(genetic_mut_prob);
+  getRestructure()->setGeneticMutationProbability(genetic_mutation_probability);
 }
 
 void
-set_genetic_cross_prob(float genetic_cross_prob)
+set_genetic_crossover_probability(float genetic_crossover_probability)
 {
-  getRestructure()->setGeneticCrossProb(genetic_cross_prob);
+  getRestructure()->setGeneticCrossoverProbability(genetic_crossover_probability);
 }
 
 void
-set_genetic_tourn_size(int genetic_tourn_size)
+set_genetic_tournament_size(int genetic_tournament_size)
 {
-  getRestructure()->setGeneticTournSize(genetic_tourn_size);
+  getRestructure()->setGeneticTournamentSize(genetic_tournament_size);
 }
 
 void
-set_genetic_tourn_prob(float genetic_tourn_prob)
+set_genetic_tournament_probability(float genetic_tournament_probability)
 {
-  getRestructure()->setGeneticTournProb(genetic_tourn_prob);
+  getRestructure()->setGeneticTournamentProbability(genetic_tournament_probability);
 }
 
 void

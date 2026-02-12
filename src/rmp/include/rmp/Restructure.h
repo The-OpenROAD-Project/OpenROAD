@@ -85,19 +85,25 @@ class Restructure
   }
   void setAnnealingInitialOps(unsigned ops) { annealing_init_ops_ = ops; }
   void setGeneticSeed(std::mt19937::result_type seed) { genetic_seed_ = seed; }
-  void setGeneticPopSize(unsigned pop_size) { genetic_pop_size_ = pop_size; }
-  void setGeneticMutProb(float mut_prob) { genetic_mut_prob_ = mut_prob; }
-  void setGeneticCrossProb(float cross_prob)
+  void setGeneticPopulationSize(unsigned population_size)
   {
-    genetic_cross_prob_ = cross_prob;
+    genetic_population_size_ = population_size;
   }
-  void setGeneticTournSize(unsigned tourn_size)
+  void setGeneticMutationProbability(float mutation_probability)
   {
-    genetic_tourn_size_ = tourn_size;
+    genetic_mutation_probability_ = mutation_probability;
   }
-  void setGeneticTournProb(float tourn_prob)
+  void setGeneticCrossoverProbability(float crossover_probability)
   {
-    genetic_tourn_prob_ = tourn_prob;
+    genetic_crossover_probability_ = crossover_probability;
+  }
+  void setGeneticTournamentSize(unsigned tournament_size)
+  {
+    genetic_tournament_size_ = tournament_size;
+  }
+  void setGeneticTournamentProbability(float tournament_probability)
+  {
+    genetic_tournament_probability_ = tournament_probability;
   }
   void setGeneticIters(unsigned iters) { genetic_iters_ = iters; }
   void setGeneticInitialOps(unsigned ops) { genetic_init_ops_ = ops; }
@@ -147,11 +153,11 @@ class Restructure
 
   // Genetic
   std::optional<std::mt19937::result_type> genetic_seed_;
-  unsigned genetic_pop_size_ = 4;
-  float genetic_mut_prob_ = 0.5;
-  float genetic_cross_prob_ = 0.5;
-  unsigned genetic_tourn_size_ = 4;
-  float genetic_tourn_prob_ = 0.8;
+  unsigned genetic_population_size_ = 4;
+  float genetic_mutation_probability_ = 0.5;
+  float genetic_crossover_probability_ = 0.5;
+  unsigned genetic_tournament_size_ = 4;
+  float genetic_tournament_probability_ = 0.8;
   unsigned genetic_iters_ = 10;
   unsigned genetic_init_ops_ = 10;
 

@@ -45,11 +45,11 @@ resynth_genetic \
   -corner slow \
   -initial_ops 5 \
   -iters 15 \
-  -pop_size 100 \
-  -mut_prob 0.25 \
-  -cross_prob 0.75 \
-  -tourn_size 9 \
-  -tourn_prob 0.9
+  -population_size 100 \
+  -mutation_probability 0.25 \
+  -crossover_probability 0.75 \
+  -tournament_size 9 \
+  -tournament_probability 0.9
 report_timing_histogram
 report_cell_usage
 report_checks
