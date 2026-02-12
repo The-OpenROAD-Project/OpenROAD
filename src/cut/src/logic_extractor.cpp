@@ -3,6 +3,7 @@
 
 #include "cut/logic_extractor.h"
 
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <utility>
@@ -69,6 +70,14 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     iter.enqueueAdjacentVertices(vertex);
     cut_vertices.push_back(vertex);
   }
+
+  auto network = open_sta_->network();
+
+  std::stable_sort(cut_vertices.begin(), cut_vertices.end(),
+                   [network](const sta::Vertex* a, const sta::Vertex* b) {
+                     return a->name(network) < b->name(network);
+                   });
+
   return cut_vertices;
 }
 
