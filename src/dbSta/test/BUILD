@@ -71,24 +71,193 @@ ALL_TESTS = [
 ]
 
 filegroup(
-    name = "test_resources",
-    srcs = glob(
-        ["**/*"],
-        exclude = [
-            test + "." + ext
-            for test in ALL_TESTS
-            for ext in [
-                "tcl",
-                "py",
-            ]
-        ],
-    ),
+    name = "regression_resources",
+    srcs = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45.pdn.tcl",
+        "Nangate45/Nangate45.rc",
+        "Nangate45/Nangate45.tracks",
+        "Nangate45/Nangate45.vars",
+        "Nangate45/Nangate45_fast.lib",
+        "Nangate45/Nangate45_slow.lib",
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "helpers.tcl",
+        "liberty1.lef",
+        "liberty1.lib",
+    ],
 )
+
+[
+    filegroup(
+        name = test_name + "_resources",
+        srcs = [":regression_resources"] + glob(
+            [
+                test_name + ".*",
+            ],
+        ) + {
+            "block_sta1": [
+                "example1_typ.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "find_clks1": [
+                "pad.lef",
+                "pad.lib",
+            ],
+            "get_ports1_hier": [
+                "get_ports1.v",
+            ],
+            "hier2": [
+                "example1_typ.lib",
+                "example1.lef",
+                "hier2_out.vok",
+            ],
+            "hier3": [
+                "example1_typ.lib",
+                "example1.lef",
+            ],
+            "hier_deep": [
+                "example1_typ.lib",
+                "example1.lef",
+            ],
+            "hierclock": [
+                "hierclock_gate.v",
+                "hierclock_out.vok",
+            ],
+            "network_edit1": [
+                "reg3.def",
+            ],
+            "read_vcd": glob(
+                [
+                    "Element.*",
+                    "MockArray.*",
+                    "asap7/*",
+                ],
+            ),
+            "read_verilog1": [
+                "reg1.v",
+            ],
+            "read_verilog10": [
+                "hier1.v",
+            ],
+            "read_verilog10_no_prop": [
+                "hier1.v",
+            ],
+            "read_verilog11": [
+                "hier1.v",
+            ],
+            "read_verilog2": [
+                "hier1.v",
+            ],
+            "read_verilog3": [
+                "bus1.lef",
+                "bus1.lib",
+                "bus1.v",
+            ],
+            "read_verilog5": [
+                "bidir1.lef",
+                "bidir1.lib",
+            ],
+            "read_verilog9": [
+                "reg1.v",
+            ],
+            "readdb_hier": [
+                "hier1.v",
+            ],
+            "report_cell_usage_file": [
+                "report_cell_usage.def",
+            ],
+            "report_cell_usage_modinsts": [
+                "hier1.v",
+            ],
+            "report_cell_usage_modinsts_metrics": [
+                "hier1.v",
+            ],
+            "report_cell_usage_physical_only": [
+                "report_cell_usage_no_taps.def",
+            ],
+            "report_json1": [
+                "reg6.def",
+            ],
+            "report_timing_histogram": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sdc_get1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sdc_names1": [
+                "hier1.def",
+            ],
+            "sta1": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta2": [
+                "example1_slow.lib",
+                "example1.def",
+                "example1.lef",
+                "example1.sdf",
+                "example1.v",
+            ],
+            "sta3": [
+                "example1_slow.lib",
+                "example1_fast.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta4": [
+                "example1_slow.lib",
+                "example1.dspef",
+                "example1.def",
+                "example1.lef",
+            ],
+            "sta5": [
+                "example1_fast.lib",
+                "example1_slow.lib",
+                "example1_typ.lib",
+                "example1.def",
+                "example1.lef",
+            ],
+            "write_sdc1": [
+                "hier1.sdc",
+                "hier1.v",
+            ],
+            "write_verilog1": [
+                "reg1.def",
+            ],
+            "write_verilog2": [
+                "reg4.def",
+            ],
+            "write_verilog3": [
+                "bus1.def",
+                "bus1.lef",
+                "bus1.lib",
+            ],
+            "write_verilog6": [
+                "write_verilog5.def",
+            ],
+            "write_verilog8": [
+                "reg5.v",
+            ],
+            "write_verilog9_hier": [
+                "write_verilog9.v",
+            ],
+        }.get(test_name, []),
+    )
+    for test_name in ALL_TESTS
+]
 
 [
     regression_test(
         name = test_name,
-        data = [":test_resources"],
+        data = [":" + test_name + "_resources"],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
