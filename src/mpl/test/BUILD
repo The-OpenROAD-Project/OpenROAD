@@ -35,6 +35,7 @@ COMPULSORY_TESTS = [
     "macros_without_pins1",
     "mixed_ios1",
     "no_unfixed_macros",
+    "placement_blockages1",
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
@@ -202,6 +203,10 @@ filegroup(
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
                     "testcases/no_unfixed_macros.def",
+                ],
+                "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
                 ],
                 "orientation_improve1": [
                     "testcases/orientation_improve1.def",
