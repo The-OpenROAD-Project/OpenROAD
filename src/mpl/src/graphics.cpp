@@ -585,8 +585,6 @@ void Graphics::drawNotches(gui::Painter& painter)
     odb::Rect rect = notch;
     rect.moveDelta(outline_.xMin(), outline_.yMin());
 
-    // painter.setBrush(gui::Painter::kYellow, gui::Painter::kNone);
-
     painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
 
     painter.drawRect(rect);
