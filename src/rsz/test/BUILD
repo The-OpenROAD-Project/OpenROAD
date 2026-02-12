@@ -9,6 +9,7 @@ exports_files(
 )
 
 TESTS = [
+    "bottleneck",
     "buffer_ports1",
     "buffer_ports10",
     "buffer_ports11",

@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "BottleneckAnalysis.hh"
 #include "BufferMove.hh"
 #include "BufferedNet.hh"
 #include "CloneMove.hh"
@@ -207,6 +208,7 @@ Resizer::Resizer(utl::Logger* logger,
   repair_setup_ = std::make_unique<RepairSetup>(this);
   repair_hold_ = std::make_unique<RepairHold>(this);
   rebuffer_ = std::make_unique<Rebuffer>(this);
+  bottleneck_analysis_ = std::make_unique<BottleneckAnalysis>(this);
 }
 
 Resizer::~Resizer() = default;
@@ -6104,6 +6106,11 @@ bool Resizer::estimateSlewsInTree(Pin* drvr_pin,
   }
 
   return true;
+}
+
+void Resizer::reportBottlenecks(double alpha, int npins, bool verbose)
+{
+  bottleneck_analysis_->analyze(alpha, npins, verbose);
 }
 
 }  // namespace rsz
