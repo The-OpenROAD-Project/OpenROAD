@@ -1351,12 +1351,31 @@ SimOut simulateOnce(const ModelContext& ctx, const Knobs& k, const int fidelity)
                          * (1.0 - wire_speedup);
   delay_s += clk_delay_s_scaled;
 
-  if (ctx.calib.builtin_ref_clock_user > 0.0 && clock_period_user > 0.0) {
-    const double tight_ratio
-        = ctx.calib.builtin_ref_clock_user / clock_period_user;
-    const double wall_start = 1.20;
-    const double wall = std::max(0.0, tight_ratio - wall_start);
-    delay_s *= (1.0 + 15.0 * wall * wall);
+  if (clock_period_user > 0.0 && std::isfinite(clock_period_user)) {
+    double tight_ref_user = 0.0;
+    if (ctx.baseline_metrics.baseline_ecp_user
+        && *ctx.baseline_metrics.baseline_ecp_user > 0.0
+        && std::isfinite(*ctx.baseline_metrics.baseline_ecp_user)) {
+      tight_ref_user = *ctx.baseline_metrics.baseline_ecp_user;
+    } else if (ctx.sta.worst_path_valid && ctx.sta.worst_path_delay_user > 0.0
+               && std::isfinite(ctx.sta.worst_path_delay_user)) {
+      tight_ref_user = ctx.sta.worst_path_delay_user;
+    } else if (ctx.calib.builtin_ref_clock_user > 0.0
+               && std::isfinite(ctx.calib.builtin_ref_clock_user)) {
+      tight_ref_user = ctx.calib.builtin_ref_clock_user;
+    }
+
+    if (tight_ref_user > 0.0 && std::isfinite(tight_ref_user)) {
+      const double tight_ratio = tight_ref_user / clock_period_user;
+      const double wall_start
+          = readEnvDouble("SURROGATE_TIGHT_CLOCK_WALL_START").value_or(1.50);
+      const double wall_coeff
+          = readEnvDouble("SURROGATE_TIGHT_CLOCK_WALL_COEFF").value_or(3.0);
+      const double wall = std::max(0.0, tight_ratio - wall_start);
+      if (wall > 0.0 && wall_coeff > 0.0) {
+        delay_s *= (1.0 + wall_coeff * wall * wall);
+      }
+    }
   }
 
   o.delay_user
