@@ -296,14 +296,20 @@ void Opendp::setInitialGridCells()
   std::unordered_set<Node*> conflicted;
   const DbuX site_width = grid_->getSiteWidth();
 
+  // Check which cells are missaligned with rows
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
-      if ((node->getLeft() % site_width != 0) || !checkInRows(*node)) {
+      const GridX x = grid_->gridX(node.get());
+      const GridY y = grid_->gridSnapDownY(node.get());
+      if (node->getLeft() != gridToDbu(x, site_width)
+          || node->getBottom() != grid_->gridYToDbu(y)
+          || !canBePlaced(node.get(), x, y)) {
         conflicted.insert(node.get());
       }
     }
   }
 
+  // Check which cells are overlapping with other cells
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
       if (conflicted.contains(node.get())) {
