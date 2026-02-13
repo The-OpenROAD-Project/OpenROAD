@@ -131,15 +131,19 @@ void RamGen::makeCellByte(Grid& ram_grid,
   auto gclock_net = makeNet(prefix, "gclock");
   auto we0_net = makeNet(prefix, "we0");
 
-  const int logical_bit_base = byte_idx * 8;  // For naming bits: 0, 8, 16,...
-  const int physical_col_base
-      = byte_idx * 9;  // For placement taking into acount select bit of each
-                       // byte: 0, 9, 18, 27...
+  // For naming bits: 0, 8, 16,...
+  const int logical_bit_base = byte_idx * 8;
+
+  // For placement taking into acount select bit of each byte: 0, 9, 18, 27...
+  const int physical_col_base = byte_idx * 9;
+
   for (int local_bit = 0; local_bit < 8; ++local_bit) {
-    const int global_logical_bit_idx
-        = logical_bit_base + local_bit;                          // For naming
-    const int physical_col_idx = physical_col_base + local_bit;  // For
-                                                                 // placement
+    // For naming
+    const int global_logical_bit_idx = logical_bit_base + local_bit;
+
+    // For placement
+    const int physical_col_idx = physical_col_base + local_bit;
+
     auto name = fmt::format("{}.bit{}", prefix, global_logical_bit_idx);
     vector<dbNet*> outs;
     outs.reserve(read_ports);
