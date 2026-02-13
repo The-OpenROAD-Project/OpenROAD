@@ -123,8 +123,8 @@ class WireSegment
 
   std::vector<double> bufferLocations_;
   std::vector<std::string> bufferMasters_;
-  int wl2FirstBuffer_;
-  int lastWl_;
+  int wl2FirstBuffer_ = 0;
+  int lastWl_ = 0;
 };
 
 //-----------------------------------------------------------------------------

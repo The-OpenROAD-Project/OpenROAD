@@ -10,6 +10,7 @@ package(
 
 cc_library(
     name = "nangate45_fixture",
+    testonly = 1,
     hdrs = ["include/tst/nangate45_fixture.h"],
     data = [
         "//test:nangate45_data",
@@ -21,6 +22,7 @@ cc_library(
 
 cc_library(
     name = "sky130_fixture",
+    testonly = 1,
     hdrs = ["include/tst/sky130_fixture.h"],
     data = [
         "//test:sky130hd_data",
@@ -32,6 +34,7 @@ cc_library(
 
 cc_library(
     name = "tst",
+    testonly = 1,
     srcs = [
         "src/fixture.cpp",
     ],
@@ -56,6 +59,7 @@ cc_library(
 
 cc_library(
     name = "integrated_fixture",
+    testonly = 1,
     srcs = ["src/IntegratedFixture.cpp"],
     hdrs = ["include/tst/IntegratedFixture.h"],
     data = [

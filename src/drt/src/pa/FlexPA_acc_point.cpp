@@ -28,6 +28,7 @@
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 

@@ -19,6 +19,7 @@
 
 #include "mainWindow.h"
 #include "utl/Logger.h"
+#include "utl/Progress.h"
 
 namespace gui {
 

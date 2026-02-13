@@ -3,10 +3,12 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 291 components and 1743 component-terminals.
 [INFO ODB-0133]     Created 4 nets and 294 connections.
-*******************************************
+*****************************************************
 CTS config:
 -apply_ndr:                          HALF
 -buf_list:                           CLKBUF_X3 
+-clock_buffer_footprint:             unset
+-clock_buffer_string:                unset
 -branching_point_buffers_distance:   480000
 -clustering_exponent:                4
 -clustering_unbalance_ratio:         0.6
@@ -24,7 +26,7 @@ CTS config:
 -skip_nets:                          gclk1 gclk3 
 -tree_buf:                           undefined
 -wire_unit:                          20
-****'***************************************
+*****************************************************
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:

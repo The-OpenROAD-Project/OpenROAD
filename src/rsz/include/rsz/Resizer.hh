@@ -51,6 +51,13 @@
 
 namespace rsz {
 
+// Buffer use classification
+enum class BufferUse
+{
+  DATA,
+  CLOCK
+};
+
 using LibertyPortTuple = std::tuple<sta::LibertyPort*, sta::LibertyPort*>;
 using InstanceTuple = std::tuple<sta::Instance*, sta::Instance*>;
 using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
@@ -417,6 +424,26 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void inferClockBufferList(const char* lib_name,
                             std::vector<std::string>& buffers);
   bool isClockCellCandidate(sta::LibertyCell* cell);
+
+  // Clock buffer pattern configuration
+  void setClockBufferString(const std::string& clk_str);
+  void setClockBufferFootprint(const std::string& footprint);
+  void resetClockBufferPattern();
+  bool hasClockBufferString() const { return !clock_buffer_string_.empty(); }
+  bool hasClockBufferFootprint() const
+  {
+    return !clock_buffer_footprint_.empty();
+  }
+  const std::string& getClockBufferString() const
+  {
+    return clock_buffer_string_;
+  }
+  const std::string& getClockBufferFootprint() const
+  {
+    return clock_buffer_footprint_;
+  }
+  BufferUse getBufferUse(sta::LibertyCell* buffer);
+
   // Clone inverters next to the registers they drive to remove them
   // from the clock network.
   // yosys is too stupid to use the inverted clock registers
@@ -700,7 +727,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasPins(sta::Net* net);
   void getPins(sta::Net* net, PinVector& pins) const;
   void getPins(sta::Instance* inst, PinVector& pins) const;
-  void SwapNetNames(odb::dbITerm* iterm_to, odb::dbITerm* iterm_from);
   odb::Point tieLocation(const sta::Pin* load, int separation);
   sta::InstanceSeq findClkInverters();
   void cloneClkInverter(sta::Instance* inv);
@@ -864,6 +890,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool exclude_clock_buffers_ = true;
   bool buffer_moved_into_core_ = false;
   bool match_cell_footprint_ = false;
+  bool equiv_cells_made_ = false;
+
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
   // insert a buffer in the middle of. Theoretically computed using the smallest
@@ -898,6 +926,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool sizing_keep_site_ = false;
   bool sizing_keep_vt_ = false;
   bool disable_buffer_pruning_ = false;
+
+  // Clock buffer pattern configuration
+  std::string clock_buffer_string_;
+  std::string clock_buffer_footprint_;
 
   // Sizing
   const double default_sizing_cap_ratio_ = 4.0;

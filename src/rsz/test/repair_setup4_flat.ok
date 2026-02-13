@@ -60,9 +60,9 @@ tns max -2.588
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | r2/D
         1 |       0 |       0 |        1 |      0 |     0 |    +1.4% |   -0.518 |       -3.3 |     11 | r2/D
-    final |       0 |       3 |        2 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
+    final |       0 |       5 |        3 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 2 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.
