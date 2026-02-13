@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2025-2025, The OpenROAD Authors
+// Copyright (c) 2025-2026, The OpenROAD Authors
 
 #include "genetic_strategy.h"
 
