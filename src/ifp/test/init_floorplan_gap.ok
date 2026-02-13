@@ -1,15 +1,15 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: init_floorplan_gap.lef
-[ERROR IFP-0354] Gap must be positive (-2000)
-[ERROR IFP-0354] Gap must be positive (0)
-[ERROR IFP-0354] Gap must be positive (-2000)
-[ERROR IFP-0354] Gap must be positive (0)
+[ERROR IFP-0036] Gap must be positive (-2000)
+[ERROR IFP-0036] Gap must be positive (0)
+[ERROR IFP-0036] Gap must be positive (-2000)
+[ERROR IFP-0036] Gap must be positive (0)
 [INFO IFP-0001] Added 71 rows of 526 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO IFP-0001] Added 35 rows of 526 site FreePDK45_38x28_10R_NP_162NW_34O_DoubleHeight.
-[INFO IFP-0012] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
-[INFO IFP-0013] Core BBox: (  0.000  0.000 ) ( 99.940 99.400 ) um
-[INFO IFP-0016] Core area:                         9934.036 um^2
-[INFO IFP-0017] Total instances area:                15.428 um^2
-[INFO IFP-0020] Result utilization:                   0.002
-[INFO IFP-0032] Number of instances:                      5
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 99.940 99.400 ) um
+[INFO IFP-0102] Core area:                         9934.036 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.002
+[INFO IFP-0105] Number of instances:                      5
 No differences found.
