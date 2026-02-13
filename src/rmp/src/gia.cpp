@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2026, The OpenROAD Authors
 
-#include "aig/gia/gia.h"
+#include "gia.h"
 
 #include <algorithm>
 #include <cassert>
@@ -18,12 +18,12 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "map/if/if.h"
 #pragma GCC diagnostic pop
+#include "aig/gia/gia.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "gia.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "map/scl/sclSize.h"
@@ -200,33 +200,6 @@ std::vector<GiaOp> GiaOps(utl::Logger* logger)
         debugPrint(logger, RMP, "gia", 1, "Starting synch2");
         replaceGia(g, Gia_ManAigSynch2(g.get(), &pars, 6, 20));
       }};
-  /* Some ABC functions/commands that could be used, but crash in some
-     permutations:
-      * &nf. Call it like this:
-            namespace abc {
-            extern Gia_Man_t* Nf_ManPerformMapping(Gia_Man_t* pGia,
-                                                   Jf_Par_t* pPars);
-            }
-            abc::Jf_Par_t pars = {};
-            Nf_ManSetDefaultPars(&pars);
-            new_gia = Nf_ManPerformMapping(gia, &pars);
-        It crashes on a null pointer due to a missing time manager. We can make
-        the time manager:
-            gia->pManTime = abc::Tim_ManStart(Gia_ManCiNum(new_gia),
-                                              Gia_ManCoNum(new_gia));
-        But then, an assert deep in &nf fails.
-      * &dsd. Call it like this:
-            namespace abc {
-            extern Gia_Man_t* Gia_ManCollapseTest(Gia_Man_t* p, int fVerbose);
-            }
-            new_gia = Gia_ManCollapseTest(gia, false);
-        An assert fails.
-
-      Some functions/commands don't actually exist:
-      * &resub
-      * &reshape, &reshape -a
-      These are just stubs that return null.
-   */
   std::vector<GiaOp> ops;
   ops.reserve(all_ops.size());
   for (size_t i = 0; i < all_ops.size(); ++i) {
