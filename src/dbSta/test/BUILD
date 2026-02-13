@@ -19,6 +19,7 @@ ALL_TESTS = [
     "get_ports1",
     "get_ports1_hier",
     "hier2",
+    "hier3",
     "hierclock",
     "hierwrite",
     "hier_deep",
@@ -112,6 +113,10 @@ filegroup(
                 "example1_typ.lib",
                 "example1.lef",
                 "hier2_out.vok",
+            ],
+            "hier3": [
+                "example1_typ.lib",
+                "example1.lef",
             ],
             "hier_deep": [
                 "example1_typ.lib",
