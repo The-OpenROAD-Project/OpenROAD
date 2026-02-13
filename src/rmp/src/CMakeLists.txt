@@ -51,8 +51,6 @@ target_include_directories(rmp
 target_include_directories(rmp_lib
   PUBLIC
     ../include
-  PRIVATE
-    .
 )
 
 target_link_libraries(rmp_lib
