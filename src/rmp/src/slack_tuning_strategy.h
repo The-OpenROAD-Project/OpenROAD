@@ -63,7 +63,6 @@ class SolutionSlack final
   std::optional<sta::Slack> WorstSlack() const { return worst_slack_; }
 };
 
-// TODO docs
 class SlackTuningStrategy : public ResynthesisStrategy
 {
  public:
