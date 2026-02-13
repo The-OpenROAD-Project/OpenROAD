@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <numeric>
 #include <ranges>
 #include <string>
 #include <unordered_map>
@@ -113,42 +114,56 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
                                     const UnfoldedModel& model)
 {
   const auto& chips = model.getChips();
-  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
+  std::vector<int> sorted(chips.size());
+  std::iota(sorted.begin(), sorted.end(), 0);
+  std::ranges::sort(sorted, [&](int a, int b) {
+    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+  });
 
-  for (size_t i = 0; i < chips.size(); i++) {
-    auto cuboid_i = chips[i].cuboid;
-    for (size_t j = i + 1; j < chips.size(); j++) {
-      auto cuboid_j = chips[j].cuboid;
-      if (cuboid_i.overlaps(cuboid_j)) {
-        overlaps.emplace_back(&chips[i], &chips[j]);
+  // Precompute connection map for faster lookup
+  Checker::ConnectionMap connection_map;
+  for (const auto& conn : model.getConnections()) {
+    if (!conn.top_region || !conn.bottom_region) {
+      continue;
+    }
+    const auto* c1 = conn.top_region->parent_chip;
+    const auto* c2 = conn.bottom_region->parent_chip;
+    if (c1 > c2) {
+      std::swap(c1, c2);
+    }
+    connection_map[{c1, c2}].push_back(&conn);
+  }
+
+  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
+  for (size_t i = 0; i < sorted.size(); ++i) {
+    auto* c1 = &chips[sorted[i]];
+    for (size_t j = i + 1; j < sorted.size(); ++j) {
+      auto* c2 = &chips[sorted[j]];
+      if (c2->cuboid.xMin() >= c1->cuboid.xMax()) {
+        break;
+      }
+      if (c1->cuboid.overlaps(c2->cuboid)) {
+        if (!isOverlapFullyInConnections(model, c1, c2, connection_map)) {
+          overlaps.emplace_back(c1, c2);
+        }
       }
     }
   }
 
   if (!overlaps.empty()) {
     auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Overlapping chips");
-    logger_->warn(
-        utl::ODB, 156, "Found {} overlapping chips", (int) overlaps.size());
-
+    logger_->warn(utl::ODB, 156, "Found {} overlapping chips", overlaps.size());
     for (const auto& [inst1, inst2] : overlaps) {
-      odb::dbMarker* marker = odb::dbMarker::create(cat);
-
-      auto cuboid1 = inst1->cuboid;
-      auto cuboid2 = inst2->cuboid;
-      auto intersection = cuboid1.intersect(cuboid2);
-
-      odb::Rect bbox(intersection.xMin(),
-                     intersection.yMin(),
-                     intersection.xMax(),
-                     intersection.yMax());
-      marker->addShape(bbox);
-
+      auto* marker = dbMarker::create(cat);
+      auto intersection = inst1->cuboid.intersect(inst2->cuboid);
+      marker->addShape(Rect(intersection.xMin(),
+                            intersection.yMin(),
+                            intersection.xMax(),
+                            intersection.yMax()));
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
-
-      std::string comment
-          = "Chips " + inst1->name + " and " + inst2->name + " overlap";
-      marker->setComment(comment);
+      marker->setComment(
+          fmt::format("Chips {} and {} overlap", inst1->name, inst2->name));
     }
   }
 }
@@ -168,10 +183,47 @@ void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
 {
 }
 
-bool Checker::isOverlapFullyInConnections(const UnfoldedChip* chip1,
-                                          const UnfoldedChip* chip2,
-                                          const Cuboid& overlap) const
+bool Checker::isOverlapFullyInConnections(
+    const UnfoldedModel& model,
+    const UnfoldedChip* chip1,
+    const UnfoldedChip* chip2,
+    const ConnectionMap& connection_map) const
 {
+  auto overlap = chip1->cuboid.intersect(chip2->cuboid);
+  Rect overlap_rect(
+      overlap.xMin(), overlap.yMin(), overlap.xMax(), overlap.yMax());
+
+  const auto* c1 = chip1;
+  const auto* c2 = chip2;
+  if (c1 > c2) {
+    std::swap(c1, c2);
+  }
+
+  auto it = connection_map.find({c1, c2});
+  if (it == connection_map.end()) {
+    return false;
+  }
+
+  for (const auto* conn_ptr : it->second) {
+    const auto& conn = *conn_ptr;
+    // We already know parent chips match c1/c2 due to map validation
+    if (!isValid(conn)) {
+      continue;
+    }
+    auto* r1 = conn.top_region;
+    auto* r2 = conn.bottom_region;
+    auto valid = [&](auto* r) {
+      return r->isInternalExt()
+             && Rect(r->cuboid.xMin(),
+                     r->cuboid.yMin(),
+                     r->cuboid.xMax(),
+                     r->cuboid.yMax())
+                    .contains(overlap_rect);
+    };
+    if (valid(r1) || valid(r2)) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -208,11 +260,10 @@ bool Checker::isValid(const UnfoldedConnection& conn) const
     return false;
   }
   if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
-    return conn.top_region->parent_chip == conn.bottom_region->parent_chip
-           && std::max(conn.top_region->cuboid.zMin(),
-                       conn.bottom_region->cuboid.zMin())
-                  <= std::min(conn.top_region->cuboid.zMax(),
-                              conn.bottom_region->cuboid.zMax());
+    return std::max(conn.top_region->cuboid.zMin(),
+                    conn.bottom_region->cuboid.zMin())
+           <= std::min(conn.top_region->cuboid.zMax(),
+                       conn.bottom_region->cuboid.zMax());
   }
 
   auto surfaces = getMatingSurfaces(conn);
