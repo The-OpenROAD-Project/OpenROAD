@@ -27,8 +27,8 @@
 namespace rmp {
 
 // The magic numbers are defaults from abc/src/base/abci/abc.c
-constexpr size_t SEARCH_RESIZE_ITERS = 100;
-constexpr size_t FINAL_RESIZE_ITERS = 1000;
+constexpr size_t kSearchResizeIters = 100;
+constexpr size_t kFinalResizeIters = 1000;
 
 using utl::RMP;
 
@@ -61,36 +61,36 @@ SolutionSlack::ResultOps SolutionSlack::RandomNeighbor(
   SolutionSlack::ResultOps sol = solution_;
   enum class Move : uint8_t
   {
-    ADD,
-    REMOVE,
-    SWAP,
-    COUNT
+    kAdd,
+    kRemove,
+    kSwap,
+    kCount
   };
-  Move move = Move::ADD;
+  Move move = Move::kAdd;
   if (sol.size() > 1) {
-    const auto count = static_cast<std::underlying_type_t<Move>>(Move::COUNT);
+    const auto count = static_cast<std::underlying_type_t<Move>>(Move::kCount);
     move = Move(absl::Uniform<int>(random, 0, count));
   }
   switch (move) {
-    case Move::ADD: {
+    case Move::kAdd: {
       debugPrint(logger, RMP, "slack_tunning", 2, "Adding a new GIA operation");
       size_t i = absl::Uniform<size_t>(random, 0, sol.size() + 1);
       size_t j = absl::Uniform<size_t>(random, 0, all_ops.size());
       sol.insert(sol.begin() + i, all_ops[j]);
     } break;
-    case Move::REMOVE: {
+    case Move::kRemove: {
       debugPrint(logger, RMP, "slack_tunning", 2, "Removing a GIA operation");
       size_t i = absl::Uniform<size_t>(random, 0, sol.size());
       sol.erase(sol.begin() + i);
     } break;
-    case Move::SWAP: {
+    case Move::kSwap: {
       debugPrint(
           logger, RMP, "slack_tunning", 2, "Swapping adjacent GIA operations");
       assert(sol.size() > 1);
       size_t i = absl::Uniform<size_t>(random, 0, sol.size() - 1);
       std::swap(sol[i], sol[i + 1]);
     } break;
-    case Move::COUNT:
+    case Move::kCount:
       // TODO replace with std::unreachable() once we reach c++23
       break;
   }
@@ -121,7 +121,7 @@ sta::Vertex* SolutionSlack::Evaluate(
          candidate_vertices,
          abc_library,
          solution_,
-         SEARCH_RESIZE_ITERS,
+         kSearchResizeIters,
          name_generator,
          logger);
 
@@ -181,7 +181,7 @@ void SlackTuningStrategy::OptimizeDesign(sta::dbSta* sta,
          candidate_vertices,
          abc_library,
          best_ops,
-         FINAL_RESIZE_ITERS,
+         kFinalResizeIters,
          name_generator,
          logger);
   logger->info(RMP,
