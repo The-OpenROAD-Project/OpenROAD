@@ -84,7 +84,7 @@ extern void Abc_FrameSetLibGen(void* pLib);
 namespace rmp {
 using utl::RMP;
 
-static void replaceGia(GiaOp::Type& gia, abc::Gia_Man_t* new_gia)
+static void replaceGia(GiaOp::AigManager& gia, abc::Gia_Man_t* new_gia)
 {
   // Operation does not allocate new gia
   if (gia.get() == new_gia) {
@@ -114,7 +114,7 @@ std::vector<GiaOp> GiaOps(utl::Logger* logger)
     };
   };
 
-  std::vector<GiaOp::OpType> all_ops = {
+  std::vector<GiaOp::OpExecutor> all_ops = {
       // &st
       step("Starting rehash &st",
            [](auto& g) { return Gia_ManRehash(g.get(), false); }),
@@ -208,7 +208,7 @@ std::vector<GiaOp> GiaOps(utl::Logger* logger)
   return ops;
 }
 
-static GiaOp::Type initGia(abc::Abc_Ntk_t* ntk, utl::Logger* logger)
+static GiaOp::AigManager initGia(abc::Abc_Ntk_t* ntk, utl::Logger* logger)
 {
   debugPrint(logger, RMP, "gia", 1, "Converting to GIA");
   assert(!Abc_NtkIsStrash(ntk));

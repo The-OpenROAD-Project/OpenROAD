@@ -24,11 +24,11 @@ namespace rmp {
 
 struct GiaOp final
 {
-  using Type = utl::UniquePtrWithDeleter<abc::Gia_Man_t>;
-  using OpType = std::function<void(Type&)>;
+  using AigManager = utl::UniquePtrWithDeleter<abc::Gia_Man_t>;
+  using OpExecutor = std::function<void(AigManager&)>;
 
   size_t id;
-  OpType op;
+  OpExecutor op;
   bool operator==(const GiaOp& other) const { return id == other.id; }
   bool operator!=(const GiaOp& other) const { return !(*this == other); }
 
