@@ -79,11 +79,11 @@ test_check_fails "LEF-CHK-003d: Multi-pattern still incompatible (FAIL)" "lef003
 # Test 4-5a: LEF-CHK-004-005 - Signal pin fully blocked by same-layer obstruction
 test_check_fails "LEF-CHK-004-005a: Signal pin fully blocked" "lef004_005a_fully_blocked"
 
-# Test 4-5b: LEF-CHK-004-005 - Multi-shape pin, one blocked one open (should PASS)
-test_check_passes "LEF-CHK-004-005b: Multi-shape, one accessible (PASS)" "lef004_005b_multi_shape_pass"
+# Test 4-5b: LEF-CHK-004-005 - Pin blocked on M1 but accessible from M2 above (PASS)
+test_check_passes "LEF-CHK-004-005b: Blocked on M1 but from M2 (PASS)" "lef004_005b_multi_shape_pass"
 
-# Test 4-5c: LEF-CHK-004-005 - Power pin blocked (merged signal+power check)
-test_check_fails "LEF-CHK-004-005c: Power pin blocked" "lef004_005c_power_blocked"
+# Test 4-5c: LEF-CHK-004-005 - Power pin blocked on M1+M2 (FAIL)
+test_check_fails "LEF-CHK-004-005c: Power pin blocked (M1+M2)" "lef004_005c_power_blocked"
 
 # Test 6a: LEF-CHK-006 - Excessive polygon count (below threshold = FAIL)
 test_check_fails "LEF-CHK-006: Excessive polygon count (threshold 5)" "lef006_polygon_count" "-max_polygons 5"

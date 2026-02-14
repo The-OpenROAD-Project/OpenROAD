@@ -267,13 +267,14 @@ MACRO lef004_005a_fully_blocked
   OBS
     LAYER M1 ;
     RECT 0.900 0.900 1.300 1.300 ;
+    LAYER M2 ;
+    RECT 0.900 0.900 1.300 1.300 ;
   END
 END lef004_005a_fully_blocked
 
 # =============================================================================
-# LEF-CHK-004-005b: Pin has multiple shapes - one blocked, one accessible (PASS)
-# First shape is blocked by obstruction but second shape is open.
-# The check should pass because at least one shape is accessible.
+# LEF-CHK-004-005b: Pin blocked on same layer, but accessible from above (PASS)
+# M1 obstruction blocks all edges, but NO M2 obstruction, so from M2 works.
 # =============================================================================
 MACRO lef004_005b_multi_shape_pass
   CLASS BLOCK ;
@@ -286,7 +287,6 @@ MACRO lef004_005b_multi_shape_pass
     PORT
       LAYER M1 ;
       RECT 1.000 1.000 1.200 1.200 ;
-      RECT 5.000 5.000 5.200 5.200 ;
     END
   END SIG
   OBS
@@ -296,7 +296,7 @@ MACRO lef004_005b_multi_shape_pass
 END lef004_005b_multi_shape_pass
 
 # =============================================================================
-# LEF-CHK-004-005c: Power pin blocked (same check as signal)
+# LEF-CHK-004-005c: Power pin blocked on same layer AND above (FAIL)
 # =============================================================================
 MACRO lef004_005c_power_blocked
   CLASS BLOCK ;
@@ -312,6 +312,8 @@ MACRO lef004_005c_power_blocked
   END VDD
   OBS
     LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+    LAYER M2 ;
     RECT 0.900 0.900 1.300 1.300 ;
   END
 END lef004_005c_power_blocked

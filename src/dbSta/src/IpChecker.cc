@@ -3,8 +3,17 @@
 
 #include "db_sta/IpChecker.hh"
 
+
+#include <string>
+#include <cstdint>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
@@ -328,57 +337,60 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
   }
 }
 
-// Helper: Check if a pin has at least one accessible edge
+// Helper: Check if a pin has at least one accessible path
+// Access can come from:
+//   1. Same-layer routing (at least one edge not blocked by same-layer OBS)
+//   2. Via from above (pin area not fully covered by OBS on layer above)
+//   3. Via from below (pin area not fully covered by OBS on layer below)
 bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
                                   const odb::Rect& pin_rect,
                                   odb::dbTechLayer* layer)
 {
-  // Get all obstructions on this layer AND layers above
-  // Obstructions above can block via access to the pin
-  std::vector<odb::Rect> obs_rects;
   int pin_routing_level = layer->getRoutingLevel();
+
+  // Collect obstructions by relationship to pin layer
+  std::vector<odb::Rect> same_layer_obs;
+  std::vector<odb::Rect> above_layer_obs;
+  std::vector<odb::Rect> below_layer_obs;
 
   for (odb::dbBox* obs : master->getObstructions()) {
     odb::dbTechLayer* obs_layer = obs->getTechLayer();
     if (!obs_layer) {
       continue;
     }
-    int obs_routing_level = obs_layer->getRoutingLevel();
+    int obs_level = obs_layer->getRoutingLevel();
+    odb::Rect obs_rect = obs->getBox();
 
-    // Check obstructions on same layer or above
-    if (obs_routing_level >= pin_routing_level) {
-      obs_rects.push_back(obs->getBox());
+    if (obs_level == pin_routing_level) {
+      same_layer_obs.push_back(obs_rect);
+    } else if (obs_level == pin_routing_level + 1) {
+      above_layer_obs.push_back(obs_rect);
+    } else if (obs_level == pin_routing_level - 1) {
+      below_layer_obs.push_back(obs_rect);
     }
   }
 
-  if (obs_rects.empty()) {
-    return true;  // No obstructions, all edges accessible
+  // Check 1: Same-layer edge access
+  // If any edge of the pin is not blocked, routing can reach it
+  if (same_layer_obs.empty()) {
+    return true;  // No same-layer obstructions, all edges accessible
   }
 
-  // Check each edge for accessibility
-  // An edge is accessible if it's not fully covered by obstructions
-
-  // North edge (top)
   odb::Rect north_edge(
       pin_rect.xMin(), pin_rect.yMax(), pin_rect.xMax(), pin_rect.yMax() + 1);
-  bool north_blocked = false;
-
-  // South edge (bottom)
   odb::Rect south_edge(
       pin_rect.xMin(), pin_rect.yMin() - 1, pin_rect.xMax(), pin_rect.yMin());
-  bool south_blocked = false;
-
-  // East edge (right)
   odb::Rect east_edge(
       pin_rect.xMax(), pin_rect.yMin(), pin_rect.xMax() + 1, pin_rect.yMax());
-  bool east_blocked = false;
-
-  // West edge (left)
   odb::Rect west_edge(
       pin_rect.xMin() - 1, pin_rect.yMin(), pin_rect.xMin(), pin_rect.yMax());
+
+  bool north_blocked = false;
+  bool south_blocked = false;
+  bool east_blocked = false;
   bool west_blocked = false;
 
-  for (const auto& obs_rect : obs_rects) {
+  for (const auto& obs_rect : same_layer_obs) {
     if (obs_rect.intersects(north_edge)) {
       north_blocked = true;
     }
@@ -393,8 +405,40 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
     }
   }
 
-  // Return true if at least one edge is accessible
-  return !north_blocked || !south_blocked || !east_blocked || !west_blocked;
+  if (!north_blocked || !south_blocked || !east_blocked || !west_blocked) {
+    return true;  // At least one edge is accessible on the same layer
+  }
+
+  // All edges blocked on same layer. Check via access from above/below.
+
+  // Check 2: Access from above — pin area must NOT be fully covered
+  // by obstructions on the layer above
+  bool above_blocked = false;
+  for (const auto& obs_rect : above_layer_obs) {
+    if (obs_rect.contains(pin_rect)) {
+      above_blocked = true;
+      break;
+    }
+  }
+  if (!above_blocked && pin_routing_level > 0) {
+    return true;  // Can drop a via from above
+  }
+
+  // Check 3: Access from below — pin area must NOT be fully covered
+  // by obstructions on the layer below
+  bool below_blocked = false;
+  for (const auto& obs_rect : below_layer_obs) {
+    if (obs_rect.contains(pin_rect)) {
+      below_blocked = true;
+      break;
+    }
+  }
+  if (!below_blocked && pin_routing_level > 1) {
+    return true;  // Can access via from below
+  }
+
+  // All access paths blocked
+  return false;
 }
 
 // LEF-CHK-004-005: Pin accessibility (signal and power)
@@ -509,7 +553,7 @@ void IpChecker::checkFinFetProperty(odb::dbMaster* master)
 
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     std::string layer_name_lower = layer->getName();
-    std::transform(layer_name_lower.begin(),
+    std::ranges::transform(layer_name_lower.begin(),
                    layer_name_lower.end(),
                    layer_name_lower.begin(),
                    [](unsigned char c) { return std::tolower(c); });
