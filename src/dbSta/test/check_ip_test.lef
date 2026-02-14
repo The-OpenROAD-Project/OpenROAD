@@ -13,6 +13,7 @@ LAYER M1
   DIRECTION HORIZONTAL ;
   PITCH 0.200 ;
   WIDTH 0.100 ;
+  AREA 0.020 ;
 END M1
 
 LAYER M2
@@ -415,8 +416,9 @@ END lef010a_small_width
 
 # =============================================================================
 # LEF-CHK-010b: Pin width OK in perpendicular, small in parallel (PASS)
-# M1 is HORIZONTAL, so "width" = dy = 0.200 >= 0.100 -> PASS
+# M1 is HORIZONTAL, so "width" = dy = 0.200 >= 0.100
 # Even though dx = 0.050 (small), that's the "length" direction, not checked.
+# Area = 50*400 = 20000 >= 20000 (M1 AREA rule)
 # =============================================================================
 MACRO lef010b_length_ok
   CLASS BLOCK ;
@@ -428,10 +430,48 @@ MACRO lef010b_length_ok
     ANTENNAMODEL OXIDE1 ;
     PORT
       LAYER M1 ;
-      RECT 0.000 1.000 0.050 1.200 ;
+      RECT 0.000 1.000 0.050 1.400 ;
     END
   END A
 END lef010b_length_ok
 
-END LIBRARY
+# =============================================================================
+# LEF-CHK-010b: Pin area less than layer minimum area (FAIL)
+# M1 AREA = 0.020 um^2 = 20000 DBU^2
+# Pin: RECT 0.000 1.000 0.100 1.100 -> dx=100, dy=100 -> area=10000 < 20000
+# =============================================================================
+MACRO lef010b_small_area
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.100 1.100 ;
+    END
+  END A
+END lef010b_small_area
 
+# =============================================================================
+# LEF-CHK-010b: Pin area meets minimum area (PASS)
+# Pin: RECT 0.000 1.000 0.200 1.200 -> dx=200, dy=200 -> area=40000 >= 20000
+# =============================================================================
+MACRO lef010b_area_ok
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef010b_area_ok
+
+END LIBRARY

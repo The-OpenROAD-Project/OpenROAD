@@ -598,30 +598,26 @@ void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
 void IpChecker::checkPinMinArea(odb::dbMaster* master)
 {
   std::string master_name = master->getName();
+  int dbu_per_micron = db_->getTech()->getDbUnitsPerMicron();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
     for (odb::dbMPin* mpin : mterm->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
         odb::dbTechLayer* layer = box->getTechLayer();
-        if (!layer) {
+        if (!layer || !layer->hasArea()) {
           continue;
         }
 
-        // Get min area from layer area rules
-        int min_area = 0;
-        for (auto* rule : layer->getTechLayerAreaRules()) {
-          min_area = std::max(min_area, rule->getArea());
-        }
-
-        if (min_area == 0) {
-          continue;
-        }
+        // getArea() returns microns^2, convert to DBU^2
+        double min_area_um2 = layer->getArea();
+        int64_t min_area_dbu2 = static_cast<int64_t>(
+            min_area_um2 * dbu_per_micron * dbu_per_micron);
 
         odb::Rect rect = box->getBox();
         int64_t shape_area
             = static_cast<int64_t>(rect.dx()) * static_cast<int64_t>(rect.dy());
 
-        if (shape_area < min_area) {
+        if (shape_area < min_area_dbu2) {
           logger_->warn(utl::CHK,
                         110,
                         "Pin {}/{} on layer {} has area {} less than "
@@ -630,7 +626,7 @@ void IpChecker::checkPinMinArea(odb::dbMaster* master)
                         mterm->getName(),
                         layer->getName(),
                         shape_area,
-                        min_area);
+                        min_area_dbu2);
           warning_count_++;
         }
       }

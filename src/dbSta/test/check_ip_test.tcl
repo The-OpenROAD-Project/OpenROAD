@@ -104,8 +104,14 @@ test_check_fails "LEF-CHK-009: Pin has no geometry" "lef009_no_geometry"
 # Test 10a: LEF-CHK-010a - Pin width perpendicular to direction is too small (FAIL)
 test_check_fails "LEF-CHK-010a: Pin width too small perpendicular to routing" "lef010a_small_width"
 
-# Test 10b: LEF-CHK-010 - Pin width OK perpendicular, small in parallel (PASS)
+# Test 10b: LEF-CHK-010b - Pin width OK perpendicular, small in parallel (PASS)
 test_check_passes "LEF-CHK-010b: Pin length small but width OK (PASS)" "lef010b_length_ok"
+
+# Test 10c: LEF-CHK-010b - Pin area less than layer min area (FAIL)
+test_check_fails "LEF-CHK-010b: Pin area too small" "lef010b_small_area"
+
+# Test 10d: LEF-CHK-010b - Pin area meets layer min area (PASS)
+test_check_passes "LEF-CHK-010b: Pin area OK (PASS)" "lef010b_area_ok"
 
 puts "\n=============================================="
 puts "IP Checker Test Suite Complete"
