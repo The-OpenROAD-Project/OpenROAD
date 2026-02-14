@@ -23,13 +23,13 @@ namespace sta {
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
 // LEF-CHK-002: Pin coordinates aligned to manufacturing grid
 // LEF-CHK-003: Pin routing grid alignment
-// LEF-CHK-004: Signal pin accessibility (edge accessible)
-// LEF-CHK-005: Power pin accessibility (edge accessible)
-// LEF-CHK-006: Excessive polygon count
+// LEF-CHK-004-005: Pin accessibility (signal and power)
+// LEF-CHK-006: Polygon count
 // LEF-CHK-007: Antenna information present
 // LEF-CHK-008: FinFET technology detection (info only)
 // LEF-CHK-009: Pin geometry presence
-// LEF-CHK-010: Pin minimum dimensions
+// LEF-CHK-010a: Pin minimum width (perpendicular to routing direction)
+// LEF-CHK-010b: Pin minimum area
 
 class IpChecker
 {
@@ -67,11 +67,8 @@ class IpChecker
   // LEF-CHK-003: Pin routing grid alignment
   void checkPinRoutingGridAlignment(odb::dbMaster* master);
 
-  // LEF-CHK-004: Signal pin accessibility
-  void checkSignalPinAccessibility(odb::dbMaster* master);
-
-  // LEF-CHK-005: Power pin accessibility
-  void checkPowerPinAccessibility(odb::dbMaster* master);
+  // LEF-CHK-004-005: Pin accessibility (signal and power)
+  void checkPinAccessibility(odb::dbMaster* master);
 
   // LEF-CHK-006: Polygon count
   void checkPolygonCount(odb::dbMaster* master);
@@ -85,8 +82,11 @@ class IpChecker
   // LEF-CHK-009: Pin geometry presence
   void checkPinGeometryPresence(odb::dbMaster* master);
 
-  // LEF-CHK-010: Pin minimum dimensions
+  // LEF-CHK-010a: Pin minimum width (perpendicular to routing direction)
   void checkPinMinDimensions(odb::dbMaster* master);
+
+  // LEF-CHK-010b: Pin minimum area
+  void checkPinMinArea(odb::dbMaster* master);
 
   // Helper: Check if a pin shape has at least one accessible edge
   bool hasAccessibleEdge(odb::dbMaster* master,

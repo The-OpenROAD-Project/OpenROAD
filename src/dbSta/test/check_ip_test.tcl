@@ -22,41 +22,33 @@ puts "Loading: $test_def (track grid definitions)"
 read_def $test_def
 
 # Helper to run a test that expects failure
-proc test_check_fails { test_name master_name { extra_args "" } } {
-  puts "\n--- Test: $test_name ---"
-  puts "Testing master: $master_name"
-  if { $extra_args ne "" } {
+proc test_check_fails {test_name master_name {extra_args ""}} {
+    puts "\n--- Test: $test_name ---"
+    puts "Testing master: $master_name"
     set cmd "check_ip -master $master_name $extra_args"
-  } else {
-    set cmd "check_ip -master $master_name"
-  }
-  puts "Command: $cmd"
-  if { [catch { eval $cmd } err] } {
-    puts "EXPECTED FAILURE: $err"
-    return 1
-  } else {
-    puts "UNEXPECTED PASS - this test should have failed!"
-    return 0
-  }
+    puts "Command: $cmd"
+    if {[catch {eval $cmd} err]} {
+        puts "EXPECTED FAILURE: $err"
+        return 1
+    } else {
+        puts "UNEXPECTED PASS - this test should have failed!"
+        return 0
+    }
 }
 
 # Helper to run a test that expects success
-proc test_check_passes { test_name master_name { extra_args "" } } {
-  puts "\n--- Test: $test_name ---"
-  puts "Testing master: $master_name"
-  if { $extra_args ne "" } {
+proc test_check_passes {test_name master_name {extra_args ""}} {
+    puts "\n--- Test: $test_name ---"
+    puts "Testing master: $master_name"
     set cmd "check_ip -master $master_name $extra_args"
-  } else {
-    set cmd "check_ip -master $master_name"
-  }
-  puts "Command: $cmd"
-  if { [catch { eval $cmd } err] } {
-    puts "UNEXPECTED FAILURE: $err"
-    return 0
-  } else {
-    puts "PASS: No warnings"
-    return 1
-  }
+    puts "Command: $cmd"
+    if {[catch {eval $cmd} err]} {
+        puts "UNEXPECTED FAILURE: $err"
+        return 0
+    } else {
+        puts "PASS: No warnings"
+        return 1
+    }
 }
 
 puts "\n=============================================="
@@ -84,29 +76,36 @@ test_check_passes "LEF-CHK-003c: Multi-pattern effective pitch (PASS)" "lef003c_
 # Test 3d: LEF-CHK-003 - Multi-pattern fail (still can't align with effective pitch)
 test_check_fails "LEF-CHK-003d: Multi-pattern still incompatible (FAIL)" "lef003d_multi_fail"
 
-# Test 4: LEF-CHK-004 - Signal pin not accessible
-test_check_fails "LEF-CHK-004: Signal pin blocked by obstruction" "lef004_signal_blocked"
+# Test 4-5a: LEF-CHK-004-005 - Signal pin fully blocked by same-layer obstruction
+test_check_fails "LEF-CHK-004-005a: Signal pin fully blocked" "lef004_005a_fully_blocked"
 
-# Test 5: LEF-CHK-005 - Power pin not accessible
-test_check_fails "LEF-CHK-005: Power pin blocked by obstruction" "lef005_power_blocked"
+# Test 4-5b: LEF-CHK-004-005 - Multi-shape pin, one blocked one open (should PASS)
+test_check_passes "LEF-CHK-004-005b: Multi-shape, one accessible (PASS)" "lef004_005b_multi_shape_pass"
 
-# Test 6: LEF-CHK-006 - Excessive polygon count (use low threshold)
-test_check_fails "LEF-CHK-006: Excessive polygon count" "lef006_polygon_count" "-max_polygons 5"
+# Test 4-5c: LEF-CHK-004-005 - Power pin blocked (merged signal+power check)
+test_check_fails "LEF-CHK-004-005c: Power pin blocked" "lef004_005c_power_blocked"
+
+# Test 6a: LEF-CHK-006 - Excessive polygon count (below threshold = FAIL)
+test_check_fails "LEF-CHK-006: Excessive polygon count (threshold 5)" "lef006_polygon_count" "-max_polygons 5"
+
+# Test 6b: LEF-CHK-006 - Polygon count at threshold (should PASS)
+test_check_passes "LEF-CHK-006: Polygon count at threshold (threshold 6)" "lef006_polygon_count" "-max_polygons 6"
 
 # Test 7: LEF-CHK-007 - Missing antenna info
 test_check_fails "LEF-CHK-007: Missing antenna model" "lef007_no_antenna"
 
 # Test 8: LEF-CHK-008 - FinFET detection (info only, requires -verbose)
 # This is an INFO message, not a warning, so it should pass
-puts "\n--- Test: LEF-CHK-008: FinFET detection (info only) ---"
-puts "Testing with -verbose flag on lef008_finfet..."
 test_check_passes "LEF-CHK-008: FinFET detection (verbose)" "lef008_finfet" "-verbose"
 
 # Test 9: LEF-CHK-009 - Missing pin geometry
 test_check_fails "LEF-CHK-009: Pin has no geometry" "lef009_no_geometry"
 
-# Test 10: LEF-CHK-010 - Pin smaller than layer minimum
-test_check_fails "LEF-CHK-010: Pin geometry too small" "lef010_small_pin"
+# Test 10a: LEF-CHK-010a - Pin width perpendicular to direction is too small (FAIL)
+test_check_fails "LEF-CHK-010a: Pin width too small perpendicular to routing" "lef010a_small_width"
+
+# Test 10b: LEF-CHK-010 - Pin width OK perpendicular, small in parallel (PASS)
+test_check_passes "LEF-CHK-010b: Pin length small but width OK (PASS)" "lef010b_length_ok"
 
 puts "\n=============================================="
 puts "IP Checker Test Suite Complete"

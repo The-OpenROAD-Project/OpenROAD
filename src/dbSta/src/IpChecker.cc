@@ -101,13 +101,13 @@ void IpChecker::checkLefMaster(odb::dbMaster* master)
   checkManufacturingGridAlignment(master);     // LEF-CHK-001
   checkPinManufacturingGridAlignment(master);  // LEF-CHK-002
   checkPinRoutingGridAlignment(master);        // LEF-CHK-003
-  checkSignalPinAccessibility(master);         // LEF-CHK-004
-  checkPowerPinAccessibility(master);          // LEF-CHK-005
+  checkPinAccessibility(master);               // LEF-CHK-004-005
   checkPolygonCount(master);                   // LEF-CHK-006
   checkAntennaInfo(master);                    // LEF-CHK-007
   checkFinFetProperty(master);                 // LEF-CHK-008
   checkPinGeometryPresence(master);            // LEF-CHK-009
-  checkPinMinDimensions(master);               // LEF-CHK-010
+  checkPinMinDimensions(master);               // LEF-CHK-010a
+  checkPinMinArea(master);                     // LEF-CHK-010b
 }
 
 // LEF-CHK-001: Macro dimensions aligned to manufacturing grid
@@ -397,17 +397,16 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
   return !north_blocked || !south_blocked || !east_blocked || !west_blocked;
 }
 
-// LEF-CHK-004: Signal pin accessibility
-void IpChecker::checkSignalPinAccessibility(odb::dbMaster* master)
+// LEF-CHK-004-005: Pin accessibility (signal and power)
+// A pin is considered accessible if at least one of its shapes has
+// an accessible edge on its layer.
+void IpChecker::checkPinAccessibility(odb::dbMaster* master)
 {
   std::string master_name = master->getName();
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type == odb::dbSigType::POWER
-        || sig_type == odb::dbSigType::GROUND) {
-      continue;
-    }
+    bool any_shape_accessible = false;
+    bool has_shapes = false;
 
     for (odb::dbMPin* mpin : mterm->getMPins()) {
       for (odb::dbBox* box : mpin->getGeometry()) {
@@ -416,53 +415,30 @@ void IpChecker::checkSignalPinAccessibility(odb::dbMaster* master)
           continue;
         }
 
+        has_shapes = true;
         odb::Rect pin_rect = box->getBox();
-        if (!hasAccessibleEdge(master, pin_rect, layer)) {
-          logger_->warn(utl::CHK,
-                        40,
-                        "Signal pin {}/{} has no accessible edge on layer {}",
-                        master_name,
-                        mterm->getName(),
-                        layer->getName());
-          warning_count_++;
-          break;  // One warning per pin
-        }
-      }
-    }
-  }
-}
-
-// LEF-CHK-005: Power pin accessibility
-void IpChecker::checkPowerPinAccessibility(odb::dbMaster* master)
-{
-  std::string master_name = master->getName();
-
-  for (odb::dbMTerm* mterm : master->getMTerms()) {
-    odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type != odb::dbSigType::POWER
-        && sig_type != odb::dbSigType::GROUND) {
-      continue;
-    }
-
-    for (odb::dbMPin* mpin : mterm->getMPins()) {
-      for (odb::dbBox* box : mpin->getGeometry()) {
-        odb::dbTechLayer* layer = box->getTechLayer();
-        if (!layer) {
-          continue;
-        }
-
-        odb::Rect pin_rect = box->getBox();
-        if (!hasAccessibleEdge(master, pin_rect, layer)) {
-          logger_->warn(utl::CHK,
-                        50,
-                        "Power pin {}/{} has no accessible edge on layer {}",
-                        master_name,
-                        mterm->getName(),
-                        layer->getName());
-          warning_count_++;
+        if (hasAccessibleEdge(master, pin_rect, layer)) {
+          any_shape_accessible = true;
           break;
         }
       }
+
+      if (any_shape_accessible) {
+        break;
+      }
+    }
+
+    if (has_shapes && !any_shape_accessible) {
+      odb::dbSigType sig_type = mterm->getSigType();
+      bool is_power = (sig_type == odb::dbSigType::POWER
+                       || sig_type == odb::dbSigType::GROUND);
+      logger_->warn(utl::CHK,
+                    40,
+                    "{} pin {}/{} has no accessible edge on any shape",
+                    is_power ? "Power" : "Signal",
+                    master_name,
+                    mterm->getName());
+      warning_count_++;
     }
   }
 }
@@ -571,7 +547,9 @@ void IpChecker::checkPinGeometryPresence(odb::dbMaster* master)
   }
 }
 
-// LEF-CHK-010: Pin minimum dimensions
+// LEF-CHK-010a: Pin minimum width (perpendicular to routing direction)
+// Width is the dimension perpendicular to the preferred routing direction.
+// For a HORIZONTAL layer, width = dx. For VERTICAL, width = dy.
 void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
 {
   std::string master_name = master->getName();
@@ -590,17 +568,69 @@ void IpChecker::checkPinMinDimensions(odb::dbMaster* master)
         }
 
         odb::Rect rect = box->getBox();
-        int shape_width = rect.minDXDY();
+
+        // Width is perpendicular to routing direction
+        int shape_width;
+        if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+          shape_width = rect.dy();  // height is the "width" for horizontal
+        } else {
+          shape_width = rect.dx();  // width is the "width" for vertical
+        }
 
         if (static_cast<uint32_t>(shape_width) < min_width) {
           logger_->warn(utl::CHK,
                         100,
-                        "Pin {}/{} geometry width ({}) less than layer "
-                        "minimum width ({})",
+                        "Pin {}/{} on layer {} has width {} perpendicular "
+                        "to routing direction, less than layer min width {}",
                         master_name,
                         mterm->getName(),
+                        layer->getName(),
                         shape_width,
                         min_width);
+          warning_count_++;
+        }
+      }
+    }
+  }
+}
+
+// LEF-CHK-010b: Pin minimum area
+void IpChecker::checkPinMinArea(odb::dbMaster* master)
+{
+  std::string master_name = master->getName();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* layer = box->getTechLayer();
+        if (!layer) {
+          continue;
+        }
+
+        // Get min area from layer area rules
+        int min_area = 0;
+        for (auto* rule : layer->getTechLayerAreaRules()) {
+          min_area = std::max(min_area, rule->getArea());
+        }
+
+        if (min_area == 0) {
+          continue;
+        }
+
+        odb::Rect rect = box->getBox();
+        int64_t shape_area
+            = static_cast<int64_t>(rect.dx()) * static_cast<int64_t>(rect.dy());
+
+        if (shape_area < min_area) {
+          logger_->warn(utl::CHK,
+                        110,
+                        "Pin {}/{} on layer {} has area {} less than "
+                        "layer minimum area {}",
+                        master_name,
+                        mterm->getName(),
+                        layer->getName(),
+                        shape_area,
+                        min_area);
           warning_count_++;
         }
       }
