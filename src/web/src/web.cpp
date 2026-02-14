@@ -108,7 +108,8 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
                                                        const int x,
                                                        int y)
 {
-  // utl::DebugScopedTimer timer(logger_, utl::WEB, "tile", 1, "generateTile {}");
+  // utl::DebugScopedTimer timer(logger_, utl::WEB, "tile", 1, "generateTile
+  // {}");
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
       kTileSizeInPixel * kTileSizeInPixel * 4, 0);
@@ -284,6 +285,7 @@ http::response<http::string_body> handle_request(
 
     res.set(http::field::content_type, "image/png");
     res.body() = std::string(png_data.begin(), png_data.end());
+    res.set(http::field::cache_control, "public, max-age=604800");
   } else {
     res.result(http::status::not_found);
     res.body() = "Resource not found.";

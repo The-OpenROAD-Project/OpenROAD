@@ -1,8 +1,8 @@
 const map = L.map('map', {
     crs: L.CRS.Simple,
-    center: [-128, 128],  // center of scaled design
     zoom: 1,
-    zoomSnap: 0.1
+    zoomSnap: 0.1,
+    zoomDelta: 0.2,
 });
 
 const layersRequest = fetch('http://localhost:8080/layers');
@@ -59,7 +59,7 @@ Promise.all([layersRequest, boundsRequest])
             [-minY * scale, minX * scale],
             [-maxY * scale, maxX * scale]
         ];
-
+        console.log(scaledBounds)
         map.fitBounds(scaledBounds);
     })
     .catch(err => {
