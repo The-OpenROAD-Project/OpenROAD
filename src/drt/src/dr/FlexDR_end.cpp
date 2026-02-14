@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
@@ -15,6 +16,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "distributed/drUpdate.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"

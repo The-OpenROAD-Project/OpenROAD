@@ -3,6 +3,8 @@
 
 #include "cgt/ClockGating.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -29,18 +31,22 @@
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "map/mio/mio.h"
+#include "misc/util/abc_global.h"
+#include "misc/vec/vecInt.h"
+#include "misc/vec/vecPtr.h"
 #include "odb/db.h"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
-#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 

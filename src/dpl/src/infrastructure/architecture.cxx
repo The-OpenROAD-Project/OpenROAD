@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <stack>
 #include <utility>
@@ -13,6 +14,7 @@
 
 #include "Objects.h"
 #include "Padding.h"
+#include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
 #include "network.h"
 #include "odb/db.h"

@@ -173,6 +173,7 @@ class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerTwoWiresForbiddenSpcRule;
+class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
@@ -1320,7 +1321,8 @@ class dbBlock : public dbObject
   std::string makeNewModNetName(dbModule* parent,
                                 const char* base_name = "net",
                                 const dbNameUniquifyType& uniquify
-                                = dbNameUniquifyType::ALWAYS);
+                                = dbNameUniquifyType::ALWAYS,
+                                dbNet* corresponding_flat_net = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -8628,7 +8630,8 @@ class dbModNet : public dbObject
   static dbModNet* create(dbModule* parent_module, const char* base_name);
   static dbModNet* create(dbModule* parent_module,
                           const char* base_name,
-                          const dbNameUniquifyType& uniquify);
+                          const dbNameUniquifyType& uniquify,
+                          dbNet* corresponding_flat_net = nullptr);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet
@@ -9069,6 +9072,10 @@ class dbTechLayer : public dbObject
 
   uint32_t getWrongWayWidth() const;
 
+  void setWrongWayMinWidth(uint32_t wrong_way_min_width);
+
+  uint32_t getWrongWayMinWidth() const;
+
   void setLayerAdjustment(float layer_adjustment);
 
   float getLayerAdjustment() const;
@@ -9122,6 +9129,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
   getTechLayerTwoWiresForbiddenSpcRules() const;
+
+  dbSet<dbTechLayerVoltageSpacing> getTechLayerVoltageSpacings() const;
 
   void setRectOnly(bool rect_only);
 
@@ -11154,6 +11163,27 @@ class dbTechLayerTwoWiresForbiddenSpcRule : public dbObject
 
   static void destroy(dbTechLayerTwoWiresForbiddenSpcRule* rule);
   // User Code End dbTechLayerTwoWiresForbiddenSpcRule
+};
+
+class dbTechLayerVoltageSpacing : public dbObject
+{
+ public:
+  void setTocutAbove(bool tocut_above);
+
+  bool isTocutAbove() const;
+
+  void setTocutBelow(bool tocut_below);
+
+  bool isTocutBelow() const;
+
+  // User Code Begin dbTechLayerVoltageSpacing
+  const std::map<float, int>& getTable() const;
+  void addEntry(float voltage, int spacing);
+
+  static dbTechLayerVoltageSpacing* create(dbTechLayer* layer);
+
+  static void destroy(dbTechLayerVoltageSpacing* rule);
+  // User Code End dbTechLayerVoltageSpacing
 };
 
 class dbTechLayerWidthTableRule : public dbObject

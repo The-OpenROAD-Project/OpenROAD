@@ -63,15 +63,15 @@ clk I
 14 gclk1:1 gclk1:GCK 1e-06
 *END
 
-*D_NET gclk3 0.16457
+*D_NET gclk3 0.164533
 *CONN
 *I gclk3:GCK O *D CLKGATE_X1
 *I clkbuf_0_gclk3:A I *D CLKBUF_X3
 *CAP
-1 gclk3:0 0.0822849
-2 gclk3:1 0.0822849
+1 gclk3:0 0.0822667
+2 gclk3:1 0.0822667
 *RES
-1 gclk3:0 gclk3:1 0.00338701
+1 gclk3:0 gclk3:1 0.00338626
 2 gclk3:0 clkbuf_0_gclk3:A 1e-06
 3 gclk3:0 clkbuf_0_gclk3:A 1e-06
 4 gclk3:0 clkbuf_0_gclk3:A 1e-06
@@ -93,12 +93,12 @@ clk I
 *I clkbuf_0_gclk4:A I *D CLKBUF_X3
 *I delaybuf_0_core:A I *D CLKBUF_X3
 *CAP
-1 gclk4:0 0.0193762
+1 gclk4:0 0.0193944
 2 gclk4:1 0.231511
-3 gclk4:2 0.0375117
+3 gclk4:2 0.0374935
 4 gclk4:3 0.288399
 *RES
-1 gclk4:0 gclk4:3 0.000797562
+1 gclk4:0 gclk4:3 0.000798313
 2 gclk4:0 delaybuf_0_core:A 1e-06
 3 gclk4:0 delaybuf_0_core:A 1e-06
 4 gclk4:0 delaybuf_0_core:A 1e-06
@@ -117,7 +117,7 @@ clk I
 17 gclk4:2 gclk4:GCK 1e-06
 18 gclk4:2 gclk4:GCK 1e-06
 19 gclk4:2 gclk4:GCK 1e-06
-20 gclk4:3 gclk4:2 0.00154406
+20 gclk4:3 gclk4:2 0.0015433
 21 gclk4:2 gclk4:GCK 1e-06
 *END
 
@@ -227,71 +227,71 @@ clk I
 21 clknet_0_clk:2 clkbuf_0_clk:Z 1e-06
 *END
 
-*D_NET clknet_1_0__leaf_clk 0.543592
+*D_NET clknet_1_0__leaf_clk_1 0.543592
 *CONN
 *I gclk4:CK I *D CLKGATE_X1
 *I clkbuf_1_0__f_clk:Z O *D CLKBUF_X3
 *I h1/delaybuf_2_core:A I *D CLKBUF_X3
 *CAP
-1 clknet_1_0__leaf_clk:0 0.0257619
-2 clknet_1_0__leaf_clk:1 0.0488601
-3 clknet_1_0__leaf_clk:2 0.197174
-4 clknet_1_0__leaf_clk:3 0.271796
+1 clknet_1_0__leaf_clk_1:0 0.0257619
+2 clknet_1_0__leaf_clk_1:1 0.0488601
+3 clknet_1_0__leaf_clk_1:2 0.197174
+4 clknet_1_0__leaf_clk_1:3 0.271796
 *RES
-1 clknet_1_0__leaf_clk:0 clknet_1_0__leaf_clk:3 0.00106041
-2 clknet_1_0__leaf_clk:0 h1/delaybuf_2_core:A 1e-06
-3 clknet_1_0__leaf_clk:0 h1/delaybuf_2_core:A 1e-06
-4 clknet_1_0__leaf_clk:0 h1/delaybuf_2_core:A 1e-06
-5 clknet_1_0__leaf_clk:0 h1/delaybuf_2_core:A 1e-06
-6 clknet_1_0__leaf_clk:0 h1/delaybuf_2_core:A 1e-06
-7 clknet_1_0__leaf_clk:1 clknet_1_0__leaf_clk:1 1e-06
-8 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-9 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-10 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-11 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-12 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-13 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
-14 clknet_1_0__leaf_clk:2 clknet_1_0__leaf_clk:3 0.00811606
-15 clknet_1_0__leaf_clk:2 gclk4:CK 1e-06
-16 clknet_1_0__leaf_clk:2 gclk4:CK 1e-06
-17 clknet_1_0__leaf_clk:2 gclk4:CK 1e-06
-18 clknet_1_0__leaf_clk:2 gclk4:CK 1e-06
-19 clknet_1_0__leaf_clk:2 gclk4:CK 1e-06
-20 clknet_1_0__leaf_clk:3 clknet_1_0__leaf_clk:1 0.00201118
-21 clknet_1_0__leaf_clk:1 clkbuf_1_0__f_clk:Z 1e-06
+1 clknet_1_0__leaf_clk_1:0 clknet_1_0__leaf_clk_1:3 0.00106041
+2 clknet_1_0__leaf_clk_1:0 h1/delaybuf_2_core:A 1e-06
+3 clknet_1_0__leaf_clk_1:0 h1/delaybuf_2_core:A 1e-06
+4 clknet_1_0__leaf_clk_1:0 h1/delaybuf_2_core:A 1e-06
+5 clknet_1_0__leaf_clk_1:0 h1/delaybuf_2_core:A 1e-06
+6 clknet_1_0__leaf_clk_1:0 h1/delaybuf_2_core:A 1e-06
+7 clknet_1_0__leaf_clk_1:1 clknet_1_0__leaf_clk_1:1 1e-06
+8 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+9 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+10 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+11 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+12 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+13 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
+14 clknet_1_0__leaf_clk_1:2 clknet_1_0__leaf_clk_1:3 0.00811606
+15 clknet_1_0__leaf_clk_1:2 gclk4:CK 1e-06
+16 clknet_1_0__leaf_clk_1:2 gclk4:CK 1e-06
+17 clknet_1_0__leaf_clk_1:2 gclk4:CK 1e-06
+18 clknet_1_0__leaf_clk_1:2 gclk4:CK 1e-06
+19 clknet_1_0__leaf_clk_1:2 gclk4:CK 1e-06
+20 clknet_1_0__leaf_clk_1:3 clknet_1_0__leaf_clk_1:1 0.00201118
+21 clknet_1_0__leaf_clk_1:1 clkbuf_1_0__f_clk:Z 1e-06
 *END
 
-*D_NET clknet_1_1__leaf_clk 0.451199
+*D_NET clknet_1_1__leaf_clk_1 0.451199
 *CONN
 *I gclk1:CK I *D CLKGATE_X1
 *I h1/gclk2:CK I *D CLKGATE_X1
 *I clkbuf_1_1__f_clk:Z O *D CLKBUF_X3
 *CAP
-1 clknet_1_1__leaf_clk:0 0.130543
-2 clknet_1_1__leaf_clk:1 0.0950564
-3 clknet_1_1__leaf_clk:2 0.225599
+1 clknet_1_1__leaf_clk_1:0 0.130543
+2 clknet_1_1__leaf_clk_1:1 0.0950564
+3 clknet_1_1__leaf_clk_1:2 0.225599
 *RES
-1 clknet_1_1__leaf_clk:0 clknet_1_1__leaf_clk:0 1e-06
-2 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-3 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-4 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-5 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-6 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-7 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
-8 clknet_1_1__leaf_clk:1 clknet_1_1__leaf_clk:2 0.00391271
-9 clknet_1_1__leaf_clk:1 h1/gclk2:CK 1e-06
-10 clknet_1_1__leaf_clk:1 h1/gclk2:CK 1e-06
-11 clknet_1_1__leaf_clk:1 h1/gclk2:CK 1e-06
-12 clknet_1_1__leaf_clk:1 h1/gclk2:CK 1e-06
-13 clknet_1_1__leaf_clk:1 h1/gclk2:CK 1e-06
-14 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-15 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-16 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-17 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-18 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-19 clknet_1_1__leaf_clk:2 clknet_1_1__leaf_clk:0 0.0053734
-20 clknet_1_1__leaf_clk:2 gclk1:CK 1e-06
-21 clknet_1_1__leaf_clk:0 clkbuf_1_1__f_clk:Z 1e-06
+1 clknet_1_1__leaf_clk_1:0 clknet_1_1__leaf_clk_1:0 1e-06
+2 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+3 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+4 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+5 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+6 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+7 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
+8 clknet_1_1__leaf_clk_1:1 clknet_1_1__leaf_clk_1:2 0.00391271
+9 clknet_1_1__leaf_clk_1:1 h1/gclk2:CK 1e-06
+10 clknet_1_1__leaf_clk_1:1 h1/gclk2:CK 1e-06
+11 clknet_1_1__leaf_clk_1:1 h1/gclk2:CK 1e-06
+12 clknet_1_1__leaf_clk_1:1 h1/gclk2:CK 1e-06
+13 clknet_1_1__leaf_clk_1:1 h1/gclk2:CK 1e-06
+14 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+15 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+16 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+17 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+18 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+19 clknet_1_1__leaf_clk_1:2 clknet_1_1__leaf_clk_1:0 0.0053734
+20 clknet_1_1__leaf_clk_1:2 gclk1:CK 1e-06
+21 clknet_1_1__leaf_clk_1:0 clkbuf_1_1__f_clk:Z 1e-06
 *END
 
 *D_NET clknet_0_h1\/gclk5 7.11161
@@ -1917,15 +1917,15 @@ clk I
 44 clknet_2_3__leaf_h1\/gclk2:3 h1/clkbuf_2_3__f_h1\/gclk2:Z 1e-06
 *END
 
-*D_NET clknet_0_gclk4 0.548992
+*D_NET clknet_0_gclk4 0.549029
 *CONN
 *I clkbuf_0_gclk4:Z O *D CLKBUF_X3
 *I clkbuf_1_0__f_gclk4:A I *D CLKBUF_X3
 *CAP
-1 clknet_0_gclk4:0 0.274496
-2 clknet_0_gclk4:1 0.274496
+1 clknet_0_gclk4:0 0.274514
+2 clknet_0_gclk4:1 0.274514
 *RES
-1 clknet_0_gclk4:0 clknet_0_gclk4:1 0.0112988
+1 clknet_0_gclk4:0 clknet_0_gclk4:1 0.0112995
 2 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
 3 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
 4 clknet_0_gclk4:0 clkbuf_1_0__f_gclk4:A 1e-06
@@ -2300,7 +2300,7 @@ clk I
 44 clknet_2_3__leaf_gclk4_regs:1 clkbuf_2_3__f_gclk4_regs:Z 1e-06
 *END
 
-*D_NET clknet_0_gclk3 1.59432
+*D_NET clknet_0_gclk3 1.59428
 *CONN
 *I clkbuf_0_gclk3:Z O *D CLKBUF_X3
 *I clkbuf_2_0__f_gclk3:A I *D CLKBUF_X3
@@ -2309,10 +2309,10 @@ clk I
 *I clkbuf_2_3__f_gclk3:A I *D CLKBUF_X3
 *CAP
 1 clknet_0_gclk3:0 0.361251
-2 clknet_0_gclk3:1 0.421076
-3 clknet_0_gclk3:2 0.122698
-4 clknet_0_gclk3:3 0.0819565
-5 clknet_0_gclk3:4 0.253387
+2 clknet_0_gclk3:1 0.421095
+3 clknet_0_gclk3:2 0.122679
+4 clknet_0_gclk3:3 0.0819383
+5 clknet_0_gclk3:4 0.253368
 6 clknet_0_gclk3:5 0.353953
 *RES
 1 clknet_0_gclk3:0 clknet_0_gclk3:1 0.0148698
@@ -2326,7 +2326,7 @@ clk I
 9 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 10 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 11 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
-12 clknet_0_gclk3:1 clknet_0_gclk3:5 0.00246253
+12 clknet_0_gclk3:1 clknet_0_gclk3:5 0.00246328
 13 clknet_0_gclk3:1 clkbuf_2_0__f_gclk3:A 1e-06
 14 clknet_0_gclk3:2 clknet_0_gclk3:2 1e-06
 15 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
@@ -2335,14 +2335,14 @@ clk I
 18 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
 19 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
 20 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
-21 clknet_0_gclk3:3 clknet_0_gclk3:2 0.00337349
+21 clknet_0_gclk3:3 clknet_0_gclk3:2 0.00337274
 22 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 23 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 24 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 25 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 26 clknet_0_gclk3:3 clkbuf_2_2__f_gclk3:A 1e-06
 27 clknet_0_gclk3:2 clkbuf_0_gclk3:Z 1e-06
-28 clknet_0_gclk3:4 clknet_0_gclk3:5 0.0104299
+28 clknet_0_gclk3:4 clknet_0_gclk3:5 0.0104291
 29 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06
 30 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06
 31 clknet_0_gclk3:4 clkbuf_2_3__f_gclk3:A 1e-06

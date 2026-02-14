@@ -7,8 +7,12 @@
 #include <utility>
 #include <vector>
 
+#include "db/grObj/grBlockObject.h"
+#include "db/grObj/grShape.h"
+#include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNode.h"
+#include "frBaseTypes.h"
 #include "gr/FlexGR.h"
 
 namespace drt {

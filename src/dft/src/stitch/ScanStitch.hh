@@ -3,11 +3,16 @@
 
 #pragma once
 
+#include <cstddef>
+#include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
 #include "ScanChain.hh"
+#include "ScanPin.hh"
 #include "ScanStitchConfig.hh"
 #include "Utils.hh"
 #include "odb/db.h"

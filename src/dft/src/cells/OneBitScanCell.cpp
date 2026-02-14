@@ -10,6 +10,7 @@
 
 #include "ClockDomain.hh"
 #include "ScanCell.hh"
+#include "ScanPin.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"

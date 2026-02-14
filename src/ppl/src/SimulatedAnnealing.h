@@ -15,10 +15,7 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
-
-namespace utl {
-class Logger;
-}  // namespace utl
+#include "utl/Logger.h"
 
 namespace ppl {
 
@@ -28,8 +25,6 @@ struct DebugSettings
 
   bool isOn() const { return renderer != nullptr; }
 };
-
-using utl::Logger;
 
 using GroupLimits = std::pair<int, int>;
 
@@ -42,7 +37,7 @@ class SimulatedAnnealing
                      Core* core,
                      std::vector<Slot>& slots,
                      const std::vector<Constraint>& constraints,
-                     Logger* logger,
+                     utl::Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
   void run(float init_temperature,
@@ -130,7 +125,7 @@ class SimulatedAnnealing
   const float group_to_free_slots_ = 0.7;
   const float pins_per_slot_limit_ = 0.5;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();
   const int seed_ = 42;

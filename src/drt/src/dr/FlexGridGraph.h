@@ -20,6 +20,7 @@
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
 #include "db/obj/frTrackPattern.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
@@ -635,16 +636,19 @@ class FlexGridGraph
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostPlanar = currCost;
+          break;
         case frDirEnum::N:
           currCost = node.markerCostPlanar;
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostPlanar = currCost;
+          break;
         case frDirEnum::U:
           currCost = node.markerCostVia;
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostVia = currCost;
+          break;
         default:;
       }
     }

@@ -21,7 +21,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
 
@@ -182,9 +181,9 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute(bool save_guides = false,
-                   bool start_incremental = false,
-                   bool end_incremental = false);
+  void startIncremental();
+  void endIncremental(bool save_guides = false);
+  void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
   NetRouteMap getPartialRoutes();
@@ -224,6 +223,7 @@ class GlobalRouter
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
@@ -231,7 +231,7 @@ class GlobalRouter
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
-  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  bool connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
@@ -326,9 +326,11 @@ class GlobalRouter
   void writePinLocations(const char* file_name);
 
  private:
+  void finishGlobalRouting(bool save_guides = false);
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void updateNetPins(Net* net);
 
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
@@ -579,8 +581,8 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbNetCreate(odb::dbNet* net) override;
-  void inDbNetPreMerge(odb::dbNet* preserved_net,
-                       odb::dbNet* removed_net) override;
+  void inDbNetPostMerge(odb::dbNet* preserved_net,
+                        odb::dbNet* removed_net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;

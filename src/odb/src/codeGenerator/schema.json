@@ -338,6 +338,13 @@
       "schema":"kSchemaLef58TwoWiresForbiddenSpacing"
     },
     {
+      "parent":"dbTechLayer",
+      "child":"dbTechLayerVoltageSpacing",
+      "type":"1_n",
+      "tbl_name":"voltage_spacing_rules_tbl_",
+      "schema":"kSchemaVoltageSpacingTables"
+    },
+    {
       "parent": "dbDft",
       "child": "dbScanPin",
       "type": "1_n",

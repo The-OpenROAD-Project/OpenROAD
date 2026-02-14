@@ -3,11 +3,14 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:        569.772 um^2
+[INFO GPL-0037] Total instances area:          569.772 um^2
+[INFO GPL-0035] Pin density area adjust:        49.963 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
@@ -24,12 +27,15 @@
 [INFO GPL-0019] Utilization:                    64.970 %
 [INFO GPL-0020] Standard cells area:           619.735 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 294	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 5668660
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000004 HPWL: 5065828
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 5052664
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 5056873
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000008 HPWL: 5056105
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.108 um^2
 [INFO GPL-0025] Ideal bin area:                  3.011 um^2
@@ -38,7 +44,7 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
@@ -76,11 +82,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-0040] Routability iteration: 1
 [INFO GPL-0041] Total routing overflow: 0.0000
 [INFO GPL-0042] Number of overflowed tiles: 0 (0.00%)
-[INFO GPL-0043] Average top 0.5% routing congestion: 0.4498
-[INFO GPL-0044] Average top 1.0% routing congestion: 0.4498
-[INFO GPL-0045] Average top 2.0% routing congestion: 0.4368
-[INFO GPL-0046] Average top 5.0% routing congestion: 0.4256
-[INFO GPL-0047] Routability iteration weighted routing congestion: 0.4498
+[INFO GPL-0043] Average top 0.5% routing congestion: 0.2972
+[INFO GPL-0044] Average top 1.0% routing congestion: 0.2972
+[INFO GPL-0045] Average top 2.0% routing congestion: 0.2858
+[INFO GPL-0046] Average top 5.0% routing congestion: 0.2713
+[INFO GPL-0047] Routability iteration weighted routing congestion: 0.2972
 [INFO GPL-0050] Weighted routing congestion is lower than target routing congestion(1.2500), end routability optimization.
 [INFO GPL-0090] Routability finished. Target routing congestion achieved succesfully.
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
@@ -96,7 +102,7 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
 [INFO GPL-1001] Global placement finished at iteration 355
 [INFO GPL-1003] Routability mode iteration count: 64
-[INFO GPL-1005] Routability final weighted congestion: 0.4179
+[INFO GPL-1005] Routability final weighted congestion: 0.2670
 [INFO GPL-1002] Placed Cell Area              619.7347
 [INFO GPL-1003] Available Free Area           953.8760
 [INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)

@@ -23,11 +23,17 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frNode.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
+#include "db/tech/frLookupTbl.h"
+#include "db/tech/frViaDef.h"
 #include "db/tech/frViaRuleGenerate.h"
 #include "drt/TritonRoute.h"
 #include "frBaseTypes.h"
@@ -1700,6 +1706,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       tmpLayer->setWidthTblOrthCon(ucon.get());
       getTech()->addUConstraint(std::move(ucon));
     }
+  }
+  if (layer->getWrongWayMinWidth() != 0
+      && layer->getWrongWayMinWidth() != layer->getMinWidth()) {
+    logger_->warn(utl::DRT,
+                  625,
+                  "LEF58_MINWIDTH rule with WRONGDIRECTION is not supported "
+                  "for layer {}.",
+                  layer->getName());
   }
 }
 

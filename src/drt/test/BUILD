@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "down_access_term",
     "drc_test",
     "ispd18_sample",
     "ispd18_sample_incr",
@@ -31,6 +32,7 @@ MANUAL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
+    "down_access_term",
     "drc_test",
     "ispd18_sample",
     "ispd18_sample_incr",

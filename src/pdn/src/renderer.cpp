@@ -13,7 +13,9 @@
 #include "gui/gui.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
+#include "shape.h"
 #include "straps.h"
+#include "via.h"
 
 namespace pdn {
 
@@ -288,6 +290,15 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
 void PDNRenderer::drawObjects(gui::Painter& painter)
 {
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(ring_color_, "Ring");
+  legend.addLegendKey(strap_color_, "Strap");
+  legend.addLegendKey(followpin_color_, "Followpin");
+  legend.addLegendKey(via_color_, "Via");
+  legend.addLegendKey(obstruction_color_, "Obstruction");
+  legend.addLegendKey(repair_color_, "Repair Area");
+  legend.addLegendKey(repair_outline_color_, "Repair Area Outline");
+  legend.draw(painter);
 }
 
 void PDNRenderer::pause()

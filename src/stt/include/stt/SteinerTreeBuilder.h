@@ -26,8 +26,6 @@ class Gui;
 
 namespace stt {
 
-using utl::Logger;
-
 namespace flt {
 class Flute;
 }
@@ -51,7 +49,7 @@ struct Tree
 class SteinerTreeBuilder
 {
  public:
-  SteinerTreeBuilder(odb::dbDatabase* db, Logger* logger);
+  SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger);
   ~SteinerTreeBuilder();
 
   Tree makeSteinerTree(const std::vector<int>& x,
@@ -97,7 +95,7 @@ class SteinerTreeBuilder
   std::pair<int, float> min_fanout_alpha_;
   std::pair<int, float> min_hpwl_alpha_;
 
-  Logger* logger_;
+  utl::Logger* logger_;
   odb::dbDatabase* db_;
   std::unique_ptr<flt::Flute> flute_;
 };
@@ -106,7 +104,7 @@ class SteinerTreeBuilder
 void reportSteinerTree(const Tree& tree,
                        int drvr_x,
                        int drvr_y,
-                       Logger* logger);
-void reportSteinerTree(const stt::Tree& tree, Logger* logger);
+                       utl::Logger* logger);
+void reportSteinerTree(const stt::Tree& tree, utl::Logger* logger);
 
 }  // namespace stt

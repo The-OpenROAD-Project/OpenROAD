@@ -5,15 +5,19 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <random>
+#include <vector>
 
+#include "aig/gia/gia.h"
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbSta.hh"
 #include "resynthesis_strategy.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
+#include "sta/Graph.hh"
 #include "utl/Logger.h"
 #include "utl/unique_name.h"
 

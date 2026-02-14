@@ -34,6 +34,8 @@
 #include <vector>
 
 #include "db/obj/frMarker.h"
+#include "db/obj/frNode.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"

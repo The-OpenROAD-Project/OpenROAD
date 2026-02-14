@@ -10,7 +10,10 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/drObj/drFig.h"
 #include "db/drObj/drNet.h"
+#include "db/gcObj/gcNet.h"
+#include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
@@ -18,6 +21,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
+#include "db/obj/frTerm.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"

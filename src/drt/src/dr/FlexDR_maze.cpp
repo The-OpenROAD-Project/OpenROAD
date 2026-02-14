@@ -20,8 +20,12 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/drObj/drFig.h"
+#include "db/drObj/drShape.h"
 #include "db/gcObj/gcNet.h"
 #include "db/gcObj/gcPin.h"
+#include "db/infra/frBox.h"
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
@@ -29,6 +33,7 @@
 #include "db/obj/frInst.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexMazeTypes.h"

@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
 #include <array>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <filesystem>
 #include <map>
-#include <memory>
 #include <mutex>
 #include <set>
 #include <string>
@@ -28,6 +27,7 @@
 #include "gtest/gtest.h"
 #include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
+#include "misc/vec/vecPtr.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/lefin.h"
@@ -39,7 +39,6 @@
 #include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 #include "utl/deleter.h"
 #include "utl/unique_name.h"
 

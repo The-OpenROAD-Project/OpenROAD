@@ -36,12 +36,17 @@
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"

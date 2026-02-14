@@ -9,11 +9,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 40.28 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:         58.254 um^2
+[INFO GPL-0037] Total instances area:           58.254 um^2
+[INFO GPL-0035] Pin density area adjust:        -5.299 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                17
 [INFO GPL-0007] Movable instances:                  17
 [INFO GPL-0008] Fixed instances:                     0
@@ -30,6 +33,9 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0019] Utilization:                     0.111 %
 [INFO GPL-0020] Standard cells area:            52.955 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 17	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000011 HPWL: 2447220
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 63168
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000008 HPWL: 59941
@@ -54,9 +60,9 @@ tns max -2.588
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | r2/D
         1 |       0 |       0 |        1 |      0 |     0 |    +1.4% |   -0.518 |       -3.3 |     11 | r2/D
-    final |       0 |       3 |        2 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
+    final |       0 |       5 |        3 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 2 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

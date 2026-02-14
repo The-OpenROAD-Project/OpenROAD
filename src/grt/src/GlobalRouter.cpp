@@ -4,6 +4,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -27,14 +28,15 @@
 #include "AbstractGrouteRenderer.h"
 #include "AbstractRoutingCongestionDataSource.h"
 #include "CUGR.h"
+#include "DataType.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
+#include "Pin.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
 #include "boost/icl/interval.hpp"
 #include "boost/polygon/polygon.hpp"
-#include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -52,7 +54,6 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/Parasitics.hh"
 #include "sta/Set.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
@@ -104,7 +105,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -228,7 +229,12 @@ NetRouteMap GlobalRouter::getPartialRoutes()
   } else {
     partial_routes_.clear();
     if (routes_.empty()) {
-      partial_routes_ = fastroute_->getPlanarRoutes();
+      if (!use_cugr_) {
+        partial_routes_ = fastroute_->getPlanarRoutes();
+      } else {
+        partial_routes_ = cugr_->getRoutes();
+        updatePinAccessPoints();
+      }
       net_routes = partial_routes_;
     }
   }
@@ -257,6 +263,18 @@ bool GlobalRouter::haveDetailedRoutes()
     }
   }
   return false;
+}
+
+bool GlobalRouter::haveDbGuides()
+{
+  for (odb::dbNet* net : block_->getNets()) {
+    // check term count due to 1-pin nets in multiple designs.
+    if (!net->isSpecial() && net->getGuides().empty() && net->getTermCount() > 1
+        && !net->isConnectedByAbutment()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool GlobalRouter::designIsPlaced()
@@ -299,12 +317,33 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
   return false;
 }
 
-void GlobalRouter::globalRoute(bool save_guides,
-                               bool start_incremental,
-                               bool end_incremental)
+void GlobalRouter::startIncremental()
 {
+  is_incremental_ = true;
+  if (!initialized_ || haveDetailedRoutes()) {
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
+    initFastRoute(min_layer, max_layer);
+  }
+  grouter_cbk_ = new GRouteDbCbk(this);
+  grouter_cbk_->addOwner(block_);
+}
+
+void GlobalRouter::endIncremental(bool save_guides)
+{
+  is_incremental_ = true;
+  fastroute_->setResistanceAware(resistance_aware_);
+  updateDirtyRoutes();
+  grouter_cbk_->removeOwner();
+  delete grouter_cbk_;
+  grouter_cbk_ = nullptr;
+  finishGlobalRouting(save_guides);
+}
+
+void GlobalRouter::globalRoute(bool save_guides)
+{
+  auto start = std::chrono::steady_clock::now();
   bool has_routable_nets = false;
-  is_incremental_ = (start_incremental || end_incremental);
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
     if (net->getITerms().size() + net->getBTerms().size() > 1) {
@@ -319,75 +358,68 @@ void GlobalRouter::globalRoute(bool save_guides,
                   "(with at least 2 terms)");
     return;
   }
-  if (start_incremental && end_incremental) {
-    logger_->error(GRT,
-                   251,
-                   "The start_incremental and end_incremental flags cannot be "
-                   "defined together");
-  } else if (start_incremental) {
-    if (!initialized_ || haveDetailedRoutes()) {
-      int min_layer, max_layer;
-      getMinMaxLayer(min_layer, max_layer);
-      initFastRoute(min_layer, max_layer);
-    }
-    grouter_cbk_ = new GRouteDbCbk(this);
-    grouter_cbk_->addOwner(block_);
-  } else {
-    try {
-      if (end_incremental) {
-        updateDirtyRoutes();
-        grouter_cbk_->removeOwner();
-        delete grouter_cbk_;
-        grouter_cbk_ = nullptr;
-      } else {
-        clear();
-        block_ = db_->getChip()->getBlock();
 
-        int min_layer, max_layer;
-        getMinMaxLayer(min_layer, max_layer);
+  try {
+    clear();
+    block_ = db_->getChip()->getBlock();
 
-        std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
-        if (use_cugr_) {
-          int min_layer, max_layer;
-          getMinMaxLayer(min_layer, max_layer);
-          std::set<odb::dbNet*> clock_nets;
-          findClockNets(nets, clock_nets);
-          cugr_->init(min_layer, max_layer, clock_nets);
-          cugr_->route();
-          routes_ = cugr_->getRoutes();
-          updatePinAccessPoints();
-        } else {
-          if (verbose_) {
-            reportResources();
-          }
+    int min_layer, max_layer;
+    getMinMaxLayer(min_layer, max_layer);
 
-          routes_ = findRouting(nets, min_layer, max_layer);
-        }
+    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+    if (use_cugr_) {
+      std::set<odb::dbNet*> clock_nets;
+      findClockNets(nets, clock_nets);
+      cugr_->init(min_layer, max_layer, clock_nets);
+      cugr_->route();
+      routes_ = cugr_->getRoutes();
+      updatePinAccessPoints();
+      addRemainingGuides(routes_, nets, min_layer, max_layer);
+    } else {
+      if (verbose_) {
+        reportResources();
       }
-    } catch (...) {
-      updateDbCongestion();
-      saveCongestion();
-      throw;
-    }
 
+      routes_ = findRouting(nets, min_layer, max_layer);
+    }
+  } catch (...) {
     updateDbCongestion();
     saveCongestion();
+    throw;
+  }
 
-    if (verbose_ && !use_cugr_) {
-      reportCongestion();
+  finishGlobalRouting(save_guides);
+  auto end = std::chrono::steady_clock::now();
+  if (verbose_) {
+    auto runtime
+        = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+    int hour = runtime.count() / 3600;
+    int min = (runtime.count() % 3600) / 60;
+    int sec = runtime.count() % 60;
+    logger_->info(
+        GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
+  }
+}
+
+void GlobalRouter::finishGlobalRouting(bool save_guides)
+{
+  updateDbCongestion();
+  saveCongestion();
+
+  if (verbose_ && !use_cugr_) {
+    reportCongestion();
+  }
+  computeWirelength();
+  if (verbose_) {
+    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+  }
+  if (save_guides) {
+    std::vector<odb::dbNet*> nets;
+    nets.reserve(block_->getNets().size());
+    for (odb::dbNet* db_net : block_->getNets()) {
+      nets.push_back(db_net);
     }
-    computeWirelength();
-    if (verbose_) {
-      logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-    }
-    if (save_guides) {
-      std::vector<odb::dbNet*> nets;
-      nets.reserve(block_->getNets().size());
-      for (odb::dbNet* db_net : block_->getNets()) {
-        nets.push_back(db_net);
-      }
-      saveGuides(nets);
-    }
+    saveGuides(nets);
   }
 
   if (is_congested_) {
@@ -818,11 +850,7 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
   initRoutingLayers(min_layer, max_layer);
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
-    net->destroyPins();
-    // update pin positions
-    makeItermPins(net, db_net, grid_->getGridArea());
-    makeBtermPins(net, db_net, grid_->getGridArea());
-    findPins(net);
+    updateNetPins(net);
     destroyNetWire(net);
     std::string pins_not_covered;
     // compare new positions with last positions & add on vector
@@ -2044,7 +2072,11 @@ void GlobalRouter::setCriticalNetsPercentage(float critical_nets_percentage)
         301,
         "Timing is not available, setting critical nets percentage to 0.");
   }
-  fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
+  if (use_cugr_) {
+    cugr_->setCriticalNetsPercentage(critical_nets_percentage);
+  } else {
+    fastroute_->setCriticalNetsPercentage(critical_nets_percentage);
+  }
 }
 
 void GlobalRouter::addLayerAdjustment(int layer, float reduction_percentage)
@@ -2322,6 +2354,11 @@ void GlobalRouter::loadGuidesFromDB()
   if (!routes_.empty()) {
     return;
   }
+
+  if (!haveDbGuides()) {
+    return;
+  }
+
   initGridAndNets();
   for (odb::dbNet* net : block_->getNets()) {
     for (odb::dbGuide* guide : net->getGuides()) {
@@ -4211,9 +4248,7 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
       delete db_net_map_[db_net];
     }
     db_net_map_[db_net] = net;
-    makeItermPins(net, db_net, grid_->getGridArea());
-    makeBtermPins(net, db_net, grid_->getGridArea());
-    findPins(net);
+    updateNetPins(net);
     return net;
   }
   return nullptr;
@@ -4231,6 +4266,15 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
   db_net_map_.erase(db_net);
   dirty_nets_.erase(db_net);
   routes_.erase(db_net);
+}
+
+void GlobalRouter::updateNetPins(Net* net)
+{
+  odb::dbNet* db_net = net->getDbNet();
+  net->destroyPins();
+  makeItermPins(net, db_net, grid_->getGridArea());
+  makeBtermPins(net, db_net, grid_->getGridArea());
+  findPins(net);
 }
 
 Net* GlobalRouter::getNet(odb::dbNet* db_net)
@@ -4908,22 +4952,29 @@ void GlobalRouter::mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
-  // Do not merge the routing if the survivor net is already dirty.
-  if (!net1->isDirtyNet()) {
-    connectRouting(db_net1, db_net2);
+  // Try to connect the routing of the two nets
+  if (connectRouting(db_net1, db_net2)) {
     net1->setIsMergedNet(true);
     net1->setMergedNet(db_net2);
+    net1->setDirtyNet(false);
     net2->setIsMergedNet(true);
     net2->setMergedNet(db_net1);
+  } else {
+    // After failing to connect the routing, the survivor net still have
+    // uncovered pins and needs to be re-routed
+    net1->setDirtyNet(true);
   }
 }
 
-void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
+bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
 {
   Net* net1 = db_net_map_[db_net1];
   Net* net2 = db_net_map_[db_net2];
 
-  // find the pin positions in the buffer that connects the two nets
+  // Find the pin positions in the buffer that connects the two nets.
+  // At the time this function is called, the buffer information still preserved
+  // on GRT data structures, allowing us to use it to define the connection
+  // position.
   odb::Point pin_pos1;
   odb::Point pin_pos2;
   findBufferPinPostions(net1, net2, pin_pos1, pin_pos2);
@@ -4940,6 +4991,10 @@ void GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
   } else {
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
   }
+
+  updateNetPins(net1);
+  std::string dump;
+  return netIsCovered(db_net1, dump);
 }
 
 void GlobalRouter::findBufferPinPostions(Net* net1,
@@ -5805,8 +5860,8 @@ void GRouteDbCbk::inDbNetDestroy(odb::dbNet* net)
   grouter_->removeNet(net);
 }
 
-void GRouteDbCbk::inDbNetPreMerge(odb::dbNet* preserved_net,
-                                  odb::dbNet* removed_net)
+void GRouteDbCbk::inDbNetPostMerge(odb::dbNet* preserved_net,
+                                   odb::dbNet* removed_net)
 {
   grouter_->mergeNetsRouting(preserved_net, removed_net);
 }
@@ -5815,9 +5870,7 @@ void GRouteDbCbk::inDbITermPreDisconnect(odb::dbITerm* iterm)
 {
   odb::dbNet* db_net = iterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
-    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(iterm->getNet());
-    net->destroyITermPin(iterm);
   }
 }
 
@@ -5851,9 +5904,7 @@ void GRouteDbCbk::inDbBTermPreDisconnect(odb::dbBTerm* bterm)
 {
   odb::dbNet* db_net = bterm->getNet();
   if (db_net != nullptr && !db_net->isSpecial()) {
-    Net* net = grouter_->getNet(db_net);
     grouter_->addDirtyNet(bterm->getNet());
-    net->destroyBTermPin(bterm);
   }
 }
 

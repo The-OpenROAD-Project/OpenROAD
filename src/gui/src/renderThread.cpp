@@ -25,6 +25,7 @@
 #include "boost/geometry/index/predicates.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "gui/gui.h"
+#include "label.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -1107,6 +1108,10 @@ void RenderThread::drawLayer(QPainter* painter,
     drawNetTracks(gui_painter, layer);
   }
 
+  if (viewer_->options_->areFocusedNetsGuidesVisible()) {
+    drawNetsRouteGuides(gui_painter, viewer_->focus_nets_, layer);
+  }
+
   for (auto* renderer : Gui::get()->renderers()) {
     if (restart_) {
       break;
@@ -1409,16 +1414,32 @@ void RenderThread::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
   if (viewer_->route_guides_.empty()) {
     return;
   }
+
+  drawNetsRouteGuides(painter, viewer_->route_guides_, layer);
+}
+
+void RenderThread::drawNetsRouteGuides(Painter& painter,
+                                       const std::set<odb::dbNet*>& nets,
+                                       odb::dbTechLayer* layer)
+{
   painter.setPen(layer);
   painter.setBrush(layer);
-  for (auto net : viewer_->route_guides_) {
+
+  for (odb::dbNet* net : nets) {
     if (restart_) {
       break;
     }
-    for (auto guide : net->getGuides()) {
-      if (guide->getLayer() != layer) {
-        continue;
-      }
+
+    drawNetRouteGuides(painter, net, layer);
+  }
+}
+
+void RenderThread::drawNetRouteGuides(Painter& painter,
+                                      odb::dbNet* net,
+                                      odb::dbTechLayer* layer)
+{
+  for (odb::dbGuide* guide : net->getGuides()) {
+    if (guide->getLayer() == layer) {
       painter.drawRect(guide->getBox());
     }
   }
@@ -1690,7 +1711,8 @@ void RenderThread::drawIOPins(Painter& painter,
   const int min_bpin_size = viewer_->options_->isDetailedVisibility()
                                 ? viewer_->fineViewableResolution()
                                 : viewer_->nominalViewableResolution();
-  const int64_t max_lin_bpins = bounds.minDXDY() / min_bpin_size;
+  const int64_t max_lin_bpins
+      = min_bpin_size > 0 ? bounds.minDXDY() / min_bpin_size : bounds.minDXDY();
   const int64_t max_bpins
       = std::min(kMaxBPinsPerLayer, max_lin_bpins * max_lin_bpins);
 

@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbITerm.h"
@@ -16,11 +17,9 @@
 #include "dbModInst.h"
 #include "dbModule.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
-#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -28,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbModuleModNetBTermItr.h"
@@ -203,6 +203,16 @@ void dbModNet::rename(const char* new_name)
 
   _dbBlock* block = (_dbBlock*) obj->getOwner();
 
+  if (getParent()->getModNet(new_name) != nullptr) {
+    block->getLogger()->error(
+        utl::ODB,
+        495,
+        "dbModNet::rename(): Found a duplicate dbModNet name '{}' in the "
+        "module '{}'. Review the name creation logic.",
+        new_name,
+        getParent()->getName());
+  }
+
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
              "DB_EDIT",
@@ -308,11 +318,20 @@ dbModNet* dbModNet::getModNet(dbBlock* block, uint32_t id)
 
 dbModNet* dbModNet::create(dbModule* parent_module, const char* base_name)
 {
-  assert(parent_module->getModNet(base_name) == nullptr);
-
-  // give illusion of scoping.
   _dbModule* parent = (_dbModule*) parent_module;
   _dbBlock* block = (_dbBlock*) parent->getOwner();
+
+  if (parent_module->getModNet(base_name) != nullptr) {
+    block->getLogger()->error(
+        utl::ODB,
+        492,
+        "dbModNet::create(): Found a duplicate dbModNet name '{}' in the "
+        "module '{}'. Review the name creation logic.",
+        base_name,
+        parent_module->getHierarchicalName());
+  }
+
+  // give illusion of scoping.
   _dbModNet* modnet = block->modnet_tbl_->create();
   // defaults
   modnet->name_ = safe_strdup(base_name);
@@ -351,11 +370,12 @@ dbModNet* dbModNet::create(dbModule* parent_module, const char* base_name)
 
 dbModNet* dbModNet::create(dbModule* parent_module,
                            const char* base_name,
-                           const dbNameUniquifyType& uniquify)
+                           const dbNameUniquifyType& uniquify,
+                           dbNet* corresponding_flat_net)
 {
   dbBlock* block = parent_module->getOwner();
-  std::string net_name
-      = block->makeNewModNetName(parent_module, base_name, uniquify);
+  std::string net_name = block->makeNewModNetName(
+      parent_module, base_name, uniquify, corresponding_flat_net);
   return create(parent_module, block->getBaseName(net_name.c_str()));
 }
 

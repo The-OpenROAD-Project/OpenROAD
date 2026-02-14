@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -88,11 +89,16 @@ class dbInsertBuffer
       const std::set<dbModNet*>& modnets_in_target_module) const;
   bool checkAllLoadsAreTargets(dbModNet* net,
                                const std::set<dbObject*>& load_pins) const;
+  bool isMarkedAsNotReusable(dbModNet* net) const;
+  std::optional<bool> getCachedReusability(dbModNet* net) const;
+  void markModNetReusability(dbModNet* net, bool is_reusable) const;
   bool getPinLocation(const dbObject* pin, int& x, int& y) const;
   bool computeCentroid(const dbObject* drvr_pin,
                        const std::set<dbObject*>& load_pins,
                        Point& result) const;
-  void placeBufferAtLocation(dbInst* buffer_inst, const Point& loc);
+  void placeBufferAtLocation(dbInst* buffer_inst,
+                             const Point& loc,
+                             const char* reason = "argument");
   void placeBufferAtPin(dbInst* buffer_inst, const dbObject* term);
   void placeBufferAtCentroid(dbInst* buffer_inst,
                              const dbObject* drvr_pin,
@@ -106,6 +112,14 @@ class dbInsertBuffer
   /// pins for the buffer being inserted.
   ///
   void populateReusableModNets(const std::set<dbObject*>& load_pins);
+
+  ///
+  /// Traverses the netlist upstream (fanin cone) from the given net and marks
+  /// all visited dbModNets as 'false' in is_target_only_cache_. This prevents
+  /// reusing any net that is part of the buffer's fanin, avoiding loops.
+  ///
+  void markFaninModNetsNotReusable(dbModNet* net);
+  void checkSanity() const;
 
   //------------------------------------------------------------------
   // Helper functions for hierarchicalConnect
@@ -122,12 +136,28 @@ class dbInsertBuffer
                          dbModule* driver_mod);
   dbModNet* ensureModNet(dbObject* obj,
                          dbModule* mod,
+                         dbNet* corresponding_flat_net = nullptr,
                          const char* suffix = nullptr);
+
+  void connectPeerITerms(dbModule* mod,
+                         dbModNet* mod_net,
+                         dbNet* corresponding_flat_net);
+
+  ///
+  /// Trace up the module hierarchy from current_mod to target_mod,
+  /// creating hierarchical ports (dbModBTerm/dbModITerm) and modNets as needed.
+  /// Returns the dbObject (dbModITerm) at target_mod level.
+  /// - current_obj: Starting point (dbITerm, dbBTerm, or dbModITerm)
+  /// - io_type: Port direction for created hierarchical ports
+  /// - suffix: Optional suffix for port names
+  /// - corresponding_flat_net: The flat net to use for name collision avoidance
+  ///
   dbObject* traceUp(dbObject* current_obj,
                     dbModule* current_mod,
                     dbModule* target_mod,
                     dbIoType io_type,
-                    const char* suffix);
+                    const char* suffix,
+                    dbNet* corresponding_flat_net = nullptr);
   void connectDifferentModule(dbObject* driver,
                               dbObject* load,
                               dbModule* driver_mod,
@@ -202,7 +232,10 @@ class dbInsertBuffer
   void dlogMovedBTermLoad(int load_idx,
                           int num_loads,
                           const dbBTerm* load) const;
-  void dlogPlacedBuffer(const dbInst* buffer_inst, const Point& loc) const;
+  void dlogPlacedBuffer(const dbInst* buffer_inst,
+                        const Point& loc,
+                        const char* reason) const;
+  void dlogUnplacedBuffer(const dbInst* buffer_inst, const char* reason) const;
   void dlogInsertBufferSuccess(const dbInst* buffer_inst) const;
   void dlogInsertBufferStart(int count, const char* mode) const;
   void dlogSeparator() const;

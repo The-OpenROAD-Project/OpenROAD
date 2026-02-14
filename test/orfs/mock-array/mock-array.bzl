@@ -284,6 +284,7 @@ def mock_array(name, config):
                 "RTLMP_MAX_MACRO": "64",
                 "RTLMP_MIN_INST": "50",
                 "RTLMP_MIN_MACRO": "8",
+                "RTLMP_NOTCH_WT": "0",
             },
             macros = ["Element_{name}_base_generate_abstract".format(name = name)],
             sources = {
@@ -478,7 +479,7 @@ def mock_array(name, config):
                     arguments = {
                         "ARRAY_COLS": str(config["cols"]),
                         "ARRAY_ROWS": str(config["rows"]),
-                        "LOAD_POWER_TCL": "$(location :load_power.tcl)",
+                        "LOAD_MOCK_ARRAY_TCL": "$(location :load_mock_array.tcl)",
                         "OUTPUT": "$(location :{variant}_{power_test}_{stage}.txt)".format(
                             variant = variant,
                             power_test = power_test,
@@ -497,7 +498,7 @@ def mock_array(name, config):
                                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
                                ":opensta_runfiles",
                                ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
-                               ":load_power.tcl",
+                               ":load_mock_array.tcl",
                            ] + ["{macro}_{variant}_{stage}".format(
                                variant = (name + "_base") if macro == "Element" else variant,
                                macro = macro,

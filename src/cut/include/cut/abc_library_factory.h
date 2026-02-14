@@ -18,6 +18,8 @@
 #include "rsz/Resizer.hh"
 #include "sta/Liberty.hh"
 #include "sta/Sta.hh"
+#include "sta/TableModel.hh"
+#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
 

@@ -1,0 +1,7 @@
+[INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
+[INFO ODB-0128] Design: unfixed_cells_dont_fit_in_core
+[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0131]     Created 151 components and 902 component-terminals.
+[ERROR MPL-0065] The movable cells do not fit in the macro placement area.
+Error: unfixed_cells_dont_fit_in_core.tcl, 10 MPL-0065

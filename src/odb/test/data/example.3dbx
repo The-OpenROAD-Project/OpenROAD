@@ -8,19 +8,19 @@ Header:
 Design:
   name: "TopDesign"
   external:
-    verilog_file: "/path/to/top.v"
+    verilog_file: "top.v"
 
 ChipletInst:
   soc_inst:
     reference: SoC
     external:
-      verilog_file: "/path/to/soc.v"
+      verilog_file: "soc.v"
       sdc_file: "/path/to/soc.sdc"
       def_file: "/path/to/soc.def"
   soc_inst_duplicate:
     reference: SoC
     external:
-      verilog_file: "/path/to/soc.v"
+      verilog_file: "soc.v"
       sdc_file: "/path/to/soc.sdc"
       def_file: "/path/to/soc.def"
 
@@ -36,10 +36,10 @@ Stack:
 
 Connection:
   soc_to_soc:
-    top: soc_inst_duplicate.regions.r1
-    bot: soc_inst.regions.r1
-    thickness: 2.0
+    top: soc_inst_duplicate.regions.front_reg
+    bot: soc_inst.regions.front_reg
+    thickness: 0.0
   soc_to_virtual:
-    top: soc_inst_duplicate.regions.r1
+    top: soc_inst_duplicate.regions.back_reg
     bot: ~
     thickness: 0.0

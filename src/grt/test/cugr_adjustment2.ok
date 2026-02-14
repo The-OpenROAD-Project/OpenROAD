@@ -4,7 +4,7 @@
 [INFO ODB-0131]     Created 676 components and 2850 component-terminals.
 [INFO ODB-0133]     Created 579 nets and 1498 connections.
 [WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
-[INFO GRT-0020] Min routing layer: metal1
+[INFO GRT-0020] Min routing layer: metal2
 [INFO GRT-0021] Max routing layer: metal10
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)
@@ -19,7 +19,7 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0003] Macros: 0
-[INFO GRT-0004] Blockages: 2874
+[INFO GRT-0004] Blockages: 0
 [INFO GRT-0019] Found 0 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 36
@@ -30,13 +30,15 @@ num of nets :        579
 num of special nets: 0
 gcell grid:          35 x 35 x 10
 stage 1: pattern routing
+4 / 579 nets have overflow.
+stage 2: pattern routing with possible detours
 0 / 579 nets have overflow.
 routing statistics
-wire length (metric):  36712
-total via count:       2624
+wire length (metric):  36802
+total via count:       4437
 total wire overflow:   0
 min resource: 0.3999999761581421
 bottleneck:   (8, 0, 4)
-[INFO GRT-0018] Total wirelength: 10342 um
+[INFO GRT-0018] Total wirelength: 10362 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

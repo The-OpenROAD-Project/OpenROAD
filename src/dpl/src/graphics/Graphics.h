@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "DplObserver.h"
+#include "dpl/Opendp.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -29,7 +30,7 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridY yl,
                  GridX xh,
                  GridY yh) override;
-  void endPlacement() override;
+  void redrawAndPause() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;

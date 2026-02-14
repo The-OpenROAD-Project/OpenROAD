@@ -14,7 +14,9 @@
 #include <vector>
 
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
+#include "db/tech/frViaDef.h"
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
 #include "global.h"

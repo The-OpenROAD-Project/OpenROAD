@@ -6,12 +6,16 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <string>
+#include <type_traits>
 
 #include "odb/geom.h"
 #include "spdlog/fmt/fmt.h"
+#include "sta/Corner.hh"
 #include "sta/Delay.hh"
-#include "sta/Network.hh"
-#include "sta/Path.hh"
+#include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -21,29 +25,12 @@ class EstimateParasitics;
 
 namespace rsz {
 
-using utl::Logger;
-
-using odb::Point;
-
-using sta::Corner;
-using sta::DcalcAnalysisPt;
-using sta::Delay;
-using sta::LibertyCell;
-using sta::Network;
-using sta::Path;
-using sta::Pin;
-using sta::Required;
-using sta::RiseFall;
-using sta::StaState;
-using sta::Unit;
-using sta::Units;
-
 class Resizer;
 class RepairSetup;
 
 class BufferedNet;
 using BufferedNetPtr = std::shared_ptr<BufferedNet>;
-using Requireds = std::array<Required, RiseFall::index_count>;
+using Requireds = std::array<sta::Required, sta::RiseFall::index_count>;
 
 class FixedDelay
 {
@@ -123,38 +110,38 @@ class BufferedNet
  public:
   // load
   BufferedNet(BufferedNetType type,
-              const Point& location,
-              const Pin* load_pin,
-              const Corner* corner,
+              const odb::Point& location,
+              const sta::Pin* load_pin,
+              const sta::Corner* corner,
               const Resizer* resizer);
   // wire
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               int layer,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics);
   // via
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               int layer,
               int ref_layer,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer);
   // junc
   BufferedNet(BufferedNetType type,
-              const Point& location,
+              const odb::Point& location,
               const BufferedNetPtr& ref,
               const BufferedNetPtr& ref2,
               const Resizer* resizer);
   // buffer
   BufferedNet(BufferedNetType type,
-              const Point& location,
-              LibertyCell* buffer_cell,
+              const odb::Point& location,
+              sta::LibertyCell* buffer_cell,
               const BufferedNetPtr& ref,
-              const Corner* corner,
+              const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics);
   std::string to_string(const Resizer* resizer) const;
@@ -165,7 +152,7 @@ class BufferedNet
   // wire     wire is from loc to location(ref_)
   // buffer   buffer driver pin location
   // load     load pin location
-  Point location() const { return location_; }
+  odb::Point location() const { return location_; }
   float cap() const { return cap_; }
   void setCapacitance(float cap);
   float fanout() const { return fanout_; }
@@ -173,17 +160,17 @@ class BufferedNet
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  const Pin* loadPin() const { return load_pin_; }
+  const sta::Pin* loadPin() const { return load_pin_; }
   // wire
   int length() const;
-  void wireRC(const Corner* corner,
+  void wireRC(const sta::Corner* corner,
               const Resizer* resizer,
               const est::EstimateParasitics* estimate_parasitics,
               // Return values.
               double& res,
               double& cap);
   // via
-  double viaResistance(const Corner* corner,
+  double viaResistance(const sta::Corner* corner,
                        const Resizer* resizer,
                        const est::EstimateParasitics* estimate_parasitics);
   // wire, via
@@ -191,7 +178,7 @@ class BufferedNet
   // via
   int refLayer() const { return ref_layer_; }
   // buffer
-  LibertyCell* bufferCell() const { return buffer_cell_; }
+  sta::LibertyCell* bufferCell() const { return buffer_cell_; }
   // junction  left
   // buffer    wire
   // wire      end of wire
@@ -267,15 +254,15 @@ class BufferedNet
   }
 
   bool fitsEnvelope(Metrics target);
-  const Corner* corner() { return corner_; }
+  const sta::Corner* corner() { return corner_; }
 
  private:
   BufferedNetType type_;
-  Point location_;
+  odb::Point location_;
   // only used by load type
-  const Pin* load_pin_{nullptr};
+  const sta::Pin* load_pin_{nullptr};
   // only used by buffer type
-  LibertyCell* buffer_cell_{nullptr};
+  sta::LibertyCell* buffer_cell_{nullptr};
   // only used by wire and via type
   int layer_{null_layer};
   // only used by via type
@@ -307,7 +294,40 @@ class BufferedNet
   // Delay from driver pin to here
   FixedDelay arrival_delay_ = FixedDelay::ZERO;
 
-  const Corner* corner_ = nullptr;
+  const sta::Corner* corner_ = nullptr;
 };
+
+// Template magic to make it easier to write algorithms descending
+// over the buffer tree in the form of lambdas; it allows recursive
+// lambda calling and it keeps track of the level number which is important
+// for good debug prints
+//
+// https://stackoverflow.com/questions/2067988/how-to-make-a-recursive-lambda
+template <class F>
+struct visitor
+{
+  F f;
+  int level = 0;
+  explicit visitor(F&& f) : f(std::forward<F>(f)) {}
+  template <class... Args>
+  decltype(auto) operator()(Args&&... args)
+  {
+    level++;
+    decltype(auto) ret = f(*this, level, std::forward<Args>(args)...);
+    level--;
+    return ret;
+  }
+
+  // delete the copy constructor
+  visitor(const visitor&) = delete;
+  visitor& operator=(const visitor&) = delete;
+};
+
+template <typename F, class... Args>
+static decltype(auto) visitTree(F&& f, Args&&... args)
+{
+  visitor<std::decay_t<F>> v{std::forward<F>(f)};
+  return v(std::forward<Args>(args)...);
+}
 
 }  // namespace rsz

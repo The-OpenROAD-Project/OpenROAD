@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "gui/gui.h"
+#include "layoutTabs.h"
 #include "layoutViewer.h"
 
 namespace gui {
@@ -16,65 +17,50 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutTabs* viewers)
     : QDialog(parent), viewers_(viewers)
 {
   setupUi(this);
-}
-
-void GotoLocationDialog::updateUnits(int dbu_per_micron, bool use_dbu)
-{
-  if (use_dbu) {
-    xEdit->setText(QString::number(xEdit->text().toDouble() * dbu_per_micron));
-    yEdit->setText(QString::number(yEdit->text().toDouble() * dbu_per_micron));
-    sEdit->setText(QString::number(sEdit->text().toDouble() * dbu_per_micron));
-  } else {
-    xEdit->setText(QString::number(xEdit->text().toDouble() / dbu_per_micron));
-    yEdit->setText(QString::number(yEdit->text().toDouble() / dbu_per_micron));
-    sEdit->setText(QString::number(sEdit->text().toDouble() / dbu_per_micron));
-  }
+  connect(gotoBtn, &QPushButton::clicked, this, &GotoLocationDialog::goTo);
 }
 
 // NOLINTNEXTLINE(readability-non-const-parameter)
-void GotoLocationDialog::updateLocation(QLineEdit* x_edit, QLineEdit* y_edit)
+void GotoLocationDialog::updateLocation()
 {
   auto viewer = viewers_->getCurrent();
+  if (!viewer) {
+    return;
+  }
   x_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().x(), false)));
   y_edit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer->getVisibleCenter().y(), false)));
+  int box_size = viewer->getVisibleDiameter();
+  s_edit->setText(QString::fromStdString(
+      Descriptor::Property::convert_dbu(box_size, false)));
 }
 
-void GotoLocationDialog::show_init()
+void GotoLocationDialog::showInit()
 {
-  auto viewer = viewers_->getCurrent();
-  GotoLocationDialog::updateLocation(xEdit, yEdit);
-  int box_size = sqrt(pow((viewer->getVisibleBounds().lr().x()
-                           - viewer->getVisibleBounds().ll().x()),
-                          2)
-                      + pow((viewer->getVisibleBounds().ul().y()
-                             - viewer->getVisibleBounds().ll().y()),
-                            2))
-                 / 2;
-  sEdit->setText(QString::fromStdString(
-      Descriptor::Property::convert_dbu(box_size, false)));
+  updateLocation();
   show();
 }
 
-void GotoLocationDialog::accept()
+void GotoLocationDialog::goTo()
 {
   auto gui = gui::Gui::get();
   bool convert_x_ok;
   bool convert_y_ok;
   bool convert_s_ok;
   int x_coord = Descriptor::Property::convert_string(
-      xEdit->text().toStdString(), &convert_x_ok);
+      x_edit->text().toStdString(), &convert_x_ok);
   int y_coord = Descriptor::Property::convert_string(
-      yEdit->text().toStdString(), &convert_y_ok);
-  int box_size = Descriptor::Property::convert_string(
-      sEdit->text().toStdString(), &convert_s_ok);
+      y_edit->text().toStdString(), &convert_y_ok);
+  int diameter = Descriptor::Property::convert_string(
+      s_edit->text().toStdString(), &convert_s_ok);
   if (convert_x_ok && convert_y_ok && convert_s_ok) {
-    gui->zoomTo(odb::Rect(x_coord - box_size,
-                          y_coord - box_size,
-                          x_coord + box_size,
-                          y_coord + box_size));
+    gui->zoomTo(odb::Point(x_coord, y_coord), diameter);
   }
-  GotoLocationDialog::updateLocation(xEdit, yEdit);
+  updateLocation();
+}
+
+void GotoLocationDialog::accept()
+{
 }
 }  // namespace gui

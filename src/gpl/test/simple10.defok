@@ -2987,7 +2987,7 @@ COMPONENTS 32 ;
     - TAP_28 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 18400 32640 ) N ;
     - TAP_29 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 18400 38080 ) N ;
     - TAP_30 sky130_fd_sc_hd__tapvpwrvgnd_1 + SOURCE DIST + FIXED ( 18400 40800 ) FS ;
-    - _0_ sky130_fd_sc_hd__inv_2 + PLACED ( 32224 1331720 ) N ;
+    - _0_ sky130_fd_sc_hd__inv_2 + PLACED ( 32276 997720 ) N ;
 END COMPONENTS
 PINS 4 ;
     - VGND + NET VGND + SPECIAL + DIRECTION INPUT + USE GROUND

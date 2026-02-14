@@ -42,6 +42,8 @@
 #include "odb/geom.h"
 #include "options.h"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -3002,6 +3004,11 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
     props.emplace_back("Minimum width",
                        Property::convert_dbu(layer->getMinWidth(), true));
   }
+  if (layer->getWrongWayMinWidth() != 0) {
+    props.emplace_back(
+        "Wrong way minimum width",
+        Property::convert_dbu(layer->getWrongWayMinWidth(), true));
+  }
   if (layer->hasMaxWidth()) {
     props.emplace_back("Max width",
                        Property::convert_dbu(layer->getMaxWidth(), true));
@@ -3208,6 +3215,24 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
       }
     }
     props.emplace_back("Tech vias", tech_vias);
+  }
+
+  for (auto* spacing_table : layer->getTechLayerVoltageSpacings()) {
+    std::string title = "Voltage spacing";
+    if (spacing_table->isTocutAbove() && spacing_table->isTocutBelow()) {
+      title += " - tocut";
+    } else if (spacing_table->isTocutAbove()) {
+      title += " - tocut above";
+    } else if (spacing_table->isTocutBelow()) {
+      title += " - tocut below";
+    }
+
+    PropertyList voltagetable;
+    for (const auto& [voltage, spacing] : spacing_table->getTable()) {
+      voltagetable.emplace_back(fmt::format("{:.3f}V", voltage),
+                                Property::convert_dbu(spacing, true));
+    }
+    props.emplace_back(std::move(title), voltagetable);
   }
 
   return props;

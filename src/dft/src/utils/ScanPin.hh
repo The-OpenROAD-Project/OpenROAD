@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <string_view>
 #include <variant>
 
 #include "odb/db.h"

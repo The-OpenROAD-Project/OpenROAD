@@ -96,14 +96,11 @@ proc save_image { args } {
   set resolution 0
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
-    set tech [ord::get_db_tech]
-    if { $tech == "NULL" } {
-      utl::error GUI 17 "No technology loaded."
-    }
-    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
+    set db [ord::get_db]
+    set resolution [expr $keys(-resolution) * [$db getDbuPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
+      set res_per_pixel [expr $resolution / [$db getDbuPerMicron]]
       utl::warn GUI 31 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
@@ -153,14 +150,11 @@ proc save_animated_gif { args } {
   set resolution 0
   if { [info exists keys(-resolution)] } {
     sta::check_positive_float "-resolution" $keys(-resolution)
-    set tech [ord::get_db_tech]
-    if { $tech == "NULL" } {
-      utl::error GUI 52 "No technology loaded."
-    }
-    set resolution [expr $keys(-resolution) * [$tech getDbUnitsPerMicron]]
+    set db [ord::get_db]
+    set resolution [expr $keys(-resolution) * [$db getDbuPerMicron]]
     if { $resolution < 1 } {
       set resolution 1.0
-      set res_per_pixel [expr $resolution / [$tech getDbUnitsPerMicron]]
+      set res_per_pixel [expr $resolution / [$db getDbuPerMicron]]
       utl::warn GUI 55 "Resolution too high for design, defaulting to ${res_per_pixel}um per pixel"
     }
   }
@@ -469,3 +463,30 @@ proc add_label { args } {
     $size \
     $name]
 }
+
+namespace eval gui {
+proc show_worst_path { args } {
+  sta::parse_key_args "show_worst_path" args \
+    keys {} flags {-setup -hold}
+
+  sta::check_argc_eq0 "show_worst_path" $args
+
+  set setup 1
+  if { [info exists flags(-hold)] } {
+    set setup 0
+  }
+
+  gui::show_worst_path_internal $setup
+}
+
+sta::define_cmd_args "clear_timing_path" {}
+
+proc clear_timing_path { args } {
+  sta::parse_key_args "clear_timing_path" args \
+    keys {} flags {}
+
+  sta::check_argc_eq0 "clear_timing_path" $args
+
+  gui::clear_timing_path_internal
+}
+} ;# namespace gui

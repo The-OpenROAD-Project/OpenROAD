@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "CtsOptions.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -30,11 +31,11 @@
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
-#include "sta/Units.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -48,7 +49,7 @@ TechChar::TechChar(CtsOptions* options,
                    rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
-                   Logger* logger)
+                   utl::Logger* logger)
     : options_(options),
       db_(db),
       resizer_(resizer),
@@ -98,11 +99,16 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
     if (!(lutLine.isPureWire)) {
       // Goes through the topology of the wiresegment and defines the buffer
       // locations and masters.
+      int wl2FirstBuffer
+          = std::round(std::stod(lutLine.topology[0]) * (double) length);
+      int lastWl = 0;
       int maxIndex = 0;
       if (lutLine.topology.size() % 2 == 0) {
         maxIndex = lutLine.topology.size();
       } else {
         maxIndex = lutLine.topology.size() - 1;
+        lastWl = std::round(std::stod(lutLine.topology[maxIndex])
+                            * (double) length);
       }
       for (int topologyIndex = 0; topologyIndex < maxIndex; topologyIndex++) {
         const std::string topologyS = lutLine.topology[topologyIndex];
@@ -115,6 +121,12 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
           segment.addBufferMaster(topologyS);
         }
       }
+      segment.setLastWl(lastWl);
+      segment.setWl2FirstBuffer(wl2FirstBuffer);
+    } else {
+      int wl = std::round(std::stod(lutLine.topology[0]) * (double) length);
+      segment.setLastWl(wl);
+      segment.setWl2FirstBuffer(wl);
     }
   }
 
@@ -312,14 +324,15 @@ void TechChar::printCharacterization() const
   logger_->report("wireSegmentUnit = {}", options_->getWireSegmentUnit());
 
   logger_->report(
-      "\nidx length load outSlew power delay inCap inSlew pureWire bufLoc");
+      "\n   idx length load outSlew power delay inCap inSlew pureWire Wl2First "
+      "LastWl bufLoc");
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffer_locations;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
       buffer_locations += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
-    logger_->report("{:6} {:2} {:2} {:2} {:.2e} {:4} {:2} {:2} {} {}",
+    logger_->report("{:6} {:4} {:4} {:4} {:.4e} {:4} {:4} {:4} {} {:4} {:4} {}",
                     idx,
                     (unsigned) segment.getLength(),
                     (unsigned) segment.getLoad(),
@@ -329,6 +342,8 @@ void TechChar::printCharacterization() const
                     (unsigned) segment.getInputCap(),
                     (unsigned) segment.getInputSlew(),
                     !segment.isBuffered(),
+                    segment.getWl2FirstBuffer(),
+                    segment.getLastWl(),
                     buffer_locations);
   });
 }
@@ -380,6 +395,8 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
             const unsigned delay = seg.getDelay();
             const unsigned inputCap = seg.getInputCap();
             const unsigned inputSlew = seg.getInputSlew();
+            const int wl2FirstBuffer = seg.getWl2FirstBuffer();
+            const int lastWl = seg.getLastWl();
 
             WireSegment& fakeSeg = createWireSegment(
                 fakeLength, load, outSlew, power, delay, inputCap, inputSlew);
@@ -388,6 +405,8 @@ void TechChar::createFakeEntries(unsigned length, unsigned fakeLength)
               fakeSeg.addBuffer(seg.getBufferLocation(buf));
               fakeSeg.addBufferMaster(seg.getBufferMaster(buf));
             }
+            fakeSeg.setWl2FirstBuffer(wl2FirstBuffer);
+            fakeSeg.setLastWl(lastWl);
           });
     }
   }
@@ -397,20 +416,22 @@ void TechChar::reportSegment(unsigned key) const
 {
   const WireSegment& seg = getWireSegment(key);
 
-  debugPrint(
-      logger_,
-      CTS,
-      "tech char",
-      1,
-      "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} delay: "
-      "{}",
-      key,
-      seg.getInputSlew(),
-      seg.getInputCap(),
-      seg.getOutputSlew(),
-      seg.getLoad(),
-      seg.getLength(),
-      seg.getDelay());
+  debugPrint(logger_,
+             CTS,
+             "tech char",
+             1,
+             "    Key: {} inSlew: {} inCap: {} outSlew: {} load: {} length: {} "
+             "wl2fistyBuf: {} lastWL: {} delay: "
+             "{}",
+             key,
+             seg.getInputSlew(),
+             seg.getInputCap(),
+             seg.getOutputSlew(),
+             seg.getLoad(),
+             seg.getLength(),
+             seg.getWl2FirstBuffer(),
+             seg.getLastWl(),
+             seg.getDelay());
 
   for (unsigned idx = 0; idx < seg.getNumBuffers(); ++idx) {
     debugPrint(logger_,

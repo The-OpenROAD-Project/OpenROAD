@@ -77,10 +77,10 @@ class HierRTLMP
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
-  void setHaloWidth(int halo_width);
-  void setHaloHeight(int halo_height);
+  void setDefaultHalo(int halo_width, int halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
+  void setMacroHalo(odb::dbInst* macro, int halo_width, int halo_height);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -100,10 +100,10 @@ class HierRTLMP
   void setNotchWeight(float notch_weight);
   void setMacroBlockageWeight(float macro_blockage_weight);
   void setTargetUtil(float target_util);
-  void setTargetDeadSpace(float target_dead_space);
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
+
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);
   void setDebugShowClustersIds(bool show_clusters_ids);
@@ -145,7 +145,9 @@ class HierRTLMP
   void calculateChildrenTilings(Cluster* parent);
   void calculateMacroTilings(Cluster* cluster);
   IntervalList computeWidthIntervals(const TilingList& tilings);
-  void setTightPackingTilings(Cluster* macro_array);
+  TilingList generateTilingsForMacroCluster(int macro_width,
+                                            int macro_height,
+                                            int number_of_macros);
   void searchAvailableRegionsForUnconstrainedPins();
   BoundaryToRegionsMap getBoundaryToBlockedRegionsMap(
       const std::vector<odb::Rect>& blocked_regions_for_pins) const;
@@ -165,11 +167,18 @@ class HierRTLMP
   void setPlacementBlockages();
 
   // Fine Shaping
-  bool runFineShaping(Cluster* parent,
-                      std::vector<SoftMacro>& macros,
-                      std::map<std::string, int>& soft_macro_id_map,
-                      float target_util,
-                      float target_dead_space);
+  int computeTinyClusterMaxNumberOfStdCells() const;
+  bool singleArraySingleStdCellCluster(
+      const std::vector<SoftMacro>& soft_macros) const;
+  void setMacroClustersShapes(std::vector<SoftMacro>& soft_macros) const;
+  std::vector<float> computeUtilizationList(float total_number_of_runs) const;
+  bool validUtilization(float utilization,
+                        const odb::Rect& outline,
+                        const std::vector<SoftMacro>& soft_macros) const;
+  std::vector<SoftMacro> applyUtilization(
+      float utilization,
+      const odb::Rect& outline,
+      const std::vector<SoftMacro>& original_soft_macros) const;
 
   // Hierarchical Macro Placement 1st stage: Cluster Placement
   void adjustMacroBlockageWeight();
@@ -238,6 +247,7 @@ class HierRTLMP
                                                const odb::Rect& overlay) const;
 
   // For debugging
+  void reportShapeCurves(const std::vector<SoftMacro>& soft_macros) const;
   template <typename SACore>
   void printPlacementResult(Cluster* parent,
                             const odb::Rect& outline,
@@ -267,13 +277,7 @@ class HierRTLMP
   int num_threads_ = 10;       // number of threads
   const int random_seed_ = 0;  // random seed for deterministic
 
-  float target_dead_space_ = 0.2;  // dead space for the cluster
-  float target_util_ = 0.25;       // target utilization of the design
-  const float target_dead_space_step_ = 0.05;  // step for dead space
-  const float target_util_step_ = 0.1;         // step for utilization
-  const float num_target_util_ = 10;
-  const float num_target_dead_space_ = 20;
-
+  float target_utilization_{0.0};
   float min_ar_ = 0.3;  // the aspect ratio range for StdCellCluster (min_ar_, 1
                         // / min_ar_)
 
@@ -292,10 +296,12 @@ class HierRTLMP
 
   std::map<std::string, odb::Rect> fences_;   // macro_name, fence
   std::map<odb::dbInst*, odb::Rect> guides_;  // Macro -> Guidance Region
+  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
   std::vector<odb::Rect> placement_blockages_;
   std::vector<odb::Rect> io_blockages_;
 
   PinAccessDepthLimits pin_access_depth_limits_;
+  float tiny_cluster_max_number_of_std_cells_{0};
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -381,9 +387,7 @@ class Snapper
   void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
   int totalAlignedPins(const LayerDataList& layers_data_list,
                        const odb::dbTechLayerDir& direction,
-                       bool report_unaligned_pins = false);
-  void reportUnalignedPins(const LayerDataList& layers_data_list,
-                           const odb::dbTechLayerDir& direction);
+                       bool error_unaligned_right_way_on_grid = false);
 
   LayerDataList computeLayerDataList(
       const odb::dbTechLayerDir& target_direction);

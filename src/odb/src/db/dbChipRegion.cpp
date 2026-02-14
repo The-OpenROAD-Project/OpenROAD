@@ -7,13 +7,15 @@
 #include <string>
 
 #include "dbChipBump.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <cstdint>
+
 #include "dbChip.h"
 #include "dbChipInst.h"
 #include "dbChipRegionInst.h"
@@ -38,6 +40,12 @@ bool _dbChipRegion::operator==(const _dbChipRegion& rhs) const
   if (box_ != rhs.box_) {
     return false;
   }
+  if (z_min_ != rhs.z_min_) {
+    return false;
+  }
+  if (z_max_ != rhs.z_max_) {
+    return false;
+  }
   if (*chip_bump_tbl_ != *rhs.chip_bump_tbl_) {
     return false;
   }
@@ -53,6 +61,8 @@ bool _dbChipRegion::operator<(const _dbChipRegion& rhs) const
 _dbChipRegion::_dbChipRegion(_dbDatabase* db)
 {
   side_ = static_cast<uint8_t>(dbChipRegion::Side::FRONT);
+  z_min_ = 0;
+  z_max_ = 0;
   chip_bump_tbl_ = new dbTable<_dbChipBump>(
       db, this, (GetObjTbl_t) &_dbChipRegion::getObjectTable, dbChipBumpObj);
 }
@@ -63,6 +73,8 @@ dbIStream& operator>>(dbIStream& stream, _dbChipRegion& obj)
   stream >> obj.side_;
   stream >> obj.layer_;
   stream >> obj.box_;
+  stream >> obj.z_min_;
+  stream >> obj.z_max_;
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_bump_tbl_;
   }
@@ -75,6 +87,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbChipRegion& obj)
   stream << obj.side_;
   stream << obj.layer_;
   stream << obj.box_;
+  stream << obj.z_min_;
+  stream << obj.z_max_;
   stream << *obj.chip_bump_tbl_;
   return stream;
 }
@@ -141,16 +155,9 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 Cuboid dbChipRegion::getCuboid() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
-  Rect box = obj->box_;
-  int z = 0;
-  if (getSide() == dbChipRegion::Side::FRONT) {
-    z = getChip()->getThickness();
-  } else if (getSide() == dbChipRegion::Side::BACK) {
-    z = 0;
-  } else {
-    z = getChip()->getThickness() / 2;
-  }
-  return Cuboid(box.xMin(), box.yMin(), z, box.xMax(), box.yMax(), z);
+  const Rect& box = obj->box_;
+  return Cuboid(
+      box.xMin(), box.yMin(), obj->z_min_, box.xMax(), box.yMax(), obj->z_max_);
 }
 
 dbChip* dbChipRegion::getChip() const
@@ -169,13 +176,17 @@ dbTechLayer* dbChipRegion::getLayer() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   dbChip* chip = (dbChip*) obj->getOwner();
-  if (chip->getBlock() == nullptr || chip->getBlock()->getTech() == nullptr
-      || obj->layer_ == 0) {
+
+  dbTech* tech = chip->getTech();
+  if (tech == nullptr) {
     return nullptr;
   }
+  dbTechLayer* layer = nullptr;
+  if (obj->layer_ != 0) {
+    layer = dbTechLayer::getTechLayer(tech, obj->layer_);
+  }
 
-  _dbTech* tech = (_dbTech*) chip->getBlock()->getTech();
-  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
+  return layer;
 }
 
 dbChipRegion* dbChipRegion::create(dbChip* chip,
@@ -190,15 +201,7 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   _dbChip* _chip = (_dbChip*) chip;
   utl::Logger* logger = _chip->getImpl()->getLogger();
   if (layer != nullptr) {
-    if (chip->getBlock() == nullptr) {
-      logger->error(
-          utl::ODB,
-          508,
-          "Cannot create chip region {} for chip {} because chip has no block",
-          name,
-          chip->getName());
-    }
-    if (chip->getBlock()->getTech() != layer->getTech()) {
+    if (chip->getTech() != layer->getTech()) {
       logger->error(utl::ODB,
                     509,
                     "Cannot create chip region {} layer {} is not in the same "
@@ -216,7 +219,6 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
         name,
         chip->getName());
   }
-  _dbTechLayer* _layer = (_dbTechLayer*) layer;
 
   // Create a new chip region
   _dbChipRegion* chip_region = _chip->chip_region_tbl_->create();
@@ -224,8 +226,20 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
   // Initialize the chip region
   chip_region->name_ = name;
   chip_region->side_ = static_cast<uint8_t>(side);
-  chip_region->layer_ = (_layer != nullptr) ? _layer->getOID() : 0;
+  chip_region->layer_ = (layer != nullptr) ? layer->getImpl()->getOID() : 0;
   chip_region->box_ = Rect();  // Initialize with empty rectangle
+
+  const int chip_thickness = chip->getThickness();
+  if (side == dbChipRegion::Side::FRONT) {
+    chip_region->z_min_ = chip_thickness;
+    chip_region->z_max_ = chip_thickness;
+  } else if (side == dbChipRegion::Side::BACK) {
+    chip_region->z_min_ = 0;
+    chip_region->z_max_ = 0;
+  } else {
+    chip_region->z_min_ = 0;
+    chip_region->z_max_ = chip_thickness;
+  }
 
   return (dbChipRegion*) chip_region;
 }

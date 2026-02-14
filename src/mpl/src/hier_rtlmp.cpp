@@ -111,20 +111,22 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setHaloWidth(int halo_width)
+void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
 {
-  tree_->halo_width = halo_width;
-}
-
-void HierRTLMP::setHaloHeight(int halo_height)
-{
-  tree_->halo_height = halo_height;
+  tree_->default_halo = {.width = halo_width, .height = halo_height};
 }
 
 void HierRTLMP::setGuidanceRegions(
     const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
 {
   guides_ = guidance_regions;
+}
+
+void HierRTLMP::setMacroHalo(odb::dbInst* macro,
+                             int halo_width,
+                             int halo_height)
+{
+  macro_to_halo_[macro] = {.width = halo_width, .height = halo_height};
 }
 
 // Options related to clustering
@@ -162,12 +164,7 @@ void HierRTLMP::setLargeNetThreshold(int large_net_threshold)
 
 void HierRTLMP::setTargetUtil(float target_util)
 {
-  target_util_ = target_util;
-}
-
-void HierRTLMP::setTargetDeadSpace(float target_dead_space)
-{
-  target_dead_space_ = target_dead_space;
+  target_utilization_ = target_util;
 }
 
 void HierRTLMP::setMinAR(float min_ar)
@@ -252,6 +249,11 @@ void HierRTLMP::run()
 void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
+  clustering_engine_ = std::make_unique<ClusteringEngine>(
+      block_, network_, logger_, tritonpart_, graphics_.get());
+
+  // Set target structure
+  clustering_engine_->setTree(tree_.get());
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -266,6 +268,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
+  clustering_engine_->setHalos(macro_to_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -285,7 +288,26 @@ void HierRTLMP::runHierarchicalMacroPlacement()
   }
 
   adjustMacroBlockageWeight();
+  tiny_cluster_max_number_of_std_cells_
+      = computeTinyClusterMaxNumberOfStdCells();
   placeChildren(tree_->root.get());
+}
+
+int HierRTLMP::computeTinyClusterMaxNumberOfStdCells() const
+{
+  const float tiny_cluster_ratio = 0.001;
+  const int max_number_of_std_cells
+      = tiny_cluster_ratio * block_->getInsts().size();
+
+  debugPrint(
+      logger_,
+      MPL,
+      "fine_shaping",
+      1,
+      "Std cell clusters with less than {} cells will be considered tiny.",
+      max_number_of_std_cells);
+
+  return max_number_of_std_cells;
 }
 
 void HierRTLMP::resetSAParameters()
@@ -635,240 +657,65 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   std::vector<HardMacro*> hard_macros = cluster->getHardMacros();
-  TilingSet tilings_set;
+  int number_of_macros = hard_macros.size();
+  int macro_width = hard_macros.front()->getWidth();
+  int macro_height = hard_macros.front()->getHeight();
 
-  if (hard_macros.size() == 1) {
-    int width = hard_macros[0]->getWidth();
-    int height = hard_macros[0]->getHeight();
+  TilingList tilings = generateTilingsForMacroCluster(
+      macro_width, macro_height, number_of_macros);
 
-    TilingList tilings;
-    tilings.emplace_back(width, height);
-    cluster->setTilings(tilings);
-
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               1,
-               "{} has only one macro, set tiling according to macro with halo",
-               cluster->getName());
-    return;
+  if (tilings.empty()) {
+    tilings = generateTilingsForMacroCluster(
+        macro_width, macro_height, number_of_macros + 1);
   }
 
-  if (cluster->isArrayOfInterconnectedMacros()) {
-    setTightPackingTilings(cluster);
-    return;
-  }
-
-  if (graphics_) {
-    graphics_->setCurrentCluster(cluster);
-  }
-
-  // otherwise call simulated annealing to determine tilings
-  // set the action probabilities
-  const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
-                           + exchange_swap_prob_;
-
-  const odb::Rect outline(
-      0, 0, tree_->root->getWidth(), tree_->root->getHeight());
-
-  // update macros
-  std::vector<HardMacro> macros;
-  macros.reserve(hard_macros.size());
-  for (auto& macro : hard_macros) {
-    macros.push_back(*macro);
-  }
-  int num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 10)
-                                 ? macros.size()
-                                 : num_perturb_per_step_ / 10;
-  if (cluster->getParent() == nullptr) {
-    num_perturb_per_step = (macros.size() > num_perturb_per_step_ / 5)
-                               ? macros.size()
-                               : num_perturb_per_step_ / 5;
-  }
-
-  // To generate different macro tilings, we vary the outline constraints
-  // we first vary the outline width while keeping outline_height fixed
-  // Then we vary the outline height while keeping outline_width fixed
-  // We vary the outline of cluster to generate different tilings
-  std::vector<float> vary_factor_list{1.0};
-  float vary_step = 1.0 / num_runs_;  // change the outline by at most halfly
-  for (int i = 1; i < num_runs_; i++) {
-    vary_factor_list.push_back(1.0 - i * vary_step);
-  }
-  int remaining_runs = num_runs_;
-  int run_id = 0;
-  while (remaining_runs > 0) {
-    HardSAVector sa_batch;
-    const int run_thread
-        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-    for (int i = 0; i < run_thread; i++) {
-      const odb::Rect new_outline(
-          0, 0, outline.dx() * vary_factor_list[run_id++], outline.dy());
-      if (graphics_) {
-        graphics_->setOutline(new_outline);
-      }
-      std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(tree_.get(),
-                                              new_outline,
-                                              macros,
-                                              shaping_core_weights_,
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_ + run_id,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
-      sa_batch.push_back(std::move(sa));
-    }
-    if (sa_batch.size() == 1) {
-      runSA<SACoreHardMacro>(sa_batch[0].get());
-    } else {
-      // multi threads
-      std::vector<std::thread> threads;
-      threads.reserve(sa_batch.size());
-      for (auto& sa : sa_batch) {
-        threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
-      }
-      for (auto& th : threads) {
-        th.join();
-      }
-    }
-    // add macro tilings
-    for (auto& sa : sa_batch) {
-      if (sa->fitsIn(outline)) {
-        tilings_set.insert({sa->getWidth(), sa->getHeight()});
-      }
-    }
-    remaining_runs -= run_thread;
-  }
-  // change the outline height while keeping outline width fixed
-  remaining_runs = num_runs_;
-  run_id = 0;
-  while (remaining_runs > 0) {
-    HardSAVector sa_batch;
-    const int run_thread
-        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
-    for (int i = 0; i < run_thread; i++) {
-      const odb::Rect new_outline(
-          0, 0, outline.dx(), outline.dy() * vary_factor_list[run_id++]);
-      if (graphics_) {
-        graphics_->setOutline(new_outline);
-      }
-      std::unique_ptr<SACoreHardMacro> sa
-          = std::make_unique<SACoreHardMacro>(tree_.get(),
-                                              new_outline,
-                                              macros,
-                                              shaping_core_weights_,
-                                              pos_swap_prob_ / action_sum,
-                                              neg_swap_prob_ / action_sum,
-                                              double_swap_prob_ / action_sum,
-                                              exchange_swap_prob_ / action_sum,
-                                              init_prob_,
-                                              max_num_step_,
-                                              num_perturb_per_step,
-                                              random_seed_ + run_id,
-                                              graphics_.get(),
-                                              logger_,
-                                              block_);
-      sa_batch.push_back(std::move(sa));
-    }
-    if (sa_batch.size() == 1) {
-      runSA<SACoreHardMacro>(sa_batch[0].get());
-    } else {
-      // multi threads
-      std::vector<std::thread> threads;
-      threads.reserve(sa_batch.size());
-      for (auto& sa : sa_batch) {
-        threads.emplace_back(runSA<SACoreHardMacro>, sa.get());
-      }
-      for (auto& th : threads) {
-        th.join();
-      }
-    }
-    // add macro tilings
-    for (auto& sa : sa_batch) {
-      if (sa->fitsIn(outline)) {
-        tilings_set.insert({sa->getWidth(), sa->getHeight()});
-      }
-    }
-    remaining_runs -= run_thread;
-  }
-
-  if (tilings_set.empty()) {
+  if (tilings.empty()) {
     logger_->error(MPL,
                    4,
-                   "No valid tilings for hard macro cluster: {}",
-                   cluster->getName());
+                   "Unable to fit cluster {} within outline. Macro height: {}, "
+                   "width: {}, number of macros: {}.",
+                   cluster->getName(),
+                   macro_width,
+                   macro_height,
+                   number_of_macros);
   }
 
-  TilingList tilings_list(tilings_set.begin(), tilings_set.end());
-  std::ranges::sort(tilings_list, isAreaSmaller);
+  cluster->setTilings(tilings);
 
-  for (auto& tiling : tilings_list) {
-    debugPrint(logger_,
-               MPL,
-               "coarse_shaping",
-               2,
-               "width: {}, height: {}",
-               tiling.width(),
-               tiling.height());
-  }
-
-  // we only keep the minimum area tiling since all the macros has the same size
-  // later this can be relaxed.  But this may cause problems because the
-  // minimizing the wirelength may leave holes near the boundary
-  TilingList new_tilings_list;
-  float first_tiling_area = tilings_list.front().area();
-  for (auto& tiling : tilings_list) {
-    if (tiling.area() <= first_tiling_area) {
-      new_tilings_list.push_back(tiling);
+  if (logger_->debugCheck(MPL, "coarse_shaping", 2)) {
+    std::string line = "Tiling for hard cluster " + cluster->getName()
+                       + " with " + std::to_string(number_of_macros)
+                       + " macros.\n";
+    for (auto& tiling : tilings) {
+      line += " < " + std::to_string(tiling.width()) + " , ";
+      line += std::to_string(tiling.height()) + " >  ";
     }
+    line += "\n";
+    debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
   }
-  tilings_list = std::move(new_tilings_list);
-  cluster->setTilings(tilings_list);
-
-  std::string line = "Tiling for hard cluster " + cluster->getName() + "  ";
-  for (auto& tiling : tilings_list) {
-    line += " < " + std::to_string(tiling.width()) + " , ";
-    line += std::to_string(tiling.height()) + " >  ";
-  }
-  line += "\n";
-  debugPrint(logger_, MPL, "coarse_shaping", 2, "{}", line);
 }
 
-// Used only for arrays of interconnected macros.
-void HierRTLMP::setTightPackingTilings(Cluster* macro_array)
+TilingList HierRTLMP::generateTilingsForMacroCluster(int macro_width,
+                                                     int macro_height,
+                                                     int number_of_macros)
 {
   TilingList tight_packing_tilings;
-
-  int num_macro = macro_array->getNumMacro();
-  float macro_width = macro_array->getHardMacros().front()->getWidth();
-  float macro_height = macro_array->getHardMacros().front()->getHeight();
-
   const odb::Rect outline = tree_->root->getBBox();
 
-  int columns = 0;
-  for (int rows = 1; rows < std::sqrt(num_macro) + 1; rows++) {
-    if (num_macro % rows == 0) {
-      columns = num_macro / rows;
+  int rows = 0;
+  for (int cols = 1; cols <= number_of_macros; cols++) {
+    if (number_of_macros % cols == 0) {
+      rows = number_of_macros / cols;
 
-      // We don't consider tilings for right angle rotation orientations,
-      // because they're not allowed in our macro placer.
-      // Tiling needs to fit inside outline
-      if (columns * macro_width <= outline.dx()
+      if (cols * macro_width <= outline.dx()
           && rows * macro_height <= outline.dy()) {
-        tight_packing_tilings.emplace_back(columns * macro_width,
+        tight_packing_tilings.emplace_back(cols * macro_width,
                                            rows * macro_height);
       }
     }
   }
 
-  macro_array->setTilings(tight_packing_tilings);
+  return tight_packing_tilings;
 }
 
 void HierRTLMP::searchAvailableRegionsForUnconstrainedPins()
@@ -927,7 +774,7 @@ void HierRTLMP::computePinAccessDepthLimits()
 {
   const odb::Rect die = block_->getDieArea();
 
-  constexpr float max_depth_proportion = 0.20;
+  constexpr float max_depth_proportion = 0.10;
   pin_access_depth_limits_.x.max = max_depth_proportion * die.dx();
   pin_access_depth_limits_.y.max = max_depth_proportion * die.dy();
 
@@ -982,7 +829,7 @@ void HierRTLMP::createBlockagesForIOBundles()
   for (Cluster* io_bundle : io_bundles) {
     const float number_of_ios
         = static_cast<float>(clustering_engine_->getNumberOfIOs(io_bundle));
-    const float io_density_factor = number_of_ios / total_fixed_ios;
+    const float io_density_factor = 1.0 + (number_of_ios / total_fixed_ios);
     const int depth = base_depth * io_density_factor;
     const odb::Rect rect = io_bundle->getBBox();
     const odb::Line line = rectToLine(block_, rect, logger_);
@@ -1083,7 +930,7 @@ void HierRTLMP::createBlockagesForConstraintRegions()
         = clustering_engine_->getNumberOfIOs(cluster_of_unplaced_ios);
 
     const float io_density_factor
-        = cluster_number_of_ios / static_cast<float>(total_ios);
+        = 1.0 + (cluster_number_of_ios / static_cast<float>(total_ios));
     const int depth = base_depth * io_density_factor;
 
     const odb::Rect region_rect = cluster_of_unplaced_ios->getBBox();
@@ -1297,6 +1144,18 @@ void HierRTLMP::mergeNets(BundledNetList& nets)
   nets = std::move(merged_nets);
 }
 
+void HierRTLMP::setMacroClustersShapes(
+    std::vector<SoftMacro>& soft_macros) const
+{
+  for (SoftMacro& soft_macro : soft_macros) {
+    if (soft_macro.isMacroCluster() && !soft_macro.isFixed()) {
+      Cluster* cluster = soft_macro.getCluster();
+      const TilingList& tilings = cluster->getTilings();
+      soft_macro.setShapes(tilings);
+    }
+  }
+}
+
 // Recommendation from the original implementation:
 // For single level, increase macro blockage weight to
 // half of the outline weight.
@@ -1455,113 +1314,45 @@ void HierRTLMP::placeChildren(Cluster* parent)
     writeNetFile(file_name_prefix, macros, nets);
   }
 
-  // The sum of probabilities should be equal to 1.0.
+  setMacroClustersShapes(macros);
+
+  // The sum of probabilities should be 1.
   const float action_sum = pos_swap_prob_ + neg_swap_prob_ + double_swap_prob_
                            + exchange_swap_prob_ + resize_prob_;
-
-  // In our implementation, target_util and target_dead_space are different
-  // target_util is used to determine the utilization for MixedCluster
-  // target_dead_space is used to determine the utilization for
-  // StandardCellCluster We vary the target utilization to generate different
-  // tilings
-
-  // In our implementation, the utilization can be larger than 1.
-  std::vector<float> target_utils(num_target_util_);
-  for (int i = 0; i < num_target_util_; i++) {
-    target_utils[i] = target_util_ + (i * target_util_step_);
-  }
-
-  // In our implementation, the target_dead_space should be less than 1.0.
-  // The larger the target dead space, the higher the utilization.
-  std::vector<float> target_dead_spaces;
-  for (int i = 0; i < num_target_dead_space_; i++) {
-    if (target_dead_space_ + i * target_dead_space_step_ < 1.0) {
-      target_dead_spaces.push_back(target_dead_space_
-                                   + (i * target_dead_space_step_));
-    }
-  }
-
-  // Since target_util and target_dead_space are independent variables
-  // the combination should be (target_util, target_dead_space_list)
-  // target util has higher priority than target_dead_space
-  std::vector<float> target_util_list;
-  std::vector<float> target_dead_space_list;
-  for (auto& target_util : target_utils) {
-    for (auto& target_dead_space : target_dead_spaces) {
-      target_util_list.push_back(target_util);
-      target_dead_space_list.push_back(target_dead_space);
-    }
-  }
 
   // The number of perturbations in each step should be larger than the
   // number of macros
   const int num_perturb_per_step
       = std::max(static_cast<int>(macros.size()), num_perturb_per_step_);
 
-  int remaining_runs = target_util_list.size();
+  const int total_number_of_runs = 10;
+  std::vector<float> utilization_list
+      = computeUtilizationList(total_number_of_runs);
+  int remaining_runs = total_number_of_runs;
   int run_id = 0;
 
-  SACoreSoftMacro* best_sa = nullptr;
-  SoftSAVector sa_containers;  // The owner of SACore objects
-
-  // To give consistency across threads we check the solutions
-  // at a fixed interval independent of how many threads we are using.
-  const int check_interval = 10;
-  int begin_check = 0;
-  int end_check = std::min(check_interval, remaining_runs);
-  float best_cost = std::numeric_limits<float>::max();
-
+  std::unique_ptr<SACoreSoftMacro> best_sa;
   while (remaining_runs > 0) {
     SoftSAVector sa_batch;
-    const int run_thread
+    const int number_of_attempts
         = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
 
-    for (int i = 0; i < run_thread; i++) {
-      std::vector<SoftMacro> shaped_macros = macros;  // copy for multithread
-
-      const float target_util = target_util_list[run_id];
-      const float target_dead_space = target_dead_space_list[run_id++];
-
-      debugPrint(logger_,
-                 MPL,
-                 "fine_shaping",
-                 1,
-                 "Starting adjusting shapes for children of {}. target_util = "
-                 "{}, target_dead_space = {}",
-                 parent->getName(),
-                 target_util,
-                 target_dead_space);
-
-      if (!runFineShaping(parent,
-                          shaped_macros,
-                          soft_macro_id_map,
-                          target_util,
-                          target_dead_space)) {
-        debugPrint(logger_,
-                   MPL,
-                   "fine_shaping",
-                   1,
-                   "Cannot generate feasible shapes for children of {}, sa_id: "
-                   "{}, target_util: {}, target_dead_space: {}",
-                   parent->getName(),
-                   run_id,
-                   target_util,
-                   target_dead_space);
+    for (int i = 0; i < number_of_attempts; i++) {
+      const float utilization = utilization_list[run_id++];
+      if (!validUtilization(utilization, outline, macros)) {
         continue;
       }
-      debugPrint(logger_,
-                 MPL,
-                 "fine_shaping",
-                 1,
-                 "Finished generating shapes for children of cluster {}",
-                 parent->getName());
-      // Note that all the probabilities are normalized to the summation of 1.0.
-      // Note that the weight are not necessaries summarized to 1.0, i.e., not
-      // normalized.
+
+      std::vector<SoftMacro> inflated_macros
+          = applyUtilization(utilization, outline, macros);
+
+      const bool single_array_single_std_cell_cluster
+          = singleArraySingleStdCellCluster(macros);
+
       std::unique_ptr<SACoreSoftMacro> sa
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
-                                              shaped_macros,
+                                              inflated_macros,
                                               placement_core_weights_,
                                               cluster_placement_weights_,
                                               notch_h_th_,
@@ -1583,10 +1374,13 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
+      if (single_array_single_std_cell_cluster) {
+        sa->forceCentralization();
+      }
       sa_batch.push_back(std::move(sa));
     }
 
-    if (graphics_) {
+    if (graphics_ && !sa_batch.empty()) {
       runSA<SACoreSoftMacro>(sa_batch.front().get());
     } else {
       std::vector<std::thread> threads;
@@ -1599,49 +1393,56 @@ void HierRTLMP::placeChildren(Cluster* parent)
       }
     }
 
-    remaining_runs -= run_thread;
+    const bool first_batch = remaining_runs == total_number_of_runs;
+    remaining_runs -= number_of_attempts;
 
-    for (auto& sa : sa_batch) {
-      sa_containers.push_back(std::move(sa));
-    }
+    for (int sa_index = 0; sa_index < sa_batch.size(); ++sa_index) {
+      auto& sa = sa_batch[sa_index];
 
-    while (sa_containers.size() >= end_check) {
-      while (begin_check < end_check) {
-        auto& sa = sa_containers[begin_check];
-        if (sa->isValid() && sa->getNormCost() < best_cost) {
-          best_cost = sa->getNormCost();
-          best_sa = sa.get();
+      if (sa->isValid()) {
+        if (!first_batch || sa != sa_batch.front()) {
+          const int utilization_index
+              = (run_id - number_of_attempts) + sa_index;
+
+          logger_->warn(MPL,
+                        55,
+                        "Couldn't find a solution for the specified "
+                        "utilization. The utilization was adjusted to {}.",
+                        utilization_list[utilization_index]);
         }
-        ++begin_check;
-      }
-      // add early stop mechanism
-      if (best_sa || remaining_runs == 0) {
+
+        best_sa = std::move(sa);
         break;
       }
-      end_check = begin_check + std::min(check_interval, remaining_runs);
     }
+
     if (best_sa) {
       break;
     }
   }
 
   if (!best_sa) {
-    logger_->error(MPL, 40, "Failed on cluster {}", parent->getName());
+    logger_->error(MPL,
+                   40,
+                   "Annealing engine failed to find a valid solution.\nCluster "
+                   "Id: {}\n Cluster Name: {}",
+                   parent->getId(),
+                   parent->getName());
   }
 
   best_sa->fillDeadSpace();
 
-  std::vector<SoftMacro> shaped_macros = best_sa->getMacros();
+  std::vector<SoftMacro> placed_macros = best_sa->getMacros();
 
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 1)) {
     logger_->report("Cluster Placement Summary");
-    printPlacementResult(parent, outline, best_sa);
+    printPlacementResult(parent, outline, best_sa.get());
 
-    writeFloorplanFile(file_name_prefix, shaped_macros);
-    writeCostFile(file_name_prefix, best_sa);
+    writeFloorplanFile(file_name_prefix, placed_macros);
+    writeCostFile(file_name_prefix, best_sa.get());
   }
 
-  updateChildrenShapesAndLocations(parent, shaped_macros, soft_macro_id_map);
+  updateChildrenShapesAndLocations(parent, placed_macros, soft_macro_id_map);
   updateChildrenRealLocation(parent, outline.xMin(), outline.yMin());
 
   for (auto& cluster : parent->getChildren()) {
@@ -1649,6 +1450,30 @@ void HierRTLMP::placeChildren(Cluster* parent)
   }
 
   clustering_engine_->updateInstancesAssociation(parent);
+}
+
+std::vector<float> HierRTLMP::computeUtilizationList(
+    const float total_number_of_runs) const
+{
+  std::vector<float> utilization_list(total_number_of_runs);
+  const float maximum_utilization = 1.0;
+  const float exponential_ratio
+      = std::pow(maximum_utilization / target_utilization_,
+                 (1.0 / (total_number_of_runs - 1.0)));
+
+  for (int i = 0; i < total_number_of_runs; i++) {
+    utilization_list[i] = target_utilization_ * std::pow(exponential_ratio, i);
+
+    debugPrint(logger_,
+               MPL,
+               "fine_shaping",
+               1,
+               "Utilization List[{}] = {}",
+               i,
+               utilization_list[i]);
+  }
+
+  return utilization_list;
 }
 
 // Find the area of blockages that are inside the outline.
@@ -1779,216 +1604,161 @@ void HierRTLMP::createFixedTerminal(Cluster* cluster,
       location, cluster->getName(), width, height, terminal_cluster);
 }
 
-// Determine the shape of each cluster based on target utilization
-// and target dead space.  In constrast to all previous works, we
-// use two parameters: target utilization, target_dead_space.
-// This is the trick part.  During our experiements, we found that keeping
-// the same utilization of standard-cell clusters and mixed cluster will make
-// SA very difficult to find a feasible solution.  With different utilization,
-// SA can more easily find the solution. In our method, the target_utilization
-// is used to determine the bloating ratio for mixed cluster, the
-// target_dead_space is used to determine the bloating ratio for standard-cell
-// cluster. The target utilization is based on tiling results we calculated
-// before. The tiling results (which only consider the contribution of hard
-// macros) will give us very close starting point.
-bool HierRTLMP::runFineShaping(Cluster* parent,
-                               std::vector<SoftMacro>& macros,
-                               std::map<std::string, int>& soft_macro_id_map,
-                               float target_util,
-                               float target_dead_space)
+bool HierRTLMP::validUtilization(
+    const float utilization,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& soft_macros) const
 {
-  const int outline_width = parent->getWidth();
-  const int outline_height = parent->getHeight();
-  const int64_t outline_area
-      = outline_width * static_cast<int64_t>(outline_height);
-
-  int64_t pin_access_area = 0;
+  int64_t blocked_area = 0;
   int64_t std_cell_cluster_area = 0;
-  int64_t std_cell_mixed_cluster_area = 0;
+  int64_t mixed_cluster_std_cell_area = 0;
   int64_t macro_cluster_area = 0;
-  int64_t macro_mixed_cluster_area = 0;
-  // add the macro area for blockages, pin access and so on
-  for (auto& macro : macros) {
-    if (macro.getCluster() == nullptr) {
-      pin_access_area += macro.getArea();  // get the physical-only area
-    }
-  }
+  int64_t mixed_cluster_macro_area = 0;
 
-  for (auto& cluster : parent->getChildren()) {
+  for (const SoftMacro& soft_macro : soft_macros) {
+    Cluster* cluster = soft_macro.getCluster();
+
+    if (!cluster) {
+      blocked_area += soft_macro.getArea();  // Physical area.
+      continue;
+    }
+
     if (cluster->isIOCluster()) {
       continue;
     }
 
     if (cluster->isFixedMacro()) {
-      macro_cluster_area += cluster->getArea();
+      // Here we need to use the area of the SoftMacro in order to cover the
+      // cases in which the fixed macro is partially inside the outline.
+      macro_cluster_area += soft_macro.getArea();
       continue;
     }
 
-    if (cluster->getClusterType() == StdCellCluster) {
-      std_cell_cluster_area += cluster->getStdCellArea();
-    } else if (cluster->getClusterType() == HardMacroCluster) {
-      TilingList valid_tilings;
-      for (auto& tiling : cluster->getTilings()) {
-        if (tiling.width() < outline_width
-            && tiling.height() < outline_height) {
-          valid_tilings.push_back(tiling);
-        }
+    switch (cluster->getClusterType()) {
+      case StdCellCluster: {
+        std_cell_cluster_area += cluster->getStdCellArea();
+        break;
       }
-
-      if (valid_tilings.empty()) {
-        logger_->error(MPL,
-                       7,
-                       "Not enough space in cluster: {} for "
-                       "child hard macro cluster: {}",
-                       parent->getName(),
-                       cluster->getName());
+      case HardMacroCluster: {
+        const TilingList& tilings = cluster->getTilings();
+        macro_cluster_area += tilings.front().area();
+        break;
       }
-
-      macro_cluster_area += valid_tilings.front().area();
-      cluster->setTilings(valid_tilings);
-    } else {  // mixed cluster
-      std_cell_mixed_cluster_area += cluster->getStdCellArea();
-      TilingList valid_tilings;
-      for (auto& tiling : cluster->getTilings()) {
-        if (tiling.width() < outline_width
-            && tiling.height() < outline_height) {
-          valid_tilings.push_back(tiling);
-        }
+      case MixedCluster: {
+        const TilingList& tilings = cluster->getTilings();
+        mixed_cluster_macro_area += tilings.front().area();
+        mixed_cluster_std_cell_area += cluster->getStdCellArea();
       }
-
-      if (valid_tilings.empty()) {
-        logger_->error(MPL,
-                       8,
-                       "Not enough space in cluster: {} for "
-                       "child mixed cluster: {}",
-                       parent->getName(),
-                       cluster->getName());
-      }
-
-      macro_mixed_cluster_area += valid_tilings.front().area();
-      cluster->setTilings(valid_tilings);
-    }  // end for cluster type
+    }
   }
 
-  // check how much available space to inflate for mixed cluster
-  const float min_target_util
-      = std_cell_mixed_cluster_area
-        / static_cast<float>(outline_area - pin_access_area - macro_cluster_area
-                             - macro_mixed_cluster_area);
+  const int64_t hard_area
+      = blocked_area + macro_cluster_area + mixed_cluster_macro_area;
+  const int64_t available_area = outline.area() - hard_area;
 
-  target_util = std::max(target_util, min_target_util);
-  // calculate the std_cell_util
-  const int64_t avail_space
-      = outline_area
-        - (pin_access_area + macro_cluster_area + macro_mixed_cluster_area
-           + std_cell_mixed_cluster_area / target_util);
-  const float std_cell_util
-      = std_cell_cluster_area / (avail_space * (1 - target_dead_space));
+  const int64_t soft_area = std_cell_cluster_area + mixed_cluster_std_cell_area;
+  const int64_t inflated_soft_area = soft_area / utilization;
 
-  // shape clusters
-  if ((std_cell_cluster_area > 0 && avail_space < 0)
-      || (std_cell_mixed_cluster_area > 0 && min_target_util <= 0.0)) {
-    debugPrint(logger_,
-               MPL,
-               "fine_shaping",
-               1,
-               "No valid solution for children of {} area {} "
-               "std_cell_area = {} avail_space = {} pa area = {} macro area {} "
-               "std_cell_mixed_area = {} min_target_util = {}",
-               parent->getName(),
-               outline_area,
-               std_cell_cluster_area,
-               avail_space,
-               pin_access_area,
-               macro_cluster_area,
-               std_cell_mixed_cluster_area,
-               min_target_util);
+  return inflated_soft_area < available_area;
+}
 
-    return false;
-  }
+std::vector<SoftMacro> HierRTLMP::applyUtilization(
+    const float utilization,
+    const odb::Rect& outline,
+    const std::vector<SoftMacro>& original_soft_macros) const
+{
+  std::vector<SoftMacro> new_soft_macros = original_soft_macros;
+  const bool single_array_single_std_cell_cluster
+      = singleArraySingleStdCellCluster(original_soft_macros);
 
-  // set the shape for each macro
-  for (auto& cluster : parent->getChildren()) {
-    if (cluster->isIOCluster() || cluster->isFixedMacro()) {
+  for (SoftMacro& new_soft_macro : new_soft_macros) {
+    Cluster* cluster = new_soft_macro.getCluster();
+
+    if (!cluster || cluster->isIOCluster() || cluster->isFixedMacro()) {
       continue;
     }
-    if (cluster->getClusterType() == StdCellCluster) {
+
+    if (new_soft_macro.isStdCellCluster()) {
       int64_t area = cluster->getArea();
       int width = std::sqrt(area);
       int height = width;
 
-      const float dust_threshold
-          = 1.0 / macros.size();  // check if the cluster is the dust cluster
-      const int dust_std_cell = 100;
-
-      const float width_check
-          = block_->dbuToMicrons(width) / block_->dbuToMicrons(outline_width);
-      const float height_check
-          = block_->dbuToMicrons(height) / block_->dbuToMicrons(outline_height);
-
-      if ((width_check <= dust_threshold && height_check <= dust_threshold)
-          || cluster->getNumStdCell() <= dust_std_cell) {
-        width = block_->micronsToDbu(1e-3);
-        height = block_->micronsToDbu(1e-3);
+      if (cluster->getNumStdCell() <= tiny_cluster_max_number_of_std_cells_
+          || single_array_single_std_cell_cluster) {
+        const int negligible_width = 1;
+        width = negligible_width;
+        height = width;
         area = width * static_cast<int64_t>(height);
       } else {
-        area = cluster->getArea() / std_cell_util;
+        area = cluster->getArea() / utilization;
         width = std::sqrt(area / min_ar_);
       }
-      IntervalList width_intervals
-          = {Interval(area / width /* min */, width /* max */)};
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
-                                                              area);
-    } else if (cluster->getClusterType() == HardMacroCluster) {
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(
-          cluster->getTilings());
-      debugPrint(logger_,
-                 MPL,
-                 "fine_shaping",
-                 2,
-                 "hard_macro_cluster : {}",
-                 cluster->getName());
-      for (auto& tiling : cluster->getTilings()) {
-        debugPrint(logger_,
-                   MPL,
-                   "fine_shaping",
-                   2,
-                   "    ( {} , {} ) ",
-                   tiling.width(),
-                   tiling.height());
-      }
-    } else {  // Mixed cluster
-      const TilingList& tilings = cluster->getTilings();
-      IntervalList width_intervals;
-      float area = tilings.back().area();
-      area += cluster->getStdCellArea() / target_util;
-      for (auto& tiling : tilings) {
-        if (tiling.area() <= area) {
-          width_intervals.emplace_back(tiling.width(), area / tiling.height());
-        }
-      }
 
-      debugPrint(logger_,
-                 MPL,
-                 "fine_shaping",
-                 2,
-                 "name:  {} area: {}",
-                 cluster->getName(),
-                 area);
+      const int minimum_width = area / width;
+      const int maximum_width = width;
+      Interval width_interval(minimum_width, maximum_width);
 
-      debugPrint(logger_, MPL, "fine_shaping", 2, "width_list :  ");
-      for (auto& width_interval : width_intervals) {
-        debugPrint(logger_,
-                   MPL,
-                   "fine_shaping",
-                   2,
-                   " [  {} {}  ] ",
-                   width_interval.min,
-                   width_interval.max);
-      }
-      macros[soft_macro_id_map[cluster->getName()]].setShapes(width_intervals,
-                                                              area);
+      new_soft_macro.setShapes({width_interval}, area);
     }
+
+    if (new_soft_macro.isMixedCluster()) {
+      const TilingList& tilings = cluster->getTilings();
+      int64_t macro_area = tilings.back().area();
+      int64_t inflated_area
+          = macro_area + (cluster->getStdCellArea() / utilization);
+
+      IntervalList width_intervals;
+      for (const Tiling& tiling : tilings) {
+        const int minimum_width = tiling.width();
+        const int maximum_width = inflated_area / tiling.height();
+        width_intervals.emplace_back(minimum_width, maximum_width);
+      }
+
+      new_soft_macro.setShapes(width_intervals, inflated_area);
+    }
+  }
+
+  if (logger_->debugCheck(MPL, "fine_shaping", 1)) {
+    reportShapeCurves(new_soft_macros);
+  }
+
+  return new_soft_macros;
+}
+
+bool HierRTLMP::singleArraySingleStdCellCluster(
+    const std::vector<SoftMacro>& soft_macros) const
+{
+  int number_of_macro_arrays = 0;
+  int number_of_std_clusters = 0;
+
+  for (const SoftMacro& soft_macro : soft_macros) {
+    if (soft_macro.isMixedCluster()) {
+      return false;
+    }
+
+    Cluster* cluster = soft_macro.getCluster();
+
+    if (!cluster || cluster->isIOCluster()) {
+      continue;
+    }
+
+    if (soft_macro.isMacroCluster()) {
+      if (!cluster->isArrayOfInterconnectedMacros()) {
+        return false;
+      }
+
+      ++number_of_macro_arrays;
+    } else if (soft_macro.isStdCellCluster()) {
+      ++number_of_std_clusters;
+    }
+
+    if (number_of_macro_arrays > 1 || number_of_std_clusters > 1) {
+      return false;
+    }
+  }
+
+  if (number_of_macro_arrays == 0 || number_of_std_clusters == 0) {
+    return false;
   }
 
   return true;
@@ -2755,6 +2525,16 @@ odb::Rect HierRTLMP::getRect(Boundary boundary) const
   return boundary_rect;
 }
 
+void HierRTLMP::reportShapeCurves(
+    const std::vector<SoftMacro>& soft_macros) const
+{
+  logger_->report("\nReporting Shape Curves\n");
+
+  for (const SoftMacro& soft_macro : soft_macros) {
+    soft_macro.reportShapeCurve(logger_);
+  }
+}
+
 template <typename SACore>
 void HierRTLMP::printPlacementResult(Cluster* parent,
                                      const odb::Rect& outline,
@@ -3324,16 +3104,24 @@ void Snapper::attemptSnapToExtraPatterns(
     }
   }
 
-  if (best_snapped_pins != total_pins) {
-    reportUnalignedPins(layers_data_list, target_direction);
-  }
-
   snapPinToPosition(snap_pin, positions[best_index], target_direction);
+
+  if (best_snapped_pins != total_pins) {
+    totalAlignedPins(layers_data_list, target_direction, true);
+
+    logger_->warn(MPL,
+                  2,
+                  "Could not align all pins of the macro {} to the track-grid. "
+                  "{} out of {} pins were aligned.",
+                  inst_->getName(),
+                  best_snapped_pins,
+                  total_pins);
+  }
 }
 
 int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
                               const odb::dbTechLayerDir& direction,
-                              bool report_unaligned_pins)
+                              bool error_unaligned_right_way_on_grid)
 {
   int pins_aligned = 0;
 
@@ -3353,22 +3141,14 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
         pins_aligned++;
         i++;
       } else if (pin_centers[i] < data.available_positions[j]) {
-        if (report_unaligned_pins) {
-          if (data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
-            logger_->error(MPL,
-                           5,
-                           "Couldn't align pin {} from the RightWayOnGridOnly "
-                           "layer {} with the track-grid.",
-                           data.pins[i]->getName(),
-                           data.track_grid->getTechLayer()->getName());
-          } else {
-            logger_->warn(
-                MPL,
-                2,
-                "Couldn't align pin {} from layer {} to the track-grid.",
-                data.pins[i]->getName(),
-                data.track_grid->getTechLayer()->getName());
-          }
+        if (error_unaligned_right_way_on_grid
+            && data.track_grid->getTechLayer()->isRightWayOnGridOnly()) {
+          logger_->error(MPL,
+                         5,
+                         "Couldn't align pin {} from the RightWayOnGridOnly "
+                         "layer {} with the track-grid.",
+                         data.pins[i]->getName(),
+                         data.track_grid->getTechLayer()->getName());
         }
 
         i++;
@@ -3378,12 +3158,6 @@ int Snapper::totalAlignedPins(const LayerDataList& layers_data_list,
     }
   }
   return pins_aligned;
-}
-
-void Snapper::reportUnalignedPins(const LayerDataList& layers_data_list,
-                                  const odb::dbTechLayerDir& direction)
-{
-  totalAlignedPins(layers_data_list, direction, true);
 }
 
 void Snapper::alignWithManufacturingGrid(int& origin)

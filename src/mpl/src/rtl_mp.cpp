@@ -54,7 +54,6 @@ bool MacroPlacer::place(const int num_threads,
                         const float notch_weight,
                         const float macro_blockage_weight,
                         const float target_util,
-                        const float target_dead_space,
                         const float min_ar,
                         const char* report_directory,
                         const bool keep_clustering_data)
@@ -66,8 +65,7 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setMaxNumLevel(max_num_level);
   hier_rtlmp_->setClusterSizeRatioPerLevel(coarsening_ratio);
   hier_rtlmp_->setLargeNetThreshold(large_net_threshold);
-  hier_rtlmp_->setHaloWidth(halo_width);
-  hier_rtlmp_->setHaloHeight(halo_height);
+  hier_rtlmp_->setDefaultHalo(halo_width, halo_height);
   hier_rtlmp_->setGlobalFence(global_fence);
   hier_rtlmp_->setAreaWeight(area_weight);
   hier_rtlmp_->setOutlineWeight(outline_weight);
@@ -78,12 +76,10 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setNotchWeight(notch_weight);
   hier_rtlmp_->setMacroBlockageWeight(macro_blockage_weight);
   hier_rtlmp_->setTargetUtil(target_util);
-  hier_rtlmp_->setTargetDeadSpace(target_dead_space);
   hier_rtlmp_->setMinAR(min_ar);
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();
@@ -219,6 +215,13 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
   }
 
   guidance_regions_[macro] = region;
+}
+
+void MacroPlacer::setMacroHalo(odb::dbInst* macro,
+                               int halo_width,
+                               int halo_height)
+{
+  hier_rtlmp_->setMacroHalo(macro, halo_width, halo_height);
 }
 
 void MacroPlacer::setMacroPlacementFile(const std::string& file_name)

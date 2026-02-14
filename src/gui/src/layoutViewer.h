@@ -131,6 +131,7 @@ class LayoutViewer : public QWidget
 
   odb::dbBlock* getBlock() const { return chip_->getBlock(); }
   odb::dbChip* getChip() const { return chip_; }
+  std::map<odb::dbChipInst*, odb::dbChip*> getChips() const;
   void setLogger(utl::Logger* logger);
   qreal getPixelsPerDBU() { return pixels_per_dbu_; }
   void setScroller(LayoutScroll* scroller);
@@ -167,6 +168,9 @@ class LayoutViewer : public QWidget
   bool isCursorInsideViewport();
   void updateCursorCoordinates();
 
+  // gets the size of the diameter of the biggest circle that fits the view
+  int getVisibleDiameter();
+
  signals:
   // indicates the current location of the mouse
   void location(int x, int y);
@@ -182,6 +186,8 @@ class LayoutViewer : public QWidget
   void addRuler(int x0, int y0, int x1, int y1);
 
   void focusNetsChanged();
+
+  void viewUpdated();
 
  public slots:
   // zoom in the layout, keeping the current center_
@@ -204,6 +210,9 @@ class LayoutViewer : public QWidget
 
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);
+
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
 
   // indicates a chip has been loaded
   void chipLoaded(odb::dbChip* chip);
@@ -280,7 +289,8 @@ class LayoutViewer : public QWidget
   void setPixelsPerDBU(qreal pixels_per_dbu);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
-  void selectViaShapesAt(odb::dbTechLayer* cut_layer,
+  void selectViaShapesAt(odb::dbBlock* block,
+                         odb::dbTechLayer* cut_layer,
                          odb::dbTechLayer* select_layer,
                          const odb::Rect& region,
                          int shape_limit,
@@ -291,7 +301,8 @@ class LayoutViewer : public QWidget
 
   qreal computePixelsPerDBU(const QSize& size, const odb::Rect& dbu_rect);
   odb::Rect getBounds() const;
-  odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
+  odb::Rect getPaddedRect(const odb::Rect& rect,
+                          double factor = defaultZoomMargin);
 
   bool hasDesign() const;
   int getDbuPerMicron() const;
@@ -313,10 +324,11 @@ class LayoutViewer : public QWidget
 
   using Edge = std::pair<odb::Point, odb::Point>;
   // search for nearest edge to point
-  std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt,
+  std::pair<Edge, bool> searchNearestEdge(odb::Point pt,
                                           bool horizontal,
                                           bool vertical);
   void searchNearestViaEdge(
+      odb::dbBlock* block,
       odb::dbTechLayer* cut_layer,
       odb::dbTechLayer* search_layer,
       const odb::Rect& search_line,
@@ -435,6 +447,7 @@ class LayoutViewer : public QWidget
   std::string loading_indicator_;
 
   static constexpr qreal kZoomScaleFactor = 1.2;
+  static constexpr double defaultZoomMargin = 0.05;
 
   // parameters used to animate the selection of objects
   static constexpr int kAnimationRepeats = 6;

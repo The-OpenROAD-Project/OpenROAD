@@ -8,18 +8,22 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "MplObserver.h"
+#include "boost/polygon/polygon.hpp"
+#include "boost/polygon/polygon_90_set_data.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "par/PartitionMgr.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -50,8 +54,6 @@ void ClusteringEngine::run()
 
   createRoot();
   setBaseThresholds();
-
-  createDataFlow();
   createIOClusters();
 
   if (design_metrics_->getNumStdCell() == 0) {
@@ -82,6 +84,12 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
   tree_ = tree;
 }
 
+void ClusteringEngine::setHalos(
+    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+{
+  macro_to_halo_ = macro_to_halo;
+}
+
 // Check if macro placement is both needed and feasible.
 // Also report some design data relevant for the user and
 // initialize the tree with data from the design.
@@ -89,6 +97,12 @@ void ClusteringEngine::init()
 {
   setDieArea();
   setFloorplanShape();
+  createHardMacros();
+
+  if (!movableCellsFitInMacroPlacementArea()) {
+    logger_->error(
+        MPL, 65, "The movable cells do not fit in the macro placement area.");
+  }
 
   design_metrics_ = computeModuleMetrics(block_->getTopModule());
 
@@ -117,6 +131,53 @@ void ClusteringEngine::init()
   reportDesignData();
 }
 
+bool ClusteringEngine::movableCellsFitInMacroPlacementArea() const
+{
+  const odb::Rect& macro_placement_area = tree_->floorplan_shape;
+
+  int64_t occupied_area = 0;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    const odb::Rect bbox = inst->getBBox()->getBox();
+
+    if (inst->isFixed()) {
+      // Note that we can handle fixed cells outside the macro placement area.
+      // Also, it may exist macros such as physical markers that can be
+      // partially inside the core so we need to compute the intersection.
+      odb::Rect intersection;
+      bbox.intersection(macro_placement_area, intersection);
+      occupied_area += intersection.area();
+      continue;
+    }
+
+    if (inst->isBlock()) {
+      occupied_area += tree_->maps.inst_to_hard.at(inst)->getArea();
+    } else {
+      occupied_area += bbox.area();
+    }
+  }
+
+  namespace gtl = boost::polygon;
+  using gtl::operators::operator+=;
+  using PolygonSet = gtl::polygon_90_set_data<int>;
+
+  PolygonSet polygons;
+  for (odb::dbBlockage* blockage : block_->getBlockages()) {
+    const odb::Rect bbox = blockage->getBBox()->getBox();
+    odb::Rect intersection;
+    bbox.intersection(macro_placement_area, intersection);
+    polygons += intersection;
+  }
+
+  std::vector<odb::Rect> blockages_without_overlap;
+  polygons.get_rectangles(blockages_without_overlap);
+
+  for (const odb::Rect& blockage : blockages_without_overlap) {
+    occupied_area += blockage.area();
+  }
+
+  return occupied_area <= macro_placement_area.area();
+}
+
 // Note: The die area's dimensions will be used inside
 // SA Core when computing the wirelength in a situation in which
 // the target cluster is a cluster of unplaced IOs.
@@ -130,10 +191,8 @@ int64_t ClusteringEngine::computeMacroWithHaloArea(
 {
   int64_t macro_with_halo_area = 0;
   for (odb::dbInst* unfixed_macro : unfixed_macros) {
-    odb::dbMaster* master = unfixed_macro->getMaster();
-    const int width = master->getWidth() + (2 * tree_->halo_width);
-    const int height = master->getHeight() + (2 * tree_->halo_height);
-    macro_with_halo_area += (width * static_cast<int64_t>(height));
+    macro_with_halo_area
+        += tree_->maps.inst_to_hard.at(unfixed_macro)->getArea();
   }
   return macro_with_halo_area;
 }
@@ -161,42 +220,10 @@ Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
   unsigned int num_macro = 0;
   int64_t macro_area = 0;
 
-  const odb::Rect& core = block_->getCoreArea();
-
   for (odb::dbInst* inst : module->getInsts()) {
     if (inst->isBlock()) {
       num_macro += 1;
       macro_area += computeArea(inst);
-
-      if (inst->isFixed()) {
-        logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
-
-        if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
-          ignorable_macros_.insert(inst);
-          logger_->info(MPL,
-                        63,
-                        "{} is outside the macro placement area and will be "
-                        "ignored.",
-                        inst->getName());
-          continue;
-        }
-
-        tree_->has_fixed_macros = true;
-      }
-
-      auto macro = std::make_unique<HardMacro>(
-          inst, tree_->halo_width, tree_->halo_height);
-
-      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
-        logger_->error(
-            MPL,
-            6,
-            "Found macro that does not fit in the core.\nName: {}\n{}",
-            inst->getName(),
-            generateMacroAndCoreDimensionsTable(macro.get(), core));
-      }
-
-      tree_->maps.inst_to_hard[inst] = std::move(macro);
     } else if (inst->isFixed() && !inst->getMaster()->isCover()
                && inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
       logger_->error(MPL,
@@ -285,8 +312,8 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->halo_width),
-      block_->dbuToMicrons(tree_->halo_height),
+      block_->dbuToMicrons(tree_->default_halo.width),
+      block_->dbuToMicrons(tree_->default_halo.height),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -621,232 +648,16 @@ void ClusteringEngine::createIOPadCluster(odb::dbInst* pad)
   tree_->root->addChild(std::move(cluster));
 }
 
-// Dataflow is used to improve quality of macro placement.
-// Here we model each std cell instance, IO pin and macro pin as vertices.
-void ClusteringEngine::createDataFlow()
+void ClusteringEngine::addIgnorableMacro(odb::dbInst* inst)
 {
-  if (design_metrics_->getNumStdCell() != 0 && !stdCellsHaveLiberty()) {
-    logger_->warn(
-        MPL,
-        14,
-        "No Liberty data found for std cells. Continuing without dataflow.");
-    data_connections_.is_empty = true;
-    return;
+  if (!inst->isBlock()) {
+    logger_->error(MPL,
+                   7,
+                   "Trying to add non-macro instance {} to ignorable macros.",
+                   inst->getName());
   }
 
-  // Create vertices IDs.
-  const VerticesMaps vertices_maps = computeVertices();
-  const int num_of_vertices = static_cast<int>(vertices_maps.stoppers.size());
-
-  const DataFlowHypergraph hypergraph = computeHypergraph(num_of_vertices);
-
-  // Traverse hypergraph to build dataflow.
-  for (auto [src, src_pin] : vertices_maps.id_to_bterm) {
-    int idx = 0;
-    std::vector<bool> visited(num_of_vertices, false);
-    std::vector<std::set<odb::dbInst*>> insts(max_num_of_hops_);
-    dataFlowDFSIOPin(
-        src, idx, vertices_maps, hypergraph, insts, visited, false);
-    dataFlowDFSIOPin(src, idx, vertices_maps, hypergraph, insts, visited, true);
-
-    data_connections_.io_and_regs.emplace_back(src_pin, insts);
-  }
-
-  for (auto [src, src_pin] : vertices_maps.id_to_macro_pin) {
-    int idx = 0;
-    std::vector<bool> visited(num_of_vertices, false);
-    std::vector<std::set<odb::dbInst*>> std_cells(max_num_of_hops_);
-    std::vector<std::set<odb::dbInst*>> macros(max_num_of_hops_);
-    dataFlowDFSMacroPin(
-        src, idx, vertices_maps, hypergraph, std_cells, macros, visited, false);
-    dataFlowDFSMacroPin(
-        src, idx, vertices_maps, hypergraph, std_cells, macros, visited, true);
-
-    data_connections_.macro_pins_and_regs.emplace_back(src_pin, std_cells);
-    data_connections_.macro_pins_and_macros.emplace_back(src_pin, macros);
-  }
-}
-
-// Here we assume that there are std cells in the design!
-bool ClusteringEngine::stdCellsHaveLiberty()
-{
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (isIgnoredInst(inst) || inst->isBlock()) {
-      continue;
-    }
-
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (liberty_cell) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-VerticesMaps ClusteringEngine::computeVertices()
-{
-  VerticesMaps vertices_maps;
-
-  if (tree_->io_pads.empty()) {
-    computeIOVertices(vertices_maps);
-  } else {
-    computePadVertices(vertices_maps);
-  }
-
-  computeStdCellVertices(vertices_maps);
-  computeMacroPinVertices(vertices_maps);
-
-  debugPrint(logger_,
-             MPL,
-             "multilevel_autoclustering",
-             1,
-             "Number of vertices: {}",
-             vertices_maps.stoppers.size());
-
-  return vertices_maps;
-}
-
-void ClusteringEngine::computeIOVertices(VerticesMaps& vertices_maps)
-{
-  for (odb::dbBTerm* bterm : block_->getBTerms()) {
-    const int id = static_cast<int>(vertices_maps.stoppers.size());
-    odb::dbIntProperty::create(bterm, "vertex_id", id);
-    vertices_maps.id_to_bterm[id] = bterm;
-    vertices_maps.stoppers.push_back(true);
-  }
-}
-
-void ClusteringEngine::computePadVertices(VerticesMaps& vertices_maps)
-{
-  for (odb::dbInst* pad : tree_->io_pads) {
-    const int id = static_cast<int>(vertices_maps.stoppers.size());
-    odb::dbIntProperty::create(pad, "vertex_id", id);
-    vertices_maps.id_to_std_cell[id] = pad;
-    vertices_maps.stoppers.push_back(true);
-  }
-}
-
-void ClusteringEngine::computeStdCellVertices(VerticesMaps& vertices_maps)
-{
-  for (odb::dbInst* inst : block_->getInsts()) {
-    if (isIgnoredInst(inst) || inst->isBlock()) {
-      continue;
-    }
-
-    const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    if (!liberty_cell) {
-      continue;
-    }
-
-    const int id = static_cast<int>(vertices_maps.stoppers.size());
-
-    // Registers are stoppers.
-    odb::dbIntProperty::create(inst, "vertex_id", id);
-    vertices_maps.id_to_std_cell[id] = inst;
-
-    if (liberty_cell->hasSequentials()) {
-      vertices_maps.stoppers.push_back(true);
-    } else {
-      vertices_maps.stoppers.push_back(false);
-    }
-  }
-}
-
-void ClusteringEngine::computeMacroPinVertices(VerticesMaps& vertices_maps)
-{
-  for (auto& [macro, hard_macro] : tree_->maps.inst_to_hard) {
-    for (odb::dbITerm* pin : macro->getITerms()) {
-      if (pin->getSigType() != odb::dbSigType::SIGNAL
-          && pin->getSigType() != odb::dbSigType::CLOCK) {
-        continue;
-      }
-
-      const int id = static_cast<int>(vertices_maps.stoppers.size());
-      odb::dbIntProperty::create(pin, "vertex_id", id);
-      vertices_maps.id_to_macro_pin[id] = pin;
-      vertices_maps.stoppers.push_back(true);
-    }
-  }
-}
-
-DataFlowHypergraph ClusteringEngine::computeHypergraph(
-    const int num_of_vertices)
-{
-  DataFlowHypergraph graph;
-  graph.vertices.resize(num_of_vertices);
-  graph.backward_vertices.resize(num_of_vertices);
-
-  for (odb::dbNet* net : block_->getNets()) {
-    if (!isValidNet(net)) {
-      continue;
-    }
-
-    int driver_id = -1;
-    std::set<int> loads_id;
-    bool net_has_stdcell_without_liberty = false;
-    for (odb::dbITerm* iterm : net->getITerms()) {
-      odb::dbInst* inst = iterm->getInst();
-      int vertex_id = -1;
-
-      if (inst->isBlock()) {
-        vertex_id = odb::dbIntProperty::find(iterm, "vertex_id")->getValue();
-      } else if (inst->isPad()) {
-        vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
-      } else {
-        odb::dbIntProperty* int_prop
-            = odb::dbIntProperty::find(inst, "vertex_id");
-
-        // Std cells without liberty data are not marked as vertices
-        if (int_prop) {
-          vertex_id = int_prop->getValue();
-        } else {
-          net_has_stdcell_without_liberty = true;
-          break;
-        }
-      }
-
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        driver_id = vertex_id;
-      } else {
-        loads_id.insert(vertex_id);
-      }
-    }
-
-    if (net_has_stdcell_without_liberty) {
-      continue;
-    }
-
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int vertex_id
-          = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        driver_id = vertex_id;
-      } else {
-        loads_id.insert(vertex_id);
-      }
-    }
-
-    // Skip high fanout nets or nets that do not have valid driver or loads
-    if (driver_id < 0 || loads_id.empty()
-        || loads_id.size() > tree_->large_net_threshold) {
-      continue;
-    }
-
-    std::vector<int> hyperedge{driver_id};
-    for (auto& load : loads_id) {
-      if (load != driver_id) {
-        hyperedge.push_back(load);
-      }
-    }
-    graph.vertices[driver_id].push_back(graph.hyperedges.size());
-    for (int i = 1; i < hyperedge.size(); i++) {
-      graph.backward_vertices[hyperedge[i]].push_back(graph.hyperedges.size());
-    }
-    graph.hyperedges.push_back(std::move(hyperedge));
-  }
-
-  return graph;
+  ignorable_macros_.insert(inst);
 }
 
 bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
@@ -860,218 +671,12 @@ bool ClusteringEngine::isIgnoredInst(odb::dbInst* inst)
   return master->isPad() || master->isCover() || master->isEndCap();
 }
 
-// Forward or Backward DFS search to find sequential paths from/to IO pins based
-// on hop count to macro pins
-void ClusteringEngine::dataFlowDFSIOPin(
-    const int parent,
-    int idx,
-    const VerticesMaps& vertices_maps,
-    const DataFlowHypergraph& hypergraph,
-    std::vector<std::set<odb::dbInst*>>& insts,
-    std::vector<bool>& visited,
-    bool backward_search)
-{
-  visited[parent] = true;
-  if (vertices_maps.stoppers[parent]) {
-    if (parent < vertices_maps.id_to_bterm.size()) {
-      ;  // currently we do not consider IO pin to IO pin connection
-    } else if (parent < vertices_maps.id_to_bterm.size()
-                            + vertices_maps.id_to_std_cell.size()) {
-      insts[idx].insert(vertices_maps.id_to_std_cell.at(parent));
-    } else {
-      insts[idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
-    }
-    idx++;
-  }
-
-  if (idx >= max_num_of_hops_) {
-    return;
-  }
-
-  if (!backward_search) {
-    for (auto& hyperedge : hypergraph.vertices[parent]) {
-      for (auto& vertex : hypergraph.hyperedges[hyperedge]) {
-        // we do not consider pin to pin
-        if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-          continue;
-        }
-        dataFlowDFSIOPin(vertex,
-                         idx,
-                         vertices_maps,
-                         hypergraph,
-                         insts,
-                         visited,
-                         backward_search);
-      }
-    }
-  } else {
-    for (auto& hyperedge : hypergraph.backward_vertices[parent]) {
-      const int vertex
-          = hypergraph.hyperedges[hyperedge].front();  // driver vertex
-      // we do not consider pin to pin
-      if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-        continue;
-      }
-      dataFlowDFSIOPin(vertex,
-                       idx,
-                       vertices_maps,
-                       hypergraph,
-                       insts,
-                       visited,
-                       backward_search);
-    }
-  }
-}
-
-// Forward or Backward DFS search to find sequential paths between Macros based
-// on hop count
-void ClusteringEngine::dataFlowDFSMacroPin(
-    const int parent,
-    int idx,
-    const VerticesMaps& vertices_maps,
-    const DataFlowHypergraph& hypergraph,
-    std::vector<std::set<odb::dbInst*>>& std_cells,
-    std::vector<std::set<odb::dbInst*>>& macros,
-    std::vector<bool>& visited,
-    bool backward_search)
-{
-  visited[parent] = true;
-  if (vertices_maps.stoppers[parent]) {
-    if (parent < vertices_maps.id_to_bterm.size()) {
-      ;  // the connection between IO and macro pins have been considers
-    } else if (parent < vertices_maps.id_to_bterm.size()
-                            + vertices_maps.id_to_std_cell.size()) {
-      std_cells[idx].insert(vertices_maps.id_to_std_cell.at(parent));
-    } else {
-      macros[idx].insert(vertices_maps.id_to_macro_pin.at(parent)->getInst());
-    }
-    idx++;
-  }
-
-  if (idx >= max_num_of_hops_) {
-    return;
-  }
-
-  if (!backward_search) {
-    for (auto& hyperedge : hypergraph.vertices[parent]) {
-      for (auto& vertex : hypergraph.hyperedges[hyperedge]) {
-        // we do not consider pin to pin
-        if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-          continue;
-        }
-        dataFlowDFSMacroPin(vertex,
-                            idx,
-                            vertices_maps,
-                            hypergraph,
-                            std_cells,
-                            macros,
-                            visited,
-                            backward_search);
-      }
-    }
-  } else {
-    for (auto& hyperedge : hypergraph.backward_vertices[parent]) {
-      const int vertex = hypergraph.hyperedges[hyperedge].front();
-      // we do not consider pin to pin
-      if (visited[vertex] || vertex < vertices_maps.id_to_bterm.size()) {
-        continue;
-      }
-      dataFlowDFSMacroPin(vertex,
-                          idx,
-                          vertices_maps,
-                          hypergraph,
-                          std_cells,
-                          macros,
-                          visited,
-                          backward_search);
-    }
-  }
-}
-
-void ClusteringEngine::buildDataFlowConnections()
-{
-  if (data_connections_.is_empty) {
-    return;
-  }
-
-  // bterm, macros or ffs
-  for (const auto& [bterm, insts] : data_connections_.io_and_regs) {
-    const int driver_id = tree_->maps.bterm_to_cluster_id.at(bterm);
-    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
-
-    for (int hops = 0; hops < max_num_of_hops_; hops++) {
-      std::set<int> sink_clusters = computeSinks(insts[hops]);
-      const float conn_weight = computeConnWeight(hops);
-      for (const int sink_id : sink_clusters) {
-        if (driver_id != sink_id) {
-          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
-          connect(driver_cluster, sink_cluster, conn_weight);
-        }
-      }
-    }
-  }
-
-  // macros to ffs
-  for (const auto& [iterm, insts] : data_connections_.macro_pins_and_regs) {
-    const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
-    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
-
-    for (int hops = 0; hops < max_num_of_hops_; hops++) {
-      std::set<int> sink_clusters = computeSinks(insts[hops]);
-      const float conn_weight = computeConnWeight(hops);
-      for (const int sink_id : sink_clusters) {
-        if (driver_id != sink_id) {
-          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
-          connect(driver_cluster, sink_cluster, conn_weight);
-        }
-      }
-    }
-  }
-
-  // macros to macros
-  for (const auto& [iterm, insts] : data_connections_.macro_pins_and_macros) {
-    const int driver_id = tree_->maps.inst_to_cluster_id.at(iterm->getInst());
-    Cluster* driver_cluster = tree_->maps.id_to_cluster.at(driver_id);
-
-    for (int hops = 0; hops < max_num_of_hops_; hops++) {
-      std::set<int> sink_clusters = computeSinks(insts[hops]);
-      const float conn_weight = computeConnWeight(hops);
-      for (const int sink_id : sink_clusters) {
-        if (driver_id != sink_id) {
-          Cluster* sink_cluster = tree_->maps.id_to_cluster.at(sink_id);
-          connect(driver_cluster, sink_cluster, conn_weight);
-        }
-      }
-    }
-  }
-}
-
 void ClusteringEngine::connect(Cluster* a,
                                Cluster* b,
                                const float connection_weight) const
 {
   a->addConnection(b, connection_weight);
   b->addConnection(a, connection_weight);
-}
-
-float ClusteringEngine::computeConnWeight(const int hops)
-{
-  const float base_remoteness_factor = 2.0;
-  const float base_connection_weight = 1;
-  const float remoteness_factor = std::pow(base_remoteness_factor, hops);
-
-  return base_connection_weight / remoteness_factor;
-}
-
-std::set<int> ClusteringEngine::computeSinks(
-    const std::set<odb::dbInst*>& insts)
-{
-  std::set<int> sink_clusters;
-  for (auto& inst : insts) {
-    const int cluster_id = tree_->maps.inst_to_cluster_id.at(inst);
-    sink_clusters.insert(cluster_id);
-  }
-  return sink_clusters;
 }
 
 void ClusteringEngine::treatEachMacroAsSingleCluster()
@@ -1227,8 +832,7 @@ void ClusteringEngine::multilevelAutocluster(Cluster* parent)
   if (level_ == 0) {
     const int leaf_max_std_cell
         = tree_->base_max_std_cell
-          / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1)
-          * (1 + size_tolerance_);
+          / std::pow(tree_->cluster_size_ratio, tree_->max_level - 1);
     if (parent->getNumStdCell() < leaf_max_std_cell) {
       force_split_root = true;
       debugPrint(logger_,
@@ -1292,13 +896,6 @@ void ClusteringEngine::updateSizeThresholds()
   min_macro_ = tree_->base_min_macro / coarse_factor;
   max_std_cell_ = tree_->base_max_std_cell / coarse_factor;
   min_std_cell_ = tree_->base_min_std_cell / coarse_factor;
-
-  // We define the tolerance to improve the robustness of our hierarchical
-  // clustering
-  max_macro_ *= (1 + size_tolerance_);
-  min_macro_ *= (1 - size_tolerance_);
-  max_std_cell_ *= (1 + size_tolerance_);
-  min_std_cell_ *= (1 - size_tolerance_);
 
   if (min_macro_ <= 0) {
     min_macro_ = 1;
@@ -1476,13 +1073,14 @@ void ClusteringEngine::updateSubTree(Cluster* parent)
 
   parent->addChildren(std::move(children_clusters));
 
-  // When breaking large flat clusters, the children will
-  // be modified, so, we need to iterate them using indexes.
-  const UniqueClusterVector& new_children = parent->getChildren();
-  for (const auto& child : new_children) {
-    child->setParent(parent);
-    if (isLargeFlatCluster(child.get())) {
-      breakLargeFlatCluster(child.get());
+  // Note that use a copy of the current children's list in order to be
+  // able to use a range-based loop. That is needed, because the parent's
+  // children will change if a child of the list is broken.
+  std::vector<Cluster*> new_children = parent->getRawChildren();
+  for (Cluster* new_child : new_children) {
+    new_child->setParent(parent);
+    if (isLargeFlatCluster(new_child)) {
+      breakLargeFlatCluster(new_child);
     }
   }
 }
@@ -1987,7 +1585,6 @@ void ClusteringEngine::rebuildConnections()
 {
   clearConnections();
   buildNetListConnections();
-  buildDataFlowConnections();
 }
 
 void ClusteringEngine::clearConnections()
@@ -2433,6 +2030,67 @@ void ClusteringEngine::replaceByStdCellCluster(
   virtual_conn_clusters.push_back(mixed_leaf->getId());
 }
 
+std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
+    const HardMacro* hard_macro,
+    const odb::Rect& core) const
+{
+  std::string table;
+
+  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
+  table += fmt::format("\n-----------------------------------------");
+  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
+                       block_->dbuToMicrons(hard_macro->getWidth()),
+                       block_->dbuToMicrons(core.dx()));
+  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
+                       block_->dbuToMicrons(hard_macro->getHeight()),
+                       block_->dbuToMicrons(core.dy()));
+
+  return table;
+}
+
+// Creates the hard macros objects and inserts them in the tree map
+void ClusteringEngine::createHardMacros()
+{
+  const odb::Rect& core = block_->getCoreArea();
+
+  for (odb::dbInst* inst : block_->getInsts()) {
+    if (inst->isBlock()) {
+      if (inst->isFixed()) {
+        logger_->info(MPL, 62, "Found fixed macro {}.", inst->getName());
+
+        if (!inst->getBBox()->getBox().overlaps(tree_->floorplan_shape)) {
+          addIgnorableMacro(inst);
+          logger_->info(MPL,
+                        63,
+                        "{} is outside the macro placement area and will be "
+                        "ignored.",
+                        inst->getName());
+          continue;
+        }
+
+        tree_->has_fixed_macros = true;
+      }
+
+      HardMacro::Halo halo = macro_to_halo_.contains(inst)
+                                 ? macro_to_halo_.at(inst)
+                                 : tree_->default_halo;
+
+      auto macro = std::make_unique<HardMacro>(inst, halo);
+
+      if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
+        logger_->error(
+            MPL,
+            6,
+            "Found macro that does not fit in the core.\nName: {}\n{}",
+            inst->getName(),
+            generateMacroAndCoreDimensionsTable(macro.get(), core));
+      }
+
+      tree_->maps.inst_to_hard[inst] = std::move(macro);
+    }
+  }
+}
+
 // When placing the HardMacros of a macro cluster, we create temporary
 // internal macro clusters - one representing each HardMacro - so we
 // can use them to compute the connections with the fixed terminals.
@@ -2486,24 +2144,6 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
 }
 
 ///////////////////////////////////////////////
-
-std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
-    const HardMacro* hard_macro,
-    const odb::Rect& core) const
-{
-  std::string table;
-
-  table += fmt::format("\n          |   Macro + Halos   |   Core   ");
-  table += fmt::format("\n-----------------------------------------");
-  table += fmt::format("\n   Width  | {:>17.2f} | {:>8.2f}",
-                       block_->dbuToMicrons(hard_macro->getWidth()),
-                       block_->dbuToMicrons(core.dx()));
-  table += fmt::format("\n  Height  | {:>17.2f} | {:>8.2f}\n",
-                       block_->dbuToMicrons(hard_macro->getHeight()),
-                       block_->dbuToMicrons(core.dy()));
-
-  return table;
-}
 
 void ClusteringEngine::reportThresholds() const
 {

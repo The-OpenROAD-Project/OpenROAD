@@ -17,10 +17,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/drObj/drAccessPattern.h"
+#include "db/drObj/drFig.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGuide.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
@@ -1253,8 +1256,13 @@ void FlexDRWorker::initNet_term_helper(const frDesign* design,
       }
       dAp->setValidAccess(ap->getAccess());
       if (ap->hasAccess(frDirEnum::U)) {
+        // prefer UP via access over DOWN via access
         if (!(ap->getViaDefs().empty())) {
           dAp->setAccessViaDef(frDirEnum::U, &(ap->getViaDefs()));
+        }
+      } else if (ap->hasAccess(frDirEnum::D)) {
+        if (!(ap->getViaDefs().empty())) {
+          dAp->setAccessViaDef(frDirEnum::D, &(ap->getViaDefs()));
         }
       }
       if (getRouteBox().intersects(bp)) {
@@ -2034,7 +2042,8 @@ void FlexDRWorker::initMazeCost_ap()
           }
         }
 
-        if (ap->hasAccessViaDef(frDirEnum::U)) {
+        if (ap->hasAccessViaDef(frDirEnum::U)
+            || ap->hasAccessViaDef(frDirEnum::D)) {
           gridGraph_.setSVia(mi.x(), mi.y(), mi.z());
           apSVia_[mi] = ap.get();
         }
@@ -3015,6 +3024,8 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
           auto bterm = static_cast<frBTerm*>(obj);
           bool hasHorizontalAccess = false;
           bool hasVerticalAccess = false;
+          bool hasUpViaAccess = false;
+          bool hasDownViaAccess = false;
           for (const auto& pin : bterm->getPins()) {
             for (int i = 0; i < pin->getNumPinAccess(); i++) {
               const auto& pa = pin->getPinAccess(i);
@@ -3024,6 +3035,8 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
                 }
                 hasVerticalAccess |= ap->hasVertAccess();
                 hasHorizontalAccess |= ap->hasHorzAccess();
+                hasUpViaAccess |= ap->hasAccess(frDirEnum::U);
+                hasDownViaAccess |= ap->hasAccess(frDirEnum::D);
               }
             }
           }
@@ -3033,8 +3046,12 @@ void FlexDRWorker::initMazeCost_planarTerm(const frDesign* design)
           for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
             for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
               FlexMazeIdx mIdx(i, j, zIdx);
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
-              gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
+              if (!hasUpViaAccess) {
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::U);
+              }
+              if (!hasDownViaAccess) {
+                gridGraph_.setBlocked(i, j, zIdx, frDirEnum::D);
+              }
               if (isLayerHorz && hasHorizontalAccess) {
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::N);
                 gridGraph_.setBlocked(i, j, zIdx, frDirEnum::S);
@@ -3092,7 +3109,8 @@ void FlexDRWorker::initMazeCost_via_helper(drNet* net, bool isAddPathCost)
 
     drAccessPattern* minCostAP = nullptr;
     for (auto& ap : pin->getAccessPatterns()) {
-      if (ap->hasAccessViaDef(frDirEnum::U)) {
+      if (ap->hasAccessViaDef(frDirEnum::U)
+          || ap->hasAccessViaDef(frDirEnum::D)) {
         if (minCostAP == nullptr) {
           minCostAP = ap.get();
         }

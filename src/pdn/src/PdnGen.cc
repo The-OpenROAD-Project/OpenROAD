@@ -17,23 +17,26 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
+#include "shape.h"
 #include "sroute.h"
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 #include "via_repair.h"
 
 namespace pdn {
 
 using utl::Logger;
 
-PdnGen::PdnGen(dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
+PdnGen::PdnGen(odb::dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
 {
   sroute_ = std::make_unique<SRoute>(this, db, logger_);
 }
@@ -743,23 +746,6 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   for (auto& [net, swire] : net_map) {
     net->setSpecial();
-
-    // determine if unique and set WildConnected
-    bool appear_in_all_grids = true;
-    for (auto* domain : domains) {
-      for (const auto& grid : domain->getGrids()) {
-        const auto nets = grid->getNets();
-        if (std::ranges::find(nets, net) == nets.end()) {
-          appear_in_all_grids = false;
-        }
-      }
-    }
-
-    if (appear_in_all_grids) {
-      // should this be based on the global connect?
-      net->setWildConnected();
-    }
-
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 

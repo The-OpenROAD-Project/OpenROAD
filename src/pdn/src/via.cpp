@@ -25,6 +25,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -1965,6 +1966,10 @@ void ViaGenerator::determineRowsAndColumns(
           - 2 * std::max(bottom_min_enclosure.getY(), top_min_enclosure.getY());
     int max_cut_area = 0;
     for (auto* rule : getCutLayer()->getTechLayerArraySpacingRules()) {
+      if (rule->isParallelOverlap()) {
+        continue;
+      }
+
       if (!isCutClass(rule->getCutClass())) {
         continue;
       }
@@ -1996,7 +2001,7 @@ void ViaGenerator::determineRowsAndColumns(
                              top_min_enclosure.getX(),
                              cut_spacing_x + cut_width,
                              getMaxColumns());
-        // if long array allowed,  leave x alone
+        // if long array allowed, leave x alone
         x_cuts = rule->isLongArray() ? x_cuts : std::min(x_cuts, rule_cuts);
         int y_cuts = getCuts(height,
                              cut_height,

@@ -3,6 +3,7 @@
 
 #include "dbBlock.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 #include <unistd.h>
 
 #include <algorithm>
@@ -110,7 +111,6 @@
 #include "dbScanInst.h"
 #include "dbScanListScanInstItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechLayerRule.h"
@@ -174,7 +174,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   max_cap_node_id_ = 0;
   max_rseg_id_ = 0;
   max_cc_seg_id_ = 0;
-  min_routing_layer_ = 1;
+  min_routing_layer_ = 2;
   max_routing_layer_ = -1;
   min_layer_for_clock_ = -1;
   max_layer_for_clock_ = -2;
@@ -3932,13 +3932,30 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
 
 std::string dbBlock::makeNewModNetName(dbModule* parent,
                                        const char* base_name,
-                                       const dbNameUniquifyType& uniquify)
+                                       const dbNameUniquifyType& uniquify,
+                                       dbNet* corresponding_flat_net)
 {
-  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [parent](const char* name) {
-    return parent->getModNet(name) != nullptr
-           || parent->findModBTerm(name) != nullptr;
+  auto exists = [parent, this, corresponding_flat_net](const char* full_name) {
+    const char* base_name_ptr = getBaseName(full_name);
+    if (parent->getModNet(base_name_ptr)
+        || parent->findModBTerm(base_name_ptr)) {
+      return true;
+    }
+
+    // Internal flat net collision check (uses full hierarchical name)
+    // - Allow collision with the corresponding flat net (same logical net)
+    // - Collision with other internal flat nets is not allowed
+    dbNet* existing_net = findNet(full_name);
+    if (existing_net != nullptr && existing_net != corresponding_flat_net) {
+      if (existing_net->isInternalTo(parent)) {
+        return true;  // Collision with a different internal flat net
+      }
+    }
+
+    return false;
   };
+
+  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
   return block->makeNewName(parent->getModInst(),
                             base_name,
                             uniquify,

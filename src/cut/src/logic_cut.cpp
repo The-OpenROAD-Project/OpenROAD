@@ -3,6 +3,8 @@
 
 #include "cut/logic_cut.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +20,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
+#include "map/scl/sclLib.h"
+#include "misc/vec/vecPtr.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"

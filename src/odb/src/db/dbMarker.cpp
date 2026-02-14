@@ -10,6 +10,7 @@
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbITerm.h"
 #include "dbInst.h"
@@ -17,7 +18,6 @@
 #include "dbNet.h"
 #include "dbObstruction.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbVector.h"
@@ -634,6 +634,19 @@ std::string dbMarker::getName() const
       case dbChipInstObj:
         sources += static_cast<dbChipInst*>(src)->getName();
         break;
+      case dbChipConnObj: {
+        const dbChipConn* conn = static_cast<dbChipConn*>(src);
+        sources += fmt::format(
+            "{}:{}", conn->getParentChip()->getName(), conn->getName());
+        break;
+      }
+      case dbChipRegionInstObj: {
+        const dbChipRegionInst* region = static_cast<dbChipRegionInst*>(src);
+        sources += fmt::format("{}.regions.{}",
+                               region->getChipInst()->getName(),
+                               region->getChipRegion()->getName());
+        break;
+      }
       default:
         obj->getLogger()->error(
             utl::ODB, 290, "Unsupported object type: {}", src->getTypeName());

@@ -9,12 +9,13 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "debug_gui.h"
 #include "dpl/Opendp.h"
 #include "heatMap.h"
 #include "ir_network.h"
 #include "ir_solver.h"
+#include "node.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"

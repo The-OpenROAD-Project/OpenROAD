@@ -4,7 +4,6 @@
 #include "dbNet.h"
 
 #include <algorithm>
-#include <boost/container/small_vector.hpp>
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -16,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/container/small_vector.hpp"
 #include "dbBPin.h"
 #include "dbBTerm.h"
 #include "dbBTermItr.h"
@@ -46,7 +46,6 @@
 #include "dbSWire.h"
 #include "dbSWireItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechNonDefaultRule.h"
 #include "dbWire.h"
@@ -2350,10 +2349,6 @@ void dbNet::mergeNet(dbNet* in_net)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
-  for (auto callback : block->callbacks_) {
-    callback->inDbNetPreMerge(this, in_net);
-  }
-
   // 1. Connect all terminals of in_net to this net.
 
   // in_net->getITerms() returns a terminal iterator, and iterm->connect() can
@@ -2373,6 +2368,10 @@ void dbNet::mergeNet(dbNet* in_net)
                                                       bterms_set.end());
   for (dbBTerm* bterm : bterms) {
     bterm->connect(this);
+  }
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbNetPostMerge(this, in_net);
   }
 
   // 2. Destroy in_net
@@ -2648,6 +2647,7 @@ bool dbNet::isInternalTo(dbModule* module) const
 
 void dbNet::checkSanityModNetConsistency() const
 {
+  bool issued_warning = false;
   utl::Logger* logger = getImpl()->getLogger();
 
   // 1. Find all related dbModNets with this dbNet.
@@ -2688,6 +2688,7 @@ void dbNet::checkSanityModNetConsistency() const
       flat_iterms, hier_iterms, std::back_inserter(iterms_in_flat_only));
 
   if (iterms_in_flat_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  484,
                  "SanityCheck: dbNet '{}' has ITerms not present in its "
@@ -2703,6 +2704,7 @@ void dbNet::checkSanityModNetConsistency() const
       hier_iterms, flat_iterms, std::back_inserter(iterms_in_hier_only));
 
   if (iterms_in_hier_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  488,
                  "SanityCheck: dbNet '{}' is missing ITerms that are present "
@@ -2722,6 +2724,7 @@ void dbNet::checkSanityModNetConsistency() const
       flat_bterms, hier_bterms, std::back_inserter(bterms_in_flat_only));
 
   if (bterms_in_flat_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  486,
                  "SanityCheck: dbNet '{}' has BTerms not present in its "
@@ -2737,6 +2740,7 @@ void dbNet::checkSanityModNetConsistency() const
       hier_bterms, flat_bterms, std::back_inserter(bterms_in_hier_only));
 
   if (bterms_in_hier_only.empty() == false) {
+    issued_warning = true;
     logger->warn(utl::ODB,
                  490,
                  "SanityCheck: dbNet '{}' is missing BTerms that are present "
@@ -2745,9 +2749,14 @@ void dbNet::checkSanityModNetConsistency() const
     for (dbBTerm* bterm : bterms_in_hier_only) {
       logger->warn(utl::ODB,
                    491,
-                   "  - BTerm: {} (in hier, not in flat)",
+                   "  - BTerm: {} (in hier net, not in flat net)",
                    bterm->getName());
     }
+  }
+
+  // Print debug information
+  if (issued_warning) {
+    dump(true);
   }
 }
 

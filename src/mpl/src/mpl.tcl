@@ -24,7 +24,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -notch_weight notch_weight \
                                           -macro_blockage_weight macro_blockage_weight \
                                           -target_util   target_util \
-                                          -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -report_directory report_directory \
                                           -write_macro_placement file_name \
@@ -39,7 +38,7 @@ proc rtl_macro_placer { args } {
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
          -macro_blockage_weight -target_util \
-         -target_dead_space -min_ar \
+         -min_ar \
          -report_directory \
          -write_macro_placement } \
     flags {-keep_clustering_data}
@@ -75,10 +74,9 @@ proc rtl_macro_placer { args } {
   set guidance_weight 10.0
   set fence_weight 10.0
   set boundary_weight 50.0
-  set notch_weight 10.0
+  set notch_weight 50.0
   set macro_blockage_weight 10.0
   set target_util 0.25
-  set target_dead_space 0.05
   set min_ar 0.33
   set report_directory "hier_rtlmp"
 
@@ -159,9 +157,6 @@ proc rtl_macro_placer { args } {
   if { [info exists keys(-target_util)] } {
     set target_util $keys(-target_util)
   }
-  if { [info exists keys(-target_dead_space)] } {
-    set target_dead_space $keys(-target_dead_space)
-  }
   if { [info exists keys(-min_ar)] } {
     set min_ar $keys(-min_ar)
   }
@@ -191,7 +186,6 @@ proc rtl_macro_placer { args } {
       $guidance_weight $fence_weight $boundary_weight \
       $notch_weight $macro_blockage_weight \
       $target_util \
-      $target_dead_space \
       $min_ar \
       $report_directory \
       [info exists flags(-keep_clustering_data)]]
@@ -284,6 +278,39 @@ proc set_macro_guidance_region { args } {
   }
 
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
+}
+
+sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
+                                        -halo halo }
+proc set_macro_halo { args } {
+  sta::parse_key_args "set_macro_halo" args \
+    keys { -macro_name -halo } flags {}
+
+  sta::check_argc_eq0 "set_macro_halo" $args
+
+  if { [info exists keys(-macro_name)] } {
+    set macro_name $keys(-macro_name)
+  } else {
+    utl::error MPL 48 "-macro_name is required."
+  }
+
+  set macro [mpl::parse_macro_name "set_macro_halo" $macro_name]
+
+  if { [info exists keys(-halo)] } {
+    set halo $keys(-halo)
+  } else {
+    utl::error MPL 38 "-halo is required."
+  }
+
+  if { [llength $halo] != 2 } {
+    utl::error MPL 54 "-halo must be a list of 2 values."
+  }
+
+  lassign $halo width height
+  set width $width
+  set height $height
+
+  mpl::set_macro_halo $macro $width $height
 }
 
 namespace eval mpl {

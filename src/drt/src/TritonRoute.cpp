@@ -23,12 +23,14 @@
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
+#include "distributed/RoutingJobDescription.h"
 #include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
@@ -696,19 +698,19 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size,
-                     offset,
-                     mazeEndIter,
-                     workerDRCCost,
-                     workerMarkerCost,
-                     workerFixedShapeCost,
-                     workerMarkerDecay,
-                     getMode(ripupMode),
-                     followGuide});
+  FlexDR::SearchRepairArgs args = {.size = size,
+                                   .offset = offset,
+                                   .mazeEndIter = mazeEndIter,
+                                   .workerDRCCost = workerDRCCost,
+                                   .workerMarkerCost = workerMarkerCost,
+                                   .workerFixedShapeCost = workerFixedShapeCost,
+                                   .workerMarkerDecay = workerMarkerDecay,
+                                   .ripupMode = getMode(ripupMode),
+                                   .followGuide = followGuide};
+  dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
-
 void TritonRoute::endFR()
 {
   if (router_cfg_->SINGLE_STEP_DR) {
