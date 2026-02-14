@@ -98,6 +98,12 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/l
   sky130_fd_io__top_gpiov2
 [WARNING IFP-0028] Core area lower left (250.000, 250.000) snapped to (250.240, 250.240).
 [INFO IFP-0001] Added 1723 rows of 6712 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 3588.000 5188.000 ) um
+[INFO IFP-0101] Core BBox: ( 250.240 250.240 ) ( 3337.760 4936.800 ) um
+[INFO IFP-0102] Core area:                     14469847.731 um^2
+[INFO IFP-0103] Total instances area:           1188049.550 um^2
+[INFO IFP-0104] Effective utilization:                0.082
+[INFO IFP-0105] Number of instances:                     67
 [INFO PAD-0116] Creating terminal for clock on met5 at (988.200um, 32.990um) - (1050.800um, 95.440um)
 [INFO PAD-0116] Creating terminal for flash_clk on met5 at (1805.200um, 32.990um) - (1867.800um, 95.440um)
 [INFO PAD-0116] Creating terminal for flash_csb on met5 at (1531.200um, 32.990um) - (1593.800um, 95.440um)
