@@ -2,6 +2,13 @@
 [INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
 [WARNING ORD-2011] LEF master MOCK_SINGLE has no liberty cell.
 [WARNING ORD-2011] LEF master MOCK_DOUBLE has no liberty cell.
+[INFO IFP-0107] Defining die area using utilization: 30.00% and aspect ratio: 0.5.
 [INFO IFP-0001] Added 1 rows of 34 site DoubleHeightSite.
 [INFO IFP-0001] Added 2 rows of 34 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) (  6.525  3.260 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) (  6.460  2.800 ) um
+[INFO IFP-0102] Core area:                           18.088 um^2
+[INFO IFP-0103] Total instances area:                 6.384 um^2
+[INFO IFP-0104] Effective utilization:                0.353
+[INFO IFP-0105] Number of instances:                      4
 No differences found.

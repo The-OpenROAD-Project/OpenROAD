@@ -12,6 +12,9 @@ cmake_policy(SET CMP0086 NEW)
 # Allows <PackageName>_ROOT to be used
 cmake_policy(SET CMP0074 NEW)
 
+# Allows <PACKAGENAME>_ROOT in find_package
+cmake_policy(SET CMP0144 NEW)
+
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
 
