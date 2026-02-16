@@ -806,7 +806,7 @@ void Gui::saveImage(const std::string& filename,
     save_cmds += "unset ::gui::display_settings\n";
     // end with hide to return
     save_cmds += "gui::hide";
-    showGui(save_cmds, false);
+    showGui(Interpreter::Tcl, save_cmds, false);
   } else {
     // save current display settings and apply new
     main_window->getControls()->save();
@@ -1481,7 +1481,10 @@ void Gui::hideGui()
   main_window->exit();
 }
 
-void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
+void Gui::showGui(Interpreter interpreter,
+                  const std::string& cmds,
+                  bool interactive,
+                  bool load_settings)
 {
   if (enabled()) {
     logger_->warn(utl::GUI, 8, "GUI already active.");
@@ -1492,7 +1495,13 @@ void Gui::showGui(const std::string& cmds, bool interactive, bool load_settings)
   // passing in cmd_argc and cmd_argv to meet Qt application requirement for
   // arguments nullptr for tcl interp to indicate nothing to setup and commands
   // and interactive setting
-  startGui(cmd_argc, cmd_argv, nullptr, cmds, interactive, load_settings);
+  startGui(cmd_argc,
+           cmd_argv,
+           interpreter,
+           nullptr,
+           cmds,
+           interactive,
+           load_settings);
 }
 
 void Gui::minimize()
@@ -1727,6 +1736,7 @@ class SafeApplication : public QApplication
 // returns when the GUI is done.
 int startGui(int& argc,
              char* argv[],
+             Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,
@@ -1784,15 +1794,26 @@ int startGui(int& argc,
     interp = open_road->tclInterp();
   }
 
-  // pass in tcl interp to script widget and ensure OpenRoad gets initialized
-  main_window->getScriptWidget()->setupTcl(
-      interp, interactive, init_openroad, [&]() {
-        // init remainder of GUI, to be called immediately after OpenRoad is
-        // guaranteed to be initialized.
-        main_window->init(open_road->getSta(), open_road->getDocsPath());
-        // announce design created to ensure GUI gets setup
-        main_window->postReadDb(main_window->getDb());
-      });
+  auto post_or_init = [&]() {
+    // init remainder of GUI, to be called immediately after OpenRoad is
+    // guaranteed to be initialized.
+    main_window->init(open_road->getSta(), open_road->getDocsPath());
+    // announce design created to ensure GUI gets setup
+    main_window->postReadDb(main_window->getDb());
+  };
+
+  switch (interpreter) {
+    case Interpreter::Tcl:
+      // pass in tcl interp to script widget and ensure OpenRoad gets
+      // initialized
+      main_window->getScriptWidget()->setupTcl(
+          interp, interactive, init_openroad, post_or_init);
+      break;
+    case Interpreter::Python:
+      // init python in script widget and ensure OpenRoad gets initialized
+      main_window->getScriptWidget()->setupPython(post_or_init);
+      break;
+  }
 
   // Exit the app if someone chooses exit from the menu in the window
   QObject::connect(main_window, &MainWindow::exit, &app, &QApplication::quit);
