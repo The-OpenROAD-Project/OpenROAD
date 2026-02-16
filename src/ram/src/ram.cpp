@@ -151,10 +151,20 @@ void RamGen::makeCellByte(Grid& ram_grid,
   auto gclock_net = makeNet(prefix, "gclock");
   auto we0_net = makeNet(prefix, "we0");
 
-  int bit_idx = byte_idx * 9;
+  // For naming bits: 0, 8, 16,...
+  const int logical_bit_base = byte_idx * 8;
+
+  // For placement taking into acount select bit of each byte: 0, 9, 18, 27...
+  const int physical_col_base = byte_idx * 9;
+
   for (int local_bit = 0; local_bit < 8; ++local_bit) {
-    const int global_bit_idx = bit_idx + local_bit;
-    auto name = fmt::format("{}.bit{}", prefix, global_bit_idx);
+    // For naming
+    const int global_logical_bit_idx = logical_bit_base + local_bit;
+
+    // For placement
+    const int physical_col_idx = physical_col_base + local_bit;
+
+    auto name = fmt::format("{}.bit{}", prefix, global_logical_bit_idx);
     vector<dbNet*> outs;
     outs.reserve(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
@@ -166,7 +176,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
                                  select_b_nets,
                                  data_input[local_bit],
                                  outs),
-                     global_bit_idx);
+                     physical_col_idx);
   }
 
   auto sel_cell = std::make_unique<Cell>();
@@ -230,24 +240,27 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
   int layers = std::log2(num_word) - 1;
 
   dbNet* prev_net = nullptr;  // net to store previous and gate output
+  dbNet* decoder_out_net = makeNet(prefix, "decoder_out");
 
   for (int i = 0; i < layers; ++i) {
     auto input_net = makeNet(prefix, fmt::format("layer_in{}", i));
     // sets up first AND gate, closest to byte's select + write enable gate
     if (i == 0 && i == layers - 1) {
+      makeCellInst(word_cell.get(),
+                   prefix,
+                   fmt::format("and_layer{}", i),
+                   and2_cell_,
+                   {{"A", addr_nets[i]},
+                    {"B", addr_nets[i + 1]},
+                    {"X", decoder_out_net}});
+      prev_net = input_net;
+    } else if (i == 0) {
       makeCellInst(
           word_cell.get(),
           prefix,
           fmt::format("and_layer{}", i),
           and2_cell_,
-          {{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", selects[0]}});
-      prev_net = input_net;
-    } else if (i == 0) {
-      makeCellInst(word_cell.get(),
-                   prefix,
-                   fmt::format("and_layer{}", i),
-                   and2_cell_,
-                   {{"A", addr_nets[i]}, {"B", input_net}, {"X", selects[0]}});
+          {{"A", addr_nets[i]}, {"B", input_net}, {"X", decoder_out_net}});
       prev_net = input_net;
     } else if (i == layers - 1) {  // last AND gate layer
       makeCellInst(
@@ -265,6 +278,14 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
                    {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
       prev_net = input_net;
     }
+  }
+
+  for (int port = 0; port < read_ports; ++port) {
+    makeCellInst(word_cell.get(),
+                 prefix,
+                 fmt::format("buf_port{}", port),
+                 buffer_cell_,
+                 {{"A", decoder_out_net}, {"X", selects[port]}});
   }
 
   return word_cell;
