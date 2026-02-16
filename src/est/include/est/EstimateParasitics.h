@@ -182,7 +182,7 @@ class EstimateParasitics : public sta::dbStaState
   SteinerTree* makeSteinerTree(odb::Point drvr_location,
                                const std::vector<odb::Point>& sink_locations);
   SteinerTree* makeSteinerTree(const sta::Pin* drvr_pin);
-  void updateParasitics(bool save_guides = false);
+  void updateParasitics();
   void ensureWireParasitic(const sta::Pin* drvr_pin);
   void ensureWireParasitic(const sta::Pin* drvr_pin, const sta::Net* net);
   void highlightSteiner(const sta::Pin* drvr);

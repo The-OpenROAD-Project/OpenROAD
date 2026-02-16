@@ -8084,6 +8084,10 @@ class dbGuide : public dbObject
 
   void setIsJumper(bool jumper);
 
+  bool ignoreUsage() const;
+
+  void setIgnoreUsage(bool ignore_usage);
+
   bool isConnectedToTerm() const;
 
   void setIsConnectedToTerm(bool is_connected);

@@ -111,7 +111,8 @@ class FastRouteCore
                 int min_layer,
                 int max_layer,
                 float slack,
-                std::vector<int8_t>* edge_cost_per_layer);
+                std::vector<int8_t>* edge_cost_per_layer,
+                bool routed = false);
   void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   void mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net);
@@ -277,6 +278,8 @@ class FastRouteCore
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
   void setIncrementalGrt(bool is_incremental);
+
+  void writeCongestionMap(const std::string& filename);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
