@@ -88,6 +88,11 @@ class Restructure
   void setTieLoPort(sta::LibertyPort* loport);
   void setTieHiPort(sta::LibertyPort* hiport);
 
+  void resynthEmap(sta::Corner* corner,
+                   bool map_multioutput,
+                   bool verbose,
+                   char* workdir_name);
+
  private:
   void deleteComponents();
   void getBlob(unsigned max_depth);

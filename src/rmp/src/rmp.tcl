@@ -152,3 +152,33 @@ proc resynth_annealing { args } {
 
   rmp::resynth_annealing_cmd $corner
 }
+
+sta::define_cmd_args "resynth_emap" {
+                                      [-corner corner]
+                                      [-target area|timing]\
+                                      [-map_multioutput]\
+                                      [-verbose]\
+                                      [-work_dir workdir_name]
+                                    }
+
+proc resynth_emap { args } {
+  sta::parse_key_args "resynth_emap" args \
+    keys {-corner -target -work_dir} \
+    flags {-map_multioutput -verbose}
+
+  set corner [sta::parse_corner keys]
+  set target "area"
+  set map_multioutput [info exists flags(-map_multioutput)]
+  set verbose [info exists flags(-verbose)]
+  set workdir_name "."
+
+  if { [info exists keys(-target)] } {
+    set target $keys(-target)
+  }
+
+  if { [info exists keys(-work_dir)] } {
+    set workdir_name $keys(-work_dir)
+  }
+
+  rmp::resynth_emap_cmd $corner $target $map_multioutput $verbose $workdir_name
+}
