@@ -1,0 +1,5 @@
+[INFO ODB-0227] LEF file: data/../Nangate45/Nangate45_tech.lef, created 22 layers, 27 vias
+[WARNING ODB-0404] Connection invalid_conn has missing regions
+[WARNING ODB-0404] Connection invalid_conn has missing regions
+Summary 1 / 1 (100% pass)
+pass

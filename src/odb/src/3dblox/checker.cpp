@@ -23,6 +23,21 @@ namespace odb {
 
 namespace {
 
+const char* sideToString(UnfoldedRegionSide side)
+{
+  switch (side) {
+    case UnfoldedRegionSide::TOP:
+      return "TOP";
+    case UnfoldedRegionSide::BOTTOM:
+      return "BOTTOM";
+    case UnfoldedRegionSide::INTERNAL:
+      return "INTERNAL";
+    case UnfoldedRegionSide::INTERNAL_EXT:
+      return "INTERNAL_EXT";
+  }
+  return "UNKNOWN";
+}
+
 MatingSurfaces getMatingSurfaces(const UnfoldedConnection& conn)
 {
   auto* r1 = conn.top_region;
@@ -85,6 +100,7 @@ void Checker::check(dbChip* chip)
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
+  checkConnectionRegions(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -233,6 +249,49 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
                                      const UnfoldedModel& model)
 {
+  auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
+  auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
+    marker->addSource(r->region_inst);
+    marker->addShape(Rect(r->cuboid.xMin(),
+                          r->cuboid.yMin(),
+                          r->cuboid.xMax(),
+                          r->cuboid.yMax()));
+    return fmt::format("{}/{} (faces {})",
+                       r->parent_chip->name,
+                       r->region_inst->getChipRegion()->getName(),
+                       sideToString(r->effective_side));
+  };
+  int count = 0;
+  for (const auto& conn : model.getConnections()) {
+    if ((!conn.top_region || !conn.bottom_region)
+        && conn.connection->getTopRegion()
+        && conn.connection->getBottomRegion()) {
+      logger_->warn(utl::ODB,
+                    404,
+                    "Connection {} has missing regions",
+                    conn.connection->getName());
+      auto* marker = dbMarker::create(cat);
+      marker->addSource(conn.connection);
+      marker->setComment(fmt::format("Connection {} has missing regions",
+                                     conn.connection->getName()));
+    } else {
+      if (!isValid(conn)) {
+        auto* marker = dbMarker::create(cat);
+        marker->addSource(conn.connection);
+        std::string msg = fmt::format("Invalid connection {}: {} to {}",
+                                      conn.connection->getName(),
+                                      describe(conn.top_region, marker),
+                                      describe(conn.bottom_region, marker));
+        marker->setComment(msg);
+        logger_->warn(utl::ODB, 207, msg);
+        count++;
+      }
+    }
+  }
+  if (count > 0) {
+    logger_->warn(
+        utl::ODB, 273, "Found {} non-intersecting connections", count);
+  }
 }
 
 void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,

@@ -6,6 +6,7 @@ or_integration_tests(
     all_pins_placed2
     bterm_hier_create
     check_3dblox
+    check_3dblox_missing_regions
     check_routing_tracks
     create_blockage
     create_obstruction
