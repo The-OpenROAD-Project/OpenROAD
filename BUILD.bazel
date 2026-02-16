@@ -123,7 +123,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
-    "//third-party/abc:abc-lib",
+    "@abc",
     ":ord",
 ] + select(
     {
