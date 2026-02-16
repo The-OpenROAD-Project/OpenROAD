@@ -30,6 +30,8 @@ class Checker
                           const UnfoldedModel& model);
   void checkOverlappingChips(dbMarkerCategory* top_cat,
                              const UnfoldedModel& model);
+  void checkInternalExtUsage(dbMarkerCategory* top_cat,
+                             const UnfoldedModel& model);
   void checkConnectionRegions(dbMarkerCategory* top_cat,
                               const UnfoldedModel& model);
   void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
