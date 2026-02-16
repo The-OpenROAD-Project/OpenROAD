@@ -61,6 +61,18 @@ build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
 build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
 
+##### Platform-specific configs (auto-selected) #############
+# --enable_platform_specific_config makes bazel automatically apply
+# build:macos on macOS, build:linux on Linux, etc.
+common --enable_platform_specific_config
+
+# macOS: boost.stacktrace needs this since backtrace() doesn't require GNU source
+build:macos --copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+build:macos --host_copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+# Aligned allocation/deallocation for abseil is only available since 10.13
+build:macos --macos_minimum_os=10.13
+build:macos --host_macos_minimum_os=10.13
+
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
 build:asan --copt=-fsanitize=address

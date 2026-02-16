@@ -280,6 +280,13 @@ cc_binary(
     name = "_openroadpy.so",
     srcs = [":openroad_swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
+    linkopts = select({
+        "@platforms//os:macos": [
+            "-undefined",
+            "dynamic_lookup",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = True,
     deps = [
         ":openroad_lib",  # Depends on the core odb C++ library

@@ -103,6 +103,13 @@ cc_binary(
     srcs = [":swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src/swig/common"],
+    linkopts = select({
+        "@platforms//os:macos": [
+            "-undefined",
+            "dynamic_lookup",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = True,
     deps = [
         ":odb",  # Depends on the core odb C++ library
