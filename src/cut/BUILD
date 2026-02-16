@@ -38,6 +38,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/abc:abc-lib",
+        "//third-party:mockturtle",
         "@boost.bind",
         "@boost.config",
         "@boost.fusion",

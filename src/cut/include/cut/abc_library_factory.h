@@ -6,7 +6,7 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -35,6 +35,7 @@ class AbcLibrary
   abc::SC_Lib* abc_library() { return abc_library_.get(); }
   abc::Mio_Library_t* mio_library();
   bool IsSupportedCell(const std::string& cell_name);
+  const std::set<std::string>& SupportedCells();
   bool IsConst0Cell(const std::string& cell_name);
   bool IsConst1Cell(const std::string& cell_name);
   bool IsConstCell(const std::string& cell_name);
@@ -48,8 +49,8 @@ class AbcLibrary
   utl::UniquePtrWithDeleter<abc::Mio_Library_t> mio_library_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::set<std::string> supported_cells_;
-  std::unordered_set<std::string> const1_gates_;
-  std::unordered_set<std::string> const0_gates_;
+  std::set<std::string> const1_gates_;
+  std::set<std::string> const0_gates_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const0_cell_;
   std::optional<std::pair<abc::SC_Cell*, abc::SC_Pin*>> const1_cell_;
   bool const_gates_initalized_ = false;
@@ -65,6 +66,7 @@ class AbcLibraryFactory
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
   AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
   AbcLibraryFactory& SetCorner(sta::Corner* corner);
+  utl::UniquePtrWithDeleter<abc::SC_Lib> BuildScl();
   AbcLibrary Build();
 
  private:

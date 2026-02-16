@@ -10,8 +10,8 @@
 #include <cstring>
 #include <memory>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -30,7 +30,7 @@
 
 namespace cut {
 
-std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
+std::map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
     const std::vector<sta::Net*>& primary_inputs,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network)
@@ -41,7 +41,7 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
     return network->id(a) < network->id(b);
   });
 
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
+  std::map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
   for (sta::Net* input_pin : sorted_primary_inputs) {
     abc::Abc_Obj_t* primary_input_abc = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_Obj_t* primary_input_net = abc::Abc_NtkCreateNet(&abc_network);
@@ -56,12 +56,12 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryInputs(
   return name_pin_map;
 }
 
-std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
+std::map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
     const std::vector<sta::Net*>& primary_outputs,
     abc::Abc_Ntk_t& abc_network,
     sta::dbNetwork* network)
 {
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
+  std::map<sta::Net*, abc::Abc_Obj_t*> name_pin_map;
   std::vector<sta::Net*> sorted_primary_outputs(primary_outputs.begin(),
                                                 primary_outputs.end());
 
@@ -83,10 +83,10 @@ std::unordered_map<sta::Net*, abc::Abc_Obj_t*> CreateAbcPrimaryOutputs(
   return name_pin_map;
 }
 
-std::unordered_map<std::string, abc::Mio_Gate_t*> NameToAbcGateMap(
+std::map<std::string, abc::Mio_Gate_t*> NameToAbcGateMap(
     abc::Mio_Library_t* library)
 {
-  std::unordered_map<std::string, abc::Mio_Gate_t*> result;
+  std::map<std::string, abc::Mio_Gate_t*> result;
 
   // Create map of cell names to Mio_Gate_t
   abc::Mio_Gate_t* current_gate = abc::Mio_LibraryReadGates(library);
@@ -98,10 +98,10 @@ std::unordered_map<std::string, abc::Mio_Gate_t*> NameToAbcGateMap(
   return result;
 }
 
-std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>>
+std::map<abc::Mio_Gate_t*, std::vector<std::string>>
 MioGateToPortOrder(abc::Mio_Library_t* library)
 {
-  std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>> result;
+  std::map<abc::Mio_Gate_t*, std::vector<std::string>> result;
 
   // Create map of cell names to Mio_Gate_t
   abc::Mio_Gate_t* current_gate = abc::Mio_LibraryReadGates(library);
@@ -119,7 +119,7 @@ MioGateToPortOrder(abc::Mio_Library_t* library)
   return result;
 }
 
-std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
+std::map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     sta::InstanceSet& cut_instances,
     AbcLibrary& abc_library,
     abc::Abc_Ntk_t& abc_network,
@@ -127,10 +127,10 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
     abc::Mio_Library_t* library,
     utl::Logger* logger)
 {
-  std::unordered_map<std::string, abc::Mio_Gate_t*> cell_name_to_mio
+  std::map<std::string, abc::Mio_Gate_t*> cell_name_to_mio
       = NameToAbcGateMap(library);
 
-  std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> instance_map;
+  std::map<const sta::Instance*, abc::Abc_Obj_t*> instance_map;
   for (const sta::Instance* instance : cut_instances) {
     // Assign this node its standard cell. This is what makes this node
     // an AND gate or whatever.
@@ -168,12 +168,12 @@ std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> CreateStandardCells(
 void ConnectPinToDriver(
     sta::dbNetwork* network,
     sta::Pin* output_pin,
-    const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+    const std::map<sta::Net*, abc::Abc_Obj_t*>&
         abc_primary_output_pins,
-    std::unordered_map<sta::Net*, abc::Abc_Obj_t*>& abc_net_map,
+    std::map<sta::Net*, abc::Abc_Obj_t*>& abc_net_map,
     utl::Logger* logger,
     abc::Abc_Ntk_t& abc_network,
-    const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+    const std::map<const sta::Instance*, abc::Abc_Obj_t*>&
         abc_instances)
 {
   sta::Instance* instance = network->instance(output_pin);
@@ -233,11 +233,11 @@ void ConnectPinToDriver(
 }
 
 void CreateNets(const std::vector<sta::Net*>& output_nets,
-                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                const std::map<sta::Net*, abc::Abc_Obj_t*>&
                     abc_primary_input_nets,
-                const std::unordered_map<sta::Net*, abc::Abc_Obj_t*>&
+                const std::map<sta::Net*, abc::Abc_Obj_t*>&
                     abc_primary_output_nets,
-                const std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*>&
+                const std::map<const sta::Instance*, abc::Abc_Obj_t*>&
                     abc_instances,
                 abc::Abc_Ntk_t& abc_network,
                 sta::dbNetwork* network,
@@ -247,7 +247,7 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
   // Sometimes we might create a net that drives multiple pins.
   // Save them here so that the ConnectPinToDriver function can reuse
   // the already created net.
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_net_map;
+  std::map<sta::Net*, abc::Abc_Obj_t*> abc_net_map;
   for (auto& [sta_net, abc_instance] : abc_primary_input_nets) {
     abc_net_map[sta_net] = abc_instance;
   }
@@ -274,7 +274,7 @@ void CreateNets(const std::vector<sta::Net*>& output_nets,
 
   // ABC expects the inputs to particular gates to happen in a certain implict
   // order. Create a map from library cells to port order.
-  std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>> port_order
+  std::map<abc::Mio_Gate_t*, std::vector<std::string>> port_order
       = MioGateToPortOrder(library);
 
   // Sort instances for stability.
@@ -349,9 +349,9 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
                         /*fUseMemMan=*/1),
       &abc::Abc_NtkDelete);
 
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_input_nets
+  std::map<sta::Net*, abc::Abc_Obj_t*> abc_input_nets
       = CreateAbcPrimaryInputs(primary_inputs_, *abc_network, network);
-  std::unordered_map<sta::Net*, abc::Abc_Obj_t*> abc_output_nets
+  std::map<sta::Net*, abc::Abc_Obj_t*> abc_output_nets
       = CreateAbcPrimaryOutputs(primary_outputs_, *abc_network, network);
 
   abc::Mio_Library_t* mio_library = abc_library.mio_library();
@@ -359,7 +359,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> LogicCut::BuildMappedAbcNetwork(
 
   // Create cells from cut instances, get a map of the created nodes
   // keyed by the instance in the netlist.
-  std::unordered_map<const sta::Instance*, abc::Abc_Obj_t*> standard_cells
+  std::map<const sta::Instance*, abc::Abc_Obj_t*> standard_cells
       = CreateStandardCells(cut_instances_,
                             abc_library,
                             *abc_network,
@@ -410,14 +410,14 @@ sta::Instance* GetLogicalParentInstance(sta::InstanceSet& cut_instances,
   return instance;
 }
 
-std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> CreateInstances(
+std::map<abc::Abc_Obj_t*, sta::Instance*> CreateInstances(
     abc::Abc_Ntk_t* abc_network,
     sta::dbNetwork* network,
     sta::Instance* parent_instance,
     utl::UniqueName& unique_name,
     utl::Logger* logger)
 {
-  std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> result;
+  std::map<abc::Abc_Obj_t*, sta::Instance*> result;
 
   for (int i = 0; i < abc::Abc_NtkObjNumMax(abc_network); i++) {
     // ABC stores all objects as a list of objs we need to filter
@@ -450,14 +450,14 @@ std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> CreateInstances(
   return result;
 }
 
-std::unordered_map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
+std::map<abc::Abc_Obj_t*, sta::Net*> CreateNets(
     abc::Abc_Ntk_t* abc_network,
     sta::dbNetwork* network,
     sta::Instance* parent_instance,
     utl::UniqueName& unique_name,
     utl::Logger* logger)
 {
-  std::unordered_map<abc::Abc_Obj_t*, sta::Net*> result;
+  std::map<abc::Abc_Obj_t*, sta::Net*> result;
 
   // Get primary input and output nets
   for (int i = 0; i < abc::Abc_NtkObjNumMax(abc_network); i++) {
@@ -518,7 +518,7 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
 {
   // Delete nets that only belong to the cut set.
   sta::NetSet nets_to_be_deleted(network);
-  std::unordered_set<sta::Net*> primary_input_or_output_nets;
+  std::set<sta::Net*> primary_input_or_output_nets;
 
   for (sta::Net* net : primary_inputs) {
     primary_input_or_output_nets.insert(net);
@@ -561,13 +561,13 @@ void DeleteExistingLogicCut(sta::dbNetwork* network,
 void ConnectInstances(
     abc::Abc_Ntk_t* abc_network,
     sta::dbNetwork* network,
-    const std::unordered_map<abc::Abc_Obj_t*, sta::Instance*>& new_instances,
-    const std::unordered_map<abc::Abc_Obj_t*, sta::Net*>& new_nets,
+    const std::map<abc::Abc_Obj_t*, sta::Instance*>& new_instances,
+    const std::map<abc::Abc_Obj_t*, sta::Net*>& new_nets,
     utl::Logger* logger)
 {
   abc::Mio_Library_t* library
       = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
-  std::unordered_map<abc::Mio_Gate_t*, std::vector<std::string>>
+  std::map<abc::Mio_Gate_t*, std::vector<std::string>>
       gate_to_port_order = MioGateToPortOrder(library);
 
   // Sorted for stability
@@ -724,10 +724,10 @@ void LogicCut::InsertMappedAbcNetwork(abc::Abc_Ntk_t* abc_network,
 
   sta::Instance* parent_instance
       = GetLogicalParentInstance(cut_instances_, network, logger);
-  std::unordered_map<abc::Abc_Obj_t*, sta::Instance*> abc_objs_to_instances
+  std::map<abc::Abc_Obj_t*, sta::Instance*> abc_objs_to_instances
       = CreateInstances(
           abc_network, network, parent_instance, unique_name, logger);
-  std::unordered_map<abc::Abc_Obj_t*, sta::Net*> abc_nets_to_sta_nets
+  std::map<abc::Abc_Obj_t*, sta::Net*> abc_nets_to_sta_nets
       = CreateNets(abc_network, network, parent_instance, unique_name, logger);
 
   // Get rid of the old cut in preparation to connect the new ones.
