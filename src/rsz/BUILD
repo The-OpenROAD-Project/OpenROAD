@@ -15,6 +15,8 @@ cc_library(
     srcs = [
         "src/BaseMove.cc",
         "src/BaseMove.hh",
+        "src/BottleneckAnalysis.cc",
+        "src/BottleneckAnalysis.hh",
         "src/BufferMove.cc",
         "src/BufferMove.hh",
         "src/BufferedNet.cc",

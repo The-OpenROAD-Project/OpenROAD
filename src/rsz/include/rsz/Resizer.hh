@@ -88,6 +88,7 @@ class UnbufferMove;
 class VTSwapSpeedMove;
 class SizeUpMatchMove;
 class RegisterOdbCallbackGuard;
+class BottleneckAnalysis;
 
 class NetHash
 {
@@ -511,6 +512,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(sta::Pin* pin);
 
+  void reportBottlenecks(double alpha, int npins, bool invert_report);
+
   bool hasFanout(sta::Vertex* drvr);
   bool hasFanout(sta::Pin* drvr);
 
@@ -836,6 +839,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
+  std::unique_ptr<BottleneckAnalysis> bottleneck_analysis_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   sta::LibertyCellSet dont_use_;
@@ -979,6 +983,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class ConcreteSwapArithModules;
   friend class Rebuffer;
   friend class OdbCallBack;
+  friend class BottleneckAnalysis;
 };
 
 }  // namespace rsz
