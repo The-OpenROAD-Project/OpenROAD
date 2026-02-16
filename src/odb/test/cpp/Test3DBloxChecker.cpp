@@ -269,7 +269,7 @@ TEST_F(CheckerFixture, test_z_separation_no_overlap)
   EXPECT_TRUE(getOverlappingMarkers().empty());
 }
 
-TEST_F(CheckerFixture, test_overlap_masked_by_valid_connection)
+TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
 {
   // Create INTERNAL_EXT regions for masking
   auto r1_int = dbChipRegion::create(
@@ -295,7 +295,7 @@ TEST_F(CheckerFixture, test_overlap_masked_by_valid_connection)
   conn->setThickness(0);
 
   check();
-  EXPECT_TRUE(getOverlappingMarkers().empty());
+  EXPECT_EQ(getOverlappingMarkers().size(), 1);
 }
 
 TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
