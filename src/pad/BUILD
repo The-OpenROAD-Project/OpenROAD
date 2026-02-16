@@ -45,7 +45,7 @@ cc_library(
         "@boost.icl",
         "@boost.polygon",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

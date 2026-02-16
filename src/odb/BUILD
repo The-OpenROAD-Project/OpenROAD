@@ -90,7 +90,7 @@ cc_library(
         "@boost.regex",
         "@boost.spirit",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
         "@yaml-cpp",
         "@zlib",
     ],
@@ -149,7 +149,7 @@ cc_library(
         "@boost.multi_array",
         "@boost.polygon",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
