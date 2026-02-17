@@ -10,6 +10,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
