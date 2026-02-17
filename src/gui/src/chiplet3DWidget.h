@@ -8,6 +8,7 @@
 #include <QVector2D>
 #include <QVector3D>
 #include <QWidget>
+#include <cstdint>
 #include <vector>
 
 namespace odb {
@@ -30,7 +31,7 @@ class Chiplet3DWidget : public QWidget
   void setLogger(utl::Logger* logger);
 
  protected:
-  void paintEvent(QPaintEvent* event) override;  // Replaces paintGL
+  void paintEvent(QPaintEvent* event) override;
   void mousePressEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void mouseMoveEvent(QMouseEvent* event) override;

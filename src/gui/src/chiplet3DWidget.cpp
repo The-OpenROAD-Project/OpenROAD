@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -224,10 +225,10 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
   // artifacts.
 
   // Simple clipping: Clip against Z = -0.1 (very close to camera)
-  const float CLIP_Z = -0.1f;
+  const float kClipZ = -0.1f;
 
-  bool p1_visible = p1_view.z() < CLIP_Z;
-  bool p2_visible = p2_view.z() < CLIP_Z;
+  const bool p1_visible = p1_view.z() < kClipZ;
+  const bool p2_visible = p2_view.z() < kClipZ;
 
   if (!p1_visible && !p2_visible) {
     return;  // Both behind camera
@@ -235,9 +236,9 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
 
   if (p1_visible != p2_visible) {
     // Line spans the clip plane. Calculate intersection.
-    // t = (CLIP_Z - z1) / (z2 - z1)
-    float t = (CLIP_Z - p1_view.z()) / (p2_view.z() - p1_view.z());
-    QVector3D intersection = p1_view + (p2_view - p1_view) * t;
+    // t = (kClipZ - z1) / (z2 - z1)
+    const float t = (kClipZ - p1_view.z()) / (p2_view.z() - p1_view.z());
+    const QVector3D intersection = p1_view + (p2_view - p1_view) * t;
 
     if (!p1_visible) {
       p1_view = intersection;
@@ -246,16 +247,17 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
     }
   }
 
-  QVector3D p1_ndc = projection.map(p1_view);
-  QVector3D p2_ndc = projection.map(p2_view);
+  // NDC or Normalized Device Coordinates 
+  const QVector3D p1_ndc = projection.map(p1_view);
+  const QVector3D p2_ndc = projection.map(p2_view);
 
   // Map NDC (-1 to 1) to Viewport (0 to width/height)
-  float w = viewport.width();
-  float h = viewport.height();
+  const float w = viewport.width();
+  const float h = viewport.height();
 
   // Note: NDC Y is up, Screen Y is down.
-  QPointF s1((p1_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p1_ndc.y()) * 0.5f * h);
-  QPointF s2((p2_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p2_ndc.y()) * 0.5f * h);
+  const QPointF s1((p1_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p1_ndc.y()) * 0.5f * h);
+  const QPointF s2((p2_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p2_ndc.y()) * 0.5f * h);
 
   // 4. Draw
   QPen pen(color);
