@@ -4,6 +4,8 @@
 // clang-format off
 %{
 
+#include <sstream>
+
 #include "ord/OpenRoad.hh"
 #include "graphics/Graphics.h"
 #include "graphics/DplObserver.h"
@@ -115,6 +117,51 @@ void improve_placement_cmd(int seed,
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->improvePlacement(seed, max_displacement_x, max_displacement_y);
+}
+
+void reset_global_swap_params_cmd()
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->resetGlobalSwapParams();
+}
+
+void configure_global_swap_params_cmd(int passes,
+                                      double tolerance,
+                                      double tradeoff,
+                                      double area_weight,
+                                      double pin_weight,
+                                      double user_weight,
+                                      int sampling_moves,
+                                      int normalization_interval,
+                                      double profiling_excess,
+                                      const char* budget_multipliers_str)
+{
+  std::vector<double> budget_multipliers;
+  if (budget_multipliers_str != nullptr) {
+    std::stringstream ss(budget_multipliers_str);
+    double value;
+    while (ss >> value) {
+      budget_multipliers.push_back(value);
+    }
+  }
+
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->configureGlobalSwapParams(passes,
+                                    tolerance,
+                                    tradeoff,
+                                    area_weight,
+                                    pin_weight,
+                                    user_weight,
+                                    sampling_moves,
+                                    normalization_interval,
+                                    profiling_excess,
+                                    budget_multipliers);
+}
+
+void set_extra_dpl_cmd(bool enable)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setExtraDplEnabled(enable);
 }
 
 } // namespace
