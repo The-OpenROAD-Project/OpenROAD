@@ -247,7 +247,7 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
     }
   }
 
-  // NDC or Normalized Device Coordinates 
+  // NDC or Normalized Device Coordinates
   const QVector3D p1_ndc = projection.map(p1_view);
   const QVector3D p2_ndc = projection.map(p2_view);
 
@@ -256,8 +256,10 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
   const float h = viewport.height();
 
   // Note: NDC Y is up, Screen Y is down.
-  const QPointF s1((p1_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p1_ndc.y()) * 0.5f * h);
-  const QPointF s2((p2_ndc.x() + 1.0f) * 0.5f * w, (1.0f - p2_ndc.y()) * 0.5f * h);
+  const QPointF s1((p1_ndc.x() + 1.0f) * 0.5f * w,
+                   (1.0f - p1_ndc.y()) * 0.5f * h);
+  const QPointF s2((p2_ndc.x() + 1.0f) * 0.5f * w,
+                   (1.0f - p2_ndc.y()) * 0.5f * h);
 
   // 4. Draw
   QPen pen(color);
