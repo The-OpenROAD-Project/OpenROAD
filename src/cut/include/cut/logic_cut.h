@@ -152,15 +152,7 @@ LogicCut::BuildMappedMockturtleNetwork(
   std::unordered_map<const sta::Net*, signal> net_to_signal;
 
   // Create PIs for primary_inputs_ (CUT boundary inputs)
-  std::vector<sta::Net*> sorted_inputs(primary_inputs_.begin(),
-                                       primary_inputs_.end());
-  std::sort(sorted_inputs.begin(),
-            sorted_inputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
-
-  for (sta::Net* net : sorted_inputs) {
+  for (sta::Net* net : primary_inputs_) {
     const signal pi = ntk.create_pi(network->name(net));
     net_to_signal[net] = pi;
   }
@@ -236,15 +228,7 @@ LogicCut::BuildMappedMockturtleNetwork(
   };
 
   // Hook up primary outputs
-  std::vector<sta::Net*> sorted_outputs(primary_outputs_.begin(),
-                                        primary_outputs_.end());
-  std::sort(sorted_outputs.begin(),
-            sorted_outputs.end(),
-            [network](sta::Net* a, sta::Net* b) {
-              return network->id(a) < network->id(b);
-            });
-
-  for (sta::Net* net : sorted_outputs) {
+  for (sta::Net* net : primary_outputs_) {
     const signal s = build_net_signal(net, 0);
     ntk.create_po(s, network->name(net));
   }

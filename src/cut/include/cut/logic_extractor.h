@@ -199,6 +199,15 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   std::vector<sta::Net*> primary_output_nets
       = ConvertIoPinsToNets(filtered_primary_outputs);
 
+  auto network = open_sta_->network();
+
+  std::ranges::stable_sort(primary_input_nets, [network](const sta::Net *a, const sta::Net *b) {
+                               return network->id(a) < network->id(b);
+                           });
+  std::ranges::stable_sort(primary_output_nets, [network](const sta::Net *a, const sta::Net *b) {
+                               return network->id(a) < network->id(b);
+                           });
+
   return LogicCut(std::move(primary_input_nets),
                   std::move(primary_output_nets),
                   std::move(cut_instances));
