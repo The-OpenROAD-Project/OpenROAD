@@ -19,24 +19,24 @@
 #include "utl/Logger.h"
 
 namespace {
-constexpr float INITIAL_DISTANCE_FACTOR = 3.0f;
-constexpr float LAYER_GAP_FACTOR = 2.0f;
-constexpr float MIN_DISTANCE_CHECK = 100.0f;
-constexpr float DEFAULT_DISTANCE = 1000.0f;
-constexpr float DEFAULT_SAFE_SIZE = 1000.0f;
-constexpr float NEAR_FAR_FACTOR = 2.0f;
-constexpr float MIN_Z_NEAR = 10.0f;
-constexpr float MAX_Z_FAR_OFFSET = 10000.0f;
-constexpr float GRID_SIZE_FACTOR = 1.5f;
-constexpr float GRID_STEPS = 5.0f;
-constexpr float GRID_Z_OFFSET_FACTOR = 0.05f;
-constexpr int GRID_LINE_COUNT = 5;
-constexpr float ROTATION_SENSITIVITY = 2.0f;
-constexpr float PAN_SENSITIVITY = 0.002f;
-constexpr float ZOOM_IN_FACTOR = 0.9f;
-constexpr float ZOOM_OUT_FACTOR = 1.1f;
+constexpr float kInitialDistanceFactor = 3.0f;
+constexpr float kLayerGapFactor = 2.0f;
+constexpr float kMinDistanceCheck = 100.0f;
+constexpr float kDefaultDistance = 1000.0f;
+constexpr float kDefaultSafeSize = 1000.0f;
+constexpr float kNearFarFactor = 2.0f;
+constexpr float kMinZNear = 10.0f;
+constexpr float kMaxZFarOffset = 10000.0f;
+constexpr float kGridSizeFactor = 1.5f;
+constexpr float kGridSteps = 5.0f;
+constexpr float kGridZOffsetFactor = 0.05f;
+constexpr int kGridLineCount = 5;
+constexpr float kRotationSensitivity = 2.0f;
+constexpr float kPanSensitivity = 0.002f;
+constexpr float kZoomInFactor = 0.9f;
+constexpr float kZoomOutFactor = 1.1f;
 
-static const std::array<QVector3D, 7> COLOR_PALETTE = {{
+static const std::array<QVector3D, 7> kColorPalette = {{
     {0.0f, 1.0f, 0.0f},  // Green
     {1.0f, 1.0f, 0.0f},  // Yellow
     {0.0f, 1.0f, 1.0f},  // Cyan
@@ -72,9 +72,9 @@ void Chiplet3DWidget::buildGeometries()
   if (!chip_) {
     return;
   }
-  odb::Cuboid global_cuboid = chip_->getCuboid();
-  odb::UnfoldedModel model(logger_, chip_);
-  odb::dbTransform center_transform
+  const odb::Cuboid global_cuboid = chip_->getCuboid();
+  const odb::UnfoldedModel model(logger_, chip_);
+  const odb::dbTransform center_transform
       = odb::dbTransform(odb::Point3D(-global_cuboid.xCenter(),
                                       -global_cuboid.yCenter(),
                                       -global_cuboid.zCenter()));
@@ -83,18 +83,18 @@ void Chiplet3DWidget::buildGeometries()
   indices_lines_.clear();
 
   // Center and Camera calculations
-  float cx = (global_cuboid.xMin() + global_cuboid.xMax()) / 2.0f;
-  float cy = (global_cuboid.yMin() + global_cuboid.yMax()) / 2.0f;
+  const float cx = (global_cuboid.xMin() + global_cuboid.xMax()) / 2.0f;
+  const float cy = (global_cuboid.yMin() + global_cuboid.yMax()) / 2.0f;
   center_ = QVector3D(cx, cy, 0.0f);
 
-  float dx = global_cuboid.dx();
-  float dy = global_cuboid.dy();
-  float dz = global_cuboid.dz() * LAYER_GAP_FACTOR;
+  const float dx = global_cuboid.dx();
+  const float dy = global_cuboid.dy();
+  const float dz = global_cuboid.dz() * kLayerGapFactor;
   bounding_radius_ = std::sqrt(dx * dx + dy * dy + dz * dz) / 2.0f;
 
-  distance_ = bounding_radius_ * INITIAL_DISTANCE_FACTOR;
-  if (distance_ < MIN_DISTANCE_CHECK) {
-    distance_ = DEFAULT_DISTANCE;
+  distance_ = bounding_radius_ * kInitialDistanceFactor;
+  if (distance_ < kMinDistanceCheck) {
+    distance_ = kDefaultDistance;
   }
 
   int index = 0;
@@ -102,19 +102,19 @@ void Chiplet3DWidget::buildGeometries()
     odb::Cuboid draw_cuboid = chip.cuboid;
     center_transform.apply(draw_cuboid);
     // Color by Depth (proportional to Z)
-    QVector3D color = COLOR_PALETTE[index++ % COLOR_PALETTE.size()];
+    const QVector3D color = kColorPalette[index++ % kColorPalette.size()];
 
-    int base = vertices_.size();
+    const uint32_t base = vertices_.size();
     for (const auto& p : draw_cuboid.getPoints()) {
       vertices_.push_back({QVector3D(p.x(), p.y(), p.z()), color});
     }
 
     // Add line indices for a cube (12 lines)
-    const int lines[24] = {0, 1, 1, 2, 2, 3, 3, 0,   // Bottom face
-                           4, 5, 5, 6, 6, 7, 7, 4,   // Top face
-                           0, 4, 1, 5, 2, 6, 3, 7};  // Connecting pillars
+    const uint32_t lines[24] = {0, 1, 1, 2, 2, 3, 3, 0,   // Bottom face
+                                4, 5, 5, 6, 6, 7, 7, 4,   // Top face
+                                0, 4, 1, 5, 2, 6, 3, 7};  // Connecting pillars
 
-    for (int i : lines) {
+    for (const uint32_t i : lines) {
       indices_lines_.push_back(base + i);
     }
   }
@@ -130,23 +130,23 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
 
   // 2. Setup Camera Matrices
 
-  // Projection Matrix
-  QMatrix4x4 projection;
   // Use bounding_radius_ which is rotation-invariant
   float safe_size = bounding_radius_;
   if (safe_size < 1.0f) {
-    safe_size = DEFAULT_SAFE_SIZE;
+    safe_size = kDefaultSafeSize;
   }
 
-  float zNear = distance_ - safe_size * NEAR_FAR_FACTOR;
-  float zFar = distance_ + safe_size * NEAR_FAR_FACTOR;
+  const float zNear
+      = std::max(distance_ - safe_size * kNearFarFactor, kMinZNear);
+  float zFar = distance_ + safe_size * kNearFarFactor;
 
-  zNear = std::max(zNear, MIN_Z_NEAR);
-  if (zFar < zNear + MIN_DISTANCE_CHECK) {
-    zFar = zNear + MAX_Z_FAR_OFFSET;
+  if (zFar < zNear + kMinDistanceCheck) {
+    zFar = zNear + kMaxZFarOffset;
   }
 
-  qreal aspect = qreal(width()) / qreal(height() ? height() : 1);
+  // Projection Matrix
+  const qreal aspect = qreal(width()) / qreal(height() ? height() : 1);
+  QMatrix4x4 projection;
   projection.perspective(45.0f, aspect, zNear, zFar);
 
   // ModelView Matrix
@@ -155,13 +155,14 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
   modelView.rotate(rotation_);
 
   // 3. Draw Grid
-  painter.setPen(QPen(QColor(76, 76, 76), 1));     // 0.3f grey
-  float grid_size = safe_size * GRID_SIZE_FACTOR;  // Adjust grid to scene size
-  float step = grid_size / GRID_STEPS;
-  float grid_z = -center_.z() - (distance_ * GRID_Z_OFFSET_FACTOR * 0.5f);
+  painter.setPen(QPen(QColor(76, 76, 76), 1));  // 0.3f grey
+  const float grid_size
+      = safe_size * kGridSizeFactor;  // Adjust grid to scene size
+  const float step = grid_size / kGridSteps;
+  const float grid_z = -center_.z() - (distance_ * kGridZOffsetFactor * 0.5f);
 
-  for (int i = -GRID_LINE_COUNT; i <= GRID_LINE_COUNT; ++i) {
-    float pos = i * step;
+  for (int i = -kGridLineCount; i <= kGridLineCount; ++i) {
+    const float pos = i * step;
     // Lines parallel to Z (or Y in local, depending on orientation)
     // The original code drew grid on Z plane.
     drawLine3D(painter,
@@ -187,8 +188,8 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
 
   // Process lines
   for (size_t i = 0; i < indices_lines_.size(); i += 2) {
-    uint32_t idx1 = indices_lines_[i];
-    uint32_t idx2 = indices_lines_[i + 1];
+    const uint32_t idx1 = indices_lines_[i];
+    const uint32_t idx2 = indices_lines_[i + 1];
 
     if (idx1 < vertices_.size() && idx2 < vertices_.size()) {
       const VertexData& v1 = vertices_[idx1];
@@ -263,9 +264,7 @@ void Chiplet3DWidget::drawLine3D(QPainter& painter,
                    (1.0f - p2_ndc.y()) * 0.5f * h);
 
   // 4. Draw
-  QPen pen(color);
-  pen.setWidth(2);
-  painter.setPen(pen);
+  painter.setPen(QPen(color, 2));
   painter.drawLine(s1, s2);
 }
 
@@ -280,17 +279,17 @@ void Chiplet3DWidget::mouseReleaseEvent(QMouseEvent* e)
 
 void Chiplet3DWidget::mouseMoveEvent(QMouseEvent* e)
 {
-  QVector2D diff = QVector2D(e->localPos()) - mouse_press_position_;
+  const QVector2D diff = QVector2D(e->localPos()) - mouse_press_position_;
   mouse_press_position_ = QVector2D(e->localPos());
 
   if (e->buttons() & Qt::LeftButton) {
     // Rotation
-    QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
-    float angle = diff.length() / ROTATION_SENSITIVITY;
+    const QVector3D n = QVector3D(diff.y(), diff.x(), 0.0).normalized();
+    const float angle = diff.length() / kRotationSensitivity;
     rotation_ = QQuaternion::fromAxisAndAngle(n, angle) * rotation_;
   } else if (e->buttons() & Qt::RightButton) {
     // Pan
-    float scale = distance_ * PAN_SENSITIVITY;
+    const float scale = distance_ * kPanSensitivity;
     pan_x_ += diff.x() * scale;
     pan_y_ -= diff.y() * scale;
   }
@@ -300,9 +299,9 @@ void Chiplet3DWidget::mouseMoveEvent(QMouseEvent* e)
 void Chiplet3DWidget::wheelEvent(QWheelEvent* e)
 {
   if (e->angleDelta().y() > 0) {
-    distance_ *= ZOOM_IN_FACTOR;
+    distance_ *= kZoomInFactor;
   } else {
-    distance_ *= ZOOM_OUT_FACTOR;
+    distance_ *= kZoomOutFactor;
   }
   update();
 }
