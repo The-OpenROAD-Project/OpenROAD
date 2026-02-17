@@ -5,6 +5,7 @@ module(
     name = "openroad",
 )
 
+bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_cc", version = "0.1.2")
@@ -92,9 +93,16 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
+    commit = "e1d5b0b4725d045a03d18e02c54bdebe73d07384",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
+
+# Updated dependencies of qt_bazel_prebuilts. Once the updated versions
+# have been added to qt_bazel_prebuilts, they can be removed here.
+# (But CAVE, right now that would result in cyclic dependencies with,
+# WORKSPACE so that also has to go first).
+bazel_dep(name = "harfbuzz", version = "11.0.1.bcr.1")
+bazel_dep(name = "glib", version = "2.82.2.bcr.8")
 
 # Dependencies needed by one of the rules_hdl repos. Once they are on
 # BCR, they should depend on their own version.
