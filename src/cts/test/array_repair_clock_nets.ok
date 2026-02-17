@@ -3,6 +3,12 @@
 [INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 4940.000 4940.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 4940.000 4939.200 ) um
+[INFO IFP-0102] Core area:                     24399648.000 um^2
+[INFO IFP-0103] Total instances area:          20260174.500 um^2
+[INFO IFP-0104] Effective utilization:                0.830
+[INFO IFP-0105] Number of instances:                   2475
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:

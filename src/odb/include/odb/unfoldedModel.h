@@ -10,8 +10,9 @@
 #include <utility>
 #include <vector>
 
-#include "dbTransform.h"
-#include "geom.h"
+#include "odb/dbTransform.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbChip;

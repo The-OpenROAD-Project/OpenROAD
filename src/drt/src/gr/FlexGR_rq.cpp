@@ -13,6 +13,7 @@
 #include "db/grObj/grVia.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRTree.h"
 #include "gr/FlexGR.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"

@@ -42,7 +42,11 @@ _lcov() {
 }
 
 _coverity() {
-    cmake -B build .
+    cmakeOptions=""
+    if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+        cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
+    fi
+    cmake ${cmakeOptions} -B build .
     # compile abc before calling cov-build to exclude from analysis.
     # Coverity fails to process abc code due to -fpermissive flag.
     cmake --build build -j $(nproc) --target abc

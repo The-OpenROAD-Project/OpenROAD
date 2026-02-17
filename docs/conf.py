@@ -15,7 +15,7 @@ import os
 # -- Project information -----------------------------------------------------
 
 project = "OpenROAD"
-copyright = "The Regents of the University of California, 2021"
+copyright = "The OpenROAD Authors, 2021"
 author = "OpenROAD Team"
 
 
