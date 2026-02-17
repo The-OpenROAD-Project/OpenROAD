@@ -239,10 +239,9 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
     // However, since we don't have base path info readily available without API
     // change, we use absolute() as a best-effort de-duplication key.
     std::string full_path = std::filesystem::absolute(include).string();
-    if (read_files_.contains(full_path)) {
+    if (!read_files_.insert(std::move(full_path)).second) {
       continue;
     }
-    read_files_.insert(std::move(full_path));
 
     if (include.find(".3dbv") != std::string::npos) {
       readDbv(include);
