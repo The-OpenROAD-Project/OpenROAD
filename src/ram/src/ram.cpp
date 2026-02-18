@@ -910,13 +910,13 @@ void RamGen::writeBehavioralVerilog(const std:: string& filename,
   
   std::ofstream vf(filename);
    if (!vf.is_open()) {         // <-- FIXED: was backwards
-    logger_->error(RAM, 12, "Unable to open file {}", filename);
+    logger_->error(RAM, 17, "Unable to open file {}", filename);
     return;
   }
 
   vf << verilog_code;
   vf.close();
-  logger_->info(RAM, 17, "Behavioral Verilog for {} written to {}", module_name, filename);
+  logger_->info(RAM, 24, "Behavioral Verilog for {} written to {}", module_name, filename);
 
 }
 
