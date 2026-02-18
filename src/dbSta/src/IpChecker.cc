@@ -208,6 +208,11 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
 
   auto track_grids = block->getTrackGrids();
   if (track_grids.empty()) {
+    logger_->info(utl::CHK,
+                  12,
+                  "Skipping pin routing grid alignment check for {} "
+                  "due to no tracks present in the design.",
+                  master->getName());
     return;
   }
 
@@ -218,9 +223,7 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
   std::map<odb::dbTechLayer*, std::vector<int>> layer_pin_centers;
 
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    odb::dbSigType sig_type = mterm->getSigType();
-    if (sig_type == odb::dbSigType::POWER
-        || sig_type == odb::dbSigType::GROUND) {
+    if (mterm->getSigType().isSupply()) {
       continue;
     }
 
@@ -237,16 +240,14 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
             (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL);
 
         // Only check minimum-width pins
-        // For wider pins, routing can connect regardless of offset
+        // For wider pins, routing might connect regardless of offset
         int pin_dim = is_horizontal ? rect.dy() : rect.dx();
         if (min_width > 0 && static_cast<uint32_t>(pin_dim) > min_width) {
           continue;  // Wider than minimum, skip for now
         }
 
         // Pin center along the routing direction
-        int center = is_horizontal
-                         ? (rect.yMin() + rect.yMax()) / 2
-                         : (rect.xMin() + rect.xMax()) / 2;
+        int center = is_horizontal ? rect.yCenter() : rect.xCenter();
         layer_pin_centers[layer].push_back(center);
       }
     }
@@ -258,8 +259,10 @@ void IpChecker::checkPinRoutingGridAlignment(odb::dbMaster* master)
       continue;  // Need at least 2 pins to compute distances
     }
 
-    // Sort and compute distances between consecutive pin centers
-    std::sort(centers.begin(), centers.end());
+    // Sort to compute distances between consecutive pin centers.
+    // Sorting is needed because pins are collected per-mterm, not in spatial order.
+    // Consecutive distances after sorting give the minimal spacings whose GCD represents the pin grid.
+    std::ranges::sort(centers);
     int distance_gcd = 0;
     for (size_t i = 1; i < centers.size(); i++) {
       int dist = centers[i] - centers[i - 1];
@@ -371,11 +374,28 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
   }
 
   // Check 1: Same-layer edge access
-  // If any edge of the pin is not blocked, routing can reach it
+  // If any edge of the pin is not blocked, routing can reach it.
+  // A pin edge on the macro boundary is always accessible from outside.
   if (same_layer_obs.empty()) {
     return true;  // No same-layer obstructions, all edges accessible
   }
 
+  // Get macro bounding box (origin is always 0,0 in master coords)
+  int macro_width = static_cast<int>(master->getWidth());
+  int macro_height = static_cast<int>(master->getHeight());
+
+  // An edge touching the macro boundary is accessible from outside
+  bool north_on_boundary = (pin_rect.yMax() >= macro_height);
+  bool south_on_boundary = (pin_rect.yMin() <= 0);
+  bool east_on_boundary = (pin_rect.xMax() >= macro_width);
+  bool west_on_boundary = (pin_rect.xMin() <= 0);
+
+  if (north_on_boundary || south_on_boundary
+      || east_on_boundary || west_on_boundary) {
+    return true;  // Pin extends to macro boundary, accessible from outside
+  }
+
+  // For interior pins, check if any edge is free from obstructions.
   odb::Rect north_edge(
       pin_rect.xMin(), pin_rect.yMax(), pin_rect.xMax(), pin_rect.yMax() + 1);
   odb::Rect south_edge(
@@ -391,16 +411,16 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
   bool west_blocked = false;
 
   for (const auto& obs_rect : same_layer_obs) {
-    if (obs_rect.intersects(north_edge)) {
+    if (obs_rect.overlaps(north_edge)) {
       north_blocked = true;
     }
-    if (obs_rect.intersects(south_edge)) {
+    if (obs_rect.overlaps(south_edge)) {
       south_blocked = true;
     }
-    if (obs_rect.intersects(east_edge)) {
+    if (obs_rect.overlaps(east_edge)) {
       east_blocked = true;
     }
-    if (obs_rect.intersects(west_edge)) {
+    if (obs_rect.overlaps(west_edge)) {
       west_blocked = true;
     }
   }
@@ -473,9 +493,7 @@ void IpChecker::checkPinAccessibility(odb::dbMaster* master)
     }
 
     if (has_shapes && !any_shape_accessible) {
-      odb::dbSigType sig_type = mterm->getSigType();
-      bool is_power = (sig_type == odb::dbSigType::POWER
-                       || sig_type == odb::dbSigType::GROUND);
+      bool is_power = mterm->getSigType().isSupply();
       logger_->warn(utl::CHK,
                     40,
                     "{} pin {}/{} has no accessible edge on any shape",

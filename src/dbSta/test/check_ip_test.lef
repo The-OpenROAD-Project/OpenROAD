@@ -248,8 +248,10 @@ MACRO lef003d_multi_fail
 END lef003d_multi_fail
 
 # =============================================================================
-# LEF-CHK-004-005a: Pin fully blocked - obstruction covers pin on same layer
-# AND above layer (M2) so it can't be accessed from above either.
+# LEF-CHK-004-005a: Pin fully blocked on same layer AND above layer
+# M1 obstruction completely overlaps the pin, preventing same-layer routing access.
+# M2 obstruction prevents access from the layer above.
+# M1 is routing level 1, so there's nothing below to access from either.
 # =============================================================================
 MACRO lef004_005a_fully_blocked
   CLASS BLOCK ;
@@ -317,6 +319,34 @@ MACRO lef004_005c_power_blocked
     RECT 0.900 0.900 1.300 1.300 ;
   END
 END lef004_005c_power_blocked
+
+# =============================================================================
+# LEF-CHK-004-005d: Pin on macro boundary, covered by same-layer OBS (PASS)
+# The pin is located at x=0 (west macro edge) and is geometrically overlapped
+# by M1 and M2 obstructions inside the macro.
+# However, because the pin touches the macro boundary, routing access is still
+# possible from outside the macro (west side).
+# =============================================================================
+MACRO lef004_005d_edge_pin
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN SIG
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END SIG
+  OBS
+    LAYER M1 ;
+    RECT 0.000 0.900 0.300 1.300 ;
+    LAYER M2 ;
+    RECT 0.000 0.900 0.300 1.300 ;
+  END
+END lef004_005d_edge_pin
 
 # =============================================================================
 # LEF-CHK-006: Excessive polygon count (test with -max_polygons 5)
