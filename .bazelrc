@@ -62,7 +62,6 @@ build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
 
 # Settings for --config=asan address sanitizer build
-# Settings for --config=asan address sanitizer build
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-DADDRESS_SANITIZER
