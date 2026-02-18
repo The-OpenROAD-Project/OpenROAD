@@ -23,4 +23,3 @@ reset_opt_config -limit_sizing_area -limit_sizing_leakage
 report_equiv_cells CLKBUFx2_ASAP7_75t_R
 report_equiv_cells -match_cell_footprint CLKBUFx2_ASAP7_75t_R
 report_equiv_cells BUFx2_ASAP7_75t_R
-

@@ -2290,7 +2290,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   // Sort to make hash order-independent
-  std::sort(layer_names.begin(), layer_names.end());
+  std::ranges::sort(layer_names,);
 
   // Now hash in sorted order
   size_t hash1 = 0;
@@ -5989,7 +5989,7 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
   }
   auto it = drv2buf_slew.find(buffer_load_pin);
   if (it == drv2buf_slew.end()) {
-    return;
+    return false;
   }
   float estimated_drv2buf_slew = it->second;
   Vertex* buf_load_vertex = graph_->pinLoadVertex(buffer_load_pin);
