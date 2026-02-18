@@ -51,8 +51,7 @@ ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
 
 void ThreeDBlox::readDbv(const std::string& dbv_file)
 {
-  std::string full_path = std::filesystem::absolute(dbv_file).string();
-  read_files_.insert(full_path);
+  read_files_.insert(std::filesystem::absolute(dbv_file).string());
   DbvParser parser(logger_);
   DbvData data = parser.parseFile(dbv_file);
   if (db_->getDbuPerMicron() == 0) {
@@ -81,8 +80,7 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
 
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
-  std::string full_path = std::filesystem::absolute(dbx_file).string();
-  read_files_.insert(full_path);
+  read_files_.insert(std::filesystem::absolute(dbx_file).string());
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
   readHeaderIncludes(data.header.includes);
@@ -241,10 +239,9 @@ void ThreeDBlox::readHeaderIncludes(const std::vector<std::string>& includes)
     // However, since we don't have base path info readily available without API
     // change, we use absolute() as a best-effort de-duplication key.
     std::string full_path = std::filesystem::absolute(include).string();
-    if (read_files_.contains(full_path)) {
+    if (!read_files_.insert(std::move(full_path)).second) {
       continue;
     }
-    read_files_.insert(full_path);
 
     if (include.find(".3dbv") != std::string::npos) {
       readDbv(include);
