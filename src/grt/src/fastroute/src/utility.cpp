@@ -20,6 +20,7 @@
 #include "FastRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
@@ -1618,7 +1619,10 @@ float FastRouteCore::CalculatePartialSlack()
   // defined by the user
   const int threshold_index
       = std::ceil(slacks.size() * critical_nets_percentage_ / 100);
-  const float slack_th = slacks[threshold_index];
+  const float slack_th
+      = slacks.empty() ? 0.0f
+                       : slacks[std::min(static_cast<size_t>(threshold_index),
+                                         slacks.size() - 1)];
 
   // Set the non critical nets slack as the lowest float, so they can be
   // ordered by overflow (and ordered first than the critical nets)

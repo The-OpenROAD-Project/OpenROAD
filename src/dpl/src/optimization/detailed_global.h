@@ -16,6 +16,8 @@ class Edge;
 class Architecture;
 class DetailedMgr;
 class Network;
+class Journal;
+struct GlobalSwapParams;
 
 class DetailedGlobalSwap : public DetailedGenerator
 {
@@ -37,6 +39,9 @@ class DetailedGlobalSwap : public DetailedGenerator
   bool calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox);
   bool getRange(Node*, odb::Rect&);
   bool generate(Node* ndi);
+  bool generateWirelengthOptimalMove(Node* ndi);
+  bool generateRandomMove(Node* ndi);
+  double calculateAdaptiveCongestionWeight();
 
   // Standard stuff.
   DetailedMgr* mgr_;
@@ -55,6 +60,20 @@ class DetailedGlobalSwap : public DetailedGenerator
   int attempts_;
   int moves_;
   int swaps_;
+
+  // Two-pass optimization state
+  double budget_hpwl_ = 0.0;
+  bool is_profiling_pass_ = false;
+  Journal* profiling_journal_ = nullptr;
+  double tradeoff_ = 0.2;
+  double congestion_weight_ = 0.0;
+  std::vector<double> congestion_contribution_;
+  const GlobalSwapParams* swap_params_ = nullptr;
+
+  // Extra DPL tapering (0 = legacy-like, 1 = full extra).
+  double extra_dpl_intensity_ = 1.0;
+  double extra_dpl_alpha_ = 1.0;
+  bool allow_random_moves_ = true;
 };
 
 }  // namespace dpl

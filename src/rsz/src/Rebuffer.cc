@@ -70,39 +70,6 @@ using BnetSeq = BufferedNetSeq;
 using BnetPtr = BufferedNetPtr;
 using BnetMetrics = BufferedNet::Metrics;
 
-// Template magic to make it easier to write algorithms descending
-// over the buffer tree in the form of lambdas; it allows recursive
-// lambda calling and it keeps track of the level number which is important
-// for good debug prints
-//
-// https://stackoverflow.com/questions/2067988/how-to-make-a-recursive-lambda
-template <class F>
-struct visitor
-{
-  F f;
-  int level = 0;
-  explicit visitor(F&& f) : f(std::forward<F>(f)) {}
-  template <class... Args>
-  decltype(auto) operator()(Args&&... args)
-  {
-    level++;
-    decltype(auto) ret = f(*this, level, std::forward<Args>(args)...);
-    level--;
-    return ret;
-  }
-
-  // delete the copy constructor
-  visitor(const visitor&) = delete;
-  visitor& operator=(const visitor&) = delete;
-};
-
-template <typename F, class... Args>
-static decltype(auto) visitTree(F&& f, Args&&... args)
-{
-  visitor<std::decay_t<F>> v{std::forward<F>(f)};
-  return v(std::forward<Args>(args)...);
-}
-
 Rebuffer::Rebuffer(Resizer* resizer) : resizer_(resizer)
 {
 }
@@ -1843,7 +1810,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
                                               buffer_cell,
                                               &buffer_loc,
                                               instance_base_name,
-                                              nullptr /*new_net_base_name*/,
+                                              kDefaultNetBaseName,
                                               odb::dbNameUniquifyType::ALWAYS,
                                               true /*loads_on_diff_nets*/));
 

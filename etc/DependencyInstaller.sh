@@ -62,8 +62,8 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20240722.0"
-ABSL_CHECKSUM="740fb8f35ebdf82740c294bde408b9c0"
+ABSL_VERSION="20260107.0"
+ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -781,7 +781,6 @@ _install_common_dev() {
     _install_lemon
     _install_spdlog
     _install_gtest
-    _install_abseil
 
     if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
         _install_equivalence_deps
@@ -1028,6 +1027,7 @@ Options:
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
+  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
 
@@ -1078,6 +1078,7 @@ main() {
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
             -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
+            -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
                 echo "Unknown option: ${1}" >&2
                 _help
@@ -1143,6 +1144,7 @@ main() {
                     ubuntu_version_normalized="20.04"
                 fi
                 _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
@@ -1188,6 +1190,7 @@ main() {
                     fi
                 fi
                 _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Darwin")
@@ -1206,6 +1209,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             cat <<EOF
 To enable GCC-11 you need to run:
@@ -1225,6 +1229,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         *)

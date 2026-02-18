@@ -22,10 +22,12 @@
 #include <vector>
 
 #include "fft.h"
+#include "gpl/Replace.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 #include "omp.h"
 #include "placerBase.h"
+#include "point.h"
 #include "utl/Logger.h"
 
 #define REPLACE_SQRT2 1.414213562373095048801L
@@ -1891,7 +1893,7 @@ NesterovBase::NesterovBase(
   log_ = log;
   log_->info(GPL,
              33,
-             "Initializing Nesterov region: {}",
+             "---- Initialize Nesterov Region: {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
   // Set a fixed seed

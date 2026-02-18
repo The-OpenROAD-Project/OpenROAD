@@ -12,6 +12,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"

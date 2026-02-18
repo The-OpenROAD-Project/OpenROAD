@@ -1,4 +1,3 @@
-#include <iostream>
 #include <stdexcept>
 #include <string>
 
@@ -52,11 +51,11 @@ TEST_F(DbvFixture, test_3dbv)
 
   // Test chip regions were created
   auto regions = chip->getChipRegions();
-  EXPECT_EQ(regions.size(), 1);
+  EXPECT_EQ(regions.size(), 2);
 
-  auto region = *regions.begin();
-  EXPECT_EQ(region->getName(), "r1");
-  EXPECT_EQ(region->getSide(), dbChipRegion::Side::FRONT);
+  auto region = chip->findChipRegion("back_reg");
+  ASSERT_NE(region, nullptr);
+  EXPECT_EQ(region->getSide(), dbChipRegion::Side::BACK);
 
   // Test region bounding box
   Rect region_box = region->getBox();
@@ -100,14 +99,14 @@ TEST_F(DbvFixture, test_3dbx)
             "soc_inst_duplicate");
   EXPECT_EQ(connection->getBottomRegion()->getChipInst()->getName(),
             "soc_inst");
-  EXPECT_EQ(connection->getThickness(), 2.0 * db_->getDbuPerMicron());
+  EXPECT_EQ(connection->getThickness(), 0);
   connection = *itr;
   EXPECT_EQ(connection->getName(), "soc_to_virtual");
   EXPECT_EQ(connection->getTopRegion()->getChipInst()->getName(),
             "soc_inst_duplicate");
   EXPECT_EQ(connection->getTopRegionPath().size(), 1);
   EXPECT_EQ(connection->getTopRegionPath()[0]->getName(), "soc_inst_duplicate");
-  EXPECT_EQ(connection->getTopRegion()->getChipRegion()->getName(), "r1");
+  EXPECT_EQ(connection->getTopRegion()->getChipRegion()->getName(), "back_reg");
   EXPECT_EQ(connection->getBottomRegionPath().size(), 0);
   EXPECT_EQ(connection->getBottomRegion(), nullptr);
   EXPECT_EQ(connection->getThickness(), 0.0);
@@ -115,7 +114,8 @@ TEST_F(DbvFixture, test_3dbx)
 
 TEST_F(DbvFixture, test_bump_map_parser)
 {
-  auto region = db_->findChip("SoC")->findChipRegion("r1");
+  auto region = db_->findChip("SoC")->findChipRegion("back_reg");
+  ASSERT_NE(region, nullptr);
   EXPECT_EQ(region->getChipBumps().size(), 2);
   auto bump = *region->getChipBumps().begin();
   EXPECT_EQ(bump->getInst()->getName(), "bump1");
@@ -128,7 +128,8 @@ TEST_F(DbvFixture, test_bump_map_parser)
   EXPECT_EQ(bump->getNet(), nullptr);
   EXPECT_EQ(bump->getBTerm(), nullptr);
   auto soc_inst = db_->getChip()->findChipInst("soc_inst");
-  auto region_inst = soc_inst->findChipRegionInst("r1");
+  auto region_inst = soc_inst->findChipRegionInst("back_reg");
+  ASSERT_NE(region_inst, nullptr);
   EXPECT_EQ(region_inst->getChipBumpInsts().size(), 2);
   auto bump_inst = *region_inst->getChipBumpInsts().begin();
   EXPECT_EQ(bump_inst->getChipBump(), bump);

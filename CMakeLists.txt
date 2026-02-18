@@ -12,6 +12,10 @@ cmake_policy(SET CMP0086 NEW)
 # Allows <PackageName>_ROOT to be used
 cmake_policy(SET CMP0074 NEW)
 
+# Disallows <PACKAGENAME>_ROOT in find_package.
+# TODO: resolve absl/or-tools issue and switch to NEW
+cmake_policy(SET CMP0144 OLD)
+
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
 
@@ -62,7 +66,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # Get version string in OPENROAD_VERSION
 if(NOT OPENROAD_VERSION)
   include(GetGitRevisionDescription)
-  git_describe(OPENROAD_VERSION)
+  git_describe(OPENROAD_VERSION --tags --match "[0-9][0-9]Q[0-9]")
   string(FIND ${OPENROAD_VERSION} "NOTFOUND" GIT_DESCRIBE_NOTFOUND)
   if(${GIT_DESCRIBE_NOTFOUND} GREATER -1)
     message(WARNING "OpenROAD git describe failed, using sha1 instead")

@@ -41,6 +41,8 @@ build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
 build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
 build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
+build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declarations"
+build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 
 # The warning acceptance bar in CI for PRs is set by -Werror of a specific
 # version of some chosen compiler. Disable warnings from other compilers until
@@ -56,8 +58,8 @@ build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
-build --per_file_copt=external/.*@-w
-build --host_per_file_copt=external/.*@-w
+build --per_file_copt=.*external/.*@-w
+build --host_per_file_copt=.*external/.*@-w
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
@@ -92,6 +94,8 @@ build:ci --remote_download_minimal
 build:ci --remote_upload_local_results=true
 # Disable disk cache for CI builds
 build:ci --disk_cache=
+# Tell the 'ci' config to include 'opt'
+build:ci --config=opt
 
 # Setup remote cache
 build --remote_cache=https://bazel.precisioninno.com

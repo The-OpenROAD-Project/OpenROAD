@@ -130,6 +130,7 @@ or_integration_tests(
     repair_tie10_hier
     repair_tie11_hier
     repair_tie12_hier
+    repair_tie13_hier
     repair_wire1
     repair_wire2
     repair_wire3
@@ -184,6 +185,7 @@ or_integration_tests(
     report_buffers_sky130hs
     report_buffers_sky130hd
     report_buffers_gf180
+    report_buffers_no_lef
     repair_setup_vt_swap
     repair_setup_vt_swap2
     repair_fanout7_skip_pin_swap

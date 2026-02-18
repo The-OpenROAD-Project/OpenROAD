@@ -158,10 +158,21 @@ set_infinite_cap(bool infinite_capacity)
   getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
 }
 
-void
-global_route(bool start_incremental, bool end_incremental)
+void start_incremental()
 {
-  getGlobalRouter()->globalRoute(true, start_incremental, end_incremental);
+  getGlobalRouter()->startIncremental();
+}
+
+void end_incremental()
+{
+  // Save guides by default when ending incremental routing from Tcl interface.
+  getGlobalRouter()->endIncremental(true);
+}
+
+void
+global_route()
+{
+  getGlobalRouter()->globalRoute(true);
 }
 
 std::vector<int>

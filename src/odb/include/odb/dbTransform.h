@@ -103,6 +103,8 @@ class dbTransform
 
   dbOrientType getOrient() const { return orient_; }
   Point getOffset() const { return Point(offset_.x(), offset_.y()); }
+  Point3D getOffset3D() const { return offset_; }
+  bool isMirrorZ() const { return mirror_z_; }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);
