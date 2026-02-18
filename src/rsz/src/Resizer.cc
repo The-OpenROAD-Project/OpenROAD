@@ -2290,7 +2290,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   // Sort to make hash order-independent
-  std::ranges::sort(layer_names,);
+  std::ranges::sort(layer_names);
 
   // Now hash in sorted order
   size_t hash1 = 0;
