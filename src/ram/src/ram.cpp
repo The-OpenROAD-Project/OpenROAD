@@ -61,7 +61,8 @@ RamGen::RamGen(sta::dbNetwork* network,
       ioPlacer_(ioPlacer),
       opendp_(opendp),
       global_router_(global_router),
-      detailed_router_(detailed_router)
+      detailed_router_(detailed_router),
+      behavioral_verilog_filename_("")
 {
 }
 
@@ -832,6 +833,91 @@ void RamGen::generate(const int bytes_per_word,
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
+
+  writeBehavioralVerilog(behavioral_verilog_filename_, bytes_per_word, word_count, read_ports);
+}
+
+void RamGen:: setBehavioralVerilogFilename(const std::string& filename){
+  behavioral_verilog_filename_ = filename;
+}
+
+void RamGen::writeBehavioralVerilog(const std:: string& filename,
+                                    const int bytes_per_word,
+                                    const int word_count,
+                                    const int read_ports){
+    if (filename.empty()) {
+      return;
+    }
+
+    const int word_size_bit = bytes_per_word * 8; 
+    const int address_width = std::ceil(std::log2(word_count)); //for adress input length in bits
+
+    std::string module_name = fmt::format("RAM{}x{}_behavioral", word_count, word_size_bit);
+
+    std::string port_list = "clk, \n D";
+    for (int i=0; i< read_ports; i++) {
+      port_list += fmt::format(", \n Q{}", i);
+    }
+    port_list += ",\n addr,\n we,\n VSS,\n VDD";
+
+    std::string output_declaration;
+    for (int i=0; i< read_ports; i++){
+      output_declaration += fmt::format(" output [{}:0] Q{}; \n", word_size_bit-1, i);
+    }
+
+    std::string read_port_logic;
+    for (int i=0; i< read_ports; i++){
+      read_port_logic += fmt::format(" assign Q{} = mem[addr];\n",i);
+    }
+
+    std::string verilog_code = fmt::format(R"(
+    module {} ({});
+      input clk;
+      input [{}:0] D;
+      {}
+      input [{}:0] addr;
+      input [{}:0] we;
+      inout VSS;
+      inout VDD;
+
+      // memory array declaration
+      reg [{}:0] mem[0:{}];
+
+      integer i;
+      always @(posedge clk) begin
+        for (i=0; i< {}; i = i +1 ) begin
+          if (we[i]) begin
+            mem[addr][i*8 +:8] <= D[i*8 +:8];
+          end
+        end
+      end
+
+      {}
+        
+      endmodule
+    )",
+      module_name,
+      port_list,
+      word_size_bit-1,
+      output_declaration,
+      address_width-1,
+      bytes_per_word-1,
+      word_size_bit-1,
+      word_count -1,
+      bytes_per_word,
+      read_port_logic
+  );
+  
+  std::ofstream vf(filename);
+   if (!vf.is_open()) {         // <-- FIXED: was backwards
+    logger_->error(RAM, 12, "Unable to open file {}", filename);
+    return;
+  }
+
+  vf << verilog_code;
+  vf.close();
+  logger_->info(RAM, 17, "Behavioral Verilog for {} written to {}", module_name, filename);
+
 }
 
 }  // namespace ram
