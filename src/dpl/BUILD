@@ -95,7 +95,7 @@ cc_library(
         "@boost.random",
         "@boost.tokenizer",
         "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
+        "@coin-or-lemon//:lemon",
         "@tk_tcl//:tcl",
     ],
 )
