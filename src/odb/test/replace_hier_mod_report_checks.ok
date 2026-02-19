@@ -30,6 +30,7 @@ Path Type: max
           -0.39   slack (VIOLATED)
 
 
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r4 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk
@@ -60,6 +61,7 @@ Path Type: max
           -0.39   slack (VIOLATED)
 
 
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
 Path Group: clk

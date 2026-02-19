@@ -49,6 +49,7 @@ Cell type report:                       Count       Area
   Multi-Input combinational cell           82     384.12
   Total                                   103     523.00
 [WARNING ODB-0470] The modules cannot be swapped because the new module name LCU_16_KOGGE_STONE is identical to the existing module name.
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Startpoint: gcd_1/dpath.b_reg.out[3]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
 Endpoint: carry_out (output port)

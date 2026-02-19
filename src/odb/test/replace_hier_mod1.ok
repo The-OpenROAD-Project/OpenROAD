@@ -127,6 +127,7 @@ Corner: slow
 Equivalence check - pre
 Repair timing output passed/skipped equivalence test
 ### swap bc1 to inv_chain ###
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
@@ -292,6 +293,7 @@ Corner: slow
 Equivalence check - swap (buffer_chain -> inv_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to buffer_chain ###
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
@@ -433,6 +435,7 @@ Corner: slow
 Equivalence check - swap for rollback (inv_chain -> buffer_chain)
 Repair timing output passed/skipped equivalence test
 ### swap bc1 back to inv_chain ###
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO GPL-0006] Execute incremental mode global placement.
 [INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
