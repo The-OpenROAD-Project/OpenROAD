@@ -26,9 +26,10 @@ namespace dpl {
 void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
-                       const char* report_file_name){
+                       const char* report_file_name,
+                       bool incremental){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name));
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), incremental);
 }
 
 void
@@ -99,14 +100,17 @@ void
 set_debug_cmd(float min_displacement,
               const odb::dbInst* debug_instance,
               int jump_moves,
-              bool iterative_placement)
+              bool iterative_placement,
+              bool deep_iterative_placement,
+              bool paint_pixels)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setJumpMoves(jump_moves);
   opendp->setIterativePlacement(iterative_placement);
+  opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, min_displacement, debug_instance);
+          opendp, min_displacement, debug_instance, paint_pixels);
       opendp->setDebug(graphics);
   }
 }
