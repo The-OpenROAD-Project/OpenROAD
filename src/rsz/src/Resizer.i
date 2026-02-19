@@ -109,7 +109,6 @@ namespace rsz {
 void
 report_net_parasitic(Net *net)
 {
-  Resizer *resizer = getResizer();
   Scene *corner = sta::Sta::sta()->cmdScene();
   auto parasitics = corner->parasitics(sta::MinMax::max());
   auto parasitic = parasitics->findParasiticNetwork(net);
@@ -121,7 +120,6 @@ report_net_parasitic(Net *net)
 float
 sum_parasitic_network_resist(Net *net)
 {
-  Resizer *resizer = getResizer();
   Scene *corner = sta::Sta::sta()->cmdScene();
   auto parasitics = corner->parasitics(sta::MinMax::max());
   auto parasitic = parasitics->findParasiticNetwork(net);
