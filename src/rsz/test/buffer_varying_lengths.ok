@@ -171,13 +171,13 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-place334/Z                              0.20    0.06    0.14 (MET)
+place326/Z                              0.20    0.06    0.14 (MET)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-place334/Z                             60.65   27.72   32.93 (MET)
+place326/Z                             60.65   27.72   32.93 (MET)
 
 -------------------------------------------------------------
  Distance | Buffer area | Path delay | Sequence

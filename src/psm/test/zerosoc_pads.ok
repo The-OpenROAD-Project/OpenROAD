@@ -14,11 +14,11 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd_data/io/sk
 ########## IR report #################
 Net              : vdd
 Corner           : default
-Total power      : 2.70e-03 W
+Total power      : 8.97e-03 W
 Supply voltage   : 1.80e+00 V
 Worstcase voltage: 1.80e+00 V
 Average voltage  : 1.80e+00 V
-Average IR drop  : 4.41e-04 V
-Worstcase IR drop: 5.68e-04 V
-Percentage drop  : 0.03 %
+Average IR drop  : 1.62e-03 V
+Worstcase IR drop: 2.34e-03 V
+Percentage drop  : 0.13 %
 ######################################
