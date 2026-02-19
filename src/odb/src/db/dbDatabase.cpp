@@ -6,7 +6,6 @@
 
 #include <cstdint>
 
-#include "absl/synchronization/mutex.h"
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipConn.h"
@@ -37,6 +36,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
