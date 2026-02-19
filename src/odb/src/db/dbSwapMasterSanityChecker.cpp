@@ -11,6 +11,7 @@
 #include "boost/container/small_vector.hpp"
 #include "dbModule.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -212,9 +213,8 @@ int dbSwapMasterSanityChecker::checkHierNetConnectivity()
     }
 
     if (mod_net->getParent() != parent_) {
-      error(ctx + ": ModITerm '" + iterm->getName()
-            + "' connected to ModNet '" + mod_net->getName()
-            + "' whose parent is not the parent module");
+      error(ctx + ": ModITerm '" + iterm->getName() + "' connected to ModNet '"
+            + mod_net->getName() + "' whose parent is not the parent module");
     }
 
     // Verify reverse link: the ModNet's ModITerms should contain this iterm
@@ -328,8 +328,8 @@ int dbSwapMasterSanityChecker::checkFlatNetConnectivity()
           }
           if (has_input_consumer) {
             error(ctx + ": ITerm '" + iterm->getName() + "' of inst '"
-                  + inst->getName()
-                  + "' has internal ModNet '" + mod_net->getName()
+                  + inst->getName() + "' has internal ModNet '"
+                  + mod_net->getName()
                   + "' but no flat net (missing internal net creation)");
           }
         }
@@ -367,8 +367,7 @@ int dbSwapMasterSanityChecker::checkInstanceHierarchy()
             + "' has wrong parent");
     }
     if (child->getMaster() == nullptr) {
-      error(ctx + ": child ModInst '" + child->getName()
-            + "' has null master");
+      error(ctx + ": child ModInst '" + child->getName() + "' has null master");
     }
   }
 

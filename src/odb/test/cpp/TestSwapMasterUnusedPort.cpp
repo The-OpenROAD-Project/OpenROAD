@@ -8,6 +8,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "tst/fixture.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
