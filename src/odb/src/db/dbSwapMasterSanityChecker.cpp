@@ -32,6 +32,16 @@ int dbSwapMasterSanityChecker::run()
   error_count_ = 0;
 
   checkStructuralIntegrity();
+  if (error_count_ > 0) {
+    // Structural integrity failed — remaining checks would dereference
+    // invalid pointers (e.g., null parent_ or new_master_).
+    logger_->error(utl::ODB,
+                   512,
+                   "swapMaster structural integrity failed: {} error(s) "
+                   "detected, aborting.",
+                   error_count_);
+  }
+
   checkPortPinMatching();
   checkHierNetConnectivity();
   checkFlatNetConnectivity();
@@ -398,16 +408,8 @@ void dbSwapMasterSanityChecker::checkHashTableIntegrity()
 // 7. No dangling objects: verify no orphaned ModNets remain [WARNING]
 void dbSwapMasterSanityChecker::checkNoDanglingObjects()
 {
-  // Check ModNets in new_master_ for zero connections
-  const std::string ctx = masterContext();
-  for (dbModNet* mod_net : new_master_->getModNets()) {
-    if (mod_net->connectionCount() == 0) {
-      warn(ctx + ": ModNet '" + mod_net->getName()
-           + "' in new_master has zero connections");
-    }
-  }
-
   // Check ModNets in parent module for zero connections
+  // (new_master_ ModNets are already checked in checkHierNetConnectivity)
   for (dbModNet* mod_net : parent_->getModNets()) {
     if (mod_net->connectionCount() == 0) {
       warn(std::string("ModNet '") + mod_net->getName()
