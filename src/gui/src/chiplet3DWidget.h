@@ -4,45 +4,50 @@
 #pragma once
 
 #include <QMatrix4x4>
-#include <QOpenGLWidget>
 #include <QQuaternion>
 #include <QVector2D>
 #include <QVector3D>
+#include <QWidget>
 #include <cstdint>
 #include <vector>
 
 namespace odb {
 class dbChip;
 }
-
 namespace utl {
 class Logger;
 }
 
 namespace gui {
 
-class Chiplet3DWidget : public QOpenGLWidget
+class Chiplet3DWidget : public QWidget
 {
   Q_OBJECT
 
  public:
   explicit Chiplet3DWidget(QWidget* parent = nullptr);
-  ~Chiplet3DWidget() override = default;
 
   void setChip(odb::dbChip* chip);
   void setLogger(utl::Logger* logger);
 
  protected:
-  void initializeGL() override;
-  void paintGL() override;
-
-  void mousePressEvent(QMouseEvent* e) override;
-  void mouseReleaseEvent(QMouseEvent* e) override;
-  void mouseMoveEvent(QMouseEvent* e) override;
-  void wheelEvent(QWheelEvent* e) override;
+  void paintEvent(QPaintEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void wheelEvent(QWheelEvent* event) override;
 
  private:
   void buildGeometries();
+
+  // Helper to draw a line with 3D projection and clipping
+  void drawLine3D(QPainter& painter,
+                  const QVector3D& p1_world,
+                  const QVector3D& p2_world,
+                  const QColor& color,
+                  const QMatrix4x4& modelView,
+                  const QMatrix4x4& projection,
+                  const QRect& viewport);
 
   odb::dbChip* chip_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -50,6 +55,7 @@ class Chiplet3DWidget : public QOpenGLWidget
   QVector2D mouse_press_position_;
   QQuaternion rotation_;
 
+  // Camera State
   float distance_ = 10.0f;
   float pan_x_ = 0.0f;
   float pan_y_ = 0.0f;
@@ -64,7 +70,7 @@ class Chiplet3DWidget : public QOpenGLWidget
   };
 
   std::vector<VertexData> vertices_;
-  std::vector<uint16_t> indices_lines_;
+  std::vector<uint32_t> indices_lines_;
 };
 
 }  // namespace gui

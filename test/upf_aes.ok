@@ -3,6 +3,12 @@
 [WARNING IFP-0028] Core area lower left (30.000, 30.000) snapped to (30.360, 32.640).
 [INFO IFP-0001] Added 344 rows of 2042 site unithd.
 [INFO IFP-0001] Added 172 rows of 2042 site unithddbl.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 1000.000 1000.000 ) um
+[INFO IFP-0101] Core BBox: ( 30.360 32.640 ) ( 969.680 968.320 ) um
+[INFO IFP-0102] Core area:                       878902.938 um^2
+[INFO IFP-0103] Total instances area:            368817.475 um^2
+[INFO IFP-0104] Effective utilization:                0.420
+[INFO IFP-0105] Number of instances:                  51385
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 3632

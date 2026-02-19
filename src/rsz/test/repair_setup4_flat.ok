@@ -1,5 +1,11 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:                58.254 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                     17
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 8754

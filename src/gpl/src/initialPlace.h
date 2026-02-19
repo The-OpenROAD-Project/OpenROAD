@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "Eigen/SparseCore"
+#include "gpl/Replace.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
 

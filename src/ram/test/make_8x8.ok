@@ -7,15 +7,15 @@
 [INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
 [INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
 [INFO PDN-0001] Inserting grid: ram_grid
-[INFO PPL-0067] Restrict pins [ D[0] D[1] D[2] D[3] D[4] ... ] to region 0.00u-125.12u at the TOP edge.
-[INFO PPL-0001] Number of available slots 288
+[INFO PPL-0067] Restrict pins [ D[0] D[1] D[2] D[3] D[4] ... ] to region 0.00u-127.88u at the TOP edge.
+[INFO PPL-0001] Number of available slots 294
 [INFO PPL-0002] Number of I/O             29
 [INFO PPL-0003] Number of I/O w/sink      29
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 516.04 um.
-[INFO DPL-0001] Placed 49 filler instances.
+[INFO PPL-0012] I/O nets HPWL: 529.84 um.
+[INFO DPL-0001] Placed 50 filler instances.
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
@@ -38,9 +38,9 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] li1 shape region query size = 8225.
+[INFO DRT-0033] li1 shape region query size = 8451.
 [INFO DRT-0033] mcon shape region query size = 436.
-[INFO DRT-0033] met1 shape region query size = 1264.
+[INFO DRT-0033] met1 shape region query size = 1298.
 [INFO DRT-0033] via shape region query size = 30.
 [INFO DRT-0033] met2 shape region query size = 78.
 [INFO DRT-0033] via2 shape region query size = 6.
@@ -52,7 +52,7 @@
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] FR_MASTERSLICE guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
-[INFO DRT-0036] li1 guide region query size = 477.
+[INFO DRT-0036] li1 guide region query size = 493.
 [INFO DRT-0036] mcon guide region query size = 0.
 [INFO DRT-0036] met1 guide region query size = 354.
 [INFO DRT-0036] via guide region query size = 0.
