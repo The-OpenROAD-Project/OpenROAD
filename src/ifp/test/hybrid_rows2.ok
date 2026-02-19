@@ -9,4 +9,10 @@
 [INFO IFP-0050] Added 280 rows of site HybridAG.
 [INFO IFP-0050] Added 279 rows of site HybridAG2.
 [INFO IFP-0050] Added 279 rows of site HybridGA.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 1100.000 1100.000 ) um
+[INFO IFP-0101] Core BBox: ( 100.130 102.400 ) ( 999.970 998.400 ) um
+[INFO IFP-0102] Core area:                       806256.640 um^2
+[INFO IFP-0103] Total instances area:                 2.090 um^2
+[INFO IFP-0104] Effective utilization:                0.000
+[INFO IFP-0105] Number of instances:                      5
 No differences found.
