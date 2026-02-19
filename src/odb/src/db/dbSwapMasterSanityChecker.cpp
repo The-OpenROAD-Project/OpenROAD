@@ -3,7 +3,6 @@
 
 #include "dbSwapMasterSanityChecker.h"
 
-#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -83,20 +82,18 @@ std::string dbSwapMasterSanityChecker::masterContext() const
 }
 
 // 1. Structural integrity: basic pointer consistency [ERROR]
-int dbSwapMasterSanityChecker::checkStructuralIntegrity()
+void dbSwapMasterSanityChecker::checkStructuralIntegrity()
 {
-  int before = warn_count_ + error_count_;
-
   if (parent_ == nullptr) {
     error("new_mod_inst '" + std::string(new_mod_inst_->getName())
           + "' has null parent");
-    return (warn_count_ + error_count_) - before;
+    return;
   }
 
   if (new_master_ == nullptr) {
     error("new_mod_inst '" + std::string(new_mod_inst_->getName())
           + "' has null master");
-    return (warn_count_ + error_count_) - before;
+    return;
   }
 
   if (new_master_->getModInst() != new_mod_inst_) {
@@ -109,41 +106,19 @@ int dbSwapMasterSanityChecker::checkStructuralIntegrity()
     error(std::string("parent->findModInst('") + new_mod_inst_->getName()
           + "') does not return new_mod_inst");
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 2. Port/pin matching: ModITerm <-> ModBTerm bidirectional links
 //    Broken links / count mismatch → ERROR, IO type mismatch → WARNING
-int dbSwapMasterSanityChecker::checkPortPinMatching()
+void dbSwapMasterSanityChecker::checkPortPinMatching()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
 
-  // Count ModITerms and ModBTerms
-  dbSet<dbModITerm> iterms = new_mod_inst_->getModITerms();
-  dbSet<dbModBTerm> bterms = new_master_->getModBTerms();
-
+  // Count ModITerms while checking bidirectional links
   int iterm_count = 0;
-  for ([[maybe_unused]] dbModITerm* iterm : iterms) {
-    ++iterm_count;
-  }
-
-  int bterm_count = 0;
-  for (dbModBTerm* bterm : bterms) {
-    if (bterm->isBusPort()) {
-      continue;  // Bus-level headers don't have ModITerms by design
-    }
-    ++bterm_count;
-  }
-
-  if (iterm_count != bterm_count) {
-    error(ctx + ": ModITerm count (" + std::to_string(iterm_count)
-          + ") != ModBTerm count (" + std::to_string(bterm_count) + ")");
-  }
-
-  // Check each ModITerm has a child ModBTerm and the link is bidirectional
   for (dbModITerm* iterm : new_mod_inst_->getModITerms()) {
+    ++iterm_count;
+
     dbModBTerm* child_bterm = iterm->getChildModBTerm();
     if (child_bterm == nullptr) {
       error(ctx + ": ModITerm '" + iterm->getName()
@@ -163,12 +138,14 @@ int dbSwapMasterSanityChecker::checkPortPinMatching()
     }
   }
 
-  // Check each ModBTerm in new_master_ has a parent ModITerm belonging to
-  // new_mod_inst_
+  // Count ModBTerms while checking parent ModITerm links
+  int bterm_count = 0;
   for (dbModBTerm* bterm : new_master_->getModBTerms()) {
     if (bterm->isBusPort()) {
       continue;  // Bus-level headers don't have ModITerms by design
     }
+    ++bterm_count;
+
     dbModITerm* parent_iterm = bterm->getParentModITerm();
     if (parent_iterm == nullptr) {
       error(ctx + ": ModBTerm '" + bterm->getName()
@@ -179,6 +156,11 @@ int dbSwapMasterSanityChecker::checkPortPinMatching()
       error(ctx + ": ModBTerm '" + bterm->getName()
             + "' parent ModITerm doesn't belong to new_mod_inst");
     }
+  }
+
+  if (iterm_count != bterm_count) {
+    error(ctx + ": ModITerm count (" + std::to_string(iterm_count)
+          + ") != ModBTerm count (" + std::to_string(bterm_count) + ")");
   }
 
   // Check IO type consistency between new_master_ and src_module_
@@ -193,16 +175,13 @@ int dbSwapMasterSanityChecker::checkPortPinMatching()
            + " src=" + src_bterm->getIoType().getString());
     }
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 3. Hierarchical net connectivity
 //    Wrong parent / missing reverse link → ERROR
 //    Zero connections / missing internal ModNet → WARNING
-int dbSwapMasterSanityChecker::checkHierNetConnectivity()
+void dbSwapMasterSanityChecker::checkHierNetConnectivity()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
 
   // Each ModITerm connected to a ModNet: net's parent should be parent_
@@ -259,42 +238,13 @@ int dbSwapMasterSanityChecker::checkHierNetConnectivity()
   for (dbModNet* mod_net : new_master_->getModNets()) {
     mod_net->checkSanity();
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 4. Flat net connectivity
 //    Wrong block → ERROR
-int dbSwapMasterSanityChecker::checkFlatNetConnectivity()
+void dbSwapMasterSanityChecker::checkFlatNetConnectivity()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
-
-  // For each boundary ModBTerm with an internal ModNet, check flat net
-  for (dbModBTerm* bterm : new_master_->getModBTerms()) {
-    dbModNet* int_mod_net = bterm->getModNet();
-    if (int_mod_net == nullptr) {
-      continue;
-    }
-
-    dbNet* flat_net = int_mod_net->findRelatedNet();
-    if (flat_net == nullptr) {
-      continue;
-    }
-
-    // Verify the flat net has ITerms belonging to instances in new_master_
-    bool has_internal_iterm = false;
-    for (dbITerm* iterm : flat_net->getITerms()) {
-      if (iterm->getInst()->getModule() == new_master_) {
-        has_internal_iterm = true;
-        break;
-      }
-    }
-    if (!has_internal_iterm && !flat_net->getITerms().empty()) {
-      // This is expected when the boundary net has only external connections
-      // Not necessarily a failure, but worth noting at debug level
-    }
-  }
 
   // For each dbInst inside new_master_: verify flat net consistency
   dbBlock* block = new_master_->getOwner();
@@ -342,14 +292,11 @@ int dbSwapMasterSanityChecker::checkFlatNetConnectivity()
       }
     }
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 5. Instance hierarchy: verify instances belong to correct modules [ERROR]
-int dbSwapMasterSanityChecker::checkInstanceHierarchy()
+void dbSwapMasterSanityChecker::checkInstanceHierarchy()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
 
   // All dbInsts in new_master_: each inst's getModule() == new_master_
@@ -387,15 +334,12 @@ int dbSwapMasterSanityChecker::checkInstanceHierarchy()
           + std::to_string(new_mod_inst_count)
           + " src_module=" + std::to_string(src_mod_inst_count));
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 6. Hash table integrity: verify internal hash tables match actual sets
 // [WARNING]
-int dbSwapMasterSanityChecker::checkHashTableIntegrity()
+void dbSwapMasterSanityChecker::checkHashTableIntegrity()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
 
   _dbModule* mod_impl = (_dbModule*) new_master_;
@@ -449,41 +393,33 @@ int dbSwapMasterSanityChecker::checkHashTableIntegrity()
     warn(ctx + ": dbinst_hash_ size (" + std::to_string(hash_dbinst_count)
          + ") != getInsts size (" + std::to_string(set_dbinst_count) + ")");
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
-// 7. No dangling objects: verify no orphaned nets remain [WARNING]
-int dbSwapMasterSanityChecker::checkNoDanglingObjects()
+// 7. No dangling objects: verify no orphaned ModNets remain [WARNING]
+void dbSwapMasterSanityChecker::checkNoDanglingObjects()
 {
-  int before = warn_count_ + error_count_;
-
-  // Check parent block for dangling flat nets
-  dbBlock* block = parent_->getOwner();
-  for (dbNet* net : block->getNets()) {
-    if (net->getITerms().empty() && net->getBTerms().empty()
-        && !net->isSpecial()) {
-      warn(std::string("Dangling flat net '") + net->getName()
-           + "' in parent block (no ITerms, no BTerms, not special)");
+  // Check ModNets in new_master_ for zero connections
+  const std::string ctx = masterContext();
+  for (dbModNet* mod_net : new_master_->getModNets()) {
+    if (mod_net->connectionCount() == 0) {
+      warn(ctx + ": ModNet '" + mod_net->getName()
+           + "' in new_master has zero connections");
     }
   }
 
-  // All ModNets in parent module should have connections
+  // Check ModNets in parent module for zero connections
   for (dbModNet* mod_net : parent_->getModNets()) {
     if (mod_net->connectionCount() == 0) {
       warn(std::string("ModNet '") + mod_net->getName()
            + "' in parent module has zero connections");
     }
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 // 8. Combinational loop detection in the flat netlist within new_master_
 // [ERROR]
-int dbSwapMasterSanityChecker::checkCombinationalLoops()
+void dbSwapMasterSanityChecker::checkCombinationalLoops()
 {
-  int before = warn_count_ + error_count_;
   const std::string ctx = masterContext();
 
   // Build instance index map for instances in new_master_
@@ -495,7 +431,7 @@ int dbSwapMasterSanityChecker::checkCombinationalLoops()
   }
 
   if (insts.empty()) {
-    return 0;
+    return;
   }
 
   const int n = static_cast<int>(insts.size());
@@ -527,59 +463,64 @@ int dbSwapMasterSanityChecker::checkCombinationalLoops()
     }
   }
 
-  // DFS-based cycle detection with path tracking
+  // Iterative DFS-based cycle detection with path tracking
   // 0=unvisited, 1=in current DFS path, 2=fully processed
   std::vector<int> state(n, 0);
-  boost::container::small_vector<int, 32> path;
-  bool loop_found = false;
+  std::vector<int> path;
+  // DFS stack: (node, index into adj[node])
+  std::vector<std::pair<int, int>> stack;
 
-  std::function<void(int)> dfs = [&](int u) {
-    state[u] = 1;
-    path.push_back(u);
+  for (int start = 0; start < n; start++) {
+    if (state[start] != 0) {
+      continue;
+    }
 
-    for (int v : adj[u]) {
-      if (state[v] == 1) {
-        // Found a cycle — collect instances in the loop
-        loop_found = true;
-        std::string msg;
-        msg += ctx;
-        msg += ": combinational loop detected: ";
-        bool in_loop = false;
-        for (int idx : path) {
-          if (idx == v) {
-            in_loop = true;
-          }
-          if (in_loop) {
-            if (msg.back() != ' ') {
-              msg += " -> ";
+    stack.emplace_back(start, 0);
+    state[start] = 1;
+    path.push_back(start);
+
+    while (!stack.empty()) {
+      auto& [u, edge_idx] = stack.back();
+
+      if (edge_idx < static_cast<int>(adj[u].size())) {
+        int v = adj[u][edge_idx];
+        ++edge_idx;
+
+        if (state[v] == 1) {
+          // Found a cycle — collect instances in the loop
+          std::string msg;
+          msg += ctx;
+          msg += ": combinational loop detected: ";
+          bool in_loop = false;
+          for (int idx : path) {
+            if (idx == v) {
+              in_loop = true;
             }
-            msg += insts[idx]->getName();
+            if (in_loop) {
+              if (msg.back() != ' ') {
+                msg += " -> ";
+              }
+              msg += insts[idx]->getName();
+            }
           }
-        }
-        msg += " -> ";
-        msg += insts[v]->getName();
-        error(msg);
-        return;
-      }
-      if (state[v] == 0) {
-        dfs(v);
-        if (loop_found) {
+          msg += " -> ";
+          msg += insts[v]->getName();
+          error(msg);
           return;
         }
+        if (state[v] == 0) {
+          state[v] = 1;
+          path.push_back(v);
+          stack.emplace_back(v, 0);
+        }
+      } else {
+        // All neighbors processed, backtrack
+        path.pop_back();
+        state[u] = 2;
+        stack.pop_back();
       }
     }
-
-    path.pop_back();
-    state[u] = 2;
-  };
-
-  for (int i = 0; i < n && !loop_found; i++) {
-    if (state[i] == 0) {
-      dfs(i);
-    }
   }
-
-  return (warn_count_ + error_count_) - before;
 }
 
 }  // namespace odb
