@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "utl/Logger.h"
 
 namespace LefParser {
@@ -249,7 +250,7 @@ class lefin
   lefinReader* reader_;
 
   // Protects the LefParser namespace that has static variables
-  static std::mutex lef_mutex_;
+  static absl::Mutex lef_mutex_;
 };
 
 }  // namespace odb

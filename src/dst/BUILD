@@ -37,6 +37,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
         "@boost.serialization",

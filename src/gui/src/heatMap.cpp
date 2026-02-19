@@ -26,6 +26,7 @@
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
@@ -524,7 +525,7 @@ bool HeatMapDataSource::hasData() const
 
 void HeatMapDataSource::ensureMap()
 {
-  std::unique_lock<std::mutex> lock(ensure_mutex_);
+  absl::MutexLock lock(ensure_mutex_);
 
   if (destroy_map_) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);

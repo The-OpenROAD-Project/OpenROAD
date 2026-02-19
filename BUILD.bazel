@@ -210,6 +210,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
@@ -230,6 +232,7 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
+    deps = ["@abseil-cpp//absl/synchronization"],
 )
 
 cc_library(

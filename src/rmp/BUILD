@@ -45,6 +45,8 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@abc",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.bind",
         "@boost.config",
         "@boost.fusion",

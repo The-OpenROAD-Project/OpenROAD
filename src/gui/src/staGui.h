@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -233,7 +234,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
-  std::mutex rendering_;
+  absl::Mutex rendering_;
 
   static const gui::Painter::Color kInstHighlightColor;
   static const gui::Painter::Color kPathInstColor;

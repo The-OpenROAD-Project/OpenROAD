@@ -13,6 +13,7 @@
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
 
@@ -243,7 +244,7 @@ class HeatMapDataSource
 
   std::vector<MapSetting> settings_;
 
-  std::mutex ensure_mutex_;
+  absl::Mutex ensure_mutex_;
 };
 
 class HeatMapRenderer : public Renderer

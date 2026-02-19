@@ -6,6 +6,8 @@
 #include <exception>
 #include <mutex>
 
+#include "absl/synchronization/mutex.h"
+
 namespace utl {
 
 // For capturing an exception in an OpenMP worker thread and rethrowing
@@ -16,7 +18,7 @@ class ThreadException
  public:
   void capture()
   {
-    std::unique_lock<std::mutex> guard(lock_);
+    absl::MutexLock guard(lock_);
     ptr_ = std::current_exception();
   }
 
@@ -31,7 +33,7 @@ class ThreadException
 
  private:
   std::exception_ptr ptr_;
-  std::mutex lock_;
+  absl::Mutex lock_;
 };
 
 }  // namespace utl

@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
 #include "odb/geom.h"
 
@@ -205,7 +206,7 @@ class TritonRoute
   uint16_t dist_port_{0};
   std::string shared_volume_;
   std::vector<std::pair<int, std::string>> workers_results_;
-  std::mutex results_mutex_;
+  absl::Mutex results_mutex_;
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;

@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
+
 namespace odb {
 class dbBlock;
 class dbDatabase;
@@ -201,7 +203,7 @@ class Design
   Tech* tech_;
 
   // Single-thread access to the interpreter in evalTclString
-  static std::mutex interp_mutex;
+  static absl::Mutex interp_mutex;
 };
 
 }  // namespace ord

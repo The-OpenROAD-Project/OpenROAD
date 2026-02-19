@@ -22,6 +22,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
@@ -447,12 +448,12 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
  private:
   ScriptWidget* widget_;
-  std::mutex mutex_;
+  absl::Mutex mutex_;
 };
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
-  // use spdlog::details::null_mutex instead of std::mutex, Qt will handle the
+  // use spdlog::details::null_mutex instead of absl::Mutex, Qt will handle the
   // thread transfers to the output viewer null_mutex prevents deadlock (by not
   // locking) when the logging causes a redraw, which then causes another
   // logging event.
