@@ -3099,6 +3099,12 @@ class dbInst : public dbObject
   dbBox* getHalo();
 
   ///
+  /// Returns a halo assigned to this instance with orientation applied.
+  /// Returns a empty box if this instance has no halo.
+  ///
+  Rect getTransformedHalo();
+
+  ///
   /// Get the weight assigned to this instance.
   /// (Default: 1)
   ///

@@ -258,12 +258,12 @@ class HardMacro
     {
     }
 
-    Halo(odb::dbBox* def_halo)
+    Halo(odb::Rect halo)
     {
-      left = def_halo->xMin();
-      bottom = def_halo->yMin();
-      right = def_halo->xMax();
-      top = def_halo->yMax();
+      left = halo.xMin();
+      bottom = halo.yMin();
+      right = halo.xMax();
+      top = halo.yMax();
     }
   };
 
