@@ -165,7 +165,7 @@ cc_test(
         "//src/stt",
         "//src/tst",
         "//src/utl",
-        "@com_google_absl//absl/strings",
+        "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
