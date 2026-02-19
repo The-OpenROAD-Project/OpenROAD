@@ -122,6 +122,7 @@ add_library(db
     dbModITerm.cpp
     dbModNet.cpp
     dbModule.cpp
+    dbSwapMasterSanityChecker.cpp
     dbNetTrack.cpp
     dbPolygon.cpp
     dbPowerDomain.cpp

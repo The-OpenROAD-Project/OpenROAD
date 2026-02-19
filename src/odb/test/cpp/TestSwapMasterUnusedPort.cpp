@@ -84,6 +84,9 @@ class TestSwapMasterUnusedPort : public tst::Fixture
 //    - Expected: Internal Net (in1 -> buf_b) must exist even if in1 is unused.
 TEST_F(TestSwapMasterUnusedPort, SwapMasterUnusedPortInternalConn)
 {
+  // Enable sanity checker for swapMaster
+  logger_.setDebugLevel(utl::ODB, "replace_design_check_sanity", 1);
+
   auto* buf_master = lib_->findMaster("BUF_X1");
   ASSERT_NE(buf_master, nullptr);
 
