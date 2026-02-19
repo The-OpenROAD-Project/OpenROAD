@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <numeric>
 #include <ranges>
 #include <string>
 #include <unordered_map>
@@ -19,6 +20,58 @@
 #include "utl/unionFind.h"
 
 namespace odb {
+
+namespace {
+
+MatingSurfaces getMatingSurfaces(const UnfoldedConnection& conn)
+{
+  auto* r1 = conn.top_region;
+  auto* r2 = conn.bottom_region;
+  if (!r1 || !r2) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  // r1 faces down (Bottom side) and r2 faces up (Top side) -> r1 is above r2
+  bool r1_down_r2_up = r1->isBottom() && r2->isTop();
+  // r1 faces up (Top side) and r2 faces down (Bottom side) -> r2 is above r1
+  bool r1_up_r2_down = r1->isTop() && r2->isBottom();
+
+  if (r1_down_r2_up == r1_up_r2_down) {
+    return {.valid = false, .top_z = 0, .bot_z = 0};
+  }
+
+  auto* top = r1_down_r2_up ? r1 : r2;
+  auto* bot = r1_down_r2_up ? r2 : r1;
+  return {
+      .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
+}
+
+bool isValid(const UnfoldedConnection& conn)
+{
+  if (!conn.top_region || !conn.bottom_region) {
+    return true;
+  }
+  if (!conn.top_region->cuboid.xyIntersects(conn.bottom_region->cuboid)) {
+    return false;
+  }
+  if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
+    return std::max(conn.top_region->cuboid.zMin(),
+                    conn.bottom_region->cuboid.zMin())
+           <= std::min(conn.top_region->cuboid.zMax(),
+                       conn.bottom_region->cuboid.zMax());
+  }
+
+  auto surfaces = getMatingSurfaces(conn);
+  if (!surfaces.valid) {
+    return false;
+  }
+  if (surfaces.top_z < surfaces.bot_z) {
+    return false;
+  }
+  return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
+}
+
+}  // namespace
 
 Checker::Checker(utl::Logger* logger) : logger_(logger)
 {
@@ -113,42 +166,40 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
                                     const UnfoldedModel& model)
 {
   const auto& chips = model.getChips();
-  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
+  std::vector<int> sorted(chips.size());
+  std::iota(sorted.begin(), sorted.end(), 0);
+  std::ranges::sort(sorted, [&](int a, int b) {
+    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+  });
 
-  for (size_t i = 0; i < chips.size(); i++) {
-    auto cuboid_i = chips[i].cuboid;
-    for (size_t j = i + 1; j < chips.size(); j++) {
-      auto cuboid_j = chips[j].cuboid;
-      if (cuboid_i.overlaps(cuboid_j)) {
-        overlaps.emplace_back(&chips[i], &chips[j]);
+  std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
+  for (size_t i = 0; i < sorted.size(); ++i) {
+    auto* c1 = &chips[sorted[i]];
+    for (size_t j = i + 1; j < sorted.size(); ++j) {
+      auto* c2 = &chips[sorted[j]];
+      if (c2->cuboid.xMin() >= c1->cuboid.xMax()) {
+        break;
+      }
+      if (c1->cuboid.overlaps(c2->cuboid)) {
+        overlaps.emplace_back(c1, c2);
       }
     }
   }
 
   if (!overlaps.empty()) {
     auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Overlapping chips");
-    logger_->warn(
-        utl::ODB, 156, "Found {} overlapping chips", (int) overlaps.size());
-
+    logger_->warn(utl::ODB, 156, "Found {} overlapping chips", overlaps.size());
     for (const auto& [inst1, inst2] : overlaps) {
-      odb::dbMarker* marker = odb::dbMarker::create(cat);
-
-      auto cuboid1 = inst1->cuboid;
-      auto cuboid2 = inst2->cuboid;
-      auto intersection = cuboid1.intersect(cuboid2);
-
-      odb::Rect bbox(intersection.xMin(),
-                     intersection.yMin(),
-                     intersection.xMax(),
-                     intersection.yMax());
-      marker->addShape(bbox);
-
+      auto* marker = dbMarker::create(cat);
+      auto intersection = inst1->cuboid.intersect(inst2->cuboid);
+      marker->addShape(Rect(intersection.xMin(),
+                            intersection.yMin(),
+                            intersection.xMax(),
+                            intersection.yMax()));
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
-
-      std::string comment
-          = "Chips " + inst1->name + " and " + inst2->name + " overlap";
-      marker->setComment(comment);
+      marker->setComment(
+          fmt::format("Chips {} and {} overlap", inst1->name, inst2->name));
     }
   }
 }
@@ -166,63 +217,6 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
                                    const UnfoldedModel& model)
 {
-}
-
-bool Checker::isOverlapFullyInConnections(const UnfoldedChip* chip1,
-                                          const UnfoldedChip* chip2,
-                                          const Cuboid& overlap) const
-{
-  return false;
-}
-
-Checker::MatingSurfaces Checker::getMatingSurfaces(
-    const UnfoldedConnection& conn) const
-{
-  auto* r1 = conn.top_region;
-  auto* r2 = conn.bottom_region;
-  if (!r1 || !r2) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
-  }
-
-  // r1 faces down (Bottom side) and r2 faces up (Top side) -> r1 is above r2
-  bool r1_down_r2_up = r1->isBottom() && r2->isTop();
-  // r1 faces up (Top side) and r2 faces down (Bottom side) -> r2 is above r1
-  bool r1_up_r2_down = r1->isTop() && r2->isBottom();
-
-  if (r1_down_r2_up == r1_up_r2_down) {
-    return {.valid = false, .top_z = 0, .bot_z = 0};
-  }
-
-  auto* top = r1_down_r2_up ? r1 : r2;
-  auto* bot = r1_down_r2_up ? r2 : r1;
-  return {
-      .valid = true, .top_z = top->getSurfaceZ(), .bot_z = bot->getSurfaceZ()};
-}
-
-bool Checker::isValid(const UnfoldedConnection& conn) const
-{
-  if (!conn.top_region || !conn.bottom_region) {
-    return true;
-  }
-  if (!conn.top_region->cuboid.xyIntersects(conn.bottom_region->cuboid)) {
-    return false;
-  }
-  if (conn.top_region->isInternalExt() || conn.bottom_region->isInternalExt()) {
-    return conn.top_region->parent_chip == conn.bottom_region->parent_chip
-           && std::max(conn.top_region->cuboid.zMin(),
-                       conn.bottom_region->cuboid.zMin())
-                  <= std::min(conn.top_region->cuboid.zMax(),
-                              conn.bottom_region->cuboid.zMax());
-  }
-
-  auto surfaces = getMatingSurfaces(conn);
-  if (!surfaces.valid) {
-    return false;
-  }
-  if (surfaces.top_z < surfaces.bot_z) {
-    return false;
-  }
-  return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
 }  // namespace odb
