@@ -14,11 +14,11 @@
 #include <vector>
 
 #include "PlacementDRC.h"
-#include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
 #include "graphics/DplObserver.h"
 #include "infrastructure/Coordinates.h"
-#include "infrastructure/DecapObjects.h"
+#include "infrastructure/DecapObjects.h"  // NOLINT(misc-include-cleaner) Needed for DecapCell/GapInfo completeness in ~Opendp()
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
@@ -231,6 +231,67 @@ void Opendp::optimizeMirroring()
 {
   OptimizeMirroring opt(logger_, db_);
   opt.run();
+}
+
+void Opendp::resetGlobalSwapParams()
+{
+  global_swap_params_ = GlobalSwapParams();
+}
+
+void Opendp::configureGlobalSwapParams(
+    int passes,
+    double tolerance,
+    double tradeoff,
+    double area_weight,
+    double pin_weight,
+    double user_weight,
+    int sampling_moves,
+    int normalization_interval,
+    double profiling_excess,
+    const std::vector<double>& budget_multipliers)
+{
+  if (passes > 0) {
+    global_swap_params_.passes = passes;
+  }
+  if (tolerance > 0.0) {
+    global_swap_params_.tolerance = tolerance;
+  }
+  if (tradeoff >= 0.0) {
+    global_swap_params_.tradeoff = std::max(0.0, std::min(1.0, tradeoff));
+  }
+  if (area_weight >= 0.0) {
+    global_swap_params_.area_weight = area_weight;
+  }
+  if (pin_weight >= 0.0) {
+    global_swap_params_.pin_weight = pin_weight;
+  }
+  if (user_weight > 0.0) {
+    global_swap_params_.user_congestion_weight = user_weight;
+  }
+  if (sampling_moves > 0) {
+    global_swap_params_.sampling_moves = sampling_moves;
+  }
+  if (normalization_interval > 0) {
+    global_swap_params_.normalization_interval = normalization_interval;
+  }
+  if (profiling_excess > 0.0) {
+    global_swap_params_.profiling_excess = profiling_excess;
+  }
+  if (!budget_multipliers.empty()) {
+    global_swap_params_.budget_multipliers = budget_multipliers;
+  }
+  if (global_swap_params_.budget_multipliers.empty()) {
+    global_swap_params_.budget_multipliers = {1.0};
+  }
+  if (global_swap_params_.area_weight < 0.0
+      || global_swap_params_.pin_weight < 0.0) {
+    logger_->error(DPL, 1280, "Utilization weights must be non-negative.");
+  }
+  if (global_swap_params_.area_weight == 0.0
+      && global_swap_params_.pin_weight == 0.0) {
+    logger_->error(
+        DPL, 1281, "At least one utilization weight must be greater than 0.");
+  }
 }
 
 int Opendp::disp(const Node* cell) const

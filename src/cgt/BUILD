@@ -41,7 +41,7 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "//third-party/abc:abc-lib",
+        "@abc",
         "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],

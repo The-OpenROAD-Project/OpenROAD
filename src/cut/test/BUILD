@@ -37,7 +37,7 @@ cc_test(
         "//src/sta:opensta_lib",
         "//src/tst",
         "//src/utl",
-        "//third-party/abc:abc-lib",
+        "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

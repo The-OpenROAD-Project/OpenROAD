@@ -227,5 +227,154 @@ TEST_F(CheckerFixture, test_connectivity_gap)
   EXPECT_EQ(getFloatingMarkers().size(), 1);
 }
 
+TEST_F(CheckerFixture, test_abutment_no_overlap)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip1_, "inst2");
+  inst2->setLoc(Point3D(2000, 0, 0));  // Abuts at x=2000 (since width is 2000)
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  check();
+  EXPECT_TRUE(getOverlappingMarkers().empty());
+}
+
+TEST_F(CheckerFixture, test_close_proximity_no_overlap)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip1_, "inst2");
+  inst2->setLoc(Point3D(2001, 0, 0));  // 1 unit gap
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  check();
+  EXPECT_TRUE(getOverlappingMarkers().empty());
+}
+
+TEST_F(CheckerFixture, test_z_separation_no_overlap)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip1_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 600));  // gap in Z (thick=500, so gap=100)
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  check();
+  EXPECT_TRUE(getOverlappingMarkers().empty());
+}
+
+TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
+{
+  // Create INTERNAL_EXT regions for masking
+  auto r1_int = dbChipRegion::create(
+      chip1_, "r1_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r1_int->setBox(Rect(0, 0, 2000, 2000));
+
+  auto r2_int = dbChipRegion::create(
+      chip2_, "r2_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r2_int->setBox(Rect(0, 0, 1500, 1500));
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(100, 100, 0));  // Geometric overlap
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  // Connect them
+  auto* ri1 = inst1->findChipRegionInst("r1_int");
+  auto* ri2 = inst2->findChipRegionInst("r2_int");
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+}
+
+TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
+{
+  // Create small INTERNAL_EXT regions that don't cover the full overlap
+  auto r1_int = dbChipRegion::create(
+      chip1_, "r1_int_small", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r1_int->setBox(Rect(0, 0, 50, 50));
+
+  auto r2_int = dbChipRegion::create(
+      chip2_, "r2_int_small", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r2_int->setBox(Rect(0, 0, 50, 50));
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 0));  // Full overlap of chip2 inside chip1
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  // Connect them with small regions
+  auto* ri1 = inst1->findChipRegionInst("r1_int_small");
+  auto* ri2 = inst2->findChipRegionInst("r2_int_small");
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+}
+
+TEST_F(CheckerFixture, test_overlap_with_invalid_connection)
+{
+  // Use FRONT/BACK regions - these should NOT mask overlaps
+  // because masking requires INTERNAL regions
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 0));  // Overlap
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+}
+
+TEST_F(CheckerFixture, test_multiple_chips_complex_overlap)
+{
+  // inst1: 0..2000
+  // inst2: 100..1600 (chip2 w=1500) overlaps inst1
+  // inst3: 3000..5000 (chip1 w=2000) no overlap
+  // inst4: 3100..5100 (chip1 w=2000) overlaps inst3
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(100, 0, 0));
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst3 = dbChipInst::create(top_chip_, chip1_, "inst3");
+  inst3->setLoc(Point3D(3000, 0, 0));
+  inst3->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst4 = dbChipInst::create(top_chip_, chip1_, "inst4");
+  inst4->setLoc(Point3D(3100, 0, 0));
+  inst4->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  check();
+  auto markers = getOverlappingMarkers();
+  EXPECT_EQ(markers.size(), 2);
+}
+
 }  // namespace
 }  // namespace odb

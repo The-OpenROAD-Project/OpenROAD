@@ -6,17 +6,14 @@
 #include <string>
 #include <vector>
 
-#include "util/utility.h"
-#include "utl/Logger.h"
-
-// Detailed management of segments.
-#include "infrastructure/detailed_segment.h"
 #include "optimization/detailed_manager.h"
+#include "utl/Logger.h"
 // Detailed placement algorithms.
 #include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed.h"
 #include "optimization/detailed_global.h"
+#include "optimization/detailed_global_legacy.h"
 #include "optimization/detailed_mis.h"
 #include "optimization/detailed_orient.h"
 #include "optimization/detailed_random.h"
@@ -143,8 +140,13 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     DetailedMis mis(arch_, network_);
     mis.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
-    DetailedGlobalSwap gs(arch_, network_);
-    gs.run(mgr_, args);
+    if (mgr_->isExtraDplEnabled()) {
+      DetailedGlobalSwap gs(arch_, network_);
+      gs.run(mgr_, args);
+    } else {
+      legacy::DetailedGlobalSwap gs(arch_, network_);
+      gs.run(mgr_, args);
+    }
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
     DetailedVerticalSwap vs(arch_, network_);
     vs.run(mgr_, args);
