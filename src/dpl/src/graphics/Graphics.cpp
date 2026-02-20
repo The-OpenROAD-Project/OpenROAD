@@ -20,10 +20,12 @@ namespace dpl {
 
 Graphics::Graphics(Opendp* dp,
                    float min_displacement,
-                   const odb::dbInst* debug_instance)
+                   const odb::dbInst* debug_instance,
+                   bool paint_pixels)
     : dp_(dp),
       debug_instance_(debug_instance),
-      min_displacement_(min_displacement)
+      min_displacement_(min_displacement),
+      paint_pixels_(paint_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -87,7 +89,27 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   for (const auto& cell : dp_->network_->getNodes()) {
-    if (!cell->isPlaced() || !cell->getDbInst()) {
+    if (!cell->getDbInst()) {
+      continue;
+    }
+
+    if (!cell->isPlaced()) {
+      auto color = gui::Painter::kDarkMagenta;
+      painter.setPen(color);
+      painter.setBrush(color);
+      odb::Rect bbox;
+      bbox = cell->getDbInst()->getBBox()->getBox();
+      painter.drawRect(bbox);
+      continue;
+    }
+
+    if (cell->getDbInst()->isFixed()) {
+      auto color = gui::Painter::kGray;
+      color.a = 100;
+      painter.setPen(color);
+      painter.setBrush(color);
+      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
+      painter.drawRect(bbox);
       continue;
     }
 
@@ -121,10 +143,42 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   auto color = gui::Painter::kCyan;
+  color.a = 100;
   painter.setPen(color);
   painter.setBrush(color);
   for (auto& rect : searched_) {
     painter.drawRect(rect);
+  }
+
+  if (paint_pixels_) {
+    const Grid* grid = dp_->grid_.get();
+    if (grid) {
+      const odb::Rect core = grid->getCore();
+      const DbuX site_width = grid->getSiteWidth();
+
+      auto color = gui::Painter::kWhite;
+      color.a = 100;
+      painter.setPen(color);
+      painter.setBrush(color);
+
+      for (GridY y{0}; y < grid->getRowCount(); y++) {
+        const DbuY y_dbu = grid->gridYToDbu(y);
+        const DbuY next_y_dbu = grid->gridYToDbu(y + 1);
+        for (GridX x{0}; x < grid->getRowSiteCount(); x++) {
+          const Pixel& pixel = grid->pixel(y, x);
+          if (pixel.cell != nullptr) {
+            const DbuX x_dbu = gridToDbu(x, site_width);
+            const DbuX next_x_dbu = gridToDbu(x + 1, site_width);
+
+            odb::Rect rect(core.xMin() + x_dbu.v,
+                           core.yMin() + y_dbu.v,
+                           core.xMin() + next_x_dbu.v,
+                           core.yMin() + next_y_dbu.v);
+            painter.drawRect(rect);
+          }
+        }
+      }
+    }
   }
 }
 

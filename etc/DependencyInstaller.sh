@@ -1027,6 +1027,7 @@ Options:
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
+  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
 
@@ -1077,6 +1078,7 @@ main() {
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
             -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
+            -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
                 echo "Unknown option: ${1}" >&2
                 _help
