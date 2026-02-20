@@ -79,15 +79,10 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   for (const std::string& buffer : dlyBuffers) {
     int bufDelay = techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
                    * std::pow(10, 14);
-    debugPrint(logger_,
-               CTS,
-               "insertion delay",
-               3,
-               "{} : {}",
-               buffer,
-               bufDelay);
-    buffersDelay.push_back(techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
-                           * std::pow(10, 14));
+    debugPrint(logger_, CTS, "insertion delay", 3, "{} : {}", buffer, bufDelay);
+    buffersDelay.push_back(
+        techChar_->computeBufferDelay(buffer, buffer, extra_out_cap)
+        * std::pow(10, 14));
   }
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
@@ -367,7 +362,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
       if (delay > w) {
         bestPrevWeight = 0;
       } else {
-        bestPrevWeight = dp[w-delay];
+        bestPrevWeight = dp[w - delay];
       }
 
       if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + delay - w)) {
@@ -380,19 +375,6 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   if (!dp[target]) {
     return {};
   }
-
-  logger_->report("Initial best = {}", dp[target]);
-  // adjust buffers delay for wire cap
-  odb::Rect loadPinsBbox = odb::Rect();
-  std::string sinkMaster;
-  loadPinsBbox.mergeInit();
-  for (odb::dbITerm* sinkInput : sinks) {
-    int sinkX, sinkY;
-    sinkInput->getAvgXY(&sinkX, &sinkY);
-    loadPinsBbox.merge({sinkX, sinkY});
-    sinkMaster = sinkInput->getInst()->getMaster()->getName();
-  }
-
   int w = target;
   int nBufs = 0;
   while (w > 0 && dp_elements[w] != -1) {
@@ -400,14 +382,23 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     w -= buffersDelay_[dp_elements[w]];
   }
 
-  logger_->report("Initial n bufs = {}", nBufs);
+  debugPrint(
+      logger_, CTS, "insertion delay", 4, "Initial best = {}", dp[target]);
+  debugPrint(logger_, CTS, "insertion delay", 4, "Initial n bufs = {}", nBufs);
+  // adjust buffers delay for wire cap
+  odb::Rect loadPinsBbox = odb::Rect();
+  loadPinsBbox.mergeInit();
+  for (odb::dbITerm* sinkInput : sinks) {
+    int sinkX, sinkY;
+    sinkInput->getAvgXY(&sinkX, &sinkY);
+    loadPinsBbox.merge({sinkX, sinkY});
+  }
 
   float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
   float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
   std::vector<int> adjustedBuffersDelay;
   double extraOutCap = (std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_;
-  computeBuffersDelay(adjustedBuffersDelay,
-                      extraOutCap);
+  computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
 
   dp.assign(target + 1, 0);
   dp_elements.assign(target + 1, -1);
@@ -420,17 +411,21 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
         bestPrevWeight = 0;
         prevBuf = -1;
       } else {
-        bestPrevWeight = dp[w-delay];
-        prevBuf = dp_elements[w-delay];
+        bestPrevWeight = dp[w - delay];
+        prevBuf = dp_elements[w - delay];
       }
 
-      std::string load;
-      if(prevBuf == -1) {
-        load = sinkMaster;
+      int updatedDelay;
+      if (prevBuf == -1) {
+        updatedDelay
+            = techChar_->computeBufferDelay(dlyBuffers[i], sinks, extraOutCap)
+              * std::pow(10, 14);
       } else {
-        load = dlyBuffers[prevBuf];
+        updatedDelay = techChar_->computeBufferDelay(
+                           dlyBuffers[i], dlyBuffers[prevBuf], extraOutCap)
+                       * std::pow(10, 14);
       }
-      int updatedDelay = techChar_->computeDriverBufferDelay(dlyBuffers[i], load, extraOutCap) * std::pow(10, 14);
+
       if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + updatedDelay - w)) {
         dp_elements[w] = i;
         dp[w] = bestPrevWeight + updatedDelay;
@@ -488,21 +483,21 @@ void LatencyBalancer::balanceLatencies(int nodeId)
     node->inputTerm->getAvgXY(&srcX, &srcY);
   }
 
-  std::map<double, std::vector<odb::dbITerm*>> delyaNeeded2Childern;
+  std::map<double, std::vector<odb::dbITerm*>> delayNeeded2Childern;
   for (int child : node->childrenIds) {
     balanceLatencies(child);
     if (graph_[child].dlyNeeded == -1) {
       continue;
     }
 
-    delyaNeeded2Childern[graph_[child].dlyNeeded].push_back(
+    delayNeeded2Childern[graph_[child].dlyNeeded].push_back(
         graph_[child].inputTerm);
   }
 
   // If the children need a different amount of buffers insert this difference
   debugPrint(logger_, CTS, "insertion delay", 1, "at node {}", node->name);
   for (auto& [dlyNeeded, children] :
-       std::ranges::reverse_view(delyaNeeded2Childern)) {
+       std::ranges::reverse_view(delayNeeded2Childern)) {
     if (logger_->debugCheck(CTS, "insertion delay", 2)) {
       debugPrint(logger_, CTS, "insertion delay", 2, " sinks [");
       for (auto c : children) {

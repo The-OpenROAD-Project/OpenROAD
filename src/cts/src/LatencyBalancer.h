@@ -12,8 +12,8 @@
 
 #include "Clock.h"
 #include "CtsOptions.h"
-#include "TreeBuilder.h"
 #include "TechChar.h"
+#include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
 #include "sta/Delay.hh"
@@ -73,7 +73,8 @@ class LatencyBalancer
  private:
   void initSta();
   void findLeafBuilders(TreeBuilder* builder);
-  void computeBuffersDelay(std::vector<int>& buffersDelay, double extra_out_cap);
+  void computeBuffersDelay(std::vector<int>& buffersDelay,
+                           double extra_out_cap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -84,7 +85,11 @@ class LatencyBalancer
                                odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks);
-  std::vector<std::string> computeNumberOfDelayBuffers(double delayNeeded,int srcX, int srcY, const std::vector<odb::dbITerm*>& sinks);
+  std::vector<std::string> computeNumberOfDelayBuffers(
+      double delayNeeded,
+      int srcX,
+      int srcY,
+      const std::vector<odb::dbITerm*>& sinks);
   // DFS search throw the tree graph to insert delay buffers. At each node,
   // evaluate the delay of the its children, if the children need delay buffers
   // and need different ammount of delay buffers, isert this difference, to the
