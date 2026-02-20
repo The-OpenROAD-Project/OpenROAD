@@ -350,42 +350,47 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     int srcY,
     const std::vector<odb::dbITerm*>& sinks)
 {
-  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
   int target = delayNeeded * std::pow(10, 14);
   debugPrint(logger_, CTS, "insertion delay", 2, "  target delay: {}", target);
+  std::vector<std::string> dlyBuffers = options_->getDlyBufferList();
+
+  // Compute initial best combinations of buffers to insert the target delay
   std::vector<int> dp(target + 1, 0);
   std::vector<int> dp_elements(target + 1, -1);
   for (int w = 0; w <= target; w++) {
     for (int i = 0; i < buffersDelay_.size(); i++) {
-      const int delay = buffersDelay_[i];
+      const int bufDelay = buffersDelay_[i];
       int bestPrevWeight;
-      if (delay > w) {
+      if (bufDelay > w) {
         bestPrevWeight = 0;
       } else {
-        bestPrevWeight = dp[w - delay];
+        bestPrevWeight = dp[w - bufDelay];
       }
 
-      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + delay - w)) {
+      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + bufDelay - w)) {
         dp_elements[w] = i;
-        dp[w] = bestPrevWeight + delay;
+        dp[w] = bestPrevWeight + bufDelay;
       }
     }
   }
 
+  // No buffers to insert
   if (!dp[target]) {
     return {};
   }
+
+  // Backtrack to find number of buffers that will be needed
   int w = target;
   int nBufs = 0;
   while (w > 0 && dp_elements[w] != -1) {
     nBufs++;
     w -= buffersDelay_[dp_elements[w]];
   }
-
   debugPrint(
       logger_, CTS, "insertion delay", 4, "Initial best = {}", dp[target]);
   debugPrint(logger_, CTS, "insertion delay", 4, "Initial n bufs = {}", nBufs);
-  // adjust buffers delay for wire cap
+
+  // Adjust buffers delay for wire cap
   odb::Rect loadPinsBbox = odb::Rect();
   loadPinsBbox.mergeInit();
   for (odb::dbITerm* sinkInput : sinks) {
@@ -400,19 +405,20 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   double extraOutCap = (std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_;
   computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
 
+  // Compute best buffer combination with more accurate values
   dp.assign(target + 1, 0);
   dp_elements.assign(target + 1, -1);
   for (int w = 0; w <= target; w++) {
     for (int i = 0; i < adjustedBuffersDelay.size(); i++) {
-      const int delay = adjustedBuffersDelay[i];
+      const int bufDelay = adjustedBuffersDelay[i];
       int bestPrevWeight;
       int prevBuf;
-      if (delay > w) {
+      if (bufDelay > w) {
         bestPrevWeight = 0;
         prevBuf = -1;
       } else {
-        bestPrevWeight = dp[w - delay];
-        prevBuf = dp_elements[w - delay];
+        bestPrevWeight = dp[w - bufDelay];
+        prevBuf = dp_elements[w - bufDelay];
       }
 
       int updatedDelay;
@@ -439,6 +445,8 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
              2,
              "  Max achievable delay {}",
              dp[target]);
+
+  // Backtrack to find which buffers will be used
   std::stringstream tmp;
   tmp << "[";
   w = target;
