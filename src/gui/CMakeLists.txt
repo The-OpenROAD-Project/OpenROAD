@@ -43,7 +43,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/tclCmdHighlighter.cpp
     src/displayControls.cpp
     src/gui.cpp
-    src/search.cpp 
+    src/search.cpp
     src/findDialog.cpp
     src/gotoDialog.cpp
     src/inspector.cpp
@@ -79,7 +79,8 @@ if (Qt5_FOUND AND BUILD_GUI)
   target_link_libraries(gui
     PUBLIC
       odb
-    PRIVATE
+      PRIVATE
+      absl::synchronization
       Qt5::Core
       Qt5::Widgets
       Qt5::Charts
@@ -90,7 +91,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   )
 
   # Disable LTO for gui. LTO causes a crash with Qt plugin loading
-  set_target_properties(gui PROPERTIES 
+  set_target_properties(gui PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION OFF
     INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF
   )
@@ -107,8 +108,8 @@ else()
   else()
     message(STATUS "GUI is not enabled")
   endif()
-  add_library(gui 
-    src/stub.cpp 
+  add_library(gui
+    src/stub.cpp
     src/stub_heatMap.cpp
   )
   target_link_libraries(gui

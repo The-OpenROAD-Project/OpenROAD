@@ -494,7 +494,7 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   {
-    std::lock_guard guard(rendering_);
+    absl::MutexLock guard(&rendering_);
     path_ = path;
     highlight_stage_.clear();
   }
@@ -503,7 +503,7 @@ void TimingPathRenderer::highlight(TimingPath* path)
 
 void TimingPathRenderer::clearHighlightNodes()
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   highlight_stage_.clear();
 }
 
@@ -528,7 +528,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
-      std::lock_guard guard(rendering_);
+      absl::MutexLock guard(&rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -583,7 +583,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
     return;
   }
