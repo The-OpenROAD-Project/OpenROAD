@@ -8,7 +8,8 @@
   fetchFromGitHub,
   fetchzip,
   libsForQt5,
-  boost183,
+  abseil-cpp,
+  boost189,
   eigen,
   cudd,
   ninja,
@@ -26,13 +27,13 @@
   clp,
   cbc,
   re2,
-  swig4,
+  swig,
   pkg-config,
   cmake,
   gnumake,
   flex,
   bison,
-  clang-tools_14,
+  clang-tools,
   gtest,
   # or-tools
   stdenv,
@@ -102,7 +103,8 @@
     QT_PLUGIN_PATH = lib.makeSearchPathOutput "bin" "lib/qt-${libsForQt5.qt5.qtbase.version}/plugins" self.qt5Libs;
 
     buildInputs = self.qt5Libs ++ [
-      boost183
+      abseil-cpp
+      boost189
       eigen
       cudd
       tcl
@@ -125,7 +127,7 @@
     ];
 
     nativeBuildInputs = [
-      swig4
+      swig
       pkg-config
       cmake
       ninja
@@ -133,7 +135,7 @@
       flex
       bison
       libsForQt5.wrapQtAppsHook
-      clang-tools_14
+      clang-tools
     ];
   });
 in
