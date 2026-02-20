@@ -1281,7 +1281,7 @@ void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 {
   if (db_inst == nullptr) {
-    log_->warn(GPL, 327, "Trying to destroy odb::dbInst* nullptr");
+    log_->warn(GPL, 328, "Trying to destroy odb::dbInst* nullptr");
     return;
   }
 
@@ -1296,7 +1296,7 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
       }
       if (!updated) {
         log_->error(GPL,
-                    326,
+                    329,
                     "NesterovPlace destroyCbkGCell failed to update db_inst {}",
                     replaced.first->getName());
       }
