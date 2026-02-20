@@ -74,13 +74,13 @@ int dbSwapMasterSanityChecker::run()
   return total;
 }
 
-void dbSwapMasterSanityChecker::warn(const std::string& msg)
+void dbSwapMasterSanityChecker::warnMsg(const std::string& msg)
 {
   ++warn_count_;
   logger_->warn(utl::ODB, 498, "SanityCheck(swapMaster) warning: {}", msg);
 }
 
-void dbSwapMasterSanityChecker::error(const std::string& msg)
+void dbSwapMasterSanityChecker::errorMsg(const std::string& msg)
 {
   ++error_count_;
   logger_->warn(utl::ODB, 508, "SanityCheck(swapMaster) error: {}", msg);
@@ -97,27 +97,24 @@ std::string dbSwapMasterSanityChecker::masterContext() const
 void dbSwapMasterSanityChecker::checkStructuralIntegrity()
 {
   if (parent_ == nullptr) {
-    error(fmt::format("new_mod_inst '{}' has null parent",
-                      new_mod_inst_->getName()));
+    error("new_mod_inst '{}' has null parent", new_mod_inst_->getName());
     return;
   }
 
   if (new_master_ == nullptr) {
-    error(fmt::format("new_mod_inst '{}' has null master",
-                      new_mod_inst_->getName()));
+    error("new_mod_inst '{}' has null master", new_mod_inst_->getName());
     return;
   }
 
   if (new_master_->getModInst() != new_mod_inst_) {
-    error(fmt::format(
-        "{}: getModInst() != new_mod_inst (reverse pointer mismatch)",
-        masterContext()));
+    error("{}: getModInst() != new_mod_inst (reverse pointer mismatch)",
+          masterContext());
   }
 
   dbModInst* found = parent_->findModInst(new_mod_inst_->getName());
   if (found != new_mod_inst_) {
-    error(fmt::format("parent->findModInst('{}') does not return new_mod_inst",
-                      new_mod_inst_->getName()));
+    error("parent->findModInst('{}') does not return new_mod_inst",
+          new_mod_inst_->getName());
   }
 }
 
@@ -134,25 +131,24 @@ void dbSwapMasterSanityChecker::checkPortPinMatching()
 
     dbModBTerm* child_bterm = iterm->getChildModBTerm();
     if (child_bterm == nullptr) {
-      error(fmt::format(
-          "{}: ModITerm '{}' has null child ModBTerm", ctx, iterm->getName()));
+      error("{}: ModITerm '{}' has null child ModBTerm", ctx, iterm->getName());
       continue;
     }
 
     dbModITerm* back_iterm = child_bterm->getParentModITerm();
     if (back_iterm != iterm) {
-      error(fmt::format(
+      error(
           "{}: ModITerm '{}' -> child ModBTerm -> getParentModITerm() "
           "doesn't point back",
           ctx,
-          iterm->getName()));
+          iterm->getName());
     }
 
     if (std::string(iterm->getName()) != std::string(child_bterm->getName())) {
-      error(fmt::format("{}: ModITerm name '{}' != child ModBTerm name '{}'",
-                        ctx,
-                        iterm->getName(),
-                        child_bterm->getName()));
+      error("{}: ModITerm name '{}' != child ModBTerm name '{}'",
+            ctx,
+            iterm->getName(),
+            child_bterm->getName());
     }
   }
 
@@ -166,23 +162,22 @@ void dbSwapMasterSanityChecker::checkPortPinMatching()
 
     dbModITerm* parent_iterm = bterm->getParentModITerm();
     if (parent_iterm == nullptr) {
-      error(fmt::format(
-          "{}: ModBTerm '{}' has null parent ModITerm", ctx, bterm->getName()));
+      error(
+          "{}: ModBTerm '{}' has null parent ModITerm", ctx, bterm->getName());
       continue;
     }
     if (parent_iterm->getParent() != new_mod_inst_) {
-      error(fmt::format(
-          "{}: ModBTerm '{}' parent ModITerm doesn't belong to new_mod_inst",
-          ctx,
-          bterm->getName()));
+      error("{}: ModBTerm '{}' parent ModITerm doesn't belong to new_mod_inst",
+            ctx,
+            bterm->getName());
     }
   }
 
   if (iterm_count != bterm_count) {
-    error(fmt::format("{}: ModITerm count ({}) != ModBTerm count ({})",
-                      ctx,
-                      iterm_count,
-                      bterm_count));
+    error("{}: ModITerm count ({}) != ModBTerm count ({})",
+          ctx,
+          iterm_count,
+          bterm_count);
   }
 
   // Check IO type consistency between new_master_ and src_module_
@@ -192,11 +187,11 @@ void dbSwapMasterSanityChecker::checkPortPinMatching()
       continue;
     }
     if (new_bterm->getIoType() != src_bterm->getIoType()) {
-      warn(fmt::format("{}: ModBTerm '{}' IO type mismatch: new={} src={}",
-                       ctx,
-                       new_bterm->getName(),
-                       new_bterm->getIoType().getString(),
-                       src_bterm->getIoType().getString()));
+      warn("{}: ModBTerm '{}' IO type mismatch: new={} src={}",
+           ctx,
+           new_bterm->getName(),
+           new_bterm->getIoType().getString(),
+           src_bterm->getIoType().getString());
     }
   }
 }
@@ -216,12 +211,12 @@ void dbSwapMasterSanityChecker::checkHierNetConnectivity()
     }
 
     if (mod_net->getParent() != parent_) {
-      error(fmt::format(
+      error(
           "{}: ModITerm '{}' connected to ModNet '{}' whose parent is not "
           "the parent module",
           ctx,
           iterm->getName(),
-          mod_net->getName()));
+          mod_net->getName());
     }
 
     // Verify reverse link: the ModNet's ModITerms should contain this iterm
@@ -234,25 +229,25 @@ void dbSwapMasterSanityChecker::checkHierNetConnectivity()
     }
     if (found == false) {
       error(
-          fmt::format("{}: ModNet '{}' does not contain ModITerm '{}' in its "
-                      "ModITerms list",
-                      ctx,
-                      mod_net->getName(),
-                      iterm->getName()));
+          "{}: ModNet '{}' does not contain ModITerm '{}' in its "
+          "ModITerms list",
+          ctx,
+          mod_net->getName(),
+          iterm->getName());
     }
   }
 
   // All ModNets inside new_master_: parent == new_master_, connectionCount > 0
   for (dbModNet* mod_net : new_master_->getModNets()) {
     if (mod_net->getParent() != new_master_) {
-      error(fmt::format("{}: Internal ModNet '{}' parent is not new_master",
-                        ctx,
-                        mod_net->getName()));
+      error("{}: Internal ModNet '{}' parent is not new_master",
+            ctx,
+            mod_net->getName());
     }
     if (mod_net->connectionCount() == 0) {
-      warn(fmt::format("{}: Internal ModNet '{}' has zero connections",
-                       ctx,
-                       mod_net->getName()));
+      warn("{}: Internal ModNet '{}' has zero connections",
+           ctx,
+           mod_net->getName());
     }
   }
 
@@ -262,9 +257,9 @@ void dbSwapMasterSanityChecker::checkHierNetConnectivity()
       continue;  // Bus-level headers don't carry internal ModNet connections
     }
     if (bterm->getModNet() == nullptr) {
-      warn(fmt::format("{}: ModBTerm '{}' has no internal ModNet connection",
-                       ctx,
-                       bterm->getName()));
+      warn("{}: ModBTerm '{}' has no internal ModNet connection",
+           ctx,
+           bterm->getName());
     }
   }
 
@@ -311,24 +306,23 @@ void dbSwapMasterSanityChecker::checkFlatNetConnectivity()
             has_input_consumer = true;  // ITerm itself is a consumer
           }
           if (has_input_consumer) {
-            error(fmt::format(
+            error(
                 "{}: ITerm '{}' of inst '{}' has internal ModNet '{}' but "
                 "no flat net (missing internal net creation)",
                 ctx,
                 iterm->getName(),
                 inst->getName(),
-                mod_net->getName()));
+                mod_net->getName());
           }
         }
         continue;
       }
 
       if (net->getBlock() != block) {
-        error(fmt::format(
-            "{}: ITerm '{}' of inst '{}' connected to net in wrong block",
-            ctx,
-            iterm->getName(),
-            inst->getName()));
+        error("{}: ITerm '{}' of inst '{}' connected to net in wrong block",
+              ctx,
+              iterm->getName(),
+              inst->getName());
       }
     }
   }
@@ -342,20 +336,17 @@ void dbSwapMasterSanityChecker::checkInstanceHierarchy()
   // All dbInsts in new_master_: each inst's getModule() == new_master_
   for (dbInst* inst : new_master_->getInsts()) {
     if (inst->getModule() != new_master_) {
-      error(fmt::format(
-          "{}: dbInst '{}' has wrong module pointer", ctx, inst->getName()));
+      error("{}: dbInst '{}' has wrong module pointer", ctx, inst->getName());
     }
   }
 
   // All child ModInsts in new_master_: parent == new_master_, master != nullptr
   for (dbModInst* child : new_master_->getModInsts()) {
     if (child->getParent() != new_master_) {
-      error(fmt::format(
-          "{}: child ModInst '{}' has wrong parent", ctx, child->getName()));
+      error("{}: child ModInst '{}' has wrong parent", ctx, child->getName());
     }
     if (child->getMaster() == nullptr) {
-      error(fmt::format(
-          "{}: child ModInst '{}' has null master", ctx, child->getName()));
+      error("{}: child ModInst '{}' has null master", ctx, child->getName());
     }
   }
 
@@ -363,19 +354,19 @@ void dbSwapMasterSanityChecker::checkInstanceHierarchy()
   int new_db_inst_count = new_master_->getDbInstCount();
   int src_db_inst_count = src_module_->getDbInstCount();
   if (new_db_inst_count != src_db_inst_count) {
-    error(fmt::format("{}: dbInst count mismatch: new_master={} src_module={}",
-                      ctx,
-                      new_db_inst_count,
-                      src_db_inst_count));
+    error("{}: dbInst count mismatch: new_master={} src_module={}",
+          ctx,
+          new_db_inst_count,
+          src_db_inst_count);
   }
 
   int new_mod_inst_count = new_master_->getModInstCount();
   int src_mod_inst_count = src_module_->getModInstCount();
   if (new_mod_inst_count != src_mod_inst_count) {
-    error(fmt::format("{}: ModInst count mismatch: new_master={} src_module={}",
-                      ctx,
-                      new_mod_inst_count,
-                      src_mod_inst_count));
+    error("{}: ModInst count mismatch: new_master={} src_module={}",
+          ctx,
+          new_mod_inst_count,
+          src_mod_inst_count);
   }
 }
 
@@ -395,16 +386,16 @@ void dbSwapMasterSanityChecker::checkHashTableIntegrity()
     // Cross-check: findModBTerm should return same object
     dbModBTerm* found = new_master_->findModBTerm(bterm->getName());
     if (found != bterm) {
-      warn(fmt::format("{}: findModBTerm('{}') returns different object",
-                       ctx,
-                       bterm->getName()));
+      warn("{}: findModBTerm('{}') returns different object",
+           ctx,
+           bterm->getName());
     }
   }
   if (hash_bterm_count != set_bterm_count) {
-    warn(fmt::format("{}: modbterm_hash_ size ({}) != getModBTerms size ({})",
-                     ctx,
-                     hash_bterm_count,
-                     set_bterm_count));
+    warn("{}: modbterm_hash_ size ({}) != getModBTerms size ({})",
+         ctx,
+         hash_bterm_count,
+         set_bterm_count);
   }
 
   // ModNet hash
@@ -414,10 +405,10 @@ void dbSwapMasterSanityChecker::checkHashTableIntegrity()
     ++set_net_count;
   }
   if (hash_net_count != set_net_count) {
-    warn(fmt::format("{}: modnet_hash_ size ({}) != getModNets size ({})",
-                     ctx,
-                     hash_net_count,
-                     set_net_count));
+    warn("{}: modnet_hash_ size ({}) != getModNets size ({})",
+         ctx,
+         hash_net_count,
+         set_net_count);
   }
 
   // ModInst hash
@@ -427,10 +418,10 @@ void dbSwapMasterSanityChecker::checkHashTableIntegrity()
     ++set_modinst_count;
   }
   if (hash_modinst_count != set_modinst_count) {
-    warn(fmt::format("{}: modinst_hash_ size ({}) != getModInsts size ({})",
-                     ctx,
-                     hash_modinst_count,
-                     set_modinst_count));
+    warn("{}: modinst_hash_ size ({}) != getModInsts size ({})",
+         ctx,
+         hash_modinst_count,
+         set_modinst_count);
   }
 
   // dbInst hash
@@ -440,10 +431,10 @@ void dbSwapMasterSanityChecker::checkHashTableIntegrity()
     ++set_dbinst_count;
   }
   if (hash_dbinst_count != set_dbinst_count) {
-    warn(fmt::format("{}: dbinst_hash_ size ({}) != getInsts size ({})",
-                     ctx,
-                     hash_dbinst_count,
-                     set_dbinst_count));
+    warn("{}: dbinst_hash_ size ({}) != getInsts size ({})",
+         ctx,
+         hash_dbinst_count,
+         set_dbinst_count);
   }
 }
 
@@ -454,8 +445,8 @@ void dbSwapMasterSanityChecker::checkNoDanglingObjects()
   // (new_master_ ModNets are already checked in checkHierNetConnectivity)
   for (dbModNet* mod_net : parent_->getModNets()) {
     if (mod_net->connectionCount() == 0) {
-      warn(fmt::format("ModNet '{}' in parent module has zero connections",
-                       mod_net->getName()));
+      warn("ModNet '{}' in parent module has zero connections",
+           mod_net->getName());
     }
   }
 }
@@ -508,19 +499,24 @@ void dbSwapMasterSanityChecker::checkCombinationalLoops()
   }
 
   // Iterative DFS-based cycle detection with path tracking
-  // 0=unvisited, 1=in current DFS path, 2=fully processed
-  std::vector<int> state(n, 0);
+  enum DfsState
+  {
+    kUnvisited,
+    kInPath,
+    kProcessed
+  };
+  std::vector<DfsState> state(n, kUnvisited);
   std::vector<int> path;
   // DFS stack: (node, index into adj[node])
   std::vector<std::pair<int, int>> stack;
 
   for (int start = 0; start < n; start++) {
-    if (state[start] != 0) {
+    if (state[start] != kUnvisited) {
       continue;
     }
 
     stack.emplace_back(start, 0);
-    state[start] = 1;
+    state[start] = kInPath;
     path.push_back(start);
 
     while (!stack.empty()) {
@@ -530,7 +526,7 @@ void dbSwapMasterSanityChecker::checkCombinationalLoops()
         int v = adj[u][edge_idx];
         ++edge_idx;
 
-        if (state[v] == 1) {
+        if (state[v] == kInPath) {
           // Found a cycle — collect instances in the loop
           std::string loop_path;
           bool in_loop = false;
@@ -547,19 +543,18 @@ void dbSwapMasterSanityChecker::checkCombinationalLoops()
           }
           loop_path += " -> ";
           loop_path += insts[v]->getName();
-          error(fmt::format(
-              "{}: combinational loop detected: {}", ctx, loop_path));
+          error("{}: combinational loop detected: {}", ctx, loop_path);
           return;
         }
-        if (state[v] == 0) {
-          state[v] = 1;
+        if (state[v] == kUnvisited) {
+          state[v] = kInPath;
           path.push_back(v);
           stack.emplace_back(v, 0);
         }
       } else {
         // All neighbors processed, backtrack
         path.pop_back();
-        state[u] = 2;
+        state[u] = kProcessed;
         stack.pop_back();
       }
     }

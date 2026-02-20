@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "spdlog/fmt/fmt.h"
+
 namespace utl {
 class Logger;
 }
@@ -36,9 +38,20 @@ class dbSwapMasterSanityChecker
   void checkCombinationalLoops();
 
   // Log a warning-level issue (non-fatal)
-  void warn(const std::string& msg);
+  template <typename... Args>
+  void warn(const std::string& fmt_str, const Args&... args)
+  {
+    warnMsg(fmt::format(fmt::runtime(fmt_str), args...));
+  }
   // Log an error-level issue (fatal — triggers logger_->error() at end of run)
-  void error(const std::string& msg);
+  template <typename... Args>
+  void error(const std::string& fmt_str, const Args&... args)
+  {
+    errorMsg(fmt::format(fmt::runtime(fmt_str), args...));
+  }
+
+  void warnMsg(const std::string& msg);
+  void errorMsg(const std::string& msg);
 
   // Context string for log messages: "module '<name>' (inst '<name>')"
   std::string masterContext() const;
