@@ -211,6 +211,11 @@ std::vector<odb::dbInst*> ClusteringEngine::getUnfixedMacros()
 void ClusteringEngine::setFloorplanShape()
 {
   tree_->floorplan_shape = block_->getCoreArea().intersect(tree_->global_fence);
+
+  if (tree_->floorplan_shape.area() == 0) {
+    logger_->error(
+        MPL, 68, "The global fence set is completely outside the core area.");
+  }
 }
 
 Metrics* ClusteringEngine::computeModuleMetrics(odb::dbModule* module)
