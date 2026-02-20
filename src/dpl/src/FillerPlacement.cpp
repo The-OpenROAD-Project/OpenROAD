@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"

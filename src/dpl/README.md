@@ -32,6 +32,7 @@ detailed_placement
 | `-max_displacement` | Max distance that an instance can be moved (in microns) when finding a site where it can be placed. Either set one value for both directions or set `{disp_x disp_y}` for individual directions. The default values are `{0, 0}`, and the allowed values within are integers `[0, MAX_INT]`. |
 | `-disallow_one_site_gaps` | Option is deprecated. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
+| `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
 
 ### Set Placement Padding
 

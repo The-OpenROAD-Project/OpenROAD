@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "BalancerConnection.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
