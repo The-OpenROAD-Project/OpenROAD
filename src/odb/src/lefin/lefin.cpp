@@ -2594,13 +2594,13 @@ int lefin::dbdist(double value)
 
 dbTech* lefin::createTech(const char* name, const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createTech(name, lef_file);
 }
 
 dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createLib(tech, name, lef_file);
 }
 
@@ -2608,25 +2608,25 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
                                const char* lib_name,
                                const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createTechAndLib(tech_name, lib_name, lef_file);
 }
 
 bool lefin::updateLib(dbLib* lib, const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateLib(lib, lef_file);
 }
 
 bool lefin::updateTech(dbTech* tech, const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateTech(tech, lef_file);
 }
 
 bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
 {
-  absl::MutexLock lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateTechAndLib(lib, lef_file);
 }
 

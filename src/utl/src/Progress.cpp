@@ -127,13 +127,13 @@ std::shared_ptr<ProgressReporter> Progress::startPercentageReporting(
 
 void Progress::addReporter(std::shared_ptr<ProgressReporter>& reporter)
 {
-  absl::MutexLock lock(reporters_lock_);
+  absl::MutexLock lock(&reporters_lock_);
   reporters_.push_back(reporter);
 }
 
 bool Progress::removeReporter(ProgressReporter* reporter)
 {
-  absl::MutexLock lock(reporters_lock_);
+  absl::MutexLock lock(&reporters_lock_);
 
   if (reporters_.empty()) {
     return false;
@@ -155,7 +155,7 @@ bool Progress::removeReporter(ProgressReporter* reporter)
 
 void Progress::interrupt()
 {
-  absl::MutexLock lock(reporters_lock_);
+  absl::MutexLock lock(&reporters_lock_);
   for (const auto& reporter : reporters_) {
     if (auto report = reporter.lock()) {
       report->interrupt();
@@ -165,7 +165,7 @@ void Progress::interrupt()
 
 std::vector<std::shared_ptr<ProgressReporter>> Progress::getReporters()
 {
-  absl::MutexLock lock(reporters_lock_);
+  absl::MutexLock lock(&reporters_lock_);
 
   std::vector<std::shared_ptr<ProgressReporter>> reporters;
 
@@ -180,7 +180,7 @@ std::vector<std::shared_ptr<ProgressReporter>> Progress::getReporters()
 
 int Progress::countReporters()
 {
-  absl::MutexLock lock(reporters_lock_);
+  absl::MutexLock lock(&reporters_lock_);
 
   int count = 0;
 

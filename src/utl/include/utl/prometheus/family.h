@@ -228,7 +228,7 @@ class Family : public Collectable
   /// if the given metric was not returned by Add().
   void Remove(PrometheusMetric* metric)
   {
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     if (!labels_reverse_lookup.contains(metric)) {
       return;
@@ -246,7 +246,7 @@ class Family : public Collectable
   bool Has(const Labels& cur_labels) const
   {
     const Hash hash = hash_labels(cur_labels);
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
     return metrics.find(hash) != metrics.end();
   }
 
@@ -267,7 +267,7 @@ class Family : public Collectable
   /// \return Zero or more samples for each dimensional data.
   MetricFamilies Collect() const override
   {
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     if (metrics.empty()) {
       return {};
@@ -332,7 +332,7 @@ class CustomFamily : public Family
   CustomMetric& Add(const Labels& new_labels, Args&&... args)
   {
     const Hash hash = hash_labels(new_labels);
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     // try to find existing one
     auto metrics_iter = metrics.find(hash);

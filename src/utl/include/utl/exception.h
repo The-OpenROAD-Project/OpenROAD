@@ -18,7 +18,7 @@ class ThreadException
  public:
   void capture()
   {
-    absl::MutexLock guard(lock_);
+    absl::MutexLock guard(&lock_);
     ptr_ = std::current_exception();
   }
 

@@ -809,7 +809,7 @@ bool AntennaChecker::Impl::checkRatioViolations(odb::dbNet* db_net,
 
 void AntennaChecker::Impl::writeReport(std::ofstream& report_file, bool verbose)
 {
-  absl::MutexLock lock(map_mutex_);
+  absl::MutexLock lock(&map_mutex_);
   for (const auto& [net, violation_report] : net_to_report_) {
     if (verbose || violation_report.violated) {
       report_file << violation_report.report;
@@ -822,7 +822,7 @@ void AntennaChecker::Impl::printReport(odb::dbNet* db_net)
   if (db_net) {
     logger_->report("{}", net_to_report_[db_net].report);
   } else {
-    absl::MutexLock lock(map_mutex_);
+    absl::MutexLock lock(&map_mutex_);
     for (const auto& [net, violation_report] : net_to_report_) {
       if (violation_report.violated) {
         logger_->report("{}", violation_report.report);
@@ -881,7 +881,7 @@ int AntennaChecker::Impl::checkGates(odb::dbNet* db_net,
   }
   // Write report on map
   if (save_report) {
-    absl::MutexLock lock(map_mutex_);
+    absl::MutexLock lock(&map_mutex_);
     net_to_report_.at(db_net) = net_report;
   }
 
@@ -1160,7 +1160,7 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
                                         bool verbose)
 {
   {
-    absl::MutexLock lock(map_mutex_);
+    absl::MutexLock lock(&map_mutex_);
     net_to_report_.clear();
   }
   initAntennaRules();
@@ -1219,7 +1219,7 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
       int pin_viol_count
           = checkNet(net, verbose, true, nullptr, 0, antenna_violations);
       if (pin_viol_count > 0) {
-        absl::MutexLock lock(map_mutex_);
+        absl::MutexLock lock(&map_mutex_);
         net_violation_count++;
         pin_violation_count += pin_viol_count;
       }

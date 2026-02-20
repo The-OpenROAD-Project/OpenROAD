@@ -887,7 +887,7 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
-  absl::MutexLock lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
         nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
@@ -907,14 +907,14 @@ void dbDatabase::clear()
 
 void dbDatabase::destroy(dbDatabase* db_)
 {
-  absl::MutexLock lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   db_tbl->destroy(db);
 }
 
 dbDatabase* dbDatabase::getDatabase(uint32_t dbid)
 {
-  absl::MutexLock lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);
 }
 

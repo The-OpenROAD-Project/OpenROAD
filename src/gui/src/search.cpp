@@ -268,7 +268,7 @@ Search::BlockData& Search::getData(odb::dbBlock* block)
 void Search::updateShapes(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.shapes_init_mutex);
+  absl::MutexLock lock(&data.shapes_init_mutex);
   if (data.shapes_init) {
     return;  // already done by another thread
   }
@@ -325,7 +325,7 @@ void Search::updateShapes(odb::dbBlock* block)
 void Search::updateBPins(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.bpins_init_mutex);
+  absl::MutexLock lock(&data.bpins_init_mutex);
   if (data.bpins_init) {
     return;  // already done by another thread
   }
@@ -360,7 +360,7 @@ void Search::updateBPins(odb::dbBlock* block)
 void Search::updateFills(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.fills_init_mutex);
+  absl::MutexLock lock(&data.fills_init_mutex);
   if (data.fills_init) {
     return;  // already done by another thread
   }
@@ -381,7 +381,7 @@ void Search::updateFills(odb::dbBlock* block)
 void Search::updateInsts(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.insts_init_mutex);
+  absl::MutexLock lock(&data.insts_init_mutex);
   if (data.insts_init) {
     return;  // already done by another thread
   }
@@ -402,7 +402,7 @@ void Search::updateInsts(odb::dbBlock* block)
 void Search::updateBlockages(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.blockages_init_mutex);
+  absl::MutexLock lock(&data.blockages_init_mutex);
   if (data.blockages_init) {
     return;  // already done by another thread
   }
@@ -425,7 +425,7 @@ void Search::updateBlockages(odb::dbBlock* block)
 void Search::updateObstructions(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.obstructions_init_mutex);
+  absl::MutexLock lock(&data.obstructions_init_mutex);
   if (data.obstructions_init) {
     return;  // already done by another thread
   }
@@ -451,7 +451,7 @@ void Search::updateObstructions(odb::dbBlock* block)
 void Search::updateRows(odb::dbBlock* block)
 {
   BlockData& data = getData(block);
-  absl::MutexLock lock(data.rows_init_mutex);
+  absl::MutexLock lock(&data.rows_init_mutex);
   if (data.rows_init) {
     return;  // already done by another thread
   }

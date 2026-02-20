@@ -102,7 +102,7 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> DelayOptimizationStrategy::Optimize(
                                               /*fUpdateLevel=*/true));
   {
     // Lock the tech mapping and buffer since they rely on static variables.
-    const absl::MutexLock lock(abc_library_mutex);
+    const absl::MutexLock lock(&abc_library_mutex);
 
     auto library = static_cast<abc::Mio_Library_t*>(ntk->pManFunc);
 

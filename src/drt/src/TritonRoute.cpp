@@ -1333,7 +1333,7 @@ void TritonRoute::setParams(const ParamStruct& params)
 void TritonRoute::addWorkerResults(
     const std::vector<std::pair<int, std::string>>& results)
 {
-  absl::MutexLock lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   workers_results_.insert(
       workers_results_.end(), results.begin(), results.end());
   results_sz_ = workers_results_.size();
@@ -1342,7 +1342,7 @@ void TritonRoute::addWorkerResults(
 bool TritonRoute::getWorkerResults(
     std::vector<std::pair<int, std::string>>& results)
 {
-  absl::MutexLock lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   if (workers_results_.empty()) {
     return false;
   }

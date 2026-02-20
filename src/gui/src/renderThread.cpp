@@ -202,7 +202,7 @@ void RenderThread::draw(QImage& image,
   }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
-  absl::MutexLock lock(drawing_mutex_);
+  absl::MutexLock lock(&drawing_mutex_);
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 

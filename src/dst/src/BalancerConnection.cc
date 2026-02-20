@@ -150,7 +150,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         break;
       }
       case JobMessage::kBroadcast: {
-        absl::MutexLock lock(owner_->workers_mutex_);
+        absl::MutexLock lock(&owner_->workers_mutex_);
         owner_->broadcastData_.push_back(data);
         asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
@@ -174,7 +174,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                       == std::string::npos) {
                     // Since asio::transfer_all() used with a stream buffer it
                     // always reach an eof file exception!
-                    absl::MutexLock lock(broadcast_failure_mutex);
+                    absl::MutexLock lock(&broadcast_failure_mutex);
                     failed_workers.emplace_back(worker.ip, worker.port);
                   }
                 }

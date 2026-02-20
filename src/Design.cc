@@ -136,7 +136,7 @@ ant::AntennaChecker* Design::getAntennaChecker()
 
 std::string Design::evalTclString(const std::string& cmd)
 {
-  const absl::MutexLock lock(interp_mutex);
+  const absl::MutexLock lock(&interp_mutex);
   auto openroad = getOpenRoad();
   ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
   Tcl_Interp* tcl_interp = openroad->tclInterp();

@@ -118,7 +118,7 @@ class Summary : PrometheusMetric
   /// \brief Observe the given amount.
   void Observe(const double value)
   {
-    absl::MutexLock lock(mutex_);
+    absl::MutexLock lock(&mutex_);
 
     count_ += 1;
     sum_ += value;
@@ -132,7 +132,7 @@ class Summary : PrometheusMetric
   {
     auto metric = ClientMetric{};
 
-    absl::MutexLock lock(mutex_);
+    absl::MutexLock lock(&mutex_);
 
     metric.summary.quantile.reserve(quantiles_.size());
     for (const auto& quantile : quantiles_) {

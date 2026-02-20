@@ -93,7 +93,7 @@ class PrometheusRegistry : public Collectable
   /// \return Zero or more metrics and their samples.
   MetricFamilies Collect() const override
   {
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     MetricFamilies results;
 
@@ -112,7 +112,7 @@ class PrometheusRegistry : public Collectable
                     const std::string& help,
                     const Family::Labels& labels)
   {
-    absl::MutexLock lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     bool found_one_but_not_merge = false;
     for (const FamilyPtr& family_ptr : families) {

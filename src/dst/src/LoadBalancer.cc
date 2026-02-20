@@ -78,7 +78,7 @@ LoadBalancer::~LoadBalancer()
 
 bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 {
-  absl::MutexLock lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   bool valid_worker_state = true;
   if (!broadcastData_.empty()) {
     for (auto data : broadcastData_) {
@@ -107,7 +107,7 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 }
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
-  absl::MutexLock lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
@@ -121,7 +121,7 @@ void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 }
 void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 {
-  absl::MutexLock lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   if (!workers_.empty()) {
     Worker w = workers_.top();
     workers_.pop();
@@ -136,7 +136,7 @@ void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 
 void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
-  absl::MutexLock lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();

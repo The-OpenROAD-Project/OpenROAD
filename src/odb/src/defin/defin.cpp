@@ -72,7 +72,7 @@ void defin::readChip(std::vector<dbLib*>& libs,
                      dbChip* chip,
                      const bool issue_callback)
 {
-  absl::MutexLock lock(def_mutex_);
+  absl::MutexLock lock(&def_mutex_);
   reader_->readChip(libs, def_file, chip, issue_callback);
 }
 

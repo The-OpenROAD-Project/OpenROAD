@@ -525,7 +525,7 @@ bool HeatMapDataSource::hasData() const
 
 void HeatMapDataSource::ensureMap()
 {
-  absl::MutexLock lock(ensure_mutex_);
+  absl::MutexLock lock(&ensure_mutex_);
 
   if (destroy_map_) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);
