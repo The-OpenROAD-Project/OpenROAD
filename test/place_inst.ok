@@ -2,6 +2,12 @@
 [INFO ODB-0227] LEF file: Nangate45/fake_macros.lef, created 10 library cells
 [WARNING IFP-0028] Core area lower left (5.000, 5.000) snapped to (5.130, 5.600).
 [INFO IFP-0001] Added 346 rows of 2551 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 500.000 500.000 ) um
+[INFO IFP-0101] Core BBox: (  5.130  5.600 ) ( 489.820 490.000 ) um
+[INFO IFP-0102] Core area:                       234783.836 um^2
+[INFO IFP-0103] Total instances area:               519.764 um^2
+[INFO IFP-0104] Effective utilization:                0.002
+[INFO IFP-0105] Number of instances:                    362
 [ERROR ORD-0062] No origin or location specified for test2.
 ORD-0062
 [ERROR ORD-0063] origin and location specified for test2, only one is supported.

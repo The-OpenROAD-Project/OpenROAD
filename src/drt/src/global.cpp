@@ -14,6 +14,7 @@
 #include "db/obj/frMPin.h"
 #include "db/obj/frMarker.h"
 #include "db/obj/frMaster.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 
 namespace drt {

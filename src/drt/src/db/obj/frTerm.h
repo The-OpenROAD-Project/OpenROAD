@@ -9,6 +9,7 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frNet.h"
+#include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

@@ -10,10 +10,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcPin.h"
 #include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"

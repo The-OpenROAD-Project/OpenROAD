@@ -1,0 +1,141 @@
+[INFO ODB-0227] LEF file: example1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ORD-2056] The following 128 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  AND2_X2
+  AND2_X4
+  AND3_X1
+  AND3_X2
+  AND3_X4
+  AND4_X1
+  AND4_X2
+  AND4_X4
+  ANTENNA_X1
+  AOI211_X1
+  AOI211_X2
+  AOI211_X4
+  AOI21_X1
+  AOI21_X2
+  AOI21_X4
+  AOI221_X1
+  AOI221_X2
+  AOI221_X4
+  AOI222_X1
+  AOI222_X2
+  AOI222_X4
+  AOI22_X1
+  AOI22_X2
+  AOI22_X4
+  BUF_X16
+  BUF_X32
+  BUF_X4
+  BUF_X8
+  CLKBUF_X1
+  CLKBUF_X2
+  CLKBUF_X3
+  CLKGATETST_X1
+  CLKGATETST_X2
+  CLKGATETST_X4
+  CLKGATETST_X8
+  CLKGATE_X1
+  CLKGATE_X2
+  CLKGATE_X4
+  CLKGATE_X8
+  DFFRS_X1
+  DFFRS_X2
+  DFFR_X1
+  DFFR_X2
+  DFFS_X1
+  DFFS_X2
+  DFF_X2
+  DLH_X1
+  DLH_X2
+  DLL_X1
+  DLL_X2
+  FA_X1
+  FILLCELL_X1
+  FILLCELL_X16
+  FILLCELL_X2
+  FILLCELL_X32
+  FILLCELL_X4
+  FILLCELL_X8
+  HA_X1
+  INV_X16
+  INV_X2
+  INV_X32
+  INV_X4
+  INV_X8
+  LOGIC0_X1
+  LOGIC1_X1
+  MUX2_X1
+  MUX2_X2
+  NAND2_X1
+  NAND2_X2
+  NAND2_X4
+  NAND3_X1
+  NAND3_X2
+  NAND3_X4
+  NAND4_X1
+  NAND4_X2
+  NAND4_X4
+  NOR2_X2
+  NOR2_X4
+  NOR3_X1
+  NOR3_X2
+  NOR3_X4
+  NOR4_X1
+  NOR4_X2
+  NOR4_X4
+  OAI211_X1
+  OAI211_X2
+  OAI211_X4
+  OAI21_X1
+  OAI21_X2
+  OAI21_X4
+  OAI221_X1
+  OAI221_X2
+  OAI221_X4
+  OAI222_X1
+  OAI222_X2
+  OAI222_X4
+  OAI22_X1
+  OAI22_X2
+  OAI22_X4
+  OAI33_X1
+  OR2_X1
+  OR2_X2
+  OR2_X4
+  OR3_X1
+  OR3_X2
+  OR3_X4
+  OR4_X1
+  OR4_X2
+  OR4_X4
+  SDFFRS_X1
+  SDFFRS_X2
+  SDFFR_X1
+  SDFFR_X2
+  SDFFS_X1
+  SDFFS_X2
+  SDFF_X1
+  SDFF_X2
+  TBUF_X1
+  TBUF_X16
+  TBUF_X2
+  TBUF_X4
+  TBUF_X8
+  TINV_X1
+  TLAT_X1
+  XNOR2_X1
+  XNOR2_X2
+  XOR2_X1
+  XOR2_X2
+Find b1/out2: b1/out2
+Find b2/out2: b2/out2
+Find bus pin b3/bus_out: b3/bus_out[0]
+bus_out pin: b3/bus_out[3]
+bus_out pin: b3/bus_out[2]
+bus_out pin: b3/bus_out[1]
+bus_out pin: b3/bus_out[0]
+Net connected to b2/u3/Z: b2/out2
+Modnet connected to b2/u3/Z: out2
+No differences found.

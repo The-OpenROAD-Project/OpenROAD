@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <Eigen/Sparse>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -12,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include "Eigen/Sparse"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "connection.h"

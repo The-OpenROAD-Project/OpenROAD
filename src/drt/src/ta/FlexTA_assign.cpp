@@ -10,7 +10,12 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/taObj/taFig.h"
+#include "db/taObj/taPin.h"
+#include "db/taObj/taShape.h"
+#include "db/taObj/taVia.h"
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"

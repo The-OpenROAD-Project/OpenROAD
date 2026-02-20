@@ -23,9 +23,32 @@ class dbNetwork;
 class LibertyPort;
 }  // namespace sta
 
+namespace utl {
+class Logger;
+}
+
+namespace pdn {
+class PdnGen;
+}
+
+namespace ppl {
+class IOPlacer;
+}
+
+namespace dpl {
+class Opendp;
+}
+
+namespace grt {
+class GlobalRouter;
+}
+
+namespace drt {
+class TritonRoute;
+}
+
 namespace ram {
 
-////////////////////////////////////////////////////////////////
 class Cell;
 class Layout;
 class Grid;
@@ -33,7 +56,14 @@ class Grid;
 class RamGen
 {
  public:
-  RamGen(sta::dbNetwork* network, odb::dbDatabase* db, utl::Logger* logger);
+  RamGen(sta::dbNetwork* network,
+         odb::dbDatabase* db,
+         utl::Logger* logger,
+         pdn::PdnGen* pdngen,
+         ppl::IOPlacer* ioPlacer,
+         dpl::Opendp* opendp_,
+         grt::GlobalRouter* global_router_,
+         drt::TritonRoute* detailed_router_);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -44,6 +74,20 @@ class RamGen
                 odb::dbMaster* inv_cell,
                 odb::dbMaster* tapcell,
                 int max_tap_dist);
+
+  void ramPdngen(const char* power_pin,
+                 const char* ground_pin,
+                 const char* route_name,
+                 int route_width,
+                 const char* ver_name,
+                 int ver_width,
+                 int ver_pitch,
+                 const char* hor_name,
+                 int hor_width,
+                 int hor_pitch);
+  void ramPinplacer(const char* ver_name, const char* hor_name);
+  void ramFiller(const std::vector<std::string>& filler_cells);
+  void ramRouting(int thread_count);
 
  private:
   void findMasters();
@@ -96,6 +140,11 @@ class RamGen
   odb::dbDatabase* db_;
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_;
+  pdn::PdnGen* pdngen_{nullptr};
+  ppl::IOPlacer* ioPlacer_{nullptr};
+  dpl::Opendp* opendp_{nullptr};
+  grt::GlobalRouter* global_router_{nullptr};
+  drt::TritonRoute* detailed_router_{nullptr};
 
   odb::dbMaster* storage_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};
@@ -104,6 +153,10 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  std::vector<odb::dbBTerm*> addr_inputs_;
+  std::vector<odb::dbBTerm*> data_inputs_;
+  std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
 };
 
 }  // namespace ram

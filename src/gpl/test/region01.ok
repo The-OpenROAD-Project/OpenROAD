@@ -3,9 +3,16 @@
 The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd/sky130_fd_sc_hd.lef at line 2.
 
 [INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd.lef, created 437 library cells
+[INFO IFP-0107] Defining die area using utilization: 5.00% and aspect ratio: 1.
 [WARNING UPF-0024] Isolation spm_inst_0_isolation defined, but no cells defined.
 [WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
 [INFO IFP-0001] Added 137 rows of 811 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO IFP-0101] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO IFP-0102] Core area:                       139017.078 um^2
+[INFO IFP-0103] Total instances area:              6974.189 um^2
+[INFO IFP-0104] Effective utilization:                0.050
+[INFO IFP-0105] Number of instances:                    630
 [INFO PDN-0101] Using VDD_0 as power net for Core domain.
 [INFO PDN-0102] Using GND as ground net for Core domain.
 [INFO PDN-0001] Inserting grid: spm_inst_0_grid

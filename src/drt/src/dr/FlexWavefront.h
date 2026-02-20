@@ -7,6 +7,7 @@
 #include <memory>
 #include <queue>
 
+#include "db/infra/frBox.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
 #include "global.h"

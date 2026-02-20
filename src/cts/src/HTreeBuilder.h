@@ -11,8 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "Clock.h"
 #include "CtsObserver.h"
 #include "CtsOptions.h"
+#include "TechChar.h"
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"

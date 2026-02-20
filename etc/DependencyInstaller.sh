@@ -62,8 +62,8 @@ LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20240722.0"
-ABSL_CHECKSUM="740fb8f35ebdf82740c294bde408b9c0"
+ABSL_VERSION="20260107.0"
+ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
@@ -1027,6 +1027,7 @@ Options:
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
+  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
 
@@ -1077,6 +1078,7 @@ main() {
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
             -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
+            -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
                 echo "Unknown option: ${1}" >&2
                 _help

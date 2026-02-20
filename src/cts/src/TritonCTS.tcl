@@ -39,6 +39,8 @@ proc configure_cts_characterization { args } {
 sta::define_cmd_args "set_cts_config" {[-apply_ndr strategy] \
                                        [-branching_point_buffers_distance] \
 				       [-buf_list] \
+                                       [-clock_buffer_footprint footprint] \
+                                       [-clock_buffer_string string] \
                                        [-clustering_exponent] \
                                        [-clustering_unbalance_ratio] \
                                        [-delay_buffer_derate] \
@@ -58,7 +60,9 @@ sta::define_cmd_args "set_cts_config" {[-apply_ndr strategy] \
 }
 proc set_cts_config { args } {
   sta::parse_key_args "set_cts_config" args \
-    keys {-apply_ndr -branching_point_buffers_distance -buf_list -clustering_exponent \
+    keys {-apply_ndr -branching_point_buffers_distance -buf_list \
+           -clock_buffer_footprint -clock_buffer_string \
+           -clustering_exponent \
            -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
            -library -macro_clustering_max_diameter -macro_clustering_size \
            -num_static_layers -sink_buffer_max_cap_derate -sink_clustering_levels -root_buf \
@@ -70,6 +74,25 @@ proc set_cts_config { args } {
   if { [info exists keys(-apply_ndr)] } {
     set strategy $keys(-apply_ndr)
     cts::set_apply_ndr $strategy
+  }
+  if { [info exists keys(-clock_buffer_string)] && [info exists keys(-clock_buffer_footprint)] } {
+    utl::error CTS 135 "-clock_buffer_string and -clock_buffer_footprint are mutually exclusive."
+  } elseif { [info exists keys(-clock_buffer_string)] } {
+    if { ![rsz::has_clock_buffer_footprint_cmd] } {
+      set clk_str $keys(-clock_buffer_string)
+      rsz::set_clock_buffer_string_cmd $clk_str
+    } else {
+      utl::error CTS 133 "-clock_buffer_string cannot be set because\
+        -clock_buffer_footprint is already defined."
+    }
+  } elseif { [info exists keys(-clock_buffer_footprint)] } {
+    if { ![rsz::has_clock_buffer_string_cmd] } {
+      set footprint $keys(-clock_buffer_footprint)
+      rsz::set_clock_buffer_footprint_cmd $footprint
+    } else {
+      utl::error CTS 134 "-clock_buffer_footprint cannot be set because\
+        -clock_buffer_string is already defined."
+    }
   }
   if { [info exists keys(-branching_point_buffers_distance)] } {
     set distance $keys(-branching_point_buffers_distance)
@@ -204,10 +227,20 @@ proc report_cts_config { args } {
   set wire_segment_unit [cts::get_wire_unit]
   # reset the db units
   cts::set_db_unit 1
-  puts "*******************************************"
+  set clock_buffer_string "unset"
+  if { [rsz::has_clock_buffer_string_cmd] } {
+    set clock_buffer_string [rsz::get_clock_buffer_string_cmd]
+  }
+  set clock_buffer_footprint "unset"
+  if { [rsz::has_clock_buffer_footprint_cmd] } {
+    set clock_buffer_footprint [rsz::get_clock_buffer_footprint_cmd]
+  }
+  puts "*****************************************************"
   puts "CTS config:"
   puts "-apply_ndr:                          $ndr_strategy"
   puts "-buf_list:                           $buffer_list"
+  puts "-clock_buffer_footprint:             $clock_buffer_footprint"
+  puts "-clock_buffer_string:                $clock_buffer_string"
   puts "-branching_point_buffers_distance:   $vertex_buffer_distance"
   puts "-clustering_exponent:                $clustering_power"
   puts "-clustering_unbalance_ratio:         $clustering_capacity"
@@ -225,12 +258,14 @@ proc report_cts_config { args } {
   puts "-skip_nets:                          $skip_nets_list"
   puts "-tree_buf:                           $tree_buffer"
   puts "-wire_unit:                          $wire_segment_unit"
-  puts "****'***************************************"
+  puts "*****************************************************"
 }
 
 sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
                                          [-branching_point_buffers_distance] \
 					 [-buf_list] \
+                                         [-clock_buffer_footprint] \
+                                         [-clock_buffer_string] \
                                          [-clustering_exponent] \
                                          [-clustering_unbalance_ratio] \
                                          [-delay_buffer_derate] \
@@ -251,7 +286,9 @@ sta::define_cmd_args "reset_cts_config" {[-apply_ndr] \
 proc reset_cts_config { args } {
   sta::parse_key_args "reset_cts_config" args \
     keys {} \
-    flags {-apply_ndr -buf_list -branching_point_buffers_distance -clustering_exponent \
+    flags {-apply_ndr -buf_list -branching_point_buffers_distance \
+           -clock_buffer_footprint -clock_buffer_string \
+           -clustering_exponent \
            -clustering_unbalance_ratio -delay_buffer_derate -distance_between_buffers \
            -library -macro_clustering_max_diameter -macro_clustering_size \
            -num_static_layers -root_buf -sink_buffer_max_cap_derate -sink_clustering_levels \
@@ -270,6 +307,12 @@ proc reset_cts_config { args } {
   if { $reset_all || [info exists flags(-buf_list)] } {
     cts::reset_buffer_list
     utl::info CTS 213 "Buffer list has been removed."
+  }
+  if {
+    $reset_all || [info exists flags(-clock_buffer_string)]
+    || [info exists flags(-clock_buffer_footprint)]
+  } {
+    rsz::reset_clock_buffer_pattern_cmd
   }
   if { $reset_all || [info exists flags(-clustering_exponent)] } {
     cts::reset_clustering_exponent

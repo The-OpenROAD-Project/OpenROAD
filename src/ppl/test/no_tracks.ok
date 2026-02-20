@@ -1,5 +1,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0107] Defining die area using utilization: 30.00% and aspect ratio: 1.
 [INFO IFP-0001] Added 29 rows of 219 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 41.625 41.625 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 41.610 40.600 ) um
+[INFO IFP-0102] Core area:                         1689.366 um^2
+[INFO IFP-0103] Total instances area:               519.764 um^2
+[INFO IFP-0104] Effective utilization:                0.308
+[INFO IFP-0105] Number of instances:                    362
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0021] Horizontal routing tracks not found for layer metal3.

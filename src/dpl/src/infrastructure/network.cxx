@@ -14,6 +14,7 @@
 #include "PlacementDRC.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace dpl {

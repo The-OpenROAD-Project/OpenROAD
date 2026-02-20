@@ -8,9 +8,12 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "db/grObj/grFig.h"
+#include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
+#include "frRTree.h"
 #include "gr/FlexGR.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"

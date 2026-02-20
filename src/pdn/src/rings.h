@@ -8,6 +8,7 @@
 
 #include "grid_component.h"
 #include "odb/geom.h"
+#include "shape.h"
 
 namespace odb {
 class dbTechLayer;

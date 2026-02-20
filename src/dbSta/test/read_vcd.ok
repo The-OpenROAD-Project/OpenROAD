@@ -12,5 +12,5 @@
 [INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
 [WARNING ORD-2011] LEF master TAPCELL_ASAP7_75t_R has no liberty cell.
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-[WARNING STA-1656] Element.spef line 22253, pin io_lsbOuts_0 not found.
+[WARNING STA-1655] Element.spef line 22253, io_lsbOuts_0 not connected to net ces_0_0/io_lsbOuts_0.
 Annotated 59488 pin activities.

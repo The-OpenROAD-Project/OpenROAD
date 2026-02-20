@@ -1,6 +1,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:               138.054 um^2
+[INFO IFP-0104] Effective utilization:                0.003
+[INFO IFP-0105] Number of instances:                     47
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 8754
@@ -60,9 +66,9 @@ tns max -10.567
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.676 |      -10.6 |     26 | u1/r21/D
-    final |       0 |      14 |        4 |      0 |     0 |    +9.4% |   -0.508 |      -10.5 |     26 | u1/r21/D
+    final |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |      -10.5 |     26 | u1/r21/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 14 instances: 14 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

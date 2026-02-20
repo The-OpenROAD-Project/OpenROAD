@@ -9,6 +9,7 @@
 
 #include "odb/wOrder.h"
 #include "rcx/ext.h"
+#include "rcx/extRCap.h"
 #include "rcx/extSolverGen.h"
 #include "utl/Logger.h"
 

@@ -419,6 +419,56 @@ void TimingPath::populateCapturePath(sta::Path* path,
       path, sta, dcalc_ap, offset, true, clock_expanded, capture_nodes_);
 }
 
+std::vector<odb::dbNet*> TimingPath::getNets(
+    const PathSection& path_section) const
+{
+  std::vector<odb::dbNet*> section_nets;
+  switch (path_section) {
+    case kAll: {
+      getNets(section_nets, path_nodes_, false, false);
+      getNets(section_nets, capture_nodes_, false, false);
+      break;
+    }
+    case kLaunch: {
+      getNets(section_nets, path_nodes_, true, false);
+      break;
+    }
+    case kData: {
+      getNets(section_nets, path_nodes_, false, true);
+      break;
+    }
+    case kCapture: {
+      getNets(section_nets, capture_nodes_, false, false);
+      break;
+    }
+  }
+
+  return section_nets;
+}
+
+void TimingPath::getNets(std::vector<odb::dbNet*>& nets,
+                         const TimingNodeList& nodes,
+                         const bool only_clock,
+                         const bool only_data) const
+{
+  for (const auto& node : nodes) {
+    if (only_clock && !node->isClock()) {
+      continue;
+    }
+    if (only_data && node->isClock()) {
+      continue;
+    }
+
+    if (node->isSource()) {
+      for (auto* sink_node : node->getPairedNodes()) {
+        if (sink_node != nullptr) {
+          nets.push_back(sink_node->getNet());
+        }
+      }
+    }
+  }
+}
+
 std::string TimingPath::getStartStageName() const
 {
   const int start_idx = getClkPathEndIndex() + 1;

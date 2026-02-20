@@ -56,6 +56,7 @@ class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
 class ChartsWidget;
+class Chiplet3DWidget;
 class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
@@ -94,6 +95,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   Inspector* getInspector() const { return inspector_; }
   HelpWidget* getHelpViewer() const { return help_widget_; }
   ChartsWidget* getChartsWidget() const { return charts_widget_; }
+  Chiplet3DWidget* getChiplet3DViewer() const { return chiplet_viewer_; }
   TimingWidget* getTimingWidget() const { return timing_widget_; }
 
   std::vector<std::string> getRestoreTclCommands();
@@ -343,6 +345,8 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
   ChartsWidget* charts_widget_;
+  Chiplet3DWidget* chiplet_viewer_;
+  QDockWidget* chiplet_dock_;
   HelpWidget* help_widget_;
 
   FindObjectDialog* find_dialog_;

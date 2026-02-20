@@ -4,6 +4,12 @@
 [INFO ODB-0131]     Created 482 components and 2074 component-terminals.
 [INFO ODB-0133]     Created 385 nets and 1110 connections.
 [INFO IFP-0001] Added 72 rows of 527 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.130 100.800 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 100.130 100.800 ) um
+[INFO IFP-0102] Core area:                        10093.104 um^2
+[INFO IFP-0103] Total instances area:               621.376 um^2
+[INFO IFP-0104] Effective utilization:                0.062
+[INFO IFP-0105] Number of instances:                    482
 [INFO PDN-0001] Inserting grid: Core
 [WARNING PDN-0195] Removing 9 via(s) between metal1 and metal4 at (2.0000 um, 0.0050 um) for VSS
 [WARNING PDN-0195] Removing 9 via(s) between metal1 and metal4 at (42.0000 um, 0.0050 um) for VSS

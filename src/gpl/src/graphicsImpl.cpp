@@ -99,8 +99,8 @@ void GraphicsImpl::debugForNesterovPlace(
       "Iteration",
       {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
   stepLength_chart_->setXAxisFormat("%d");
-  stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f"});
-  stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0});
+  stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f", "%.2f"});
+  stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0});
 
   routing_chart_ = gui->addChart(
       "GPL Routing",
@@ -125,7 +125,7 @@ void GraphicsImpl::debugForNesterovPlace(
     for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
       GCellHandle cell_handle = nb->getGCells()[idx];
       if (cell_handle->contains(inst)) {
-        nb_selected_index_ = idx;
+        nb_selected_index_ = &nb - nbVec_.data();
         break;
       }
     }

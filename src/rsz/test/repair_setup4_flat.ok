@@ -1,5 +1,11 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:                58.254 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                     17
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 8754
@@ -60,9 +66,9 @@ tns max -2.588
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.563 |       -2.6 |     11 | r2/D
         1 |       0 |       0 |        1 |      0 |     0 |    +1.4% |   -0.518 |       -3.3 |     11 | r2/D
-    final |       0 |       3 |        2 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
+    final |       0 |       5 |        3 |      0 |     0 |    +9.6% |   -0.528 |       -3.1 |     11 | r2/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 2 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 3 instances: 3 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 3 buffers, 1 to split loads.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

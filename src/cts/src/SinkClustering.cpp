@@ -12,6 +12,11 @@
 #include <sstream>
 #include <vector>
 
+#include "CtsObserver.h"
+#include "CtsOptions.h"
+#include "HTreeBuilder.h"
+#include "TechChar.h"
+#include "TreeBuilder.h"
 #include "Util.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"

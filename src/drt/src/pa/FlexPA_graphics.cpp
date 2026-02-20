@@ -12,9 +12,11 @@
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frMPin.h"
 #include "frBaseTypes.h"
+#include "frDesign.h"
 #include "global.h"
 #include "gui/gui.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"
 
 namespace drt {

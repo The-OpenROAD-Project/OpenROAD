@@ -14,6 +14,8 @@
 #include <QWidget>
 #include <variant>
 
+#include "gui/heatMap.h"
+
 namespace gui {
 
 HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,

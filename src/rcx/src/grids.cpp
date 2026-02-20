@@ -12,6 +12,7 @@
 #include "odb/db.h"
 #include "odb/isotropy.h"
 #include "rcx/array1.h"
+#include "rcx/box.h"
 #include "rcx/util.h"
 
 namespace rcx {

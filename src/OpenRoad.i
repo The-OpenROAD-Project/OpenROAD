@@ -199,6 +199,13 @@ getSteinerTreeBuilder()
   return openroad->getSteinerTreeBuilder();
 }
 
+ram::RamGen*
+getRamGen()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getRamGen();
+}
+
 } // namespace ord
 
 namespace sta {

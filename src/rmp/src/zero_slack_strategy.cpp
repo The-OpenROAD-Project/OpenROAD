@@ -5,6 +5,7 @@
 
 #include <vector>
 
+#include "base/abc/abc.h"
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"

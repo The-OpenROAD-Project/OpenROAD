@@ -13,6 +13,7 @@
 #include "boost/asio.hpp"
 #include "boost/beast.hpp"
 #include "utl/Logger.h"
+#include "utl/prometheus/text_serializer.h"
 
 namespace {
 

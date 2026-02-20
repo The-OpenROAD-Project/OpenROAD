@@ -2,3 +2,5 @@ build/
 debug/
 src/sta/build/
 src/sta/debug/
+# we use abc from MODULE.bazel
+third-party/abc/

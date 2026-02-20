@@ -250,6 +250,7 @@ class DisplayControls : public QDockWidget,
 
   bool isGCellGridVisible() const override;
   bool isFlywireHighlightOnly() const override;
+  bool areFocusedNetsGuidesVisible() const override;
 
   // API from dbNetworkObserver
   void postReadLiberty() override;
@@ -388,6 +389,7 @@ class DisplayControls : public QDockWidget,
     ModelRow flywires_only;
     ModelRow labels;
     ModelRow background;
+    ModelRow focused_nets_guides;
   };
 
   struct InstanceShapeModels

@@ -24,6 +24,8 @@
 
 namespace dpl {
 
+class Network;
+
 struct GridIntervalX
 {
   GridX lo;
@@ -156,6 +158,14 @@ class Grid
 
   bool isMultiHeight(odb::dbMaster* master) const;
 
+  // Utilization-aware placement support
+  void computeUtilizationMap(Network* network,
+                             float area_weight,
+                             float pin_weight);
+  void updateUtilizationMap(Node* node, DbuX x, DbuY y, bool add);
+  float getUtilizationDensity(int pixel_idx) const;
+  void normalizeUtilization();
+
  private:
   // Maps a site to the right orientation to use in a given row
   using SiteToOrientation = std::map<odb::dbSite*, odb::dbOrientType>;
@@ -212,6 +222,28 @@ class Grid
 
   GridY row_count_{0};
   GridX row_site_count_{0};
+
+  // Utilization density map
+  std::vector<float> utilization_density_;
+  std::vector<float> total_area_;
+  std::vector<float> total_pins_;
+  float area_weight_ = 0.0f;
+  float pin_weight_ = 0.0f;
+  bool utilization_dirty_ = false;
+  float last_max_area_ = 1.0f;
+  float last_max_pins_ = 1.0f;
+  float last_max_utilization_ = 1.0f;
+
+  int countValidPixels(GridX x_begin,
+                       GridY y_begin,
+                       GridX x_end,
+                       GridY y_end) const;
+  void applyCellContribution(Node* node,
+                             GridX x_begin,
+                             GridY y_begin,
+                             GridX x_end,
+                             GridY y_end,
+                             float scale);
 };
 
 }  // namespace dpl

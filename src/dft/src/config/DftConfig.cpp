@@ -3,6 +3,8 @@
 
 #include "DftConfig.hh"
 
+#include "ScanArchitectConfig.hh"
+#include "ScanStitchConfig.hh"
 #include "utl/Logger.h"
 
 namespace dft {

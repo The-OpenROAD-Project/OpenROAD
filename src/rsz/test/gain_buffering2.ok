@@ -2,6 +2,12 @@
 [INFO ODB-0227] LEF file: sky130hd/sky130hd_std_cell.lef, created 437 library cells
 [WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.120, 10.880).
 [INFO IFP-0001] Added 29 rows of 173 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
+[INFO IFP-0101] Core BBox: ( 10.120 10.880 ) ( 89.700 89.760 ) um
+[INFO IFP-0102] Core area:                         6277.270 um^2
+[INFO IFP-0103] Total instances area:               269.008 um^2
+[INFO IFP-0104] Effective utilization:                0.043
+[INFO IFP-0105] Number of instances:                     28
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: _69_ (rising edge-triggered flip-flop clocked by clk)
 Endpoint: _68_ (rising edge-triggered flip-flop clocked by clk)

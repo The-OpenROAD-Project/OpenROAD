@@ -5,4 +5,10 @@
 [INFO ODB-0133]     Created 10 nets and 14 connections.
 [WARNING IFP-0028] Core area lower left (1.000, 1.000) snapped to (1.140, 1.400).
 [INFO IFP-0001] Added 4 rows of 63 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 14.140  9.070 ) um
+[INFO IFP-0101] Core BBox: (  1.140  1.400 ) ( 13.110  7.000 ) um
+[INFO IFP-0102] Core area:                           67.032 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.230
+[INFO IFP-0105] Number of instances:                      5
 No differences found.

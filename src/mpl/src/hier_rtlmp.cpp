@@ -182,11 +182,6 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
-void HierRTLMP::setDataFlowDriven()
-{
-  clustering_engine_->setDataFlowDriven();
-}
-
 // Top Level Function
 // The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:
@@ -1093,10 +1088,17 @@ int HierRTLMP::computePinAccessBaseDepth(const int io_span) const
     }
   }
 
-  int64_t root_area = (tree_->root->getWidth()
-                       * static_cast<int64_t>(tree_->root->getHeight()));
+  const odb::Rect root_box = tree_->root->getBBox();
+
+  if (root_box.area() == 0) {
+    logger_->error(MPL,
+                   67,
+                   "Failed computing pin access blockages' base depth: root "
+                   "area is zero.");
+  }
+
   const double macro_dominance_factor
-      = tree_->macro_with_halo_area / static_cast<double>(root_area);
+      = tree_->macro_with_halo_area / static_cast<double>(root_box.area());
 
   const int base_depth = std_cell_area / static_cast<double>(io_span)
                          * std::pow((1 - macro_dominance_factor), 2);
@@ -1351,6 +1353,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
       std::vector<SoftMacro> inflated_macros
           = applyUtilization(utilization, outline, macros);
 
+      const bool single_array_single_std_cell_cluster
+          = singleArraySingleStdCellCluster(macros);
+
       std::unique_ptr<SACoreSoftMacro> sa
           = std::make_unique<SACoreSoftMacro>(tree_.get(),
                                               outline,
@@ -1376,7 +1381,9 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
-
+      if (single_array_single_std_cell_cluster) {
+        sa->forceCentralization();
+      }
       sa_batch.push_back(std::move(sa));
     }
 

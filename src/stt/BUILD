@@ -57,7 +57,7 @@ cc_library(
         "//src/utl",
         "@boost.heap",
         "@boost.multi_array",
-        "@com_github_quantamhd_lemon//:lemon",
+        "@coin-or-lemon//:lemon",
     ],
 )
 

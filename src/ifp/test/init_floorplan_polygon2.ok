@@ -1,4 +1,5 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0005] Added 6 die polygon vertices to the list.
+[INFO IFP-0106] Initializing floorplan in polygon mode.
 [ERROR IFP-0085] no -core_area specified for polygonal floorplan.
 IFP-0085

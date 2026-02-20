@@ -15,6 +15,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pdn/PdnGen.hh"
+#include "shape.h"
 
 namespace pdn {
 class Grid;

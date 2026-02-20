@@ -103,7 +103,6 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setReportDirectory(const char* report_directory);
   void setKeepClusteringData(bool keep_clustering_data);
-  void setDataFlowDriven();
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

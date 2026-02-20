@@ -8,7 +8,9 @@
 #include <vector>
 
 #include "db/obj/frAccess.h"
+#include "db/obj/frBPin.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frMPin.h"
@@ -17,6 +19,7 @@
 #include "db/obj/frVia.h"
 #include "frBaseTypes.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 
 namespace drt {
 

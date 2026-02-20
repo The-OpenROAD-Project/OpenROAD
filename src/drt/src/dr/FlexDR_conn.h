@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frFig.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frTechObject.h"
 #include "dr/AbstractDRGraphics.h"

@@ -12,7 +12,9 @@
 #include <utility>
 #include <vector>
 
+#include "Clock.h"
 #include "Clustering.h"
+#include "CtsObserver.h"
 #include "SinkClustering.h"
 #include "TechChar.h"
 #include "TreeBuilder.h"

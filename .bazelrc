@@ -41,6 +41,8 @@ build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
 build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
 build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
+build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declarations"
+build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 
 # The warning acceptance bar in CI for PRs is set by -Werror of a specific
 # version of some chosen compiler. Disable warnings from other compilers until
@@ -56,17 +58,17 @@ build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
-build --per_file_copt=external/.*@-w
-build --host_per_file_copt=external/.*@-w
+build --per_file_copt=.*external/.*@-w
+build --host_per_file_copt=.*external/.*@-w
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
-build:asan --copt -fsanitize=address --host_copt -fsanitize=address
-build:asan --copt -DADDRESS_SANITIZER --host_copt -DADDRESS_SANITIZER
-build:asan --copt -O1 --host_copt -O1
-build:asan --copt -g --host_copt -g
-build:asan --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
-build:asan --linkopt -fsanitize=address --host_linkopt -fsanitize=address
+build:asan --copt=-fsanitize=address
+build:asan --copt=-DADDRESS_SANITIZER
+build:asan --copt=-O1
+build:asan --copt=-g
+build:asan --copt=-fno-omit-frame-pointer
+build:asan --linkopt=-fsanitize=address
 
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never

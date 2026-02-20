@@ -14,6 +14,7 @@
 #include "db/gcObj/gcShape.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"

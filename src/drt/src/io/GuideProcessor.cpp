@@ -22,6 +22,7 @@
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGCellPattern.h"
 #include "db/tech/frLayer.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"

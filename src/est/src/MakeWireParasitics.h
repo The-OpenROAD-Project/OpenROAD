@@ -10,6 +10,7 @@
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
+#include "grt/PinGridLocation.h"
 #include "grt/RoutePt.h"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"

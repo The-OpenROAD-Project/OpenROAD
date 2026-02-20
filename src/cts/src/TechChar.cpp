@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "CtsOptions.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -32,6 +33,7 @@
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"

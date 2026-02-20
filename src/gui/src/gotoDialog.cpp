@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "gui/gui.h"
+#include "layoutTabs.h"
 #include "layoutViewer.h"
 
 namespace gui {

@@ -284,6 +284,7 @@ def mock_array(name, config):
                 "RTLMP_MAX_MACRO": "64",
                 "RTLMP_MIN_INST": "50",
                 "RTLMP_MIN_MACRO": "8",
+                "RTLMP_NOTCH_WT": "0",
             },
             macros = ["Element_{name}_base_generate_abstract".format(name = name)],
             sources = {

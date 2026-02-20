@@ -228,6 +228,8 @@ class MBFF
   void displayFlopClusters(const char* stage,
                            std::vector<std::vector<Flop>>& clusters);
 
+  float getLeakage(odb::dbMaster* master);
+
   // OpenROAD vars
   odb::dbDatabase* db_;
   odb::dbBlock* block_;
