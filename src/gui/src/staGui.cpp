@@ -33,6 +33,7 @@
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
