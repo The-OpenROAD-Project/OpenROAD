@@ -775,7 +775,7 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
           if (infinite_capacity_) {
             cap = kBigCap;
           } else if (inside_layer_range) {
-            computeGCellCapacity(
+            cap = computeGCellCapacity(
                 x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
           }
           min_cap = std::min(min_cap, cap);
