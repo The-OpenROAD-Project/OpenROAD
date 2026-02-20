@@ -2261,10 +2261,12 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
     BufferedNetPtr bnet = resizer_->makeBufferedNet(drvr_pin, corner_);
 
     if (!bnet) {
-      logger_->warn(RSZ,
-                    75,
-                    "makeBufferedNet failed for driver {}",
-                    network_->pathName(drvr_pin));
+      debugPrint(logger_,
+                 RSZ,
+                 "rebuffer",
+                 2,
+                 "makeBufferedNet failed for driver {}",
+                 network_->pathName(drvr_pin));
       return 0;
     }
 
