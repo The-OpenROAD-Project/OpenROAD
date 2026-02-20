@@ -1295,7 +1295,7 @@ float GlobalRouter::getNetSlack(Net* net)
   return slack;
 }
 
-void GlobalRouter::initNetlist(std::vector<Net*>& nets)
+void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
 {
   pad_pins_connections_.clear();
 
@@ -1335,9 +1335,10 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
 
-  // add resources for pin access in macro/pad pins after defining their on grid
-  // position
-  if (has_macros_or_pads_) {
+  // Add resources for pin access in macro/pad pins after defining their on grid
+  // position. It must be done only in the initialization of the tool, not
+  // during incremental.
+  if (has_macros_or_pads_ && !incremental) {
     addResourcesForPinAccess(nets);
   }
   fastroute_->initAuxVar();
@@ -5826,7 +5827,7 @@ void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
-  initNetlist(nets);
+  initNetlist(nets, true);
   fastroute_->initAuxVar();
   fastroute_->setIncrementalGrt(true);
 }

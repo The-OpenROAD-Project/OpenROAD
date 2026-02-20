@@ -349,7 +349,7 @@ class GlobalRouter
                            int track_count,
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
-  void initNetlist(std::vector<Net*>& nets);
+  void initNetlist(std::vector<Net*>& nets, bool incremental = false);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
