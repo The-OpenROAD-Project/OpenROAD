@@ -527,6 +527,7 @@ class GlobalRouter
   bool is_congested_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
+  bool has_macros_or_pads_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;

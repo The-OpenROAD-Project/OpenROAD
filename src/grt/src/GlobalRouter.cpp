@@ -1337,7 +1337,9 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
   // add resources for pin access in macro/pad pins after defining their on grid
   // position
-  addResourcesForPinAccess(nets);
+  if (has_macros_or_pads_) {
+    addResourcesForPinAccess(nets);
+  }
   fastroute_->initAuxVar();
 }
 
@@ -4678,6 +4680,11 @@ int GlobalRouter::findInstancesObstructions(
     if (master->isBlock()) {
       macros_cnt++;
       is_macro = true;
+      has_macros_or_pads_ = true;
+    }
+
+    if (master->getType().isPad()) {
+      has_macros_or_pads_ = true;
     }
 
     if (is_macro) {
