@@ -28,7 +28,7 @@ def_file ::= version_stmt case_sens_stmt error? rule* end_design
 rule ::= design_section | assertions_section | blockage_section
        | comps_section | constraint_section | extension_section
        | fill_section | comps_maskShift_section
-       | floorplan_contraints_section | groups_section
+       | floorplan_contraints_section [sic] | groups_section
        | iotiming_section | nets_section | nondefaultrule_section
        | partitions_section | pin_props_section | regions_section
        | scanchains_section | slot_section | snets_section
