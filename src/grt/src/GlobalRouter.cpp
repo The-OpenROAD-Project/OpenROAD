@@ -1337,7 +1337,7 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets)
 
   // add resources for pin access in macro/pad pins after defining their on grid
   // position
-  addResourcesForPinAccess();
+  addResourcesForPinAccess(nets);
   fastroute_->initAuxVar();
 }
 
@@ -1917,10 +1917,10 @@ void GlobalRouter::applyObstructionAdjustment(const odb::Rect& obstruction,
 // This function adds the resources necessary to route these pins. Only pins in
 // the east and north edges are affected because FastRoute routes from left to
 // right, and bottom to top.
-void GlobalRouter::addResourcesForPinAccess()
+void GlobalRouter::addResourcesForPinAccess(const std::vector<Net*>& nets)
 {
   odb::dbTech* tech = db_->getTech();
-  for (const auto& [db_net, net] : db_net_map_) {
+  for (const auto& net : nets) {
     for (const Pin& pin : net->getPins()) {
       if (pin.isConnectedToPadOrMacro() && (pin.getEdge() != PinEdge::none)) {
         const odb::Point& pos = pin.getOnGridPosition();

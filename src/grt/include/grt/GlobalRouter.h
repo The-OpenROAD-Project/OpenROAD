@@ -373,7 +373,7 @@ class GlobalRouter
   void savePositionWithReducedResources(const odb::Rect& rect,
                                         odb::dbTechLayer* tech_layer,
                                         odb::dbNet* db_net);
-  void addResourcesForPinAccess();
+  void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
