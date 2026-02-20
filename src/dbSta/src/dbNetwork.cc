@@ -393,7 +393,7 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
       // to avoid returning both.
       std::unordered_set<dbNet*> handled_flat_nets;
       for (odb::dbModNet* mod_net : mod_nets) {
-        dbNet* flat_net = network_->findRelatedDbNet(mod_net);
+        dbNet* flat_net = mod_net->findRelatedNet();
         if (flat_net) {
           handled_flat_nets.insert(flat_net);
         }
@@ -1904,7 +1904,7 @@ bool dbNetwork::isPower(const Net* net) const
   }
 
   if (db_modnet) {
-    dbNet* related_net = findRelatedDbNet(db_modnet);
+    dbNet* related_net = db_modnet->findRelatedNet();
     if (related_net) {
       return (related_net->getSigType() == dbSigType::POWER);
     }
@@ -1921,7 +1921,7 @@ bool dbNetwork::isGround(const Net* net) const
     return (db_net->getSigType() == dbSigType::GROUND);
   }
   if (db_modnet) {
-    dbNet* related_net = findRelatedDbNet(db_modnet);
+    dbNet* related_net = db_modnet->findRelatedNet();
     if (related_net) {
       return (related_net->getSigType() == dbSigType::GROUND);
     }
@@ -4247,7 +4247,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 /*
 A modnet can have only one equivalent dbNet.
 */
-dbNet* dbNetwork::findRelatedDbNet(const odb::dbModNet* net) const
+dbNet* dbNetwork::checkRelatedDbNet(const odb::dbModNet* net) const
 {
   // we pass in the net and decode it for axiom checking.
 
@@ -4754,7 +4754,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
 
     // Now run checks on the collected nets.
     for (odb::dbModNet* mod_net : mod_nets_to_check) {
-      findRelatedDbNet(mod_net);
+      checkRelatedDbNet(mod_net);
     }
 
     for (odb::dbNet* net_db : nets_to_check) {
@@ -4771,7 +4771,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   dbSet<odb::dbModNet> mod_nets = block()->getModNets();
   for (odb::dbModNet* mod_net : mod_nets) {
     mod_net->checkSanity();
-    findRelatedDbNet(mod_net);
+    checkRelatedDbNet(mod_net);
   }
 
   // Check for incomplete flat net connections
@@ -4967,7 +4967,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       odb::dbUtil::findModITermDrivers(modnet, drivers);
 
       // Also, find drivers from the related flat net
-      dbNet* related_dbnet = findRelatedDbNet(modnet);
+      dbNet* related_dbnet = checkRelatedDbNet(modnet);
       if (related_dbnet) {
         odb::dbUtil::findITermDrivers(related_dbnet, drivers);
         odb::dbUtil::findBTermDrivers(related_dbnet, drivers);

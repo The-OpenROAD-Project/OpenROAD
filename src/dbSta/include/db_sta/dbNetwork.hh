@@ -56,6 +56,7 @@ class dbNetwork : public ConcreteNetwork
 
   // Sanity checkers
   int checkAxioms(odb::dbObject* obj = nullptr) const;
+  odb::dbNet* checkRelatedDbNet(const odb::dbModNet*) const;
   void checkSanityModBTerms() const;
   void checkSanityModITerms() const;
   void checkSanityModuleInsts() const;
@@ -240,7 +241,6 @@ class dbNetwork : public ConcreteNetwork
   void setAttribute(Instance* instance,
                     const std::string& key,
                     const std::string& value) override;
-  odb::dbNet* findRelatedDbNet(const odb::dbModNet*) const;
   odb::dbModNet* findModNetForPin(const Pin*);
   odb::dbModInst* getModInst(Instance* inst) const;
 
