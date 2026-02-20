@@ -735,8 +735,8 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
   fastroute_->initEdges();
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
-  const int BIG_INT = std::numeric_limits<int>::max();
-  const int16_t big_cap = 1000;
+  const int kBigInt = std::numeric_limits<int>::max();
+  const int16_t kBigCap = std::numeric_limits<int16_t>::max() / 10;
 
   for (int layer = 1; layer <= grid_->getNumLayers(); layer++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
@@ -751,49 +751,43 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
         = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
 
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      int min_cap = BIG_INT;
+      int min_cap = kBigInt;
       for (int y = 1; y <= y_grids; y++) {
         for (int x = 1; x < x_grids; x++) {
-          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
-                                                                    y - 1,
-                                                                    track_init,
-                                                                    track_pitch,
-                                                                    track_count,
-                                                                    horizontal)
-                                             : 0;
+          const int cap = infinite_capacity_ ? kBigCap
+                          : inside_layer_range
+                              ? computeGCellCapacity(x - 1,
+                                                     y - 1,
+                                                     track_init,
+                                                     track_pitch,
+                                                     track_count,
+                                                     horizontal)
+                              : 0;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1,
-                                      y - 1,
-                                      x,
-                                      y - 1,
-                                      layer,
-                                      infinite_capacity_ ? big_cap : cap);
+          fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, cap);
         }
       }
-      min_cap = min_cap == BIG_INT ? 0 : min_cap;
-      fastroute_->addHCapacity(infinite_capacity_ ? big_cap : min_cap, layer);
+      min_cap = min_cap == kBigInt ? 0 : min_cap;
+      fastroute_->addHCapacity(min_cap, layer);
     } else {
-      int min_cap = BIG_INT;
+      int min_cap = kBigInt;
       for (int x = 1; x <= x_grids; x++) {
         for (int y = 1; y < y_grids; y++) {
-          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
-                                                                    y - 1,
-                                                                    track_init,
-                                                                    track_pitch,
-                                                                    track_count,
-                                                                    horizontal)
-                                             : 0;
+          const int cap = infinite_capacity_ ? kBigCap
+                          : inside_layer_range
+                              ? computeGCellCapacity(x - 1,
+                                                     y - 1,
+                                                     track_init,
+                                                     track_pitch,
+                                                     track_count,
+                                                     horizontal)
+                              : 0;
           min_cap = std::min(min_cap, cap);
-          fastroute_->setEdgeCapacity(x - 1,
-                                      y - 1,
-                                      x - 1,
-                                      y,
-                                      layer,
-                                      infinite_capacity_ ? big_cap : cap);
+          fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, cap);
         }
       }
-      min_cap = min_cap == BIG_INT ? 0 : min_cap;
-      fastroute_->addVCapacity(infinite_capacity_ ? big_cap : min_cap, layer);
+      min_cap = min_cap == kBigInt ? 0 : min_cap;
+      fastroute_->addVCapacity(min_cap, layer);
     }
   }
   fastroute_->initLowerBoundCapacities();
