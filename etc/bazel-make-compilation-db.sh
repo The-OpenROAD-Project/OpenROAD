@@ -49,6 +49,16 @@ done >> compile_flags.txt
 # Qt include files check for this
 echo '-fPIC' >> compile_flags.txt
 
+# Python include bindings.
+for f in bazel-out/../../../external/*/include/python3.*/Python.h; do
+  if [ -f "${f}" ]; then
+    PY_INC="$(dirname "${f}")"
+    echo "-I${PY_INC}"
+    echo "-I$(realpath "${PY_INC}")"  # work around clangd bug
+    break
+  fi
+done >> compile_flags.txt
+
 # Since we don't do per-file define extraction in compile_flag.txt,
 # add them here globally
 cat >> compile_flags.txt <<EOF
