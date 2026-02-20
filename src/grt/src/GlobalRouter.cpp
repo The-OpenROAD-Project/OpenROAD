@@ -1924,45 +1924,47 @@ void GlobalRouter::addResourcesForPinAccess(const std::vector<Net*>& nets)
 {
   odb::dbTech* tech = db_->getTech();
   for (const auto& net : nets) {
-    for (const Pin& pin : net->getPins()) {
-      if (pin.isConnectedToPadOrMacro() && (pin.getEdge() != PinEdge::none)) {
-        const odb::Point& pos = pin.getOnGridPosition();
-        int pin_x = ((pos.x() - grid_->getXMin()) / grid_->getTileSize());
-        int pin_y = ((pos.y() - grid_->getYMin()) / grid_->getTileSize());
-        const int layer = pin.getConnectionLayer();
-        odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
-        if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-          const bool north_pin = pin.getEdge() == PinEdge::north;
-          const int pin_y1 = north_pin ? pin_y : pin_y - 1;
-          const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
+    if (net->isConnectedToPadOrMacro()) {
+      for (const Pin& pin : net->getPins()) {
+        if (pin.isConnectedToPadOrMacro() && (pin.getEdge() != PinEdge::none)) {
+          const odb::Point& pos = pin.getOnGridPosition();
+          int pin_x = ((pos.x() - grid_->getXMin()) / grid_->getTileSize());
+          int pin_y = ((pos.y() - grid_->getYMin()) / grid_->getTileSize());
+          const int layer = pin.getConnectionLayer();
+          odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+          if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+            const bool north_pin = pin.getEdge() == PinEdge::north;
+            const int pin_y1 = north_pin ? pin_y : pin_y - 1;
+            const int pin_y2 = north_pin ? pin_y + 1 : pin_y;
 
-          // Ensure we do not go out of bounds when the pin is at the edge of
-          // the grid. If the pin is on the south edge and at y=0, there is no
-          // room for adding resources.
-          if (pin_y1 < 0) {
-            continue;
+            // Ensure we do not go out of bounds when the pin is at the edge of
+            // the grid. If the pin is on the south edge and at y=0, there is no
+            // room for adding resources.
+            if (pin_y1 < 0) {
+              continue;
+            }
+
+            const int edge_cap = fastroute_->getEdgeCapacity(
+                pin_x, pin_y1, pin_x, pin_y2, layer);
+            fastroute_->addAdjustment(
+                pin_x, pin_y1, pin_x, pin_y2, layer, edge_cap + 1, false);
+          } else {
+            const bool east_pin = pin.getEdge() == PinEdge::east;
+            const int pin_x1 = east_pin ? pin_x : pin_x - 1;
+            const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
+
+            // Ensure we do not go out of bounds when the pin is at the edge of
+            // the grid. If the pin is on the west edge and at x=0, there is no
+            // room for adding resources.
+            if (pin_x1 < 0) {
+              continue;
+            }
+
+            const int edge_cap = fastroute_->getEdgeCapacity(
+                pin_x1, pin_y, pin_x2, pin_y, layer);
+            fastroute_->addAdjustment(
+                pin_x1, pin_y, pin_x2, pin_y, layer, edge_cap + 1, false);
           }
-
-          const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x, pin_y1, pin_x, pin_y2, layer);
-          fastroute_->addAdjustment(
-              pin_x, pin_y1, pin_x, pin_y2, layer, edge_cap + 1, false);
-        } else {
-          const bool east_pin = pin.getEdge() == PinEdge::east;
-          const int pin_x1 = east_pin ? pin_x : pin_x - 1;
-          const int pin_x2 = east_pin ? pin_x + 1 : pin_x;
-
-          // Ensure we do not go out of bounds when the pin is at the edge of
-          // the grid. If the pin is on the west edge and at x=0, there is no
-          // room for adding resources.
-          if (pin_x1 < 0) {
-            continue;
-          }
-
-          const int edge_cap = fastroute_->getEdgeCapacity(
-              pin_x1, pin_y, pin_x2, pin_y, layer);
-          fastroute_->addAdjustment(
-              pin_x1, pin_y, pin_x2, pin_y, layer, edge_cap + 1, false);
         }
       }
     }
@@ -4359,6 +4361,10 @@ void GlobalRouter::makeItermPins(Net* net,
 
     const bool connected_to_pad = type.isPad();
     const bool connected_to_macro = master->isBlock();
+
+    if (connected_to_pad || connected_to_macro) {
+      net->setIsConnectedToPadOrMacro(true);
+    }
 
     odb::dbInst* inst = iterm->getInst();
     if (!inst->isPlaced()) {
