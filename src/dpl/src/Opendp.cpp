@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -93,6 +94,14 @@ void Opendp::setIterativePlacement(const bool iterative)
   iterative_placement_ = iterative;
 }
 
+void Opendp::setDeepIterativePlacement(const bool deep_iterative)
+{
+  deep_iterative_placement_ = deep_iterative;
+  if (deep_iterative) {
+    iterative_placement_ = true;
+  }
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
@@ -105,13 +114,17 @@ Journal* Opendp::getJournal() const
 
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
-                               const std::string& report_file_name)
+                               const std::string& report_file_name,
+                               bool incremental)
 {
+  incremental_ = incremental;
   importDb();
   adjustNodesOrient();
-  for (const auto& node : network_->getNodes()) {
-    if (node->getType() == Node::CELL && !node->isFixed()) {
-      node->setPlaced(false);
+  if (!incremental_) {
+    for (const auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL && !node->isFixed()) {
+        node->setPlaced(false);
+      }
     }
   }
 
@@ -337,6 +350,78 @@ void Opendp::findOverlapInRtree(const bgBox& queryBox,
   overlaps.clear();
   regions_rtree_.query(boost::geometry::index::intersects(queryBox),
                        std::back_inserter(overlaps));
+}
+
+void Opendp::setInitialGridCells()
+{
+  std::unordered_set<Node*> conflicted;
+  const DbuX site_width = grid_->getSiteWidth();
+
+  // Check which cells are missaligned with rows
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      const GridX x = grid_->gridX(node.get());
+      const GridY y = grid_->gridSnapDownY(node.get());
+      if (node->getLeft() != gridToDbu(x, site_width)
+          || node->getBottom() != grid_->gridYToDbu(y)
+          || !canBePlaced(node.get(), x, y)) {
+        conflicted.insert(node.get());
+      }
+    }
+  }
+
+  // Check which cells are overlapping with other cells
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      if (conflicted.contains(node.get())) {
+        continue;
+      }
+
+      bool node_conflicted = false;
+      grid_->visitCellPixels(
+          *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+            if (pixel->cell != nullptr && pixel->cell != node.get()) {
+              node_conflicted = true;
+              if (!pixel->cell->isFixed()) {
+                conflicted.insert(pixel->cell);
+              }
+            } else {
+              pixel->cell = node.get();
+            }
+          });
+
+      if (node_conflicted) {
+        conflicted.insert(node.get());
+      }
+    }
+  }
+
+  for (GridY y{0}; y < grid_->getRowCount(); y++) {
+    for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+      Pixel& pixel = grid_->pixel(y, x);
+      if (pixel.cell != nullptr && !pixel.cell->isFixed()) {
+        pixel.cell = nullptr;
+      }
+    }
+  }
+
+  for (auto& node : network_->getNodes()) {
+    if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      if (conflicted.find(node.get()) == conflicted.end()) {
+        // This cell is perfectly legal and has no conflicts.
+        grid_->visitCellPixels(
+            *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
+              pixel->cell = node.get();
+              pixel->util = 1.0;
+            });
+        grid_->paintCellPadding(node.get());
+      } else {
+        // This cell is either illegal or was part of an overlap conflict.
+        // Unplace it.
+        unplaceCell(node.get());
+      }
+    }
+  }
 }
 
 void Opendp::setFixedGridCells()

@@ -567,6 +567,15 @@ void Cluster::initConnection()
 
 void Cluster::addConnection(Cluster* cluster, const float connection_weight)
 {
+  if (connection_weight == 0.0) {
+    logger_->error(MPL,
+                   66,
+                   "Attempting to create connection with zero weight.\nCluster "
+                   "A: {}\nCluster B: {}",
+                   name_,
+                   cluster->getName());
+  }
+
   connections_map_[cluster->getId()] += connection_weight;
 }
 
