@@ -29,6 +29,7 @@
 #include "odb/util.h"
 #include "util/journal.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -117,6 +118,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name,
                                bool incremental)
 {
+  utl::Timer timer;
   incremental_ = incremental;
   importDb();
   adjustNodesOrient();
@@ -162,6 +164,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }
+  logger_->info(DPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Opendp::updateDbInstLocations()

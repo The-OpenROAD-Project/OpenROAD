@@ -29,6 +29,7 @@
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "via.h"
 #include "via_repair.h"
 
@@ -60,6 +61,7 @@ void PdnGen::resetShapes()
 
 void PdnGen::buildGrids(bool trim)
 {
+  utl::Timer timer;
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - begin");
   auto* block = db_->getChip()->getBlock();
 
@@ -152,6 +154,7 @@ void PdnGen::buildGrids(bool trim)
   }
 
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
+  logger_->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void PdnGen::cleanupVias()

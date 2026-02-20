@@ -116,4 +116,16 @@ def make_design(tech):
     logger.suppressMessage(utl.GRT, 303)
     logger.suppressMessage(utl.GRT, 704)
 
+    # suppress elapsed time messages (non-deterministic)
+    logger.suppressMessage(utl.CTS, 500)
+    logger.suppressMessage(utl.DPL, 500)
+    logger.suppressMessage(utl.DRT, 501)
+    logger.suppressMessage(utl.GPL, 500)
+    logger.suppressMessage(utl.GRT, 501)
+    logger.suppressMessage(utl.IFP, 500)
+    logger.suppressMessage(utl.IFP, 501)
+    logger.suppressMessage(utl.MPL, 500)
+    logger.suppressMessage(utl.PDN, 500)
+    logger.suppressMessage(utl.RSZ, 500)
+
     return design

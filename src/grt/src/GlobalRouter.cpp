@@ -4,7 +4,6 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -59,6 +58,7 @@
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+#include "utl/timer.h"
 
 namespace grt {
 
@@ -342,7 +342,7 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
-  auto start = std::chrono::steady_clock::now();
+  utl::Timer timer;
   bool has_routable_nets = false;
 
   for (auto net : db_->getChip()->getBlock()->getNets()) {
@@ -389,16 +389,15 @@ void GlobalRouter::globalRoute(bool save_guides)
   }
 
   finishGlobalRouting(save_guides);
-  auto end = std::chrono::steady_clock::now();
   if (verbose_) {
-    auto runtime
-        = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-    int hour = runtime.count() / 3600;
-    int min = (runtime.count() % 3600) / 60;
-    int sec = runtime.count() % 60;
+    const int elapsed = static_cast<int>(timer.elapsed());
+    const int hour = elapsed / 3600;
+    const int min = (elapsed % 3600) / 60;
+    const int sec = elapsed % 60;
     logger_->info(
         GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
   }
+  logger_->info(GRT, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void GlobalRouter::finishGlobalRouting(bool save_guides)
