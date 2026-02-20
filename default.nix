@@ -89,7 +89,7 @@ let
     '';
 
     shellHook = ''
-      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format"; 
+      alias ord-format-changed="${git}/bin/git diff --name-only | grep -E '\.(cpp|cc|c|h|hh)$' | xargs clang-format -i -style=file:.clang-format";
     '';
 
     qt5Libs = [
@@ -106,37 +106,38 @@ let
     buildInputs = self.qt5Libs ++ [
       abseil-cpp
       boost189
-      eigen
+      cbc
+      clp
       cudd
-      tcl
-      python3
-      readline
-      tclreadline
-      spdlog
+      eigen
+      glpk
+      gtest
       libffi
       llvmPackages.openmp
-
-      lemon-graph'
-      or-tools'
-      glpk
-      zlib
-      clp
-      cbc
+      python3
       re2
-      gtest
+      readline
+      spdlog
+      tcl
+      tclreadline
       yaml-cpp
+      zlib
+
+      # Local derivations
+      or-tools'
+      lemon-graph'
     ];
 
     nativeBuildInputs = [
-      swig
-      pkg-config
-      cmake
-      ninja
-      gnumake
-      flex
       bison
-      libsForQt5.wrapQtAppsHook
       clang-tools
+      cmake
+      flex
+      gnumake
+      libsForQt5.wrapQtAppsHook
+      ninja
+      pkg-config
+      swig
     ];
   });
 in
