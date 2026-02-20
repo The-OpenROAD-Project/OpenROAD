@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "spdlog/fmt/fmt.h"
+#include "spdlog/fmt/fmt.h"  // NOLINT(misc-include-cleaner)
 
 namespace utl {
 class Logger;
