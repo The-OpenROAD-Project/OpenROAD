@@ -754,15 +754,13 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
       int min_cap = kBigInt;
       for (int y = 1; y <= y_grids; y++) {
         for (int x = 1; x < x_grids; x++) {
-          const int cap = infinite_capacity_ ? kBigCap
-                          : inside_layer_range
-                              ? computeGCellCapacity(x - 1,
-                                                     y - 1,
-                                                     track_init,
-                                                     track_pitch,
-                                                     track_count,
-                                                     horizontal)
-                              : 0;
+          int cap = 0;
+          if (infinite_capacity_) {
+            cap = kBigCap;
+          } else if (inside_layer_range) {
+            cap = computeGCellCapacity(
+                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+          }
           min_cap = std::min(min_cap, cap);
           fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, cap);
         }
@@ -773,15 +771,13 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
       int min_cap = kBigInt;
       for (int x = 1; x <= x_grids; x++) {
         for (int y = 1; y < y_grids; y++) {
-          const int cap = infinite_capacity_ ? kBigCap
-                          : inside_layer_range
-                              ? computeGCellCapacity(x - 1,
-                                                     y - 1,
-                                                     track_init,
-                                                     track_pitch,
-                                                     track_count,
-                                                     horizontal)
-                              : 0;
+          int cap = 0;
+          if (infinite_capacity_) {
+            cap = kBigCap;
+          } else if (inside_layer_range) {
+            computeGCellCapacity(
+                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+          }
           min_cap = std::min(min_cap, cap);
           fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, cap);
         }
