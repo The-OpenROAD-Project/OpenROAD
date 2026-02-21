@@ -263,34 +263,20 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
   };
   int count = 0;
   for (const auto& conn : model.getConnections()) {
-    if ((!conn.top_region || !conn.bottom_region)
-        && conn.connection->getTopRegion()
-        && conn.connection->getBottomRegion()) {
-      logger_->warn(utl::ODB,
-                    404,
-                    "Connection {} has missing regions",
-                    conn.connection->getName());
+    if (!isValid(conn)) {
       auto* marker = dbMarker::create(cat);
       marker->addSource(conn.connection);
-      marker->setComment(fmt::format("Connection {} has missing regions",
-                                     conn.connection->getName()));
-    } else {
-      if (!isValid(conn)) {
-        auto* marker = dbMarker::create(cat);
-        marker->addSource(conn.connection);
-        std::string msg = fmt::format("Invalid connection {}: {} to {}",
-                                      conn.connection->getName(),
-                                      describe(conn.top_region, marker),
-                                      describe(conn.bottom_region, marker));
-        marker->setComment(msg);
-        logger_->warn(utl::ODB, 207, msg);
-        count++;
-      }
+      std::string msg = fmt::format("Invalid connection {}: {} to {}",
+                                    conn.connection->getName(),
+                                    describe(conn.top_region, marker),
+                                    describe(conn.bottom_region, marker));
+      marker->setComment(msg);
+      logger_->warn(utl::ODB, 207, msg);
+      count++;
     }
   }
   if (count > 0) {
-    logger_->warn(
-        utl::ODB, 273, "Found {} non-intersecting connections", count);
+    logger_->warn(utl::ODB, 273, "Found {} invalid connections", count);
   }
 }
 
