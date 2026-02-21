@@ -9,7 +9,6 @@
 #include <csignal>
 #include <ctime>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <vector>
 

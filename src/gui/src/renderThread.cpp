@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <exception>
 #include <iterator>
-#include <mutex>
 #include <optional>
 #include <set>
 #include <string>

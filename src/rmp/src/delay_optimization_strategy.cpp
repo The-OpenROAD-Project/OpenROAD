@@ -6,7 +6,6 @@
 #include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
 #include <cstring>
-#include <mutex>
 
 #include "absl/base/attributes.h"
 #include "absl/base/const_init.h"

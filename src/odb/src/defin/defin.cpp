@@ -3,7 +3,6 @@
 
 #include "odb/defin.h"
 
-#include <mutex>
 #include <vector>
 
 #include "absl/base/attributes.h"

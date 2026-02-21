@@ -30,7 +30,6 @@
 #include <iostream>
 #include <istream>
 #include <map>
-#include <mutex>
 #include <ostream>
 #include <stdexcept>
 #include <string>

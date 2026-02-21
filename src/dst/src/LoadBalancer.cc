@@ -8,7 +8,6 @@
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <mutex>
 #include <queue>
 #include <string>
 #include <vector>

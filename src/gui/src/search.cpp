@@ -4,7 +4,6 @@
 #include "search.h"
 
 #include <atomic>
-#include <mutex>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"

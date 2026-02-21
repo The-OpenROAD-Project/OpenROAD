@@ -4,7 +4,6 @@
 #pragma once
 
 #include <exception>
-#include <mutex>
 
 #include "absl/synchronization/mutex.h"
 

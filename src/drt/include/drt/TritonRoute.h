@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <queue>
 #include <set>

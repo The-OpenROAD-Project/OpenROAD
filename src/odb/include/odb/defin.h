@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <mutex>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"

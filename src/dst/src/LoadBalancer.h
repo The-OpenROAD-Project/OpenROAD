@@ -6,7 +6,6 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <string>
 #include <vector>

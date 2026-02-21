@@ -7,7 +7,6 @@
 #include <cmath>
 #include <cstdint>
 #include <istream>
-#include <mutex>
 #include <ostream>
 #include <string>
 

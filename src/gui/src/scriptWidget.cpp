@@ -18,7 +18,6 @@
 #include <cerrno>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <stdexcept>
 #include <string>
 

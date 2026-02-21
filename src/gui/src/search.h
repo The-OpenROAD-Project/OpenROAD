@@ -7,7 +7,6 @@
 #include <atomic>
 #include <iterator>
 #include <map>
-#include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>

@@ -24,7 +24,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <mutex>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"

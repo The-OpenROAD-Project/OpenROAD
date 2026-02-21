@@ -12,7 +12,6 @@
 #include <QWidget>
 #include <functional>
 #include <memory>
-#include <mutex>
 
 #include "absl/synchronization/mutex.h"
 #include "utl/Logger.h"
