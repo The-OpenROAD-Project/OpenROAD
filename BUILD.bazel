@@ -180,6 +180,7 @@ cc_binary(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
+        "//bazel/glibc_for_apple:portable_rand_qsort",
         "@rules_cc//cc/runfiles",
         "@tcl_lang//:tcl",
     ],
