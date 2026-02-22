@@ -82,6 +82,8 @@ class CheckerFixture : public tst::Fixture
   static constexpr const char* overlapping_chips_category = "Overlapping chips";
   static constexpr const char* unused_internal_ext_category
       = "Unused internal_ext";
+  static constexpr const char* connected_regions_category
+      = "Connection regions";
 };
 
 TEST_F(CheckerFixture, test_no_violations)
@@ -103,6 +105,7 @@ TEST_F(CheckerFixture, test_no_violations)
   check();
   EXPECT_TRUE(getMarkers(floating_chips_category).empty());
   EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
+  EXPECT_TRUE(getMarkers(connected_regions_category).empty());
 }
 
 TEST_F(CheckerFixture, test_overlapping_chips)
@@ -416,6 +419,105 @@ TEST_F(CheckerFixture, test_used_internal_ext)
 
   check();
   EXPECT_TRUE(getMarkers(unused_internal_ext_category).empty());
+}
+
+TEST_F(CheckerFixture, test_connection_invalid_xy)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(3000, 3000, 500));  // No XY overlap
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  auto markers = getMarkers(connected_regions_category);
+  EXPECT_EQ(markers.size(), 1);
+}
+
+TEST_F(CheckerFixture, test_connection_invalid_sides)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  // Both regions are on the FRONT side, but facing each other requires one to
+  // be BACK
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_fr");
+
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  auto markers = getMarkers(connected_regions_category);
+  EXPECT_EQ(markers.size(), 1);
+}
+
+TEST_F(CheckerFixture, test_connection_thickness_mismatch)
+{
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 600));  // Distance is 100
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(50);  // Mismatch (100 != 50)
+
+  check();
+  auto markers = getMarkers(connected_regions_category);
+  EXPECT_EQ(markers.size(), 1);
+}
+
+TEST_F(CheckerFixture, test_connection_internal_ext)
+{
+  // internal_ext regions overlap in Z
+  auto r1_int = dbChipRegion::create(
+      chip1_, "r1_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r1_int->setBox(Rect(0, 0, 2000, 2000));
+
+  auto r2_int = dbChipRegion::create(
+      chip2_, "r2_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r2_int->setBox(Rect(0, 0, 1500, 1500));
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 100));  // Z overlap since chip1 thickness is 500
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_int");
+  auto* ri2 = inst2->findChipRegionInst("r2_int");
+
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  EXPECT_TRUE(getMarkers(connected_regions_category).empty());
+
+  // Test failure: move inst2 outside Z-range of inst1
+  inst2->setLoc(Point3D(0, 0, 600));
+  check();
+  EXPECT_EQ(getMarkers(connected_regions_category).size(), 1);
 }
 
 }  // namespace
