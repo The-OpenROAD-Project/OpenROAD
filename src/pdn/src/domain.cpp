@@ -22,7 +22,8 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
                              odb::dbBlock* block,
                              odb::dbNet* power,
                              odb::dbNet* ground,
-                             const std::vector<odb::dbNet*>& secondary_nets,
+                             const std::vector<odb::dbNet*>& secondary_power,
+                             const std::vector<odb::dbNet*>& secondary_ground,
                              utl::Logger* logger)
     : name_("Core"),
       pdngen_(pdngen),
@@ -30,7 +31,8 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
       power_(power),
       switched_power_(nullptr),
       ground_(ground),
-      secondary_(secondary_nets),
+      secondary_power_(secondary_power),
+      secondary_ground_(secondary_ground),
       region_(nullptr),
       logger_(logger)
 {
@@ -42,7 +44,8 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
                              odb::dbBlock* block,
                              odb::dbNet* power,
                              odb::dbNet* ground,
-                             const std::vector<odb::dbNet*>& secondary_nets,
+                             const std::vector<odb::dbNet*>& secondary_power,
+                             const std::vector<odb::dbNet*>& secondary_ground,
                              odb::dbRegion* region,
                              utl::Logger* logger)
     : name_(name),
@@ -51,7 +54,8 @@ VoltageDomain::VoltageDomain(PdnGen* pdngen,
       power_(power),
       switched_power_(nullptr),
       ground_(ground),
-      secondary_(secondary_nets),
+      secondary_power_(secondary_power),
+      secondary_ground_(secondary_ground),
       region_(region),
       logger_(logger)
 {
@@ -75,20 +79,30 @@ std::vector<odb::dbNet*> VoltageDomain::getNets(bool start_with_power) const
   std::vector<odb::dbNet*> nets;
 
   if (start_with_power) {
+    // Order: primary power, switched power, secondary power nets,
+    //        secondary ground nets, primary ground.
+    // This groups all supply rails together before the ground rails,
+    // fixing the ordering issue for multi-rail designs (e.g., VDDA, VDD, VSS).
     nets.push_back(power_);
     if (switched_power_ != nullptr) {
       nets.push_back(switched_power_);
     }
+    nets.insert(nets.end(), secondary_power_.begin(), secondary_power_.end());
+    nets.insert(
+        nets.end(), secondary_ground_.begin(), secondary_ground_.end());
     nets.push_back(ground_);
   } else {
+    // Reverse order: primary ground, secondary ground nets,
+    //                secondary power nets, switched power, primary power.
     nets.push_back(ground_);
-    nets.push_back(power_);
+    nets.insert(
+        nets.end(), secondary_ground_.begin(), secondary_ground_.end());
+    nets.insert(nets.end(), secondary_power_.begin(), secondary_power_.end());
     if (switched_power_ != nullptr) {
       nets.push_back(switched_power_);
     }
+    nets.push_back(power_);
   }
-
-  nets.insert(nets.end(), secondary_.begin(), secondary_.end());
 
   return nets;
 }
@@ -210,12 +224,20 @@ void VoltageDomain::report() const
     logger_->report("  Switched power net: {}", switched_power_->getName());
   }
 
-  if (!secondary_.empty()) {
+  if (!secondary_power_.empty()) {
     std::string nets;
-    for (auto* net : secondary_) {
+    for (auto* net : secondary_power_) {
       nets += net->getName() + " ";
     }
-    logger_->report("  Secondary nets: {}", nets);
+    logger_->report("  Secondary power nets: {}", nets);
+  }
+
+  if (!secondary_ground_.empty()) {
+    std::string nets;
+    for (auto* net : secondary_ground_) {
+      nets += net->getName() + " ";
+    }
+    logger_->report("  Secondary ground nets: {}", nets);
   }
 
   for (const auto& grid : grids_) {
