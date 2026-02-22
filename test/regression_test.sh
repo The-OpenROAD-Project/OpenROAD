@@ -23,7 +23,7 @@ case "$TEST_TYPE" in
 esac
 
 echo "Command: $CMD"
-$CMD |& tee $LOG_FILE
+$CMD 2>&1 | tee $LOG_FILE
 
 echo "Exitcode:  $?"
 

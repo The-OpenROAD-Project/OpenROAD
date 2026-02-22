@@ -180,7 +180,7 @@ cc_binary(
         "//src/utl",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -213,7 +213,7 @@ cc_library(
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
 
@@ -283,6 +283,13 @@ cc_binary(
     name = "_openroadpy.so",
     srcs = [":openroad_swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
+    linkopts = select({
+        "@platforms//os:macos": [
+            "-undefined",
+            "dynamic_lookup",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = True,
     deps = [
         ":openroad_lib",  # Depends on the core odb C++ library

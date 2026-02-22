@@ -82,7 +82,7 @@ cc_library(
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/sat:cp_model",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -95,6 +95,13 @@ cc_binary(
     ],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src"],
+    linkopts = select({
+        "@platforms//os:macos": [
+            "-undefined",
+            "dynamic_lookup",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = True,
     deps = [
         "//src/gpl",

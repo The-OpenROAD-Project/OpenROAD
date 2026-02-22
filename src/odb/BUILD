@@ -92,7 +92,7 @@ cc_library(
         "@boost.regex",
         "@boost.spirit",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
         "@yaml-cpp",
         "@zlib",
     ],
@@ -105,6 +105,13 @@ cc_binary(
     srcs = [":swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src/swig/common"],
+    linkopts = select({
+        "@platforms//os:macos": [
+            "-undefined",
+            "dynamic_lookup",
+        ],
+        "//conditions:default": [],
+    }),
     linkshared = True,
     deps = [
         ":odb",  # Depends on the core odb C++ library
@@ -152,7 +159,7 @@ cc_library(
         "@boost.multi_array",
         "@boost.polygon",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
