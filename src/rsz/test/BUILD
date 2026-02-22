@@ -164,6 +164,7 @@ TESTS = [
     "replace_arith_modules2",
     "replace_arith_modules3",
     "report_buffers_asap7",
+    "report_buffers_asap7_augmented",
     "report_buffers_gf180",
     "report_buffers_ihp",
     "report_buffers_nangate45",

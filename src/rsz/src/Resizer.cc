@@ -1663,12 +1663,13 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         continue;
       }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
+      double area_ratio = (base_area != 0.0) ? equiv_area / base_area : 0.0;
       std::optional<float> equiv_cell_leakage = cellLeakage(equiv_cell);
       if (equiv_cell_leakage) {
         logger_->report("{:<41} {:>7.3f} {:>5.2f} {:>8.2e} {:>5.2f}   {}",
                         cell_name,
                         equiv_area,
-                        equiv_area / base_area,
+                        area_ratio,
                         *equiv_cell_leakage,
                         *equiv_cell_leakage / *base_leakage,
                         cellVTType(equiv_master).vt_name);
@@ -1676,7 +1677,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                         cell_name,
                         equiv_area,
-                        equiv_area / base_area,
+                        area_ratio,
                         cellVTType(equiv_master).vt_name);
       }
     }
@@ -1702,10 +1703,11 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
         continue;
       }
       double equiv_area = block_->dbuAreaToMicrons(equiv_master->getArea());
+      double area_ratio = (base_area != 0.0) ? equiv_area / base_area : 0.0;
       logger_->report("{:<41} {:>7.3f} {:>5.2f}   {}",
                       cell_name,
                       equiv_area,
-                      equiv_area / base_area,
+                      area_ratio,
                       cellVTType(equiv_master).vt_name);
     }
     logger_->report(
@@ -2273,7 +2275,7 @@ VTCategory Resizer::cellVTType(dbMaster* master)
   }
 
   std::unordered_set<std::string> unique_layers;  // count each layer only once
-  size_t hash1 = 0;
+  std::vector<std::string> layer_names;
   std::string new_layer_name;
   for (dbBox* bbox : obs) {
     odb::dbTechLayer* layer = bbox->getTechLayer();
@@ -2283,17 +2285,26 @@ VTCategory Resizer::cellVTType(dbMaster* master)
 
     std::string curr_layer_name = layer->getName();
     if (unique_layers.insert(curr_layer_name).second) {
-      debugPrint(logger_,
-                 RSZ,
-                 "equiv",
-                 1,
-                 "{} has OBS implant layer {}",
-                 master->getName(),
-                 curr_layer_name);
-      size_t hash2 = boost::hash<std::string>()(curr_layer_name);
-      boost::hash_combine(hash1, hash2);
-      new_layer_name = mergeVTLayerNames(new_layer_name, curr_layer_name);
+      layer_names.emplace_back(curr_layer_name);
     }
+  }
+
+  // Sort to make hash order-independent
+  std::ranges::sort(layer_names);
+
+  // Now hash in sorted order
+  size_t hash1 = 0;
+  for (const auto& name : layer_names) {
+    debugPrint(logger_,
+               RSZ,
+               "equiv",
+               1,
+               "{} has OBS implant layer {}",
+               master->getName(),
+               name);
+    size_t hash2 = boost::hash<std::string>()(name);
+    boost::hash_combine(hash1, hash2);
+    new_layer_name = mergeVTLayerNames(new_layer_name, name);
   }
 
   if (hash1 == 0) {
@@ -5977,7 +5988,9 @@ bool Resizer::estimateSlewsAfterBufferRemoval(
     return false;
   }
   auto it = drv2buf_slew.find(buffer_load_pin);
-  assert(it != drv2buf_slew.end());
+  if (it == drv2buf_slew.end()) {
+    return false;
+  }
   float estimated_drv2buf_slew = it->second;
   Vertex* buf_load_vertex = graph_->pinLoadVertex(buffer_load_pin);
   assert(buf_load_vertex != nullptr);
