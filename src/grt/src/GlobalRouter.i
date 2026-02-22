@@ -152,6 +152,12 @@ set_skip_large_fanout(int skip_large_fanout)
   getGlobalRouter()->setSkipLargeFanoutNets(skip_large_fanout);
 }
 
+void
+set_infinite_cap(bool infinite_capacity)
+{
+  getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
+}
+
 void start_incremental()
 {
   getGlobalRouter()->startIncremental();

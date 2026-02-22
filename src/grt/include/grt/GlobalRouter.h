@@ -160,6 +160,8 @@ class GlobalRouter
     skip_large_fanout_ = skip_large_fanout;
   };
 
+  void setInfiniteCapacity(bool infinite_capacity);
+
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
@@ -513,7 +515,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
-  bool is_incremental_;
+  bool infinite_capacity_;
   float adjustment_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
@@ -563,6 +565,7 @@ class GlobalRouter
 
   // incremental grt
   GRouteDbCbk* grouter_cbk_;
+  bool is_incremental_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

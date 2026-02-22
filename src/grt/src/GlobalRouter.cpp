@@ -82,7 +82,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
-      is_incremental_(false),
+      infinite_capacity_(false),
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
@@ -101,7 +101,8 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       heatmap_(nullptr),
       heatmap_rudy_(nullptr),
       congestion_file_name_(nullptr),
-      grouter_cbk_(nullptr)
+      grouter_cbk_(nullptr),
+      is_incremental_(false)
 {
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
@@ -734,6 +735,8 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
   fastroute_->initEdges();
   int x_grids = grid_->getXGrids();
   int y_grids = grid_->getYGrids();
+  const int kBigInt = std::numeric_limits<int>::max();
+  const int16_t kBigCap = std::numeric_limits<int16_t>::max() / 10;
 
   for (int layer = 1; layer <= grid_->getNumLayers(); layer++) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
@@ -748,42 +751,47 @@ void GlobalRouter::setCapacities(int min_routing_layer, int max_routing_layer)
         = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
 
     if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      int min_cap = std::numeric_limits<int>::max();
+      int min_cap = kBigInt;
       for (int y = 1; y <= y_grids; y++) {
         for (int x = 1; x < x_grids; x++) {
-          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
-                                                                    y - 1,
-                                                                    track_init,
-                                                                    track_pitch,
-                                                                    track_count,
-                                                                    horizontal)
-                                             : 0;
+          int cap = 0;
+          if (infinite_capacity_) {
+            cap = kBigCap;
+          } else if (inside_layer_range) {
+            cap = computeGCellCapacity(
+                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+          }
           min_cap = std::min(min_cap, cap);
           fastroute_->setEdgeCapacity(x - 1, y - 1, x, y - 1, layer, cap);
         }
       }
-      min_cap = min_cap == std::numeric_limits<int>::max() ? 0 : min_cap;
+      min_cap = min_cap == kBigInt ? 0 : min_cap;
       fastroute_->addHCapacity(min_cap, layer);
     } else {
-      int min_cap = std::numeric_limits<int>::max();
+      int min_cap = kBigInt;
       for (int x = 1; x <= x_grids; x++) {
         for (int y = 1; y < y_grids; y++) {
-          const int cap = inside_layer_range ? computeGCellCapacity(x - 1,
-                                                                    y - 1,
-                                                                    track_init,
-                                                                    track_pitch,
-                                                                    track_count,
-                                                                    horizontal)
-                                             : 0;
+          int cap = 0;
+          if (infinite_capacity_) {
+            cap = kBigCap;
+          } else if (inside_layer_range) {
+            cap = computeGCellCapacity(
+                x - 1, y - 1, track_init, track_pitch, track_count, horizontal);
+          }
           min_cap = std::min(min_cap, cap);
           fastroute_->setEdgeCapacity(x - 1, y - 1, x - 1, y, layer, cap);
         }
       }
-      min_cap = min_cap == std::numeric_limits<int>::max() ? 0 : min_cap;
+      min_cap = min_cap == kBigInt ? 0 : min_cap;
       fastroute_->addVCapacity(min_cap, layer);
     }
   }
   fastroute_->initLowerBoundCapacities();
+}
+
+void GlobalRouter::setInfiniteCapacity(bool infinite_capacity)
+{
+  infinite_capacity_ = infinite_capacity;
 }
 
 int GlobalRouter::computeGCellCapacity(const int x,
