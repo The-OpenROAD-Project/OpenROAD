@@ -1,63 +1,8 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
-[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
-[WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
-[INFO IFP-0001] Added 127 rows of 947 site FreePDK45_38x28_10R_NP_162NW_34O.
-[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 200.000 200.000 ) um
-[INFO IFP-0101] Core BBox: ( 10.070 11.200 ) ( 190.000 189.000 ) um
-[INFO IFP-0102] Core area:                        31991.554 um^2
-[INFO IFP-0103] Total instances area:               689.738 um^2
-[INFO IFP-0104] Effective utilization:                0.022
-[INFO IFP-0105] Number of instances:                    153
-Found 0 macro blocks.
-Using 2 tracks default min distance between IO pins.
-[INFO PPL-0001] Number of available slots 2452
-[INFO PPL-0002] Number of I/O             152
-[INFO PPL-0003] Number of I/O w/sink      152
-[INFO PPL-0004] Number of I/O w/o sink    0
-[INFO PPL-0005] Slots per section         200
-[INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 17487.20 um.
-[INFO GPL-0001] ---- Initialize GPL Main Data Structures
-[INFO GPL-0002] DBU: 2000
-[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
-[INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 190.000 189.000 ) um
-[INFO GPL-0036] Movable instances area:        689.738 um^2
-[INFO GPL-0037] Total instances area:          689.738 um^2
-[INFO GPL-0035] Pin density area adjust:        -0.628 um^2
-[INFO GPL-0032] ---- Initialize Region: Top-level
-[INFO GPL-0006] Number of instances:               153
-[INFO GPL-0007] Movable instances:                 153
-[INFO GPL-0008] Fixed instances:                     0
-[INFO GPL-0009] Dummy instances:                     0
-[INFO GPL-0010] Number of nets:                    155
-[INFO GPL-0011] Number of pins:                    611
-[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 200.000 200.000 ) um
-[INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 190.000 189.000 ) um
-[INFO GPL-0016] Core area:                   31991.554 um^2
-[INFO GPL-0014] Region name: top-level.
-[INFO GPL-0015] Region area:                 31991.554 um^2
-[INFO GPL-0017] Fixed instances area:            0.000 um^2
-[INFO GPL-0018] Movable instances area:        689.110 um^2
-[INFO GPL-0019] Utilization:                     2.154 %
-[INFO GPL-0020] Standard cells area:           689.110 um^2
-[INFO GPL-0021] Large instances area:            0.000 um^2
-[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
-[INFO GPL-0051] Source of initial instance position counters:
-	Odb location = 0	Core center = 153	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000009 HPWL: 32665220
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 5920851
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 4895497
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 4861338
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 4859121
-Placement Analysis
----------------------------------
-total displacement       1411.2 u
-average displacement        9.2 u
-max displacement           11.9 u
-original HPWL            1815.5 u
-legalized HPWL           3285.4 u
-delta HPWL                   81 %
-
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 152 pins.
+[INFO ODB-0131]     Created 153 components and 917 component-terminals.
+[INFO ODB-0133]     Created 155 nets and 459 connections.
 worst slack max -0.18
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 150 endpoints with setup violations.

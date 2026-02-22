@@ -1,26 +1,9 @@
 # repair_design max_fanout
 source "helpers.tcl"
-source "hi_fanout.tcl"
-
-set def_filename [make_result_file "repair_fanout7.def"]
-# Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
-
-write_clone_test_def $def_filename NAND2_X4 150
 
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_verilog clone_hier.v
-link_design hi_fanout -hier
-
-source Nangate45/Nangate45.vars
-
-initialize_floorplan -die_area "0 0 200 200" -core_area "10 10 190 190" \
-  -site $site
-source $tracks_file
-place_pins -hor_layers $io_placer_hor_layer \
-  -ver_layers $io_placer_ver_layer
-global_placement -skip_nesterov_place
-detailed_placement
+read_def clone_hier.def
 
 create_clock -period 0.1 clk1
 set_driving_cell -lib_cell BUF_X1 [all_inputs]
@@ -28,6 +11,7 @@ set_driving_cell -lib_cell BUF_X1 [all_inputs]
 # gate cloning fixes.
 set_max_fanout 200 [current_design]
 
+source Nangate45/Nangate45.vars
 source Nangate45/Nangate45.rc
 set_wire_rc -layer metal2
 estimate_parasitics -placement

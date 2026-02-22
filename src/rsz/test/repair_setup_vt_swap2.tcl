@@ -20,16 +20,7 @@ read_lef asap7/asap7sc7p5t_28_R_1x_220121a.lef
 read_lef asap7/asap7sc7p5t_28_L_1x_220121a.lef
 read_lef asap7/asap7sc7p5t_28_SL_1x_220121a.lef
 
-read_verilog gcd_asap7_cts.v
-link gcd
-
-initialize_floorplan -die_area {0 0 100 100} -core_area {10 10 90 90} \
-  -site $site
-source $tracks_file
-place_pins -hor_layers $io_placer_hor_layer \
-  -ver_layers $io_placer_ver_layer
-global_placement
-detailed_placement
+read_def gcd_asap7_placed.def
 
 read_sdc gcd.sdc
 source asap7/setRC.tcl
