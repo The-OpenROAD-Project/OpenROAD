@@ -56,6 +56,7 @@ Cell type report:                       Count       Area
 =============================================
 ALU_16_HAN_CARLSON -> ALU_16_BRENT_KUNG
 =============================================
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Successfully replaced hier module
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[0]$_DFFE_PP_
@@ -116,6 +117,7 @@ Repair timing output passed/skipped equivalence test
 =============================================
 ALU_16_BRENT_KUNG -> ALU_16_KOGGE_STONE
 =============================================
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Successfully replaced hier module
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[0]$_DFFE_PP_
@@ -171,6 +173,7 @@ Repair timing output passed/skipped equivalence test
 =============================================
 ALU_16_KOGGE_STONE -> ALU_16_SKLANSKY
 =============================================
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Successfully replaced hier module
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[0]$_DFFE_PP_
@@ -228,6 +231,7 @@ Repair timing output passed/skipped equivalence test
 =============================================
 ALU_16_SKLANSKY -> ALU_16_HAN_CARLSON
 =============================================
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 Successfully replaced hier module
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[0]$_DFFE_PP_

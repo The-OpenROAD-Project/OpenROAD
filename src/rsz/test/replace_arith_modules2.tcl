@@ -42,6 +42,7 @@ puts "number instances in verilog is $num_instances"
 
 #set_debug_level RSZ replace_arith 1
 #set_debug_level ODB replace_design 10
+set_debug_level ODB replace_design_check_sanity 1
 report_wns
 report_tns
 

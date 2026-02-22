@@ -31,6 +31,7 @@ report_cell_usage _120_
 # - To enable the EQ check, you should set the envar "EQUIVALENCE_CHECK".
 write_verilog_for_eqy $test_name before "None"
 
+set_debug_level ODB replace_design_check_sanity 1
 proc do_swap { from_alu to_alu } {
   variable test_name
   puts "\n============================================="

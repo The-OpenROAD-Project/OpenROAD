@@ -27,6 +27,7 @@ report_cell_usage _551_
 write_verilog_for_eqy replace_hier_mod2 before "None"
 
 #set_debug_level ODB replace_design 1
+set_debug_level ODB replace_design_check_sanity 1
 
 # Swap #1. BRENT_KUNG -> KOGGE_STONE
 replace_hier_module _551_ LCU_16_KOGGE_STONE
