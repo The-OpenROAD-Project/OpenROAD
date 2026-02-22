@@ -270,8 +270,7 @@ odb::dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
                                                  bool skipBterms)
 {
   if (dir == odb::dbTechLayerDir::NONE) {
-    return createNetSingleWire(
-        netName, x1, y1, x2, y2, routingLayer, dir, skipBterms);
+    dir = odb::dbTechLayerDir::HORIZONTAL;
   }
 
   if ((netName == nullptr) || (routingLayer < 1)

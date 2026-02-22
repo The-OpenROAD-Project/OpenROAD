@@ -358,25 +358,15 @@ uint32_t extMeasure::createContextNets(char* dirName,
     sprintf(netName, "%s_m%d_cntxt_%d", dirName, met, cnt++);
     dbNet* net;
     assert(_create_net_util.getBlock() == _block);
-    if (mlayer->getDirection() != dbTechLayerDir::HORIZONTAL) {
-      net = _create_net_util.createNetSingleWire(netName,
-                                                 ll[0],
-                                                 ll[1],
-                                                 ur[0],
-                                                 ur[1],
-                                                 met,
-                                                 dbTechLayerDir::HORIZONTAL,
-                                                 false);
-    } else {
-      net = _create_net_util.createNetSingleWire(netName,
-                                                 ll[0],
-                                                 ll[1],
-                                                 ur[0],
-                                                 ur[1],
-                                                 met,
-                                                 mlayer->getDirection(),
-                                                 false);
-    }
+    net = _create_net_util.createNetSingleWire(netName,
+                                               ll[0],
+                                               ll[1],
+                                               ur[0],
+                                               ur[1],
+                                               met,
+                                               mlayer->getDirection(),
+                                               false);
+
     addNew2dBox(net, ll, ur, met, true);
   }
   return cnt - 1;
