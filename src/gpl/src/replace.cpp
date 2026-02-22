@@ -24,6 +24,7 @@
 #include "sta/StaMain.hh"
 #include "timingBase.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "utl/validation.h"
 
 namespace gpl {
@@ -155,8 +156,10 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
 
 void Replace::doPlace(const int threads, const PlaceOptions& options)
 {
+  utl::Timer timer;
   doInitialPlace(threads, options);
   doNesterovPlace(threads, options);
+  log_->info(GPL, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)

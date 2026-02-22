@@ -7,7 +7,7 @@ tech.readLef("sky130hd/sky130hd.tlef")
 tech.readLef("sky130hd/sky130_fd_sc_hd_merged.lef")
 tech.readLiberty("sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib")
 
-design = Design(tech)
+design = helpers.make_design(tech)
 design.readVerilog("reg2.v")
 design.link("top")
 
