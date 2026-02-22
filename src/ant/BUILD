@@ -34,6 +34,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",

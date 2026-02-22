@@ -6,12 +6,12 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <string>
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/asio/thread_pool.hpp"
@@ -74,9 +74,9 @@ class LoadBalancer
   asio::io_context* service_;
   utl::Logger* logger_;
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> workers_;
-  std::mutex workers_mutex_;
+  absl::Mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
-  std::mutex pool_mutex_;
+  absl::Mutex pool_mutex_;
   uint32_t jobs_;
   std::atomic<bool> alive_ = true;
   boost::thread workers_lookup_thread_;

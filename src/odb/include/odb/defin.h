@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include <mutex>
 #include <vector>
+
+#include "absl/synchronization/mutex.h"
 
 namespace utl {
 class Logger;
@@ -51,7 +52,7 @@ class defin
   definReader* reader_;
 
   // Protects the DefParser namespace that has static variables
-  static std::mutex def_mutex_;
+  static absl::Mutex def_mutex_;
 };
 
 }  // namespace odb

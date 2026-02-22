@@ -6,12 +6,12 @@
 #include <fstream>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "ant/AntennaChecker.hh"
 #include "odb/db.h"
 #include "odb/dbWireGraph.h"
@@ -196,7 +196,7 @@ class AntennaChecker::Impl
   std::string report_file_name_;
   std::vector<odb::dbNet*> nets_;
   std::map<odb::dbNet*, ViolationReport> net_to_report_;
-  std::mutex map_mutex_;
+  absl::Mutex map_mutex_;
   // consts
   static constexpr int max_diode_count_per_gate = 10;
 };

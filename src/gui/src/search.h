@@ -7,11 +7,11 @@
 #include <atomic>
 #include <iterator>
 #include <map>
-#include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
 #include "odb/db.h"
@@ -313,13 +313,13 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     RtreeDBox<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
-    std::mutex shapes_init_mutex;
-    std::mutex fills_init_mutex;
-    std::mutex insts_init_mutex;
-    std::mutex blockages_init_mutex;
-    std::mutex obstructions_init_mutex;
-    std::mutex rows_init_mutex;
-    std::mutex bpins_init_mutex;
+    absl::Mutex shapes_init_mutex;
+    absl::Mutex fills_init_mutex;
+    absl::Mutex insts_init_mutex;
+    absl::Mutex blockages_init_mutex;
+    absl::Mutex obstructions_init_mutex;
+    absl::Mutex rows_init_mutex;
+    absl::Mutex bpins_init_mutex;
 
     // The net is used for filter shapes by net type
     LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;

@@ -110,6 +110,7 @@ target_include_directories(drt_lib
 
 target_link_libraries(drt_lib
   PUBLIC
+    absl::synchronization
     stt_lib
     utl_lib
     dst_lib
