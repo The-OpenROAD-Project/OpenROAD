@@ -1,0 +1,509 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+LAYER M1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.200 ;
+  WIDTH 0.100 ;
+  AREA 0.020 ;
+END M1
+
+LAYER M2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.200 ;
+  WIDTH 0.100 ;
+END M2
+
+# FinFET layer for LEF-CHK-008 test
+LAYER fin_drawing
+  TYPE MASTERSLICE ;
+END fin_drawing
+
+SITE unit
+  CLASS CORE ;
+  SIZE 0.200 BY 2.000 ;
+  SYMMETRY Y ;
+END unit
+
+# =============================================================================
+# LEF-CHK-000: Macro with good alignment, all checks should pass
+# =============================================================================
+MACRO pass_all_checks
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 0.000 10.000 0.200 ;
+    END
+  END VDD
+END pass_all_checks
+
+# =============================================================================
+# LEF-CHK-001: Macro dimensions NOT aligned to manufacturing grid (0.005 um)
+# Width 10.001 is not divisible by 0.005
+# =============================================================================
+MACRO lef001_grid_width
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.001 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef001_grid_width
+
+# =============================================================================
+# LEF-CHK-002: Pin coordinates NOT aligned to manufacturing grid
+# Pin rect uses 0.001 which is not on 0.005 grid
+# =============================================================================
+MACRO lef002_pin_grid
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.001 1.000 0.200 1.200 ;
+    END
+  END A
+END lef002_pin_grid
+
+# =============================================================================
+# LEF-CHK-003a: Pin distances compatible with single-pattern track grid (PASS)
+# Two minimum-width pins on M1 (horizontal, pitch 0.200 = 200 DBU)
+# Pin A center_y = (1000+1100)/2 = 1050
+# Pin B center_y = (1400+1500)/2 = 1450
+# Distance = 400, GCD = 400. 400 % 200 == 0 -> PASS
+# =============================================================================
+MACRO lef003a_single_pass
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.100 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.400 0.200 1.500 ;
+    END
+  END B
+END lef003a_single_pass
+
+# =============================================================================
+# LEF-CHK-003b: Pin distances NOT compatible with single-pattern grid (FAIL)
+# Three minimum-width pins on M2 (vertical, pitch 0.200 = 200 DBU)
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (250+350)/2 = 300
+# Pin C center_x = (380+480)/2 = 430
+# Distances: 150, 130. GCD = 10. 10 % 200 != 0 -> FAIL
+# =============================================================================
+MACRO lef003b_single_fail
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.250 1.000 0.350 1.200 ;
+    END
+  END B
+  PIN C
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.380 1.000 0.480 1.200 ;
+    END
+  END C
+END lef003b_single_fail
+
+# =============================================================================
+# LEF-CHK-003c: Multi-pattern effective pitch allows alignment (PASS)
+# M2 has two track patterns: pitch=200 at offsets 0 and 100
+# Effective pitch = GCD(200, 200, |100-0|) = 100
+# Two minimum-width pins on M2:
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (400+500)/2 = 450
+# Distance = 300. GCD = 300. 300 % 100 == 0 -> PASS
+# Note: 300 % 200 != 0, so this would FAIL with single pattern.
+# This demonstrates that the effective pitch matters.
+# =============================================================================
+MACRO lef003c_multi_pass
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.400 1.000 0.500 1.200 ;
+    END
+  END B
+END lef003c_multi_pass
+
+# =============================================================================
+# LEF-CHK-003d: Multi-pattern effective pitch still can't align (FAIL)
+# M2 effective pitch = 100 (from two patterns above)
+# Three minimum-width pins on M2:
+# Pin A center_x = (100+200)/2 = 150
+# Pin B center_x = (230+330)/2 = 280
+# Pin C center_x = (390+490)/2 = 440
+# Distances: 130, 160. GCD(130, 160) = 10. 10 % 100 != 0 -> FAIL
+# =============================================================================
+MACRO lef003d_multi_fail
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.100 1.000 0.200 1.200 ;
+    END
+  END A
+  PIN B
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.230 1.000 0.330 1.200 ;
+    END
+  END B
+  PIN C
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M2 ;
+      RECT 0.390 1.000 0.490 1.200 ;
+    END
+  END C
+END lef003d_multi_fail
+
+# =============================================================================
+# LEF-CHK-004-005a: Pin fully blocked on same layer AND above layer
+# M1 obstruction completely overlaps the pin, preventing same-layer routing access.
+# M2 obstruction prevents access from the layer above.
+# M1 is routing level 1, so there's nothing below to access from either.
+# =============================================================================
+MACRO lef004_005a_fully_blocked
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN SIG
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 1.000 1.000 1.200 1.200 ;
+    END
+  END SIG
+  OBS
+    LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+    LAYER M2 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+  END
+END lef004_005a_fully_blocked
+
+# =============================================================================
+# LEF-CHK-004-005b: Pin blocked on same layer, but accessible from above (PASS)
+# M1 obstruction blocks all edges, but NO M2 obstruction, so from M2 works.
+# =============================================================================
+MACRO lef004_005b_multi_shape_pass
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN SIG
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 1.000 1.000 1.200 1.200 ;
+    END
+  END SIG
+  OBS
+    LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+  END
+END lef004_005b_multi_shape_pass
+
+# =============================================================================
+# LEF-CHK-004-005c: Power pin blocked on same layer AND above (FAIL)
+# =============================================================================
+MACRO lef004_005c_power_blocked
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER M1 ;
+      RECT 1.000 1.000 1.200 1.200 ;
+    END
+  END VDD
+  OBS
+    LAYER M1 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+    LAYER M2 ;
+    RECT 0.900 0.900 1.300 1.300 ;
+  END
+END lef004_005c_power_blocked
+
+# =============================================================================
+# LEF-CHK-004-005d: Pin on macro boundary, covered by same-layer OBS (PASS)
+# The pin is located at x=0 (west macro edge) and is geometrically overlapped
+# by M1 and M2 obstructions inside the macro.
+# However, because the pin touches the macro boundary, routing access is still
+# possible from outside the macro (west side).
+# =============================================================================
+MACRO lef004_005d_edge_pin
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN SIG
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END SIG
+  OBS
+    LAYER M1 ;
+    RECT 0.000 0.900 0.300 1.300 ;
+    LAYER M2 ;
+    RECT 0.000 0.900 0.300 1.300 ;
+  END
+END lef004_005d_edge_pin
+
+# =============================================================================
+# LEF-CHK-006: Excessive polygon count (test with -max_polygons 5)
+# This macro has many obstructions to trigger polygon count warning
+# =============================================================================
+MACRO lef006_polygon_count
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+  OBS
+    LAYER M1 ;
+    RECT 2.000 2.000 2.100 2.100 ;
+    RECT 3.000 3.000 3.100 3.100 ;
+    RECT 4.000 4.000 4.100 4.100 ;
+    RECT 5.000 5.000 5.100 5.100 ;
+    RECT 6.000 6.000 6.100 6.100 ;
+  END
+END lef006_polygon_count
+
+# =============================================================================
+# LEF-CHK-007: Signal pin missing antenna model
+# =============================================================================
+MACRO lef007_no_antenna
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef007_no_antenna
+
+# =============================================================================
+# LEF-CHK-008: FinFET technology detection (info only, use -verbose)
+# Detects if any layer name contains "fin" 
+# =============================================================================
+MACRO lef008_finfet
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef008_finfet
+
+# =============================================================================
+# LEF-CHK-009: Signal pin has NO geometry defined
+# =============================================================================
+MACRO lef009_no_geometry
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+  END A
+END lef009_no_geometry
+
+# =============================================================================
+# LEF-CHK-010a: Pin width perpendicular to routing direction < layer min width
+# M1 is HORIZONTAL, so "width" = dy (height of the rect).
+# Pin has dy = 0.050 (50 DBU) which is less than M1 min width 0.100 (100 DBU).
+# Note: dx = 0.200 (200 DBU) which is FINE - we only check perpendicular.
+# =============================================================================
+MACRO lef010a_small_width
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.050 ;
+    END
+  END A
+END lef010a_small_width
+
+# =============================================================================
+# LEF-CHK-010b: Pin width OK in perpendicular, small in parallel (PASS)
+# M1 is HORIZONTAL, so "width" = dy = 0.200 >= 0.100
+# Even though dx = 0.050 (small), that's the "length" direction, not checked.
+# Area = 50*400 = 20000 >= 20000 (M1 AREA rule)
+# =============================================================================
+MACRO lef010b_length_ok
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.050 1.400 ;
+    END
+  END A
+END lef010b_length_ok
+
+# =============================================================================
+# LEF-CHK-010b: Pin area less than layer minimum area (FAIL)
+# M1 AREA = 0.020 um^2 = 20000 DBU^2
+# Pin: RECT 0.000 1.000 0.100 1.100 -> dx=100, dy=100 -> area=10000 < 20000
+# =============================================================================
+MACRO lef010b_small_area
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.100 1.100 ;
+    END
+  END A
+END lef010b_small_area
+
+# =============================================================================
+# LEF-CHK-010b: Pin area meets minimum area (PASS)
+# Pin: RECT 0.000 1.000 0.200 1.200 -> dx=200, dy=200 -> area=40000 >= 20000
+# =============================================================================
+MACRO lef010b_area_ok
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 10.000 BY 10.000 ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    ANTENNAMODEL OXIDE1 ;
+    PORT
+      LAYER M1 ;
+      RECT 0.000 1.000 0.200 1.200 ;
+    END
+  END A
+END lef010b_area_ok
+
+END LIBRARY

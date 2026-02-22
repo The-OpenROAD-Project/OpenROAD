@@ -1,0 +1,22 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+
+DESIGN check_ip_test ;
+
+UNITS DISTANCE MICRONS 1000 ;
+
+DIEAREA ( 0 0 ) ( 100000 100000 ) ;
+
+# Single-pattern tracks on M1 (horizontal layer)
+# Pitch = 200 DBU (0.200 um), origin at 100
+TRACKS Y 100 DO 500 STEP 200 LAYER M1 ;
+
+# Two-pattern tracks on M2 (vertical layer)
+# Pattern 1: pitch=200, origin=0  -> tracks at 0, 200, 400, ...
+# Pattern 2: pitch=200, origin=100 -> tracks at 100, 300, 500, ...
+# Effective pitch = GCD(200, 200, |100-0|) = GCD(200, 100) = 100
+TRACKS X 0 DO 500 STEP 200 LAYER M2 ;
+TRACKS X 100 DO 500 STEP 200 LAYER M2 ;
+
+END DESIGN
