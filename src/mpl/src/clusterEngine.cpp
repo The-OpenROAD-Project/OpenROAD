@@ -2078,17 +2078,13 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
+      inst->setOrient(odb::dbOrientType::R180);
+
       HardMacro::Halo halo
           = macro_to_halo_.contains(inst) ? macro_to_halo_.at(inst)
             : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getTransformedHalo())
                                           : tree_->default_halo;
 
-      logger_->report("MACRO {} HALO {} {} {} {}",
-                      inst->getName(),
-                      halo.left,
-                      halo.bottom,
-                      halo.right,
-                      halo.top);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 

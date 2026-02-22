@@ -3105,6 +3105,11 @@ class dbInst : public dbObject
   Rect getTransformedHalo();
 
   ///
+  /// Sets the halo to this instance.
+  ///
+  void setHalo(int left, int bottom, int right, int top);
+
+  ///
   /// Get the weight assigned to this instance.
   /// (Default: 1)
   ///

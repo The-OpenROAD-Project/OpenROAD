@@ -879,9 +879,6 @@ dbBox* dbInst::getHalo()
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbBox* b = block->box_tbl_->getPtr(inst->halo_);
   
-  // dbTransform transform(inst->flags_.orient, Point(0, 0));
-  // transform.apply(b->shape_.rect);
-
   return (dbBox*) b;
 }
 
@@ -908,8 +905,18 @@ Rect dbInst::getTransformedHalo()
   int y2 = std::abs(std::max(rect.yMin(), rect.yMax()));
 
   halo.reset(x1, y1, x2, y2);
-  
+
   return halo;
+}
+
+void dbInst::setHalo(int left, int bottom, int right, int top) {
+  dbBox* halo = getHalo();
+  
+  if (halo != nullptr) {
+    dbBox::destroy(getHalo());  
+  }
+
+  dbBox::create(this, left, bottom, right, top);
 }
 
 void dbInst::getConnectivity(std::vector<dbInst*>& result,
