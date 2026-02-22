@@ -28,8 +28,9 @@ std::string generate_unused_filename(const std::string& prefix)
 {
   int counter = 1;
   std::string filename;
+  const auto pid = static_cast<unsigned int>(::getpid());
   do {
-    filename = fmt::format("{}.{}", prefix, counter++);
+    filename = fmt::format("{}.{}.{}", prefix, pid, counter++);
   } while (std::filesystem::exists(filename));
 
   return filename;
