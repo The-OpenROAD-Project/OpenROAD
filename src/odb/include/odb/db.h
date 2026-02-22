@@ -8270,7 +8270,7 @@ class dbMarker : public dbObject
 
   std::string getName() const;
 
-  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon, Cuboid>;
 
   dbMarkerCategory* getCategory() const;
   std::vector<MarkerShape> getShapes() const;
@@ -8283,6 +8283,7 @@ class dbMarker : public dbObject
   void addShape(const Line& line);
   void addShape(const Rect& rect);
   void addShape(const Polygon& polygon);
+  void addShape(const Cuboid& cuboid);
 
   void setTechLayer(dbTechLayer* layer);
 

@@ -5158,8 +5158,12 @@ void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
         painter.drawLine(line.pt0(), line.pt1());
       } else if (std::holds_alternative<odb::Rect>(shape)) {
         painter.drawRect(std::get<odb::Rect>(shape));
-      } else {
+      } else if (std::holds_alternative<odb::Polygon>(shape)) {
         painter.drawPolygon(std::get<odb::Polygon>(shape));
+      } else if (std::holds_alternative<odb::Cuboid>(shape)) {
+        const odb::Cuboid cuboid = std::get<odb::Cuboid>(shape);
+        const odb::Rect rect = cuboid.getEnclosingRect();
+        painter.drawRect(rect);
       }
     }
   }
