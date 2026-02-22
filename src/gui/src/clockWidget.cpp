@@ -45,7 +45,6 @@
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "odb/db.h"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -60,7 +59,7 @@ Q_DECLARE_METATYPE(odb::dbBTerm*);
 Q_DECLARE_METATYPE(odb::dbITerm*);
 Q_DECLARE_METATYPE(odb::dbInst*);
 Q_DECLARE_METATYPE(odb::dbNet*);
-Q_DECLARE_METATYPE(sta::Corner*);
+Q_DECLARE_METATYPE(sta::Scene*);
 
 namespace gui {
 
@@ -1440,7 +1439,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
 
       if (lib_port != nullptr) {
         auto function = lib_port->function();
-        if (function && function->op() == sta::FuncExpr::op_not) {
+        if (function && function->op() == sta::FuncExpr::Op::not_) {
           buf_node->setIsInverter(true);
         }
       }
@@ -1613,7 +1612,7 @@ void ClockWidget::setBlock(odb::dbBlock* block)
   block_ = block;
 }
 
-void ClockWidget::populate(sta::Corner* corner)
+void ClockWidget::populate(sta::Scene* corner)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
@@ -1621,11 +1620,11 @@ void ClockWidget::populate(sta::Corner* corner)
   views_.clear();
 
   if (corner == nullptr) {
-    corner = corner_box_->currentData().value<sta::Corner*>();
+    corner = corner_box_->currentData().value<sta::Scene*>();
   } else {
-    corner_box_->setCurrentText(corner->name());
+    corner_box_->setCurrentText(corner->name().c_str());
   }
-  stagui_->setCorner(corner);
+  stagui_->setScene(corner);
 
   for (auto& tree : stagui_->getClockTrees()) {
     if (!tree->getNet()) {  // skip virtual clocks
@@ -1667,8 +1666,8 @@ void ClockWidget::showEvent(QShowEvent* event)
 void ClockWidget::postReadLiberty()
 {
   corner_box_->clear();
-  for (sta::Corner* corner : *sta_->corners()) {
-    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+  for (sta::Scene* corner : sta_->scenes()) {
+    corner_box_->addItem(corner->name().c_str(), QVariant::fromValue(corner));
   }
 }
 
@@ -1707,14 +1706,14 @@ void ClockWidget::saveImage(const std::string& clock_name,
   }
 
   bool populate_views = views_.empty();
-  sta::Corner* sta_corner = nullptr;
+  sta::Scene* sta_corner = nullptr;
   if (!corner.empty() && corner != corner_box_->currentText().toStdString()) {
     populate_views = true;
     const int idx = corner_box_->findText(QString::fromStdString(corner));
     if (idx == -1) {
       logger_->error(utl::GUI, 89, "Unable to find \"{}\" corner", corner);
     }
-    sta_corner = corner_box_->itemData(idx).value<sta::Corner*>();
+    sta_corner = corner_box_->itemData(idx).value<sta::Scene*>();
   }
 
   if (populate_views) {

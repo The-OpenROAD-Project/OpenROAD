@@ -22,7 +22,7 @@ class dbNet;
 
 namespace sta {
 class dbSta;
-class Corner;
+class Scene;
 class LibertyCell;
 class Network;
 class Sta;
@@ -67,17 +67,17 @@ class Timing
   bool isEndpoint(odb::dbITerm* db_pin);
   bool isEndpoint(odb::dbBTerm* db_pin);
 
-  float getNetCap(odb::dbNet* net, sta::Corner* corner, MinMax minmax);
-  float getPortCap(odb::dbITerm* pin, sta::Corner* corner, MinMax minmax);
+  float getNetCap(odb::dbNet* net, sta::Scene* corner, MinMax minmax);
+  float getPortCap(odb::dbITerm* pin, sta::Scene* corner, MinMax minmax);
   float getMaxCapLimit(odb::dbMTerm* pin);
   float getMaxSlewLimit(odb::dbMTerm* pin);
-  float staticPower(odb::dbInst* inst, sta::Corner* corner);
-  float dynamicPower(odb::dbInst* inst, sta::Corner* corner);
+  float staticPower(odb::dbInst* inst, sta::Scene* corner);
+  float dynamicPower(odb::dbInst* inst, sta::Scene* corner);
 
   std::vector<odb::dbMTerm*> getTimingFanoutFrom(odb::dbMTerm* input);
-  std::vector<sta::Corner*> getCorners();
-  sta::Corner* cmdCorner();
-  sta::Corner* findCorner(const char* name);
+  std::vector<sta::Scene*> getCorners();
+  sta::Scene* cmdCorner();
+  sta::Scene* findCorner(const char* name);
 
   void makeEquivCells();
   std::vector<odb::dbMaster*> equivCells(odb::dbMaster* master);

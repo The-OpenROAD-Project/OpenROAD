@@ -10,19 +10,19 @@
 ########## IR report #################
 Net              : VSS
 Corner           : default
-Total power      : 1.41e-04 W
+Total power      : 1.38e-04 W
 Supply voltage   : 0.00e+00 V
-Worstcase voltage: 1.05e-03 V
-Average voltage  : 6.81e-04 V
-Average IR drop  : 6.81e-04 V
-Worstcase IR drop: 1.05e-03 V
-Percentage drop  : 0.10 %
+Worstcase voltage: 1.03e-03 V
+Average voltage  : 6.68e-04 V
+Average IR drop  : 6.68e-04 V
+Worstcase IR drop: 1.03e-03 V
+Percentage drop  : 0.09 %
 ######################################
 ########## EM analysis ###############
 Net                : VSS
 Corner             : default
-Maximum current    : 1.28e-04 A
-Average current    : 1.86e-06 A
+Maximum current    : 1.26e-04 A
+Average current    : 1.82e-06 A
 Number of resistors: 2139
 ######################################
 No differences found.

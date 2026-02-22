@@ -32,7 +32,6 @@ report_checks
 estimate_parasitics -placement
 report_checks
 
-sta::network_changed
 estimate_parasitics -placement
 report_checks
 

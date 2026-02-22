@@ -17,14 +17,13 @@
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/ParasiticsClass.hh"
-#include "sta/Set.hh"
 
 namespace sta {
 class Net;
 class dbNetwork;
 class Parasitics;
 class Parasitic;
-class Corner;
+class Scene;
 class OperatingConditions;
 class ParasiticAnalysisPt;
 class Units;
@@ -65,59 +64,60 @@ class MakeWireParasitics
  private:
   sta::Pin* staPin(odb::dbBTerm* bterm) const;
   sta::Pin* staPin(odb::dbITerm* iterm) const;
-  void makeRouteParasitics(odb::dbNet* net,
+  void makeRouteParasitics(sta::Parasitics* parasitics,
+                           odb::dbNet* net,
                            grt::GRoute& route,
                            sta::Net* sta_net,
-                           sta::Corner* corner,
-                           sta::ParasiticAnalysisPt* analysis_point,
+                           sta::Scene* corner,
                            sta::Parasitic* parasitic,
                            NodeRoutePtMap& node_map);
   sta::ParasiticNode* ensureParasiticNode(int x,
                                           int y,
                                           int layer,
                                           NodeRoutePtMap& node_map,
+                                          sta::Parasitics* parasitics,
                                           sta::Parasitic* parasitic,
                                           sta::Net* net) const;
-  void makeParasiticsToPins(odb::dbNet* net,
+  void makeParasiticsToPins(sta::Parasitics* parasitics,
+                            odb::dbNet* net,
                             std::vector<grt::PinGridLocation>& pin_grid_locs,
                             NodeRoutePtMap& node_map,
-                            sta::Corner* corner,
-                            sta::ParasiticAnalysisPt* analysis_point,
+                            sta::Scene* corner,
                             sta::Parasitic* parasitic);
-  void makeParasiticsToPin(odb::dbNet* net,
+  void makeParasiticsToPin(sta::Parasitics* parasitics,
+                           odb::dbNet* net,
                            grt::PinGridLocation& pin_loc,
                            NodeRoutePtMap& node_map,
-                           sta::Corner* corner,
-                           sta::ParasiticAnalysisPt* analysis_point,
+                           sta::Scene* corner,
                            sta::Parasitic* parasitic);
   void makePartialParasiticsToPins(
+      sta::Parasitics* parasitics,
       std::vector<grt::PinGridLocation>& pin_grid_locs,
       NodeRoutePtMap& node_map,
-      sta::Corner* corner,
-      sta::ParasiticAnalysisPt* analysis_point,
+      sta::Scene* corner,
       sta::Parasitic* parasitic,
       odb::dbNet* net);
-  void makePartialParasiticsToPin(grt::PinGridLocation& pin_loc,
+  void makePartialParasiticsToPin(sta::Parasitics* parasitics,
+                                  grt::PinGridLocation& pin_loc,
                                   NodeRoutePtMap& node_map,
-                                  sta::Corner* corner,
-                                  sta::ParasiticAnalysisPt* analysis_point,
+                                  sta::Scene* corner,
                                   sta::Parasitic* parasitic,
                                   odb::dbNet* net);
   void layerRC(int wire_length_dbu,
                int layer,
-               sta::Corner* corner,
+               sta::Scene* corner,
                // Return values.
                float& res,
                float& cap) const;
   void layerRC(int wire_length_dbu,
                int layer,
-               sta::Corner* corner,
+               sta::Scene* corner,
                odb::dbNet* net,
                // Return values.
                float& res,
                float& cap) const;
   float getCutLayerRes(odb::dbTechLayer* cut_layer,
-                       sta::Corner* corner,
+                       sta::Scene* corner,
                        int num_cuts = 1) const;
   double dbuToMeters(int dbu) const;
 
@@ -129,7 +129,6 @@ class MakeWireParasitics
   utl::Logger* logger_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
-  sta::Parasitics* parasitics_;
   sta::ArcDelayCalc* arc_delay_calc_;
   const sta::MinMax* min_max_;
   size_t resistor_id_;

@@ -23,7 +23,7 @@ class Rect;
 
 namespace sta {
 class dbSta;
-class Corner;
+class Scene;
 }  // namespace sta
 
 namespace utl {
@@ -352,7 +352,7 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
 
   std::string corner_;
 
-  sta::Corner* getCorner() const;
+  sta::Scene* getCorner() const;
 };
 
 }  // namespace gui

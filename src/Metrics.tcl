@@ -161,7 +161,7 @@ proc report_erc_metrics { } {
 define_cmd_args "report_power_metric" {[-corner corner_name]}
 proc report_power_metric { args } {
   parse_key_args "report_power_metric" args keys {-corner} flags {}
-  set corner [sta::parse_corner keys]
+  set corner [sta::parse_scene keys]
   set power_result [design_power $corner]
   set totals [lrange $power_result 0 3]
   lassign $totals design_internal design_switching design_leakage design_total

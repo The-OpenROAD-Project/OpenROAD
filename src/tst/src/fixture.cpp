@@ -17,7 +17,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/lefin.h"
-#include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Sta.hh"
@@ -88,15 +87,15 @@ std::string Fixture::getFilePath(const std::string& file_path) const
 }
 
 sta::LibertyLibrary* Fixture::readLiberty(const std::string& filename,
-                                          sta::Corner* corner,
+                                          sta::Scene* scene,
                                           const sta::MinMaxAll* min_max,
                                           const bool infer_latches)
 {
-  if (!corner) {
-    corner = sta_->findCorner("default");
+  if (!scene) {
+    scene = sta_->findScene("default");
   }
   auto path = getFilePath(filename);
-  return sta_->readLiberty(path.c_str(), corner, min_max, infer_latches);
+  return sta_->readLiberty(path.c_str(), scene, min_max, infer_latches);
 }
 
 odb::dbTech* Fixture::loadTechLef(const char* name, const std::string& lef_file)

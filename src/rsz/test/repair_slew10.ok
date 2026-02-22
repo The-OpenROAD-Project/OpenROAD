@@ -8,7 +8,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u3/A                                    0.10    0.12   -0.02 (VIOLATED)
+u11/A                                   0.10    0.12   -0.02 (VIOLATED)
 
 max capacitance
 
@@ -27,7 +27,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u3/A                                    0.10    0.07    0.03 (MET)
+u11/A                                   0.10    0.07    0.03 (MET)
 
 max capacitance
 

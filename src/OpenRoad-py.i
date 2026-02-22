@@ -47,7 +47,7 @@ get_db_block();
 
 %}
 
-%template(Corners) std::vector<sta::Corner*>;
+%template(Corners) std::vector<sta::Scene*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
 %template(Masters) std::vector<odb::dbMaster*>;
 

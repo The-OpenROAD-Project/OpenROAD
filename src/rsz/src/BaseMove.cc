@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
@@ -20,7 +21,7 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
+#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
@@ -31,10 +32,9 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
-#include "sta/UnorderedMap.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -49,30 +49,7 @@ using odb::Point;
 
 using utl::RSZ;
 
-using sta::ArcDcalcResult;
-using sta::ArcDelay;
-using sta::Cell;
-using sta::DcalcAnalysisPt;
-using sta::Edge;
-using sta::fuzzyGreater;
-using sta::GraphDelayCalc;
-using sta::INF;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::InstanceSet;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::LoadPinIndexMap;
-using sta::Net;
-using sta::NetConnectedPinIterator;
-using sta::Pin;
-using sta::RiseFall;
-using sta::Slack;
-using sta::Slew;
-using sta::TimingArc;
-using sta::TimingArcSet;
-using sta::Vertex;
-using sta::VertexOutEdgeIterator;
+using namespace sta;  // NOLINT
 
 using InputSlews = std::array<Slew, RiseFall::index_count>;
 using TgtSlews = std::array<Slew, RiseFall::index_count>;
@@ -178,114 +155,6 @@ double BaseMove::area(dbMaster* master)
          * resizer_->dbuToMeters(master->getHeight());
 }
 
-// Rise/fall delays across all timing arcs into drvr_port.
-// Uses target slew for input slew.
-void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                          const float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap,
-                          // Return values.
-                          ArcDelay delays[RiseFall::index_count],
-                          Slew slews[RiseFall::index_count])
-{
-  for (int rf_index : RiseFall::rangeIndex()) {
-    delays[rf_index] = -INF;
-    slews[rf_index] = -INF;
-  }
-  LibertyCell* cell = drvr_port->libertyCell();
-  for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        // use annotated slews if available
-        LibertyPort* port = arc->from();
-        float in_slew = 0.0;
-        auto it = input_slew_map_.find(port);
-        if (it != input_slew_map_.end()) {
-          const InputSlews& slew = it->second;
-          in_slew = slew[in_rf->index()];
-        } else {
-          in_slew = tgt_slews_[in_rf->index()];
-        }
-        LoadPinIndexMap load_pin_index_map(network_);
-        ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         dcalc_ap);
-
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
-        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
-        slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
-      }
-    }
-  }
-}
-
-// Rise/fall delays across all timing arcs into drvr_port.
-// Takes input slews and load cap
-void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                          const float load_cap,
-                          const Slew in_slews[RiseFall::index_count],
-                          const DcalcAnalysisPt* dcalc_ap,
-                          // Return values.
-                          ArcDelay delays[RiseFall::index_count],
-                          Slew out_slews[RiseFall::index_count])
-{
-  for (int rf_index : RiseFall::rangeIndex()) {
-    delays[rf_index] = -INF;
-    out_slews[rf_index] = -INF;
-  }
-  LibertyCell* cell = drvr_port->libertyCell();
-  for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        LoadPinIndexMap load_pin_index_map(network_);
-        ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slews[in_rf->index()],
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         dcalc_ap);
-
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
-        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
-        out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
-      }
-    }
-  }
-}
-
-ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                             const RiseFall* rf,
-                             const float load_cap,
-                             const DcalcAnalysisPt* dcalc_ap)
-{
-  ArcDelay delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
-  return delays[rf->index()];
-}
-
-ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                             const float load_cap,
-                             const DcalcAnalysisPt* dcalc_ap)
-{
-  ArcDelay delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
-  return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
-}
-
 bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
                           const LibertyCell* cell,
                           const LibertyPort* port_a,
@@ -296,7 +165,7 @@ bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
   }
 
   sta::LibertyCellPortIterator port_iter(cell);
-  sta::UnorderedMap<const LibertyPort*, std::vector<bool>> port_stimulus;
+  std::unordered_map<const LibertyPort*, std::vector<bool>> port_stimulus;
   size_t input_port_count = 0;
   while (port_iter.hasNext()) {
     LibertyPort* port = port_iter.next();
@@ -344,29 +213,29 @@ bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
 
 bool BaseMove::simulateExpr(
     sta::FuncExpr* expr,
-    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+    std::unordered_map<const LibertyPort*, std::vector<bool>>& port_stimulus,
     size_t table_index)
 {
-  using Operator = sta::FuncExpr::Operator;
-  const Operator curr_op = expr->op();
+  using Op = sta::FuncExpr::Op;
+  const Op curr_op = expr->op();
 
   switch (curr_op) {
-    case Operator::op_not:
+    case Op::not_:
       return !simulateExpr(expr->left(), port_stimulus, table_index);
-    case Operator::op_and:
+    case Op::and_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              && simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_or:
+    case Op::or_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              || simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_xor:
+    case Op::xor_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              ^ simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_one:
+    case Op::one:
       return true;
-    case Operator::op_zero:
+    case Op::zero:
       return false;
-    case Operator::op_port:
+    case Op::port:
       return port_stimulus[expr->port()][table_index];
   }
 
@@ -376,7 +245,7 @@ bool BaseMove::simulateExpr(
 
 std::vector<bool> BaseMove::simulateExpr(
     sta::FuncExpr* expr,
-    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus)
+    std::unordered_map<const LibertyPort*, std::vector<bool>>& port_stimulus)
 {
   size_t table_length = 0x1 << port_stimulus.size();
   std::vector<bool> result;
@@ -420,13 +289,12 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 //
 bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 {
-  if (params.corner == nullptr) {
+  const Scene* scene = params.corner;
+  if (scene == nullptr) {
     // can't do any estimation without a corner
     return false;
   }
 
-  const DcalcAnalysisPt* dcalc_ap
-      = params.corner->findDcalcAnalysisPt(resizer_->max_);
   GraphDelayCalc* dcalc = sta_->graphDelayCalc();
 
   ArcDelay old_delay[RiseFall::index_count];
@@ -461,11 +329,12 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
-  float delay_imp
-      = resizer_->bufferDelay(params.driver_cell,
-                              params.driver_path->transition(sta_),
-                              dcalc->loadCap(params.driver_pin, dcalc_ap),
-                              dcalc_ap);
+  float delay_imp = resizer_->bufferDelay(
+      params.driver_cell,
+      params.driver_path->transition(sta_),
+      dcalc->loadCap(params.driver_pin, scene, MinMax::max()),
+      scene,
+      MinMax::max());
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
   // Model slew degradation across wire from prev_drv_pin to the FO inst pin
@@ -490,12 +359,15 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
           load_pin_slew)) {
     return false;
   }
+
+  SceneSeq scenes1({const_cast<Scene*>(scene)});
   for (const auto& [load_pin, estimated_new_load_slew] : load_pin_slew) {
     Vertex* load_vertex = graph_->pinLoadVertex(load_pin);
     assert(load_vertex != nullptr);
     Slew old_load_slew[RiseFall::index_count];
     for (auto rf : RiseFall::range()) {
-      old_load_slew[rf->index()] = sta_->vertexSlew(load_vertex, rf, dcalc_ap);
+      old_load_slew[rf->index()] = sta_->slew(
+          load_vertex, rf->asRiseFallBoth(), scenes1, MinMax::max());
     }
     Slew new_load_slew[RiseFall::index_count];
     for (auto rf : RiseFall::range()) {
@@ -516,7 +388,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     // slew
     // degradation
     if (!estimateInputSlewImpact(network_->instance(load_pin),
-                                 dcalc_ap,
+                                 scene,
+                                 MinMax::max(),
                                  old_load_slew,
                                  new_load_slew,
                                  delay_degrad - delay_imp,
@@ -533,11 +406,13 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
     const Pin* side_input_pin = pin_iter->next();
-    if (side_input_pin == params.prev_driver_pin
+    if (network_->isHierarchical(side_input_pin)
+        || side_input_pin == params.prev_driver_pin
         || side_input_pin == params.driver_input_pin) {
       continue;
     }
-    float old_slack = sta_->pinSlack(side_input_pin, resizer_->max_);
+    float old_slack
+        = sta_->slack(graph_->pinLoadVertex(side_input_pin), resizer_->max_);
     float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
     if (new_slack < 0) {
       float slack_degrad = old_slack - new_slack;
@@ -560,7 +435,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     // Consider secondary degradation at side out pin from degraded input
     // slew.
     if (!estimateInputSlewImpact(network_->instance(side_input_pin),
-                                 dcalc_ap,
+                                 scene,
+                                 MinMax::max(),
                                  old_drvr_slew,
                                  new_drvr_slew,
                                  delay_degrad,
@@ -581,7 +457,8 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 // Estimate impact from degraded input slew for this instance.
 // Include all output pins for multi-outut gate (MOG) cells.
 bool BaseMove::estimateInputSlewImpact(Instance* instance,
-                                       const DcalcAnalysisPt* dcalc_ap,
+                                       const Scene* scene,
+                                       const MinMax* min_max,
                                        Slew old_in_slew[RiseFall::index_count],
                                        Slew new_in_slew[RiseFall::index_count],
                                        // delay adjustment from prev stage
@@ -607,19 +484,19 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
       // clang-format on
       return false;
     }
-    float load_cap = dcalc->loadCap(pin, dcalc_ap);
+    float load_cap = dcalc->loadCap(pin, scene, min_max);
     ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
     Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
     resizer_->gateDelays(
-        port, load_cap, old_in_slew, dcalc_ap, old_delay, old_slew);
+        port, load_cap, old_in_slew, scene, min_max, old_delay, old_slew);
     resizer_->gateDelays(
-        port, load_cap, new_in_slew, dcalc_ap, new_delay, new_slew);
+        port, load_cap, new_in_slew, scene, min_max, new_delay, new_slew);
     float delay_diff = max(
         new_delay[RiseFall::riseIndex()] - old_delay[RiseFall::riseIndex()],
         new_delay[RiseFall::fallIndex()] - old_delay[RiseFall::fallIndex()]);
 
-    float old_slack
-        = sta_->pinSlack(pin, resizer_->max_) - params.setup_slack_margin;
+    float old_slack = sta_->slack(graph_->pinDrvrVertex(pin), resizer_->max_)
+                      - params.setup_slack_margin;
     float new_slack
         = old_slack - delay_diff - delay_adjust - params.setup_slack_margin;
     if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
@@ -673,36 +550,44 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
                                   LibertyPort* drvr_port,
                                   const float load_cap,
                                   const float prev_drive,
-                                  const DcalcAnalysisPt* dcalc_ap)
+                                  const Scene* scene,
+                                  const MinMax* min_max)
 {
-  const int lib_ap = dcalc_ap->libertyIndex();
+  const int lib_ap = scene->libertyIndex(min_max);
   LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
-    sort(swappable_cells,
-         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
-           LibertyPort* port1
-               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           LibertyPort* port2
-               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           const float drive1 = port1->driveResistance();
-           const float drive2 = port2->driveResistance();
-           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-           const float capacitance1 = port1->capacitance();
-           const float capacitance2 = port2->capacitance();
-           return std::tie(drive2, intrinsic1, capacitance1)
-                  < std::tie(drive1, intrinsic2, capacitance2);
-         });
-    const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
-    const float delay
-        = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
-          + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+    sort(
+        swappable_cells,
+        [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
+          const LibertyPort* port1 = static_cast<const LibertyPort*>(
+                                         cell1->findLibertyPort(drvr_port_name))
+                                         ->scenePort(lib_ap);
+          const LibertyPort* port2 = static_cast<const LibertyPort*>(
+                                         cell2->findLibertyPort(drvr_port_name))
+                                         ->scenePort(lib_ap);
+          const float drive1 = port1->driveResistance();
+          const float drive2 = port2->driveResistance();
+          const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+          const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+          const float capacitance1 = port1->capacitance();
+          const float capacitance2 = port2->capacitance();
+          return std::tie(drive2, intrinsic1, capacitance1)
+                 < std::tie(drive1, intrinsic2, capacitance2);
+        });
+    const float drive = static_cast<const LibertyPort*>(drvr_port)
+                            ->scenePort(lib_ap)
+                            ->driveResistance();
+    const float delay = resizer_->gateDelay(drvr_port, load_cap, scene, min_max)
+                        + prev_drive
+                              * static_cast<const LibertyPort*>(in_port)
+                                    ->scenePort(lib_ap)
+                                    ->capacitance();
 
     for (LibertyCell* swappable : swappable_cells) {
-      LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
+      LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
       LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
       LibertyPort* swappable_input
@@ -710,7 +595,7 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
       const float swappable_drive = swappable_drvr->driveResistance();
       // Include delay of previous driver into swappable gate.
       const float swappable_delay
-          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+          = resizer_->gateDelay(swappable_drvr, load_cap, scene, min_max)
             + prev_drive * swappable_input->capacitance();
       if (swappable_drive < drive && swappable_delay < delay) {
         return swappable;
@@ -824,17 +709,17 @@ float BaseMove::getInputPinCapacitance(Pin* pin, const LibertyCell* cell)
 bool BaseMove::checkMaxCapOK(const Pin* drvr_pin, float cap_delta)
 {
   float cap, max_cap, cap_slack;
-  const sta::Corner* corner;
+  const Scene* corner;
   const RiseFall* tr;
   sta_->checkCapacitance(drvr_pin,
-                         nullptr /* corner */,
+                         sta_->scenes(),
                          resizer_->max_,
                          // return values
-                         corner,
-                         tr,
                          cap,
                          max_cap,
-                         cap_slack);
+                         cap_slack,
+                         tr,
+                         corner);
 
   if (max_cap > 0.0 && corner) {
     float new_cap = cap + cap_delta;
@@ -858,7 +743,7 @@ Slack BaseMove::getWorstInputSlack(Instance* inst)
       Vertex* vertex = graph_->pinDrvrVertex(pin);
       if (vertex) {
         worst_slack
-            = std::min(worst_slack, sta_->vertexSlack(vertex, resizer_->max_));
+            = std::min(worst_slack, sta_->slack(vertex, resizer_->max_));
       }
     }
   }
@@ -878,7 +763,7 @@ Slack BaseMove::getWorstOutputSlack(Instance* inst)
       Vertex* vertex = graph_->pinLoadVertex(inst_pin);
       if (vertex) {
         worst_slack
-            = std::min(worst_slack, sta_->vertexSlack(vertex, resizer_->max_));
+            = std::min(worst_slack, sta_->slack(vertex, resizer_->max_));
       }
     }
   }
@@ -970,18 +855,15 @@ bool BaseMove::checkMaxSlewViolation(const Pin* output_pin,
                                      LibertyPort* output_port,
                                      float output_slew_factor,
                                      float output_cap,
-                                     const DcalcAnalysisPt* dcalc_ap)
+                                     const Scene* scene)
 {
   float output_res = output_port->driveResistance();
   float output_slew = output_slew_factor * output_res * output_cap;
   float max_slew;
   bool slew_limit_exists;
 
-  sta_->findSlewLimit(output_port,
-                      dcalc_ap->corner(),
-                      resizer_->max_,
-                      max_slew,
-                      slew_limit_exists);
+  sta_->findSlewLimit(
+      output_port, scene, resizer_->max_, max_slew, slew_limit_exists);
 
   if (output_slew > max_slew) {
     debugPrint(logger_,
@@ -1009,7 +891,10 @@ float BaseMove::computeElmoreSlewFactor(const Pin* output_pin,
   Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
 
   // Get the output slew
-  const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
+  const Slew output_slew = sta_->slew(output_vertex,
+                                      sta::RiseFallBoth::riseFall(),
+                                      sta_->scenes(),
+                                      resizer_->max_);
 
   // Get the output resistance
   float output_res = output_port->driveResistance();

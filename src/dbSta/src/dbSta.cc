@@ -38,12 +38,12 @@
 #include "odb/dbTypes.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/EquivCells.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
@@ -334,18 +334,19 @@ void dbSta::postReadDb(odb::dbDatabase* db)
   }
 }
 
-Slack dbSta::netSlack(const odb::dbNet* db_net, const MinMax* min_max)
+Slack dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
-  return netSlack(net, min_max);
+  return slack(net, min_max);
 }
 
 std::set<odb::dbNet*> dbSta::findClkNets()
 {
-  ensureClkNetwork();
+  sta::Mode* mode = cmdMode();
+  ensureClkNetwork(mode);
   std::set<odb::dbNet*> clk_nets;
-  for (Clock* clk : sdc_->clks()) {
-    const PinSet* clk_pins = pins(clk);
+  for (Clock* clk : mode->sdc()->clocks()) {
+    const PinSet* clk_pins = pins(clk, mode);
     if (clk_pins) {
       for (const Pin* pin : *clk_pins) {
         odb::dbNet* db_net = nullptr;
@@ -362,9 +363,10 @@ std::set<odb::dbNet*> dbSta::findClkNets()
 
 std::set<odb::dbNet*> dbSta::findClkNets(const Clock* clk)
 {
-  ensureClkNetwork();
+  sta::Mode* mode = cmdMode();
+  ensureClkNetwork(mode);
   std::set<odb::dbNet*> clk_nets;
-  const PinSet* clk_pins = pins(clk);
+  const PinSet* clk_pins = pins(clk, mode);
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
       odb::dbNet* db_net = nullptr;
@@ -710,8 +712,8 @@ void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
   utl::Histogram<float> histogram(logger_);
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
-    float slack = sta_->vertexSlack(vertex, min_max);
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    float slack = sta_->slack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       histogram.addData(time_unit->staToUser(slack));
     }
@@ -728,7 +730,7 @@ void dbSta::reportLogicDepthHistogram(int num_bins,
   utl::Histogram<int> histogram(logger_);
 
   sta_->worstSlack(MinMax::max());  // Update timing.
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
+  for (sta::Vertex* vertex : sta_->endpoints()) {
     int path_length = 0;
     Path* path = sta_->vertexWorstSlackPath(vertex, MinMax::max());
     odb::dbInst* prev_inst
@@ -1267,7 +1269,7 @@ void dbStaCbk::inDbBTermSetSigType(odb::dbBTerm* bterm,
 {
   // sta can't handle such changes, see OpenROAD#6025, so just reset the whole
   // thing.
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
   // The above is insufficient, see OpenROAD#6089, clear the vertex id as a
   // workaround.
   bterm->staSetVertexId(object_id_null);
@@ -1364,7 +1366,8 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
           continue;
         }
         Pin* pin = db_network_->dbToSta(iterm);
-        float slack = pinSlack(pin, min_max);
+        float slack = this->slack(
+            pin, sta::RiseFallBoth::riseFall(), scenes(), min_max);
         float arrival = 0.0;
         float required = 0.0;
 
@@ -1375,17 +1378,17 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
         }
         if (vertex) {
           float min_s = 1e30;
-          for (Corner* corner : *corners()) {
-            PathAnalysisPt* path_ap = corner->findPathAnalysisPt(min_max);
-            if (!path_ap) {
-              continue;
-            }
+          for (Scene* corner : scenes()) {
             for (const RiseFall* rf : RiseFall::range()) {
-              float s = vertexSlack(vertex, rf, path_ap);
+              SceneSeq corner1{corner};
+              float s
+                  = this->slack(vertex, rf->asRiseFallBoth(), corner1, min_max);
               if (s < min_s) {
                 min_s = s;
-                arrival = vertexArrival(vertex, rf, path_ap);
-                required = vertexRequired(vertex, rf, path_ap);
+                arrival = this->arrival(
+                    vertex, rf->asRiseFallBoth(), corner1, min_max);
+                required = this->required(
+                    vertex, rf->asRiseFallBoth(), corner1, min_max);
               }
             }
           }
@@ -1394,21 +1397,16 @@ void dbSta::dumpModInstPinSlacks(const char* mod_inst_name,
         float cap = 0.0;
         float res = 0.0;
         Net* net = network()->net(pin);
-        if (net) {
-          Parasitics* parasitics = this->parasitics();
-          Corner* corner = corners()->findCorner(0);
-
-          if (parasitics && corner) {
-            const ParasiticAnalysisPt* ap
-                = corner->findParasiticAnalysisPt(MinMax::max());
-            if (ap) {
-              Parasitic* p = parasitics->findParasiticNetwork(net, ap);
-              if (p) {
-                cap = parasitics->capacitance(p);
-                ParasiticResistorSeq resistors = parasitics->resistors(p);
-                for (ParasiticResistor* r : resistors) {
-                  res += parasitics->value(r);
-                }
+        Scene* corner = cmdScene();
+        if (net && corner) {
+          Parasitics* parasitics = corner->parasitics(MinMax::max());
+          if (parasitics) {
+            Parasitic* p = parasitics->findParasiticNetwork(net);
+            if (p) {
+              cap = parasitics->capacitance(p);
+              ParasiticResistorSeq resistors = parasitics->resistors(p);
+              for (ParasiticResistor* r : resistors) {
+                res += parasitics->value(r);
               }
             }
           }

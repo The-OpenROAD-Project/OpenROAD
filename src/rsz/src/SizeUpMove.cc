@@ -24,7 +24,6 @@ using std::string;
 using utl::RSZ;
 
 using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
@@ -46,8 +45,8 @@ bool SizeUpMove::doMove(const Path* drvr_path,
 {
   Pin* drvr_pin = drvr_path->pin(this);
   Instance* drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
-  const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  const float load_cap = graph_delay_calc_->loadCap(
+      drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const int in_index = drvr_index - 1;
   const Path* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
@@ -69,8 +68,12 @@ bool SizeUpMove::doMove(const Path* drvr_path,
     }
 
     LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    LibertyCell* upsize
-        = upsizeCell(in_port, drvr_port, load_cap, prev_drive, dcalc_ap);
+    LibertyCell* upsize = upsizeCell(in_port,
+                                     drvr_port,
+                                     load_cap,
+                                     prev_drive,
+                                     drvr_path->scene(sta_),
+                                     drvr_path->minMax(sta_));
 
     if (upsize && !resizer_->dontTouch(drvr) && replaceCell(drvr, upsize)) {
       debugPrint(logger_,

@@ -146,5 +146,9 @@ proc check_axioms { args } {
   check_axioms_cmd
 }
 
+proc endpoint_path_count { } {
+  return [endpoint_count]
+}
+
 # namespace
 }

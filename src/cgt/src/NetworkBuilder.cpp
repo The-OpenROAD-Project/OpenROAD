@@ -7,7 +7,6 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
@@ -92,26 +91,26 @@ void NetworkBuilder::init(utl::Logger* const logger,
         if (port->direction()->isAnyInput()) {
           assert(!port->function());
         } else if (auto expr = port->function()) {
-          if (expr->op() == sta::FuncExpr::op_and) {
-            if (expr->left()->op() == sta::FuncExpr::op_port
-                && expr->right()->op() == sta::FuncExpr::op_port) {
+          if (expr->op() == sta::FuncExpr::Op::and_) {
+            if (expr->left()->op() == sta::FuncExpr::Op::port
+                && expr->right()->op() == sta::FuncExpr::Op::port) {
               and_cell_ = cell;
               and_inputs_[0] = expr->left()->port();
               and_inputs_[1] = expr->right()->port();
               and_output_ = port;
             }
           }
-          if (expr->op() == sta::FuncExpr::op_or) {
-            if (expr->left()->op() == sta::FuncExpr::op_port
-                && expr->right()->op() == sta::FuncExpr::op_port) {
+          if (expr->op() == sta::FuncExpr::Op::or_) {
+            if (expr->left()->op() == sta::FuncExpr::Op::port
+                && expr->right()->op() == sta::FuncExpr::Op::port) {
               or_cell_ = cell;
               or_inputs_[0] = expr->left()->port();
               or_inputs_[1] = expr->right()->port();
               or_output_ = port;
             }
           }
-          if (expr->op() == sta::FuncExpr::op_not) {
-            if (expr->left()->op() == sta::FuncExpr::op_port
+          if (expr->op() == sta::FuncExpr::Op::not_) {
+            if (expr->left()->op() == sta::FuncExpr::Op::port
                 && !expr->right()) {
               not_cell_ = cell;
               not_input_ = expr->left()->port();

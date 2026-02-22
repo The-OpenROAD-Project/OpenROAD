@@ -31,7 +31,6 @@
 #include "map/scl/sclCon.h"
 // clang-format on
 #include "map/scl/sclLib.h"
-#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/LeakagePower.hh"
 #include "sta/Liberty.hh"
@@ -154,24 +153,24 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
   }
 
   const sta::TableAxis* axis_1 = model->axis1();
-  sta::FloatSeq* axis1_values = axis_1->values();
-  if (!axis1_values) {
+  if (!axis_1) {
     logger_->error(utl::CUT, 15, "axis 1 null cannot create ABC table");
   }
+  const sta::FloatSeq& axis1_values = axis_1->values();
 
-  for (float axis_value : *axis1_values) {
+  for (float axis_value : axis1_values) {
     double adjusted_value = time_unit->staToUser(axis_value);
     abc::Vec_FltPush(&abc_table->vIndex0, adjusted_value);
     abc::Vec_IntPush(&abc_table->vIndex0I, abc::Scl_Flt2Int(adjusted_value));
   }
 
   const sta::TableAxis* axis_2 = model->axis2();
-  sta::FloatSeq* axis2_values = axis_2->values();
-  if (!axis2_values) {
+  if (!axis_2) {
     logger_->error(utl::CUT, 16, "axis 2 null cannot create ABC table");
   }
+  const sta::FloatSeq& axis2_values = axis_2->values();
 
-  for (float axis_value : *axis2_values) {
+  for (float axis_value : axis2_values) {
     double adjusted_value = capacitance_unit->staToUser(axis_value);
     abc::Vec_FltPush(&abc_table->vIndex1, adjusted_value);
     abc::Vec_IntPush(&abc_table->vIndex1I, abc::Scl_Flt2Int(adjusted_value));
@@ -179,14 +178,13 @@ void AbcLibraryFactory::AbcPopulateAbcSurfaceFromSta(
 
   // Vec<Vec<float> > -- 'vData[i0][i1]' gives value at '(index0[i0],
   // index1[i1])' Building the 2D table from STA to ABC's data structure.
-  for (size_t i = 0; i < axis1_values->size(); i++) {
-    abc::Vec_Flt_t* axis_1_abc_vec = abc::Vec_FltAlloc(axis1_values->size());
-    abc::Vec_Int_t* axis_1_abc_int_vec
-        = abc::Vec_IntAlloc(axis1_values->size());
+  for (size_t i = 0; i < axis1_values.size(); i++) {
+    abc::Vec_Flt_t* axis_1_abc_vec = abc::Vec_FltAlloc(axis1_values.size());
+    abc::Vec_Int_t* axis_1_abc_int_vec = abc::Vec_IntAlloc(axis1_values.size());
     abc::Vec_PtrPush(&abc_table->vData, axis_1_abc_vec);
     abc::Vec_PtrPush(&abc_table->vDataI, axis_1_abc_int_vec);
 
-    for (size_t j = 0; j < axis2_values->size(); j++) {
+    for (size_t j = 0; j < axis2_values.size(); j++) {
       float value = time_unit->staToUser(model->value(i, j, 0));
       abc::Vec_FltPush(axis_1_abc_vec, value);
       abc::Vec_IntPush(axis_1_abc_int_vec, abc::Scl_Flt2Int(value));
@@ -368,7 +366,7 @@ AbcLibraryFactory& AbcLibraryFactory::AddResizer(rsz::Resizer* resizer)
   return *this;
 }
 
-AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Corner* corner)
+AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Scene* corner)
 {
   corner_ = corner;
   return *this;
@@ -380,13 +378,13 @@ AbcLibrary AbcLibraryFactory::Build()
     logger_->error(utl::CUT, 19, "Build called with null sta library");
   }
 
-  if (db_sta_->corners()->count() > 1 && !corner_) {
+  if (db_sta_->scenes().size() > 1 && !corner_) {
     logger_->error(
         utl::CUT, 20, "More than one corner is loaded, and no corner was set");
   }
 
   if (!corner_) {
-    corner_ = db_sta_->corners()->corners()[0];
+    corner_ = db_sta_->scenes()[0];
   }
 
   // Populate units from default liberty
@@ -413,7 +411,7 @@ AbcLibrary AbcLibraryFactory::Build()
 }
 
 std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(
-    sta::Corner* corner)
+    sta::Scene* corner)
 {
   std::vector<sta::LibertyCell*> result;
   const sta::LibertySeq& libraries
@@ -489,14 +487,14 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(
 
     // These are conditional leakages. Just average them
     // since abc can only accept a single value.
-    sta::LeakagePowerSeq* leakage_powers = cell->leakagePowers();
+    const sta::LeakagePowerSeq& leakage_powers = cell->leakagePowers();
     std::optional<float> average_leakage;
-    for (sta::LeakagePower* power : *leakage_powers) {
+    for (const sta::LeakagePower& power : leakage_powers) {
       if (!average_leakage) {
-        average_leakage = power->power();
+        average_leakage = power.power();
         continue;
       }
-      average_leakage = average_leakage.value() + power->power();
+      average_leakage = average_leakage.value() + power.power();
     }
 
     bool leakage_power_exists;
@@ -509,7 +507,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(
       // We know we'll always have at least one leakage power since average
       // is present.
       abc_cell->leakage = power_unit->staToUser(average_leakage.value()
-                                                / leakage_powers->size());
+                                                / leakage_powers.size());
     } else {
       logger_->warn(utl::CUT,
                     21,

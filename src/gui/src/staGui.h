@@ -410,8 +410,8 @@ class TimingControlsDialog : public QDialog
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
-  sta::Corner* getCorner() const { return sta_->getCorner(); }
-  void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
+  sta::Scene* getScene() const { return sta_->getScene(); }
+  void setScene(sta::Scene* scene) { sta_->setScene(scene); }
 
  signals:
   void inspect(const Selected& selected);

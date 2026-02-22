@@ -5,9 +5,9 @@
 [INFO ODB-0133]     Created 103 nets and 242 connections.
 Design area 128 um^2 100% utilization.
 Removed 27 instances with constant outputs.
-Number of paths for restructure are 30
-Found 30 end points for restructure
-Found 129 pins in extracted logic.
+Number of paths for restructure are 32
+Found 32 end points for restructure
+Found 131 pins in extracted logic.
 Found 41 instances for restructuring.
 [INFO CUT-0002] Blif writer successfully dumped file with 41 instances.
 Warning: Detected 2 multi-output cells (for example, "FA_X1").

@@ -29,7 +29,6 @@
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -317,8 +316,7 @@ class TechChar
   std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   utl::Logger* logger_;
-  sta::PathAnalysisPt* charPathAnalysis_ = nullptr;
-  sta::Corner* charCorner_ = nullptr;
+  sta::Scene* charCorner_ = nullptr;
   odb::dbBlock* charBlock_ = nullptr;
   odb::dbMaster* charBuf_ = nullptr;
   odb::dbMTerm* charBufIn_ = nullptr;

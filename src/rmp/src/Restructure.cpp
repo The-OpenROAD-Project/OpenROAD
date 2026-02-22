@@ -83,14 +83,14 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::resynth(sta::Corner* corner)
+void Restructure::resynth(sta::Scene* corner)
 {
   ZeroSlackStrategy zero_slack_strategy(corner);
   zero_slack_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthAnnealing(sta::Corner* corner)
+void Restructure::resynthAnnealing(sta::Scene* corner)
 {
   AnnealingStrategy annealing_strategy(corner,
                                        slack_threshold_,
@@ -326,10 +326,10 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                unsigned max_depth)
 {
   auto sta_state = open_sta_->search();
-  sta::VertexSet* end_points = sta_state->endpoints();
-  std::size_t path_found = end_points->size();
+  sta::VertexSet& end_points = sta_state->endpoints();
+  std::size_t path_found = end_points.size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  for (auto& end_point : *end_points) {
+  for (auto& end_point : end_points) {
     if (!is_area_mode_) {
       sta::Path* path
           = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
@@ -348,7 +348,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   // unconstrained end points
   if (is_area_mode_) {
-    auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
+    auto errors = open_sta_->checkTiming(open_sta_->cmdMode(),
+                                         false /*no_input_delay*/,
                                          false /*no_output_delay*/,
                                          false /*reg_multiple_clks*/,
                                          true /*reg_no_clks*/,
@@ -448,7 +449,8 @@ void Restructure::removeConstCells()
       }
       outputs++;
       auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);
-      sta::LogicValue pinVal = open_sta_->simLogicValue(pin);
+      sta::LogicValue pinVal
+          = open_sta_->simLogicValue(pin, open_sta_->cmdMode());
       if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
         odb::dbNet* net = iterm->getNet();
         if (net) {

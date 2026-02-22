@@ -661,7 +661,10 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   }
 
   // place limits on tools with threads
-  sta_->setThreadCount(threads_);
+  // sta_->setThreadCount(threads_);
+
+  // Temporary until some issues can be resolved related to multi-mode.
+  sta_->setThreadCount(1);
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

@@ -21,6 +21,7 @@
 #include "SizeDownMove.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/SearchClass.hh"
@@ -31,8 +32,6 @@
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -51,24 +50,13 @@
 
 namespace rsz {
 
+using namespace sta;  // NOLINT
+
 using std::max;
 using std::pair;
 using std::string;
 using std::vector;
 using utl::RSZ;
-
-using sta::Edge;
-using sta::fuzzyEqual;
-using sta::fuzzyGreater;
-using sta::fuzzyGreaterEqual;
-using sta::fuzzyLess;
-using sta::InstancePinIterator;
-using sta::NetConnectedPinIterator;
-using sta::PathEndSeq;
-using sta::PathExpanded;
-using sta::Slew;
-using sta::VertexInEdgeIterator;
-using sta::VertexOutEdgeIterator;
 
 RepairSetup::RepairSetup(Resizer* resizer) : resizer_(resizer)
 {
@@ -103,7 +91,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   init();
   resizer_->rebuffer_->init();
   // IMPROVE ME: rebuffering always looks at cmd corner
-  resizer_->rebuffer_->initOnCorner(sta_->cmdCorner());
+  resizer_->rebuffer_->initOnCorner(sta_->cmdScene());
   constexpr int digits = 3;
   max_repairs_per_pass_ = max_repairs_per_pass;
   resizer_->buffer_moved_into_core_ = false;
@@ -199,15 +187,15 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   logger_->info(RSZ, 100, repair_moves);
 
   // Sort failing endpoints by slack.
-  const sta::VertexSet* endpoints = sta_->endpoints();
-  vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
+  const VertexSet& endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
   // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
   // individually control each clock domain instead of just fixating on fixing
   // one.
-  for (sta::Vertex* end : *endpoints) {
-    const sta::Slack end_slack = sta_->vertexSlack(end, max_);
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack < setup_slack_margin) {
       violating_ends.emplace_back(end, end_slack);
     }
@@ -222,8 +210,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
              1,
              "Violating endpoints {}/{} {}%",
              violating_ends.size(),
-             endpoints->size(),
-             int(violating_ends.size() / double(endpoints->size()) * 100));
+             endpoints.size(),
+             int(violating_ends.size() / double(endpoints.size()) * 100));
 
   if (!violating_ends.empty()) {
     logger_->info(RSZ,
@@ -252,9 +240,9 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                 repair_tns_end_percent * 100.0);
 
   // Ensure that max cap and max fanout violations don't get worse
-  sta_->checkCapacitanceLimitPreamble();
-  sta_->checkSlewLimitPreamble();
-  sta_->checkFanoutLimitPreamble();
+  sta_->checkCapacitancesPreamble(sta_->scenes());
+  sta_->checkSlewsPreamble();
+  sta_->checkFanoutPreamble();
 
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int opto_iteration = 0;
@@ -268,10 +256,10 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   for (const auto& end_original_slack : violating_ends) {
     fallback_ = false;
-    sta::Vertex* end = end_original_slack.first;
-    sta::Slack end_slack = sta_->vertexSlack(end, max_);
-    sta::Slack worst_slack;
-    sta::Vertex* worst_vertex;
+    Vertex* end = end_original_slack.first;
+    Slack end_slack = sta_->slack(end, max_);
+    Slack worst_slack;
+    Vertex* worst_vertex;
     sta_->worstSlack(max_, worst_slack, worst_vertex);
     debugPrint(logger_,
                RSZ,
@@ -391,7 +379,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       }
       estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
-      end_slack = sta_->vertexSlack(end, max_);
+      end_slack = sta_->slack(end, max_);
       sta_->worstSlack(max_, worst_slack, worst_vertex);
       const bool better
           = (fuzzyGreater(worst_slack, prev_worst_slack)
@@ -590,9 +578,9 @@ void RepairSetup::repairSetup(const sta::Pin* end_pin)
   init();
   max_repairs_per_pass_ = 1;
 
-  sta::Vertex* vertex = graph_->pinLoadVertex(end_pin);
-  const sta::Slack slack = sta_->vertexSlack(vertex, max_);
-  sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
+  Vertex* vertex = graph_->pinLoadVertex(end_pin);
+  const Slack slack = sta_->slack(vertex, max_);
+  Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
   move_sequence_.clear();
   move_sequence_ = {resizer_->unbuffer_move_.get(),
@@ -678,8 +666,12 @@ bool RepairSetup::repairPath(sta::Path* path,
     const int path_length = expanded.size();
     vector<pair<int, sta::Delay>> load_delays;
     const int start_index = expanded.startIndex();
-    const sta::DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
-    const int lib_ap = dcalc_ap->libertyIndex();
+    const Scene* corner = path->scene(sta_);
+    if (path->minMax(sta_) != resizer_->max_) {
+      logger_->error(RSZ, 500, "repairSetup expects max delay path");
+      return false;
+    }
+    const int lib_ap = corner->libertyIndex(resizer_->max_);
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
       const sta::Path* path = expanded.path(i);
@@ -687,11 +679,12 @@ bool RepairSetup::repairPath(sta::Path* path,
       const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
-        const sta::TimingArc* prev_arc = path->prevArc(sta_);
-        const sta::TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
+        const TimingArc* prev_arc = path->prevArc(sta_);
+        const TimingArc* corner_arc = prev_arc->sceneArc(lib_ap);
         Edge* prev_edge = path->prevEdge(sta_);
-        const sta::Delay load_delay
-            = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
+        const Delay load_delay
+            = graph_->arcDelay(
+                  prev_edge, prev_arc, corner->dcalcAnalysisPtIndex(max_))
               // Remove intrinsic delay to find load dependent delay.
               - corner_arc->intrinsicDelay();
         load_delays.emplace_back(i, load_delay);
@@ -908,10 +901,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
   }
 
   // Sort remaining failing endpoints
-  const sta::VertexSet* endpoints = sta_->endpoints();
-  vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
-  for (sta::Vertex* end : *endpoints) {
-    const sta::Slack end_slack = sta_->vertexSlack(end, max_);
+  const VertexSet& endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack < params.setup_slack_margin) {
       violating_ends.emplace_back(end, end_slack);
     }
@@ -960,10 +953,10 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
     }
 
     fallback_ = false;
-    sta::Vertex* end = end_original_slack.first;
-    sta::Slack end_slack = sta_->vertexSlack(end, max_);
-    sta::Slack worst_slack;
-    sta::Vertex* worst_vertex;
+    Vertex* end = end_original_slack.first;
+    Slack end_slack = sta_->slack(end, max_);
+    Slack worst_slack;
+    Vertex* worst_vertex;
     sta_->worstSlack(max_, worst_slack, worst_vertex);
     end_index++;
     if (end_index > max_end_count) {
@@ -1018,7 +1011,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
       }
       estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
-      end_slack = sta_->vertexSlack(end, max_);
+      end_slack = sta_->slack(end, max_);
       sta_->worstSlack(max_, curr_worst_slack, worst_vertex);
       curr_tns = sta_->totalNegativeSlack(max_);
 
@@ -1086,10 +1079,10 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
   bool changed = false;
 
   // Start with sorted violating endpoints
-  const sta::VertexSet* endpoints = sta_->endpoints();
-  vector<pair<sta::Vertex*, sta::Slack>> violating_ends;
-  for (sta::Vertex* end : *endpoints) {
-    const sta::Slack end_slack = sta_->vertexSlack(end, max_);
+  const VertexSet& endpoints = sta_->endpoints();
+  vector<pair<Vertex*, Slack>> violating_ends;
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack < params.setup_slack_margin) {
       violating_ends.emplace_back(end, end_slack);
     }
@@ -1137,8 +1130,8 @@ bool RepairSetup::swapVTCritCells(const OptoParams& params, int& num_viols)
     estimate_parasitics_->updateParasitics();
     sta_->findRequireds();
     violating_ends.clear();
-    for (sta::Vertex* end : *endpoints) {
-      const sta::Slack end_slack = sta_->vertexSlack(end, max_);
+    for (Vertex* end : endpoints) {
+      const Slack end_slack = sta_->slack(end, max_);
       if (end_slack < params.setup_slack_margin) {
         violating_ends.emplace_back(end, end_slack);
       }
@@ -1218,7 +1211,7 @@ void RepairSetup::traverseFaninCone(
 
       // Only traverse if we haven't visited and the fanin has negative slack
       if (visited.find(fanin_vertex) == visited.end()) {
-        const sta::Slack fanin_slack = sta_->vertexSlack(fanin_vertex, max_);
+        const Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (fanin_slack < params.setup_slack_margin) {
           queue.push(fanin_vertex);
           visited.insert(fanin_vertex);
@@ -1252,7 +1245,7 @@ sta::Slack RepairSetup::getInstanceSlack(sta::Instance* inst)
     if (network_->direction(pin)->isAnyOutput()) {
       sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
       if (vertex) {
-        const sta::Slack pin_slack = sta_->vertexSlack(vertex, max_);
+        const Slack pin_slack = sta_->slack(vertex, max_);
         worst_slack = std::min(worst_slack, pin_slack);
       }
     }

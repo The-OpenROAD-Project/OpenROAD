@@ -27,11 +27,11 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringSeq.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -447,7 +447,7 @@ void TechChar::reportSegment(unsigned key) const
 void TechChar::initClockLayerResCap(float dbUnitsPerMicron)
 {
   // Clock RC should be set with set_wire_rc -clock
-  sta::Corner* corner = openSta_->cmdCorner();
+  sta::Scene* corner = openSta_->cmdScene();
 
   // convert from per meter to per dbu
   capPerDBU_ = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
@@ -807,24 +807,24 @@ void TechChar::collectSlewsLoadsFromTableAxis(sta::LibertyCell* libCell,
         = dynamic_cast<sta::GateTableModel*>(model);
     if (gateModel) {
       const sta::TableModel* delayModel = gateModel->delayModel();
-      sta::FloatSeq* slews = nullptr;
-      sta::FloatSeq* loads = nullptr;
+      const sta::FloatSeq* slews = nullptr;
+      const sta::FloatSeq* loads = nullptr;
       const sta::TableAxis* axis1 = delayModel->axis1();
       if (axis1) {
         if (axis1->variable() == sta::TableAxisVariable::input_net_transition) {
-          slews = axis1->values();
+          slews = &axis1->values();
         } else if (axis1->variable()
                    == sta::TableAxisVariable::total_output_net_capacitance) {
-          loads = axis1->values();
+          loads = &axis1->values();
         }
       }
       const sta::TableAxis* axis2 = delayModel->axis2();
       if (axis2) {
         if (axis2->variable() == sta::TableAxisVariable::input_net_transition) {
-          slews = axis2->values();
+          slews = &axis2->values();
         } else if (axis2->variable()
                    == sta::TableAxisVariable::total_output_net_capacitance) {
-          loads = axis2->values();
+          loads = &axis2->values();
         }
       }
       if (slews) {
@@ -1085,12 +1085,17 @@ void TechChar::createStaInstance()
   // characterization. Creates the new instance based on the charcterization
   // block.
   openStaChar_ = openSta_->makeBlockSta(charBlock_);
+
+  // Create the same scenes in the same order, this will make liberty indices
+  // line up and allow sharing the library between the two dbSta instances
+  sta::StringSeq scene_names;
+  for (auto scene : openSta_->scenes()) {
+    scene_names.push_back(scene->name().c_str());
+  }
+  openStaChar_->makeScenes(&scene_names);
+
   // Gets the corner and other analysis attributes from the new instance.
-  charCorner_ = openStaChar_->cmdCorner();
-  sta::PathAPIndex path_ap_index
-      = charCorner_->findPathAnalysisPt(sta::MinMax::max())->index();
-  sta::Corners* corners = openStaChar_->search()->corners();
-  charPathAnalysis_ = corners->findPathAnalysisPt(path_ap_index);
+  charCorner_ = openStaChar_->cmdScene();
 }
 
 void TechChar::setParasitics(
@@ -1212,14 +1217,15 @@ TechChar::ResultData TechChar::computeTopologyResults(
       = std::round(incap / charCapStepSize_) * charCapStepSize_;
   results.totalcap = totalcap;
   // Computations for delay.
-  const float pinArrival = openStaChar_->vertexArrival(
-      outPinVert, sta::RiseFall::fall(), charPathAnalysis_);
+  sta::SceneSeq charCorner1({charCorner_});
+  const float pinArrival = openStaChar_->arrival(
+      outPinVert, sta::RiseFallBoth::fall(), charCorner1, sta::MinMax::max());
   results.pinArrival = pinArrival;
   // Computations for output slew. Avg of rise and fall slew.
-  const float pinRise = openStaChar_->vertexSlew(
-      outPinVert, sta::RiseFall::rise(), sta::MinMax::max());
-  const float pinFall = openStaChar_->vertexSlew(
-      outPinVert, sta::RiseFall::fall(), sta::MinMax::max());
+  const float pinRise = openStaChar_->slew(
+      outPinVert, sta::RiseFallBoth::rise(), charCorner1, sta::MinMax::max());
+  const float pinFall = openStaChar_->slew(
+      outPinVert, sta::RiseFallBoth::fall(), charCorner1, sta::MinMax::max());
   const float pinSlew = std::round((pinRise + pinFall) / 2 / charSlewStepSize_)
                         * charSlewStepSize_;
   results.pinSlew = pinSlew;
