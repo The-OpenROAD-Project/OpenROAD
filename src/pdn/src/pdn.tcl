@@ -71,12 +71,14 @@ sta::define_cmd_args "set_voltage_domain" {-name domain_name \
                                            -power power_net_name \
                                            -ground ground_net_name \
                                            [-region region_name] \
-                                           [-secondary_power secondary_power_net_name] \
+                                           [-secondary_power list_of_secondary_power_nets] \
+                                           [-secondary_ground list_of_secondary_ground_nets] \
                                            [-switched_power switched_power_net_name]}
 
 proc set_voltage_domain { args } {
   sta::parse_key_args "set_voltage_domain" args \
-    keys {-name -region -power -ground -secondary_power -switched_power} flags {}
+    keys {-name -region -power -ground -secondary_power -secondary_ground \
+          -switched_power} flags {}
 
   sta::check_argc_eq0 "set_voltage_domain" $args
 
@@ -115,14 +117,29 @@ proc set_voltage_domain { args } {
     }
   }
 
-  set secondary {}
+  # Collect secondary power nets (placed between primary power and ground).
+  set secondary_power {}
   if { [info exists keys(-secondary_power)] } {
     foreach snet $keys(-secondary_power) {
       set db_net [[ord::get_db_block] findNet $snet]
       if { $db_net == "NULL" } {
         utl::error PDN 1006 "Unable to find secondary power net: $snet"
       } else {
-        lappend secondary $db_net
+        lappend secondary_power $db_net
+      }
+    }
+  }
+
+  # Collect secondary ground nets (placed between secondary power and primary
+  # ground).
+  set secondary_ground {}
+  if { [info exists keys(-secondary_ground)] } {
+    foreach snet $keys(-secondary_ground) {
+      set db_net [[ord::get_db_block] findNet $snet]
+      if { $db_net == "NULL" } {
+        utl::error PDN 1007 "Unable to find secondary ground net: $snet"
+      } else {
+        lappend secondary_ground $db_net
       }
     }
   }
@@ -148,9 +165,11 @@ proc set_voltage_domain { args } {
     if { [info exists keys(-name)] && [pdn::modify_voltage_domain_name $keys(-name)] != "Core" } {
       utl::warn PDN 1042 "Core voltage domain will be named \"Core\"."
     }
-    pdn::set_core_domain $pwr $switched_power $gnd $secondary
+    pdn::set_core_domain $pwr $switched_power $gnd $secondary_power \
+        $secondary_ground
   } else {
-    pdn::make_region_domain $name $pwr $switched_power $gnd $secondary $region
+    pdn::make_region_domain $name $pwr $switched_power $gnd $secondary_power \
+        $secondary_ground $region
   }
 }
 
