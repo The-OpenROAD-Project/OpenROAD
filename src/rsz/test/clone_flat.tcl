@@ -9,8 +9,7 @@ write_clone_test_def $def_filename NAND2_X4 150
 
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_verilog clone_flat.v
-link_design hi_fanout
+read_def $def_filename
 
 create_clock -period 0.1 clk1
 set_driving_cell -lib_cell BUF_X1 [all_inputs]
