@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -1008,6 +1009,32 @@ void NesterovPlace::reportResults(int nesterov_iter,
              placement_diff);
 }
 
+bool NesterovPlace::shouldResetMomentumTerm(int nesterov_iter)
+{
+  if (nesterov_iter <= 10) {
+    return false;
+  }
+  // Sum the stopping condition heurisitics across every region.
+  float global_dot_product = std::accumulate(
+      nbVec_.begin(), nbVec_.end(), 0.0f, [](float a, auto& nb) {
+        return a + nb->getGradientMomentumStoppingHeuristic();
+      });
+  // If this value is greater than zero we should reset. See paper
+  // https://arxiv.org/abs/1204.3982 for why.
+  if (global_dot_product > 0.0) {
+    debugPrint(log_,
+               GPL,
+               "gradient_stop",
+               1,
+               "Momentum restart triggered at iter {}, gradient dot "
+               "product: {}",
+               nesterov_iter,
+               global_dot_product);
+    return true;
+  }
+  return false;
+}
+
 int NesterovPlace::doNesterovPlace(int start_iter)
 {
   // if replace diverged in init() function, Nesterov must be skipped.
@@ -1067,14 +1094,20 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int nesterov_iter = start_iter;
   for (; nesterov_iter < npVars_.maxNesterovIter; nesterov_iter++) {
+    bool reset_momentum = shouldResetMomentumTerm(nesterov_iter);
+
     const float prevA = curA;
 
-    // here, prevA is a_(k), curA is a_(k+1)
-    // See, the ePlace-MS paper's Algorithm 1
-    curA = (1.0 + sqrt(4.0 * prevA * prevA + 1.0)) * 0.5;
+    if (reset_momentum) {
+      curA = 1.0;  // Resetting alpha to 1.0 makes the next coeff 0.0
+    } else {
+      // here, prevA is a_(k), curA is a_(k+1)
+      // See, the ePlace-MS paper's Algorithm 1
+      curA = (1.0 + sqrt(4.0 * prevA * prevA + 1.0)) * 0.5;
+    }
 
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
-    const float coeff = (prevA - 1.0) / curA;
+    const float coeff = reset_momentum ? 0.0 : (prevA - 1.0) / curA;
 
     doBackTracking(coeff);
 
