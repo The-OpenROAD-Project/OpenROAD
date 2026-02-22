@@ -37,6 +37,7 @@
 #include "odb/geom.h"
 #include "options.h"
 #include "renderThread.h"
+#include "ruler.h"
 #include "search.h"
 
 namespace utl {

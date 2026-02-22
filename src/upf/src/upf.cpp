@@ -3,6 +3,7 @@
 
 #include "upf/upf.h"
 
+#include <cctype>
 #include <cmath>
 #include <limits>
 #include <map>

@@ -20,6 +20,7 @@
 
 #include "CtsOptions.h"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "rsz/Resizer.hh"

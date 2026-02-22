@@ -4,6 +4,7 @@
 #include "db_sta/SpefWriter.hh"
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <iostream>
 #include <map>

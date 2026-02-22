@@ -20,6 +20,7 @@
 #include "Rebuffer.hh"
 #include "SizeDownMove.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"

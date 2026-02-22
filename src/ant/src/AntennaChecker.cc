@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AntennaCheckerImpl.hh"
+#include "PinType.hh"
 #include "Polygon.hh"
 #include "WireBuilder.hh"
 #include "absl/synchronization/mutex.h"

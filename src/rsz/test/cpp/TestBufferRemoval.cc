@@ -30,6 +30,7 @@
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "tst/fixture.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"

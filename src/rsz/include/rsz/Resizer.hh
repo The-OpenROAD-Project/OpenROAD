@@ -22,6 +22,7 @@
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
+#include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
