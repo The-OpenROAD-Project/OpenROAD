@@ -121,7 +121,7 @@ set_layer_rc_cmd(odb::dbTechLayer *layer,
                  float res,
                  float cap)
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setLayerRC(layer, corner, res, cap);
 }
 
@@ -143,7 +143,7 @@ double
 layer_resistance(odb::dbTechLayer *layer,
                  const Corner *corner)
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   double res, cap;
   estimate_parasitics->layerRC(layer, corner, res, cap);
   return res;
@@ -153,7 +153,7 @@ double
 layer_capacitance(odb::dbTechLayer *layer,
                   const Corner *corner)
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   double res, cap;
   estimate_parasitics->layerRC(layer, corner, res, cap);
   return cap;
@@ -165,7 +165,7 @@ set_h_wire_signal_rc_cmd(const Corner *corner,
                          float cap)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setHWireSignalRC(corner, res, cap);
 }
 
@@ -175,7 +175,7 @@ set_v_wire_signal_rc_cmd(const Corner *corner,
                          float cap)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setVWireSignalRC(corner, res, cap);
 }
 
@@ -185,7 +185,7 @@ set_h_wire_clk_rc_cmd(const Corner *corner,
                       float cap)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setHWireClkRC(corner, res, cap);
 }
 
@@ -195,7 +195,7 @@ set_v_wire_clk_rc_cmd(const Corner *corner,
                       float cap)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setVWireClkRC(corner, res, cap);
 }
 
@@ -204,7 +204,7 @@ double
 wire_signal_resistance(const Corner *corner)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   return estimate_parasitics->wireSignalResistance(corner);
 }
 
@@ -212,7 +212,7 @@ double
 wire_clk_resistance(const Corner *corner)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   return estimate_parasitics->wireClkResistance(corner);
 }
 
@@ -221,7 +221,7 @@ double
 wire_signal_capacitance(const Corner *corner)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   return estimate_parasitics->wireSignalCapacitance(corner);
 }
 
@@ -229,7 +229,7 @@ double
 wire_clk_capacitance(const Corner *corner)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   return estimate_parasitics->wireClkCapacitance(corner);
 }
 
@@ -238,7 +238,7 @@ void
 estimate_parasitics_cmd(ParasiticsSrc src, const char* path)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   std::map<Corner*, std::ostream*> spef_files;
   if (path != nullptr && std::strlen(path) > 0) {
     std::string file_path(path);
@@ -284,29 +284,72 @@ void
 estimate_parasitic_net(const Net *net)
 {
   ensureLinked();
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->estimateWireParasitic(net);
 }
 
 bool
 have_estimated_parasitics()
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   return estimate_parasitics->haveEstimatedParasitics();
 }
 
 void
 set_parasitics_src(ParasiticsSrc src)
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->setParasiticsSrc(src);
 }
 
 void
 highlight_steiner_tree(const Pin *drvr_pin)
 {
-  est::EstimateParasitics *estimate_parasitics = getEstimateParasitics();
+  EstimateParasitics *estimate_parasitics = getEstimateParasitics();
   estimate_parasitics->highlightSteiner(drvr_pin);
+}
+
+void
+report_net_parasitics(Net *net)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = estimate->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    estimate->parasitics()->report(parasitic);
+  }
+}
+
+float
+sum_parasitic_network_resist(Net *net)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  Corner *corner = sta::Sta::sta()->cmdCorner();
+  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
+  auto parasitic = estimate->parasitics()->findParasiticNetwork(net, ap);
+  if (parasitic) {
+    float ret = 0.0;
+    for (auto resist : estimate->parasitics()->resistors(parasitic)) {
+      ret += estimate->parasitics()->value(resist);
+    }
+    return ret;
+  } else {
+    return 0.0f;
+  }
+}
+
+std::string
+sum_point_to_point_resist(Pin *point1, Pin *point2)
+{
+  EstimateParasitics *estimate = getEstimateParasitics();
+  std::optional<float> result = estimate->sumPointToPointResist(point1, point2);
+  if (result) {
+    return std::to_string(result.value());
+  } else {
+    // signal that parasitics are missing
+    return "";
+  }
 }
 
 } // namespace
