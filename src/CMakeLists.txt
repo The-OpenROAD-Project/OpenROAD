@@ -36,6 +36,10 @@ set(OPENROAD_SOURCE
   Main.cc
   )
 
+if(ENABLE_SURROGATE)
+  list(APPEND OPENROAD_SOURCE Surrogate.cc)
+endif()
+
 if(USE_SYSTEM_BOOST)
   set(Boost_USE_STATIC_LIBS OFF)
 else()
@@ -293,6 +297,10 @@ add_subdirectory(est)
 add_executable(openroad
   ${OPENROAD_SOURCE}
 )
+
+if(ENABLE_SURROGATE)
+  target_compile_definitions(openroad PRIVATE ENABLE_SURROGATE)
+endif()
 
 set_target_properties(openroad PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
