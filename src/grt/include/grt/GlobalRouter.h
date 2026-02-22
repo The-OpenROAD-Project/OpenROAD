@@ -349,7 +349,7 @@ class GlobalRouter
                            int track_count,
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
-  void initNetlist(std::vector<Net*>& nets);
+  void initNetlist(std::vector<Net*>& nets, bool incremental = false);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -373,7 +373,7 @@ class GlobalRouter
   void savePositionWithReducedResources(const odb::Rect& rect,
                                         odb::dbTechLayer* tech_layer,
                                         odb::dbNet* db_net);
-  void addResourcesForPinAccess();
+  void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
@@ -527,6 +527,7 @@ class GlobalRouter
   bool is_congested_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
+  bool has_macros_or_pads_{false};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
