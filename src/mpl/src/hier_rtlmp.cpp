@@ -97,9 +97,9 @@ void HierRTLMP::setNotchWeight(float weight)
   cluster_placement_weights_.notch = weight;
 }
 
-void HierRTLMP::setMacroBlockageWeight(float weight)
+void HierRTLMP::setSoftBlockageWeight(float weight)
 {
-  cluster_placement_weights_.macro_blockage = weight;
+  cluster_placement_weights_.soft_blockage = weight;
 }
 
 void HierRTLMP::setGlobalFence(odb::Rect global_fence)
@@ -287,7 +287,7 @@ void HierRTLMP::runHierarchicalMacroPlacement()
     graphics_->startFine();
   }
 
-  adjustMacroBlockageWeight();
+  adjustSoftBlockageWeight();
   tiny_cluster_max_number_of_std_cells_
       = computeTinyClusterMaxNumberOfStdCells();
   placeChildren(tree_->root.get());
@@ -322,7 +322,7 @@ void HierRTLMP::resetSAParameters()
 
   cluster_placement_weights_.boundary = 0.0;
   cluster_placement_weights_.notch = 0.0;
-  cluster_placement_weights_.macro_blockage = 0.0;
+  cluster_placement_weights_.soft_blockage = 0.0;
 }
 
 void HierRTLMP::runCoarseShaping()
@@ -1164,22 +1164,22 @@ void HierRTLMP::setMacroClustersShapes(
 }
 
 // Recommendation from the original implementation:
-// For single level, increase macro blockage weight to
+// For single level, increase soft blockage weight to
 // half of the outline weight.
-void HierRTLMP::adjustMacroBlockageWeight()
+void HierRTLMP::adjustSoftBlockageWeight()
 {
   if (tree_->max_level == 1) {
-    float new_macro_blockage_weight = placement_core_weights_.outline / 2.0;
+    float new_soft_blockage_weight = placement_core_weights_.outline / 2.0;
     debugPrint(logger_,
                MPL,
                "hierarchical_macro_placement",
                1,
-               "Tree max level is {}, Changing macro blockage weight from {} "
+               "Tree max level is {}, Changing soft blockage weight from {} "
                "to {} (half of the outline weight)",
                tree_->max_level,
-               cluster_placement_weights_.macro_blockage,
-               new_macro_blockage_weight);
-    cluster_placement_weights_.macro_blockage = new_macro_blockage_weight;
+               cluster_placement_weights_.soft_blockage,
+               new_soft_blockage_weight);
+    cluster_placement_weights_.soft_blockage = new_soft_blockage_weight;
   }
 }
 
@@ -1220,9 +1220,15 @@ void HierRTLMP::placeChildren(Cluster* parent)
   std::map<int, odb::Rect> guides;
   std::vector<SoftMacro> macros;
 
-  std::vector<odb::Rect> blockages = findBlockagesWithinOutline(outline);
-  eliminateOverlaps(blockages);
-  createSoftMacrosForBlockages(blockages, macros);
+  RectList hard_blockages
+      = findOffsetIntersections(placement_blockages_, outline);
+  eliminateOverlaps(hard_blockages);
+  createSoftMacrosForBlockages(hard_blockages, macros);
+
+  RectList soft_blockages = findOffsetIntersections(io_blockages_, outline);
+  if (graphics_) {
+    graphics_->setSoftBlockages(soft_blockages);
+  }
 
   // We store the io clusters to push them into the macros' vector
   // only after it is already populated with the clusters we're trying to
@@ -1381,9 +1387,11 @@ void HierRTLMP::placeChildren(Cluster* parent)
       sa->setFences(fences);
       sa->setGuides(guides);
       sa->setNets(nets);
+      sa->setSoftBlockages(soft_blockages);
       if (single_array_single_std_cell_cluster) {
         sa->forceCentralization();
       }
+
       sa_batch.push_back(std::move(sa));
     }
 
@@ -1483,39 +1491,19 @@ std::vector<float> HierRTLMP::computeUtilizationList(
   return utilization_list;
 }
 
-// Find the area of blockages that are inside the outline.
-std::vector<odb::Rect> HierRTLMP::findBlockagesWithinOutline(
-    const odb::Rect& outline) const
+RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,
+                                            const odb::Rect& outline) const
 {
-  std::vector<odb::Rect> blockages_within_outline;
+  RectList intersections;
 
-  for (auto& blockage : placement_blockages_) {
-    getBlockageRegionWithinOutline(blockages_within_outline, blockage, outline);
+  for (const odb::Rect& candidate_blockage : candidate_blockages) {
+    odb::Rect intersection;
+    candidate_blockage.intersection(outline, intersection);
+    intersection.moveDelta(-outline.xMin(), -outline.yMin());
+    intersections.push_back(intersection);
   }
 
-  for (auto& blockage : io_blockages_) {
-    getBlockageRegionWithinOutline(blockages_within_outline, blockage, outline);
-  }
-
-  return blockages_within_outline;
-}
-
-void HierRTLMP::getBlockageRegionWithinOutline(
-    std::vector<odb::Rect>& blockages_within_outline,
-    const odb::Rect& blockage,
-    const odb::Rect& outline) const
-{
-  const int b_lx = std::max(outline.xMin(), blockage.xMin());
-  const int b_ly = std::max(outline.yMin(), blockage.yMin());
-  const int b_ux = std::min(outline.xMax(), blockage.xMax());
-  const int b_uy = std::min(outline.yMax(), blockage.yMax());
-
-  if ((b_ux - b_lx > 0) && (b_uy - b_ly > 0)) {
-    blockages_within_outline.emplace_back(b_lx - outline.xMin(),
-                                          b_ly - outline.yMin(),
-                                          b_ux - outline.xMin(),
-                                          b_uy - outline.yMin());
-  }
+  return intersections;
 }
 
 void HierRTLMP::eliminateOverlaps(std::vector<odb::Rect>& blockages) const

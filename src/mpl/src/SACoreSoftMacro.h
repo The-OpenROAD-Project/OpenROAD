@@ -55,8 +55,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float getNormBoundaryPenalty() const;
   float getNotchPenalty() const;
   float getNormNotchPenalty() const;
-  float getMacroBlockagePenalty() const;
-  float getNormMacroBlockagePenalty() const;
+  float getSoftBlockagePenalty() const;
+  float getNormSoftBlockagePenalty() const;
 
   void printResults() const;  // just for test
 
@@ -65,7 +65,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
-  void addBlockages(const std::vector<odb::Rect>& blockages);
+  void setSoftBlockages(const RectList& soft_blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
 
@@ -112,7 +112,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                       int end_col);
   float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
-  void calMacroBlockagePenalty();
+  void calSoftBlockagePenalty();
   void calFixedMacrosPenalty();
 
   std::vector<odb::Point> getClustersLocations() const;
@@ -123,7 +123,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void findFixedMacros();
 
-  std::vector<odb::Rect> blockages_;
+  std::vector<odb::Rect> soft_blockages_;
   std::vector<odb::Rect> fixed_macros_;
 
   Cluster* root_;
@@ -139,22 +139,22 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   // additional penalties
   float boundary_weight_ = 0.0;
-  float macro_blockage_weight_ = 0.0;
+  float soft_blockage_weight_ = 0.0;
   float notch_weight_ = 0.0;
   const float fixed_macros_weight_ = 100.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;
-  float macro_blockage_penalty_ = 0.0;
+  float soft_blockage_penalty_ = 0.0;
   float fixed_macros_penalty_ = 0.0;
 
   float pre_boundary_penalty_ = 0.0;
   float pre_notch_penalty_ = 0.0;
-  float pre_macro_blockage_penalty_ = 0.0;
+  float pre_soft_blockage_penalty_ = 0.0;
 
   float norm_boundary_penalty_ = 0.0;
   float norm_notch_penalty_ = 0.0;
-  float norm_macro_blockage_penalty_ = 0.0;
+  float norm_soft_blockage_penalty_ = 0.0;
   float norm_fixed_macros_penalty_ = 0.0;
 
   // action prob

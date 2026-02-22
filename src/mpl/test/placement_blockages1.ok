@@ -1,8 +1,6 @@
 [INFO ODB-0227] LEF file: ./Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO ODB-0227] LEF file: ./testcases/macro_only.lef, created 9 library cells
-[WARNING STA-1171] ./testcases/macro_only.lib line 32, default_max_transition is 0.0.
-[INFO ODB-0128] Design: io_constraints1
-[INFO ODB-0130]     Created 3 pins.
+[INFO ODB-0128] Design: placement_blockages1
 [INFO ODB-0131]     Created 151 components and 902 component-terminals.
 Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 124.60)
 	Number of std cell instances: 150
@@ -18,4 +16,6 @@ Die Area: (0.00, 0.00) (150.00, 125.00),  Floorplan Area: (0.00, 0.00) (149.91, 
 	Floorplan Utilization: 0.08
 	Manufacturing Grid: 10
 
+[WARNING MPL-0026] Design has no IO pins!
+[WARNING MPL-0055] Couldn't find a solution for the specified utilization. The utilization was adjusted to 0.29163226.
 No differences found.

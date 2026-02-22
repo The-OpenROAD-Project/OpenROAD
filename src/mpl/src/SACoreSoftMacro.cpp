@@ -66,7 +66,7 @@ SACoreSoftMacro::SACoreSoftMacro(PhysicalHierarchy* tree,
       root_(tree->root.get())
 {
   boundary_weight_ = soft_weights.boundary;
-  macro_blockage_weight_ = soft_weights.macro_blockage;
+  soft_blockage_weight_ = soft_weights.soft_blockage;
   notch_weight_ = soft_weights.notch;
   resize_prob_ = resize_prob;
   notch_h_th_ = notch_h_threshold;
@@ -126,14 +126,14 @@ float SACoreSoftMacro::getNormBoundaryPenalty() const
   return norm_boundary_penalty_;
 }
 
-float SACoreSoftMacro::getMacroBlockagePenalty() const
+float SACoreSoftMacro::getSoftBlockagePenalty() const
 {
-  return macro_blockage_penalty_;
+  return soft_blockage_penalty_;
 }
 
-float SACoreSoftMacro::getNormMacroBlockagePenalty() const
+float SACoreSoftMacro::getNormSoftBlockagePenalty() const
 {
-  return norm_macro_blockage_penalty_;
+  return norm_soft_blockage_penalty_;
 }
 
 float SACoreSoftMacro::getNotchPenalty() const
@@ -170,9 +170,9 @@ float SACoreSoftMacro::calNormCost() const
   if (norm_boundary_penalty_ > 0.0) {
     cost += boundary_weight_ * boundary_penalty_ / norm_boundary_penalty_;
   }
-  if (norm_macro_blockage_penalty_ > 0.0) {
-    cost += macro_blockage_weight_ * macro_blockage_penalty_
-            / norm_macro_blockage_penalty_;
+  if (norm_soft_blockage_penalty_ > 0.0) {
+    cost += soft_blockage_weight_ * soft_blockage_penalty_
+            / norm_soft_blockage_penalty_;
   }
   if (norm_fixed_macros_penalty_ > 0.0) {
     cost += fixed_macros_weight_ * fixed_macros_penalty_
@@ -191,7 +191,7 @@ void SACoreSoftMacro::calPenalty()
   calGuidancePenalty();
   calFencePenalty();
   calBoundaryPenalty();
-  calMacroBlockagePenalty();
+  calSoftBlockagePenalty();
   calNotchPenalty();
   calFixedMacrosPenalty();
   if (graphics_) {
@@ -255,7 +255,7 @@ void SACoreSoftMacro::saveState()
   pre_guidance_penalty_ = guidance_penalty_;
   pre_fence_penalty_ = fence_penalty_;
   pre_boundary_penalty_ = boundary_penalty_;
-  pre_macro_blockage_penalty_ = macro_blockage_penalty_;
+  pre_soft_blockage_penalty_ = soft_blockage_penalty_;
   pre_notch_penalty_ = notch_penalty_;
 }
 
@@ -288,7 +288,7 @@ void SACoreSoftMacro::restoreState()
   guidance_penalty_ = pre_guidance_penalty_;
   fence_penalty_ = pre_fence_penalty_;
   boundary_penalty_ = pre_boundary_penalty_;
-  macro_blockage_penalty_ = pre_macro_blockage_penalty_;
+  soft_blockage_penalty_ = pre_soft_blockage_penalty_;
   notch_penalty_ = pre_notch_penalty_;
 }
 
@@ -302,7 +302,7 @@ void SACoreSoftMacro::initialize()
   std::vector<float> guidance_penalty_list;
   std::vector<float> fence_penalty_list;
   std::vector<float> boundary_penalty_list;
-  std::vector<float> macro_blockage_penalty_list;
+  std::vector<float> soft_blockage_penalty_list;
   std::vector<float> notch_penalty_list;
   std::vector<float> area_penalty_list;
   std::vector<float> fixed_macros_penalty_list;
@@ -329,7 +329,7 @@ void SACoreSoftMacro::initialize()
     guidance_penalty_list.push_back(guidance_penalty_);
     fence_penalty_list.push_back(fence_penalty_);
     boundary_penalty_list.push_back(boundary_penalty_);
-    macro_blockage_penalty_list.push_back(macro_blockage_penalty_);
+    soft_blockage_penalty_list.push_back(soft_blockage_penalty_);
     notch_penalty_list.push_back(notch_penalty_);
     fixed_macros_penalty_list.push_back(fixed_macros_penalty_);
   }
@@ -341,7 +341,7 @@ void SACoreSoftMacro::initialize()
   norm_guidance_penalty_ = calAverage(guidance_penalty_list);
   norm_fence_penalty_ = calAverage(fence_penalty_list);
   norm_boundary_penalty_ = calAverage(boundary_penalty_list);
-  norm_macro_blockage_penalty_ = calAverage(macro_blockage_penalty_list);
+  norm_soft_blockage_penalty_ = calAverage(soft_blockage_penalty_list);
   norm_notch_penalty_ = calAverage(notch_penalty_list);
   norm_fixed_macros_penalty_ = calAverage(fixed_macros_penalty_list);
 
@@ -367,8 +367,8 @@ void SACoreSoftMacro::initialize()
     norm_fence_penalty_ = 1.0;
   }
 
-  if (norm_macro_blockage_penalty_ <= 1e-4) {
-    norm_macro_blockage_penalty_ = 1.0;
+  if (norm_soft_blockage_penalty_ <= 1e-4) {
+    norm_soft_blockage_penalty_ = 1.0;
   }
 
   if (norm_boundary_penalty_ <= 1e-4) {
@@ -393,7 +393,7 @@ void SACoreSoftMacro::initialize()
     guidance_penalty_ = guidance_penalty_list[i];
     fence_penalty_ = fence_penalty_list[i];
     boundary_penalty_ = boundary_penalty_list[i];
-    macro_blockage_penalty_ = macro_blockage_penalty_list[i];
+    soft_blockage_penalty_ = soft_blockage_penalty_list[i];
     notch_penalty_ = notch_penalty_list[i];
     fixed_macros_penalty_ = fixed_macros_penalty_list[i];
     cost_list.push_back(calNormCost());
@@ -474,29 +474,29 @@ void SACoreSoftMacro::calBoundaryPenalty()
   }
 }
 
-// Penalty for overlapping between clusters with macros and macro blockages.
-// There may be situations in which we cannot guarantee that there will be
-// no overlap, so we consider:
+// Penalty for overlapping between clusters with macros and virtual blockages
+// generated by the macro placer. There may be situations in which we cannot
+// guarantee that there will be no overlap, so we consider:
 // 1) Number of macros to prioritize clusters with more macros.
 // 2) The macro area percentage over the cluster's total area so that
 //    mixed clusters with large std cell area have less penalty.
-void SACoreSoftMacro::calMacroBlockagePenalty()
+void SACoreSoftMacro::calSoftBlockagePenalty()
 {
-  macro_blockage_penalty_ = 0.0;
-  if (blockages_.empty() || macro_blockage_weight_ <= 0.0) {
+  soft_blockage_penalty_ = 0.0;
+  if (soft_blockages_.empty() || soft_blockage_weight_ <= 0.0) {
     return;
   }
 
   int tot_num_macros = 0;
-  for (const auto& macro_id : pos_seq_) {
+  for (const int macro_id : pos_seq_) {
     tot_num_macros += macros_[macro_id].getNumMacro();
   }
   if (tot_num_macros <= 0) {
     return;
   }
 
-  for (auto& blockage : blockages_) {
-    for (const auto& macro_id : pos_seq_) {
+  for (const odb::Rect& blockage : soft_blockages_) {
+    for (const int macro_id : pos_seq_) {
       const SoftMacro& soft_macro = macros_[macro_id];
       if (soft_macro.getNumMacro() > 0) {
         odb::Rect overlap;
@@ -511,18 +511,19 @@ void SACoreSoftMacro::calMacroBlockagePenalty()
         const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 
-        macro_blockage_penalty_
+        soft_blockage_penalty_
             += overlap.area() * soft_macro.getNumMacro() * macro_dominance;
       }
     }
   }
   // normalization
-  macro_blockage_penalty_ = macro_blockage_penalty_ / tot_num_macros;
+  soft_blockage_penalty_ = soft_blockage_penalty_ / tot_num_macros;
   if (graphics_) {
-    graphics_->setMacroBlockagePenalty({"Macro Blockage",
-                                        macro_blockage_weight_,
-                                        macro_blockage_penalty_,
-                                        norm_macro_blockage_penalty_});
+    graphics_->setSoftBlockagePenalty(
+        {.name = "Soft Blockage",
+         .weight = soft_blockage_weight_,
+         .value = soft_blockage_penalty_,
+         .normalization_factor = norm_soft_blockage_penalty_});
   }
 }
 
@@ -975,9 +976,9 @@ void SACoreSoftMacro::printResults() const
           boundary_penalty_,
           norm_boundary_penalty_});
   report({"Macro Blockage",
-          macro_blockage_weight_,
-          macro_blockage_penalty_,
-          norm_macro_blockage_penalty_});
+          soft_blockage_weight_,
+          soft_blockage_penalty_,
+          norm_soft_blockage_penalty_});
   report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   reportTotalCost();
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
@@ -1152,10 +1153,9 @@ int SACoreSoftMacro::getSegmentIndex(const int segment,
   return index;
 }
 
-// The blockages here are only those that overlap with the annealing outline.
-void SACoreSoftMacro::addBlockages(const std::vector<odb::Rect>& blockages)
+void SACoreSoftMacro::setSoftBlockages(const RectList& soft_blockages)
 {
-  blockages_.insert(blockages_.end(), blockages.begin(), blockages.end());
+  soft_blockages_ = soft_blockages;
 }
 
 std::vector<odb::Point> SACoreSoftMacro::getClustersLocations() const

@@ -32,6 +32,7 @@ or_integration_tests(
     fixed_covers
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
+    placement_blockages1
 )
 
 
