@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2019-2025, The OpenROAD Authors
+# Copyright (c) 2019-2026, The OpenROAD Authors
 
 include("openroad")
 
@@ -16,6 +16,9 @@ add_library(rmp_lib
     Restructure.cpp
     annealing_strategy.cpp
     delay_optimization_strategy.cpp
+    genetic_strategy.cpp
+    gia.cpp
+    slack_tuning_strategy.cpp
     utils.cpp
     zero_slack_strategy.cpp
 )
@@ -60,6 +63,8 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
+    absl_hash
+    absl_city
 )
 
 target_link_libraries(rmp

@@ -20,6 +20,8 @@ or_integration_tests(
     aes_annealing
     gcd_annealing1
     gcd_annealing2
+    aes_genetic
+    gcd_genetic
 )
 
 

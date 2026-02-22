@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+// Copyright (c) 2019-2026, The OpenROAD Authors
 
 %{
 #include "rmp/Restructure.h"
@@ -78,12 +78,64 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
   getRestructure()->setAnnealingInitialOps(set_annealing_initial_ops);
 }
 
-void resynth_cmd(Corner* corner) {
+void
+set_genetic_seed(std::mt19937::result_type genetic_seed)
+{
+  getRestructure()->setGeneticSeed(genetic_seed);
+}
+
+void
+set_genetic_population_size(int genetic_population_size)
+{
+  getRestructure()->setGeneticPopulationSize(genetic_population_size);
+}
+
+void
+  set_genetic_mutation_probability(float genetic_mutation_probability)
+{
+  getRestructure()->setGeneticMutationProbability(genetic_mutation_probability);
+}
+
+void
+set_genetic_crossover_probability(float genetic_crossover_probability)
+{
+  getRestructure()->setGeneticCrossoverProbability(genetic_crossover_probability);
+}
+
+void
+set_genetic_tournament_size(int genetic_tournament_size)
+{
+  getRestructure()->setGeneticTournamentSize(genetic_tournament_size);
+}
+
+void
+set_genetic_tournament_probability(float genetic_tournament_probability)
+{
+  getRestructure()->setGeneticTournamentProbability(genetic_tournament_probability);
+}
+
+void
+set_genetic_iters(int genetic_iters)
+{
+  getRestructure()->setGeneticIters(genetic_iters);
+}
+
+void
+set_genetic_initial_ops(int genetic_initial_ops)
+{
+  getRestructure()->setGeneticInitialOps(genetic_initial_ops);
+}
+
+ void resynth_cmd(Corner* corner) {
   getRestructure()->resynth(corner);
 }
 
 void resynth_annealing_cmd(Corner* corner) {
   getRestructure()->resynthAnnealing(corner);
+}
+
+void resynth_genetic_cmd(Corner* corner) {
+  getRestructure()->resynthGenetic(corner);
 }
 
 void
