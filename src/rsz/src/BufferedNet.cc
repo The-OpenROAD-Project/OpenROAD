@@ -1136,10 +1136,11 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
         // tree
         logger_->error(RSZ,
                        74,
-                       "failed to build tree from gloubal routes: found route "
-                       "to {} pins, expected {}",
-                       bnet->loadCount(),
-                       pin_grid_locs.size() - 1);
+                       "Failed to build tree from global routes for pin '{}' "
+                       "at grid ({}, {}): found route to {} pins, expected {}",
+                       db_network_->pathName(drvr_pin),
+                       drvr_route_pt.x(), drvr_route_pt.y(),
+                       bnet->loadCount(), pin_grid_locs.size() - 1);
         return nullptr;
       }
     }
