@@ -147,6 +147,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
   updateDbInstLocations();
+  // fixParity();
   if (!placement_failures_.empty()) {
     logger_->info(DPL,
                   34,

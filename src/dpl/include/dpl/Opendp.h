@@ -255,6 +255,9 @@ class Opendp
   void prePlace();
   void prePlaceGroups();
   void place();
+  void fixParity();
+  void eeqSwap(odb::dbInst* db_inst);
+  bool M1Missaligned(Node* cell);
   void placeGroups2();
   void brickPlace1(const Group* group);
   void brickPlace2(const Group* group);
