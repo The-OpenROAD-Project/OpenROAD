@@ -837,11 +837,12 @@ void RamGen::generate(const int bytes_per_word,
   writeBehavioralVerilog(behavioral_verilog_filename_, bytes_per_word, word_count, read_ports);
 }
 
-void RamGen:: setBehavioralVerilogFilename(const std::string& filename){
+void RamGen::setBehavioralVerilogFilename(const std::string& filename)
+{
   behavioral_verilog_filename_ = filename;
 }
 
-void RamGen::writeBehavioralVerilog(const std:: string& filename,
+void RamGen::writeBehavioralVerilog(const std::string& filename,
                                     const int bytes_per_word,
                                     const int word_count,
                                     const int read_ports){
@@ -867,9 +868,9 @@ void RamGen::writeBehavioralVerilog(const std:: string& filename,
 
     std::string read_port_logic;
     for (int i=0; i< read_ports; i++){
-    read_port_logic += fmt::format(R"(
-      always @(posedge clk) begin
-        Q{} <= mem[addr_reg];
+      read_port_logic += fmt::format(R"(
+      always @(*) begin
+        Q{} = mem[addr_reg];
       end
       )", i);
     }
@@ -887,6 +888,7 @@ void RamGen::writeBehavioralVerilog(const std:: string& filename,
       // memory array declaration
       reg [{}:0] mem[0:{}];
 
+      // registered address (latch pipeline)
       reg [{}:0] addr_reg;
       always @(posedge clk) begin
         addr_reg <= addr;
@@ -897,12 +899,12 @@ void RamGen::writeBehavioralVerilog(const std:: string& filename,
       always @(posedge clk) begin
         for (i=0; i< {}; i = i +1 ) begin
           if (we[i]) begin
-            mem[addr_reg][i*8 +:8] <= D[i*8 +:8];
+            mem[addr][i*8 +:8] <= D[i*8 +:8];
           end
         end
       end
 
-      // read logic
+      // read logic 
       {}
         
       endmodule
@@ -914,14 +916,14 @@ void RamGen::writeBehavioralVerilog(const std:: string& filename,
       address_width-1,
       bytes_per_word-1,
       word_size_bit-1,
-      word_count -1,
-      address_width-1,  
+      word_count-1,
+      address_width-1,
       bytes_per_word,
       read_port_logic
-  );
+    );
   
   std::ofstream vf(filename);
-   if (!vf.is_open()) {
+  if (!vf.is_open()) {
     logger_->error(RAM, 23, "Unable to open file {}", filename);
     return;
   }
