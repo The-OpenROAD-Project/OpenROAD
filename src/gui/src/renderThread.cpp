@@ -34,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "ruler.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 

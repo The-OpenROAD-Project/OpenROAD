@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "RDLRouter.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon_90_set_data.hpp"
 #include "boost/polygon/polygon_90_with_holes_data.hpp"
