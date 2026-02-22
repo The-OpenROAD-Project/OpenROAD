@@ -81,7 +81,7 @@ class CheckerFixture : public tst::Fixture
   static constexpr const char* floating_chips_category = "Floating chips";
   static constexpr const char* overlapping_chips_category = "Overlapping chips";
   static constexpr const char* unused_internal_ext_category
-      = "Unused internal_ext";
+      = "Unused INTERNAL_EXT";
 };
 
 TEST_F(CheckerFixture, test_no_violations)
