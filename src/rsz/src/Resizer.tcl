@@ -952,5 +952,10 @@ proc check_max_wire_length { max_wire_length use_default } {
   return $max_wire_length
 }
 
+proc report_bottlenecks { args } {
+  sta::parse_key_args "report_bottlenecks" args keys {-alpha -npins} flags {}
+  rsz::report_bottlenecks_cmd [sta::time_ui_sta $keys(-alpha)] $keys(-npins) true
+}
+
 # namespace
 }

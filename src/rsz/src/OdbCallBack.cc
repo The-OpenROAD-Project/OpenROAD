@@ -1,19 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-//
-//  These are callback functions to keep track of nets that need parasitics
-//  update after 5 optimization transforms:
-//  1. buffer insertion
-//  2. buffer/cell removal
-//  3. cell sizing
-//  4. pin swapping
-//  5. gate cloning
-//
-//
-
 #include "rsz/OdbCallBack.hh"
 
+#include "BottleneckAnalysis.hh"
 #include "db_sta/dbNetwork.hh"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
@@ -29,6 +19,7 @@ using sta::InstancePinIterator;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Network;
+using sta::Pin;
 
 OdbCallBack::OdbCallBack(Resizer* resizer,
                          Network* network,
@@ -49,6 +40,18 @@ void OdbCallBack::inDbNetDestroy(odb::dbNet* net)
   if (resizer_->net_slack_map_.count(sta_net)) {
     resizer_->net_slack_map_.erase(sta_net);
   }
+}
+
+void OdbCallBack::inDbITermDestroy(odb::dbITerm* iterm)
+{
+  Pin* pin = db_network_->dbToSta(iterm);
+  resizer_->bottleneck_analysis_->pinRemoved(pin);
+}
+
+void OdbCallBack::inDbBTermDestroy(odb::dbBTerm* bterm)
+{
+  Pin* pin = db_network_->dbToSta(bterm);
+  resizer_->bottleneck_analysis_->pinRemoved(pin);
 }
 
 }  // namespace rsz

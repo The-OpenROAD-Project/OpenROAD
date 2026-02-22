@@ -823,6 +823,13 @@ void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const 
      corner, load_pin_slew);
 }
 
+void report_bottlenecks_cmd(double alpha, int npins, bool verbose)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->reportBottlenecks(alpha, npins, verbose);
+}
+
 } // namespace
 
 %} // inline

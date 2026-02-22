@@ -4,7 +4,8 @@ or_integration_tests(
     gain_buffering1_hier
     repair_fanout1_hier
     repair_fanout2_hier
-    repair_fanout3_hier      
+    repair_fanout3_hier
+    bottleneck
     buffer_ports1
     buffer_ports3
     buffer_ports4
