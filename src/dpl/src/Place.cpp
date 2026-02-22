@@ -741,6 +741,9 @@ bool Opendp::shiftMove(Node* target_cell)
   deepIterativePause("pause after legalGridPt() inside shiftMove(), cell "
                      + target_cell->name());
 
+  deepIterativePause("pause after legalGridPt() inside shiftMove(), cell "
+                     + target_cell->name());
+
   // erase region cells
   for (Node* around_cell : region_cells) {
     if (target_cell->inGroup() == around_cell->inGroup()) {

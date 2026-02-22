@@ -49,7 +49,6 @@ class dbBlockCallBackObj
 
   // dbInst Start
   virtual void inDbInstCreate(dbInst*) {}
-  virtual void inDbInstCreate(dbInst*, dbRegion*) {}
   virtual void inDbInstDestroy(dbInst*) {}
   virtual void inDbInstPlacementStatusBefore(dbInst*, const dbPlacementStatus&)
   {
