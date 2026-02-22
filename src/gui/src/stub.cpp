@@ -170,6 +170,7 @@ std::string Descriptor::Property::toString(const std::any& /* value */)
 // using namespace odb;
 int startGui(int& argc,
              char* argv[],
+             Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script,
              bool interactive,

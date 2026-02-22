@@ -547,7 +547,7 @@ void hide_widget(const char* name)
 void show(const char* script = "", bool interactive = true, bool load_settings = true)
 {
   auto gui = gui::Gui::get();
-  gui->showGui(script, interactive, load_settings);
+  gui->showGui(gui::Interpreter::Tcl, script, interactive, load_settings);
 }
 
 void hide()

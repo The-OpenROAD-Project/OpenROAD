@@ -46,6 +46,12 @@ class Painter;
 class Selected;
 class Options;
 
+enum class Interpreter
+{
+  Tcl,
+  Python
+};
+
 struct GIF
 {
   std::string filename;
@@ -926,7 +932,8 @@ class Gui
   void hideGui();
 
   // Called to show the gui and return to tcl command line
-  void showGui(const std::string& cmds = "",
+  void showGui(Interpreter interpreter,
+               const std::string& cmds = "",
                bool interactive = true,
                bool load_settings = true);
   void minimize();
@@ -1081,6 +1088,7 @@ class Gui
 // The main entry point
 int startGui(int& argc,
              char* argv[],
+             Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script = "",
              bool interactive = true,

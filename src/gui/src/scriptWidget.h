@@ -5,6 +5,7 @@
 
 #include <QColor>
 #include <QDockWidget>
+#include <QHBoxLayout>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSettings>
@@ -23,7 +24,7 @@ class dbDatabase;
 struct Tcl_Interp;
 
 namespace gui {
-class TclCmdInputWidget;
+class CmdInputWidget;
 
 // This shows a line edit to enter tcl commands and a
 // text area that is used to show the commands and their
@@ -43,6 +44,8 @@ class ScriptWidget : public QDockWidget
   void writeSettings(QSettings* settings);
 
   void setLogger(utl::Logger* logger);
+
+  void setupPython(const std::function<void(void)>& post_or_init);
 
   void setupTcl(Tcl_Interp* interp,
                 bool interactive,
@@ -109,8 +112,11 @@ class ScriptWidget : public QDockWidget
   void addMsgToReportBuffer(const QString& text);
   void addLogToOutput(const QString& text, const QColor& color);
 
+  void setupInterpreterWidget();
+
   QPlainTextEdit* output_;
-  TclCmdInputWidget* input_;
+  QHBoxLayout* input_layout_;
+  CmdInputWidget* input_;
   QPushButton* pauser_;
   std::unique_ptr<QTimer> pause_timer_;
   std::unique_ptr<QTimer> report_timer_;
