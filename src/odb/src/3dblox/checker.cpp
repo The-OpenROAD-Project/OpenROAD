@@ -224,10 +224,14 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
 void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
                                     const UnfoldedModel& model)
 {
-  auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Unused internal_ext");
+  dbMarkerCategory* cat = nullptr;
   for (const auto& chip : model.getChips()) {
     for (const auto& region : chip.regions) {
       if (region.isInternalExt() && !region.isUsed) {
+        if (!cat) {
+          cat = dbMarkerCategory::createOrReplace(top_cat,
+                                                  "Unused internal_ext");
+        }
         logger_->warn(utl::ODB,
                       464,
                       "Region {} is internal_ext but unused",
@@ -249,7 +253,6 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
                                      const UnfoldedModel& model)
 {
-  auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
   auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
     marker->addSource(r->region_inst);
     marker->addShape(Rect(r->cuboid.xMin(),
@@ -262,8 +265,12 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
                        sideToString(r->effective_side));
   };
   int count = 0;
+  dbMarkerCategory* cat = nullptr;
   for (const auto& conn : model.getConnections()) {
     if (!isValid(conn)) {
+      if (!cat) {
+        cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
+      }
       auto* marker = dbMarker::create(cat);
       marker->addSource(conn.connection);
       std::string msg = fmt::format("Invalid connection {}: {} to {}",
