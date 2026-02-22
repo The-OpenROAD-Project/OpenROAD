@@ -36,6 +36,7 @@ class _dbGuide : public _dbObject
   dbId<_dbGuide> guide_next_;
   bool is_congested_;
   bool is_jumper_;
+  bool ignore_usage_;
   bool is_connect_to_term_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);

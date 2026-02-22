@@ -137,7 +137,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
     sta::Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
-      estimate_parasitics_->updateParasitics(true);
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       const sta::Slack end_slack_after = sta_->vertexSlack(end, max_);
 
