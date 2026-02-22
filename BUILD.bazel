@@ -180,7 +180,7 @@ cc_binary(
         "//src/utl",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -213,7 +213,7 @@ cc_library(
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
 
