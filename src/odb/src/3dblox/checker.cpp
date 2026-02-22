@@ -84,6 +84,7 @@ void Checker::check(dbChip* chip)
 
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
+  checkInternalExtUsage(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -200,6 +201,31 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
       marker->addSource(inst2->chip_inst_path.back());
       marker->setComment(
           fmt::format("Chips {} and {} overlap", inst1->name, inst2->name));
+    }
+  }
+}
+
+void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
+                                    const UnfoldedModel& model)
+{
+  auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Unused internal_ext");
+  for (const auto& chip : model.getChips()) {
+    for (const auto& region : chip.regions) {
+      if (region.isInternalExt() && !region.isUsed) {
+        logger_->warn(utl::ODB,
+                      464,
+                      "Region {} is internal_ext but unused",
+                      region.region_inst->getChipRegion()->getName());
+        auto* marker = dbMarker::create(cat);
+        marker->addSource(region.region_inst);
+        marker->addShape(Rect(region.cuboid.xMin(),
+                              region.cuboid.yMin(),
+                              region.cuboid.xMax(),
+                              region.cuboid.yMax()));
+        marker->setComment(
+            fmt::format("Unused internal_ext region: {}",
+                        region.region_inst->getChipRegion()->getName()));
+      }
     }
   }
 }
