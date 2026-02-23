@@ -64,13 +64,8 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
   }
 
   SolutionSlack sol_slack{ops};
-  auto* worst_vertex = sol_slack.Evaluate(
+  auto [worst_slack, worst_vertex] = sol_slack.Evaluate(
       candidate_vertices, abc_library, corner_, sta, name_generator, logger);
-
-  if (!sol_slack.WorstSlack()) {
-    logger->error(RMP, 51, "Should be evaluated");
-  }
-  sta::Slack worst_slack = *sol_slack.WorstSlack();
 
   if (!temperature_) {
     sta::Delay required = sta->required(worst_vertex,
@@ -87,7 +82,8 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
                *temperature_,
                worst_slack);
 
-  SolutionSlack best_sol{ops, worst_slack};
+  sta::Slack best_worst_slack = worst_slack;
+  auto best_ops = ops;
   size_t worse_iters = 0;
 
   for (unsigned i = 0; i < iterations_; i++) {
@@ -96,8 +92,8 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
 
     if (revert_after_ && worse_iters >= *revert_after_) {
       logger->info(RMP, 57, "Reverting to the best found solution");
-      ops = best_sol.Solution();
-      worst_slack = *best_sol.WorstSlack();
+      ops = best_ops;
+      worst_slack = best_worst_slack;
       worse_iters = 0;
     }
 
@@ -107,7 +103,7 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
                    "Iteration: {}, temperature: {}, best worst slack: {}",
                    i + 1,
                    current_temp,
-                   *best_sol.WorstSlack());
+                   best_worst_slack);
     } else {
       debugPrint(logger,
                  RMP,
@@ -116,22 +112,17 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
                  "Iteration: {}, temperature: {}, best worst slack: {}",
                  i + 1,
                  current_temp,
-                 best_sol.WorstSlack() ? *best_sol.WorstSlack() : 0);
+                 best_worst_slack);
     }
 
     SolutionSlack s{ops};
     auto new_ops = s.RandomNeighbor(all_ops, logger, random_);
     sol_slack = SolutionSlack{new_ops};
 
-    sol_slack.Evaluate(
+    auto [worst_slack_new, _] = sol_slack.Evaluate(
         candidate_vertices, abc_library, corner_, sta, name_generator, logger);
 
-    if (!sol_slack.WorstSlack()) {
-      logger->error(RMP, 55, "Should be evaluated");
-    }
-    sta::Slack worst_slack_new = *sol_slack.WorstSlack();
-
-    if (best_sol.WorstSlack() && worst_slack_new < *best_sol.WorstSlack()) {
+    if (worst_slack_new < best_worst_slack) {
       worse_iters++;
     } else {
       worse_iters = 0;
@@ -180,11 +171,12 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
     ops = std::move(new_ops);
     worst_slack = worst_slack_new;
 
-    if (best_sol.WorstSlack() && worst_slack > *best_sol.WorstSlack()) {
-      best_sol = SolutionSlack{ops, worst_slack};
+    if (worst_slack > best_worst_slack) {
+      best_worst_slack = worst_slack;
+      best_ops = ops;
     }
   }
-  return best_sol.Solution();
+  return best_ops;
 }
 
 }  // namespace rmp

@@ -6,6 +6,7 @@
 #include <optional>
 #include <random>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "cut/abc_library_factory.h"
@@ -20,7 +21,7 @@ class Resizer;
 
 namespace sta {
 class dbSta;
-class Corner;
+class Scene;
 class Vertex;
 }  // namespace sta
 
@@ -52,12 +53,13 @@ class SolutionSlack final
                            utl::Logger* logger,
                            std::mt19937& random) const;
 
-  sta::Vertex* Evaluate(const std::vector<sta::Vertex*>& candidate_vertices,
-                        cut::AbcLibrary& abc_library,
-                        sta::Corner* corner,
-                        sta::dbSta* sta,
-                        utl::UniqueName& name_generator,
-                        utl::Logger* logger);
+  std::pair<sta::Slack, sta::Vertex*> Evaluate(
+      const std::vector<sta::Vertex*>& candidate_vertices,
+      cut::AbcLibrary& abc_library,
+      sta::Scene* corner,
+      sta::dbSta* sta,
+      utl::UniqueName& name_generator,
+      utl::Logger* logger);
   ResultOps Solution() const { return solution_; }
   ResultOps& Solution() { return solution_; }
   std::optional<sta::Slack> WorstSlack() const { return worst_slack_; }
@@ -66,7 +68,7 @@ class SolutionSlack final
 class SlackTuningStrategy : public ResynthesisStrategy
 {
  public:
-  explicit SlackTuningStrategy(sta::Corner* corner,
+  explicit SlackTuningStrategy(sta::Scene* corner,
                                sta::Slack slack_threshold,
                                std::optional<std::mt19937::result_type> seed,
                                unsigned iterations,
@@ -97,7 +99,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
       = 0;
 
  protected:
-  sta::Corner* corner_;
+  sta::Scene* corner_;
   sta::Slack slack_threshold_;
   unsigned iterations_;
   unsigned initial_ops_;

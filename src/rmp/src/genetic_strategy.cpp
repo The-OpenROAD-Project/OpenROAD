@@ -75,7 +75,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
   }
 
   for (auto& candidate : population) {
-    candidate.Evaluate(
+    (void) candidate.Evaluate(
         candidate_vertices, abc_library, corner_, sta, name_generator, logger);
 
     debugPrint(logger, RMP, "genetic", 1, candidate.toString());
@@ -116,12 +116,12 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
       if (sol_slack.WorstSlack()) {
         continue;
       }
-      sol_slack.Evaluate(candidate_vertices,
-                         abc_library,
-                         corner_,
-                         sta,
-                         name_generator,
-                         logger);
+      (void) sol_slack.Evaluate(candidate_vertices,
+                                abc_library,
+                                corner_,
+                                sta,
+                                name_generator,
+                                logger);
     }
     // Selection
     std::ranges::stable_sort(
