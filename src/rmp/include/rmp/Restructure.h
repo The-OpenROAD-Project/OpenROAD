@@ -73,10 +73,7 @@ class Restructure
            char* workdir_name,
            char* abc_logfile);
 
-  void setAnnealingSeed(std::mt19937::result_type seed)
-  {
-    annealing_seed_ = seed;
-  }
+  void setAnnealingSeed(int seed) { annealing_seed_ = seed; }
   void setAnnealingTemp(float temp) { annealing_temp_ = temp; }
   void setAnnealingIters(unsigned iters) { annealing_iters_ = iters; }
   void setAnnealingRevertAfter(unsigned revert_after)
@@ -84,7 +81,7 @@ class Restructure
     annealing_revert_after_ = revert_after;
   }
   void setAnnealingInitialOps(unsigned ops) { annealing_init_ops_ = ops; }
-  void setGeneticSeed(std::mt19937::result_type seed) { genetic_seed_ = seed; }
+  void setGeneticSeed(int seed) { genetic_seed_ = seed; }
   void setGeneticPopulationSize(unsigned population_size)
   {
     genetic_population_size_ = population_size;
@@ -145,14 +142,14 @@ class Restructure
   odb::dbBlock* block_ = nullptr;
 
   // Annealing
-  std::mt19937::result_type annealing_seed_ = 0;
+  int annealing_seed_ = 0;
   std::optional<float> annealing_temp_;
   unsigned annealing_iters_ = 100;
   std::optional<unsigned> annealing_revert_after_;
   unsigned annealing_init_ops_ = 10;
 
   // Genetic
-  std::mt19937::result_type genetic_seed_ = 0;
+  int genetic_seed_ = 0;
   unsigned genetic_population_size_ = 4;
   float genetic_mutation_probability_ = 0.5;
   float genetic_crossover_probability_ = 0.5;

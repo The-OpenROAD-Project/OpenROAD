@@ -49,7 +49,7 @@ set_slack_threshold(float slack_threshold)
 }
 
 void
-set_annealing_seed(std::mt19937::result_type annealing_seed)
+set_annealing_seed(int annealing_seed)
 {
   getRestructure()->setAnnealingSeed(annealing_seed);
 }
@@ -79,7 +79,7 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
 }
 
 void
-set_genetic_seed(std::mt19937::result_type genetic_seed)
+set_genetic_seed(int genetic_seed)
 {
   getRestructure()->setGeneticSeed(genetic_seed);
 }

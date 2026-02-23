@@ -70,7 +70,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
  public:
   explicit SlackTuningStrategy(sta::Scene* corner,
                                sta::Slack slack_threshold,
-                               std::mt19937::result_type seed,
+                               int seed,
                                unsigned iterations,
                                unsigned initial_ops)
       : corner_(corner),
