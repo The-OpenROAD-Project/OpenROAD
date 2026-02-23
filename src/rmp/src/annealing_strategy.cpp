@@ -64,14 +64,10 @@ std::vector<GiaOp> AnnealingStrategy::RunStrategy(
   }
 
   SolutionSlack sol_slack{ops};
-  auto [worst_slack, worst_vertex] = sol_slack.Evaluate(
+  auto [worst_slack, required] = sol_slack.Evaluate(
       candidate_vertices, abc_library, corner_, sta, name_generator, logger);
 
   if (!temperature_) {
-    sta::Delay required = sta->required(worst_vertex,
-                                        sta::RiseFallBoth::riseFall(),
-                                        sta->scenes(),
-                                        sta::MinMax::max());
     temperature_ = required;
   }
 

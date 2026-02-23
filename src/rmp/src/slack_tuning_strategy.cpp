@@ -106,7 +106,7 @@ static std::pair<sta::Slack, sta::Vertex*> GetWorstSlack(sta::dbSta* sta,
   return {worst_slack, worst_vertex};
 }
 
-std::pair<sta::Slack, sta::Vertex*> SolutionSlack::Evaluate(
+std::pair<sta::Slack, sta::Delay> SolutionSlack::Evaluate(
     const std::vector<sta::Vertex*>& candidate_vertices,
     cut::AbcLibrary& abc_library,
     sta::Corner* corner,
@@ -130,8 +130,13 @@ std::pair<sta::Slack, sta::Vertex*> SolutionSlack::Evaluate(
   auto [worst_slack, worst_vertex] = GetWorstSlack(sta, corner);
   worst_slack_ = worst_slack;
 
+  sta::Delay required = sta->required(worst_vertex,
+                                      sta::RiseFallBoth::riseFall(),
+                                      sta->scenes(),
+                                      sta::MinMax::max());
+
   odb::dbDatabase::undoEco(block);
-  return {worst_slack, worst_vertex};
+  return {worst_slack, required};
 }
 
 void SlackTuningStrategy::OptimizeDesign(sta::dbSta* sta,

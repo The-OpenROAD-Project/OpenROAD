@@ -53,7 +53,7 @@ class SolutionSlack final
                            utl::Logger* logger,
                            std::mt19937& random) const;
 
-  std::pair<sta::Slack, sta::Vertex*> Evaluate(
+  std::pair<sta::Slack, sta::Delay> Evaluate(
       const std::vector<sta::Vertex*>& candidate_vertices,
       cut::AbcLibrary& abc_library,
       sta::Scene* corner,
