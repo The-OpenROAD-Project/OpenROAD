@@ -54,7 +54,7 @@
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
-#include "sta/Set.hh"
+#include "sta/Parasitics.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -1291,7 +1291,7 @@ float GlobalRouter::getNetSlack(Net* net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  sta::Slack slack = sta_->slack(sta_net, sta::MinMax::max());
   return slack;
 }
 

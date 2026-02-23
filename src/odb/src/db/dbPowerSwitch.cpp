@@ -20,7 +20,10 @@
 #include "odb/db.h"
 #include "utl/Logger.h"
 // User Code Begin Includes
+#include <vector>
+
 #include "dbCommon.h"
+#include "dbVector.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbPowerSwitch>;

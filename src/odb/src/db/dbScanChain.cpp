@@ -16,6 +16,12 @@
 #include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include <string_view>
+#include <variant>
+
+#include "odb/dbObject.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanChain>;
 

@@ -83,6 +83,7 @@ cc_library(
     ],
     deps = [
         "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.asio",
         "@boost.beast",
@@ -90,7 +91,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -152,7 +153,7 @@ cc_library(
         "@boost.stacktrace",
         "@openroad_rules_python//python/cc:current_py_cc_headers",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

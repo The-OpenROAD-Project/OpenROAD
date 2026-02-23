@@ -212,7 +212,7 @@ cc_library(
         "@boost.iterator",
         "@boost.stacktrace",
         "@openmp",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

@@ -23,10 +23,17 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <fstream>
+#include <set>
+#include <variant>
+#include <vector>
+
 #include "dbChip.h"
 #include "dbCore.h"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;

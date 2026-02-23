@@ -3,16 +3,18 @@
 
 #include "odb/defin.h"
 
-#include <mutex>
 #include <vector>
 
+#include "absl/base/attributes.h"
+#include "absl/base/const_init.h"
+#include "absl/synchronization/mutex.h"
 #include "definReader.h"
 #include "odb/db.h"
 
 namespace odb {
 
 // Protects the DefParser namespace that has static variables
-std::mutex defin::def_mutex_;
+ABSL_CONST_INIT absl::Mutex defin::def_mutex_(absl::kConstInit);
 
 defin::defin(dbDatabase* db, utl::Logger* logger, MODE mode)
 {
@@ -69,7 +71,7 @@ void defin::readChip(std::vector<dbLib*>& libs,
                      dbChip* chip,
                      const bool issue_callback)
 {
-  std::lock_guard<std::mutex> lock(def_mutex_);
+  absl::MutexLock lock(&def_mutex_);
   reader_->readChip(libs, def_file, chip, issue_callback);
 }
 

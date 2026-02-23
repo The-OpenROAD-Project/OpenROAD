@@ -82,7 +82,7 @@ cc_library(
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/sat:cp_model",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

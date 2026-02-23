@@ -17,7 +17,9 @@
 // User Code Begin Includes
 #include <fstream>
 #include <regex>
+#include <set>
 #include <sstream>
+#include <stdexcept>
 
 #include "boost/regex.hpp"
 #include "dbChip.h"
@@ -25,6 +27,7 @@
 #include "dbHashTable.hpp"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarkerCategory>;

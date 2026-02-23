@@ -30,14 +30,13 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PortDirection.hh"
@@ -51,17 +50,9 @@
 
 namespace rsz {
 
+using namespace sta;  // NOLINT
+
 using odb::dbSigType;
-using sta::ArcDcalcResult;
-using sta::Arrival;
-using sta::Edge;
-using sta::fuzzyGreaterEqual;
-using sta::fuzzyLess;
-using sta::INF;
-using sta::RiseFallBoth;
-using sta::TimingArc;
-using sta::TimingArcSet;
-using sta::VertexOutEdgeIterator;
 using std::make_shared;
 using utl::RSZ;
 
@@ -226,14 +217,13 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
     sta::Slew rf_slew = 0;
 
     if (driver_path) {
-      const sta::DcalcAnalysisPt* dcalc_ap
-          = arrival_path->dcalcAnalysisPt(sta_);
       sta::LoadPinIndexMap load_pin_index_map(network_);
       sta::Slew slew = graph_delay_calc_->edgeFromSlew(
           driver_path->vertex(sta_),
           driver_arc->fromEdge()->asRiseFall(),
           driver_edge,
-          dcalc_ap);
+          driver_path->scene(sta_),
+          driver_path->minMax(sta_));
 
       auto dcalc_result
           = arc_delay_calc_->gateDelay(nullptr,
@@ -242,7 +232,8 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
                                        bnet->cap() + drvr_port_->capacitance(),
                                        nullptr,
                                        load_pin_index_map,
-                                       dcalc_ap);
+                                       driver_path->scene(sta_),
+                                       driver_path->minMax(sta_));
       rf_delay = dcalc_result.gateDelay();
 
       Arrival prev_arrival = driver_path->isClock(sta_)
@@ -1138,13 +1129,12 @@ FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
 
   if (rf) {
     for (auto rf1 : rf->range()) {
-      const sta::DcalcAnalysisPt* dcalc_ap
-          = arrival_paths_[rf1->index()]->dcalcAnalysisPt(sta_);
-      sta::LibertyPort *input, *output;
+      const Scene* scene = arrival_paths_[rf1->index()]->scene(sta_);
+      LibertyPort *input, *output;
       cell->bufferPorts(input, output);
-      sta::ArcDelay gate_delays[sta::RiseFall::index_count];
-      sta::Slew slews[sta::RiseFall::index_count];
-      resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+      ArcDelay gate_delays[RiseFall::index_count];
+      Slew slews[RiseFall::index_count];
+      resizer_->gateDelays(output, load_cap, scene, max_, gate_delays, slews);
       delay = std::max<FixedDelay>(
           delay, FixedDelay(gate_delays[rf1->index()], resizer_));
     }
@@ -1406,9 +1396,9 @@ void Rebuffer::init()
   estimate_parasitics_ = resizer_->estimate_parasitics_;
   resizer_max_wire_length_
       = resizer_->metersToDbu(resizer_->findMaxWireLength());
-  sta_->checkCapacitanceLimitPreamble();
-  sta_->checkSlewLimitPreamble();
-  sta_->checkFanoutLimitPreamble();
+  sta_->checkCapacitancesPreamble(sta_->scenes());
+  sta_->checkSlewsPreamble();
+  sta_->checkFanoutPreamble();
 
   resizer_->findFastBuffers();
   buffer_sizes_.clear();
@@ -1434,7 +1424,7 @@ void Rebuffer::init()
   }
 }
 
-void Rebuffer::initOnCorner(sta::Corner* corner)
+void Rebuffer::initOnCorner(Scene* corner)
 {
   corner_ = corner;
   wire_length_step_
@@ -1456,7 +1446,6 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
   max_slew = maxSlewMargined(max_slew);
   float in_slew = maxSlewMargined(resizer_->maxInputSlew(inp, corner_));
 
-  const sta::DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(max_);
   auto objective = [&](float load_cap) {
     sta::Slew slew = -INF;
     for (TimingArcSet* arc_set : cell->timingArcSets()) {
@@ -1470,8 +1459,9 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
                                            load_cap,
                                            nullptr,
                                            load_pin_index_map,
-                                           dcalc_ap);
-          const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
+                                           corner_,
+                                           max_);
+          const Slew& drvr_slew = dcalc_result.drvrSlew();
           slew = std::max(slew, drvr_slew);
         }
       }
@@ -1543,7 +1533,7 @@ static bool isPortBuffer(sta::dbNetwork* network, sta::Instance* inst)
 }
 
 BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
-                                   const sta::Corner* corner)
+                                   const sta::Scene* corner)
 {
   BufferedNetPtr tree = resizer_->makeBufferedNet(drvr_pin, corner);
   if (!tree) {
@@ -1930,7 +1920,8 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
 
   {
     float fanout, max_fanout, fanout_slack;
-    sta_->checkFanout(drvr_pin, max_, fanout, max_fanout, fanout_slack);
+    sta_->checkFanout(
+        drvr_pin, corner_->mode(), max_, fanout, max_fanout, fanout_slack);
     if (max_fanout > 0.0) {
       fanout_limit_ = max_fanout;
     } else {
@@ -1974,10 +1965,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
 
     if (net && !resizer_->dontTouch(net) && !net_db->isConnectedByAbutment()
         && !net_db->isSpecial() && net_db->getSigType() == dbSigType::SIGNAL
-        && !sta_->isClock(drvr_pin)
-        && !sta_->isClockSrc(drvr_pin)
+        && !sta_->isClock(drvr_pin, sta_->cmdMode())
+        && !sta_->isClockSrc(drvr_pin, sta_->cmdMode()->sdc())
         // Exclude tie hi/low cells and supply nets.
-        && !drvr->isConstant() && !resizer_->isTristateDriver(drvr_pin)) {
+        && !sta_->isConstant(drvr_pin, sta_->cmdMode())
+        && !resizer_->isTristateDriver(drvr_pin)) {
       sta::Instance* inst = network_->instance(drvr_pin);
 
       if (inst && network_->libertyCell(inst)
@@ -2007,7 +1999,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     print_interval_ = (print_interval_ / 10) * 10;
   }
 
-  initOnCorner(sta_->cmdCorner());
+  initOnCorner(sta_->cmdScene());
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
 
   for (auto iter = 0; iter < filtered_pins.size(); iter++) {
@@ -2359,7 +2351,7 @@ void BufferMove::rebufferNet(const sta::Pin* drvr_pin)
 {
   auto& rebuffer = resizer_->rebuffer_;
   rebuffer->init();
-  rebuffer->initOnCorner(sta_->cmdCorner());
+  rebuffer->initOnCorner(sta_->cmdScene());
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   int inserted_buffer_count = rebuffer->rebufferPin(drvr_pin);
   logger_->report("Inserted {} buffers.", inserted_buffer_count);

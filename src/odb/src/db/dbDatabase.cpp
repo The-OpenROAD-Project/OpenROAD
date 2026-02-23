@@ -30,12 +30,12 @@
 #include <iostream>
 #include <istream>
 #include <map>
-#include <mutex>
 #include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
@@ -72,7 +72,7 @@ constexpr int kMagic2 = 0x4E414442;  // NADB
 
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
-static std::mutex* db_tbl_mutex = new std::mutex;
+static absl::Mutex* db_tbl_mutex = new absl::Mutex;
 static std::atomic<uint32_t> db_unique_id = 0;
 // User Code End Static
 
@@ -886,7 +886,7 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
         nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
@@ -906,14 +906,14 @@ void dbDatabase::clear()
 
 void dbDatabase::destroy(dbDatabase* db_)
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   db_tbl->destroy(db);
 }
 
 dbDatabase* dbDatabase::getDatabase(uint32_t dbid)
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);
 }
 

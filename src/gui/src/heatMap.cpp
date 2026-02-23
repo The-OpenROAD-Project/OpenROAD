@@ -19,19 +19,18 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
 #include "heatMapSetup.h"
 #include "odb/db.h"
-#include "sta/Corner.hh"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
@@ -524,7 +523,7 @@ bool HeatMapDataSource::hasData() const
 
 void HeatMapDataSource::ensureMap()
 {
-  std::unique_lock<std::mutex> lock(ensure_mutex_);
+  absl::MutexLock lock(&ensure_mutex_);
 
   if (destroy_map_) {
     debugPrint(logger_, utl::GUI, "HeatMap", 1, "{} - Destroying map", name_);
@@ -1084,7 +1083,7 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
       "Corner:",
       [this]() {
         std::vector<std::string> corners;
-        for (auto* corner : *sta_->corners()) {
+        for (auto* corner : sta_->scenes()) {
           corners.emplace_back(corner->name());
         }
         return corners;
@@ -1164,14 +1163,14 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
   base += (new_data / data_area) * intersection_area;
 }
 
-sta::Corner* PowerDensityDataSource::getCorner() const
+sta::Scene* PowerDensityDataSource::getCorner() const
 {
-  auto* corner = sta_->findCorner(corner_.c_str());
+  auto* corner = sta_->findScene(corner_);
   if (corner != nullptr) {
     return corner;
   }
 
-  auto corners = sta_->corners()->corners();
+  auto corners = sta_->scenes();
   if (!corners.empty()) {
     return corners[0];
   }

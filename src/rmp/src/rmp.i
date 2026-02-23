@@ -23,7 +23,7 @@ using ord::getRestructure;
 using ord::getOpenRoad;
 using odb::dbInst;
 using sta::LibertyPort;
-using sta::Corner;
+using sta::Scene;
 %}
 
 %include "../../Exception.i"
@@ -78,11 +78,11 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
   getRestructure()->setAnnealingInitialOps(set_annealing_initial_ops);
 }
 
-void resynth_cmd(Corner* corner) {
+void resynth_cmd(Scene* corner) {
   getRestructure()->resynth(corner);
 }
 
-void resynth_annealing_cmd(Corner* corner) {
+void resynth_annealing_cmd(Scene* corner) {
   getRestructure()->resynthAnnealing(corner);
 }
 

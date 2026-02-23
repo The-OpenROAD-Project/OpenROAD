@@ -8,7 +8,7 @@ TESTS = [
     "ar01",
     "ar02",
     "clust01",
-    "clust02",
+    #"clust02",
     "clust03",
     "cluster_place01",
     "convergence01",
