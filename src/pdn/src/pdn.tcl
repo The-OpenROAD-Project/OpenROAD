@@ -1,6 +1,21 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Resolve a list of net name strings to dbNet objects.
+# Reports PDN error $err_id if any name is not found.
+proc pdn::collect_secondary_nets { net_names err_id type_label } {
+  set nets {}
+  foreach snet $net_names {
+    set db_net [[ord::get_db_block] findNet $snet]
+    if { $db_net == "NULL" } {
+      utl::error PDN $err_id "Unable to find secondary $type_label net: $snet"
+    } else {
+      lappend nets $db_net
+    }
+  }
+  return $nets
+}
+
 sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-dont_add_pins] \
                                [-reset] \
@@ -116,31 +131,16 @@ proc set_voltage_domain { args } {
     }
   }
 
-  # Collect secondary power nets (placed between primary power and ground).
   set secondary_power {}
   if { [info exists keys(-secondary_power)] } {
-    foreach snet $keys(-secondary_power) {
-      set db_net [[ord::get_db_block] findNet $snet]
-      if { $db_net == "NULL" } {
-        utl::error PDN 1006 "Unable to find secondary power net: $snet"
-      } else {
-        lappend secondary_power $db_net
-      }
-    }
+    set secondary_power \
+        [pdn::collect_secondary_nets $keys(-secondary_power) 1006 "power"]
   }
 
-  # Collect secondary ground nets (placed between secondary power and primary
-  # ground).
   set secondary_ground {}
   if { [info exists keys(-secondary_ground)] } {
-    foreach snet $keys(-secondary_ground) {
-      set db_net [[ord::get_db_block] findNet $snet]
-      if { $db_net == "NULL" } {
-        utl::error PDN 1007 "Unable to find secondary ground net: $snet"
-      } else {
-        lappend secondary_ground $db_net
-      }
-    }
+    set secondary_ground \
+        [pdn::collect_secondary_nets $keys(-secondary_ground) 1007 "ground"]
   }
 
   set switched_power "NULL"

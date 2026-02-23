@@ -18,6 +18,22 @@
 
 namespace pdn {
 
+namespace {
+void reportSecondaryNets(utl::Logger* logger,
+                         const char* label,
+                         const std::vector<odb::dbNet*>& nets)
+{
+  if (nets.empty()) {
+    return;
+  }
+  std::string names;
+  for (auto* net : nets) {
+    names += net->getName() + " ";
+  }
+  logger->report("  Secondary {} nets: {}", label, names);
+}
+}  // namespace
+
 VoltageDomain::VoltageDomain(PdnGen* pdngen,
                              odb::dbBlock* block,
                              odb::dbNet* power,
@@ -224,21 +240,8 @@ void VoltageDomain::report() const
     logger_->report("  Switched power net: {}", switched_power_->getName());
   }
 
-  if (!secondary_power_.empty()) {
-    std::string nets;
-    for (auto* net : secondary_power_) {
-      nets += net->getName() + " ";
-    }
-    logger_->report("  Secondary power nets: {}", nets);
-  }
-
-  if (!secondary_ground_.empty()) {
-    std::string nets;
-    for (auto* net : secondary_ground_) {
-      nets += net->getName() + " ";
-    }
-    logger_->report("  Secondary ground nets: {}", nets);
-  }
+  reportSecondaryNets(logger_, "power", secondary_power_);
+  reportSecondaryNets(logger_, "ground", secondary_ground_);
 
   for (const auto& grid : grids_) {
     grid->report();
