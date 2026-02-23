@@ -29,6 +29,7 @@
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 #include "via.h"
 #include "via_repair.h"
 
@@ -56,6 +57,14 @@ void PdnGen::resetShapes()
     grid->resetShapes();
   }
   updateRenderer();
+}
+
+void PdnGen::run(bool trim, bool add_pins, const std::string& report_file)
+{
+  utl::Timer timer;
+  buildGrids(trim);
+  writeToDb(add_pins, report_file);
+  logger_->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void PdnGen::buildGrids(bool trim)

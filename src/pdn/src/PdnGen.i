@@ -81,6 +81,12 @@ void reset_shapes()
   pdngen->resetShapes();
 }
 
+void run_pdngen(bool trim, bool add_pins, const char* report_file)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->run(trim, add_pins, report_file);
+}
+
 void build_grids(bool trim = true)
 {
   PdnGen* pdngen = ord::getPdnGen();

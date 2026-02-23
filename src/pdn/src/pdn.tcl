@@ -62,8 +62,7 @@ proc pdngen { args } {
   }
 
   pdn::check_setup
-  pdn::build_grids $trim
-  pdn::write_to_db $add_pins $failed_via_report
+  pdn::run_pdngen $trim $add_pins $failed_via_report
   pdn::reset_shapes
 }
 

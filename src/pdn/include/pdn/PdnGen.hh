@@ -83,6 +83,7 @@ class PdnGen
                                odb::dbRegion* region);
 
   // Grids
+  void run(bool trim, bool add_pins, const std::string& report_file);
   void buildGrids(bool trim);
   std::vector<Grid*> findGrid(const std::string& name) const;
   void makeCoreGrid(VoltageDomain* domain,
