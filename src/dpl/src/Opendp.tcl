@@ -4,11 +4,12 @@
 sta::define_cmd_args "detailed_placement" { \
                            [-max_displacement disp|{disp_x disp_y}] \
                            [-disallow_one_site_gaps] \
+                           [-incremental] \
                            [-report_file_name file_name]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps}
+    keys {-max_displacement -report_file_name} flags {-disallow_one_site_gaps -incremental}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -47,7 +48,7 @@ proc detailed_placement { args } {
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
-      $file_name
+      $file_name [info exists flags(-incremental)]
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -297,7 +298,7 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-    keys {-instance -min_displacement -jump_moves} flags {-iterative}
+    keys {-instance -min_displacement -jump_moves} flags {-iterative -deep_iterative -paint_pixels}
 
 
   if { [info exists keys(-min_displacement)] } {
@@ -323,7 +324,9 @@ proc detailed_placement_debug { args } {
     set debug_instance "NULL"
   }
 
-  dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves [info exists flags(-iterative)]
+  dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves \
+    [info exists flags(-iterative)] [info exists flags(-deep_iterative)] \
+    [info exists flags(-paint_pixels)]
 }
 
 proc get_masters_arg { arg_name arg } {

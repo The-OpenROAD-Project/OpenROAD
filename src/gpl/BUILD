@@ -77,12 +77,12 @@ cc_library(
         "@boost.tokenizer",
         "@boost.unordered",
         "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
+        "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/sat:cp_model",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

@@ -3,9 +3,9 @@
 
 #include "BaseMove.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
@@ -29,7 +29,8 @@ class SizeDownMove : public BaseMove
   sta::LibertyCell* downSizeGate(const sta::LibertyPort* drvr_port,
                                  const sta::LibertyPort* load_port,
                                  const sta::Pin* load_pin,
-                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
                                  float slack_margin);
 };
 

@@ -68,6 +68,11 @@ void Opendp::detailedPlacement()
   initGrid();
   // Paint fixed cells.
   setFixedGridCells();
+  // Paint initially place2d cells (respecting already legalized ones).
+  if (incremental_) {
+    logger_->report("setInitialGridCells()");
+    setInitialGridCells();
+  }
   // group mapping & x_axis dummycell insertion
   groupInitPixels2();
   // y axis dummycell insertion
@@ -304,29 +309,45 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
-  int move_count = 0;
-  auto report_placement = [this, &move_count](
-                              Node* cell, bool mapped, bool shifted) {
-    if (jump_moves_ > 0 && (move_count++ % jump_moves_ != 0)) {
-      return;
-    }
+  auto report_placement = [this](Node* cell, bool mapped, bool shifted) {
     if (debug_observer_) {
       const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
       if (mapped) {
-        logger_->report("Successful mapMove(), {} cell {}", type, cell->name());
-      } else if (shifted) {
-        logger_->report(
-            "Successful shiftMove(), {} cell {}", type, cell->name());
+        logger_->report("Successful mapMove(), {} cell {}, #moves: {}",
+                        type,
+                        cell->name(),
+                        move_count_);
       } else {
         logger_->report(
-            "Unsuccessful placement, {} cell {}", type, cell->name());
+            "Failed mapMove(), {} cell {}, trying shiftMove(), #moves: {}",
+            type,
+            cell->name(),
+            move_count_);
+        if (shifted) {
+          logger_->report("Successful shiftMove(), {} cell {}, #moves: {}",
+                          type,
+                          cell->name(),
+                          move_count_);
+        } else {
+          logger_->report("Unsuccessful placement, {} cell {}, #moves: {}",
+                          type,
+                          cell->name(),
+                          move_count_);
+        }
       }
+      move_count_++;
+      if (jump_moves_ > 0 && (move_count_ % jump_moves_ != 0)) {
+        deep_iterative_placement_ = false;
+        return;
+      }
+      deep_iterative_placement_ = true;
       debug_observer_->redrawAndPause();
     }
   };
 
   vector<Node*> sorted_cells;
   sorted_cells.reserve(network_->getNumCells());
+  int failed_map_move = 0, failed_shift_move = 0, success_map_move = 0;
 
   for (auto& cell : network_->getNodes()) {
     if (cell->getType() != Node::CELL) {
@@ -358,7 +379,11 @@ void Opendp::place()
         bool shifted = false;
         if (!mapped) {
           shifted = shiftMove(cell);
+          if (!shifted) {
+            failed_shift_move++;
+          }
         }
+        mapped == 1 ? success_map_move++ : failed_map_move++;
 
         if (iterative_placement_) {
           odb::Point initial_location = getOdbLocation(cell);
@@ -372,13 +397,26 @@ void Opendp::place()
       }
     }
   }
+
+  int count = 0;
   for (Node* cell : sorted_cells) {
     if (!isMultiRow(cell)) {
+      if (iterative_placement_) {
+        count++;
+        logger_->report("Placing single-row cell {}, count {}, %: {:.2f}",
+                        cell->name(),
+                        count,
+                        100.0 * count / sorted_cells.size());
+      }
       bool mapped = mapMove(cell);
       bool shifted = false;
       if (!mapped) {
         shifted = shiftMove(cell);
+        if (!shifted) {
+          failed_shift_move++;
+        }
       }
+      mapped == 1 ? success_map_move++ : failed_map_move++;
 
       if (iterative_placement_) {
         odb::Point initial_location = getOdbLocation(cell);
@@ -390,6 +428,28 @@ void Opendp::place()
         }
       }
     }
+  }
+
+  if (iterative_placement_) {
+    logger_->report(
+        "Total counters:\n"
+        "\t#cells: {}\n"
+        "\t#Failed mapMove(): {}, #Success mapMove(): {}\n"
+        "\t% Success mapMove(): {:.2f}\n"
+        "\t#Failed shiftMove(): {}\n"
+        "\t% Success shiftMove(): {:.2f}",
+        sorted_cells.size(),
+        failed_map_move,
+        success_map_move,
+        success_map_move > 0
+            ? 100.0 * success_map_move / (failed_map_move + success_map_move)
+            : 0,
+        failed_shift_move,
+        failed_map_move > 0
+            ? 100.0 * (failed_map_move - failed_shift_move) / (failed_map_move)
+            : 0);
+
+    logger_->report("Placement failures: {}", placement_failures_.size());
   }
 }
 
@@ -623,7 +683,7 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
              cell->getBottom(),
              grid_pt.x,
              grid_pt.y);
-  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
   debugPrint(logger_,
              DPL,
              "place",
@@ -644,45 +704,85 @@ bool Opendp::mapMove(Node* cell, const GridPt& grid_pt)
   return false;
 }
 
-bool Opendp::shiftMove(Node* cell)
+void Opendp::deepIterativePause(const std::string& message, bool only_print)
 {
-  const GridPt grid_pt = legalGridPt(cell, true);
+  if (deep_iterative_placement_ && debug_observer_) {
+    logger_->report(message);
+    if (!only_print) {
+      debug_observer_->redrawAndPause();
+    }
+  }
+}
+
+bool Opendp::shiftMove(Node* target_cell)
+{
+  const GridPt taget_cell_pixel = legalGridPt(target_cell, true);
   // magic number alert
   const GridY boundary_margin{3};
-  const GridX margin_width{grid_->gridPaddedWidth(cell).v * boundary_margin.v};
+  const GridX margin_width{grid_->gridPaddedWidth(target_cell).v
+                           * (1 + boundary_margin.v)};
   std::set<Node*> region_cells;
-  for (GridX x = grid_pt.x - margin_width; x < grid_pt.x + margin_width; x++) {
-    for (GridY y = grid_pt.y - boundary_margin; y < grid_pt.y + boundary_margin;
+  for (GridX x = taget_cell_pixel.x - margin_width;
+       x <= (taget_cell_pixel.x + margin_width);
+       x++) {
+    for (GridY y = taget_cell_pixel.y - boundary_margin;
+         y <= (taget_cell_pixel.y + boundary_margin);
          y++) {
       Pixel* pixel = grid_->gridPixel(x, y);
       if (pixel) {
-        Node* cell = pixel->cell;
-        if (cell && !cell->isFixed()) {
-          region_cells.insert(cell);
+        Node* cell_in_pixel = pixel->cell;
+        if (cell_in_pixel && !cell_in_pixel->isFixed()) {
+          region_cells.insert(cell_in_pixel);
         }
       }
     }
   }
 
+  deepIterativePause("pause after legalGridPt() inside shiftMove(), cell "
+                     + target_cell->name());
+
   // erase region cells
   for (Node* around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup()) {
+    if (target_cell->inGroup() == around_cell->inGroup()) {
       unplaceCell(around_cell);
     }
   }
 
+  deepIterativePause("pause after unplacing cells inside shiftMove()");
+
   // place target cell
-  if (!mapMove(cell)) {
-    placement_failures_.push_back(cell);
+  bool success = true;
+  if (!mapMove(target_cell)) {
+    deepIterativePause("failed mapMove() inside shiftMove() for target cell "
+                           + target_cell->name(),
+                       /*only_print=*/true);
+    placement_failures_.push_back(target_cell);
+    success = false;
   }
+
+  deepIterativePause("pause after placing target cell inside shiftMove()");
 
   // re-place erased cells
   for (Node* around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell)) {
-      placement_failures_.push_back(cell);
+    deepIterativePause(
+        "pause before mapMove() inside shiftMove() for surrounding cell "
+        + around_cell->name());
+
+    if (target_cell->inGroup() == around_cell->inGroup()
+        && !mapMove(around_cell)) {
+      deepIterativePause(
+          "failed mapMove() inside shiftMove() for surrounding cell "
+              + around_cell->name(),
+          /*only_print=*/true);
+      placement_failures_.push_back(around_cell);
+      success = false;
     }
   }
-  return placement_failures_.empty();
+
+  deepIterativePause(
+      "pause after placing surrounding cells inside shiftMove()");
+
+  return success;
 }
 
 bool Opendp::swapCells(Node* cell1, Node* cell2)
@@ -735,7 +835,7 @@ bool Opendp::swapCells(Node* cell1, Node* cell2)
 bool Opendp::refineMove(Node* cell)
 {
   const GridPt grid_pt = legalGridPt(cell, false);
-  const PixelPt pixel_pt = searchNearestSite(cell, grid_pt.x, grid_pt.y);
+  const PixelPt pixel_pt = diamondSearch(cell, grid_pt.x, grid_pt.y);
 
   if (pixel_pt.pixel) {
     if (abs(grid_pt.x - pixel_pt.x) > max_displacement_x_
@@ -768,9 +868,9 @@ int Opendp::distChange(const Node* cell, const DbuX x, const DbuY y) const
 
 ////////////////////////////////////////////////////////////////
 
-PixelPt Opendp::searchNearestSite(const Node* cell,
-                                  const GridX x,
-                                  const GridY y) const
+PixelPt Opendp::diamondSearch(const Node* cell,
+                              const GridX x,
+                              const GridY y) const
 {
   // Diamond search limits.
   GridX x_min = x - max_displacement_x_;

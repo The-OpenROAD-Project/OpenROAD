@@ -11,11 +11,11 @@
 #include <QWaitCondition>
 #include <cstdint>
 #include <map>
-#include <mutex>
 #include <set>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
 #include "label.h"
 #include "odb/db.h"
@@ -155,7 +155,7 @@ class RenderThread : public QThread
 
   utl::Logger* logger_ = nullptr;
   LayoutViewer* viewer_;
-  std::mutex drawing_mutex_;
+  absl::Mutex drawing_mutex_;
 
   // These variables are cached copies of what's passed to render().
   // The draw method will the make a local copy of them to avoid any

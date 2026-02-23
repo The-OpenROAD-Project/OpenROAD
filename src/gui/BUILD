@@ -29,8 +29,9 @@ cc_library(
     includes = ["include"],
     deps = [
         "//src/odb",
+        "@abseil-cpp//absl/synchronization",
         "@boost.multi_array",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -82,12 +83,13 @@ QT_GUI_PLATFORMS = {
             "//src/sta:opensta_lib",
             "//src/utl",
             "//third-party/gif-h:gif_h",
+            "@abseil-cpp//absl/synchronization",
             "@boost.algorithm",
             "@boost.geometry",
             "@boost.multi_array",
             "@boost.stacktrace",
             "@spdlog",
-            "@tk_tcl//:tcl",
+            "@tcl_lang//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
     )
     for platform, suffix in QT_GUI_PLATFORMS.items()

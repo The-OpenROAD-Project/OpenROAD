@@ -14,7 +14,6 @@
 #include "sta/Hash.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Vector.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "stt/flute.h"
 #include "utl/Logger.h"
@@ -62,7 +61,7 @@ class SteinerTree
               sta::dbNetwork* db_network,
               utl::Logger* logger);
   SteinerTree(odb::Point drvr_location, utl::Logger* logger);
-  sta::Vector<PinLoc>& pinlocs() { return pinlocs_; }
+  std::vector<PinLoc>& pinlocs() { return pinlocs_; }
   int pinCount() const { return pinlocs_.size(); }
   int branchCount() const;
   void branch(int index,
@@ -112,7 +111,7 @@ class SteinerTree
   stt::Tree tree_;
   const odb::Point drvr_location_;
   int drvr_steiner_pt_ = 0;      // index into tree_.branch
-  sta::Vector<PinLoc> pinlocs_;  // Initial input
+  std::vector<PinLoc> pinlocs_;  // Initial input
   LocPinMap loc_pin_map_;        // location -> pins map
   std::vector<SteinerPt> left_;
   std::vector<SteinerPt> right_;

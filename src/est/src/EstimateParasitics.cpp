@@ -30,8 +30,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
@@ -42,7 +40,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
-#include "sta/Vector.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -53,7 +50,11 @@ using utl::EST;
 
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
+using sta::Parasitic;
+using sta::Parasitics;
+using sta::Pin;
 using sta::PinSet;
+using sta::Scene;
 
 using odb::dbInst;
 using odb::dbMasterType;
@@ -98,13 +99,13 @@ void EstimateParasitics::initSteinerRenderer(
 ////////////////////////////////////////////////////////////////
 
 void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
-                                    const sta::Corner* corner,
+                                    const sta::Scene* corner,
                                     double res,
                                     double cap)
 {
   if (layer_res_.empty()) {
     int layer_count = db_->getTech()->getLayerCount();
-    int corner_count = sta_->corners()->count();
+    int corner_count = sta_->scenes().size();
     layer_res_.resize(layer_count);
     layer_cap_.resize(layer_count);
     for (int i = 0; i < layer_count; i++) {
@@ -118,7 +119,7 @@ void EstimateParasitics::setLayerRC(odb::dbTechLayer* layer,
 }
 
 void EstimateParasitics::layerRC(odb::dbTechLayer* layer,
-                                 const sta::Corner* corner,
+                                 const sta::Scene* corner,
                                  // Return values.
                                  double& res,
                                  double& cap) const
@@ -155,85 +156,80 @@ void EstimateParasitics::sortClkAndSignalLayers()
   std::ranges::sort(signal_layers_, sortLayers);
 }
 
-void EstimateParasitics::setHWireSignalRC(const sta::Corner* corner,
+void EstimateParasitics::setHWireSignalRC(const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  wire_signal_res_.resize(sta_->corners()->count());
-  wire_signal_cap_.resize(sta_->corners()->count());
-  wire_signal_res_[corner->index()].h_res = res;
-  wire_signal_cap_[corner->index()].h_cap = cap;
+  wire_signal_res_.resize(sta_->scenes().size());
+  wire_signal_cap_.resize(sta_->scenes().size());
+  wire_signal_res_[scene->index()].h_res = res;
+  wire_signal_cap_[scene->index()].h_cap = cap;
 }
-void EstimateParasitics::setVWireSignalRC(const sta::Corner* corner,
+void EstimateParasitics::setVWireSignalRC(const sta::Scene* scene,
                                           double res,
                                           double cap)
 {
-  wire_signal_res_.resize(sta_->corners()->count());
-  wire_signal_cap_.resize(sta_->corners()->count());
-  wire_signal_res_[corner->index()].v_res = res;
-  wire_signal_cap_[corner->index()].v_cap = cap;
+  wire_signal_res_.resize(sta_->scenes().size());
+  wire_signal_cap_.resize(sta_->scenes().size());
+  wire_signal_res_[scene->index()].v_res = res;
+  wire_signal_cap_[scene->index()].v_cap = cap;
 }
 
-double EstimateParasitics::wireSignalResistance(const sta::Corner* corner) const
+double EstimateParasitics::wireSignalResistance(const sta::Scene* scene) const
 {
   if (wire_signal_res_.empty()) {
     return 0.0;
   }
 
-  return (wire_signal_res_[corner->index()].h_res
-          + wire_signal_res_[corner->index()].v_res)
+  return (wire_signal_res_[scene->index()].h_res
+          + wire_signal_res_[scene->index()].v_res)
          / 2;
 }
 
-double EstimateParasitics::wireSignalHResistance(
-    const sta::Corner* corner) const
+double EstimateParasitics::wireSignalHResistance(const sta::Scene* scene) const
 {
   if (wire_signal_res_.empty()) {
     return 0.0;
   }
-  return wire_signal_res_[corner->index()].h_res;
+  return wire_signal_res_[scene->index()].h_res;
 }
 
-double EstimateParasitics::wireSignalVResistance(
-    const sta::Corner* corner) const
+double EstimateParasitics::wireSignalVResistance(const sta::Scene* scene) const
 {
   if (wire_signal_res_.empty()) {
     return 0.0;
   }
-  return wire_signal_res_[corner->index()].v_res;
+  return wire_signal_res_[scene->index()].v_res;
 }
 
-double EstimateParasitics::wireSignalCapacitance(
-    const sta::Corner* corner) const
+double EstimateParasitics::wireSignalCapacitance(const sta::Scene* scene) const
 {
   if (wire_signal_cap_.empty()) {
     return 0.0;
   }
 
-  return (wire_signal_cap_[corner->index()].h_cap
-          + wire_signal_cap_[corner->index()].v_cap)
+  return (wire_signal_cap_[scene->index()].h_cap
+          + wire_signal_cap_[scene->index()].v_cap)
          / 2;
 }
 
-double EstimateParasitics::wireSignalHCapacitance(
-    const sta::Corner* corner) const
+double EstimateParasitics::wireSignalHCapacitance(const sta::Scene* scene) const
 {
   if (wire_signal_cap_.empty()) {
     return 0.0;
   }
-  return wire_signal_cap_[corner->index()].h_cap;
+  return wire_signal_cap_[scene->index()].h_cap;
 }
 
-double EstimateParasitics::wireSignalVCapacitance(
-    const sta::Corner* corner) const
+double EstimateParasitics::wireSignalVCapacitance(const sta::Scene* scene) const
 {
   if (wire_signal_cap_.empty()) {
     return 0.0;
   }
-  return wire_signal_cap_[corner->index()].v_cap;
+  return wire_signal_cap_[scene->index()].v_cap;
 }
 
-void EstimateParasitics::wireSignalRC(const sta::Corner* corner,
+void EstimateParasitics::wireSignalRC(const sta::Scene* scene,
                                       // Return values.
                                       double& res,
                                       double& cap) const
@@ -241,93 +237,93 @@ void EstimateParasitics::wireSignalRC(const sta::Corner* corner,
   if (wire_signal_res_.empty()) {
     res = 0.0;
   } else {
-    auto resistance = wire_signal_res_[corner->index()];
+    auto resistance = wire_signal_res_[scene->index()];
     res = (resistance.h_res + resistance.v_res) / 2;
   }
   if (wire_signal_cap_.empty()) {
     cap = 0.0;
   } else {
-    auto capacitance = wire_signal_cap_[corner->index()];
+    auto capacitance = wire_signal_cap_[scene->index()];
     cap = (capacitance.h_cap + capacitance.v_cap) / 2;
   }
 }
 
-void EstimateParasitics::setHWireClkRC(const sta::Corner* corner,
+void EstimateParasitics::setHWireClkRC(const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  wire_clk_res_.resize(sta_->corners()->count());
-  wire_clk_cap_.resize(sta_->corners()->count());
-  wire_clk_res_[corner->index()].h_res = res;
-  wire_clk_cap_[corner->index()].h_cap = cap;
+  wire_clk_res_.resize(sta_->scenes().size());
+  wire_clk_cap_.resize(sta_->scenes().size());
+  wire_clk_res_[scene->index()].h_res = res;
+  wire_clk_cap_[scene->index()].h_cap = cap;
 }
 
-void EstimateParasitics::setVWireClkRC(const sta::Corner* corner,
+void EstimateParasitics::setVWireClkRC(const sta::Scene* scene,
                                        double res,
                                        double cap)
 {
-  wire_clk_res_.resize(sta_->corners()->count());
-  wire_clk_cap_.resize(sta_->corners()->count());
-  wire_clk_res_[corner->index()].v_res = res;
-  wire_clk_cap_[corner->index()].v_cap = cap;
+  wire_clk_res_.resize(sta_->scenes().size());
+  wire_clk_cap_.resize(sta_->scenes().size());
+  wire_clk_res_[scene->index()].v_res = res;
+  wire_clk_cap_[scene->index()].v_cap = cap;
 }
 
-double EstimateParasitics::wireClkResistance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkResistance(const sta::Scene* scene) const
 {
   if (wire_clk_res_.empty()) {
     return 0.0;
   }
 
-  return (wire_clk_res_[corner->index()].h_res
-          + wire_clk_res_[corner->index()].v_res)
+  return (wire_clk_res_[scene->index()].h_res
+          + wire_clk_res_[scene->index()].v_res)
          / 2;
 }
 
-double EstimateParasitics::wireClkHResistance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkHResistance(const sta::Scene* scene) const
 {
   if (wire_clk_res_.empty()) {
     return 0.0;
   }
 
-  return wire_clk_res_[corner->index()].h_res;
+  return wire_clk_res_[scene->index()].h_res;
 }
 
-double EstimateParasitics::wireClkVResistance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkVResistance(const sta::Scene* scene) const
 {
   if (wire_clk_res_.empty()) {
     return 0.0;
   }
 
-  return wire_clk_res_[corner->index()].v_res;
+  return wire_clk_res_[scene->index()].v_res;
 }
 
-double EstimateParasitics::wireClkCapacitance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkCapacitance(const sta::Scene* scene) const
 {
   if (wire_clk_cap_.empty()) {
     return 0.0;
   }
 
-  return (wire_clk_cap_[corner->index()].h_cap
-          + wire_clk_cap_[corner->index()].v_cap)
+  return (wire_clk_cap_[scene->index()].h_cap
+          + wire_clk_cap_[scene->index()].v_cap)
          / 2;
 }
 
-double EstimateParasitics::wireClkHCapacitance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkHCapacitance(const sta::Scene* scene) const
 {
   if (wire_clk_cap_.empty()) {
     return 0.0;
   }
 
-  return wire_clk_cap_[corner->index()].h_cap;
+  return wire_clk_cap_[scene->index()].h_cap;
 }
 
-double EstimateParasitics::wireClkVCapacitance(const sta::Corner* corner) const
+double EstimateParasitics::wireClkVCapacitance(const sta::Scene* scene) const
 {
   if (wire_clk_cap_.empty()) {
     return 0.0;
   }
 
-  return wire_clk_cap_[corner->index()].v_cap;
+  return wire_clk_cap_[scene->index()].v_cap;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -371,13 +367,13 @@ void EstimateParasitics::ensureParasitics()
 
 void EstimateParasitics::estimateParasitics(ParasiticsSrc src)
 {
-  std::map<sta::Corner*, std::ostream*> spef_streams;
+  std::map<sta::Scene*, std::ostream*> spef_streams;
   estimateParasitics(src, spef_streams);
 }
 
 void EstimateParasitics::estimateParasitics(
     ParasiticsSrc src,
-    std::map<sta::Corner*, std::ostream*>& spef_streams)
+    std::map<sta::Scene*, std::ostream*>& spef_streams)
 {
   initBlock();
   std::unique_ptr<sta::SpefWriter> spef_writer;
@@ -505,12 +501,10 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
 {
   // Sufficient to check for parasitic for one corner because
   // they are all made at the same time.
-  const sta::Corner* corner = sta_->corners()->findCorner(0);
-  const sta::ParasiticAnalysisPt* parasitic_ap
-      = corner->findParasiticAnalysisPt(max_);
-  if (parasitics_invalid_.hasKey(net)
-      || parasitics_->findPiElmore(
-             drvr_pin, sta::RiseFall::rise(), parasitic_ap)
+  const Scene* corner = sta_->scenes().front();
+  Parasitics* parasitics = corner->parasitics(max_);
+  if (parasitics_invalid_.contains(net)
+      || parasitics->findPiElmore(drvr_pin, sta::RiseFall::rise(), max_)
              == nullptr) {
     switch (parasitics_src_) {
       case ParasiticsSrc::placement:
@@ -534,11 +528,11 @@ void EstimateParasitics::ensureWireParasitic(const sta::Pin* drvr_pin,
 
 void EstimateParasitics::estimateGlobalRouteRC(sta::SpefWriter* spef_writer)
 {
-  // Remove any existing parasitics.
   sta_->deleteParasitics();
-
-  // Make separate parasitics for each corner.
-  sta_->setParasiticAnalysisPts(true);
+  for (Scene* scene : scenes_) {
+    Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
+    scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+  }
 
   MakeWireParasitics builder(
       logger_, this, sta_, db_->getTech(), block_, global_router_);
@@ -593,9 +587,16 @@ void EstimateParasitics::estimateWireParasitics(sta::SpefWriter* spef_writer)
 {
   initBlock();
   if (!wire_signal_cap_.empty()) {
-    sta_->ensureClkNetwork();
-    // Make separate parasitics for each corner, same for min/max.
-    sta_->setParasiticAnalysisPts(true);
+    for (auto mode : sta_->modes()) {
+      sta_->ensureClkNetwork(mode);
+    }
+    // Make separate parasitics for each corner
+    sta_->deleteParasitics();
+    for (Scene* scene : scenes_) {
+      Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
+      scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+    }
+
     sta::LibertyLibrary* default_lib = network_->defaultLibertyLibrary();
     // Call clearNetDrvrPinMap only without full blown ConcreteNetwork::clear()
     // This is because netlist changes may invalidate cached net driver pin data
@@ -628,8 +629,7 @@ void EstimateParasitics::estimateWireParasitic(const sta::Net* net,
 {
   PinSet* drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
-    PinSet::Iterator drvr_iter(drivers);
-    const sta::Pin* drvr_pin = drvr_iter.next();
+    const Pin* drvr_pin = *drivers->begin();
     estimateWireParasitic(drvr_pin, net, spef_writer);
   }
 }
@@ -639,7 +639,6 @@ void EstimateParasitics::estimateWireParasitic(const sta::Pin* drvr_pin,
                                                sta::SpefWriter* spef_writer)
 {
   if (!network_->isPower(net) && !network_->isGround(net)
-      && !sta_->isIdealClock(drvr_pin)
       && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net)) {
       // When an input port drives a pad instance with huge input
@@ -656,13 +655,10 @@ void EstimateParasitics::makeWireParasitic(sta::Net* net,
                                            sta::Pin* drvr_pin,
                                            sta::Pin* load_pin,
                                            double wire_length,  // meters
-                                           const sta::Corner* corner,
-                                           sta::Parasitics* parasitics)
+                                           const Scene* corner)
 {
-  const sta::ParasiticAnalysisPt* parasitics_ap
-      = corner->findParasiticAnalysisPt(max_);
-  sta::Parasitic* parasitic
-      = parasitics->makeParasiticNetwork(net, false, parasitics_ap);
+  sta::Parasitics* parasitics = corner->parasitics(max_);
+  sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
   sta::ParasiticNode* n1
       = parasitics->ensureParasiticNode(parasitic, drvr_pin, network_);
   sta::ParasiticNode* n2
@@ -700,25 +696,23 @@ void EstimateParasitics::makePadParasitic(const sta::Net* net,
 {
   const sta::Pin *pin1, *pin2;
   net2Pins(net, pin1, pin2);
-  for (sta::Corner* corner : *sta_->corners()) {
-    const sta::ParasiticAnalysisPt* parasitics_ap
-        = corner->findParasiticAnalysisPt(max_);
-    sta::Parasitic* parasitic
-        = sta_->makeParasiticNetwork(net, false, parasitics_ap);
+  for (sta::Scene* corner : sta_->scenes()) {
+    sta::Parasitics* parasitics = corner->parasitics(max_);
+    sta::Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
     sta::ParasiticNode* n1
-        = parasitics_->ensureParasiticNode(parasitic, pin1, network_);
+        = parasitics->ensureParasiticNode(parasitic, pin1, network_);
     sta::ParasiticNode* n2
-        = parasitics_->ensureParasiticNode(parasitic, pin2, network_);
+        = parasitics->ensureParasiticNode(parasitic, pin2, network_);
 
     // Use a small resistor to keep the connectivity intact.
-    parasitics_->makeResistor(parasitic, 1, .001, n1, n2);
+    parasitics->makeResistor(parasitic, 1, .001, n1, n2);
     if (spef_writer) {
-      spef_writer->writeNet(corner, net, parasitic);
+      spef_writer->writeNet(corner, net, parasitic, parasitics);
     }
     arc_delay_calc_->reduceParasitic(
         parasitic, net, corner, sta::MinMaxAll::all());
+    parasitics->deleteParasiticNetwork(net);
   }
-  parasitics_->deleteParasiticNetworks(net);
 }
 
 void EstimateParasitics::estimateWireParasiticSteiner(
@@ -734,12 +728,14 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                1,
                "estimate wire {}",
                sdc_network_->pathName(net));
-    for (sta::Corner* corner : *sta_->corners()) {
-      std::set<const sta::Pin*> connected_pins;
-      const sta::ParasiticAnalysisPt* parasitics_ap
-          = corner->findParasiticAnalysisPt(max_);
-      sta::Parasitic* parasitic
-          = sta_->makeParasiticNetwork(net, false, parasitics_ap);
+    for (sta::Scene* corner : sta_->scenes()) {
+      if (sta_->isIdealClock(drvr_pin, corner->mode())) {
+        continue;
+      }
+
+      std::set<const Pin*> connected_pins;
+      Parasitics* parasitics = corner->parasitics(max_);
+      Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
       bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
       double wire_cap = 0.0;
       double wire_res = 0.0;
@@ -773,13 +769,13 @@ void EstimateParasitics::estimateWireParasiticSteiner(
           wire_res = is_clk ? wireClkResistance(corner)
                             : wireSignalResistance(corner);
         }
-        sta::ParasiticNode* n1 = parasitics_->ensureParasiticNode(
+        sta::ParasiticNode* n1 = parasitics->ensureParasiticNode(
             parasitic, net, steiner_pt1, network_);
-        sta::ParasiticNode* n2 = parasitics_->ensureParasiticNode(
+        sta::ParasiticNode* n2 = parasitics->ensureParasiticNode(
             parasitic, net, steiner_pt2, network_);
         if (wire_length_dbu == 0) {
           // Use a small resistor to keep the connectivity intact.
-          parasitics_->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
+          parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
         } else {
           double length = dbuToMeters(wire_length_dbu);
           double cap = length * wire_cap;
@@ -802,17 +798,18 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                      "estimate_parasitics",
                      2,
                      " pi {} l={} c2={} rpi={} c1={} {}",
-                     parasitics_->name(n1),
+                     parasitics->name(n1),
                      units_->distanceUnit()->asString(length),
                      units_->capacitanceUnit()->asString(cap / 2.0),
                      units_->resistanceUnit()->asString(res),
                      units_->capacitanceUnit()->asString(cap / 2.0),
-                     parasitics_->name(n2));
-          parasitics_->incrCap(n1, cap / 2.0);
-          parasitics_->makeResistor(parasitic, resistor_id++, res, n1, n2);
-          parasitics_->incrCap(n2, cap / 2.0);
+                     parasitics->name(n2));
+          parasitics->incrCap(n1, cap / 2.0);
+          parasitics->makeResistor(parasitic, resistor_id++, res, n1, n2);
+          parasitics->incrCap(n2, cap / 2.0);
         }
-        parasiticNodeConnectPins(parasitic,
+        parasiticNodeConnectPins(parasitics,
+                                 parasitic,
                                  n1,
                                  tree,
                                  steiner_pt1,
@@ -820,7 +817,8 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                                  corner,
                                  connected_pins,
                                  is_clk);
-        parasiticNodeConnectPins(parasitic,
+        parasiticNodeConnectPins(parasitics,
+                                 parasitic,
                                  n2,
                                  tree,
                                  steiner_pt2,
@@ -830,27 +828,14 @@ void EstimateParasitics::estimateWireParasiticSteiner(
                                  is_clk);
       }
       if (spef_writer) {
-        spef_writer->writeNet(corner, net, parasitic);
+        spef_writer->writeNet(corner, net, parasitic, parasitics);
       }
       arc_delay_calc_->reduceParasitic(
           parasitic, net, corner, sta::MinMaxAll::all());
+      parasitics->deleteParasiticNetwork(net);
     }
-    parasitics_->deleteParasiticNetworks(net);
     delete tree;
   }
-}
-
-float EstimateParasitics::pinCapacitance(
-    const sta::Pin* pin,
-    const sta::DcalcAnalysisPt* dcalc_ap) const
-{
-  sta::LibertyPort* port = network_->libertyPort(pin);
-  if (port) {
-    int lib_ap = dcalc_ap->libertyIndex();
-    sta::LibertyPort* corner_port = port->cornerPort(lib_ap);
-    return corner_port->capacitance();
-  }
-  return 0.0;
 }
 
 odb::dbTechLayer* EstimateParasitics::getPinLayer(const sta::Pin* pin)
@@ -882,7 +867,7 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const sta::Pin* pin)
   return pin_layer;
 }
 
-double EstimateParasitics::computeAverageCutResistance(sta::Corner* corner)
+double EstimateParasitics::computeAverageCutResistance(sta::Scene* scene)
 {
   if (layer_res_.empty()) {
     return 0.0;
@@ -908,7 +893,7 @@ double EstimateParasitics::computeAverageCutResistance(sta::Corner* corner)
        layer_idx++) {
     odb::dbTechLayer* layer = db_->getTech()->findLayer(layer_idx);
     if (layer && layer->getType() == odb::dbTechLayerType::CUT) {
-      const float resistance = layer_res_[layer_idx][corner->index()];
+      const float resistance = layer_res_[layer_idx][scene->index()];
       total_resistance += resistance;
       count++;
     }
@@ -918,13 +903,14 @@ double EstimateParasitics::computeAverageCutResistance(sta::Corner* corner)
 }
 
 void EstimateParasitics::parasiticNodeConnectPins(
+    sta::Parasitics* parasitics,
     sta::Parasitic* parasitic,
     sta::ParasiticNode* node,
     SteinerTree* tree,
     SteinerPt pt,
     size_t& resistor_id,
-    sta::Corner* corner,
-    std::set<const sta::Pin*>& connected_pins,
+    sta::Scene* corner,
+    std::set<const Pin*>& connected_pins,
     const bool is_clk)
 {
   const sta::PinSeq* pins = tree->pins(pt);
@@ -938,11 +924,11 @@ void EstimateParasitics::parasiticNodeConnectPins(
 
     for (const sta::Pin* pin : *pins) {
       sta::ParasiticNode* pin_node
-          = parasitics_->ensureParasiticNode(parasitic, pin, network_);
+          = parasitics->ensureParasiticNode(parasitic, pin, network_);
       if (connected_pins.find(pin) != connected_pins.end()) {
         // If pin was already connected with via resistances, use a small
         // resistor to keep connectivity intact.
-        parasitics_->makeResistor(
+        parasitics->makeResistor(
             parasitic, resistor_id++, 1.0e-3, node, pin_node);
       } else {
         if (tree_layer != nullptr && !layer_res_.empty()) {
@@ -955,14 +941,14 @@ void EstimateParasitics::parasiticNodeConnectPins(
             if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
               double cut_res
                   = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
-              parasitics_->makeResistor(
+              parasitics->makeResistor(
                   parasitic, resistor_id++, cut_res, node, pin_node);
             }
           }
         } else {
           double cut_res
               = std::max(computeAverageCutResistance(corner), 1.0e-3);
-          parasitics_->makeResistor(
+          parasitics->makeResistor(
               parasitic, resistor_id++, cut_res, node, pin_node);
         }
         connected_pins.insert(pin);
@@ -1091,13 +1077,13 @@ static void connectedPins(const sta::Net* net,
                           sta::Network* network,
                           sta::dbNetwork* db_network,
                           // Return value.
-                          sta::Vector<PinLoc>& pins);
+                          std::vector<PinLoc>& pins);
 
 static void connectedPins(const sta::Net* net,
                           sta::Network* network,
                           sta::dbNetwork* db_network,
                           // Return value.
-                          sta::Vector<PinLoc>& pins)
+                          std::vector<PinLoc>& pins)
 {
   NetConnectedPinIterator* pin_iter = network->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
@@ -1123,16 +1109,18 @@ SteinerTree* EstimateParasitics::makeSteinerTree(
     const std::vector<odb::Point>& sink_locations)
 {
   SteinerTree* tree = new SteinerTree(drvr_location, logger_);
-  sta::Vector<PinLoc>& pinlocs = tree->pinlocs();
+  std::vector<PinLoc>& pinlocs = tree->pinlocs();
   for (auto loc : sink_locations) {
     pinlocs.push_back(PinLoc{nullptr, loc});
   }
   // Sort pins by location
-  sort(pinlocs, [=](const PinLoc& pin1, const PinLoc& pin2) {
-    return pin1.loc.getX() < pin2.loc.getX()
-           || (pin1.loc.getX() == pin2.loc.getX()
-               && pin1.loc.getY() < pin2.loc.getY());
-  });
+  sort(pinlocs.begin(),
+       pinlocs.end(),
+       [=](const PinLoc& pin1, const PinLoc& pin2) {
+         return pin1.loc.getX() < pin2.loc.getX()
+                || (pin1.loc.getX() == pin2.loc.getX()
+                    && pin1.loc.getY() < pin2.loc.getY());
+       });
   int pin_count = pinlocs.size();
   if (pin_count >= 1) {
     // Two separate vectors of coordinates needed by flute.
@@ -1167,15 +1155,17 @@ SteinerTree* EstimateParasitics::makeSteinerTree(const sta::Pin* drvr_pin)
   debugPrint(
       logger_, EST, "steiner", 1, "sta::Net {}", sdc_network->pathName(net));
   SteinerTree* tree = new SteinerTree(drvr_pin, db_network_, logger_);
-  sta::Vector<PinLoc>& pinlocs = tree->pinlocs();
+  std::vector<PinLoc>& pinlocs = tree->pinlocs();
   // Find all the connected pins
   connectedPins(net, network_, db_network_, pinlocs);
   // Sort pins by location because connectedPins order is not deterministic.
-  sort(pinlocs, [=](const PinLoc& pin1, const PinLoc& pin2) {
-    return pin1.loc.getX() < pin2.loc.getX()
-           || (pin1.loc.getX() == pin2.loc.getX()
-               && pin1.loc.getY() < pin2.loc.getY());
-  });
+  sort(pinlocs.begin(),
+       pinlocs.end(),
+       [=](const PinLoc& pin1, const PinLoc& pin2) {
+         return pin1.loc.getX() < pin2.loc.getX()
+                || (pin1.loc.getX() == pin2.loc.getX()
+                    && pin1.loc.getY() < pin2.loc.getY());
+       });
   int pin_count = pinlocs.size();
   bool is_placed = true;
   if (pin_count >= 2) {

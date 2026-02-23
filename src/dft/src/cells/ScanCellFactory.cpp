@@ -83,10 +83,10 @@ std::unique_ptr<ClockDomain> GetClockDomainFromClock(
   ClockEdge edge = ClockEdge::Rising;
   const sta::SequentialSeq& sequentials = liberty_cell->sequentials();
   // TODO: Other cells may have more than one sequential
-  for (const sta::Sequential* sequential : sequentials) {
+  for (const sta::Sequential& sequential : sequentials) {
     // If the clock has a left FuncExpr, then
-    sta::FuncExpr* left = sequential->clock()->left();
-    sta::FuncExpr* right = sequential->clock()->right();
+    sta::FuncExpr* left = sequential.clock()->left();
+    sta::FuncExpr* right = sequential.clock()->right();
     if (left && !right) {
       //  When operator is NOT, left is the only operand
       edge = ClockEdge::Falling;

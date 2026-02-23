@@ -9,10 +9,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
@@ -21,6 +21,9 @@ namespace rsz {
 
 using sta::LibertyCell;
 using sta::LibertyCellSeq;
+using sta::LibertyLibraryIterator;
+using sta::RiseFall;
+using sta::Scene;
 using utl::RSZ;
 
 PreChecks::PreChecks(Resizer* resizer) : resizer_(resizer)
@@ -36,12 +39,15 @@ void PreChecks::checkSlewLimit(float ref_cap, float max_load_slew)
   if (!best_case_slew_computed_ || ref_cap < best_case_slew_load_) {
     LibertyCellSeq swappable_cells
         = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
-    float slew = resizer_->bufferSlew(
-        resizer_->buffer_lowest_drive_, ref_cap, resizer_->tgt_slew_dcalc_ap_);
+    float slew = resizer_->bufferSlew(resizer_->buffer_lowest_drive_,
+                                      ref_cap,
+                                      resizer_->tgt_slew_corner_,
+                                      sta::MinMax::max());
     for (LibertyCell* buffer : swappable_cells) {
       slew = std::min(
           slew,
-          resizer_->bufferSlew(buffer, ref_cap, resizer_->tgt_slew_dcalc_ap_));
+          resizer_->bufferSlew(
+              buffer, ref_cap, resizer_->tgt_slew_corner_, sta::MinMax::max()));
     }
     best_case_slew_computed_ = true;
     best_case_slew_load_ = ref_cap;
@@ -92,16 +98,16 @@ void PreChecks::checkCapLimit(const sta::Pin* drvr_pin)
   }
 
   float cap1, max_cap1, cap_slack1;
-  const sta::Corner* corner1;
-  const sta::RiseFall* tr1;
+  const Scene* corner1;
+  const RiseFall* tr1;
   sta_->checkCapacitance(drvr_pin,
-                         nullptr,
+                         sta_->scenes(),
                          sta::MinMax::max(),
-                         corner1,
-                         tr1,
                          cap1,
                          max_cap1,
-                         cap_slack1);
+                         cap_slack1,
+                         tr1,
+                         corner1);
   if (max_cap1 > 0 && max_cap1 < min_cap_load_) {
     sta::dbNetwork* network = resizer_->getDbNetwork();
     const sta::Unit* cap_unit = sta_->units()->capacitanceUnit();

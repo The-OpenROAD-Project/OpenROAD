@@ -25,7 +25,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <ranges>
 #include <set>
 #include <string>
@@ -33,6 +32,7 @@
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -43,15 +43,15 @@
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
 
-Q_DECLARE_METATYPE(sta::Corner*);
+Q_DECLARE_METATYPE(sta::Scene*);
 
 namespace gui {
 
@@ -494,7 +494,7 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   {
-    std::lock_guard guard(rendering_);
+    absl::MutexLock guard(&rendering_);
     path_ = path;
     highlight_stage_.clear();
   }
@@ -503,7 +503,7 @@ void TimingPathRenderer::highlight(TimingPath* path)
 
 void TimingPathRenderer::clearHighlightNodes()
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   highlight_stage_.clear();
 }
 
@@ -528,7 +528,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
-      std::lock_guard guard(rendering_);
+      absl::MutexLock guard(&rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -583,7 +583,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
     return;
   }
@@ -716,7 +716,7 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   const int path_count = 1000;
 
   STAGuiInterface stagui(sta_);
-  stagui.setCorner(sta_->cmdCorner());
+  stagui.setScene(sta_->cmdScene());
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
@@ -1187,8 +1187,8 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
             if (index < 0 || index >= corner_box_->count()) {
               return;
             }
-            auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
-            sta_->setCorner(corner);
+            auto* corner = corner_box_->itemData(index).value<sta::Scene*>();
+            sta_->setScene(corner);
           });
 
   connect(expand_clk_,
@@ -1256,20 +1256,20 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->getCorner();
+  auto* current_corner = sta_->getScene();
   corner_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->getSTA()->corners()->corners()) {
+  for (auto* corner : sta_->getSTA()->scenes()) {
     if (corner == current_corner) {
       selection = corner_box_->count();
     }
-    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+    corner_box_->addItem(corner->name().c_str(), QVariant::fromValue(corner));
   }
 
   if (corner_box_->count() > 1) {
     selection += 1;
     corner_box_->insertItem(
-        0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
+        0, "All", QVariant::fromValue(static_cast<sta::Scene*>(nullptr)));
     if (current_corner == nullptr) {
       selection = 0;
     }

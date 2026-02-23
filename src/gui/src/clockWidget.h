@@ -536,7 +536,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
  public slots:
   void setBlock(odb::dbBlock* block);
-  void populate(sta::Corner* corner = nullptr);
+  void populate(sta::Scene* corner = nullptr);
   void fit();
   void findInCts(const Selected& selection);
   void findInCts(const SelectionSet& selections);

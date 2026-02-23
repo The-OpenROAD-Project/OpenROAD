@@ -20,6 +20,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
@@ -35,8 +36,6 @@ using odb::dbInst;
 using utl::RSZ;
 
 using sta::ArcDelay;
-using sta::Corner;
-using sta::DcalcAnalysisPt;
 using sta::GraphDelayCalc;
 using sta::Instance;
 using sta::InstancePinIterator;
@@ -49,6 +48,8 @@ using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
+using sta::Scene;
+using sta::Sdc;
 using sta::Slack;
 using sta::Slew;
 using sta::Vertex;
@@ -106,8 +107,12 @@ bool UnbufferMove::doMove(const Path* drvr_path,
     Vertex* prev_drvr_vertex = prev_drvr_path->vertex(sta_);
     Pin* prev_drvr_pin = prev_drvr_vertex->pin();
     float curr_fanout, max_fanout, fanout_slack;
-    sta_->checkFanout(
-        prev_drvr_pin, resizer_->max_, curr_fanout, max_fanout, fanout_slack);
+    sta_->checkFanout(prev_drvr_pin,
+                      drvr_path->scene(sta_)->mode(),
+                      resizer_->max_,
+                      curr_fanout,
+                      max_fanout,
+                      fanout_slack);
     float new_fanout = curr_fanout + fanout(drvr_vertex) - 1;
     if (max_fanout > 0.0) {
       // Honor max fanout when the constraint exists
@@ -142,22 +147,20 @@ bool UnbufferMove::doMove(const Path* drvr_path,
 
     // Watch out for new max cap violations
     float cap, max_cap, cap_slack;
-    const Corner* corner;
+    const Scene* corner;
     const RiseFall* tr;
     sta_->checkCapacitance(prev_drvr_pin,
-                           nullptr /* corner */,
+                           sta_->scenes(),
                            resizer_->max_,
                            // return values
-                           corner,
-                           tr,
                            cap,
                            max_cap,
-                           cap_slack);
+                           cap_slack,
+                           tr,
+                           corner);
     if (max_cap > 0.0 && corner) {
-      const DcalcAnalysisPt* dcalc_ap
-          = corner->findDcalcAnalysisPt(resizer_->max_);
       GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-      float drvr_cap = dcalc->loadCap(drvr_pin, dcalc_ap);
+      float drvr_cap = dcalc->loadCap(drvr_pin, corner, resizer_->max_);
       LibertyPort *buffer_input_port, *buffer_output_port;
       drvr_cell->bufferPorts(buffer_input_port, buffer_output_port);
       float new_cap = cap + drvr_cap
@@ -303,9 +306,11 @@ bool UnbufferMove::canRemoveBuffer(Instance* buffer, bool honorDontTouchFixed)
     db_net_removed = out_db_net;
   }
 
-  if (!sdc_->isConstrained(in_pin) && !sdc_->isConstrained(out_pin)
-      && (!removed || !sdc_->isConstrained(removed))
-      && !sdc_->isConstrained(buffer)) {
+  Sdc* sdc = sta_->cmdMode()->sdc();
+
+  if (!sdc->isConstrained(in_pin) && !sdc->isConstrained(out_pin)
+      && (!removed || !sdc->isConstrained(removed))
+      && !sdc->isConstrained(buffer)) {
     return db_net_removed == nullptr
            || (db_net_survivor && db_net_survivor->canMergeNet(db_net_removed));
   }

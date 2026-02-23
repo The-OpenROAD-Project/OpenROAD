@@ -954,8 +954,8 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
                    tie_term->getName());
   }
   auto func_operation = lib_port->function()->op();
-  const bool is_zero = func_operation == sta::FuncExpr::op_zero;
-  const bool is_one = func_operation == sta::FuncExpr::op_one;
+  const bool is_zero = func_operation == sta::FuncExpr::Op::zero;
+  const bool is_one = func_operation == sta::FuncExpr::Op::one;
 
   odb::dbSigType look_for;
   if (is_zero) {

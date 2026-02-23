@@ -281,6 +281,8 @@
     "https://bcr.bazel.build/modules/cel-spec/0.15.0/source.json": "ab7dccdf21ea2261c0f809b5a5221a4d7f8b580309f285fdf1444baaca75d44a",
     "https://bcr.bazel.build/modules/civetweb/1.16/MODULE.bazel": "46a38f9daeb57392e3827fce7d40926be0c802bd23cdd6bfd3a96c804de42fae",
     "https://bcr.bazel.build/modules/civetweb/1.16/source.json": "ba8b9585adb8355cb51b999d57172fd05e7a762c56b8d4bac6db42c99de3beb7",
+    "https://bcr.bazel.build/modules/coin-or-lemon/1.3.1/MODULE.bazel": "5e473f5c4e35fcb6b51a81faf0b80ce5220987d6de7f91414bb3e0864c3db46b",
+    "https://bcr.bazel.build/modules/coin-or-lemon/1.3.1/source.json": "e054ec6f134c8fea0f73d0da9a8b3bf869ed87a000e7863f40961f88813c50e7",
     "https://bcr.bazel.build/modules/contrib_rules_jvm/0.28.0/MODULE.bazel": "83a53d7aad6c7886289fdb4020d0b593e16a9d7a24866aeb4cf3561baa86dff6",
     "https://bcr.bazel.build/modules/contrib_rules_jvm/0.28.0/source.json": "d5049245d3b1c03bf95e6764d76e7862bb26378b28b1f19cbcbbca5d2c49db1d",
     "https://bcr.bazel.build/modules/cudd/3.0.0/MODULE.bazel": "8965373c9c424ea1b6cc0b6e1089259b6b8c68e7f64b3fbc161aca10b96f83de",
@@ -314,7 +316,6 @@
     "https://bcr.bazel.build/modules/glib/2.82.2.bcr.5/MODULE.bazel": "1f58891f8460e88d29ca57df3104d575a21751557cd8c2141c720873b3f62031",
     "https://bcr.bazel.build/modules/glib/2.82.2.bcr.8/MODULE.bazel": "d2a9f5954dde7670969250cb8b2c655d7978cd9bd90abbe6dde8de6eb831ef2c",
     "https://bcr.bazel.build/modules/glib/2.82.2.bcr.8/source.json": "80e65b55c091697b005a2b7f9474a3a2021d8e72a71864516f72838596898a03",
-    "https://bcr.bazel.build/modules/glpk/5.0.bcr.3/MODULE.bazel": "86ba1c49777c9a3a61fb80e5c2de8fb4dd46b80505a317371853b2a6e5b0d411",
     "https://bcr.bazel.build/modules/glpk/5.0.bcr.4/MODULE.bazel": "59b737ac99678f1147b55f678f380f09aef42d88220403820352372af9150944",
     "https://bcr.bazel.build/modules/glpk/5.0.bcr.4/source.json": "0b1191246ab55c6ea2dca4438afd7c02333c5ba0e06d0bae2b836047042e3fe6",
     "https://bcr.bazel.build/modules/google_benchmark/1.8.2/MODULE.bazel": "a70cf1bba851000ba93b58ae2f6d76490a9feb74192e57ab8e8ff13c34ec50cb",
@@ -635,6 +636,8 @@
     "https://bcr.bazel.build/modules/swig/4.3.0/source.json": "ea8dac67896e3a623cd92c48573a351c4bab1537f5aeb210c1c1e049994dd599",
     "https://bcr.bazel.build/modules/systemc/3.0.2/MODULE.bazel": "7c4283e827307eb8eedfcba74f500f114e248916d948a2cdc45971818f3fde0d",
     "https://bcr.bazel.build/modules/systemc/3.0.2/source.json": "47370abd3ed04ce3c1a65a5b87c973e3e80e7e10e6b1dca2f15076f612d86d4c",
+    "https://bcr.bazel.build/modules/tcl_lang/8.6.16.bcr.1/MODULE.bazel": "1fc27ececc903378b88ad5a0b92d2675b54fe3add9bcc27d612195bd823c2f2d",
+    "https://bcr.bazel.build/modules/tcl_lang/8.6.16.bcr.1/source.json": "f755e3b14f4d08e68f03ef0e1a7ac1aebe993b73ff05ee55f69ceb4e1c36b7e6",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250927-12f2552/MODULE.bazel": "b702a6b6806b1041d84918c5098b765b204261647f8cb3e75e0f439106b65ddd",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250927-12f2552/source.json": "a6f5da61dd65e3f2f7380b4f52dd4b0f771a5b6ba9db7b46be7c28c52bc7af58",
     "https://bcr.bazel.build/modules/toolchains_llvm/1.5.0/MODULE.bazel": "31c7077ef64bafdf2dfb46d4bca321b4e8f143b00ac68b2c31f5ff0c91044b60",
@@ -1205,7 +1208,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "mXT67CG7L5OLVmAL21N/b1fUYtLkKfGcDS9/BHvSBuY=",
-        "usagesDigest": "SsMqHEYBRp0Uj5HRjbIwgIA+BpzCxNHjo4l4sC6Me+c=",
+        "usagesDigest": "m8JYya4JLp8KJqQtREu0nWd2z2GnhQai8tSTqMKbJDo=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1223,8 +1226,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:v3.0-4512-g528ad3d8a",
-              "sha256": "087122e12c90edcb3ebfc452a3238417fbc78e1135f5b43feaf7162d885cada1",
+              "image": "docker.io/openroad/orfs:26Q1-333-g9ad095627",
+              "sha256": "c89d51c311c16d2f0e6aae43648d6ffb0b1befd4cc4a122c683684361776f838",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [

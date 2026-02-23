@@ -27,11 +27,12 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/PathGroup.hh"
 #include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
@@ -173,7 +174,7 @@ TimingPath::TimingPath()
 
 void TimingPath::populateNodeList(sta::Path* path,
                                   sta::dbSta* sta,
-                                  sta::DcalcAnalysisPt* dcalc_ap,
+                                  sta::Scene* scene,
                                   const float offset,
                                   const bool is_capture_path,
                                   const bool clock_expanded,
@@ -185,7 +186,7 @@ void TimingPath::populateNodeList(sta::Path* path,
   sta::PathExpanded expand(path, sta);
   auto* graph = sta->graph();
   auto* network = sta->network();
-  auto* sdc = sta->sdc();
+  const sta::Sdc* sdc = scene->sdc();
 
   // Used to compute logic metrics.
   std::set<sta::Instance*> logic_insts;
@@ -199,7 +200,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     const auto* ref = expand.path(i);
     sta::Vertex* vertex = ref->vertex(sta);
     const auto pin = vertex->pin();
-    const bool pin_is_clock = sta->isClock(pin);
+    const bool pin_is_clock = sta->isClock(pin, scene->mode());
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
     const auto arrival = ref->arrival();
@@ -215,9 +216,7 @@ void TimingPath::populateNodeList(sta::Path* path,
         if (network->isTopLevelPort(pin)) {
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
-          node_fanout += sdc->portExtFanout(
-                             port, dcalc_ap->corner(), sta::MinMax::max())
-                         + 1;
+          node_fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
         } else {
           node_fanout++;
         }
@@ -227,7 +226,8 @@ void TimingPath::populateNodeList(sta::Path* path,
     float cap = 0.0;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
       sta::GraphDelayCalc* graph_delay_calc = sta->graphDelayCalc();
-      cap = graph_delay_calc->loadCap(pin, ref->transition(sta), dcalc_ap);
+      cap = graph_delay_calc->loadCap(
+          pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
     }
 
     odb::dbITerm* term;
@@ -241,7 +241,7 @@ void TimingPath::populateNodeList(sta::Path* path,
 
     float slew = 0.0f;
 
-    if (!sta->isIdealClock(pin)) {
+    if (!sta->isIdealClock(pin, scene->mode())) {
       arrival_cur_stage = arrival;
       slew = ref->slew(sta);
     }
@@ -251,7 +251,7 @@ void TimingPath::populateNodeList(sta::Path* path,
     if (!is_capture_path) {
       sta::Instance* inst_of_curr_pin = network->instance(pin);
 
-      if (!sta->isClock(pin)) {
+      if (!sta->isClock(pin, scene->mode())) {
         updateLogicMetrics(network,
                            inst_of_curr_pin,
                            inst_of_prev_pin,
@@ -267,7 +267,7 @@ void TimingPath::populateNodeList(sta::Path* path,
       inst_of_prev_pin = inst_of_curr_pin;
     }
 
-    if (!sta->isClock(pin)) {
+    if (!sta->isClock(pin, scene->mode())) {
       fanout_ += node_fanout;
     }
 
@@ -403,20 +403,24 @@ bool TimingPath::instancesAreInverterPair(sta::Instance* curr_inst,
 
 void TimingPath::populatePath(sta::Path* path,
                               sta::dbSta* sta,
-                              sta::DcalcAnalysisPt* dcalc_ap,
                               bool clock_expanded)
 {
-  populateNodeList(path, sta, dcalc_ap, 0, false, clock_expanded, path_nodes_);
+  populateNodeList(
+      path, sta, path->scene(sta), 0, false, clock_expanded, path_nodes_);
 }
 
 void TimingPath::populateCapturePath(sta::Path* path,
                                      sta::dbSta* sta,
-                                     sta::DcalcAnalysisPt* dcalc_ap,
                                      float offset,
                                      bool clock_expanded)
 {
-  populateNodeList(
-      path, sta, dcalc_ap, offset, true, clock_expanded, capture_nodes_);
+  populateNodeList(path,
+                   sta,
+                   path->scene(sta),
+                   offset,
+                   true,
+                   clock_expanded,
+                   capture_nodes_);
 }
 
 std::vector<odb::dbNet*> TimingPath::getNets(
@@ -781,7 +785,7 @@ void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
     return;
   }
 
-  if (start->dcalcAnalysisPt(sta)->delayMinMax() != sta::MinMax::max()) {
+  if (start->minMax(sta) != sta::MinMax::max()) {
     // only populate with max delay
     return;
   }
@@ -903,11 +907,10 @@ std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping()
 class PathGroupSlackEndVisitor : public sta::PathEndVisitor
 {
  public:
-  PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
-                           sta::StaState* sta);
+  PathGroupSlackEndVisitor(const sta::PathGroup* path_group, sta::Sta* sta);
   PathGroupSlackEndVisitor(const sta::PathGroup* path_group,
                            const sta::Clock* clk,
-                           sta::StaState* sta);
+                           sta::Sta* sta);
   PathGroupSlackEndVisitor(const PathGroupSlackEndVisitor&) = default;
   PathEndVisitor* copy() const override;
   void visit(sta::PathEnd* path_end) override;
@@ -917,7 +920,7 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
 
  private:
   const sta::PathGroup* path_group_;
-  sta::StaState* sta_;
+  sta::Sta* sta_;
   const sta::Clock* clk_;
   bool has_slack_{false};
   float worst_slack_{std::numeric_limits<float>::max()};
@@ -925,7 +928,7 @@ class PathGroupSlackEndVisitor : public sta::PathEndVisitor
 
 PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
     const sta::PathGroup* path_group,
-    sta::StaState* sta)
+    sta::Sta* sta)
     : path_group_(path_group), sta_(sta), clk_(nullptr)
 {
 }
@@ -933,7 +936,7 @@ PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
 PathGroupSlackEndVisitor::PathGroupSlackEndVisitor(
     const sta::PathGroup* path_group,
     const sta::Clock* clk,
-    sta::StaState* sta)
+    sta::Sta* sta)
     : path_group_(path_group), sta_(sta), clk_(clk)
 {
 }
@@ -945,9 +948,10 @@ sta::PathEndVisitor* PathGroupSlackEndVisitor::copy() const
 
 void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
 {
-  sta::Search* search = sta_->search();
-  const sta::PathGroupSeq path_groups = search->pathGroups(path_end);
-  const auto iter = std::ranges::find(path_groups, path_group_);
+  const sta::PathGroupSeq path_groups
+      = sta_->cmdScene()->mode()->pathGroups(path_end);
+  const auto iter
+      = std::find(path_groups.begin(), path_groups.end(), path_group_);
   if (iter != path_groups.end()) {
     if (clk_ != nullptr) {
       sta::Path* path = path_end->path();
@@ -972,7 +976,7 @@ void PathGroupSlackEndVisitor::resetWorstSlack()
 
 STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
-      corner_(nullptr),
+      scene_(nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
       max_path_count_(50),
@@ -981,19 +985,10 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
-StaPins STAGuiInterface::getStartPoints() const
-{
-  StaPins pins;
-  for (auto end : sta_->startpointPins()) {
-    pins.insert(end);
-  }
-  return pins;
-}
-
 StaPins STAGuiInterface::getEndPoints() const
 {
   StaPins pins;
-  for (auto end : *sta_->endpoints()) {
+  for (auto end : sta_->endpoints()) {
     pins.insert(end->pin());
   }
   return pins;
@@ -1001,13 +996,14 @@ StaPins STAGuiInterface::getEndPoints() const
 
 float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
 {
-  return sta_->pinSlack(pin, minMax());
+  return sta_->slack(
+      pin, sta::RiseFallBoth::riseFall(), sta_->scenes(), minMax());
 }
 
 std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 {
   std::set<std::string> group_paths_names;
-  sta::Sdc* sdc = sta_->sdc();
+  sta::Sdc* sdc = scene_->sdc();
   sta::GroupPathMap group_paths_map = sdc->groupPaths();
   for (const auto [name, group_paths] : group_paths_map) {
     group_paths_names.insert(name);
@@ -1020,20 +1016,23 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 // when running "report_checks".
 void STAGuiInterface::updatePathGroups()
 {
-  sta::Search* search = sta_->search();
-  search->makePathGroups(1,         /* group count */
-                         1,         /* endpoint count*/
-                         false,     /* unique pins */
-                         false,     /* unique edges */
-                         -sta::INF, /* min slack */
-                         sta::INF,  /* max slack*/
-                         nullptr,   /* group names */
-                         true,      /* setup */
-                         true,      /* hold */
-                         true,      /* recovery */
-                         true,      /* removal */
-                         true,      /* clk gating setup */
-                         true /* clk gating hold*/);
+  sta::StdStringSeq empty_group_names;
+  for (sta::Mode* mode : sta_->modes()) {
+    mode->makePathGroups(1,                 /* group count */
+                         1,                 /* endpoint count*/
+                         false,             /* unique pins */
+                         false,             /* unique edges */
+                         -sta::INF,         /* min slack */
+                         sta::INF,          /* max slack*/
+                         empty_group_names, /* group names */
+                         true,              /* setup */
+                         true,              /* hold */
+                         true,              /* recovery */
+                         true,              /* removal */
+                         true,              /* clk gating setup */
+                         true,              /* clk gating hold */
+                         false /* unconstrained paths */);
+  }
 }
 
 EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
@@ -1044,18 +1043,17 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(
 
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
-  sta::Search* search = sta_->search();
-  sta::PathGroup* path_group
-      = search->findPathGroup(path_group_name.c_str(), minMax());
+  sta::PathGroup* path_group = sta_->cmdMode()->pathGroups()->findPathGroup(
+      path_group_name.c_str(), minMax());
   PathGroupSlackEndVisitor path_group_visitor(path_group, clk, sta_);
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
-    visit_ends.visitPathEnds(
-        vertex, nullptr, minMaxAll(), false, &path_group_visitor);
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    visit_ends.visitPathEnds(vertex, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {
       end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
       path_group_visitor.resetWorstSlack();
     }
   }
+
   return end_point_to_slack;
 }
 
@@ -1065,12 +1063,11 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(const sta::Clock* clk)
 
   EndPointSlackMap end_point_to_slack;
   sta::VisitPathEnds visit_ends(sta_);
-  sta::Search* search = sta_->search();
-  sta::PathGroup* path_group = search->findPathGroup(clk, minMax());
+  sta::PathGroup* path_group
+      = sta_->cmdMode()->pathGroups()->findPathGroup(clk, minMax());
   PathGroupSlackEndVisitor path_group_visitor(path_group, sta_);
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
-    visit_ends.visitPathEnds(
-        vertex, nullptr, minMaxAll(), false, &path_group_visitor);
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    visit_ends.visitPathEnds(vertex, &path_group_visitor);
     if (path_group_visitor.hasSlack()) {
       end_point_to_slack[vertex->pin()] = path_group_visitor.worstSlack();
       path_group_visitor.resetWorstSlack();
@@ -1081,7 +1078,7 @@ EndPointSlackMap STAGuiInterface::getEndPointToSlackMap(const sta::Clock* clk)
 
 int STAGuiInterface::getEndPointCount() const
 {
-  return sta_->endpoints()->size();
+  return sta_->endpoints().size();
 }
 
 std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
@@ -1133,10 +1130,13 @@ TimingPathList STAGuiInterface::getTimingPaths(
     sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
-        pins, clks_from, nullptr, sta::RiseFallBoth::riseFall());
+        pins, clks_from, nullptr, sta::RiseFallBoth::riseFall(), scene_->sdc());
   } else if (clks_from) {
-    e_from = sta_->makeExceptionFrom(
-        nullptr, clks_from, nullptr, sta::RiseFallBoth::riseFall());
+    e_from = sta_->makeExceptionFrom(nullptr,
+                                     clks_from,
+                                     nullptr,
+                                     sta::RiseFallBoth::riseFall(),
+                                     scene_->sdc());
   }
 
   sta::ExceptionThruSeq* e_thrus = nullptr;
@@ -1150,8 +1150,11 @@ TimingPathList STAGuiInterface::getTimingPaths(
       }
       sta::PinSet* pins = new sta::PinSet(getNetwork());
       pins->insert(thru_set.begin(), thru_set.end());
-      e_thrus->push_back(sta_->makeExceptionThru(
-          pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
+      e_thrus->push_back(sta_->makeExceptionThru(pins,
+                                                 nullptr,
+                                                 nullptr,
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 scene_->sdc()));
     }
   }
 
@@ -1163,22 +1166,25 @@ TimingPathList STAGuiInterface::getTimingPaths(
                                  clks_to,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
-                                 sta::RiseFallBoth::riseFall());
+                                 sta::RiseFallBoth::riseFall(),
+                                 scene_->sdc());
   } else if (clks_to) {
     e_to = sta_->makeExceptionTo(nullptr,
                                  clks_to,
                                  nullptr,
                                  sta::RiseFallBoth::riseFall(),
-                                 sta::RiseFallBoth::riseFall());
+                                 sta::RiseFallBoth::riseFall(),
+                                 scene_->sdc());
   }
 
-  std::unique_ptr<sta::PathGroupNameSet> group_names;
+  sta::StdStringSeq group_names;
   if (!path_group_name.empty()) {
-    group_names = std::make_unique<sta::PathGroupNameSet>();
-    group_names->insert(path_group_name.c_str());
+    group_names = {path_group_name};
   }
 
   sta::Search* search = sta_->search();
+  sta::SceneSeq search_scenes
+      = scene_ != nullptr ? sta::SceneSeq{scene_} : sta_->scenes();
   sta::PathEndSeq path_ends
       = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,
@@ -1186,7 +1192,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           e_to,
           include_unconstrained_,
           // corner, min_max,
-          corner_,
+          search_scenes,
           minMaxAll(),
           // group_count, endpoint_count, unique_pins
           max_path_count_,
@@ -1196,7 +1202,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           -sta::INF,
           sta::INF,  // slack_min, slack_max,
           true,      // sort_by_slack
-          group_names.get(),
+          group_names,
           // setup, hold, recovery, removal,
           use_max_,
           !use_max_,
@@ -1209,9 +1215,6 @@ TimingPathList STAGuiInterface::getTimingPaths(
   for (auto& path_end : path_ends) {
     TimingPath* timing_path = new TimingPath();
     sta::Path* path = path_end->path();
-
-    sta::DcalcAnalysisPt* dcalc_ap
-        = path->pathAnalysisPt(sta_)->dcalcAnalysisPt();
 
     auto* start_clock_edge = path_end->sourceClkEdge(sta_);
     if (start_clock_edge != nullptr) {
@@ -1244,13 +1247,14 @@ TimingPathList STAGuiInterface::getTimingPaths(
 
     const bool clock_expaneded = clock_propagated;
 
-    timing_path->populatePath(path, sta_, dcalc_ap, clock_expaneded);
+    timing_path->populatePath(path, sta_, clock_expaneded);
     if (include_capture_path_) {
-      timing_path->populateCapturePath(path_end->targetClkPath(),
-                                       sta_,
-                                       dcalc_ap,
-                                       path_end->targetClkOffset(sta_),
-                                       clock_expaneded);
+      if (path_end->targetClkPath()) {
+        timing_path->populateCapturePath(path_end->targetClkPath(),
+                                         sta_,
+                                         path_end->targetClkOffset(sta_),
+                                         clock_expaneded);
+      }
     }
 
     timing_path->computeClkEndIndex();
@@ -1272,8 +1276,9 @@ ConeDepthMapPinSet STAGuiInterface::getFaninCone(const sta::Pin* pin) const
                                   false,  // startpoints_only
                                   0,
                                   0,
-                                  true,   // thru_disabled
-                                  true);  // thru_constants
+                                  true,  // thru_disabled
+                                  true,  // thru_constants
+                                  scene_->mode());
 
   ConeDepthMapPinSet depth_map;
   for (auto& [level, pin_list] : getCone(pin, std::move(pins), true)) {
@@ -1293,8 +1298,9 @@ ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
                                           false,  // startpoints_only
                                           0,
                                           0,
-                                          true,   // thru_disabled
-                                          true);  // thru_constants
+                                          true,  // thru_disabled
+                                          true,  // thru_constants
+                                          scene_->mode());
   return getCone(pin, std::move(pins), false);
 }
 
@@ -1497,32 +1503,32 @@ void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
   }
 }
 
-sta::ClockSeq* STAGuiInterface::getClocks() const
+const sta::ClockSeq* STAGuiInterface::getClocks() const
 {
-  return sta_->sdc()->clocks();
+  return &scene_->sdc()->clocks();
 }
 
 std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
 {
   initSTA();
-  sta_->ensureClkNetwork();
+  sta_->ensureClkNetwork(scene_->mode());
   sta_->ensureClkArrivals();
 
   std::vector<std::unique_ptr<ClockTree>> trees;
   std::map<const sta::Clock*, ClockTree*> roots;
-  for (sta::Clock* clk : *sta_->sdc()->clocks()) {
+  for (sta::Clock* clk : scene_->sdc()->clocks()) {
     ClockTree* root = new ClockTree(clk, getNetwork());
     roots[clk] = root;
     trees.emplace_back(root);
   }
 
   sta::Graph* graph = sta_->graph();
-  for (sta::Vertex* src_vertex : *graph->regClkVertices()) {
+  for (sta::Vertex* src_vertex : graph->regClkVertices()) {
     sta::VertexPathIterator path_iter(src_vertex, sta_);
     while (path_iter.hasNext()) {
       sta::Path* path = path_iter.next();
 
-      if (path->dcalcAnalysisPt(sta_)->corner() != corner_) {
+      if (path->scene(sta_) != scene_) {
         continue;
       }
 

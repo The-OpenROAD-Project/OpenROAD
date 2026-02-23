@@ -18,7 +18,6 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -145,7 +144,7 @@ class RepairSetup : public sta::dbStaState
   const sta::MinMax* min_ = sta::MinMax::min();
   const sta::MinMax* max_ = sta::MinMax::max();
 
-  sta::UnorderedMap<sta::LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
+  std::unordered_map<sta::LibertyPort*, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int print_interval_ = 10;

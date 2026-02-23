@@ -55,37 +55,19 @@ class CheckerFixture : public tst::Fixture
     three_dblox.check();
   }
 
-  std::vector<dbMarker*> getFloatingMarkers()
+  std::vector<dbMarker*> getMarkers(const char* category_name)
   {
-    auto category = top_chip_->findMarkerCategory("3DBlox");
-    if (!category) {
+    auto top_cat = top_chip_->findMarkerCategory("3DBlox");
+    if (!top_cat) {
       return {};
     }
-    auto float_cat = category->findMarkerCategory("Floating chips");
-    if (!float_cat) {
+    auto cat = top_cat->findMarkerCategory(category_name);
+    if (!cat) {
       return {};
     }
 
     std::vector<dbMarker*> markers;
-    for (auto* m : float_cat->getMarkers()) {
-      markers.push_back(m);
-    }
-    return markers;
-  }
-
-  std::vector<dbMarker*> getOverlappingMarkers()
-  {
-    auto category = top_chip_->findMarkerCategory("3DBlox");
-    if (!category) {
-      return {};
-    }
-    auto overlap_cat = category->findMarkerCategory("Overlapping chips");
-    if (!overlap_cat) {
-      return {};
-    }
-
-    std::vector<dbMarker*> markers;
-    for (auto* m : overlap_cat->getMarkers()) {
+    for (auto* m : cat->getMarkers()) {
       markers.push_back(m);
     }
     return markers;
@@ -95,6 +77,11 @@ class CheckerFixture : public tst::Fixture
   dbChip* top_chip_;
   dbChip* chip1_;
   dbChip* chip2_;
+
+  static constexpr const char* floating_chips_category = "Floating chips";
+  static constexpr const char* overlapping_chips_category = "Overlapping chips";
+  static constexpr const char* unused_internal_ext_category
+      = "Unused internal_ext";
 };
 
 TEST_F(CheckerFixture, test_no_violations)
@@ -114,8 +101,8 @@ TEST_F(CheckerFixture, test_no_violations)
   conn1->setThickness(0);
 
   check();
-  EXPECT_TRUE(getFloatingMarkers().empty());
-  EXPECT_TRUE(getOverlappingMarkers().empty());
+  EXPECT_TRUE(getMarkers(floating_chips_category).empty());
+  EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
 TEST_F(CheckerFixture, test_overlapping_chips)
@@ -129,7 +116,7 @@ TEST_F(CheckerFixture, test_overlapping_chips)
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  auto markers = getOverlappingMarkers();
+  auto markers = getMarkers(overlapping_chips_category);
   EXPECT_EQ(markers.size(), 1);
 
   if (!markers.empty()) {
@@ -159,7 +146,7 @@ TEST_F(CheckerFixture, test_single_floating_chip)
   conn1->setThickness(0);
 
   check();
-  auto markers = getFloatingMarkers();
+  auto markers = getMarkers(floating_chips_category);
   EXPECT_EQ(markers.size(), 1);
 
   if (!markers.empty()) {
@@ -196,7 +183,7 @@ TEST_F(CheckerFixture, test_multiple_floating_groups)
   conn1->setThickness(0);
 
   check();
-  auto markers = getFloatingMarkers();
+  auto markers = getMarkers(floating_chips_category);
   EXPECT_EQ(markers.size(), 2);
 }
 
@@ -218,13 +205,13 @@ TEST_F(CheckerFixture, test_connectivity_gap)
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  EXPECT_TRUE(getFloatingMarkers().empty());
+  EXPECT_TRUE(getMarkers(floating_chips_category).empty());
 
   // Case 2: Broken connection (gap too large)
   // Move inst2 to 800
   inst2->setLoc(Point3D(0, 0, 800));
   check();
-  EXPECT_EQ(getFloatingMarkers().size(), 1);
+  EXPECT_EQ(getMarkers(floating_chips_category).size(), 1);
 }
 
 TEST_F(CheckerFixture, test_abutment_no_overlap)
@@ -238,7 +225,7 @@ TEST_F(CheckerFixture, test_abutment_no_overlap)
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  EXPECT_TRUE(getOverlappingMarkers().empty());
+  EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
 TEST_F(CheckerFixture, test_close_proximity_no_overlap)
@@ -252,7 +239,7 @@ TEST_F(CheckerFixture, test_close_proximity_no_overlap)
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  EXPECT_TRUE(getOverlappingMarkers().empty());
+  EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
 TEST_F(CheckerFixture, test_z_separation_no_overlap)
@@ -266,7 +253,7 @@ TEST_F(CheckerFixture, test_z_separation_no_overlap)
   inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  EXPECT_TRUE(getOverlappingMarkers().empty());
+  EXPECT_TRUE(getMarkers(overlapping_chips_category).empty());
 }
 
 TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
@@ -295,7 +282,7 @@ TEST_F(CheckerFixture, test_overlap_despite_valid_connection)
   conn->setThickness(0);
 
   check();
-  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+  EXPECT_EQ(getMarkers(overlapping_chips_category).size(), 1);
 }
 
 TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
@@ -324,7 +311,7 @@ TEST_F(CheckerFixture, test_overlap_partially_covered_by_connection)
   conn->setThickness(0);
 
   check();
-  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+  EXPECT_EQ(getMarkers(overlapping_chips_category).size(), 1);
 }
 
 TEST_F(CheckerFixture, test_overlap_with_invalid_connection)
@@ -345,7 +332,7 @@ TEST_F(CheckerFixture, test_overlap_with_invalid_connection)
   conn->setThickness(0);
 
   check();
-  EXPECT_EQ(getOverlappingMarkers().size(), 1);
+  EXPECT_EQ(getMarkers(overlapping_chips_category).size(), 1);
 }
 
 TEST_F(CheckerFixture, test_multiple_chips_complex_overlap)
@@ -372,8 +359,63 @@ TEST_F(CheckerFixture, test_multiple_chips_complex_overlap)
   inst4->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  auto markers = getOverlappingMarkers();
+  auto markers = getMarkers(overlapping_chips_category);
   EXPECT_EQ(markers.size(), 2);
+}
+
+TEST_F(CheckerFixture, test_unused_internal_ext)
+{
+  // internal_ext region on chip1. Not connected.
+  auto r1_int = dbChipRegion::create(
+      chip1_, "r1_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r1_int->setBox(Rect(0, 0, 2000, 2000));
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  check();
+  auto markers = getMarkers(unused_internal_ext_category);
+  EXPECT_EQ(markers.size(), 1);
+  if (!markers.empty()) {
+    auto sources = markers[0]->getSources();
+    EXPECT_EQ(sources.size(), 1);
+    // Source should be the region instance
+    if (!sources.empty()) {
+      auto* source = *sources.begin();
+      EXPECT_EQ(source->getObjectType(), dbChipRegionInstObj);
+      auto* region_inst = static_cast<dbChipRegionInst*>(source);
+      EXPECT_NE(region_inst, nullptr);
+      if (region_inst) {
+        EXPECT_EQ(region_inst->getChipRegion()->getName(), "r1_int");
+      }
+    }
+  }
+}
+
+TEST_F(CheckerFixture, test_used_internal_ext)
+{
+  // internal_ext region on chip1
+  auto r1_int = dbChipRegion::create(
+      chip1_, "r1_int", dbChipRegion::Side::INTERNAL_EXT, nullptr);
+  r1_int->setBox(Rect(0, 0, 2000, 2000));
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  // Connect them
+  auto* ri1 = inst1->findChipRegionInst("r1_int");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+  auto* conn = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn->setThickness(0);
+
+  check();
+  EXPECT_TRUE(getMarkers(unused_internal_ext_category).empty());
 }
 
 }  // namespace

@@ -95,8 +95,8 @@ cc_library(
         "@boost.random",
         "@boost.tokenizer",
         "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
-        "@tk_tcl//:tcl",
+        "@coin-or-lemon//:lemon",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -133,7 +133,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

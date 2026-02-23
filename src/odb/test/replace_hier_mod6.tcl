@@ -39,7 +39,6 @@ proc do_swap { from_alu to_alu } {
   set result [catch { replace_hier_module _120_ $to_alu }]
   if { $result == 0 } {
     puts "Successfully replaced hier module"
-    sta::network_changed
     estimate_parasitics -placement
     report_checks -fields input_pins -through _001_
     report_cell_usage _120_
