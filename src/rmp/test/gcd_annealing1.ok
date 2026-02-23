@@ -98,29 +98,29 @@ tns max -15641.01
 [INFO RMP-0059] Resynthesis: starting tuning algorithm, Worst slack is 5.5752042e-11
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
-[INFO RMP-0053] Initial temperature: 4.7118065e-10, worst slack: -9.051415e-11
+[INFO RMP-0053] Initial temperature: 4.713938e-10, worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 10, temperature: 4.287744e-10, best worst slack: -9.051415e-11
-[INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 20, temperature: 3.8165632e-10, best worst slack: -9.051415e-11
-[INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 30, temperature: 3.3453826e-10, best worst slack: -9.051415e-11
+[INFO RMP-0054] Iteration: 10, temperature: 4.289684e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 40, temperature: 2.874202e-10, best worst slack: -9.051415e-11
+[INFO RMP-0054] Iteration: 20, temperature: 3.8182899e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 50, temperature: 2.4030214e-10, best worst slack: -9.051415e-11
+[INFO RMP-0054] Iteration: 30, temperature: 3.346896e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 60, temperature: 1.9318407e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 70, temperature: 1.46066e-10, best worst slack: -9.051415e-11
+[INFO RMP-0054] Iteration: 40, temperature: 2.8755023e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 80, temperature: 9.894793e-11, best worst slack: -9.051415e-11
+[INFO RMP-0054] Iteration: 50, temperature: 2.4041083e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 90, temperature: 5.182987e-11, best worst slack: 1.1096624e-11
+[INFO RMP-0054] Iteration: 60, temperature: 1.9327147e-10, best worst slack: -9.051415e-11
 [INFO RMP-0057] Reverting to the best found solution
-[INFO RMP-0054] Iteration: 100, temperature: 4.7118065e-12, best worst slack: 1.1096624e-11
+[INFO RMP-0054] Iteration: 70, temperature: 1.4613208e-10, best worst slack: -9.051415e-11
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 80, temperature: 9.8992696e-11, best worst slack: -9.051415e-11
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 90, temperature: 5.185332e-11, best worst slack: 1.1096624e-11
+[INFO RMP-0057] Reverting to the best found solution
+[INFO RMP-0054] Iteration: 100, temperature: 4.713938e-12, best worst slack: 1.1096624e-11
 [INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
 [INFO RMP-0068] Resynthesis: Worst slack is 1.1096624e-11
 [-407.492, -343.990): ************************************************** (32)
