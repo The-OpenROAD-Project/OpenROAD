@@ -146,6 +146,7 @@ std::vector<GiaOp> GeneticStrategy::RunStrategy(
     }
     removeDuplicates(newPopulation, logger);
 
+    // No winners from tournament, use first candidate
     if (newPopulation.empty()) {
       newPopulation.emplace_back(population.front());
     }
