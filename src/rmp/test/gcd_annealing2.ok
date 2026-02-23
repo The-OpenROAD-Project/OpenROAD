@@ -98,37 +98,37 @@ tns max -15641.01
 [INFO RMP-0059] Resynthesis: starting tuning algorithm, Worst slack is 5.5752042e-11
 Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0052] Resynthesis: starting simulated annealing
-[INFO RMP-0053] Initial temperature: 1e-10, worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 10, temperature: 9.1000006e-11, best worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 20, temperature: 8.1e-11, best worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 30, temperature: 7.1e-11, best worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 40, temperature: 6.1000004e-11, best worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 50, temperature: 5.1e-11, best worst slack: -9.051415e-11
-[INFO RMP-0054] Iteration: 60, temperature: 4.1e-11, best worst slack: -9.032358e-11
-[INFO RMP-0054] Iteration: 70, temperature: 3.1e-11, best worst slack: -8.960466e-11
-[INFO RMP-0054] Iteration: 80, temperature: 2.1e-11, best worst slack: -8.960466e-11
-[INFO RMP-0054] Iteration: 90, temperature: 1.1e-11, best worst slack: -8.960466e-11
-[INFO RMP-0054] Iteration: 100, temperature: 1e-12, best worst slack: -8.960466e-11
+[INFO RMP-0053] Initial temperature: 1e-10, worst slack: -1.031652e-10
+[INFO RMP-0054] Iteration: 10, temperature: 9.1000006e-11, best worst slack: -8.1117e-11
+[INFO RMP-0054] Iteration: 20, temperature: 8.1e-11, best worst slack: -2.9464486e-12
+[INFO RMP-0054] Iteration: 30, temperature: 7.1e-11, best worst slack: -2.9464486e-12
+[INFO RMP-0054] Iteration: 40, temperature: 6.1000004e-11, best worst slack: 8.572643e-12
+[INFO RMP-0054] Iteration: 50, temperature: 5.1e-11, best worst slack: 8.572643e-12
+[INFO RMP-0054] Iteration: 60, temperature: 4.1e-11, best worst slack: 3.336187e-11
+[INFO RMP-0054] Iteration: 70, temperature: 3.1e-11, best worst slack: 3.336187e-11
+[INFO RMP-0054] Iteration: 80, temperature: 2.1e-11, best worst slack: 3.336187e-11
+[INFO RMP-0054] Iteration: 90, temperature: 1.1e-11, best worst slack: 3.336187e-11
+[INFO RMP-0054] Iteration: 100, temperature: 1e-12, best worst slack: 3.336187e-11
 [INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
-[INFO RMP-0068] Resynthesis: Worst slack is -8.960466e-11
-[-548.200, -467.061): ************************************************** (35)
-[-467.061, -385.923): *** (2)
-[-385.923, -304.785): * (1)
-[-304.785, -223.646): *** (2)
-[-223.646, -142.508): *** (2)
-[-142.508,  -61.370): ****** (4)
-[ -61.370,   19.769): * (1)
-[  19.769,  100.907): **** (3)
-[ 100.907,  182.046): *** (2)
-[ 182.046,  263.184]: * (1)
+[INFO RMP-0068] Resynthesis: Worst slack is 3.336187e-11
+[-312.598, -255.050): ************************************************** (33)
+[-255.050, -197.503): ***** (3)
+[-197.503, -139.955): *** (2)
+[-139.955,  -82.407): ****** (4)
+[ -82.407,  -24.859): ******** (5)
+[ -24.859,   32.688): ** (1)
+[  32.688,   90.236): *** (2)
+[  90.236,  147.784):  (0)
+[ 147.784,  205.332): *** (2)
+[ 205.332,  262.879]: ** (1)
 Cell type report:                       Count       Area
-  Inverter                                 50       2.64
+  Inverter                                 60       2.70
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          291      22.89
-  Total                                   376      35.74
-Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
+  Multi-Input combinational cell          289      21.04
+  Total                                   384      33.94
+Startpoint: dpath/a_lt_b$in0[2]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: dpath/a_lt_b$in0[12]$_DFFE_PP_
+Endpoint: dpath/a_lt_b$in0[10]$_DFFE_PP_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -138,62 +138,47 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  70.31   70.31 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  21.77   92.08 v cut_59873/Y (INVx1_ASAP7_75t_R)
-  24.28  116.36 ^ _421_/CON (HAxp5_ASAP7_75t_R)
-  26.59  142.95 v cut_60009/Y (INVx1_ASAP7_75t_R)
- 103.16  246.11 ^ _420_/CON (FAx1_ASAP7_75t_R)
-  28.86  274.98 v cut_59815/Y (CKINVDCx10_ASAP7_75t_R)
-  22.16  297.14 ^ cut_59816/Y (NOR2x2_ASAP7_75t_R)
-  21.40  318.54 v cut_59818/Y (NOR2x1p5_ASAP7_75t_R)
-  19.37  337.91 ^ cut_59819/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  363.18 v cut_59821/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  383.58 ^ cut_59822/Y (NOR2x1p5_ASAP7_75t_R)
-  21.95  405.53 v cut_59824/Y (NOR2x1p5_ASAP7_75t_R)
-  19.46  424.99 ^ cut_59825/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  450.27 v cut_59827/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  470.66 ^ cut_59828/Y (NOR2x1p5_ASAP7_75t_R)
-  21.95  492.61 v cut_59830/Y (NOR2x1p5_ASAP7_75t_R)
-  19.46  512.07 ^ cut_59831/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  537.35 v cut_59833/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  557.74 ^ cut_59834/Y (NOR2x1p5_ASAP7_75t_R)
-  21.95  579.70 v cut_59836/Y (NOR2x1p5_ASAP7_75t_R)
-  19.46  599.16 ^ cut_59837/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  624.43 v cut_59839/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  644.83 ^ cut_59840/Y (NOR2x1p5_ASAP7_75t_R)
-  21.95  666.78 v cut_59842/Y (NOR2x1p5_ASAP7_75t_R)
-  19.46  686.24 ^ cut_59843/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  711.51 v cut_59845/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  731.91 ^ cut_59846/Y (NOR2x1p5_ASAP7_75t_R)
-  21.95  753.86 v cut_59848/Y (NOR2x1p5_ASAP7_75t_R)
-  19.46  773.32 ^ cut_59849/Y (NOR2x1p5_ASAP7_75t_R)
-  25.28  798.60 v cut_59851/Y (NOR2x1p5_ASAP7_75t_R)
-  20.39  818.99 ^ cut_59852/Y (NOR2x1p5_ASAP7_75t_R)
-  23.37  842.36 v cut_59854/Y (NOR2x1p5_ASAP7_75t_R)
-  21.81  864.17 ^ cut_59855/Y (NOR2x2_ASAP7_75t_R)
-  42.13  906.30 ^ cut_59857/Y (OR2x6_ASAP7_75t_R)
-  33.35  939.65 ^ cut_59998/Y (AND2x4_ASAP7_75t_R)
-  14.29  953.94 v cut_60093/Y (NAND2xp5_ASAP7_75t_R)
-  18.20  972.14 ^ cut_60094/Y (NAND2xp33_ASAP7_75t_R)
-  22.76  994.90 v cut_60096/Y (NOR2xp33_ASAP7_75t_R)
-  23.52 1018.42 ^ cut_60099/Y (NOR2xp33_ASAP7_75t_R)
-   0.00 1018.42 ^ dpath/a_lt_b$in0[12]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-        1018.42   data arrival time
+   0.00    0.00 ^ dpath/a_lt_b$in0[2]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  69.79   69.79 ^ dpath/a_lt_b$in0[2]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  19.23   89.02 v cut_62086/Y (INVx1_ASAP7_75t_R)
+ 169.74  258.76 v _435_/SN (HAxp5_ASAP7_75t_R)
+  21.74  280.50 ^ cut_62025/Y (INVx6_ASAP7_75t_R)
+  17.25  297.75 v cut_62026/Y (NAND2xp5_ASAP7_75t_R)
+  18.75  316.49 ^ cut_62027/Y (NAND2xp5_ASAP7_75t_R)
+  15.18  331.67 v cut_62029/Y (NAND2xp5_ASAP7_75t_R)
+  25.34  357.01 ^ cut_62030/Y (NAND2xp5_ASAP7_75t_R)
+  28.27  385.28 v cut_62032/Y (NAND2xp5_ASAP7_75t_R)
+  25.50  410.78 ^ cut_62033/Y (NAND2x1_ASAP7_75t_R)
+  16.48  427.26 v cut_62040/Y (NAND2xp5_ASAP7_75t_R)
+  17.36  444.62 ^ cut_62041/Y (NAND2xp5_ASAP7_75t_R)
+  16.53  461.15 v cut_62042/Y (NAND2xp5_ASAP7_75t_R)
+  27.15  488.30 ^ cut_62043/Y (NAND2xp5_ASAP7_75t_R)
+  19.50  507.81 v cut_62044/Y (NAND2xp5_ASAP7_75t_R)
+  21.03  528.84 ^ cut_62048/Y (NAND2xp5_ASAP7_75t_R)
+  33.68  562.52 ^ cut_62050/Y (AND2x2_ASAP7_75t_R)
+  17.57  580.09 v cut_62052/Y (NOR2x1_ASAP7_75t_R)
+  19.45  599.54 ^ cut_62053/Y (NOR2x1_ASAP7_75t_R)
+  40.10  639.64 ^ cut_62055/Y (OR2x6_ASAP7_75t_R)
+  38.55  678.18 v cut_62070/Y (NOR2x2_ASAP7_75t_R)
+  48.68  726.86 ^ cut_62192/Y (NAND2x2_ASAP7_75t_R)
+  30.33  757.19 v cut_62270/Y (NOR2xp33_ASAP7_75t_R)
+  25.59  782.79 ^ cut_62271/Y (NOR2xp33_ASAP7_75t_R)
+   0.00  782.79 ^ dpath/a_lt_b$in0[10]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         782.79   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
-         500.00 ^ dpath/a_lt_b$in0[12]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -29.78  470.22   library setup time
-         470.22   data required time
+         500.00 ^ dpath/a_lt_b$in0[10]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -29.81  470.19   library setup time
+         470.19   data required time
 ---------------------------------------------------------
-         470.22   data required time
-        -1018.42   data arrival time
+         470.19   data required time
+        -782.79   data arrival time
 ---------------------------------------------------------
-        -548.20   slack (VIOLATED)
+        -312.60   slack (VIOLATED)
 
 
-wns max -548.20
-tns max -20829.82
+wns max -312.60
+tns max -11793.66
 Repair timing output passed/skipped equivalence test
