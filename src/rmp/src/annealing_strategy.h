@@ -23,7 +23,7 @@ class AnnealingStrategy final : public SlackTuningStrategy
  public:
   explicit AnnealingStrategy(sta::Scene* corner,
                              sta::Slack slack_threshold,
-                             std::optional<std::mt19937::result_type> seed,
+                             std::mt19937::result_type seed,
                              std::optional<float> temperature,
                              unsigned iterations,
                              std::optional<unsigned> revert_after,

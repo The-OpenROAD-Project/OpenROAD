@@ -70,7 +70,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
  public:
   explicit SlackTuningStrategy(sta::Scene* corner,
                                sta::Slack slack_threshold,
-                               std::optional<std::mt19937::result_type> seed,
+                               std::mt19937::result_type seed,
                                unsigned iterations,
                                unsigned initial_ops)
       : corner_(corner),
@@ -78,9 +78,7 @@ class SlackTuningStrategy : public ResynthesisStrategy
         iterations_(iterations),
         initial_ops_(initial_ops)
   {
-    if (seed) {
-      random_.seed(*seed);
-    }
+    random_.seed(seed);
   }
 
   void OptimizeDesign(sta::dbSta* sta,

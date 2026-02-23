@@ -145,14 +145,14 @@ class Restructure
   odb::dbBlock* block_ = nullptr;
 
   // Annealing
-  std::optional<std::mt19937::result_type> annealing_seed_;
+  std::mt19937::result_type annealing_seed_ = 0;
   std::optional<float> annealing_temp_;
   unsigned annealing_iters_ = 100;
   std::optional<unsigned> annealing_revert_after_;
   unsigned annealing_init_ops_ = 10;
 
   // Genetic
-  std::optional<std::mt19937::result_type> genetic_seed_;
+  std::mt19937::result_type genetic_seed_ = 0;
   unsigned genetic_population_size_ = 4;
   float genetic_mutation_probability_ = 0.5;
   float genetic_crossover_probability_ = 0.5;

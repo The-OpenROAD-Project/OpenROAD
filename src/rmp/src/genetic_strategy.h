@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <optional>
 #include <random>
 #include <vector>
 
@@ -20,7 +19,7 @@ class GeneticStrategy final : public SlackTuningStrategy
  public:
   explicit GeneticStrategy(sta::Corner* corner,
                            sta::Slack slack_threshold,
-                           std::optional<std::mt19937::result_type> seed,
+                           std::mt19937::result_type seed,
                            unsigned population_size,
                            float mutation_probability,
                            float crossover_probability,
