@@ -728,8 +728,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   // Don't need to reroute every net during first GRT run, let it for the
   // incremental optimizations
   const int endIND = is_incremental_grt_ ? tree_order_pv_.size()
-                                         : tree_order_pv_.size() * 0.8;
-  const int kMaxRerouteIter = 5;
+                                         : tree_order_pv_.size() * 0.9;
+  const int max_reroute_iter = is_incremental_grt_ ? 5 : 0;
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
@@ -1606,7 +1606,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       if (structural_change) {
         reroute_iter++;
       }
-    } while (structural_change && reroute_iter <= kMaxRerouteIter);
+    } while (structural_change && reroute_iter <= max_reroute_iter);
   }  // nets loop
 }
 
