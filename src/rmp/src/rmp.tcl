@@ -172,7 +172,7 @@ proc resynth_genetic { args } {
               -tournament_size -tournament_probability -initial_ops -slack_threshold} \
     flags {}
 
-  set corner [sta::parse_corner keys]
+  set corner [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
   }

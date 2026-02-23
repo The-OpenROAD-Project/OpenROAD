@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "absl/hash/hash.h"
-#include "absl/random/random.h"
+#include "absl/random/distributions.h"
 #include "cut/abc_library_factory.h"
 #include "gia.h"
 #include "rsz/Resizer.hh"

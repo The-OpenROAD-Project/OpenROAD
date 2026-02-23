@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/random/random.h"
+#include "absl/random/distributions.h"
 #include "cut/abc_library_factory.h"
 #include "gia.h"
 #include "odb/db.h"

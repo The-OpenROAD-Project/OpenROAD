@@ -52,6 +52,8 @@ cc_library(
         "//src/utl",
         "@abc",
         "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
         "@boost.bind",
         "@boost.config",
@@ -60,9 +62,6 @@ cc_library(
         "@boost.optional",
         "@boost.phoenix",
         "@boost.spirit",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/hash",
-        "@com_google_absl//absl/random",
     ],
 )
 
