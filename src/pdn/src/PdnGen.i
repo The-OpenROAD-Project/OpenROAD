@@ -44,29 +44,16 @@ using utl::PDN;
 
 namespace pdn {
 
-void set_core_domain(odb::dbNet* power,
-                     odb::dbNet* switched_power,
-                     odb::dbNet* ground,
-                     const std::vector<odb::dbNet*>& secondary_power,
-                     const std::vector<odb::dbNet*>& secondary_ground)
+void set_core_domain(odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->setCoreDomain(
-      power, switched_power, ground, secondary_power, secondary_ground);
+  pdngen->setCoreDomain(power, switched_power, ground, secondary_nets);
 }
 
-void make_region_domain(const char* name,
-                        odb::dbNet* power,
-                        odb::dbNet* switched_power,
-                        odb::dbNet* ground,
-                        const std::vector<odb::dbNet*>& secondary_power,
-                        const std::vector<odb::dbNet*>& secondary_ground,
-                        odb::dbRegion* region)
+void make_region_domain(const char* name, odb::dbNet* power, odb::dbNet* switched_power, odb::dbNet* ground, const std::vector<odb::dbNet*>& secondary_nets, odb::dbRegion* region)
 {
   PdnGen* pdngen = ord::getPdnGen();
-  pdngen->makeRegionVoltageDomain(
-      name, power, switched_power, ground, secondary_power, secondary_ground,
-      region);
+  pdngen->makeRegionVoltageDomain(name, power, switched_power, ground, secondary_nets, region);
 }
 
 void reset()

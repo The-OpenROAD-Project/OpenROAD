@@ -397,7 +397,6 @@ void GlobalRouter::globalRoute(bool save_guides)
     logger_->info(
         GRT, 303, "Global routing runtime = {:02}:{:02}:{:02}", hour, min, sec);
   }
-  logger_->info(GRT, 501, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void GlobalRouter::finishGlobalRouting(bool save_guides)

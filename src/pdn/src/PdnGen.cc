@@ -29,7 +29,6 @@
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
-#include "utl/timer.h"
 #include "via.h"
 #include "via_repair.h"
 
@@ -61,7 +60,6 @@ void PdnGen::resetShapes()
 
 void PdnGen::buildGrids(bool trim)
 {
-  utl::Timer timer;
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - begin");
   auto* block = db_->getChip()->getBlock();
 
@@ -154,7 +152,6 @@ void PdnGen::buildGrids(bool trim)
   }
 
   debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
-  logger_->info(utl::PDN, 500, "Runtime: {:.2f}s", timer.elapsed());
 }
 
 void PdnGen::cleanupVias()
@@ -257,7 +254,7 @@ VoltageDomain* PdnGen::getCoreDomain() const
 void PdnGen::ensureCoreDomain()
 {
   if (core_domain_ == nullptr) {
-    setCoreDomain(nullptr, nullptr, nullptr, {}, {});
+    setCoreDomain(nullptr, nullptr, nullptr, {});
   }
 }
 
@@ -294,15 +291,14 @@ VoltageDomain* PdnGen::findDomain(const std::string& name)
 void PdnGen::setCoreDomain(odb::dbNet* power,
                            odb::dbNet* switched_power,
                            odb::dbNet* ground,
-                           const std::vector<odb::dbNet*>& secondary_power,
-                           const std::vector<odb::dbNet*>& secondary_ground)
+                           const std::vector<odb::dbNet*>& secondary)
 {
   auto* block = db_->getChip()->getBlock();
   if (core_domain_ != nullptr) {
     logger_->warn(utl::PDN, 183, "Replacing existing core voltage domain.");
   }
   core_domain_ = std::make_unique<VoltageDomain>(
-      this, block, power, ground, secondary_power, secondary_ground, logger_);
+      this, block, power, ground, secondary, logger_);
 
   if (importUPF(core_domain_.get())) {
     if (switched_power) {
@@ -319,8 +315,7 @@ void PdnGen::makeRegionVoltageDomain(
     odb::dbNet* power,
     odb::dbNet* switched_power,
     odb::dbNet* ground,
-    const std::vector<odb::dbNet*>& secondary_power,
-    const std::vector<odb::dbNet*>& secondary_ground,
+    const std::vector<odb::dbNet*>& secondary_nets,
     odb::dbRegion* region)
 {
   if (region == nullptr) {
@@ -336,15 +331,8 @@ void PdnGen::makeRegionVoltageDomain(
     }
   }
   auto* block = db_->getChip()->getBlock();
-  auto domain = std::make_unique<VoltageDomain>(this,
-                                                name,
-                                                block,
-                                                power,
-                                                ground,
-                                                secondary_power,
-                                                secondary_ground,
-                                                region,
-                                                logger_);
+  auto domain = std::make_unique<VoltageDomain>(
+      this, name, block, power, ground, secondary_nets, region, logger_);
 
   if (importUPF(domain.get())) {
     if (switched_power) {

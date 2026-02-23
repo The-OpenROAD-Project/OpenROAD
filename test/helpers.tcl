@@ -302,11 +302,9 @@ suppress_message CTS 500
 suppress_message DPL 500
 suppress_message DRT 501
 suppress_message GPL 500
-suppress_message GRT 501
 suppress_message IFP 500
 suppress_message IFP 501
 suppress_message MPL 500
-suppress_message PDN 500
 suppress_message RSZ 500
 
 proc get_3dblox_marker_count { category_name } {

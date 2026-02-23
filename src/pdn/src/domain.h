@@ -33,8 +33,7 @@ class VoltageDomain
                 odb::dbBlock* block,
                 odb::dbNet* power,
                 odb::dbNet* ground,
-                const std::vector<odb::dbNet*>& secondary_power,
-                const std::vector<odb::dbNet*>& secondary_ground,
+                const std::vector<odb::dbNet*>& secondary_nets,
                 odb::dbRegion* region,
                 utl::Logger* logger);
 
@@ -42,8 +41,7 @@ class VoltageDomain
                 odb::dbBlock* block,
                 odb::dbNet* power,
                 odb::dbNet* ground,
-                const std::vector<odb::dbNet*>& secondary_power,
-                const std::vector<odb::dbNet*>& secondary_ground,
+                const std::vector<odb::dbNet*>& secondary_nets,
                 utl::Logger* logger);  // Core
 
   const std::string& getName() const { return name_; }
@@ -56,14 +54,6 @@ class VoltageDomain
   odb::dbNet* getGround() const { return ground_; }
   odb::dbNet* getAlwaysOnPower() const { return power_; }
   odb::dbNet* getSwitchedPower() const { return switched_power_; }
-  const std::vector<odb::dbNet*>& getSecondaryPower() const
-  {
-    return secondary_power_;
-  }
-  const std::vector<odb::dbNet*>& getSecondaryGround() const
-  {
-    return secondary_ground_;
-  }
 
   void setSwitchedPower(odb::dbNet* switched_power)
   {
@@ -72,9 +62,6 @@ class VoltageDomain
   bool hasSwitchedPower() const { return switched_power_ != nullptr; }
 
   // returns the order in which the nets should be arranged in the grid shapes
-  // ordering: [power, switched_power?, ...secondary_power,
-  //            ...secondary_ground, ground] when start_with_power is true,
-  // and the reverse when false.
   std::vector<odb::dbNet*> getNets(bool start_with_power = true) const;
 
   bool hasRegion() const { return region_ != nullptr; }
@@ -103,8 +90,7 @@ class VoltageDomain
   odb::dbNet* power_;
   odb::dbNet* switched_power_;
   odb::dbNet* ground_;
-  std::vector<odb::dbNet*> secondary_power_;
-  std::vector<odb::dbNet*> secondary_ground_;
+  std::vector<odb::dbNet*> secondary_;
 
   odb::dbRegion* region_;
 
