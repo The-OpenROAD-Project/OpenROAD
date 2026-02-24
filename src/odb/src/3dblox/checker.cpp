@@ -4,7 +4,10 @@
 #include "checker.h"
 
 #include <algorithm>
+#include <boost/functional/hash.hpp>
+#include <cmath>
 #include <cstddef>
+#include <map>
 #include <numeric>
 #include <ranges>
 #include <string>
@@ -14,6 +17,7 @@
 
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/dbWireGraph.h"
 #include "odb/geom.h"
 #include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
@@ -92,7 +96,7 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void Checker::check(dbChip* chip)
+void Checker::check(dbChip* chip, int bump_pitch_tolerance)
 {
   UnfoldedModel model(logger_, chip);
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
@@ -101,6 +105,7 @@ void Checker::check(dbChip* chip)
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
+  checkNetConnectivity(top_cat, model, bump_pitch_tolerance);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -284,8 +289,296 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
-                                   const UnfoldedModel& model)
+                                   const UnfoldedModel& model,
+                                   int bump_pitch_tolerance)
 {
+  int disconnected_nets = 0;
+
+  // 1. Pre-index connections by region for faster lookup
+  // Map: Region -> List of Connections attached to it
+  std::unordered_map<const UnfoldedRegion*,
+                     std::vector<const UnfoldedConnection*>>
+      region_connections;
+
+  for (const auto& conn : model.getConnections()) {
+    if (isValid(conn) && conn.top_region && conn.bottom_region) {
+      region_connections[conn.top_region].push_back(&conn);
+      region_connections[conn.bottom_region].push_back(&conn);
+    }
+  }
+
+  for (const auto& net : model.getNets()) {
+    if (net.connected_bumps.size() < 2) {
+      continue;
+    }
+
+    utl::UnionFind uf(net.connected_bumps.size());
+    std::unordered_map<const UnfoldedRegion*, std::vector<int>> region_bumps;
+
+    checkIntraChipConnectivity(net, uf, region_bumps);
+
+    checkInterChipConnectivity(
+        net, uf, region_bumps, region_connections, bump_pitch_tolerance);
+
+    // 4. Analyze groups and report violations
+    std::vector<std::vector<int>> groups(net.connected_bumps.size());
+    for (size_t i = 0; i < net.connected_bumps.size(); ++i) {
+      groups[uf.find((int) i)].push_back((int) i);
+    }
+    std::erase_if(groups, [](const auto& g) { return g.empty(); });
+
+    if (groups.size() > 1) {
+      auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Open nets");
+      disconnected_nets++;
+      // Heuristic: Assume largest group is "main" net
+      auto max_it = std::ranges::max_element(
+          groups, [](auto& a, auto& b) { return a.size() < b.size(); });
+      if (max_it != groups.end()) {
+        groups.erase(max_it);
+      }
+
+      auto* marker = dbMarker::create(cat);
+      marker->addSource(net.chip_net);
+
+      int disconnected_count = 0;
+      for (auto& group : groups) {
+        for (int idx : group) {
+          disconnected_count++;
+          auto* b = net.connected_bumps[idx];
+          if (b->bump_inst) {
+            marker->addSource(b->bump_inst);
+            marker->addShape(
+                Rect(b->global_position.x() - kBumpMarkerHalfSize,
+                     b->global_position.y() - kBumpMarkerHalfSize,
+                     b->global_position.x() + kBumpMarkerHalfSize,
+                     b->global_position.y() + kBumpMarkerHalfSize));
+          }
+        }
+      }
+      marker->setComment(
+          fmt::format("Net {} has {} disconnected bump(s) out of {} total.",
+                      net.chip_net->getName(),
+                      disconnected_count,
+                      net.connected_bumps.size()));
+    }
+  }
+
+  if (disconnected_nets > 0) {
+    logger_->warn(
+        utl::ODB, 405, "Found {} disconnected nets.", disconnected_nets);
+  }
+}
+
+void Checker::checkIntraChipConnectivity(
+    const UnfoldedNet& net,
+    utl::UnionFind& uf,
+    std::unordered_map<const UnfoldedRegion*, std::vector<int>>& region_bumps)
+{
+  std::map<UnfoldedChip*, std::vector<int>> chip_groups;
+  for (size_t i = 0; i < net.connected_bumps.size(); ++i) {
+    auto* b = net.connected_bumps[i];
+    chip_groups[b->parent_region->parent_chip].push_back((int) i);
+    region_bumps[b->parent_region].push_back((int) i);
+  }
+
+  for (const auto& [chip, indices] : chip_groups) {
+    verifyChipConnectivity(indices, net, uf);
+  }
+}
+
+void Checker::checkInterChipConnectivity(
+    const UnfoldedNet& net,
+    utl::UnionFind& uf,
+    const std::unordered_map<const UnfoldedRegion*, std::vector<int>>&
+        region_bumps,
+    const std::unordered_map<const UnfoldedRegion*,
+                             std::vector<const UnfoldedConnection*>>&
+        region_connections,
+    int bump_pitch_tolerance)
+{
+  // Iterate only over regions that actually have bumps for this net
+  for (const auto& [region, bumps] : region_bumps) {
+    auto conn_it = region_connections.find(region);
+    if (conn_it == region_connections.end()) {
+      continue;
+    }
+
+    for (const auto* conn : conn_it->second) {
+      const UnfoldedRegion* other_region = (conn->top_region == region)
+                                               ? conn->bottom_region
+                                               : conn->top_region;
+
+      auto other_bumps_it = region_bumps.find(other_region);
+      // Enforce a canonical processing direction: only merge from the
+      // top-region perspective. Since every connection is encountered twice in
+      // the region loop (once as top, once as bottom), we skip the bottom-side
+      // visit to avoid redundant work.
+      if (other_bumps_it != region_bumps.end() && conn->top_region == region) {
+        connectBumpsBetweenRegions(
+            bumps, other_bumps_it->second, bump_pitch_tolerance, net, uf);
+      }
+    }
+  }
+}
+
+void Checker::verifyChipConnectivity(const std::vector<int>& indices,
+                                     const UnfoldedNet& net,
+                                     utl::UnionFind& uf)
+{
+  if (indices.size() < 2) {
+    return;
+  }
+
+  // Identify the dbNet and valid BTerms for these bumps
+  dbNet* local_net = nullptr;
+  std::vector<std::pair<int, dbBTerm*>> valid_bumps;
+  valid_bumps.reserve(indices.size());
+
+  bool has_valid_terms = false;
+
+  for (int idx : indices) {
+    auto* b = net.connected_bumps[idx];
+    dbBTerm* term = nullptr;
+    if (b->bump_inst) {
+      if (auto* cb = b->bump_inst->getChipBump()) {
+        term = cb->getBTerm();
+      }
+    }
+
+    if (term) {
+      valid_bumps.emplace_back(idx, term);
+      if (!local_net) {
+        local_net = term->getNet();
+      }
+      has_valid_terms = true;
+    }
+  }
+
+  if (!has_valid_terms || !local_net || !local_net->getWire()) {
+    return;  // No wire or terms -> assume open
+  }
+
+  // Build graph to analyze connectivity
+  dbWireGraph graph;
+  graph.decode(local_net->getWire());
+
+  auto find_root = [](dbWireGraph::Node* n) {
+    while (n->in_edge()) {
+      n = n->in_edge()->source();
+    }
+    return n;
+  };
+
+  // Map: Component Root -> List of Connected Bump Indices
+  std::map<dbWireGraph::Node*, std::vector<int>> components;
+
+  // Iterate graph nodes to find which component each BTerm belongs to.
+  // We must visit ALL nodes because a wire may wander far outside the
+  // bounding box of its terminals before coming back (e.g. detour routing).
+  for (auto it = graph.begin_nodes(); it != graph.end_nodes(); ++it) {
+    dbWireGraph::Node* node = *it;
+    int x, y;
+    node->xy(x, y);
+    Point pt(x, y);
+
+    dbTechLayer* layer = node->layer();
+
+    for (const auto& [idx, term] : valid_bumps) {
+      bool match = false;
+      for (dbBPin* pin : term->getBPins()) {
+        for (dbBox* box : pin->getBoxes()) {
+          if (box->getTechLayer() == layer && box->getBox().intersects(pt)) {
+            match = true;
+            break;
+          }
+        }
+        if (match) {
+          break;
+        }
+      }
+
+      if (match) {
+        dbWireGraph::Node* root = find_root(node);
+        components[root].push_back(idx);
+      }
+    }
+  }
+
+  // Unite bumps that share the same component root
+  for (const auto& [root, bump_list] : components) {
+    for (size_t k = 1; k < bump_list.size(); ++k) {
+      uf.unite(bump_list[0], bump_list[k]);
+    }
+  }
+}
+
+void Checker::connectBumpsBetweenRegions(const std::vector<int>& set_a,
+                                         const std::vector<int>& set_b,
+                                         int tolerance,
+                                         const UnfoldedNet& net,
+                                         utl::UnionFind& uf)
+{
+  if (tolerance == 0) {
+    // Exact match: Use a hash multimap for O(1) lookup
+    std::unordered_multimap<std::pair<int, int>,
+                            int,
+                            boost::hash<std::pair<int, int>>>
+        xy_map;
+    for (int idx : set_b) {
+      const Point3D& p = net.connected_bumps[idx]->global_position;
+      xy_map.insert({{p.x(), p.y()}, idx});
+    }
+
+    for (int idx : set_a) {
+      const Point3D& p = net.connected_bumps[idx]->global_position;
+      // Use equal_range to pick up ALL coincident bumps in set_b,
+      auto [begin, end] = xy_map.equal_range({p.x(), p.y()});
+      for (auto it = begin; it != end; ++it) {
+        uf.unite(idx, it->second);
+      }
+    }
+  } else {
+    // Tolerance match: Use a spatial sort (sweep-line like)
+    // Sort both lists by X coordinate
+    auto sort_by_x = [&](int a, int b) {
+      return net.connected_bumps[a]->global_position.x()
+             < net.connected_bumps[b]->global_position.x();
+    };
+    // Create local copies to sort
+    std::vector<int> sorted_a = set_a;
+    std::vector<int> sorted_b = set_b;
+    std::ranges::sort(sorted_a, sort_by_x);
+    std::ranges::sort(sorted_b, sort_by_x);
+
+    size_t j_start = 0;
+    for (int i_idx : sorted_a) {
+      const Point3D& p1 = net.connected_bumps[i_idx]->global_position;
+
+      // Advance j_start to the first potential candidate in X range
+      while (j_start < sorted_b.size()) {
+        const Point3D& p2
+            = net.connected_bumps[sorted_b[j_start]]->global_position;
+        if (p2.x() >= p1.x() - tolerance) {
+          break;
+        }
+        j_start++;
+      }
+
+      // Check candidates in X range
+      for (size_t j = j_start; j < sorted_b.size(); ++j) {
+        int j_idx = sorted_b[j];
+        const Point3D& p2 = net.connected_bumps[j_idx]->global_position;
+
+        if (p2.x() > p1.x() + tolerance) {
+          break;  // Out of X range, stop
+        }
+
+        if (std::abs(p1.y() - p2.y()) <= tolerance) {
+          uf.unite(i_idx, j_idx);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace odb

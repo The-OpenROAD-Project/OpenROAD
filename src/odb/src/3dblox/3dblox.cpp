@@ -94,10 +94,10 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   calculateSize(chip);
 }
 
-void ThreeDBlox::check()
+void ThreeDBlox::check(int bump_pitch_tolerance)
 {
   Checker checker(logger_);
-  checker.check(db_->getChip());
+  checker.check(db_->getChip(), bump_pitch_tolerance);
 }
 
 namespace {
