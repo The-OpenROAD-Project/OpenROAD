@@ -711,7 +711,7 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   return status;
 }
 
-void Restructure::resynthEmap(sta::Corner* corner,
+void Restructure::resynthEmap(sta::Scene* corner,
                               bool map_multioutput,
                               bool verbose,
                               char* workdir_name)

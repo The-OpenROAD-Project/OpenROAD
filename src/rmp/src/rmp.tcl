@@ -166,7 +166,7 @@ proc resynth_emap { args } {
     keys {-corner -target -work_dir} \
     flags {-map_multioutput -verbose}
 
-  set corner [sta::parse_corner keys]
+  set corner [sta::parse_scene keys]
   set target "area"
   set map_multioutput [info exists flags(-map_multioutput)]
   set verbose [info exists flags(-verbose)]

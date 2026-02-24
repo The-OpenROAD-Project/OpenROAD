@@ -155,39 +155,40 @@ Extended technology mapping stats:
 [i] Report stats: area = 948.28; delay = 199.64;
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 225 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 225 out of 225 (100.00%) violating endpoints...
+[INFO RSZ-0094] Found 169 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 169 out of 169 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2845.526 |  -427848.5 |    225 | u0/w[0][13]$_DFF_P_/D
-    final |       0 |     261 |        4 |     88 |    15 |    +1.2% |    0.630 |        0.0 |      0 | text_out[90]$_DFF_P_/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -2845.526 |  -326818.0 |    169 | sa10_sub[7]$_DFF_P_/D
+    final |       0 |     254 |        4 |     91 |    16 |    +1.2% |   -0.359 |       -0.4 |      0 | sa30_sub[5]$_DFF_P_/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 4 buffers, 4 to split loads.
-[INFO RSZ-0051] Resized 261 instances: 261 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 15 instances.
-[INFO RSZ-0049] Cloned 88 instances.
+[INFO RSZ-0051] Resized 254 instances: 254 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 16 instances.
+[INFO RSZ-0049] Cloned 91 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
 Cell type report:                       Count       Area
   Timing Repair Buffer                      4       0.41
-  Inverter                               1316      57.80
+  Inverter                               1316      57.81
   Timing Repair inverter                   21       0.92
   Sequential cell                         562     163.91
-  Multi-Input combinational cell        11033     908.03
-  Total                                 12936    1131.06
-[  0.630,  89.499): ************************************************** (160)
-[ 89.499, 178.368): ** (6)
-[178.368, 267.236): ******** (25)
-[267.236, 356.105): ********** (33)
-[356.105, 444.974): ****** (19)
-[444.974, 533.843): *** (8)
-[533.843, 622.711): *** (9)
-[622.711, 711.580): ******** (27)
-[711.580, 800.449): ******************************************** (142)
-[800.449, 889.318]: ****************************************** (133)
-Startpoint: sa32_sub[7]$_DFF_P_
+  Multi-Input combinational cell        11036     908.14
+  Total                                 12939    1131.19
+[ -0.359,  83.135): *********************** (160)
+[ 83.135, 166.629):  (0)
+[166.629, 250.123): * (4)
+[250.123, 333.617): * (3)
+[333.617, 417.111): * (8)
+[417.111, 500.605): ** (14)
+[500.605, 584.099): * (3)
+[584.099, 667.593): **** (25)
+[667.593, 751.087): ************************************************** (343)
+[751.087, 834.581]: ******************* (131)
+Startpoint: sa00_sr[7]$_DFF_P_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: text_out[90]$_DFF_P_
+Endpoint: sa30_sub[5]$_DFF_P_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -197,36 +198,36 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ sa32_sub[7]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
- 130.57  130.57 ^ sa32_sub[7]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
-  74.23  204.80 v n_9445/Y (NOR2xp33_ASAP7_75t_R)
-  69.16  273.96 ^ n_9446/Y (AOI21xp33_ASAP7_75t_R)
-  32.46  306.42 v n_9447/Y (OAI211xp5_ASAP7_75t_R)
-  77.54  383.96 ^ n_9450/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
-  99.89  483.86 v n_9451/Y (AOI21x1_ASAP7_75t_R)
- 119.44  603.30 ^ n_9452/Y (INVx1_ASAP7_75t_R)
-  88.51  691.82 v n_9575/Y (NOR2xp67_ASAP7_75t_R)
-  91.62  783.44 ^ n_9655/Y (AOI21xp33_ASAP7_75t_R)
-  57.80  841.24 ^ n_9972/Y (OA21x2_ASAP7_75t_R)
-  16.34  857.57 v n_9973/Y (AOI31xp33_ASAP7_75t_R)
-  34.32  891.89 ^ n_9979/Y (A2O1A1Ixp33_ASAP7_75t_R)
-  28.03  919.92 v n_9988/Y (OAI22xp33_ASAP7_75t_R)
-  46.97  966.89 ^ n_9989/Y (AOI32xp33_ASAP7_75t_R)
-   0.00  966.89 ^ text_out[90]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
-         966.89   data arrival time
+   0.00    0.00 ^ sa00_sr[7]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ 109.67  109.67 v sa00_sr[7]$_DFF_P_/QN (DFFHQNx1_ASAP7_75t_R)
+  83.49  193.16 v n_3060/Y (XNOR2xp5_ASAP7_75t_R)
+  41.78  234.94 ^ n_10006/Y (NAND2xp33_ASAP7_75t_R)
+  26.53  261.47 v n_10007/Y (OAI211xp5_ASAP7_75t_R)
+  90.53  352.00 ^ n_10010/Y (AOI21xp33_ASAP7_75t_R)
+  69.01  421.01 v n_10011/Y (AOI211xp5_ASAP7_75t_R)
+ 187.77  608.77 ^ n_10012/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
+ 135.41  744.18 v n_10137/Y (NAND2xp33_ASAP7_75t_R)
+  51.28  795.46 ^ n_10420/Y (AOI211xp5_ASAP7_75t_R)
+  37.35  832.81 v n_10421/Y (AOI211xp5_ASAP7_75t_R)
+  33.11  865.92 ^ n_10426/Y (A2O1A1Ixp33_ASAP7_75t_R)
+  32.90  898.82 v n_10427/Y (OAI321xp33_ASAP7_75t_R)
+  45.38  944.20 v n_10437/Y (OA21x2_ASAP7_75t_R)
+  25.04  969.24 ^ n_10462/Y (OAI21xp33_ASAP7_75t_R)
+   0.00  969.24 ^ sa30_sub[5]$_DFF_P_/D (DFFHQNx1_ASAP7_75t_R)
+         969.24   data arrival time
 
 1000.00 1000.00   clock core_clock (rise edge)
    0.00 1000.00   clock network delay (ideal)
    0.00 1000.00   clock reconvergence pessimism
-        1000.00 ^ text_out[90]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
- -32.48  967.52   library setup time
-         967.52   data required time
+        1000.00 ^ sa30_sub[5]$_DFF_P_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -31.12  968.88   library setup time
+         968.88   data required time
 ---------------------------------------------------------
-         967.52   data required time
-        -966.89   data arrival time
+         968.88   data required time
+        -969.24   data arrival time
 ---------------------------------------------------------
-           0.63   slack (MET)
+          -0.36   slack (VIOLATED)
 
 
-wns max 0.00
-tns max 0.00
+wns max -0.36
+tns max -0.36

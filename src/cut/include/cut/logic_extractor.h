@@ -272,7 +272,7 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
       cut_vertex_set.insert(vertex);
 
       // Figure out if we should add the driver.
-      if (!vertex->isConstant()) {
+      if (!open_sta_->isConstant(pin, open_sta_->cmdMode())) {
         continue;
       }
 

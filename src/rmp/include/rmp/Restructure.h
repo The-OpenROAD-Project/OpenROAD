@@ -88,7 +88,7 @@ class Restructure
   void setTieLoPort(sta::LibertyPort* loport);
   void setTieHiPort(sta::LibertyPort* hiport);
 
-  void resynthEmap(sta::Corner* corner,
+  void resynthEmap(sta::Scene* corner,
                    bool map_multioutput,
                    bool verbose,
                    char* workdir_name);

@@ -134,17 +134,18 @@ Extended technology mapping stats:
 [i] Report stats: area = 20.75; delay = 244.98;
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
-[INFO RSZ-0094] Found 33 endpoints with setup violations.
-[INFO RSZ-0099] Repairing 33 out of 33 (100.00%) violating endpoints...
+[INFO RSZ-0094] Found 43 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 43 out of 43 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -562.748 |   -14817.8 |     33 | dpath/a_lt_b$in0[3]$_DFFE_PP_/D
-    final |       0 |      32 |        1 |      4 |    22 |    +3.8% | -266.299 |    -7756.8 |     32 | dpath/a_lt_b$in0[3]$_DFFE_PP_/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -562.748 |   -16868.5 |     43 | dpath/a_lt_b$in1[0]$_DFFE_PP_/D
+     220* |       0 |      34 |        1 |      4 |    23 |    +3.6% | -265.380 |    -9021.9 |     41 | dpath/a_lt_b$in1[10]$_DFFE_PP_/D
+    final |       0 |      37 |        1 |      4 |    23 |    +3.8% | -265.380 |    -8996.1 |     41 | dpath/a_lt_b$in1[10]$_DFFE_PP_/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0045] Inserted 1 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 32 instances: 32 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 22 instances.
+[INFO RSZ-0051] Resized 37 instances: 37 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 23 instances.
 [INFO RSZ-0049] Cloned 4 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
@@ -154,19 +155,19 @@ Cell type report:                       Count       Area
   Sequential cell                          35      10.21
   Multi-Input combinational cell          207      19.55
   Total                                   296      32.16
-[-266.299, -207.776): ************************************************** (30)
-[-207.776, -149.252): *** (2)
-[-149.252,  -90.728):  (0)
-[ -90.728,  -32.205):  (0)
-[ -32.205,   26.319): ** (1)
-[  26.319,   84.842):  (0)
-[  84.842,  143.366): ** (1)
-[ 143.366,  201.889):  (0)
-[ 201.889,  260.413):  (0)
-[ 260.413,  318.937]: ** (1)
+[-265.380, -213.126): ************************************************** (32)
+[-213.126, -160.872): ******** (5)
+[-160.872, -108.618):  (0)
+[-108.618,  -56.364): *** (2)
+[ -56.364,   -4.111): *** (2)
+[  -4.111,   48.143): *** (2)
+[  48.143,  100.397): *** (2)
+[ 100.397,  152.651): ******** (5)
+[ 152.651,  204.905): *** (2)
+[ 204.905,  257.159]: ** (1)
 Startpoint: dpath/a_lt_b$in1[1]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: dpath/a_lt_b$in0[3]$_DFFE_PP_
+Endpoint: dpath/a_lt_b$in1[10]$_DFFE_PP_
           (rising edge-triggered flip-flop clocked by core_clock)
 Path Group: core_clock
 Path Type: max
@@ -194,24 +195,24 @@ Corner: slow
   32.36  490.16 v n_177/Y (OAI22xp5_ASAP7_75t_R)
   36.93  527.08 ^ n_179/Y (AOI211x1_ASAP7_75t_R)
   69.91  596.99 v n_181/Y (A2O1A1O1Ixp25_ASAP7_75t_R)
-  88.50  685.49 ^ n_183/Y (OAI31xp67_ASAP7_75t_R)
-  58.92  744.40 v n_218/Y (OAI222xp33_ASAP7_75t_R)
-   0.00  744.40 v dpath/a_lt_b$in0[3]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-         744.40   data arrival time
+  87.58  684.57 ^ n_183/Y (OAI31xp67_ASAP7_75t_R)
+  58.92  743.49 v n_208/Y (OAI222xp33_ASAP7_75t_R)
+   0.00  743.49 v dpath/a_lt_b$in1[10]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         743.49   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
-         500.00 ^ dpath/a_lt_b$in0[3]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+         500.00 ^ dpath/a_lt_b$in1[10]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
  -21.89  478.11   library setup time
          478.11   data required time
 ---------------------------------------------------------
          478.11   data required time
-        -744.40   data arrival time
+        -743.49   data arrival time
 ---------------------------------------------------------
-        -266.30   slack (VIOLATED)
+        -265.38   slack (VIOLATED)
 
 
-wns max -266.30
-tns max -7756.83
+wns max -265.38
+tns max -8996.07
 Repair timing output passed/skipped equivalence test

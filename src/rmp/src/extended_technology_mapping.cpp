@@ -53,7 +53,7 @@ namespace {
 
 std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
 extract_logic_to_mockturtle(sta::dbSta* sta,
-                            sta::Corner* corner,
+                            sta::Scene* corner,
                             rsz::Resizer* resizer,
                             mockturtle::tech_library<9u>& tech_lib,
                             utl::Logger* logger)
@@ -74,7 +74,7 @@ extract_logic_to_mockturtle(sta::dbSta* sta,
   sta->search()->endpointsInvalid();
 
   cut::LogicExtractorFactory logic_extractor(sta, logger);
-  for (sta::Vertex* endpoint : *sta->endpoints()) {
+  for (sta::Vertex* endpoint : sta->endpoints()) {
     logic_extractor.AppendEndpoint(endpoint);
   }
 
@@ -452,7 +452,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
 void extended_technology_mapping(sta::dbSta* sta,
                                  odb::dbDatabase* db,
-                                 sta::Corner* corner,
+                                 sta::Scene* corner,
                                  bool map_multioutput,
                                  bool area_oriented_mapping,
                                  bool verbose,
@@ -462,7 +462,9 @@ void extended_technology_mapping(sta::dbSta* sta,
   sta->ensureGraph();
   sta->ensureLevelized();
   sta->searchPreamble();
-  sta->ensureClkNetwork();
+  for (auto mode : sta->modes()) {
+    sta->ensureClkNetwork(mode);
+  }
 
   // Configure emap parameters
   mockturtle::emap_params ps;

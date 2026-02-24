@@ -3,14 +3,14 @@
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 #include "utl/Logger.h"
 
 namespace rmp {
 
 void extended_technology_mapping(sta::dbSta* sta,
-                                 odb::dbDatabase *db,
-                                 sta::Corner* corner,
+                                 odb::dbDatabase* db,
+                                 sta::Scene* corner,
                                  bool map_multioutput,
                                  bool area_oriented_mapping,
                                  bool verbose,
