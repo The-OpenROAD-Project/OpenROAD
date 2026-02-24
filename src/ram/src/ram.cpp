@@ -5,6 +5,7 @@
 
 #include <array>
 #include <cmath>
+#include <fstream>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -62,7 +63,7 @@ RamGen::RamGen(sta::dbNetwork* network,
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
-      behavioral_verilog_filename_("")
+      behavioral_verilog_filename_()
 {
 }
 
@@ -119,7 +120,9 @@ std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
                prefix,
                "bit",
                storage_cell_,
-               {{"GATE", clock}, {"D", data_input}, {"Q", storage_net}});
+               {{storage_cell_->findMTerm("CLK") ? "CLK" : "GATE", clock},
+                {"D", data_input},
+                {"Q", storage_net}});
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
     makeCellInst(bit_cell.get(),
@@ -834,7 +837,8 @@ void RamGen::generate(const int bytes_per_word,
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
 
-  writeBehavioralVerilog(behavioral_verilog_filename_, bytes_per_word, word_count, read_ports);
+  writeBehavioralVerilog(
+      behavioral_verilog_filename_, bytes_per_word, word_count, read_ports);
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)
@@ -845,37 +849,42 @@ void RamGen::setBehavioralVerilogFilename(const std::string& filename)
 void RamGen::writeBehavioralVerilog(const std::string& filename,
                                     const int bytes_per_word,
                                     const int word_count,
-                                    const int read_ports){
-    if (filename.empty()) {
-      return;
-    }
+                                    const int read_ports)
+{
+  if (filename.empty()) {
+    return;
+  }
 
-    const int word_size_bit = bytes_per_word * 8; 
-    const int address_width = std::ceil(std::log2(word_count));
+  const int word_size_bit = bytes_per_word * 8;
+  const int address_width
+      = (word_count <= 1) ? 1 : std::ceil(std::log2(word_count));
 
-    std::string module_name = fmt::format("RAM{}x{}_behavioral", word_count, word_size_bit);
+  std::string module_name
+      = fmt::format("RAM{}x{}_behavioral", word_count, word_size_bit);
 
-    std::string port_list = "clk, \n D";
-    for (int i=0; i< read_ports; i++) {
-      port_list += fmt::format(", \n Q{}", i);
-    }
-    port_list += ",\n addr,\n we,\n VSS,\n VDD";
+  std::string port_list = "clk, \n D";
+  for (int i = 0; i < read_ports; i++) {
+    port_list += fmt::format(", \n Q{}", i);
+  }
+  port_list += ",\n addr,\n we,\n VSS,\n VDD";
 
-    std::string output_declaration;
-    for (int i=0; i< read_ports; i++){
-      output_declaration += fmt::format(" output reg [{}:0] Q{}; \n", word_size_bit-1, i);
-    }
+  std::string output_declaration;
+  for (int i = 0; i < read_ports; i++) {
+    output_declaration
+        += fmt::format(" output reg [{}:0] Q{}; \n", word_size_bit - 1, i);
+  }
 
-    std::string read_port_logic;
-    for (int i=0; i< read_ports; i++){
-      read_port_logic += fmt::format(R"(
+  std::string read_port_logic;
+  for (int i = 0; i < read_ports; i++) {
+    read_port_logic += fmt::format(R"(
       always @(*) begin
-        Q{} = mem[addr_reg];
+        Q{} = mem[addr];
       end
-      )", i);
-    }
+      )",
+                                   i);
+  }
 
-    std::string verilog_code = fmt::format(R"(
+  std::string verilog_code = fmt::format(R"(
     module {} ({});
       input clk;
       input [{}:0] D;
@@ -888,12 +897,6 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
       // memory array declaration
       reg [{}:0] mem[0:{}];
 
-      // registered address (latch pipeline)
-      reg [{}:0] addr_reg;
-      always @(posedge clk) begin
-        addr_reg <= addr;
-      end
-
       // write logic
       integer i;
       always @(posedge clk) begin
@@ -904,24 +907,21 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
         end
       end
 
-      // read logic 
+      // read logic
       {}
-        
       endmodule
     )",
-      module_name,
-      port_list,
-      word_size_bit-1,
-      output_declaration,
-      address_width-1,
-      bytes_per_word-1,
-      word_size_bit-1,
-      word_count-1,
-      address_width-1,
-      bytes_per_word,
-      read_port_logic
-    );
-  
+                                         module_name,
+                                         port_list,
+                                         word_size_bit - 1,
+                                         output_declaration,
+                                         address_width - 1,
+                                         bytes_per_word - 1,
+                                         word_size_bit - 1,
+                                         word_count - 1,
+                                         bytes_per_word,
+                                         read_port_logic);
+
   std::ofstream vf(filename);
   if (!vf.is_open()) {
     logger_->error(RAM, 23, "Unable to open file {}", filename);
@@ -930,7 +930,11 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
 
   vf << verilog_code;
   vf.close();
-  logger_->info(RAM, 24, "Behavioral Verilog for {} written to {}", module_name, filename);
+  logger_->info(RAM,
+                24,
+                "Behavioral Verilog for {} written to {}",
+                module_name,
+                filename);
 }
 
 }  // namespace ram
