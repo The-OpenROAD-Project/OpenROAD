@@ -28,7 +28,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     PRIVATE
       src
   )
-  
+
   target_link_libraries(utl_py
     PUBLIC
       spdlog::spdlog
@@ -64,6 +64,7 @@ target_include_directories(utl_lib
 
 target_link_libraries(utl_lib
   PUBLIC
+    absl::synchronization
     spdlog::spdlog
     ${TCL_LIBRARY}
     ${Boost_LIBRARIES}
@@ -74,7 +75,7 @@ target_sources(utl
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
 )
-  
+
 target_include_directories(utl
   PUBLIC
     include

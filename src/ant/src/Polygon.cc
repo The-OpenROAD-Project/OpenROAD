@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 
+#include "AntennaCheckerImpl.hh"
 #include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/dbShape.h"

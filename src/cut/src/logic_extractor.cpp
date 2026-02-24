@@ -20,22 +20,28 @@
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/SearchPred.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 namespace cut {
 
-bool SearchPredNonReg2LibrarySupport::searchThru(sta::Edge* edge)
+bool SearchPredCombLibrarySupport::searchThru(sta::Edge* edge,
+                                              const sta::Mode* mode) const
 {
-  sta::Vertex* v = edge->from(graph_);
-  sta::Network* network = sta_->network();
-
-  sta::Instance* inst = network->instance(v->pin());
-  if (!inst) {
+  const sta::TimingRole* role = edge->role();
+  if (role->genericRole() == sta::TimingRole::regClkToQ()
+      || role->genericRole() == sta::TimingRole::latchDtoQ()) {
     return false;
   }
 
-  sta::LibertyCell* cell = network->libertyCell(inst);
-  if (!cell) {
+  sta::Vertex* to_vertex = edge->from(graph_);
+  sta::Network* network = sta_->network();
+  sta::Instance* to_instance = network->instance(to_vertex->pin());
+  if (to_instance == nullptr) {
+    return false;
+  }
+  sta::LibertyCell* cell = network->libertyCell(to_instance);
+  if (cell == nullptr) {
     return false;
   }
 
@@ -43,7 +49,7 @@ bool SearchPredNonReg2LibrarySupport::searchThru(sta::Edge* edge)
     return false;
   }
 
-  return sta::SearchPredNonReg2::searchThru(edge);
+  return sta::SearchPred1::searchThru(edge, mode);
 }
 
 LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
@@ -56,7 +62,7 @@ LogicExtractorFactory& LogicExtractorFactory::AppendEndpoint(
 std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     const std::set<std::string>& supported_cells)
 {
-  cut::SearchPredNonReg2LibrarySupport pred(
+  cut::SearchPredCombLibrarySupport pred(
       open_sta_, supported_cells, open_sta_->graph());
   sta::BfsBkwdIterator iter(sta::BfsIndex::other, &pred, open_sta_);
   for (const auto& end_point : endpoints_) {

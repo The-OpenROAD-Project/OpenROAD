@@ -1,6 +1,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
 [INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:                60.382 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                     21
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 8754
@@ -57,9 +63,9 @@ Cell type report:                       Count       Area
   Buffer                                    2       1.60
   Total                                     2       1.60
 Net u1z
- Pin capacitance: 4.624-5.406
+ Pin capacitance: 5.008-5.406
  Wire capacitance: 0.000
- Total capacitance: 4.624-5.406
+ Total capacitance: 5.008-5.406
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -68,15 +74,15 @@ Driver pins
  u1/Z output (BUF_X1) (4, 603)
 
 Load pins
- bc1/u2/A input (BUF_X1) 0.835-0.983 (4, 597)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (7, 600)
- ic1/u4/A input (INV_X1) 1.477-1.720 (7, 600)
- ic2/u4/A input (INV_X1) 1.477-1.720 (4, 597)
+ bc1/u2/A input (BUF_X1) 0.906-0.983 (4, 597)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (7, 600)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (7, 600)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (4, 597)
 
 Net u3z
- Pin capacitance: 1.030-1.158
+ Pin capacitance: 1.096-1.158
  Wire capacitance: 0.000
- Total capacitance: 1.030-1.158
+ Total capacitance: 1.096-1.158
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -85,7 +91,7 @@ Driver pins
  bc1/u3/Z output (BUF_X1) (4, 603)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (1, 604)
+ r2/D input (DFF_X1) 1.096-1.158 (1, 604)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -222,9 +228,9 @@ Cell type report:                       Count       Area
   Inverter                                  2       1.06
   Total                                     2       1.06
 Net u1z
- Pin capacitance: 5.265-6.142
+ Pin capacitance: 5.699-6.142
  Wire capacitance: 0.000
- Total capacitance: 5.265-6.142
+ Total capacitance: 5.699-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -233,15 +239,15 @@ Driver pins
  u1/Z output (BUF_X1) (3, 598)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.477-1.720 (7, 599)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (1, 596)
- ic1/u4/A input (INV_X1) 1.477-1.720 (0, 596)
- ic2/u4/A input (INV_X1) 1.477-1.720 (2, 607)
+ bc1/u4/A input (INV_X1) 1.598-1.720 (7, 599)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (1, 596)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (0, 596)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (2, 607)
 
 Net u3z
- Pin capacitance: 1.030-1.158
+ Pin capacitance: 1.096-1.158
  Wire capacitance: 0.000
- Total capacitance: 1.030-1.158
+ Total capacitance: 1.096-1.158
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -250,7 +256,7 @@ Driver pins
  bc1/u5/ZN output (INV_X1) (2, 603)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (2, 596)
+ r2/D input (DFF_X1) 1.096-1.158 (2, 596)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -363,9 +369,9 @@ Cell type report:                       Count       Area
   Buffer                                    2       1.60
   Total                                     2       1.60
 Net u1z
- Pin capacitance: 4.624-5.406
+ Pin capacitance: 5.008-5.406
  Wire capacitance: 0.000
- Total capacitance: 4.624-5.406
+ Total capacitance: 5.008-5.406
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -374,15 +380,15 @@ Driver pins
  u1/Z output (BUF_X1) (3, 600)
 
 Load pins
- bc1/u2/A input (BUF_X1) 0.835-0.983 (2, 600)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (1, 597)
- ic1/u4/A input (INV_X1) 1.477-1.720 (3, 600)
- ic2/u4/A input (INV_X1) 1.477-1.720 (4, 605)
+ bc1/u2/A input (BUF_X1) 0.906-0.983 (2, 600)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (1, 597)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (3, 600)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (4, 605)
 
 Net u3z
- Pin capacitance: 1.030-1.158
+ Pin capacitance: 1.096-1.158
  Wire capacitance: 0.000
- Total capacitance: 1.030-1.158
+ Total capacitance: 1.096-1.158
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -391,7 +397,7 @@ Driver pins
  bc1/u3/Z output (BUF_X1) (2, 598)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (2, 594)
+ r2/D input (DFF_X1) 1.096-1.158 (2, 594)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)
@@ -504,9 +510,9 @@ Cell type report:                       Count       Area
   Inverter                                  2       1.06
   Total                                     2       1.06
 Net u1z
- Pin capacitance: 5.265-6.142
+ Pin capacitance: 5.699-6.142
  Wire capacitance: 0.000
- Total capacitance: 5.265-6.142
+ Total capacitance: 5.699-6.142
  Number of drivers: 1
  Number of loads: 4
  Number of pins: 5
@@ -515,15 +521,15 @@ Driver pins
  u1/Z output (BUF_X1) (3, 601)
 
 Load pins
- bc1/u4/A input (INV_X1) 1.477-1.720 (2, 600)
- bc2/u2/A input (BUF_X1) 0.835-0.983 (1, 599)
- ic1/u4/A input (INV_X1) 1.477-1.720 (1, 601)
- ic2/u4/A input (INV_X1) 1.477-1.720 (3, 604)
+ bc1/u4/A input (INV_X1) 1.598-1.720 (2, 600)
+ bc2/u2/A input (BUF_X1) 0.906-0.983 (1, 599)
+ ic1/u4/A input (INV_X1) 1.598-1.720 (1, 601)
+ ic2/u4/A input (INV_X1) 1.598-1.720 (3, 604)
 
 Net u3z
- Pin capacitance: 1.030-1.158
+ Pin capacitance: 1.096-1.158
  Wire capacitance: 0.000
- Total capacitance: 1.030-1.158
+ Total capacitance: 1.096-1.158
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -532,7 +538,7 @@ Driver pins
  bc1/u5/ZN output (INV_X1) (1, 600)
 
 Load pins
- r2/D input (DFF_X1) 1.030-1.158 (2, 593)
+ r2/D input (DFF_X1) 1.096-1.158 (2, 593)
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: r2 (rising edge-triggered flip-flop clocked by clk)

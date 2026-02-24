@@ -9,7 +9,6 @@
 #include <iterator>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -19,6 +18,7 @@
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
 #include "PACallBack.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
@@ -36,9 +36,11 @@
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
+#include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "global.h"
 #include "gr/FlexGR.h"
@@ -1330,7 +1332,7 @@ void TritonRoute::setParams(const ParamStruct& params)
 void TritonRoute::addWorkerResults(
     const std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   workers_results_.insert(
       workers_results_.end(), results.begin(), results.end());
   results_sz_ = workers_results_.size();
@@ -1339,7 +1341,7 @@ void TritonRoute::addWorkerResults(
 bool TritonRoute::getWorkerResults(
     std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   if (workers_results_.empty()) {
     return false;
   }

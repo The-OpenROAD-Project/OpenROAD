@@ -764,15 +764,14 @@ void Gui::saveImage(const std::string& filename,
     if (chip == nullptr) {
       logger_->error(utl::GUI, 64, "No design loaded.");
     }
-
+    save_region = chip->getBBox();
     auto* block = chip->getBlock();
-    if (block == nullptr) {
-      logger_->error(utl::GUI, 65, "No design loaded.");
+
+    if (block != nullptr) {
+      save_region = block->getBBox()->getBox();
     }
 
-    save_region
-        = block->getBBox()
-              ->getBox();  // get die area since screen area is not reliable
+    // get die area since screen area is not reliable
     const double bloat_by = 0.05;  // 5%
     const int bloat = std::min(save_region.dx(), save_region.dy()) * bloat_by;
 
@@ -780,11 +779,7 @@ void Gui::saveImage(const std::string& filename,
   }
 
   if (!enabled()) {
-    auto* tech = db_->getTech();
-    if (tech == nullptr) {
-      logger_->error(utl::GUI, 16, "No design loaded.");
-    }
-    const double dbu_per_micron = tech->getDbUnitsPerMicron();
+    const double dbu_per_micron = db_->getDbuPerMicron();
 
     std::string save_cmds;
 

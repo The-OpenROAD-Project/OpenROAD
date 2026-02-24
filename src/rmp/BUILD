@@ -46,8 +46,10 @@ cc_library(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/utl",
-        "//third-party/abc:abc-lib",
         "//third-party:mockturtle",
+        "@abc",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.bind",
         "@boost.config",
         "@boost.fusion",
@@ -84,7 +86,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

@@ -9,9 +9,9 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
-#include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Scene.hh"
 #include "sta/Units.hh"
 #include "tcl.h"
 
@@ -73,7 +73,7 @@ void Tech::readLiberty(const std::string& file_name)
 {
   // TODO: take corner & min/max args
   getSta()->readLiberty(file_name.c_str(),
-                        getSta()->cmdCorner(),
+                        getSta()->cmdScene(),
                         sta::MinMaxAll::all(),
                         true /* infer_latches */);
 }

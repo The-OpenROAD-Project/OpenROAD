@@ -5,6 +5,9 @@ module(
     name = "openroad",
 )
 
+bazel_dep(name = "abc", version = "0.62-yosyshq")
+bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "coin-or-lemon", version = "1.3.1")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_cc", version = "0.1.2")
@@ -22,9 +25,6 @@ git_override(
 bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
-# TODO: fix uses of @com_google_absl and use @abseil-cpp directly
-bazel_dep(name = "abseil-cpp", version = "20260107.0", repo_name = "com_google_absl")
-
 BOOST_VERSION = "1.89.0.bcr.2"
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
@@ -34,7 +34,6 @@ bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 bazel_dep(name = "boost.config", version = BOOST_VERSION)
 bazel_dep(name = "boost.container", version = BOOST_VERSION)
 bazel_dep(name = "boost.container_hash", version = BOOST_VERSION)
-bazel_dep(name = "boost.core", version = BOOST_VERSION)
 bazel_dep(name = "boost.format", version = BOOST_VERSION)
 bazel_dep(name = "boost.fusion", version = BOOST_VERSION)
 bazel_dep(name = "boost.geometry", version = BOOST_VERSION)
@@ -72,6 +71,7 @@ bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.8.0")
+bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
@@ -92,13 +92,16 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "90cfbab79df93960c5493f8a75df6199fb80fe26",
+    commit = "e1d5b0b4725d045a03d18e02c54bdebe73d07384",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-# Dependencies needed by one of the rules_hdl repos. Once they are on
-# BCR, they should depend on their own version.
-bazel_dep(name = "glpk", version = "5.0.bcr.3", repo_name = "org_gnu_glpk")
+# Updated dependencies of qt_bazel_prebuilts. Once the updated versions
+# have been added to qt_bazel_prebuilts, they can be removed here.
+# (But CAVE, right now that would result in cyclic dependencies with,
+# WORKSPACE so that also has to go first).
+bazel_dep(name = "harfbuzz", version = "11.0.1.bcr.1")
+bazel_dep(name = "glib", version = "2.82.2.bcr.8")
 
 ## Lock the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
@@ -144,7 +147,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "72db79cc90376851e27ee484c1ae1e23c2e30f44",
+    commit = "63ecaa366a7418d7afaa3777b96daa8401a64983",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -153,10 +156,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-4512-g528ad3d8a",
+    image = "docker.io/openroad/orfs:26Q1-333-g9ad095627",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "087122e12c90edcb3ebfc452a3238417fbc78e1135f5b43feaf7162d885cada1",
+    sha256 = "c89d51c311c16d2f0e6aae43648d6ffb0b1befd4cc4a122c683684361776f838",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")

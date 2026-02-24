@@ -13,10 +13,9 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -31,20 +30,17 @@
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/TimingArc.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
+
+using namespace sta;  // NOLINT
 
 using std::pair;
 using std::string;
 using std::vector;
 
 using utl::RSZ;
-
-using sta::Edge;
-using sta::PathExpanded;
-using sta::VertexOutEdgeIterator;
 
 RecoverPower::RecoverPower(Resizer* resizer)
     : resizer_(resizer), bad_vertices_(resizer->graph_)
@@ -69,18 +65,18 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
-  sta::VertexSet* endpoints = sta_->endpoints();
-  sta::VertexSeq ends_with_slack;
-  for (sta::Vertex* end : *endpoints) {
-    const sta::Slack end_slack = sta_->vertexSlack(end, max_);
+  VertexSet& endpoints = sta_->endpoints();
+  VertexSeq ends_with_slack;
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack > setup_slack_margin_
         && end_slack < setup_slack_max_margin_) {
       ends_with_slack.push_back(end);
     }
   }
 
-  sort(ends_with_slack, [this](sta::Vertex* end1, sta::Vertex* end2) {
-    return sta_->vertexSlack(end1, max_) > sta_->vertexSlack(end2, max_);
+  std::ranges::sort(ends_with_slack, [this](Vertex* end1, Vertex* end2) {
+    return sta_->slack(end1, max_) > sta_->slack(end2, max_);
   });
 
   debugPrint(logger_,
@@ -89,8 +85,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
              1,
              "Candidate paths {}/{} {}%",
              ends_with_slack.size(),
-             endpoints->size(),
-             int(ends_with_slack.size() / double(endpoints->size()) * 100));
+             endpoints.size(),
+             int(ends_with_slack.size() / double(endpoints.size()) * 100));
 
   int max_end_count = ends_with_slack.size() * recover_power_percent;
   // As long as we are here fix at least one path
@@ -113,8 +109,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   for (sta::Vertex* end : ends_with_slack) {
     resizer_->journalBegin();
-    const sta::Slack end_slack_before = sta_->vertexSlack(end, max_);
-    sta::Slack worst_slack_after;
+    const Slack end_slack_before = sta_->slack(end, max_);
+    Slack worst_slack_after;
     //=====================================================================
     // Just a counter to know when to break out
     end_index++;
@@ -139,7 +135,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     if (changed) {
       estimate_parasitics_->updateParasitics(true);
       sta_->findRequireds();
-      const sta::Slack end_slack_after = sta_->vertexSlack(end, max_);
+      const Slack end_slack_after = sta_->slack(end, max_);
 
       sta_->worstSlack(max_, worst_slack_after, worst_vertex);
 
@@ -228,10 +224,10 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
   init();
   resize_count_ = 0;
 
-  sta::Vertex* vertex = graph_->pinLoadVertex(end_pin);
-  const sta::Slack slack = sta_->vertexSlack(vertex, max_);
-  const sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
-  sta::Vertex* drvr_vertex;
+  Vertex* vertex = graph_->pinLoadVertex(end_pin);
+  const Slack slack = sta_->slack(vertex, max_);
+  const Path* path = sta_->vertexWorstSlackPath(vertex, max_);
+  Vertex* drvr_vertex;
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -255,8 +251,8 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
     const int path_length = expanded.size();
     vector<pair<int, sta::Delay>> load_delays;
     const int start_index = expanded.startIndex();
-    const sta::DcalcAnalysisPt* dcalc_ap = path->dcalcAnalysisPt(sta_);
-    const int lib_ap = dcalc_ap->libertyIndex();
+    const auto dcalc_ap_index = path->dcalcAnalysisPtIndex(sta_);
+    const int lib_ap = path->scene(sta_)->libertyIndex(path->minMax(sta_));
     // Find load delay for each gate in the path.
     for (int i = start_index; i < path_length; i++) {
       const sta::Path* path = expanded.path(i);
@@ -264,11 +260,11 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
       const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
-        const sta::TimingArc* prev_arc = path->prevArc(sta_);
-        const sta::TimingArc* corner_arc = prev_arc->cornerArc(lib_ap);
+        const TimingArc* prev_arc = path->prevArc(sta_);
+        const TimingArc* corner_arc = prev_arc->sceneArc(lib_ap);
         const Edge* prev_edge = path->prevEdge(sta_);
-        const sta::Delay load_delay
-            = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
+        const Delay load_delay
+            = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap_index)
               // Remove intrinsic delay to find load dependent delay.
               - corner_arc->intrinsicDelay();
         load_delays.emplace_back(i, load_delay);
@@ -328,10 +324,10 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                                 const bool only_same_size_swap,
                                 const sta::Slack path_slack)
 {
-  const sta::Pin* drvr_pin = drvr_path->pin(this);
-  sta::Instance* drvr = network_->instance(drvr_pin);
-  const sta::DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
-  const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  const Pin* drvr_pin = drvr_path->pin(this);
+  Instance* drvr = network_->instance(drvr_pin);
+  const float load_cap = graph_delay_calc_->loadCap(
+      drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const int in_index = drvr_index - 1;
   const sta::Path* in_path = expanded->path(in_index);
   const sta::Pin* in_pin = in_path->pin(sta_);
@@ -348,14 +344,15 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
         prev_drive = prev_drvr_port->driveResistance();
       }
     }
-    const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    const sta::LibertyCell* downsize = downsizeCell(in_port,
-                                                    drvr_port,
-                                                    load_cap,
-                                                    prev_drive,
-                                                    dcalc_ap,
-                                                    only_same_size_swap,
-                                                    path_slack);
+    const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    const LibertyCell* downsize = downsizeCell(in_port,
+                                               drvr_port,
+                                               load_cap,
+                                               prev_drive,
+                                               drvr_path->scene(sta_),
+                                               drvr_path->minMax(sta_),
+                                               only_same_size_swap,
+                                               path_slack);
     if (downsize != nullptr) {
       debugPrint(logger_,
                  RSZ,
@@ -390,52 +387,54 @@ bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
   return false;
 }
 
-sta::LibertyCell* RecoverPower::downsizeCell(
-    const sta::LibertyPort* in_port,
-    const sta::LibertyPort* drvr_port,
-    const float load_cap,
-    const float prev_drive,
-    const sta::DcalcAnalysisPt* dcalc_ap,
-    const bool match_size,
-    const sta::Slack path_slack)
+LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
+                                        const LibertyPort* drvr_port,
+                                        const float load_cap,
+                                        const float prev_drive,
+                                        const Scene* scene,
+                                        const MinMax* min_max,
+                                        const bool match_size,
+                                        const Slack path_slack)
 {
-  const int lib_ap = dcalc_ap->libertyIndex();
-  sta::LibertyCell* cell = drvr_port->libertyCell();
-  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  const int lib_ap = scene->libertyIndex(min_max);
+  LibertyCell* cell = drvr_port->libertyCell();
+  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
-    sort(&swappable_cells,
-         [=, this](const sta::LibertyCell* cell1,
-                   const sta::LibertyCell* cell2) {
-           sta::LibertyPort* port1
-               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           const sta::LibertyPort* port2
-               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           const float drive1 = port1->driveResistance();
-           const float drive2 = port2->driveResistance();
-           const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-           return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
-         });
-    const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
+    sort(
+        &swappable_cells,
+        [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
+          const LibertyPort* port1 = const_cast<const LibertyPort*>(
+                                         cell1->findLibertyPort(drvr_port_name))
+                                         ->scenePort(lib_ap);
+          const LibertyPort* port2 = const_cast<const LibertyPort*>(
+                                         cell2->findLibertyPort(drvr_port_name))
+                                         ->scenePort(lib_ap);
+          const float drive1 = port1->driveResistance();
+          const float drive2 = port2->driveResistance();
+          const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+          const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+          return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
+        });
+    const float drive = drvr_port->scenePort(lib_ap)->driveResistance();
     const float delay
-        = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
-          + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+        = resizer_->gateDelay(drvr_port, load_cap, scene, min_max)
+          + (prev_drive * in_port->scenePort(lib_ap)->capacitance());
 
-    sta::LibertyCell* best_cell = nullptr;
-    for (sta::LibertyCell* swappable : swappable_cells) {
-      const sta::LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
-      const sta::LibertyPort* swappable_drvr
+    LibertyCell* best_cell = nullptr;
+    for (LibertyCell* swappable : swappable_cells) {
+      const LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
+      const LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
       const sta::LibertyPort* swappable_input
           = swappable_corner->findLibertyPort(in_port_name);
       const float current_drive = swappable_drvr->driveResistance();
       // Include delay of previous driver into swappable gate.
       const float current_delay
-          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+          = resizer_->gateDelay(swappable_drvr, load_cap, scene, min_max)
             + prev_drive * swappable_input->capacitance();
 
       if (!resizer_->dontUse(swappable) && current_drive > drive

@@ -27,9 +27,10 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.json",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -137,7 +138,7 @@ cc_library(
         "//src/utl",
         "@boost.json",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

@@ -40,6 +40,7 @@
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
 #include "chartsWidget.h"
+#include "chiplet3DWidget.h"
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -106,6 +107,8 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
+      chiplet_viewer_(new Chiplet3DWidget(this)),
+      chiplet_dock_(new QDockWidget("3D Viewer", this)),
       help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewers_)),
@@ -126,6 +129,9 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+  chiplet_dock_->setObjectName("chiplet_viewer_dock");
+  chiplet_dock_->setWidget(chiplet_viewer_);
+  addDockWidget(Qt::RightDockWidgetArea, chiplet_dock_);
   addDockWidget(Qt::RightDockWidgetArea, help_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
@@ -136,10 +142,12 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
   tabifyDockWidget(inspector_, drc_viewer_);
   tabifyDockWidget(inspector_, clock_viewer_);
   tabifyDockWidget(inspector_, charts_widget_);
+  tabifyDockWidget(inspector_, chiplet_dock_);
   tabifyDockWidget(inspector_, help_widget_);
 
   drc_viewer_->hide();
   clock_viewer_->hide();
+  chiplet_dock_->hide();
 
   // Hook up all the signals/slots
   connect(viewers_,
@@ -156,6 +164,10 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           viewers_,
           &LayoutTabs::commandAboutToExecute);
   connect(this, &MainWindow::chipLoaded, viewers_, &LayoutTabs::chipLoaded);
+  connect(this,
+          &MainWindow::chipLoaded,
+          chiplet_viewer_,
+          &Chiplet3DWidget::setChip);
   connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
@@ -639,7 +651,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
       new DbCellEdgeSpacingDescriptor(db_));
 
-  gui->registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
+  gui->registerDescriptor<sta::Scene*>(new CornerDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
@@ -888,6 +900,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
   windows_menu_->addAction(charts_widget_->toggleViewAction());
+  windows_menu_->addAction(chiplet_dock_->toggleViewAction());
   windows_menu_->addAction(help_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
@@ -1681,6 +1694,7 @@ void MainWindow::setLogger(utl::Logger* logger)
   clock_viewer_->setLogger(logger);
   charts_widget_->setLogger(logger);
   timing_widget_->setLogger(logger);
+  chiplet_viewer_->setLogger(logger);
 }
 
 void MainWindow::fit()

@@ -26,13 +26,13 @@
 #include <cstddef>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "utl/prometheus/client_metric.h"
 #include "utl/prometheus/collectable.h"
 #include "utl/prometheus/hash.h"
@@ -89,7 +89,7 @@ class Family : public Collectable
   const std::string name;
   const std::string help;
   const Labels constant_labels;
-  mutable std::mutex mutex;
+  mutable absl::Mutex mutex;
 
   std::unordered_map<Hash, MetricPtr> metrics;
   std::unordered_map<Hash, Labels> labels;
@@ -227,7 +227,7 @@ class Family : public Collectable
   /// if the given metric was not returned by Add().
   void Remove(PrometheusMetric* metric)
   {
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     if (!labels_reverse_lookup.contains(metric)) {
       return;
@@ -245,7 +245,7 @@ class Family : public Collectable
   bool Has(const Labels& cur_labels) const
   {
     const Hash hash = hash_labels(cur_labels);
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
     return metrics.find(hash) != metrics.end();
   }
 
@@ -266,7 +266,7 @@ class Family : public Collectable
   /// \return Zero or more samples for each dimensional data.
   MetricFamilies Collect() const override
   {
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     if (metrics.empty()) {
       return {};
@@ -331,7 +331,7 @@ class CustomFamily : public Family
   CustomMetric& Add(const Labels& new_labels, Args&&... args)
   {
     const Hash hash = hash_labels(new_labels);
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     // try to find existing one
     auto metrics_iter = metrics.find(hash);

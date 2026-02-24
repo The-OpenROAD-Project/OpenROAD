@@ -47,16 +47,16 @@ odb::dbBlock* get_block()
 // converts from microns to DBU
 odb::Rect make_rect(double xlo, double ylo, double xhi, double yhi)
 {
-  auto block = get_block();
-  int dbuPerUU = block->getDbUnitsPerMicron();
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  int dbuPerUU = db->getDbuPerMicron();
   return odb::Rect(xlo * dbuPerUU, ylo * dbuPerUU, xhi * dbuPerUU, yhi * dbuPerUU);
 }
 
 // converts from microns to DBU
 odb::Point make_point(double x, double y)
 {
-  auto block = get_block();
-  int dbuPerUU = block->getDbUnitsPerMicron();
+  auto db = ord::OpenRoad::openRoad()->getDb();
+  int dbuPerUU = db->getDbuPerMicron();
   return odb::Point(x * dbuPerUU, y * dbuPerUU);
 }
 

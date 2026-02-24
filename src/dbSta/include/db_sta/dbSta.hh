@@ -155,7 +155,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbNetwork* getDbNetwork() { return db_network_; }
   dbStaReport* getDbReport() { return db_report_; }
 
-  Slack netSlack(const odb::dbNet* net, const MinMax* min_max);
+  Slack slack(const odb::dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
@@ -214,8 +214,8 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   void dumpModInstGraphConnections(const char* mod_inst_name,
                                    const char* filename);
 
-  using Sta::netSlack;
   using Sta::replaceCell;
+  using Sta::slack;
 
  private:
   void makeReport() override;

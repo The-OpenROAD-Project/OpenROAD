@@ -65,8 +65,8 @@ class AbcLibraryFactory
   explicit AbcLibraryFactory(utl::Logger* logger) : logger_(logger) {}
   AbcLibraryFactory& AddDbSta(sta::dbSta* db_sta);
   AbcLibraryFactory& AddResizer(rsz::Resizer* resizer);
-  AbcLibraryFactory& SetCorner(sta::Corner* corner);
   utl::UniquePtrWithDeleter<abc::SC_Lib> BuildScl();
+  AbcLibraryFactory& SetCorner(sta::Scene* corner);
   AbcLibrary Build();
 
  private:
@@ -84,12 +84,12 @@ class AbcLibraryFactory
   void AbcPopulateAbcSurfaceFromSta(abc::SC_Surface* abc_table,
                                     const sta::TableModel* model,
                                     sta::Units* units);
-  std::vector<sta::LibertyCell*> GetLibertyCellsFromCorner(sta::Corner* corner);
+  std::vector<sta::LibertyCell*> GetLibertyCellsFromCorner(sta::Scene* corner);
   std::vector<abc::SC_Pin*> CreateAbcInputPins(sta::LibertyCell* cell);
 
   utl::Logger* logger_;
   sta::dbSta* db_sta_ = nullptr;
-  sta::Corner* corner_ = nullptr;
+  sta::Scene* corner_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;
 };
 

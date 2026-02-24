@@ -8,11 +8,12 @@
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <mutex>
 #include <queue>
 #include <string>
 #include <vector>
 
+#include "BalancerConnection.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
@@ -76,7 +77,7 @@ LoadBalancer::~LoadBalancer()
 
 bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   bool valid_worker_state = true;
   if (!broadcastData_.empty()) {
     for (auto data : broadcastData_) {
@@ -105,7 +106,7 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 }
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
@@ -119,7 +120,7 @@ void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 }
 void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   if (!workers_.empty()) {
     Worker w = workers_.top();
     workers_.pop();
@@ -134,7 +135,7 @@ void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 
 void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
@@ -150,7 +151,7 @@ void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
 {
   if (lock) {
-    workers_mutex_.lock();
+    workers_mutex_.Lock();
   }
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
@@ -163,7 +164,7 @@ void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
   }
   workers_.swap(new_queue);
   if (lock) {
-    workers_mutex_.unlock();
+    workers_mutex_.Unlock();
   }
 }
 

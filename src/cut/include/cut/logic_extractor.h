@@ -18,6 +18,10 @@
 #include "sta/SearchPred.hh"
 #include "utl/Logger.h"
 
+namespace sta {
+class Mode;
+}
+
 namespace cut {
 
 template <typename T>
@@ -44,24 +48,21 @@ concept Library = std::same_as<std::remove_cvref_t<T>, AbcLibrary>
 // particular class will not allow the iterator to walk through DFFs, latches
 // or any cell that is not supported by ABC. This allows our logic extractor
 // to only extract cells that we could reasonably put in ABC.
-class SearchPredNonReg2LibrarySupport : public sta::SearchPredNonReg2
+class SearchPredCombLibrarySupport : public sta::SearchPred1
 {
  public:
-  // supported_liberty_cells is a set of cells that are supported by library.
-  SearchPredNonReg2LibrarySupport(sta::dbSta* open_sta,
-                                  const std::set<std::string>& supported_cells,
-                                  sta::Graph* graph)
-      : sta::SearchPredNonReg2(open_sta),
-        graph_(graph),
-        supported_(supported_cells)
+  // supported_liberty_cells is a set of cells that are supported by ABC.
+  SearchPredCombLibrarySupport(sta::dbSta* open_sta,
+                               const std::set<std::string>& supported_cells,
+                               sta::Graph* graph)
+      : sta::SearchPred1(open_sta), supported_(supported_cells), graph_(graph)
   {
   }
-
-  bool searchThru(sta::Edge* edge) override;
+  bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override;
 
  private:
-  sta::Graph* graph_;
   const std::set<std::string>& supported_;
+  sta::Graph* graph_;
 };
 
 class LogicExtractorFactory
@@ -201,11 +202,13 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
 
   auto network = open_sta_->network();
 
-  std::ranges::stable_sort(primary_input_nets, [network](const sta::Net *a, const sta::Net *b) {
-                               return network->id(a) < network->id(b);
+  std::ranges::stable_sort(primary_input_nets,
+                           [network](const sta::Net* a, const sta::Net* b) {
+                             return network->id(a) < network->id(b);
                            });
-  std::ranges::stable_sort(primary_output_nets, [network](const sta::Net *a, const sta::Net *b) {
-                               return network->id(a) < network->id(b);
+  std::ranges::stable_sort(primary_output_nets,
+                           [network](const sta::Net* a, const sta::Net* b) {
+                             return network->id(a) < network->id(b);
                            });
 
   return LogicCut(std::move(primary_input_nets),

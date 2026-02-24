@@ -103,7 +103,7 @@ cc_library(
         "@boost.stacktrace",
         "@boost.tokenizer",
         "@boost.utility",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

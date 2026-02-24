@@ -7,7 +7,7 @@ worst slack max -0.16
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.155 |      -23.3 |    150 | load0/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.155 |      -23.3 |    150 | load143/D
        10 |       0 |       4 |        0 |      3 |     2 |    +1.1% |   -0.132 |      -19.5 |    150 | load65/D
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_2/Q
 [WARNING RSZ-0075] makeBufferedNet failed for driver drvr_1/Q

@@ -20,8 +20,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "shape.h"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -64,20 +62,20 @@ void PDNSim::setDebugGui(bool enable)
       new ConnectionDescriptor(solvers_));
 }
 
-void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
+void PDNSim::setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
   voltages[corner] = voltage;
 }
 
-void PDNSim::setInstPower(odb::dbInst* inst, sta::Corner* corner, float power)
+void PDNSim::setInstPower(odb::dbInst* inst, sta::Scene* corner, float power)
 {
   auto& powers = user_powers_[inst];
   powers[corner] = power;
 }
 
 void PDNSim::analyzePowerGrid(odb::dbNet* net,
-                              sta::Corner* corner,
+                              sta::Scene* corner,
                               GeneratedSourceType source_type,
                               const std::string& voltage_file,
                               bool use_prev_solution,
@@ -139,7 +137,7 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
 }
 
 void PDNSim::writeSpiceNetwork(odb::dbNet* net,
-                               sta::Corner* corner,
+                               sta::Scene* corner,
                                GeneratedSourceType source_type,
                                const std::string& spice_file,
                                const std::string& voltage_source_file)
@@ -178,7 +176,7 @@ void PDNSim::getIRDropForLayer(odb::dbNet* net,
 }
 
 void PDNSim::getIRDropForLayer(odb::dbNet* net,
-                               sta::Corner* corner,
+                               sta::Scene* corner,
                                odb::dbTechLayer* layer,
                                IRDropByPoint& ir_drop) const
 {

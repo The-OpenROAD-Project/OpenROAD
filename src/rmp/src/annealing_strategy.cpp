@@ -112,7 +112,9 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   sta->ensureGraph();
   sta->ensureLevelized();
   sta->searchPreamble();
-  sta->ensureClkNetwork();
+  for (auto mode : sta->modes()) {
+    sta->ensureClkNetwork(mode);
+  }
   auto block = sta->db()->getChip()->getBlock();
 
   auto candidate_vertices = GetEndpoints(sta, resizer, slack_threshold_);
@@ -354,7 +356,10 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   odb::dbDatabase::undoEco(block);
 
   if (!temperature_) {
-    sta::Delay required = sta->vertexRequired(worst_vertex, sta::MinMax::max());
+    sta::Delay required = sta->required(worst_vertex,
+                                        sta::RiseFallBoth::riseFall(),
+                                        sta->scenes(),
+                                        sta::MinMax::max());
     temperature_ = required;
   }
 

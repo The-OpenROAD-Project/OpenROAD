@@ -20,11 +20,11 @@
 #include <QWidget>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -233,7 +233,7 @@ class TimingPathRenderer : public gui::Renderer
     odb::dbObject* sink;
   };
   std::vector<std::unique_ptr<HighlightStage>> highlight_stage_;
-  std::mutex rendering_;
+  absl::Mutex rendering_;
 
   static const gui::Painter::Color kInstHighlightColor;
   static const gui::Painter::Color kPathInstColor;
@@ -410,8 +410,8 @@ class TimingControlsDialog : public QDialog
 
   const sta::Pin* convertTerm(Gui::Term term) const;
 
-  sta::Corner* getCorner() const { return sta_->getCorner(); }
-  void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
+  sta::Scene* getScene() const { return sta_->getScene(); }
+  void setScene(sta::Scene* scene) { sta_->setScene(scene); }
 
  signals:
   void inspect(const Selected& selected);

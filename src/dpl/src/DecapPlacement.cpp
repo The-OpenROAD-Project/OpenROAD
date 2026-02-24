@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"

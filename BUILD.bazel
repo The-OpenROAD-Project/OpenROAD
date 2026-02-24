@@ -123,7 +123,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
-    "//third-party/abc:abc-lib",
+    "@abc",
     ":ord",
 ] + select(
     {
@@ -180,7 +180,7 @@ cc_binary(
         "//src/utl",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -210,8 +210,10 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
 
@@ -230,6 +232,7 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
+    deps = ["@abseil-cpp//absl/synchronization"],
 )
 
 cc_library(

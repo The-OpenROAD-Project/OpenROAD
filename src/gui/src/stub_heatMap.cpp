@@ -242,7 +242,7 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
 {
 }
 
-sta::Corner* PowerDensityDataSource::getCorner() const
+sta::Scene* PowerDensityDataSource::getCorner() const
 {
   return nullptr;
 }
