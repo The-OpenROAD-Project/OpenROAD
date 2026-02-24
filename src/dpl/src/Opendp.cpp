@@ -91,14 +91,14 @@ void Opendp::setJumpMoves(const int jump_moves)
 
 void Opendp::setIterativePlacement(const bool iterative)
 {
-  iterative_placement_ = iterative;
+  iterative_debug_ = iterative;
 }
 
 void Opendp::setDeepIterativePlacement(const bool deep_iterative)
 {
-  deep_iterative_placement_ = deep_iterative;
+  deep_iterative_debug_ = deep_iterative;
   if (deep_iterative) {
-    iterative_placement_ = true;
+    iterative_debug_ = true;
   }
 }
 
