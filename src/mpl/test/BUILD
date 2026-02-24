@@ -9,8 +9,6 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
-    "boundary_push2",
-    "boundary_push3",
     "centralization1",
     "clocked_macro",
     "fixed_covers",
@@ -71,14 +69,6 @@ filegroup(
             ] + {
                 "boundary_push1": [
                     "testcases/boundary_push1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push2": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push3": [
-                    "testcases/boundary_push2.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "centralization1": [

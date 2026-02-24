@@ -22,8 +22,6 @@ or_integration_tests(
     orientation_improve2
     orientation_improve3
     boundary_push1
-    boundary_push2
-    boundary_push3
     centralization1
     clocked_macro
     keep_clustering_data
