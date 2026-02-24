@@ -30,6 +30,7 @@ namespace gpl {
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
+  addDisplayControl(kDrawInstances, true);
   gui::Gui::get()->registerRenderer(this);
 }
 
@@ -345,11 +346,13 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
   }
 
   // Draw the placeable objects
-  painter.setPen(gui::Painter::kWhite);
-  drawCells(nbc_->getGCells(), painter);
-  for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
-    const auto& nb = nbVec_[nb_idx];
-    drawCells(nb->getGCells(), painter, nb_idx);
+  if (checkDisplayControl(kDrawInstances)) {
+    painter.setPen(gui::Painter::kWhite);
+    drawCells(nbc_->getGCells(), painter);
+    for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
+      const auto& nb = nbVec_[nb_idx];
+      drawCells(nb->getGCells(), painter, nb_idx);
+    }
   }
 
   // Create lighter versions of the region_colors_ with alpha 50

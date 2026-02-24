@@ -77,6 +77,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   void setDisplayControl(std::string_view name, bool value) override;
 
+  const char* getDisplayControlGroupName() override { return "GPL"; }
+
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
   void gifEnd(int key) override;
@@ -167,6 +169,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
   static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  static constexpr const char* kDrawInstances = "Draw GPL Cells";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
   bool draw_bins_ = false;
