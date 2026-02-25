@@ -976,7 +976,7 @@ void PathGroupSlackEndVisitor::resetWorstSlack()
 
 STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
-      scene_(nullptr),
+      scene_(sta ? sta->cmdScene() : nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
       max_path_count_(50),

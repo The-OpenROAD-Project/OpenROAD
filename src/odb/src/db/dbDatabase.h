@@ -15,6 +15,7 @@
 
 #include "dbChipRegionInstItr.h"
 #include "odb/dbDatabaseObserver.h"
+#include "odb/dbObject.h"
 namespace utl {
 class Logger;
 }

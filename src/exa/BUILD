@@ -26,7 +26,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 
@@ -56,7 +56,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

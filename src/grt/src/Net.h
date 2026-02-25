@@ -70,6 +70,11 @@ class Net
     are_segments_restored_ = are_segments_restored;
   }
   bool areSegmentsRestored() const { return are_segments_restored_; }
+  void setIsConnectedToPadOrMacro(bool is_connected)
+  {
+    is_connected_to_pad_or_macro_ = is_connected;
+  }
+  bool isConnectedToPadOrMacro() const { return is_connected_to_pad_or_macro_; }
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
@@ -86,6 +91,7 @@ class Net
   bool is_clk_;
   bool restore_route_from_guides_;
   bool are_segments_restored_;
+  bool is_connected_to_pad_or_macro_;
 };
 
 }  // namespace grt

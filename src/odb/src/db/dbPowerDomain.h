@@ -10,6 +10,8 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 // User Code Begin Includes
+#include <string>
+
 #include "odb/geom.h"
 // User Code End Includes
 

@@ -16,6 +16,7 @@
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include "dbGDSLib.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSSRef>;

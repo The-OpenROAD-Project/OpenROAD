@@ -69,7 +69,7 @@ cc_library(
         "//src/utl",
         "@boost.asio",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

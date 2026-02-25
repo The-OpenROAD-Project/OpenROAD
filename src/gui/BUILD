@@ -31,7 +31,7 @@ cc_library(
         "//src/odb",
         "@abseil-cpp//absl/synchronization",
         "@boost.multi_array",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 
@@ -89,7 +89,7 @@ QT_GUI_PLATFORMS = {
             "@boost.multi_array",
             "@boost.stacktrace",
             "@spdlog",
-            "@tcl_lang//:tcl",
+            "@tk_tcl//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
     )
     for platform, suffix in QT_GUI_PLATFORMS.items()

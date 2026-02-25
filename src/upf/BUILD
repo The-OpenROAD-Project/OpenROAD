@@ -50,7 +50,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

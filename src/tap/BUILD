@@ -52,7 +52,7 @@ cc_library(
         "@boost.geometry",
         "@boost.polygon",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

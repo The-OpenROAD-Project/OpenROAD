@@ -83,7 +83,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

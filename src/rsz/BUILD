@@ -115,7 +115,7 @@ cc_library(
         "@boost.multi_array",
         "@boost.stacktrace",
         "@spdlog",
-        "@tcl_lang//:tcl",
+        "@tk_tcl//:tcl",
     ],
 )
 

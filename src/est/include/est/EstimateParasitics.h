@@ -11,6 +11,7 @@
 #include <ostream>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "db_sta/SpefWriter.hh"

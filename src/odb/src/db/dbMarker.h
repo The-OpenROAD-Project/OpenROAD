@@ -19,6 +19,7 @@
 
 #include "dbMarkerCategory.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 // User Code End Includes
 
 namespace odb {

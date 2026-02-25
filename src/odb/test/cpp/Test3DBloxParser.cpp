@@ -102,10 +102,9 @@ TEST_F(DbvFixture, test_3dbx)
   EXPECT_EQ(connection->getThickness(), 0);
   connection = *itr;
   EXPECT_EQ(connection->getName(), "soc_to_virtual");
-  EXPECT_EQ(connection->getTopRegion()->getChipInst()->getName(),
-            "soc_inst_duplicate");
+  EXPECT_EQ(connection->getTopRegion()->getChipInst()->getName(), "soc_inst");
   EXPECT_EQ(connection->getTopRegionPath().size(), 1);
-  EXPECT_EQ(connection->getTopRegionPath()[0]->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(connection->getTopRegionPath()[0]->getName(), "soc_inst");
   EXPECT_EQ(connection->getTopRegion()->getChipRegion()->getName(), "back_reg");
   EXPECT_EQ(connection->getBottomRegionPath().size(), 0);
   EXPECT_EQ(connection->getBottomRegion(), nullptr);

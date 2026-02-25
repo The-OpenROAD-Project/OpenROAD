@@ -10,6 +10,10 @@
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include <string>
+#include <unordered_map>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;

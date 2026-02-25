@@ -24,6 +24,10 @@ def _tcl_encode_sta_impl(ctx):
         arguments = [args],
         tools = [ctx.executable._tclsh, ctx.file._encode_script],
         executable = ctx.executable._tclsh,
+        env = {
+            # FIXME why is this needed?
+            "TCL_LIBRARY": ctx.executable._tclsh.path + ".runfiles/tk_tcl/library",
+        },
     )
     return [DefaultInfo(files = depset([output_file]))]
 
@@ -47,7 +51,7 @@ tcl_encode_sta = rule(
             allow_single_file = True,
         ),
         "_tclsh": attr.label(
-            default = "@tcl_lang//:tclsh",
+            default = "@tk_tcl//:tclsh",
             executable = True,
             cfg = "exec",
         ),

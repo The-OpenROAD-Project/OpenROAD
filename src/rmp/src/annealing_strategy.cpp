@@ -40,6 +40,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/MinMax.hh"
 #include "sta/Search.hh"
+#include "sta/Transition.hh"
 #include "utils.h"
 #include "utl/Logger.h"
 #include "utl/SuppressStdout.h"

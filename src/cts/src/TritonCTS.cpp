@@ -48,6 +48,7 @@
 #include "sta/Liberty.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
