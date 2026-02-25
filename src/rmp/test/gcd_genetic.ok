@@ -114,26 +114,25 @@ Derived GENLIB library "asap7sc7p5t_AO_RVT_SS_nldm_211120" with 169 gates.
 [INFO RMP-0065] Resynthesis: Iteration 14 of genetic algorithm
 [INFO RMP-0066] Resynthesis: Best result is of individual 0
 [INFO RMP-0067] Resynthesis: End of slack tuning, applying ABC operations
-[INFO RMP-0068] Resynthesis: Worst slack is -5.955808e-11
-[-59.558, -27.727): ************************************************** (39)
-[-27.727,   4.105): **** (3)
-[  4.105,  35.936): **** (3)
-[ 35.936,  67.767): **** (3)
-[ 67.767,  99.598):  (0)
-[ 99.598, 131.430): **** (3)
-[131.430, 163.261):  (0)
-[163.261, 195.092): * (1)
-[195.092, 226.924):  (0)
-[226.924, 258.755]: * (1)
+[INFO RMP-0068] Resynthesis: Worst slack is -3.7283482e-11
+[-37.283,  -7.407): ************************************************** (37)
+[ -7.407,  22.470): ******* (5)
+[ 22.470,  52.347): *** (2)
+[ 52.347,  82.224): **** (3)
+[ 82.224, 112.101): *** (2)
+[112.101, 141.977):  (0)
+[141.977, 171.854): **** (3)
+[171.854, 201.731):  (0)
+[201.731, 231.608):  (0)
+[231.608, 261.485]: * (1)
 Cell type report:                       Count       Area
-  Inverter                                 71       3.60
+  Inverter                                 65       3.91
   Sequential cell                          35      10.21
-  Multi-Input combinational cell          461      31.87
-  Total                                   567      45.68
-Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
+  Multi-Input combinational cell          414      29.95
+  Total                                   514      44.06
+Startpoint: dpath/a_lt_b$in0[7]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
-Endpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
-          (rising edge-triggered flip-flop clocked by core_clock)
+Endpoint: resp_msg[15] (output port clocked by core_clock)
 Path Group: core_clock
 Path Type: max
 Corner: slow
@@ -142,40 +141,34 @@ Corner: slow
 ---------------------------------------------------------
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
-   0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  69.08   69.08 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  21.31   90.40 v cut_214046/Y (INVx1_ASAP7_75t_R)
-  27.31  117.70 ^ _421_/CON (HAxp5_ASAP7_75t_R)
-  27.31  145.01 v cut_214253/Y (INVx1_ASAP7_75t_R)
-  69.77  214.78 ^ _420_/CON (FAx1_ASAP7_75t_R)
-  19.03  233.81 v cut_214023/Y (INVx5_ASAP7_75t_R)
-  25.15  258.96 ^ cut_214024/Y (NOR2xp67_ASAP7_75t_R)
-  26.63  285.59 v cut_214025/Y (NOR2xp67_ASAP7_75t_R)
-  31.19  316.78 ^ cut_214026/Y (NOR2xp67_ASAP7_75t_R)
-  23.43  340.21 v cut_214027/Y (NOR2x1_ASAP7_75t_R)
-  27.49  367.71 ^ cut_214028/Y (NOR2x1_ASAP7_75t_R)
-  22.25  389.96 v cut_214029/Y (NOR2x1_ASAP7_75t_R)
-  30.54  420.50 ^ cut_214039/Y (NOR2x1_ASAP7_75t_R)
-  36.59  457.09 v cut_214078/Y (NOR2x1p5_ASAP7_75t_R)
-  25.50  482.60 ^ cut_214079/Y (NOR2xp33_ASAP7_75t_R)
-  22.47  505.06 v cut_214105/Y (NOR2xp33_ASAP7_75t_R)
-  24.69  529.75 ^ cut_214106/Y (NAND2xp33_ASAP7_75t_R)
-   0.00  529.75 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-         529.75   data arrival time
+   0.00    0.00 ^ dpath/a_lt_b$in0[7]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  69.94   69.94 v dpath/a_lt_b$in0[7]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  22.92   92.86 ^ cut_206068/Y (INVx1_ASAP7_75t_R)
+  74.45  167.31 ^ _430_/SN (HAxp5_ASAP7_75t_R)
+  40.36  207.66 v cut_205968/Y (NOR2xp67_ASAP7_75t_R)
+  38.98  246.64 v cut_206270/Y (AND2x2_ASAP7_75t_R)
+  35.85  282.49 v cut_206271/Y (OR2x2_ASAP7_75t_R)
+  25.17  307.66 ^ cut_206312/Y (NOR2xp33_ASAP7_75t_R)
+  26.65  334.31 v cut_206339/Y (NAND2xp33_ASAP7_75t_R)
+  26.58  360.89 ^ cut_206342/Y (NOR2xp67_ASAP7_75t_R)
+  24.59  385.48 v cut_206343/Y (NOR2x1_ASAP7_75t_R)
+  39.20  424.68 v cut_206371/Y (OR2x2_ASAP7_75t_R)
+  12.60  437.28 ^ cut_206372/Y (NAND2xp5_ASAP7_75t_R)
+   0.00  437.28 ^ resp_msg[15] (out)
+         437.28   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
-         500.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -29.80  470.20   library setup time
-         470.20   data required time
+-100.00  400.00   output external delay
+         400.00   data required time
 ---------------------------------------------------------
-         470.20   data required time
-        -529.75   data arrival time
+         400.00   data required time
+        -437.28   data arrival time
 ---------------------------------------------------------
-         -59.56   slack (VIOLATED)
+         -37.28   slack (VIOLATED)
 
 
-wns max -59.56
-tns max -2098.03
+wns max -37.28
+tns max -526.75
 Repair timing output passed/skipped equivalence test

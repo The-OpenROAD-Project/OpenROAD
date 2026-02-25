@@ -49,7 +49,8 @@ resynth_genetic \
   -mutation_probability 0.25 \
   -crossover_probability 0.75 \
   -tournament_size 9 \
-  -tournament_probability 0.9
+  -tournament_probability 0.9 \
+  -seed 21
 report_timing_histogram
 report_cell_usage
 report_checks
