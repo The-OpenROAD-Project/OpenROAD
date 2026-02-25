@@ -20,6 +20,7 @@
 #include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/MinMax.hh"
+#include "sta/Transition.hh"
 #include "utils.h"
 #include "utl/Logger.h"
 #include "utl/unique_name.h"
