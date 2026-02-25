@@ -22,6 +22,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -fence_weight fence_weight \
                                           -boundary_weight boundary_weight \
                                           -notch_weight notch_weight \
+                                          -macro_blockage_weight macro_blockage_weight \
                                           -soft_blockage_weight soft_blockage_weight \
                                           -target_util   target_util \
                                           -min_ar  min_ar \
@@ -37,6 +38,7 @@ proc rtl_macro_placer { args } {
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
+         -macro_blockage_weight \
          -soft_blockage_weight -target_util \
          -min_ar \
          -report_directory \
@@ -150,6 +152,16 @@ proc rtl_macro_placer { args } {
   }
   if { [info exists keys(-notch_weight)] } {
     set notch_weight $keys(-notch_weight)
+  }
+  if { [info exists keys(-macro_blockage_weight)] } {
+    if { [info exists keys(-soft_blockage_weight)] } {
+      utl::error MPL 69 "Cannot set -macro_blockage_weight along with\
+                         -soft_blockage_weight. Use only one of those keys."
+    }
+
+    utl::warn MPL 70 "-macro_blockage_weight is deprecated, use\
+                      -soft_blockage_weight instead."
+    set soft_blockage_weight $keys(-macro_blockage_weight)
   }
   if { [info exists keys(-soft_blockage_weight)] } {
     set soft_blockage_weight $keys(-soft_blockage_weight)
