@@ -62,8 +62,8 @@ RamGen::RamGen(sta::dbNetwork* network,
       ioPlacer_(ioPlacer),
       opendp_(opendp),
       global_router_(global_router),
-      detailed_router_(detailed_router),
-      
+      detailed_router_(detailed_router)
+
 {
 }
 
