@@ -69,12 +69,73 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
     iter.enqueue(end_point);
   }
 
+  sta::dbNetwork* network = open_sta_->getDbNetwork();
+  sta::Graph* graph = open_sta_->graph();
+
   std::vector<sta::Vertex*> cut_vertices;
+  std::unordered_set<sta::Vertex*> cut_set;
+
   while (iter.hasNext()) {
     sta::Vertex* vertex = iter.next();
     iter.enqueueAdjacentVertices(vertex);
-    cut_vertices.push_back(vertex);
+
+    if (cut_set.insert(vertex).second) {
+      cut_vertices.push_back(vertex);
+    }
   }
+
+  // Collect instances whose any output pin is already in the cut
+  std::unordered_set<const sta::Instance*> insts;
+  insts.reserve(cut_vertices.size());
+
+  for (sta::Vertex* v : cut_vertices) {
+    sta::Pin* pin = v->pin();
+    if (!pin) {
+      continue;
+    }
+
+    sta::PortDirection* dir = network->direction(pin);
+    if (!dir || !dir->isOutput()) {
+      continue;
+    }
+
+    if (sta::Instance* inst = network->instance(pin)) {
+      insts.insert(inst);
+    }
+  }
+
+  // For those instances, add all output pins vertices to the cut
+  for (const sta::Instance* inst : insts) {
+    auto pin_it = std::unique_ptr<sta::InstancePinIterator>(
+        network->pinIterator(inst));
+
+    while (pin_it->hasNext()) {
+      sta::Pin* p = pin_it->next();
+      if (!p) {
+        continue;
+      }
+
+      sta::PortDirection* dir = network->direction(p);
+      if (!dir || !dir->isOutput()) {
+        continue;
+      }
+
+      sta::VertexId vid = network->vertexId(p);
+      if (vid == 0) {
+        continue;
+      }
+
+      sta::Vertex* pv = graph->vertex(vid);
+      if (!pv) {
+        continue;
+      }
+
+      if (cut_set.insert(pv).second) {
+        cut_vertices.push_back(pv);
+      }
+    }
+  }
+
   return cut_vertices;
 }
 
