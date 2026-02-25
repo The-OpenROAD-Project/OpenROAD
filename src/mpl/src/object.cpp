@@ -842,6 +842,11 @@ int64_t HardMacro::getRealArea() const
   return getRealWidth() * static_cast<int64_t>(getRealHeight());
 }
 
+void HardMacro::setOrientation(const odb::dbOrientType& orient)
+{
+  orientation_ = orient;
+}
+
 odb::dbOrientType HardMacro::getOrientation() const
 {
   return orientation_;

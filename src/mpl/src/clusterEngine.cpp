@@ -305,8 +305,7 @@ void ClusteringEngine::reportDesignData()
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tHalo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
-      "\tHalo height: {:.2f}\n"
+      "\tDefault halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -2078,13 +2077,10 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      inst->setOrient(odb::dbOrientType::R180);
-
       HardMacro::Halo halo
           = macro_to_halo_.contains(inst) ? macro_to_halo_.at(inst)
-            : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getTransformedHalo())
+            : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getHalo())
                                           : tree_->default_halo;
-
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 

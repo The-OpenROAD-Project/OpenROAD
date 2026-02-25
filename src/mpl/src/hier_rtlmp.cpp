@@ -31,6 +31,7 @@
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/util.h"
@@ -2265,11 +2266,10 @@ float HierRTLMP::calculateRealMacroWirelength(odb::dbInst* macro)
 
 void HierRTLMP::flipRealMacro(odb::dbInst* macro, const bool& is_vertical_flip)
 {
-  if (is_vertical_flip) {
-    macro->setOrient(macro->getOrient().flipY());
-  } else {
-    macro->setOrient(macro->getOrient().flipX());
-  }
+  odb::dbOrientType orient = is_vertical_flip ? macro->getOrient().flipY()
+                                              : macro->getOrient().flipX();
+  macro->setOrient(orient);
+  tree_->maps.inst_to_hard[macro]->setOrientation(orient);
 }
 
 void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
@@ -2280,12 +2280,13 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     }
 
     const float original_wirelength = calculateRealMacroWirelength(inst);
-    odb::Point macro_location = inst->getLocation();
 
     // Flipping is done by mirroring the macro about the "Y" or "X" axis,
     // so, after flipping, we must manually set the location (lower-left corner)
     // again to move the macro back to the the position choosen by mpl.
     flipRealMacro(inst, is_vertical_flip);
+    odb::Point macro_location = tree_->maps.inst_to_hard[inst]->getLocation();
+
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);
 

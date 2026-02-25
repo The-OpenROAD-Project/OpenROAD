@@ -258,12 +258,12 @@ class HardMacro
     {
     }
 
-    Halo(odb::Rect halo)
+    Halo(odb::dbBox* halo)
     {
-      left = halo.xMin();
-      bottom = halo.yMin();
-      right = halo.xMax();
-      top = halo.yMax();
+      left = halo->xMin();
+      bottom = halo->yMin();
+      right = halo->xMax();
+      top = halo->yMax();
     }
   };
 
@@ -316,6 +316,7 @@ class HardMacro
   int getRealHeight() const;
   int64_t getRealArea() const;
 
+  void setOrientation(const odb::dbOrientType& orient);
   odb::dbOrientType getOrientation() const;
 
   // Interfaces with OpenDB
