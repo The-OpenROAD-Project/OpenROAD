@@ -419,7 +419,7 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
   bool is_limit_exceeded = false;
   if (useMaxCapLimit_) {
     is_limit_exceeded
-        |= (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
+        |= (capCost > options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
   // size is defined by the user
   if (use_max_size_) {
