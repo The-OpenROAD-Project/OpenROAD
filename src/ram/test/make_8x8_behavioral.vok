@@ -1,0 +1,45 @@
+
+    module RAM8x8_behavioral (clk, 
+ D, 
+ Q0, 
+ Q1,
+ addr,
+ we,
+ VSS,
+ VDD);
+      input clk;
+      input [7:0] D;
+       output reg [7:0] Q0; 
+ output reg [7:0] Q1; 
+
+      input [2:0] addr;
+      input [0:0] we;
+      inout VSS;
+      inout VDD;
+
+      // memory array declaration
+      reg [7:0] mem[0:7];
+
+      // write logic
+      integer i;
+      always @(posedge clk) begin
+        for (i=0; i< 1; i = i +1 ) begin
+          if (we[i]) begin
+            mem[addr][i*8 +:8] <= D[i*8 +:8];
+          end
+        end
+      end
+
+      // read logic
+      
+      always @(*) begin
+        Q0 = mem[addr];
+      end
+      
+      always @(*) begin
+        Q1 = mem[addr];
+      end
+      
+        
+      endmodule
+    
