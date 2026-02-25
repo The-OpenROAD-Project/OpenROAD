@@ -63,7 +63,7 @@ RamGen::RamGen(sta::dbNetwork* network,
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
-      behavioral_verilog_filename_()
+      
 {
 }
 
