@@ -489,15 +489,16 @@ void extended_technology_mapping(sta::dbSta* sta,
     auto abc_library = factory.BuildScl();
     auto lib = abc_library.get();
     int cell_count = 0;
-    auto genlib_vec = abc::Abc_SclProduceGenlibStr(
-        lib, Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
+    auto* genlib_vec = abc::Abc_SclProduceGenlibStr(
+        lib, abc::Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
     // ABC ends the file with '.end', but mockturtle doesn't like that
     for (int i = 0; i < sizeof(".end\n\0"); i++) {
-      Vec_StrPop(genlib_vec);
+      abc::Vec_StrPop(genlib_vec);
     }
-    Vec_StrPush(genlib_vec, '\0');
-    auto genlib_str = Vec_StrArray(genlib_vec);
+    abc::Vec_StrPush(genlib_vec, '\0');
+    auto* genlib_str = abc::Vec_StrArray(genlib_vec);
     std::istringstream genlib(genlib_str);
+    abc::Vec_StrFree(genlib_vec);
 
     class diagnostic_consumer : public lorina::diagnostic_consumer
     {
