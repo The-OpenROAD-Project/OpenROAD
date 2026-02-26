@@ -14,6 +14,7 @@ bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
+bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_scala")
 git_override(
@@ -120,21 +121,14 @@ register_toolchains(
     "@rules_verilator//verilator:verilator_toolchain",
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "1.2.0",
-    # reduce namespace collisions by prefixing with openroad
-    repo_name = "openroad_rules_python",
-)
-
-python = use_extension("@openroad_rules_python//python/extensions:python.bzl", "python")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
 use_repo(python, "python_3_13")
 
-pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "openroad-pip",
     python_version = "3.13",
