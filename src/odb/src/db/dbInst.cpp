@@ -914,7 +914,7 @@ void dbInst::setHalo(int left, int bottom, int right, int top)
   dbBox* halo = getHalo();
 
   if (halo != nullptr) {
-    dbBox::destroy(getHalo());
+    dbBox::destroy(halo);
   }
 
   dbBox::create(this, left, bottom, right, top);

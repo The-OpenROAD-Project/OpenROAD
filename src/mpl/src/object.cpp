@@ -777,6 +777,7 @@ void HardMacro::setRealX(int x)
     case R180:
     case MX:
       x_ = x - halo_.right;
+      break;
     default:
       x_ = x - halo_.left;
   }
@@ -793,6 +794,7 @@ void HardMacro::setRealY(int y)
     case R180:
     case MY:
       y_ = y - halo_.top;
+      break;
     default:
       y_ = y - halo_.bottom;
   }
