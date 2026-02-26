@@ -130,7 +130,7 @@ python_wrap_cc = rule(
             doc = "args to pass directly to the swig binary",
         ),
         "_swig": attr.label(
-            default = "@org_swig//:swig_stable",
+            default = "@swig",
             allow_files = True,
             cfg = "exec",
         ),
