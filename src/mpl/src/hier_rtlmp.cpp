@@ -2285,7 +2285,8 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     // so, after flipping, we must manually set the location (lower-left corner)
     // again to move the macro back to the the position choosen by mpl.
     flipRealMacro(inst, is_vertical_flip);
-    odb::Point macro_location = tree_->maps.inst_to_hard[inst]->getRealLocation();
+    odb::Point macro_location
+        = tree_->maps.inst_to_hard[inst]->getRealLocation();
 
     inst->setLocation(macro_location.getX(), macro_location.getY());
     const float new_wirelength = calculateRealMacroWirelength(inst);

@@ -771,14 +771,14 @@ void HardMacro::setRealX(int x)
   if (getArea() == 0) {
     return;
   }
-  
+
   using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
     case R180:
     case MX:
       x_ = x - halo_.right;
     default:
-      x_ = x - halo_.left; 
+      x_ = x - halo_.left;
   }
 }
 
@@ -787,14 +787,14 @@ void HardMacro::setRealY(int y)
   if (getArea() == 0) {
     return;
   }
-  
+
   using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
     case R180:
     case MY:
       y_ = y - halo_.top;
     default:
-      y_ = y - halo_.bottom; 
+      y_ = y - halo_.bottom;
   }
 }
 
@@ -811,7 +811,7 @@ int HardMacro::getRealX() const
     case MX:
       return x_ + halo_.right;
     default:
-      return x_ + halo_.left; 
+      return x_ + halo_.left;
   }
 }
 
@@ -823,7 +823,7 @@ int HardMacro::getRealY() const
     case MY:
       return y_ + halo_.top;
     default:
-      return y_ + halo_.bottom; 
+      return y_ + halo_.bottom;
   }
 }
 
