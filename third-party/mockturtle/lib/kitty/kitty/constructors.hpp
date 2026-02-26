@@ -39,6 +39,7 @@
 #include <stack>
 #include <string>
 
+#include "absl/random/random.h"
 #include "cube.hpp"
 #include "detail/constants.hpp"
 #include "detail/mscfix.hpp"
@@ -356,11 +357,13 @@ void create_from_raw( TT& tt, std::istream& in )
 template<typename TT>
 void create_random( TT& tt, std::default_random_engine::result_type seed )
 {
-  std::default_random_engine gen( seed );
-  std::uniform_int_distribution<uint64_t> dist( 0ul, std::numeric_limits<uint64_t>::max() );
+  std::seed_seq seed_seq{seed};
+  absl::BitGen gen(seed_seq);
 
-  assign_operation( tt, [&dist, &gen]()
-                    { return dist( gen ); } );
+  assign_operation(tt, [&gen]() {
+    return absl::Uniform<uint64_t>(
+        gen, 0ul, std::numeric_limits<uint64_t>::max());
+  });
 }
 
 /*! \brief Constructs a truth table from random value

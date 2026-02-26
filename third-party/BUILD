@@ -19,5 +19,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@spdlog",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/random:random",
     ],
 )
