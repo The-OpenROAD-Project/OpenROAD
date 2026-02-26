@@ -86,6 +86,7 @@ or_integration_tests(
     repair_setup_sizedown
     repair_setup_sizeup_match
     repair_setup1
+    repair_setup2
     repair_setup3
     repair_setup4
     repair_setup4_flat

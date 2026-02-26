@@ -2,7 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_hdl//dependency_support/org_gnu_bison:bison.bzl", "genyacc")
+load("//bazel:bison.bzl", "genyacc")
 
 package(
     default_visibility = ["//:__subpackages__"],

@@ -1113,7 +1113,8 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst);
+  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  bool updateHandle(odb::dbInst* db_inst, size_t handle);
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.

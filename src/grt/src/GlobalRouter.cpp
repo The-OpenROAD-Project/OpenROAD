@@ -149,7 +149,8 @@ GlobalRouter::~GlobalRouter()
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
-                                              int max_routing_layer)
+                                              int max_routing_layer,
+                                              bool check_pin_placement)
 {
   fastroute_->clear();
   h_nets_in_pos_.clear();
@@ -170,7 +171,9 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = findNets(true);
-  checkPinPlacement();
+  if (check_pin_placement) {
+    checkPinPlacement();
+  }
   initNetlist(nets);
 
   initialized_ = true;

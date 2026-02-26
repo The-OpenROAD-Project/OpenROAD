@@ -96,7 +96,7 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@coin-or-lemon//:lemon",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -133,7 +133,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

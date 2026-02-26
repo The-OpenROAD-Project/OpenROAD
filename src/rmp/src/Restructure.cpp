@@ -11,7 +11,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -21,23 +20,20 @@
 #include <vector>
 
 #include "annealing_strategy.h"
-#include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
-#include "cut/abc_library_factory.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"

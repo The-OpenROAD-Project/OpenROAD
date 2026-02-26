@@ -178,7 +178,9 @@ class GlobalRouter
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
-  std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer,
+                                  bool check_pin_placement = true);
   void initFastRouteIncr(std::vector<Net*>& nets);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.

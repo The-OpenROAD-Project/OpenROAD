@@ -168,10 +168,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     for (const auto& group : groups | std::views::reverse) {
       auto* marker = dbMarker::create(cat);
       for (auto* chip : group) {
-        marker->addShape(Rect(chip->cuboid.xMin(),
-                              chip->cuboid.yMin(),
-                              chip->cuboid.xMax(),
-                              chip->cuboid.yMax()));
+        marker->addShape(chip->cuboid);
         marker->addSource(chip->chip_inst_path.back());
       }
       marker->setComment("Isolated chip set starting with " + group[0]->name);
@@ -209,10 +206,7 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
     for (const auto& [inst1, inst2] : overlaps) {
       auto* marker = dbMarker::create(cat);
       auto intersection = inst1->cuboid.intersect(inst2->cuboid);
-      marker->addShape(Rect(intersection.xMin(),
-                            intersection.yMin(),
-                            intersection.xMax(),
-                            intersection.yMax()));
+      marker->addShape(intersection);
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
       marker->setComment(
@@ -238,10 +232,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
                       region.region_inst->getChipRegion()->getName());
         auto* marker = dbMarker::create(cat);
         marker->addSource(region.region_inst);
-        marker->addShape(Rect(region.cuboid.xMin(),
-                              region.cuboid.yMin(),
-                              region.cuboid.xMax(),
-                              region.cuboid.yMax()));
+        marker->addShape(region.cuboid);
         marker->setComment(
             fmt::format("Unused internal_ext region: {}",
                         region.region_inst->getChipRegion()->getName()));
