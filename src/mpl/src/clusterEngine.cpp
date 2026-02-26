@@ -2077,10 +2077,13 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo
-          = macro_to_halo_.contains(inst) ? macro_to_halo_.at(inst)
-            : inst->getHalo() != nullptr  ? HardMacro::Halo(inst->getHalo())
-                                          : tree_->default_halo;
+      HardMacro::Halo halo = tree_->default_halo;
+
+      if (macro_to_halo_.contains(inst)) {
+        halo = macro_to_halo_.at(inst);
+      } else if (inst->getHalo() != nullptr) {
+        halo = HardMacro::Halo(inst->getHalo());
+      }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
