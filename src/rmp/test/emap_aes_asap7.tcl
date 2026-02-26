@@ -46,7 +46,7 @@ write_verilog_for_eqy $test_name before "None"
 puts "-- After --\n"
 
 resynth_emap -corner fast \
-  -target timing \
+  -target area \
   -map_multioutput
 
 suppress_message RSZ 75
@@ -60,9 +60,7 @@ report_checks
 report_wns
 report_tns
 
-# Skipping eqy check as is takes a lot of time to complete
-# 
-# set liberty_files [concat $lib_files_slow $lib_files_fast]
-# run_equivalence_test $test_name \
-#   -liberty_files $liberty_files \
-#   -remove_cells "None"
+set liberty_files [concat $lib_files_slow $lib_files_fast]
+run_equivalence_test $test_name \
+  -liberty_files $liberty_files \
+  -remove_cells "None"
