@@ -304,17 +304,17 @@ proc set_macro_halo { args } {
 
   set length [llength $halo]
 
-  if { length != 2 || length != 4 } {
+  if { $length != 2 && $length != 4 } {
     utl::error MPL 54 "-halo must be a list of 2 or 4 values."
   }
 
-  if { length == 2} {
+  if { $length == 2} {
     lassign $halo left bottom
     set right $left
-    set top $botom
+    set top $bottom
   }
 
-  if { length == 4} {
+  if { $length == 4} {
     lassign $halo left bottom right top
   }
 
