@@ -12,6 +12,7 @@
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
+#include <sstream>
 
 #include "dbBlock.h"
 #include "dbJournal.h"
@@ -21,6 +22,18 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
+
+namespace {
+
+std::string rectToString(const Rect& rect)
+{
+  std::ostringstream stream;
+  stream << rect;
+  return stream.str();
+}
+
+}  // namespace
+
 template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
@@ -163,7 +176,7 @@ dbGuide* dbGuide::create(dbNet* net,
              "EDIT: create dbGuide at id {}, in layer {} box {}",
              guide->getOID(),
              layer->getName(),
-             box);
+             rectToString(box));
 
   if (block->journal_) {
     block->journal_->beginAction(dbJournal::kCreateObject);
@@ -202,7 +215,7 @@ void dbGuide::destroy(dbGuide* guide)
              "EDIT: delete dbGuide at id {}, in layer {} box {}",
              guide->getId(),
              guide->getLayer()->getName(),
-             guide->getBox());
+             rectToString(guide->getBox()));
 
   if (block->journal_) {
     block->journal_->beginAction(dbJournal::kDeleteObject);
