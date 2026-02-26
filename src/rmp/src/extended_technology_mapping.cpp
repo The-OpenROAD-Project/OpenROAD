@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -146,6 +147,128 @@ CellMapping map_cell_from_standard_cell(const BlockNtk& ntk,
   return m;
 }
 
+struct TieMaster
+{
+  odb::dbMaster* master = nullptr;
+  std::string out_pin;
+  bool value = false;
+};
+
+struct ConstDriverCache
+{
+  odb::dbNet* net0 = nullptr;
+  odb::dbNet* net1 = nullptr;
+  odb::dbInst* inst0 = nullptr;
+  odb::dbInst* inst1 = nullptr;
+} const_cache;
+
+static std::optional<TieMaster> find_tie_master(
+    const odb::dbSet<odb::dbLib>& libs,
+    bool value)
+{
+  std::vector<TieMaster> candidates;
+
+  for (const auto& lib : libs) {
+    for (auto* master : lib->getMasters()) {
+      int sig_in = 0, sig_out = 0;
+      std::string out_name;
+
+      for (auto* mt : master->getMTerms()) {
+        auto sig = mt->getSigType();
+        if (sig == odb::dbSigType::POWER || sig == odb::dbSigType::GROUND) {
+          continue;
+        }
+        switch (mt->getIoType().getValue()) {
+          case odb::dbIoType::INPUT:
+            sig_in++;
+            break;
+          case odb::dbIoType::OUTPUT:
+            sig_out++;
+            out_name = mt->getName();
+            break;
+          default:
+            // ignore INOUT/FEEDTHRU
+            break;
+        }
+      }
+
+      if (sig_in == 0 && sig_out == 1) {
+        // likely a constant cell
+        TieMaster tm;
+        tm.master = master;
+        tm.out_pin = out_name;
+
+        std::string n = master->getName();
+        for (auto& c : n) {
+          c = std::toupper(c);
+        }
+
+        // constant 0
+        if (!value
+            && (n.find("TIELO") != std::string::npos
+                || n.find("TIEL") != std::string::npos
+                || n.find("TIE0") != std::string::npos)) {
+          return tm;
+        }
+        // constant 1
+        if (value
+            && (n.find("TIEHI") != std::string::npos
+                || n.find("TIEH") != std::string::npos
+                || n.find("TIE1") != std::string::npos)) {
+          return tm;
+        }
+      }
+    }
+  }
+
+  return std::nullopt;
+}
+
+odb::dbNet* ensure_const_net(bool value,
+                             odb::dbBlock* block,
+                             const odb::dbSet<odb::dbLib>& libs)
+{
+  odb::dbNet*& net = value ? const_cache.net1 : const_cache.net0;
+  odb::dbInst*& inst = value ? const_cache.inst1 : const_cache.inst0;
+
+  const char* name = value ? "CONST1" : "CONST0";
+
+  if (!net) {
+    net = block->findNet(name);
+    if (!net) {
+      net = odb::dbNet::create(block, name);
+    }
+    if (!net) {
+      throw std::runtime_error("Failed to create const net");
+    }
+  }
+
+  if (!inst) {
+    auto tie = find_tie_master(libs, value);
+    if (!tie) {
+      throw std::runtime_error(
+          "No supply net and no tie cell found; cannot create constant driver");
+    }
+
+    std::string inst_name = value ? "u_const1" : "u_const0";
+    inst = block->findInst(inst_name.c_str());
+    if (!inst) {
+      inst = odb::dbInst::create(block, tie->master, inst_name.c_str());
+    }
+    if (!inst) {
+      throw std::runtime_error("Failed to create tie inst");
+    }
+
+    auto* out_it = inst->findITerm(tie->out_pin.c_str());
+    if (!out_it) {
+      throw std::runtime_error("Tie output iterm not found");
+    }
+    out_it->connect(net);
+  }
+
+  return net;
+}
+
 void import_mockturtle_mapped_network(sta::dbSta* sta,
                                       const BlockNtk& ntk,
                                       const odb::dbSet<odb::dbLib>& libs,
@@ -202,33 +325,8 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   const auto num_nodes = topo_ntk.size();
   std::vector<std::vector<odb::dbNet*>> node_out_nets(num_nodes);
 
-  // Const nets (for constant fanins)
-  odb::dbNet* const0_net = nullptr;
-  odb::dbNet* const1_net = nullptr;
-
-  auto ensure_const_net = [&](bool value) -> odb::dbNet* {
-    const char* net_name = value ? "CONST1" : "CONST0";
-    odb::dbNet*& cache = value ? const1_net : const0_net;
-
-    if (cache) {
-      return cache;
-    }
-
-    odb::dbNet* net = block->findNet(net_name);
-    if (!net) {
-      net = odb::dbNet::create(block, net_name);
-    }
-    if (!net) {
-      throw std::runtime_error(
-          fmt::format("Failed to create or find const net {}", net_name));
-    }
-
-    cache = net;
-    return net;
-  };
-
   auto node_index = [&](const BlockNtk::node& n) -> uint32_t {
-    return static_cast<uint32_t>(topo_ntk.node_to_index(n));
+    return topo_ntk.node_to_index(n);
   };
 
   auto node_output_signal = [&](const BlockNtk::node& n, uint32_t k) {
@@ -368,7 +466,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       if (topo_ntk.is_constant(src_node)) {
         // constant node; complemented = 1
         const bool value = topo_ntk.is_complemented(f);
-        src_net = ensure_const_net(value);
+        src_net = ensure_const_net(value, block, libs);
       } else {
         const auto src_idx = node_index(src_node);
         uint32_t out_pin_idx = 0;
@@ -422,13 +520,14 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
     odb::dbNet* driver_net = nullptr;
     auto src_node = topo_ntk.get_node(f);
+    uint32_t src_idx = 0;
+    uint32_t out_pin_idx = 0;
 
     if (topo_ntk.is_constant(src_node)) {
       const bool value = topo_ntk.is_complemented(f);
-      driver_net = ensure_const_net(value);
+      driver_net = ensure_const_net(value, block, libs);
     } else {
-      const auto src_idx = node_index(src_node);
-      uint32_t out_pin_idx = 0;
+      src_idx = node_index(src_node);
       if (topo_ntk.is_multioutput(src_node)) {
         out_pin_idx = topo_ntk.get_output_pin(f);
       }
@@ -443,7 +542,8 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
 
     if (driver_net && boundary_net && driver_net != boundary_net) {
-      driver_net->mergeNet(boundary_net);
+      boundary_net->mergeNet(driver_net);
+      node_out_nets[src_idx][out_pin_idx] = boundary_net;
     }
   });
 }
