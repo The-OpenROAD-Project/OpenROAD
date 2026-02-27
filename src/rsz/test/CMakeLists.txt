@@ -181,6 +181,7 @@ or_integration_tests(
     replace_arith_modules2
     replace_arith_modules3
     report_buffers_asap7
+    report_buffers_asap7_augmented
     report_buffers_nangate45
     report_buffers_ihp
     report_buffers_sky130hs

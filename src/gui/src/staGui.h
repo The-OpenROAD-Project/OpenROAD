@@ -429,7 +429,7 @@ class TimingControlsDialog : public QDialog
   QFormLayout* layout_;
 
   QSpinBox* path_count_spin_box_;
-  QComboBox* corner_box_;
+  QComboBox* scene_box_;
   DropdownCheckboxes* clock_box_;
 
   QCheckBox* unconstrained_;

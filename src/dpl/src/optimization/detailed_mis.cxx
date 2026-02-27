@@ -36,6 +36,7 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "lemon/core.h"
 #include "lemon/cost_scaling.h"
 #include "lemon/cycle_canceling.h"
 #include "lemon/list_graph.h"

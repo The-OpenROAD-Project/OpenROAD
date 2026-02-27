@@ -884,9 +884,9 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
           -> int {
         node->setArrivalDelay(arrival);
         switch (node->type()) {
-          case BnetType::via:
           case BnetType::wire:
           case BnetType::buffer:
+          case BnetType::via:
             recurse(node->ref(), arrival + node->delay());
             break;
           case BnetType::junction:
@@ -1096,6 +1096,17 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             }
             bnet->setDelay(wire_delay);
             bnet->setSlack(p->slack() - wire_delay);
+            bnet->setSlackTransition(p->slackTransition());
+            return ret;
+          }
+          case BnetType::via: {
+            int ret = recurse(bnet->ref());
+            BnetPtr p = bnet->ref();
+            double via_res
+                = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
+            FixedDelay via_delay = FixedDelay(via_res * p->cap(), resizer_);
+            bnet->setDelay(via_delay);
+            bnet->setSlack(p->slack() - via_delay);
             bnet->setSlackTransition(p->slackTransition());
             return ret;
           }
@@ -1556,6 +1567,19 @@ BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
             }
             return nullptr;
           }
+          case BnetType::via: {
+            auto inner = recurse(node->ref());
+            if (inner) {
+              return make_shared<BufferedNet>(BnetType::via,
+                                              node->location(),
+                                              node->layer(),
+                                              node->refLayer(),
+                                              inner,
+                                              corner,
+                                              resizer_);
+            }
+            return nullptr;
+          }
           case BnetType::junction: {
             auto left = recurse(node->ref());
             auto right = recurse(node->ref2());
@@ -1627,6 +1651,7 @@ static FixedDelay criticalPathDelay(utl::Logger* logger, const BnetPtr& root)
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
           case BnetType::wire:
+          case BnetType::via:
           case BnetType::buffer:
             return recurse(node->ref());
           case BnetType::junction:
@@ -2169,6 +2194,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
         [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
           switch (bnet->type()) {
             case BnetType::wire:
+            case BnetType::via:
               return recurse(bnet->ref());
             case BnetType::junction:
               return recurse(bnet->ref()) + recurse(bnet->ref2());

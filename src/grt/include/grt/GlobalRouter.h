@@ -532,6 +532,7 @@ class GlobalRouter
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
   bool has_macros_or_pads_{false};
+  bool check_pin_placement_{true};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
