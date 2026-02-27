@@ -383,7 +383,7 @@ void RamGen::findMasters()
             return false;
           }
           auto function = port->function();
-          return function->op() != sta::FuncExpr::op_not;
+          return function->op() != sta::FuncExpr::Op::not_;
         },
         "tristate");
   }
@@ -395,9 +395,9 @@ void RamGen::findMasters()
             return false;
           }
           auto function = port->function();
-          return function && function->op() == sta::FuncExpr::op_and
-                 && function->left()->op() == sta::FuncExpr::op_port
-                 && function->right()->op() == sta::FuncExpr::op_port;
+          return function && function->op() == sta::FuncExpr::Op::and_
+                 && function->left()->op() == sta::FuncExpr::Op::port
+                 && function->right()->op() == sta::FuncExpr::Op::port;
         },
         "and2");
   }
@@ -410,9 +410,9 @@ void RamGen::findMasters()
             return false;
           }
           auto function = port->function();
-          return function && function->op() == sta::FuncExpr::op_and
-                 && function->left()->op() == sta::FuncExpr::op_port
-                 && function->right()->op() == sta::FuncExpr::op_port;
+          return function && function->op() == sta::FuncExpr::Op::and_
+                 && function->left()->op() == sta::FuncExpr::Op::port
+                 && function->right()->op() == sta::FuncExpr::Op::port;
         },
         "storage");
   }

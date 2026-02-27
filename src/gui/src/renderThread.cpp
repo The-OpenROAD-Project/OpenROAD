@@ -13,13 +13,13 @@
 #include <cstdint>
 #include <exception>
 #include <iterator>
-#include <mutex>
 #include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/predicates.hpp"
@@ -34,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "ruler.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -201,7 +202,7 @@ void RenderThread::draw(QImage& image,
   }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
-  std::lock_guard<std::mutex> lock(drawing_mutex_);
+  absl::MutexLock lock(&drawing_mutex_);
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 

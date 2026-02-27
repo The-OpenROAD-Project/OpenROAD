@@ -17,10 +17,14 @@
 // User Code Begin Includes
 #include <algorithm>
 #include <cassert>
+#include <iterator>
+#include <utility>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbTech.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "utl/algorithms.h"
 // User Code End Includes
 namespace odb {

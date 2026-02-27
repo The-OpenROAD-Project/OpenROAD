@@ -265,6 +265,7 @@ cc_test(
         "//src/rsz",
         "//src/sta:opensta_lib",
         "//src/stt",
+        "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "@googletest//:gtest",

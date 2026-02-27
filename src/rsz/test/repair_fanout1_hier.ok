@@ -74,6 +74,6 @@ max fanout
 
 Pin                                   Limit Fanout  Slack
 ---------------------------------------------------------
-hi_fanout_inst/fanout3/Z                 10     10      0 (MET)
+hi_fanout_inst/fanout1/Z                 10     10      0 (MET)
 
 No differences found.

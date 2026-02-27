@@ -21,7 +21,7 @@ replace_arith_module -path_count 100 -target setup -slack_margin 0.0
 [INFO RSZ-0154] Identified 64 critical arithmetic instances
 [INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
 wns max -50.87
-tns max -109841.57
+tns max -109842.09
 [WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_BRENT_KUNG' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_KOGGE_STONE' is defined but never instantiated.
 [WARNING ORD-2043] SanityCheck: Module 'ALU_20_0_25_0_25_unused_CO_X_SKLANSKY' is defined but never instantiated.

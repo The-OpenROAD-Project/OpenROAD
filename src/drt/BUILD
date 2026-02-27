@@ -210,6 +210,7 @@ cc_library(
         "//src/odb",
         "//src/stt",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
         "@boost.container",
@@ -274,13 +275,14 @@ cc_library(
         "//src/gui",
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.container",
         "@boost.geometry",
         "@boost.polygon",
         "@boost.serialization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

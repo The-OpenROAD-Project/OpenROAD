@@ -88,6 +88,6 @@ replace_arith_module -path_count 100 -target setup -slack_margin 0.0
 [INFO RSZ-0154] Identified 64 critical arithmetic instances
 [INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
 wns max -51.38
-tns max -111291.84
+tns max -111292.37
 wns max -51.38
-tns max -111291.84
+tns max -111292.37

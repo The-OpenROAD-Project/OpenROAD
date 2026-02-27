@@ -88,7 +88,7 @@ cc_library(
         "//src/utl",
         "@boost.multi_array",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

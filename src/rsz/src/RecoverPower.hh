@@ -8,16 +8,16 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
@@ -58,7 +58,8 @@ class RecoverPower : public sta::dbStaState
                                  const sta::LibertyPort* drvr_port,
                                  float load_cap,
                                  float prev_drive,
-                                 const sta::DcalcAnalysisPt* dcalc_ap,
+                                 const sta::Scene* scene,
+                                 const sta::MinMax* min_max,
                                  bool match_size,
                                  sta::Slack path_slack);
   int fanout(sta::Vertex* vertex);
@@ -67,10 +68,9 @@ class RecoverPower : public sta::dbStaState
   BufferedNetSeq addWireAndBuffer(BufferedNetSeq Z,
                                   BufferedNetPtr bnet_wire,
                                   int level);
-  float pinCapacitance(const sta::Pin* pin,
-                       const sta::DcalcAnalysisPt* dcalc_ap);
+  float pinCapacitance(const sta::Pin* pin, const sta::Scene* scene);
   float bufferInputCapacitance(sta::LibertyCell* buffer_cell,
-                               const sta::DcalcAnalysisPt* dcalc_ap);
+                               const sta::Scene* scene);
   sta::Slack slackPenalized(BufferedNetPtr bnet);
   sta::Slack slackPenalized(BufferedNetPtr bnet, int index);
 
@@ -80,7 +80,7 @@ class RecoverPower : public sta::dbStaState
   sta::dbNetwork* db_network_ = nullptr;
   Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
-  const sta::Corner* corner_ = nullptr;
+  const sta::Scene* scene_ = nullptr;
   int resize_count_ = 0;
   const sta::MinMax* max_ = sta::MinMax::max();
 

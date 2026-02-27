@@ -934,7 +934,7 @@ proc parse_max_wire_length { keys_var } {
 }
 
 proc check_max_wire_length { max_wire_length use_default } {
-  if { [est::wire_signal_resistance [sta::cmd_corner]] > 0 } {
+  if { [est::wire_signal_resistance [sta::cmd_scene]] > 0 } {
     set min_delay_max_wire_length [rsz::find_max_wire_length]
     if { $max_wire_length > 0 } {
       if { $max_wire_length < $min_delay_max_wire_length } {

@@ -22,21 +22,19 @@
 #include "db_sta/dbSta.hh"
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
+#include "est/SteinerTree.h"
 #include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/OdbCallBack.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Hash.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
-#include "sta/Map.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
@@ -45,7 +43,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "sta/Transition.hh"
-#include "sta/UnorderedMap.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -95,7 +92,7 @@ class NetHash
   size_t operator()(const sta::Net* net) const { return hashPtr(net); }
 };
 
-using CellTargetLoadMap = sta::Map<sta::LibertyCell*, float>;
+using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;
 using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
 enum class MoveType
@@ -391,7 +388,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void setDebugPin(const sta::Pin* pin);
   void setWorstSlackNetsPercent(float);
   void annotateInputSlews(sta::Instance* inst,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max);
   void resetInputSlews();
 
   ////////////////////////////////////////////////////////////////
@@ -455,9 +453,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // in half with a buffer (in meters).
   double findMaxWireLength(bool issue_error = true);
   double findMaxWireLength(sta::LibertyCell* buffer_cell,
-                           const sta::Corner* corner);
+                           const sta::Scene* corner);
   double findMaxWireLength(sta::LibertyPort* drvr_port,
-                           const sta::Corner* corner);
+                           const sta::Scene* corner);
   // Longest driver to load wire (in meters).
   double maxLoadManhattenDistance(const sta::Net* net);
 
@@ -527,11 +525,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
-                                  const sta::Corner* corner);
+                                  const sta::Scene* corner);
   bool computeNewDelaysSlews(
       sta::Pin* driver_pin,
       sta::Instance* buffer,
-      const sta::Corner* corner,
+      const sta::Scene* corner,
       // return values
       sta::ArcDelay old_delay[sta::RiseFall::index_count],
       sta::ArcDelay new_delay[sta::RiseFall::index_count],
@@ -544,12 +542,12 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       sta::Pin* drvr_pin,
       sta::Instance* buffer_instance,
       sta::Slew drvr_slew,
-      const sta::Corner* corner,
+      const sta::Scene* corner,
       std::map<const sta::Pin*, float>& load_pin_slew);
   bool estimateSlewsInTree(sta::Pin* drvr_pin,
                            sta::Slew drvr_slew,
                            const BufferedNetPtr& tree,
-                           const sta::Corner* corner,
+                           const sta::Scene* corner,
                            std::map<const sta::Pin*, float>& load_pin_slew);
 
  protected:
@@ -630,7 +628,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   ////////////////////////////////////////////////////////////////
 
   void findLongWires(sta::VertexSeq& drvrs);
-  int findMaxSteinerDist(sta::Vertex* drvr, const sta::Corner* corner);
+  int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
   float driveResistance(const sta::Pin* drvr_pin);
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
@@ -640,10 +638,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
-  float portCapacitance(sta::LibertyPort* input,
-                        const sta::Corner* corner) const;
-  float pinCapacitance(const sta::Pin* pin,
-                       const sta::DcalcAnalysisPt* dcalc_ap) const;
+  float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
   void swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
                 sta::LibertyPort* port2,
@@ -652,39 +647,47 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                             sta::LibertyPort* drvr_port,
                             const sta::LibertyPortSet& equiv_ports,
                             float load_cap,
-                            const sta::DcalcAnalysisPt* dcalc_ap,
+                            const sta::Scene* corner,
+                            const sta::MinMax* min_max,
                             // Return value
                             sta::LibertyPort** swap_port);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
-                  const sta::DcalcAnalysisPt* dcalc_ap,
+                  const sta::Scene* corner,
+                  const sta::MinMax* min_max,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
                   sta::Slew slews[sta::RiseFall::index_count]);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Slew in_slews[sta::RiseFall::index_count],
-                  const sta::DcalcAnalysisPt* dcalc_ap,
+                  const sta::Scene* corner,
+                  const sta::MinMax* min_max,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
                   sta::Slew out_slews[sta::RiseFall::index_count]);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           float load_cap,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max);
   sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
                           const sta::RiseFall* rf,
                           float load_cap,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max);
   float bufferDelay(sta::LibertyCell* buffer_cell,
                     float load_cap,
-                    const sta::DcalcAnalysisPt* dcalc_ap);
+                    const sta::Scene* corner,
+                    const sta::MinMax* min_max);
   float bufferDelay(sta::LibertyCell* buffer_cell,
                     const sta::RiseFall* rf,
                     float load_cap,
-                    const sta::DcalcAnalysisPt* dcalc_ap);
+                    const sta::Scene* corner,
+                    const sta::MinMax* min_max);
   void bufferDelays(sta::LibertyCell* buffer_cell,
                     float load_cap,
-                    const sta::DcalcAnalysisPt* dcalc_ap,
+                    const sta::Scene* corner,
+                    const sta::MinMax* min_max,
                     // Return values.
                     sta::ArcDelay delays[sta::RiseFall::index_count],
                     sta::Slew slews[sta::RiseFall::index_count]);
@@ -699,7 +702,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
                          double wire_length,  // meters
-                         const sta::Corner* corner,
+                         const sta::Scene* corner,
                          sta::Parasitics* parasitics);
   bool overMaxArea();
   bool bufferBetweenPorts(sta::Instance* buffer);
@@ -779,27 +782,28 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                    float load_cap,
                                    bool revisiting_inst);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
-                                 const sta::Corner* corner);
+                                 const sta::Scene* corner);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
-                                        const sta::Corner* corner);
+                                        const sta::Scene* corner);
   BufferedNetPtr makeBufferedNetSteinerOverBnets(
       odb::Point root,
       const std::vector<BufferedNetPtr>& sinks,
-      const sta::Corner* corner);
+      const sta::Scene* corner);
   BufferedNetPtr makeBufferedNetGroute(const sta::Pin* drvr_pin,
-                                       const sta::Corner* corner);
+                                       const sta::Scene* corner);
   float bufferSlew(sta::LibertyCell* buffer_cell,
                    float load_cap,
-                   const sta::DcalcAnalysisPt* dcalc_ap);
+                   const sta::Scene* corner,
+                   const sta::MinMax* min_max);
   float maxInputSlew(const sta::LibertyPort* input,
-                     const sta::Corner* corner) const;
+                     const sta::Scene* scene) const;
   void checkLoadSlews(const sta::Pin* drvr_pin,
                       double slew_margin,
                       // Return values.
                       sta::Slew& slew,
                       float& limit,
                       float& slack,
-                      const sta::Corner*& corner);
+                      const sta::Scene*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const sta::Instance* inst);
 
@@ -879,8 +883,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::VertexSeq level_drvr_vertices_;
   bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
-  sta::Corner* tgt_slew_corner_ = nullptr;
-  const sta::DcalcAnalysisPt* tgt_slew_dcalc_ap_ = nullptr;
+  sta::Scene* tgt_slew_corner_ = nullptr;
   // Instances with multiple output ports that have been resized.
   sta::InstanceSet resized_multi_output_insts_;
   int inserted_buffer_count_ = 0;
@@ -898,7 +901,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // drive cell (because larger ones would give us a longer length).
   float max_wire_length_ = 0;
   float worst_slack_nets_percent_ = 10;
-  sta::Map<const sta::Net*, sta::Slack> net_slack_map_;
+  std::map<const sta::Net*, sta::Slack> net_slack_map_;
 
   std::unordered_map<sta::LibertyCell*, std::optional<float>>
       cell_leakage_cache_;
@@ -913,7 +916,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   static constexpr float tgt_slew_load_cap_factor = 10.0;
 
   // Use actual input slews for accurate delay/slew estimation
-  sta::UnorderedMap<sta::LibertyPort*, InputSlews> input_slew_map_;
+  std::unordered_map<sta::LibertyPort*, InputSlews> input_slew_map_;
 
   std::unique_ptr<OdbCallBack> db_cbk_;
 

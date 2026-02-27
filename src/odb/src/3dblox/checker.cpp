@@ -23,6 +23,21 @@ namespace odb {
 
 namespace {
 
+const char* sideToString(UnfoldedRegionSide side)
+{
+  switch (side) {
+    case UnfoldedRegionSide::TOP:
+      return "TOP";
+    case UnfoldedRegionSide::BOTTOM:
+      return "BOTTOM";
+    case UnfoldedRegionSide::INTERNAL:
+      return "INTERNAL";
+    case UnfoldedRegionSide::INTERNAL_EXT:
+      return "INTERNAL_EXT";
+  }
+  return "UNKNOWN";
+}
+
 MatingSurfaces getMatingSurfaces(const UnfoldedConnection& conn)
 {
   auto* r1 = conn.top_region;
@@ -85,6 +100,7 @@ void Checker::check(dbChip* chip)
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
+  checkConnectionRegions(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -152,10 +168,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     for (const auto& group : groups | std::views::reverse) {
       auto* marker = dbMarker::create(cat);
       for (auto* chip : group) {
-        marker->addShape(Rect(chip->cuboid.xMin(),
-                              chip->cuboid.yMin(),
-                              chip->cuboid.xMax(),
-                              chip->cuboid.yMax()));
+        marker->addShape(chip->cuboid);
         marker->addSource(chip->chip_inst_path.back());
       }
       marker->setComment("Isolated chip set starting with " + group[0]->name);
@@ -193,10 +206,7 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
     for (const auto& [inst1, inst2] : overlaps) {
       auto* marker = dbMarker::create(cat);
       auto intersection = inst1->cuboid.intersect(inst2->cuboid);
-      marker->addShape(Rect(intersection.xMin(),
-                            intersection.yMin(),
-                            intersection.xMax(),
-                            intersection.yMax()));
+      marker->addShape(intersection);
       marker->addSource(inst1->chip_inst_path.back());
       marker->addSource(inst2->chip_inst_path.back());
       marker->setComment(
@@ -208,20 +218,21 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
 void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
                                     const UnfoldedModel& model)
 {
-  auto* cat = dbMarkerCategory::createOrReplace(top_cat, "Unused internal_ext");
+  dbMarkerCategory* cat = nullptr;
   for (const auto& chip : model.getChips()) {
     for (const auto& region : chip.regions) {
       if (region.isInternalExt() && !region.isUsed) {
+        if (!cat) {
+          cat = dbMarkerCategory::createOrReplace(top_cat,
+                                                  "Unused internal_ext");
+        }
         logger_->warn(utl::ODB,
                       464,
                       "Region {} is internal_ext but unused",
                       region.region_inst->getChipRegion()->getName());
         auto* marker = dbMarker::create(cat);
         marker->addSource(region.region_inst);
-        marker->addShape(Rect(region.cuboid.xMin(),
-                              region.cuboid.yMin(),
-                              region.cuboid.xMax(),
-                              region.cuboid.yMax()));
+        marker->addShape(region.cuboid);
         marker->setComment(
             fmt::format("Unused internal_ext region: {}",
                         region.region_inst->getChipRegion()->getName()));
@@ -233,6 +244,38 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
                                      const UnfoldedModel& model)
 {
+  auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
+    marker->addSource(r->region_inst);
+    marker->addShape(Rect(r->cuboid.xMin(),
+                          r->cuboid.yMin(),
+                          r->cuboid.xMax(),
+                          r->cuboid.yMax()));
+    return fmt::format("{}/{} (faces {})",
+                       r->parent_chip->name,
+                       r->region_inst->getChipRegion()->getName(),
+                       sideToString(r->effective_side));
+  };
+  int count = 0;
+  dbMarkerCategory* cat = nullptr;
+  for (const auto& conn : model.getConnections()) {
+    if (!isValid(conn)) {
+      if (!cat) {
+        cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
+      }
+      auto* marker = dbMarker::create(cat);
+      marker->addSource(conn.connection);
+      std::string msg = fmt::format("Invalid connection {}: {} to {}",
+                                    conn.connection->getName(),
+                                    describe(conn.top_region, marker),
+                                    describe(conn.bottom_region, marker));
+      marker->setComment(msg);
+      logger_->warn(utl::ODB, 207, msg);
+      count++;
+    }
+  }
+  if (count > 0) {
+    logger_->warn(utl::ODB, 273, "Found {} invalid connections", count);
+  }
 }
 
 void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,

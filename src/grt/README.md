@@ -31,6 +31,7 @@ global_route
     [-end_incremental]
     [-use_cugr]
     [-resistance_aware]
+    [-infinite_cap]
 ```
 
 #### Options
@@ -50,6 +51,7 @@ global_route
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
+| `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
 
 ### Set Routing Layers
 

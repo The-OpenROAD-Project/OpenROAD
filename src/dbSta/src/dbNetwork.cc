@@ -56,6 +56,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -72,6 +73,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/ObjectId.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
@@ -256,38 +258,6 @@ enum class PinPointerTags : std::uintptr_t
   kDbModIterm = 3U,
 };
 
-class DbLibraryIterator1 : public Iterator<Library*>
-{
- public:
-  explicit DbLibraryIterator1(ConcreteLibraryIterator* iter);
-  ~DbLibraryIterator1() override;
-  bool hasNext() override;
-  Library* next() override;
-
- private:
-  ConcreteLibraryIterator* iter_;
-};
-
-DbLibraryIterator1::DbLibraryIterator1(ConcreteLibraryIterator* iter)
-    : iter_(iter)
-{
-}
-
-DbLibraryIterator1::~DbLibraryIterator1()
-{
-  delete iter_;
-}
-
-bool DbLibraryIterator1::hasNext()
-{
-  return iter_->hasNext();
-}
-
-Library* DbLibraryIterator1::next()
-{
-  return reinterpret_cast<Library*>(iter_->next());
-}
-
 //
 // check the leaves accessible from the network
 // match those accessible from block.
@@ -424,7 +394,7 @@ DbInstanceNetIterator::DbInstanceNetIterator(const Instance* instance,
       // to avoid returning both.
       std::unordered_set<dbNet*> handled_flat_nets;
       for (odb::dbModNet* mod_net : mod_nets) {
-        dbNet* flat_net = network_->findRelatedDbNet(mod_net);
+        dbNet* flat_net = mod_net->findRelatedNet();
         if (flat_net) {
           handled_flat_nets.insert(flat_net);
         }
@@ -1935,7 +1905,7 @@ bool dbNetwork::isPower(const Net* net) const
   }
 
   if (db_modnet) {
-    dbNet* related_net = findRelatedDbNet(db_modnet);
+    dbNet* related_net = db_modnet->findRelatedNet();
     if (related_net) {
       return (related_net->getSigType() == dbSigType::POWER);
     }
@@ -1952,7 +1922,7 @@ bool dbNetwork::isGround(const Net* net) const
     return (db_net->getSigType() == dbSigType::GROUND);
   }
   if (db_modnet) {
-    dbNet* related_net = findRelatedDbNet(db_modnet);
+    dbNet* related_net = db_modnet->findRelatedNet();
     if (related_net) {
       return (related_net->getSigType() == dbSigType::GROUND);
     }
@@ -1979,7 +1949,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
   odb::dbModNet* mod_net = nullptr;
   dbNet* db_net = nullptr;
 
-  if (visited_nets.hasKey(net)) {
+  if (visited_nets.contains(net)) {
     return;
   }
 
@@ -2310,7 +2280,7 @@ void dbNetwork::readDbNetlistAfter()
 {
   makeTopCell();
   findConstantNets();
-  checkLibertyCorners();
+  checkLibertyScenes();
   checkLibertyCellsWithoutLef();
 }
 
@@ -2955,9 +2925,11 @@ void dbNetwork::deleteNet(Net* net)
 
 void dbNetwork::deleteNetBefore(const Net* net)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  delete drvrs;
-  net_drvr_pin_map_.erase(net);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    delete entry->second;
+    net_drvr_pin_map_.erase(entry);
+  }
 }
 
 void dbNetwork::mergeInto(Net*, Net*)
@@ -3802,8 +3774,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
       //
       PinSet* drivers = this->drivers(net);
       if (drivers && !drivers->empty()) {
-        PinSet::Iterator drvr_iter(drivers);
-        const Pin* drvr_pin = drvr_iter.next();
+        const Pin* drvr_pin = *drivers->begin();
         driver_pin = const_cast<Pin*>(drvr_pin);
         odb::dbITerm* iterm;
         odb::dbBTerm* bterm;
@@ -3853,8 +3824,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
   if (net) {
     PinSet* drivers = this->drivers(net);
     if (drivers && !drivers->empty()) {
-      PinSet::Iterator drvr_iter(drivers);
-      const Pin* drvr_pin = drvr_iter.next();
+      const Pin* drvr_pin = *drivers->begin();
       driver_pin = const_cast<Pin*>(drvr_pin);
     }
   }
@@ -4278,7 +4248,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
 /*
 A modnet can have only one equivalent dbNet.
 */
-dbNet* dbNetwork::findRelatedDbNet(const odb::dbModNet* net) const
+dbNet* dbNetwork::checkRelatedDbNet(const odb::dbModNet* net) const
 {
   // we pass in the net and decode it for axiom checking.
 
@@ -4785,7 +4755,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
 
     // Now run checks on the collected nets.
     for (odb::dbModNet* mod_net : mod_nets_to_check) {
-      findRelatedDbNet(mod_net);
+      checkRelatedDbNet(mod_net);
     }
 
     for (odb::dbNet* net_db : nets_to_check) {
@@ -4802,7 +4772,7 @@ void dbNetwork::checkSanityNetConnectivity(odb::dbObject* obj) const
   dbSet<odb::dbModNet> mod_nets = block()->getModNets();
   for (odb::dbModNet* mod_net : mod_nets) {
     mod_net->checkSanity();
-    findRelatedDbNet(mod_net);
+    checkRelatedDbNet(mod_net);
   }
 
   // Check for incomplete flat net connections
@@ -4998,7 +4968,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
       odb::dbUtil::findModITermDrivers(modnet, drivers);
 
       // Also, find drivers from the related flat net
-      dbNet* related_dbnet = findRelatedDbNet(modnet);
+      dbNet* related_dbnet = checkRelatedDbNet(modnet);
       if (related_dbnet) {
         odb::dbUtil::findITermDrivers(related_dbnet, drivers);
         odb::dbUtil::findBTermDrivers(related_dbnet, drivers);
@@ -5151,11 +5121,13 @@ PinSet* dbNetwork::drivers(const Net* net)
   }
 
   // Get or create drvrs pin set
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs == nullptr) {
-    drvrs = new PinSet(this);
-    net_drvr_pin_map_[net] = drvrs;
+  auto drvrs_entry = net_drvr_pin_map_.find(net);
+  if (drvrs_entry == net_drvr_pin_map_.end()) {
+    std::tie(drvrs_entry, std::ignore)
+        = net_drvr_pin_map_.insert({net, new PinSet(this)});
   }
+
+  PinSet* drvrs = drvrs_entry->second;
 
   // Insert the driver pin of the net
   dbNet* db_net = findFlatDbNet(net);
@@ -5173,18 +5145,18 @@ PinSet* dbNetwork::drivers(const Net* net)
 
 void dbNetwork::removeDriverFromCache(const Net* net)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs) {
-    delete drvrs;
-    net_drvr_pin_map_.erase(net);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    delete entry->second;
+    net_drvr_pin_map_.erase(entry);
   }
 }
 
 void dbNetwork::removeDriverFromCache(const Net* net, const Pin* drvr)
 {
-  PinSet* drvrs = net_drvr_pin_map_.findKey(net);
-  if (drvrs) {
-    drvrs->erase(drvr);
+  auto entry = net_drvr_pin_map_.find(net);
+  if (entry != net_drvr_pin_map_.end()) {
+    entry->second->erase(drvr);
   }
 }
 

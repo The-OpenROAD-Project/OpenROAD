@@ -71,6 +71,7 @@ bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.8.0")
+bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
@@ -146,7 +147,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "72db79cc90376851e27ee484c1ae1e23c2e30f44",
+    commit = "63ecaa366a7418d7afaa3777b96daa8401a64983",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -155,10 +156,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:v3.0-4512-g528ad3d8a",
+    image = "docker.io/openroad/orfs:26Q1-333-g9ad095627",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "087122e12c90edcb3ebfc452a3238417fbc78e1135f5b43feaf7162d885cada1",
+    sha256 = "c89d51c311c16d2f0e6aae43648d6ffb0b1befd4cc4a122c683684361776f838",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")

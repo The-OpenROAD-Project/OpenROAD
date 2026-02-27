@@ -21,8 +21,12 @@
 #include "dbTech.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
 #include <sstream>
 
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "spdlog/fmt/ostr.h"
 // User Code End Includes
 namespace odb {
