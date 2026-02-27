@@ -1548,7 +1548,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       stagui_(nullptr),
       update_button_(new QPushButton("Update", this)),
       fit_button_(new QPushButton("Fit", this)),
-      corner_box_(new QComboBox(this)),
+      scene_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
 {
   setObjectName("clock_viewer");  // for settings
@@ -1556,11 +1556,11 @@ ClockWidget::ClockWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
 
   QHBoxLayout* button_layout = new QHBoxLayout;
-  button_layout->addWidget(corner_box_);
+  button_layout->addWidget(scene_box_);
   button_layout->addWidget(update_button_);
   button_layout->addWidget(fit_button_);
 
-  corner_box_->setToolTip("Timing corner");
+  scene_box_->setToolTip("Timing scene");
 
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addLayout(button_layout);
@@ -1612,19 +1612,19 @@ void ClockWidget::setBlock(odb::dbBlock* block)
   block_ = block;
 }
 
-void ClockWidget::populate(sta::Scene* corner)
+void ClockWidget::populate(sta::Scene* scene)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   clocks_tab_->clear();
   views_.clear();
 
-  if (corner == nullptr) {
-    corner = corner_box_->currentData().value<sta::Scene*>();
+  if (scene == nullptr) {
+    scene = scene_box_->currentData().value<sta::Scene*>();
   } else {
-    corner_box_->setCurrentText(corner->name().c_str());
+    scene_box_->setCurrentText(scene->name().c_str());
   }
-  stagui_->setScene(corner);
+  stagui_->setScene(scene);
 
   for (auto& tree : stagui_->getClockTrees()) {
     if (!tree->getNet()) {  // skip virtual clocks
@@ -1665,9 +1665,9 @@ void ClockWidget::showEvent(QShowEvent* event)
 
 void ClockWidget::postReadLiberty()
 {
-  corner_box_->clear();
-  for (sta::Scene* corner : sta_->scenes()) {
-    corner_box_->addItem(corner->name().c_str(), QVariant::fromValue(corner));
+  scene_box_->clear();
+  for (sta::Scene* scene : sta_->scenes()) {
+    scene_box_->addItem(scene->name().c_str(), QVariant::fromValue(scene));
   }
 }
 
@@ -1696,7 +1696,7 @@ void ClockWidget::selectClock(const std::string& clock_name,
 
 void ClockWidget::saveImage(const std::string& clock_name,
                             const std::string& path,
-                            const std::string& corner,
+                            const std::string& scene,
                             const std::optional<int>& width_px,
                             const std::optional<int>& height_px)
 {
@@ -1706,18 +1706,18 @@ void ClockWidget::saveImage(const std::string& clock_name,
   }
 
   bool populate_views = views_.empty();
-  sta::Scene* sta_corner = nullptr;
-  if (!corner.empty() && corner != corner_box_->currentText().toStdString()) {
+  sta::Scene* sta_scene = nullptr;
+  if (!scene.empty() && scene != scene_box_->currentText().toStdString()) {
     populate_views = true;
-    const int idx = corner_box_->findText(QString::fromStdString(corner));
+    const int idx = scene_box_->findText(QString::fromStdString(scene));
     if (idx == -1) {
-      logger_->error(utl::GUI, 89, "Unable to find \"{}\" corner", corner);
+      logger_->error(utl::GUI, 89, "Unable to find \"{}\" scene", scene);
     }
-    sta_corner = corner_box_->itemData(idx).value<sta::Scene*>();
+    sta_scene = scene_box_->itemData(idx).value<sta::Scene*>();
   }
 
   if (populate_views) {
-    populate(sta_corner);
+    populate(sta_scene);
   }
 
   selectClock(clock_name);

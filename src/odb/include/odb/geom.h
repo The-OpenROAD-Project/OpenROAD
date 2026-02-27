@@ -154,6 +154,7 @@ class Cuboid
   int xCenter() const { return (xlo_ + xhi_) / 2; }
   int yCenter() const { return (ylo_ + yhi_) / 2; }
   int zCenter() const { return (zlo_ + zhi_) / 2; }
+  Rect getEnclosingRect() const;
 
   std::vector<Point3D> getPoints() const;
   Point3D lll() const;  // lower corner (xMin, yMin, zMin)
@@ -211,6 +212,8 @@ class Cuboid
 
   void printf(FILE* fp, const char* prefix = "");
   void print(const char* prefix = "");
+  friend dbIStream& operator>>(dbIStream& stream, Cuboid& c);
+  friend dbOStream& operator<<(dbOStream& stream, const Cuboid& c);
 
  private:
   int xlo_ = 0;
@@ -1244,6 +1247,11 @@ inline Point3D Cuboid::uur() const
 inline Point3D Cuboid::center() const
 {
   return Point3D(xCenter(), yCenter(), zCenter());
+}
+
+inline Rect Cuboid::getEnclosingRect() const
+{
+  return Rect(xlo_, ylo_, xhi_, yhi_);
 }
 
 inline bool Cuboid::intersects(const Point3D& p) const

@@ -160,6 +160,8 @@ class GlobalRouter
     skip_large_fanout_ = skip_large_fanout;
   };
 
+  void setInfiniteCapacity(bool infinite_capacity);
+
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
@@ -176,7 +178,9 @@ class GlobalRouter
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
-  std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer,
+                                  bool check_pin_placement = true);
   void initFastRouteIncr(std::vector<Net*>& nets);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
@@ -350,7 +354,7 @@ class GlobalRouter
                            int track_count,
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
-  void initNetlist(std::vector<Net*>& nets);
+  void initNetlist(std::vector<Net*>& nets, bool incremental = false);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -374,7 +378,7 @@ class GlobalRouter
   void savePositionWithReducedResources(const odb::Rect& rect,
                                         odb::dbTechLayer* tech_layer,
                                         odb::dbNet* db_net);
-  void addResourcesForPinAccess();
+  void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
@@ -514,7 +518,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
-  bool is_incremental_;
+  bool infinite_capacity_;
   float adjustment_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
@@ -528,6 +532,8 @@ class GlobalRouter
   bool is_congested_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
+  bool has_macros_or_pads_{false};
+  bool check_pin_placement_{true};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
@@ -564,6 +570,7 @@ class GlobalRouter
 
   // incremental grt
   GRouteDbCbk* grouter_cbk_;
+  bool is_incremental_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

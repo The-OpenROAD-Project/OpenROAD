@@ -47,11 +47,11 @@ get_db_block();
 
 %}
 
+%include "Exception-py.i"
+
 %template(Corners) std::vector<sta::Scene*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
 %template(Masters) std::vector<odb::dbMaster*>;
-
-%include "Exception-py.i"
 %include "ord/Tech.h"
 %include "ord/Design.h"
 %include "ord/Timing.h"

@@ -152,7 +152,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-start_incremental] \
                                   [-end_incremental] \
                                   [-use_cugr] \
-                                  [-resistance_aware]
+                                  [-resistance_aware] \
+                                  [-infinite_cap]
 }
 
 proc global_route { args } {
@@ -161,8 +162,8 @@ proc global_route { args } {
           -grid_origin -critical_nets_percentage -congestion_report_iter_step\
           -skip_large_fanout_nets
          } \
-    flags {-allow_congestion -resistance_aware -verbose -start_incremental -end_incremental \
-          -use_cugr}
+    flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
+          -end_incremental -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
 
@@ -227,6 +228,9 @@ proc global_route { args } {
 
   set resistance_aware [info exists flags(-resistance_aware)]
   grt::set_resistance_aware $resistance_aware
+
+  set infinite_cap [info exists flags(-infinite_cap)]
+  grt::set_infinite_cap $infinite_cap
 
   set start_incremental [info exists flags(-start_incremental)]
   set end_incremental [info exists flags(-end_incremental)]

@@ -92,6 +92,26 @@ cc_library(
 )
 
 cc_library(
+    name = "IpChecker",
+    srcs = [
+        "src/IpChecker.cc",
+    ],
+    hdrs = [
+        "include/db_sta/IpChecker.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "dbNetwork",
     srcs = [
         "src/dbEditHierarchy.cc",
@@ -114,6 +134,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "include/db_sta/IpChecker.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",

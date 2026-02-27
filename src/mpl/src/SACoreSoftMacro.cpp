@@ -631,7 +631,7 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::vector<int> y_point;
 
   for (auto& macro : macros_) {
-    if (macro.isStdCellCluster()) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
     x_point.push_back(macro.getX());
@@ -647,40 +647,43 @@ void SACoreSoftMacro::fillCoordsLists(std::vector<int>& x_coords,
   std::ranges::sort(x_point);
   std::ranges::sort(y_point);
 
+  // getSegmentIndex requires the bigger value
+  // from points within the same epsilon to work properly
   int epsilon = outline_.dx() / 100;
-  for (int i = 0; i < x_point.size(); i++) {
-    if (i + 1 < x_point.size()
-        && std::abs(x_point[i + 1] - x_point[i]) <= epsilon) {
-      continue;
+  x_coords.push_back(x_point.back());
+  for (int i = x_point.size() - 2; i >= 0; i--) {
+    if (x_coords.back() - x_point[i] > epsilon) {
+      x_coords.push_back(x_point[i]);
     }
-    x_coords.push_back(x_point[i]);
   }
+  std::ranges::reverse(x_coords);
 
   epsilon = outline_.dy() / 100;
-  for (int i = 0; i < y_point.size(); i++) {
-    if (i + 1 < y_point.size()
-        && std::abs(y_point[i + 1] - y_point[i]) <= epsilon) {
-      continue;
+  y_coords.push_back(y_point.back());
+
+  for (int i = y_point.size() - 2; i >= 0; i--) {
+    if (y_coords.back() - y_point[i] > epsilon) {
+      y_coords.push_back(y_point[i]);
     }
-    y_coords.push_back(y_point[i]);
   }
+  std::ranges::reverse(y_coords);
 }
 
-SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
-    std::vector<std::vector<bool>>& grid,
-    int start_row,
-    int start_col,
-    int end_row,
-    int end_col)
+SACoreSoftMacro::NotchVicinity SACoreSoftMacro::checkNotchVicinity(
+    const std::vector<std::vector<bool>>& grid,
+    const int start_row,
+    const int start_col,
+    const int end_row,
+    const int end_col)
 {
   int num_y = grid.size();
   int num_x = grid.front().size();
 
-  Neighbors neighbors;
+  NotchVicinity vicinity;
   if (start_row > 0) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[start_row - 1][i]) {
-        neighbors.bottom = false;
+        vicinity.bottom = false;
         break;
       }
     }
@@ -688,7 +691,7 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (end_row < num_y - 1) {
     for (int i = start_col; i <= end_col; i++) {
       if (!grid[end_row + 1][i]) {
-        neighbors.top = false;
+        vicinity.top = false;
         break;
       }
     }
@@ -696,7 +699,7 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (start_col > 0) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][start_col - 1]) {
-        neighbors.left = false;
+        vicinity.left = false;
         break;
       }
     }
@@ -704,29 +707,38 @@ SACoreSoftMacro::Neighbors SACoreSoftMacro::findNeighbors(
   if (end_col < num_x - 1) {
     for (int i = start_row; i <= end_row; i++) {
       if (!grid[i][end_col + 1]) {
-        neighbors.right = false;
+        vicinity.right = false;
         break;
       }
     }
   }
 
-  return neighbors;
+  return vicinity;
 }
 
-bool SACoreSoftMacro::isSegmentEmpty(std::vector<std::vector<bool>>& grid,
-                                     int start_row,
-                                     int start_col,
-                                     int end_row,
-                                     int end_col)
+bool SACoreSoftMacro::isRowEmpty(const std::vector<std::vector<bool>>& grid,
+                                 const int row,
+                                 const int start_col,
+                                 const int end_col)
 {
-  for (int i = start_row; i <= end_row; i++) {
-    for (int j = start_col; j <= end_col; j++) {
-      if (grid[i][j]) {
-        return false;
-      }
+  for (int col = start_col; col <= end_col; col++) {
+    if (grid[row][col]) {
+      return false;
     }
   }
+  return true;
+}
 
+bool SACoreSoftMacro::isColEmpty(const std::vector<std::vector<bool>>& grid,
+                                 const int col,
+                                 const int start_row,
+                                 const int end_row)
+{
+  for (int row = start_row; row <= end_row; row++) {
+    if (grid[row][col]) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -779,7 +791,7 @@ void SACoreSoftMacro::calNotchPenalty()
 
   std::vector<std::vector<bool>> grid(num_y, std::vector<bool>(num_x, false));
   for (auto& macro : macros_) {
-    if (macro.isStdCellCluster()) {
+    if (!macro.isMacroCluster() && !macro.isMixedCluster()) {
       continue;
     }
     int x_start = getSegmentIndex(macro.getX(), x_coords);
@@ -793,17 +805,20 @@ void SACoreSoftMacro::calNotchPenalty()
     }
   }
 
+  std::vector<std::vector<bool>> visited(num_y,
+                                         std::vector<bool>(num_x, false));
+
   for (int start_row = 0; start_row < num_y; start_row++) {
     for (int start_col = 0; start_col < num_x; start_col++) {
-      if (grid[start_row][start_col]) {
+      if (grid[start_row][start_col] || visited[start_row][start_col]) {
         continue;
       }
 
       int end_row = start_row;
       int end_col = start_col;
 
-      Neighbors current_neighbors
-          = findNeighbors(grid, start_row, start_col, end_row, end_col);
+      NotchVicinity current_vicinity
+          = checkNotchVicinity(grid, start_row, start_col, end_row, end_col);
       bool expand_rows = true;
       bool expand_cols = true;
 
@@ -811,12 +826,12 @@ void SACoreSoftMacro::calNotchPenalty()
         if (expand_rows) {
           end_row += 1;
           if (end_row < num_y
-              && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
-            Neighbors expanded_neighbors
-                = findNeighbors(grid, start_row, start_col, end_row, end_col);
-            if (expanded_neighbors.total() > current_neighbors.total()
-                || expanded_neighbors == current_neighbors) {
-              current_neighbors = expanded_neighbors;
+              && isRowEmpty(grid, end_row, start_col, end_col)) {
+            NotchVicinity expanded_vicinity = checkNotchVicinity(
+                grid, start_row, start_col, end_row, end_col);
+            if (expanded_vicinity.total() > current_vicinity.total()
+                || expanded_vicinity == current_vicinity) {
+              current_vicinity = expanded_vicinity;
             } else {
               expand_rows = false;
               end_row -= 1;
@@ -830,12 +845,12 @@ void SACoreSoftMacro::calNotchPenalty()
         if (expand_cols) {
           end_col += 1;
           if (end_col < num_x
-              && isSegmentEmpty(grid, start_row, start_col, end_row, end_col)) {
-            Neighbors expanded_neighbors
-                = findNeighbors(grid, start_row, start_col, end_row, end_col);
-            if (expanded_neighbors.total() > current_neighbors.total()
-                || expanded_neighbors == current_neighbors) {
-              current_neighbors = expanded_neighbors;
+              && isColEmpty(grid, end_col, start_row, end_row)) {
+            NotchVicinity expanded_vicinity = checkNotchVicinity(
+                grid, start_row, start_col, end_row, end_col);
+            if (expanded_vicinity.total() > current_vicinity.total()
+                || expanded_vicinity == current_vicinity) {
+              current_vicinity = expanded_vicinity;
             } else {
               expand_cols = false;
               end_col -= 1;
@@ -847,17 +862,23 @@ void SACoreSoftMacro::calNotchPenalty()
         }
       }
 
+      for (int i = start_row; i < end_row + 1; i++) {
+        for (int j = start_col; j < end_col + 1; j++) {
+          visited[i][j] = true;
+        }
+      }
+
       width = x_coords[end_col + 1] - x_coords[start_col];
       height = y_coords[end_row + 1] - y_coords[start_row];
 
       bool is_notch = false;
-      if (current_neighbors.total() == 4) {
-        is_notch = true;
-      } else if (current_neighbors.top && current_neighbors.bottom) {
+      if (current_vicinity.top && current_vicinity.bottom) {
         if (height < notch_h_th_) {
           is_notch = true;
         }
-      } else if (current_neighbors.left && current_neighbors.right) {
+      }
+
+      if (current_vicinity.left && current_vicinity.right) {
         if (width < notch_v_th_) {
           is_notch = true;
         }

@@ -114,11 +114,6 @@ void PlacementDensityDataSource::inDbInstCreate(odb::dbInst*)
   destroyMap();
 }
 
-void PlacementDensityDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  destroyMap();
-}
-
 void PlacementDensityDataSource::inDbInstDestroy(odb::dbInst*)
 {
   destroyMap();

@@ -31,6 +31,7 @@
 #include "map/scl/sclSize.h"
 #include "misc/extra/extra.h"
 #include "misc/nm/nm.h"
+#include "misc/util/abc_global.h"
 #include "misc/vec/vecPtr.h"
 #include "odb/db.h"
 #include "proof/dch/dch.h"
