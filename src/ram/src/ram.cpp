@@ -930,10 +930,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
 
   vf << verilog_code;
   vf.close();
-  logger_->info(RAM,
-                24,
-                "Behavioral Verilog written for {}",
-                module_name);
+  logger_->info(RAM, 24, "Behavioral Verilog written for {}", module_name);
 }
 
 }  // namespace ram
