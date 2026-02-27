@@ -40,6 +40,5 @@
         Q1 = mem[addr];
       end
       
-        
       endmodule
     
