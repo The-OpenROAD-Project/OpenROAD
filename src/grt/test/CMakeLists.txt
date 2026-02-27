@@ -98,5 +98,6 @@ or_integration_tests(
     upper_layer_net
     write_segments1
     write_segments2
+  PASSFAIL_TESTS
+    thread_count_reports
 )
-

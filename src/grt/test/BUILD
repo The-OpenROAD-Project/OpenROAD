@@ -136,3 +136,10 @@ MANUAL_FOR_BAZEL_TESTS = [
     data = [":test_resources"],
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "thread_count_reports",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)

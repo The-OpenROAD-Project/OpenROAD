@@ -727,7 +727,6 @@ class FastRouteCore
   // Maze 2D variables
   std::vector<bool> pop_heap2_2D_;
   std::vector<double*> src_heap_2D_;
-  std::vector<int> src_heap_pos_2D_;
   std::vector<double*> dest_heap_2D_;
   multi_array<double, 2> d1_2D_;
   multi_array<double, 2> d2_2D_;

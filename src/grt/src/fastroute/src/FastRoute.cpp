@@ -20,10 +20,12 @@
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace grt {
 
 using utl::GRT;
+using utl::DebugScopedTimer;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
@@ -198,8 +200,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   total_size = static_cast<int64>(y_grid_) * x_grid_;
   src_heap_2D_.resize(total_size);
-  total_size = static_cast<int64>(y_range_) * x_range_;
-  src_heap_pos_2D_.assign(total_size, -1);
   total_size = static_cast<int64>(y_grid_) * x_grid_;
   dest_heap_2D_.resize(total_size);
 
@@ -1347,6 +1347,19 @@ NetRouteMap FastRouteCore::run()
     return getRoutes();
   }
 
+  double total_run_time = 0.0;
+  double initial_rsmt_time = 0.0;
+  double route_l_time = 0.0;
+  double congestion_rsmt_time = 0.0;
+  double new_route_l_time = 0.0;
+  double spiral_time = 0.0;
+  double route_z_time = 0.0;
+  double monotonic_time = 0.0;
+  double overflow_iterations_time = 0.0;
+  double finalization_time = 0.0;
+  const DebugScopedTimer total_timer(
+      total_run_time, logger_, GRT, "timer", 1, "FastRoute run: {}");
+
   graph2d_.clearUsed();
   preProcessTechLayers();
 
@@ -1395,39 +1408,67 @@ NetRouteMap FastRouteCore::run()
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
-  gen_brk_RSMT(false, false, false, false, noADJ);
+  {
+    const DebugScopedTimer timer(
+        initial_rsmt_time, logger_, GRT, "timer", 1, "Initial RSMT: {}");
+    gen_brk_RSMT(false, false, false, false, noADJ);
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After RSMT");
   }
 
   // First time L routing
-  routeLAll(true);
+  {
+    const DebugScopedTimer timer(
+        route_l_time, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
+    routeLAll(true);
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After routeLAll");
   }
 
   // Congestion-driven rip-up and reroute L
-  gen_brk_RSMT(true, true, true, false, noADJ);
+  {
+    const DebugScopedTimer timer(congestion_rsmt_time,
+                                 logger_,
+                                 GRT,
+                                 "timer",
+                                 1,
+                                 "Congestion-driven RSMT: {}");
+    gen_brk_RSMT(true, true, true, false, noADJ);
+  }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After congestion-driven RSMT");
   }
 
   // New rip-up and reroute L via-guided
-  newrouteLAll(false, true);
+  {
+    const DebugScopedTimer timer(
+        new_route_l_time, logger_, GRT, "timer", 1, "Via-guided routeLAll: {}");
+    newrouteLAll(false, true);
+  }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After newRouteLAll");
   }
 
   // Rip-up and reroute using spiral route
-  spiralRouteAll();
+  {
+    const DebugScopedTimer timer(
+        spiral_time, logger_, GRT, "timer", 1, "Spiral routing: {}");
+    spiralRouteAll();
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After spiralRouteAll");
   }
 
   // Rip-up a tree edge according to its ripup type and Z-route it
-  newrouteZAll(10);
+  {
+    const DebugScopedTimer timer(
+        route_z_time, logger_, GRT, "timer", 1, "Initial routeZAll: {}");
+    newrouteZAll(10);
+  }
   int past_cong = getOverflow2D(&maxOverflow);
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -1451,6 +1492,8 @@ NetRouteMap FastRouteCore::run()
   }
 
   for (int i = 0; i < LVIter; i++) {
+    const DebugScopedTimer timer(
+        monotonic_time, logger_, GRT, "timer", 1, "Monotonic routing: {}");
     logistic_coef = 2.0 / (1 + log(maxOverflow));
     debugPrint(logger_,
                GRT,
@@ -1506,12 +1549,19 @@ NetRouteMap FastRouteCore::run()
   int overflow_increases = -1;
   int last_total_overflow = 0;
   float overflow_reduction_percent = -1;
-  while (total_overflow_ > 0 && i <= overflow_iterations_
-         && overflow_increases <= max_overflow_increases) {
-    if (verbose_) {
-      logger_->info(
-          GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
-    }
+  {
+    const DebugScopedTimer timer(overflow_iterations_time,
+                                 logger_,
+                                 GRT,
+                                 "timer",
+                                 1,
+                                 "Overflow iterations: {}");
+    while (total_overflow_ > 0 && i <= overflow_iterations_
+           && overflow_increases <= max_overflow_increases) {
+      if (verbose_) {
+        logger_->info(
+            GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
+      }
 
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
@@ -1771,11 +1821,13 @@ NetRouteMap FastRouteCore::run()
       }
     }
 
-    // generate DRC report each interval
-    if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
-      saveCongestion(i);
-    }
-  }  // end overflow iterations
+      // generate DRC report each interval
+      if (congestion_report_iter_step_
+          && i % congestion_report_iter_step_ == 0) {
+        saveCongestion(i);
+      }
+    }  // end overflow iterations
+  }
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
@@ -1810,50 +1862,70 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  freeRR();
+  int finallength = 0;
+  int numVia = 0;
+  {
+    const DebugScopedTimer timer(
+        finalization_time, logger_, GRT, "timer", 1, "Finalization: {}");
+    freeRR();
 
-  removeLoops();
+    removeLoops();
 
-  getOverflow2Dmaze(&maxOverflow, &tUsage);
+    getOverflow2Dmaze(&maxOverflow, &tUsage);
 
-  layerAssignment();
+    layerAssignment();
 
-  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    getOverflow3D();
-    logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
-                    past_cong,
-                    total_overflow_);
-  }
-
-  costheight_ = 3;
-  via_cost_ = 1;
-
-  if (past_cong == 0) {
-    // Increase ripup threshold if res-aware is enabled
-    if (enable_resistance_aware_) {
-      long_edge_len = BIG_INT;
-      short_edge_len = BIG_INT;
+    if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+      getOverflow3D();
+      logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
+                      past_cong,
+                      total_overflow_);
     }
 
-    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+    costheight_ = 3;
+    via_cost_ = 1;
+
+    if (past_cong == 0) {
+      // Increase ripup threshold if res-aware is enabled
+      if (enable_resistance_aware_) {
+        long_edge_len = BIG_INT;
+        short_edge_len = BIG_INT;
+      }
+
+      mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+      mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+    }
+
+    // Disable estimate parasitics for grt incremental steps with
+    // resistance-aware strategy to prevent issues during repair design and
+    // repair timing
+    en_estimate_parasitics_ = false;
+
+    if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+      getOverflow3D();
+      logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
+    }
+
+    fillVIA();
+    finallength = getOverflow3D();
+    numVia = threeDVIA();
+    checkRoute3D();
+    ensurePinCoverage();
   }
 
-  // Disable estimate parasitics for grt incremental steps with resistance-aware
-  // strategy to prevent issues during repair design and repair timing
-  en_estimate_parasitics_ = false;
-
-  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    getOverflow3D();
-    logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
-  }
-
-  fillVIA();
-  const int finallength = getOverflow3D();
-  const int numVia = threeDVIA();
-  checkRoute3D();
-  ensurePinCoverage();
-
+  logger_->metric("global_route__fastroute__run_s", total_run_time);
+  logger_->metric("global_route__fastroute__initial_rsmt_s", initial_rsmt_time);
+  logger_->metric("global_route__fastroute__route_l_s", route_l_time);
+  logger_->metric("global_route__fastroute__congestion_rsmt_s",
+                  congestion_rsmt_time);
+  logger_->metric("global_route__fastroute__new_route_l_s", new_route_l_time);
+  logger_->metric("global_route__fastroute__spiral_s", spiral_time);
+  logger_->metric("global_route__fastroute__route_z_s", route_z_time);
+  logger_->metric("global_route__fastroute__monotonic_s", monotonic_time);
+  logger_->metric("global_route__fastroute__overflow_iterations_s",
+                  overflow_iterations_time);
+  logger_->metric("global_route__fastroute__finalization_s",
+                  finalization_time);
   logger_->metric("global_route__vias", numVia);
   if (verbose_) {
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);
