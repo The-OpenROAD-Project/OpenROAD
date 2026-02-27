@@ -1066,6 +1066,14 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
                                               const sta::Scene* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
+  if (db_net->getTermCount() == 1) {
+    logger_->warn(
+        RSZ,
+        104,
+        "Net {} has only one pin, skipping buffered net construction.",
+        db_net->getName());
+    return nullptr;
+  }
   const sta::Net* net = db_network_->dbToSta(db_net);
   assert(db_net != nullptr);
 
