@@ -39,6 +39,8 @@
 #include <iostream>
 #include <map>
 
+#include <fmt/format.h>
+
 namespace mockturtle
 {
 

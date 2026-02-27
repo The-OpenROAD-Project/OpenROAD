@@ -128,7 +128,7 @@ void AnnealingStrategy::OptimizeDesign(sta::dbSta* sta,
   cut::AbcLibraryFactory factory(logger);
   factory.AddDbSta(sta);
   factory.AddResizer(resizer);
-  factory.SetCorner(corner_);
+  factory.SetScene(corner_);
   cut::AbcLibrary abc_library = factory.Build();
 
   // GIA ops as lambdas

@@ -105,18 +105,18 @@ proc restructure { args } {
     $depth_threshold_value $workdir_name $abc_logfile
 }
 
-sta::define_cmd_args "resynth" {[-corner corner]}
+sta::define_cmd_args "resynth" {[-scene scene]}
 
 proc resynth { args } {
   sta::parse_key_args "resynth" args \
-    keys {-corner} \
+    keys {-scene} \
     flags {}
-  set corner [sta::parse_scene keys]
-  rmp::resynth_cmd $corner
+  set scene[sta::parse_scene keys]
+  rmp::resynth_cmd $scene
 }
 
 sta::define_cmd_args "resynth_annealing" {
-                                            [-corner corner]
+                                            [-scene scene]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-temp temp]
@@ -127,10 +127,10 @@ sta::define_cmd_args "resynth_annealing" {
 
 proc resynth_annealing { args } {
   sta::parse_key_args "resynth_annealing" args \
-    keys {-corner -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
+    keys {-scene -iters -revert_after -seed -temp -initial_ops -slack_threshold} \
     flags {}
 
-  set corner [sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
   }
@@ -150,11 +150,11 @@ proc resynth_annealing { args } {
     rmp::set_annealing_initial_ops $keys(-initial_ops)
   }
 
-  rmp::resynth_annealing_cmd $corner
+  rmp::resynth_annealing_cmd $scene
 }
 
 sta::define_cmd_args "resynth_emap" {
-                                      [-corner corner]
+                                      [-scene scene]
                                       [-target area|timing]\
                                       [-map_multioutput]\
                                       [-verbose]\
@@ -163,10 +163,10 @@ sta::define_cmd_args "resynth_emap" {
 
 proc resynth_emap { args } {
   sta::parse_key_args "resynth_emap" args \
-    keys {-corner -target -work_dir} \
+    keys {-scene -target -work_dir} \
     flags {-map_multioutput -verbose}
 
-  set corner [sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   set target "area"
   set map_multioutput [info exists flags(-map_multioutput)]
   set verbose [info exists flags(-verbose)]
@@ -180,5 +180,5 @@ proc resynth_emap { args } {
     set workdir_name $keys(-work_dir)
   }
 
-  rmp::resynth_emap_cmd $corner $target $map_multioutput $verbose $workdir_name
+  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $workdir_name
 }

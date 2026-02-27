@@ -711,21 +711,16 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
   return status;
 }
 
-void Restructure::resynthEmap(sta::Scene* corner,
+void Restructure::resynthEmap(sta::Scene* scene,
                               bool map_multioutput,
                               bool verbose,
                               char* workdir_name)
 {
   bool area_oriented_mapping = opt_mode_ == Mode::AREA_1;
 
-  extended_technology_mapping(open_sta_,
-                              db_,
-                              corner,
-                              map_multioutput,
-                              area_oriented_mapping,
-                              verbose,
-                              resizer_,
-                              logger_);
+  auto emap = ExtendedTechnologyMapping(scene, map_multioutput, area_oriented_mapping, verbose);
+
+  emap.map(open_sta_, db_, resizer_, logger_);
 }
 
 }  // namespace rmp

@@ -78,12 +78,12 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
   getRestructure()->setAnnealingInitialOps(set_annealing_initial_ops);
 }
 
-void resynth_cmd(Scene* corner) {
-  getRestructure()->resynth(corner);
+void resynth_cmd(Scene* scene) {
+  getRestructure()->resynth(scene);
 }
 
-void resynth_annealing_cmd(Scene* corner) {
-  getRestructure()->resynthAnnealing(corner);
+void resynth_annealing_cmd(Scene* scene) {
+  getRestructure()->resynthAnnealing(scene);
 }
 
 void
@@ -112,9 +112,9 @@ int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 
-void resynth_emap_cmd(Scene* corner, char* target, bool map_multioutput, bool verbose, char* workdir_name) {
+void resynth_emap_cmd(Scene* scene, char* target, bool map_multioutput, bool verbose, char* workdir_name) {
   getRestructure()->setMode(target);
-  getRestructure()->resynthEmap(corner, map_multioutput, verbose, workdir_name);
+  getRestructure()->resynthEmap(scene, map_multioutput, verbose, workdir_name);
 }
 
 %}

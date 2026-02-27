@@ -8,7 +8,6 @@
 #include <cstring>
 #include <optional>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 
@@ -17,9 +16,9 @@
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
 #include "cut/logic_extractor.h"
+#include "db_sta/dbSta.hh"
 #include "lorina/common.hpp"
 #include "lorina/diagnostics.hpp"
-#include "map/mio/mio.h"
 #include "map/scl/sclLib.h"
 #include "misc/vec/vecStr.h"
 #include "mockturtle/algorithms/emap.hpp"
@@ -28,13 +27,15 @@
 #include "mockturtle/networks/block.hpp"
 #include "mockturtle/utils/name_utils.hpp"
 #include "mockturtle/utils/tech_library.hpp"
-#include "mockturtle/views/cell_view.hpp"
 #include "mockturtle/views/names_view.hpp"
 #include "mockturtle/views/topo_view.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "ord/OpenRoad.hh"
+#include "sta/ConcreteLibrary.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/GraphDelayCalc.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Search.hh"
 #include "utl/Logger.h"
@@ -45,25 +46,23 @@ Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
                                    float Gain,
                                    int nGatesMin,
                                    int fUseAll,
-                                   int* pnCellCount);  // NOLINT
+                                   int* pnCellCount);
 }  // namespace abc
 
 namespace rmp {
 
-namespace {
-
 std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
-extract_logic_to_mockturtle(sta::dbSta* sta,
-                            sta::Scene* corner,
-                            rsz::Resizer* resizer,
-                            mockturtle::tech_library<9u>& tech_lib,
-                            utl::Logger* logger)
+ExtendedTechnologyMapping::extractLogicToMockturtle(
+    sta::dbSta* sta,
+    sta::Scene* scene,
+    rsz::Resizer* resizer,
+    mockturtle::tech_library<9u>& tech_lib,
+    utl::Logger* logger)
 {
   using abc::Abc_Ntk_t;
   using abc::Abc_NtkDelete;
   using abc::Aig_Man_t;
   using abc::Aig_Obj_t;
-  using abc::Mio_Library_t;
 
   using aig_ntk = mockturtle::names_view<mockturtle::aig_network>;
 
@@ -87,17 +86,8 @@ extract_logic_to_mockturtle(sta::dbSta* sta,
   return {ntk, cut};
 }
 
-using BlockNtk
-    = mockturtle::names_view<mockturtle::cell_view<mockturtle::block_network>>;
-
-// Mapping info for one cell instance
-struct CellMapping
-{
-  std::string master_name;              // dbMaster / Liberty cell name
-  std::vector<std::string> input_pins;  // in fanin order (from gate::pins)
-};
-
-std::vector<odb::dbMTerm*> getSignalOutputs(odb::dbMaster* master)
+std::vector<odb::dbMTerm*> ExtendedTechnologyMapping::getSignalOutputs(
+    odb::dbMaster* master)
 {
   std::vector<odb::dbMTerm*> outs;
 
@@ -123,9 +113,10 @@ std::vector<odb::dbMTerm*> getSignalOutputs(odb::dbMaster* master)
   return outs;
 }
 
-CellMapping map_cell_from_standard_cell(const BlockNtk& ntk,
-                                        const BlockNtk::node& n,
-                                        utl::Logger* logger)
+ExtendedTechnologyMapping::CellMapping
+ExtendedTechnologyMapping::mapCellFromStdCell(const BlockNtk& ntk,
+                                              const BlockNtk::node& n,
+                                              utl::Logger* logger)
 {
   CellMapping m;
 
@@ -133,10 +124,11 @@ CellMapping map_cell_from_standard_cell(const BlockNtk& ntk,
   m.master_name = sc.name;           // must match Liberty/LEF cell name
 
   if (sc.gates.empty()) {
-    throw std::runtime_error(
-        fmt::format("Standard cell {} has no gates (node {})",
-                    sc.name,
-                    ntk.node_to_index(n)));
+    logger->error(utl::RMP,
+                  50,
+                  "Standard cell {} has no gates (node {})",
+                  sc.name,
+                  ntk.node_to_index(n));
   }
 
   const auto& first_gate = sc.gates.front();
@@ -147,24 +139,25 @@ CellMapping map_cell_from_standard_cell(const BlockNtk& ntk,
   return m;
 }
 
-struct TieMaster
+std::optional<const sta::LibertyCell*>
+ExtendedTechnologyMapping::findLibertyCellByMasterName(
+    sta::Sta* sta,
+    const std::string& cell_name)
 {
-  odb::dbMaster* master = nullptr;
-  std::string out_pin;
-  bool value = false;
-};
+  auto* libs = sta->network()->libertyLibraryIterator();
+  while (libs->hasNext()) {
+    auto lib = libs->next();
+    if (auto* cell = lib->findCell(cell_name.c_str())) {
+      return cell->libertyCell();
+    }
+  }
+  return std::nullopt;
+}
 
-struct ConstDriverCache
-{
-  odb::dbNet* net0 = nullptr;
-  odb::dbNet* net1 = nullptr;
-  odb::dbInst* inst0 = nullptr;
-  odb::dbInst* inst1 = nullptr;
-} const_cache;
-
-static std::optional<TieMaster> find_tie_master(
-    const odb::dbSet<odb::dbLib>& libs,
-    bool value)
+std::optional<ExtendedTechnologyMapping::TieMaster>
+ExtendedTechnologyMapping::findTieMaster(const odb::dbSet<odb::dbLib>& libs,
+                                         sta::dbSta* sta,
+                                         bool value)
 {
   std::vector<TieMaster> candidates;
 
@@ -192,29 +185,26 @@ static std::optional<TieMaster> find_tie_master(
         }
       }
 
-      if (sig_in == 0 && sig_out == 1) {
-        // likely a constant cell
-        TieMaster tm;
-        tm.master = master;
-        tm.out_pin = out_name;
+      if (sig_in != 0 || sig_out 1 = 1) {
+        continue;
+      }
 
-        std::string n = master->getName();
-        for (auto& c : n) {
-          c = std::toupper(c);
-        }
+      // likely a constant cell
+      TieMaster tm = {.master = master, .out_pin = out_name};
 
-        // constant 0
-        if (!value
-            && (n.find("TIELO") != std::string::npos
-                || n.find("TIEL") != std::string::npos
-                || n.find("TIE0") != std::string::npos)) {
-          return tm;
+      auto lib_cell = findLibertyCellByMasterName(sta, master->getName());
+      if (!lib_cell.has_value()) {
+        continue;
+      }
+      auto* port_it = lib_cell.value()->portIterator();
+      while (port_it->hasNext()) {
+        auto* port = port_it->next()->libertyPort();
+        if (!port->direction()->isOutput()) {
+          continue;
         }
-        // constant 1
-        if (value
-            && (n.find("TIEHI") != std::string::npos
-                || n.find("TIEH") != std::string::npos
-                || n.find("TIE1") != std::string::npos)) {
+        auto* func = port->function();
+        if ((value && func->op() == sta::FuncExpr::Op::one)
+            || (!value && func->op() == sta::FuncExpr::Op::zero)) {
           return tm;
         }
       }
@@ -224,56 +214,67 @@ static std::optional<TieMaster> find_tie_master(
   return std::nullopt;
 }
 
-odb::dbNet* ensure_const_net(bool value,
-                             odb::dbBlock* block,
-                             const odb::dbSet<odb::dbLib>& libs)
+odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
+    bool value,
+    odb::dbBlock* block,
+    const odb::dbSet<odb::dbLib>& libs,
+    sta::dbSta* sta,
+    utl::Logger* logger)
 {
-  odb::dbNet*& net = value ? const_cache.net1 : const_cache.net0;
-  odb::dbInst*& inst = value ? const_cache.inst1 : const_cache.inst0;
+  odb::dbNet*& net = value ? net1_cache_ : net0_cache_;
+
+  if (net) {
+    return net;
+  }
 
   const char* name = value ? "CONST1" : "CONST0";
 
+  net = block->findNet(name);
   if (!net) {
-    net = block->findNet(name);
-    if (!net) {
-      net = odb::dbNet::create(block, name);
-    }
-    if (!net) {
-      throw std::runtime_error("Failed to create const net");
-    }
+    net = odb::dbNet::create(block, name);
+  }
+  if (!net) {
+    logger->error(utl::RMP, 51, "Failed to create const net");
   }
 
+  auto tie = findTieMaster(libs, sta, value);
+  if (!tie) {
+    logger->error(
+        utl::RMP,
+        51,
+        "No supply net and no tie cell found; cannot create constant driver");
+  }
+
+  std::string inst_name = value ? "u_const1" : "u_const0";
+  odb::dbInst* inst = block->findInst(inst_name.c_str());
   if (!inst) {
-    auto tie = find_tie_master(libs, value);
-    if (!tie) {
-      throw std::runtime_error(
-          "No supply net and no tie cell found; cannot create constant driver");
-    }
+    inst = odb::dbInst::create(block, tie->master, inst_name.c_str());
+  }
+  if (!inst) {
+    logger->error(utl::RMP, 52, "Failed to create tie inst");
+  }
 
-    std::string inst_name = value ? "u_const1" : "u_const0";
-    inst = block->findInst(inst_name.c_str());
-    if (!inst) {
-      inst = odb::dbInst::create(block, tie->master, inst_name.c_str());
-    }
-    if (!inst) {
-      throw std::runtime_error("Failed to create tie inst");
-    }
+  auto* out_it = inst->findITerm(tie->out_pin.c_str());
+  if (!out_it) {
+    logger->error(utl::RMP, 53, "Tie output iterm not found");
+  }
+  out_it->connect(net);
 
-    auto* out_it = inst->findITerm(tie->out_pin.c_str());
-    if (!out_it) {
-      throw std::runtime_error("Tie output iterm not found");
-    }
-    out_it->connect(net);
+  if (value) {
+    net1_cache_ = net;
+  } else {
+    net0_cache_ = net;
   }
 
   return net;
 }
 
-void import_mockturtle_mapped_network(sta::dbSta* sta,
-                                      const BlockNtk& ntk,
-                                      const odb::dbSet<odb::dbLib>& libs,
-                                      cut::LogicCut& cut,
-                                      utl::Logger* logger)
+void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
+    sta::dbSta* sta,
+    const BlockNtk& ntk,
+    const odb::dbSet<odb::dbLib>& libs,
+    cut::LogicCut& cut,
+    utl::Logger* logger)
 {
   auto topo_ntk = mockturtle::topo_view(ntk);
 
@@ -343,12 +344,12 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
     const std::string name = ntk.get_name(topo_ntk.make_signal(n));
     if (name.empty()) {
-      throw std::runtime_error(fmt::format("PI node {} has empty name", idx));
+      logger->error(utl::RMP, 53, "PI node {} has empty name", idx);
     }
 
     odb::dbNet* net = block->findNet(name.c_str());
     if (!net) {
-      throw std::runtime_error(fmt::format("Failed to find PI net {}", name));
+      logger->error(utl::RMP, 54, "Failed to find PI net {}", name);
     }
 
     node_out_nets[idx].resize(1);
@@ -359,7 +360,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = node_index(n);
 
-    CellMapping mapping = map_cell_from_standard_cell(topo_ntk, n, logger);
+    CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
     odb::dbMaster* master = nullptr;
     for (const auto& lib : libs) {
       master = lib->findMaster(mapping.master_name.c_str());
@@ -368,17 +369,17 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       }
     }
     if (!master) {
-      throw std::runtime_error(
-          fmt::format("Cannot find master {}", mapping.master_name));
+      logger->error(utl::RMP, 55, "Cannot find master {}", mapping.master_name);
     }
 
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = odb::dbInst::create(block, master, inst_name.c_str());
     if (!inst) {
-      throw std::runtime_error(
-          fmt::format("Failed to create dbInst {} for master {}",
-                      inst_name,
-                      mapping.master_name));
+      logger->error(utl::RMP,
+                    55,
+                    "Failed to create dbInst {} for master {}",
+                    inst_name,
+                    mapping.master_name);
     }
 
     const auto out_mterms = getSignalOutputs(master);
@@ -391,12 +392,14 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
     }
 
     if (num_cell_outputs < num_node_outputs) {
-      throw std::runtime_error(fmt::format(
+      logger->error(
+          utl::RMP,
+          56,
           "Cell {} has only {} signal outputs but node {} has {} outputs",
           mapping.master_name,
           num_cell_outputs,
           idx,
-          num_node_outputs));
+          num_node_outputs);
     }
 
     node_out_nets[idx].resize(num_node_outputs);
@@ -408,8 +411,11 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
       odb::dbITerm* o_iterm = inst->findITerm(pin_name.c_str());
       if (!o_iterm) {
-        throw std::runtime_error(fmt::format(
-            "Instance {} has no output ITerm {}", inst_name, pin_name));
+        logger->error(utl::RMP,
+                      57,
+                      "Instance {} has no output ITerm {}",
+                      inst_name,
+                      pin_name);
       }
 
       std::string net_name;
@@ -428,8 +434,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
         net = odb::dbNet::create(block, net_name.c_str());
       }
       if (!net) {
-        throw std::runtime_error(
-            fmt::format("Failed to create/find net {}", net_name));
+        logger->error(utl::RMP, 58, "Failed to create/find net {}", net_name);
       }
 
       o_iterm->connect(net);
@@ -441,23 +446,25 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = node_index(n);
 
-    CellMapping mapping = map_cell_from_standard_cell(topo_ntk, n, logger);
+    CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
 
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
-      throw std::runtime_error(fmt::format("Instance {} not found", inst_name));
+      logger->error(utl::RMP, 59, "Instance {} not found", inst_name);
     }
 
     uint32_t fanin_idx = 0;
     topo_ntk.foreach_fanin(n, [&](const BlockNtk::signal& f) {
       if (fanin_idx >= mapping.input_pins.size()) {
-        throw std::runtime_error(fmt::format(
+        logger->error(
+            utl::RMP,
+            60,
             "Not enough input pins in cell {} (node {}), fanins={} inputs={}",
             mapping.master_name,
             idx,
             fanin_idx,
-            mapping.input_pins.size()));
+            mapping.input_pins.size());
       }
 
       odb::dbNet* src_net = nullptr;
@@ -466,7 +473,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       if (topo_ntk.is_constant(src_node)) {
         // constant node; complemented = 1
         const bool value = topo_ntk.is_complemented(f);
-        src_net = ensure_const_net(value, block, libs);
+        src_net = ensureConstNet(value, block, libs, sta, logger);
       } else {
         const auto src_idx = node_index(src_node);
         uint32_t out_pin_idx = 0;
@@ -477,10 +484,11 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
         if (src_idx >= node_out_nets.size()
             || out_pin_idx >= node_out_nets[src_idx].size()
             || node_out_nets[src_idx][out_pin_idx] == nullptr) {
-          throw std::runtime_error(
-              fmt::format("Missing driver net for fanin of {} (node {})",
-                          mapping.master_name,
-                          idx));
+          logger->error(utl::RMP,
+                        61,
+                        "Missing driver net for fanin of {} (node {})",
+                        mapping.master_name,
+                        idx);
         }
         src_net = node_out_nets[src_idx][out_pin_idx];
       }
@@ -488,8 +496,11 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       const std::string& pin_name = mapping.input_pins[fanin_idx++];
       odb::dbITerm* it = inst->findITerm(pin_name.c_str());
       if (!it) {
-        throw std::runtime_error(fmt::format(
-            "Master {} had no input ITerm {}", mapping.master_name, pin_name));
+        logger->error(utl::RMP,
+                      62,
+                      "Master {} had no input ITerm {}",
+                      mapping.master_name,
+                      pin_name);
       }
       it->connect(src_net);
     });
@@ -501,8 +512,10 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   for (sta::Net* sta_net : cut.primary_outputs()) {
     odb::dbNet* db_net = db_network->staToDb(sta_net);
     if (!db_net) {
-      throw std::runtime_error(fmt::format(
-          "cut primary output net {} has no dbNet", db_network->name(sta_net)));
+      logger->error(utl::RMP,
+                    63,
+                    "cut primary output net {} has no dbNet",
+                    db_network->name(sta_net));
     }
     boundary_po_dbnets.push_back(db_net);
   }
@@ -510,10 +523,12 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   // Connect each mapped PO driver to corresponding boundary net by merging.
   topo_ntk.foreach_po([&](const BlockNtk::signal& f, uint32_t po_index) {
     if (po_index >= boundary_po_dbnets.size()) {
-      throw std::runtime_error(fmt::format(
+      logger->error(
+          utl::RMP,
+          64,
           "Mapped network has more POs ({}) than cut.primary_outputs ({})",
           po_index + 1,
-          boundary_po_dbnets.size()));
+          boundary_po_dbnets.size());
     }
 
     odb::dbNet* boundary_net = boundary_po_dbnets[po_index];
@@ -525,7 +540,7 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
 
     if (topo_ntk.is_constant(src_node)) {
       const bool value = topo_ntk.is_complemented(f);
-      driver_net = ensure_const_net(value, block, libs);
+      driver_net = ensureConstNet(value, block, libs, sta, logger);
     } else {
       src_idx = node_index(src_node);
       if (topo_ntk.is_multioutput(src_node)) {
@@ -535,8 +550,8 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
       if (src_idx >= node_out_nets.size()
           || out_pin_idx >= node_out_nets[src_idx].size()
           || node_out_nets[src_idx][out_pin_idx] == nullptr) {
-        throw std::runtime_error(
-            fmt::format("Missing driver net for PO index {}", po_index));
+        logger->error(
+            utl::RMP, 65, "Missing driver net for PO index {}", po_index);
       }
       driver_net = node_out_nets[src_idx][out_pin_idx];
     }
@@ -548,16 +563,10 @@ void import_mockturtle_mapped_network(sta::dbSta* sta,
   });
 }
 
-}  // anonymous namespace
-
-void extended_technology_mapping(sta::dbSta* sta,
-                                 odb::dbDatabase* db,
-                                 sta::Scene* corner,
-                                 bool map_multioutput,
-                                 bool area_oriented_mapping,
-                                 bool verbose,
-                                 rsz::Resizer* resizer,
-                                 utl::Logger* logger)
+void ExtendedTechnologyMapping::map(sta::dbSta* sta,
+                                    odb::dbDatabase* db,
+                                    rsz::Resizer* resizer,
+                                    utl::Logger* logger)
 {
   sta->ensureGraph();
   sta->ensureLevelized();
@@ -569,10 +578,10 @@ void extended_technology_mapping(sta::dbSta* sta,
   // Configure emap parameters
   mockturtle::emap_params ps;
 
-  ps.map_multioutput = map_multioutput;
-  ps.verbose = verbose;
+  ps.map_multioutput = map_multioutput_;
+  ps.verbose = verbose_;
 
-  if (area_oriented_mapping) {
+  if (area_oriented_mapping_) {
     ps.area_oriented_mapping = true;
   } else {
     ps.area_oriented_mapping = false;
@@ -585,7 +594,7 @@ void extended_technology_mapping(sta::dbSta* sta,
     cut::AbcLibraryFactory factory(logger);
     factory.AddDbSta(sta);
     factory.AddResizer(resizer);
-    factory.SetCorner(corner);
+    factory.SetScene(scene_);
     auto abc_library = factory.BuildScl();
     auto lib = abc_library.get();
     int cell_count = 0;
@@ -647,7 +656,7 @@ void extended_technology_mapping(sta::dbSta* sta,
 
   // Create mockturtle AIG network
   auto [ntk, cut]
-      = extract_logic_to_mockturtle(sta, corner, resizer, tech_lib, logger);
+      = extractLogicToMockturtle(sta, scene_, resizer, tech_lib, logger);
 
   // Extended technology mapping statistics
   mockturtle::emap_stats st;
@@ -661,8 +670,8 @@ void extended_technology_mapping(sta::dbSta* sta,
 
   // Print statitstics
   logger->report(
-      "Extended technology mapping stats:\n\tarea: {}\n\tdelay: {}\n\tpower: "
-      "{}\n\tinverters: {}\n\tmultioutput gates: {}\n",
+      "Extended technology mapping stats:\n\tarea: {:.3f}\n\tdelay: "
+      "{:.3f}\n\tpower: {:.3f}\n\tinverters: {}\n\tmultioutput gates: {}\n",
       st.area,
       st.delay,
       st.power,
@@ -675,7 +684,11 @@ void extended_technology_mapping(sta::dbSta* sta,
   // Import mapped network back to OpenROAD
   auto libs = db->getLibs();
 
-  import_mockturtle_mapped_network(sta, mapped_ntk, libs, cut, logger);
+  // Clear const network cache
+  net0_cache_ = nullptr;
+  net1_cache_ = nullptr;
+
+  importMockturtleMappedNetwork(sta, mapped_ntk, libs, cut, logger);
 
   db->triggerPostReadDb();
 }

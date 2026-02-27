@@ -37,6 +37,8 @@
 #include <map>
 #include <string_view>
 
+#include <fmt/format.h>
+
 namespace lorina
 {
 

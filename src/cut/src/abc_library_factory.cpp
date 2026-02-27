@@ -366,9 +366,9 @@ AbcLibraryFactory& AbcLibraryFactory::AddResizer(rsz::Resizer* resizer)
   return *this;
 }
 
-AbcLibraryFactory& AbcLibraryFactory::SetCorner(sta::Scene* corner)
+AbcLibraryFactory& AbcLibraryFactory::SetScene(sta::Scene* scene)
 {
-  corner_ = corner;
+  scene_ = scene;
   return *this;
 }
 
@@ -378,13 +378,13 @@ utl::UniquePtrWithDeleter<abc::SC_Lib> AbcLibraryFactory::BuildScl()
     logger_->error(utl::CUT, 19, "Build called with null sta library");
   }
 
-  if (db_sta_->scenes().size() > 1 && !corner_) {
+  if (db_sta_->scenes().size() > 1 && !scene_) {
     logger_->error(
-        utl::CUT, 20, "More than one corner is loaded, and no corner was set");
+        utl::CUT, 20, "More than one scene is loaded, and no scene was set");
   }
 
-  if (!corner_) {
-    corner_ = db_sta_->scenes()[0];
+  if (!scene_) {
+    scene_ = db_sta_->scenes()[0];
   }
 
   // Populate units from default liberty
@@ -393,9 +393,9 @@ utl::UniquePtrWithDeleter<abc::SC_Lib> AbcLibraryFactory::BuildScl()
       = db_sta_->network()->defaultLibertyLibrary();
   PopulateLibraryDetails(abc_library, default_library);
 
-  // Grab cells from requested corner.
+  // Grab cells from requested scene.
   std::vector<sta::LibertyCell*> liberty_cells
-      = GetLibertyCellsFromCorner(corner_);
+      = GetLibertyCellsFromScene(scene_);
 
   PopulateAbcSclLibFromSta(
       abc_library, liberty_cells, default_library->units());
@@ -413,12 +413,12 @@ AbcLibrary AbcLibraryFactory::Build()
   return AbcLibrary(BuildScl(), logger_);
 }
 
-std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromCorner(
-    sta::Scene* corner)
+std::vector<sta::LibertyCell*> AbcLibraryFactory::GetLibertyCellsFromScene(
+    sta::Scene* scene)
 {
   std::vector<sta::LibertyCell*> result;
   const sta::LibertySeq& libraries
-      = corner->libertyLibraries(sta::MinMax::max());
+      = scene->libertyLibraries(sta::MinMax::max());
   for (sta::LibertyLibrary* library : libraries) {
     sta::LibertyCellIterator cell_iterator(library);
     while (cell_iterator.hasNext()) {
