@@ -410,7 +410,25 @@ void FastRouteCore::convertToMazeroute()
 }
 
 // non recursive version of heapify
-static void heapify(std::vector<double*>& array)
+constexpr int kNotInHeap = -1;
+
+static int heapIndex(double* base, double* entry)
+{
+  return static_cast<int>(entry - base);
+}
+
+static void clearHeapPositions(std::vector<double*>& array,
+                               std::vector<int>& heap_pos,
+                               double* base)
+{
+  for (double* entry : array) {
+    heap_pos[heapIndex(base, entry)] = kNotInHeap;
+  }
+}
+
+static void heapify(std::vector<double*>& array,
+                    std::vector<int>& heap_pos,
+                    double* base)
 {
   bool stop = false;
   const int heapSize = array.size();
@@ -435,31 +453,48 @@ static void heapify(std::vector<double*>& array)
     }
     if (smallest != i) {
       array[i] = array[smallest];
+      heap_pos[heapIndex(base, array[i])] = i;
       i = smallest;
     } else {
       array[i] = tmp;
+      heap_pos[heapIndex(base, tmp)] = i;
       stop = true;
     }
   } while (!stop);
 }
 
-static void updateHeap(std::vector<double*>& array, int i)
+static void updateHeap(std::vector<double*>& array,
+                       std::vector<int>& heap_pos,
+                       double* base,
+                       int i)
 {
   double* tmpi = array[i];
   while (i > 0 && *(array[parent_index(i)]) > *tmpi) {
     const int parent = parent_index(i);
     array[i] = array[parent];
+    heap_pos[heapIndex(base, array[i])] = i;
     i = parent;
   }
   array[i] = tmpi;
+  heap_pos[heapIndex(base, tmpi)] = i;
 }
 
 // remove the entry with minimum distance from Priority queue
-static void removeMin(std::vector<double*>& array)
+static void removeMin(std::vector<double*>& array,
+                      std::vector<int>& heap_pos,
+                      double* base)
 {
+  double* removed = array[0];
+  if (array.size() == 1) {
+    heap_pos[heapIndex(base, removed)] = kNotInHeap;
+    array.pop_back();
+    return;
+  }
+
   array[0] = array.back();
-  heapify(array);
+  heapify(array, heap_pos, base);
   array.pop_back();
+  heap_pos[heapIndex(base, removed)] = kNotInHeap;
 }
 
 // ripup a tree edge according to its ripup type and Z-route it
@@ -510,8 +545,10 @@ void FastRouteCore::setupHeap(const int netID,
   } else {  // net with more than 2 pins
     const int numNodes = sttrees_[netID].num_nodes();
 
-    std::vector<bool> visited(numNodes, false);
-    std::vector<int> queue(numNodes);
+    visited_2D_.assign(numNodes, false);
+    queue_2D_.resize(numNodes);
+    auto& visited = visited_2D_;
+    auto& queue = queue_2D_;
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap
@@ -774,12 +811,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   }
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A1].route.type
-      == RouteType::MazeRoute)  // if originally allocated, free them first
-  {
-    treeedges[edge_n1A1].route.grids.clear();
-  }
-  treeedges[edge_n1A1].route.grids.resize(E1_pos + 1);
+  treeedges[edge_n1A1].route.grids.assign(E1_pos + 1, GPoint3D{});
 
   if (A1x <= E1x) {
     int cnt = 0;
@@ -806,12 +838,8 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A2].route.type
-      == RouteType::MazeRoute)  // if originally allocated, free them first
-  {
-    treeedges[edge_n1A2].route.grids.clear();
-  }
-  treeedges[edge_n1A2].route.grids.resize(cnt_n1A1 + cnt_n1A2 - E1_pos - 1);
+  treeedges[edge_n1A2].route.grids.assign(
+      cnt_n1A1 + cnt_n1A2 - E1_pos - 1, GPoint3D{});
 
   int cnt = 0;
   if (E1x <= A2x) {
@@ -899,12 +927,9 @@ bool FastRouteCore::updateRouteType2(const int net_id,
 
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for grids[].x and grids[].y of edge_A1A2
-  if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
-    treeedges[edge_A1A2].route.grids.clear();
-  }
   const int len_A1A2 = cnt_n1A1 + cnt_n1A2 - 1;
 
-  treeedges[edge_A1A2].route.grids.resize(len_A1A2);
+  treeedges[edge_A1A2].route.grids.assign(len_A1A2, GPoint3D{});
   treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
   treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
@@ -946,19 +971,13 @@ bool FastRouteCore::updateRouteType2(const int net_id,
   }
 
   // allocate memory for grids[].x and grids[].y of edge_n1C1 and edge_n1C2
-  if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute) {
-    treeedges[edge_n1C1].route.grids.clear();
-  }
   const int len_n1C1 = E1_pos + 1;
-  treeedges[edge_n1C1].route.grids.resize(len_n1C1);
+  treeedges[edge_n1C1].route.grids.assign(len_n1C1, GPoint3D{});
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
-  if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute) {
-    treeedges[edge_n1C2].route.grids.clear();
-  }
   const int len_n1C2 = cnt_C1C2 - E1_pos;
-  treeedges[edge_n1C2].route.grids.resize(len_n1C2);
+  treeedges[edge_n1C2].route.grids.assign(len_n1C2, GPoint3D{});
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
   treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
@@ -1052,10 +1071,14 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   const int max_usage_multiplier = 40;
 
-  for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
+  const int max_h_usage = max_usage_multiplier * h_capacity_;
+  h_cost_table_.reserve(max_h_usage);
+  for (int i = 0; i < max_h_usage; i++) {
     h_cost_table_.push_back(getCost(i, true, cost_params));
   }
-  for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
+  const int max_v_usage = max_usage_multiplier * v_capacity_;
+  v_cost_table_.reserve(max_v_usage);
+  for (int i = 0; i < max_v_usage; i++) {
     v_cost_table_.push_back(getCost(i, false, cost_params));
   }
 
@@ -1072,15 +1095,18 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     StNetOrder();
   }
 
-  std::vector<double*> src_heap;
-  std::vector<double*> dest_heap;
-  src_heap.reserve(y_grid_ * x_grid_);
-  dest_heap.reserve(y_grid_ * x_grid_);
+  auto& src_heap = src_heap_2D_;
+  auto& src_heap_pos = src_heap_pos_2D_;
+  auto& dest_heap = dest_heap_2D_;
+  auto& d1 = d1_2D_;
+  auto& d2 = d2_2D_;
+  auto& pop_heap2 = pop_heap2_2D_;
+  double* d1_base = &d1[0][0];
 
-  multi_array<double, 2> d1(boost::extents[y_range_][x_range_]);
-  multi_array<double, 2> d2(boost::extents[y_range_][x_range_]);
-
-  std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
+  std::fill(src_heap_pos.begin(), src_heap_pos.end(), kNotInHeap);
+  src_heap.clear();
+  dest_heap.clear();
+  std::fill(pop_heap2.begin(), pop_heap2.end(), false);
 
   /**
    * @brief Updates the cost of an adjacent grid if the new cost is lower,
@@ -1112,14 +1138,13 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     if (adj_cost >= BIG_INT) {  // neighbor has not been put into src_heap
       src_heap.push_back(&d1[adj_y][adj_x]);
-      updateHeap(src_heap, src_heap.size() - 1);
+      updateHeap(src_heap, src_heap_pos, d1_base, src_heap.size() - 1);
     } else if (adj_cost > cost) {  // neighbor has been put into src_heap
                                    // but needs update
       double* dtmp = &d1[adj_y][adj_x];
-      const auto it = std::ranges::find(src_heap, dtmp);
-      if (it != src_heap.end()) {
-        const int pos = it - src_heap.begin();
-        updateHeap(src_heap, pos);
+      const int pos = src_heap_pos[heapIndex(d1_base, dtmp)];
+      if (pos != kNotInHeap && src_heap[pos] == dtmp) {
+        updateHeap(src_heap, src_heap_pos, d1_base, pos);
       } else {
         logger_->error(
             GRT,
@@ -1257,6 +1282,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // setup src_heap, dest_heap and initialize d1[][] and d2[][] for all the
       // grids on the two subtrees
+      clearHeapPositions(src_heap, src_heap_pos, d1_base);
       setupHeap(netID,
                 edgeID,
                 src_heap,
@@ -1267,6 +1293,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                 regionX2,
                 regionY1,
                 regionY2);
+      const int src_heap_size = static_cast<int>(src_heap.size());
+      for (int slot = 0; slot < src_heap_size; slot++) {
+        src_heap_pos[heapIndex(d1_base, src_heap[slot])] = slot;
+      }
 
       // while loop to find shortest path
       int ind1 = (src_heap[0] - &d1[0][0]);
@@ -1291,7 +1321,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                  : parent_y3_[curY][curX];
         }
 
-        removeMin(src_heap);
+        removeMin(src_heap, src_heap_pos, d1_base);
 
         if (curX > regionX1) {  // left
           relaxAdjacent(
@@ -1686,10 +1716,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }  // n2 is not a pin and E2!=n2
 
       // update route for edge (n1, n2) and edge usage
-      if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
-        treeedges[edge_n1n2].route.grids.clear();
-      }
-      treeedges[edge_n1n2].route.grids.resize(cnt_n1n2);
+      treeedges[edge_n1n2].route.grids.assign(cnt_n1n2, GPoint3D{});
       treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
       treeedges[edge_n1n2].route.routelen = cnt_n1n2 - 1;
       treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);
