@@ -228,6 +228,7 @@ class FastRouteCore
   void setCongestionReportFile(const char* congestion_file_name);
   void setGridMax(int x_max, int y_max);
   void setDetourPenalty(int penalty);
+  void setNumThreads(int num_threads) { num_threads_ = num_threads; }
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -623,6 +624,7 @@ class FastRouteCore
   std::string congestion_file_name_;
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
+  int num_threads_;
   int x_range_;
   int y_range_;
 
@@ -721,6 +723,16 @@ class FastRouteCore
       horizontal_blocked_intervals_;
 
   std::vector<int> net_ids_;
+
+  // Maze 2D variables
+  std::vector<bool> pop_heap2_2D_;
+  std::vector<double*> src_heap_2D_;
+  std::vector<int> src_heap_pos_2D_;
+  std::vector<double*> dest_heap_2D_;
+  multi_array<double, 2> d1_2D_;
+  multi_array<double, 2> d2_2D_;
+  std::vector<bool> visited_2D_;
+  std::vector<int> queue_2D_;
 
   // Maze 3D variables
   multi_array<Direction, 3> directions_3D_;

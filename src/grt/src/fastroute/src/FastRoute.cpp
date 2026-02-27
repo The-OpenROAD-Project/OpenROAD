@@ -34,6 +34,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       db_(db),
       overflow_iterations_(0),
       congestion_report_iter_step_(0),
+      num_threads_(1),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -191,12 +192,26 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
 
+  // maze2D variables
+  int64 total_size = static_cast<int64>(y_grid_) * x_range_;
+  pop_heap2_2D_.resize(total_size, false);
+
+  total_size = static_cast<int64>(y_grid_) * x_grid_;
+  src_heap_2D_.resize(total_size);
+  total_size = static_cast<int64>(y_range_) * x_range_;
+  src_heap_pos_2D_.assign(total_size, -1);
+  total_size = static_cast<int64>(y_grid_) * x_grid_;
+  dest_heap_2D_.resize(total_size);
+
+  d1_2D_.resize(boost::extents[y_range_][x_range_]);
+  d2_2D_.resize(boost::extents[y_range_][x_range_]);
+
   // maze3D variables
   directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
   pop_heap2_3D_.resize(total_size, false);
 
   // allocate memory for priority queue
@@ -2020,22 +2035,25 @@ void FastRouteCore::setDetourPenalty(int penalty)
 std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_);
+#pragma omp parallel for num_threads(num_threads_)
   for (int l = 0; l < num_layers_; l++) {
+    int original_resource = 0;
     bool is_horizontal
         = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
       for (int i = 0; i < y_grid_; i++) {
         for (int j = 0; j < x_grid_ - 1; j++) {
-          original_resources[l] += h_edges_3D_[l][i][j].real_cap;
+          original_resource += h_edges_3D_[l][i][j].real_cap;
         }
       }
     } else {
       for (int i = 0; i < y_grid_ - 1; i++) {
         for (int j = 0; j < x_grid_; j++) {
-          original_resources[l] += v_edges_3D_[l][i][j].real_cap;
+          original_resource += v_edges_3D_[l][i][j].real_cap;
         }
       }
     }
+    original_resources[l] = original_resource;
   }
 
   return original_resources;
@@ -2049,39 +2067,46 @@ void FastRouteCore::computeCongestionInformation()
   max_h_overflow_.resize(num_layers_);
   max_v_overflow_.resize(num_layers_);
 
+#pragma omp parallel for num_threads(num_threads_)
   for (int l = 0; l < num_layers_; l++) {
-    cap_per_layer_[l] = 0;
-    usage_per_layer_[l] = 0;
-    overflow_per_layer_[l] = 0;
-    max_h_overflow_[l] = 0;
-    max_v_overflow_[l] = 0;
+    int cap_per_layer = 0;
+    int usage_per_layer = 0;
+    int overflow_per_layer = 0;
+    int max_h_overflow = 0;
+    int max_v_overflow = 0;
 
     for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_ - 1; j++) {
-        cap_per_layer_[l] += h_edges_3D_[l][i][j].cap;
-        usage_per_layer_[l] += h_edges_3D_[l][i][j].usage;
+        cap_per_layer += h_edges_3D_[l][i][j].cap;
+        usage_per_layer += h_edges_3D_[l][i][j].usage;
 
         const int overflow
             = h_edges_3D_[l][i][j].usage - h_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
-          overflow_per_layer_[l] += overflow;
-          max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
+          overflow_per_layer += overflow;
+          max_h_overflow = std::max(max_h_overflow, overflow);
         }
       }
     }
     for (int i = 0; i < y_grid_ - 1; i++) {
       for (int j = 0; j < x_grid_; j++) {
-        cap_per_layer_[l] += v_edges_3D_[l][i][j].cap;
-        usage_per_layer_[l] += v_edges_3D_[l][i][j].usage;
+        cap_per_layer += v_edges_3D_[l][i][j].cap;
+        usage_per_layer += v_edges_3D_[l][i][j].usage;
 
         const int overflow
             = v_edges_3D_[l][i][j].usage - v_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
-          overflow_per_layer_[l] += overflow;
-          max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
+          overflow_per_layer += overflow;
+          max_v_overflow = std::max(max_v_overflow, overflow);
         }
       }
     }
+
+    cap_per_layer_[l] = cap_per_layer;
+    usage_per_layer_[l] = usage_per_layer;
+    overflow_per_layer_[l] = overflow_per_layer;
+    max_h_overflow_[l] = max_h_overflow;
+    max_v_overflow_[l] = max_v_overflow;
   }
 }
 

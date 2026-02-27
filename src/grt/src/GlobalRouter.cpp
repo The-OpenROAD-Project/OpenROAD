@@ -86,6 +86,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       adjustment_(0.0),
       congestion_report_iter_step_(0),
       allow_congestion_(false),
+      num_threads_(1),
       macro_extension_(0),
       initialized_(false),
       total_diodes_count_(0),
@@ -107,6 +108,12 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   fastroute_
       = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
   cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
+}
+
+void GlobalRouter::setNumThreads(int num_threads)
+{
+  num_threads_ = num_threads;
+  fastroute_->setNumThreads(num_threads_);
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -3728,9 +3735,16 @@ int GlobalRouter::computeNetWirelength(odb::dbNet* db_net)
 
 void GlobalRouter::computeWirelength()
 {
+  std::vector<odb::dbNet*> routed_nets;
+  routed_nets.reserve(routes_.size());
+  for (const auto& [db_net, route] : routes_) {
+    routed_nets.push_back(db_net);
+  }
+
   int64_t total_wirelength = 0;
-  for (auto& net_route : routes_) {
-    total_wirelength += computeNetWirelength(net_route.first);
+#pragma omp parallel for num_threads(num_threads_) reduction(+ : total_wirelength)
+  for (int i = 0; i < static_cast<int>(routed_nets.size()); i++) {
+    total_wirelength += computeNetWirelength(routed_nets[i]);
   }
   logger_->metric("global_route__wirelength",
                   total_wirelength / block_->getDefUnits());
