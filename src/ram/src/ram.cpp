@@ -859,58 +859,66 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   const int address_width
       = (word_count <= 1) ? 1 : std::ceil(std::log2(word_count));
 
-  std::string module_name
-      = fmt::format("RAM{}x{}_behavioral", word_count, word_size_bit);
+  std::string module_name = fmt::format("RAM{}x{}", word_count, word_size_bit);
 
-  std::string port_list = "clk, \n D";
+  std::string port_list = "\n  clk,\n  D";
   for (int i = 0; i < read_ports; i++) {
-    port_list += fmt::format(", \n Q{}", i);
+    if (read_ports == 1) {
+      port_list += ",\n  Q";
+    } else {
+      port_list += fmt::format(",\n  Q{}", i);
+    }
   }
-  port_list += ",\n addr,\n we,\n VSS,\n VDD";
+  port_list += ",\n  addr,\n  we";
 
   std::string output_declaration;
   for (int i = 0; i < read_ports; i++) {
-    output_declaration
-        += fmt::format(" output reg [{}:0] Q{}; \n", word_size_bit - 1, i);
+    if (read_ports == 1) {
+      output_declaration
+          += fmt::format("  output reg [{}:0] Q;\n", word_size_bit - 1);
+    } else {
+      output_declaration
+          += fmt::format("  output reg [{}:0] Q{};\n", word_size_bit - 1, i);
+    }
   }
 
   std::string read_port_logic;
   for (int i = 0; i < read_ports; i++) {
-    read_port_logic += fmt::format(R"(
-      always @(*) begin
-        Q{} = mem[addr];
-      end
-      )",
-                                   i);
+    std::string port_name = (read_ports == 1) ? "Q" : fmt::format("Q{}", i);
+    if (i > 0) {
+      read_port_logic += "\n";
+    }
+    read_port_logic += fmt::format(R"(  always @(*) begin
+    {} = mem[addr];
+  end
+)",
+                                   port_name);
   }
 
-  std::string verilog_code = fmt::format(R"(
-    module {} ({});
-      input clk;
-      input [{}:0] D;
-      {}
-      input [{}:0] addr;
-      input [{}:0] we;
-      inout VSS;
-      inout VDD;
+  std::string verilog_code = fmt::format(R"(module {} ({}
+);
+  input clk;
+  input [{}:0] D;
+{}  input [{}:0] addr;
+  input [{}:0] we;
 
-      // memory array declaration
-      reg [{}:0] mem[0:{}];
+  // memory array declaration
+  reg [{}:0] mem[0:{}];
 
-      // write logic
-      integer i;
-      always @(posedge clk) begin
-        for (i=0; i< {}; i = i +1 ) begin
-          if (we[i]) begin
-            mem[addr][i*8 +:8] <= D[i*8 +:8];
-          end
-        end
+  // write logic
+  integer i;
+  always @(posedge clk) begin
+    for (i = 0; i < {}; i = i + 1) begin
+      if (we[i]) begin
+        mem[addr][i*8 +:8] <= D[i*8 +:8];
       end
+    end
+  end
 
-      // read logic
-      {}
-      endmodule
-    )",
+  // read logic
+{}
+endmodule
+)",
                                          module_name,
                                          port_list,
                                          word_size_bit - 1,

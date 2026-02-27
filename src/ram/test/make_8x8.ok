@@ -6,7 +6,7 @@
 [INFO RAM-0016] Selected and2 cell sky130_fd_sc_hd__and2_0
 [INFO RAM-0016] Selected clock gate cell sky130_fd_sc_hd__dlclkp_1
 [INFO RAM-0016] Selected buffer cell sky130_fd_sc_hd__buf_1
-[INFO RAM-0024] Behavioral Verilog written for RAM8x8_behavioral
+[INFO RAM-0024] Behavioral Verilog written for RAM8x8
 [INFO PDN-0001] Inserting grid: ram_grid
 [INFO PPL-0067] Restrict pins [ D[0] D[1] D[2] D[3] D[4] ... ] to region 0.00u-142.60u at the TOP edge.
 [INFO PPL-0001] Number of available slots 324
@@ -65,3 +65,6 @@
 [INFO DRT-0036] via4 guide region query size = 0.
 [INFO DRT-0036] met5 guide region query size = 0.
 [INFO DRT-0179] Init gr pin query.
+No differences found.
+No differences found.
+No differences found.
