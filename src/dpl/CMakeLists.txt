@@ -27,6 +27,9 @@ add_library(dpl_lib
   src/OptMirror.cpp
   src/PlacementDRC.cpp
 
+  src/HybridLegalizer.cpp
+  src/HybridLegalizerNeg.cpp
+
   src/Optdp.cpp
   src/infrastructure/architecture.cxx
   src/util/color.cxx
