@@ -1,6 +1,5 @@
-# Test if the packing engine can handle one fixed
-# macro and two movable macros without generating
-# overlap.
+# Test if MPL handles DEF and directional halos
+# correctly
 source "helpers.tcl"
 
 read_lef "./Nangate45/Nangate45.lef"

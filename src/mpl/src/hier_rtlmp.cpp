@@ -2285,6 +2285,8 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
     // so, after flipping, we must manually set the location (lower-left corner)
     // again to move the macro back to the the position choosen by mpl.
     flipRealMacro(inst, is_vertical_flip);
+    // The real location shifts differently with uneven halos when flipping
+    // and it requires us to handle the location in MPL
     odb::Point macro_location
         = tree_->maps.inst_to_hard[inst]->getRealLocation();
 
