@@ -1,4 +1,4 @@
-# Test if the set_macro_halo command is working and 
+# Test if the set_macro_halo command is working and
 # MPL handles directional halos correctly
 source "helpers.tcl"
 
