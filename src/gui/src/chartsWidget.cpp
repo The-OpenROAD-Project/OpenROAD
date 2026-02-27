@@ -633,7 +633,9 @@ void HistogramView::populateBins()
   }
 
   // determine interval
-  const float bin_interval = computeBucketInterval();
+  const float bin_interval
+      = computeBucketInterval(std::min(0.0f, histogram_->getMinValue()),
+                              std::max(0.0f, histogram_->getMaxValue()));
   const float bin_min
       = std::floor(std::min(0.0f, histogram_->getMinValue()) / bin_interval)
         * bin_interval;
@@ -717,66 +719,38 @@ void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
   setVisualConfig();
 }
 
-float HistogramView::computeBucketInterval()
+float HistogramView::computeBucketInterval(float min_slack, float max_slack)
 {
-  float min_slack = histogram_->getMinValue();
-  float max_slack = histogram_->getMaxValue();
-
-  if (min_slack < 0 && max_slack < 0) {
-    max_slack = 0;
-  } else if (min_slack > 0 && max_slack > 0) {
-    min_slack = 0;
-  }
-
   const float exact_interval
       = (max_slack - min_slack) / kDefaultNumberOfBuckets;
 
   const float snap_interval = computeSnapBucketInterval(exact_interval);
-
-  // We compute a new number of buckets based on the snap interval.
-  const int new_number_of_buckets = (max_slack - min_slack) / snap_interval;
-
-  if (new_number_of_buckets < kMinimumNumberOfBuckets) {
-    const float minimum_interval
-        = (max_slack - min_slack) / kMinimumNumberOfBuckets;
-
-    float decimal_snap_interval
-        = computeSnapBucketDecimalInterval(minimum_interval);
-
-    return decimal_snap_interval;
-  }
   return snap_interval;
-}
-
-float HistogramView::computeSnapBucketDecimalInterval(float minimum_interval)
-{
-  float integer_part = minimum_interval;
-  int power_count = 0;
-
-  while (static_cast<int>(integer_part) == 0) {
-    integer_part *= 10;
-    ++power_count;
-  }
-
-  precision_count_ = power_count;
-
-  return std::ceil(integer_part) / std::pow(10, power_count);
 }
 
 float HistogramView::computeSnapBucketInterval(float exact_interval)
 {
-  if (exact_interval < 10) {
-    return std::ceil(exact_interval);
+  int exp = std::floor(std::log10(exact_interval));
+  double mag = std::pow(10.0, exp);
+  double residual = exact_interval / mag;
+  precision_count_ = std::max(-exp, 0);
+
+  double nice_coeff;
+  if (residual < 1.5) {
+    // [1.0 ~ 1.5)
+    nice_coeff = 1.0;
+  } else if (residual < 3.0) {
+    // [1.5, 3.0)
+    nice_coeff = 2.0;
+  } else if (residual < 7.0) {
+    // [3.0, 7.0)
+    nice_coeff = 5.0;
+  } else {
+    // [7.0, 10)
+    nice_coeff = 10.0;
   }
 
-  float snap_interval = 0;
-  const int digits = computeNumberOfDigits(exact_interval);
-
-  while (snap_interval < exact_interval) {
-    snap_interval += 5 * std::pow(10, digits - 2);
-  }
-
-  return snap_interval;
+  return nice_coeff * mag;
 }
 
 int HistogramView::computeNumberOfDigits(float value)
