@@ -1,0 +1,6 @@
+precision: 1000
+chiplet_defs:
+  top:
+    type: die
+    external:
+      verilog_file: temp_test.v

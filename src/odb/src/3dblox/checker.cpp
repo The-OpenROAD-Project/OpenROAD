@@ -5,10 +5,14 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
+#include <memory>
 #include <numeric>
 #include <ranges>
 #include <string>
+#include <system_error>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -16,6 +20,10 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "odb/unfoldedModel.h"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/PatternMatch.hh"
+#include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
@@ -86,6 +94,25 @@ bool isValid(const UnfoldedConnection& conn)
   return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
+class StaReportGuard
+{
+ public:
+  StaReportGuard() : sta_(std::make_unique<sta::Sta>())
+  {
+    sta_->makeComponents();
+  }
+  ~StaReportGuard()
+  {
+    if (sta_) {
+      sta_->setReport(nullptr);
+    }
+  }
+  sta::Sta* operator->() const { return sta_.get(); }
+
+ private:
+  std::unique_ptr<sta::Sta> sta_;
+};
+
 }  // namespace
 
 Checker::Checker(utl::Logger* logger) : logger_(logger)
@@ -94,8 +121,9 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 
 void Checker::check(dbChip* chip)
 {
-  UnfoldedModel model(logger_, chip);
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
+  checkLogicalConnectivity(top_cat, chip);
+  UnfoldedModel model(logger_, chip);
 
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
@@ -286,6 +314,160 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
                                    const UnfoldedModel& model)
 {
+}
+
+void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
+{
+  StaReportGuard sta;
+  std::unordered_set<std::string> loaded_files;
+  std::unordered_set<dbChip*> processed_masters;
+
+  dbMarkerCategory* design_cat = nullptr;
+  dbMarkerCategory* alignment_cat = nullptr;
+
+  for (auto* inst : chip->getChipInsts()) {
+    auto* master = inst->getMasterChip();
+    if (!master || !processed_masters.insert(master).second) {
+      continue;
+    }
+
+    auto* prop = dbProperty::find(master, "verilog_file");
+    if (!prop || prop->getType() != dbProperty::STRING_PROP) {
+      debugPrint(logger_,
+                 utl::ODB,
+                 "3dblox",
+                 551,
+                 "Missing 'verilog_file' property for master {}",
+                 master->getName());
+      continue;
+    }
+
+    std::string raw_file = static_cast<dbStringProperty*>(prop)->getValue();
+    std::error_code ec;
+    std::filesystem::path path
+        = std::filesystem::weakly_canonical(raw_file, ec);
+    if (ec) {
+      path = std::filesystem::absolute(raw_file, ec);
+    }
+    std::string file = path.string();
+
+    if (loaded_files.insert(file).second) {
+      debugPrint(logger_,
+                 utl::ODB,
+                 "3dblox",
+                 552,
+                 "Reading Verilog file {} for design {}",
+                 path.filename().string(),
+                 master->getName());
+      if (!sta->readVerilog(file.c_str())) {
+        debugPrint(logger_,
+                   utl::ODB,
+                   "3dblox",
+                   553,
+                   "Failed to read Verilog file {}",
+                   file);
+      }
+    }
+
+    auto* network = sta->network();
+    sta::Cell* cell = nullptr;
+    {
+      std::unique_ptr<sta::LibraryIterator> lib_iter(
+          network->libraryIterator());
+      while (lib_iter->hasNext()) {
+        auto* lib = lib_iter->next();
+        cell = network->findCell(lib, master->getName());
+        if (cell) {
+          break;
+        }
+      }
+    }
+
+    if (!cell) {
+      std::vector<std::string> modules;
+      std::unique_ptr<sta::LibraryIterator> li(network->libraryIterator());
+      sta::PatternMatch all("*");
+      while (li->hasNext()) {
+        auto matches = network->findCellsMatching(li->next(), &all);
+        for (auto* c : matches) {
+          modules.emplace_back(network->name(c));
+        }
+      }
+      std::ranges::sort(modules);
+      if (modules.size() > 10) {
+        modules.resize(10);
+        modules.emplace_back("...");
+      }
+      if (!design_cat) {
+        design_cat
+            = dbMarkerCategory::createOrReplace(top_cat, "Design Alignment");
+      }
+      auto* marker = dbMarker::create(design_cat);
+      std::string msg = fmt::format(
+          "Design Alignment Violation: Verilog module {} not found in file {}. "
+          "Available "
+          "modules: {}",
+          master->getName(),
+          file,
+          modules.empty() ? "None"
+                          : fmt::format("{}", fmt::join(modules, ", ")));
+      marker->setComment(msg);
+      marker->addSource(master);
+      logger_->warn(utl::ODB, 550, msg);
+      continue;
+    }
+
+    std::unordered_set<std::string> verilog_nets;
+    {
+      std::unique_ptr<sta::CellPortBitIterator> port_iter(
+          network->portBitIterator(cell));
+      while (port_iter->hasNext()) {
+        verilog_nets.insert(network->name(port_iter->next()));
+      }
+    }
+
+    for (auto* region : master->getChipRegions()) {
+      for (auto* bump : region->getChipBumps()) {
+        auto* net = bump->getNet();
+        if (net && !verilog_nets.contains(net->getName())) {
+          if (!alignment_cat) {
+            alignment_cat = dbMarkerCategory::createOrReplace(
+                top_cat, "Logical Alignment");
+          }
+          auto* marker = dbMarker::create(alignment_cat);
+          std::string bump_name
+              = bump->getInst() ? bump->getInst()->getName() : "UNKNOWN_BUMP";
+
+          std::vector<std::string> available_nets;
+          available_nets.insert(
+              available_nets.end(), verilog_nets.begin(), verilog_nets.end());
+          std::ranges::sort(available_nets);
+          if (available_nets.size() > 10) {
+            available_nets.resize(10);
+            available_nets.emplace_back("...");
+          }
+
+          std::string msg = fmt::format(
+              "Logical net {} (bump {}) not found in Verilog. Available nets: "
+              "[{}]",
+              net->getName(),
+              bump_name,
+              fmt::join(available_nets, ", "));
+
+          marker->setComment(msg);
+          marker->addSource(bump);
+          logger_->warn(
+              utl::ODB,
+              560,
+              "Logical net {} in bmap for chiplet {} (bump {}) not found in "
+              "Verilog",
+              net->getName(),
+              master->getName(),
+              bump_name);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace odb

@@ -26,6 +26,7 @@ class Checker
   void check(dbChip* chip);
 
  private:
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip);
   void checkFloatingChips(dbMarkerCategory* top_cat,
                           const UnfoldedModel& model);
   void checkOverlappingChips(dbMarkerCategory* top_cat,

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
@@ -29,6 +30,8 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
@@ -336,6 +339,62 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
       odb::dbStringProperty::create(
           chip, "verilog_file", chiplet.external.verilog_file.c_str());
+    }
+    if (sta_ != nullptr) {
+      std::string full_path
+          = std::filesystem::absolute(chiplet.external.verilog_file).string();
+      if (read_verilog_files_.insert(full_path).second) {
+        if (!sta_->readVerilog(chiplet.external.verilog_file.c_str())) {
+          logger_->warn(utl::ODB,
+                        554,
+                        "Failed to read Verilog file {}",
+                        chiplet.external.verilog_file);
+        }
+      }
+      auto* network = sta_->network();
+      sta::Cell* cell = nullptr;
+      {
+        std::unique_ptr<sta::LibraryIterator> lib_iter(
+            network->libraryIterator());
+        while (lib_iter->hasNext()) {
+          auto* lib = lib_iter->next();
+          cell = network->findCell(lib, chiplet.name.c_str());
+          if (cell) {
+            break;
+          }
+        }
+      }
+
+      if (!cell) {
+        logger_->warn(utl::ODB,
+                      555,
+                      "Verilog module {} not found in loaded libraries.",
+                      chiplet.name);
+      }
+
+      if (cell) {
+        std::unordered_set<std::string> existing_nets;
+        for (auto* net : chip->getChipNets()) {
+          existing_nets.insert(net->getName());
+        }
+        std::unique_ptr<sta::CellPortBitIterator> port_iter(
+            network->portBitIterator(cell));
+        while (port_iter->hasNext()) {
+          auto* port = port_iter->next();
+          const char* net_name = network->name(port);
+          if (!existing_nets.contains(net_name)) {
+            dbChipNet::create(chip, net_name);
+            existing_nets.insert(net_name);
+            debugPrint(logger_,
+                       utl::ODB,
+                       "3dblox",
+                       1,
+                       "Created dbChipNet {} for chip {} from Verilog",
+                       net_name,
+                       chip->getName());
+          }
+        }
+      }
     }
   }
   // Read DEF file
