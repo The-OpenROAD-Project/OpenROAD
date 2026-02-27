@@ -634,6 +634,11 @@ void HistogramView::populateBins()
 
   const float min_slack = std::min(0.0f, histogram_->getMinValue());
   const float max_slack = std::max(0.0f, histogram_->getMaxValue());
+  if (min_slack == max_slack) {
+    precision_count_ = 1;
+    histogram_->generateBins(1, -0.1, 0.2);
+    return;
+  }
 
   // determine interval
   const float bin_interval = computeBucketInterval(min_slack, max_slack);
