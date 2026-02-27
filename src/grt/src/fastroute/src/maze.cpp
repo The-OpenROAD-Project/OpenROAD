@@ -410,25 +410,7 @@ void FastRouteCore::convertToMazeroute()
 }
 
 // non recursive version of heapify
-constexpr int kNotInHeap = -1;
-
-static int heapIndex(double* base, double* entry)
-{
-  return static_cast<int>(entry - base);
-}
-
-static void clearHeapPositions(std::vector<double*>& array,
-                               std::vector<int>& heap_pos,
-                               double* base)
-{
-  for (double* entry : array) {
-    heap_pos[heapIndex(base, entry)] = kNotInHeap;
-  }
-}
-
-static void heapify(std::vector<double*>& array,
-                    std::vector<int>& heap_pos,
-                    double* base)
+static void heapify(std::vector<double*>& array)
 {
   bool stop = false;
   const int heapSize = array.size();
@@ -453,48 +435,31 @@ static void heapify(std::vector<double*>& array,
     }
     if (smallest != i) {
       array[i] = array[smallest];
-      heap_pos[heapIndex(base, array[i])] = i;
       i = smallest;
     } else {
       array[i] = tmp;
-      heap_pos[heapIndex(base, tmp)] = i;
       stop = true;
     }
   } while (!stop);
 }
 
-static void updateHeap(std::vector<double*>& array,
-                       std::vector<int>& heap_pos,
-                       double* base,
-                       int i)
+static void updateHeap(std::vector<double*>& array, int i)
 {
   double* tmpi = array[i];
   while (i > 0 && *(array[parent_index(i)]) > *tmpi) {
     const int parent = parent_index(i);
     array[i] = array[parent];
-    heap_pos[heapIndex(base, array[i])] = i;
     i = parent;
   }
   array[i] = tmpi;
-  heap_pos[heapIndex(base, tmpi)] = i;
 }
 
 // remove the entry with minimum distance from Priority queue
-static void removeMin(std::vector<double*>& array,
-                      std::vector<int>& heap_pos,
-                      double* base)
+static void removeMin(std::vector<double*>& array)
 {
-  double* removed = array[0];
-  if (array.size() == 1) {
-    heap_pos[heapIndex(base, removed)] = kNotInHeap;
-    array.pop_back();
-    return;
-  }
-
   array[0] = array.back();
-  heapify(array, heap_pos, base);
+  heapify(array);
   array.pop_back();
-  heap_pos[heapIndex(base, removed)] = kNotInHeap;
 }
 
 // ripup a tree edge according to its ripup type and Z-route it
@@ -1096,14 +1061,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   }
 
   auto& src_heap = src_heap_2D_;
-  auto& src_heap_pos = src_heap_pos_2D_;
   auto& dest_heap = dest_heap_2D_;
   auto& d1 = d1_2D_;
   auto& d2 = d2_2D_;
   auto& pop_heap2 = pop_heap2_2D_;
-  double* d1_base = &d1[0][0];
 
-  std::fill(src_heap_pos.begin(), src_heap_pos.end(), kNotInHeap);
   src_heap.clear();
   dest_heap.clear();
   std::fill(pop_heap2.begin(), pop_heap2.end(), false);
@@ -1138,13 +1100,14 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
     if (adj_cost >= BIG_INT) {  // neighbor has not been put into src_heap
       src_heap.push_back(&d1[adj_y][adj_x]);
-      updateHeap(src_heap, src_heap_pos, d1_base, src_heap.size() - 1);
+      updateHeap(src_heap, src_heap.size() - 1);
     } else if (adj_cost > cost) {  // neighbor has been put into src_heap
                                    // but needs update
       double* dtmp = &d1[adj_y][adj_x];
-      const int pos = src_heap_pos[heapIndex(d1_base, dtmp)];
-      if (pos != kNotInHeap && src_heap[pos] == dtmp) {
-        updateHeap(src_heap, src_heap_pos, d1_base, pos);
+      const auto it = std::ranges::find(src_heap, dtmp);
+      if (it != src_heap.end()) {
+        const int pos = it - src_heap.begin();
+        updateHeap(src_heap, pos);
       } else {
         logger_->error(
             GRT,
@@ -1282,7 +1245,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // setup src_heap, dest_heap and initialize d1[][] and d2[][] for all the
       // grids on the two subtrees
-      clearHeapPositions(src_heap, src_heap_pos, d1_base);
       setupHeap(netID,
                 edgeID,
                 src_heap,
@@ -1293,10 +1255,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                 regionX2,
                 regionY1,
                 regionY2);
-      const int src_heap_size = static_cast<int>(src_heap.size());
-      for (int slot = 0; slot < src_heap_size; slot++) {
-        src_heap_pos[heapIndex(d1_base, src_heap[slot])] = slot;
-      }
 
       // while loop to find shortest path
       int ind1 = (src_heap[0] - &d1[0][0]);
@@ -1321,7 +1279,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                  : parent_y3_[curY][curX];
         }
 
-        removeMin(src_heap, src_heap_pos, d1_base);
+        removeMin(src_heap);
 
         if (curX > regionX1) {  // left
           relaxAdjacent(
