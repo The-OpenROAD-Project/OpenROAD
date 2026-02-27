@@ -67,7 +67,7 @@ cc_library(
         "@boost.container_hash",
         "@boost.polygon",
         "@boost.unordered",
-        "@com_github_quantamhd_lemon//:lemon",
+        "@coin-or-lemon//:lemon",
     ],
 )
 
@@ -98,7 +98,7 @@ cc_library(
         "//src/rsz",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

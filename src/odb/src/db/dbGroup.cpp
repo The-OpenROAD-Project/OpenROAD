@@ -26,6 +26,9 @@
 #include "dbGroupGroundNetItr.h"
 #include "dbGroupPowerNetItr.h"
 #include "dbRegion.h"
+#include "dbVector.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbGroup>;

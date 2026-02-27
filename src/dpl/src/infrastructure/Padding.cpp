@@ -5,6 +5,7 @@
 
 #include "Objects.h"
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 

@@ -3,6 +3,7 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -23,7 +24,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Vector.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -496,30 +496,20 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
 
 void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
 {
-  // make the instance iterms and set up their reference
-  // to the child ports (dbModBTerms).
-
-  std::unique_ptr<InstancePinIterator> ip_iter(network_->pinIterator(inst));
-  while (ip_iter->hasNext()) {
-    Pin* cur_pin = ip_iter->next();
-    const std::string pin_name_string = network_->portName(cur_pin);
-    //
-    // we do not need to store the pin names.. But they are
-    // assumed to exist in the STA world.
-    //
-
-    dbModBTerm* modbterm;
-    std::string port_name_str = pin_name_string;  // intentionally make copy
-    const size_t last_idx = port_name_str.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      port_name_str = port_name_str.substr(last_idx + 1);
+  for (dbModBTerm* modbterm : modinst->getMaster()->getModBTerms()) {
+    // Do not create bus aggregator (or sentinel) for dbModITerm.
+    // - STA network iterators (e.g. pinIterator) typically iterate over
+    //   bit-blasted pins (leaves) and do not expect bus aggregate pins.
+    // - Creating dbModITerm for bus aggregates (which have isBusPort() == true)
+    //   causes dbNetwork::pinIterator to return them, confusing downstream
+    //   tools like VerilogWriter which expect to find a net or standard signal
+    //   for every pin.
+    if (modbterm->isBusPort()) {
+      continue;
     }
-    dbModule* module = modinst->getMaster();
-    modbterm = module->findModBTerm(port_name_str.c_str());
-    // pass the modbterm into the moditerm creator
-    // so that during journalling we keep the moditerm/modbterm correlation
+
     dbModITerm* moditerm
-        = dbModITerm::create(modinst, pin_name_string.c_str(), modbterm);
+        = dbModITerm::create(modinst, modbterm->getName(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -745,7 +735,7 @@ void Verilog2db::makeDbNets(const Instance* inst, PinSet& visited_pins)
     }
 
     // Sort connected pins for regression stability
-    sort(net_pins, PinPathNameLess(network_));
+    std::ranges::sort(net_pins, PinPathNameLess(network_));
 
     // Connect pins to the new flat net
     for (const Pin* pin : net_pins) {
@@ -878,24 +868,15 @@ void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
         }
       }
     }
+  }
 
-    // push down inside the hierarchical instance to find any
-    // modnets connected on the inside of the instance
-    Net* below_pin_net;
-    Term* below_term = network_->term(inst_pin);
-    if (below_term) {
-      below_pin_net = network_->net(below_term);
-      const char* below_net_name = network_->name(below_pin_net);
-      if (child_module->getModNet(below_net_name)) {
-        continue;
-      }
-      std::string pin_name = network_->name(below_term);
-      size_t last_idx = pin_name.find_last_of('/');
-      if (last_idx != std::string::npos) {
-        pin_name = pin_name.substr(last_idx + 1);
-      }
-      dbModBTerm* mod_bterm = child_module->findModBTerm(pin_name.c_str());
-      dbModNet* lower_mod_net = constructModNet(below_pin_net, child_module);
+  // push down inside the hierarchical instance to find any
+  // modnets connected on the inside of the instance
+  for (dbModBTerm* mod_bterm : child_module->getModBTerms()) {
+    const char* port_name = mod_bterm->getName();
+    Net* internal_net = network_->findNet(inst, port_name);
+    if (internal_net != nullptr) {
+      dbModNet* lower_mod_net = constructModNet(internal_net, child_module);
       mod_bterm->connect(lower_mod_net);
       debugPrint(logger_,
                  utl::ODB,
@@ -1089,7 +1070,6 @@ void Verilog2db::makeModNets(Instance* inst)
         dbModBTerm* mod_bterm
             = module->findModBTerm(network_->name(below_term));
         dbModNet* lower_mod_net = constructModNet(below_pin_net, module);
-        mod_bterm->connect(lower_mod_net);
         debugPrint(logger_,
                    utl::ODB,
                    "dbReadVerilog",

@@ -3,6 +3,12 @@
 [INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 4940.000 4940.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 4940.000 4939.200 ) um
+[INFO IFP-0102] Core area:                     24399648.000 um^2
+[INFO IFP-0103] Total instances area:          20260174.500 um^2
+[INFO IFP-0104] Effective utilization:                0.830
+[INFO IFP-0105] Number of instances:                   2475
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -140,7 +146,7 @@ legalized HPWL         189763.7 u
 delta HPWL                    0 %
 
 Clock clk
-   1.04 source latency inst_12_11/clk ^
+   1.05 source latency inst_12_11/clk ^
   -1.19 target latency inst_13_11/clk ^
    0.00 CRPR
 --------------
@@ -182,7 +188,7 @@ Path Type: max
    0.04    1.06 ^ wire10/Z (BUF_X8)
    0.04    1.11 ^ max_length9/Z (BUF_X8)
    0.05    1.16 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.16 ^ inst_1_1/clk (array_tile)
+   0.00    1.17 ^ inst_1_1/clk (array_tile)
    0.21    1.38 ^ inst_1_1/e_out (array_tile)
    0.00    1.38 ^ inst_2_1/w_in (array_tile)
            1.38   data arrival time

@@ -5,6 +5,12 @@
 [INFO ODB-0132]     Created 2 special nets and 42 connections.
 [INFO ODB-0133]     Created 2 nets and 42 connections.
 [INFO IFP-0001] Added 62 rows of 463 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 88.000 88.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 87.970 86.800 ) um
+[INFO IFP-0102] Core area:                         7635.796 um^2
+[INFO IFP-0103] Total instances area:                94.962 um^2
+[INFO IFP-0104] Effective utilization:                0.012
+[INFO IFP-0105] Number of instances:                     21
 Placement Analysis
 ---------------------------------
 total displacement          7.5 u

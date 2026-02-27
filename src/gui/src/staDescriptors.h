@@ -90,10 +90,10 @@ class LibertyPortDescriptor : public Descriptor
   sta::dbSta* sta_;
 };
 
-class CornerDescriptor : public Descriptor
+class SceneDescriptor : public Descriptor
 {
  public:
-  CornerDescriptor(sta::dbSta* sta);
+  SceneDescriptor(sta::dbSta* sta);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;

@@ -7,6 +7,7 @@ option(BUILD_GUI "Build the GUI" ON)
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets Charts)
+find_package(OpenGL REQUIRED)
 
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -42,7 +43,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/tclCmdHighlighter.cpp
     src/displayControls.cpp
     src/gui.cpp
-    src/search.cpp 
+    src/search.cpp
     src/findDialog.cpp
     src/gotoDialog.cpp
     src/inspector.cpp
@@ -69,6 +70,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/colorGenerator.cpp
     src/bufferTreeDescriptor.cpp
     src/chartsWidget.cpp
+    src/chiplet3DWidget.cpp
     src/GUIProgress.cpp
     src/dropdownCheckboxes.cpp
     resources/resource.qrc
@@ -77,17 +79,19 @@ if (Qt5_FOUND AND BUILD_GUI)
   target_link_libraries(gui
     PUBLIC
       odb
-    PRIVATE
+      PRIVATE
+      absl::synchronization
       Qt5::Core
       Qt5::Widgets
       Qt5::Charts
+      OpenGL::GL
       utl_lib
       Boost::boost
       OpenSTA
   )
 
   # Disable LTO for gui. LTO causes a crash with Qt plugin loading
-  set_target_properties(gui PROPERTIES 
+  set_target_properties(gui PROPERTIES
     INTERPROCEDURAL_OPTIMIZATION OFF
     INTERPROCEDURAL_OPTIMIZATION_RELEASE OFF
   )
@@ -104,8 +108,8 @@ else()
   else()
     message(STATUS "GUI is not enabled")
   endif()
-  add_library(gui 
-    src/stub.cpp 
+  add_library(gui
+    src/stub.cpp
     src/stub_heatMap.cpp
   )
   target_link_libraries(gui

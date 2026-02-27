@@ -23,10 +23,17 @@
 #include "dbVector.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <fstream>
+#include <set>
+#include <variant>
+#include <vector>
+
 #include "dbChip.h"
 #include "dbCore.h"
 #include "odb/dbChipCallBackObj.h"
 #include "odb/dbObject.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbMarker>;
@@ -139,6 +146,12 @@ dbIStream& operator>>(dbIStream& stream, _dbMarker& obj)
         obj.shapes_.emplace_back(p);
         break;
       }
+      case _dbMarker::ShapeType::kCuboid: {
+        Cuboid c;
+        stream >> c;
+        obj.shapes_.emplace_back(c);
+        break;
+      }
     }
   }
   // User Code End >>
@@ -175,9 +188,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbMarker& obj)
     } else if (std::holds_alternative<Rect>(shape)) {
       stream << _dbMarker::ShapeType::kRect;
       stream << std::get<Rect>(shape);
-    } else {
+    } else if (std::holds_alternative<Polygon>(shape)) {
       stream << _dbMarker::ShapeType::kPolygon;
       stream << std::get<Polygon>(shape);
+    } else if (std::holds_alternative<Cuboid>(shape)) {
+      stream << _dbMarker::ShapeType::kCuboid;
+      stream << std::get<Cuboid>(shape);
     }
   }
   // User Code End <<
@@ -634,6 +650,19 @@ std::string dbMarker::getName() const
       case dbChipInstObj:
         sources += static_cast<dbChipInst*>(src)->getName();
         break;
+      case dbChipConnObj: {
+        const dbChipConn* conn = static_cast<dbChipConn*>(src);
+        sources += fmt::format(
+            "{}:{}", conn->getParentChip()->getName(), conn->getName());
+        break;
+      }
+      case dbChipRegionInstObj: {
+        const dbChipRegionInst* region = static_cast<dbChipRegionInst*>(src);
+        sources += fmt::format("{}.regions.{}",
+                               region->getChipInst()->getName(),
+                               region->getChipRegion()->getName());
+        break;
+      }
       default:
         obj->getLogger()->error(
             utl::ODB, 290, "Unsupported object type: {}", src->getTypeName());
@@ -686,6 +715,12 @@ void dbMarker::addShape(const Polygon& polygon)
 {
   _dbMarker* marker = (_dbMarker*) this;
   marker->shapes_.emplace_back(polygon);
+}
+
+void dbMarker::addShape(const Cuboid& cuboid)
+{
+  _dbMarker* marker = (_dbMarker*) this;
+  marker->shapes_.emplace_back(cuboid);
 }
 
 void dbMarker::setTechLayer(dbTechLayer* layer)
@@ -762,8 +797,10 @@ Rect dbMarker::getBBox() const
       }
     } else if (std::holds_alternative<Rect>(shape)) {
       bbox.merge(std::get<Rect>(shape));
-    } else {
+    } else if (std::holds_alternative<Polygon>(shape)) {
       bbox.merge(std::get<Polygon>(shape).getEnclosingRect());
+    } else if (std::holds_alternative<Cuboid>(shape)) {
+      bbox.merge(std::get<Cuboid>(shape).getEnclosingRect());
     }
   }
 

@@ -12,6 +12,7 @@
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "ScanCellMock.hh"
+#include "ScanChain.hh"
 #include "gtest/gtest.h"
 #include "utl/Logger.h"
 

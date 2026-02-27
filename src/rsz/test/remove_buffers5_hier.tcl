@@ -45,7 +45,6 @@ remove_buffers
 estimate_parasitics -placement
 {*}$report_checks_cmd
 
-sta::network_changed
 estimate_parasitics -placement
 {*}$report_checks_cmd
 

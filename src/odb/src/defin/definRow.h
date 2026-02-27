@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "definBase.h"
+#include "definTypes.h"
 #include "odb/dbTypes.h"
 
 namespace odb {

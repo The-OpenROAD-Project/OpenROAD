@@ -52,6 +52,7 @@ target_include_directories(rmp_lib
 
 target_link_libraries(rmp_lib
   PUBLIC
+    absl::synchronization
     odb
     dbSta_lib
     OpenSTA

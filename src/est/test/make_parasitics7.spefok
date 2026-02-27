@@ -30,11 +30,12 @@ out O
 4 in1:3 14.4855
 *RES
 1 in1:0 in1:0 1e-06
-2 in1:0 in1 1e-06
+2 in1 in1:0 1e-06
 3 in1:1 in1:3 0.6516
-4 in1:2 in1:3 0.6516
-5 in1:3 in1:0 1.31301
-6 in1:0 in1 1e-06
+4 r1:D in1:1 1e-06
+5 in1:2 in1:3 0.6516
+6 r2:D in1:2 1e-06
+7 in1:3 in1:0 1.31301
 *END
 
 *D_NET out 33.9494
@@ -46,9 +47,9 @@ out O
 2 out:1 16.9747
 *RES
 1 out:0 out:1 3.06578
-2 out:1 out:1 1e-06
-3 out:1 r3:Q 1e-06
-4 out:1 r3:Q 1e-06
+2 out out:0 1e-06
+3 r3:Q out:1 1e-06
+4 out:1 out:1 1e-06
 *END
 
 *D_NET r1q 14.6426
@@ -60,9 +61,9 @@ out O
 2 r1q:1 7.32131
 *RES
 1 r1q:0 r1q:1 1.32229
-2 r1q:1 r1q:1 1e-06
-3 r1q:1 r1:Q 1e-06
-4 r1q:1 r1:Q 1e-06
+2 u2:A1 r1q:0 1e-06
+3 r1:Q r1q:1 1e-06
+4 r1q:1 r1q:1 1e-06
 *END
 
 *D_NET r2q 14.22
@@ -74,9 +75,9 @@ out O
 2 r2q:1 7.10998
 *RES
 1 r2q:0 r2q:0 1e-06
-2 r2q:0 r2:Q 1e-06
+2 r2:Q r2q:0 1e-06
 3 r2q:1 r2q:0 1.28412
-4 r2q:0 r2:Q 1e-06
+4 u1:A r2q:1 1e-06
 *END
 
 *D_NET u1z 43.297
@@ -88,9 +89,9 @@ out O
 2 u1z:1 21.6485
 *RES
 1 u1z:0 u1z:1 3.90991
-2 u1z:1 u1z:1 1e-06
-3 u1z:1 u1:Z 1e-06
-4 u1z:1 u1:Z 1e-06
+2 u2:A2 u1z:0 1e-06
+3 u1:Z u1z:1 1e-06
+4 u1z:1 u1z:1 1e-06
 *END
 
 *D_NET u2z 21.6713
@@ -102,8 +103,8 @@ out O
 2 u2z:1 10.8357
 *RES
 1 u2z:0 u2z:0 1e-06
-2 u2z:0 u2:ZN 1e-06
+2 u2:ZN u2z:0 1e-06
 3 u2z:1 u2z:0 1.95702
-4 u2z:0 u2:ZN 1e-06
+4 r3:D u2z:1 1e-06
 *END
 

@@ -15,6 +15,9 @@
 #include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanPartition>;
 

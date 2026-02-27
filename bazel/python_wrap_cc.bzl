@@ -19,6 +19,14 @@ PythonSwigInfo = provider(
 
 PYTHON_STABLE_API_DEFINE = "Py_LIMITED_API=0x030A0000"
 
+PYTHON_EXTENSION_LINKOPTS = select({
+    "@platforms//os:macos": [
+        "-undefined",
+        "dynamic_lookup",
+    ],
+    "//conditions:default": [],
+})
+
 def _get_transitive_srcs(srcs, deps):
     return depset(
         srcs,

@@ -34,6 +34,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
@@ -58,7 +59,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

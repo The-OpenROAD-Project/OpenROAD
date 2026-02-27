@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 

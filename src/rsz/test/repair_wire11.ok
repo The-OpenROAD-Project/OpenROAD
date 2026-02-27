@@ -7,18 +7,24 @@
 [INFO ODB-0133]     Created 2 nets and 3 connections.
 [WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
 [INFO IFP-0001] Added 270 rows of 1999 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 1200.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: ( 10.070 11.200 ) ( 389.880 389.200 ) um
+[INFO IFP-0102] Core area:                       143568.180 um^2
+[INFO IFP-0103] Total instances area:              2500.798 um^2
+[INFO IFP-0104] Effective utilization:                0.017
+[INFO IFP-0105] Number of instances:                      2
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-pad1/DATA                               0.20    0.35   -0.15 (VIOLATED)
+pad1/DATA                               0.20    0.88   -0.68 (VIOLATED)
 u1/Z                                    0.20    0.23   -0.03 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-u1/Z                                   60.65  149.16  -88.51 (VIOLATED)
+u1/Z                                   60.65  149.17  -88.52 (VIOLATED)
 
 [WARNING RSZ-0065] max wire length less than 693u increases wire delays.
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining

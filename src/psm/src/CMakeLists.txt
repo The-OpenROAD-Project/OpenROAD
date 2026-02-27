@@ -8,6 +8,7 @@ find_package(Eigen3 REQUIRED)
 swig_lib(NAME      psm
          NAMESPACE psm
          I_FILE    pdnsim.i
+         SWIG_INCLUDES ${OPENSTA_HOME}
          SCRIPTS   pdnsim.tcl
 )
 
@@ -28,6 +29,10 @@ target_sources(psm
 target_include_directories( psm
   PUBLIC
     ../include
+  PRIVATE
+    # A side-effect of including OpenSTA swig files
+    ${OPENSTA_HOME}
+    ${OPENSTA_HOME}/include/sta
 )
 
 target_link_libraries(psm

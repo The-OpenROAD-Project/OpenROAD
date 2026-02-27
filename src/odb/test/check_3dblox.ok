@@ -5,8 +5,15 @@
 [INFO ODB-0128] Design: fake_macros
 [INFO ODB-0131]     Created 10 components and 32 component-terminals.
 [INFO ODB-0133]     Created 12 nets and 24 connections.
-[WARNING ODB-0156] Found 1 overlapping chips
 [WARNING ODB-0151] Found 1 floating chip sets
+[WARNING ODB-0207] Invalid connection soc_to_soc: soc_inst_duplicate/front_reg (faces BOTTOM) to soc_inst/front_reg (faces TOP)
+[WARNING ODB-0273] Found 1 invalid connections
 [WARNING ODB-0151] Found 2 floating chip sets
-Summary 7 / 7 (100% pass)
+[WARNING ODB-0207] Invalid connection soc_to_soc: soc_inst_duplicate/front_reg (faces BOTTOM) to soc_inst/front_reg (faces TOP)
+[WARNING ODB-0273] Found 1 invalid connections
+[WARNING ODB-0151] Found 2 floating chip sets
+[WARNING ODB-0156] Found 1 overlapping chips
+[WARNING ODB-0207] Invalid connection soc_to_soc: soc_inst_duplicate/front_reg (faces BOTTOM) to soc_inst/front_reg (faces TOP)
+[WARNING ODB-0273] Found 1 invalid connections
+Summary 6 / 6 (100% pass)
 pass

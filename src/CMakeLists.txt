@@ -66,7 +66,7 @@ if(USE_SYSTEM_OPENSTA)
     IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
   )
   if(CUDD_LIB)
-    set_target_properties(OpenSTA PROPERTIES 
+    set_target_properties(OpenSTA PROPERTIES
       INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
     )
   endif()
@@ -146,6 +146,8 @@ include(UseSWIG)
 
 find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
+
+find_package(absl REQUIRED)
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)
@@ -355,6 +357,7 @@ target_link_libraries(openroad
   mpl
   par
   est
+  absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}

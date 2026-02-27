@@ -23,10 +23,11 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
-#include "sta/Corner.hh"
+#include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
@@ -183,17 +184,17 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
     props.push_back({"Default fanout load", load});
   }
 
-  SelectionSet corners;
-  for (auto* corner : *sta_->corners()) {
+  SelectionSet scenes;
+  for (auto* scene : sta_->scenes()) {
     for (const sta::MinMax* min_max :
          {sta::MinMax::min(), sta::MinMax::max()}) {
-      const auto& libs = corner->libertyLibraries(min_max);
+      const auto& libs = scene->libertyLibraries(min_max);
       if (std::ranges::find(libs, library) != libs.end()) {
-        corners.insert(gui->makeSelected(corner));
+        scenes.insert(gui->makeSelected(scene));
       }
     }
   }
-  props.push_back({"Corners", corners});
+  props.push_back({"Scenes", scenes});
 
   SelectionSet cells;
   sta::LibertyCellIterator cell_iter(library);
@@ -545,41 +546,41 @@ void LibertyPortDescriptor::visitAllObjects(
 
 //////////////////////////////////////////////////
 
-CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
+SceneDescriptor::SceneDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string CornerDescriptor::getName(const std::any& object) const
+std::string SceneDescriptor::getName(const std::any& object) const
 {
-  return std::any_cast<sta::Corner*>(object)->name();
+  return std::any_cast<sta::Scene*>(object)->name();
 }
 
-std::string CornerDescriptor::getTypeName() const
+std::string SceneDescriptor::getTypeName() const
 {
-  return "Timing corner";
+  return "Timing scene";
 }
 
-bool CornerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+bool SceneDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   return false;
 }
 
-void CornerDescriptor::highlight(const std::any& object, Painter& painter) const
+void SceneDescriptor::highlight(const std::any& object, Painter& painter) const
 {
 }
 
-Descriptor::Properties CornerDescriptor::getProperties(
+Descriptor::Properties SceneDescriptor::getProperties(
     const std::any& object) const
 {
-  auto corner = std::any_cast<sta::Corner*>(object);
+  auto scene = std::any_cast<sta::Scene*>(object);
 
   auto gui = Gui::get();
 
-  Properties props;
+  Properties props({{.name = "Mode", .value = scene->mode()->name()}});
 
   SelectionSet libs;
   for (auto* min_max : {sta::MinMax::min(), sta::MinMax::max()}) {
-    for (auto* lib : corner->libertyLibraries(min_max)) {
+    for (auto* lib : scene->libertyLibraries(min_max)) {
       libs.insert(gui->makeSelected(lib));
     }
   }
@@ -588,26 +589,26 @@ Descriptor::Properties CornerDescriptor::getProperties(
   return props;
 }
 
-Selected CornerDescriptor::makeSelected(const std::any& object) const
+Selected SceneDescriptor::makeSelected(const std::any& object) const
 {
-  if (auto corner = std::any_cast<sta::Corner*>(&object)) {
-    return Selected(*corner, this);
+  if (auto scene = std::any_cast<sta::Scene*>(&object)) {
+    return Selected(*scene, this);
   }
   return Selected();
 }
 
-bool CornerDescriptor::lessThan(const std::any& l, const std::any& r) const
+bool SceneDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
-  auto l_corner = std::any_cast<sta::Corner*>(l);
-  auto r_corner = std::any_cast<sta::Corner*>(r);
-  return strcmp(l_corner->name(), r_corner->name()) < 0;
+  auto l_scene = std::any_cast<sta::Scene*>(l);
+  auto r_scene = std::any_cast<sta::Scene*>(r);
+  return l_scene->name() < r_scene->name();
 }
 
-void CornerDescriptor::visitAllObjects(
+void SceneDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
-  for (auto* corner : *sta_->corners()) {
-    func({corner, this});
+  for (auto* scene : sta_->scenes()) {
+    func({scene, this});
   }
 }
 
@@ -646,7 +647,6 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 {
   auto inst = std::any_cast<sta::Instance*>(object);
   auto* network = sta_->getDbNetwork();
-  auto* sdc = sta_->sdc();
 
   auto gui = Gui::get();
 
@@ -666,7 +666,12 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
     return abs(value) >= 0.1 * sta::INF;
   };
 
-  bool has_sdc_constraint = sdc->isConstrained(inst);
+  bool has_sdc_constraint = false;
+
+  for (sta::Mode* mode : sta_->modes()) {
+    has_sdc_constraint |= mode->sdc()->isConstrained(inst);
+  }
+
   PropertyList port_power_activity;
   PropertyList port_arrival_hold;
   PropertyList port_arrival_setup;
@@ -676,13 +681,18 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   while (port_itr->hasNext()) {
     sta::Port* port = port_itr->next();
     sta::Pin* pin = network->findPin(inst, port);
-    has_sdc_constraint |= sdc->isConstrained(pin);
 
-    for (auto* clock : sta_->clocks(pin)) {
-      clocks.insert(gui->makeSelected(clock));
+    for (sta::Mode* mode : sta_->modes()) {
+      has_sdc_constraint |= mode->sdc()->isConstrained(inst);
     }
 
-    auto power = sta_->activity(pin);
+    for (sta::Mode* mode : sta_->modes()) {
+      for (auto* clock : sta_->clocks(pin, mode)) {
+        clocks.insert(gui->makeSelected(clock));
+      }
+    }
+
+    auto power = sta_->activity(pin, sta_->cmdScene());
 
     bool is_lib_port = false;
     std::any port_id;
@@ -708,7 +718,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
-          = sta_->pinArrival(pin, nullptr, sta::MinMax::max());
+          = sta_->arrival(pin, nullptr, sta::MinMax::max());
       const std::string setup_text
           = is_inf(setup_arrival)
                 ? "None"
@@ -717,8 +727,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
                       timeunit->asString(setup_arrival, kFloatPrecision),
                       timeunit->scaleAbbrevSuffix());
       port_arrival_setup.emplace_back(port_id, setup_text);
-      const auto hold_arrival
-          = sta_->pinArrival(pin, nullptr, sta::MinMax::min());
+      const auto hold_arrival = sta_->arrival(
+          pin, sta::RiseFallBoth::riseFall(), sta::MinMax::min());
       const std::string hold_text
           = is_inf(hold_arrival)
                 ? "None"
@@ -733,10 +743,10 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   props.push_back({"Port power activity", port_power_activity});
 
   PropertyList power;
-  for (auto* corner : *sta_->corners()) {
-    const auto power_info = sta_->power(inst, corner);
+  for (auto* scene : sta_->scenes()) {
+    const auto power_info = sta_->power(inst, scene);
     power.emplace_back(
-        gui->makeSelected(corner),
+        gui->makeSelected(scene),
         Descriptor::convertUnits(power_info.total(), false, kFloatPrecision)
             + "W");
   }
@@ -833,21 +843,11 @@ void ClockDescriptor::highlight(const std::any& object, Painter& painter) const
 
 std::set<const sta::Pin*> ClockDescriptor::getClockPins(sta::Clock* clock) const
 {
-  std::set<const sta::Pin*> pins;
-  for (auto* pin : sta_->startpointPins()) {
-    const auto pin_clocks = sta_->clocks(pin);
-    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
-      pins.insert(pin);
-    }
+  auto pins = sta_->cmdMode()->clkNetwork()->pins(clock);
+  if (!pins) {
+    return {};
   }
-  for (auto* pin : sta_->endpointPins()) {
-    const auto pin_clocks = sta_->clocks(pin);
-    if (std::ranges::find(pin_clocks, clock) != pin_clocks.end()) {
-      pins.insert(pin);
-    }
-  }
-
-  return pins;
+  return {pins->begin(), pins->end()};
 }
 
 Descriptor::Properties ClockDescriptor::getProperties(

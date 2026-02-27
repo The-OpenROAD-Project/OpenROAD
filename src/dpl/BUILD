@@ -52,6 +52,8 @@ cc_library(
         "src/optimization/detailed_generator.h",
         "src/optimization/detailed_global.cxx",
         "src/optimization/detailed_global.h",
+        "src/optimization/detailed_global_legacy.cxx",
+        "src/optimization/detailed_global_legacy.h",
         "src/optimization/detailed_manager.cxx",
         "src/optimization/detailed_manager.h",
         "src/optimization/detailed_mis.cxx",
@@ -93,8 +95,8 @@ cc_library(
         "@boost.random",
         "@boost.tokenizer",
         "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
-        "@tk_tcl//:tcl",
+        "@coin-or-lemon//:lemon",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -131,7 +133,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@boost.utility",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

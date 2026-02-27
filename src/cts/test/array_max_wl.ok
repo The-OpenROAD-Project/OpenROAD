@@ -3,6 +3,12 @@
 [INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 3528 rows (91728000 sites) were cut with 225 shapes for a total of 52263 rows (14219856 sites).
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 4940.000 4940.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 4940.000 4939.200 ) um
+[INFO IFP-0102] Core area:                     24399648.000 um^2
+[INFO IFP-0103] Total instances area:          20260174.500 um^2
+[INFO IFP-0104] Effective utilization:                0.830
+[INFO IFP-0105] Number of instances:                   2475
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -576,11 +582,11 @@ legalized HPWL         201452.1 u
 delta HPWL                    0 %
 
 Clock clk
-   1.47 source latency inst_7_10/clk ^
-  -1.30 target latency inst_8_10/clk ^
+   1.47 source latency inst_7_8/clk ^
+  -1.35 target latency inst_8_8/clk ^
    0.00 CRPR
 --------------
-   0.17 setup skew
+   0.12 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -633,9 +639,9 @@ Path Type: max
    0.04    1.35 ^ max_length8/Z (BUF_X8)
    0.05    1.41 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
    0.00    1.41 ^ inst_1_1/clk (array_tile)
-   0.21    1.62 ^ inst_1_1/e_out (array_tile)
-   0.00    1.62 ^ inst_2_1/w_in (array_tile)
-           1.62   data arrival time
+   0.21    1.63 ^ inst_1_1/e_out (array_tile)
+   0.00    1.63 ^ inst_2_1/w_in (array_tile)
+           1.63   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -685,7 +691,7 @@ Path Type: max
            6.31   data required time
 ---------------------------------------------------------
            6.31   data required time
-          -1.62   data arrival time
+          -1.63   data arrival time
 ---------------------------------------------------------
            4.69   slack (MET)
 
@@ -786,12 +792,12 @@ Path Type: max
    0.04    6.27 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
    0.04    6.30 ^ max_length11/Z (BUF_X8)
    0.05    6.35 ^ clkbuf_leaf_118_clk/Z (BUF_X4)
-   0.00    6.35 ^ inst_3_1/clk (array_tile)
-   0.00    6.35   clock reconvergence pessimism
-  -0.05    6.30   library setup time
-           6.30   data required time
+   0.00    6.36 ^ inst_3_1/clk (array_tile)
+   0.00    6.36   clock reconvergence pessimism
+  -0.05    6.31   library setup time
+           6.31   data required time
 ---------------------------------------------------------
-           6.30   data required time
+           6.31   data required time
           -1.58   data arrival time
 ---------------------------------------------------------
            4.73   slack (MET)
