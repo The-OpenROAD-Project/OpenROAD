@@ -1066,6 +1066,14 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
                                               const sta::Scene* corner)
 {
   odb::dbNet* db_net = db_network_->findFlatDbNet(drvr_pin);
+  if (db_net == nullptr) {
+    logger_->error(RSZ,
+                   106,
+                   "Net for driver pin {} not found.",
+                   db_network_->pathName(drvr_pin));
+    return nullptr;
+  }
+
   if (db_net->getTermCount() == 1) {
     logger_->warn(
         RSZ,
@@ -1075,7 +1083,6 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
     return nullptr;
   }
   const sta::Net* net = db_network_->dbToSta(db_net);
-  assert(db_net != nullptr);
 
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(db_net);
