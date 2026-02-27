@@ -632,16 +632,14 @@ void HistogramView::populateBins()
     return;
   }
 
+  const float min_slack = std::min(0.0f, histogram_->getMinValue());
+  const float max_slack = std::max(0.0f, histogram_->getMaxValue());
+
   // determine interval
-  const float bin_interval
-      = computeBucketInterval(std::min(0.0f, histogram_->getMinValue()),
-                              std::max(0.0f, histogram_->getMaxValue()));
-  const float bin_min
-      = std::floor(std::min(0.0f, histogram_->getMinValue()) / bin_interval)
-        * bin_interval;
-  const float bin_max
-      = std::ceil(std::max(0.0f, histogram_->getMaxValue()) / bin_interval)
-        * bin_interval;
+  const float bin_interval = computeBucketInterval(min_slack, max_slack);
+  const float bin_min = std::floor(min_slack / bin_interval) * bin_interval;
+  const float bin_max = std::ceil(max_slack / bin_interval) * bin_interval;
+
   const int bins = (bin_max - bin_min) / bin_interval;
   histogram_->generateBins(bins, bin_min, bin_interval);
 }
@@ -731,22 +729,19 @@ float HistogramView::computeBucketInterval(float min_slack, float max_slack)
 float HistogramView::computeSnapBucketInterval(float exact_interval)
 {
   int exp = std::floor(std::log10(exact_interval));
+  precision_count_ = std::max(-exp, 0);
+
   double mag = std::pow(10.0, exp);
   double residual = exact_interval / mag;
-  precision_count_ = std::max(-exp, 0);
 
   double nice_coeff;
   if (residual < 1.5) {
-    // [1.0 ~ 1.5)
     nice_coeff = 1.0;
   } else if (residual < 3.0) {
-    // [1.5, 3.0)
     nice_coeff = 2.0;
   } else if (residual < 7.0) {
-    // [3.0, 7.0)
     nice_coeff = 5.0;
   } else {
-    // [7.0, 10)
     nice_coeff = 10.0;
   }
 
