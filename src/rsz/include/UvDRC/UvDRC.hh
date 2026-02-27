@@ -98,7 +98,7 @@ class RCTreeNode
       const sta::Corner* corner,
       double unit_r,
       double unit_c,
-      int max_cap,
+      float max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidates,
@@ -177,7 +177,7 @@ class LoadNode : public RCTreeNode
       const sta::Corner* corner,
       double unit_r,
       double unit_c,
-      int max_cap,
+      float max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidates,
@@ -225,7 +225,7 @@ class WireNode : public RCTreeNode
       const sta::Corner* corner,
       double unit_r,
       double unit_c,
-      int max_cap,
+      float max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidates,
@@ -317,7 +317,7 @@ class JuncNode : public RCTreeNode
       const sta::Corner* corner,
       double unit_r,
       double unit_c,
-      int max_cap,
+      float max_cap,
       rsz::Resizer* resizer,
       sta::dbSta* sta,
       BufferCandidates& buffer_candidates,
@@ -340,7 +340,7 @@ class UvDRCSlewBuffer
   ~UvDRCSlewBuffer() = default;
   std::size_t Run(const sta::Pin* drvr_pin,
                   const sta::Corner* corner,
-                  int max_cap);
+                  float max_cap);
 
   static constexpr double K_OPENROAD_SLEW_FACTOR = 1.39;  // From OpenROAD
  private:

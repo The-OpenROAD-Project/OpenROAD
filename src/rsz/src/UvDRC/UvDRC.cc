@@ -146,7 +146,7 @@ std::vector<BufferSolution> LoadNode::CalcBufferSolutions(
     const sta::Corner* corner,
     double unit_r,
     double unit_c,
-    int max_cap,
+    float max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
     BufferCandidates& buffer_candidates,
@@ -179,7 +179,7 @@ std::vector<BufferSolution> WireNode::CalcBufferSolutions(
     const sta::Corner* corner,
     double unit_r,
     double unit_c,
-    int max_cap,
+    float max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
     BufferCandidates& buffer_candidates,
@@ -253,7 +253,7 @@ std::vector<BufferSolution> JuncNode::CalcBufferSolutions(
     const sta::Corner* corner,
     double unit_r,
     double unit_c,
-    int max_cap,
+    float max_cap,
     rsz::Resizer* resizer,
     sta::dbSta* sta,
     BufferCandidates& buffer_candidates,
@@ -336,10 +336,8 @@ void UvDRCSlewBuffer::InitBufferCandidates()
     assert(in_slew_limit != sta::INF);
 
     float load_cap_limit;
-    out->libertyLibrary()->defaultMaxCapacitance(load_cap_limit, exists);
-    if (!exists) {
-      load_cap_limit = sta::INF;
-    }
+    out->capacitanceLimit(sta::MinMax::max(), load_cap_limit, exists);
+    assert(exists);
 
     BufferCandidate candidate{
         b, input_cap, drive_resistance, in_slew_limit, load_cap_limit};
@@ -748,7 +746,7 @@ int UvDRCSlewBuffer::MaxLengthForCap(sta::LibertyCell* buffer_cell,
 
 std::size_t UvDRCSlewBuffer::Run(const sta::Pin* drvr_pin,
                                  const sta::Corner* corner,
-                                 int max_cap)
+                                 float max_cap)
 {
   InitBufferCandidates();
   RCTreeNodePtr root = nullptr;

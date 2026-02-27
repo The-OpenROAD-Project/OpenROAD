@@ -113,7 +113,7 @@ set_dont_use $dont_use
 
 estimate_parasitics -placement
 
-repair_design -slew_margin $slew_margin -cap_margin $cap_margin
+repair_design -slew_margin $slew_margin -cap_margin $cap_margin -uvdrc
 
 repair_tie_fanout -separation $tie_separation $tielo_port
 repair_tie_fanout -separation $tie_separation $tiehi_port
@@ -132,6 +132,8 @@ utl::metric "RSZ::repair_design_buffer_count" [rsz::repair_design_buffer_count]
 utl::metric "RSZ::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
 utl::metric "RSZ::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]
 utl::metric "RSZ::max_capacitance_slack" [expr [sta::max_capacitance_check_slack_limit] * 100]
+
+exit
 
 ################################################################
 # Clock Tree Synthesis
