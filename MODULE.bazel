@@ -92,8 +92,8 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
-    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+    commit = "c42fdd2cb15d284f8ec78f13485a1181d722ea85",
+    remote = "https://github.com/feuerste/qt_bazel_prebuilts",
 )
 
 # Updated dependencies of qt_bazel_prebuilts. Once the updated versions
