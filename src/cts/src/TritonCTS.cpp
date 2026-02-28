@@ -46,6 +46,7 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/MinMax.hh"
 #include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
