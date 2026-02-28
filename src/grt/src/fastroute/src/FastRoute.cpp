@@ -1054,10 +1054,9 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
       std::vector<GPoint3D> filled_grids;
 
       // Handle vias for node1_alias (start node)
-      if (treenodes[node1_alias].hID == edgeID
+      if (node1_alias < num_terminals || treenodes[node1_alias].hID == edgeID
           || (edgeID == treenodes[node1_alias].lID
-              && treenodes[node1_alias].hID == BIG_INT
-              && node1_alias < num_terminals)) {
+              && treenodes[node1_alias].hID == BIG_INT)) {
         int16_t bottom_layer = treenodes[node1_alias].botL;
         int16_t top_layer = treenodes[node1_alias].topL;
         int16_t edge_init_layer = grids[0].layer;
@@ -1087,10 +1086,9 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
       }
 
       // Handle vias for node2_alias (end node)
-      if (treenodes[node2_alias].hID == edgeID
+      if (node2_alias < num_terminals || treenodes[node2_alias].hID == edgeID
           || (edgeID == treenodes[node2_alias].lID
-              && treenodes[node2_alias].hID == BIG_INT
-              && node2_alias < num_terminals)) {
+              && treenodes[node2_alias].hID == BIG_INT)) {
         int16_t bottom_layer = treenodes[node2_alias].botL;
         int16_t top_layer = treenodes[node2_alias].topL;
         if (node2_alias < num_terminals) {

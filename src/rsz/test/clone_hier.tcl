@@ -1,16 +1,9 @@
 # repair_design max_fanout
 source "helpers.tcl"
-source "hi_fanout.tcl"
-
-set def_filename [make_result_file "repair_fanout7.def"]
-# Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
-
-write_clone_test_def $def_filename NAND2_X4 150
 
 read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
-read_verilog clone_hier.v
-link_design hi_fanout -hier
+read_def clone_hier.def
 
 create_clock -period 0.1 clk1
 set_driving_cell -lib_cell BUF_X1 [all_inputs]

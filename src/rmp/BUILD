@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -18,8 +18,14 @@ cc_library(
         "src/annealing_strategy.h",
         "src/delay_optimization_strategy.cpp",
         "src/delay_optimization_strategy.h",
+        "src/genetic_strategy.cpp",
+        "src/genetic_strategy.h",
+        "src/gia.cpp",
+        "src/gia.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
+        "src/slack_tuning_strategy.cpp",
+        "src/slack_tuning_strategy.h",
         "src/utils.cpp",
         "src/utils.h",
         "src/zero_slack_strategy.cpp",
@@ -46,6 +52,8 @@ cc_library(
         "//src/utl",
         "@abc",
         "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
         "@boost.bind",
         "@boost.config",

@@ -27,8 +27,16 @@ report_wns
 report_tns
 
 puts "-- After --\n"
-
-resynth_annealing -corner fast -initial_ops 5 -iters 30 -seed 189
+resynth_genetic \
+  -corner slow \
+  -initial_ops 5 \
+  -iters 15 \
+  -population_size 50 \
+  -mutation_probability 0.25 \
+  -crossover_probability 0.25 \
+  -tournament_size 9 \
+  -tournament_probability 0.8 \
+  -seed 20
 report_timing_histogram
 report_cell_usage
 report_checks

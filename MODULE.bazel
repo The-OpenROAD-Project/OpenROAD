@@ -92,7 +92,7 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "e1d5b0b4725d045a03d18e02c54bdebe73d07384",
+    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
