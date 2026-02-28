@@ -27,6 +27,9 @@ cc_library(
 cc_library(
     name = "groute",
     hdrs = ["include/grt/GRoute.h"],
+    deps = [
+        "//src/odb",
+    ],
 )
 
 cc_library(
