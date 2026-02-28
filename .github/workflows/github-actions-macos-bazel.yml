@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master # Updated to strictly track master
+      - macos-bazel
   pull_request:
   workflow_dispatch:
 
