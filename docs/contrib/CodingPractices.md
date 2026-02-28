@@ -545,3 +545,52 @@ list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp)
 list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.h)
 list(REMOVE_ITEM SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/Parameters.cpp)
 ```
+
+## Bazel
+
+### Practice #38
+
+Keep Bazel `deps` lists accurate: every library whose headers a target
+directly `#include`s must appear as a direct dependency of that target.
+Relying on transitive deps is fragile — if an intermediate target
+ever removes the dep, your target silently breaks.
+
+This is the build-system counterpart to Practice #23 (IWYU for C++
+includes) and is called **DWYU** (Depend on What You Use).
+
+Use [**`bant`**](https://github.com/hzeller/bant) — a tool by Henner
+Zeller — to find and fix these issues automatically.
+The project ships a helper script that builds or locates `bant`:
+
+``` shell
+BANT=$(bash etc/get-bant-path.sh)
+```
+
+Run DWYU across the whole tree and pipe the output to
+[`buildozer`](https://github.com/bazelbuild/buildtools/blob/main/buildozer/README.md)
+to apply the fixes:
+
+``` shell
+# Check everything and print suggested buildozer commands
+$BANT dwyu //...
+
+# Apply all suggested edits in one shot
+. <($BANT dwyu //...)
+
+# Check a single package
+$BANT dwyu //src/cts/...
+```
+
+The output is a list of `buildozer` edit commands, for example:
+
+``` text
+buildozer 'add deps //src/dbSta:dbNetwork' //src/cgt
+buildozer 'remove deps @spdlog' //src/dbSta:IpChecker
+```
+
+Use the `-v` flag to see which specific `#include` lines triggered each
+suggestion:
+
+``` shell
+$BANT dwyu -v //src/gui/...
+```
