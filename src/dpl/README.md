@@ -1,12 +1,48 @@
 # Detailed Placement
 
 The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or 
-Open-Source Detailed Placement Engine. Its key features are: 
+Open-Source Detailed Placement Engine. Its key features are:
 
--   Fence region.
--   Fragmented ROWs.
+-   Fence region,
+-   Fragmented ROWs,
+-   Two-pass legalization (optional)
 
-## Commands
+Implements a two-pass hybrid legalizer targeting OpenROAD's `dpl` (detailed
+placement) module:
+
+```
+Global Placement result
+        │
+        ▼
+┌───────────────────┐
+│   Abacus Pass     │  Fast DP sweep, row-by-row.
+│                   │  Near-optimal for uncongested cells.
+│  Handles:         │  Mixed-cell-height via row assignment.
+│  - 1x/2x/3x/4x    │  Power-rail alignment enforced.
+│  - Fence regions  │  Fence violations → skipped (→ negotiation).
+└────────┬──────────┘
+         │ illegal cells (overlap / fence violated)
+         ▼
+┌───────────────────┐
+│ Negotiation Pass  │  Iterative rip-up & replace (from NBLG paper).
+│                   │  Illegal cells + spatial neighbors compete for
+│  NBLG components: │  grid resources.  History cost penalises
+│  - Adaptive pf    │  persistent congestion.  Isolation point skips
+│  - Isolation pt   │  already-legal cells in phase 2.
+│  - 5-component    │
+│    negotiation    │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ Post-optimisation │  Greedy displacement improvement (5 passes).
+│                   │  Cell swap via bipartite matching within groups.
+└────────┬──────────┘
+         │
+         ▼
+   Legal placement written back to OpenDB
+```
+# Commands
 
 ```{note}
 - Parameters in square brackets `[-param param]` are optional.
@@ -23,6 +59,7 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
+    [-hybrid_legalization]
 ```
 
 #### Options
@@ -33,6 +70,7 @@ detailed_placement
 | `-disallow_one_site_gaps` | Option is deprecated. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
+| `-hybrid_legalization` | Enable two-pass flow consistingh of fast legalization based on Abacus pass followed by negotiation-based pass if needed.  This option is disabled by default. |
 
 ### Set Placement Padding
 
@@ -172,6 +210,33 @@ Simply run the following script:
 
 ## Limitations
 
+1. **Abacus cluster chain**: The current Abacus implementation uses a
+   simplified cluster structure. A production version should maintain an
+   explicit doubly-linked list of cells within each cluster, as in the
+   original Spindler et al. paper.
+
+2. **Multithreading**: The negotiation pass is single-threaded here.
+   Extend with the inter-region parallelism from NBLG (Algorithm 2, dynamic
+   region adjustment) using OpenMP or std::thread.
+
+3. **Fence region R-tree**: Replace linear scan in `FenceRegion::nearestRect()`
+   with a spatial index (Boost.Geometry rtree or OpenROAD's existing RTree)
+   for large designs with many fence sub-rectangles.
+
+4. **Technology constraints** (pin short/access, edge spacing): Add penalty
+   terms to `targetCost()` as described in NBLG Section IV-D-2.
+
+5. **pf integration**: The `adaptivePf()` function is computed but not yet
+   wired into `negotiationCost()`. Wire it as:
+   ```cpp
+   double p = adaptivePf(iter) * (usg / cap);
+   ```
+   where `iter` is passed into `negotiationCost()`.
+
+6. **Row rail inference**: Currently uses row-index parity as a proxy for
+   VDD/VSS. Replace with actual LEF pg_pin parsing once available in the
+   build context.
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+opendp+in%3Atitle)
@@ -185,6 +250,12 @@ about this tool.
 
 ## References
 1. Do, S., Woo, M., & Kang, S. (2019, May). Fence-region-aware mixed-height standard cell legalization. In Proceedings of the 2019 on Great Lakes Symposium on VLSI (pp. 259-262). [(.pdf)](https://dl.acm.org/doi/10.1145/3299874.3318012)
+2. P. Spindler et al., "Abacus: Fast legalization of standard cell circuits
+  with minimal movement," ISPD 2008.
+3 J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern
+  Design," IEEE TCAD, vol. 41, no. 11, 2022.
+4 L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based
+  performance-driven router for FPGAs," 1995.
 
 ## License
 

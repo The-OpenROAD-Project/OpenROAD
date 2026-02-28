@@ -107,7 +107,9 @@ class Opendp
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
-                         bool incremental = false);
+                         bool incremental = false,
+                         bool use_hybrid_legalizer = false);
+  int hybridLegalize();
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -394,6 +396,7 @@ class Opendp
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
   bool incremental_ = false;
+  bool use_hybrid_legalizer_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

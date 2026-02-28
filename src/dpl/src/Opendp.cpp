@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "HybridLegalizer.h"
 #include "PlacementDRC.h"
 #include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
@@ -115,7 +116,8 @@ Journal* Opendp::getJournal() const
 void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
-                               bool incremental)
+                               bool incremental,
+                               const bool use_hybrid_legalizer)
 {
   incremental_ = incremental;
   importDb();
@@ -154,21 +156,65 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   // Save displacement stats before updating instance DB locations.
   findDisplacementStats();
   updateDbInstLocations();
+
   if (!placement_failures_.empty()) {
-    logger_->info(DPL,
-                  34,
-                  "Detailed placement failed on the following {} instances:",
-                  placement_failures_.size());
-    for (auto cell : placement_failures_) {
-      logger_->info(DPL, 35, " {}", cell->name());
+    if (use_hybrid_legalizer) {
+      // Standard engine left some cells illegal.  Give the hybrid
+      // Abacus+Negotiation legalizer a chance to recover before treating
+      // the run as a hard failure.  HybridLegalizer re-reads current OpenDB
+      // locations so it composes correctly with the preceding standard pass.
+      logger_->info(DPL,
+                    1100,
+                    "Standard placer failed on {} instance(s); "
+                    "retrying with HybridLegalizer.",
+                    placement_failures_.size());
+
+      HybridLegalizer hybrid(db_, logger_);
+      hybrid.legalize();
+
+      // Warn if negotiation did not fully converge (non-convergence is not
+      // reported inside HybridLegalizerNeg.cpp to keep that file free of
+      // registered DPL message IDs; we surface it here instead).
+      if (hybrid.numViolations() > 0) {
+        logger_->warn(DPL,
+                      1101,
+                      "HybridLegalizer negotiation did not fully converge; "
+                      "{} violation(s) remain.",
+                      hybrid.numViolations());
+      }
+
+      // Use the hybrid legalizer's own violation count as the ground truth.
+      // If it resolved everything, suppress the failure list entirely.
+      // If violations remain the original placement_failures_ list is still
+      // the best description of what is wrong, so keep it unchanged.
+      if (hybrid.numViolations() == 0) {
+        placement_failures_.clear();
+      }
     }
 
-    saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
-    if (!report_file_name.empty()) {
-      writeJsonReport(report_file_name);
+    if (!placement_failures_.empty()) {
+      logger_->info(DPL,
+                    34,
+                    "Detailed placement failed on the following {} instances:",
+                    placement_failures_.size());
+      for (auto cell : placement_failures_) {
+        logger_->info(DPL, 35, " {}", cell->name());
+      }
+
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
+      logger_->error(DPL, 36, "Detailed placement failed.");
     }
-    logger_->error(DPL, 36, "Detailed placement failed.");
   }
+}
+
+int Opendp::hybridLegalize()
+{
+  HybridLegalizer hybrid(db_, logger_);
+  hybrid.legalize();
+  return hybrid.numViolations();
 }
 
 void Opendp::updateDbInstLocations()

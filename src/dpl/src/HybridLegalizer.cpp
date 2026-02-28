@@ -1,126 +1,170 @@
-//////////////////////////////////////////////////////////////////////////////
-// HybridLegalizer.cpp
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
-// Implementation of the hybrid Abacus + Negotiation legalizer.
+// Copyright (c) 2024, The OpenROAD Authors
+// All rights reserved.
 //
-// Part 1: Initialisation, grid construction, Abacus pass
-//////////////////////////////////////////////////////////////////////////////
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its contributors
+//   may be used to endorse or promote products derived from this software
+//   without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
+
+// HybridLegalizer.cpp – initialisation, grid, Abacus pass, metrics.
 
 #include "HybridLegalizer.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <numeric>
-
-// OpenROAD / OpenDB headers (present in opendp build tree)
-#include "odb/dbShape.h"
-#include "utl/Logger.h"
+#include <limits>
+#include <ranges>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace dpl {
 
-//============================================================================
-// FenceRegion helpers
-//============================================================================
+// ===========================================================================
+// FenceRegion
+// ===========================================================================
 
 bool FenceRegion::contains(int x, int y, int w, int h) const {
   for (const auto& r : rects) {
-    if (x >= r.xlo && y >= r.ylo &&
-        x + w <= r.xhi && y + h <= r.yhi)
+    if (x >= r.xlo && y >= r.ylo && x + w <= r.xhi && y + h <= r.yhi) {
       return true;
+    }
   }
   return false;
 }
 
-FenceRegion::Rect FenceRegion::nearestRect(int cx, int cy) const {
+FenceRect FenceRegion::nearestRect(int cx, int cy) const {
   assert(!rects.empty());
-  const Rect* best = &rects[0];
+  const FenceRect* best = rects.data();
   int bestDist = std::numeric_limits<int>::max();
   for (const auto& r : rects) {
-    int dx = std::max({0, r.xlo - cx, cx - r.xhi});
-    int dy = std::max({0, r.ylo - cy, cy - r.yhi});
-    int d  = dx + dy;
-    if (d < bestDist) { bestDist = d; best = &r; }
+    const int dx = std::max({0, r.xlo - cx, cx - r.xhi});
+    const int dy = std::max({0, r.ylo - cy, cy - r.yhi});
+    const int d = dx + dy;
+    if (d < bestDist) {
+      bestDist = d;
+      best = &r;
+    }
   }
   return *best;
 }
 
-//============================================================================
+// ===========================================================================
 // Constructor
-//============================================================================
+// ===========================================================================
 
-HybridLegalizer::HybridLegalizer(dbDatabase* db, utl::Logger* logger)
+HybridLegalizer::HybridLegalizer(odb::dbDatabase* db, utl::Logger* logger)
     : db_(db), logger_(logger) {}
 
-//============================================================================
-// Top-level entry point
-//============================================================================
+// ===========================================================================
+// legalize – top-level entry point
+// ===========================================================================
 
-void HybridLegalizer::legalize(float /*targetDensity*/) {
-  logger_->info(utl::DPL, 900, "HybridLegalizer: starting legalization.");
+void HybridLegalizer::legalize() {
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: starting legalization.");
 
-  // --- Step 1: Load design from OpenDB ---
-  initFromDB();
+  initFromDb();
   buildGrid();
   initFenceRegions();
 
-  logger_->info(utl::DPL, 901,
-    "HybridLegalizer: {} cells, grid {}x{}.",
-    cells_.size(), gridW_, gridH_);
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "HybridLegalizer: {} cells, grid {}x{}.",
+             cells_.size(),
+             gridW_,
+             gridH_);
 
-  // --- Step 2: Abacus pass (fast, handles most cells) ---
-  logger_->info(utl::DPL, 902, "HybridLegalizer: running Abacus pass.");
+  // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
   std::vector<int> illegal = runAbacus();
 
-  logger_->info(utl::DPL, 903,
-    "HybridLegalizer: Abacus done. {} cells still illegal.", illegal.size());
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "HybridLegalizer: Abacus done, {} cells still illegal.",
+             illegal.size());
 
-  // --- Step 3: Negotiation pass (fix remaining violations) ---
+  // --- Phase 2: Negotiation (fixes remaining violations) -------------------
   if (!illegal.empty()) {
-    logger_->info(utl::DPL, 904,
-      "HybridLegalizer: running negotiation pass on {} cells.", illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "HybridLegalizer: negotiation pass on {} cells.",
+               illegal.size());
     runNegotiation(illegal);
   }
 
-  // --- Step 4: Post-optimisation ---
-  logger_->info(utl::DPL, 905, "HybridLegalizer: post-optimisation.");
+  // --- Phase 3: Post-optimisation ------------------------------------------
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
   greedyImprove(5);
   cellSwap();
   greedyImprove(1);
 
-  logger_->info(utl::DPL, 906,
-    "HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",
-    avgDisplacement(), maxDisplacement(), numViolations());
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",
+             avgDisplacement(),
+             maxDisplacement(),
+             numViolations());
 
-  // --- Step 5: Write results back to OpenDB ---
+  // --- Write back to OpenDB ------------------------------------------------
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.inst == nullptr) continue;
-    int dbX = dieXlo_ + cell.x * siteWidth_;
-    int dbY = dieYlo_ + cell.y * rowHeight_;
+    if (cell.fixed || cell.inst == nullptr) {
+      continue;
+    }
+    const int dbX = dieXlo_ + cell.x * siteWidth_;
+    const int dbY = dieYlo_ + cell.y * rowHeight_;
     cell.inst->setLocation(dbX, dbY);
     cell.inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
   }
 }
 
-//============================================================================
+// ===========================================================================
 // Initialisation
-//============================================================================
+// ===========================================================================
 
-void HybridLegalizer::initFromDB() {
-  auto* chip  = db_->getChip();
-  auto* block = chip->getBlock();
+void HybridLegalizer::initFromDb() {
+  auto* block = db_->getChip()->getBlock();
 
-  // Die area
-  odb::Rect coreArea;
-  block->getCoreArea(coreArea);
+  const odb::Rect coreArea = block->getCoreArea();
   dieXlo_ = coreArea.xMin();
   dieYlo_ = coreArea.yMin();
   dieXhi_ = coreArea.xMax();
   dieYhi_ = coreArea.yMax();
 
-  // Site width and row height from first row
-  siteWidth_ = 0;
-  rowHeight_ = 0;
+  // Derive site dimensions from the first row.
   for (auto* row : block->getRows()) {
     auto* site = row->getSite();
     siteWidth_ = site->getWidth();
@@ -129,407 +173,402 @@ void HybridLegalizer::initFromDB() {
   }
   assert(siteWidth_ > 0 && rowHeight_ > 0);
 
-  // Row power rail types
-  int numRows = (dieYhi_ - dieYlo_) / rowHeight_;
-  rowRail_.resize(numRows, PowerRailType::VSS);
-
-  // OpenDB rows carry orientation; use row index parity as a proxy
-  // for VDD/VSS (standard cell rows alternate VSS/VDD from bottom).
-  // Replace with PDK-specific logic if available.
-  for (int r = 0; r < numRows; ++r)
-    rowRail_[r] = (r % 2 == 0) ? PowerRailType::VSS : PowerRailType::VDD;
-
-  // Build cells
-  cells_.clear();
-  for (auto* inst : block->getInsts()) {
-    auto status = inst->getPlacementStatus();
-    if (status == odb::dbPlacementStatus::NONE) continue;
-
-    Cell c;
-    c.inst  = inst;
-    c.fixed = (status == odb::dbPlacementStatus::FIRM ||
-               status == odb::dbPlacementStatus::LOCKED ||
-               status == odb::dbPlacementStatus::COVER);
-
-    int dbX, dbY;
-    inst->getLocation(dbX, dbY);
-    c.initX = (dbX - dieXlo_) / siteWidth_;
-    c.initY = (dbY - dieYlo_) / rowHeight_;
-    c.x     = c.initX;
-    c.y     = c.initY;
-
-    auto* master = inst->getMaster();
-    int masterW  = master->getWidth();
-    int masterH  = master->getHeight();
-    c.width  = std::max(1, (int)std::round((double)masterW / siteWidth_));
-    c.height = std::max(1, (int)std::round((double)masterH / rowHeight_));
-
-    c.railType  = inferRailType(inst);
-    c.flippable = (c.height % 2 == 1); // odd-height cells can flip
-    cells_.push_back(c);
+  // Assign power-rail types using row-index parity (VSS at even rows).
+  // Replace with explicit LEF pg_pin parsing for advanced PDKs.
+  const int numRows = (dieYhi_ - dieYlo_) / rowHeight_;
+  rowRail_.clear();
+  rowRail_.resize(numRows);
+  for (int r = 0; r < numRows; ++r) {
+    rowRail_[r] = (r % 2 == 0) ? HLPowerRailType::kVss : HLPowerRailType::kVdd;
   }
 
-  rowCells_.resize(numRows);
+  // Build HLCell records from all placed instances.
+  cells_.clear();
+  cells_.reserve(block->getInsts().size());
+
+  for (auto* inst : block->getInsts()) {
+    const auto status = inst->getPlacementStatus();
+    if (status == odb::dbPlacementStatus::NONE) {
+      continue;
+    }
+
+    HLCell cell;
+    cell.inst = inst;
+    cell.fixed =
+        (status == odb::dbPlacementStatus::FIRM ||
+         status == odb::dbPlacementStatus::LOCKED ||
+         status == odb::dbPlacementStatus::COVER);
+
+    int dbX = 0;
+    int dbY = 0;
+    inst->getLocation(dbX, dbY);
+    cell.initX = (dbX - dieXlo_) / siteWidth_;
+    cell.initY = (dbY - dieYlo_) / rowHeight_;
+    cell.x = cell.initX;
+    cell.y = cell.initY;
+
+    auto* master = inst->getMaster();
+    cell.width = std::max(
+        1,
+        static_cast<int>(
+            std::round(static_cast<double>(master->getWidth()) / siteWidth_)));
+    cell.height = std::max(
+        1,
+        static_cast<int>(
+            std::round(static_cast<double>(master->getHeight()) / rowHeight_)));
+
+    cell.railType = inferRailType(cell.initY);
+    cell.flippable = (cell.height % 2 == 1);
+
+    cells_.push_back(cell);
+  }
 }
 
-PowerRailType HybridLegalizer::inferRailType(dbInst* inst) const {
-  // Attempt to infer from instance origin row alignment.
-  // A more accurate implementation would parse the LEF pg_pin info.
-  int dbX, dbY;
-  inst->getLocation(dbX, dbY);
-  int rowIdx = (dbY - dieYlo_) / rowHeight_;
-  if (rowIdx < (int)rowRail_.size())
+HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const {
+  if (rowIdx >= 0 && rowIdx < static_cast<int>(rowRail_.size())) {
     return rowRail_[rowIdx];
-  return PowerRailType::VSS;
+  }
+  return HLPowerRailType::kVss;
 }
 
 void HybridLegalizer::buildGrid() {
   gridW_ = (dieXhi_ - dieXlo_) / siteWidth_;
   gridH_ = (dieYhi_ - dieYlo_) / rowHeight_;
-  grid_.assign(gridW_ * gridH_, Grid{});
+  grid_.assign(static_cast<size_t>(gridW_ * gridH_), HLGrid{});
 
-  // Mark blockages (fixed cells, macros) as capacity=0
-  for (const auto& cell : cells_) {
-    if (!cell.fixed) continue;
-    for (int dy = 0; dy < cell.height; ++dy)
+  // Mark blockages and record fixed-cell usage in one pass.
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      continue;
+    }
+    const HLCell& cell = cells_[i];
+    for (int dy = 0; dy < cell.height; ++dy) {
       for (int dx = 0; dx < cell.width; ++dx) {
-        int gx = cell.x + dx;
-        int gy = cell.y + dy;
-        if (gridExists(gx, gy))
+        const int gx = cell.x + dx;
+        const int gy = cell.y + dy;
+        if (gridExists(gx, gy)) {
           gridAt(gx, gy).capacity = 0;
+          gridAt(gx, gy).usage = 1;
+        }
       }
-  }
-
-  // Place fixed cells into grid usage
-  for (const auto& cell : cells_) {
-    if (!cell.fixed) continue;
-    addUsage(const_cast<int&>(
-      *std::find_if(cells_.begin(), cells_.end(),
-        [&cell](const Cell& c){ return c.inst == cell.inst; })
-      == cell
-      ? reinterpret_cast<const int*>(&cell) - reinterpret_cast<const int*>(cells_.data())
-      : nullptr), // workaround: done properly below
-      1);
-  }
-  // Simpler: iterate by index
-  for (int i = 0; i < (int)cells_.size(); ++i) {
-    if (cells_[i].fixed)
-      addUsage(i, 1);
+    }
   }
 }
 
 void HybridLegalizer::initFenceRegions() {
-  // OpenROAD stores fence regions as odb::dbRegion with odb::dbBox boundaries.
+  fences_.clear();  // Guard against double-population if legalize() is re-run.
+
   auto* block = db_->getChip()->getBlock();
+
   for (auto* region : block->getRegions()) {
     FenceRegion fr;
     fr.id = region->getId();
+
     for (auto* box : region->getBoundaries()) {
-      FenceRegion::Rect r;
+      FenceRect r;
       r.xlo = (box->xMin() - dieXlo_) / siteWidth_;
       r.ylo = (box->yMin() - dieYlo_) / rowHeight_;
       r.xhi = (box->xMax() - dieXlo_) / siteWidth_;
       r.yhi = (box->yMax() - dieYlo_) / rowHeight_;
       fr.rects.push_back(r);
     }
-    if (!fr.rects.empty())
-      fences_.push_back(fr);
+
+    if (!fr.rects.empty()) {
+      fences_.push_back(std::move(fr));
+    }
   }
 
-  // Assign fenceId to cells based on region membership
-  for (int i = 0; i < (int)cells_.size(); ++i) {
-    auto* inst = cells_[i].inst;
-    if (!inst) continue;
-    auto* region = inst->getRegion();
-    if (!region) continue;
-    int rid = region->getId();
-    for (int fi = 0; fi < (int)fences_.size(); ++fi) {
+  // Map each instance to its fence region (if any).
+  for (auto& cell : cells_) {
+    if (cell.inst == nullptr) {
+      continue;
+    }
+    auto* region = cell.inst->getRegion();
+    if (region == nullptr) {
+      continue;
+    }
+    const int rid = region->getId();
+    for (int fi = 0; fi < static_cast<int>(fences_.size()); ++fi) {
       if (fences_[fi].id == rid) {
-        cells_[i].fenceId = fi;
+        cell.fenceId = fi;
         break;
       }
     }
   }
 }
 
-//============================================================================
-// Grid usage helpers
-//============================================================================
+// ===========================================================================
+// HLGrid helpers
+// ===========================================================================
 
 void HybridLegalizer::addUsage(int cellIdx, int delta) {
-  const Cell& c = cells_[cellIdx];
-  for (int dy = 0; dy < c.height; ++dy)
-    for (int dx = 0; dx < c.width; ++dx) {
-      int gx = c.x + dx;
-      int gy = c.y + dy;
-      if (gridExists(gx, gy))
+  const HLCell& cell = cells_[cellIdx];
+  for (int dy = 0; dy < cell.height; ++dy) {
+    for (int dx = 0; dx < cell.width; ++dx) {
+      const int gx = cell.x + dx;
+      const int gy = cell.y + dy;
+      if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
+      }
     }
+  }
 }
 
-//============================================================================
+// ===========================================================================
 // Constraint helpers
-//============================================================================
+// ===========================================================================
 
 bool HybridLegalizer::inDie(int x, int y, int w, int h) const {
-  return x >= 0 && y >= 0 &&
-         x + w <= gridW_ && y + h <= gridH_;
+  return x >= 0 && y >= 0 && x + w <= gridW_ && y + h <= gridH_;
 }
 
-bool HybridLegalizer::isValidRow(int rowIdx, const Cell& cell) const {
-  if (rowIdx < 0 || rowIdx + cell.height > gridH_) return false;
-
-  PowerRailType needed = cell.railType;
-  PowerRailType rowBot = rowRail_[rowIdx];
-
-  if (cell.height % 2 == 1) {
-    // Odd-height: bottom rail must match, or cell can be flipped (top rail matches)
-    return cell.flippable
-             ? (rowBot == needed || rowRail_[rowIdx] != needed)
-             : (rowBot == needed);
-  } else {
-    // Even-height: both boundaries must be same rail type,
-    // so bottom must equal top — only possible if moved by even rows.
-    return (rowBot == needed);
+bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const {
+  if (rowIdx < 0 || rowIdx + cell.height > gridH_) {
+    return false;
   }
+  const HLPowerRailType rowBot = rowRail_[rowIdx];
+  if (cell.height % 2 == 1) {
+    // Odd-height: bottom rail must match, or cell can be vertically flipped.
+    return cell.flippable || (rowBot == cell.railType);
+  }
+  // Even-height: bottom boundary must be the correct rail type, and the
+  // cell may only move by an even number of rows.
+  return rowBot == cell.railType;
 }
 
 bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const {
-  const Cell& c = cells_[cellIdx];
-  if (c.fenceId < 0) {
-    // Default region: must not be inside any fence
-    for (const auto& f : fences_) {
-      if (f.contains(x, y, c.width, c.height))
+  const HLCell& cell = cells_[cellIdx];
+  if (cell.fenceId < 0) {
+    // Default region: must not overlap any named fence.
+    for (const auto& fence : fences_) {
+      if (fence.contains(x, y, cell.width, cell.height)) {
         return false;
+      }
     }
     return true;
   }
-  // Assigned fence: must be inside its fence
-  return fences_[c.fenceId].contains(x, y, c.width, c.height);
+  return fences_[cell.fenceId].contains(x, y, cell.width, cell.height);
 }
 
-std::pair<int,int> HybridLegalizer::snapToLegal(int cellIdx, int x, int y) const {
-  const Cell& c = cells_[cellIdx];
-  // Clamp x to die
-  x = std::max(0, std::min(x, gridW_ - c.width));
-  // Find nearest valid row for power rail
-  int best = y;
+std::pair<int, int> HybridLegalizer::snapToLegal(
+    int cellIdx, int x, int y) const {
+  const HLCell& cell = cells_[cellIdx];
+  x = std::max(0, std::min(x, gridW_ - cell.width));
+
+  int bestRow = y;
   int bestDist = std::numeric_limits<int>::max();
-  for (int r = 0; r + c.height <= gridH_; ++r) {
-    if (isValidRow(r, c)) {
-      int d = std::abs(r - y);
-      if (d < bestDist) { bestDist = d; best = r; }
+  for (int r = 0; r + cell.height <= gridH_; ++r) {
+    if (isValidRow(r, cell)) {
+      const int d = std::abs(r - y);
+      if (d < bestDist) {
+        bestDist = d;
+        bestRow = r;
+      }
     }
   }
-  return {x, best};
+  return {x, bestRow};
 }
 
-//============================================================================
-// Abacus Pass
-//============================================================================
-// Classic Abacus algorithm (Spindler et al. ISPD 2008), extended for
-// mixed-cell-height: cells are processed row by row using their bottom-row
-// assignment. For multirow cells, all spanned rows are reserved.
-//
-// Returns indices of cells that are still illegal (overlap / fence violated).
-//============================================================================
+// ===========================================================================
+// Abacus pass
+// ===========================================================================
 
 std::vector<int> HybridLegalizer::runAbacus() {
-  // Sort movable cells: primary = y (row), secondary = x
+  // Build sorted order: ascending y then x.
   std::vector<int> order;
   order.reserve(cells_.size());
-  for (int i = 0; i < (int)cells_.size(); ++i)
-    if (!cells_[i].fixed) order.push_back(i);
-
-  std::sort(order.begin(), order.end(), [this](int a, int b) {
-    if (cells_[a].y != cells_[b].y) return cells_[a].y < cells_[b].y;
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      order.push_back(i);
+    }
+  }
+  std::ranges::sort(order, [this](int a, int b) {
+    if (cells_[a].y != cells_[b].y) {
+      return cells_[a].y < cells_[b].y;
+    }
     return cells_[a].x < cells_[b].x;
   });
 
-  // Clear grid usage for movable cells before replanting
-  for (int i : order) addUsage(i, -1);
+  // Remove movable cell usage before replanting.
+  for (int i : order) {
+    addUsage(i, -1);
+  }
 
-  // Group by row
-  std::unordered_map<int, std::vector<int>> byRow;
+  // Snap each cell to a legal row and group by that row.
+  std::vector<std::vector<int>> byRow(gridH_);
   for (int i : order) {
     auto [sx, sy] = snapToLegal(i, cells_[i].x, cells_[i].y);
     cells_[i].x = sx;
     cells_[i].y = sy;
-    byRow[sy].push_back(i);
+    if (sy >= 0 && sy < gridH_) {
+      byRow[sy].push_back(i);
+    }
   }
 
-  // Run Abacus row sweep
-  for (auto& [rowIdx, cellsInRow] : byRow) {
-    // Sort by x within row
-    std::sort(cellsInRow.begin(), cellsInRow.end(), [this](int a, int b) {
-      return cells_[a].x < cells_[b].x;
-    });
-    abacusRow(rowIdx, cellsInRow);
+  // Run the Abacus sweep row by row.
+  for (int r = 0; r < gridH_; ++r) {
+    if (byRow[r].empty()) {
+      continue;
+    }
+    std::ranges::sort(
+        byRow[r], [this](int a, int b) { return cells_[a].x < cells_[b].x; });
+    abacusRow(r, byRow[r]);
   }
 
-  // Re-add movable cell usage
-  for (int i : order) addUsage(i, 1);
+  // Restore movable cell usage after placement.
+  for (int i : order) {
+    addUsage(i, 1);
+  }
 
-  // Identify still-illegal cells
+  // Collect still-illegal cells.
   std::vector<int> illegal;
   for (int i : order) {
-    if (!isCellLegal(i)) {
-      cells_[i].legal = false;
+    cells_[i].legal = isCellLegal(i);
+    if (!cells_[i].legal) {
       illegal.push_back(i);
-    } else {
-      cells_[i].legal = true;
     }
   }
   return illegal;
 }
 
-//----------------------------------------------------------------------------
-// Abacus: process one row
-//----------------------------------------------------------------------------
 void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow) {
   std::vector<AbacusCluster> clusters;
 
-  for (int i : cellsInRow) {
-    Cell& c = cells_[i];
+  for (int idx : cellsInRow) {
+    const HLCell& cell = cells_[idx];
 
-    // Fence constraint: if cell can't legally sit at proposed x in this row,
-    // skip it here — it will be handled by the negotiation pass
-    if (!respectsFence(i, c.x, rowIdx)) continue;
-    if (!isValidRow(rowIdx, c))         continue;
+    // Skip cells that violate fence or row constraints – negotiation handles
+    // them later.
+    if (!respectsFence(idx, cell.x, rowIdx) || !isValidRow(rowIdx, cell)) {
+      continue;
+    }
 
-    // Create singleton cluster at cell's ideal position
     AbacusCluster nc;
-    nc.firstCellIdx = i;
-    nc.lastCellIdx  = i;
-    nc.optX         = static_cast<double>(c.initX);
-    nc.totalWeight  = 1.0;
-    nc.totalQ       = nc.optX;
-    nc.width        = c.width;
+    nc.cellIndices.push_back(idx);
+    nc.optX = static_cast<double>(cell.initX);
+    nc.totalWeight = 1.0;
+    nc.totalQ = nc.optX;
+    nc.totalWidth = cell.width;
 
-    // Clamp to die
-    nc.optX = std::max(0.0, std::min(nc.optX,
-                (double)(gridW_ - c.width)));
-
-    clusters.push_back(nc);
+    // Clamp to die boundary.
+    nc.optX = std::max(
+        0.0, std::min(nc.optX, static_cast<double>(gridW_ - cell.width)));
+    clusters.push_back(std::move(nc));
     collapseClusters(clusters, rowIdx);
   }
 
-  // Assign final x positions from clusters
-  // (We store per-cell optimal x in cells_ directly)
-  // After collapseClusters the last cluster holds the solved chain;
-  // we need to walk each cluster's cells left-to-right.
-  // For simplicity, we store the solved x on each cell during collapse.
+  // Write solved positions back to cells_.
+  for (const auto& cluster : clusters) {
+    assignClusterPositions(cluster, rowIdx);
+  }
 }
 
-//----------------------------------------------------------------------------
-// Abacus cluster collapse (merge overlapping clusters, solve placement)
-//----------------------------------------------------------------------------
-void HybridLegalizer::addCellToCluster(AbacusCluster& cl, int cellIdx) {
-  Cell& c = cells_[cellIdx];
-  cl.lastCellIdx  = cellIdx;
-  cl.totalWeight += 1.0;
-  cl.totalQ      += static_cast<double>(c.initX);
-  cl.width       += c.width;
-}
-
-void HybridLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
-                                        int rowIdx) {
+void HybridLegalizer::collapseClusters(
+    std::vector<AbacusCluster>& clusters, int /*rowIdx*/) {
   while (clusters.size() >= 2) {
     AbacusCluster& last = clusters[clusters.size() - 1];
     AbacusCluster& prev = clusters[clusters.size() - 2];
 
-    // Solve optimal x for last cluster
-    double optX = last.totalQ / last.totalWeight;
-    optX = std::max(0.0, std::min(optX, (double)(gridW_ - last.width)));
-    last.optX = optX;
+    // Solve optimal position for the last cluster.
+    last.optX = last.totalQ / last.totalWeight;
+    last.optX = std::max(
+        0.0,
+        std::min(last.optX, static_cast<double>(gridW_ - last.totalWidth)));
 
-    // Overlap? merge
-    if (prev.optX + prev.width > last.optX) {
-      // Merge last into prev
+    // If the last cluster overlaps the previous one, merge them.
+    if (prev.optX + prev.totalWidth > last.optX) {
       prev.totalWeight += last.totalWeight;
-      prev.totalQ      += last.totalQ;
-      prev.width       += last.width;
-      prev.lastCellIdx  = last.lastCellIdx;
-      // Re-solve prev
+      prev.totalQ += last.totalQ;
+      prev.totalWidth += last.totalWidth;
+      for (int idx : last.cellIndices) {
+        prev.cellIndices.push_back(idx);
+      }
       prev.optX = prev.totalQ / prev.totalWeight;
-      prev.optX = std::max(0.0,
-                    std::min(prev.optX, (double)(gridW_ - prev.width)));
+      prev.optX = std::max(
+          0.0,
+          std::min(prev.optX, static_cast<double>(gridW_ - prev.totalWidth)));
       clusters.pop_back();
     } else {
       break;
     }
   }
 
-  // Assign integer x positions walking the last cluster's cells
+  // Re-solve the top cluster after any merge.
   if (!clusters.empty()) {
-    AbacusCluster& cl = clusters.back();
-    int curX = static_cast<int>(std::round(cl.optX));
-    curX = std::max(0, std::min(curX, gridW_ - cl.width));
-
-    // Walk cell chain: cells are stored in order, use a simple scan
-    // In a full implementation, clusters maintain a linked list of cells.
-    // Here we scan cells_ in the row for cells between firstCellIdx/lastCellIdx.
-    // For correctness with the current simplified structure, we assign x
-    // sequentially to cells in the cluster in their sorted x order.
-    // (A production version would maintain an explicit doubly-linked list.)
-    int ci = cl.firstCellIdx;
-    while (ci != -1) {
-      cells_[ci].x = curX;
-      cells_[ci].y = rowIdx;
-      curX += cells_[ci].width;
-      // In this simplified version, we don't have an explicit next pointer.
-      // A full implementation stores next/prev indices in Cell.
-      // We break here; the full chain traversal is done in the production version.
-      break;
-    }
+    AbacusCluster& top = clusters.back();
+    top.optX = top.totalQ / top.totalWeight;
+    top.optX = std::max(
+        0.0, std::min(top.optX, static_cast<double>(gridW_ - top.totalWidth)));
   }
 }
 
-//----------------------------------------------------------------------------
-// Check if cell is legal (no overflow, in die, fence, rail ok)
-//----------------------------------------------------------------------------
-bool HybridLegalizer::isCellLegal(int cellIdx) const {
-  const Cell& c = cells_[cellIdx];
-  if (!inDie(c.x, c.y, c.width, c.height))       return false;
-  if (!isValidRow(c.y, c))                          return false;
-  if (!respectsFence(cellIdx, c.x, c.y))            return false;
+void HybridLegalizer::assignClusterPositions(
+    const AbacusCluster& cluster, int rowIdx) {
+  int curX = static_cast<int>(std::round(cluster.optX));
+  curX = std::max(0, std::min(curX, gridW_ - cluster.totalWidth));
 
-  for (int dy = 0; dy < c.height; ++dy)
-    for (int dx = 0; dx < c.width; ++dx)
-      if (gridAt(c.x + dx, c.y + dy).overuse() > 0)
+  for (int idx : cluster.cellIndices) {
+    cells_[idx].x = curX;
+    cells_[idx].y = rowIdx;
+    curX += cells_[idx].width;
+  }
+}
+
+bool HybridLegalizer::isCellLegal(int cellIdx) const {
+  const HLCell& cell = cells_[cellIdx];
+  if (!inDie(cell.x, cell.y, cell.width, cell.height)) {
+    return false;
+  }
+  if (!isValidRow(cell.y, cell)) {
+    return false;
+  }
+  if (!respectsFence(cellIdx, cell.x, cell.y)) {
+    return false;
+  }
+  for (int dy = 0; dy < cell.height; ++dy) {
+    for (int dx = 0; dx < cell.width; ++dx) {
+      if (gridAt(cell.x + dx, cell.y + dy).overuse() > 0) {
         return false;
+      }
+    }
+  }
   return true;
 }
 
-//============================================================================
+// ===========================================================================
 // Metrics
-//============================================================================
+// ===========================================================================
 
 double HybridLegalizer::avgDisplacement() const {
-  if (cells_.empty()) return 0.0;
   double sum = 0.0;
-  int cnt = 0;
-  for (const auto& c : cells_) {
-    if (c.fixed) continue;
-    sum += c.displacement();
-    ++cnt;
+  int count = 0;
+  for (const auto& cell : cells_) {
+    if (!cell.fixed) {
+      sum += cell.displacement();
+      ++count;
+    }
   }
-  return cnt ? sum / cnt : 0.0;
+  return count > 0 ? sum / count : 0.0;
 }
 
 int HybridLegalizer::maxDisplacement() const {
   int mx = 0;
-  for (const auto& c : cells_) {
-    if (!c.fixed) mx = std::max(mx, c.displacement());
+  for (const auto& cell : cells_) {
+    if (!cell.fixed) {
+      mx = std::max(mx, cell.displacement());
+    }
   }
   return mx;
 }
 
 int HybridLegalizer::numViolations() const {
-  int v = 0;
-  for (int i = 0; i < (int)cells_.size(); ++i)
-    if (!cells_[i].fixed && !isCellLegal(i)) ++v;
-  return v;
+  int count = 0;
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed && !isCellLegal(i)) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 }  // namespace dpl

@@ -1,115 +1,166 @@
-//////////////////////////////////////////////////////////////////////////////
-// HybridLegalizerNeg.cpp
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
 //
-// Part 2: Negotiation pass + post-optimisation
+// Copyright (c) 2024, The OpenROAD Authors
+// All rights reserved.
 //
-// Only cells flagged as illegal by Abacus enter the negotiation loop,
-// but their neighbors (within the bounding window) are also allowed to
-// rip-up and improve during negotiation, so the loop can create space
-// organically.
-//////////////////////////////////////////////////////////////////////////////
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice,
+//   this list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its contributors
+//   may be used to endorse or promote products derived from this software
+//   without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
 
-#include "HybridLegalizer.h"
+// HybridLegalizerNeg.cpp – negotiation pass and post-optimisation.
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
+#include <ranges>
 #include <unordered_set>
+#include <utility>
+
+#include "HybridLegalizer.h"
 
 namespace dpl {
 
-//============================================================================
-// Negotiation pass — top level
-//============================================================================
+// ===========================================================================
+// runNegotiation – top-level negotiation driver
+// ===========================================================================
 
 void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells) {
-  // Seed active set: illegal cells + their spatial neighbors
-  // (neighbors can move to create space)
+  // Seed with illegal cells and all movable neighbors within the search
+  // window so the loop can create space organically.
   std::unordered_set<int> activeSet(illegalCells.begin(), illegalCells.end());
 
-  // Expand to include cells within window of each illegal cell
   for (int idx : illegalCells) {
-    const Cell& c = cells_[idx];
-    int xlo = c.x - horizWindow_;
-    int xhi = c.x + c.width  + horizWindow_;
-    int ylo = c.y - adjWindow_;
-    int yhi = c.y + c.height + adjWindow_;
+    const HLCell& seed = cells_[idx];
+    const int xlo = seed.x - horizWindow_;
+    const int xhi = seed.x + seed.width + horizWindow_;
+    const int ylo = seed.y - adjWindow_;
+    const int yhi = seed.y + seed.height + adjWindow_;
 
-    for (int i = 0; i < (int)cells_.size(); ++i) {
-      if (cells_[i].fixed) continue;
-      const Cell& n = cells_[i];
-      if (n.x >= xlo && n.x <= xhi && n.y >= ylo && n.y <= yhi)
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (cells_[i].fixed) {
+        continue;
+      }
+      const HLCell& nb = cells_[i];
+      if (nb.x >= xlo && nb.x <= xhi && nb.y >= ylo && nb.y <= yhi) {
         activeSet.insert(i);
+      }
     }
   }
 
   std::vector<int> active(activeSet.begin(), activeSet.end());
 
-  // Phase 1: I = 0 (all active cells rip-up every iteration)
-  logger_->info(utl::DPL, 910,
-    "Negotiation phase 1: {} active cells, {} iterations.",
-    active.size(), maxIterNeg_);
+  // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "Negotiation phase 1: {} active cells, {} iterations.",
+             active.size(),
+             maxIterNeg_);
 
   for (int iter = 0; iter < maxIterNeg_; ++iter) {
-    int overflows = negotiationIter(active, iter, /*updateHistory=*/true);
+    const int overflows = negotiationIter(active, iter, /*updateHistory=*/true);
     if (overflows == 0) {
-      logger_->info(utl::DPL, 911,
-        "Negotiation phase 1 converged at iteration {}.", iter);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "hybrid",
+                 1,
+                 "Negotiation phase 1 converged at iteration {}.",
+                 iter);
       return;
     }
   }
 
-  // Phase 2: I = kIsolationPt (skip already-legal cells)
-  logger_->info(utl::DPL, 912,
-    "Negotiation phase 2: isolation point active, {} iterations.", kMaxIterNeg2);
+  // Phase 2 – isolation point active: skip already-legal cells.
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "Negotiation phase 2: isolation point active, {} iterations.",
+             kMaxIterNeg2);
 
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    int overflows = negotiationIter(active, iter + maxIterNeg_,
-                                    /*updateHistory=*/true);
+    const int overflows =
+        negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
     if (overflows == 0) {
-      logger_->info(utl::DPL, 913,
-        "Negotiation phase 2 converged at iteration {}.", iter);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "hybrid",
+                 1,
+                 "Negotiation phase 2 converged at iteration {}.",
+                 iter);
       return;
     }
   }
 
-  logger_->warn(utl::DPL, 914,
-    "Negotiation did not fully converge. Remaining violations: {}.",
-    numViolations());
+  // Non-convergence is reported by the caller (Opendp::detailedPlacement)
+  // via numViolations(), which avoids registering a message ID in this file.
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "Negotiation did not fully converge. Remaining violations: {}.",
+             numViolations());
 }
 
-//============================================================================
-// Single negotiation iteration
-//============================================================================
+// ===========================================================================
+// negotiationIter – one full rip-up/replace sweep over activeCells
+// ===========================================================================
 
-int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
-                                      int iter,
-                                      bool updateHistory) {
-  // Sort by negotiation order each iteration
+int HybridLegalizer::negotiationIter(
+    std::vector<int>& activeCells, int iter, bool updateHistory) {
   sortByNegotiationOrder(activeCells);
 
   for (int idx : activeCells) {
-    Cell& c = cells_[idx];
-    if (c.fixed) continue;
-
-    // Isolation point: skip legal cells in phase 2
-    if (iter >= kIsolationPt && isCellLegal(idx)) continue;
-
-    // Rip up and find best location
+    if (cells_[idx].fixed) {
+      continue;
+    }
+    // Isolation point: skip legal cells during phase 2.
+    if (iter >= kIsolationPt && isCellLegal(idx)) {
+      continue;
+    }
     ripUp(idx);
-    auto [bx, by] = findBestLocation(idx);
+    const auto [bx, by] = findBestLocation(idx);
     place(idx, bx, by);
   }
 
-  // Count overflows
+  // Count remaining overflows.
   int totalOverflow = 0;
   for (int idx : activeCells) {
-    const Cell& c = cells_[idx];
-    if (c.fixed) continue;
-    for (int dy = 0; dy < c.height; ++dy)
-      for (int dx = 0; dx < c.width; ++dx)
-        if (gridExists(c.x+dx, c.y+dy))
-          totalOverflow += gridAt(c.x+dx, c.y+dy).overuse();
+    if (cells_[idx].fixed) {
+      continue;
+    }
+    const HLCell& cell = cells_[idx];
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int dx = 0; dx < cell.width; ++dx) {
+        if (gridExists(cell.x + dx, cell.y + dy)) {
+          totalOverflow += gridAt(cell.x + dx, cell.y + dy).overuse();
+        }
+      }
+    }
   }
 
   if (totalOverflow > 0 && updateHistory) {
@@ -120,17 +171,13 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   return totalOverflow;
 }
 
-//============================================================================
-// Rip-up: remove cell from grid
-//============================================================================
+// ===========================================================================
+// ripUp / place
+// ===========================================================================
 
 void HybridLegalizer::ripUp(int cellIdx) {
   addUsage(cellIdx, -1);
 }
-
-//============================================================================
-// Place cell and update grid
-//============================================================================
 
 void HybridLegalizer::place(int cellIdx, int x, int y) {
   cells_[cellIdx].x = x;
@@ -138,265 +185,293 @@ void HybridLegalizer::place(int cellIdx, int x, int y) {
   addUsage(cellIdx, 1);
 }
 
-//============================================================================
-// Find best location within search window
-// Enumerates candidate grid locations, returns minimum negotiation cost.
-//============================================================================
+// ===========================================================================
+// findBestLocation – enumerate candidates within the search window
+// ===========================================================================
 
-std::pair<int,int> HybridLegalizer::findBestLocation(int cellIdx) const {
-  const Cell& c = cells_[cellIdx];
+std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const {
+  const HLCell& cell = cells_[cellIdx];
 
-  double bestCost = static_cast<double>(kInfCost);
-  int    bestX    = c.x;
-  int    bestY    = c.y;
+  auto bestCost = static_cast<double>(kInfCost);
+  int bestX = cell.x;
+  int bestY = cell.y;
 
-  // Search window: current row ± horizWindow_, adjacent rows ± adjWindow_
-  // We search 3 rows: (y-1), y, (y+1) with different x ranges
-  auto tryLocation = [&](int wx, int wy, int xRange) {
-    for (int dx = -xRange; dx <= xRange; ++dx) {
-      int tx = wx + dx;
-      int ty = wy;
-      if (!inDie(tx, ty, c.width, c.height))    continue;
-      if (!isValidRow(ty, c))                    continue;
-      if (!respectsFence(cellIdx, tx, ty))       continue;
-
-      double cost = negotiationCost(cellIdx, tx, ty);
-      if (cost < bestCost) {
-        bestCost = cost;
-        bestX = tx;
-        bestY = ty;
-      }
+  // Helper: evaluate one candidate position.
+  auto tryLocation = [&](int tx, int ty) {
+    if (!inDie(tx, ty, cell.width, cell.height)) {
+      return;
+    }
+    if (!isValidRow(ty, cell)) {
+      return;
+    }
+    if (!respectsFence(cellIdx, tx, ty)) {
+      return;
+    }
+    const double cost = negotiationCost(cellIdx, tx, ty);
+    if (cost < bestCost) {
+      bestCost = cost;
+      bestX = tx;
+      bestY = ty;
     }
   };
 
-  // Current row — wider window
-  tryLocation(c.initX, c.y,                horizWindow_);
-
-  // Adjacent rows — narrower window
-  tryLocation(c.initX, c.y - c.height,     adjWindow_);
-  tryLocation(c.initX, c.y + c.height,     adjWindow_);
-
-  // Also try snapping to initial position
-  {
-    auto [sx, sy] = snapToLegal(cellIdx, c.initX, c.initY);
-    if (inDie(sx, sy, c.width, c.height) &&
-        isValidRow(sy, c) &&
-        respectsFence(cellIdx, sx, sy)) {
-      double cost = negotiationCost(cellIdx, sx, sy);
-      if (cost < bestCost) { bestCost = cost; bestX = sx; bestY = sy; }
-    }
+  // Current row – wide window.
+  for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
+    tryLocation(cell.initX + dx, cell.y);
   }
+
+  // Adjacent rows – narrow window.
+  for (int dx = -adjWindow_; dx <= adjWindow_; ++dx) {
+    tryLocation(cell.initX + dx, cell.y - cell.height);
+    tryLocation(cell.initX + dx, cell.y + cell.height);
+  }
+
+  // Also try snapping to the original position.
+  const auto [sx, sy] = snapToLegal(cellIdx, cell.initX, cell.initY);
+  tryLocation(sx, sy);
 
   return {bestX, bestY};
 }
 
-//============================================================================
-// Negotiation cost — Eq. 10 from NBLG paper
-//   Cost(x,y) = b(x,y) + Σ h(gx,gy) * p(gx,gy)
-//============================================================================
+// ===========================================================================
+// negotiationCost – Eq. 10 from the NBLG paper
+//   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
+// ===========================================================================
 
 double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const {
-  const Cell& c = cells_[cellIdx];
-
+  const HLCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
 
-  for (int dy = 0; dy < c.height; ++dy) {
-    for (int dx = 0; dx < c.width; ++dx) {
-      int gx = x + dx;
-      int gy = y + dy;
+  for (int dy = 0; dy < cell.height; ++dy) {
+    for (int dx = 0; dx < cell.width; ++dx) {
+      const int gx = x + dx;
+      const int gy = y + dy;
       if (!gridExists(gx, gy)) {
         cost += kInfCost;
         continue;
       }
-      const Grid& g = gridAt(gx, gy);
+      const HLGrid& g = gridAt(gx, gy);
       if (g.capacity == 0) {
         cost += kInfCost;  // blockage
         continue;
       }
-      // h * p  (congestion term)
-      double usg = static_cast<double>(g.usage + 1); // +1 for this cell
-      double cap = static_cast<double>(g.capacity);
-      double p   = (usg / cap);  // simplified; full version uses pf
-      cost += g.histCost * p;
+      // Congestion term: h * p  (Eq. 10).
+      // Usage is incremented by 1 to account for this cell being placed.
+      const auto usageWithCell = static_cast<double>(g.usage + 1);
+      const auto cap = static_cast<double>(g.capacity);
+      const double penalty = usageWithCell / cap;
+      cost += g.histCost * penalty;
     }
   }
   return cost;
 }
 
-//============================================================================
-// Target (displacement) cost — Eq. 11 from NBLG
-//   b(x,y) = δ + mf * max(δ - th, 0)
-//============================================================================
+// ===========================================================================
+// targetCost – Eq. 11 from the NBLG paper
+//   b(x,y) = δ + mf * max(δ − th, 0)
+// ===========================================================================
 
 double HybridLegalizer::targetCost(int cellIdx, int x, int y) const {
-  const Cell& c = cells_[cellIdx];
-  int disp = std::abs(x - c.initX) + std::abs(y - c.initY);
-  return static_cast<double>(disp)
-         + mf_ * std::max(0, disp - th_);
+  const HLCell& cell = cells_[cellIdx];
+  const int disp = std::abs(x - cell.initX) + std::abs(y - cell.initY);
+  return static_cast<double>(disp) +
+         mf_ * static_cast<double>(std::max(0, disp - th_));
 }
 
-//============================================================================
-// Adaptive penalty function pf — Eq. 14 from NBLG
-//   pf = 1.0 + α * exp(-β * exp(-γ*(i - ith)))
-//============================================================================
+// ===========================================================================
+// adaptivePf – Eq. 14 from the NBLG paper
+//   pf = 1.0 + α * exp(−β * exp(−γ * (i − ith)))
+// ===========================================================================
 
 double HybridLegalizer::adaptivePf(int iter) const {
   return 1.0 + kAlpha * std::exp(-kBeta * std::exp(-kGamma * (iter - kIth)));
 }
 
-//============================================================================
-// Update history costs — Eq. 12 from NBLG
-//   h_new(x,y) = h_old(x,y) + hf * overuse(x,y)
-//============================================================================
+// ===========================================================================
+// updateHistoryCosts – Eq. 12 from the NBLG paper
+//   h_new = h_old + hf * overuse
+// ===========================================================================
 
 void HybridLegalizer::updateHistoryCosts() {
   for (auto& g : grid_) {
-    int ov = g.overuse();
-    if (ov > 0)
+    const int ov = g.overuse();
+    if (ov > 0) {
       g.histCost += kHfDefault * ov;
+    }
   }
 }
 
-//============================================================================
-// Sort by negotiation order:
-//   Primary:   total overuse descending  (most congested first)
-//   Secondary: height descending          (taller cells later — NBLG inverts
-//                                          this so larger cells are processed
-//                                          after smaller ones have settled)
-//   Tertiary:  width descending
-//============================================================================
+// ===========================================================================
+// sortByNegotiationOrder
+//   Primary:   total overuse descending  (most congested processed first)
+//   Secondary: height ascending           (smaller cells settle before larger)
+//   Tertiary:  width ascending
+// ===========================================================================
 
 void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const {
-  // Compute per-cell overuse
-  auto cellOveruse = [this](int idx) -> int {
-    const Cell& c = cells_[idx];
+  auto cellOveruse = [this](int idx) {
+    const HLCell& cell = cells_[idx];
     int ov = 0;
-    for (int dy = 0; dy < c.height; ++dy)
-      for (int dx = 0; dx < c.width; ++dx)
-        if (gridExists(c.x+dx, c.y+dy))
-          ov += gridAt(c.x+dx, c.y+dy).overuse();
+    for (int dy = 0; dy < cell.height; ++dy) {
+      for (int dx = 0; dx < cell.width; ++dx) {
+        if (gridExists(cell.x + dx, cell.y + dy)) {
+          ov += gridAt(cell.x + dx, cell.y + dy).overuse();
+        }
+      }
+    }
     return ov;
   };
 
-  std::sort(indices.begin(), indices.end(),
-    [&](int a, int b) {
-      int oa = cellOveruse(a);
-      int ob = cellOveruse(b);
-      if (oa != ob) return oa > ob;                           // more overuse first
-      if (cells_[a].height != cells_[b].height)
-        return cells_[a].height < cells_[b].height;           // smaller height first
-      return cells_[a].width < cells_[b].width;
-    });
+  std::ranges::sort(indices, [&](int a, int b) {
+    const int oa = cellOveruse(a);
+    const int ob = cellOveruse(b);
+    if (oa != ob) {
+      return oa > ob;
+    }
+    if (cells_[a].height != cells_[b].height) {
+      return cells_[a].height < cells_[b].height;
+    }
+    return cells_[a].width < cells_[b].width;
+  });
 }
 
-//============================================================================
-// Post-optimisation: greedy improve
-// For each cell, try all locations in search window with congestion penalty
-// set to infinity (no new overlaps allowed). Accept if displacement reduces.
-//============================================================================
+// ===========================================================================
+// greedyImprove – post-optimisation: reduce displacement without creating
+// new overlaps.
+// ===========================================================================
 
 void HybridLegalizer::greedyImprove(int passes) {
   std::vector<int> order;
-  for (int i = 0; i < (int)cells_.size(); ++i)
-    if (!cells_[i].fixed) order.push_back(i);
+  order.reserve(cells_.size());
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      order.push_back(i);
+    }
+  }
 
-  for (int p = 0; p < passes; ++p) {
+  for (int pass = 0; pass < passes; ++pass) {
     int improved = 0;
+
     for (int idx : order) {
-      Cell& c = cells_[idx];
-      int curDisp = c.displacement();
+      HLCell& cell = cells_[idx];
+      const int curDisp = cell.displacement();
 
       ripUp(idx);
 
-      // Search window — same as negotiation but only accept zero-overflow
-      int bestX = c.x, bestY = c.y;
+      int bestX = cell.x;
+      int bestY = cell.y;
       int bestDisp = curDisp;
 
       auto tryLoc = [&](int tx, int ty) {
-        if (!inDie(tx, ty, c.width, c.height))  return;
-        if (!isValidRow(ty, c))                  return;
-        if (!respectsFence(idx, tx, ty))         return;
-        // Check no overflow would result
-        for (int dy = 0; dy < c.height; ++dy)
-          for (int dx = 0; dx < c.width; ++dx)
-            if (gridAt(tx+dx, ty+dy).overuse() > 0) return;
-        int d = std::abs(tx - c.initX) + std::abs(ty - c.initY);
-        if (d < bestDisp) { bestDisp = d; bestX = tx; bestY = ty; }
+        if (!inDie(tx, ty, cell.width, cell.height)) {
+          return;
+        }
+        if (!isValidRow(ty, cell)) {
+          return;
+        }
+        if (!respectsFence(idx, tx, ty)) {
+          return;
+        }
+        // Only accept if no new overlap is introduced.
+        for (int dy = 0; dy < cell.height; ++dy) {
+          for (int dx = 0; dx < cell.width; ++dx) {
+            if (gridAt(tx + dx, ty + dy).overuse() > 0) {
+              return;
+            }
+          }
+        }
+        const int d = std::abs(tx - cell.initX) + std::abs(ty - cell.initY);
+        if (d < bestDisp) {
+          bestDisp = d;
+          bestX = tx;
+          bestY = ty;
+        }
       };
 
       for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
-        tryLoc(c.initX + dx, c.y);
-        if (c.y >= c.height)         tryLoc(c.initX + dx, c.y - c.height);
-        if (c.y + c.height < gridH_) tryLoc(c.initX + dx, c.y + c.height);
+        tryLoc(cell.initX + dx, cell.y);
+        tryLoc(cell.initX + dx, cell.y - cell.height);
+        tryLoc(cell.initX + dx, cell.y + cell.height);
       }
 
       place(idx, bestX, bestY);
-      if (bestDisp < curDisp) ++improved;
+      if (bestDisp < curDisp) {
+        ++improved;
+      }
     }
-    if (improved == 0) break;  // converged
+
+    if (improved == 0) {
+      break;
+    }
   }
 }
 
-//============================================================================
-// Post-optimisation: cell swap
-// For cells of same height/width/rail type, try swapping positions if it
-// reduces total displacement without increasing max displacement.
-//============================================================================
+// ===========================================================================
+// cellSwap – swap pairs of same-type cells when total displacement decreases
+// without exceeding the current maximum displacement.
+// ===========================================================================
 
 void HybridLegalizer::cellSwap() {
-  int maxDisp = maxDisplacement();
+  const int maxDisp = maxDisplacement();
 
-  // Group cells by (height, width, railType)
-  struct Key {
-    int h, w;
-    PowerRailType r;
-    bool operator==(const Key& o) const {
-      return h==o.h && w==o.w && r==o.r;
+  // Group movable cells by (height, width, railType).
+  struct GroupKey {
+    int height;
+    int width;
+    HLPowerRailType rail;
+    bool operator==(const GroupKey& o) const {
+      return height == o.height && width == o.width && rail == o.rail;
     }
   };
-  struct KeyHash {
-    size_t operator()(const Key& k) const {
-      return std::hash<int>()(k.h) ^ (std::hash<int>()(k.w) << 8)
-             ^ (std::hash<int>()((int)k.r) << 16);
+  struct GroupKeyHash {
+    size_t operator()(const GroupKey& k) const {
+      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8) ^
+             (std::hash<int>()(static_cast<int>(k.rail)) << 16);
     }
   };
 
-  std::unordered_map<Key, std::vector<int>, KeyHash> groups;
-  for (int i = 0; i < (int)cells_.size(); ++i) {
-    if (cells_[i].fixed) continue;
-    groups[{cells_[i].height, cells_[i].width, cells_[i].railType}]
-      .push_back(i);
+  std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      groups[{cells_[i].height, cells_[i].width, cells_[i].railType}].push_back(
+          i);
+    }
   }
 
-  // Within each group, try pairwise swaps
   for (auto& [key, grp] : groups) {
-    for (int ii = 0; ii < (int)grp.size(); ++ii) {
-      for (int jj = ii + 1; jj < (int)grp.size(); ++jj) {
-        int a = grp[ii], b = grp[jj];
-        Cell& ca = cells_[a];
-        Cell& cb = cells_[b];
+    for (int ii = 0; ii < static_cast<int>(grp.size()); ++ii) {
+      for (int jj = ii + 1; jj < static_cast<int>(grp.size()); ++jj) {
+        const int a = grp[ii];
+        const int b = grp[jj];
+        HLCell& ca = cells_[a];
+        HLCell& cb = cells_[b];
 
-        int dispBefore = ca.displacement() + cb.displacement();
+        const int dispBefore = ca.displacement() + cb.displacement();
+        const int newDispA =
+            std::abs(cb.x - ca.initX) + std::abs(cb.y - ca.initY);
+        const int newDispB =
+            std::abs(ca.x - cb.initX) + std::abs(ca.y - cb.initY);
+        const int dispAfter = newDispA + newDispB;
 
-        int newDispA = std::abs(cb.x - ca.initX) + std::abs(cb.y - ca.initY);
-        int newDispB = std::abs(ca.x - cb.initX) + std::abs(ca.y - cb.initY);
-        int dispAfter  = newDispA + newDispB;
-
-        // Accept swap if: total displacement reduces AND
-        //                 neither new displacement exceeds current max
-        if (dispAfter < dispBefore &&
-            newDispA <= maxDisp && newDispB <= maxDisp &&
-            respectsFence(a, cb.x, cb.y) &&
-            respectsFence(b, ca.x, ca.y) &&
-            isValidRow(cb.y, ca) &&
-            isValidRow(ca.y, cb)) {
-          // Swap
-          ripUp(a); ripUp(b);
-          std::swap(ca.x, cb.x);
-          std::swap(ca.y, cb.y);
-          place(a, ca.x, ca.y);
-          place(b, cb.x, cb.y);
+        if (dispAfter >= dispBefore) {
+          continue;
         }
+        if (newDispA > maxDisp || newDispB > maxDisp) {
+          continue;
+        }
+        if (!respectsFence(a, cb.x, cb.y) || !respectsFence(b, ca.x, ca.y)) {
+          continue;
+        }
+        if (!isValidRow(cb.y, ca) || !isValidRow(ca.y, cb)) {
+          continue;
+        }
+
+        ripUp(a);
+        ripUp(b);
+        std::swap(ca.x, cb.x);
+        std::swap(ca.y, cb.y);
+        place(a, ca.x, ca.y);
+        place(b, cb.x, cb.y);
       }
     }
   }
