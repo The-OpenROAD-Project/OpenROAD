@@ -20,6 +20,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//src/stt",
+        "//src/utl",
     ],
 )
 
