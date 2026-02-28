@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master # Updated to strictly track master
-      - macos-bazel
+      - macos-bazel # for local testing
   pull_request:
   workflow_dispatch:
 
@@ -30,10 +30,6 @@ jobs:
           key: ${{ runner.os }}-bazel-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-bazel-
-
-      - name: Install dependencies
-        run: |
-          ./etc/DependencyInstaller.sh
 
       - name: Install Bazelisk
         run: brew install bazelisk
