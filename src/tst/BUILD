@@ -17,7 +17,10 @@ cc_library(
     ],
     includes = ["."],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb",
+    ],
 )
 
 cc_library(
@@ -29,7 +32,10 @@ cc_library(
     ],
     includes = ["."],
     visibility = ["//visibility:public"],
-    deps = [":tst"],
+    deps = [
+        ":tst",
+        "//src/odb",
+    ],
 )
 
 cc_library(
