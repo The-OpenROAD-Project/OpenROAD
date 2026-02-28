@@ -933,7 +933,6 @@ endmodule
   std::ofstream vf(filename);
   if (!vf.is_open()) {
     logger_->error(RAM, 23, "Unable to open file {}", filename);
-    return;
   }
 
   vf << verilog_code;
