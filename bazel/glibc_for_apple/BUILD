@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 package(
     default_visibility = ["//visibility:public"],
 )
@@ -17,8 +19,8 @@ cc_library(
         # causing non-determinism in code like ABC across platforms.
         # On Linux (glibc), these are already the native implementations.
         "@platforms//os:macos": [
-            "portable_rand.c",
             "portable_qsort.c",
+            "portable_rand.c",
         ],
         "//conditions:default": [],
     }),
