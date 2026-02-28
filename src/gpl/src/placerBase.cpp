@@ -119,7 +119,7 @@ bool Instance::isFixed() const
     return true;
   }
 
-  return inst_->getPlacementStatus().isFixed();
+  return inst_->getPlacementStatus().isFixed() || isLocked();
 }
 
 bool Instance::isInstance() const

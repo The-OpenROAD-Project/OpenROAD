@@ -1045,6 +1045,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->setIter(start_iter);
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
+    nb->resetConverged();
     original_area += nb->getNesterovInstsArea();
   }
 
