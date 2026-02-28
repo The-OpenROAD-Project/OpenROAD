@@ -1071,7 +1071,6 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
                    106,
                    "Net for driver pin {} not found.",
                    db_network_->pathName(drvr_pin));
-    return nullptr;
   }
 
   if (db_net->getTermCount() == 1) {
@@ -1162,7 +1161,6 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
                        drvr_route_pt.y(),
                        bnet->loadCount(),
                        pin_grid_locs.size() - 1);
-        return nullptr;
       }
     }
     return bnet;
