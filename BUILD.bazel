@@ -175,7 +175,6 @@ cc_binary(
         ":opt_notification",
         ":ord",
         "//bazel:runfiles",
-        "//bazel/glibc_for_apple:portable_rand_qsort",
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
@@ -183,7 +182,10 @@ cc_binary(
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tcl_lang//:tcl",
-    ],
+    ] + select({
+        "@platforms//os:macos": ["//bazel/glibc_for_apple:portable_rand_qsort"],
+        "//conditions:default": [],
+    }),
 )
 
 GUI_BUILD_FLAGS = select(
