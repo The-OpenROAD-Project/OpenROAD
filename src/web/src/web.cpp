@@ -186,6 +186,25 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
           }
         }
       }
+
+      // Draw special net shapes (power/ground straps) for this layer
+      for (const auto& shape : search_->searchSNetShapes(
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
+      {
+        const odb::Rect box = std::get<0>(shape)->getBox();
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, ix, draw_y, color);
+          }
+        }
+      }
     }
 
     for (odb::dbInst* inst : search_->searchInsts(
@@ -589,7 +608,17 @@ class ws_session : public std::enable_shared_from_this<ws_session>
     auto self = shared_from_this();
     auto gen = generator_;
     net::post(ws_.get_executor(), [self, gen, req]() {
-      WsResponse resp = dispatch_request(req, gen);
+      WsResponse resp;
+      try {
+        resp = dispatch_request(req, gen);
+      } catch (const std::exception& e) {
+        resp.id = req.id;
+        resp.type = 2;  // error
+        std::string err = std::string("server error: ") + e.what();
+        resp.payload.assign(err.begin(), err.end());
+        std::cerr << "dispatch error for request " << req.id << ": "
+                  << e.what() << "\n";
+      }
       self->queue_response(resp);
     });
 

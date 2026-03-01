@@ -56,6 +56,7 @@ class WebSocketManager {
             return; // stale response (e.g. tile scrolled away)
         }
         this.pending.delete(id);
+        updateStatus();
 
         const payload = data.slice(8);
 
@@ -78,21 +79,25 @@ class WebSocketManager {
             msg.id = id;
             this.pending.set(id, { resolve, reject });
             this.ws.send(JSON.stringify(msg));
+            updateStatus();
         });
     }
 
     // Cancel a pending request (e.g. tile scrolled out of view)
     cancel(id) {
         this.pending.delete(id);
+        updateStatus();
     }
 }
 
-// Custom Leaflet TileLayer that loads tiles via WebSocket
-const WSTileLayer = L.TileLayer.extend({
+// Custom Leaflet GridLayer that loads tiles via WebSocket.
+// We extend L.GridLayer (not L.TileLayer) to avoid URL-specific behaviors
+// like _abortLoading that interfere with async WebSocket tile loading.
+const WSTileLayer = L.GridLayer.extend({
     initialize: function(wsManager, layerName, options) {
         this._wsManager = wsManager;
         this._layerName = layerName;
-        L.TileLayer.prototype.initialize.call(this, '', options);
+        L.GridLayer.prototype.initialize.call(this, options);
     },
 
     createTile: function(coords, done) {
@@ -131,24 +136,42 @@ const WSTileLayer = L.TileLayer.extend({
     _removeTile: function(key) {
         const tile = this._tiles[key];
         if (tile && tile.el) {
-            // Cancel pending WebSocket request using the ID stored on this
-            // specific tile element (not by coordinate key)
             if (tile.el._wsRequestId !== undefined) {
                 this._wsManager.cancel(tile.el._wsRequestId);
             }
-            // Revoke blob URL if still set
             if (tile.el.src && tile.el.src.startsWith('blob:')) {
                 URL.revokeObjectURL(tile.el.src);
             }
         }
-        L.TileLayer.prototype._removeTile.call(this, key);
+        L.GridLayer.prototype._removeTile.call(this, key);
     }
 });
 
 const map = L.map('map', {
     crs: L.CRS.Simple,
     zoom: 1,
+    fadeAnimation: false,
 });
+
+// Status indicator showing pending WS tile requests
+const statusDiv = document.createElement('div');
+statusDiv.id = 'ws-status';
+statusDiv.style.cssText = 'position:fixed;top:8px;right:8px;z-index:10000;'
+    + 'background:rgba(0,0,0,0.7);color:#aaa;padding:4px 10px;'
+    + 'font:12px monospace;border-radius:4px;pointer-events:none;';
+document.body.appendChild(statusDiv);
+
+function updateStatus() {
+    const n = wsManager ? wsManager.pending.size : 0;
+    if (n === 0) {
+        statusDiv.textContent = '';
+        statusDiv.style.display = 'none';
+    } else {
+        statusDiv.textContent = `pending: ${n}`;
+        statusDiv.style.display = '';
+        statusDiv.style.color = n > 20 ? '#f88' : '#ff0';
+    }
+}
 
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
 const wsManager = new WebSocketManager(wsUrl);
