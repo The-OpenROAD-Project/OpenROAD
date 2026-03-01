@@ -92,8 +92,6 @@ const WSTileLayer = L.TileLayer.extend({
     initialize: function(wsManager, layerName, options) {
         this._wsManager = wsManager;
         this._layerName = layerName;
-        // Track request IDs per tile key for cancellation
-        this._pendingIds = new Map();
         L.TileLayer.prototype.initialize.call(this, '', options);
     },
 
@@ -102,9 +100,11 @@ const WSTileLayer = L.TileLayer.extend({
         tile.alt = '';
         tile.setAttribute('role', 'presentation');
 
-        const id = this._wsManager.nextId; // peek at next ID
-        const key = coords.x + ':' + coords.y + ':' + coords.z;
-        this._pendingIds.set(key, id);
+        // Store request ID on the tile element itself to avoid
+        // coordinate-key collisions when Leaflet creates a new tile
+        // at the same coords before removing the old one.
+        const requestId = this._wsManager.nextId;
+        tile._wsRequestId = requestId;
 
         this._wsManager.request({
             type: 'tile',
@@ -117,10 +117,11 @@ const WSTileLayer = L.TileLayer.extend({
                 URL.revokeObjectURL(tile.src);
                 done(null, tile);
             };
+            tile.onerror = () => {
+                done(new Error('tile image load error'), tile);
+            };
             tile.src = URL.createObjectURL(blob);
-            this._pendingIds.delete(key);
         }).catch(err => {
-            this._pendingIds.delete(key);
             done(err, tile);
         });
 
@@ -128,16 +129,17 @@ const WSTileLayer = L.TileLayer.extend({
     },
 
     _removeTile: function(key) {
-        // Cancel pending WebSocket request for tiles that scrolled away
-        const id = this._pendingIds.get(key);
-        if (id !== undefined) {
-            this._wsManager.cancel(id);
-            this._pendingIds.delete(key);
-        }
-        // Revoke blob URL if still set
         const tile = this._tiles[key];
-        if (tile && tile.el && tile.el.src && tile.el.src.startsWith('blob:')) {
-            URL.revokeObjectURL(tile.el.src);
+        if (tile && tile.el) {
+            // Cancel pending WebSocket request using the ID stored on this
+            // specific tile element (not by coordinate key)
+            if (tile.el._wsRequestId !== undefined) {
+                this._wsManager.cancel(tile.el._wsRequestId);
+            }
+            // Revoke blob URL if still set
+            if (tile.el.src && tile.el.src.startsWith('blob:')) {
+                URL.revokeObjectURL(tile.el.src);
+            }
         }
         L.TileLayer.prototype._removeTile.call(this, key);
     }
@@ -146,8 +148,6 @@ const WSTileLayer = L.TileLayer.extend({
 const map = L.map('map', {
     crs: L.CRS.Simple,
     zoom: 1,
-    zoomSnap: 0.1,
-    zoomDelta: 0.2,
 });
 
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
