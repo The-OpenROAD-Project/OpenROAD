@@ -760,8 +760,8 @@ proc replace_arith_modules { args } {
   } else {
     set target "setup"
   }
-  if { [info exists keys(-slack_margin)] } {
-    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  if { [info exists keys(-slack_threshold)] } {
+    set slack_margin [rsz::parse_time_margin_arg "-slack_threshold" keys]
   } else {
     set slack_margin 0.0
   }
