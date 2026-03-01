@@ -1077,7 +1077,7 @@ BufferedNetPtr Resizer::makeBufferedNetGroute(const sta::Pin* drvr_pin,
     logger_->warn(
         RSZ,
         104,
-        "Net {} has only one pin, skipping buffered net construction.",
+        "Net {} only has one pin. Check if it is intended to be dangling.",
         db_net->getName());
     return nullptr;
   }
