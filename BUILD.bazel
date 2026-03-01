@@ -246,11 +246,6 @@ genrule(
     name = "OpenRoadVersion",
     srcs = [],
     outs = ["include/ord/Version.hh"],
-    # stamp = -1 means "stamp when --stamp is set" (via --config=release).
-    # Without --stamp (the default), STABLE_GIT_VERSION is empty and
-    # the output is deterministic, so the Bazel cache is not invalidated
-    # on every commit.
-    stamp = -1,
     cmd = """
         VERSION=""
         if [ -f bazel-out/stable-status.txt ]; then
@@ -261,6 +256,11 @@ genrule(
         printf '#define OPENROAD_VERSION "%s"\\n' "$$VERSION" > $@
         printf '#define OPENROAD_GIT_DESCRIBE ""\\n' >> $@
     """,
+    # stamp = -1 means "stamp when --stamp is set" (via --config=release).
+    # Without --stamp (the default), STABLE_GIT_VERSION is empty and
+    # the output is deterministic, so the Bazel cache is not invalidated
+    # on every commit.
+    stamp = -1,
 )
 
 tcl_encode(
