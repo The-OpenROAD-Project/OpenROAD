@@ -162,10 +162,11 @@ wsManager.readyPromise.then(async () => {
 
         // --- Load Layers ---
         const overlayLayers = {};
-        layersData.layers.forEach(name => {
+        layersData.layers.forEach((name, index) => {
             const layer = new WSTileLayer(wsManager, name, {
                 attribution: name,
-                opacity: 0.7
+                opacity: 0.7,
+                zIndex: index + 1
             });
             overlayLayers[name] = layer;
             layer.addTo(map);

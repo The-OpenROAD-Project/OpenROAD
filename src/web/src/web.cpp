@@ -51,6 +51,8 @@ class TileGenerator
 
   odb::Rect getBounds();
 
+  std::vector<std::string> getRoutingLayers();
+
   std::vector<unsigned char> generateTile(const std::string& layer,
                                           int z,
                                           int x,
@@ -107,6 +109,18 @@ odb::Rect TileGenerator::getBounds()
   return bounds;
 }
 
+std::vector<std::string> TileGenerator::getRoutingLayers()
+{
+  std::vector<std::string> layers;
+  odb::dbTech* tech = db_->getTech();
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer->getRoutingLevel() > 0) {
+      layers.push_back(layer->getName());
+    }
+  }
+  return layers;
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
                                                        const int z,
                                                        const int x,
@@ -116,7 +130,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
   std::vector<unsigned char> image_buffer(
       kTileSizeInPixel * kTileSizeInPixel * 4, 0);
 
-  // Per-layer colors: m1=blue, m2=red, then cycle through distinct hues
+  // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
   static const Color palette[] = {
       {70, 130, 210, 180},   // moderate blue
       {200, 50, 50, 180},    // red
@@ -129,16 +143,12 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
   };
   static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
 
-  // Extract numeric suffix from layer name (e.g. "m1" -> 1, "m12" -> 12)
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
+
   int layer_index = 0;
-  for (size_t i = 0; i < layer.size(); ++i) {
-    if (std::isdigit(layer[i])) {
-      layer_index = std::stoi(layer.substr(i)) - 1;
-      break;
-    }
-  }
-  if (layer_index < 0) {
-    layer_index = 0;
+  if (tech_layer) {
+    layer_index = std::max(0, tech_layer->getRoutingLevel() - 1);
   }
   const Color color = palette[layer_index % palette_size];
   Color obs_color = color.lighter();
@@ -156,6 +166,28 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     const double scale = kTileSizeInPixel / tile_dbu_size;
 
     odb::dbBlock* block = db_->getChip()->getBlock();
+
+    // Draw routing shapes (wires, vias, bterms) for this layer
+    if (tech_layer) {
+      for (const auto& shape : search_->searchBoxShapes(
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
+      {
+        const odb::Rect& box = std::get<0>(shape);
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, ix, draw_y, color);
+          }
+        }
+      }
+    }
+
     for (odb::dbInst* inst : search_->searchInsts(
              block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
       odb::Rect inst_bbox = inst->getBBox()->getBox();
@@ -204,6 +236,9 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       }
 
       for (odb::dbBox* obs : master->getObstructions()) {
+        if (tech_layer && obs->getTechLayer() != tech_layer) {
+          continue;
+        }
         odb::Rect box = obs->getBox();
         inst->getTransform().apply(box);
         if (!box.overlaps(dbu_tile)) {
@@ -223,6 +258,9 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       for (odb::dbMTerm* mterm : master->getMTerms()) {
         for (odb::dbMPin* mpin : mterm->getMPins()) {
           for (odb::dbBox* geom : mpin->getGeometry()) {
+            if (tech_layer && geom->getTechLayer() != tech_layer) {
+              continue;
+            }
             odb::Rect box = geom->getBox();
             inst->getTransform().apply(box);
             if (!box.overlaps(dbu_tile)) {
@@ -370,7 +408,18 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::LAYERS: {
       resp.type = 0;  // JSON
-      const std::string json = "{\"layers\": [\"m1\", \"m2\"]}";
+      std::stringstream ss;
+      ss << "{\"layers\": [";
+      bool first = true;
+      for (const auto& name : gen->getRoutingLayers()) {
+        if (!first) {
+          ss << ", ";
+        }
+        ss << "\"" << name << "\"";
+        first = false;
+      }
+      ss << "]}";
+      const std::string json = ss.str();
       resp.payload.assign(json.begin(), json.end());
       break;
     }
