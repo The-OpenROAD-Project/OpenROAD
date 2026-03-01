@@ -10,6 +10,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -341,8 +342,13 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
           chip, "verilog_file", chiplet.external.verilog_file.c_str());
     }
     if (sta_ != nullptr) {
-      std::string full_path
-          = std::filesystem::absolute(chiplet.external.verilog_file).string();
+      std::error_code ec;
+      auto path = std::filesystem::weakly_canonical(
+          chiplet.external.verilog_file, ec);
+      if (ec) {
+        path = std::filesystem::absolute(chiplet.external.verilog_file, ec);
+      }
+      std::string full_path = path.string();
       if (read_verilog_files_.insert(full_path).second) {
         if (!sta_->readVerilog(chiplet.external.verilog_file.c_str())) {
           logger_->warn(utl::ODB,

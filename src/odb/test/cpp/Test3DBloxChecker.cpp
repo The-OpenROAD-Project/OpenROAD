@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
+#include "Test3DBloxCheckerFixture.h"
 #include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "Test3DBloxCheckerFixture.h"
 
 namespace odb {
 namespace {

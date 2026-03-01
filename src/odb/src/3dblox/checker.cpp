@@ -426,6 +426,15 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
       }
     }
 
+    std::vector<std::string> available_nets;
+    available_nets.insert(
+        available_nets.end(), verilog_nets.begin(), verilog_nets.end());
+    std::ranges::sort(available_nets);
+    if (available_nets.size() > 10) {
+      available_nets.resize(10);
+      available_nets.emplace_back("...");
+    }
+
     for (auto* region : master->getChipRegions()) {
       for (auto* bump : region->getChipBumps()) {
         auto* net = bump->getNet();
@@ -437,15 +446,6 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
           auto* marker = dbMarker::create(alignment_cat);
           std::string bump_name
               = bump->getInst() ? bump->getInst()->getName() : "UNKNOWN_BUMP";
-
-          std::vector<std::string> available_nets;
-          available_nets.insert(
-              available_nets.end(), verilog_nets.begin(), verilog_nets.end());
-          std::ranges::sort(available_nets);
-          if (available_nets.size() > 10) {
-            available_nets.resize(10);
-            available_nets.emplace_back("...");
-          }
 
           std::string msg = fmt::format(
               "Logical net {} (bump {}) not found in Verilog. Available nets: "
