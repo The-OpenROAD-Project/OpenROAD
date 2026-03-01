@@ -152,6 +152,7 @@ const map = L.map('map', {
 
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
 const wsManager = new WebSocketManager(wsUrl);
+let fitBounds = null;
 
 wsManager.readyPromise.then(async () => {
     try {
@@ -187,16 +188,22 @@ wsManager.readyPromise.then(async () => {
 
         const scale = tileSize / Math.max(designWidth, designHeight);
 
-        const scaledBounds = [
+        fitBounds = [
             [-minY * scale, minX * scale],
             [-maxY * scale, maxX * scale]
         ];
-        map.fitBounds(scaledBounds);
+        map.fitBounds(fitBounds);
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
         map.getPane('mapPane').innerHTML =
             '<div style="color:red; text-align:center; margin-top: 50px; font-family: monospace;">' +
             'Error: Could not load initial data from server.' +
             '</div>';
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'f' && fitBounds) {
+        map.fitBounds(fitBounds);
     }
 });
