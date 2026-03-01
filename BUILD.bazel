@@ -247,10 +247,17 @@ genrule(
     name = "OpenRoadVersion",
     srcs = [],
     outs = ["include/ord/Version.hh"],
-    cmd = """echo -e '
-#define OPENROAD_VERSION "HDL-HEAD"
-#define OPENROAD_GIT_SHA1 "HEAD"
-' > \"$@\"
+    # stamp = True lets the rule read bazel-out/stable-status.txt, which is
+    # populated by tools/workspace_status.sh when building with --stamp.
+    # With the default --nostamp, STABLE_GIT_VERSION is empty and the output
+    # is deterministic, so the Bazel cache is not invalidated on every commit.
+    stamp = True,
+    cmd = """
+        VERSION=$$(grep '^STABLE_GIT_VERSION ' bazel-out/stable-status.txt \
+                    | cut -d' ' -f2-)
+        [ -z "$$VERSION" ] && VERSION="bazel-nostamp"
+        printf '#define OPENROAD_VERSION "%s"\\n' "$$VERSION" > $@
+        printf '#define OPENROAD_GIT_DESCRIBE "%s"\\n' "$$VERSION" >> $@
     """,
 )
 
