@@ -4,6 +4,7 @@
 #pragma once
 
 #include <atomic>
+#include <absl/base/thread_annotations.h>
 #include <cstdint>
 #include <memory>
 #include <queue>
@@ -43,7 +44,7 @@ class LoadBalancer
   bool addWorker(const std::string& ip, uint16_t port);
   void updateWorker(const ip::address& ip, uint16_t port);
   void getNextWorker(ip::address& ip, uint16_t& port);
-  void removeWorker(const ip::address& ip, uint16_t port, bool lock = true);
+  void removeWorker(const ip::address& ip, uint16_t port);
   void punishWorker(const ip::address& ip, uint16_t port);
 
  private:
@@ -82,6 +83,8 @@ class LoadBalancer
   boost::thread workers_lookup_thread_;
   std::vector<std::string> broadcastData_;
 
+  void removeWorkerLocked(const ip::address& ip, uint16_t port)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(workers_mutex_);
   void start_accept();
   void handle_accept(const BalancerConnection::Pointer& connection,
                      const boost::system::error_code& err);

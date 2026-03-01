@@ -148,11 +148,14 @@ void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
   workers_.swap(new_queue);
 }
 
-void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
+void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port)
 {
-  if (lock) {
-    workers_mutex_.Lock();
-  }
+  absl::MutexLock lock(&workers_mutex_);
+  removeWorkerLocked(ip, port);
+}
+
+void LoadBalancer::removeWorkerLocked(const ip::address& ip, uint16_t port)
+{
   std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
@@ -163,9 +166,6 @@ void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
     new_queue.push(worker);
   }
   workers_.swap(new_queue);
-  if (lock) {
-    workers_mutex_.Unlock();
-  }
 }
 
 void LoadBalancer::lookUpWorkers(const char* domain, uint16_t port)
