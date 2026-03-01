@@ -861,6 +861,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
 
   std::string module_name = fmt::format("RAM{}x{}", word_count, word_size_bit);
 
+  // Build port list
   std::string port_list = "\n  clk,\n  D";
   for (int i = 0; i < read_ports; i++) {
     if (read_ports == 1) {
@@ -869,8 +870,13 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
       port_list += fmt::format(",\n  Q{}", i);
     }
   }
-  port_list += ",\n  addr,\n  we";
+  port_list += ",\n  addr_w";
+  for (int i = 0; i < read_ports; i++) {
+    port_list += fmt::format(",\n  addr_r{}", i);
+  }
+  port_list += ",\n  we";
 
+  // Build output declarations
   std::string output_declaration;
   for (int i = 0; i < read_ports; i++) {
     if (read_ports == 1) {
@@ -882,6 +888,16 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     }
   }
 
+  // Build address declarations
+  std::string addr_declarations;
+  addr_declarations
+      += fmt::format("  input [{}:0] addr_w;\n", address_width - 1);
+  for (int i = 0; i < read_ports; i++) {
+    addr_declarations
+        += fmt::format("  input [{}:0] addr_r{};\n", address_width - 1, i);
+  }
+
+  // Build read port logic
   std::string read_port_logic;
   for (int i = 0; i < read_ports; i++) {
     std::string port_name = (read_ports == 1) ? "Q" : fmt::format("Q{}", i);
@@ -889,18 +905,18 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
       read_port_logic += "\n";
     }
     read_port_logic += fmt::format(R"(  always @(*) begin
-    {} = mem[addr];
+    {} = mem[addr_r{}];
   end
 )",
-                                   port_name);
+                                   port_name,
+                                   i);
   }
 
   std::string verilog_code = fmt::format(R"(module {} ({}
 );
   input clk;
   input [{}:0] D;
-{}  input [{}:0] addr;
-  input [{}:0] we;
+{}{}  input [{}:0] we;
 
   // memory array declaration
   reg [{}:0] mem[0:{}];
@@ -910,7 +926,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   always @(posedge clk) begin
     for (i = 0; i < {}; i = i + 1) begin
       if (we[i]) begin
-        mem[addr][i*8 +:8] <= D[i*8 +:8];
+        mem[addr_w][i*8 +:8] <= D[i*8 +:8];
       end
     end
   end
@@ -923,7 +939,7 @@ endmodule
                                          port_list,
                                          word_size_bit - 1,
                                          output_declaration,
-                                         address_width - 1,
+                                         addr_declarations,
                                          bytes_per_word - 1,
                                          word_size_bit - 1,
                                          word_count - 1,
