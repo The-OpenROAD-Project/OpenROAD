@@ -2,7 +2,6 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -12,20 +11,30 @@ package(
 )
 
 cc_library(
-    name = "exa",
+    name = "web",
     srcs = [
-        "src/example.cpp",
-        "src/observer.h",
+        "src/color.cpp",
+        "src/color.h",
+        "src/search.cpp",
+        "src/search.h",
+        "src/web.cpp",
     ],
     hdrs = [
-        "include/exa/example.h",
+        "include/web/web.h",
     ],
     includes = [
         "include",
     ],
+    copts = [
+        "-Isrc/web/src",
+    ],
     deps = [
         "//src/odb",
         "//src/utl",
+        "//third-party/lodepng",
+        "@boost.asio",
+        "@boost.beast",
+        "@boost.geometry",
         "@tk_tcl//:tcl",
     ],
 )
@@ -33,29 +42,24 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "src/MakeExample.cpp",
-        "src/graphics.cpp",
-        "src/graphics.h",
-        "src/observer.h",
+        "src/MakeWeb.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
-        "include/exa/MakeExample.h",
+        "include/web/MakeWeb.h",
     ],
     copts = [
-        "-Isrc/exa/src",
+        "-Isrc/web/src",
     ],
     includes = [
         "include",
     ],
     deps = [
-        ":exa",
+        ":web",
         "//:ord",
-        "//src/gui",
         "//src/odb",
         "//src/utl",
-        "@boost.stacktrace",
         "@tk_tcl//:tcl",
     ],
 )
@@ -63,40 +67,25 @@ cc_library(
 tcl_encode(
     name = "tcl",
     srcs = [
-        "src/example.tcl",
+        "src/web.tcl",
     ],
-    char_array_name = "exa_tcl_inits",
-    namespace = "exa",
+    char_array_name = "web_tcl_inits",
+    namespace = "web",
 )
 
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "src/example.i",
+        "src/web.i",
         "//:error_swig",
     ],
-    module = "exa",
-    namespace_prefix = "exa",
-    root_swig_src = "src/example.i",
+    module = "web",
+    namespace_prefix = "web",
+    root_swig_src = "src/web.i",
     swig_includes = [
-        "src/exa/src",
+        "src/web/src",
     ],
     deps = [
         "//src/odb:swig",
-    ],
-)
-
-python_wrap_cc(
-    name = "swig-py",
-    srcs = [
-        "include/exa/example.h",
-        "src/example-py.i",
-        "//:error_swig-py",
-    ],
-    module = "exa_py",
-    root_swig_src = "src/example-py.i",
-    swig_includes = [
-        "include",
-        "src",
     ],
 )

@@ -6,17 +6,20 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
+#include <boost/asio/strand.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <boost/beast/websocket.hpp>
+#include <cstring>
+#include <deque>
 #include <iostream>
-#include <memory>  // For shared_ptr and enable_shared_from_this
+#include <memory>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
 #include "color.h"
-#include "cpp-httplib/httplib.h"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -28,6 +31,7 @@ namespace web {
 
 namespace beast = boost::beast;
 namespace http = beast::http;
+namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
@@ -108,8 +112,6 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
                                                        const int x,
                                                        int y)
 {
-  // utl::DebugScopedTimer timer(logger_, utl::WEB, "tile", 1, "generateTile
-  // {}");
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
       kTileSizeInPixel * kTileSizeInPixel * 4, 0);
@@ -117,7 +119,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
   Color color{0, 0, 255, 180};
   Color obs_color = color.lighter();
 
-  // 2. Determine our tile's bounding box in dbu coordinates.
+  // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
     y = num_tiles_at_zoom - 1 - y;  // flip
@@ -149,7 +151,6 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       const int pixel_yl = (int) ((yl - dbu_y_min) * scale);
       const int pixel_xh = (int) std::ceil((xh - dbu_x_min) * scale);
       const int pixel_yh = (int) std::ceil((yh - dbu_y_min) * scale);
-      // const odb::Rect pixel_bbox = toPixels(scale, inst_bbox, dbu_tile);
 
       // Draw the rectangle border
       Color gray{128, 128, 128, 255};
@@ -216,17 +217,6 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
         }
       }
     }
-    // Draw tile border
-    if (false) {
-      for (int ix = 0; ix < 255; ++ix) {
-        setPixel(image_buffer, ix, 0, {255, 0, 0, 255});
-        setPixel(image_buffer, ix, 255, {255, 0, 0, 255});
-      }
-      for (int iy = 0; iy < 255; ++iy) {
-        setPixel(image_buffer, 0, iy, {255, 0, 0, 255});
-        setPixel(image_buffer, 255, iy, {255, 0, 0, 255});
-      }
-    }
   }
 
   std::vector<unsigned char> png_data;
@@ -240,12 +230,164 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
 }
 
 //------------------------------------------------------------------------------
-/**
- * @brief This is your "Router". (Unchanged from C++20)
- *
- * This function is called by the session to handle a complete
- * request. It's where you implement your endpoint logic.
- */
+// Transport-agnostic request/response types and dispatch
+//------------------------------------------------------------------------------
+
+struct WsRequest
+{
+  uint32_t id = 0;
+  enum Type
+  {
+    TILE,
+    BOUNDS,
+    LAYERS,
+    UNKNOWN
+  } type
+      = UNKNOWN;
+  std::string layer;
+  int z = 0;
+  int x = 0;
+  int y = 0;
+};
+
+struct WsResponse
+{
+  uint32_t id = 0;
+  // 0 = JSON payload, 1 = PNG payload, 2 = error
+  uint8_t type = 0;
+  std::vector<unsigned char> payload;
+};
+
+// Minimal JSON field extraction (no JSON library dependency)
+static std::string extract_string(const std::string& json,
+                                  const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return {};
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return {};
+  }
+  auto quote_start = json.find('"', pos + 1);
+  if (quote_start == std::string::npos) {
+    return {};
+  }
+  auto quote_end = json.find('"', quote_start + 1);
+  if (quote_end == std::string::npos) {
+    return {};
+  }
+  return json.substr(quote_start + 1, quote_end - quote_start - 1);
+}
+
+static int extract_int(const std::string& json, const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  // Skip whitespace after colon
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  try {
+    return std::stoi(json.substr(pos));
+  } catch (...) {
+    return 0;
+  }
+}
+
+static WsRequest parse_ws_request(const std::string& msg)
+{
+  WsRequest req;
+  req.id = static_cast<uint32_t>(extract_int(msg, "id"));
+
+  std::string type_str = extract_string(msg, "type");
+  if (type_str == "tile") {
+    req.type = WsRequest::TILE;
+    req.layer = extract_string(msg, "layer");
+    req.z = extract_int(msg, "z");
+    req.x = extract_int(msg, "x");
+    req.y = extract_int(msg, "y");
+  } else if (type_str == "bounds") {
+    req.type = WsRequest::BOUNDS;
+  } else if (type_str == "layers") {
+    req.type = WsRequest::LAYERS;
+  } else {
+    req.type = WsRequest::UNKNOWN;
+  }
+  return req;
+}
+
+static WsResponse dispatch_request(const WsRequest& req,
+                                   const std::shared_ptr<TileGenerator>& gen)
+{
+  WsResponse resp;
+  resp.id = req.id;
+
+  switch (req.type) {
+    case WsRequest::BOUNDS: {
+      resp.type = 0;  // JSON
+      const odb::Rect bounds = gen->getBounds();
+      std::stringstream ss;
+      ss << "{\"bounds\": [[" << bounds.yMin() << ", " << bounds.xMin()
+         << "], [" << bounds.yMax() << ", " << bounds.xMax() << "]]}";
+      const std::string json = ss.str();
+      resp.payload.assign(json.begin(), json.end());
+      break;
+    }
+    case WsRequest::LAYERS: {
+      resp.type = 0;  // JSON
+      const std::string json = "{\"layers\": [\"m1\"]}";
+      resp.payload.assign(json.begin(), json.end());
+      break;
+    }
+    case WsRequest::TILE: {
+      resp.type = 1;  // PNG
+      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y);
+      break;
+    }
+    default: {
+      resp.type = 2;  // error
+      const std::string err = "Unknown request type";
+      resp.payload.assign(err.begin(), err.end());
+      break;
+    }
+  }
+
+  return resp;
+}
+
+// Serialize a WsResponse into the binary wire format:
+//   [0..3] uint32_t id (big-endian)
+//   [4]    uint8_t  type
+//   [5..7] reserved
+//   [8..]  payload
+static std::vector<unsigned char> serialize_response(const WsResponse& resp)
+{
+  std::vector<unsigned char> frame(8 + resp.payload.size());
+  const uint32_t id_be = htonl(resp.id);
+  std::memcpy(frame.data(), &id_be, 4);
+  frame[4] = resp.type;
+  frame[5] = frame[6] = frame[7] = 0;
+  if (!resp.payload.empty()) {
+    std::memcpy(frame.data() + 8, resp.payload.data(), resp.payload.size());
+  }
+  return frame;
+}
+
+//------------------------------------------------------------------------------
+// HTTP request handler (wraps dispatch_request for HTTP transport)
+//------------------------------------------------------------------------------
+
 http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
     std::shared_ptr<TileGenerator> generator)
@@ -260,93 +402,95 @@ http::response<http::string_body> handle_request(
   std::smatch match_pieces;
   std::string target_path(req.target());
 
-  // --- Endpoint Routing Logic ---
   if (req.method() == http::verb::get && req.target() == "/bounds") {
-    // const odb::Rect bounds = getBounds();
-    const odb::Rect bounds{0, 0, 20000, 20000};
-    std::stringstream ss;
-    // Returns bounds in Leaflet's [y, x] format: [[yMin, xMin], [yMax, xMax]]
-    ss << "{\"bounds\": [[" << bounds.yMin() << ", " << bounds.xMin() << "], ["
-       << bounds.yMax() << ", " << bounds.xMax() << "]]}";
+    WsRequest ws_req;
+    ws_req.type = WsRequest::BOUNDS;
+    WsResponse ws_resp = dispatch_request(ws_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = ss.str();
+    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
   } else if (req.method() == http::verb::get && req.target() == "/layers") {
+    WsRequest ws_req;
+    ws_req.type = WsRequest::LAYERS;
+    WsResponse ws_resp = dispatch_request(ws_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = "{\"layers\": [\"m1\"]}";
+    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
   } else if (req.method() == http::verb::get
              && std::regex_match(target_path, match_pieces, tile_regex)) {
-    std::string layer = match_pieces[1].str();
-    int z = std::stoi(match_pieces[2].str());
-    int x = std::stoi(match_pieces[3].str());
-    int y = std::stoi(match_pieces[4].str());
-
-    std::vector<unsigned char> png_data
-        = generator->generateTile(layer, z, x, y);
+    WsRequest ws_req;
+    ws_req.type = WsRequest::TILE;
+    ws_req.layer = match_pieces[1].str();
+    ws_req.z = std::stoi(match_pieces[2].str());
+    ws_req.x = std::stoi(match_pieces[3].str());
+    ws_req.y = std::stoi(match_pieces[4].str());
+    WsResponse ws_resp = dispatch_request(ws_req, generator);
 
     res.set(http::field::content_type, "image/png");
-    res.body() = std::string(png_data.begin(), png_data.end());
+    res.body()
+        = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
   } else {
     res.result(http::status::not_found);
     res.body() = "Resource not found.";
   }
-  // --- End Routing Logic ---
 
   res.prepare_payload();
   return res;
 }
 
 //------------------------------------------------------------------------------
+// WebSocket session - multiplexes many requests over a single connection
+//------------------------------------------------------------------------------
 
-/**
- * @brief Handles a single HTTP server connection.
- *
- * Inherits from enable_shared_from_this to manage its own lifetime.
- */
-class session : public std::enable_shared_from_this<session>
+class ws_session : public std::enable_shared_from_this<ws_session>
 {
-  beast::tcp_stream stream_;
+  websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
 
-  // We use a shared_ptr for the response because http::async_write
-  // requires a non-const reference, and we need to keep it
-  // alive during the async operation.
-  std::shared_ptr<http::response<http::string_body>> res_;
-
-  // The request parser.
-  // Note: We'd use a parser if we weren't using the simple http::string_body
-  http::request<http::string_body> req_;
+  // Write serialization: strand + queue ensures one async_write at a time
+  net::strand<net::any_io_executor> strand_;
+  std::deque<std::vector<unsigned char>> write_queue_;
+  bool writing_ = false;
 
  public:
-  // Take ownership of the socket
-  session(tcp::socket&& socket, std::shared_ptr<TileGenerator> generator)
-      : stream_(std::move(socket)), generator_(generator)
+  ws_session(tcp::socket&& socket, std::shared_ptr<TileGenerator> generator)
+      : ws_(std::move(socket)),
+        generator_(std::move(generator)),
+        strand_(net::make_strand(ws_.get_executor()))
   {
   }
 
-  // Start the asynchronous operations
-  void run()
+  // Accept the WebSocket upgrade using the already-read HTTP request
+  void run(http::request<http::string_body>&& req)
   {
-    // We need to be executing within an asio strand to
-    // safely access the member variables.
-    // For this simple example, the callback chain itself
-    // provides implicit stranding, so we start with a read.
-    do_read();
+    ws_.set_option(
+        websocket::stream_base::timeout::suggested(beast::role_type::server));
+    ws_.set_option(
+        websocket::stream_base::decorator([](websocket::response_type& res) {
+          res.set(http::field::server, "OpenROAD WebSocket Server");
+        }));
+
+    ws_.async_accept(
+        req,
+        [self = shared_from_this()](beast::error_code ec) {
+          self->on_accept(ec);
+        });
   }
 
  private:
+  void on_accept(beast::error_code ec)
+  {
+    if (ec) {
+      std::cerr << "ws accept error: " << ec.message() << "\n";
+      return;
+    }
+    do_read();
+  }
+
   void do_read()
   {
-    // Clear the request
-    req_ = {};
-
-    // Read a request
-    http::async_read(
-        stream_,
+    ws_.async_read(
         buffer_,
-        req_,
-        // Capture 'self' to keep this object alive
         [self = shared_from_this()](beast::error_code ec, std::size_t) {
           self->on_read(ec);
         });
@@ -354,29 +498,129 @@ class session : public std::enable_shared_from_this<session>
 
   void on_read(beast::error_code ec)
   {
-    // This means the client closed the connection
+    if (ec) {
+      if (ec != websocket::error::closed) {
+        std::cerr << "ws read error: " << ec.message() << "\n";
+      }
+      return;
+    }
+
+    // Parse the incoming text message as a request
+    const std::string msg = beast::buffers_to_string(buffer_.data());
+    buffer_.consume(buffer_.size());
+
+    const WsRequest req = parse_ws_request(msg);
+
+    // Dispatch tile generation to the thread pool (not to the strand).
+    // This lets multiple tiles render concurrently across all 32 threads.
+    auto self = shared_from_this();
+    auto gen = generator_;
+    net::post(ws_.get_executor(), [self, gen, req]() {
+      WsResponse resp = dispatch_request(req, gen);
+      self->queue_response(resp);
+    });
+
+    // Immediately start reading the next request
+    do_read();
+  }
+
+  void queue_response(const WsResponse& resp)
+  {
+    std::vector<unsigned char> frame = serialize_response(resp);
+
+    // Post to the strand to serialize write queue access
+    net::post(strand_, [self = shared_from_this(),
+                        frame = std::move(frame)]() mutable {
+      self->write_queue_.push_back(std::move(frame));
+      if (!self->writing_) {
+        self->do_write();
+      }
+    });
+  }
+
+  void do_write()
+  {
+    if (write_queue_.empty()) {
+      writing_ = false;
+      return;
+    }
+    writing_ = true;
+    ws_.binary(true);
+    ws_.async_write(
+        net::buffer(write_queue_.front()),
+        [self = shared_from_this()](beast::error_code ec, std::size_t) {
+          // Post back to the strand to serialize queue access
+          net::post(self->strand_, [self, ec]() {
+            if (ec) {
+              std::cerr << "ws write error: " << ec.message() << "\n";
+              return;
+            }
+            self->write_queue_.pop_front();
+            self->do_write();
+          });
+        });
+  }
+};
+
+//------------------------------------------------------------------------------
+// HTTP session - handles traditional HTTP connections
+//------------------------------------------------------------------------------
+
+class session : public std::enable_shared_from_this<session>
+{
+  beast::tcp_stream stream_;
+  beast::flat_buffer buffer_;
+  std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<http::response<http::string_body>> res_;
+  http::request<http::string_body> req_;
+
+ public:
+  session(tcp::socket&& socket, std::shared_ptr<TileGenerator> generator)
+      : stream_(std::move(socket)), generator_(generator)
+  {
+  }
+
+  void run() { do_read(); }
+
+  // Entry point when the first request was already read by detect_session
+  void run_with_request(http::request<http::string_body> req,
+                        beast::flat_buffer buffer)
+  {
+    req_ = std::move(req);
+    buffer_ = std::move(buffer);
+    on_read({});
+  }
+
+ private:
+  void do_read()
+  {
+    req_ = {};
+    http::async_read(
+        stream_,
+        buffer_,
+        req_,
+        [self = shared_from_this()](beast::error_code ec, std::size_t) {
+          self->on_read(ec);
+        });
+  }
+
+  void on_read(beast::error_code ec)
+  {
     if (ec == http::error::end_of_stream) {
       return do_close();
     }
-
     if (ec) {
       std::cerr << "Session read error: " << ec.message() << "\n";
       return;
     }
 
-    // --- We have a request, now send a response ---
-
-    // Create the response object. We use a shared_ptr
-    // so it lives long enough for the async_write.
     res_ = std::make_shared<http::response<http::string_body>>(
         handle_request(std::move(req_), generator_));
-
     do_write();
   }
 
   void do_write()
   {
-    // Write the response
     http::async_write(
         stream_,
         *res_,
@@ -392,36 +636,78 @@ class session : public std::enable_shared_from_this<session>
       return;
     }
 
-    // Check if we should close the connection
     bool keep_alive = res_->keep_alive();
-
-    // Clear the response to free memory
     res_ = nullptr;
 
     if (keep_alive) {
-      // Go back to reading the next request
       do_read();
     } else {
-      // This means "Connection: close" was set
       do_close();
     }
   }
 
   void do_close()
   {
-    // Send a TCP shutdown
     beast::error_code ec;
     stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
-    // At this point, the connection is closed.
-    // The session object will be destroyed when the last shared_ptr goes away.
   }
 };
 
 //------------------------------------------------------------------------------
+// Detect session - reads first HTTP request, routes to WS or HTTP session
+//------------------------------------------------------------------------------
 
-/**
- * @brief Accepts incoming connections and launches sessions
- */
+class detect_session : public std::enable_shared_from_this<detect_session>
+{
+  beast::tcp_stream stream_;
+  beast::flat_buffer buffer_;
+  std::shared_ptr<TileGenerator> generator_;
+  http::request<http::string_body> req_;
+
+ public:
+  detect_session(tcp::socket&& socket,
+                 std::shared_ptr<TileGenerator> generator)
+      : stream_(std::move(socket)), generator_(std::move(generator))
+  {
+  }
+
+  void run()
+  {
+    http::async_read(
+        stream_,
+        buffer_,
+        req_,
+        [self = shared_from_this()](beast::error_code ec, std::size_t) {
+          self->on_read(ec);
+        });
+  }
+
+ private:
+  void on_read(beast::error_code ec)
+  {
+    if (ec) {
+      std::cerr << "Detect read error: " << ec.message() << "\n";
+      return;
+    }
+
+    if (websocket::is_upgrade(req_)) {
+      // WebSocket upgrade - hand off to ws_session
+      auto ws = std::make_shared<ws_session>(
+          stream_.release_socket(), generator_);
+      ws->run(std::move(req_));
+    } else {
+      // Regular HTTP - hand off to session with already-read request
+      auto s = std::make_shared<session>(
+          stream_.release_socket(), generator_);
+      s->run_with_request(std::move(req_), std::move(buffer_));
+    }
+  }
+};
+
+//------------------------------------------------------------------------------
+// Listener - accepts incoming connections
+//------------------------------------------------------------------------------
+
 class listener : public std::enable_shared_from_this<listener>
 {
   net::io_context& ioc_;
@@ -436,40 +722,34 @@ class listener : public std::enable_shared_from_this<listener>
   {
     beast::error_code ec;
 
-    // Open the acceptor
     acceptor_.open(endpoint.protocol(), ec);
-    if (ec) { /* handle error */
+    if (ec) {
       return;
     }
 
-    // Allow address reuse
     acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-    if (ec) { /* handle error */
+    if (ec) {
       return;
     }
 
-    // Bind to the server address
     acceptor_.bind(endpoint, ec);
-    if (ec) { /* handle error */
+    if (ec) {
       return;
     }
 
-    // Start listening for connections
     acceptor_.listen(net::socket_base::max_listen_connections, ec);
-    if (ec) { /* handle error */
+    if (ec) {
       return;
     }
   }
 
-  // Start accepting connections
   void run() { do_accept(); }
 
  private:
   void do_accept()
   {
-    // Asynchronously wait for a new connection
     acceptor_.async_accept(
-        ioc_,  // The executor for the socket
+        ioc_,
         [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
           self->on_accept(ec, std::move(socket));
         });
@@ -479,14 +759,10 @@ class listener : public std::enable_shared_from_this<listener>
   {
     if (ec) {
       std::cerr << "Listener accept error: " << ec.message() << "\n";
-      // Don't stop, just log and keep accepting
     } else {
-      // We have a new connection.
-      // Create a 'session' and run it.
-      std::make_shared<session>(std::move(socket), generator_)->run();
+      // Route through detect_session to handle both HTTP and WebSocket
+      std::make_shared<detect_session>(std::move(socket), generator_)->run();
     }
-
-    // Immediately go back to accepting the *next* connection
     do_accept();
   }
 };
@@ -509,38 +785,29 @@ void WebServer::serve()
 
     logger_->info(utl::WEB,
                   1,
-                  //"Server starting on http://{}:{} with {} threads...",
-                  // address,
                   "Server starting on http://:{} with {} threads...",
                   port,
                   num_threads);
 
-    // The I/O context is the "engine" for all async I/O
     net::io_context ioc{num_threads};
 
-    // Create and launch the main 'listener'
-    // It will start accepting connections
     std::make_shared<listener>(ioc, tcp::endpoint{address, port}, generator_)
         ->run();
 
-    // Set up a signal handler to gracefully shut down
     net::signal_set signals(ioc, SIGINT, SIGTERM);
     signals.async_wait([&](auto, auto) {
       logger_->info(utl::WEB, 3, "Shutting down...");
       ioc.stop();
     });
 
-    // Create a pool of threads to run the io_context
     std::vector<std::thread> threads;
     threads.reserve(num_threads - 1);
     for (int i = 0; i < num_threads - 1; ++i) {
       threads.emplace_back([&ioc] { ioc.run(); });
     }
 
-    // The main thread also joins the pool
     ioc.run();
 
-    // Wait for all threads to finish
     for (auto& t : threads) {
       t.join();
     }
