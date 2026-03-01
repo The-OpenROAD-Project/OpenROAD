@@ -116,7 +116,31 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
   std::vector<unsigned char> image_buffer(
       kTileSizeInPixel * kTileSizeInPixel * 4, 0);
 
-  Color color{0, 0, 255, 180};
+  // Per-layer colors: m1=blue, m2=red, then cycle through distinct hues
+  static const Color palette[] = {
+      {70, 130, 210, 180},   // moderate blue
+      {200, 50, 50, 180},    // red
+      {50, 180, 80, 180},    // green
+      {200, 160, 40, 180},   // amber
+      {160, 60, 200, 180},   // purple
+      {40, 190, 190, 180},   // teal
+      {220, 120, 50, 180},   // orange
+      {180, 70, 150, 180},   // magenta
+  };
+  static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
+
+  // Extract numeric suffix from layer name (e.g. "m1" -> 1, "m12" -> 12)
+  int layer_index = 0;
+  for (size_t i = 0; i < layer.size(); ++i) {
+    if (std::isdigit(layer[i])) {
+      layer_index = std::stoi(layer.substr(i)) - 1;
+      break;
+    }
+  }
+  if (layer_index < 0) {
+    layer_index = 0;
+  }
+  const Color color = palette[layer_index % palette_size];
   Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
@@ -346,7 +370,7 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::LAYERS: {
       resp.type = 0;  // JSON
-      const std::string json = "{\"layers\": [\"m1\"]}";
+      const std::string json = "{\"layers\": [\"m1\", \"m2\"]}";
       resp.payload.assign(json.begin(), json.end());
       break;
     }
