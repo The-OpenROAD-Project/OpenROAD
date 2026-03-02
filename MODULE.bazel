@@ -141,7 +141,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "dba8c9857e9056dad2d7054c80613a104d12b3d0",
+    commit = "dea261e6445ffc790989b22e85e15ae64172aa1f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -150,10 +150,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-464-g2b005366a",
+    image = "docker.io/openroad/orfs:26Q1-473-gb75a51133",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "f8e7b6983733298a29c3724a76ce3d4763fa11636ef8784a8b0bf6c28831624e",
+    sha256 = "0d811b5bbb44861ded130e10989a64b35163341f7300da66f7b17a67e3676e6b",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
