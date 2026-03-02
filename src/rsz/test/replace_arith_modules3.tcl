@@ -49,6 +49,7 @@ global_placement -skip_nesterov_place
 set num_instances [llength [get_cells -hier *]]
 puts "number instances in verilog is $num_instances"
 
+set_debug_level ODB replace_design_check_sanity 1
 report_wns
 report_tns
 

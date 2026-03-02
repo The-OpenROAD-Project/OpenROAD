@@ -63,6 +63,15 @@ Without offering any deeper insight some comments about what is shown above:
 
     bazelisk build :openroad
 
+## Version stamping
+
+By default, Bazel dev builds use a fixed placeholder version (`bazel-nostamp`) so that the build output is deterministic and fully cacheable across commits.
+
+To embed the real git version (e.g. `26Q1-1486-g6fe48208e4`), use `--config=release`:
+
+    bazelisk build --config=release :openroad
+    ./bazel-bin/openroad -version
+
 ## Platforms
 
 https://bazel.build/extending/platforms
