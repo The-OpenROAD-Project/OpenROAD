@@ -148,6 +148,7 @@ find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
 
 find_package(absl REQUIRED)
+message(STATUS "absl: ${absl_VERSION}")
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)

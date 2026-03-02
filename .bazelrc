@@ -1,4 +1,9 @@
 common --enable_bzlmod
+build --workspace_status_command=tools/workspace_status.sh
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
 common --enable_workspace  # explicitly currently still needing this
 
 # suppress distracting warning about newer module
