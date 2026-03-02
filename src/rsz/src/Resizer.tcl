@@ -761,13 +761,13 @@ proc replace_arith_modules { args } {
     set target "setup"
   }
   if { [info exists keys(-slack_threshold)] } {
-    set slack_margin [rsz::parse_time_margin_arg "-slack_threshold" keys]
+    set slack_threshold [rsz::parse_time_margin_arg "-slack_threshold" keys]
   } else {
-    set slack_margin 0.0
+    set slack_threshold 0.0
   }
 
-  puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
-  rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+  puts "replace_arith_modules -path_count $path_count -target $target -slack_threshold $slack_threshold"
+  rsz::swap_arith_modules_cmd $path_count $target $slack_threshold
 }
 
 sta::define_cmd_args "report_buffers" { [-filtered] }
