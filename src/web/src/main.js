@@ -184,7 +184,7 @@ const visibility = {
     pad_areaio: true,
     pad_other: true,
     // Physical sub-types
-    phys_fill: true,
+    phys_fill: false,
     phys_endcap: true,
     phys_welltap: true,
     phys_tie: true,
@@ -222,11 +222,16 @@ function redrawAllLayers() {
     }
 }
 
-function makeVisToggle(key, labelText) {
+function makeVisToggle(key, labelText, checked) {
+    if (checked === undefined) {
+        checked = visibility[key];
+    } else {
+        visibility[key] = checked;
+    }
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.checked = visibility[key];
+    checkbox.checked = checked;
     checkbox.addEventListener('change', () => {
         visibility[key] = checkbox.checked;
         redrawAllLayers();
@@ -237,11 +242,13 @@ function makeVisToggle(key, labelText) {
 }
 
 // children: array of [key, label] for leaf toggles, or nested makeVisGroup elements
-// options: { visKey, disabled, expanded }
+// options: { visKey, disabled, expanded, checked }
 //   visKey: if set, parent checkbox also controls this visibility key directly
 //   disabled: if true, children are grayed out and non-interactive
 //   expanded: if true, start with children visible
+//   checked: if false, start unchecked with all children off (default true)
 function makeVisGroup(groupLabel, children, options = {}) {
+    const startChecked = options.checked !== false;
     const container = document.createElement('div');
     container.className = 'vis-group';
 
@@ -256,7 +263,10 @@ function makeVisGroup(groupLabel, children, options = {}) {
 
     const parentCb = document.createElement('input');
     parentCb.type = 'checkbox';
-    parentCb.checked = true;
+    parentCb.checked = startChecked;
+    if (options.visKey) {
+        visibility[options.visKey] = startChecked;
+    }
     header.appendChild(parentCb);
     header.appendChild(document.createTextNode(groupLabel));
     container.appendChild(header);
@@ -273,14 +283,19 @@ function makeVisGroup(groupLabel, children, options = {}) {
     const childCbs = [];
     for (const child of children) {
         if (child instanceof HTMLElement) {
-            // Nested group element
+            // Nested group element — if parent starts unchecked, uncheck children
             childDiv.appendChild(child);
-            child.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            const cbs = child.querySelectorAll('input[type="checkbox"]');
+            cbs.forEach(cb => {
                 childCbs.push(cb);
+                if (!startChecked) {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change'));
+                }
             });
         } else {
             const [key, label] = child;
-            const toggle = makeVisToggle(key, label);
+            const toggle = makeVisToggle(key, label, startChecked ? undefined : false);
             childDiv.appendChild(toggle);
             childCbs.push(toggle.querySelector('input'));
         }
@@ -310,12 +325,16 @@ function makeVisGroup(groupLabel, children, options = {}) {
     });
 
     // Update parent state when children change
-    childDiv.addEventListener('change', () => {
+    function syncParent() {
         const allChecked = childCbs.every(cb => cb.checked);
         const someChecked = childCbs.some(cb => cb.checked);
         parentCb.checked = allChecked;
         parentCb.indeterminate = someChecked && !allChecked;
-    });
+    }
+    childDiv.addEventListener('change', syncParent);
+
+    // Compute initial parent state from actual child states
+    syncParent();
 
     return container;
 }
@@ -685,7 +704,7 @@ wsManager.readyPromise.then(async () => {
                     ['phys_bump', 'Bump'],
                     ['phys_other', 'Other'],
                 ]),
-            ], { expanded: true });
+            ]);
             displayControlsEl.appendChild(instanceGroup);
 
             // --- Nets group ---
@@ -698,7 +717,7 @@ wsManager.readyPromise.then(async () => {
                 ['net_tieoff', 'Tie off'],
                 ['net_scan', 'Scan'],
                 ['net_analog', 'Analog'],
-            ], { expanded: true });
+            ]);
             displayControlsEl.appendChild(netGroup);
 
             // --- Shapes group ---
@@ -707,7 +726,7 @@ wsManager.readyPromise.then(async () => {
                 ['special_nets', 'Special Nets'],
                 ['pins', 'Pins'],
                 ['blockages', 'Blockages'],
-            ], { expanded: true });
+            ]);
             displayControlsEl.appendChild(shapeGroup);
         }
 
