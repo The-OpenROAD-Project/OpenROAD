@@ -218,10 +218,12 @@ void MacroPlacer::addGuidanceRegion(odb::dbInst* macro, odb::Rect region)
 }
 
 void MacroPlacer::setMacroHalo(odb::dbInst* macro,
-                               int halo_width,
-                               int halo_height)
+                               int left,
+                               int bottom,
+                               int right,
+                               int top)
 {
-  hier_rtlmp_->setMacroHalo(macro, halo_width, halo_height);
+  hier_rtlmp_->setMacroHalo(macro, left, bottom, right, top);
 }
 
 void MacroPlacer::setMacroPlacementFile(const std::string& file_name)
