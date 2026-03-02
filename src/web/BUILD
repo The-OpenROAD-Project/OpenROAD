@@ -17,6 +17,7 @@ cc_library(
         "src/color.h",
         "src/search.cpp",
         "src/search.h",
+        "src/tile_generator.h",
         "src/web.cpp",
     ],
     hdrs = [

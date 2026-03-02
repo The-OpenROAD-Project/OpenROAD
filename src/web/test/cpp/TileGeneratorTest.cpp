@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2025, The OpenROAD Authors
+
+#include "tile_generator.h"
+
+#include "gtest/gtest.h"
+#include "lodepng.h"
+#include "odb/db.h"
+#include "tst/nangate45_fixture.h"
+
+namespace web {
+namespace {
+
+class TileGeneratorTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    // Nangate45Fixture gives us a chip + block with die area (0,0)-(1000,1000).
+    // Enlarge to fit standard cells (Nangate45 LEF units = 2000, so
+    // 100000 dbu = 50 um).
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+  }
+
+  // Create TileGenerator.  Call this after placing any instances so
+  // that the block BBox (used by getBounds) is up to date.
+  void makeTileGen()
+  {
+    tile_gen_ = std::make_unique<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+  }
+
+  // Decode a PNG byte vector into raw RGBA pixels.
+  std::vector<unsigned char> decodePng(
+      const std::vector<unsigned char>& png_data,
+      unsigned& width,
+      unsigned& height)
+  {
+    std::vector<unsigned char> pixels;
+    unsigned err = lodepng::decode(pixels, width, height, png_data);
+    EXPECT_EQ(err, 0u) << lodepng_error_text(err);
+    return pixels;
+  }
+
+  // Return true if any pixel in the RGBA buffer has alpha > 0.
+  static bool hasNonTransparentPixel(const std::vector<unsigned char>& rgba)
+  {
+    for (size_t i = 3; i < rgba.size(); i += 4) {
+      if (rgba[i] > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  odb::dbInst* placeInst(const char* master_name,
+                          const char* inst_name,
+                          int x,
+                          int y)
+  {
+    odb::dbMaster* master = lib_->findMaster(master_name);
+    EXPECT_NE(master, nullptr) << "Master not found: " << master_name;
+    odb::dbInst* inst = odb::dbInst::create(block_, master, inst_name);
+    inst->setLocation(x, y);
+    inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    return inst;
+  }
+
+  std::unique_ptr<TileGenerator> tile_gen_;
+};
+
+TEST_F(TileGeneratorTest, HasStaFalseWhenNull)
+{
+  makeTileGen();
+  EXPECT_FALSE(tile_gen_->hasSta());
+}
+
+TEST_F(TileGeneratorTest, GetBoundsReflectsInstances)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+  odb::Rect bounds = tile_gen_->getBounds();
+  // Bounds should encompass the placed instance.
+  EXPECT_GT(bounds.dx(), 0);
+  EXPECT_GT(bounds.dy(), 0);
+  EXPECT_LE(bounds.xMin(), 10000);
+  EXPECT_LE(bounds.yMin(), 10000);
+}
+
+TEST_F(TileGeneratorTest, GetRoutingLayers)
+{
+  makeTileGen();
+  std::vector<std::string> layers = tile_gen_->getRoutingLayers();
+  EXPECT_EQ(layers.size(), 10);
+  EXPECT_EQ(layers.front(), "metal1");
+  EXPECT_EQ(layers.back(), "metal10");
+}
+
+TEST_F(TileGeneratorTest, GenerateTileReturnsValidPng)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0);
+  ASSERT_FALSE(png.empty());
+
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 256u);
+  EXPECT_EQ(h, 256u);
+}
+
+TEST_F(TileGeneratorTest, EmptyDesignProducesTransparentTile)
+{
+  makeTileGen();
+
+  // No instances or routing, so the tile should be transparent.
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+}
+
+TEST_F(TileGeneratorTest, PlacedInstanceDrawsPixels)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // Use the special "_instances" layer to draw instance borders.
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels));
+}
+
+TEST_F(TileGeneratorTest, StdcellVisibilityFilter)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+}
+
+TEST_F(TileGeneratorTest, IsNetVisibleRespectsSignalType)
+{
+  odb::dbNet* sig_net = odb::dbNet::create(block_, "sig");
+  sig_net->setSigType(odb::dbSigType::SIGNAL);
+
+  odb::dbNet* pwr_net = odb::dbNet::create(block_, "vdd");
+  pwr_net->setSigType(odb::dbSigType::POWER);
+
+  odb::dbNet* clk_net = odb::dbNet::create(block_, "clk");
+  clk_net->setSigType(odb::dbSigType::CLOCK);
+
+  // Default visibility: all visible
+  TileVisibility vis;
+  EXPECT_TRUE(vis.isNetVisible(sig_net));
+  EXPECT_TRUE(vis.isNetVisible(pwr_net));
+  EXPECT_TRUE(vis.isNetVisible(clk_net));
+
+  // Disable signal nets
+  vis.net_signal = false;
+  EXPECT_FALSE(vis.isNetVisible(sig_net));
+  EXPECT_TRUE(vis.isNetVisible(pwr_net));
+
+  // Disable power nets
+  vis.net_power = false;
+  EXPECT_FALSE(vis.isNetVisible(pwr_net));
+
+  // Disable clock nets
+  vis.net_clock = false;
+  EXPECT_FALSE(vis.isNetVisible(clk_net));
+}
+
+TEST_F(TileGeneratorTest, TileVisibilityDefaultAllTrue)
+{
+  TileVisibility vis;
+  EXPECT_TRUE(vis.stdcells);
+  EXPECT_TRUE(vis.macros);
+  EXPECT_TRUE(vis.routing);
+  EXPECT_TRUE(vis.special_nets);
+  EXPECT_TRUE(vis.pins);
+  EXPECT_TRUE(vis.blockages);
+  EXPECT_TRUE(vis.net_signal);
+  EXPECT_TRUE(vis.net_power);
+  EXPECT_TRUE(vis.net_ground);
+  EXPECT_TRUE(vis.net_clock);
+  EXPECT_TRUE(vis.phys_fill);
+  EXPECT_TRUE(vis.phys_endcap);
+}
+
+TEST_F(TileGeneratorTest, InvalidLayerProducesValidPng)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  auto png = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0);
+  ASSERT_FALSE(png.empty());
+
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 256u);
+  EXPECT_EQ(h, 256u);
+}
+
+TEST_F(TileGeneratorTest, OutOfBoundsTileIsTransparent)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // At zoom=1 valid tiles are (0,0),(0,1),(1,0),(1,1).  Tile (5,5) is out.
+  auto png = tile_gen_->generateTile("_instances", 1, 5, 5);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels));
+}
+
+}  // namespace
+}  // namespace web

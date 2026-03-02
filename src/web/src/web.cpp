@@ -27,6 +27,7 @@
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "search.h"
+#include "tile_generator.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -38,120 +39,19 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
-struct TileVisibility
+TileGenerator::TileGenerator(odb::dbDatabase* db,
+                             sta::dbSta* sta,
+                             utl::Logger* logger)
+    : db_(db), sta_(sta), logger_(logger), search_(std::make_unique<Search>())
 {
-  bool stdcells = true;
-  bool macros = true;
-
-  // Pad sub-types
-  bool pad_input = true;
-  bool pad_output = true;
-  bool pad_inout = true;
-  bool pad_power = true;
-  bool pad_spacer = true;
-  bool pad_areaio = true;
-  bool pad_other = true;
-
-  // Physical sub-types
-  bool phys_fill = true;
-  bool phys_endcap = true;
-  bool phys_welltap = true;
-  bool phys_tie = true;
-  bool phys_antenna = true;
-  bool phys_cover = true;
-  bool phys_bump = true;
-  bool phys_other = true;
-
-  // Std cell sub-types (used when Liberty/STA is available)
-  bool std_bufinv = true;
-  bool std_bufinv_timing = true;
-  bool std_clock_bufinv = true;
-  bool std_clock_gate = true;
-  bool std_level_shift = true;
-  bool std_sequential = true;
-  bool std_combinational = true;
-
-  // Net sub-types (by dbSigType)
-  bool net_signal = true;
-  bool net_power = true;
-  bool net_ground = true;
-  bool net_clock = true;
-  bool net_reset = true;
-  bool net_tieoff = true;
-  bool net_scan = true;
-  bool net_analog = true;
-
-  // Shapes
-  bool routing = true;
-  bool special_nets = true;
-  bool pins = true;
-  bool blockages = true;
-
-  bool isNetVisible(odb::dbNet* net) const
-  {
-    switch (net->getSigType().getValue()) {
-      case odb::dbSigType::SIGNAL:
-        return net_signal;
-      case odb::dbSigType::POWER:
-        return net_power;
-      case odb::dbSigType::GROUND:
-        return net_ground;
-      case odb::dbSigType::CLOCK:
-        return net_clock;
-      case odb::dbSigType::RESET:
-        return net_reset;
-      case odb::dbSigType::TIEOFF:
-        return net_tieoff;
-      case odb::dbSigType::SCAN:
-        return net_scan;
-      case odb::dbSigType::ANALOG:
-        return net_analog;
-    }
-    return true;
+  odb::dbChip* chip = db_->getChip();
+  if (!chip) {
+    logger_->error(utl::WEB, 99, "No chip to serve");
   }
-};
+  search_->setTopChip(chip);
+}
 
-class TileGenerator
-{
- public:
-  TileGenerator(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
-      : db_(db), sta_(sta), logger_(logger), search_(std::make_unique<Search>())
-  {
-    odb::dbChip* chip = db_->getChip();
-    if (!chip) {
-      logger_->error(utl::WEB, 99, "No chip to serve");
-    }
-    search_->setTopChip(chip);
-  }
-
-  bool hasSta() const { return sta_ != nullptr; }
-
-  odb::Rect getBounds();
-
-  std::vector<std::string> getRoutingLayers();
-
-  std::vector<unsigned char> generateTile(const std::string& layer,
-                                          int z,
-                                          int x,
-                                          int y,
-                                          const TileVisibility& vis = {});
-
- private:
-  void setPixel(std::vector<unsigned char>& image,
-                int x,
-                int y,
-                const Color& c);
-
-  static odb::Rect toPixels(double scale,
-                            const odb::Rect& rect,
-                            const odb::Rect& dbu_tile);
-
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
-  std::unique_ptr<Search> search_;
-  static constexpr int kTileSizeInPixel = 256;
-};
+TileGenerator::~TileGenerator() = default;
 
 /* static */
 odb::Rect TileGenerator::toPixels(const double scale,
