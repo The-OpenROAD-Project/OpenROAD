@@ -157,7 +157,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   for (sta::Vertex* vertex : cut_vertices) {
     // If the pins in the cutset are primary outputs don't call it
     // a primary input
-    if (endpoint_vertex.find(vertex) != endpoint_vertex.end()) {
+    if (endpoint_vertex.contains(vertex)) {
       continue;
     }
 
@@ -170,7 +170,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
     for (const sta::Pin* pin : *pin_set) {
       // If a driver pin of the pin under consideration is not in the cut
       // vertices, then it is a primary input.
-      if (pins.find(pin) != pins.end()) {
+      if (pins.contains(pin)) {
         is_primary_input = false;
         break;
       }
@@ -212,7 +212,7 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryOutputs(
     while (pin_iterator->hasNext()) {
       const sta::Pin* connected_pin = pin_iterator->next();
       // Pin is not in our cutset, and therefore is a primary output.
-      if (cut_set_vertices.find(connected_pin) == cut_set_vertices.end()) {
+      if (!cut_set_vertices.contains(connected_pin)) {
         sta::VertexId vertex_id = network->vertexId(connected_pin);
         sta::Vertex* vertex = network->graph()->vertex(vertex_id);
         primary_outputs.push_back(vertex->pin());

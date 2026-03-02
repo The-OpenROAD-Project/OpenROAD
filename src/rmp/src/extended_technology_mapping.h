@@ -53,7 +53,7 @@ class ExtendedTechnologyMapping
 
   std::tuple<mockturtle::names_view<mockturtle::aig_network>, cut::LogicCut>
   extractLogicToMockturtle(sta::dbSta* sta,
-                           sta::Scene* corner,
+                           sta::Scene* scene,
                            rsz::Resizer* resizer,
                            mockturtle::tech_library<9u>& tech_lib,
                            utl::Logger* logger);

@@ -95,6 +95,10 @@ mockturtle::signal<mockturtle::aig_network> tt_to_aig(
     return ntk.get_constant(true);
   }
 
+  if (var_index >= inputs.size()) {
+    logger->error(utl::CUT, 54, "var_index {} out of range (inputs {}).", var_index, inputs.size());
+  }
+
   const signal x = inputs[var_index];
 
   // Cofactors w.r.t. current variable index.
@@ -166,8 +170,9 @@ LogicCut::BuildMappedMockturtleNetwork(
     }
 
     sta::PinSet* drivers = network->drivers(net);
-    // Net driven from outside the cut handled by logic_extractor
-    assert(drivers && !drivers->empty());
+    if (!drivers || drivers->empty()) {
+      logger->error(utl::CUT, 55, "Net driven from outside the cut {}", network->name(net));
+    }
 
     if (drivers->size() != 1) {
       logger->error(utl::CUT,
@@ -198,6 +203,10 @@ LogicCut::BuildMappedMockturtleNetwork(
     }
 
     const gate* g = gate_it->second;
+
+    if (g->pins.size() != g->function.num_vars()) {
+      logger->error(utl::CUT, 52, "Invalid pin count");
+    }
 
     // Build fanin signals in the same order as GENLIB pins
     std::vector<signal> fanins;
