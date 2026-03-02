@@ -151,6 +151,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":IpChecker",
         ":dbNetwork",
         ":dbSta",
         "//:ord",
