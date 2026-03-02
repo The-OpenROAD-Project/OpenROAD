@@ -259,7 +259,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   icewall_ = new pad::ICeWall(db_, logger_);
   dft_ = new dft::Dft(db_, sta_, logger_);
   example_ = new exa::Example(db_, logger_);
-  web_server_ = new web::WebServer(db_, logger_);
+  web_server_ = new web::WebServer(db_, sta_, logger_);
 
   // Init components.
   Ord_Init(tcl_interp);

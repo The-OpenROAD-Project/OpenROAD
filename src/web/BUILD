@@ -29,6 +29,7 @@ cc_library(
         "-Isrc/web/src",
     ],
     deps = [
+        "//src/dbSta",
         "//src/odb",
         "//src/utl",
         "//third-party/lodepng",

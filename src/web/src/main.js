@@ -108,20 +108,17 @@ const WSTileLayer = L.GridLayer.extend({
         const requestId = this._wsManager.nextId;
         tile._wsRequestId = requestId;
 
+        const vf = {};
+        for (const [k, v] of Object.entries(visibility)) {
+            vf[k] = v ? 1 : 0;
+        }
         this._wsManager.request({
             type: 'tile',
             layer: this._layerName,
             z: coords.z,
             x: coords.x,
             y: coords.y,
-            stdcells: visibility.stdcells ? 1 : 0,
-            macros: visibility.macros ? 1 : 0,
-            pads: visibility.pads ? 1 : 0,
-            physical: visibility.physical ? 1 : 0,
-            routing: visibility.routing ? 1 : 0,
-            special_nets: visibility.special_nets ? 1 : 0,
-            pins: visibility.pins ? 1 : 0,
-            blockages: visibility.blockages ? 1 : 0,
+            ...vf,
         }).then(blob => {
             tile.onload = () => {
                 URL.revokeObjectURL(tile.src);
@@ -178,8 +175,32 @@ let allLayers = [];
 const visibility = {
     stdcells: true,
     macros: true,
-    pads: true,
-    physical: true,
+    // Pad sub-types
+    pad_input: true,
+    pad_output: true,
+    pad_inout: true,
+    pad_power: true,
+    pad_spacer: true,
+    pad_areaio: true,
+    pad_other: true,
+    // Physical sub-types
+    phys_fill: true,
+    phys_endcap: true,
+    phys_welltap: true,
+    phys_tie: true,
+    phys_antenna: true,
+    phys_cover: true,
+    phys_bump: true,
+    phys_other: true,
+    // Std cell sub-types
+    std_bufinv: true,
+    std_bufinv_timing: true,
+    std_clock_bufinv: true,
+    std_clock_gate: true,
+    std_level_shift: true,
+    std_sequential: true,
+    std_combinational: true,
+    // Shapes
     routing: true,
     special_nets: true,
     pins: true,
@@ -204,6 +225,90 @@ function makeVisToggle(key, labelText) {
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(labelText));
     return label;
+}
+
+// children: array of [key, label] for leaf toggles, or nested makeVisGroup elements
+// options: { visKey, disabled, expanded }
+//   visKey: if set, parent checkbox also controls this visibility key directly
+//   disabled: if true, children are grayed out and non-interactive
+//   expanded: if true, start with children visible
+function makeVisGroup(groupLabel, children, options = {}) {
+    const container = document.createElement('div');
+    container.className = 'vis-group';
+
+    // Parent row with checkbox + disclosure triangle
+    const header = document.createElement('label');
+    header.className = 'vis-group-header';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'vis-arrow';
+    arrow.textContent = options.expanded ? '\u25BC' : '\u25B6';
+    header.appendChild(arrow);
+
+    const parentCb = document.createElement('input');
+    parentCb.type = 'checkbox';
+    parentCb.checked = true;
+    header.appendChild(parentCb);
+    header.appendChild(document.createTextNode(groupLabel));
+    container.appendChild(header);
+
+    // Child items
+    const childDiv = document.createElement('div');
+    childDiv.className = options.expanded
+        ? 'vis-group-children'
+        : 'vis-group-children collapsed';
+    if (options.disabled) {
+        childDiv.classList.add('disabled');
+    }
+
+    const childCbs = [];
+    for (const child of children) {
+        if (child instanceof HTMLElement) {
+            // Nested group element
+            childDiv.appendChild(child);
+            child.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                childCbs.push(cb);
+            });
+        } else {
+            const [key, label] = child;
+            const toggle = makeVisToggle(key, label);
+            childDiv.appendChild(toggle);
+            childCbs.push(toggle.querySelector('input'));
+        }
+    }
+    container.appendChild(childDiv);
+
+    // Toggle collapse on arrow click
+    arrow.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const collapsed = childDiv.classList.toggle('collapsed');
+        arrow.textContent = collapsed ? '\u25B6' : '\u25BC';
+    });
+
+    // Parent checkbox toggles all children + optional direct visKey
+    parentCb.addEventListener('change', () => {
+        if (options.visKey) {
+            visibility[options.visKey] = parentCb.checked;
+        }
+        if (!options.disabled) {
+            for (const cb of childCbs) {
+                cb.checked = parentCb.checked;
+                cb.dispatchEvent(new Event('change'));
+            }
+        }
+        redrawAllLayers();
+    });
+
+    // Update parent state when children change
+    childDiv.addEventListener('change', () => {
+        const allChecked = childCbs.every(cb => cb.checked);
+        const someChecked = childCbs.some(cb => cb.checked);
+        parentCb.checked = allChecked;
+        parentCb.indeterminate = someChecked && !allChecked;
+    });
+
+    return container;
 }
 
 // Layer color palette (must match server-side palette in web.cpp)
@@ -441,23 +546,42 @@ window.addEventListener('resize', () => {
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
 const wsManager = new WebSocketManager(wsUrl);
 
+let hasLiberty = false;
+
 wsManager.readyPromise.then(async () => {
     try {
-        const [layersData, boundsData] = await Promise.all([
+        const [layersData, boundsData, infoData] = await Promise.all([
             wsManager.request({ type: 'layers' }),
-            wsManager.request({ type: 'bounds' })
+            wsManager.request({ type: 'bounds' }),
+            wsManager.request({ type: 'info' }),
         ]);
+        hasLiberty = infoData.has_liberty;
 
         // --- Populate Display Controls ---
         if (displayControlsEl) {
             displayControlsEl.innerHTML = '';
             allLayers = [];
 
-            // --- Layers section ---
-            const layerSection = document.createElement('div');
-            layerSection.innerHTML = '<div class="section-header">Layers</div>';
-            const layerItems = document.createElement('div');
-            layerItems.className = 'section-items';
+            // --- Layers group ---
+            const layerGroup = document.createElement('div');
+            layerGroup.className = 'vis-group';
+
+            const layerHeader = document.createElement('label');
+            layerHeader.className = 'vis-group-header';
+            const layerArrow = document.createElement('span');
+            layerArrow.className = 'vis-arrow';
+            layerArrow.textContent = '\u25BC';
+            layerHeader.appendChild(layerArrow);
+            const layerParentCb = document.createElement('input');
+            layerParentCb.type = 'checkbox';
+            layerParentCb.checked = true;
+            layerHeader.appendChild(layerParentCb);
+            layerHeader.appendChild(document.createTextNode('Layers'));
+            layerGroup.appendChild(layerHeader);
+
+            const layerChildren = document.createElement('div');
+            layerChildren.className = 'vis-group-children';
+            const layerCbs = [];
 
             layersData.layers.forEach((name, index) => {
                 const layer = new WSTileLayer(wsManager, name, {
@@ -480,6 +604,7 @@ wsManager.readyPromise.then(async () => {
                     }
                 });
                 label.appendChild(checkbox);
+                layerCbs.push(checkbox);
 
                 const colorSwatch = document.createElement('span');
                 colorSwatch.className = 'layer-color';
@@ -488,42 +613,80 @@ wsManager.readyPromise.then(async () => {
                 label.appendChild(colorSwatch);
 
                 label.appendChild(document.createTextNode(name));
-                layerItems.appendChild(label);
+                layerChildren.appendChild(label);
             });
-            layerSection.appendChild(layerItems);
-            displayControlsEl.appendChild(layerSection);
+            layerGroup.appendChild(layerChildren);
 
-            // --- Instances section ---
-            const instanceSection = document.createElement('div');
-            instanceSection.innerHTML = '<div class="section-header">Instances</div>';
-            const instanceItems = document.createElement('div');
-            instanceItems.className = 'section-items';
-            for (const [key, label] of [
-                ['stdcells', 'Std Cells'],
-                ['macros', 'Macros'],
-                ['pads', 'Pads'],
-                ['physical', 'Physical'],
-            ]) {
-                instanceItems.appendChild(makeVisToggle(key, label));
-            }
-            instanceSection.appendChild(instanceItems);
-            displayControlsEl.appendChild(instanceSection);
+            // Parent checkbox toggles all layers
+            layerParentCb.addEventListener('change', () => {
+                for (const cb of layerCbs) {
+                    cb.checked = layerParentCb.checked;
+                    cb.dispatchEvent(new Event('change'));
+                }
+            });
+            // Update parent state when children change
+            layerChildren.addEventListener('change', () => {
+                const allChecked = layerCbs.every(cb => cb.checked);
+                const someChecked = layerCbs.some(cb => cb.checked);
+                layerParentCb.checked = allChecked;
+                layerParentCb.indeterminate = someChecked && !allChecked;
+            });
+            // Toggle collapse
+            layerArrow.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const collapsed = layerChildren.classList.toggle('collapsed');
+                layerArrow.textContent = collapsed ? '\u25B6' : '\u25BC';
+            });
 
-            // --- Shapes section ---
-            const shapeSection = document.createElement('div');
-            shapeSection.innerHTML = '<div class="section-header">Shapes</div>';
-            const shapeItems = document.createElement('div');
-            shapeItems.className = 'section-items';
-            for (const [key, label] of [
+            displayControlsEl.appendChild(layerGroup);
+
+            // --- Instances section (parent checkbox toggles all) ---
+            const instanceGroup = makeVisGroup('Instances', [
+                makeVisGroup('Std Cells', [
+                    makeVisGroup('Bufs/Invs', [
+                        ['std_bufinv_timing', 'Timing opt.'],
+                        ['std_bufinv', 'Netlist'],
+                    ]),
+                    ['std_combinational', 'Combinational'],
+                    ['std_sequential', 'Sequential'],
+                    makeVisGroup('Clock tree', [
+                        ['std_clock_bufinv', 'Buffer/Inverter'],
+                        ['std_clock_gate', 'Clock gate'],
+                    ]),
+                    ['std_level_shift', 'Level shifter'],
+                ], { visKey: 'stdcells', disabled: !hasLiberty }),
+                makeVisToggle('macros', 'Macros'),
+                makeVisGroup('Pads', [
+                    ['pad_input', 'Input'],
+                    ['pad_output', 'Output'],
+                    ['pad_inout', 'Inout'],
+                    ['pad_power', 'Power'],
+                    ['pad_spacer', 'Spacer'],
+                    ['pad_areaio', 'Area IO'],
+                    ['pad_other', 'Other'],
+                ]),
+                makeVisGroup('Physical', [
+                    ['phys_fill', 'Fill'],
+                    ['phys_endcap', 'Endcap'],
+                    ['phys_welltap', 'Welltap'],
+                    ['phys_tie', 'Tie Hi/Lo'],
+                    ['phys_antenna', 'Antenna'],
+                    ['phys_cover', 'Cover'],
+                    ['phys_bump', 'Bump'],
+                    ['phys_other', 'Other'],
+                ]),
+            ], { expanded: true });
+            displayControlsEl.appendChild(instanceGroup);
+
+            // --- Shapes group ---
+            const shapeGroup = makeVisGroup('Shapes', [
                 ['routing', 'Routing'],
                 ['special_nets', 'Special Nets'],
                 ['pins', 'Pins'],
                 ['blockages', 'Blockages'],
-            ]) {
-                shapeItems.appendChild(makeVisToggle(key, label));
-            }
-            shapeSection.appendChild(shapeItems);
-            displayControlsEl.appendChild(shapeSection);
+            ], { expanded: true });
+            displayControlsEl.appendChild(shapeGroup);
         }
 
         // --- Set Bounds ---

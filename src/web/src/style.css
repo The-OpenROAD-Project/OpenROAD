@@ -119,18 +119,37 @@ html, body {
     margin-right: 6px;
     border: 1px solid #555;
 }
-.display-controls .section-header {
-    font-size: 11px;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 8px 0 3px 0;
-    border-bottom: 1px solid #333;
-    margin-bottom: 2px;
+.display-controls .vis-group {
+    margin: 1px 0;
 }
-.display-controls .section-items {
-    padding-left: 4px;
+.display-controls .vis-group-header {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    color: #ccc;
+    cursor: pointer;
+}
+.display-controls .vis-arrow {
+    font-size: 9px;
+    width: 14px;
+    text-align: center;
+    color: #888;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+}
+.display-controls .vis-group-children {
+    padding-left: 22px;
+}
+.display-controls .vis-group-children > label {
+    margin-left: 14px;
+}
+.display-controls .vis-group-children.collapsed {
+    display: none;
+}
+.display-controls .vis-group-children.disabled {
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 /* Tcl Console */

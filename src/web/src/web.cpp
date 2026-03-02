@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "color.h"
+#include "db_sta/dbSta.hh"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -41,8 +42,36 @@ struct TileVisibility
 {
   bool stdcells = true;
   bool macros = true;
-  bool pads = true;
-  bool physical = true;
+
+  // Pad sub-types
+  bool pad_input = true;
+  bool pad_output = true;
+  bool pad_inout = true;
+  bool pad_power = true;
+  bool pad_spacer = true;
+  bool pad_areaio = true;
+  bool pad_other = true;
+
+  // Physical sub-types
+  bool phys_fill = true;
+  bool phys_endcap = true;
+  bool phys_welltap = true;
+  bool phys_tie = true;
+  bool phys_antenna = true;
+  bool phys_cover = true;
+  bool phys_bump = true;
+  bool phys_other = true;
+
+  // Std cell sub-types (used when Liberty/STA is available)
+  bool std_bufinv = true;
+  bool std_bufinv_timing = true;
+  bool std_clock_bufinv = true;
+  bool std_clock_gate = true;
+  bool std_level_shift = true;
+  bool std_sequential = true;
+  bool std_combinational = true;
+
+  // Shapes
   bool routing = true;
   bool special_nets = true;
   bool pins = true;
@@ -52,9 +81,8 @@ struct TileVisibility
 class TileGenerator
 {
  public:
-  TileGenerator(odb::dbDatabase* db, utl::Logger* logger)
-      : db_(db), logger_(logger), search_(std::make_unique<Search>())
-
+  TileGenerator(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+      : db_(db), sta_(sta), logger_(logger), search_(std::make_unique<Search>())
   {
     odb::dbChip* chip = db_->getChip();
     if (!chip) {
@@ -62,6 +90,8 @@ class TileGenerator
     }
     search_->setTopChip(chip);
   }
+
+  bool hasSta() const { return sta_ != nullptr; }
 
   odb::Rect getBounds();
 
@@ -84,6 +114,7 @@ class TileGenerator
                             const odb::Rect& dbu_tile);
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   utl::Logger* logger_;
   std::unique_ptr<Search> search_;
   static constexpr int kTileSizeInPixel = 256;
@@ -236,17 +267,132 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       odb::dbMasterType mtype = master->getType();
 
       // Classify instance and check visibility
-      if (mtype.isBlock()) {
-        if (!vis.macros) continue;
-      } else if (mtype.isPad()) {
-        if (!vis.pads) continue;
-      } else if (mtype.isEndCap() || mtype.isCover()
-                 || mtype == odb::dbMasterType::CORE_SPACER
-                 || mtype == odb::dbMasterType::CORE_WELLTAP) {
-        if (!vis.physical) continue;
+      if (sta_) {
+        // Full classification using Liberty cell data
+        using IT = sta::dbSta::InstType;
+        switch (sta_->getInstanceType(inst)) {
+          case IT::BLOCK:
+            if (!vis.macros) continue;
+            break;
+          case IT::PAD_INPUT:
+            if (!vis.pad_input) continue;
+            break;
+          case IT::PAD_OUTPUT:
+            if (!vis.pad_output) continue;
+            break;
+          case IT::PAD_INOUT:
+            if (!vis.pad_inout) continue;
+            break;
+          case IT::PAD_POWER:
+            if (!vis.pad_power) continue;
+            break;
+          case IT::PAD_SPACER:
+            if (!vis.pad_spacer) continue;
+            break;
+          case IT::PAD_AREAIO:
+            if (!vis.pad_areaio) continue;
+            break;
+          case IT::PAD:
+            if (!vis.pad_other) continue;
+            break;
+          case IT::ENDCAP:
+            if (!vis.phys_endcap) continue;
+            break;
+          case IT::FILL:
+            if (!vis.phys_fill) continue;
+            break;
+          case IT::TAPCELL:
+            if (!vis.phys_welltap) continue;
+            break;
+          case IT::TIE:
+            if (!vis.phys_tie) continue;
+            break;
+          case IT::ANTENNA:
+            if (!vis.phys_antenna) continue;
+            break;
+          case IT::COVER:
+            if (!vis.phys_cover) continue;
+            break;
+          case IT::BUMP:
+            if (!vis.phys_bump) continue;
+            break;
+          case IT::LEF_OTHER:
+            if (!vis.phys_other) continue;
+            break;
+          case IT::STD_BUF:
+          case IT::STD_INV:
+            if (!vis.std_bufinv) continue;
+            break;
+          case IT::STD_BUF_TIMING_REPAIR:
+          case IT::STD_INV_TIMING_REPAIR:
+            if (!vis.std_bufinv_timing) continue;
+            break;
+          case IT::STD_BUF_CLK_TREE:
+          case IT::STD_INV_CLK_TREE:
+            if (!vis.std_clock_bufinv) continue;
+            break;
+          case IT::STD_CLOCK_GATE:
+            if (!vis.std_clock_gate) continue;
+            break;
+          case IT::STD_LEVEL_SHIFT:
+            if (!vis.std_level_shift) continue;
+            break;
+          case IT::STD_SEQUENTIAL:
+            if (!vis.std_sequential) continue;
+            break;
+          case IT::STD_COMBINATIONAL:
+            if (!vis.std_combinational) continue;
+            break;
+          case IT::STD_CELL:
+          case IT::STD_PHYSICAL:
+          case IT::STD_OTHER:
+          default:
+            if (!vis.stdcells) continue;
+            break;
+        }
       } else {
-        // Standard cells (CORE and variants)
-        if (!vis.stdcells) continue;
+        // Fallback: dbMasterType-only classification (no Liberty)
+        if (mtype.isBlock()) {
+          if (!vis.macros) continue;
+        } else if (mtype.isPad()) {
+          if (mtype == odb::dbMasterType::PAD_INPUT) {
+            if (!vis.pad_input) continue;
+          } else if (mtype == odb::dbMasterType::PAD_OUTPUT) {
+            if (!vis.pad_output) continue;
+          } else if (mtype == odb::dbMasterType::PAD_INOUT) {
+            if (!vis.pad_inout) continue;
+          } else if (mtype == odb::dbMasterType::PAD_POWER) {
+            if (!vis.pad_power) continue;
+          } else if (mtype == odb::dbMasterType::PAD_SPACER) {
+            if (!vis.pad_spacer) continue;
+          } else if (mtype == odb::dbMasterType::PAD_AREAIO) {
+            if (!vis.pad_areaio) continue;
+          } else {
+            if (!vis.pad_other) continue;
+          }
+        } else if (mtype.isEndCap()) {
+          if (!vis.phys_endcap) continue;
+        } else if (master->isFiller()) {
+          if (!vis.phys_fill) continue;
+        } else if (mtype == odb::dbMasterType::CORE_WELLTAP) {
+          if (!vis.phys_welltap) continue;
+        } else if (mtype == odb::dbMasterType::CORE_TIEHIGH
+                   || mtype == odb::dbMasterType::CORE_TIELOW) {
+          if (!vis.phys_tie) continue;
+        } else if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
+          if (!vis.phys_antenna) continue;
+        } else if (mtype.isCover()) {
+          if (mtype == odb::dbMasterType::COVER_BUMP) {
+            if (!vis.phys_bump) continue;
+          } else {
+            if (!vis.phys_cover) continue;
+          }
+        } else if (mtype == odb::dbMasterType::CORE_SPACER
+                   || inst->getSourceType() == odb::dbSourceType::DIST) {
+          if (!vis.phys_other) continue;
+        } else {
+          if (!vis.stdcells) continue;
+        }
       }
       const int xl = inst_bbox.xMin();
       const int yl = inst_bbox.yMin();
@@ -357,6 +503,7 @@ struct WsRequest
     TILE,
     BOUNDS,
     LAYERS,
+    INFO,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -366,14 +513,7 @@ struct WsRequest
   int y = 0;
 
   // Visibility flags (default: all visible)
-  bool show_stdcells = true;
-  bool show_macros = true;
-  bool show_pads = true;
-  bool show_physical = true;
-  bool show_routing = true;
-  bool show_special_nets = true;
-  bool show_pins = true;
-  bool show_blockages = true;
+  TileVisibility vis;
 };
 
 struct WsResponse
@@ -455,18 +595,44 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
-    req.show_stdcells = extract_int_or(msg, "stdcells", 1);
-    req.show_macros = extract_int_or(msg, "macros", 1);
-    req.show_pads = extract_int_or(msg, "pads", 1);
-    req.show_physical = extract_int_or(msg, "physical", 1);
-    req.show_routing = extract_int_or(msg, "routing", 1);
-    req.show_special_nets = extract_int_or(msg, "special_nets", 1);
-    req.show_pins = extract_int_or(msg, "pins", 1);
-    req.show_blockages = extract_int_or(msg, "blockages", 1);
+    req.vis.stdcells = extract_int_or(msg, "stdcells", 1);
+    req.vis.macros = extract_int_or(msg, "macros", 1);
+    // Pad sub-types
+    req.vis.pad_input = extract_int_or(msg, "pad_input", 1);
+    req.vis.pad_output = extract_int_or(msg, "pad_output", 1);
+    req.vis.pad_inout = extract_int_or(msg, "pad_inout", 1);
+    req.vis.pad_power = extract_int_or(msg, "pad_power", 1);
+    req.vis.pad_spacer = extract_int_or(msg, "pad_spacer", 1);
+    req.vis.pad_areaio = extract_int_or(msg, "pad_areaio", 1);
+    req.vis.pad_other = extract_int_or(msg, "pad_other", 1);
+    // Physical sub-types
+    req.vis.phys_fill = extract_int_or(msg, "phys_fill", 1);
+    req.vis.phys_endcap = extract_int_or(msg, "phys_endcap", 1);
+    req.vis.phys_welltap = extract_int_or(msg, "phys_welltap", 1);
+    req.vis.phys_tie = extract_int_or(msg, "phys_tie", 1);
+    req.vis.phys_antenna = extract_int_or(msg, "phys_antenna", 1);
+    req.vis.phys_cover = extract_int_or(msg, "phys_cover", 1);
+    req.vis.phys_bump = extract_int_or(msg, "phys_bump", 1);
+    req.vis.phys_other = extract_int_or(msg, "phys_other", 1);
+    // Std cell sub-types
+    req.vis.std_bufinv = extract_int_or(msg, "std_bufinv", 1);
+    req.vis.std_bufinv_timing = extract_int_or(msg, "std_bufinv_timing", 1);
+    req.vis.std_clock_bufinv = extract_int_or(msg, "std_clock_bufinv", 1);
+    req.vis.std_clock_gate = extract_int_or(msg, "std_clock_gate", 1);
+    req.vis.std_level_shift = extract_int_or(msg, "std_level_shift", 1);
+    req.vis.std_sequential = extract_int_or(msg, "std_sequential", 1);
+    req.vis.std_combinational = extract_int_or(msg, "std_combinational", 1);
+    // Shapes
+    req.vis.routing = extract_int_or(msg, "routing", 1);
+    req.vis.special_nets = extract_int_or(msg, "special_nets", 1);
+    req.vis.pins = extract_int_or(msg, "pins", 1);
+    req.vis.blockages = extract_int_or(msg, "blockages", 1);
   } else if (type_str == "bounds") {
     req.type = WsRequest::BOUNDS;
   } else if (type_str == "layers") {
     req.type = WsRequest::LAYERS;
+  } else if (type_str == "info") {
+    req.type = WsRequest::INFO;
   } else {
     req.type = WsRequest::UNKNOWN;
   }
@@ -509,16 +675,16 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
-      TileVisibility vis;
-      vis.stdcells = req.show_stdcells;
-      vis.macros = req.show_macros;
-      vis.pads = req.show_pads;
-      vis.physical = req.show_physical;
-      vis.routing = req.show_routing;
-      vis.special_nets = req.show_special_nets;
-      vis.pins = req.show_pins;
-      vis.blockages = req.show_blockages;
-      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y, vis);
+      resp.payload
+          = gen->generateTile(req.layer, req.z, req.x, req.y, req.vis);
+      break;
+    }
+    case WsRequest::INFO: {
+      resp.type = 0;  // JSON
+      const std::string json = gen->hasSta()
+                                   ? "{\"has_liberty\": true}"
+                                   : "{\"has_liberty\": false}";
+      resp.payload.assign(json.begin(), json.end());
       break;
     }
     default: {
@@ -1003,8 +1169,8 @@ class listener : public std::enable_shared_from_this<listener>
   }
 };
 
-WebServer::WebServer(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+WebServer::WebServer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+    : db_(db), sta_(sta), logger_(logger)
 {
 }
 
@@ -1013,7 +1179,7 @@ WebServer::~WebServer() = default;
 void WebServer::serve(const std::string& doc_root)
 {
   try {
-    generator_ = std::make_shared<TileGenerator>(db_, logger_);
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
     unsigned short const port = 8080;

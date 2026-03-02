@@ -26,6 +26,7 @@ target_link_libraries(web
   PUBLIC
     odb
   PRIVATE
+    dbSta
     lodepng
     utl_lib
 )

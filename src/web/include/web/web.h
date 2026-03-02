@@ -9,6 +9,10 @@
 #include "odb/geom.h"
 #include "utl/Logger.h"
 
+namespace sta {
+class dbSta;
+}
+
 namespace web {
 
 struct Color;
@@ -21,14 +25,14 @@ class TileGenerator;
 class WebServer
 {
  public:
-  WebServer(odb::dbDatabase* db, utl::Logger* logger);
+  WebServer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
   ~WebServer();
 
   void serve(const std::string& doc_root = "");
 
  private:
-
   odb::dbDatabase* db_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::shared_ptr<TileGenerator> generator_;
 };
