@@ -143,6 +143,7 @@ void Opendp::createNetwork()
       continue;
     }
     if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
       // skip unplaced terminals
       continue;
     }
