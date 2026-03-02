@@ -125,7 +125,7 @@ ExtendedTechnologyMapping::mapCellFromStdCell(const BlockNtk& ntk,
 
   if (sc.gates.empty()) {
     logger->error(utl::RMP,
-                  50,
+                  66,
                   "Standard cell {} has no gates (node {})",
                   sc.name,
                   ntk.node_to_index(n));
@@ -234,14 +234,14 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
     net = odb::dbNet::create(block, name);
   }
   if (!net) {
-    logger->error(utl::RMP, 51, "Failed to create const net");
+    logger->error(utl::RMP, 67, "Failed to create const net");
   }
 
   auto tie = findTieMaster(libs, sta, value);
   if (!tie) {
     logger->error(
         utl::RMP,
-        51,
+        68,
         "No supply net and no tie cell found; cannot create constant driver");
   }
 
@@ -251,12 +251,12 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
     inst = odb::dbInst::create(block, tie->master, inst_name.c_str());
   }
   if (!inst) {
-    logger->error(utl::RMP, 52, "Failed to create tie inst");
+    logger->error(utl::RMP, 69, "Failed to create tie inst");
   }
 
   auto* out_it = inst->findITerm(tie->out_pin.c_str());
   if (!out_it) {
-    logger->error(utl::RMP, 53, "Tie output iterm not found");
+    logger->error(utl::RMP, 70, "Tie output iterm not found");
   }
   out_it->connect(net);
 
@@ -344,12 +344,12 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
 
     const std::string name = ntk.get_name(topo_ntk.make_signal(n));
     if (name.empty()) {
-      logger->error(utl::RMP, 53, "PI node {} has empty name", idx);
+      logger->error(utl::RMP, 71, "PI node {} has empty name", idx);
     }
 
     odb::dbNet* net = block->findNet(name.c_str());
     if (!net) {
-      logger->error(utl::RMP, 54, "Failed to find PI net {}", name);
+      logger->error(utl::RMP, 72, "Failed to find PI net {}", name);
     }
 
     node_out_nets[idx].resize(1);
@@ -369,14 +369,14 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       }
     }
     if (!master) {
-      logger->error(utl::RMP, 55, "Cannot find master {}", mapping.master_name);
+      logger->error(utl::RMP, 73, "Cannot find master {}", mapping.master_name);
     }
 
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = odb::dbInst::create(block, master, inst_name.c_str());
     if (!inst) {
       logger->error(utl::RMP,
-                    55,
+                    74,
                     "Failed to create dbInst {} for master {}",
                     inst_name,
                     mapping.master_name);
@@ -394,7 +394,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     if (num_cell_outputs < num_node_outputs) {
       logger->error(
           utl::RMP,
-          56,
+          75,
           "Cell {} has only {} signal outputs but node {} has {} outputs",
           mapping.master_name,
           num_cell_outputs,
@@ -412,7 +412,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       odb::dbITerm* o_iterm = inst->findITerm(pin_name.c_str());
       if (!o_iterm) {
         logger->error(utl::RMP,
-                      57,
+                      76,
                       "Instance {} has no output ITerm {}",
                       inst_name,
                       pin_name);
@@ -434,7 +434,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
         net = odb::dbNet::create(block, net_name.c_str());
       }
       if (!net) {
-        logger->error(utl::RMP, 58, "Failed to create/find net {}", net_name);
+        logger->error(utl::RMP, 77, "Failed to create/find net {}", net_name);
       }
 
       o_iterm->connect(net);
@@ -450,7 +450,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     } else if (gate.expression == "CONST0") {
       value = false;
     } else {
-      logger->error(utl::RMP, 59, "Unknown constant expression: {}", gate.expression);
+      logger->error(utl::RMP, 78, "Unknown constant expression: {}", gate.expression);
     }
     return value ^ topo_ntk.is_complemented(f);
   };
@@ -464,7 +464,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
-      logger->error(utl::RMP, 60, "Instance {} not found", inst_name);
+      logger->error(utl::RMP, 79, "Instance {} not found", inst_name);
     }
 
     uint32_t fanin_idx = 0;
@@ -472,7 +472,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       if (fanin_idx >= mapping.input_pins.size()) {
         logger->error(
             utl::RMP,
-            60,
+            80,
             "Not enough input pins in cell {} (node {}), fanins={} inputs={}",
             mapping.master_name,
             idx,
@@ -497,7 +497,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
             || out_pin_idx >= node_out_nets[src_idx].size()
             || node_out_nets[src_idx][out_pin_idx] == nullptr) {
           logger->error(utl::RMP,
-                        61,
+                        81,
                         "Missing driver net for fanin of {} (node {})",
                         mapping.master_name,
                         idx);
@@ -509,7 +509,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       odb::dbITerm* it = inst->findITerm(pin_name.c_str());
       if (!it) {
         logger->error(utl::RMP,
-                      62,
+                      82,
                       "Master {} had no input ITerm {}",
                       mapping.master_name,
                       pin_name);
@@ -525,7 +525,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     odb::dbNet* db_net = db_network->staToDb(sta_net);
     if (!db_net) {
       logger->error(utl::RMP,
-                    63,
+                    83,
                     "cut primary output net {} has no dbNet",
                     db_network->name(sta_net));
     }
@@ -537,7 +537,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     if (po_index >= boundary_po_dbnets.size()) {
       logger->error(
           utl::RMP,
-          64,
+          84,
           "Mapped network has more POs ({}) than cut.primary_outputs ({})",
           po_index + 1,
           boundary_po_dbnets.size());
@@ -563,7 +563,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
           || out_pin_idx >= node_out_nets[src_idx].size()
           || node_out_nets[src_idx][out_pin_idx] == nullptr) {
         logger->error(
-            utl::RMP, 65, "Missing driver net for PO index {}", po_index);
+            utl::RMP, 85, "Missing driver net for PO index {}", po_index);
       }
       driver_net = node_out_nets[src_idx][out_pin_idx];
     }
