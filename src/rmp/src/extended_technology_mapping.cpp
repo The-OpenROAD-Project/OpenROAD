@@ -569,8 +569,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     }
 
     if (driver_net && boundary_net && driver_net != boundary_net) {
-      boundary_net->mergeNet(driver_net);
-      node_out_nets[src_idx][out_pin_idx] = boundary_net;
+      driver_net->mergeNet(boundary_net);
     }
   });
 }
