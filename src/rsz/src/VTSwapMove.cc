@@ -6,7 +6,6 @@
 #include <cmath>
 #include <unordered_set>
 
-#include "BaseMove.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"

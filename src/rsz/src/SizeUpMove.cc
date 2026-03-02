@@ -6,10 +6,10 @@
 #include <cmath>
 #include <string>
 
-#include "BaseMove.hh"
 #include "CloneMove.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Transition.hh"

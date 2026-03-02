@@ -9,6 +9,8 @@
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 
 namespace rsz {
 

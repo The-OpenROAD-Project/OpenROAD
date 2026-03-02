@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include "BaseMove.hh"
+#include "sta/NetworkClass.hh"
 
 namespace rsz {
 

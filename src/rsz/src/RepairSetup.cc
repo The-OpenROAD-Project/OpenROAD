@@ -44,6 +44,7 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
