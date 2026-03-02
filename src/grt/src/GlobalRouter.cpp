@@ -116,6 +116,11 @@ void GlobalRouter::setNumThreads(int num_threads)
   fastroute_->setNumThreads(num_threads_);
 }
 
+void GlobalRouter::setMulticoreRouting(bool multicore_routing)
+{
+  multicore_routing_ = multicore_routing;
+}
+
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
                                routing_congestion_data_source,
                            std::unique_ptr<AbstractRoutingCongestionDataSource>
@@ -2256,6 +2261,7 @@ void GlobalRouter::configFastRoute()
   fastroute_->setOverflowIterations(congestion_iterations_);
   fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
   fastroute_->setResistanceAware(resistance_aware_);
+  fastroute_->setMulticoreRouting(multicore_routing_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);

@@ -229,6 +229,10 @@ class FastRouteCore
   void setGridMax(int x_max, int y_max);
   void setDetourPenalty(int penalty);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
+  void setMulticoreRouting(bool multicore_routing)
+  {
+    multicore_routing_ = multicore_routing;
+  }
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -303,6 +307,15 @@ class FastRouteCore
                      int L,
                      const CostParams& cost_params,
                      float& slack_th);
+  void mazeRouteMSMDSequential(int iter,
+                               int expand,
+                               int ripup_threshold,
+                               int maze_edge_threshold,
+                               bool ordering,
+                               int via,
+                               int L,
+                               const CostParams& cost_params,
+                               float& slack_th);
   void convertToMazeroute();
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
@@ -598,6 +611,17 @@ class FastRouteCore
   void copyBR();
   void copyRS();
   void freeRR();
+  std::vector<int> getMazeRouteNetOrder(bool ordering, float& slack_th);
+  bool hasNonSoftNdrNets() const;
+  bool useSnapshotBatchRouting(int net_count) const;
+  int resolveSnapshotBatchIterationLimit(int net_count) const;
+  bool useSnapshotBatchRoutingForIteration(int iter, int net_count) const;
+  int resolveSnapshotBatchSize(int iter, int net_count) const;
+  std::unique_ptr<FastRouteCore> buildSnapshotBatchWorker() const;
+  void syncSnapshotBatchWorker(const FastRouteCore& snapshot,
+                               const std::vector<int>& batch_net_ids);
+  void applySnapshotBatchRoute(int net_id, StTree&& sttree);
+  void updatePlanarNetUsage(const StTree& sttree, FrNet* net, int edge_cost);
   int edgeShift(stt::Tree& t, int net);
   int edgeShiftNew(stt::Tree& t, int net);
 
@@ -625,6 +649,8 @@ class FastRouteCore
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
   int num_threads_;
+  bool owns_nets_;
+  bool multicore_routing_;
   int x_range_;
   int y_range_;
 
@@ -743,6 +769,12 @@ class FastRouteCore
   multi_array<int, 3> d1_3D_;
   multi_array<int, 3> d2_3D_;
   multi_array<int, 3> path_len_3D_;
+  double snapshot_batch_sync_time_ = 0.0;
+  double snapshot_batch_route_time_ = 0.0;
+  double snapshot_batch_apply_time_ = 0.0;
+  int snapshot_batch_count_ = 0;
+  int snapshot_batch_net_count_ = 0;
+  int snapshot_batch_wave_count_ = 0;
   int detour_penalty_;
 };
 

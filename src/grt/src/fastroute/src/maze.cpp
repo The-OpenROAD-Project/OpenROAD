@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -16,10 +17,13 @@
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace grt {
 
 using utl::GRT;
+using utl::DebugScopedTimer;
+using utl::Timer;
 
 static int parent_index(int i)
 {
@@ -1030,6 +1034,166 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int L,
                                   const CostParams& cost_params,
                                   float& slack_th)
+{
+  if (!useSnapshotBatchRoutingForIteration(iter, net_ids_.size())) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  std::vector<int> ordered_net_ids = getMazeRouteNetOrder(ordering, slack_th);
+  if (!useSnapshotBatchRoutingForIteration(iter, ordered_net_ids.size())) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  const int batch_size = resolveSnapshotBatchSize(iter, ordered_net_ids.size());
+  if (batch_size <= 1 || ordered_net_ids.size() <= batch_size) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  struct BatchResult
+  {
+    std::vector<int> net_ids;
+    std::vector<StTree> sttrees;
+  };
+  std::vector<std::vector<int>> batch_net_ids;
+  batch_net_ids.reserve((ordered_net_ids.size() + batch_size - 1) / batch_size);
+  for (const int net_id : ordered_net_ids) {
+    if (batch_net_ids.empty() || batch_net_ids.back().size() == batch_size) {
+      batch_net_ids.emplace_back();
+    }
+    batch_net_ids.back().push_back(net_id);
+  }
+
+  if (batch_net_ids.size() < 2) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  double snapshot_sync_time = 0.0;
+  double snapshot_route_time = 0.0;
+  double snapshot_apply_time = 0.0;
+  int wave_count = 0;
+  {
+    const int wave_size
+        = std::min((int) batch_net_ids.size(), std::max(1, num_threads_));
+    std::vector<std::unique_ptr<FastRouteCore>> workers;
+    workers.reserve(wave_size);
+    for (int worker_idx = 0; worker_idx < wave_size; worker_idx++) {
+      workers.push_back(buildSnapshotBatchWorker());
+    }
+
+    // Track B intentionally allows route-choice drift inside a wave. Route
+    // fixed contiguous batches against one snapshot, then commit them in the
+    // original batch order before advancing to the next wave.
+    for (int wave_begin = 0; wave_begin < batch_net_ids.size();
+         wave_begin += wave_size) {
+      const int active_batch_count
+          = std::min(wave_size, (int) batch_net_ids.size() - wave_begin);
+      const int active_threads = std::min(active_batch_count, num_threads_);
+      std::vector<BatchResult> batch_results(active_batch_count);
+      wave_count++;
+
+      {
+        Timer timer;
+#pragma omp parallel for num_threads(active_threads) schedule(static)
+        for (int wave_batch = 0; wave_batch < active_batch_count; wave_batch++) {
+          workers[wave_batch]->syncSnapshotBatchWorker(
+              *this, batch_net_ids[wave_begin + wave_batch]);
+        }
+        snapshot_sync_time += timer.elapsed();
+      }
+
+      {
+        Timer timer;
+#pragma omp parallel for num_threads(active_threads) schedule(static)
+        for (int wave_batch = 0; wave_batch < active_batch_count; wave_batch++) {
+          auto& worker = workers[wave_batch];
+          float batch_slack_th = slack_th;
+          worker->mazeRouteMSMDSequential(iter,
+                                          expand,
+                                          ripup_threshold,
+                                          maze_edge_threshold,
+                                          false,
+                                          via,
+                                          L,
+                                          cost_params,
+                                          batch_slack_th);
+
+          BatchResult result;
+          result.net_ids = worker->net_ids_;
+          result.sttrees.reserve(result.net_ids.size());
+          for (const int net_id : result.net_ids) {
+            result.sttrees.push_back(std::move(worker->sttrees_[net_id]));
+          }
+          batch_results[wave_batch] = std::move(result);
+        }
+        snapshot_route_time += timer.elapsed();
+      }
+
+      {
+        Timer timer;
+        for (BatchResult& result : batch_results) {
+          for (int i = 0; i < result.net_ids.size(); i++) {
+            applySnapshotBatchRoute(result.net_ids[i],
+                                    std::move(result.sttrees[i]));
+          }
+        }
+        snapshot_apply_time += timer.elapsed();
+      }
+    }
+  }
+
+  snapshot_batch_sync_time_ += snapshot_sync_time;
+  snapshot_batch_route_time_ += snapshot_route_time;
+  snapshot_batch_apply_time_ += snapshot_apply_time;
+  snapshot_batch_count_ += batch_net_ids.size();
+  snapshot_batch_net_count_ += ordered_net_ids.size();
+  snapshot_batch_wave_count_ += wave_count;
+}
+
+void FastRouteCore::mazeRouteMSMDSequential(const int iter,
+                                            const int expand,
+                                            const int ripup_threshold,
+                                            const int maze_edge_threshold,
+                                            const bool ordering,
+                                            const int via,
+                                            const int L,
+                                            const CostParams& cost_params,
+                                            float& slack_th)
 {
   // maze routing for multi-source, multi-destination
   int tmpX, tmpY;

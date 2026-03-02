@@ -148,6 +148,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-critical_nets_percentage percent] \
                                   [-skip_large_fanout_nets fanout] \
                                   [-allow_congestion] \
+                                  [-multicore] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental] \
@@ -159,10 +160,10 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -grid_origin -critical_nets_percentage -congestion_report_iter_step\
+          -grid_origin -critical_nets_percentage -congestion_report_iter_step \
           -skip_large_fanout_nets
          } \
-    flags {-allow_congestion -resistance_aware -infinite_cap -verbose -start_incremental \
+    flags {-allow_congestion -multicore -resistance_aware -infinite_cap -verbose -start_incremental \
           -end_incremental -use_cugr}
 
   sta::check_argc_eq0 "global_route" $args
@@ -228,6 +229,9 @@ proc global_route { args } {
 
   set resistance_aware [info exists flags(-resistance_aware)]
   grt::set_resistance_aware $resistance_aware
+
+  set multicore [info exists flags(-multicore)]
+  grt::set_multicore $multicore
 
   set infinite_cap [info exists flags(-infinite_cap)]
   grt::set_infinite_cap $infinite_cap
