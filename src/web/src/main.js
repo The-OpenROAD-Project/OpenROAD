@@ -590,6 +590,13 @@ wsManager.readyPromise.then(async () => {
             displayControlsEl.innerHTML = '';
             allLayers = [];
 
+            // Instance borders layer (always below routing layers)
+            const instancesLayer = new WSTileLayer(wsManager, '_instances', {
+                zIndex: 0,
+            });
+            instancesLayer.addTo(map);
+            allLayers.push(instancesLayer);
+
             // --- Layers group ---
             const layerGroup = document.createElement('div');
             layerGroup.className = 'vis-group';

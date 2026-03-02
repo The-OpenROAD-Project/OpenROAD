@@ -247,7 +247,10 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
 
     odb::dbBlock* block = db_->getChip()->getBlock();
 
-    // Draw instances first (below routing)
+    // Special "_instances" layer: only draw instance borders, no routing
+    const bool instances_only = (layer == "_instances");
+
+    // Draw instances
     for (odb::dbInst* inst : search_->searchInsts(
              block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
       odb::Rect inst_bbox = inst->getBBox()->getBox();
@@ -395,74 +398,77 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       const int pixel_xh = (int) std::ceil((xh - dbu_x_min) * scale);
       const int pixel_yh = (int) std::ceil((yh - dbu_y_min) * scale);
 
-      // Draw the rectangle border
-      Color gray{128, 128, 128, 255};
-      if (dbu_x_min <= xl && xl <= dbu_x_max) {
-        for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-          const int draw_y = (255 - iy);
-          setPixel(image_buffer, pixel_xl, draw_y, gray);
-        }
-      }
-      if (dbu_x_min <= xh && xh <= dbu_x_max) {
-        for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-          const int draw_y = (255 - iy);
-          setPixel(image_buffer, pixel_xh, draw_y, gray);
-        }
-      }
-      if (dbu_y_min <= yl && yl <= dbu_y_max) {
-        for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-          const int draw_y = (255 - pixel_yl);
-          setPixel(image_buffer, ix, draw_y, gray);
-        }
-      }
-      if (dbu_y_min <= yh && yh <= dbu_y_max) {
-        for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-          const int draw_y = (255 - pixel_yh);
-          setPixel(image_buffer, ix, draw_y, gray);
-        }
-      }
-
-      if (vis.blockages) {
-        for (odb::dbBox* obs : master->getObstructions()) {
-          if (tech_layer && obs->getTechLayer() != tech_layer) {
-            continue;
+      if (instances_only) {
+        // Draw the rectangle border (instances-only layer)
+        Color gray{128, 128, 128, 255};
+        if (dbu_x_min <= xl && xl <= dbu_x_max) {
+          for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, pixel_xl, draw_y, gray);
           }
-          odb::Rect box = obs->getBox();
-          inst->getTransform().apply(box);
-          if (!box.overlaps(dbu_tile)) {
-            continue;
+        }
+        if (dbu_x_min <= xh && xh <= dbu_x_max) {
+          for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, pixel_xh, draw_y, gray);
           }
-          const odb::Rect overlap = box.intersect(dbu_tile);
-          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+        }
+        if (dbu_y_min <= yl && yl <= dbu_y_max) {
+          for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
+            const int draw_y = (255 - pixel_yl);
+            setPixel(image_buffer, ix, draw_y, gray);
+          }
+        }
+        if (dbu_y_min <= yh && yh <= dbu_y_max) {
+          for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
+            const int draw_y = (255 - pixel_yh);
+            setPixel(image_buffer, ix, draw_y, gray);
+          }
+        }
+      } else {
+        // Layer-specific: obstructions and pins
+        if (vis.blockages) {
+          for (odb::dbBox* obs : master->getObstructions()) {
+            if (tech_layer && obs->getTechLayer() != tech_layer) {
+              continue;
+            }
+            odb::Rect box = obs->getBox();
+            inst->getTransform().apply(box);
+            if (!box.overlaps(dbu_tile)) {
+              continue;
+            }
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, ix, draw_y, obs_color);
+            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                const int draw_y = (255 - iy);
+                setPixel(image_buffer, ix, draw_y, obs_color);
+              }
             }
           }
         }
-      }
 
-      if (vis.pins) {
-        for (odb::dbMTerm* mterm : master->getMTerms()) {
-          for (odb::dbMPin* mpin : mterm->getMPins()) {
-            for (odb::dbBox* geom : mpin->getGeometry()) {
-              if (tech_layer && geom->getTechLayer() != tech_layer) {
-                continue;
-              }
-              odb::Rect box = geom->getBox();
-              inst->getTransform().apply(box);
-              if (!box.overlaps(dbu_tile)) {
-                continue;
-              }
-              const odb::Rect overlap = box.intersect(dbu_tile);
-              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+        if (vis.pins) {
+          for (odb::dbMTerm* mterm : master->getMTerms()) {
+            for (odb::dbMPin* mpin : mterm->getMPins()) {
+              for (odb::dbBox* geom : mpin->getGeometry()) {
+                if (tech_layer && geom->getTechLayer() != tech_layer) {
+                  continue;
+                }
+                odb::Rect box = geom->getBox();
+                inst->getTransform().apply(box);
+                if (!box.overlaps(dbu_tile)) {
+                  continue;
+                }
+                const odb::Rect overlap = box.intersect(dbu_tile);
+                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                  const int draw_y = (255 - iy);
-                  setPixel(image_buffer, ix, draw_y, color);
+                for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+                  for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                    const int draw_y = (255 - iy);
+                    setPixel(image_buffer, ix, draw_y, color);
+                  }
                 }
               }
             }
@@ -472,7 +478,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     }
 
     // Draw routing shapes (wires, vias, bterms) on top of instances
-    if (tech_layer && vis.routing) {
+    if (!instances_only && tech_layer && vis.routing) {
       for (const auto& shape : search_->searchBoxShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
@@ -496,7 +502,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     }
 
     // Draw special net shapes (power/ground straps) on top of instances
-    if (tech_layer && vis.special_nets) {
+    if (!instances_only && tech_layer && vis.special_nets) {
       for (const auto& shape : search_->searchSNetShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
