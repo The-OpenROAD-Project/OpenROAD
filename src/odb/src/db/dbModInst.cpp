@@ -32,6 +32,7 @@
 #include "dbModNet.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
+#include "dbSwapMasterSanityChecker.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -773,6 +774,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       std::ofstream outfile(filename);
       child_block->debugPrintContent(outfile);
     }
+  }
+
+  if (logger->debugCheck(utl::ODB, "replace_design_check_sanity", 1)) {
+    dbSwapMasterSanityChecker checker(new_mod_inst, new_module, logger);
+    checker.run();
   }
 
   return new_mod_inst;

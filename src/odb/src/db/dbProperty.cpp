@@ -411,6 +411,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
+  _dbProperty* prev = nullptr;
   uint32_t oid = prop->getOID();
 
   while (cur) {
@@ -420,12 +421,13 @@ void dbProperty::destroy(dbProperty* prop_)
       if (cur == propList) {
         ownerTable->setPropList(prop->owner_, p->next_);
       } else {
-        p->next_ = prop->next_;
+        prev->next_ = prop->next_;
       }
 
       break;
     }
 
+    prev = p;
     cur = p->next_;
   }
 
