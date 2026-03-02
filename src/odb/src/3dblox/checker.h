@@ -7,6 +7,10 @@
 #include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 
+namespace sta {
+class Sta;
+}
+
 namespace odb {
 class dbChip;
 class dbMarkerCategory;
@@ -23,10 +27,12 @@ class Checker
  public:
   Checker(utl::Logger* logger);
   ~Checker() = default;
-  void check(dbChip* chip);
+  void check(dbChip* chip, sta::Sta* sta);
 
  private:
-  void checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip);
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat,
+                                dbChip* chip,
+                                sta::Sta* sta);
   void checkFloatingChips(dbMarkerCategory* top_cat,
                           const UnfoldedModel& model);
   void checkOverlappingChips(dbMarkerCategory* top_cat,

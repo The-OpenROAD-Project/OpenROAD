@@ -10,7 +10,6 @@
 #include <numeric>
 #include <ranges>
 #include <string>
-#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -20,10 +19,12 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "odb/unfoldedModel.h"
+#include "sta/ConcreteNetwork.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sta.hh"
+#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
@@ -94,23 +95,28 @@ bool isValid(const UnfoldedConnection& conn)
   return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
-class StaReportGuard
+class StaGuard
 {
  public:
-  StaReportGuard() : sta_(std::make_unique<sta::Sta>())
+  StaGuard(sta::Sta* sta) : sta_ptr_(sta)
   {
-    sta_->makeComponents();
-  }
-  ~StaReportGuard()
-  {
-    if (sta_) {
-      sta_->setReport(nullptr);
+    if (!sta_ptr_) {
+      temp_sta_ = std::make_unique<sta::Sta>();
+      temp_sta_->makeComponents();
+      sta_ptr_ = temp_sta_.get();
     }
   }
-  sta::Sta* operator->() const { return sta_.get(); }
+  ~StaGuard()
+  {
+    if (temp_sta_) {
+      temp_sta_->setReport(nullptr);
+    }
+  }
+  sta::Sta* operator->() const { return sta_ptr_; }
 
  private:
-  std::unique_ptr<sta::Sta> sta_;
+  std::unique_ptr<sta::Sta> temp_sta_;
+  sta::Sta* sta_ptr_;
 };
 
 }  // namespace
@@ -119,12 +125,11 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void Checker::check(dbChip* chip)
+void Checker::check(dbChip* chip, sta::Sta* sta)
 {
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  checkLogicalConnectivity(top_cat, chip);
+  checkLogicalConnectivity(top_cat, chip, sta);
   UnfoldedModel model(logger_, chip);
-
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
@@ -316,10 +321,11 @@ void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
 {
 }
 
-void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
+void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
+                                       dbChip* chip,
+                                       sta::Sta* sta)
 {
-  StaReportGuard sta;
-  std::unordered_set<std::string> loaded_files;
+  StaGuard sta_guard(sta);
   std::unordered_set<dbChip*> processed_masters;
 
   dbMarkerCategory* design_cat = nullptr;
@@ -331,45 +337,7 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
       continue;
     }
 
-    auto* prop = dbProperty::find(master, "verilog_file");
-    if (!prop || prop->getType() != dbProperty::STRING_PROP) {
-      debugPrint(logger_,
-                 utl::ODB,
-                 "3dblox",
-                 551,
-                 "Missing 'verilog_file' property for master {}",
-                 master->getName());
-      continue;
-    }
-
-    std::string raw_file = static_cast<dbStringProperty*>(prop)->getValue();
-    std::error_code ec;
-    std::filesystem::path path
-        = std::filesystem::weakly_canonical(raw_file, ec);
-    if (ec) {
-      path = std::filesystem::absolute(raw_file, ec);
-    }
-    std::string file = path.string();
-
-    if (loaded_files.insert(file).second) {
-      debugPrint(logger_,
-                 utl::ODB,
-                 "3dblox",
-                 552,
-                 "Reading Verilog file {} for design {}",
-                 path.filename().string(),
-                 master->getName());
-      if (!sta->readVerilog(file.c_str())) {
-        debugPrint(logger_,
-                   utl::ODB,
-                   "3dblox",
-                   553,
-                   "Failed to read Verilog file {}",
-                   file);
-      }
-    }
-
-    auto* network = sta->network();
+    auto* network = sta_guard->network();
     sta::Cell* cell = nullptr;
     {
       std::unique_ptr<sta::LibraryIterator> lib_iter(
@@ -390,7 +358,10 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
       while (li->hasNext()) {
         auto matches = network->findCellsMatching(li->next(), &all);
         for (auto* c : matches) {
-          modules.emplace_back(network->name(c));
+          const char* name = network->name(c);
+          if (name) {
+            modules.emplace_back(name);
+          }
         }
       }
       std::ranges::sort(modules);
@@ -404,11 +375,9 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
       }
       auto* marker = dbMarker::create(design_cat);
       std::string msg = fmt::format(
-          "Design Alignment Violation: Verilog module {} not found in file {}. "
-          "Available "
-          "modules: {}",
+          "Design Alignment Violation: Verilog module {} not found. "
+          "Available modules: {}",
           master->getName(),
-          file,
           modules.empty() ? "None"
                           : fmt::format("{}", fmt::join(modules, ", ")));
       marker->setComment(msg);
@@ -417,28 +386,41 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
       continue;
     }
 
-    std::unordered_set<std::string> verilog_nets;
-    {
-      std::unique_ptr<sta::CellPortBitIterator> port_iter(
-          network->portBitIterator(cell));
-      while (port_iter->hasNext()) {
-        verilog_nets.insert(network->name(port_iter->next()));
+    std::unordered_set<std::string> nets;
+    auto* prop = dbStringProperty::find(master, "verilog_file");
+    if (prop && sta) {
+      std::string verilog_file = prop->getValue();
+      if (!verilog_file.empty() && std::filesystem::exists(verilog_file)) {
+        sta::ConcreteNetwork temp_network;
+        temp_network.copyState(sta);
+        sta::VerilogReader verilog_reader(&temp_network);
+        if (verilog_reader.read(verilog_file.c_str())) {
+          sta::Instance* top_inst
+              = verilog_reader.linkNetwork(master->getName(),
+                                           /*make_black_boxes*/ true,
+                                           /*delete_modules*/ false);
+          if (top_inst) {
+            std::unique_ptr<sta::NetIterator> net_iter(
+                temp_network.netIterator(top_inst));
+            while (net_iter->hasNext()) {
+              nets.insert(temp_network.name(net_iter->next()));
+            }
+          }
+        }
       }
     }
 
-    std::vector<std::string> available_nets;
-    available_nets.insert(
-        available_nets.end(), verilog_nets.begin(), verilog_nets.end());
-    std::ranges::sort(available_nets);
-    if (available_nets.size() > 10) {
-      available_nets.resize(10);
-      available_nets.emplace_back("...");
+    std::vector<std::string> sorted_nets(nets.begin(), nets.end());
+    std::ranges::sort(sorted_nets);
+    if (sorted_nets.size() > 10) {
+      sorted_nets.resize(10);
+      sorted_nets.emplace_back("...");
     }
 
     for (auto* region : master->getChipRegions()) {
       for (auto* bump : region->getChipBumps()) {
         auto* net = bump->getNet();
-        if (net && !verilog_nets.contains(net->getName())) {
+        if (net && !nets.contains(net->getName())) {
           if (!alignment_cat) {
             alignment_cat = dbMarkerCategory::createOrReplace(
                 top_cat, "Logical Alignment");
@@ -452,7 +434,7 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat, dbChip* chip)
               "[{}]",
               net->getName(),
               bump_name,
-              fmt::join(available_nets, ", "));
+              fmt::join(sorted_nets, ", "));
 
           marker->setComment(msg);
           marker->addSource(bump);

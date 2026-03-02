@@ -10,7 +10,6 @@
 #include <set>
 #include <sstream>
 #include <string>
-#include <system_error>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -31,9 +30,10 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
-#include "sta/Network.hh"
+#include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
+#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 namespace odb {
@@ -98,10 +98,37 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   calculateSize(chip);
 }
 
+namespace {
+void readVerilogFiles(dbChip* chip,
+                      sta::Sta* sta,
+                      std::unordered_set<dbChip*>& processed)
+{
+  if (!chip || !processed.insert(chip).second) {
+    return;
+  }
+  auto* prop = dbStringProperty::find(chip, "verilog_file");
+  if (prop && sta) {
+    std::string verilog_file = prop->getValue();
+    if (!verilog_file.empty()) {
+      if (std::filesystem::exists(verilog_file)) {
+        sta->readVerilog(verilog_file.c_str());
+      }
+    }
+  }
+  for (auto* inst : chip->getChipInsts()) {
+    readVerilogFiles(inst->getMasterChip(), sta, processed);
+  }
+}
+}  // namespace
+
 void ThreeDBlox::check()
 {
+  if (sta_) {
+    std::unordered_set<dbChip*> processed;
+    readVerilogFiles(db_->getChip(), sta_, processed);
+  }
   Checker checker(logger_);
-  checker.check(db_->getChip());
+  checker.check(db_->getChip(), sta_);
 }
 
 namespace {
@@ -342,14 +369,8 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
           chip, "verilog_file", chiplet.external.verilog_file.c_str());
     }
     if (sta_ != nullptr) {
-      std::error_code ec;
-      auto path = std::filesystem::weakly_canonical(
-          chiplet.external.verilog_file, ec);
-      if (ec) {
-        path = std::filesystem::absolute(chiplet.external.verilog_file, ec);
-      }
-      std::string full_path = path.string();
-      if (read_verilog_files_.insert(full_path).second) {
+      if (!chiplet.external.verilog_file.empty()
+          && std::filesystem::exists(chiplet.external.verilog_file)) {
         if (!sta_->readVerilog(chiplet.external.verilog_file.c_str())) {
           logger_->warn(utl::ODB,
                         554,
@@ -357,40 +378,21 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
                         chiplet.external.verilog_file);
         }
       }
-      auto* network = sta_->network();
-      sta::Cell* cell = nullptr;
-      {
-        std::unique_ptr<sta::LibraryIterator> lib_iter(
-            network->libraryIterator());
-        while (lib_iter->hasNext()) {
-          auto* lib = lib_iter->next();
-          cell = network->findCell(lib, chiplet.name.c_str());
-          if (cell) {
-            break;
-          }
-        }
-      }
-
-      if (!cell) {
-        logger_->warn(utl::ODB,
-                      555,
-                      "Verilog module {} not found in loaded libraries.",
-                      chiplet.name);
-      }
-
-      if (cell) {
-        std::unordered_set<std::string> existing_nets;
-        for (auto* net : chip->getChipNets()) {
-          existing_nets.insert(net->getName());
-        }
-        std::unique_ptr<sta::CellPortBitIterator> port_iter(
-            network->portBitIterator(cell));
-        while (port_iter->hasNext()) {
-          auto* port = port_iter->next();
-          const char* net_name = network->name(port);
-          if (!existing_nets.contains(net_name)) {
+      sta::ConcreteNetwork temp_network;
+      temp_network.copyState(sta_);
+      sta::VerilogReader verilog_reader(&temp_network);
+      if (verilog_reader.read(chiplet.external.verilog_file.c_str())) {
+        sta::Instance* top_inst
+            = verilog_reader.linkNetwork(chiplet.name.c_str(),
+                                         /*make_black_boxes*/ true,
+                                         /*delete_modules*/ false);
+        if (top_inst) {
+          std::unique_ptr<sta::NetIterator> net_iter(
+              temp_network.netIterator(top_inst));
+          while (net_iter->hasNext()) {
+            auto* net = net_iter->next();
+            const char* net_name = temp_network.name(net);
             dbChipNet::create(chip, net_name);
-            existing_nets.insert(net_name);
             debugPrint(logger_,
                        utl::ODB,
                        "3dblox",
@@ -399,6 +401,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
                        net_name,
                        chip->getName());
           }
+        } else {
+          logger_->warn(utl::ODB,
+                        555,
+                        "Verilog module {} not found in Verilog file {}.",
+                        chiplet.name,
+                        chiplet.external.verilog_file);
         }
       }
     }
@@ -640,6 +648,12 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
       static_cast<int>(chip_inst.loc.y * db_->getDbuPerMicron()),
       static_cast<int>(chip_inst.z * db_->getDbuPerMicron()),
   });
+  if (!chip_inst.external.verilog_file.empty()) {
+    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
+      odb::dbStringProperty::create(
+          chip, "verilog_file", chip_inst.external.verilog_file.c_str());
+    }
+  }
 }
 static std::vector<std::string> splitPath(const std::string& path)
 {
