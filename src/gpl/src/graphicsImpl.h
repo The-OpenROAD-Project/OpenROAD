@@ -92,7 +92,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                          int image_width_px) override;
   void saveLabeledImageImpl(std::string_view path,
                             std::string_view label,
-                            bool select_buffers,
                             std::string_view heatmap_control,
                             int image_width_px) override;
   void gifAddFrameImpl(int key,
