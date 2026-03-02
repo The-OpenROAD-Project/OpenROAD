@@ -5,13 +5,11 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <filesystem>
-#include <memory>
+#include <map>
 #include <numeric>
 #include <ranges>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -19,12 +17,6 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "odb/unfoldedModel.h"
-#include "sta/ConcreteNetwork.hh"
-#include "sta/Network.hh"
-#include "sta/NetworkClass.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/Sta.hh"
-#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/unionFind.h"
 
@@ -95,41 +87,17 @@ bool isValid(const UnfoldedConnection& conn)
   return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
-class StaGuard
-{
- public:
-  StaGuard(sta::Sta* sta) : sta_ptr_(sta)
-  {
-    if (!sta_ptr_) {
-      temp_sta_ = std::make_unique<sta::Sta>();
-      temp_sta_->makeComponents();
-      sta_ptr_ = temp_sta_.get();
-    }
-  }
-  ~StaGuard()
-  {
-    if (temp_sta_) {
-      temp_sta_->setReport(nullptr);
-    }
-  }
-  sta::Sta* operator->() const { return sta_ptr_; }
-
- private:
-  std::unique_ptr<sta::Sta> temp_sta_;
-  sta::Sta* sta_ptr_;
-};
-
 }  // namespace
 
 Checker::Checker(utl::Logger* logger) : logger_(logger)
 {
 }
 
-void Checker::check(dbChip* chip, sta::Sta* sta)
+void Checker::check(dbChip* chip)
 {
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
-  checkLogicalConnectivity(top_cat, chip, sta);
   UnfoldedModel model(logger_, chip);
+  checkLogicalConnectivity(top_cat, model);
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
@@ -322,130 +290,73 @@ void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
-                                       dbChip* chip,
-                                       sta::Sta* sta)
+                                       const UnfoldedModel& model)
 {
-  StaGuard sta_guard(sta);
-  std::unordered_set<dbChip*> processed_masters;
+  std::unordered_map<const UnfoldedBump*, const UnfoldedNet*> bump_net_map;
+  for (const auto& net : model.getNets()) {
+    for (const auto* bump : net.connected_bumps) {
+      bump_net_map[bump] = &net;
+    }
+  }
 
-  dbMarkerCategory* design_cat = nullptr;
-  dbMarkerCategory* alignment_cat = nullptr;
+  auto get_net_name = [&](const UnfoldedBump* bump) -> std::string {
+    auto it = bump_net_map.find(bump);
+    if (it != bump_net_map.end()) {
+      return it->second->chip_net->getName();
+    }
+    return "defines no net";
+  };
 
-  for (auto* inst : chip->getChipInsts()) {
-    auto* master = inst->getMasterChip();
-    if (!master || !processed_masters.insert(master).second) {
+  dbMarkerCategory* cat = nullptr;
+  for (const auto& conn : model.getConnections()) {
+    if (!isValid(conn)) {
+      continue;
+    }
+    if (!conn.top_region || !conn.bottom_region) {
       continue;
     }
 
-    auto* network = sta_guard->network();
-    sta::Cell* cell = nullptr;
-    {
-      std::unique_ptr<sta::LibraryIterator> lib_iter(
-          network->libraryIterator());
-      while (lib_iter->hasNext()) {
-        auto* lib = lib_iter->next();
-        cell = network->findCell(lib, master->getName());
-        if (cell) {
-          break;
-        }
-      }
+    std::map<Point, const UnfoldedBump*> bot_bumps;
+    for (const auto& bump : conn.bottom_region->bumps) {
+      Point p(bump.global_position.x(), bump.global_position.y());
+      bot_bumps[p] = &bump;
     }
 
-    if (!cell) {
-      std::vector<std::string> modules;
-      std::unique_ptr<sta::LibraryIterator> li(network->libraryIterator());
-      sta::PatternMatch all("*");
-      while (li->hasNext()) {
-        auto matches = network->findCellsMatching(li->next(), &all);
-        for (auto* c : matches) {
-          const char* name = network->name(c);
-          if (name) {
-            modules.emplace_back(name);
+    for (const auto& top_bump : conn.top_region->bumps) {
+      Point p(top_bump.global_position.x(), top_bump.global_position.y());
+      auto it = bot_bumps.find(p);
+      if (it != bot_bumps.end()) {
+        const UnfoldedBump* bot_bump = it->second;
+
+        // Check logical connectivity
+        auto top_net_it = bump_net_map.find(&top_bump);
+        auto bot_net_it = bump_net_map.find(bot_bump);
+
+        const UnfoldedNet* top_net
+            = top_net_it != bump_net_map.end() ? top_net_it->second : nullptr;
+        const UnfoldedNet* bot_net
+            = bot_net_it != bump_net_map.end() ? bot_net_it->second : nullptr;
+
+        if (top_net != bot_net) {
+          if (!cat) {
+            cat = dbMarkerCategory::createOrReplace(top_cat,
+                                                    "Logical Connectivity");
           }
-        }
-      }
-      std::ranges::sort(modules);
-      if (modules.size() > 10) {
-        modules.resize(10);
-        modules.emplace_back("...");
-      }
-      if (!design_cat) {
-        design_cat
-            = dbMarkerCategory::createOrReplace(top_cat, "Design Alignment");
-      }
-      auto* marker = dbMarker::create(design_cat);
-      std::string msg = fmt::format(
-          "Design Alignment Violation: Verilog module {} not found. "
-          "Available modules: {}",
-          master->getName(),
-          modules.empty() ? "None"
-                          : fmt::format("{}", fmt::join(modules, ", ")));
-      marker->setComment(msg);
-      marker->addSource(master);
-      logger_->warn(utl::ODB, 550, msg);
-      continue;
-    }
-
-    std::unordered_set<std::string> nets;
-    auto* prop = dbStringProperty::find(master, "verilog_file");
-    if (prop && sta) {
-      std::string verilog_file = prop->getValue();
-      if (!verilog_file.empty() && std::filesystem::exists(verilog_file)) {
-        sta::ConcreteNetwork temp_network;
-        temp_network.copyState(sta);
-        sta::VerilogReader verilog_reader(&temp_network);
-        if (verilog_reader.read(verilog_file.c_str())) {
-          sta::Instance* top_inst
-              = verilog_reader.linkNetwork(master->getName(),
-                                           /*make_black_boxes*/ true,
-                                           /*delete_modules*/ false);
-          if (top_inst) {
-            std::unique_ptr<sta::NetIterator> net_iter(
-                temp_network.netIterator(top_inst));
-            while (net_iter->hasNext()) {
-              nets.insert(temp_network.name(net_iter->next()));
-            }
-          }
-        }
-      }
-    }
-
-    std::vector<std::string> sorted_nets(nets.begin(), nets.end());
-    std::ranges::sort(sorted_nets);
-    if (sorted_nets.size() > 10) {
-      sorted_nets.resize(10);
-      sorted_nets.emplace_back("...");
-    }
-
-    for (auto* region : master->getChipRegions()) {
-      for (auto* bump : region->getChipBumps()) {
-        auto* net = bump->getNet();
-        if (net && !nets.contains(net->getName())) {
-          if (!alignment_cat) {
-            alignment_cat = dbMarkerCategory::createOrReplace(
-                top_cat, "Logical Alignment");
-          }
-          auto* marker = dbMarker::create(alignment_cat);
-          std::string bump_name
-              = bump->getInst() ? bump->getInst()->getName() : "UNKNOWN_BUMP";
+          auto* marker = dbMarker::create(cat);
+          marker->addSource(top_bump.bump_inst);
+          marker->addSource(bot_bump->bump_inst);
+          marker->addShape(conn.top_region->cuboid.intersect(
+              conn.bottom_region->cuboid));  // Mark overlap region
 
           std::string msg = fmt::format(
-              "Logical net {} (bump {}) not found in Verilog. Available nets: "
-              "[{}]",
-              net->getName(),
-              bump_name,
-              fmt::join(sorted_nets, ", "));
-
+              "Bumps at ({}, {}) align physically but logical connectivity "
+              "mismatch: Top bump {} vs Bottom bump {}",
+              p.x(),
+              p.y(),
+              get_net_name(&top_bump),
+              get_net_name(bot_bump));
           marker->setComment(msg);
-          marker->addSource(bump);
-          logger_->warn(
-              utl::ODB,
-              560,
-              "Logical net {} in bmap for chiplet {} (bump {}) not found in "
-              "Verilog",
-              net->getName(),
-              master->getName(),
-              bump_name);
+          logger_->warn(utl::ODB, 208, msg);
         }
       }
     }

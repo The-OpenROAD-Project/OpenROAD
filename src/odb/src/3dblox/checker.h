@@ -27,12 +27,11 @@ class Checker
  public:
   Checker(utl::Logger* logger);
   ~Checker() = default;
-  void check(dbChip* chip, sta::Sta* sta);
+  void check(dbChip* chip);
 
  private:
   void checkLogicalConnectivity(dbMarkerCategory* top_cat,
-                                dbChip* chip,
-                                sta::Sta* sta);
+                                const UnfoldedModel& model);
   void checkFloatingChips(dbMarkerCategory* top_cat,
                           const UnfoldedModel& model);
   void checkOverlappingChips(dbMarkerCategory* top_cat,

@@ -1,148 +1,167 @@
-#include <gtest/gtest.h>
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2026, The OpenROAD Authors
 
 #include <string>
+#include <vector>
 
+#include "Test3DBloxCheckerFixture.h"
+#include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
-#include "tst/fixture.h"
+#include "odb/geom.h"
 
 namespace odb {
+namespace {
 
-class LogicalConnFixture : public tst::Fixture
+class CheckerLogicalConnFixture : public CheckerFixture
 {
  protected:
-  void SetUp() override
+  CheckerLogicalConnFixture()
   {
-    blox_ = new ThreeDBlox(&logger_, db_.get(), sta_.get());
+    dbTechLayer::create(tech_, "layer1", dbTechLayerType::ROUTING);
+
+    // DIE chips need blocks (for bump masters/cells)
+    dbBlock::create(chip1_, "block1");
+    dbBlock::create(chip2_, "block2");
+
+    // Lib + bump master
+    lib_ = dbLib::create(db_.get(), "bump_lib", tech_, ',');
+    bump_master_ = dbMaster::create(lib_, "bump_pad");
+    bump_master_->setWidth(100);
+    bump_master_->setHeight(100);
+    bump_master_->setType(dbMasterType::CORE);
+    dbMTerm::create(bump_master_, "pin", dbIoType::INOUT, dbSigType::SIGNAL);
+    bump_master_->setFrozen();
   }
 
-  void TearDown() override { delete blox_; }
+  // Create a bump on a chip region.
+  dbChipBump* createBump(dbChip* chip,
+                         dbChipRegion* region,
+                         const char* bump_name,
+                         int x,
+                         int y)
+  {
+    dbBlock* block = chip->getBlock();
+    dbTechLayer* layer = tech_->findLayer("layer1");
 
-  ThreeDBlox* blox_;
+    // Physical cell in the block
+    dbInst* inst = dbInst::create(block, bump_master_, bump_name);
+    inst->setOrigin(x, y);
+    inst->setPlacementStatus(dbPlacementStatus::PLACED);
+
+    // Chip-level bump association
+    dbChipBump* chip_bump = dbChipBump::create(region, inst);
+
+    // Net + BTerm for wire-graph connectivity
+    std::string net_name = std::string(bump_name) + "_net";
+    dbNet* net = block->findNet(net_name.c_str());
+    if (!net) {
+      net = dbNet::create(block, net_name.c_str());
+    }
+    dbBTerm* bterm = dbBTerm::create(net, bump_name);
+    bterm->setIoType(dbIoType::INOUT);
+
+    // BPin with box at the bump location
+    dbBPin* bpin = dbBPin::create(bterm);
+    bpin->setPlacementStatus(dbPlacementStatus::PLACED);
+    dbBox::create(bpin, layer, x, y, x + 100, y + 100);
+
+    chip_bump->setNet(net);
+    chip_bump->setBTerm(bterm);
+
+    return chip_bump;
+  }
+
+  void check()
+  {
+    utl::Logger logger;
+    ThreeDBlox three_dblox(&logger, db_.get());
+    three_dblox.check();
+  }
+
+  dbLib* lib_;
+  dbMaster* bump_master_;
 };
 
-TEST_F(LogicalConnFixture, TestMissingNetCreation)
+TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_matching_nets)
 {
-  std::string dbv_file
-      = getFilePath("src/odb/test/data/3dblox_logical_test.3dbv");
+  auto* r1_fr = chip1_->findChipRegion("r1_fr");
+  auto* r2_bk = chip2_->findChipRegion("r2_bk");
 
-  // Run readDbv
-  blox_->readDbv(dbv_file);
+  createBump(chip1_, r1_fr, "bump1", 100, 100);
+  createBump(chip2_, r2_bk, "bump2", 100, 100);
 
-  // Check if chip "top" was created
-  auto* created_chip = db_->findChip("top");
-  ASSERT_NE(created_chip, nullptr);
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
-  // Check if nets "A" and "Z" were created in the chip
-  bool foundA = false;
-  bool foundZ = false;
-  for (auto* net : created_chip->getChipNets()) {
-    if (net->getName() == "A") {
-      foundA = true;
-    }
-    if (net->getName() == "Z") {
-      foundZ = true;
-    }
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));  // Stacked on top
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn1->setThickness(0);
+
+  auto inst1_bump1 = *ri1->getChipBumpInsts().begin();
+  auto inst2_bump2 = *ri2->getChipBumpInsts().begin();
+
+  auto* chip_net = dbChipNet::create(top_chip_, "net1");
+  chip_net->addBumpInst(inst1_bump1, {inst1});
+  chip_net->addBumpInst(inst2_bump2, {inst2});
+
+  check();
+
+  auto markers = getMarkers(logical_connectivity_category);
+  EXPECT_TRUE(markers.empty());
+}
+
+TEST_F(CheckerLogicalConnFixture, test_logical_connectivity_mismatching_nets)
+{
+  auto* r1_fr = chip1_->findChipRegion("r1_fr");
+  auto* r2_bk = chip2_->findChipRegion("r2_bk");
+
+  createBump(chip1_, r1_fr, "bump1", 200, 200);
+  createBump(chip2_, r2_bk, "bump2", 200, 200);
+
+  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
+  inst1->setLoc(Point3D(0, 0, 0));
+  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
+  inst2->setLoc(Point3D(0, 0, 500));  // Stacked on top
+  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
+
+  auto* ri1 = inst1->findChipRegionInst("r1_fr");
+  auto* ri2 = inst2->findChipRegionInst("r2_bk");
+
+  auto* conn1 = dbChipConn::create("c1", top_chip_, {inst1}, ri1, {inst2}, ri2);
+  conn1->setThickness(0);
+
+  auto inst1_bump1 = *ri1->getChipBumpInsts().begin();
+  auto inst2_bump2 = *ri2->getChipBumpInsts().begin();
+
+  auto* chip_net1 = dbChipNet::create(top_chip_, "net1");
+  chip_net1->addBumpInst(inst1_bump1, {inst1});
+
+  auto* chip_net2 = dbChipNet::create(top_chip_, "net2");
+  chip_net2->addBumpInst(inst2_bump2, {inst2});
+
+  check();
+
+  auto markers = getMarkers(logical_connectivity_category);
+  EXPECT_EQ(markers.size(), 1);
+  if (!markers.empty()) {
+    auto sources = markers[0]->getSources();
+    EXPECT_EQ(sources.size(), 2);
+
+    // Check message correctness conceptually
+    EXPECT_NE(markers[0]->getComment().find("logical connectivity mismatch"),
+              std::string::npos);
   }
-  EXPECT_TRUE(foundA);
-  EXPECT_TRUE(foundZ);
 }
 
-TEST_F(LogicalConnFixture, TestCheckerNoViolations)
-{
-  auto* tech = dbTech::create(db_.get(), "tech");
-  // master chip name matches module name in Verilog "top"
-  auto* master = dbChip::create(db_.get(), tech, "top", dbChip::ChipType::DIE);
-  dbChipNet::create(master, "A");
-  dbChipNet::create(master, "Z");
-
-  std::string verilog_file
-      = getFilePath("src/odb/test/data/3dblox_logical_check_pass.v");
-  odb::dbStringProperty::create(master, "verilog_file", verilog_file.c_str());
-
-  // top chip containing instance of master
-  auto* design_top = dbChip::create(
-      db_.get(), nullptr, "design_top", dbChip::ChipType::HIER);
-  dbChipInst::create(design_top, master, "inst1");
-  db_->setTopChip(design_top);
-
-  // Run Checker
-  blox_->check();
-
-  // Verify no markers in "Logical Alignment" or "Design Alignment"
-  auto* top_cat = design_top->findMarkerCategory("3DBlox");
-  if (top_cat) {
-    auto* design_cat = top_cat->findMarkerCategory("Design Alignment");
-    if (design_cat) {
-      EXPECT_EQ(design_cat->getMarkers().size(), 0);
-    }
-    auto* align_cat = top_cat->findMarkerCategory("Logical Alignment");
-    if (align_cat) {
-      EXPECT_EQ(align_cat->getMarkers().size(), 0);
-    }
-  }
-}
-
-TEST_F(LogicalConnFixture, TestCheckerMissingModule)
-{
-  auto* tech = dbTech::create(db_.get(), "tech");
-  // master chip name "top" but Verilog has "other_module"
-  auto* master = dbChip::create(db_.get(), tech, "top", dbChip::ChipType::DIE);
-
-  std::string verilog_file
-      = getFilePath("src/odb/test/data/3dblox_logical_check_fail_mod.v");
-  odb::dbStringProperty::create(master, "verilog_file", verilog_file.c_str());
-
-  auto* design_top = dbChip::create(
-      db_.get(), nullptr, "design_top", dbChip::ChipType::HIER);
-  dbChipInst::create(design_top, master, "inst1");
-  db_->setTopChip(design_top);
-
-  blox_->check();
-
-  // Verify "Design Alignment" marker
-  auto* top_cat = design_top->findMarkerCategory("3DBlox");
-  ASSERT_NE(top_cat, nullptr);
-  auto* design_cat = top_cat->findMarkerCategory("Design Alignment");
-  ASSERT_NE(design_cat, nullptr);
-  EXPECT_GT(design_cat->getMarkers().size(), 0);
-}
-
-TEST_F(LogicalConnFixture, TestCheckerMissingNetInVerilog)
-{
-  auto* tech = dbTech::create(db_.get(), "tech");
-  // master chip name "top" matches module name in Verilog
-  auto* master = dbChip::create(db_.get(), tech, "top", dbChip::ChipType::DIE);
-
-  // Create a bump connected to a net "EXTRA" that is NOT in Verilog
-  auto* region
-      = dbChipRegion::create(master, "r1", dbChipRegion::Side::FRONT, nullptr);
-  auto* block = dbBlock::create(master, "block");
-  auto* lib = dbLib::create(db_.get(), "lib", tech);
-  auto* bump_master = dbMaster::create(lib, "bump_cell");
-  bump_master->setFrozen();
-  auto* inst = dbInst::create(block, bump_master, "bump_inst");
-  auto* bump = dbChipBump::create(region, inst);
-  auto* net = dbNet::create(block, "EXTRA");
-  bump->setNet(net);
-
-  std::string verilog_file
-      = getFilePath("src/odb/test/data/3dblox_logical_check_fail_net.v");
-  odb::dbStringProperty::create(master, "verilog_file", verilog_file.c_str());
-
-  auto* design_top = dbChip::create(
-      db_.get(), nullptr, "design_top", dbChip::ChipType::HIER);
-  dbChipInst::create(design_top, master, "inst1");
-  db_->setTopChip(design_top);
-
-  blox_->check();
-
-  // Verify "Logical Alignment" marker
-  auto* top_cat = design_top->findMarkerCategory("3DBlox");
-  ASSERT_NE(top_cat, nullptr);
-  auto* align_cat = top_cat->findMarkerCategory("Logical Alignment");
-  ASSERT_NE(align_cat, nullptr);
-  EXPECT_GT(align_cat->getMarkers().size(), 0);
-}
-
+}  // namespace
 }  // namespace odb

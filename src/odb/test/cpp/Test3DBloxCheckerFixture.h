@@ -82,6 +82,8 @@ class CheckerFixture : public tst::Fixture
       = "Unused internal_ext";
   static constexpr const char* connected_regions_category
       = "Connection regions";
+  static constexpr const char* logical_connectivity_category
+      = "Logical Connectivity";
 };
 
 }  // namespace odb
