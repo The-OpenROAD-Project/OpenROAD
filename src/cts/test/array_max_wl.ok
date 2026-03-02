@@ -582,11 +582,11 @@ legalized HPWL         201452.1 u
 delta HPWL                    0 %
 
 Clock clk
-   1.47 source latency inst_7_10/clk ^
-  -1.30 target latency inst_8_10/clk ^
+   1.47 source latency inst_7_8/clk ^
+  -1.35 target latency inst_8_8/clk ^
    0.00 CRPR
 --------------
-   0.17 setup skew
+   0.12 setup skew
 
 Startpoint: inst_1_1 (rising edge-triggered flip-flop clocked by clk)
 Endpoint: inst_2_1 (rising edge-triggered flip-flop clocked by clk)
@@ -639,9 +639,9 @@ Path Type: max
    0.04    1.35 ^ max_length8/Z (BUF_X8)
    0.05    1.41 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
    0.00    1.41 ^ inst_1_1/clk (array_tile)
-   0.21    1.62 ^ inst_1_1/e_out (array_tile)
-   0.00    1.62 ^ inst_2_1/w_in (array_tile)
-           1.62   data arrival time
+   0.21    1.63 ^ inst_1_1/e_out (array_tile)
+   0.00    1.63 ^ inst_2_1/w_in (array_tile)
+           1.63   data arrival time
 
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
@@ -691,7 +691,7 @@ Path Type: max
            6.31   data required time
 ---------------------------------------------------------
            6.31   data required time
-          -1.62   data arrival time
+          -1.63   data arrival time
 ---------------------------------------------------------
            4.69   slack (MET)
 
@@ -792,12 +792,12 @@ Path Type: max
    0.04    6.27 ^ clkbuf_4_0_4_clk/Z (BUF_X4)
    0.04    6.30 ^ max_length11/Z (BUF_X8)
    0.05    6.35 ^ clkbuf_leaf_118_clk/Z (BUF_X4)
-   0.00    6.35 ^ inst_3_1/clk (array_tile)
-   0.00    6.35   clock reconvergence pessimism
-  -0.05    6.30   library setup time
-           6.30   data required time
+   0.00    6.36 ^ inst_3_1/clk (array_tile)
+   0.00    6.36   clock reconvergence pessimism
+  -0.05    6.31   library setup time
+           6.31   data required time
 ---------------------------------------------------------
-           6.30   data required time
+           6.31   data required time
           -1.58   data arrival time
 ---------------------------------------------------------
            4.73   slack (MET)

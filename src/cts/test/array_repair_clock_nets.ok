@@ -146,7 +146,7 @@ legalized HPWL         189763.7 u
 delta HPWL                    0 %
 
 Clock clk
-   1.04 source latency inst_12_11/clk ^
+   1.05 source latency inst_12_11/clk ^
   -1.19 target latency inst_13_11/clk ^
    0.00 CRPR
 --------------
@@ -188,7 +188,7 @@ Path Type: max
    0.04    1.06 ^ wire10/Z (BUF_X8)
    0.04    1.11 ^ max_length9/Z (BUF_X8)
    0.05    1.16 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
-   0.00    1.16 ^ inst_1_1/clk (array_tile)
+   0.00    1.17 ^ inst_1_1/clk (array_tile)
    0.21    1.38 ^ inst_1_1/e_out (array_tile)
    0.00    1.38 ^ inst_2_1/w_in (array_tile)
            1.38   data arrival time

@@ -149,7 +149,8 @@ GlobalRouter::~GlobalRouter()
 }
 
 std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
-                                              int max_routing_layer)
+                                              int max_routing_layer,
+                                              bool check_pin_placement)
 {
   fastroute_->clear();
   h_nets_in_pos_.clear();
@@ -170,7 +171,10 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->initEdgesCapacityPerLayer();
 
   std::vector<Net*> nets = findNets(true);
-  checkPinPlacement();
+  check_pin_placement_ = check_pin_placement;
+  if (check_pin_placement) {
+    checkPinPlacement();
+  }
   initNetlist(nets);
 
   initialized_ = true;
@@ -4485,16 +4489,20 @@ void GlobalRouter::makeBtermPins(Net* net,
       pin_layers.push_back(layer_boxes.first);
     }
 
-    if (pin_layers.empty()) {
+    // Pins with no geometries in any routing layers are not added to the net.
+    // We throw an error if check_pin_placement_ is true, otherwise we just skip
+    // the pin and continue with the tool initialization. This allows the use of
+    // Rudy at early stages of the flow.
+    if (!pin_layers.empty()) {
+      Pin pin(bterm, pin_pos, pin_layers, pin_boxes, getRectMiddle(die_area));
+      net->addPin(pin);
+    } else if (check_pin_placement_) {
       logger_->error(
           GRT,
           42,
           "Pin {} does not have geometries in a valid routing layer.",
           pin_name);
     }
-
-    Pin pin(bterm, pin_pos, pin_layers, pin_boxes, getRectMiddle(die_area));
-    net->addPin(pin);
   }
 }
 

@@ -24,10 +24,10 @@ fanout1/X                                20     20      0 (MET)
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -32.280 |  -188759.2 |   8000 | sink7691/D
-    final |       0 |     232 |       28 |      0 |     0 |    +0.3% |   -5.740 |   -11564.6 |   5340 | sink7534/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |  -32.283 |  -188781.1 |   8000 | sink7689/D
+    final |       0 |     231 |       28 |      0 |     0 |    +0.3% |   -5.744 |   -11599.9 |   5348 | sink7534/D
 --------------------------------------------------------------------------------------------------------------
 [INFO RSZ-0040] Inserted 28 buffers.
-[INFO RSZ-0051] Resized 232 instances: 232 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0051] Resized 231 instances: 231 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack max -5.74

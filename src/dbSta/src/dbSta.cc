@@ -1159,6 +1159,10 @@ void dbStaCbk::inDbInstSwapMasterBefore(odb::dbInst* inst,
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
 
+  if (!to_lib_cell && !from_lib_cell) {
+    return;  // sta is oblivious
+  }
+
   swap_master_arcs_equiv_ = sta::equivCellsArcs(from_lib_cell, to_lib_cell);
 
   if (swap_master_arcs_equiv_) {
@@ -1171,6 +1175,10 @@ void dbStaCbk::inDbInstSwapMasterBefore(odb::dbInst* inst,
 void dbStaCbk::inDbInstSwapMasterAfter(odb::dbInst* inst)
 {
   Instance* sta_inst = network_->dbToSta(inst);
+
+  if (!network_->libertyCell(sta_inst)) {
+    return;  // sta is oblivious
+  }
 
   if (swap_master_arcs_equiv_) {
     sta_->replaceEquivCellAfter(sta_inst);

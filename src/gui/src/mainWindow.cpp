@@ -651,7 +651,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
       new DbCellEdgeSpacingDescriptor(db_));
 
-  gui->registerDescriptor<sta::Scene*>(new CornerDescriptor(sta));
+  gui->registerDescriptor<sta::Scene*>(new SceneDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
