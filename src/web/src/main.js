@@ -150,6 +150,7 @@ const WSTileLayer = L.GridLayer.extend({
 const map = L.map('map', {
     crs: L.CRS.Simple,
     zoom: 1,
+    zoomSnap: 0,
     fadeAnimation: false,
 });
 
