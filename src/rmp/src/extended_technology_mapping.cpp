@@ -185,7 +185,7 @@ ExtendedTechnologyMapping::findTieMaster(const odb::dbSet<odb::dbLib>& libs,
         }
       }
 
-      if (sig_in != 0 || sig_out 1 = 1) {
+      if (sig_in != 0 || sig_out != 1) {
         continue;
       }
 
@@ -442,6 +442,19 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     }
   });
 
+  auto get_constant_value = [topo_ntk, logger](const BlockNtk::node &src_node, const BlockNtk::signal &f) {
+    auto gate = topo_ntk.get_cell(src_node).gates[topo_ntk.get_output_pin(f)];
+    bool value;
+    if (gate.expression == "CONST1") {
+      value = true;
+    } else if (gate.expression == "CONST0") {
+      value = false;
+    } else {
+      logger->error(utl::RMP, 59, "Unknown constant expression: {}", gate.expression);
+    }
+    return value ^ topo_ntk.is_complemented(f);
+  };
+
   // Connect gate inputs to driver nets
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
     const auto idx = node_index(n);
@@ -451,7 +464,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     const std::string inst_name = fmt::format("n_{}", idx);
     odb::dbInst* inst = block->findInst(inst_name.c_str());
     if (!inst) {
-      logger->error(utl::RMP, 59, "Instance {} not found", inst_name);
+      logger->error(utl::RMP, 60, "Instance {} not found", inst_name);
     }
 
     uint32_t fanin_idx = 0;
@@ -471,8 +484,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       auto src_node = topo_ntk.get_node(f);
 
       if (topo_ntk.is_constant(src_node)) {
-        // constant node; complemented = 1
-        const bool value = topo_ntk.is_complemented(f);
+        bool value = get_constant_value(src_node, f);
         src_net = ensureConstNet(value, block, libs, sta, logger);
       } else {
         const auto src_idx = node_index(src_node);
@@ -539,7 +551,7 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     uint32_t out_pin_idx = 0;
 
     if (topo_ntk.is_constant(src_node)) {
-      const bool value = topo_ntk.is_complemented(f);
+      bool value = get_constant_value(src_node, f);
       driver_net = ensureConstNet(value, block, libs, sta, logger);
     } else {
       src_idx = node_index(src_node);
