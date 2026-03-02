@@ -14,7 +14,7 @@
 number instances in verilog is 39324
 wns max -85.02
 tns max -174555.69
-replace_arith_module -path_count 100 -target setup -slack_margin 0.0
+replace_arith_modules -path_count 100 -target setup -slack_threshold 0.0
 [INFO RSZ-0151] Starting arithmetic module replacement to optimize 'setup' target
 [INFO RSZ-0152] Analyzing 100 critical paths with slack < 0.00
 [INFO RSZ-0153] Identified 3787 violating endpoints
