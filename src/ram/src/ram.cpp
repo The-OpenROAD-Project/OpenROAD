@@ -870,8 +870,8 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
       port_list += fmt::format(",\n  Q{}", i);
     }
   }
-  port_list += ",\n  addr_w";
-  for (int i = 0; i < read_ports; i++) {
+  port_list += ",\n  addr_rw";
+  for (int i = 1; i < read_ports; i++) {
     port_list += fmt::format(",\n  addr_r{}", i);
   }
   port_list += ",\n  we";
@@ -891,8 +891,8 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   // Build address declarations
   std::string addr_declarations;
   addr_declarations
-      += fmt::format("  input [{}:0] addr_w;\n", address_width - 1);
-  for (int i = 0; i < read_ports; i++) {
+      += fmt::format("  input [{}:0] addr_rw;\n", address_width - 1);
+  for (int i = 1; i < read_ports; i++) {
     addr_declarations
         += fmt::format("  input [{}:0] addr_r{};\n", address_width - 1, i);
   }
@@ -901,15 +901,16 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   std::string read_port_logic;
   for (int i = 0; i < read_ports; i++) {
     std::string port_name = (read_ports == 1) ? "Q" : fmt::format("Q{}", i);
+    std::string addr_name = (i == 0) ? "addr_rw" : fmt::format("addr_r{}", i);
     if (i > 0) {
       read_port_logic += "\n";
     }
     read_port_logic += fmt::format(R"(  always @(*) begin
-    {} = mem[addr_r{}];
+    {} = mem[{}];
   end
 )",
                                    port_name,
-                                   i);
+                                   addr_name);
   }
 
   std::string verilog_code = fmt::format(R"(module {} ({}
@@ -926,7 +927,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   always @(posedge clk) begin
     for (i = 0; i < {}; i = i + 1) begin
       if (we[i]) begin
-        mem[addr_w][i*8 +:8] <= D[i*8 +:8];
+        mem[addr_rw][i*8 +:8] <= D[i*8 +:8];
       end
     end
   end
