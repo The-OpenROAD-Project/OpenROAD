@@ -852,7 +852,6 @@ void GraphicsImpl::addFrameLabelImpl(const odb::Rect& bbox,
 
 void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
                                         std::string_view label,
-                                        bool select_buffers,
                                         std::string_view heatmap_control,
                                         int image_width_px)
 {
@@ -862,10 +861,6 @@ void GraphicsImpl::saveLabeledImageImpl(std::string_view path,
 
   if (!heatmap_control.empty()) {
     gui->setDisplayControlsVisible(std::string(heatmap_control), true);
-  }
-
-  if (select_buffers) {
-    gui->select("Inst", "", "Description", "Timing Repair Buffer", true, -1);
   }
 
   static int label_id = 0;
