@@ -247,54 +247,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
 
     odb::dbBlock* block = db_->getChip()->getBlock();
 
-    // Draw routing shapes (wires, vias, bterms) for this layer
-    if (tech_layer && vis.routing) {
-      for (const auto& shape : search_->searchBoxShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
-      {
-        if (!vis.isNetVisible(std::get<2>(shape))) {
-          continue;
-        }
-        const odb::Rect& box = std::get<0>(shape);
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, ix, draw_y, color);
-          }
-        }
-      }
-    }
-
-    // Draw special net shapes (power/ground straps) for this layer
-    if (tech_layer && vis.special_nets) {
-      for (const auto& shape : search_->searchSNetShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
-      {
-        if (!vis.isNetVisible(std::get<2>(shape))) {
-          continue;
-        }
-        const odb::Rect box = std::get<0>(shape)->getBox();
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, ix, draw_y, color);
-          }
-        }
-      }
-    }
-
+    // Draw instances first (below routing)
     for (odb::dbInst* inst : search_->searchInsts(
              block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
       odb::Rect inst_bbox = inst->getBBox()->getBox();
@@ -513,6 +466,54 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
                 }
               }
             }
+          }
+        }
+      }
+    }
+
+    // Draw routing shapes (wires, vias, bterms) on top of instances
+    if (tech_layer && vis.routing) {
+      for (const auto& shape : search_->searchBoxShapes(
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
+      {
+        if (!vis.isNetVisible(std::get<2>(shape))) {
+          continue;
+        }
+        const odb::Rect& box = std::get<0>(shape);
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, ix, draw_y, color);
+          }
+        }
+      }
+    }
+
+    // Draw special net shapes (power/ground straps) on top of instances
+    if (tech_layer && vis.special_nets) {
+      for (const auto& shape : search_->searchSNetShapes(
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
+      {
+        if (!vis.isNetVisible(std::get<2>(shape))) {
+          continue;
+        }
+        const odb::Rect box = std::get<0>(shape)->getBox();
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            const int draw_y = (255 - iy);
+            setPixel(image_buffer, ix, draw_y, color);
           }
         }
       }
