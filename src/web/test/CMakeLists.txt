@@ -3,6 +3,8 @@
 
 or_integration_tests(
   "web"
-  TESTS
-    basic
+  PASSFAIL_TESTS
+    cpp_tests
 )
+
+add_subdirectory(cpp)

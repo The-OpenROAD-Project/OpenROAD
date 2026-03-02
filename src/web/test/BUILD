@@ -33,7 +33,7 @@ filegroup(
 
 cc_test(
     name = "tile_generator_test",
-    srcs = ["cpp/TileGeneratorTest.cpp"],
+    srcs = ["cpp/TestTileGenerator.cpp"],
     features = ["-layering_check"],
     copts = ["-Isrc/web/src"],
     data = [
