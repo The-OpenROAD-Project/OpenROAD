@@ -772,10 +772,9 @@ void HardMacro::setRealX(int x)
     return;
   }
 
-  using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
-    case R180:
-    case MX:
+    case odb::dbOrientType::Value::R180:
+    case odb::dbOrientType::Value::MX:
       x_ = x - halo_.right;
       break;
     default:
@@ -789,10 +788,9 @@ void HardMacro::setRealY(int y)
     return;
   }
 
-  using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
-    case R180:
-    case MY:
+    case odb::dbOrientType::Value::R180:
+    case odb::dbOrientType::Value::MY:
       y_ = y - halo_.top;
       break;
     default:
@@ -807,10 +805,9 @@ odb::Point HardMacro::getRealLocation() const
 
 int HardMacro::getRealX() const
 {
-  using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
-    case R180:
-    case MX:
+    case odb::dbOrientType::Value::R180:
+    case odb::dbOrientType::Value::MX:
       return x_ + halo_.right;
     default:
       return x_ + halo_.left;
@@ -819,10 +816,9 @@ int HardMacro::getRealX() const
 
 int HardMacro::getRealY() const
 {
-  using enum odb::dbOrientType::Value;
   switch (getOrientation().getValue()) {
-    case R180:
-    case MY:
+    case odb::dbOrientType::Value::R180:
+    case odb::dbOrientType::Value::MY:
       return y_ + halo_.top;
     default:
       return y_ + halo_.bottom;
