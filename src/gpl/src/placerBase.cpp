@@ -119,7 +119,7 @@ bool Instance::isFixed() const
     return true;
   }
 
-  return inst_->getPlacementStatus().isFixed() || isLocked();
+  return inst_->getPlacementStatus().isFixed();
 }
 
 bool Instance::isInstance() const
@@ -919,7 +919,7 @@ void PlacerBaseCommon::init()
     instMap_[pb_inst.dbInst()] = &pb_inst;
     insts_.push_back(&pb_inst);
 
-    if (!pb_inst.isFixed()) {
+    if (!pb_inst.dbInst()->getPlacementStatus().isFixed()) {
       placeInsts_.push_back(&pb_inst);
     }
   }
@@ -1139,7 +1139,7 @@ void PlacerBase::init()
       }
     }
 
-    if (inst->isFixed()) {
+    if (inst->dbInst()->getPlacementStatus().isFixed()) {
       // Check whether fixed instance is
       // within the corearea
       //

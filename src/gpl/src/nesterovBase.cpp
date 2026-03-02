@@ -1473,6 +1473,9 @@ void NesterovBaseCommon::updateDbGCells()
   for (auto& gCell : getGCells()) {
     if (gCell->isInstance()) {
       for (Instance* inst : gCell->insts()) {
+        if (inst->isLocked()) {
+          continue;
+        }
         odb::dbInst* db_inst = inst->dbInst();
         db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
@@ -1921,7 +1924,9 @@ NesterovBase::NesterovBase(
     }
 
     for (Instance* inst : gCell->insts()) {
-      inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+      if (!inst->isLocked()) {
+        inst->setLocation(pb_inst->lx() + x_offset, pb_inst->ly() + y_offset);
+      }
     }
     gCell->updateLocations();
     nb_gcells_.emplace_back(nbc_.get(), nbc_->getGCellIndex(gCell));
@@ -2820,6 +2825,12 @@ void NesterovBase::updateSingleGradient(
   }
 
   GCell* gCell = nb_gcells_.at(gCellIndex);
+  if (gCell->isLocked()) {
+    wireLengthGrads[gCellIndex] = FloatPoint(0, 0);
+    densityGrads[gCellIndex] = FloatPoint(0, 0);
+    sumGrads[gCellIndex] = FloatPoint(0, 0);
+    return;
+  }
 
   wireLengthGrads[gCellIndex]
       = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
@@ -2850,6 +2861,11 @@ void NesterovBase::updateInitialPrevSLPCoordi()
 #pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t i = 0; i < nb_gcells_.size(); i++) {
     GCell* curGCell = nb_gcells_[i];
+
+    if (curGCell->isLocked()) {
+      prevSLPCoordi_[i] = curSLPCoordi_[i];
+      continue;
+    }
 
     float prevCoordiX
         = curSLPCoordi_[i].x
@@ -3060,6 +3076,13 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
 
   // fill in nextCoordinates with given stepLength_
   for (size_t k = 0; k < nb_gcells_.size(); k++) {
+    GCell* curGCell = nb_gcells_[k];
+    if (curGCell->isLocked()) {
+      nextCoordi_[k] = curCoordi_[k];
+      nextSLPCoordi_[k] = curSLPCoordi_[k];
+      continue;
+    }
+
     FloatPoint nextCoordi(
         curSLPCoordi_[k].x + stepLength_ * curSLPSumGrads_[k].x,
         curSLPCoordi_[k].y + stepLength_ * curSLPSumGrads_[k].y);
@@ -3067,8 +3090,6 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
     FloatPoint nextSLPCoordi(
         nextCoordi.x + coeff * (nextCoordi.x - curCoordi_[k].x),
         nextCoordi.y + coeff * (nextCoordi.y - curCoordi_[k].y));
-
-    GCell* curGCell = nb_gcells_[k];
 
     nextCoordi_[k]
         = FloatPoint(getDensityCoordiLayoutInsideX(curGCell, nextCoordi.x),

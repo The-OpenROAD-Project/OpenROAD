@@ -145,6 +145,11 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   locked_options.overflow = std::max(options.overflow, 0.2f);
   locked_options.nesterovPlaceMaxIter = 300;
 
+  // Use uniform density for incremental runs to fill gaps effectively
+  if (!options.uniformTargetDensityMode) {
+    locked_options.uniformTargetDensityMode = true;
+  }
+
   doInitialPlace(threads, locked_options);
   const int iter = doNesterovPlace(threads, locked_options);
 
@@ -155,7 +160,16 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   }
 
   if (options.overflow < locked_options.overflow) {
-    doNesterovPlace(threads, options, iter + 1);
+    log_->report("options.overflow: {}, locked_options.overflow: {}",
+                 options.overflow,
+                 locked_options.overflow);
+
+    PlaceOptions final_options = options;
+    if (!options.uniformTargetDensityMode) {
+      final_options.uniformTargetDensityMode = true;
+    }
+
+    doNesterovPlace(threads, final_options, iter + 1);
   }
 }
 

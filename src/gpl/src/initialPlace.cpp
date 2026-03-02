@@ -283,6 +283,13 @@ void InitialPlace::createSparseMatrix()
     instLocVecY_(idx) = inst->cy();
 
     fixedInstForceVecX_(idx) = fixedInstForceVecY_(idx) = 0;
+
+    if (inst->isLocked()) {
+      listX.emplace_back(idx, idx, 1.0f);
+      listY.emplace_back(idx, idx, 1.0f);
+      fixedInstForceVecX_(idx) = inst->cx();
+      fixedInstForceVecY_(idx) = inst->cy();
+    }
   }
 
   // for each net
