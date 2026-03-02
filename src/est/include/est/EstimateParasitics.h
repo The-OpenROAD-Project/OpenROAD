@@ -219,7 +219,19 @@ class EstimateParasitics : public sta::dbStaState
                                 size_t& resistor_id,
                                 sta::Scene* scene,
                                 std::set<const sta::Pin*>& connected_pins,
+                                const sta::Net* net,
+                                int& max_node_index,
                                 bool is_clk);
+  void insertViaResistances(odb::dbTechLayer* pin_layer,
+                            odb::dbTechLayer* tree_layer,
+                            sta::Parasitics* parasitics,
+                            sta::Parasitic* parasitic,
+                            sta::ParasiticNode* pin_node,
+                            sta::ParasiticNode* node,
+                            size_t& resistor_id,
+                            sta::Scene* corner,
+                            const sta::Net* net,
+                            int& max_node_index);
   void net2Pins(const sta::Net* net,
                 const sta::Pin*& pin1,
                 const sta::Pin*& pin2) const;

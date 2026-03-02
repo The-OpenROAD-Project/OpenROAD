@@ -523,7 +523,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
   void saveImage(const std::string& clock_name,
                  const std::string& path,
-                 const std::string& corner,
+                 const std::string& scene,
                  const std::optional<int>& width_px,
                  const std::optional<int>& height_px);
   void selectClock(const std::string& clock_name,
@@ -536,7 +536,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
  public slots:
   void setBlock(odb::dbBlock* block);
-  void populate(sta::Scene* corner = nullptr);
+  void populate(sta::Scene* scene = nullptr);
   void fit();
   void findInCts(const Selected& selection);
   void findInCts(const SelectionSet& selections);
@@ -556,7 +556,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
   QPushButton* update_button_;
   QPushButton* fit_button_;
-  QComboBox* corner_box_;
+  QComboBox* scene_box_;
 
   QTabWidget* clocks_tab_;
 

@@ -46,6 +46,7 @@
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"

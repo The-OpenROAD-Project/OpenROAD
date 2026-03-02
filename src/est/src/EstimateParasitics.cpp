@@ -37,6 +37,7 @@
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
 #include "sta/Report.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
@@ -720,121 +721,135 @@ void EstimateParasitics::estimateWireParasiticSteiner(
     const sta::Net* net,
     sta::SpefWriter* spef_writer)
 {
-  SteinerTree* tree = makeSteinerTree(drvr_pin);
-  if (tree) {
-    debugPrint(logger_,
-               EST,
-               "estimate_parasitics",
-               1,
-               "estimate wire {}",
-               sdc_network_->pathName(net));
-    for (sta::Scene* corner : sta_->scenes()) {
-      if (sta_->isIdealClock(drvr_pin, corner->mode())) {
-        continue;
-      }
-
-      std::set<const Pin*> connected_pins;
-      Parasitics* parasitics = corner->parasitics(max_);
-      Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
-      bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
-      double wire_cap = 0.0;
-      double wire_res = 0.0;
-      int branch_count = tree->branchCount();
-      size_t resistor_id = 1;
-      for (int i = 0; i < branch_count; i++) {
-        odb::Point pt1, pt2;
-        SteinerPt steiner_pt1, steiner_pt2;
-        int wire_length_dbu;
-        tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
-        if (wire_length_dbu) {
-          double dx = dbuToMeters(abs(pt1.x() - pt2.x()))
-                      / dbuToMeters(wire_length_dbu);
-          double dy = dbuToMeters(abs(pt1.y() - pt2.y()))
-                      / dbuToMeters(wire_length_dbu);
-
-          if (is_clk) {
-            wire_cap = dx * wireClkHCapacitance(corner)
-                       + dy * wireClkVCapacitance(corner);
-            wire_res = dx * wireClkHResistance(corner)
-                       + dy * wireClkVResistance(corner);
-          } else {
-            wire_cap = dx * wireSignalHCapacitance(corner)
-                       + dy * wireSignalVCapacitance(corner);
-            wire_res = dx * wireSignalHResistance(corner)
-                       + dy * wireSignalVResistance(corner);
-          }
-        } else {
-          wire_cap = is_clk ? wireClkCapacitance(corner)
-                            : wireSignalCapacitance(corner);
-          wire_res = is_clk ? wireClkResistance(corner)
-                            : wireSignalResistance(corner);
-        }
-        sta::ParasiticNode* n1 = parasitics->ensureParasiticNode(
-            parasitic, net, steiner_pt1, network_);
-        sta::ParasiticNode* n2 = parasitics->ensureParasiticNode(
-            parasitic, net, steiner_pt2, network_);
-        if (wire_length_dbu == 0) {
-          // Use a small resistor to keep the connectivity intact.
-          parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
-        } else {
-          double length = dbuToMeters(wire_length_dbu);
-          double cap = length * wire_cap;
-          double res = length * wire_res;
-
-          // Reduce resistance if the net has NDR with increased width
-          odb::dbTechNonDefaultRule* ndr
-              = db_network_->staToDb(net)->getNonDefaultRule();
-          if (ndr) {
-            std::vector<odb::dbTechLayerRule*> layer_rules;
-            ndr->getLayerRules(layer_rules);
-            float ratio = (float) layer_rules.at(0)->getWidth()
-                          / layer_rules.at(0)->getLayer()->getWidth();
-            res /= ratio;
-          }
-
-          // Make pi model for the wire.
-          debugPrint(logger_,
-                     EST,
-                     "estimate_parasitics",
-                     2,
-                     " pi {} l={} c2={} rpi={} c1={} {}",
-                     parasitics->name(n1),
-                     units_->distanceUnit()->asString(length),
-                     units_->capacitanceUnit()->asString(cap / 2.0),
-                     units_->resistanceUnit()->asString(res),
-                     units_->capacitanceUnit()->asString(cap / 2.0),
-                     parasitics->name(n2));
-          parasitics->incrCap(n1, cap / 2.0);
-          parasitics->makeResistor(parasitic, resistor_id++, res, n1, n2);
-          parasitics->incrCap(n2, cap / 2.0);
-        }
-        parasiticNodeConnectPins(parasitics,
-                                 parasitic,
-                                 n1,
-                                 tree,
-                                 steiner_pt1,
-                                 resistor_id,
-                                 corner,
-                                 connected_pins,
-                                 is_clk);
-        parasiticNodeConnectPins(parasitics,
-                                 parasitic,
-                                 n2,
-                                 tree,
-                                 steiner_pt2,
-                                 resistor_id,
-                                 corner,
-                                 connected_pins,
-                                 is_clk);
-      }
-      if (spef_writer) {
-        spef_writer->writeNet(corner, net, parasitic, parasitics);
-      }
-      arc_delay_calc_->reduceParasitic(
-          parasitic, net, corner, sta::MinMaxAll::all());
-      parasitics->deleteParasiticNetwork(net);
+  bool all_modes_ideal_clock = true;
+  for (sta::Mode* mode : sta_->modes()) {
+    if (!sta_->isIdealClock(drvr_pin, mode)) {
+      all_modes_ideal_clock = false;
+      break;
     }
-    delete tree;
+  }
+
+  if (!all_modes_ideal_clock) {
+    SteinerTree* tree = makeSteinerTree(drvr_pin);
+    if (tree) {
+      debugPrint(logger_,
+                 EST,
+                 "estimate_parasitics",
+                 1,
+                 "estimate wire {}",
+                 sdc_network_->pathName(net));
+      for (sta::Scene* corner : sta_->scenes()) {
+        if (sta_->isIdealClock(drvr_pin, corner->mode())) {
+          continue;
+        }
+        std::set<const Pin*> connected_pins;
+        Parasitics* parasitics = corner->parasitics(max_);
+        Parasitic* parasitic = parasitics->makeParasiticNetwork(net, false);
+        bool is_clk = global_router_->isNonLeafClock(db_network_->staToDb(net));
+        double wire_cap = 0.0;
+        double wire_res = 0.0;
+        const int branch_count = tree->branchCount();
+        int max_node_index = tree->getMaxIndex();
+        size_t resistor_id = 1;
+        for (int i = 0; i < branch_count; i++) {
+          odb::Point pt1, pt2;
+          SteinerPt steiner_pt1, steiner_pt2;
+          int wire_length_dbu;
+          tree->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length_dbu);
+          if (wire_length_dbu) {
+            double dx = dbuToMeters(abs(pt1.x() - pt2.x()))
+                        / dbuToMeters(wire_length_dbu);
+            double dy = dbuToMeters(abs(pt1.y() - pt2.y()))
+                        / dbuToMeters(wire_length_dbu);
+
+            if (is_clk) {
+              wire_cap = dx * wireClkHCapacitance(corner)
+                         + dy * wireClkVCapacitance(corner);
+              wire_res = dx * wireClkHResistance(corner)
+                         + dy * wireClkVResistance(corner);
+            } else {
+              wire_cap = dx * wireSignalHCapacitance(corner)
+                         + dy * wireSignalVCapacitance(corner);
+              wire_res = dx * wireSignalHResistance(corner)
+                         + dy * wireSignalVResistance(corner);
+            }
+          } else {
+            wire_cap = is_clk ? wireClkCapacitance(corner)
+                              : wireSignalCapacitance(corner);
+            wire_res = is_clk ? wireClkResistance(corner)
+                              : wireSignalResistance(corner);
+          }
+          sta::ParasiticNode* n1 = parasitics->ensureParasiticNode(
+              parasitic, net, steiner_pt1, network_);
+          sta::ParasiticNode* n2 = parasitics->ensureParasiticNode(
+              parasitic, net, steiner_pt2, network_);
+          if (wire_length_dbu == 0) {
+            // Use a small resistor to keep the connectivity intact.
+            parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, n1, n2);
+          } else {
+            double length = dbuToMeters(wire_length_dbu);
+            double cap = length * wire_cap;
+            double res = length * wire_res;
+
+            // Reduce resistance if the net has NDR with increased width
+            odb::dbTechNonDefaultRule* ndr
+                = db_network_->staToDb(net)->getNonDefaultRule();
+            if (ndr) {
+              std::vector<odb::dbTechLayerRule*> layer_rules;
+              ndr->getLayerRules(layer_rules);
+              float ratio = (float) layer_rules.at(0)->getWidth()
+                            / layer_rules.at(0)->getLayer()->getWidth();
+              res /= ratio;
+            }
+
+            // Make pi model for the wire.
+            debugPrint(logger_,
+                       EST,
+                       "estimate_parasitics",
+                       2,
+                       " pi {} l={} c2={} rpi={} c1={} {}",
+                       parasitics->name(n1),
+                       units_->distanceUnit()->asString(length),
+                       units_->capacitanceUnit()->asString(cap / 2.0),
+                       units_->resistanceUnit()->asString(res),
+                       units_->capacitanceUnit()->asString(cap / 2.0),
+                       parasitics->name(n2));
+            parasitics->incrCap(n1, cap / 2.0);
+            parasitics->makeResistor(parasitic, resistor_id++, res, n1, n2);
+            parasitics->incrCap(n2, cap / 2.0);
+          }
+          parasiticNodeConnectPins(parasitics,
+                                   parasitic,
+                                   n1,
+                                   tree,
+                                   steiner_pt1,
+                                   resistor_id,
+                                   corner,
+                                   connected_pins,
+                                   net,
+                                   max_node_index,
+                                   is_clk);
+          parasiticNodeConnectPins(parasitics,
+                                   parasitic,
+                                   n2,
+                                   tree,
+                                   steiner_pt2,
+                                   resistor_id,
+                                   corner,
+                                   connected_pins,
+                                   net,
+                                   max_node_index,
+                                   is_clk);
+        }
+        if (spef_writer) {
+          spef_writer->writeNet(corner, net, parasitic, parasitics);
+        }
+        arc_delay_calc_->reduceParasitic(
+            parasitic, net, corner, sta::MinMaxAll::all());
+        parasitics->deleteParasiticNetwork(net);
+      }
+      delete tree;
+    }
   }
 }
 
@@ -850,7 +865,8 @@ odb::dbTechLayer* EstimateParasitics::getPinLayer(const sta::Pin* pin)
   if (iterm) {
     int min_layer_idx = std::numeric_limits<int>::max();
     for (const auto& [layer, rect] : iterm->getGeometries()) {
-      if (layer->getRoutingLevel() < min_layer_idx) {
+      if (layer->getType() == odb::dbTechLayerType::ROUTING
+          && layer->getRoutingLevel() < min_layer_idx) {
         min_layer_idx = layer->getRoutingLevel();
         pin_layer = layer;
       }
@@ -911,6 +927,8 @@ void EstimateParasitics::parasiticNodeConnectPins(
     size_t& resistor_id,
     sta::Scene* corner,
     std::set<const Pin*>& connected_pins,
+    const sta::Net* net,
+    int& max_node_index,
     const bool is_clk)
 {
   const sta::PinSeq* pins = tree->pins(pt);
@@ -925,26 +943,20 @@ void EstimateParasitics::parasiticNodeConnectPins(
     for (const sta::Pin* pin : *pins) {
       sta::ParasiticNode* pin_node
           = parasitics->ensureParasiticNode(parasitic, pin, network_);
-      if (connected_pins.find(pin) != connected_pins.end()) {
-        // If pin was already connected with via resistances, use a small
-        // resistor to keep connectivity intact.
-        parasitics->makeResistor(
-            parasitic, resistor_id++, 1.0e-3, node, pin_node);
-      } else {
+      if (connected_pins.find(pin) == connected_pins.end()) {
         if (tree_layer != nullptr && !layer_res_.empty()) {
           odb::dbTechLayer* pin_layer = getPinLayer(pin);
-          for (int layer_number = pin_layer->getNumber();
-               layer_number < tree_layer->getNumber();
-               layer_number++) {
-            odb::dbTechLayer* cut_layer
-                = db_->getTech()->findLayer(layer_number);
-            if (cut_layer->getType() == odb::dbTechLayerType::CUT) {
-              double cut_res
-                  = std::max(layer_res_[layer_number][corner->index()], 1.0e-3);
-              parasitics->makeResistor(
-                  parasitic, resistor_id++, cut_res, node, pin_node);
-            }
-          }
+
+          insertViaResistances(pin_layer,
+                               tree_layer,
+                               parasitics,
+                               parasitic,
+                               pin_node,
+                               node,
+                               resistor_id,
+                               corner,
+                               net,
+                               max_node_index);
         } else {
           double cut_res
               = std::max(computeAverageCutResistance(corner), 1.0e-3);
@@ -953,6 +965,73 @@ void EstimateParasitics::parasiticNodeConnectPins(
         }
         connected_pins.insert(pin);
       }
+    }
+  }
+}
+
+void EstimateParasitics::insertViaResistances(odb::dbTechLayer* pin_layer,
+                                              odb::dbTechLayer* tree_layer,
+                                              sta::Parasitics* parasitics,
+                                              sta::Parasitic* parasitic,
+                                              sta::ParasiticNode* pin_node,
+                                              sta::ParasiticNode* node,
+                                              size_t& resistor_id,
+                                              sta::Scene* corner,
+                                              const sta::Net* net,
+                                              int& max_node_index)
+{
+  sta::ParasiticNode* prev_node = nullptr;
+
+  const int pin_layer_idx = pin_layer->getNumber();
+  const int tree_layer_idx = tree_layer->getNumber();
+  if (std::abs(pin_layer_idx - tree_layer->getNumber()) == 2) {
+    // Directly connect pin node and tree node if they are one cut layer apart
+    const int cut_layer_idx = pin_layer_idx < tree_layer_idx
+                                  ? pin_layer_idx + 1
+                                  : pin_layer_idx - 1;
+    const double cut_res
+        = std::max(layer_res_[cut_layer_idx][corner->index()], 1.0e-3);
+    parasitics->makeResistor(parasitic, resistor_id++, cut_res, pin_node, node);
+  } else if (pin_layer_idx == tree_layer_idx) {
+    // Add a small resistor between the pin node and tree node to keep
+    // connectivity
+    parasitics->makeResistor(parasitic, resistor_id++, 1.0e-3, pin_node, node);
+  } else {
+    const auto [start_idx, end_idx]
+        = std::minmax(pin_layer_idx, tree_layer_idx);
+    const bool pin_is_below = (pin_layer_idx < tree_layer_idx);
+
+    for (int layer_idx = start_idx; layer_idx < end_idx; layer_idx++) {
+      odb::dbTechLayer* cut_layer = db_->getTech()->findLayer(layer_idx);
+      if (cut_layer->getType() != odb::dbTechLayerType::CUT) {
+        continue;
+      }
+      sta::ParasiticNode* mid_node = parasitics->ensureParasiticNode(
+          parasitic, net, ++max_node_index, network_);
+
+      const double cut_res
+          = std::max(layer_res_[layer_idx][corner->index()], 1.0e-3);
+
+      sta::ParasiticNode* from_node = prev_node;
+      sta::ParasiticNode* to_node = mid_node;
+      if (pin_is_below) {
+        if (layer_idx - 1 == pin_layer_idx) {
+          from_node = pin_node;
+        } else if (layer_idx + 1 == tree_layer_idx) {
+          to_node = node;
+        }
+      } else {
+        if (layer_idx - 1 == tree_layer_idx) {
+          from_node = node;
+        } else if (layer_idx + 1 == pin_layer_idx) {
+          to_node = pin_node;
+        }
+      }
+
+      parasitics->makeResistor(
+          parasitic, resistor_id++, cut_res, from_node, to_node);
+
+      prev_node = mid_node;
     }
   }
 }

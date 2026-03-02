@@ -31,7 +31,7 @@ cc_library(
         "//src/odb",
         "@abseil-cpp//absl/synchronization",
         "@boost.multi_array",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -63,9 +63,10 @@ QT_GUI_PLATFORMS = {
             "include/gui/gui.h",
             "include/gui/heatMap.h",
         ],
-        defines = [
-            "STATIC_QPA_PLUGIN_XCB=1",
-        ],
+        defines = select({
+            "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
+            "//conditions:default": [],
+        }),
         includes = [
             "include",
             "src",
@@ -89,7 +90,7 @@ QT_GUI_PLATFORMS = {
             "@boost.multi_array",
             "@boost.stacktrace",
             "@spdlog",
-            "@tk_tcl//:tcl",
+            "@tcl_lang//:tcl",
         ] + ([":uic_lib"] if platform == "headless" else []),
     )
     for platform, suffix in QT_GUI_PLATFORMS.items()

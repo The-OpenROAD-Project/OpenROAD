@@ -1,6 +1,7 @@
 #include "utl/ScopedTemporaryFile.h"
 
-#include <stdio.h>  // NOLINT(modernize-deprecated-headers): for fdopen()
+#include <stdio.h>   // NOLINT(modernize-deprecated-headers): for fdopen()
+#include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for mkstemp()
 #include <unistd.h>
 
 #include <cerrno>

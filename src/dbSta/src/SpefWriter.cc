@@ -204,6 +204,9 @@ void SpefWriter::writeNet(Scene* scene,
   bool label = false;
   for (auto node : parasitics->nodes(parasitic)) {
     if (parasitics->pin(node) == nullptr) {
+      if (parasitics->nodeGndCap(node) == 0) {
+        continue;
+      }
       if (!label) {
         label = true;
         stream << "*CAP" << '\n';
@@ -216,6 +219,9 @@ void SpefWriter::writeNet(Scene* scene,
     }
   }
   for (auto cap : parasitics->capacitors(parasitic)) {
+    if (parasitics->value(cap) == 0) {
+      continue;
+    }
     if (!label) {
       label = true;
       stream << "*CAP" << '\n';

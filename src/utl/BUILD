@@ -4,7 +4,7 @@
 load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -91,7 +91,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -105,6 +105,7 @@ cc_binary(
     ],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         "//src/utl",
@@ -153,7 +154,7 @@ cc_library(
         "@boost.stacktrace",
         "@openroad_rules_python//python/cc:current_py_cc_headers",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

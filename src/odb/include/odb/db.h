@@ -2555,7 +2555,10 @@ class dbNet : public dbObject
   ///
   /// Check if this net is internal to the given module.
   /// A net is internal if all its iterms belong to instances within the module
-  /// and it has no bterms.
+  /// (excluding sub-modules) and it has no bterms.
+  /// - A dbNet is also considered internal if it has a corresponding modnet
+  /// connected to a module output port that is unconnected in its parent
+  /// module (isInternalTo == true).
   ///
   bool isInternalTo(dbModule* module) const;
 
@@ -8274,7 +8277,7 @@ class dbMarker : public dbObject
 
   std::string getName() const;
 
-  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon, Cuboid>;
 
   dbMarkerCategory* getCategory() const;
   std::vector<MarkerShape> getShapes() const;
@@ -8287,6 +8290,7 @@ class dbMarker : public dbObject
   void addShape(const Line& line);
   void addShape(const Rect& rect);
   void addShape(const Polygon& polygon);
+  void addShape(const Cuboid& cuboid);
 
   void setTechLayer(dbTechLayer* layer);
 
@@ -8622,6 +8626,11 @@ class dbModNet : public dbObject
   /// Traverses down to child inputs or up to parent outputs.
   ///
   std::vector<dbModNet*> getNextModNetsInFanout() const;
+
+  ///
+  /// Returns the first connected dbModNet in the parent module hierarchy.
+  ///
+  dbModNet* getFirstParentModNet() const;
 
   ///
   /// Traverses the hierarchy in search of the first mod net that satisfies the
