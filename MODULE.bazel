@@ -7,14 +7,13 @@ module(
 
 bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_scala")
 git_override(
     module_name = "rules_scala",
@@ -22,7 +21,9 @@ git_override(
     remote = "https://github.com/bazelbuild/rules_scala",
 )
 
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 BOOST_VERSION = "1.89.0.bcr.2"
@@ -92,7 +93,7 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "e1d5b0b4725d045a03d18e02c54bdebe73d07384",
+    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -147,7 +148,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "63ecaa366a7418d7afaa3777b96daa8401a64983",
+    commit = "dba8c9857e9056dad2d7054c80613a104d12b3d0",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -156,10 +157,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-333-g9ad095627",
+    image = "docker.io/openroad/orfs:26Q1-464-g2b005366a",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "c89d51c311c16d2f0e6aae43648d6ffb0b1befd4cc4a122c683684361776f838",
+    sha256 = "f8e7b6983733298a29c3724a76ce3d4763fa11636ef8784a8b0bf6c28831624e",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
