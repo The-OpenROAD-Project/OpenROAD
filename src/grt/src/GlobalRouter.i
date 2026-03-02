@@ -116,6 +116,12 @@ set_multicore(bool multicore_routing)
   getGlobalRouter()->setMulticoreRouting(multicore_routing);
 }
 
+bool
+is_multicore()
+{
+  return getGlobalRouter()->isMulticoreRouting();
+}
+
 void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {

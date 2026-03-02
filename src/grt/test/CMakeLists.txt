@@ -15,6 +15,7 @@ or_integration_tests(
     congestion5
     congestion6
     congestion7
+    congestion7_multicore
     critical_nets_percentage
     critical_nets_percentage_cugr
     cugr_adjustment1
@@ -99,5 +100,8 @@ or_integration_tests(
     write_segments1
     write_segments2
   PASSFAIL_TESTS
+    multicore_bus_route
+    multicore_incremental_state
+    multicore_smoke
     thread_count_reports
 )

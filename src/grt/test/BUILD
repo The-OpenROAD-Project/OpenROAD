@@ -17,6 +17,7 @@ TESTS = [
     "congestion5",
     "congestion6",
     "congestion7",
+    "congestion7_multicore",
     "critical_nets_percentage",
     "critical_nets_percentage_cugr",
     "cugr_adjustment1",
@@ -136,6 +137,27 @@ MANUAL_FOR_BAZEL_TESTS = [
     data = [":test_resources"],
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+regression_test(
+    name = "multicore_bus_route",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "multicore_incremental_state",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "multicore_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
 
 regression_test(
     name = "thread_count_reports",

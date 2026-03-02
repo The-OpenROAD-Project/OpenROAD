@@ -233,6 +233,7 @@ class FastRouteCore
   {
     multicore_routing_ = multicore_routing;
   }
+  bool isMulticoreRouting() const { return multicore_routing_; }
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -613,6 +614,7 @@ class FastRouteCore
   void freeRR();
   std::vector<int> getMazeRouteNetOrder(bool ordering, float& slack_th);
   bool hasNonSoftNdrNets() const;
+  int resolveSnapshotBaseBatchSize(int net_count) const;
   bool useSnapshotBatchRouting(int net_count) const;
   int resolveSnapshotBatchIterationLimit(int net_count) const;
   bool useSnapshotBatchRoutingForIteration(int iter, int net_count) const;

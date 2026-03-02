@@ -119,6 +119,12 @@ void GlobalRouter::setNumThreads(int num_threads)
 void GlobalRouter::setMulticoreRouting(bool multicore_routing)
 {
   multicore_routing_ = multicore_routing;
+  fastroute_->setMulticoreRouting(multicore_routing_);
+}
+
+bool GlobalRouter::isMulticoreRouting() const
+{
+  return fastroute_->isMulticoreRouting();
 }
 
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
