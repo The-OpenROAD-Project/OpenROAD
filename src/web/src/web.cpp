@@ -12,6 +12,8 @@
 #include <boost/beast/websocket.hpp>
 #include <cstring>
 #include <deque>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -480,9 +482,31 @@ static std::vector<unsigned char> serialize_response(const WsResponse& resp)
 // HTTP request handler (wraps dispatch_request for HTTP transport)
 //------------------------------------------------------------------------------
 
+static std::string content_type_for(const std::string& path)
+{
+  auto ext = std::filesystem::path(path).extension().string();
+  if (ext == ".html") {
+    return "text/html";
+  }
+  if (ext == ".js") {
+    return "application/javascript";
+  }
+  if (ext == ".css") {
+    return "text/css";
+  }
+  if (ext == ".png") {
+    return "image/png";
+  }
+  if (ext == ".json") {
+    return "application/json";
+  }
+  return "application/octet-stream";
+}
+
 http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    std::shared_ptr<TileGenerator> generator)
+    std::shared_ptr<TileGenerator> generator,
+    const std::string& doc_root)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
   res.set(http::field::server, "Boost.Beast Server (C++17)");
@@ -520,6 +544,29 @@ http::response<http::string_body> handle_request(
     res.body()
         = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
+  } else if (req.method() == http::verb::get && !doc_root.empty()) {
+    // Serve static files from doc_root
+    std::string file_path = target_path;
+    if (file_path == "/") {
+      file_path = "/index.html";
+    }
+    // Reject paths with ".." to prevent directory traversal
+    if (file_path.find("..") == std::string::npos) {
+      auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
+      std::ifstream file(full_path, std::ios::binary);
+      if (file) {
+        std::string content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+        res.set(http::field::content_type, content_type_for(file_path));
+        res.body() = std::move(content);
+      } else {
+        res.result(http::status::not_found);
+        res.body() = "File not found.";
+      }
+    } else {
+      res.result(http::status::bad_request);
+      res.body() = "Invalid path.";
+    }
   } else {
     res.result(http::status::not_found);
     res.body() = "Resource not found.";
@@ -675,10 +722,15 @@ class session : public std::enable_shared_from_this<session>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
+  std::string doc_root_;
 
  public:
-  session(tcp::socket&& socket, std::shared_ptr<TileGenerator> generator)
-      : stream_(std::move(socket)), generator_(generator)
+  session(tcp::socket&& socket,
+          std::shared_ptr<TileGenerator> generator,
+          std::string doc_root)
+      : stream_(std::move(socket)),
+        generator_(generator),
+        doc_root_(std::move(doc_root))
   {
   }
 
@@ -717,7 +769,7 @@ class session : public std::enable_shared_from_this<session>
     }
 
     res_ = std::make_shared<http::response<http::string_body>>(
-        handle_request(std::move(req_), generator_));
+        handle_request(std::move(req_), generator_, doc_root_));
     do_write();
   }
 
@@ -765,11 +817,15 @@ class detect_session : public std::enable_shared_from_this<detect_session>
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
   http::request<http::string_body> req_;
+  std::string doc_root_;
 
  public:
   detect_session(tcp::socket&& socket,
-                 std::shared_ptr<TileGenerator> generator)
-      : stream_(std::move(socket)), generator_(std::move(generator))
+                 std::shared_ptr<TileGenerator> generator,
+                 std::string doc_root)
+      : stream_(std::move(socket)),
+        generator_(std::move(generator)),
+        doc_root_(std::move(doc_root))
   {
   }
 
@@ -800,7 +856,7 @@ class detect_session : public std::enable_shared_from_this<detect_session>
     } else {
       // Regular HTTP - hand off to session with already-read request
       auto s = std::make_shared<session>(
-          stream_.release_socket(), generator_);
+          stream_.release_socket(), generator_, doc_root_);
       s->run_with_request(std::move(req_), std::move(buffer_));
     }
   }
@@ -815,12 +871,17 @@ class listener : public std::enable_shared_from_this<listener>
   net::io_context& ioc_;
   tcp::acceptor acceptor_;
   std::shared_ptr<TileGenerator> generator_;
+  std::string doc_root_;
 
  public:
   listener(net::io_context& ioc,
            tcp::endpoint endpoint,
-           std::shared_ptr<TileGenerator> generator)
-      : ioc_(ioc), acceptor_(ioc), generator_(generator)
+           std::shared_ptr<TileGenerator> generator,
+           std::string doc_root)
+      : ioc_(ioc),
+        acceptor_(ioc),
+        generator_(generator),
+        doc_root_(std::move(doc_root))
   {
     beast::error_code ec;
 
@@ -863,7 +924,8 @@ class listener : public std::enable_shared_from_this<listener>
       std::cerr << "Listener accept error: " << ec.message() << "\n";
     } else {
       // Route through detect_session to handle both HTTP and WebSocket
-      std::make_shared<detect_session>(std::move(socket), generator_)->run();
+      std::make_shared<detect_session>(std::move(socket), generator_, doc_root_)
+          ->run();
     }
     do_accept();
   }
@@ -876,7 +938,7 @@ WebServer::WebServer(odb::dbDatabase* db, utl::Logger* logger)
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve()
+void WebServer::serve(const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, logger_);
@@ -885,6 +947,12 @@ void WebServer::serve()
     unsigned short const port = 8080;
     int const num_threads = 32;
 
+    if (!doc_root.empty()) {
+      logger_->info(utl::WEB,
+                    4,
+                    "Serving static files from {}",
+                    doc_root);
+    }
     logger_->info(utl::WEB,
                   1,
                   "Server starting on http://:{} with {} threads...",
@@ -893,7 +961,8 @@ void WebServer::serve()
 
     net::io_context ioc{num_threads};
 
-    std::make_shared<listener>(ioc, tcp::endpoint{address, port}, generator_)
+    std::make_shared<listener>(
+        ioc, tcp::endpoint{address, port}, generator_, doc_root)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);

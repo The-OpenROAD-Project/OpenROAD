@@ -1,45 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>C++ OpenROAD Tile Viewer (with Inspection)</title>
+    <title>OpenROAD Web Viewer</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""/></script>
-    
-    <style>
-        html, body { height: 100%; margin: 0; }
-        #map {
-            width: 100%;
-            height: 100%;
-            background-color: #111;
-        }
-        .leaflet-tile {
-            image-rendering: pixelated;
-        }
-        /* Style for our popup */
-        .leaflet-popup-content-wrapper {
-            background: #2b2b2b;
-            color: #eee;
-            border-radius: 4px;
-        }
-        .leaflet-popup-content {
-            font-family: monospace;
-        }
-        .leaflet-popup-content strong {
-            color: #87cfff;
-        }
-    </style>
+            crossorigin=""></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+
+    <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-    <div id="map"></div>
-    <script src="main.js"></script>
+    <div id="gl-container"></div>
+    <div id="ws-status"></div>
+    <script type="module" src="main.js"></script>
 
 </body>
 </html>

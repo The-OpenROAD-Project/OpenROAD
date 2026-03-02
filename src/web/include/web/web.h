@@ -2,6 +2,7 @@
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "odb/db.h"
@@ -23,7 +24,7 @@ class WebServer
   WebServer(odb::dbDatabase* db, utl::Logger* logger);
   ~WebServer();
 
-  void serve();
+  void serve(const std::string& doc_root = "");
 
  private:
 

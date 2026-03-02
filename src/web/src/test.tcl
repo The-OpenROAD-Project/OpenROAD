@@ -2,4 +2,4 @@
 read_db /workspace/w6/flow/results/nangate45/bp_multi/base/6_final.odb
 
 set_debug_level WEB tile 1
-web_server
+web_server -dir /workspace/w6/tools/OpenROAD/src/web/src

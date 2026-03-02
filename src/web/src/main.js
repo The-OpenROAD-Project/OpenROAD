@@ -1,4 +1,7 @@
-// WebSocket manager - multiplexes all requests over a single connection
+import { GoldenLayout } from 'https://esm.sh/golden-layout@2.6.0';
+
+// ─── WebSocket Manager ──────────────────────────────────────────────────────
+
 class WebSocketManager {
     constructor(url) {
         this.url = url;
@@ -31,7 +34,6 @@ class WebSocketManager {
 
         this.ws.onclose = () => {
             console.log('WebSocket closed, reconnecting...');
-            // Reject all pending requests
             for (const [id, handler] of this.pending) {
                 handler.reject(new Error('WebSocket closed'));
             }
@@ -83,16 +85,14 @@ class WebSocketManager {
         });
     }
 
-    // Cancel a pending request (e.g. tile scrolled out of view)
     cancel(id) {
         this.pending.delete(id);
         updateStatus();
     }
 }
 
-// Custom Leaflet GridLayer that loads tiles via WebSocket.
-// We extend L.GridLayer (not L.TileLayer) to avoid URL-specific behaviors
-// like _abortLoading that interfere with async WebSocket tile loading.
+// ─── WS Tile Layer ──────────────────────────────────────────────────────────
+
 const WSTileLayer = L.GridLayer.extend({
     initialize: function(wsManager, layerName, options) {
         this._wsManager = wsManager;
@@ -105,9 +105,6 @@ const WSTileLayer = L.GridLayer.extend({
         tile.alt = '';
         tile.setAttribute('role', 'presentation');
 
-        // Store request ID on the tile element itself to avoid
-        // coordinate-key collisions when Leaflet creates a new tile
-        // at the same coords before removing the old one.
         const requestId = this._wsManager.nextId;
         tile._wsRequestId = requestId;
 
@@ -147,20 +144,9 @@ const WSTileLayer = L.GridLayer.extend({
     }
 });
 
-const map = L.map('map', {
-    crs: L.CRS.Simple,
-    zoom: 1,
-    zoomSnap: 0,
-    fadeAnimation: false,
-});
+// ─── Status Indicator ───────────────────────────────────────────────────────
 
-// Status indicator showing pending WS tile requests
-const statusDiv = document.createElement('div');
-statusDiv.id = 'ws-status';
-statusDiv.style.cssText = 'position:fixed;top:8px;right:8px;z-index:10000;'
-    + 'background:rgba(0,0,0,0.7);color:#aaa;padding:4px 10px;'
-    + 'font:12px monospace;border-radius:4px;pointer-events:none;';
-document.body.appendChild(statusDiv);
+const statusDiv = document.getElementById('ws-status');
 
 function updateStatus() {
     const n = wsManager ? wsManager.pending.size : 0;
@@ -174,9 +160,247 @@ function updateStatus() {
     }
 }
 
+// ─── Component Factories ────────────────────────────────────────────────────
+
+let map = null;
+let fitBounds = null;
+let displayControlsEl = null;
+
+// Layer color palette (must match server-side palette in web.cpp)
+const layerPalette = [
+    [70, 130, 210],  // moderate blue
+    [200, 50, 50],   // red
+    [50, 180, 80],   // green
+    [200, 160, 40],  // amber
+    [160, 60, 200],  // purple
+    [40, 190, 190],  // teal
+    [220, 120, 50],  // orange
+    [180, 70, 150],  // magenta
+];
+
+function createLayoutViewer(container) {
+    const mapDiv = document.createElement('div');
+    mapDiv.style.width = '100%';
+    mapDiv.style.height = '100%';
+    mapDiv.style.backgroundColor = '#111';
+    container.element.appendChild(mapDiv);
+
+    map = L.map(mapDiv, {
+        crs: L.CRS.Simple,
+        zoom: 1,
+        zoomSnap: 0,
+        fadeAnimation: false,
+    });
+
+    new ResizeObserver(() => {
+        map.invalidateSize({ animate: false });
+    }).observe(mapDiv);
+}
+
+function createDisplayControls(container) {
+    const el = document.createElement('div');
+    el.className = 'display-controls';
+    el.innerHTML = '<div class="loading">Loading layers...</div>';
+    container.element.appendChild(el);
+    displayControlsEl = el;
+}
+
+function createTclConsole(container) {
+    const el = document.createElement('div');
+    el.className = 'tcl-console';
+    el.innerHTML =
+        '<textarea class="tcl-output" readonly>OpenROAD Tcl Console\n% </textarea>' +
+        '<div class="tcl-input-row">' +
+        '  <span class="tcl-prompt">%</span>' +
+        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
+        '</div>';
+    container.element.appendChild(el);
+
+    const input = el.querySelector('.tcl-input');
+    const output = el.querySelector('.tcl-output');
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const cmd = input.value.trim();
+            if (cmd) {
+                output.value += cmd + '\n';
+                output.value += '(Not connected to Tcl interpreter)\n% ';
+                output.scrollTop = output.scrollHeight;
+                input.value = '';
+            }
+        }
+    });
+}
+
+function createInspector(container) {
+    createStubPanel(container, 'Inspector',
+        'Select an object in the layout to inspect its properties.');
+}
+
+function createBrowser(container) {
+    createStubPanel(container, 'Hierarchy',
+        'Design hierarchy browser.');
+}
+
+function createTimingWidget(container) {
+    createStubPanel(container, 'Timing',
+        'Timing path analysis.');
+}
+
+function createDRCWidget(container) {
+    createStubPanel(container, 'DRC',
+        'Design rule check violations viewer.');
+}
+
+function createClockWidget(container) {
+    createStubPanel(container, 'Clock Tree',
+        'Clock tree visualization.');
+}
+
+function createChartsWidget(container) {
+    createStubPanel(container, 'Charts',
+        'Timing histograms and charts.');
+}
+
+function createHelpWidget(container) {
+    const el = document.createElement('div');
+    el.className = 'help-panel';
+    el.innerHTML =
+        '<h3>Keyboard Shortcuts</h3>' +
+        '<table>' +
+        '<tr><td><kbd>f</kbd></td><td>Fit design to viewport</td></tr>' +
+        '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
+        '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
+        '</table>';
+    container.element.appendChild(el);
+}
+
+function createSelectHighlight(container) {
+    createStubPanel(container, 'Selection',
+        'Selection and highlight browser.');
+}
+
+function createStubPanel(container, title, description) {
+    const el = document.createElement('div');
+    el.className = 'stub-panel';
+    el.innerHTML =
+        `<div class="stub-title">${title}</div>` +
+        `<div class="stub-desc">${description}</div>`;
+    container.element.appendChild(el);
+}
+
+// ─── Layout Configuration ───────────────────────────────────────────────────
+
+const defaultLayoutConfig = {
+    root: {
+        type: 'row',
+        content: [
+            {
+                type: 'component',
+                componentType: 'DisplayControls',
+                title: 'Display Controls',
+                width: 15,
+            },
+            {
+                type: 'column',
+                width: 55,
+                content: [
+                    {
+                        type: 'component',
+                        componentType: 'LayoutViewer',
+                        title: 'Layout',
+                        height: 70,
+                        isClosable: false,
+                    },
+                    {
+                        type: 'stack',
+                        height: 30,
+                        content: [
+                            {
+                                type: 'component',
+                                componentType: 'TclConsole',
+                                title: 'Tcl Console',
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'SelectHighlight',
+                                title: 'Selection',
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                type: 'stack',
+                width: 30,
+                content: [
+                    {
+                        type: 'component',
+                        componentType: 'Inspector',
+                        title: 'Inspector',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'Browser',
+                        title: 'Hierarchy',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'TimingWidget',
+                        title: 'Timing',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'DRCWidget',
+                        title: 'DRC',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'ClockWidget',
+                        title: 'Clock Tree',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'ChartsWidget',
+                        title: 'Charts',
+                    },
+                    {
+                        type: 'component',
+                        componentType: 'HelpWidget',
+                        title: 'Help',
+                    },
+                ],
+            },
+        ],
+    },
+};
+
+// ─── Golden Layout Init ─────────────────────────────────────────────────────
+
+const goldenLayout = new GoldenLayout(document.getElementById('gl-container'));
+
+goldenLayout.registerComponentFactoryFunction('LayoutViewer', createLayoutViewer);
+goldenLayout.registerComponentFactoryFunction('DisplayControls', createDisplayControls);
+goldenLayout.registerComponentFactoryFunction('TclConsole', createTclConsole);
+goldenLayout.registerComponentFactoryFunction('Inspector', createInspector);
+goldenLayout.registerComponentFactoryFunction('Browser', createBrowser);
+goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWidget);
+goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
+goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
+goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
+goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
+goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
+
+goldenLayout.loadLayout(defaultLayoutConfig);
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    goldenLayout.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ─── WebSocket Init ─────────────────────────────────────────────────────────
+
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
 const wsManager = new WebSocketManager(wsUrl);
-let fitBounds = null;
 
 wsManager.readyPromise.then(async () => {
     try {
@@ -185,18 +409,40 @@ wsManager.readyPromise.then(async () => {
             wsManager.request({ type: 'bounds' })
         ]);
 
-        // --- Load Layers ---
-        const overlayLayers = {};
-        layersData.layers.forEach((name, index) => {
-            const layer = new WSTileLayer(wsManager, name, {
-                attribution: name,
-                opacity: 0.7,
-                zIndex: index + 1
+        // --- Populate Display Controls with layer checkboxes ---
+        if (displayControlsEl) {
+            displayControlsEl.innerHTML = '';
+            layersData.layers.forEach((name, index) => {
+                const layer = new WSTileLayer(wsManager, name, {
+                    opacity: 0.7,
+                    zIndex: index + 1
+                });
+                layer.addTo(map);
+
+                const label = document.createElement('label');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.addEventListener('change', () => {
+                    if (checkbox.checked) {
+                        layer.addTo(map);
+                    } else {
+                        map.removeLayer(layer);
+                    }
+                });
+                label.appendChild(checkbox);
+
+                const colorSwatch = document.createElement('span');
+                colorSwatch.className = 'layer-color';
+                const c = layerPalette[index % layerPalette.length];
+                colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+                label.appendChild(colorSwatch);
+
+                label.appendChild(document.createTextNode(name));
+                displayControlsEl.appendChild(label);
             });
-            overlayLayers[name] = layer;
-            layer.addTo(map);
-        });
-        L.control.layers(null, overlayLayers, { collapsed: false }).addTo(map);
+        }
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
@@ -219,12 +465,10 @@ wsManager.readyPromise.then(async () => {
         map.fitBounds(fitBounds);
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
-        map.getPane('mapPane').innerHTML =
-            '<div style="color:red; text-align:center; margin-top: 50px; font-family: monospace;">' +
-            'Error: Could not load initial data from server.' +
-            '</div>';
     }
 });
+
+// ─── Keyboard Shortcuts ─────────────────────────────────────────────────────
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'f' && fitBounds) {

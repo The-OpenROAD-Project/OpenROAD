@@ -1,0 +1,190 @@
+/* Full viewport GL container */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #1e1e1e;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #ccc;
+}
+
+#gl-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* GL dark theme overrides */
+.lm_goldenlayout {
+    background: #1e1e1e;
+}
+.lm_content {
+    background: #252525;
+    overflow: hidden;
+}
+.lm_header .lm_tab {
+    background: #2d2d2d;
+    color: #aaa;
+}
+.lm_header .lm_tab.lm_active {
+    background: #252525;
+    color: #eee;
+}
+.lm_splitter {
+    background: #333;
+}
+
+/* Leaflet tiles */
+.leaflet-tile {
+    image-rendering: pixelated;
+}
+
+/* Leaflet popups */
+.leaflet-popup-content-wrapper {
+    background: #2b2b2b;
+    color: #eee;
+    border-radius: 4px;
+}
+.leaflet-popup-content {
+    font-family: monospace;
+}
+.leaflet-popup-content strong {
+    color: #87cfff;
+}
+
+/* Status overlay */
+#ws-status {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 10000;
+    background: rgba(0,0,0,0.7);
+    color: #aaa;
+    padding: 4px 10px;
+    font: 12px monospace;
+    border-radius: 4px;
+    pointer-events: none;
+    display: none;
+}
+
+/* Stub panel placeholder */
+.stub-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+    padding: 20px;
+}
+.stub-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 8px;
+}
+.stub-desc {
+    color: #555;
+    max-width: 300px;
+    line-height: 1.5;
+}
+
+/* Display Controls panel */
+.display-controls {
+    padding: 8px;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
+}
+.display-controls .loading {
+    color: #666;
+    padding: 12px 0;
+}
+.display-controls label {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    color: #ccc;
+    cursor: pointer;
+}
+.display-controls input[type="checkbox"] {
+    margin-right: 8px;
+}
+.display-controls .layer-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 6px;
+    border: 1px solid #555;
+}
+
+/* Tcl Console */
+.tcl-console {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: monospace;
+    font-size: 13px;
+}
+.tcl-output {
+    flex: 1;
+    background: #1a1a1a;
+    color: #aaa;
+    padding: 8px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    border: none;
+    outline: none;
+    resize: none;
+}
+.tcl-input-row {
+    display: flex;
+    background: #111;
+    border-top: 1px solid #444;
+}
+.tcl-prompt {
+    color: #87cfff;
+    padding: 6px 4px 6px 8px;
+    user-select: none;
+}
+.tcl-input {
+    flex: 1;
+    background: #111;
+    color: #eee;
+    border: none;
+    outline: none;
+    padding: 6px 8px 6px 0;
+    font-family: monospace;
+    font-size: 13px;
+}
+
+/* Help panel */
+.help-panel {
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-y: auto;
+    height: 100%;
+}
+.help-panel h3 {
+    color: #aaa;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+}
+.help-panel table {
+    border-collapse: collapse;
+}
+.help-panel td {
+    padding: 2px 16px 2px 0;
+}
+.help-panel kbd {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #ddd;
+}
