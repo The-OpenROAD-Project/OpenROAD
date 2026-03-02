@@ -1947,7 +1947,6 @@ void dbJournal::undo_deleteObject()
       uint32_t via_layer_id;
       bool is_congested;
       bool is_jumper_;
-      bool ignore_usage_;
       bool is_connect_to_term_;
       log_.pop(net_id);
       log_.pop(x_min);
@@ -1958,7 +1957,6 @@ void dbJournal::undo_deleteObject()
       log_.pop(via_layer_id);
       log_.pop(is_congested);
       log_.pop(is_jumper_);
-      log_.pop(ignore_usage_);
       log_.pop(is_connect_to_term_);
       auto net = dbNet::getNet(block_, net_id);
       auto layer = dbTechLayer::getTechLayer(block_->getTech(), layer_id);
@@ -1967,7 +1965,6 @@ void dbJournal::undo_deleteObject()
       auto guide = dbGuide::create(
           net, layer, via_layer, {x_min, y_min, x_max, y_max}, is_congested);
       guide->setIsJumper(is_jumper_);
-      guide->setIgnoreUsage(ignore_usage_);
       guide->setIsConnectedToTerm(is_connect_to_term_);
       debugPrint(logger_,
                  utl::ODB,

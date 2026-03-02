@@ -46,9 +46,6 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   if (is_jumper_ != rhs.is_jumper_) {
     return false;
   }
-  if (ignore_usage_ != rhs.ignore_usage_) {
-    return false;
-  }
   if (is_connect_to_term_ != rhs.is_connect_to_term_) {
     return false;
   }
@@ -65,7 +62,6 @@ _dbGuide::_dbGuide(_dbDatabase* db)
 {
   is_congested_ = false;
   is_jumper_ = false;
-  ignore_usage_ = false;
   is_connect_to_term_ = false;
 }
 
@@ -84,9 +80,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGuide& obj)
   if (obj.getDatabase()->isSchema(kSchemaHasJumpers)) {
     stream >> obj.is_jumper_;
   }
-  if (obj.getDatabase()->isSchema(kSchemaIgnoreUsage)) {
-    stream >> obj.ignore_usage_;
-  }
   if (obj.getDatabase()->isSchema(kSchemaGuideConnectedToTerm)) {
     stream >> obj.is_connect_to_term_;
   }
@@ -102,7 +95,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj)
   stream << obj.guide_next_;
   stream << obj.is_congested_;
   stream << obj.is_jumper_;
-  stream << obj.ignore_usage_;
   stream << obj.is_connect_to_term_;
   return stream;
 }
@@ -187,7 +179,6 @@ dbGuide* dbGuide::create(dbNet* net,
   guide->is_congested_ = is_congested;
   guide->guide_next_ = owner->guides_;
   guide->is_jumper_ = false;
-  guide->ignore_usage_ = false;
   owner->guides_ = guide->getOID();
   return (dbGuide*) guide;
 }
@@ -225,7 +216,6 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->pushParam(_guide->via_layer_);
     block->journal_->pushParam(_guide->is_congested_);
     block->journal_->pushParam(_guide->is_jumper_);
-    block->journal_->pushParam(_guide->ignore_usage_);
     block->journal_->pushParam(_guide->is_connect_to_term_);
     block->journal_->endAction();
   }
@@ -276,26 +266,6 @@ void dbGuide::setIsJumper(bool jumper)
   _dbDatabase* db = guide->getDatabase();
   if (db->isSchema(kSchemaHasJumpers)) {
     guide->is_jumper_ = jumper;
-  }
-}
-
-bool dbGuide::ignoreUsage() const
-{
-  bool ignore_usage = false;
-  _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(kSchemaIgnoreUsage)) {
-    ignore_usage = guide->ignore_usage_;
-  }
-  return ignore_usage;
-}
-
-void dbGuide::setIgnoreUsage(bool ignore_usage)
-{
-  _dbGuide* guide = (_dbGuide*) this;
-  _dbDatabase* db = guide->getDatabase();
-  if (db->isSchema(kSchemaIgnoreUsage)) {
-    guide->ignore_usage_ = ignore_usage;
   }
 }
 
