@@ -37,6 +37,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       overflow_iterations_(0),
       congestion_report_iter_step_(0),
       num_threads_(1),
+      owns_nets_(true),
+      multicore_routing_(false),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -134,6 +136,12 @@ void FastRouteCore::clear()
   horizontal_blocked_intervals_.clear();
 
   detour_penalty_ = 0;
+  snapshot_batch_sync_time_ = 0.0;
+  snapshot_batch_route_time_ = 0.0;
+  snapshot_batch_apply_time_ = 0.0;
+  snapshot_batch_count_ = 0;
+  snapshot_batch_net_count_ = 0;
+  snapshot_batch_wave_count_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -142,8 +150,10 @@ void FastRouteCore::clearNets()
     sttrees_.clear();
   }
 
-  for (FrNet* net : nets_) {
-    delete net;
+  if (owns_nets_) {
+    for (FrNet* net : nets_) {
+      delete net;
+    }
   }
   nets_.clear();
   net_ids_.clear();
@@ -863,6 +873,209 @@ void FastRouteCore::initAuxVar()
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
 }
 
+std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
+                                                     float& slack_th)
+{
+  if (ordering) {
+    if (critical_nets_percentage_) {
+      slack_th = CalculatePartialSlack();
+    }
+    StNetOrder();
+
+    std::vector<int> ordered_net_ids;
+    ordered_net_ids.reserve(net_ids_.size());
+    for (const auto& order_tree : tree_order_cong_) {
+      ordered_net_ids.push_back(order_tree.treeIndex);
+    }
+    return ordered_net_ids;
+  }
+
+  return net_ids_;
+}
+
+bool FastRouteCore::hasNonSoftNdrNets() const
+{
+  for (const int net_id : net_ids_) {
+    FrNet* net = nets_[net_id];
+    if (net == nullptr) {
+      continue;
+    }
+    if (net->getDbNet()->getNonDefaultRule() != nullptr && !net->isSoftNDR()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
+{
+  return multicore_routing_ && !debug_->isOn() && num_threads_ > 1
+         && net_count > 1 && !hasNonSoftNdrNets();
+}
+
+int FastRouteCore::resolveSnapshotBatchIterationLimit(const int net_count) const
+{
+  const int overflow_scaled_limit
+      = std::max(4, std::min(overflow_iterations_ / 24, 8));
+  const int net_scaled_limit = std::max(4, std::min(net_count / 128, 16));
+  return std::max(overflow_scaled_limit, net_scaled_limit);
+}
+
+bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
+                                                        const int net_count) const
+{
+  if (!useSnapshotBatchRouting(net_count)) {
+    return false;
+  }
+
+  // Track B is intentionally not exact-preserving, but late cleanup is still
+  // sensitive to route-choice drift. Keep the aggressive snapshot mode for the
+  // early/high-overflow phase and fall back to the serial kernel later.
+  return iter <= resolveSnapshotBatchIterationLimit(net_count);
+}
+
+int FastRouteCore::resolveSnapshotBatchSize(const int iter,
+                                           const int net_count) const
+{
+  const int batch_multiplier = num_threads_ >= 64 ? 4 : 2;
+  const int batch_size
+      = std::min(net_count, std::max(32, batch_multiplier * num_threads_));
+
+  const int early_iteration_limit = resolveSnapshotBatchIterationLimit(net_count);
+  const int scaled_iter = iter * 100;
+  constexpr int kHalfPercentage = 25;
+  constexpr int kQuarterPercentage = 50;
+  constexpr int kSinglePercentage = 75;
+
+  if (scaled_iter > kSinglePercentage * early_iteration_limit) {
+    return 1;
+  }
+  if (scaled_iter > kQuarterPercentage * early_iteration_limit) {
+    return std::max(1, batch_size / 4);
+  }
+  if (scaled_iter > kHalfPercentage * early_iteration_limit) {
+    return std::max(1, batch_size / 2);
+  }
+  return batch_size;
+}
+
+std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
+{
+  auto worker = std::make_unique<FastRouteCore>(
+      db_, logger_, callback_handler_, stt_builder_, sta_);
+
+  worker->owns_nets_ = false;
+  worker->multicore_routing_ = false;
+  worker->num_threads_ = 1;
+
+  worker->max_degree_ = max_degree_;
+  worker->cap_per_layer_ = cap_per_layer_;
+  worker->usage_per_layer_ = usage_per_layer_;
+  worker->overflow_per_layer_ = overflow_per_layer_;
+  worker->max_h_overflow_ = max_h_overflow_;
+  worker->max_v_overflow_ = max_v_overflow_;
+  worker->overflow_iterations_ = overflow_iterations_;
+  worker->congestion_report_iter_step_ = congestion_report_iter_step_;
+  worker->congestion_file_name_ = congestion_file_name_;
+  worker->layer_directions_ = layer_directions_;
+  worker->db_layers_ = db_layers_;
+  worker->en_estimate_parasitics_ = en_estimate_parasitics_;
+  worker->resistance_aware_ = resistance_aware_;
+  worker->enable_resistance_aware_ = enable_resistance_aware_;
+  worker->is_3d_step_ = is_3d_step_;
+  worker->is_incremental_grt_ = is_incremental_grt_;
+  worker->worst_slack_ = worst_slack_;
+  worker->worst_net_resistance_ = worst_net_resistance_;
+  worker->worst_net_length_ = worst_net_length_;
+  worker->worst_fanout_ = worst_fanout_;
+  worker->num_adjust_ = num_adjust_;
+  worker->v_capacity_ = v_capacity_;
+  worker->h_capacity_ = h_capacity_;
+  worker->x_corner_ = x_corner_;
+  worker->y_corner_ = y_corner_;
+  worker->tile_size_ = tile_size_;
+  worker->enlarge_ = enlarge_;
+  worker->costheight_ = costheight_;
+  worker->ahth_ = ahth_;
+  worker->total_overflow_ = total_overflow_;
+  worker->has_2D_overflow_ = has_2D_overflow_;
+  worker->verbose_ = verbose_;
+  worker->critical_nets_percentage_ = critical_nets_percentage_;
+  worker->via_cost_ = via_cost_;
+  worker->mazeedge_threshold_ = mazeedge_threshold_;
+  worker->v_capacity_lb_ = v_capacity_lb_;
+  worker->h_capacity_lb_ = h_capacity_lb_;
+  worker->regular_x_ = regular_x_;
+  worker->regular_y_ = regular_y_;
+  worker->detour_penalty_ = detour_penalty_;
+
+  worker->setGridsAndLayers(x_grid_, y_grid_, num_layers_);
+  worker->setGridMax(x_grid_max_, y_grid_max_);
+  worker->v_capacity_3D_ = v_capacity_3D_;
+  worker->h_capacity_3D_ = h_capacity_3D_;
+  worker->last_col_v_capacity_3D_ = last_col_v_capacity_3D_;
+  worker->last_row_h_capacity_3D_ = last_row_h_capacity_3D_;
+  worker->initAuxVar();
+
+  worker->nets_ = nets_;
+  worker->db_net_id_map_ = db_net_id_map_;
+  worker->xcor_.resize(xcor_.size());
+  worker->ycor_.resize(ycor_.size());
+  worker->dcor_.resize(dcor_.size());
+  worker->sttrees_.resize(sttrees_.size());
+
+  return worker;
+}
+
+void FastRouteCore::syncSnapshotBatchWorker(
+    const FastRouteCore& snapshot,
+    const std::vector<int>& batch_net_ids)
+{
+  graph2d_.copyRoutingStateFrom(snapshot.graph2d_, false);
+  total_overflow_ = snapshot.total_overflow_;
+  has_2D_overflow_ = snapshot.has_2D_overflow_;
+  net_ids_ = batch_net_ids;
+
+  for (const int net_id : batch_net_ids) {
+    sttrees_[net_id] = snapshot.sttrees_[net_id];
+  }
+}
+
+void FastRouteCore::updatePlanarNetUsage(const StTree& sttree,
+                                         FrNet* net,
+                                         const int edge_cost)
+{
+  for (const TreeEdge& treeedge : sttree.edges) {
+    if (treeedge.route.routelen <= 0 || treeedge.route.grids.empty()) {
+      continue;
+    }
+
+    const auto& grids = treeedge.route.grids;
+    for (int i = 0; i < treeedge.route.routelen; i++) {
+      if (grids[i].x == grids[i + 1].x && grids[i].y == grids[i + 1].y) {
+        continue;
+      }
+
+      if (grids[i].x == grids[i + 1].x) {
+        const int min_y = std::min(grids[i].y, grids[i + 1].y);
+        graph2d_.updateUsageV(grids[i].x, min_y, net, edge_cost);
+      } else if (grids[i].y == grids[i + 1].y) {
+        const int min_x = std::min(grids[i].x, grids[i + 1].x);
+        graph2d_.updateUsageH(min_x, grids[i].y, net, edge_cost);
+      }
+    }
+  }
+}
+
+void FastRouteCore::applySnapshotBatchRoute(const int net_id, StTree&& sttree)
+{
+  FrNet* net = nets_[net_id];
+  const int edge_cost = net->getEdgeCost();
+  updatePlanarNetUsage(sttrees_[net_id], net, -edge_cost);
+  sttrees_[net_id] = std::move(sttree);
+  updatePlanarNetUsage(sttrees_[net_id], net, edge_cost);
+}
+
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
@@ -1347,6 +1560,13 @@ NetRouteMap FastRouteCore::run()
     return getRoutes();
   }
 
+  snapshot_batch_sync_time_ = 0.0;
+  snapshot_batch_route_time_ = 0.0;
+  snapshot_batch_apply_time_ = 0.0;
+  snapshot_batch_count_ = 0;
+  snapshot_batch_net_count_ = 0;
+  snapshot_batch_wave_count_ = 0;
+
   double total_run_time = 0.0;
   double initial_rsmt_time = 0.0;
   double route_l_time = 0.0;
@@ -1542,6 +1762,10 @@ NetRouteMap FastRouteCore::run()
   SaveLastRouteLen();
 
   const int max_overflow_increases = 25;
+  const bool trackb_cleanup_enabled = useSnapshotBatchRouting(net_ids_.size());
+  const int trackb_iteration_limit
+      = resolveSnapshotBatchIterationLimit(net_ids_.size());
+  const int trackb_cleanup_patience = 12;
 
   float slack_th = std::numeric_limits<float>::lowest();
 
@@ -1707,45 +1931,59 @@ NetRouteMap FastRouteCore::run()
       VIA = 0;
     }
 
-    if (past_cong < bmfl) {
-      bwcnt = 0;
-      if (i > 140 || (i > 80 && past_cong < 20)) {
+    if (trackb_cleanup_enabled && i > trackb_iteration_limit) {
+      if (past_cong < bmfl) {
         copyRS();
         bmfl = past_cong;
+        bwcnt = 0;
+      } else {
+        bwcnt++;
+      }
 
-        L = 0;
-        auto cost_params = CostParams(logistic_coef, costheight_, slope);
-        mazeRouteMSMD(i,
-                      enlarge_,
-                      ripup_threshold,
-                      mazeedge_threshold_,
-                      !(i % 3),
-                      VIA,
-                      L,
-                      cost_params,
-                      slack_th);
-        last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-        if (past_cong < last_cong) {
-          copyRS();
-          bmfl = past_cong;
-        }
-        L = 1;
-        if (minofl > past_cong) {
-          minofl = past_cong;
-          minoflrnd = i;
-        }
+      if (bwcnt > trackb_cleanup_patience) {
+        break;
       }
     } else {
-      bwcnt++;
-    }
+      if (past_cong < bmfl) {
+        bwcnt = 0;
+        if (i > 140 || (i > 80 && past_cong < 20)) {
+          copyRS();
+          bmfl = past_cong;
 
-    if (bmfl > 10) {
-      if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
-        break;
+          L = 0;
+          auto cost_params = CostParams(logistic_coef, costheight_, slope);
+          mazeRouteMSMD(i,
+                        enlarge_,
+                        ripup_threshold,
+                        mazeedge_threshold_,
+                        !(i % 3),
+                        VIA,
+                        L,
+                        cost_params,
+                        slack_th);
+          last_cong = past_cong;
+          past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+          if (past_cong < last_cong) {
+            copyRS();
+            bmfl = past_cong;
+          }
+          L = 1;
+          if (minofl > past_cong) {
+            minofl = past_cong;
+            minoflrnd = i;
+          }
+        }
+      } else {
+        bwcnt++;
       }
-      if (bmfl < 30 && bwcnt > 50) {
-        break;
+
+      if (bmfl > 10) {
+        if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
+          break;
+        }
+        if (bmfl < 30 && bwcnt > 50) {
+          break;
+        }
       }
     }
 
@@ -1926,6 +2164,32 @@ NetRouteMap FastRouteCore::run()
                   overflow_iterations_time);
   logger_->metric("global_route__fastroute__finalization_s",
                   finalization_time);
+  logger_->metric("global_route__fastroute__snapshot_batch_route_s",
+                  snapshot_batch_route_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_apply_s",
+                  snapshot_batch_apply_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_sync_s",
+                  snapshot_batch_sync_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_count",
+                  snapshot_batch_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_nets",
+                  snapshot_batch_net_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_wave_count",
+                  snapshot_batch_wave_count_);
+  if (snapshot_batch_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "timer",
+               1,
+               "Snapshot batch totals: sync {} route {} apply {} waves {} "
+               "batches {} nets {}.",
+               snapshot_batch_sync_time_,
+               snapshot_batch_route_time_,
+               snapshot_batch_apply_time_,
+               snapshot_batch_wave_count_,
+               snapshot_batch_count_,
+               snapshot_batch_net_count_);
+  }
   logger_->metric("global_route__vias", numVia);
   if (verbose_) {
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);

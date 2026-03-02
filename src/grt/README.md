@@ -26,6 +26,7 @@ global_route
     [-critical_nets_percentage percent]
     [-skip_large_fanout_nets fanout]
     [-allow_congestion]
+    [-multicore]
     [-verbose]
     [-start_incremental]
     [-end_incremental]
@@ -46,6 +47,7 @@ global_route
 | `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default value is `0`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-skip_large_fanout_nets` | Skips routing for nets with a fanout higher than the specified limit. Nets above this pin count threshold are ignored by the global router and will not have routing guides, meaning they will also be skipped during detailed routing. This option is useful in debugging or estimation flows where high-fanout nets (such as pre-CTS clock nets) can be ignored. The default value is 0, indicating no fanout limit. The default value is `MAX_INT`. The allowed values are integers `[0, MAX_INT]`. |
 | `-allow_congestion` | Allow global routing results to be generated with remaining congestion. The default is false. |
+| `-multicore` | Enable the optional multicore Track B routing path. |
 | `-verbose` | This flag enables the full reporting of the global routing. |
 | `-start_incremental` | This flag initializes the GRT listener to get the net modified. The default is false. |
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |

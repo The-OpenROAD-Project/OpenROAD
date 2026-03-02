@@ -111,6 +111,12 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
+set_multicore(bool multicore_routing)
+{
+  getGlobalRouter()->setMulticoreRouting(multicore_routing);
+}
+
+void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {
   getGlobalRouter()->setCriticalNetsPercentage(criticalNetsPercentage);
