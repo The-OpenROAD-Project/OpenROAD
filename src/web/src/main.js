@@ -113,7 +113,15 @@ const WSTileLayer = L.GridLayer.extend({
             layer: this._layerName,
             z: coords.z,
             x: coords.x,
-            y: coords.y
+            y: coords.y,
+            stdcells: visibility.stdcells ? 1 : 0,
+            macros: visibility.macros ? 1 : 0,
+            pads: visibility.pads ? 1 : 0,
+            physical: visibility.physical ? 1 : 0,
+            routing: visibility.routing ? 1 : 0,
+            special_nets: visibility.special_nets ? 1 : 0,
+            pins: visibility.pins ? 1 : 0,
+            blockages: visibility.blockages ? 1 : 0,
         }).then(blob => {
             tile.onload = () => {
                 URL.revokeObjectURL(tile.src);
@@ -165,6 +173,38 @@ function updateStatus() {
 let map = null;
 let fitBounds = null;
 let displayControlsEl = null;
+let allLayers = [];
+
+const visibility = {
+    stdcells: true,
+    macros: true,
+    pads: true,
+    physical: true,
+    routing: true,
+    special_nets: true,
+    pins: true,
+    blockages: true,
+};
+
+function redrawAllLayers() {
+    for (const layer of allLayers) {
+        layer.redraw();
+    }
+}
+
+function makeVisToggle(key, labelText) {
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = visibility[key];
+    checkbox.addEventListener('change', () => {
+        visibility[key] = checkbox.checked;
+        redrawAllLayers();
+    });
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(labelText));
+    return label;
+}
 
 // Layer color palette (must match server-side palette in web.cpp)
 const layerPalette = [
@@ -408,15 +448,24 @@ wsManager.readyPromise.then(async () => {
             wsManager.request({ type: 'bounds' })
         ]);
 
-        // --- Populate Display Controls with layer checkboxes ---
+        // --- Populate Display Controls ---
         if (displayControlsEl) {
             displayControlsEl.innerHTML = '';
+            allLayers = [];
+
+            // --- Layers section ---
+            const layerSection = document.createElement('div');
+            layerSection.innerHTML = '<div class="section-header">Layers</div>';
+            const layerItems = document.createElement('div');
+            layerItems.className = 'section-items';
+
             layersData.layers.forEach((name, index) => {
                 const layer = new WSTileLayer(wsManager, name, {
                     opacity: 0.7,
                     zIndex: index + 1
                 });
                 layer.addTo(map);
+                allLayers.push(layer);
 
                 const label = document.createElement('label');
 
@@ -439,8 +488,42 @@ wsManager.readyPromise.then(async () => {
                 label.appendChild(colorSwatch);
 
                 label.appendChild(document.createTextNode(name));
-                displayControlsEl.appendChild(label);
+                layerItems.appendChild(label);
             });
+            layerSection.appendChild(layerItems);
+            displayControlsEl.appendChild(layerSection);
+
+            // --- Instances section ---
+            const instanceSection = document.createElement('div');
+            instanceSection.innerHTML = '<div class="section-header">Instances</div>';
+            const instanceItems = document.createElement('div');
+            instanceItems.className = 'section-items';
+            for (const [key, label] of [
+                ['stdcells', 'Std Cells'],
+                ['macros', 'Macros'],
+                ['pads', 'Pads'],
+                ['physical', 'Physical'],
+            ]) {
+                instanceItems.appendChild(makeVisToggle(key, label));
+            }
+            instanceSection.appendChild(instanceItems);
+            displayControlsEl.appendChild(instanceSection);
+
+            // --- Shapes section ---
+            const shapeSection = document.createElement('div');
+            shapeSection.innerHTML = '<div class="section-header">Shapes</div>';
+            const shapeItems = document.createElement('div');
+            shapeItems.className = 'section-items';
+            for (const [key, label] of [
+                ['routing', 'Routing'],
+                ['special_nets', 'Special Nets'],
+                ['pins', 'Pins'],
+                ['blockages', 'Blockages'],
+            ]) {
+                shapeItems.appendChild(makeVisToggle(key, label));
+            }
+            shapeSection.appendChild(shapeItems);
+            displayControlsEl.appendChild(shapeSection);
         }
 
         // --- Set Bounds ---

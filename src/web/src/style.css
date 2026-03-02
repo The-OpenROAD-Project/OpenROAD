@@ -119,6 +119,19 @@ html, body {
     margin-right: 6px;
     border: 1px solid #555;
 }
+.display-controls .section-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 0 3px 0;
+    border-bottom: 1px solid #333;
+    margin-bottom: 2px;
+}
+.display-controls .section-items {
+    padding-left: 4px;
+}
 
 /* Tcl Console */
 .tcl-console {

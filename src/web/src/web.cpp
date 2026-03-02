@@ -37,6 +37,18 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
+struct TileVisibility
+{
+  bool stdcells = true;
+  bool macros = true;
+  bool pads = true;
+  bool physical = true;
+  bool routing = true;
+  bool special_nets = true;
+  bool pins = true;
+  bool blockages = true;
+};
+
 class TileGenerator
 {
  public:
@@ -58,7 +70,8 @@ class TileGenerator
   std::vector<unsigned char> generateTile(const std::string& layer,
                                           int z,
                                           int x,
-                                          int y);
+                                          int y,
+                                          const TileVisibility& vis = {});
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -126,7 +139,8 @@ std::vector<std::string> TileGenerator::getRoutingLayers()
 std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
                                                        const int z,
                                                        const int x,
-                                                       int y)
+                                                       int y,
+                                                       const TileVisibility& vis)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -170,7 +184,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     odb::dbBlock* block = db_->getChip()->getBlock();
 
     // Draw routing shapes (wires, vias, bterms) for this layer
-    if (tech_layer) {
+    if (tech_layer && vis.routing) {
       for (const auto& shape : search_->searchBoxShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
@@ -189,7 +203,10 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
         }
       }
 
-      // Draw special net shapes (power/ground straps) for this layer
+    }
+
+    // Draw special net shapes (power/ground straps) for this layer
+    if (tech_layer && vis.special_nets) {
       for (const auto& shape : search_->searchSNetShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
@@ -216,8 +233,20 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
         continue;
       }
       odb::dbMaster* master = inst->getMaster();
-      if (master->getType() == odb::dbMasterType::CORE_SPACER) {
-        continue;
+      odb::dbMasterType mtype = master->getType();
+
+      // Classify instance and check visibility
+      if (mtype.isBlock()) {
+        if (!vis.macros) continue;
+      } else if (mtype.isPad()) {
+        if (!vis.pads) continue;
+      } else if (mtype.isEndCap() || mtype.isCover()
+                 || mtype == odb::dbMasterType::CORE_SPACER
+                 || mtype == odb::dbMasterType::CORE_WELLTAP) {
+        if (!vis.physical) continue;
+      } else {
+        // Standard cells (CORE and variants)
+        if (!vis.stdcells) continue;
       }
       const int xl = inst_bbox.xMin();
       const int yl = inst_bbox.yMin();
@@ -256,44 +285,48 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
         }
       }
 
-      for (odb::dbBox* obs : master->getObstructions()) {
-        if (tech_layer && obs->getTechLayer() != tech_layer) {
-          continue;
-        }
-        odb::Rect box = obs->getBox();
-        inst->getTransform().apply(box);
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+      if (vis.blockages) {
+        for (odb::dbBox* obs : master->getObstructions()) {
+          if (tech_layer && obs->getTechLayer() != tech_layer) {
+            continue;
+          }
+          odb::Rect box = obs->getBox();
+          inst->getTransform().apply(box);
+          if (!box.overlaps(dbu_tile)) {
+            continue;
+          }
+          const odb::Rect overlap = box.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, ix, draw_y, obs_color);
+          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+              const int draw_y = (255 - iy);
+              setPixel(image_buffer, ix, draw_y, obs_color);
+            }
           }
         }
       }
 
-      for (odb::dbMTerm* mterm : master->getMTerms()) {
-        for (odb::dbMPin* mpin : mterm->getMPins()) {
-          for (odb::dbBox* geom : mpin->getGeometry()) {
-            if (tech_layer && geom->getTechLayer() != tech_layer) {
-              continue;
-            }
-            odb::Rect box = geom->getBox();
-            inst->getTransform().apply(box);
-            if (!box.overlaps(dbu_tile)) {
-              continue;
-            }
-            const odb::Rect overlap = box.intersect(dbu_tile);
-            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+      if (vis.pins) {
+        for (odb::dbMTerm* mterm : master->getMTerms()) {
+          for (odb::dbMPin* mpin : mterm->getMPins()) {
+            for (odb::dbBox* geom : mpin->getGeometry()) {
+              if (tech_layer && geom->getTechLayer() != tech_layer) {
+                continue;
+              }
+              odb::Rect box = geom->getBox();
+              inst->getTransform().apply(box);
+              if (!box.overlaps(dbu_tile)) {
+                continue;
+              }
+              const odb::Rect overlap = box.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                const int draw_y = (255 - iy);
-                setPixel(image_buffer, ix, draw_y, color);
+              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                  const int draw_y = (255 - iy);
+                  setPixel(image_buffer, ix, draw_y, color);
+                }
               }
             }
           }
@@ -331,6 +364,16 @@ struct WsRequest
   int z = 0;
   int x = 0;
   int y = 0;
+
+  // Visibility flags (default: all visible)
+  bool show_stdcells = true;
+  bool show_macros = true;
+  bool show_pads = true;
+  bool show_physical = true;
+  bool show_routing = true;
+  bool show_special_nets = true;
+  bool show_pins = true;
+  bool show_blockages = true;
 };
 
 struct WsResponse
@@ -388,6 +431,18 @@ static int extract_int(const std::string& json, const std::string& key)
   }
 }
 
+// Like extract_int but returns default_val when key is absent
+static int extract_int_or(const std::string& json,
+                          const std::string& key,
+                          int default_val)
+{
+  const std::string needle = "\"" + key + "\"";
+  if (json.find(needle) == std::string::npos) {
+    return default_val;
+  }
+  return extract_int(json, key);
+}
+
 static WsRequest parse_ws_request(const std::string& msg)
 {
   WsRequest req;
@@ -400,6 +455,14 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
+    req.show_stdcells = extract_int_or(msg, "stdcells", 1);
+    req.show_macros = extract_int_or(msg, "macros", 1);
+    req.show_pads = extract_int_or(msg, "pads", 1);
+    req.show_physical = extract_int_or(msg, "physical", 1);
+    req.show_routing = extract_int_or(msg, "routing", 1);
+    req.show_special_nets = extract_int_or(msg, "special_nets", 1);
+    req.show_pins = extract_int_or(msg, "pins", 1);
+    req.show_blockages = extract_int_or(msg, "blockages", 1);
   } else if (type_str == "bounds") {
     req.type = WsRequest::BOUNDS;
   } else if (type_str == "layers") {
@@ -446,7 +509,16 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
-      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y);
+      TileVisibility vis;
+      vis.stdcells = req.show_stdcells;
+      vis.macros = req.show_macros;
+      vis.pads = req.show_pads;
+      vis.physical = req.show_physical;
+      vis.routing = req.show_routing;
+      vis.special_nets = req.show_special_nets;
+      vis.pins = req.show_pins;
+      vis.blockages = req.show_blockages;
+      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y, vis);
       break;
     }
     default: {
