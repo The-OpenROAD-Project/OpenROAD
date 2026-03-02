@@ -200,6 +200,15 @@ const visibility = {
     std_level_shift: true,
     std_sequential: true,
     std_combinational: true,
+    // Net sub-types
+    net_signal: true,
+    net_power: true,
+    net_ground: true,
+    net_clock: true,
+    net_reset: true,
+    net_tieoff: true,
+    net_scan: true,
+    net_analog: true,
     // Shapes
     routing: true,
     special_nets: true,
@@ -678,6 +687,19 @@ wsManager.readyPromise.then(async () => {
                 ]),
             ], { expanded: true });
             displayControlsEl.appendChild(instanceGroup);
+
+            // --- Nets group ---
+            const netGroup = makeVisGroup('Nets', [
+                ['net_signal', 'Signal'],
+                ['net_power', 'Power'],
+                ['net_ground', 'Ground'],
+                ['net_clock', 'Clock'],
+                ['net_reset', 'Reset'],
+                ['net_tieoff', 'Tie off'],
+                ['net_scan', 'Scan'],
+                ['net_analog', 'Analog'],
+            ], { expanded: true });
+            displayControlsEl.appendChild(netGroup);
 
             // --- Shapes group ---
             const shapeGroup = makeVisGroup('Shapes', [

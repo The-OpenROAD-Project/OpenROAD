@@ -71,11 +71,44 @@ struct TileVisibility
   bool std_sequential = true;
   bool std_combinational = true;
 
+  // Net sub-types (by dbSigType)
+  bool net_signal = true;
+  bool net_power = true;
+  bool net_ground = true;
+  bool net_clock = true;
+  bool net_reset = true;
+  bool net_tieoff = true;
+  bool net_scan = true;
+  bool net_analog = true;
+
   // Shapes
   bool routing = true;
   bool special_nets = true;
   bool pins = true;
   bool blockages = true;
+
+  bool isNetVisible(odb::dbNet* net) const
+  {
+    switch (net->getSigType().getValue()) {
+      case odb::dbSigType::SIGNAL:
+        return net_signal;
+      case odb::dbSigType::POWER:
+        return net_power;
+      case odb::dbSigType::GROUND:
+        return net_ground;
+      case odb::dbSigType::CLOCK:
+        return net_clock;
+      case odb::dbSigType::RESET:
+        return net_reset;
+      case odb::dbSigType::TIEOFF:
+        return net_tieoff;
+      case odb::dbSigType::SCAN:
+        return net_scan;
+      case odb::dbSigType::ANALOG:
+        return net_analog;
+    }
+    return true;
+  }
 };
 
 class TileGenerator
@@ -219,6 +252,9 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       for (const auto& shape : search_->searchBoxShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
+        if (!vis.isNetVisible(std::get<2>(shape))) {
+          continue;
+        }
         const odb::Rect& box = std::get<0>(shape);
         if (!box.overlaps(dbu_tile)) {
           continue;
@@ -233,7 +269,6 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
           }
         }
       }
-
     }
 
     // Draw special net shapes (power/ground straps) for this layer
@@ -241,6 +276,9 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
       for (const auto& shape : search_->searchSNetShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
       {
+        if (!vis.isNetVisible(std::get<2>(shape))) {
+          continue;
+        }
         const odb::Rect box = std::get<0>(shape)->getBox();
         if (!box.overlaps(dbu_tile)) {
           continue;
@@ -622,6 +660,15 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.vis.std_level_shift = extract_int_or(msg, "std_level_shift", 1);
     req.vis.std_sequential = extract_int_or(msg, "std_sequential", 1);
     req.vis.std_combinational = extract_int_or(msg, "std_combinational", 1);
+    // Net sub-types
+    req.vis.net_signal = extract_int_or(msg, "net_signal", 1);
+    req.vis.net_power = extract_int_or(msg, "net_power", 1);
+    req.vis.net_ground = extract_int_or(msg, "net_ground", 1);
+    req.vis.net_clock = extract_int_or(msg, "net_clock", 1);
+    req.vis.net_reset = extract_int_or(msg, "net_reset", 1);
+    req.vis.net_tieoff = extract_int_or(msg, "net_tieoff", 1);
+    req.vis.net_scan = extract_int_or(msg, "net_scan", 1);
+    req.vis.net_analog = extract_int_or(msg, "net_analog", 1);
     // Shapes
     req.vis.routing = extract_int_or(msg, "routing", 1);
     req.vis.special_nets = extract_int_or(msg, "special_nets", 1);
