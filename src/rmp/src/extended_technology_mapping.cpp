@@ -125,7 +125,7 @@ ExtendedTechnologyMapping::mapCellFromStdCell(const BlockNtk& ntk,
 
   if (sc.gates.empty()) {
     logger->error(utl::RMP,
-                  66,
+                  86,
                   "Standard cell {} has no gates (node {})",
                   sc.name,
                   ntk.node_to_index(n));
@@ -234,14 +234,14 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
     net = odb::dbNet::create(block, name);
   }
   if (!net) {
-    logger->error(utl::RMP, 67, "Failed to create const net");
+    logger->error(utl::RMP, 87, "Failed to create const net");
   }
 
   auto tie = findTieMaster(libs, sta, value);
   if (!tie) {
     logger->error(
         utl::RMP,
-        68,
+        88,
         "No supply net and no tie cell found; cannot create constant driver");
   }
 
@@ -251,12 +251,12 @@ odb::dbNet* ExtendedTechnologyMapping::ensureConstNet(
     inst = odb::dbInst::create(block, tie->master, inst_name.c_str());
   }
   if (!inst) {
-    logger->error(utl::RMP, 69, "Failed to create tie inst");
+    logger->error(utl::RMP, 89, "Failed to create tie inst");
   }
 
   auto* out_it = inst->findITerm(tie->out_pin.c_str());
   if (!out_it) {
-    logger->error(utl::RMP, 70, "Tie output iterm not found");
+    logger->error(utl::RMP, 90, "Tie output iterm not found");
   }
   out_it->connect(net);
 
