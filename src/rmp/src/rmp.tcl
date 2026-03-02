@@ -111,7 +111,7 @@ proc resynth { args } {
   sta::parse_key_args "resynth" args \
     keys {-scene} \
     flags {}
-  set scene[sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   rmp::resynth_cmd $scene
 }
 

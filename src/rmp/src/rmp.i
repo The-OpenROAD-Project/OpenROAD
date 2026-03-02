@@ -79,12 +79,6 @@ set_annealing_initial_ops(int set_annealing_initial_ops)
 }
 
 void
-resynth_cmd(Scene* scene)
-{
-  getRestructure()->resynth(scene);
-}
-
-void
 set_genetic_seed(int genetic_seed)
 {
   getRestructure()->setGeneticSeed(genetic_seed);
@@ -132,16 +126,21 @@ set_genetic_initial_ops(int genetic_initial_ops)
   getRestructure()->setGeneticInitialOps(genetic_initial_ops);
 }
 
-void resynth_cmd(Scene* corner) {
-  getRestructure()->resynth(corner);
->>>>>>> master
+void
+resynth_cmd(Scene* scene)
+{
+  getRestructure()->resynth(scene);
 }
 
-void resynth_annealing_cmd(Scene* scene) {
+void
+resynth_annealing_cmd(Scene* scene)
+{
   getRestructure()->resynthAnnealing(scene);
 }
 
-void resynth_genetic_cmd(Scene* corner) {
+void
+resynth_genetic_cmd(Scene* corner)
+{
   getRestructure()->resynthGenetic(corner);
 }
 
