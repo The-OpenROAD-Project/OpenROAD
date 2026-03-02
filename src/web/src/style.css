@@ -130,6 +130,8 @@ html, body {
 }
 .tcl-output {
     flex: 1;
+    width: 100%;
+    box-sizing: border-box;
     background: #1a1a1a;
     color: #aaa;
     padding: 8px;
@@ -138,9 +140,12 @@ html, body {
     border: none;
     outline: none;
     resize: none;
+    font-family: inherit;
+    font-size: inherit;
 }
 .tcl-input-row {
     display: flex;
+    align-items: center;
     background: #111;
     border-top: 1px solid #444;
 }

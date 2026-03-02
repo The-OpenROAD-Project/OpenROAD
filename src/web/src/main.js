@@ -190,6 +190,7 @@ function createLayoutViewer(container) {
         zoom: 1,
         zoomSnap: 0,
         fadeAnimation: false,
+        attributionControl: false,
     });
 
     new ResizeObserver(() => {
@@ -205,6 +206,15 @@ function createDisplayControls(container) {
     displayControlsEl = el;
 }
 
+let tclOutputEl = null;
+
+function tclAppend(text) {
+    if (tclOutputEl) {
+        tclOutputEl.value += text;
+        tclOutputEl.scrollTop = tclOutputEl.scrollHeight;
+    }
+}
+
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
@@ -216,15 +226,14 @@ function createTclConsole(container) {
         '</div>';
     container.element.appendChild(el);
 
+    tclOutputEl = el.querySelector('.tcl-output');
     const input = el.querySelector('.tcl-input');
-    const output = el.querySelector('.tcl-output');
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const cmd = input.value.trim();
             if (cmd) {
-                output.value += cmd + '\n';
-                output.value += '(Not connected to Tcl interpreter)\n% ';
-                output.scrollTop = output.scrollHeight;
+                tclAppend(cmd + '\n');
+                tclAppend('(Not connected to Tcl interpreter)\n% ');
                 input.value = '';
             }
         }
@@ -312,20 +321,10 @@ const defaultLayoutConfig = {
                         isClosable: false,
                     },
                     {
-                        type: 'stack',
+                        type: 'component',
+                        componentType: 'TclConsole',
+                        title: 'Tcl Console',
                         height: 30,
-                        content: [
-                            {
-                                type: 'component',
-                                componentType: 'TclConsole',
-                                title: 'Tcl Console',
-                            },
-                            {
-                                type: 'component',
-                                componentType: 'SelectHighlight',
-                                title: 'Selection',
-                            },
-                        ],
                     },
                 ],
             },
