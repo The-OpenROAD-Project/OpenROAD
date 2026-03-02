@@ -3519,8 +3519,7 @@ void NesterovBaseCommon::createCbkITerm(odb::dbITerm* iTerm)
 
 // assuming fixpointers will be called later
 //  maintaining consistency in NBC::gcellStor_ and NB::gCells_
-std::pair<odb::dbInst*, size_t> NesterovBase::destroyCbkGCell(
-    odb::dbInst* db_inst)
+std::pair<odb::dbInst*, int> NesterovBase::destroyCbkGCell(odb::dbInst* db_inst)
 {
   debugPrint(log_,
              GPL,
@@ -3530,7 +3529,7 @@ std::pair<odb::dbInst*, size_t> NesterovBase::destroyCbkGCell(
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level",
              db_inst->getName());
   auto db_it = db_inst_to_nb_index_.find(db_inst);
-  std::pair<odb::dbInst*, size_t> replacement = {nullptr, -1};
+  std::pair<odb::dbInst*, int> replacement = {nullptr, -1};
   if (db_it != db_inst_to_nb_index_.end()) {
     size_t last_index = nb_gcells_.size() - 1;
     size_t gcell_index = db_it->second;
@@ -3600,10 +3599,10 @@ bool NesterovBase::updateHandle(odb::dbInst* db_inst, size_t handle)
   return true;
 }
 
-std::pair<odb::dbInst*, size_t> NesterovBaseCommon::destroyCbkGCell(
+std::pair<odb::dbInst*, int> NesterovBaseCommon::destroyCbkGCell(
     odb::dbInst* db_inst)
 {
-  std::pair<odb::dbInst*, size_t> replacement = {nullptr, -1};
+  std::pair<odb::dbInst*, int> replacement = {nullptr, -1};
   auto it = db_inst_to_nbc_index_map_.find(db_inst);
   if (it == db_inst_to_nbc_index_map_.end()) {
     debugPrint(log_,

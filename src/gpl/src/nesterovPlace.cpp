@@ -1286,8 +1286,7 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 
   bool destroyed = false;
   for (auto& nesterov : nbVec_) {
-    std::pair<odb::dbInst*, size_t> replaced
-        = nesterov->destroyCbkGCell(db_inst);
+    std::pair<odb::dbInst*, int> replaced = nesterov->destroyCbkGCell(db_inst);
     if (replaced.first) {
       bool updated = false;
       for (auto& nesterov : nbVec_) {
