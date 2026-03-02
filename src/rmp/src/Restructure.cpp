@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+// Copyright (c) 2019-2026, The OpenROAD Authors
 
 #include "rmp/Restructure.h"
 
@@ -11,7 +11,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -21,24 +20,22 @@
 #include <vector>
 
 #include "annealing_strategy.h"
-#include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
-#include "cut/abc_library_factory.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
 #include "extended_technology_mapping.h"
+#include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
@@ -101,6 +98,22 @@ void Restructure::resynthAnnealing(sta::Scene* corner)
                                        annealing_revert_after_,
                                        annealing_init_ops_);
   annealing_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
+}
+
+void Restructure::resynthGenetic(sta::Scene* corner)
+{
+  GeneticStrategy genetic_strategy(corner,
+                                   slack_threshold_,
+                                   genetic_seed_,
+                                   genetic_population_size_,
+                                   genetic_mutation_probability_,
+                                   genetic_crossover_probability_,
+                                   genetic_tournament_size_,
+                                   genetic_tournament_probability_,
+                                   genetic_iters_,
+                                   genetic_init_ops_);
+  genetic_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
@@ -718,7 +731,8 @@ void Restructure::resynthEmap(sta::Scene* scene,
 {
   bool area_oriented_mapping = opt_mode_ == Mode::AREA_1;
 
-  auto emap = ExtendedTechnologyMapping(scene, map_multioutput, area_oriented_mapping, verbose);
+  auto emap = ExtendedTechnologyMapping(
+      scene, map_multioutput, area_oriented_mapping, verbose);
 
   emap.map(open_sta_, db_, resizer_, logger_);
 }

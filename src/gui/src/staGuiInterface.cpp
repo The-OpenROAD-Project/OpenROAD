@@ -976,7 +976,7 @@ void PathGroupSlackEndVisitor::resetWorstSlack()
 
 STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
     : sta_(sta),
-      scene_(nullptr),
+      scene_(sta ? sta->cmdScene() : nullptr),
       use_max_(true),
       one_path_per_endpoint_(true),
       max_path_count_(50),
@@ -1191,7 +1191,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           e_thrus,
           e_to,
           include_unconstrained_,
-          // corner, min_max,
+          // scene, min_max,
           search_scenes,
           minMaxAll(),
           // group_count, endpoint_count, unique_pins

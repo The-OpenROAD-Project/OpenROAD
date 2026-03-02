@@ -1079,17 +1079,17 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
   setIssueRedraw(true);
 
   addMultipleChoiceSetting(
-      "Corner",
-      "Corner:",
+      "Scene",
+      "Scene:",
       [this]() {
-        std::vector<std::string> corners;
-        for (auto* corner : sta_->scenes()) {
-          corners.emplace_back(corner->name());
+        std::vector<std::string> scenes;
+        for (auto* scene : sta_->scenes()) {
+          scenes.emplace_back(scene->name());
         }
-        return corners;
+        return scenes;
       },
-      [this]() -> std::string { return corner_; },
-      [this](const std::string& value) { corner_ = value; });
+      [this]() -> std::string { return scene_; },
+      [this](const std::string& value) { scene_ = value; });
   addBooleanSetting(
       "Internal",
       "Internal power:",
@@ -1128,7 +1128,7 @@ bool PowerDensityDataSource::populateMap()
       continue;
     }
 
-    sta::PowerResult power = sta_->power(network->dbToSta(inst), getCorner());
+    sta::PowerResult power = sta_->power(network->dbToSta(inst), getScene());
 
     float pwr = 0.0;
     if (include_all) {
@@ -1163,16 +1163,16 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
   base += (new_data / data_area) * intersection_area;
 }
 
-sta::Scene* PowerDensityDataSource::getCorner() const
+sta::Scene* PowerDensityDataSource::getScene() const
 {
-  auto* corner = sta_->findScene(corner_);
-  if (corner != nullptr) {
-    return corner;
+  auto* scene = sta_->findScene(scene_);
+  if (scene != nullptr) {
+    return scene;
   }
 
-  auto corners = sta_->scenes();
-  if (!corners.empty()) {
-    return corners[0];
+  auto scenes = sta_->scenes();
+  if (!scenes.empty()) {
+    return scenes[0];
   }
 
   return nullptr;

@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@openroad_rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
@@ -28,4 +29,12 @@ cc_library(
         "@rules_cc//cc/runfiles",
     ],
     alwayslink = True,
+)
+
+# small build test to check if "bazel build //src/sta:StaTclInitVar" works
+# Run with "bazel test //bazel:sta_tcl_encode_test"
+# Tests the tcl_encode_sta.bzl rule
+build_test(
+    name = "sta_tcl_encode_test",
+    targets = ["//src/sta:StaTclInitVar"],
 )

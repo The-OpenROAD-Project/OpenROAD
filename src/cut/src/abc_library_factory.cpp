@@ -20,6 +20,8 @@
 #include "misc/vec/vecWrd.h"
 #include "rsz/Resizer.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"

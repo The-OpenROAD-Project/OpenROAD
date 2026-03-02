@@ -350,9 +350,9 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   bool include_leakage_ = true;
   bool include_switching_ = true;
 
-  std::string corner_;
+  std::string scene_;
 
-  sta::Scene* getCorner() const;
+  sta::Scene* getScene() const;
 };
 
 }  // namespace gui

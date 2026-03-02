@@ -32,6 +32,7 @@ TESTS = [
     "gcd_cugr",
     "gcd_flute",
     "increase_capacity1",
+    "infinite_cap",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
     "invalid_routing_layer",

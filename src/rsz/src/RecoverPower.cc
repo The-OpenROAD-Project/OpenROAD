@@ -16,6 +16,7 @@
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
+#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -33,8 +34,6 @@
 #include "utl/Logger.h"
 
 namespace rsz {
-
-using namespace sta;  // NOLINT
 
 using std::pair;
 using std::string;
@@ -65,19 +64,20 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
-  VertexSet& endpoints = sta_->endpoints();
-  VertexSeq ends_with_slack;
-  for (Vertex* end : endpoints) {
-    const Slack end_slack = sta_->slack(end, max_);
+  sta::VertexSet& endpoints = sta_->endpoints();
+  sta::VertexSeq ends_with_slack;
+  for (sta::Vertex* end : endpoints) {
+    const sta::Slack end_slack = sta_->slack(end, max_);
     if (end_slack > setup_slack_margin_
         && end_slack < setup_slack_max_margin_) {
       ends_with_slack.push_back(end);
     }
   }
 
-  std::ranges::sort(ends_with_slack, [this](Vertex* end1, Vertex* end2) {
-    return sta_->slack(end1, max_) > sta_->slack(end2, max_);
-  });
+  std::ranges::sort(ends_with_slack,
+                    [this](sta::Vertex* end1, sta::Vertex* end2) {
+                      return sta_->slack(end1, max_) > sta_->slack(end2, max_);
+                    });
 
   debugPrint(logger_,
              RSZ,
@@ -109,8 +109,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
   est::IncrementalParasiticsGuard guard(estimate_parasitics_);
   for (sta::Vertex* end : ends_with_slack) {
     resizer_->journalBegin();
-    const Slack end_slack_before = sta_->slack(end, max_);
-    Slack worst_slack_after;
+    const sta::Slack end_slack_before = sta_->slack(end, max_);
+    sta::Slack worst_slack_after;
     //=====================================================================
     // Just a counter to know when to break out
     end_index++;
@@ -135,7 +135,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     if (changed) {
       estimate_parasitics_->updateParasitics(true);
       sta_->findRequireds();
-      const Slack end_slack_after = sta_->slack(end, max_);
+      const sta::Slack end_slack_after = sta_->slack(end, max_);
 
       sta_->worstSlack(max_, worst_slack_after, worst_vertex);
 
@@ -224,10 +224,10 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
   init();
   resize_count_ = 0;
 
-  Vertex* vertex = graph_->pinLoadVertex(end_pin);
-  const Slack slack = sta_->slack(vertex, max_);
-  const Path* path = sta_->vertexWorstSlackPath(vertex, max_);
-  Vertex* drvr_vertex;
+  sta::Vertex* vertex = graph_->pinLoadVertex(end_pin);
+  const sta::Slack slack = sta_->slack(vertex, max_);
+  const sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
+  sta::Vertex* drvr_vertex;
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
@@ -244,7 +244,7 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Pin* end_pin)
 sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
                                         const sta::Slack path_slack)
 {
-  PathExpanded expanded(path, sta_);
+  sta::PathExpanded expanded(path, sta_);
   sta::Vertex* changed = nullptr;
 
   if (expanded.size() > 1) {
@@ -260,10 +260,10 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
       const sta::Pin* path_pin = path->pin(sta_);
       if (i > 0 && path_vertex->isDriver(network_)
           && !network_->isTopLevelPort(path_pin)) {
-        const TimingArc* prev_arc = path->prevArc(sta_);
-        const TimingArc* corner_arc = prev_arc->sceneArc(lib_ap);
-        const Edge* prev_edge = path->prevEdge(sta_);
-        const Delay load_delay
+        const sta::TimingArc* prev_arc = path->prevArc(sta_);
+        const sta::TimingArc* corner_arc = prev_arc->sceneArc(lib_ap);
+        const sta::Edge* prev_edge = path->prevEdge(sta_);
+        const sta::Delay load_delay
             = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap_index)
               // Remove intrinsic delay to find load dependent delay.
               - corner_arc->intrinsicDelay();
@@ -320,12 +320,12 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
 
 bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
                                 const int drvr_index,
-                                PathExpanded* expanded,
+                                sta::PathExpanded* expanded,
                                 const bool only_same_size_swap,
                                 const sta::Slack path_slack)
 {
-  const Pin* drvr_pin = drvr_path->pin(this);
-  Instance* drvr = network_->instance(drvr_pin);
+  const sta::Pin* drvr_pin = drvr_path->pin(this);
+  sta::Instance* drvr = network_->instance(drvr_pin);
   const float load_cap = graph_delay_calc_->loadCap(
       drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const int in_index = drvr_index - 1;
@@ -344,15 +344,15 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
         prev_drive = prev_drvr_port->driveResistance();
       }
     }
-    const LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-    const LibertyCell* downsize = downsizeCell(in_port,
-                                               drvr_port,
-                                               load_cap,
-                                               prev_drive,
-                                               drvr_path->scene(sta_),
-                                               drvr_path->minMax(sta_),
-                                               only_same_size_swap,
-                                               path_slack);
+    const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    const sta::LibertyCell* downsize = downsizeCell(in_port,
+                                                    drvr_port,
+                                                    load_cap,
+                                                    prev_drive,
+                                                    drvr_path->scene(sta_),
+                                                    drvr_path->minMax(sta_),
+                                                    only_same_size_swap,
+                                                    path_slack);
     if (downsize != nullptr) {
       debugPrint(logger_,
                  RSZ,
@@ -387,36 +387,39 @@ bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
   return false;
 }
 
-LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
-                                        const LibertyPort* drvr_port,
-                                        const float load_cap,
-                                        const float prev_drive,
-                                        const Scene* scene,
-                                        const MinMax* min_max,
-                                        const bool match_size,
-                                        const Slack path_slack)
+sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,
+                                             const sta::LibertyPort* drvr_port,
+                                             const float load_cap,
+                                             const float prev_drive,
+                                             const sta::Scene* scene,
+                                             const sta::MinMax* min_max,
+                                             const bool match_size,
+                                             const sta::Slack path_slack)
 {
   const int lib_ap = scene->libertyIndex(min_max);
-  LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  sta::LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
-    sort(
+    sta::sort(
         &swappable_cells,
-        [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
-          const LibertyPort* port1 = const_cast<const LibertyPort*>(
-                                         cell1->findLibertyPort(drvr_port_name))
-                                         ->scenePort(lib_ap);
-          const LibertyPort* port2 = const_cast<const LibertyPort*>(
-                                         cell2->findLibertyPort(drvr_port_name))
-                                         ->scenePort(lib_ap);
+        [=, this](const sta::LibertyCell* cell1,
+                  const sta::LibertyCell* cell2) {
+          const sta::LibertyPort* port1
+              = const_cast<const sta::LibertyPort*>(
+                    cell1->findLibertyPort(drvr_port_name))
+                    ->scenePort(lib_ap);
+          const sta::LibertyPort* port2
+              = const_cast<const sta::LibertyPort*>(
+                    cell2->findLibertyPort(drvr_port_name))
+                    ->scenePort(lib_ap);
           const float drive1 = port1->driveResistance();
           const float drive2 = port2->driveResistance();
-          const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-          const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+          const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+          const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
           return (std::tie(drive1, intrinsic2) < std::tie(drive2, intrinsic1));
         });
     const float drive = drvr_port->scenePort(lib_ap)->driveResistance();
@@ -424,10 +427,10 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
         = resizer_->gateDelay(drvr_port, load_cap, scene, min_max)
           + (prev_drive * in_port->scenePort(lib_ap)->capacitance());
 
-    LibertyCell* best_cell = nullptr;
-    for (LibertyCell* swappable : swappable_cells) {
-      const LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
-      const LibertyPort* swappable_drvr
+    sta::LibertyCell* best_cell = nullptr;
+    for (sta::LibertyCell* swappable : swappable_cells) {
+      const sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
+      const sta::LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
       const sta::LibertyPort* swappable_input
           = swappable_corner->findLibertyPort(in_port_name);
@@ -454,7 +457,7 @@ LibertyCell* RecoverPower::downsizeCell(const LibertyPort* in_port,
 int RecoverPower::fanout(sta::Vertex* vertex)
 {
   int fanout = 0;
-  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
     edge_iter.next();
     fanout++;

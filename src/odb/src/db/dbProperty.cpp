@@ -21,8 +21,12 @@
 #include "dbTech.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
 #include <sstream>
 
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "spdlog/fmt/ostr.h"
 // User Code End Includes
 namespace odb {
@@ -407,6 +411,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
+  _dbProperty* prev = nullptr;
   uint32_t oid = prop->getOID();
 
   while (cur) {
@@ -416,12 +421,13 @@ void dbProperty::destroy(dbProperty* prop_)
       if (cur == propList) {
         ownerTable->setPropList(prop->owner_, p->next_);
       } else {
-        p->next_ = prop->next_;
+        prev->next_ = prop->next_;
       }
 
       break;
     }
 
+    prev = p;
     cur = p->next_;
   }
 

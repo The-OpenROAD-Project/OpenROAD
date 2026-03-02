@@ -1138,7 +1138,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       sta_(std::make_unique<STAGuiInterface>()),
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
-      corner_box_(new QComboBox(this)),
+      scene_box_(new QComboBox(this)),
       clock_box_(new DropdownCheckboxes(QString("Select Clocks"),
                                         QString("All Clocks"),
                                         this)),
@@ -1156,7 +1156,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
-  layout_->addRow("Corner:", corner_box_);
+  layout_->addRow("Scene:", scene_box_);
   layout_->addRow("Clock filter:", clock_box_);
 
   setupPinRow("From:", from_);
@@ -1181,14 +1181,14 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
                                 == Qt::Checked);
   });
 
-  connect(corner_box_,
+  connect(scene_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
           [this](int index) {
-            if (index < 0 || index >= corner_box_->count()) {
+            if (index < 0 || index >= scene_box_->count()) {
               return;
             }
-            auto* corner = corner_box_->itemData(index).value<sta::Scene*>();
-            sta_->setScene(corner);
+            auto* scene = scene_box_->itemData(index).value<sta::Scene*>();
+            sta_->setScene(scene);
           });
 
   connect(expand_clk_,
@@ -1256,26 +1256,26 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->getScene();
-  corner_box_->clear();
+  auto* current_scene = sta_->getScene();
+  scene_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->getSTA()->scenes()) {
-    if (corner == current_corner) {
-      selection = corner_box_->count();
+  for (auto* scene : sta_->getSTA()->scenes()) {
+    if (scene == current_scene) {
+      selection = scene_box_->count();
     }
-    corner_box_->addItem(corner->name().c_str(), QVariant::fromValue(corner));
+    scene_box_->addItem(scene->name().c_str(), QVariant::fromValue(scene));
   }
 
-  if (corner_box_->count() > 1) {
+  if (scene_box_->count() > 1) {
     selection += 1;
-    corner_box_->insertItem(
+    scene_box_->insertItem(
         0, "All", QVariant::fromValue(static_cast<sta::Scene*>(nullptr)));
-    if (current_corner == nullptr) {
+    if (current_scene == nullptr) {
       selection = 0;
     }
   }
 
-  corner_box_->setCurrentIndex(selection);
+  scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
     QString clk_name = clk->name();

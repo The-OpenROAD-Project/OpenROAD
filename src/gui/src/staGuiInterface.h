@@ -326,7 +326,11 @@ class STAGuiInterface
  public:
   STAGuiInterface(sta::dbSta* sta = nullptr);
 
-  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  void setSTA(sta::dbSta* sta)
+  {
+    sta_ = sta;
+    scene_ = sta->cmdScene();
+  }
   sta::dbSta* getSTA() const { return sta_; }
 
   sta::dbNetwork* getNetwork() const { return sta_->getDbNetwork(); }

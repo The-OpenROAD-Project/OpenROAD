@@ -23,19 +23,11 @@ http_archive(
 
 # Direct dependencies needed in openroad, and others that these in turn need.
 # This essentially reads as a TODO list of what needs to be upstreamed to BCR
-load("@rules_hdl//dependency_support/com_github_westes_flex:com_github_westes_flex.bzl", "com_github_westes_flex")
-load("@rules_hdl//dependency_support/org_gnu_bison:org_gnu_bison.bzl", "org_gnu_bison")
 load("@rules_hdl//dependency_support/org_pcre_ftp:org_pcre_ftp.bzl", "org_pcre_ftp")
 load("@rules_hdl//dependency_support/org_swig:org_swig.bzl", "org_swig")
 
 # Swig exists in BCR, but in a newer version where we need to test how to make
 # it to work with TCL.
 org_swig()
-
-# rules_flex and rules_bison already exist in BCR, but we use rules_hdl wrappers
-# around them. We should use the rules flex/bison-provided ones.
-com_github_westes_flex()
-
-org_gnu_bison()
 
 org_pcre_ftp()  # there is a newer pcre2 in BCR

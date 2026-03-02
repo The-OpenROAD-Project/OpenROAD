@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2022-2025, The OpenROAD Authors
+# Copyright (c) 2022-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
@@ -8,6 +8,11 @@ package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
+    "aes_annealing",
+    "aes_asap7",
+    "aes_donttouch_nangate45",
+    "aes_dontuse_nangate45",
+    "aes_genetic",
     "aes_nangate45",
     "blif_reader",
     "blif_reader_const",
@@ -18,17 +23,14 @@ COMPULSORY_TESTS = [
     "blif_writer_input_output",
     "blif_writer_sequential",
     "const_cell_removal",
-    "gcd_restructure",
-    "aes_asap7",
-    "gcd_asap7",
-    "memory_nangate45",
-    "aes_dontuse_nangate45",
-    "aes_donttouch_nangate45",
-    "aes_annealing",
-    "gcd_annealing1",
-    "gcd_annealing2",
     "emap_aes_asap7",
     "emap_gcd_asap7",
+    "gcd_annealing1",
+    "gcd_annealing2",
+    "gcd_asap7",
+    "gcd_genetic",
+    "gcd_restructure",
+    "memory_nangate45",
 ]
 
 # Disabled in CMakeLists.txt

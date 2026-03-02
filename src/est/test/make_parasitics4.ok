@@ -74,9 +74,9 @@ Path Type: max
    0.00    0.00 v in1 (in)
    0.02    0.02 v pad1/Y (PAD)
    0.34    0.37 v u1/Z (BUF_X1)
-   0.05    0.42 v pad2/PAD (PAD)
-   0.00    0.42 v out1 (out)
-           0.42   data arrival time
+   0.19    0.55 v pad2/PAD (PAD)
+   0.00    0.55 v out1 (out)
+           0.55   data arrival time
 ---------------------------------------------------------
 (Path is unconstrained)
 

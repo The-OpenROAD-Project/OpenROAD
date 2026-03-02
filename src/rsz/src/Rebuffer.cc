@@ -50,8 +50,6 @@
 
 namespace rsz {
 
-using namespace sta;  // NOLINT
-
 using odb::dbSigType;
 using std::make_shared;
 using utl::RSZ;
@@ -205,13 +203,13 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
     return {0, 0, 0};
   }
 
-  sta::Delay delay = 0, correction = INF;
+  sta::Delay delay = 0, correction = sta::INF;
   sta::Slew slew = 0;
   for (auto rf : bnet->slackTransition()->range()) {
     const sta::Path* arrival_path = arrival_paths_[rf->index()];
     const sta::Path* driver_path = arrival_path->prevPath();
-    const TimingArc* driver_arc = arrival_path->prevArc(resizer_);
-    const Edge* driver_edge = arrival_path->prevEdge(resizer_);
+    const sta::TimingArc* driver_arc = arrival_path->prevArc(resizer_);
+    const sta::Edge* driver_edge = arrival_path->prevEdge(resizer_);
 
     sta::Delay rf_delay, rf_correction;
     sta::Slew rf_slew = 0;
@@ -236,9 +234,9 @@ std::tuple<sta::Delay, sta::Delay, sta::Slew> Rebuffer::drvrPinTiming(
                                        driver_path->minMax(sta_));
       rf_delay = dcalc_result.gateDelay();
 
-      Arrival prev_arrival = driver_path->isClock(sta_)
-                                 ? search_->clkPathArrival(driver_path)
-                                 : driver_path->arrival();
+      sta::Arrival prev_arrival = driver_path->isClock(sta_)
+                                      ? search_->clkPathArrival(driver_path)
+                                      : driver_path->arrival();
       rf_correction
           = arrival_path->arrival() - (prev_arrival + dcalc_result.gateDelay());
       rf_slew = dcalc_result.drvrSlew();
@@ -330,8 +328,8 @@ static BnetPtr stripWiresAndBuffersOnBnet(BnetPtr ptr)
   return ptr;
 }
 
-static const RiseFallBoth* combinedTransition(const RiseFallBoth* a,
-                                              const RiseFallBoth* b)
+static const sta::RiseFallBoth* combinedTransition(const sta::RiseFallBoth* a,
+                                                   const sta::RiseFallBoth* b)
 {
   if (a == b) {
     return a;
@@ -342,7 +340,7 @@ static const RiseFallBoth* combinedTransition(const RiseFallBoth* a,
   if (b == nullptr) {
     return a;
   }
-  return RiseFallBoth::riseFall();
+  return sta::RiseFallBoth::riseFall();
 }
 
 static BufferedNetPtr createBnetJunction(Resizer* resizer,
@@ -521,9 +519,9 @@ BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
         sta::LibertyPort *in, *out;
         size.cell->bufferPorts(in, out);
 
-        if (fuzzyGreaterEqual(in->capacitance() + in3->cap(), best_cap)
-            || fuzzyGreaterEqual(in->capacitance() + in3->cap(),
-                                 left->cap() + right->cap())
+        if (sta::fuzzyGreaterEqual(in->capacitance() + in3->cap(), best_cap)
+            || sta::fuzzyGreaterEqual(in->capacitance() + in3->cap(),
+                                      left->cap() + right->cap())
             || junc1->slack() - size.intrinsic_delay < junc_slack) {
           break;
         }
@@ -690,7 +688,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
 
             BnetSeq opts;
             opts.reserve(std::max(opts_left.size(), opts_right.size()));
-            float best_cap = INF;
+            float best_cap = sta::INF;
 
             auto li = opts_left.rbegin(), lend = opts_left.rend();
             auto ri = opts_right.rbegin(), rend = opts_right.rend();
@@ -830,7 +828,7 @@ static void pruneCapVsAreaOptions(sta::StaState* sta, BufferedNetSeq& options)
     const BufferedNetPtr& p = options[pi];
     float cap = p->cap();
     // If cap is the same or worse than lowest_cap_seen, remove solution p.
-    if (fuzzyLess(cap, lowest_cap_seen)) {
+    if (sta::fuzzyLess(cap, lowest_cap_seen)) {
       // Otherwise copy the survivor down.
       options[si++] = p;
       lowest_cap_seen = cap;
@@ -886,9 +884,9 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
           -> int {
         node->setArrivalDelay(arrival);
         switch (node->type()) {
-          case BnetType::via:
           case BnetType::wire:
           case BnetType::buffer:
+          case BnetType::via:
             recurse(node->ref(), arrival + node->delay());
             break;
           case BnetType::junction:
@@ -1032,7 +1030,8 @@ BufferedNetPtr Rebuffer::recoverArea(const BufferedNetPtr& root,
     }
     if ((slack.value() >= slack_target
          || p->slackTransition() == nullptr /* buffer tree unconstrained */)
-        && (best_area_option == nullptr || fuzzyLess(p->area(), best_area))) {
+        && (best_area_option == nullptr
+            || sta::fuzzyLess(p->area(), best_area))) {
       best_area = p->area();
       best_area_option = p;
       best_area_index = i;
@@ -1100,6 +1099,17 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
             bnet->setSlackTransition(p->slackTransition());
             return ret;
           }
+          case BnetType::via: {
+            int ret = recurse(bnet->ref());
+            BnetPtr p = bnet->ref();
+            double via_res
+                = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
+            FixedDelay via_delay = FixedDelay(via_res * p->cap(), resizer_);
+            bnet->setDelay(via_delay);
+            bnet->setSlack(p->slack() - via_delay);
+            bnet->setSlackTransition(p->slackTransition());
+            return ret;
+          }
           case BnetType::buffer: {
             int ret = recurse(bnet->ref());
             BnetPtr p = bnet->ref();
@@ -1122,18 +1132,18 @@ void Rebuffer::annotateTiming(const BnetPtr& tree)
 }
 
 FixedDelay Rebuffer::bufferDelay(sta::LibertyCell* cell,
-                                 const RiseFallBoth* rf,
+                                 const sta::RiseFallBoth* rf,
                                  float load_cap)
 {
   FixedDelay delay = FixedDelay::ZERO;
 
   if (rf) {
     for (auto rf1 : rf->range()) {
-      const Scene* scene = arrival_paths_[rf1->index()]->scene(sta_);
-      LibertyPort *input, *output;
+      const sta::Scene* scene = arrival_paths_[rf1->index()]->scene(sta_);
+      sta::LibertyPort *input, *output;
       cell->bufferPorts(input, output);
-      ArcDelay gate_delays[RiseFall::index_count];
-      Slew slews[RiseFall::index_count];
+      sta::ArcDelay gate_delays[sta::RiseFall::index_count];
+      sta::Slew slews[sta::RiseFall::index_count];
       resizer_->gateDelays(output, load_cap, scene, max_, gate_delays, slews);
       delay = std::max<FixedDelay>(
           delay, FixedDelay(gate_delays[rf1->index()], resizer_));
@@ -1203,7 +1213,7 @@ void Rebuffer::insertBufferOptions(
                       : BnetMetrics{};
   bool assured_satisfied = !area_oriented;
 
-  float best_area = INF;
+  float best_area = sta::INF;
   FixedDelay best_slack = -FixedDelay::INF;
 
   // both `opts` and `buffer_sizes_` are ordered by ascending input
@@ -1218,7 +1228,7 @@ void Rebuffer::insertBufferOptions(
          opts_iter++) {
       BnetPtr& opt = *opts_iter;
 
-      bool keep = area_oriented ? (fuzzyLess(opt->area(), best_area)
+      bool keep = area_oriented ? (sta::fuzzyLess(opt->area(), best_area)
                                    && opt->slack() >= slack_threshold)
                                 : (opt->slack() > best_slack);
 
@@ -1264,7 +1274,8 @@ void Rebuffer::insertBufferOptions(
 
       if ((area_oriented
                ? (opt->slack() - buffer_size.intrinsic_delay >= slack_threshold
-                  && fuzzyLess(opt->area() + buffer_cell->area(), best_area))
+                  && sta::fuzzyLess(opt->area() + buffer_cell->area(),
+                                    best_area))
                : (opt->slack() - buffer_size.intrinsic_delay) > best_slack)
           && bufferSizeCanDriveLoad(buffer_size, opt)) {
         // this is a candidate, make the detailed delay calculation
@@ -1313,7 +1324,7 @@ void Rebuffer::insertBufferOptions(
       new_opts.push_back(std::move(z));
     }
   }
-  pass_through(INF);
+  pass_through(sta::INF);
 
   if (!assured_satisfied) {
     assert(exemplar != nullptr);
@@ -1323,7 +1334,7 @@ void Rebuffer::insertBufferOptions(
       sta::LibertyPort *in, *out;
       buffer_cell->bufferPorts(in, out);
 
-      float best_area = INF;
+      float best_area = sta::INF;
       BnetPtr best_option;
       for (const BnetPtr& load_opt : opts) {
         if (load_opt->area() >= best_area) {
@@ -1424,7 +1435,7 @@ void Rebuffer::init()
   }
 }
 
-void Rebuffer::initOnCorner(Scene* corner)
+void Rebuffer::initOnCorner(sta::Scene* corner)
 {
   corner_ = corner;
   wire_length_step_
@@ -1447,12 +1458,12 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
   float in_slew = maxSlewMargined(resizer_->maxInputSlew(inp, corner_));
 
   auto objective = [&](float load_cap) {
-    sta::Slew slew = -INF;
-    for (TimingArcSet* arc_set : cell->timingArcSets()) {
+    sta::Slew slew = -sta::INF;
+    for (sta::TimingArcSet* arc_set : cell->timingArcSets()) {
       if (!arc_set->role()->isTimingCheck()) {
-        for (TimingArc* arc : arc_set->arcs()) {
+        for (sta::TimingArc* arc : arc_set->arcs()) {
           sta::LoadPinIndexMap load_pin_index_map(network_);
-          ArcDcalcResult dcalc_result
+          sta::ArcDcalcResult dcalc_result
               = arc_delay_calc_->gateDelay(nullptr,
                                            arc,
                                            in_slew,
@@ -1461,7 +1472,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
                                            load_pin_index_map,
                                            corner_,
                                            max_);
-          const Slew& drvr_slew = dcalc_result.drvrSlew();
+          const sta::Slew& drvr_slew = dcalc_result.drvrSlew();
           slew = std::max(slew, drvr_slew);
         }
       }
@@ -1471,7 +1482,7 @@ float Rebuffer::findBufferLoadLimitImpliedByDriverSlew(sta::LibertyCell* cell)
 
   double drvr_res = outp->driveResistance();
   if (drvr_res == 0.0) {
-    return INF;
+    return sta::INF;
   }
 
   // cap1 lower bound
@@ -1512,7 +1523,7 @@ void Rebuffer::characterizeBufferLimits()
     out->capacitanceLimit(max_, cap_limit, cap_limit_exists);
 
     size.margined_max_cap
-        = std::min(cap_limit_exists ? maxCapMargined(cap_limit) : INF,
+        = std::min(cap_limit_exists ? maxCapMargined(cap_limit) : sta::INF,
                    findBufferLoadLimitImpliedByDriverSlew(size.cell));
   }
 }
@@ -1553,6 +1564,19 @@ BnetPtr Rebuffer::importBufferTree(const sta::Pin* drvr_pin,
                                               corner,
                                               resizer_,
                                               estimate_parasitics_);
+            }
+            return nullptr;
+          }
+          case BnetType::via: {
+            auto inner = recurse(node->ref());
+            if (inner) {
+              return make_shared<BufferedNet>(BnetType::via,
+                                              node->location(),
+                                              node->layer(),
+                                              node->refLayer(),
+                                              inner,
+                                              corner,
+                                              resizer_);
             }
             return nullptr;
           }
@@ -1627,6 +1651,7 @@ static FixedDelay criticalPathDelay(utl::Logger* logger, const BnetPtr& root)
       [&](auto& recurse, int level, const BnetPtr& node) -> int {
         switch (node->type()) {
           case BnetType::wire:
+          case BnetType::via:
           case BnetType::buffer:
             return recurse(node->ref());
           case BnetType::junction:
@@ -1900,9 +1925,9 @@ void Rebuffer::printProgress(int iteration,
 int Rebuffer::fanout(sta::Vertex* vertex) const
 {
   int fanout = 0;
-  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
+    sta::Edge* edge = edge_iter.next();
     // Disregard output->output timing arcs
     if (edge->isWire()) {
       fanout++;
@@ -1925,7 +1950,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
     if (max_fanout > 0.0) {
       fanout_limit_ = max_fanout;
     } else {
-      fanout_limit_ = INF;
+      fanout_limit_ = sta::INF;
     }
 
     float max_slew;
@@ -1935,7 +1960,7 @@ void Rebuffer::setPin(sta::Pin* drvr_pin)
     if (max_slew_exists) {
       drvr_pin_max_slew_ = maxSlewMargined(max_slew);
     } else {
-      drvr_pin_max_slew_ = INF;
+      drvr_pin_max_slew_ = sta::INF;
     }
   }
 }
@@ -2056,7 +2081,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     sta::Slack slack = slackAtDriverPin(original_tree).toSeconds();
     sta::Path* req_path = sta_->vertexWorstSlackPath(drvr, sta::MinMax::max());
     sta::Slack sta_slack
-        = req_path ? (req_path->required() - req_path->arrival()) : INF;
+        = req_path ? (req_path->required() - req_path->arrival()) : sta::INF;
 
     // The slack estimation error as observed on the original tree: we have both
     // the full STA figure and our timing model estimate and we can compare
@@ -2169,6 +2194,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
         [&](auto& recurse, int level, const BnetPtr& bnet) -> int {
           switch (bnet->type()) {
             case BnetType::wire:
+            case BnetType::via:
               return recurse(bnet->ref());
             case BnetType::junction:
               return recurse(bnet->ref()) + recurse(bnet->ref2());

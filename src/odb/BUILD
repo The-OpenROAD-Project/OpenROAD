@@ -4,7 +4,7 @@
 load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -105,6 +105,7 @@ cc_binary(
     srcs = [":swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src/swig/common"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         ":odb",  # Depends on the core odb C++ library

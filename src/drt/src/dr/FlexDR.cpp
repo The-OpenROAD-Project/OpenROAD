@@ -3,6 +3,8 @@
 
 #include "dr/FlexDR.h"
 
+#include <sys/stat.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>

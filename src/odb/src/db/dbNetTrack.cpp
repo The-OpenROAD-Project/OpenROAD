@@ -14,6 +14,8 @@
 #include <cstdint>
 
 #include "dbBlock.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbNetTrack>;

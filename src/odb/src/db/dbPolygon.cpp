@@ -12,12 +12,17 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <vector>
+
 #include "dbBoxItr.h"
 #include "dbLib.h"
 #include "dbMPin.h"
 #include "dbMaster.h"
 #include "dbTech.h"
 #include "dbTechLayer.h"
+#include "odb/dbSet.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/poly_decomp.h"
 // User Code End Includes
 namespace odb {

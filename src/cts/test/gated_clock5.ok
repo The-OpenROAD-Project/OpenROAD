@@ -136,11 +136,12 @@
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 14
 [INFO CTS-0033] Balancing latency for clock clk
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (50612 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (45012 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (39412 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (33812 94115)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (101013 149105)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (102026 98350)
-[INFO CTS-0036]  inserted 6 delay buffers
-[INFO CTS-0037] Total number of delay buffers: 6
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_clk is inserted at (51545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_clk is inserted at (46878 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_2_clk is inserted at (42212 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_3_clk is inserted at (37545 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_clk is inserted at (32878 94115)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_clk is inserted at (101013 149105)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_clk is inserted at (102026 98350)
+[INFO CTS-0036]  inserted 7 delay buffers
+[INFO CTS-0037] Total number of delay buffers: 7

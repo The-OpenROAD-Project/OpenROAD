@@ -150,5 +150,39 @@ proc endpoint_path_count { } {
   return [endpoint_count]
 }
 
+define_cmd_args "check_ip" {
+  [-master master_name]
+  [-all]
+  [-max_polygons count]
+  [-verbose]
+}
+
+proc check_ip { args } {
+  parse_key_args "check_ip" args \
+    keys {-master -max_polygons} \
+    flags {-all -verbose}
+
+  set master_name ""
+  if { [info exists keys(-master)] } {
+    set master_name $keys(-master)
+  }
+
+  set check_all [info exists flags(-all)]
+
+  if { !$check_all && $master_name eq "" } {
+    utl::error CHK 7 "Must specify either -master or -all"
+  }
+
+  set max_polygons 10000
+  if { [info exists keys(-max_polygons)] } {
+    set max_polygons $keys(-max_polygons)
+    sta::check_positive_integer "-max_polygons" $max_polygons
+  }
+
+  set verbose [info exists flags(-verbose)]
+
+  return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
+}
+
 # namespace
 }
