@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2022-2025, The OpenROAD Authors
+# Copyright (c) 2022-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
@@ -27,6 +27,8 @@ COMPULSORY_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "aes_genetic",
+    "gcd_genetic",
 ]
 
 # Disabled in CMakeLists.txt

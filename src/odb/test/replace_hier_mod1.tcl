@@ -42,6 +42,7 @@ run_equivalence_test replace_hier_mod1 \
 
 puts "### swap bc1 to inv_chain ###"
 #set_debug_level ODB replace_design 1
+set_debug_level ODB replace_design_check_sanity 1
 replace_hier_module bc1 inv_chain
 global_placement -skip_nesterov_place -incremental
 detailed_placement
