@@ -154,6 +154,7 @@ class GlobalRouter
   void setAllowCongestion(bool allow_congestion);
   void setResistanceAware(bool resistance_aware);
   void setMulticoreRouting(bool multicore_routing);
+  bool isMulticoreRouting() const;
   void setMacroExtension(int macro_extension);
   void setUseCUGR(bool use_cugr) { use_cugr_ = use_cugr; };
   void setSkipLargeFanoutNets(int skip_large_fanout)

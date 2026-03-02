@@ -1048,6 +1048,22 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     return;
   }
 
+  // If this iteration cannot form multiple snapshot batches, stay entirely on
+  // the sequential path instead of doing Track B-only ordering work first.
+  const int initial_batch_size = resolveSnapshotBatchSize(iter, net_ids_.size());
+  if (initial_batch_size <= 1 || net_ids_.size() <= initial_batch_size) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
   std::vector<int> ordered_net_ids = getMazeRouteNetOrder(ordering, slack_th);
   if (!useSnapshotBatchRoutingForIteration(iter, ordered_net_ids.size())) {
     mazeRouteMSMDSequential(iter,

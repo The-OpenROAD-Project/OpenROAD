@@ -907,10 +907,17 @@ bool FastRouteCore::hasNonSoftNdrNets() const
   return false;
 }
 
+int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
+{
+  const int batch_multiplier = num_threads_ >= 64 ? 4 : 2;
+  return std::min(net_count, std::max(32, batch_multiplier * num_threads_));
+}
+
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
   return multicore_routing_ && !debug_->isOn() && num_threads_ > 1
-         && net_count > 1 && !hasNonSoftNdrNets();
+         && net_count > resolveSnapshotBaseBatchSize(net_count)
+         && !hasNonSoftNdrNets();
 }
 
 int FastRouteCore::resolveSnapshotBatchIterationLimit(const int net_count) const
@@ -937,9 +944,7 @@ bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
 int FastRouteCore::resolveSnapshotBatchSize(const int iter,
                                            const int net_count) const
 {
-  const int batch_multiplier = num_threads_ >= 64 ? 4 : 2;
-  const int batch_size
-      = std::min(net_count, std::max(32, batch_multiplier * num_threads_));
+  const int batch_size = resolveSnapshotBaseBatchSize(net_count);
 
   const int early_iteration_limit = resolveSnapshotBatchIterationLimit(net_count);
   const int scaled_iter = iter * 100;
@@ -1019,6 +1024,9 @@ std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
 
   worker->nets_ = nets_;
   worker->db_net_id_map_ = db_net_id_map_;
+  worker->gxs_ = gxs_;
+  worker->gys_ = gys_;
+  worker->gs_ = gs_;
   worker->xcor_.resize(xcor_.size());
   worker->ycor_.resize(ycor_.size());
   worker->dcor_.resize(dcor_.size());
@@ -1762,10 +1770,10 @@ NetRouteMap FastRouteCore::run()
   SaveLastRouteLen();
 
   const int max_overflow_increases = 25;
-  const bool trackb_cleanup_enabled = useSnapshotBatchRouting(net_ids_.size());
   const int trackb_iteration_limit
       = resolveSnapshotBatchIterationLimit(net_ids_.size());
   const int trackb_cleanup_patience = 12;
+  bool trackb_cleanup_active = false;
 
   float slack_th = std::numeric_limits<float>::lowest();
 
@@ -1853,6 +1861,7 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
+    const int snapshot_batch_count_before = snapshot_batch_count_;
     auto cost_params = CostParams(logistic_coef, costheight_, slope);
     mazeRouteMSMD(i,
                   enlarge_,
@@ -1866,10 +1875,19 @@ NetRouteMap FastRouteCore::run()
 
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+    trackb_cleanup_active
+        = trackb_cleanup_active
+          || snapshot_batch_count_ > snapshot_batch_count_before;
 
     if (minofl > past_cong) {
       minofl = past_cong;
       minoflrnd = i;
+    }
+
+    if (trackb_cleanup_active && past_cong < bmfl) {
+      copyRS();
+      bmfl = past_cong;
+      bwcnt = 0;
     }
 
     if (i == 8) {
@@ -1931,12 +1949,8 @@ NetRouteMap FastRouteCore::run()
       VIA = 0;
     }
 
-    if (trackb_cleanup_enabled && i > trackb_iteration_limit) {
-      if (past_cong < bmfl) {
-        copyRS();
-        bmfl = past_cong;
-        bwcnt = 0;
-      } else {
+    if (trackb_cleanup_active && i > trackb_iteration_limit) {
+      if (past_cong >= bmfl) {
         bwcnt++;
       }
 
