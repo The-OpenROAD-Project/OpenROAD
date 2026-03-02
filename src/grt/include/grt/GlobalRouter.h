@@ -282,8 +282,7 @@ class GlobalRouter
   void boxToGlobalRouting(const odb::Rect& route_bds,
                           int layer,
                           int via_layer,
-                          GRoute& route,
-                          bool ignore_usage = false);
+                          GRoute& route);
   void updateVias();
 
   // Report wire length

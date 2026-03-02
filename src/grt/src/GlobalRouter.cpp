@@ -910,11 +910,8 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     int via_layer_idx = guide->getViaLayer() != nullptr
                             ? guide->getViaLayer()->getRoutingLevel()
                             : 0;
-    boxToGlobalRouting(guide->getBox(),
-                       layer_idx,
-                       via_layer_idx,
-                       routes_[db_net],
-                       guide->ignoreUsage());
+    boxToGlobalRouting(
+        guide->getBox(), layer_idx, via_layer_idx, routes_[db_net]);
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
@@ -946,7 +943,7 @@ void GlobalRouter::updateNetResources(Net* net, bool release_resources)
 {
   GRoute& segments = routes_[net->getDbNet()];
   for (GSegment& segment : segments) {
-    if (!segment.isVia() && !segment.ignoreUsage()) {
+    if (!segment.isVia()) {
       updateResources(segment.init_x,
                       segment.init_y,
                       segment.final_x,
@@ -2825,8 +2822,6 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
             jumper_count++;
           }
 
-          guide->setIgnoreUsage(segment.ignoreUsage());
-
           if (!use_cugr_) {
             RoutePt route_pt1(
                 segment.init_x, segment.init_y, segment.init_layer);
@@ -3290,8 +3285,7 @@ odb::Rect GlobalRouter::globalRoutingToBox(const GSegment& route)
 void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
                                       int layer,
                                       int via_layer,
-                                      GRoute& route,
-                                      bool ignore_usage)
+                                      GRoute& route)
 {
   const int tile_size = grid_->getTileSize();
   int x0 = (tile_size * (route_bds.xMin() / tile_size)) + (tile_size / 2);
@@ -3302,18 +3296,15 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
 
   if (x0 == x1 && y0 == y1) {
     route.emplace_back(x0, y0, layer, x1, y1, via_layer);
-    route.back().setIgnoreUsage(ignore_usage);
   }
 
   while (y0 == y1 && (x0 + tile_size) <= x1) {
     route.emplace_back(x0, y0, layer, x0 + tile_size, y0, layer);
-    route.back().setIgnoreUsage(ignore_usage);
     x0 += tile_size;
   }
 
   while (x0 == x1 && (y0 + tile_size) <= y1) {
     route.emplace_back(x0, y0, layer, x0, y0 + tile_size, layer);
-    route.back().setIgnoreUsage(ignore_usage);
     y0 += tile_size;
   }
 }
