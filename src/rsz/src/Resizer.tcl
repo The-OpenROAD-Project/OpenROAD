@@ -766,7 +766,8 @@ proc replace_arith_modules { args } {
     set slack_threshold 0.0
   }
 
-  puts "replace_arith_modules -path_count $path_count -target $target -slack_threshold $slack_threshold"
+  puts [format "replace_arith_modules -path_count %s -target %s -slack_threshold %s" \
+    $path_count $target $slack_threshold]
   rsz::swap_arith_modules_cmd $path_count $target $slack_threshold
 }
 
