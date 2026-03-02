@@ -1171,15 +1171,15 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       } else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         const frCoord center_to_center_spacing
             = dbRule->getSpacing(cutClass1,
-                                 true,
+                                 isSide1,
                                  cutClass2,
-                                 true,
+                                 isSide2,
                                  odb::dbTechLayerCutSpacingTableDefRule::MAX);
         const frCoord edge_to_edge_spacing
             = dbRule->getSpacing(cutClass1,
-                                 false,
+                                 isSide1,
                                  cutClass2,
-                                 false,
+                                 isSide2,
                                  odb::dbTechLayerCutSpacingTableDefRule::MIN);
         const frCoord req_edge_to_edge_spacing
             = edge_to_edge_spacing
