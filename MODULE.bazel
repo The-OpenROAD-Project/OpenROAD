@@ -7,14 +7,13 @@ module(
 
 bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_scala")
 git_override(
     module_name = "rules_scala",
@@ -22,7 +21,9 @@ git_override(
     remote = "https://github.com/bazelbuild/rules_scala",
 )
 
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 BOOST_VERSION = "1.89.0.bcr.2"
