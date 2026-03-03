@@ -838,6 +838,51 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   }
 }
 
+void FastRouteCore::addTreeEdge(int x1,
+                                int y1,
+                                int x2,
+                                int y2,
+                                int layer,
+                                odb::dbNet* db_net)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+  if (!exists) {
+    return;
+  }
+
+  FrNet* net = nets_[net_id];
+  const int k = layer - 1;
+  const int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  const int8_t edge_cost = net->getEdgeCost();
+
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  TreeEdge new_edge;
+  if (x1 == x2) {
+    for (int y = y1; y < y2; y++) {
+      graph2d_.addUsageV(x1, y, edge_cost);
+      v_edges_3D_[k][y][x1].usage += layer_edge_cost;
+      new_edge.route.grids.push_back(GPoint3D(x1, y, k));
+    }
+    new_edge.route.grids.push_back(GPoint3D(x2, y2, k));
+  } else if (y1 == y2) {
+    for (int x = x1; x < x2; x++) {
+      graph2d_.addUsageH(x, y1, edge_cost);
+      h_edges_3D_[k][y1][x].usage += layer_edge_cost;
+      new_edge.route.grids.push_back(GPoint3D(x, y1, k));
+    }
+    new_edge.route.grids.push_back(GPoint3D(x2, y1, k));
+  } else {
+    logger_->error(
+        GRT, 216, "Cannot add tree edge: edge is not vertical or horizontal.");
+  }
+
+  new_edge.route.routelen = new_edge.route.grids.size() - 1;
+
+  treeedges.push_back(new_edge);
+}
+
 bool FastRouteCore::hasAvailableResources(int x1,
                                           int y1,
                                           int x2,
