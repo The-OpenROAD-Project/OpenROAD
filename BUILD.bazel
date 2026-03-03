@@ -2,9 +2,9 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
@@ -318,7 +318,7 @@ cc_binary(
         "//src/tap",
         "//src/utl",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
