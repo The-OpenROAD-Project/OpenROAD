@@ -129,6 +129,8 @@ class RamGen
       const std::array<odb::dbNet*, 8>& data_input,
       const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
 
+  void makeWordSlice();
+
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
   std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
@@ -164,6 +166,7 @@ class RamGen
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  Grid ram_grid_;
 };
 
 }  // namespace ram

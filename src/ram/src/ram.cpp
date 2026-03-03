@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include "ram/ram.h"
+#include "ram/layout.h"
 
 #include <array>
 #include <cmath>
@@ -17,7 +18,6 @@
 #include "dpl/Opendp.h"
 #include "drt/TritonRoute.h"
 #include "grt/GlobalRouter.h"
-#include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/isotropy.h"
@@ -62,8 +62,8 @@ RamGen::RamGen(sta::dbNetwork* network,
       ioPlacer_(ioPlacer),
       opendp_(opendp),
       global_router_(global_router),
-      detailed_router_(detailed_router)
-
+      detailed_router_(detailed_router),
+      ram_grid_(odb::horizontal)
 {
 }
 
@@ -174,7 +174,7 @@ void RamGen::makeCellByte(Grid& ram_grid,
     for (int read_port = 0; read_port < read_ports; ++read_port) {
       outs.push_back(data_output[read_port][local_bit]->getNet());
     }
-    ram_grid.addCell(makeCellBit(name,
+    ram_grid_.addCell(makeCellBit(name,
                                  read_ports,
                                  gclock_net,
                                  select_b_nets,
@@ -190,6 +190,8 @@ void RamGen::makeCellByte(Grid& ram_grid,
                "cg",
                clock_gate_cell_,
                {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
+
+  odb::dbSet<odb::dbMTerm> and_mTerms = and2_cell_->getMTerms();
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
@@ -209,7 +211,11 @@ void RamGen::makeCellByte(Grid& ram_grid,
                  {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
 
-  ram_grid.addCell(std::move(sel_cell), (byte_idx * 9) + 8);
+  ram_grid_.addCell(std::move(sel_cell), (byte_idx * 9) + 8);
+}
+
+void RamGen::makeWordSlice() {
+
 }
 
 std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
@@ -631,7 +637,7 @@ void RamGen::generate(const int bytes_per_word,
   // cell for WE AND gate/inverter
   // extra column is for decoder cells
   int col_cell_count = bytes_per_word * 9;
-  Grid ram_grid(odb::horizontal, col_cell_count + 1);
+  ram_grid_.setNumLayouts(col_cell_count + 1);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
 
@@ -692,7 +698,7 @@ void RamGen::generate(const int bytes_per_word,
                                           word_decoder_nets[row],
                                           decoder_input_nets[row]);
 
-      ram_grid.addCell(std::move(decoder_and_cell), col_cell_count);
+      ram_grid_.addCell(std::move(decoder_and_cell), col_cell_count);
     }
   }
 
@@ -727,7 +733,7 @@ void RamGen::generate(const int bytes_per_word,
     for (int row = 0; row < word_count; ++row) {
       auto cell_name = fmt::format("storage_{}_{}", row, col);
 
-      makeCellByte(ram_grid,
+      makeCellByte(ram_grid_,
                    col,
                    cell_name,
                    read_ports,
@@ -745,7 +751,7 @@ void RamGen::generate(const int bytes_per_word,
                    fmt::format("in[{}]", bit + col * 8),
                    buffer_cell_,
                    {{"A", data_inputs_[bit]->getNet()}, {"X", D_nets[bit]}});
-      ram_grid.addCell(std::move(buffer_grid_cell), col * 9 + bit);
+      ram_grid_.addCell(std::move(buffer_grid_cell), col * 9 + bit);
     }
   }
 
@@ -775,53 +781,53 @@ void RamGen::generate(const int bytes_per_word,
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 
-  ram_grid.addLayout(std::move(cell_inv_layout));
+  ram_grid_.addLayout(std::move(cell_inv_layout));
 
   auto ram_origin(odb::Point(0, 0));
 
-  ram_grid.setOrigin(ram_origin);
-  ram_grid.gridInit();
+  ram_grid_.setOrigin(ram_origin);
+  ram_grid_.gridInit();
 
   if (tapcell_) {
     // max tap distance specified is greater than the length of ram
-    if (ram_grid.getRowWidth() <= max_tap_dist) {
+    if (ram_grid_.getRowWidth() <= max_tap_dist) {
       auto tapcell_layout = generateTapColumn(word_count, 0);
-      ram_grid.insertLayout(std::move(tapcell_layout), 0);
+      ram_grid_.insertLayout(std::move(tapcell_layout), 0);
     } else {
       // needed this calculation so first cells have right distance
       int nearest_tap
-          = (max_tap_dist / ram_grid.getWidth()) * ram_grid.getLayoutWidth(0);
+          = (max_tap_dist / ram_grid_.getWidth()) * ram_grid_.getLayoutWidth(0);
       int tapcell_count = 0;
       // iterates through each of the columns
-      for (int col = 0; col < ram_grid.numLayouts(); ++col) {
-        if (nearest_tap + ram_grid.getLayoutWidth(col) >= max_tap_dist) {
+      for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
+        if (nearest_tap + ram_grid_.getLayoutWidth(col) >= max_tap_dist) {
           // if the nearest_tap is too far, generate tap column
           auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
-          ram_grid.insertLayout(std::move(tapcell_layout), col);
+          ram_grid_.insertLayout(std::move(tapcell_layout), col);
           ++col;  // col adjustment after insertion
           nearest_tap = 0;
           ++tapcell_count;
         }
-        nearest_tap += ram_grid.getLayoutWidth(col);
+        nearest_tap += ram_grid_.getLayoutWidth(col);
       }
       // check for last column in the grid
       if (nearest_tap >= max_tap_dist) {
         auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
-        ram_grid.addLayout(std::move(tapcell_layout));
+        ram_grid_.addLayout(std::move(tapcell_layout));
       }
     }
   }
 
-  ram_grid.gridInit();
+  ram_grid_.gridInit();
 
   auto db_libs = db_->getLibs().begin();
   auto db_sites = *(db_libs->getSites().begin());
   auto sites_width = db_sites->getWidth();
 
-  int num_sites = ram_grid.getRowWidth() / db_sites->getWidth();
+  int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
   for (int i = 0; i <= word_count; ++i) {  // extra for the layer of buffers
     auto row_name = fmt::format("RAM_ROW{}", i);
-    auto y_coord = i * ram_grid.getHeight();
+    auto y_coord = i * ram_grid_.getHeight();
     auto row_orient = odb::dbOrientType::R0;
     if (i % 2 == 1) {
       row_orient = odb::dbOrientType::MX;
@@ -837,10 +843,10 @@ void RamGen::generate(const int bytes_per_word,
                   sites_width);
   }
 
-  ram_grid.placeGrid();
+  ram_grid_.placeGrid();
 
-  int max_y_coord = ram_grid.getHeight() * (word_count + 1);
-  int max_x_coord = ram_grid.getRowWidth();
+  int max_y_coord = ram_grid_.getHeight() * (word_count + 1);
+  int max_x_coord = ram_grid_.getRowWidth();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
