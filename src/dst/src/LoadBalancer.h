@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <atomic>
 #include <absl/base/thread_annotations.h>
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <queue>
