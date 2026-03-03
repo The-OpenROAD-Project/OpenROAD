@@ -349,7 +349,6 @@
     "https://bcr.bazel.build/modules/grpc/1.69.0/source.json": "82e5cd0eeed569909ff42fd6946b813c8b69fc71a6b075ccebef224937e19215",
     "https://bcr.bazel.build/modules/harfbuzz/11.0.1.bcr.1/MODULE.bazel": "4b0942d58350d56889a7b84348dd9b83ed02845a301c1197c55e1be16a97779b",
     "https://bcr.bazel.build/modules/harfbuzz/11.0.1.bcr.1/source.json": "91f26cabe47d52379cf596809c66e3238f53fb417d5b9e237ee999cc93d7956f",
-    "https://bcr.bazel.build/modules/harfbuzz/11.0.1/MODULE.bazel": "e004bec52244a7b7b5946c6e9d231e7349c67c5722211348ea25ece3614f47ec",
     "https://bcr.bazel.build/modules/highs/1.11.0/MODULE.bazel": "f820e7fc99bd332d5133502c49f3ff35c754566ae593b4cf5c91931c8d122f9b",
     "https://bcr.bazel.build/modules/highs/1.11.0/source.json": "122976647568ee73c10d15078f4554624ce9c390ee3d9f2a5dcb0b95b63a782b",
     "https://bcr.bazel.build/modules/highwayhash/0.0.0-20240305-5ad3bf8/MODULE.bazel": "5c7f29d5bd70feff14b0f65b39584957e18e4a8d555e5a29a4c36019afbb44b9",
