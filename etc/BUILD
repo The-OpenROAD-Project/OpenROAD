@@ -2,11 +2,14 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 package(features = ["layering_check"])
 
-exports_files([
-    "whittle.py",
-    "whittle_cleanup.tcl",
-    "whittle_cut.tcl",
-])
+exports_files(
+    [
+        "whittle.py",
+        "whittle_cleanup.tcl",
+        "whittle_cut.tcl",
+    ],
+    visibility = ["//visibility:public"],
+)
 
 py_binary(
     name = "file_to_string",
