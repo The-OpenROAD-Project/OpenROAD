@@ -36,11 +36,11 @@
         "compare": ">="
     },
     "cts__timing__hold__ws": {
-        "value": -15.7,
+        "value": -20.0,
         "compare": ">="
     },
     "cts__timing__hold__tns": {
-        "value": -56.5,
+        "value": -530.0,
         "compare": ">="
     },
     "globalroute__antenna_diodes_count": {

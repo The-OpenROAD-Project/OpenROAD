@@ -106,7 +106,7 @@ COMPULSORY_TESTS = [
     "pads_black_parrot",
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
-    "pads_black_parrot_flipchip_connect_overpads",
+    #"pads_black_parrot_flipchip_connect_overpads", # moved to manual
     "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
     "pads_black_parrot_max_width",
@@ -137,10 +137,18 @@ COMPULSORY_TESTS = [
     "widthtable",
 ]
 
-# Disabled in CMakeLists.txt
+# pdn_xxx Disabled in CMakeLists.txt
+# pads_black_parrot_flipchip_connect_overpads is unstable
+# on platform ubuntu 2204 with bazel. Sometimes it fails and sometimes it
+# passes. This is really strange. The failing run creates one additional
+# metal shape in the output
+#       NEW metal10 1660 + SHAPE STRIPE ( 895810 98000 ) ( 895810 396400 )
+# new ->NEW metal10 1660 + SHAPE STRIPE ( 5595810 5604000 ) ( 5595810 5902000 )
+#       NEW metal10 1660 + SHAPE STRIPE ( 5603680 5600830 ) ( 5902000 5600830 )
 MANUAL_TESTS = [
     "pdn_man_tcl_check",
     "pdn_readme_msgs_check",
+    "pads_black_parrot_flipchip_connect_overpads",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
