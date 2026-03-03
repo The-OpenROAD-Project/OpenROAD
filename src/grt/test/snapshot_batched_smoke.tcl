@@ -2,16 +2,16 @@ source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
 read_def "gcd.def"
 
-set_thread_count 2
+set_thread_count 16
 
 set output ""
 tee -variable output -quiet {
   global_route \
-    -multicore \
+    -snapshot_batched_width 16 \
     -verbose
 }
 
-set report_file [make_result_file "multicore_smoke.rpt"]
+set report_file [make_result_file "snapshot_batched_smoke.rpt"]
 set stream [open $report_file w]
 puts -nonewline $stream $output
 close $stream
@@ -28,7 +28,7 @@ foreach line [split $output "\n"] {
 }
 
 if { $wirelength <= 0 || $vias < 0 } {
-  utl::error GRT 706 "Failed to capture multicore global-route summary output."
+  utl::error GRT 706 "Failed to capture snapshot-batched global-route summary output."
 }
 
 puts "pass"

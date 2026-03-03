@@ -229,11 +229,11 @@ class FastRouteCore
   void setGridMax(int x_max, int y_max);
   void setDetourPenalty(int penalty);
   void setNumThreads(int num_threads) { num_threads_ = num_threads; }
-  void setMulticoreRouting(bool multicore_routing)
+  void setSnapshotBatchedWidth(int snapshot_batched_width)
   {
-    multicore_routing_ = multicore_routing;
+    snapshot_batched_width_ = snapshot_batched_width;
   }
-  bool isMulticoreRouting() const { return multicore_routing_; }
+  int getSnapshotBatchedWidth() const { return snapshot_batched_width_; }
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -614,11 +614,13 @@ class FastRouteCore
   void freeRR();
   std::vector<int> getMazeRouteNetOrder(bool ordering, float& slack_th);
   bool hasNonSoftNdrNets() const;
+  int resolveSnapshotExecutionThreads(int work_items) const;
+  int resolveSnapshotWaveSize(int available_batch_count) const;
   int resolveSnapshotBaseBatchSize(int net_count) const;
   bool useSnapshotBatchRouting(int net_count) const;
   int resolveSnapshotBatchIterationLimit(int net_count) const;
   bool useSnapshotBatchRoutingForIteration(int iter, int net_count) const;
-  int resolveSnapshotBatchSize(int iter, int net_count) const;
+  int resolveSnapshotNetsForBatch(int iter, int net_count) const;
   std::unique_ptr<FastRouteCore> buildSnapshotBatchWorker() const;
   void syncSnapshotBatchWorker(const FastRouteCore& snapshot,
                                const std::vector<int>& batch_net_ids);
@@ -652,7 +654,7 @@ class FastRouteCore
   std::vector<odb::dbTechLayer*> db_layers_;
   int num_threads_;
   bool owns_nets_;
-  bool multicore_routing_;
+  int snapshot_batched_width_;
   int x_range_;
   int y_range_;
 
