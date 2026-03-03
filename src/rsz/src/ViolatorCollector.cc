@@ -792,8 +792,7 @@ void ViolatorCollector::collectViolatingEndpoints()
       violating_endpoints_.emplace_back(end->pin(), end_slack);
     }
   }
-  std::ranges::stable_sort(violating_endpoints_.begin(),
-                           violating_endpoints_.end(),
+  std::ranges::stable_sort(violating_endpoints_,
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
                            });
@@ -854,8 +853,7 @@ void ViolatorCollector::collectViolatingStartpoints()
   }
 
   std::ranges::stable_sort(
-      violating_startpoints_.begin(),
-      violating_startpoints_.end(),
+      violating_startpoints_,
       [](const auto& start_slack1, const auto& start_slack2) {
         return start_slack1.second < start_slack2.second;
       });
@@ -2015,10 +2013,9 @@ vector<const sta::Pin*> ViolatorCollector::collectViolatorsByConeTraversal(
     traverseFaninCone(endpoint, cone_pins_with_slack, initial_threshold);
 
     // Sort by slack (worst first)
-    std::ranges::sort(
-        cone_pins_with_slack.begin(),
-        cone_pins_with_slack.end(),
-        [](const auto& a, const auto& b) { return a.second < b.second; });
+    std::ranges::sort(cone_pins_with_slack, [](const auto& a, const auto& b) {
+      return a.second < b.second;
+    });
 
     // Step 2: Compute adaptive threshold targeting 50-1000 pins
     int chosen_pin_count = 0;
@@ -2260,9 +2257,7 @@ std::vector<const sta::Pin*> ViolatorCollector::getCriticalPinsNeverConsidered()
 
   // Sort by most negative slack first
   std::ranges::sort(
-      never_considered.begin(),
-      never_considered.end(),
-      [this](const sta::Pin* a, const sta::Pin* b) {
+      never_considered, [this](const sta::Pin* a, const sta::Pin* b) {
         sta::Slack slack_a = sta_->slack(
             a, sta::RiseFall::rise()->asRiseFallBoth(), sta_->scenes(), max_);
         sta::Slack slack_b = sta_->slack(
@@ -2277,16 +2272,14 @@ std::vector<const sta::Pin*> ViolatorCollector::getCriticalPinsNeverConsidered()
   }
 
   // Now sort by load_delay (highest load delay first)
-  std::ranges::sort(never_considered.begin(),
-                    never_considered.end(),
-                    [this](const sta::Pin* a, const sta::Pin* b) {
-                      auto delays_a = getEffortDelays(a);
-                      auto delays_b = getEffortDelays(b);
-                      sta::Delay load_delay_a = delays_a.first;
-                      sta::Delay load_delay_b = delays_b.first;
-                      return load_delay_a
-                             > load_delay_b;  // Highest load delay first
-                    });
+  std::ranges::sort(
+      never_considered, [this](const sta::Pin* a, const sta::Pin* b) {
+        auto delays_a = getEffortDelays(a);
+        auto delays_b = getEffortDelays(b);
+        sta::Delay load_delay_a = delays_a.first;
+        sta::Delay load_delay_b = delays_b.first;
+        return load_delay_a > load_delay_b;  // Highest load delay first
+      });
 
   return never_considered;
 }
