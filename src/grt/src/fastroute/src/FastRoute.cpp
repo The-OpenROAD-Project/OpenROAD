@@ -20,10 +20,21 @@
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace grt {
 
 using utl::GRT;
+using utl::DebugScopedTimer;
+
+namespace {
+
+// Keep snapshot-batched route semantics pinned to the operating point that
+// benchmarked best, while letting execution width follow the user-requested
+// thread count.
+constexpr int kSnapshotSemanticWidth = 16;
+
+}
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
@@ -34,6 +45,9 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       db_(db),
       overflow_iterations_(0),
       congestion_report_iter_step_(0),
+      num_threads_(1),
+      owns_nets_(true),
+      snapshot_batched_width_(0),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -131,6 +145,12 @@ void FastRouteCore::clear()
   horizontal_blocked_intervals_.clear();
 
   detour_penalty_ = 0;
+  snapshot_batch_sync_time_ = 0.0;
+  snapshot_batch_route_time_ = 0.0;
+  snapshot_batch_apply_time_ = 0.0;
+  snapshot_batch_count_ = 0;
+  snapshot_batch_net_count_ = 0;
+  snapshot_batch_wave_count_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -139,8 +159,10 @@ void FastRouteCore::clearNets()
     sttrees_.clear();
   }
 
-  for (FrNet* net : nets_) {
-    delete net;
+  if (owns_nets_) {
+    for (FrNet* net : nets_) {
+      delete net;
+    }
   }
   nets_.clear();
   net_ids_.clear();
@@ -191,12 +213,24 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
   cost_v_test_.resize(x_range_);    // Vertical segment cost
   cost_tb_test_.resize(x_range_);   // Top and bottom boundary cost
 
+  // maze2D variables
+  int64 total_size = static_cast<int64>(y_grid_) * x_range_;
+  pop_heap2_2D_.resize(total_size, false);
+
+  total_size = static_cast<int64>(y_grid_) * x_grid_;
+  src_heap_2D_.resize(total_size);
+  total_size = static_cast<int64>(y_grid_) * x_grid_;
+  dest_heap_2D_.resize(total_size);
+
+  d1_2D_.resize(boost::extents[y_range_][x_range_]);
+  d2_2D_.resize(boost::extents[y_range_][x_range_]);
+
   // maze3D variables
   directions_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   corr_edge_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
   pr_3D_.resize(boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  int64 total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
+  total_size = static_cast<int64>(num_layers_) * y_range_ * x_range_;
   pop_heap2_3D_.resize(total_size, false);
 
   // allocate memory for priority queue
@@ -848,6 +882,228 @@ void FastRouteCore::initAuxVar()
   parent_y3_.resize(boost::extents[y_grid_][x_grid_]);
 }
 
+std::vector<int> FastRouteCore::getMazeRouteNetOrder(const bool ordering,
+                                                     float& slack_th)
+{
+  if (ordering) {
+    if (critical_nets_percentage_) {
+      slack_th = CalculatePartialSlack();
+    }
+    StNetOrder();
+
+    std::vector<int> ordered_net_ids;
+    ordered_net_ids.reserve(net_ids_.size());
+    for (const auto& order_tree : tree_order_cong_) {
+      ordered_net_ids.push_back(order_tree.treeIndex);
+    }
+    return ordered_net_ids;
+  }
+
+  return net_ids_;
+}
+
+bool FastRouteCore::hasNonSoftNdrNets() const
+{
+  for (const int net_id : net_ids_) {
+    FrNet* net = nets_[net_id];
+    if (net == nullptr) {
+      continue;
+    }
+    if (net->getDbNet()->getNonDefaultRule() != nullptr && !net->isSoftNDR()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int FastRouteCore::resolveSnapshotExecutionThreads(const int work_items) const
+{
+  const int requested_threads = snapshot_batched_width_ > 0 ? num_threads_ : 1;
+  return std::min(work_items, std::max(1, requested_threads));
+}
+
+int FastRouteCore::resolveSnapshotWaveSize(const int available_batch_count) const
+{
+  return std::min(available_batch_count, kSnapshotSemanticWidth);
+}
+
+int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
+{
+  return std::min(net_count, std::max(32, 2 * kSnapshotSemanticWidth));
+}
+
+bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
+{
+  return snapshot_batched_width_ > 0 && !debug_->isOn()
+         && net_count > resolveSnapshotBaseBatchSize(net_count)
+         && !hasNonSoftNdrNets();
+}
+
+int FastRouteCore::resolveSnapshotBatchIterationLimit(const int net_count) const
+{
+  const int overflow_scaled_limit
+      = std::max(4, std::min(overflow_iterations_ / 24, 8));
+  const int net_scaled_limit = std::max(4, std::min(net_count / 128, 16));
+  return std::max(overflow_scaled_limit, net_scaled_limit);
+}
+
+bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
+                                                        const int net_count) const
+{
+  if (!useSnapshotBatchRouting(net_count)) {
+    return false;
+  }
+
+  // Snapshot-batched routing is intentionally not exact-preserving, but late
+  // cleanup is still sensitive to route-choice drift. Keep the aggressive
+  // snapshot mode for the early/high-overflow phase and fall back to the
+  // serial kernel later.
+  return iter <= resolveSnapshotBatchIterationLimit(net_count);
+}
+
+int FastRouteCore::resolveSnapshotNetsForBatch(const int iter,
+                                              const int net_count) const
+{
+  const int nets_for_batch = resolveSnapshotBaseBatchSize(net_count);
+
+  const int early_iteration_limit = resolveSnapshotBatchIterationLimit(net_count);
+  const int scaled_iter = iter * 100;
+  constexpr int kHalfPercentage = 25;
+  constexpr int kQuarterPercentage = 50;
+  constexpr int kSinglePercentage = 75;
+
+  if (scaled_iter > kSinglePercentage * early_iteration_limit) {
+    return 1;
+  }
+  if (scaled_iter > kQuarterPercentage * early_iteration_limit) {
+    return std::max(1, nets_for_batch / 4);
+  }
+  if (scaled_iter > kHalfPercentage * early_iteration_limit) {
+    return std::max(1, nets_for_batch / 2);
+  }
+  return nets_for_batch;
+}
+
+std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
+{
+  auto worker = std::make_unique<FastRouteCore>(
+      db_, logger_, callback_handler_, stt_builder_, sta_);
+
+  worker->owns_nets_ = false;
+  worker->snapshot_batched_width_ = 0;
+  worker->num_threads_ = 1;
+
+  worker->max_degree_ = max_degree_;
+  worker->cap_per_layer_ = cap_per_layer_;
+  worker->usage_per_layer_ = usage_per_layer_;
+  worker->overflow_per_layer_ = overflow_per_layer_;
+  worker->max_h_overflow_ = max_h_overflow_;
+  worker->max_v_overflow_ = max_v_overflow_;
+  worker->overflow_iterations_ = overflow_iterations_;
+  worker->congestion_report_iter_step_ = congestion_report_iter_step_;
+  worker->congestion_file_name_ = congestion_file_name_;
+  worker->layer_directions_ = layer_directions_;
+  worker->db_layers_ = db_layers_;
+  worker->en_estimate_parasitics_ = en_estimate_parasitics_;
+  worker->resistance_aware_ = resistance_aware_;
+  worker->enable_resistance_aware_ = enable_resistance_aware_;
+  worker->is_3d_step_ = is_3d_step_;
+  worker->is_incremental_grt_ = is_incremental_grt_;
+  worker->worst_slack_ = worst_slack_;
+  worker->worst_net_resistance_ = worst_net_resistance_;
+  worker->worst_net_length_ = worst_net_length_;
+  worker->worst_fanout_ = worst_fanout_;
+  worker->num_adjust_ = num_adjust_;
+  worker->v_capacity_ = v_capacity_;
+  worker->h_capacity_ = h_capacity_;
+  worker->x_corner_ = x_corner_;
+  worker->y_corner_ = y_corner_;
+  worker->tile_size_ = tile_size_;
+  worker->enlarge_ = enlarge_;
+  worker->costheight_ = costheight_;
+  worker->ahth_ = ahth_;
+  worker->total_overflow_ = total_overflow_;
+  worker->has_2D_overflow_ = has_2D_overflow_;
+  worker->verbose_ = verbose_;
+  worker->critical_nets_percentage_ = critical_nets_percentage_;
+  worker->via_cost_ = via_cost_;
+  worker->mazeedge_threshold_ = mazeedge_threshold_;
+  worker->v_capacity_lb_ = v_capacity_lb_;
+  worker->h_capacity_lb_ = h_capacity_lb_;
+  worker->regular_x_ = regular_x_;
+  worker->regular_y_ = regular_y_;
+  worker->detour_penalty_ = detour_penalty_;
+
+  worker->setGridsAndLayers(x_grid_, y_grid_, num_layers_);
+  worker->setGridMax(x_grid_max_, y_grid_max_);
+  worker->v_capacity_3D_ = v_capacity_3D_;
+  worker->h_capacity_3D_ = h_capacity_3D_;
+  worker->last_col_v_capacity_3D_ = last_col_v_capacity_3D_;
+  worker->last_row_h_capacity_3D_ = last_row_h_capacity_3D_;
+  worker->initAuxVar();
+
+  worker->nets_ = nets_;
+  worker->db_net_id_map_ = db_net_id_map_;
+  worker->gxs_ = gxs_;
+  worker->gys_ = gys_;
+  worker->gs_ = gs_;
+  worker->xcor_.resize(xcor_.size());
+  worker->ycor_.resize(ycor_.size());
+  worker->dcor_.resize(dcor_.size());
+  worker->sttrees_.resize(sttrees_.size());
+
+  return worker;
+}
+
+void FastRouteCore::syncSnapshotBatchWorker(
+    const FastRouteCore& snapshot,
+    const std::vector<int>& batch_net_ids)
+{
+  graph2d_.copyRoutingStateFrom(snapshot.graph2d_, false);
+  total_overflow_ = snapshot.total_overflow_;
+  has_2D_overflow_ = snapshot.has_2D_overflow_;
+  net_ids_ = batch_net_ids;
+
+  for (const int net_id : batch_net_ids) {
+    sttrees_[net_id] = snapshot.sttrees_[net_id];
+  }
+}
+
+void FastRouteCore::updatePlanarNetUsage(const StTree& sttree,
+                                         FrNet* net,
+                                         const int edge_cost)
+{
+  for (const TreeEdge& treeedge : sttree.edges) {
+    if (treeedge.route.routelen <= 0 || treeedge.route.grids.empty()) {
+      continue;
+    }
+
+    const auto& grids = treeedge.route.grids;
+    for (int i = 0; i < treeedge.route.routelen; i++) {
+      if (grids[i].x == grids[i + 1].x && grids[i].y == grids[i + 1].y) {
+        continue;
+      }
+
+      if (grids[i].x == grids[i + 1].x) {
+        const int min_y = std::min(grids[i].y, grids[i + 1].y);
+        graph2d_.updateUsageV(grids[i].x, min_y, net, edge_cost);
+      } else if (grids[i].y == grids[i + 1].y) {
+        const int min_x = std::min(grids[i].x, grids[i + 1].x);
+        graph2d_.updateUsageH(min_x, grids[i].y, net, edge_cost);
+      }
+    }
+  }
+}
+
+void FastRouteCore::applySnapshotBatchRoute(const int net_id, StTree&& sttree)
+{
+  FrNet* net = nets_[net_id];
+  const int edge_cost = net->getEdgeCost();
+  updatePlanarNetUsage(sttrees_[net_id], net, -edge_cost);
+  sttrees_[net_id] = std::move(sttree);
+  updatePlanarNetUsage(sttrees_[net_id], net, edge_cost);
+}
+
 NetRouteMap FastRouteCore::getRoutes()
 {
   NetRouteMap routes;
@@ -1330,6 +1586,26 @@ NetRouteMap FastRouteCore::run()
     return getRoutes();
   }
 
+  snapshot_batch_sync_time_ = 0.0;
+  snapshot_batch_route_time_ = 0.0;
+  snapshot_batch_apply_time_ = 0.0;
+  snapshot_batch_count_ = 0;
+  snapshot_batch_net_count_ = 0;
+  snapshot_batch_wave_count_ = 0;
+
+  double total_run_time = 0.0;
+  double initial_rsmt_time = 0.0;
+  double route_l_time = 0.0;
+  double congestion_rsmt_time = 0.0;
+  double new_route_l_time = 0.0;
+  double spiral_time = 0.0;
+  double route_z_time = 0.0;
+  double monotonic_time = 0.0;
+  double overflow_iterations_time = 0.0;
+  double finalization_time = 0.0;
+  const DebugScopedTimer total_timer(
+      total_run_time, logger_, GRT, "timer", 1, "FastRoute run: {}");
+
   graph2d_.clearUsed();
   preProcessTechLayers();
 
@@ -1378,39 +1654,67 @@ NetRouteMap FastRouteCore::run()
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
   via_cost_ = 0;
-  gen_brk_RSMT(false, false, false, false, noADJ);
+  {
+    const DebugScopedTimer timer(
+        initial_rsmt_time, logger_, GRT, "timer", 1, "Initial RSMT: {}");
+    gen_brk_RSMT(false, false, false, false, noADJ);
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After RSMT");
   }
 
   // First time L routing
-  routeLAll(true);
+  {
+    const DebugScopedTimer timer(
+        route_l_time, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
+    routeLAll(true);
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After routeLAll");
   }
 
   // Congestion-driven rip-up and reroute L
-  gen_brk_RSMT(true, true, true, false, noADJ);
+  {
+    const DebugScopedTimer timer(congestion_rsmt_time,
+                                 logger_,
+                                 GRT,
+                                 "timer",
+                                 1,
+                                 "Congestion-driven RSMT: {}");
+    gen_brk_RSMT(true, true, true, false, noADJ);
+  }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After congestion-driven RSMT");
   }
 
   // New rip-up and reroute L via-guided
-  newrouteLAll(false, true);
+  {
+    const DebugScopedTimer timer(
+        new_route_l_time, logger_, GRT, "timer", 1, "Via-guided routeLAll: {}");
+    newrouteLAll(false, true);
+  }
   getOverflow2D(&maxOverflow);
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After newRouteLAll");
   }
 
   // Rip-up and reroute using spiral route
-  spiralRouteAll();
+  {
+    const DebugScopedTimer timer(
+        spiral_time, logger_, GRT, "timer", 1, "Spiral routing: {}");
+    spiralRouteAll();
+  }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
     logger_->report("After spiralRouteAll");
   }
 
   // Rip-up a tree edge according to its ripup type and Z-route it
-  newrouteZAll(10);
+  {
+    const DebugScopedTimer timer(
+        route_z_time, logger_, GRT, "timer", 1, "Initial routeZAll: {}");
+    newrouteZAll(10);
+  }
   int past_cong = getOverflow2D(&maxOverflow);
 
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -1434,6 +1738,8 @@ NetRouteMap FastRouteCore::run()
   }
 
   for (int i = 0; i < LVIter; i++) {
+    const DebugScopedTimer timer(
+        monotonic_time, logger_, GRT, "timer", 1, "Monotonic routing: {}");
     logistic_coef = 2.0 / (1 + log(maxOverflow));
     debugPrint(logger_,
                GRT,
@@ -1482,6 +1788,10 @@ NetRouteMap FastRouteCore::run()
   SaveLastRouteLen();
 
   const int max_overflow_increases = 25;
+  const int snapshot_iteration_limit
+      = resolveSnapshotBatchIterationLimit(net_ids_.size());
+  const int snapshot_cleanup_patience = 12;
+  bool snapshot_cleanup_active = false;
 
   float slack_th = std::numeric_limits<float>::lowest();
 
@@ -1489,12 +1799,19 @@ NetRouteMap FastRouteCore::run()
   int overflow_increases = -1;
   int last_total_overflow = 0;
   float overflow_reduction_percent = -1;
-  while (total_overflow_ > 0 && i <= overflow_iterations_
-         && overflow_increases <= max_overflow_increases) {
-    if (verbose_) {
-      logger_->info(
-          GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
-    }
+  {
+    const DebugScopedTimer timer(overflow_iterations_time,
+                                 logger_,
+                                 GRT,
+                                 "timer",
+                                 1,
+                                 "Overflow iterations: {}");
+    while (total_overflow_ > 0 && i <= overflow_iterations_
+           && overflow_increases <= max_overflow_increases) {
+      if (verbose_) {
+        logger_->info(
+            GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
+      }
 
     if (THRESH_M > 15) {
       THRESH_M -= thStep1;
@@ -1562,6 +1879,7 @@ NetRouteMap FastRouteCore::run()
       L = 0;
     }
 
+    const int snapshot_batch_count_before = snapshot_batch_count_;
     auto cost_params = CostParams(logistic_coef, costheight_, slope);
     mazeRouteMSMD(i,
                   enlarge_,
@@ -1575,10 +1893,19 @@ NetRouteMap FastRouteCore::run()
 
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+    snapshot_cleanup_active
+        = snapshot_cleanup_active
+          || snapshot_batch_count_ > snapshot_batch_count_before;
 
     if (minofl > past_cong) {
       minofl = past_cong;
       minoflrnd = i;
+    }
+
+    if (snapshot_cleanup_active && past_cong < bmfl) {
+      copyRS();
+      bmfl = past_cong;
+      bwcnt = 0;
     }
 
     if (i == 8) {
@@ -1640,45 +1967,55 @@ NetRouteMap FastRouteCore::run()
       VIA = 0;
     }
 
-    if (past_cong < bmfl) {
-      bwcnt = 0;
-      if (i > 140 || (i > 80 && past_cong < 20)) {
-        copyRS();
-        bmfl = past_cong;
+    if (snapshot_cleanup_active && i > snapshot_iteration_limit) {
+      if (past_cong >= bmfl) {
+        bwcnt++;
+      }
 
-        L = 0;
-        auto cost_params = CostParams(logistic_coef, costheight_, slope);
-        mazeRouteMSMD(i,
-                      enlarge_,
-                      ripup_threshold,
-                      mazeedge_threshold_,
-                      !(i % 3),
-                      VIA,
-                      L,
-                      cost_params,
-                      slack_th);
-        last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-        if (past_cong < last_cong) {
-          copyRS();
-          bmfl = past_cong;
-        }
-        L = 1;
-        if (minofl > past_cong) {
-          minofl = past_cong;
-          minoflrnd = i;
-        }
+      if (bwcnt > snapshot_cleanup_patience) {
+        break;
       }
     } else {
-      bwcnt++;
-    }
+      if (past_cong < bmfl) {
+        bwcnt = 0;
+        if (i > 140 || (i > 80 && past_cong < 20)) {
+          copyRS();
+          bmfl = past_cong;
 
-    if (bmfl > 10) {
-      if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
-        break;
+          L = 0;
+          auto cost_params = CostParams(logistic_coef, costheight_, slope);
+          mazeRouteMSMD(i,
+                        enlarge_,
+                        ripup_threshold,
+                        mazeedge_threshold_,
+                        !(i % 3),
+                        VIA,
+                        L,
+                        cost_params,
+                        slack_th);
+          last_cong = past_cong;
+          past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+          if (past_cong < last_cong) {
+            copyRS();
+            bmfl = past_cong;
+          }
+          L = 1;
+          if (minofl > past_cong) {
+            minofl = past_cong;
+            minoflrnd = i;
+          }
+        }
+      } else {
+        bwcnt++;
       }
-      if (bmfl < 30 && bwcnt > 50) {
-        break;
+
+      if (bmfl > 10) {
+        if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
+          break;
+        }
+        if (bmfl < 30 && bwcnt > 50) {
+          break;
+        }
       }
     }
 
@@ -1754,11 +2091,13 @@ NetRouteMap FastRouteCore::run()
       }
     }
 
-    // generate DRC report each interval
-    if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
-      saveCongestion(i);
-    }
-  }  // end overflow iterations
+      // generate DRC report each interval
+      if (congestion_report_iter_step_
+          && i % congestion_report_iter_step_ == 0) {
+        saveCongestion(i);
+      }
+    }  // end overflow iterations
+  }
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
@@ -1793,50 +2132,96 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  freeRR();
+  int finallength = 0;
+  int numVia = 0;
+  {
+    const DebugScopedTimer timer(
+        finalization_time, logger_, GRT, "timer", 1, "Finalization: {}");
+    freeRR();
 
-  removeLoops();
+    removeLoops();
 
-  getOverflow2Dmaze(&maxOverflow, &tUsage);
+    getOverflow2Dmaze(&maxOverflow, &tUsage);
 
-  layerAssignment();
+    layerAssignment();
 
-  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    getOverflow3D();
-    logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
-                    past_cong,
-                    total_overflow_);
-  }
-
-  costheight_ = 3;
-  via_cost_ = 1;
-
-  if (past_cong == 0) {
-    // Increase ripup threshold if res-aware is enabled
-    if (enable_resistance_aware_) {
-      long_edge_len = BIG_INT;
-      short_edge_len = BIG_INT;
+    if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+      getOverflow3D();
+      logger_->report("After LayerAssignment - 2D/3D cong: {}/{}",
+                      past_cong,
+                      total_overflow_);
     }
 
-    mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
-    mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+    costheight_ = 3;
+    via_cost_ = 1;
+
+    if (past_cong == 0) {
+      // Increase ripup threshold if res-aware is enabled
+      if (enable_resistance_aware_) {
+        long_edge_len = BIG_INT;
+        short_edge_len = BIG_INT;
+      }
+
+      mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
+      mazeRouteMSMDOrder3D(enlarge_, 0, short_edge_len);
+    }
+
+    // Disable estimate parasitics for grt incremental steps with
+    // resistance-aware strategy to prevent issues during repair design and
+    // repair timing
+    en_estimate_parasitics_ = false;
+
+    if (logger_->debugCheck(GRT, "grtSteps", 1)) {
+      getOverflow3D();
+      logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
+    }
+
+    fillVIA();
+    finallength = getOverflow3D();
+    numVia = threeDVIA();
+    checkRoute3D();
+    ensurePinCoverage();
   }
 
-  // Disable estimate parasitics for grt incremental steps with resistance-aware
-  // strategy to prevent issues during repair design and repair timing
-  en_estimate_parasitics_ = false;
-
-  if (logger_->debugCheck(GRT, "grtSteps", 1)) {
-    getOverflow3D();
-    logger_->report("After MazeRoute3D - 3Dcong: {}", total_overflow_);
+  logger_->metric("global_route__fastroute__run_s", total_run_time);
+  logger_->metric("global_route__fastroute__initial_rsmt_s", initial_rsmt_time);
+  logger_->metric("global_route__fastroute__route_l_s", route_l_time);
+  logger_->metric("global_route__fastroute__congestion_rsmt_s",
+                  congestion_rsmt_time);
+  logger_->metric("global_route__fastroute__new_route_l_s", new_route_l_time);
+  logger_->metric("global_route__fastroute__spiral_s", spiral_time);
+  logger_->metric("global_route__fastroute__route_z_s", route_z_time);
+  logger_->metric("global_route__fastroute__monotonic_s", monotonic_time);
+  logger_->metric("global_route__fastroute__overflow_iterations_s",
+                  overflow_iterations_time);
+  logger_->metric("global_route__fastroute__finalization_s",
+                  finalization_time);
+  logger_->metric("global_route__fastroute__snapshot_batch_route_s",
+                  snapshot_batch_route_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_apply_s",
+                  snapshot_batch_apply_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_sync_s",
+                  snapshot_batch_sync_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_count",
+                  snapshot_batch_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_nets",
+                  snapshot_batch_net_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_wave_count",
+                  snapshot_batch_wave_count_);
+  if (snapshot_batch_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "timer",
+               1,
+               "Snapshot batch totals: sync {} route {} apply {} waves {} "
+               "batches {} nets {}.",
+               snapshot_batch_sync_time_,
+               snapshot_batch_route_time_,
+               snapshot_batch_apply_time_,
+               snapshot_batch_wave_count_,
+               snapshot_batch_count_,
+               snapshot_batch_net_count_);
   }
-
-  fillVIA();
-  const int finallength = getOverflow3D();
-  const int numVia = threeDVIA();
-  checkRoute3D();
-  ensurePinCoverage();
-
   logger_->metric("global_route__vias", numVia);
   if (verbose_) {
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);
@@ -2018,22 +2403,25 @@ void FastRouteCore::setDetourPenalty(int penalty)
 std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_);
+#pragma omp parallel for num_threads(num_threads_)
   for (int l = 0; l < num_layers_; l++) {
+    int original_resource = 0;
     bool is_horizontal
         = layer_directions_[l] == odb::dbTechLayerDir::HORIZONTAL;
     if (is_horizontal) {
       for (int i = 0; i < y_grid_; i++) {
         for (int j = 0; j < x_grid_ - 1; j++) {
-          original_resources[l] += h_edges_3D_[l][i][j].real_cap;
+          original_resource += h_edges_3D_[l][i][j].real_cap;
         }
       }
     } else {
       for (int i = 0; i < y_grid_ - 1; i++) {
         for (int j = 0; j < x_grid_; j++) {
-          original_resources[l] += v_edges_3D_[l][i][j].real_cap;
+          original_resource += v_edges_3D_[l][i][j].real_cap;
         }
       }
     }
+    original_resources[l] = original_resource;
   }
 
   return original_resources;
@@ -2047,39 +2435,46 @@ void FastRouteCore::computeCongestionInformation()
   max_h_overflow_.resize(num_layers_);
   max_v_overflow_.resize(num_layers_);
 
+#pragma omp parallel for num_threads(num_threads_)
   for (int l = 0; l < num_layers_; l++) {
-    cap_per_layer_[l] = 0;
-    usage_per_layer_[l] = 0;
-    overflow_per_layer_[l] = 0;
-    max_h_overflow_[l] = 0;
-    max_v_overflow_[l] = 0;
+    int cap_per_layer = 0;
+    int usage_per_layer = 0;
+    int overflow_per_layer = 0;
+    int max_h_overflow = 0;
+    int max_v_overflow = 0;
 
     for (int i = 0; i < y_grid_; i++) {
       for (int j = 0; j < x_grid_ - 1; j++) {
-        cap_per_layer_[l] += h_edges_3D_[l][i][j].cap;
-        usage_per_layer_[l] += h_edges_3D_[l][i][j].usage;
+        cap_per_layer += h_edges_3D_[l][i][j].cap;
+        usage_per_layer += h_edges_3D_[l][i][j].usage;
 
         const int overflow
             = h_edges_3D_[l][i][j].usage - h_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
-          overflow_per_layer_[l] += overflow;
-          max_h_overflow_[l] = std::max(max_h_overflow_[l], overflow);
+          overflow_per_layer += overflow;
+          max_h_overflow = std::max(max_h_overflow, overflow);
         }
       }
     }
     for (int i = 0; i < y_grid_ - 1; i++) {
       for (int j = 0; j < x_grid_; j++) {
-        cap_per_layer_[l] += v_edges_3D_[l][i][j].cap;
-        usage_per_layer_[l] += v_edges_3D_[l][i][j].usage;
+        cap_per_layer += v_edges_3D_[l][i][j].cap;
+        usage_per_layer += v_edges_3D_[l][i][j].usage;
 
         const int overflow
             = v_edges_3D_[l][i][j].usage - v_edges_3D_[l][i][j].cap;
         if (overflow > 0) {
-          overflow_per_layer_[l] += overflow;
-          max_v_overflow_[l] = std::max(max_v_overflow_[l], overflow);
+          overflow_per_layer += overflow;
+          max_v_overflow = std::max(max_v_overflow, overflow);
         }
       }
     }
+
+    cap_per_layer_[l] = cap_per_layer;
+    usage_per_layer_[l] = usage_per_layer;
+    overflow_per_layer_[l] = overflow_per_layer;
+    max_h_overflow_[l] = max_h_overflow;
+    max_v_overflow_[l] = max_v_overflow;
   }
 }
 

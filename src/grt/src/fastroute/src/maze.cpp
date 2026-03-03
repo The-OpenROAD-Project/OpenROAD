@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -16,10 +17,13 @@
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace grt {
 
 using utl::GRT;
+using utl::DebugScopedTimer;
+using utl::Timer;
 
 static int parent_index(int i)
 {
@@ -510,8 +514,10 @@ void FastRouteCore::setupHeap(const int netID,
   } else {  // net with more than 2 pins
     const int numNodes = sttrees_[netID].num_nodes();
 
-    std::vector<bool> visited(numNodes, false);
-    std::vector<int> queue(numNodes);
+    visited_2D_.assign(numNodes, false);
+    queue_2D_.resize(numNodes);
+    auto& visited = visited_2D_;
+    auto& queue = queue_2D_;
 
     // find all the grids on tree edges in subtree t1 (connecting to n1) and put
     // them into src_heap
@@ -774,12 +780,7 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   }
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A1].route.type
-      == RouteType::MazeRoute)  // if originally allocated, free them first
-  {
-    treeedges[edge_n1A1].route.grids.clear();
-  }
-  treeedges[edge_n1A1].route.grids.resize(E1_pos + 1);
+  treeedges[edge_n1A1].route.grids.assign(E1_pos + 1, GPoint3D{});
 
   if (A1x <= E1x) {
     int cnt = 0;
@@ -806,12 +807,8 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
   // reallocate memory for route.gridsX and route.gridsY
-  if (treeedges[edge_n1A2].route.type
-      == RouteType::MazeRoute)  // if originally allocated, free them first
-  {
-    treeedges[edge_n1A2].route.grids.clear();
-  }
-  treeedges[edge_n1A2].route.grids.resize(cnt_n1A1 + cnt_n1A2 - E1_pos - 1);
+  treeedges[edge_n1A2].route.grids.assign(
+      cnt_n1A1 + cnt_n1A2 - E1_pos - 1, GPoint3D{});
 
   int cnt = 0;
   if (E1x <= A2x) {
@@ -899,12 +896,9 @@ bool FastRouteCore::updateRouteType2(const int net_id,
 
   // combine grids on original (A1, n1) and (n1, A2) to new (A1, A2)
   // allocate memory for grids[].x and grids[].y of edge_A1A2
-  if (treeedges[edge_A1A2].route.type == RouteType::MazeRoute) {
-    treeedges[edge_A1A2].route.grids.clear();
-  }
   const int len_A1A2 = cnt_n1A1 + cnt_n1A2 - 1;
 
-  treeedges[edge_A1A2].route.grids.resize(len_A1A2);
+  treeedges[edge_A1A2].route.grids.assign(len_A1A2, GPoint3D{});
   treeedges[edge_A1A2].route.routelen = len_A1A2 - 1;
   treeedges[edge_A1A2].len = abs(A1x - A2x) + abs(A1y - A2y);
 
@@ -946,19 +940,13 @@ bool FastRouteCore::updateRouteType2(const int net_id,
   }
 
   // allocate memory for grids[].x and grids[].y of edge_n1C1 and edge_n1C2
-  if (treeedges[edge_n1C1].route.type == RouteType::MazeRoute) {
-    treeedges[edge_n1C1].route.grids.clear();
-  }
   const int len_n1C1 = E1_pos + 1;
-  treeedges[edge_n1C1].route.grids.resize(len_n1C1);
+  treeedges[edge_n1C1].route.grids.assign(len_n1C1, GPoint3D{});
   treeedges[edge_n1C1].route.routelen = len_n1C1 - 1;
   treeedges[edge_n1C1].len = abs(C1x - E1x) + abs(C1y - E1y);
 
-  if (treeedges[edge_n1C2].route.type == RouteType::MazeRoute) {
-    treeedges[edge_n1C2].route.grids.clear();
-  }
   const int len_n1C2 = cnt_C1C2 - E1_pos;
-  treeedges[edge_n1C2].route.grids.resize(len_n1C2);
+  treeedges[edge_n1C2].route.grids.assign(len_n1C2, GPoint3D{});
   treeedges[edge_n1C2].route.routelen = len_n1C2 - 1;
   treeedges[edge_n1C2].len = abs(C2x - E1x) + abs(C2y - E1y);
 
@@ -1047,15 +1035,201 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const CostParams& cost_params,
                                   float& slack_th)
 {
+  if (!useSnapshotBatchRoutingForIteration(iter, net_ids_.size())) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  // If this iteration cannot form multiple snapshot batches, stay entirely on
+  // the sequential path instead of doing snapshot-batched ordering work first.
+  const int initial_nets_for_batch
+      = resolveSnapshotNetsForBatch(iter, net_ids_.size());
+  if (initial_nets_for_batch <= 1 || net_ids_.size() <= initial_nets_for_batch) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  std::vector<int> ordered_net_ids = getMazeRouteNetOrder(ordering, slack_th);
+  if (!useSnapshotBatchRoutingForIteration(iter, ordered_net_ids.size())) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  const int nets_for_batch
+      = resolveSnapshotNetsForBatch(iter, ordered_net_ids.size());
+  if (nets_for_batch <= 1 || ordered_net_ids.size() <= nets_for_batch) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  struct BatchResult
+  {
+    std::vector<int> net_ids;
+    std::vector<StTree> sttrees;
+  };
+  std::vector<std::vector<int>> batch_net_ids;
+  batch_net_ids.reserve((ordered_net_ids.size() + nets_for_batch - 1)
+                        / nets_for_batch);
+  for (const int net_id : ordered_net_ids) {
+    if (batch_net_ids.empty()
+        || batch_net_ids.back().size() == nets_for_batch) {
+      batch_net_ids.emplace_back();
+    }
+    batch_net_ids.back().push_back(net_id);
+  }
+
+  if (batch_net_ids.size() < 2) {
+    mazeRouteMSMDSequential(iter,
+                            expand,
+                            ripup_threshold,
+                            maze_edge_threshold,
+                            ordering,
+                            via,
+                            L,
+                            cost_params,
+                            slack_th);
+    return;
+  }
+
+  double snapshot_sync_time = 0.0;
+  double snapshot_route_time = 0.0;
+  double snapshot_apply_time = 0.0;
+  int wave_count = 0;
+  {
+    const int semantic_wave_size
+        = resolveSnapshotWaveSize(batch_net_ids.size());
+    std::vector<std::unique_ptr<FastRouteCore>> workers;
+    workers.reserve(semantic_wave_size);
+    for (int worker_idx = 0; worker_idx < semantic_wave_size; worker_idx++) {
+      workers.push_back(buildSnapshotBatchWorker());
+    }
+
+    // Snapshot-batched routing intentionally allows route-choice drift inside a wave. Route
+    // fixed contiguous batches against one snapshot, then commit them in the
+    // original batch order before advancing to the next wave.
+    for (int wave_begin = 0; wave_begin < batch_net_ids.size();
+         wave_begin += semantic_wave_size) {
+      const int batches_in_wave
+          = std::min(semantic_wave_size,
+                     (int) batch_net_ids.size() - wave_begin);
+      const int active_threads
+          = resolveSnapshotExecutionThreads(batches_in_wave);
+      std::vector<BatchResult> batch_results(batches_in_wave);
+      wave_count++;
+
+      {
+        Timer timer;
+#pragma omp parallel for num_threads(active_threads) schedule(static)
+        for (int wave_batch = 0; wave_batch < batches_in_wave; wave_batch++) {
+          workers[wave_batch]->syncSnapshotBatchWorker(
+              *this, batch_net_ids[wave_begin + wave_batch]);
+        }
+        snapshot_sync_time += timer.elapsed();
+      }
+
+      {
+        Timer timer;
+#pragma omp parallel for num_threads(active_threads) schedule(static)
+        for (int wave_batch = 0; wave_batch < batches_in_wave; wave_batch++) {
+          auto& worker = workers[wave_batch];
+          float batch_slack_th = slack_th;
+          worker->mazeRouteMSMDSequential(iter,
+                                          expand,
+                                          ripup_threshold,
+                                          maze_edge_threshold,
+                                          false,
+                                          via,
+                                          L,
+                                          cost_params,
+                                          batch_slack_th);
+
+          BatchResult result;
+          result.net_ids = worker->net_ids_;
+          result.sttrees.reserve(result.net_ids.size());
+          for (const int net_id : result.net_ids) {
+            result.sttrees.push_back(std::move(worker->sttrees_[net_id]));
+          }
+          batch_results[wave_batch] = std::move(result);
+        }
+        snapshot_route_time += timer.elapsed();
+      }
+
+      {
+        Timer timer;
+        for (BatchResult& result : batch_results) {
+          for (int i = 0; i < result.net_ids.size(); i++) {
+            applySnapshotBatchRoute(result.net_ids[i],
+                                    std::move(result.sttrees[i]));
+          }
+        }
+        snapshot_apply_time += timer.elapsed();
+      }
+    }
+  }
+
+  snapshot_batch_sync_time_ += snapshot_sync_time;
+  snapshot_batch_route_time_ += snapshot_route_time;
+  snapshot_batch_apply_time_ += snapshot_apply_time;
+  snapshot_batch_count_ += batch_net_ids.size();
+  snapshot_batch_net_count_ += ordered_net_ids.size();
+  snapshot_batch_wave_count_ += wave_count;
+}
+
+void FastRouteCore::mazeRouteMSMDSequential(const int iter,
+                                            const int expand,
+                                            const int ripup_threshold,
+                                            const int maze_edge_threshold,
+                                            const bool ordering,
+                                            const int via,
+                                            const int L,
+                                            const CostParams& cost_params,
+                                            float& slack_th)
+{
   // maze routing for multi-source, multi-destination
   int tmpX, tmpY;
 
   const int max_usage_multiplier = 40;
 
-  for (int i = 0; i < max_usage_multiplier * h_capacity_; i++) {
+  const int max_h_usage = max_usage_multiplier * h_capacity_;
+  h_cost_table_.reserve(max_h_usage);
+  for (int i = 0; i < max_h_usage; i++) {
     h_cost_table_.push_back(getCost(i, true, cost_params));
   }
-  for (int i = 0; i < max_usage_multiplier * v_capacity_; i++) {
+  const int max_v_usage = max_usage_multiplier * v_capacity_;
+  v_cost_table_.reserve(max_v_usage);
+  for (int i = 0; i < max_v_usage; i++) {
     v_cost_table_.push_back(getCost(i, false, cost_params));
   }
 
@@ -1072,15 +1246,15 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
     StNetOrder();
   }
 
-  std::vector<double*> src_heap;
-  std::vector<double*> dest_heap;
-  src_heap.reserve(y_grid_ * x_grid_);
-  dest_heap.reserve(y_grid_ * x_grid_);
+  auto& src_heap = src_heap_2D_;
+  auto& dest_heap = dest_heap_2D_;
+  auto& d1 = d1_2D_;
+  auto& d2 = d2_2D_;
+  auto& pop_heap2 = pop_heap2_2D_;
 
-  multi_array<double, 2> d1(boost::extents[y_range_][x_range_]);
-  multi_array<double, 2> d2(boost::extents[y_range_][x_range_]);
-
-  std::vector<bool> pop_heap2(y_grid_ * x_range_, false);
+  src_heap.clear();
+  dest_heap.clear();
+  std::fill(pop_heap2.begin(), pop_heap2.end(), false);
 
   /**
    * @brief Updates the cost of an adjacent grid if the new cost is lower,
@@ -1686,10 +1860,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }  // n2 is not a pin and E2!=n2
 
       // update route for edge (n1, n2) and edge usage
-      if (treeedges[edge_n1n2].route.type == RouteType::MazeRoute) {
-        treeedges[edge_n1n2].route.grids.clear();
-      }
-      treeedges[edge_n1n2].route.grids.resize(cnt_n1n2);
+      treeedges[edge_n1n2].route.grids.assign(cnt_n1n2, GPoint3D{});
       treeedges[edge_n1n2].route.type = RouteType::MazeRoute;
       treeedges[edge_n1n2].route.routelen = cnt_n1n2 - 1;
       treeedges[edge_n1n2].len = abs(E1x - E2x) + abs(E1y - E2y);

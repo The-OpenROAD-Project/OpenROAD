@@ -9,12 +9,15 @@ or_integration_tests(
     clock_route_error1
     clock_route_error2
     congestion1
+    congestion1_snapshot_batched
     congestion2
+    congestion2_snapshot_batched
     congestion3
     congestion4
     congestion5
     congestion6
     congestion7
+    congestion7_snapshot_batched
     critical_nets_percentage
     critical_nets_percentage_cugr
     cugr_adjustment1
@@ -98,5 +101,10 @@ or_integration_tests(
     upper_layer_net
     write_segments1
     write_segments2
+  PASSFAIL_TESTS
+    snapshot_batched_bus_route
+    snapshot_batched_incremental_state
+    snapshot_batched_smoke
+    snapshot_batched_single_thread_smoke
+    thread_count_reports
 )
-
