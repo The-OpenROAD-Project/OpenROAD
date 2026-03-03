@@ -11,13 +11,15 @@ TESTS = [
     "clock_route_error1",
     "clock_route_error2",
     "congestion1",
+    "congestion1_snapshot_batched",
     "congestion2",
+    "congestion2_snapshot_batched",
     "congestion3",
     "congestion4",
     "congestion5",
     "congestion6",
     "congestion7",
-    "congestion7_multicore",
+    "congestion7_snapshot_batched",
     "critical_nets_percentage",
     "critical_nets_percentage_cugr",
     "cugr_adjustment1",
@@ -139,21 +141,28 @@ MANUAL_FOR_BAZEL_TESTS = [
 ) for test_name in TESTS]
 
 regression_test(
-    name = "multicore_bus_route",
+    name = "snapshot_batched_bus_route",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
 )
 
 regression_test(
-    name = "multicore_incremental_state",
+    name = "snapshot_batched_incremental_state",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],
 )
 
 regression_test(
-    name = "multicore_smoke",
+    name = "snapshot_batched_smoke",
+    check_log = False,
+    check_passfail = True,
+    data = [":test_resources"],
+)
+
+regression_test(
+    name = "snapshot_batched_single_thread_smoke",
     check_log = False,
     check_passfail = True,
     data = [":test_resources"],

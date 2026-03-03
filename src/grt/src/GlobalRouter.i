@@ -111,15 +111,15 @@ set_resistance_aware(bool resistance_aware)
 }
 
 void
-set_multicore(bool multicore_routing)
+set_snapshot_batched_width(int snapshot_batched_width)
 {
-  getGlobalRouter()->setMulticoreRouting(multicore_routing);
+  getGlobalRouter()->setSnapshotBatchedWidth(snapshot_batched_width);
 }
 
-bool
-is_multicore()
+int
+get_snapshot_batched_width()
 {
-  return getGlobalRouter()->isMulticoreRouting();
+  return getGlobalRouter()->getSnapshotBatchedWidth();
 }
 
 void

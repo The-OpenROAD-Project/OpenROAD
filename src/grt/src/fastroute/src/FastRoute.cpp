@@ -27,6 +27,15 @@ namespace grt {
 using utl::GRT;
 using utl::DebugScopedTimer;
 
+namespace {
+
+// Keep snapshot-batched route semantics pinned to the operating point that
+// benchmarked best, while letting execution width follow the user-requested
+// thread count.
+constexpr int kSnapshotSemanticWidth = 16;
+
+}
+
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
                              utl::CallBackHandler* callback_handler,
@@ -38,7 +47,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       congestion_report_iter_step_(0),
       num_threads_(1),
       owns_nets_(true),
-      multicore_routing_(false),
+      snapshot_batched_width_(0),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -907,15 +916,25 @@ bool FastRouteCore::hasNonSoftNdrNets() const
   return false;
 }
 
+int FastRouteCore::resolveSnapshotExecutionThreads(const int work_items) const
+{
+  const int requested_threads = snapshot_batched_width_ > 0 ? num_threads_ : 1;
+  return std::min(work_items, std::max(1, requested_threads));
+}
+
+int FastRouteCore::resolveSnapshotWaveSize(const int available_batch_count) const
+{
+  return std::min(available_batch_count, kSnapshotSemanticWidth);
+}
+
 int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
 {
-  const int batch_multiplier = num_threads_ >= 64 ? 4 : 2;
-  return std::min(net_count, std::max(32, batch_multiplier * num_threads_));
+  return std::min(net_count, std::max(32, 2 * kSnapshotSemanticWidth));
 }
 
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
-  return multicore_routing_ && !debug_->isOn() && num_threads_ > 1
+  return snapshot_batched_width_ > 0 && !debug_->isOn()
          && net_count > resolveSnapshotBaseBatchSize(net_count)
          && !hasNonSoftNdrNets();
 }
@@ -935,16 +954,17 @@ bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
     return false;
   }
 
-  // Track B is intentionally not exact-preserving, but late cleanup is still
-  // sensitive to route-choice drift. Keep the aggressive snapshot mode for the
-  // early/high-overflow phase and fall back to the serial kernel later.
+  // Snapshot-batched routing is intentionally not exact-preserving, but late
+  // cleanup is still sensitive to route-choice drift. Keep the aggressive
+  // snapshot mode for the early/high-overflow phase and fall back to the
+  // serial kernel later.
   return iter <= resolveSnapshotBatchIterationLimit(net_count);
 }
 
-int FastRouteCore::resolveSnapshotBatchSize(const int iter,
-                                           const int net_count) const
+int FastRouteCore::resolveSnapshotNetsForBatch(const int iter,
+                                              const int net_count) const
 {
-  const int batch_size = resolveSnapshotBaseBatchSize(net_count);
+  const int nets_for_batch = resolveSnapshotBaseBatchSize(net_count);
 
   const int early_iteration_limit = resolveSnapshotBatchIterationLimit(net_count);
   const int scaled_iter = iter * 100;
@@ -956,12 +976,12 @@ int FastRouteCore::resolveSnapshotBatchSize(const int iter,
     return 1;
   }
   if (scaled_iter > kQuarterPercentage * early_iteration_limit) {
-    return std::max(1, batch_size / 4);
+    return std::max(1, nets_for_batch / 4);
   }
   if (scaled_iter > kHalfPercentage * early_iteration_limit) {
-    return std::max(1, batch_size / 2);
+    return std::max(1, nets_for_batch / 2);
   }
-  return batch_size;
+  return nets_for_batch;
 }
 
 std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
@@ -970,7 +990,7 @@ std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
       db_, logger_, callback_handler_, stt_builder_, sta_);
 
   worker->owns_nets_ = false;
-  worker->multicore_routing_ = false;
+  worker->snapshot_batched_width_ = 0;
   worker->num_threads_ = 1;
 
   worker->max_degree_ = max_degree_;
@@ -1768,10 +1788,10 @@ NetRouteMap FastRouteCore::run()
   SaveLastRouteLen();
 
   const int max_overflow_increases = 25;
-  const int trackb_iteration_limit
+  const int snapshot_iteration_limit
       = resolveSnapshotBatchIterationLimit(net_ids_.size());
-  const int trackb_cleanup_patience = 12;
-  bool trackb_cleanup_active = false;
+  const int snapshot_cleanup_patience = 12;
+  bool snapshot_cleanup_active = false;
 
   float slack_th = std::numeric_limits<float>::lowest();
 
@@ -1873,8 +1893,8 @@ NetRouteMap FastRouteCore::run()
 
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-    trackb_cleanup_active
-        = trackb_cleanup_active
+    snapshot_cleanup_active
+        = snapshot_cleanup_active
           || snapshot_batch_count_ > snapshot_batch_count_before;
 
     if (minofl > past_cong) {
@@ -1882,7 +1902,7 @@ NetRouteMap FastRouteCore::run()
       minoflrnd = i;
     }
 
-    if (trackb_cleanup_active && past_cong < bmfl) {
+    if (snapshot_cleanup_active && past_cong < bmfl) {
       copyRS();
       bmfl = past_cong;
       bwcnt = 0;
@@ -1947,12 +1967,12 @@ NetRouteMap FastRouteCore::run()
       VIA = 0;
     }
 
-    if (trackb_cleanup_active && i > trackb_iteration_limit) {
+    if (snapshot_cleanup_active && i > snapshot_iteration_limit) {
       if (past_cong >= bmfl) {
         bwcnt++;
       }
 
-      if (bwcnt > trackb_cleanup_patience) {
+      if (bwcnt > snapshot_cleanup_patience) {
         break;
       }
     } else {
