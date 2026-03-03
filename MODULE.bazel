@@ -7,14 +7,13 @@ module(
 
 bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_scala")
 git_override(
     module_name = "rules_scala",
@@ -22,7 +21,9 @@ git_override(
     remote = "https://github.com/bazelbuild/rules_scala",
 )
 
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 BOOST_VERSION = "1.89.0.bcr.2"
@@ -147,7 +148,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "dba8c9857e9056dad2d7054c80613a104d12b3d0",
+    commit = "dea261e6445ffc790989b22e85e15ae64172aa1f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -156,10 +157,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-464-g2b005366a",
+    image = "docker.io/openroad/orfs:26Q1-473-gb75a51133",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "f8e7b6983733298a29c3724a76ce3d4763fa11636ef8784a8b0bf6c28831624e",
+    sha256 = "0d811b5bbb44861ded130e10989a64b35163341f7300da66f7b17a67e3676e6b",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
