@@ -1255,8 +1255,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     uint32_t old_idx = it->flags_.mterm_idx;
     uint32_t new_idx = idx_map[old_idx];
     it->flags_.mterm_idx = new_idx;
-    it->mterm_
-        = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
+    it->mterm_ = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
   }
 
   // 2) reorder the iterms vector

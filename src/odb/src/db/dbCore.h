@@ -175,6 +175,7 @@ class _dbObject : public dbObject
 
  private:
   uint32_t offset_in_bytes_;
+  uint32_t oid_ = 0;  // cached object id (non-persistent)
 
   template <class T, uint32_t page_size>
   friend class dbTable;
@@ -277,9 +278,7 @@ inline const _dbObject* dbObject::getImpl() const
 
 inline uint32_t _dbObject::getOID() const
 {
-  dbObjectPage* page = getObjectPage();
-  uint32_t offset = (offset_in_bytes_ & kOffsetMask);
-  return page->page_addr_ | (offset / page->table_->obj_size_);
+  return oid_;
 }
 
 inline dbObjectTable* _dbObject::getTable() const
