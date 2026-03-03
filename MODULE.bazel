@@ -89,16 +89,9 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
+    commit = "970b93291b28ecb23f10abde796584ecbf904818",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
-
-# Updated dependencies of qt_bazel_prebuilts. Once the updated versions
-# have been added to qt_bazel_prebuilts, they can be removed here.
-# (But CAVE, right now that would result in cyclic dependencies with,
-# WORKSPACE so that also has to go first).
-bazel_dep(name = "harfbuzz", version = "11.0.1.bcr.1")
-bazel_dep(name = "glib", version = "2.82.2.bcr.8")
 
 ## Lock the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
