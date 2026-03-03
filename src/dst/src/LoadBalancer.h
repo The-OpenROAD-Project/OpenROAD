@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <absl/base/thread_annotations.h>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -12,6 +11,7 @@
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
