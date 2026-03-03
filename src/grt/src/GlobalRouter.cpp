@@ -5122,10 +5122,54 @@ bool GlobalRouter::connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2)
     std::vector<GSegment> connection
         = createConnectionForPositions(pin_pos1, pin_pos2, layer1, layer2);
 
-    // Segments created to connect the two nets should not be considered when
-    // computing resources from restored guides.
-    for (GSegment& seg : connection) {
-      seg.setIgnoreUsage(true);
+    for (const GSegment& seg : connection) {
+      const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                     / grid_->getTileSize();
+      const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                     / grid_->getTileSize();
+      const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                     / grid_->getTileSize();
+      const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                     / grid_->getTileSize();
+      const int layer = seg.init_layer;
+      if (!seg.isVia()) {
+        if (!fastroute_->hasAvailableResources(
+                x1, y1, x2, y2, layer, db_net1)) {
+          return false;
+        }
+      }
+    }
+
+    if (!net1->areSegmentsRestored() && !net2->areSegmentsRestored()) {
+      for (const GSegment& seg : connection) {
+        if (!seg.isVia()) {
+          const int x1 = (std::min(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize();
+          const int y1 = (std::min(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize();
+          const int x2 = (std::max(seg.init_x, seg.final_x) - grid_->getXMin())
+                         / grid_->getTileSize();
+          const int y2 = (std::max(seg.init_y, seg.final_y) - grid_->getYMin())
+                         / grid_->getTileSize();
+          fastroute_->addTreeEdge(x1, y1, x2, y2, seg.init_layer, db_net1);
+        }
+      }
+    } else if (net1->areSegmentsRestored()) {
+      // net1 has segments restored from ODB. The removeNet call for net2 will
+      // not call updateNetResources for net1's full route, so we must account
+      // for the connection segments' capacity here via ODB-based resource
+      // tracking.
+      for (const GSegment& seg : connection) {
+        if (!seg.isVia()) {
+          updateResources(seg.init_x,
+                          seg.init_y,
+                          seg.final_x,
+                          seg.final_y,
+                          seg.init_layer,
+                          1,
+                          db_net1);
+        }
+      }
     }
     net1_route.insert(net1_route.end(), net2_route.begin(), net2_route.end());
     net1_route.insert(net1_route.end(), connection.begin(), connection.end());
