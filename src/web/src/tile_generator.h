@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,14 @@ namespace web {
 
 struct Color;
 class Search;
+
+struct SelectionResult
+{
+  odb::dbInst* inst;
+  std::string name;
+  std::string master;
+  odb::Rect bbox;
+};
 
 struct TileVisibility
 {
@@ -111,11 +120,18 @@ class TileGenerator
 
   std::vector<std::string> getRoutingLayers();
 
-  std::vector<unsigned char> generateTile(const std::string& layer,
-                                          int z,
-                                          int x,
-                                          int y,
-                                          const TileVisibility& vis = {});
+  std::vector<SelectionResult> selectAt(int dbu_x,
+                                        int dbu_y,
+                                        int zoom = 0,
+                                        const TileVisibility& vis = {});
+
+  std::vector<unsigned char> generateTile(
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis = {},
+      const std::set<odb::dbInst*>& selected = {});
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -131,6 +147,18 @@ class TileGenerator
                         int z,
                         int x,
                         int y);
+
+  void drawSelection(std::vector<unsigned char>& image,
+                     const std::set<odb::dbInst*>& selected,
+                     const odb::Rect& dbu_tile,
+                     double scale);
+
+  bool isInstVisible(odb::dbInst* inst, const TileVisibility& vis) const;
+
+  static void blendPixel(std::vector<unsigned char>& image,
+                         int x,
+                         int y,
+                         const Color& c);
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;

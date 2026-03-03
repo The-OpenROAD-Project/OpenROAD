@@ -3,6 +3,7 @@
 
 #include "web/web.h"
 
+#include <algorithm>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -16,6 +17,8 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <utility>
@@ -100,12 +103,199 @@ std::vector<std::string> TileGenerator::getRoutingLayers()
   return layers;
 }
 
+bool TileGenerator::isInstVisible(odb::dbInst* inst,
+                                  const TileVisibility& vis) const
+{
+  odb::dbMaster* master = inst->getMaster();
+  odb::dbMasterType mtype = master->getType();
+
+  if (sta_) {
+    using IT = sta::dbSta::InstType;
+    switch (sta_->getInstanceType(inst)) {
+      case IT::BLOCK:
+        return vis.macros;
+      case IT::PAD_INPUT:
+        return vis.pad_input;
+      case IT::PAD_OUTPUT:
+        return vis.pad_output;
+      case IT::PAD_INOUT:
+        return vis.pad_inout;
+      case IT::PAD_POWER:
+        return vis.pad_power;
+      case IT::PAD_SPACER:
+        return vis.pad_spacer;
+      case IT::PAD_AREAIO:
+        return vis.pad_areaio;
+      case IT::PAD:
+        return vis.pad_other;
+      case IT::ENDCAP:
+        return vis.phys_endcap;
+      case IT::FILL:
+        return vis.phys_fill;
+      case IT::TAPCELL:
+        return vis.phys_welltap;
+      case IT::TIE:
+        return vis.phys_tie;
+      case IT::ANTENNA:
+        return vis.phys_antenna;
+      case IT::COVER:
+        return vis.phys_cover;
+      case IT::BUMP:
+        return vis.phys_bump;
+      case IT::LEF_OTHER:
+        return vis.phys_other;
+      case IT::STD_BUF:
+      case IT::STD_INV:
+        return vis.std_bufinv;
+      case IT::STD_BUF_TIMING_REPAIR:
+      case IT::STD_INV_TIMING_REPAIR:
+        return vis.std_bufinv_timing;
+      case IT::STD_BUF_CLK_TREE:
+      case IT::STD_INV_CLK_TREE:
+        return vis.std_clock_bufinv;
+      case IT::STD_CLOCK_GATE:
+        return vis.std_clock_gate;
+      case IT::STD_LEVEL_SHIFT:
+        return vis.std_level_shift;
+      case IT::STD_SEQUENTIAL:
+        return vis.std_sequential;
+      case IT::STD_COMBINATIONAL:
+        return vis.std_combinational;
+      case IT::STD_CELL:
+      case IT::STD_PHYSICAL:
+      case IT::STD_OTHER:
+      default:
+        return vis.stdcells;
+    }
+  }
+
+  // Fallback: dbMasterType-only classification (no Liberty)
+  if (mtype.isBlock()) {
+    return vis.macros;
+  }
+  if (mtype.isPad()) {
+    if (mtype == odb::dbMasterType::PAD_INPUT) {
+      return vis.pad_input;
+    }
+    if (mtype == odb::dbMasterType::PAD_OUTPUT) {
+      return vis.pad_output;
+    }
+    if (mtype == odb::dbMasterType::PAD_INOUT) {
+      return vis.pad_inout;
+    }
+    if (mtype == odb::dbMasterType::PAD_POWER) {
+      return vis.pad_power;
+    }
+    if (mtype == odb::dbMasterType::PAD_SPACER) {
+      return vis.pad_spacer;
+    }
+    if (mtype == odb::dbMasterType::PAD_AREAIO) {
+      return vis.pad_areaio;
+    }
+    return vis.pad_other;
+  }
+  if (mtype.isEndCap()) {
+    return vis.phys_endcap;
+  }
+  if (master->isFiller()) {
+    return vis.phys_fill;
+  }
+  if (mtype == odb::dbMasterType::CORE_WELLTAP) {
+    return vis.phys_welltap;
+  }
+  if (mtype == odb::dbMasterType::CORE_TIEHIGH
+      || mtype == odb::dbMasterType::CORE_TIELOW) {
+    return vis.phys_tie;
+  }
+  if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
+    return vis.phys_antenna;
+  }
+  if (mtype.isCover()) {
+    if (mtype == odb::dbMasterType::COVER_BUMP) {
+      return vis.phys_bump;
+    }
+    return vis.phys_cover;
+  }
+  if (mtype == odb::dbMasterType::CORE_SPACER
+      || inst->getSourceType() == odb::dbSourceType::DIST) {
+    return vis.phys_other;
+  }
+  return vis.stdcells;
+}
+
+std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
+                                                     const int dbu_y,
+                                                     const int zoom,
+                                                     const TileVisibility& vis)
+{
+  std::vector<SelectionResult> results;
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  // Compute a search margin of 2 pixels at the current zoom level.
+  // This accounts for coordinate conversion rounding between the client's
+  // Leaflet CRS.Simple coordinates and the server's DBU space.
+  const int num_tiles = 1 << std::max(0, zoom);
+  const int margin
+      = std::max(1, static_cast<int>(getBounds().maxDXDY()
+                                     / (kTileSizeInPixel * num_tiles) * 2));
+  debugPrint(logger_,
+             utl::WEB,
+             "select",
+             1,
+             "selectAt dbu=({},{}) zoom={} margin={}",
+             dbu_x,
+             dbu_y,
+             zoom,
+             margin);
+  int rtree_count = 0;
+  for (odb::dbInst* inst : search_->searchInsts(block,
+                                                 dbu_x - margin,
+                                                 dbu_y - margin,
+                                                 dbu_x + margin,
+                                                 dbu_y + margin)) {
+    ++rtree_count;
+    const odb::Rect bbox = inst->getBBox()->getBox();
+    const bool hits = bbox.intersects(odb::Point(dbu_x, dbu_y));
+    const bool visible = isInstVisible(inst, vis);
+    debugPrint(logger_,
+               utl::WEB,
+               "select",
+               2,
+               "  candidate {} master={} bbox=({},{},{},{}) "
+               "intersects={} visible={}",
+               inst->getName(),
+               inst->getMaster()->getName(),
+               bbox.xMin(),
+               bbox.yMin(),
+               bbox.xMax(),
+               bbox.yMax(),
+               hits,
+               visible);
+    if (hits && visible) {
+      results.push_back(
+          {inst, inst->getName(), inst->getMaster()->getName(), bbox});
+    }
+  }
+  debugPrint(logger_,
+             utl::WEB,
+             "select",
+             1,
+             "  rtree_results={} selected={}",
+             rtree_count,
+             results.size());
+  // Sort by area descending so larger instances (macros) come first
+  std::sort(results.begin(), results.end(), [](const auto& a, const auto& b) {
+    return a.bbox.area() > b.bbox.area();
+  });
+  return results;
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
     const int x,
     int y,
-    const TileVisibility& vis)
+    const TileVisibility& vis,
+    const std::set<odb::dbInst*>& selected)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -159,217 +349,9 @@ std::vector<unsigned char> TileGenerator::generateTile(
         continue;
       }
       odb::dbMaster* master = inst->getMaster();
-      odb::dbMasterType mtype = master->getType();
 
-      // Classify instance and check visibility
-      if (sta_) {
-        // Full classification using Liberty cell data
-        using IT = sta::dbSta::InstType;
-        switch (sta_->getInstanceType(inst)) {
-          case IT::BLOCK:
-            if (!vis.macros) {
-              continue;
-            }
-            break;
-          case IT::PAD_INPUT:
-            if (!vis.pad_input) {
-              continue;
-            }
-            break;
-          case IT::PAD_OUTPUT:
-            if (!vis.pad_output) {
-              continue;
-            }
-            break;
-          case IT::PAD_INOUT:
-            if (!vis.pad_inout) {
-              continue;
-            }
-            break;
-          case IT::PAD_POWER:
-            if (!vis.pad_power) {
-              continue;
-            }
-            break;
-          case IT::PAD_SPACER:
-            if (!vis.pad_spacer) {
-              continue;
-            }
-            break;
-          case IT::PAD_AREAIO:
-            if (!vis.pad_areaio) {
-              continue;
-            }
-            break;
-          case IT::PAD:
-            if (!vis.pad_other) {
-              continue;
-            }
-            break;
-          case IT::ENDCAP:
-            if (!vis.phys_endcap) {
-              continue;
-            }
-            break;
-          case IT::FILL:
-            if (!vis.phys_fill) {
-              continue;
-            }
-            break;
-          case IT::TAPCELL:
-            if (!vis.phys_welltap) {
-              continue;
-            }
-            break;
-          case IT::TIE:
-            if (!vis.phys_tie) {
-              continue;
-            }
-            break;
-          case IT::ANTENNA:
-            if (!vis.phys_antenna) {
-              continue;
-            }
-            break;
-          case IT::COVER:
-            if (!vis.phys_cover) {
-              continue;
-            }
-            break;
-          case IT::BUMP:
-            if (!vis.phys_bump) {
-              continue;
-            }
-            break;
-          case IT::LEF_OTHER:
-            if (!vis.phys_other) {
-              continue;
-            }
-            break;
-          case IT::STD_BUF:
-          case IT::STD_INV:
-            if (!vis.std_bufinv) {
-              continue;
-            }
-            break;
-          case IT::STD_BUF_TIMING_REPAIR:
-          case IT::STD_INV_TIMING_REPAIR:
-            if (!vis.std_bufinv_timing) {
-              continue;
-            }
-            break;
-          case IT::STD_BUF_CLK_TREE:
-          case IT::STD_INV_CLK_TREE:
-            if (!vis.std_clock_bufinv) {
-              continue;
-            }
-            break;
-          case IT::STD_CLOCK_GATE:
-            if (!vis.std_clock_gate) {
-              continue;
-            }
-            break;
-          case IT::STD_LEVEL_SHIFT:
-            if (!vis.std_level_shift) {
-              continue;
-            }
-            break;
-          case IT::STD_SEQUENTIAL:
-            if (!vis.std_sequential) {
-              continue;
-            }
-            break;
-          case IT::STD_COMBINATIONAL:
-            if (!vis.std_combinational) {
-              continue;
-            }
-            break;
-          case IT::STD_CELL:
-          case IT::STD_PHYSICAL:
-          case IT::STD_OTHER:
-          default:
-            if (!vis.stdcells) {
-              continue;
-            }
-            break;
-        }
-      } else {
-        // Fallback: dbMasterType-only classification (no Liberty)
-        if (mtype.isBlock()) {
-          if (!vis.macros) {
-            continue;
-          }
-        } else if (mtype.isPad()) {
-          if (mtype == odb::dbMasterType::PAD_INPUT) {
-            if (!vis.pad_input) {
-              continue;
-            }
-          } else if (mtype == odb::dbMasterType::PAD_OUTPUT) {
-            if (!vis.pad_output) {
-              continue;
-            }
-          } else if (mtype == odb::dbMasterType::PAD_INOUT) {
-            if (!vis.pad_inout) {
-              continue;
-            }
-          } else if (mtype == odb::dbMasterType::PAD_POWER) {
-            if (!vis.pad_power) {
-              continue;
-            }
-          } else if (mtype == odb::dbMasterType::PAD_SPACER) {
-            if (!vis.pad_spacer) {
-              continue;
-            }
-          } else if (mtype == odb::dbMasterType::PAD_AREAIO) {
-            if (!vis.pad_areaio) {
-              continue;
-            }
-          } else {
-            if (!vis.pad_other) {
-              continue;
-            }
-          }
-        } else if (mtype.isEndCap()) {
-          if (!vis.phys_endcap) {
-            continue;
-          }
-        } else if (master->isFiller()) {
-          if (!vis.phys_fill) {
-            continue;
-          }
-        } else if (mtype == odb::dbMasterType::CORE_WELLTAP) {
-          if (!vis.phys_welltap) {
-            continue;
-          }
-        } else if (mtype == odb::dbMasterType::CORE_TIEHIGH
-                   || mtype == odb::dbMasterType::CORE_TIELOW) {
-          if (!vis.phys_tie) {
-            continue;
-          }
-        } else if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
-          if (!vis.phys_antenna) {
-            continue;
-          }
-        } else if (mtype.isCover()) {
-          if (mtype == odb::dbMasterType::COVER_BUMP) {
-            if (!vis.phys_bump) {
-              continue;
-            }
-          } else {
-            if (!vis.phys_cover) {
-              continue;
-            }
-          }
-        } else if (mtype == odb::dbMasterType::CORE_SPACER
-                   || inst->getSourceType() == odb::dbSourceType::DIST) {
-          if (!vis.phys_other) {
-            continue;
-          }
-        } else {
-          if (!vis.stdcells) {
-            continue;
-          }
-        }
+      if (!isInstVisible(inst, vis)) {
+        continue;
       }
       const int xl = inst_bbox.xMin();
       const int yl = inst_bbox.yMin();
@@ -505,6 +487,10 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
     }
+
+    if (!selected.empty()) {
+      drawSelection(image_buffer, selected, dbu_tile, scale);
+    }
   }
 
   if (vis.debug) {
@@ -635,9 +621,96 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   }
 }
 
+/* static */
+void TileGenerator::blendPixel(std::vector<unsigned char>& image,
+                               const int x,
+                               const int y,
+                               const Color& c)
+{
+  if (x < 0 || x >= kTileSizeInPixel || y < 0 || y >= kTileSizeInPixel) {
+    return;
+  }
+  const int i = (y * kTileSizeInPixel + x) * 4;
+  const float a = c.a / 255.0f;
+  const float inv_a = 1.0f - a;
+  image[i + 0] = static_cast<unsigned char>(c.r * a + image[i + 0] * inv_a);
+  image[i + 1] = static_cast<unsigned char>(c.g * a + image[i + 1] * inv_a);
+  image[i + 2] = static_cast<unsigned char>(c.b * a + image[i + 2] * inv_a);
+  image[i + 3] = std::max(image[i + 3], c.a);
+}
+
+void TileGenerator::drawSelection(std::vector<unsigned char>& image,
+                                  const std::set<odb::dbInst*>& selected,
+                                  const odb::Rect& dbu_tile,
+                                  const double scale)
+{
+  const Color fill{255, 255, 0, 80};
+  const Color border{255, 255, 0, 255};
+
+  for (odb::dbInst* inst : selected) {
+    const odb::Rect inst_bbox = inst->getBBox()->getBox();
+    if (!dbu_tile.overlaps(inst_bbox)) {
+      continue;
+    }
+    const odb::Rect overlap = inst_bbox.intersect(dbu_tile);
+    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+    // Semi-transparent yellow fill
+    for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+      for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+        blendPixel(image, ix, 255 - iy, fill);
+      }
+    }
+
+    // Solid yellow border (only where instance edge is within the tile)
+    const odb::Rect full_draw = toPixels(scale, inst_bbox, dbu_tile);
+    // Left edge
+    if (full_draw.xMin() >= 0 && full_draw.xMin() < kTileSizeInPixel) {
+      for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+        setPixel(image, full_draw.xMin(), 255 - iy, border);
+      }
+    }
+    // Right edge
+    const int rx = std::min(full_draw.xMax() - 1, kTileSizeInPixel - 1);
+    if (rx >= 0 && full_draw.xMax() > 0) {
+      for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+        setPixel(image, rx, 255 - iy, border);
+      }
+    }
+    // Bottom edge
+    if (full_draw.yMin() >= 0 && full_draw.yMin() < kTileSizeInPixel) {
+      for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+        setPixel(image, ix, 255 - full_draw.yMin(), border);
+      }
+    }
+    // Top edge
+    const int ty = std::min(full_draw.yMax() - 1, kTileSizeInPixel - 1);
+    if (ty >= 0 && full_draw.yMax() > 0) {
+      for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+        setPixel(image, ix, 255 - ty, border);
+      }
+    }
+  }
+}
+
 //------------------------------------------------------------------------------
 // Transport-agnostic request/response types and dispatch
 //------------------------------------------------------------------------------
+
+// Escape a string for safe inclusion in a JSON string value.
+// Handles backslash and double-quote (the common offenders in Verilog names).
+static std::string json_escape(const std::string& s)
+{
+  std::string out;
+  out.reserve(s.size());
+  for (char c : s) {
+    if (c == '\\' || c == '"') {
+      out += '\\';
+    }
+    out += c;
+  }
+  return out;
+}
 
 struct WsRequest
 {
@@ -648,6 +721,7 @@ struct WsRequest
     BOUNDS,
     LAYERS,
     INFO,
+    SELECT,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -655,6 +729,11 @@ struct WsRequest
   int z = 0;
   int x = 0;
   int y = 0;
+
+  // SELECT fields
+  int select_x = 0;
+  int select_y = 0;
+  int select_zoom = 0;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -788,14 +867,46 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.type = WsRequest::LAYERS;
   } else if (type_str == "info") {
     req.type = WsRequest::INFO;
+  } else if (type_str == "select") {
+    req.type = WsRequest::SELECT;
+    req.select_x = extract_int(msg, "dbu_x");
+    req.select_y = extract_int(msg, "dbu_y");
+    req.select_zoom = extract_int_or(msg, "zoom", 0);
+    // Visibility flags for filtering selectable instances
+    req.vis.stdcells = extract_int_or(msg, "stdcells", 1);
+    req.vis.macros = extract_int_or(msg, "macros", 1);
+    req.vis.pad_input = extract_int_or(msg, "pad_input", 1);
+    req.vis.pad_output = extract_int_or(msg, "pad_output", 1);
+    req.vis.pad_inout = extract_int_or(msg, "pad_inout", 1);
+    req.vis.pad_power = extract_int_or(msg, "pad_power", 1);
+    req.vis.pad_spacer = extract_int_or(msg, "pad_spacer", 1);
+    req.vis.pad_areaio = extract_int_or(msg, "pad_areaio", 1);
+    req.vis.pad_other = extract_int_or(msg, "pad_other", 1);
+    req.vis.phys_fill = extract_int_or(msg, "phys_fill", 1);
+    req.vis.phys_endcap = extract_int_or(msg, "phys_endcap", 1);
+    req.vis.phys_welltap = extract_int_or(msg, "phys_welltap", 1);
+    req.vis.phys_tie = extract_int_or(msg, "phys_tie", 1);
+    req.vis.phys_antenna = extract_int_or(msg, "phys_antenna", 1);
+    req.vis.phys_cover = extract_int_or(msg, "phys_cover", 1);
+    req.vis.phys_bump = extract_int_or(msg, "phys_bump", 1);
+    req.vis.phys_other = extract_int_or(msg, "phys_other", 1);
+    req.vis.std_bufinv = extract_int_or(msg, "std_bufinv", 1);
+    req.vis.std_bufinv_timing = extract_int_or(msg, "std_bufinv_timing", 1);
+    req.vis.std_clock_bufinv = extract_int_or(msg, "std_clock_bufinv", 1);
+    req.vis.std_clock_gate = extract_int_or(msg, "std_clock_gate", 1);
+    req.vis.std_level_shift = extract_int_or(msg, "std_level_shift", 1);
+    req.vis.std_sequential = extract_int_or(msg, "std_sequential", 1);
+    req.vis.std_combinational = extract_int_or(msg, "std_combinational", 1);
   } else {
     req.type = WsRequest::UNKNOWN;
   }
   return req;
 }
 
-static WsResponse dispatch_request(const WsRequest& req,
-                                   const std::shared_ptr<TileGenerator>& gen)
+static WsResponse dispatch_request(
+    const WsRequest& req,
+    const std::shared_ptr<TileGenerator>& gen,
+    const std::set<odb::dbInst*>& selected = {})
 {
   WsResponse resp;
   resp.id = req.id;
@@ -830,7 +941,8 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
-      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y, req.vis);
+      resp.payload = gen->generateTile(
+          req.layer, req.z, req.x, req.y, req.vis, selected);
       break;
     }
     case WsRequest::INFO: {
@@ -976,6 +1088,10 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
 
+  // Per-session selection state
+  std::mutex selection_mutex_;
+  std::set<odb::dbInst*> selected_insts_;
+
   // Write serialization: strand + queue ensures one async_write at a time
   net::strand<net::any_io_executor> strand_;
   std::deque<std::vector<unsigned char>> write_queue_;
@@ -1038,24 +1154,80 @@ class ws_session : public std::enable_shared_from_this<ws_session>
 
     const WsRequest req = parse_ws_request(msg);
 
-    // Dispatch tile generation to the thread pool (not to the strand).
-    // This lets multiple tiles render concurrently across all 32 threads.
     auto self = shared_from_this();
     auto gen = generator_;
-    net::post(ws_.get_executor(), [self, gen, req]() {
-      WsResponse resp;
-      try {
-        resp = dispatch_request(req, gen);
-      } catch (const std::exception& e) {
+
+    if (req.type == WsRequest::SELECT) {
+      // Handle selection on the thread pool — single selectAt call
+      net::post(ws_.get_executor(), [self, gen, req]() {
+        WsResponse resp;
         resp.id = req.id;
-        resp.type = 2;  // error
-        std::string err = std::string("server error: ") + e.what();
-        resp.payload.assign(err.begin(), err.end());
-        std::cerr << "dispatch error for request " << req.id << ": " << e.what()
-                  << "\n";
+        try {
+          auto results = gen->selectAt(
+              req.select_x, req.select_y, req.select_zoom, req.vis);
+
+          // Update session selection state
+          std::set<odb::dbInst*> new_selection;
+          for (const auto& r : results) {
+            new_selection.insert(r.inst);
+          }
+          {
+            std::lock_guard<std::mutex> lock(self->selection_mutex_);
+            self->selected_insts_ = std::move(new_selection);
+          }
+
+          // Build JSON response directly from results
+          resp.type = 0;  // JSON
+          std::stringstream ss;
+          ss << "{\"selected\": [";
+          bool first = true;
+          for (const auto& r : results) {
+            if (!first) {
+              ss << ", ";
+            }
+            ss << "{\"name\": \"" << json_escape(r.name)
+               << "\", \"master\": \"" << json_escape(r.master)
+               << "\", \"bbox\": [" << r.bbox.xMin() << ", "
+               << r.bbox.yMin() << ", " << r.bbox.xMax() << ", "
+               << r.bbox.yMax() << "]}";
+            first = false;
+          }
+          ss << "]}";
+          const std::string json = ss.str();
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
+    } else {
+      // Capture current selection for tile rendering
+      std::set<odb::dbInst*> selected;
+      {
+        std::lock_guard<std::mutex> lock(selection_mutex_);
+        selected = selected_insts_;
       }
-      self->queue_response(resp);
-    });
+
+      // Dispatch tile generation to the thread pool (not to the strand).
+      // This lets multiple tiles render concurrently across all 32 threads.
+      net::post(
+          ws_.get_executor(), [self, gen, req, selected = std::move(selected)]() {
+            WsResponse resp;
+            try {
+              resp = dispatch_request(req, gen, selected);
+            } catch (const std::exception& e) {
+              resp.id = req.id;
+              resp.type = 2;  // error
+              std::string err = std::string("server error: ") + e.what();
+              resp.payload.assign(err.begin(), err.end());
+              std::cerr << "dispatch error for request " << req.id << ": "
+                        << e.what() << "\n";
+            }
+            self->queue_response(resp);
+          });
+    }
 
     // Immediately start reading the next request
     do_read();

@@ -214,6 +214,8 @@ let map = null;
 let fitBounds = null;
 let displayControlsEl = null;
 let allLayers = [];
+let designScale = null;   // pixels-per-DBU for coordinate conversion
+let designMaxDXDY = null; // max(width, height) in DBU for Y-axis mapping
 
 const visibility = {
     stdcells: true,
@@ -798,12 +800,50 @@ wsManager.readyPromise.then(async () => {
         const tileSize = 256;
 
         const scale = tileSize / Math.max(designWidth, designHeight);
+        designScale = scale;
+        designMaxDXDY = Math.max(designWidth, designHeight);
 
         fitBounds = [
             [-minY * scale, minX * scale],
             [-maxY * scale, maxX * scale]
         ];
         map.fitBounds(fitBounds);
+
+        // Click-to-select: convert click position to DBU and query server
+        map.on('click', (e) => {
+            const dbu_x = Math.round(e.latlng.lng / designScale);
+            // Tile rendering applies two Y-flips (tile index + pixel), so
+            // the visual dbu_y maps as: dbu_y = maxDXDY + lat / scale
+            const dbu_y = Math.round(designMaxDXDY + e.latlng.lat / designScale);
+
+            const vf = {};
+            for (const [k, v] of Object.entries(visibility)) {
+                vf[k] = v ? 1 : 0;
+            }
+            wsManager.request({ type: 'select', dbu_x, dbu_y, zoom: map.getZoom(), ...vf })
+                .then(data => {
+                    console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
+                    map.closePopup();
+                    if (data.selected && data.selected.length > 0) {
+                        const inst = data.selected[0];
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(
+                                `<strong>${inst.name}</strong><br>${inst.master}<br><small style="color:#888">(${dbu_x}, ${dbu_y})</small>`)
+                            .openOn(map);
+                    } else {
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(
+                                `<em>No instance at (${dbu_x}, ${dbu_y})</em>`)
+                            .openOn(map);
+                    }
+                    redrawAllLayers();
+                })
+                .catch(err => {
+                    console.error('Select failed:', err);
+                });
+        });
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }
