@@ -269,136 +269,125 @@ function redrawAllLayers() {
     }
 }
 
-function makeVisToggle(key, labelText, checked) {
-    if (checked === undefined) {
-        checked = visibility[key];
-    } else {
-        visibility[key] = checked;
-    }
-    const label = document.createElement('label');
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = checked;
-    checkbox.addEventListener('change', () => {
-        visibility[key] = checkbox.checked;
-        redrawAllLayers();
-    });
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(labelText));
-    return label;
-}
-
-// children: array of [key, label] for leaf toggles, or nested makeVisGroup elements
-// options: { visKey, disabled, expanded, checked }
-//   visKey: if set, parent checkbox also controls this visibility key directly
-//   disabled: if true, children are grayed out and non-interactive
-//   expanded: if true, start with children visible
-//   checked: if false, start unchecked with all children off (default true)
-function makeVisGroup(groupLabel, children, options = {}) {
-    const startChecked = options.checked !== false;
-    const container = document.createElement('div');
-    container.className = 'vis-group';
-
-    // Parent row with checkbox + disclosure triangle
-    const header = document.createElement('label');
-    header.className = 'vis-group-header';
-
-    const arrow = document.createElement('span');
-    arrow.className = 'vis-arrow';
-    arrow.textContent = options.expanded ? '\u25BC' : '\u25B6';
-    header.appendChild(arrow);
-
-    const parentCb = document.createElement('input');
-    parentCb.type = 'checkbox';
-    parentCb.checked = startChecked;
-    if (options.visKey) {
-        visibility[options.visKey] = startChecked;
-    }
-    header.appendChild(parentCb);
-    header.appendChild(document.createTextNode(groupLabel));
-    container.appendChild(header);
-
-    // Child items
-    const childDiv = document.createElement('div');
-    childDiv.className = options.expanded
-        ? 'vis-group-children'
-        : 'vis-group-children collapsed';
-    if (options.disabled) {
-        childDiv.classList.add('disabled');
+// Data-model-driven checkbox tree (mirrors Qt's QStandardItemModel pattern).
+// State lives in a plain JS tree; DOM is synced from model after every change.
+// No event delegation, no bubbling — avoids the cascade bugs of the old approach.
+class VisTree {
+    constructor(visibility, onChange) {
+        this.visibility = visibility;
+        this.onChange = onChange;
+        this.roots = [];
     }
 
-    const childCbs = [];
-    const nestedGroups = [];  // nested makeVisGroup containers
-    for (const child of children) {
-        if (child instanceof HTMLElement) {
-            // Nested group element — if parent starts unchecked, uncheck children
-            childDiv.appendChild(child);
-            nestedGroups.push(child);
-            const cbs = child.querySelectorAll('input[type="checkbox"]');
-            cbs.forEach(cb => {
-                childCbs.push(cb);
-                if (!startChecked) {
-                    cb.checked = false;
-                    cb.dispatchEvent(new Event('change'));
-                }
-            });
-        } else {
-            const [key, label] = child;
-            const toggle = makeVisToggle(key, label, startChecked ? undefined : false);
-            childDiv.appendChild(toggle);
-            childCbs.push(toggle.querySelector('input'));
+    // Add a tree from a declarative spec.
+    // Leaf:  { key, label }
+    // Group: { label, children: [...], visKey?, disabled? }
+    add(spec) {
+        this.roots.push(this._build(spec, null));
+        return this;
+    }
+
+    render(container) {
+        for (const r of this.roots) container.appendChild(this._dom(r));
+        for (const r of this.roots) this._sync(r);
+    }
+
+    // -- model --
+
+    _build(spec, parent) {
+        const node = {
+            label: spec.label, key: spec.key || null,
+            visKey: spec.visKey || null, disabled: !!spec.disabled,
+            parent, children: [], checked: true, indeterminate: false, cb: null,
+        };
+        if (spec.children) {
+            for (const c of spec.children)
+                node.children.push(this._build(c, node));
+            this._computeParent(node);
+        } else if (node.key) {
+            node.checked = !!this.visibility[node.key];
         }
+        return node;
     }
-    // Sync nested group parents after init overrides
-    for (const ng of nestedGroups) {
-        if (ng._syncParent) ng._syncParent();
+
+    _computeParent(node) {
+        const all  = node.children.every(c => c.checked && !c.indeterminate);
+        const none = node.children.every(c => !c.checked && !c.indeterminate);
+        node.checked = all;
+        node.indeterminate = !all && !none;
     }
-    container.appendChild(childDiv);
 
-    // Toggle collapse on arrow click
-    arrow.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const collapsed = childDiv.classList.toggle('collapsed');
-        arrow.textContent = collapsed ? '\u25B6' : '\u25BC';
-    });
+    _setSubtree(node, checked) {
+        node.checked = checked;
+        node.indeterminate = false;
+        for (const c of node.children) this._setSubtree(c, checked);
+    }
 
-    // Parent checkbox toggles all children + optional direct visKey
-    parentCb.addEventListener('change', () => {
-        if (options.visKey) {
-            visibility[options.visKey] = parentCb.checked;
+    _onCheck(node) {
+        node.checked = node.cb.checked;
+        node.indeterminate = false;
+        if (!node.disabled) {
+            for (const c of node.children) this._setSubtree(c, node.checked);
         }
-        if (!options.disabled) {
-            for (const cb of childCbs) {
-                cb.checked = parentCb.checked;
-                cb.dispatchEvent(new Event('change'));
-            }
-            // Sync nested group parents (indeterminate won't clear
-            // without this since non-bubbling events don't reach
-            // the nested childDiv listener).
-            for (const ng of nestedGroups) {
-                if (ng._syncParent) ng._syncParent();
-            }
-        }
-        redrawAllLayers();
-    });
-
-    // Update parent state when children change
-    function syncParent() {
-        const allChecked = childCbs.every(cb => cb.checked);
-        const someChecked = childCbs.some(cb => cb.checked);
-        parentCb.checked = allChecked;
-        parentCb.indeterminate = someChecked && !allChecked;
+        for (let n = node.parent; n; n = n.parent) this._computeParent(n);
+        for (const r of this.roots) this._sync(r);
+        this.onChange();
     }
-    childDiv.addEventListener('change', syncParent);
 
-    // Expose syncParent so ancestor groups can call it
-    container._syncParent = syncParent;
+    _sync(node) {
+        if (node.cb) {
+            node.cb.checked = node.checked;
+            node.cb.indeterminate = node.indeterminate;
+        }
+        if (node.key) this.visibility[node.key] = node.checked;
+        if (node.visKey) this.visibility[node.visKey] = node.checked || node.indeterminate;
+        for (const c of node.children) this._sync(c);
+    }
 
-    // Compute initial parent state from actual child states
-    syncParent();
+    // -- DOM --
 
-    return container;
+    _dom(node) {
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        node.cb = cb;
+        cb.addEventListener('change', () => this._onCheck(node));
+
+        if (!node.children.length) {
+            const label = document.createElement('label');
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(node.label));
+            return label;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'vis-group';
+
+        const header = document.createElement('label');
+        header.className = 'vis-group-header';
+        const arrow = document.createElement('span');
+        arrow.className = 'vis-arrow';
+        arrow.textContent = '\u25B6';
+        header.appendChild(arrow);
+        header.appendChild(cb);
+        header.appendChild(document.createTextNode(node.label));
+        div.appendChild(header);
+
+        const kids = document.createElement('div');
+        kids.className = 'vis-group-children collapsed';
+        if (node.disabled) kids.classList.add('disabled');
+        for (const c of node.children) kids.appendChild(this._dom(c));
+        div.appendChild(kids);
+
+        arrow.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            kids.classList.toggle('collapsed');
+            arrow.textContent = kids.classList.contains('collapsed')
+                ? '\u25B6' : '\u25BC';
+        });
+
+        return div;
+    }
 }
 
 // Layer color palette (must match server-side palette in web.cpp)
@@ -738,68 +727,61 @@ wsManager.readyPromise.then(async () => {
 
             displayControlsEl.appendChild(layerGroup);
 
-            // --- Instances section (parent checkbox toggles all) ---
-            const instanceGroup = makeVisGroup('Instances', [
-                makeVisGroup('Std Cells', [
-                    makeVisGroup('Bufs/Invs', [
-                        ['std_bufinv_timing', 'Timing opt.'],
-                        ['std_bufinv', 'Netlist'],
-                    ]),
-                    ['std_combinational', 'Combinational'],
-                    ['std_sequential', 'Sequential'],
-                    makeVisGroup('Clock tree', [
-                        ['std_clock_bufinv', 'Buffer/Inverter'],
-                        ['std_clock_gate', 'Clock gate'],
-                    ]),
-                    ['std_level_shift', 'Level shifter'],
-                ], { visKey: 'stdcells', disabled: !hasLiberty }),
-                makeVisToggle('macros', 'Macros'),
-                makeVisGroup('Pads', [
-                    ['pad_input', 'Input'],
-                    ['pad_output', 'Output'],
-                    ['pad_inout', 'Inout'],
-                    ['pad_power', 'Power'],
-                    ['pad_spacer', 'Spacer'],
-                    ['pad_areaio', 'Area IO'],
-                    ['pad_other', 'Other'],
-                ]),
-                makeVisGroup('Physical', [
-                    ['phys_fill', 'Fill'],
-                    ['phys_endcap', 'Endcap'],
-                    ['phys_welltap', 'Welltap'],
-                    ['phys_tie', 'Tie Hi/Lo'],
-                    ['phys_antenna', 'Antenna'],
-                    ['phys_cover', 'Cover'],
-                    ['phys_bump', 'Bump'],
-                    ['phys_other', 'Other'],
-                ]),
-            ]);
-            displayControlsEl.appendChild(instanceGroup);
-
-            // --- Nets group ---
-            const netGroup = makeVisGroup('Nets', [
-                ['net_signal', 'Signal'],
-                ['net_power', 'Power'],
-                ['net_ground', 'Ground'],
-                ['net_clock', 'Clock'],
-                ['net_reset', 'Reset'],
-                ['net_tieoff', 'Tie off'],
-                ['net_scan', 'Scan'],
-                ['net_analog', 'Analog'],
-            ]);
-            displayControlsEl.appendChild(netGroup);
-
-            // --- Shapes group ---
-            const shapeGroup = makeVisGroup('Shapes', [
-                ['routing', 'Routing'],
-                ['special_nets', 'Special Nets'],
-                ['pins', 'Pins'],
-                ['blockages', 'Blockages'],
-            ]);
-            displayControlsEl.appendChild(shapeGroup);
-
-            // --- Debug toggle ---
-            displayControlsEl.appendChild(makeVisToggle('debug', 'Debug tiles'));
+            // --- Visibility tree (Instances, Nets, Shapes, Debug) ---
+            const visTree = new VisTree(visibility, redrawAllLayers);
+            visTree.add({ label: 'Instances', children: [
+                { label: 'Std Cells', visKey: 'stdcells', disabled: !hasLiberty, children: [
+                    { label: 'Bufs/Invs', children: [
+                        { key: 'std_bufinv_timing', label: 'Timing opt.' },
+                        { key: 'std_bufinv', label: 'Netlist' },
+                    ]},
+                    { key: 'std_combinational', label: 'Combinational' },
+                    { key: 'std_sequential', label: 'Sequential' },
+                    { label: 'Clock tree', children: [
+                        { key: 'std_clock_bufinv', label: 'Buffer/Inverter' },
+                        { key: 'std_clock_gate', label: 'Clock gate' },
+                    ]},
+                    { key: 'std_level_shift', label: 'Level shifter' },
+                ]},
+                { key: 'macros', label: 'Macros' },
+                { label: 'Pads', children: [
+                    { key: 'pad_input', label: 'Input' },
+                    { key: 'pad_output', label: 'Output' },
+                    { key: 'pad_inout', label: 'Inout' },
+                    { key: 'pad_power', label: 'Power' },
+                    { key: 'pad_spacer', label: 'Spacer' },
+                    { key: 'pad_areaio', label: 'Area IO' },
+                    { key: 'pad_other', label: 'Other' },
+                ]},
+                { label: 'Physical', children: [
+                    { key: 'phys_fill', label: 'Fill' },
+                    { key: 'phys_endcap', label: 'Endcap' },
+                    { key: 'phys_welltap', label: 'Welltap' },
+                    { key: 'phys_tie', label: 'Tie Hi/Lo' },
+                    { key: 'phys_antenna', label: 'Antenna' },
+                    { key: 'phys_cover', label: 'Cover' },
+                    { key: 'phys_bump', label: 'Bump' },
+                    { key: 'phys_other', label: 'Other' },
+                ]},
+            ]});
+            visTree.add({ label: 'Nets', children: [
+                { key: 'net_signal', label: 'Signal' },
+                { key: 'net_power', label: 'Power' },
+                { key: 'net_ground', label: 'Ground' },
+                { key: 'net_clock', label: 'Clock' },
+                { key: 'net_reset', label: 'Reset' },
+                { key: 'net_tieoff', label: 'Tie off' },
+                { key: 'net_scan', label: 'Scan' },
+                { key: 'net_analog', label: 'Analog' },
+            ]});
+            visTree.add({ label: 'Shapes', children: [
+                { key: 'routing', label: 'Routing' },
+                { key: 'special_nets', label: 'Special Nets' },
+                { key: 'pins', label: 'Pins' },
+                { key: 'blockages', label: 'Blockages' },
+            ]});
+            visTree.add({ key: 'debug', label: 'Debug tiles' });
+            visTree.render(displayControlsEl);
         }
 
         // --- Set Bounds ---
