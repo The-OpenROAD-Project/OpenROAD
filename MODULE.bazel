@@ -15,6 +15,8 @@ bazel_dep(name = "rules_cc", version = "0.1.2")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
 bazel_dep(name = "rules_python", version = "1.8.5")
+
+# Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
 bazel_dep(name = "rules_scala")
 git_override(
     module_name = "rules_scala",
@@ -178,7 +180,6 @@ scala_deps.settings(
     fetch_sources = True,
 )
 scala_deps.scala()
-scala_deps.scalatest()
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(
