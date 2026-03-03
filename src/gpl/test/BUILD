@@ -1,5 +1,5 @@
-load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
