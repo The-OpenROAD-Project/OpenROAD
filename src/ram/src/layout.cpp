@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "layout.h"
+#include "ram/layout.h"
 
 #include <algorithm>
 #include <memory>
@@ -235,6 +235,19 @@ int Grid::getWidth() const
 int Grid::numLayouts() const
 {
   return layouts_.size();
+}
+
+void Grid::setNumLayouts(int tracks)
+{
+  if (tracks > layouts_.size()) {
+    for (int size = layouts_.size(); size <= tracks; ++size) {
+      if (orientation_ == odb::horizontal) {
+        layouts_.push_back(std::make_unique<Layout>(odb::vertical));
+      } else {
+        layouts_.push_back(std::make_unique<Layout>(odb::horizontal));
+      }
+    }
+  }
 }
 
 int Grid::getLayoutWidth(int index) const
