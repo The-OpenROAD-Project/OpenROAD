@@ -56,7 +56,7 @@ inline bool dbTable<T, page_size>::validId(dbId<T> id) const
 
   if (((uint32_t) id != 0) && (page < page_cnt_)) {
     T* p = (T*) &(pages_[page]->objects_[offset * sizeof(T)]);
-    return (p->oid_ & kAllocBit) == kAllocBit;
+    return (p->offset_in_bytes_ & kAllocBit) == kAllocBit;
   }
 
   return false;
@@ -97,7 +97,7 @@ void dbTable<T, page_size>::clear()
     const T* e = &t[pageSize()];
 
     for (; t < e; t++) {
-      if (t->oid_ & kAllocBit) {
+      if (t->offset_in_bytes_ & kAllocBit) {
         t->~T();
       }
     }
@@ -189,7 +189,7 @@ void dbTable<T, page_size>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->oid_ = (uint32_t) ((char*) t - (char*) b);
+      o->offset_in_bytes_ = (uint32_t) ((char*) t - (char*) b);
 
       if (t != b) {  // don't link zero-object
         pushQ(free_list_, o);
@@ -201,7 +201,7 @@ void dbTable<T, page_size>::newPage()
 
     for (; t >= b; --t) {
       _dbFreeObject* o = (_dbFreeObject*) t;
-      o->oid_ = (uint32_t) ((char*) t - (char*) b);
+      o->offset_in_bytes_ = (uint32_t) ((char*) t - (char*) b);
       pushQ(free_list_, o);
     }
   }
@@ -217,10 +217,10 @@ T* dbTable<T, page_size>::create()
   }
 
   _dbFreeObject* o = popQ(free_list_);
-  const uint32_t oid = o->oid_;
+  const uint32_t offset = o->offset_in_bytes_;
   new (o) T(db_);
   T* t = (T*) o;
-  t->oid_ = oid | kAllocBit;
+  t->offset_in_bytes_ = offset | kAllocBit;
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   page->alloc_cnt_++;
@@ -258,7 +258,7 @@ inline void dbTable<T, page_size>::findBottom()
     T* s = &b[offset + 1];
     T* e = &b[pageSize()];
     for (; s < e; s++) {
-      if (s->oid_ & kAllocBit) {
+      if (s->offset_in_bytes_ & kAllocBit) {
         offset = s - b;
         bottom_idx_ = (page_id << kPageShift) + offset;
         return;
@@ -283,7 +283,7 @@ inline void dbTable<T, page_size>::findBottom()
   T* e = &s[pageSize()];
 
   for (; s < e; s++) {
-    if (s->oid_ & kAllocBit) {
+    if (s->offset_in_bytes_ & kAllocBit) {
       const uint32_t offset = s - b;
       bottom_idx_ = (page_id << kPageShift) + offset;
       return;
@@ -313,7 +313,7 @@ inline void dbTable<T, page_size>::findTop()
     T* s = &b[offset - 1];
 
     for (; s >= b; s--) {
-      if (s->oid_ & kAllocBit) {
+      if (s->offset_in_bytes_ & kAllocBit) {
         offset = s - b;
         top_idx_ = (page_id << kPageShift) + offset;
         return;
@@ -337,7 +337,7 @@ inline void dbTable<T, page_size>::findTop()
   T* s = &b[kPageMask];
 
   for (; s >= b; s--) {
-    if (s->oid_ & kAllocBit) {
+    if (s->offset_in_bytes_ & kAllocBit) {
       const uint32_t offset = s - b;
       top_idx_ = (page_id << kPageShift) + offset;
       return;
@@ -355,18 +355,18 @@ void dbTable<T, page_size>::destroy(T* t)
 
   assert(t->getOID() != 0);
   assert(t->getTable() == this);
-  assert(t->oid_ & kAllocBit);
+  assert(t->offset_in_bytes_ & kAllocBit);
 
   dbTablePage* page = (dbTablePage*) t->getObjectPage();
   _dbFreeObject* o = (_dbFreeObject*) t;
 
   page->alloc_cnt_--;
-  const uint32_t oid = t->oid_;
+  const uint32_t offset = t->offset_in_bytes_;
   t->~T();  // call destructor
-  o->oid_ = oid & ~kAllocBit;
+  o->offset_in_bytes_ = offset & ~kAllocBit;
 
-  const uint32_t offset = t - (T*) page->objects_;
-  const uint32_t id = page->page_addr_ + offset;
+  const uint32_t id_in_page = t - (T*) page->objects_;
+  const uint32_t id = page->page_addr_ + id_in_page;
 
   // Add to freelist
   pushQ(free_list_, o);
@@ -440,7 +440,7 @@ next_obj:
   T* e = (T*) &(page->objects_[pageSize() * sizeof(T)]);
 
   for (; p < e; ++p) {
-    if (p->oid_ & kAllocBit) {
+    if (p->offset_in_bytes_ & kAllocBit) {
       offset = p - (T*) page->objects_;
       const uint32_t n = (page_id << kPageShift) + offset;
       assert(n <= top_idx_);
@@ -475,7 +475,7 @@ void dbTable<T, page_size>::writePage(dbOStream& stream,
   const T* e = &t[pageSize()];
 
   for (; t < e; t++) {
-    if (t->oid_ & kAllocBit) {
+    if (t->offset_in_bytes_ & kAllocBit) {
       const char allocated = 1;
       stream << allocated;
       stream << *t;
@@ -501,19 +501,19 @@ void dbTable<T, page_size>::readPage(dbIStream& stream, dbTablePage* page)
     stream >> allocated;
 
     if (!allocated) {
-      t->oid_ = (uint32_t) ((char*) t - page->objects_);
+      t->offset_in_bytes_ = (uint32_t) ((char*) t - page->objects_);
       _dbFreeObject* o = (_dbFreeObject*) t;
       stream >> o->next_;
       stream >> o->prev_;
     } else {
       new (t) T(db_);
       uint32_t oid = uint32_t((char*) t - page->objects_) | kAllocBit;
-      t->oid_ = oid;  // Set the oid so the stream code can call the dbObject
-                      // methods.
+      t->offset_in_bytes_ = oid;  // Set the oid so the stream code can call the
+                                  // dbObject methods.
       page->alloc_cnt_++;
       stream >> *t;
       // Check that the streaming code did not overwrite the oid
-      assert(t->oid_ == oid);
+      assert(t->offset_in_bytes_ == oid);
     }
   }
 }

@@ -171,10 +171,10 @@ class _dbObject : public dbObject
   dbObjectType getType() const;
   uint32_t getOID() const;
   utl::Logger* getLogger() const;
-  bool isValid() const { return oid_ & kAllocBit; };
+  bool isValid() const { return offset_in_bytes_ & kAllocBit; };
 
  private:
-  uint32_t oid_;
+  uint32_t offset_in_bytes_;
 
   template <class T, uint32_t page_size>
   friend class dbTable;
@@ -278,7 +278,7 @@ inline const _dbObject* dbObject::getImpl() const
 inline uint32_t _dbObject::getOID() const
 {
   dbObjectPage* page = getObjectPage();
-  uint32_t offset = (oid_ & kOffsetMask);
+  uint32_t offset = (offset_in_bytes_ & kOffsetMask);
   return page->page_addr_ | (offset / page->table_->obj_size_);
 }
 
@@ -308,7 +308,7 @@ inline dbObjectType _dbObject::getType() const
 
 inline dbObjectPage* _dbObject::getObjectPage() const
 {
-  uint32_t offset = (oid_ & kOffsetMask);
+  uint32_t offset = (offset_in_bytes_ & kOffsetMask);
   char* base = (char*) this - offset;
   dbObjectPage* page = (dbObjectPage*) (base - sizeof(dbObjectPage));
   return page;
