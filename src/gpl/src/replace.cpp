@@ -167,6 +167,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     PlaceOptions final_options = options;
     if (!options.uniformTargetDensityMode) {
       final_options.uniformTargetDensityMode = true;
+      final_options.initDensityPenaltyFactor = 1;
     }
 
     doNesterovPlace(threads, final_options, iter + 1);
