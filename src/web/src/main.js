@@ -328,10 +328,12 @@ function makeVisGroup(groupLabel, children, options = {}) {
     }
 
     const childCbs = [];
+    const nestedGroups = [];  // nested makeVisGroup containers
     for (const child of children) {
         if (child instanceof HTMLElement) {
             // Nested group element — if parent starts unchecked, uncheck children
             childDiv.appendChild(child);
+            nestedGroups.push(child);
             const cbs = child.querySelectorAll('input[type="checkbox"]');
             cbs.forEach(cb => {
                 childCbs.push(cb);
@@ -346,6 +348,10 @@ function makeVisGroup(groupLabel, children, options = {}) {
             childDiv.appendChild(toggle);
             childCbs.push(toggle.querySelector('input'));
         }
+    }
+    // Sync nested group parents after init overrides
+    for (const ng of nestedGroups) {
+        if (ng._syncParent) ng._syncParent();
     }
     container.appendChild(childDiv);
 
@@ -367,6 +373,12 @@ function makeVisGroup(groupLabel, children, options = {}) {
                 cb.checked = parentCb.checked;
                 cb.dispatchEvent(new Event('change'));
             }
+            // Sync nested group parents (indeterminate won't clear
+            // without this since non-bubbling events don't reach
+            // the nested childDiv listener).
+            for (const ng of nestedGroups) {
+                if (ng._syncParent) ng._syncParent();
+            }
         }
         redrawAllLayers();
     });
@@ -379,6 +391,9 @@ function makeVisGroup(groupLabel, children, options = {}) {
         parentCb.indeterminate = someChecked && !allChecked;
     }
     childDiv.addEventListener('change', syncParent);
+
+    // Expose syncParent so ancestor groups can call it
+    container._syncParent = syncParent;
 
     // Compute initial parent state from actual child states
     syncParent();
@@ -703,7 +718,7 @@ wsManager.readyPromise.then(async () => {
             layerParentCb.addEventListener('change', () => {
                 for (const cb of layerCbs) {
                     cb.checked = layerParentCb.checked;
-                    cb.dispatchEvent(new Event('change'));
+                    cb.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
             // Update parent state when children change
