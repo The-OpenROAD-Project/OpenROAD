@@ -1473,9 +1473,6 @@ void NesterovBaseCommon::updateDbGCells()
   for (auto& gCell : getGCells()) {
     if (gCell->isInstance()) {
       for (Instance* inst : gCell->insts()) {
-        if (inst->isLocked()) {
-          continue;
-        }
         odb::dbInst* db_inst = inst->dbInst();
         db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
