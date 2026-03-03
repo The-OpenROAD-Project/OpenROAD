@@ -4357,8 +4357,12 @@ void GlobalRouter::removeNet(odb::dbNet* db_net)
       // data inside FastRouteCore. Instead of merging the deleted net into
       // preserved net, we just remove it from FastRouteCore and account for its
       // resources manually with updateNetResources.
-      fastroute_->removeNet(db_net);
+      // clearNetRoute releases the tree usage but keeps db_net in
+      // db_net_id_map_, so updateNetResources can look up the correct
+      // edge_cost. deleteNet then removes the net from the map.
+      fastroute_->clearNetRoute(db_net);
       updateNetResources(deleted_net, false);
+      fastroute_->deleteNet(db_net);
     } else if (deleted_net->areSegmentsRestored()) {
       // If deleted net has segments restored from ODB, we need to mark the
       // preserved net as having segments restore to ensure proper handling of
