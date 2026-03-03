@@ -160,15 +160,9 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   }
 
   if (options.overflow < locked_options.overflow) {
-    log_->report("options.overflow: {}, locked_options.overflow: {}",
-                 options.overflow,
-                 locked_options.overflow);
-
     PlaceOptions final_options = options;
-    if (!options.uniformTargetDensityMode) {
-      final_options.uniformTargetDensityMode = true;
-      final_options.initDensityPenaltyFactor = 1;
-    }
+    final_options.uniformTargetDensityMode = true;
+    final_options.initDensityPenaltyFactor = 1;
 
     doNesterovPlace(threads, final_options, iter + 1);
   }
