@@ -221,5 +221,40 @@ TEST_F(TileGeneratorTest, OutOfBoundsTileIsTransparent)
   EXPECT_FALSE(hasNonTransparentPixel(pixels));
 }
 
+TEST_F(TileGeneratorTest, DebugModeDrawsBorder)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.debug = true;
+
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+  ASSERT_EQ(h, 256u);
+
+  // Check corners for yellow border pixels (R=255, G=255, B=0, A=255).
+  // Pixel at (0,0):
+  EXPECT_EQ(pixels[0], 255);  // R
+  EXPECT_EQ(pixels[1], 255);  // G
+  EXPECT_EQ(pixels[2], 0);    // B
+  EXPECT_EQ(pixels[3], 255);  // A
+
+  // Pixel at (255,255):
+  const int last = (255 * 256 + 255) * 4;
+  EXPECT_EQ(pixels[last + 0], 255);  // R
+  EXPECT_EQ(pixels[last + 1], 255);  // G
+  EXPECT_EQ(pixels[last + 2], 0);    // B
+  EXPECT_EQ(pixels[last + 3], 255);  // A
+}
+
+TEST_F(TileGeneratorTest, DebugDefaultOff)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.debug);
+}
+
 }  // namespace
 }  // namespace web

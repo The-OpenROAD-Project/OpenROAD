@@ -72,13 +72,13 @@ class WebSocketManager {
     }
 
     request(msg) {
+        const id = this.nextId++;
+        msg.id = id;
         return new Promise((resolve, reject) => {
             if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
                 reject(new Error('WebSocket not connected'));
                 return;
             }
-            const id = this.nextId++;
-            msg.id = id;
             this.pending.set(id, { resolve, reject });
             this.ws.send(JSON.stringify(msg));
             updateStatus();
@@ -133,6 +133,49 @@ const WSTileLayer = L.GridLayer.extend({
         });
 
         return tile;
+    },
+
+    // Re-request all existing tiles in place (no removal/flash).
+    // Use this instead of redraw() for visibility changes.
+    refreshTiles: function() {
+        if (!this._map) return;
+
+        const vf = {};
+        for (const [k, v] of Object.entries(visibility)) {
+            vf[k] = v ? 1 : 0;
+        }
+
+        for (const key in this._tiles) {
+            const tileInfo = this._tiles[key];
+            if (!tileInfo || !tileInfo.el) continue;
+
+            const tile = tileInfo.el;
+            const coords = tileInfo.coords;
+
+            // Cancel any pending request for this tile
+            if (tile._wsRequestId !== undefined) {
+                this._wsManager.cancel(tile._wsRequestId);
+            }
+
+            const requestId = this._wsManager.nextId;
+            tile._wsRequestId = requestId;
+
+            this._wsManager.request({
+                type: 'tile',
+                layer: this._layerName,
+                z: coords.z,
+                x: coords.x,
+                y: coords.y,
+                ...vf,
+            }).then(blob => {
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
+                tile.src = URL.createObjectURL(blob);
+            }).catch(() => {
+                // Tile refresh failed; keep existing image
+            });
+        }
     },
 
     _removeTile: function(key) {
@@ -214,11 +257,13 @@ const visibility = {
     special_nets: true,
     pins: true,
     blockages: true,
+    // Debug
+    debug: false,
 };
 
 function redrawAllLayers() {
     for (const layer of allLayers) {
-        layer.redraw();
+        layer.refreshTiles();
     }
 }
 
@@ -735,6 +780,9 @@ wsManager.readyPromise.then(async () => {
                 ['blockages', 'Blockages'],
             ]);
             displayControlsEl.appendChild(shapeGroup);
+
+            // --- Debug toggle ---
+            displayControlsEl.appendChild(makeVisToggle('debug', 'Debug tiles'));
         }
 
         // --- Set Bounds ---

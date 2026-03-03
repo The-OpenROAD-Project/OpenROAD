@@ -100,11 +100,12 @@ std::vector<std::string> TileGenerator::getRoutingLayers()
   return layers;
 }
 
-std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
-                                                       const int z,
-                                                       const int x,
-                                                       int y,
-                                                       const TileVisibility& vis)
+std::vector<unsigned char> TileGenerator::generateTile(
+    const std::string& layer,
+    const int z,
+    const int x,
+    int y,
+    const TileVisibility& vis)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -112,14 +113,14 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
   static const Color palette[] = {
-      {70, 130, 210, 180},   // moderate blue
-      {200, 50, 50, 180},    // red
-      {50, 180, 80, 180},    // green
-      {200, 160, 40, 180},   // amber
-      {160, 60, 200, 180},   // purple
-      {40, 190, 190, 180},   // teal
-      {220, 120, 50, 180},   // orange
-      {180, 70, 150, 180},   // magenta
+      {70, 130, 210, 180},  // moderate blue
+      {200, 50, 50, 180},   // red
+      {50, 180, 80, 180},   // green
+      {200, 160, 40, 180},  // amber
+      {160, 60, 200, 180},  // purple
+      {40, 190, 190, 180},  // teal
+      {220, 120, 50, 180},  // orange
+      {180, 70, 150, 180},  // magenta
   };
   static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
 
@@ -166,126 +167,208 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
         using IT = sta::dbSta::InstType;
         switch (sta_->getInstanceType(inst)) {
           case IT::BLOCK:
-            if (!vis.macros) continue;
+            if (!vis.macros) {
+              continue;
+            }
             break;
           case IT::PAD_INPUT:
-            if (!vis.pad_input) continue;
+            if (!vis.pad_input) {
+              continue;
+            }
             break;
           case IT::PAD_OUTPUT:
-            if (!vis.pad_output) continue;
+            if (!vis.pad_output) {
+              continue;
+            }
             break;
           case IT::PAD_INOUT:
-            if (!vis.pad_inout) continue;
+            if (!vis.pad_inout) {
+              continue;
+            }
             break;
           case IT::PAD_POWER:
-            if (!vis.pad_power) continue;
+            if (!vis.pad_power) {
+              continue;
+            }
             break;
           case IT::PAD_SPACER:
-            if (!vis.pad_spacer) continue;
+            if (!vis.pad_spacer) {
+              continue;
+            }
             break;
           case IT::PAD_AREAIO:
-            if (!vis.pad_areaio) continue;
+            if (!vis.pad_areaio) {
+              continue;
+            }
             break;
           case IT::PAD:
-            if (!vis.pad_other) continue;
+            if (!vis.pad_other) {
+              continue;
+            }
             break;
           case IT::ENDCAP:
-            if (!vis.phys_endcap) continue;
+            if (!vis.phys_endcap) {
+              continue;
+            }
             break;
           case IT::FILL:
-            if (!vis.phys_fill) continue;
+            if (!vis.phys_fill) {
+              continue;
+            }
             break;
           case IT::TAPCELL:
-            if (!vis.phys_welltap) continue;
+            if (!vis.phys_welltap) {
+              continue;
+            }
             break;
           case IT::TIE:
-            if (!vis.phys_tie) continue;
+            if (!vis.phys_tie) {
+              continue;
+            }
             break;
           case IT::ANTENNA:
-            if (!vis.phys_antenna) continue;
+            if (!vis.phys_antenna) {
+              continue;
+            }
             break;
           case IT::COVER:
-            if (!vis.phys_cover) continue;
+            if (!vis.phys_cover) {
+              continue;
+            }
             break;
           case IT::BUMP:
-            if (!vis.phys_bump) continue;
+            if (!vis.phys_bump) {
+              continue;
+            }
             break;
           case IT::LEF_OTHER:
-            if (!vis.phys_other) continue;
+            if (!vis.phys_other) {
+              continue;
+            }
             break;
           case IT::STD_BUF:
           case IT::STD_INV:
-            if (!vis.std_bufinv) continue;
+            if (!vis.std_bufinv) {
+              continue;
+            }
             break;
           case IT::STD_BUF_TIMING_REPAIR:
           case IT::STD_INV_TIMING_REPAIR:
-            if (!vis.std_bufinv_timing) continue;
+            if (!vis.std_bufinv_timing) {
+              continue;
+            }
             break;
           case IT::STD_BUF_CLK_TREE:
           case IT::STD_INV_CLK_TREE:
-            if (!vis.std_clock_bufinv) continue;
+            if (!vis.std_clock_bufinv) {
+              continue;
+            }
             break;
           case IT::STD_CLOCK_GATE:
-            if (!vis.std_clock_gate) continue;
+            if (!vis.std_clock_gate) {
+              continue;
+            }
             break;
           case IT::STD_LEVEL_SHIFT:
-            if (!vis.std_level_shift) continue;
+            if (!vis.std_level_shift) {
+              continue;
+            }
             break;
           case IT::STD_SEQUENTIAL:
-            if (!vis.std_sequential) continue;
+            if (!vis.std_sequential) {
+              continue;
+            }
             break;
           case IT::STD_COMBINATIONAL:
-            if (!vis.std_combinational) continue;
+            if (!vis.std_combinational) {
+              continue;
+            }
             break;
           case IT::STD_CELL:
           case IT::STD_PHYSICAL:
           case IT::STD_OTHER:
           default:
-            if (!vis.stdcells) continue;
+            if (!vis.stdcells) {
+              continue;
+            }
             break;
         }
       } else {
         // Fallback: dbMasterType-only classification (no Liberty)
         if (mtype.isBlock()) {
-          if (!vis.macros) continue;
+          if (!vis.macros) {
+            continue;
+          }
         } else if (mtype.isPad()) {
           if (mtype == odb::dbMasterType::PAD_INPUT) {
-            if (!vis.pad_input) continue;
+            if (!vis.pad_input) {
+              continue;
+            }
           } else if (mtype == odb::dbMasterType::PAD_OUTPUT) {
-            if (!vis.pad_output) continue;
+            if (!vis.pad_output) {
+              continue;
+            }
           } else if (mtype == odb::dbMasterType::PAD_INOUT) {
-            if (!vis.pad_inout) continue;
+            if (!vis.pad_inout) {
+              continue;
+            }
           } else if (mtype == odb::dbMasterType::PAD_POWER) {
-            if (!vis.pad_power) continue;
+            if (!vis.pad_power) {
+              continue;
+            }
           } else if (mtype == odb::dbMasterType::PAD_SPACER) {
-            if (!vis.pad_spacer) continue;
+            if (!vis.pad_spacer) {
+              continue;
+            }
           } else if (mtype == odb::dbMasterType::PAD_AREAIO) {
-            if (!vis.pad_areaio) continue;
+            if (!vis.pad_areaio) {
+              continue;
+            }
           } else {
-            if (!vis.pad_other) continue;
+            if (!vis.pad_other) {
+              continue;
+            }
           }
         } else if (mtype.isEndCap()) {
-          if (!vis.phys_endcap) continue;
+          if (!vis.phys_endcap) {
+            continue;
+          }
         } else if (master->isFiller()) {
-          if (!vis.phys_fill) continue;
+          if (!vis.phys_fill) {
+            continue;
+          }
         } else if (mtype == odb::dbMasterType::CORE_WELLTAP) {
-          if (!vis.phys_welltap) continue;
+          if (!vis.phys_welltap) {
+            continue;
+          }
         } else if (mtype == odb::dbMasterType::CORE_TIEHIGH
                    || mtype == odb::dbMasterType::CORE_TIELOW) {
-          if (!vis.phys_tie) continue;
+          if (!vis.phys_tie) {
+            continue;
+          }
         } else if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
-          if (!vis.phys_antenna) continue;
+          if (!vis.phys_antenna) {
+            continue;
+          }
         } else if (mtype.isCover()) {
           if (mtype == odb::dbMasterType::COVER_BUMP) {
-            if (!vis.phys_bump) continue;
+            if (!vis.phys_bump) {
+              continue;
+            }
           } else {
-            if (!vis.phys_cover) continue;
+            if (!vis.phys_cover) {
+              continue;
+            }
           }
         } else if (mtype == odb::dbMasterType::CORE_SPACER
                    || inst->getSourceType() == odb::dbSourceType::DIST) {
-          if (!vis.phys_other) continue;
+          if (!vis.phys_other) {
+            continue;
+          }
         } else {
-          if (!vis.stdcells) continue;
+          if (!vis.stdcells) {
+            continue;
+          }
         }
       }
       const int xl = inst_bbox.xMin();
@@ -380,8 +463,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     // Draw routing shapes (wires, vias, bterms) on top of instances
     if (!instances_only && tech_layer && vis.routing) {
       for (const auto& shape : search_->searchBoxShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
-      {
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
         if (!vis.isNetVisible(std::get<2>(shape))) {
           continue;
         }
@@ -404,8 +486,7 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     // Draw special net shapes (power/ground straps) on top of instances
     if (!instances_only && tech_layer && vis.special_nets) {
       for (const auto& shape : search_->searchSNetShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max))
-      {
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
         if (!vis.isNetVisible(std::get<2>(shape))) {
           continue;
         }
@@ -426,6 +507,10 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     }
   }
 
+  if (vis.debug) {
+    drawDebugOverlay(image_buffer, z, x, y);
+  }
+
   std::vector<unsigned char> png_data;
   unsigned error = lodepng::encode(
       png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
@@ -433,7 +518,121 @@ std::vector<unsigned char> TileGenerator::generateTile(const std::string& layer,
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
 
+  // Debug: save tile to file for inspection
+  {
+    std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z) + "_"
+                           + std::to_string(x) + "_" + std::to_string(y)
+                           + ".png";
+    lodepng::save_file(png_data, filename);
+  }
+
   return png_data;
+}
+
+void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
+                                     const int z,
+                                     const int x,
+                                     const int y)
+{
+  // Minimal 5x7 bitmap font for digits 0-9 and punctuation.
+  // Each glyph is 5 columns wide, 7 rows tall.  Stored as 7 bytes per glyph
+  // where each byte is one row (MSB = leftmost pixel, only 5 bits used).
+  // clang-format off
+  static const unsigned char font[][7] = {
+    // '0'
+    {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E},
+    // '1'
+    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E},
+    // '2'
+    {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F},
+    // '3'
+    {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E},
+    // '4'
+    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02},
+    // '5'
+    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E},
+    // '6'
+    {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E},
+    // '7'
+    {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08},
+    // '8'
+    {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},
+    // '9'
+    {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C},
+    // '/'  (index 10)
+    {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10},
+    // '='  (index 11)
+    {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00},
+    // 'x'  (index 12)
+    {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11},
+    // 'y'  (index 13)
+    {0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04},
+    // 'z'  (index 14)
+    {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F},
+  };
+  // clang-format on
+
+  const Color yellow{255, 255, 0, 255};
+  const int last = kTileSizeInPixel - 1;
+
+  // Draw 1-pixel yellow border
+  for (int i = 0; i < kTileSizeInPixel; ++i) {
+    setPixel(image, i, 0, yellow);
+    setPixel(image, i, last, yellow);
+    setPixel(image, 0, i, yellow);
+    setPixel(image, last, i, yellow);
+  }
+
+  // Build the label string "z=<zoom> <x>/<y>"
+  std::string label = "z=" + std::to_string(z) + " " + std::to_string(x) + "/"
+                      + std::to_string(y);
+
+  // Draw each character at 3x scale (5x7 glyphs become 15x21 pixels).
+  constexpr int glyph_w = 5;
+  constexpr int glyph_h = 7;
+  constexpr int scale = 3;
+  constexpr int spacing = scale;  // 3px gap between characters
+  int cx = 4;                     // starting x pixel
+  const int cy = 4;               // starting y pixel
+
+  for (const char ch : label) {
+    int glyph_idx = -1;
+    if (ch >= '0' && ch <= '9') {
+      glyph_idx = ch - '0';
+    } else if (ch == '/') {
+      glyph_idx = 10;
+    } else if (ch == '=') {
+      glyph_idx = 11;
+    } else if (ch == 'x') {
+      glyph_idx = 12;
+    } else if (ch == 'y') {
+      glyph_idx = 13;
+    } else if (ch == 'z') {
+      glyph_idx = 14;
+    } else if (ch == ' ') {
+      cx += glyph_w * scale + spacing;
+      continue;
+    }
+    if (glyph_idx < 0) {
+      cx += glyph_w * scale + spacing;
+      continue;
+    }
+
+    for (int row = 0; row < glyph_h; ++row) {
+      const unsigned char bits = font[glyph_idx][row];
+      for (int col = 0; col < glyph_w; ++col) {
+        if (bits & (0x10 >> col)) {
+          for (int sy = 0; sy < scale; ++sy) {
+            for (int sx = 0; sx < scale; ++sx) {
+              setPixel(
+                  image, cx + col * scale + sx, cy + row * scale + sy, yellow);
+            }
+          }
+        }
+      }
+    }
+    cx += glyph_w * scale + spacing;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -581,6 +780,8 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.vis.special_nets = extract_int_or(msg, "special_nets", 1);
     req.vis.pins = extract_int_or(msg, "pins", 1);
     req.vis.blockages = extract_int_or(msg, "blockages", 1);
+    // Debug
+    req.vis.debug = extract_int_or(msg, "debug", 0);
   } else if (type_str == "bounds") {
     req.type = WsRequest::BOUNDS;
   } else if (type_str == "layers") {
@@ -629,15 +830,13 @@ static WsResponse dispatch_request(const WsRequest& req,
     }
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
-      resp.payload
-          = gen->generateTile(req.layer, req.z, req.x, req.y, req.vis);
+      resp.payload = gen->generateTile(req.layer, req.z, req.x, req.y, req.vis);
       break;
     }
     case WsRequest::INFO: {
       resp.type = 0;  // JSON
-      const std::string json = gen->hasSta()
-                                   ? "{\"has_liberty\": true}"
-                                   : "{\"has_liberty\": false}";
+      const std::string json = gen->hasSta() ? "{\"has_liberty\": true}"
+                                             : "{\"has_liberty\": false}";
       resp.payload.assign(json.begin(), json.end());
       break;
     }
@@ -733,8 +932,7 @@ http::response<http::string_body> handle_request(
     WsResponse ws_resp = dispatch_request(ws_req, generator);
 
     res.set(http::field::content_type, "image/png");
-    res.body()
-        = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
+    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
   } else if (req.method() == http::verb::get && !doc_root.empty()) {
     // Serve static files from doc_root
@@ -801,11 +999,9 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           res.set(http::field::server, "OpenROAD WebSocket Server");
         }));
 
-    ws_.async_accept(
-        req,
-        [self = shared_from_this()](beast::error_code ec) {
-          self->on_accept(ec);
-        });
+    ws_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
+      self->on_accept(ec);
+    });
   }
 
  private:
@@ -855,8 +1051,8 @@ class ws_session : public std::enable_shared_from_this<ws_session>
         resp.type = 2;  // error
         std::string err = std::string("server error: ") + e.what();
         resp.payload.assign(err.begin(), err.end());
-        std::cerr << "dispatch error for request " << req.id << ": "
-                  << e.what() << "\n";
+        std::cerr << "dispatch error for request " << req.id << ": " << e.what()
+                  << "\n";
       }
       self->queue_response(resp);
     });
@@ -870,13 +1066,13 @@ class ws_session : public std::enable_shared_from_this<ws_session>
     std::vector<unsigned char> frame = serialize_response(resp);
 
     // Post to the strand to serialize write queue access
-    net::post(strand_, [self = shared_from_this(),
-                        frame = std::move(frame)]() mutable {
-      self->write_queue_.push_back(std::move(frame));
-      if (!self->writing_) {
-        self->do_write();
-      }
-    });
+    net::post(strand_,
+              [self = shared_from_this(), frame = std::move(frame)]() mutable {
+                self->write_queue_.push_back(std::move(frame));
+                if (!self->writing_) {
+                  self->do_write();
+                }
+              });
   }
 
   void do_write()
@@ -1042,8 +1238,8 @@ class detect_session : public std::enable_shared_from_this<detect_session>
 
     if (websocket::is_upgrade(req_)) {
       // WebSocket upgrade - hand off to ws_session
-      auto ws = std::make_shared<ws_session>(
-          stream_.release_socket(), generator_);
+      auto ws
+          = std::make_shared<ws_session>(stream_.release_socket(), generator_);
       ws->run(std::move(req_));
     } else {
       // Regular HTTP - hand off to session with already-read request
@@ -1140,10 +1336,7 @@ void WebServer::serve(const std::string& doc_root)
     int const num_threads = 32;
 
     if (!doc_root.empty()) {
-      logger_->info(utl::WEB,
-                    4,
-                    "Serving static files from {}",
-                    doc_root);
+      logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
     logger_->info(utl::WEB,
                   1,

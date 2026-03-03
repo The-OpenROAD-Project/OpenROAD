@@ -72,6 +72,9 @@ struct TileVisibility
   bool pins = true;
   bool blockages = true;
 
+  // Debug
+  bool debug = false;
+
   bool isNetVisible(odb::dbNet* net) const
   {
     switch (net->getSigType().getValue()) {
@@ -123,6 +126,11 @@ class TileGenerator
   static odb::Rect toPixels(double scale,
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
+
+  void drawDebugOverlay(std::vector<unsigned char>& image,
+                        int z,
+                        int x,
+                        int y);
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;

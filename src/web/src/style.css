@@ -35,7 +35,7 @@ html, body {
 
 /* Leaflet tiles */
 .leaflet-tile {
-    image-rendering: pixelated;
+    image-rendering: auto;
 }
 
 /* Leaflet popups */
