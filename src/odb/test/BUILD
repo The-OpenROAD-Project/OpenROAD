@@ -30,7 +30,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -43,7 +43,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -56,7 +56,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -69,7 +69,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -82,7 +82,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -95,7 +95,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -108,7 +108,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -121,7 +121,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -134,7 +134,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
