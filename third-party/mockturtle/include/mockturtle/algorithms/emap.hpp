@@ -1511,7 +1511,7 @@ private:
       node_data.best_gate[0] = node_data.best_gate[1] = nullptr;
       node_data.same_match = 0;
       node_data.multioutput_match[0] = node_data.multioutput_match[1] = false;
-      node_data.required[0] = node_data.required[1] = std::numeric_limits<float>::max();
+      node_data.required[0] = node_data.required[1] = std::numeric_limits<double>::max();
       node_data.map_refs[0] = node_data.map_refs[1] = 0;
       node_data.est_refs[0] = node_data.est_refs[1] = static_cast<float>( ntk.fanout_size( n ) );
 
@@ -1609,6 +1609,8 @@ private:
 
       /* reset mapping */
       node_match[index].map_refs[0] = node_match[index].map_refs[1] = 0u;
+      node_match[index].arrival[0] = node_match[index].arrival[1] = 0.0;
+      node_match[index].required[0] = node_match[index].required[1] = std::numeric_limits<double>::max();
 
       if ( ntk.is_constant( n ) )
         continue;
@@ -2332,6 +2334,13 @@ private:
           }
           continue;
         }
+      }
+
+        // guard against unmapped nodes: if neither phase has a best gate, skip
+      if ( node_data.best_gate[0] == nullptr && node_data.best_gate[1] == nullptr )
+      {
+        // no valid mapping stored for this node (e.g., not in cover); skip arrival/area.
+        continue;
       }
 
       uint8_t use_phase = node_data.best_gate[0] != nullptr ? 0 : 1;

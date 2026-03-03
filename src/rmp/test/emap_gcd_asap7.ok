@@ -100,7 +100,7 @@ tns max -15641.01
 [i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
 Extended technology mapping stats:
 	area: 16.490
-	delay: 494.660
+	delay: 486.430
 	power: 0.000
 	inverters: 0
 	multioutput gates: 13
@@ -128,10 +128,9 @@ Extended technology mapping stats:
 [i] NOR3xp33_ASAP7_75t_R     	 Instance =          1	 Area =         0.07     0.42 %
 [i] NOR4xp25_ASAP7_75t_R     	 Instance =          1	 Area =         0.09     0.55 %
 [i] OR4x1_ASAP7_75t_R        	 Instance =          1	 Area =         0.10     0.61 %
-[i] XNOR2xp5_ASAP7_75t_R     	 Instance =          1	 Area =         0.13     0.79 %
-[i] XOR2xp5_ASAP7_75t_R      	 Instance =          3	 Area =         0.39     2.37 %
+[i] XNOR2xp5_ASAP7_75t_R     	 Instance =          4	 Area =         0.52     3.15 %
 [i] TOTAL                    	 Instance =        185	 Area =        16.49   100.00 %
-[i] Report stats: area = 16.49; delay = 494.66;
+[i] Report stats: area = 16.49; delay = 495.75;
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
 [INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 45 endpoints with setup violations.
@@ -139,11 +138,11 @@ Extended technology mapping stats:
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
-        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -761.569 |   -25828.4 |     45 | dpath/a_lt_b$in0[10]$_DFFE_PP_/D
-    final |       0 |      17 |        0 |      4 |    27 |    +2.2% | -479.506 |   -18243.5 |     46 | dpath/a_lt_b$in0[11]$_DFFE_PP_/D
+        0 |       0 |       0 |        0 |      0 |     0 |    +0.0% | -757.180 |   -25626.9 |     45 | dpath/a_lt_b$in0[10]$_DFFE_PP_/D
+    final |       0 |      19 |        0 |      4 |    14 |    +2.2% | -473.673 |   -17680.6 |     46 | dpath/a_lt_b$in0[11]$_DFFE_PP_/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0051] Resized 17 instances: 17 up, 0 up match, 0 down, 0 VT
-[INFO RSZ-0043] Swapped pins on 27 instances.
+[INFO RSZ-0051] Resized 19 instances: 19 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 14 instances.
 [INFO RSZ-0049] Cloned 4 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 [INFO RSZ-0033] No hold violations found.
@@ -152,16 +151,16 @@ Cell type report:                       Count       Area
   Sequential cell                          35      10.21
   Multi-Input combinational cell          138      15.19
   Total                                   224      27.67
-[-479.506, -404.969): ************************************************** (35)
-[-404.969, -330.432):  (0)
-[-330.432, -255.895): **** (3)
-[-255.895, -181.358): *** (2)
-[-181.358, -106.821): *** (2)
-[-106.821,  -32.284): * (1)
-[ -32.284,   42.253): ****** (4)
-[  42.253,  116.790): **** (3)
-[ 116.790,  191.327): *** (2)
-[ 191.327,  265.864]: * (1)
+[-473.673, -399.740): ************************************************** (34)
+[-399.740, -325.807): * (1)
+[-325.807, -251.874): *** (2)
+[-251.874, -177.941): **** (3)
+[-177.941, -104.008): *** (2)
+[-104.008,  -30.075): * (1)
+[ -30.075,   43.858): ****** (4)
+[  43.858,  117.791): *** (2)
+[ 117.791,  191.724): *** (2)
+[ 191.724,  265.657]: *** (2)
 Startpoint: dpath/a_lt_b$in1[0]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by core_clock)
 Endpoint: dpath/a_lt_b$in0[11]$_DFFE_PP_
@@ -175,43 +174,43 @@ Corner: slow
    0.00    0.00   clock core_clock (rise edge)
    0.00    0.00   clock network delay (ideal)
    0.00    0.00 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
-  83.53   83.53 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
-  22.86  106.38 v n_86/Y (INVx2_ASAP7_75t_R)
-  24.49  130.87 ^ n_87/Y (NAND2x1p5_ASAP7_75t_R)
-  41.58  172.45 v n_88/CON (FAx1_ASAP7_75t_R)
-  44.71  217.16 ^ n_89/CON (FAx1_ASAP7_75t_R)
-  42.81  259.97 v n_91/Y (MAJIxp5_ASAP7_75t_R)
-  42.40  302.37 ^ n_92/CON (FAx1_ASAP7_75t_R)
-  43.12  345.49 v n_94/Y (MAJIxp5_ASAP7_75t_R)
-  42.47  387.96 ^ n_95/CON (FAx1_ASAP7_75t_R)
-  42.81  430.77 v n_97/Y (MAJIxp5_ASAP7_75t_R)
-  42.40  473.18 ^ n_98/CON (FAx1_ASAP7_75t_R)
-  42.81  515.99 v n_100/Y (MAJIxp5_ASAP7_75t_R)
-  42.40  558.39 ^ n_101/CON (FAx1_ASAP7_75t_R)
-  42.81  601.20 v n_103/Y (MAJIxp5_ASAP7_75t_R)
-  42.40  643.61 ^ n_104/CON (FAx1_ASAP7_75t_R)
-  41.23  684.84 v n_106/Y (MAJIxp5_ASAP7_75t_R)
-  75.62  760.46 ^ n_107/CON (FAx1_ASAP7_75t_R)
-  61.20  821.66 v n_110/Y (AOI22x1_ASAP7_75t_R)
-  37.16  858.82 ^ n_156/Y (INVx2_ASAP7_75t_R)
-  34.44  893.26 v n_225/Y (NAND5xp2_ASAP7_75t_R)
-  50.41  943.66 ^ n_226/Y (AOI33xp33_ASAP7_75t_R)
-   0.00  943.66 ^ dpath/a_lt_b$in0[11]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
-         943.66   data arrival time
+  75.59   75.59 ^ dpath/a_lt_b$in1[0]$_DFFE_PP_/QN (DFFHQNx1_ASAP7_75t_R)
+  23.58   99.17 v n_86/Y (INVx2_ASAP7_75t_R)
+  24.87  124.03 ^ n_87/Y (NAND2x1p5_ASAP7_75t_R)
+  40.06  164.09 v n_88/CON (FAx1_ASAP7_75t_R)
+  44.71  208.80 ^ n_89/CON (FAx1_ASAP7_75t_R)
+  42.81  251.61 v n_91/Y (MAJIxp5_ASAP7_75t_R)
+  42.40  294.01 ^ n_92/CON (FAx1_ASAP7_75t_R)
+  43.12  337.13 v n_94/Y (MAJIxp5_ASAP7_75t_R)
+  42.47  379.60 ^ n_95/CON (FAx1_ASAP7_75t_R)
+  42.81  422.42 v n_97/Y (MAJIxp5_ASAP7_75t_R)
+  42.40  464.82 ^ n_98/CON (FAx1_ASAP7_75t_R)
+  42.81  507.63 v n_100/Y (MAJIxp5_ASAP7_75t_R)
+  42.40  550.03 ^ n_101/CON (FAx1_ASAP7_75t_R)
+  42.81  592.84 v n_103/Y (MAJIxp5_ASAP7_75t_R)
+  42.40  635.25 ^ n_104/CON (FAx1_ASAP7_75t_R)
+  41.23  676.48 v n_106/Y (MAJIxp5_ASAP7_75t_R)
+  77.39  753.87 ^ n_107/CON (FAx1_ASAP7_75t_R)
+  61.76  815.62 v n_110/Y (AOI22x1_ASAP7_75t_R)
+  37.31  852.94 ^ n_156/Y (INVx2_ASAP7_75t_R)
+  34.49  887.43 v n_225/Y (NAND5xp2_ASAP7_75t_R)
+  50.40  937.83 ^ n_226/Y (AOI33xp33_ASAP7_75t_R)
+   0.00  937.83 ^ dpath/a_lt_b$in0[11]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         937.83   data arrival time
 
  500.00  500.00   clock core_clock (rise edge)
    0.00  500.00   clock network delay (ideal)
    0.00  500.00   clock reconvergence pessimism
          500.00 ^ dpath/a_lt_b$in0[11]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
- -35.84  464.16   library setup time
-         464.16   data required time
+ -35.85  464.15   library setup time
+         464.15   data required time
 ---------------------------------------------------------
-         464.16   data required time
-        -943.66   data arrival time
+         464.15   data required time
+        -937.83   data arrival time
 ---------------------------------------------------------
-        -479.51   slack (VIOLATED)
+        -473.67   slack (VIOLATED)
 
 
-wns max -479.51
-tns max -18243.47
+wns max -473.67
+tns max -17680.64
 Repair timing output passed/skipped equivalence test
