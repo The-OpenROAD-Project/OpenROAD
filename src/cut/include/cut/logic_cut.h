@@ -12,6 +12,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "kitty/dynamic_truth_table.hpp"
 #include "mockturtle/algorithms/cleanup.hpp"
+#include "mockturtle/algorithms/decomposition.hpp"
 #include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/networks/aig.hpp"
 #include "mockturtle/utils/tech_library.hpp"
@@ -74,52 +75,6 @@ class LogicCut
   std::vector<sta::Net*> primary_outputs_;
   sta::InstanceSet cut_instances_;
 };
-
-namespace {
-
-mockturtle::signal<mockturtle::aig_network> tt_to_aig(
-    mockturtle::names_view<mockturtle::aig_network>& ntk,
-    const kitty::dynamic_truth_table& tt,
-    const std::vector<mockturtle::signal<mockturtle::aig_network>>& inputs,
-    utl::Logger* logger,
-    unsigned var_index = 0)
-{
-  using aig_network = mockturtle::aig_network;
-  using signal = mockturtle::signal<aig_network>;
-
-  // Base cases: constant functions
-  if (kitty::is_const0(tt)) {
-    return ntk.get_constant(false);
-  }
-  if (kitty::is_const0(~tt)) {
-    return ntk.get_constant(true);
-  }
-
-  if (var_index >= inputs.size()) {
-    logger->error(utl::CUT, 54, "var_index {} out of range (inputs {}).", var_index, inputs.size());
-  }
-
-  const signal x = inputs[var_index];
-
-  // Cofactors w.r.t. current variable index.
-  const auto tt0 = kitty::cofactor0(tt, var_index);
-  const auto tt1 = kitty::cofactor1(tt, var_index);
-
-  // Recursively build sub-functions for cofactors.
-  const signal f0 = tt_to_aig(ntk, tt0, inputs, logger, var_index + 1);
-  const signal f1 = tt_to_aig(ntk, tt1, inputs, logger, var_index + 1);
-
-  // Shannon decomposition:
-  // f = (!x & f0) | (x & f1)
-  const signal a0 = ntk.create_and(!x, f0);
-  const signal a1 = ntk.create_and(x, f1);
-
-  const signal tmp = ntk.create_and(!a0, !a1);
-
-  return !tmp;
-}
-
-}  // anonymous namespace
 
 template <unsigned MaxInputs>
 mockturtle::names_view<mockturtle::aig_network>
@@ -188,8 +143,12 @@ LogicCut::BuildMappedMockturtleNetwork(
 
     // Driver should not be sequential or outside the cut (handled by logic
     // extractor)
-    assert(driver_cell && !driver_cell->hasSequentials()
-           && cut_instances_set.contains(driver_inst));
+    if (!driver_cell) {
+      logger->error(utl::CUT, 54, "Driver pin not found: {}", network->name(driver_inst));
+    }
+    if (driver_cell->hasSequentials() || !cut_instances_set.contains(driver_inst)) {
+      logger->error(utl::CUT, 55, "Invalid driver for: {}", network->name(driver_inst));
+    }
 
     const std::string cell_name = driver_cell->name();
     const std::string pin_name = network->portName(driver_pin);
@@ -227,7 +186,10 @@ LogicCut::BuildMappedMockturtleNetwork(
     }
 
     // Realize gate function as AIG fragment.
-    const signal out_sig = tt_to_aig(ntk, g->function, fanins, logger);
+    std::vector<uint32_t> vars(g->function.num_vars());
+    std::iota(vars.begin(), vars.end(), 0u);
+
+    const signal out_sig = mockturtle::shannon_decomposition(ntk, g->function, vars, fanins);
     if (!ntk.has_name(out_sig)) {
       ntk.set_name(out_sig, network->name(net));
     }
