@@ -2216,4 +2216,21 @@ void FastRouteCore::SaveLastRouteLen()
   }
 }
 
+
+int FastRouteCore::computeTotalWirelength()
+{
+  int total = 0;
+  for (const int& netID : net_ids_) {
+    const auto& treeedges = sttrees_[netID].edges;
+    const int num_edges = sttrees_[netID].num_edges();
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const auto& edge = treeedges[edgeID];
+      if (edge.len > 0) {
+        total += edge.route.routelen;
+      }
+    }
+  }
+  return total;
+}
 }  // namespace grt
+

@@ -277,6 +277,7 @@ class FastRouteCore
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
   void setIncrementalGrt(bool is_incremental);
+  int computeTotalWirelength();
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -738,3 +739,4 @@ class FastRouteCore
 extern const char* getNetName(odb::dbNet* db_net);
 
 }  // namespace grt
+
