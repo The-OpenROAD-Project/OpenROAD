@@ -47,7 +47,7 @@ py_library(
     srcs = ["helpers.py"],
     imports = ["."],
     deps = [
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
     ],
 )
 
@@ -124,7 +124,7 @@ PY_TESTS = [
         ],
         deps = [
             ":helpers",
-            "//openroad:openroadpy",
+            "//python/openroad:openroadpy",
         ],
     )
     for test_name in PY_TESTS
