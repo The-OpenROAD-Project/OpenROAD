@@ -221,6 +221,12 @@ class FastRouteCore
                              int layer,
                              int new_layer,
                              odb::dbNet* db_net);
+  bool hasAvailableResources(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int layer,
+                             odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };

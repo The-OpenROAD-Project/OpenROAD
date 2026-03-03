@@ -838,6 +838,43 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   }
 }
 
+bool FastRouteCore::hasAvailableResources(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          odb::dbNet* db_net)
+{
+  const int k = layer - 1;
+
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+  const int8_t layer_edge_cost
+      = exists ? nets_[net_id]->getLayerEdgeCost(k) : 1;
+  const int8_t edge_cost = exists ? nets_[net_id]->getEdgeCost() : 1;
+
+  if (y1 == y2) {  // horizontal edge
+    for (int x = x1; x < x2; x++) {
+      if (h_edges_3D_[k][y1][x].cap - h_edges_3D_[k][y1][x].usage
+              < layer_edge_cost
+          || graph2d_.getCapH(x, y1) - graph2d_.getUsageH(x, y1) < edge_cost) {
+        return false;
+      }
+    }
+  } else if (x1 == x2) {  // vertical edge
+    for (int y = y1; y < y2; y++) {
+      if (v_edges_3D_[k][y][x1].cap - v_edges_3D_[k][y][x1].usage
+              < layer_edge_cost
+          || graph2d_.getCapV(x1, y) - graph2d_.getUsageV(x1, y) < edge_cost) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 void FastRouteCore::initAuxVar()
 {
   tree_order_cong_.clear();
