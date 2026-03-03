@@ -1333,6 +1333,11 @@ NetRouteMap FastRouteCore::run()
   }
 
   graph2d_.clearUsed();
+  // Rebuild used grids in graph2d during incremental GRT to account for
+  // segments created during merge nets.
+  if (is_incremental_grt_) {
+    graph2d_.rebuildUsedGrids();
+  }
   preProcessTechLayers();
 
   int tUsage;
