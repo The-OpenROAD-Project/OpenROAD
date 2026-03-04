@@ -165,6 +165,7 @@ class FastRouteCore
   NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
+  int getSnapshotBatchCount() const { return snapshot_batch_count_; }
   void getBlockage(odb::dbTechLayer* layer,
                    int x,
                    int y,
@@ -779,6 +780,7 @@ class FastRouteCore
   int snapshot_batch_count_ = 0;
   int snapshot_batch_net_count_ = 0;
   int snapshot_batch_wave_count_ = 0;
+  bool snapshot_batch_disabled_for_run_ = false;
   int detour_penalty_;
 };
 

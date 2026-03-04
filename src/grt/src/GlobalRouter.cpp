@@ -127,6 +127,11 @@ int GlobalRouter::getSnapshotBatchedWidth() const
   return fastroute_->getSnapshotBatchedWidth();
 }
 
+int GlobalRouter::getSnapshotBatchCount() const
+{
+  return fastroute_->getSnapshotBatchCount();
+}
+
 void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
                                routing_congestion_data_source,
                            std::unique_ptr<AbstractRoutingCongestionDataSource>
