@@ -202,6 +202,50 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
   EXPECT_EQ(sig2_box->getBox().yMax(), 202000);
 }
 
+TEST_F(SimpleDbFixture, test_bump_map_reader_rounding)
+{
+  createSimpleDB();
+
+  db_->setDbuPerMicron(1000);
+
+  // Create BUMP master
+  dbLib* lib = db_->findLib("lib1");
+  dbTechLayer* bot_layer
+      = dbTechLayer::create(lib->getTech(), "BOT", dbTechLayerType::ROUTING);
+  dbTechLayer* layer
+      = dbTechLayer::create(lib->getTech(), "TOP", dbTechLayerType::ROUTING);
+  dbMaster* master = dbMaster::create(lib, "BUMP");
+  master->setWidth(10000);
+  master->setHeight(10000);
+  master->setOrigin(5000, 5000);
+  master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm* term
+      = dbMTerm::create(master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  dbMPin* bot_pin = dbMPin::create(term);
+  dbBox::create(bot_pin, bot_layer, -1000, -1000, 1000, 1000);
+  dbMPin* pin = dbMPin::create(term);
+  dbBox::create(pin, layer, -2000, -2000, 2000, 2000);
+  master->setFrozen();
+
+  dbBlock* block = db_->getChip()->getBlock();
+  block->setDieArea(Rect(0, 0, 500, 500));
+
+  EXPECT_EQ(block->getInsts().size(), 0);
+
+  ThreeDBlox parser(&logger_, db_.get());
+  std::string path = getFilePath(prefix + "data/example4.bmap");
+  parser.readBMap(path);
+
+  // Check bumps were created
+  EXPECT_EQ(block->getInsts().size(), 2);
+  dbInst* inst1 = block->findInst("bump1");
+  EXPECT_EQ(inst1->getBBox()->getBox().xCenter(), 1036800);
+  EXPECT_EQ(inst1->getBBox()->getBox().yCenter(), 5991840);
+  dbInst* inst2 = block->findInst("bump2");
+  EXPECT_EQ(inst2->getBBox()->getBox().xCenter(), 1041120);
+  EXPECT_EQ(inst2->getBBox()->getBox().yCenter(), 5991840);
+}
+
 TEST_F(SimpleDbFixture, test_bump_map_reader_netsonly)
 {
   createSimpleDB();
