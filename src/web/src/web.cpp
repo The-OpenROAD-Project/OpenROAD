@@ -782,7 +782,6 @@ static void serializeProperty(std::stringstream& ss,
       }
       int id = storeSelectable(selectables, sel);
       ss << "{\"name\": \"" << json_escape(sel.getName())
-         << "\", \"value\": \"" << json_escape(sel.getTypeName())
          << "\", \"name_select_id\": " << id << "}";
       first = false;
     }
