@@ -477,21 +477,38 @@ function makeClickable(el, selectId) {
 }
 
 function navigateInspector(selectId) {
-    console.log('navigateInspector: select_id =', selectId);
     wsManager.request({ type: 'inspect', select_id: selectId })
         .then(data => {
-            console.log('Inspect response:', data);
             if (data.error) {
                 console.error('Inspect error:', data.error);
                 return;
             }
             updateInspector(data);
-            // Highlight bbox on map if available
+
+            // Show popup and highlight on the map
+            map.closePopup();
+            if (highlightRect) {
+                map.removeLayer(highlightRect);
+                highlightRect = null;
+            }
             if (data.bbox && map && designScale) {
                 const [x1, y1, x2, y2] = data.bbox;
-                highlightBBox(x1, y1, x2, y2);
+                // For non-instance objects, show dashed bbox outline
+                // (instances get the yellow tile-based highlight instead)
+                if (data.type !== 'Inst') {
+                    highlightBBox(x1, y1, x2, y2);
+                }
+                // Show a popup at the center of the bbox
+                const cx = ((x1 + x2) / 2) * designScale;
+                const cy = (((y1 + y2) / 2) - designMaxDXDY) * designScale;
+                L.popup()
+                    .setLatLng([cy, cx])
+                    .setContent(
+                        `<strong>${data.name}</strong><br>` +
+                        `<small style="color:#888">${data.type}</small>`)
+                    .openOn(map);
             }
-            // Redraw tiles to clear the old instance highlight
+            // Redraw tiles to update instance highlight
             redrawAllLayers();
         })
         .catch(err => console.error('Inspect failed:', err));

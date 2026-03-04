@@ -1348,10 +1348,17 @@ class ws_session : public std::enable_shared_from_this<ws_session>
             }
           }
 
-          // Clear the old tile-highlight selection
+          // Update tile-highlight selection: if the inspected object
+          // is an instance, highlight it; otherwise clear the old one.
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
             self->selected_insts_.clear();
+            if (sel && sel.isInst()) {
+              if (auto* inst
+                  = std::any_cast<odb::dbInst*>(&sel.getObject())) {
+                self->selected_insts_.insert(*inst);
+              }
+            }
           }
 
           resp.type = 0;
@@ -1359,7 +1366,9 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           if (sel) {
             auto props = sel.getProperties();
             std::vector<gui::Selected> new_selectables;
-            ss << "{\"properties\": [";
+            ss << "{\"name\": \"" << json_escape(sel.getName())
+               << "\", \"type\": \"" << json_escape(sel.getTypeName())
+               << "\", \"properties\": [";
             bool first = true;
             for (const auto& prop : props) {
               if (!first) {
