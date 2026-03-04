@@ -12,7 +12,7 @@ set behavioral_file [make_result_file make_8x8_behavioral.v]
 generate_ram \
   -bytes_per_word 1 \
   -word_count 8 \
-  -read_ports 2 \
+  -read_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
   -power_pin VPWR \
   -ground_pin VGND \

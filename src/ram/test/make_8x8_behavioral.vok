@@ -1,18 +1,14 @@
 module RAM8x8 (
   clk,
   D,
-  Q0,
-  Q1,
+  Q,
   addr_rw,
-  addr_r1,
   we
 );
   input clk;
   input [7:0] D;
-  output reg [7:0] Q0;
-  output reg [7:0] Q1;
+  output reg [7:0] Q;
   input [2:0] addr_rw;
-  input [2:0] addr_r1;
   input [0:0] we;
 
   // memory array declaration
@@ -30,11 +26,7 @@ module RAM8x8 (
 
   // read logic
   always @(*) begin
-    Q0 = mem[addr_rw];
-  end
-
-  always @(*) begin
-    Q1 = mem[addr_r1];
+    Q = mem[addr_rw];
   end
 
 endmodule

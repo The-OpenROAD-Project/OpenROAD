@@ -597,6 +597,14 @@ void RamGen::generate(const int bytes_per_word,
   const std::string ram_name
       = fmt::format("RAM{}x{}", word_count, bits_per_word);
 
+  // error checking for read ports != 1 for current version of RamGen, edit
+  // later for future changes
+  if (read_ports != 1) {
+    logger_->error(
+        RAM, 25, "The ram generator currently only supports 1 read port.");
+    return;
+  }
+
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
   storage_cell_ = storage_cell;
