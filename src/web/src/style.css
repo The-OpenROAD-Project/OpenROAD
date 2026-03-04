@@ -242,8 +242,8 @@ html, body {
 .inspector-prop-name {
     color: #87cfff;
     min-width: 120px;
-    flex-shrink: 0;
     padding-right: 8px;
+    word-break: break-all;
 }
 .inspector-prop-value {
     color: #ccc;
