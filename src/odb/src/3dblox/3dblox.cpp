@@ -3,6 +3,7 @@
 
 #include "odb/3dblox.h"
 
+#include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <map>
