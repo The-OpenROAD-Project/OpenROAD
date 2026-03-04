@@ -169,11 +169,14 @@ html, body {
     padding: 8px;
     overflow-y: auto;
     white-space: pre-wrap;
-    border: none;
-    outline: none;
-    resize: none;
     font-family: inherit;
     font-size: inherit;
+}
+.tcl-cmd {
+    color: #87cfff;
+}
+.tcl-error {
+    color: #f55;
 }
 .tcl-input-row {
     display: flex;

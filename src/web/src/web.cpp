@@ -33,6 +33,7 @@
 #include "odb/dbTransform.h"
 #include "search.h"
 #include "tile_generator.h"
+#include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -706,10 +707,33 @@ static std::string json_escape(const std::string& s)
   std::string out;
   out.reserve(s.size());
   for (char c : s) {
-    if (c == '\\' || c == '"') {
-      out += '\\';
+    switch (c) {
+      case '\\':
+        out += "\\\\";
+        break;
+      case '"':
+        out += "\\\"";
+        break;
+      case '\n':
+        out += "\\n";
+        break;
+      case '\r':
+        out += "\\r";
+        break;
+      case '\t':
+        out += "\\t";
+        break;
+      default:
+        if (static_cast<unsigned char>(c) < 0x20) {
+          // Escape other control characters as \u00XX
+          char buf[8];
+          snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
+          out += buf;
+        } else {
+          out += c;
+        }
+        break;
     }
-    out += c;
   }
   return out;
 }
@@ -802,6 +826,45 @@ static void serializeProperty(std::stringstream& ss,
   ss << "}";
 }
 
+//------------------------------------------------------------------------------
+// TclEvaluator — thread-safe Tcl command evaluation with output capture.
+// Uses Logger::redirectStringBegin/End to capture all output (puts, logger
+// messages) without echoing to the server console.
+//------------------------------------------------------------------------------
+
+struct TclEvaluator
+{
+  Tcl_Interp* interp;
+  utl::Logger* logger;
+  std::mutex mutex;
+
+  struct Result
+  {
+    std::string output;
+    std::string result;
+    bool is_error;
+  };
+
+  TclEvaluator(Tcl_Interp* interp, utl::Logger* logger)
+      : interp(interp), logger(logger)
+  {
+  }
+
+  Result eval(const std::string& cmd)
+  {
+    std::lock_guard<std::mutex> lock(mutex);
+    logger->redirectStringBegin();
+    int rc = Tcl_Eval(interp, cmd.c_str());
+    Result r;
+    r.output = logger->redirectStringEnd();
+    r.result = Tcl_GetStringResult(interp);
+    r.is_error = (rc != TCL_OK);
+    return r;
+  }
+};
+
+//------------------------------------------------------------------------------
+
 struct WsRequest
 {
   uint32_t id = 0;
@@ -814,6 +877,7 @@ struct WsRequest
     SELECT,
     INSPECT,
     HOVER,
+    TCL_EVAL,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -827,8 +891,11 @@ struct WsRequest
   int select_y = 0;
   int select_zoom = 0;
 
-  // INSPECT fields
+  // INSPECT / HOVER fields
   int select_id = -1;
+
+  // TCL_EVAL fields
+  std::string tcl_cmd;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -859,11 +926,26 @@ static std::string extract_string(const std::string& json,
   if (quote_start == std::string::npos) {
     return {};
   }
-  auto quote_end = json.find('"', quote_start + 1);
-  if (quote_end == std::string::npos) {
-    return {};
+  // Find closing quote, skipping escaped quotes
+  std::string result;
+  for (size_t i = quote_start + 1; i < json.size(); i++) {
+    if (json[i] == '\\' && i + 1 < json.size()) {
+      switch (json[i + 1]) {
+        case '"': result += '"'; break;
+        case '\\': result += '\\'; break;
+        case 'n': result += '\n'; break;
+        case 'r': result += '\r'; break;
+        case 't': result += '\t'; break;
+        default: result += json[i + 1]; break;
+      }
+      i++;  // skip the escaped char
+    } else if (json[i] == '"') {
+      break;  // closing quote
+    } else {
+      result += json[i];
+    }
   }
-  return json.substr(quote_start + 1, quote_end - quote_start - 1);
+  return result;
 }
 
 static int extract_int(const std::string& json, const std::string& key)
@@ -968,6 +1050,9 @@ static WsRequest parse_ws_request(const std::string& msg)
   } else if (type_str == "hover") {
     req.type = WsRequest::HOVER;
     req.select_id = extract_int(msg, "select_id");
+  } else if (type_str == "tcl_eval") {
+    req.type = WsRequest::TCL_EVAL;
+    req.tcl_cmd = extract_string(msg, "cmd");
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -1188,6 +1273,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
 
   // Per-session selection state
   std::mutex selection_mutex_;
@@ -1204,9 +1290,12 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   bool writing_ = false;
 
  public:
-  ws_session(tcp::socket&& socket, std::shared_ptr<TileGenerator> generator)
+  ws_session(tcp::socket&& socket,
+             std::shared_ptr<TileGenerator> generator,
+             std::shared_ptr<TclEvaluator> tcl_eval)
       : ws_(std::move(socket)),
         generator_(std::move(generator)),
+        tcl_eval_(std::move(tcl_eval)),
         strand_(net::make_strand(ws_.get_executor()))
   {
   }
@@ -1448,6 +1537,28 @@ class ws_session : public std::enable_shared_from_this<ws_session>
         }
         self->queue_response(resp);
       });
+    } else if (req.type == WsRequest::TCL_EVAL) {
+      // Evaluate a Tcl command and return the result + logger output
+      net::post(ws_.get_executor(), [self, req]() {
+        WsResponse resp;
+        resp.id = req.id;
+        resp.type = 0;
+        try {
+          auto result = self->tcl_eval_->eval(req.tcl_cmd);
+          std::stringstream ss;
+          ss << "{\"output\": \"" << json_escape(result.output)
+             << "\", \"result\": \"" << json_escape(result.result)
+             << "\", \"is_error\": "
+             << (result.is_error ? "true" : "false") << "}";
+          const std::string json = ss.str();
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
     } else {
       // Capture current selection for tile rendering
       std::set<odb::dbInst*> selected;
@@ -1622,15 +1733,18 @@ class detect_session : public std::enable_shared_from_this<detect_session>
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   http::request<http::string_body> req_;
   std::string doc_root_;
 
  public:
   detect_session(tcp::socket&& socket,
                  std::shared_ptr<TileGenerator> generator,
+                 std::shared_ptr<TclEvaluator> tcl_eval,
                  std::string doc_root)
       : stream_(std::move(socket)),
         generator_(std::move(generator)),
+        tcl_eval_(std::move(tcl_eval)),
         doc_root_(std::move(doc_root))
   {
   }
@@ -1656,8 +1770,8 @@ class detect_session : public std::enable_shared_from_this<detect_session>
 
     if (websocket::is_upgrade(req_)) {
       // WebSocket upgrade - hand off to ws_session
-      auto ws
-          = std::make_shared<ws_session>(stream_.release_socket(), generator_);
+      auto ws = std::make_shared<ws_session>(
+          stream_.release_socket(), generator_, tcl_eval_);
       ws->run(std::move(req_));
     } else {
       // Regular HTTP - hand off to session with already-read request
@@ -1677,16 +1791,19 @@ class listener : public std::enable_shared_from_this<listener>
   net::io_context& ioc_;
   tcp::acceptor acceptor_;
   std::shared_ptr<TileGenerator> generator_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   std::string doc_root_;
 
  public:
   listener(net::io_context& ioc,
            tcp::endpoint endpoint,
            std::shared_ptr<TileGenerator> generator,
+           std::shared_ptr<TclEvaluator> tcl_eval,
            std::string doc_root)
       : ioc_(ioc),
         acceptor_(ioc),
         generator_(generator),
+        tcl_eval_(std::move(tcl_eval)),
         doc_root_(std::move(doc_root))
   {
     beast::error_code ec;
@@ -1730,15 +1847,19 @@ class listener : public std::enable_shared_from_this<listener>
       std::cerr << "Listener accept error: " << ec.message() << "\n";
     } else {
       // Route through detect_session to handle both HTTP and WebSocket
-      std::make_shared<detect_session>(std::move(socket), generator_, doc_root_)
+      std::make_shared<detect_session>(
+          std::move(socket), generator_, tcl_eval_, doc_root_)
           ->run();
     }
     do_accept();
   }
 };
 
-WebServer::WebServer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
-    : db_(db), sta_(sta), logger_(logger)
+WebServer::WebServer(odb::dbDatabase* db,
+                     sta::dbSta* sta,
+                     utl::Logger* logger,
+                     Tcl_Interp* interp)
+    : db_(db), sta_(sta), logger_(logger), interp_(interp)
 {
 }
 
@@ -1748,6 +1869,9 @@ void WebServer::serve(const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+
+    // Create Tcl evaluator with logger sink for output capture
+    auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
     unsigned short const port = 8080;
@@ -1765,7 +1889,7 @@ void WebServer::serve(const std::string& doc_root)
     net::io_context ioc{num_threads};
 
     std::make_shared<listener>(
-        ioc, tcp::endpoint{address, port}, generator_, doc_root)
+        ioc, tcp::endpoint{address, port}, generator_, tcl_eval, doc_root)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);

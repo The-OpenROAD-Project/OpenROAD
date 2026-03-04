@@ -7,6 +7,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "tcl.h"
 #include "utl/Logger.h"
 
 namespace sta {
@@ -19,13 +20,17 @@ struct Color;
 class Search;
 
 class TileGenerator;
+struct TclEvaluator;
 
 // A layout web server
 
 class WebServer
 {
  public:
-  WebServer(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  WebServer(odb::dbDatabase* db,
+            sta::dbSta* sta,
+            utl::Logger* logger,
+            Tcl_Interp* interp);
   ~WebServer();
 
   void serve(const std::string& doc_root = "");
@@ -34,6 +39,7 @@ class WebServer
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  Tcl_Interp* interp_ = nullptr;
   std::shared_ptr<TileGenerator> generator_;
 };
 

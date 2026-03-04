@@ -432,18 +432,20 @@ function createDisplayControls(container) {
 
 let tclOutputEl = null;
 
-function tclAppend(text) {
-    if (tclOutputEl) {
-        tclOutputEl.value += text;
-        tclOutputEl.scrollTop = tclOutputEl.scrollHeight;
-    }
+function tclAppend(text, className) {
+    if (!tclOutputEl) return;
+    const span = document.createElement('span');
+    if (className) span.className = className;
+    span.textContent = text;
+    tclOutputEl.appendChild(span);
+    tclOutputEl.scrollTop = tclOutputEl.scrollHeight;
 }
 
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
     el.innerHTML =
-        '<textarea class="tcl-output" readonly>OpenROAD Tcl Console\n% </textarea>' +
+        '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
         '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
@@ -455,11 +457,21 @@ function createTclConsole(container) {
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             const cmd = input.value.trim();
-            if (cmd) {
-                tclAppend(cmd + '\n');
-                tclAppend('(Not connected to Tcl interpreter)\n% ');
-                input.value = '';
-            }
+            if (!cmd) return;
+            tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+            input.value = '';
+            wsManager.request({ type: 'tcl_eval', cmd })
+                .then(data => {
+                    if (data.output) {
+                        tclAppend(data.output,
+                                  data.is_error ? 'tcl-error' : '');
+                    }
+                    if (data.result) {
+                        tclAppend(data.result + '\n',
+                                  data.is_error ? 'tcl-error' : '');
+                    }
+                })
+                .catch(err => tclAppend(`Error: ${err}\n`, 'tcl-error'));
         }
     });
 }
