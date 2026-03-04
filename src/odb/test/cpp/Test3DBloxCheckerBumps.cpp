@@ -8,16 +8,15 @@
 #include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
-#include "odb/geom.h"
 
 namespace odb {
 
 namespace {
 
-class CoincidentBumpsFixture : public CheckerFixture
+class BumpsFixture : public CheckerFixture
 {
  protected:
-  CoincidentBumpsFixture()
+  BumpsFixture()
   {
     dbTechLayer::create(tech_, "layer1", dbTechLayerType::ROUTING);
 
@@ -38,8 +37,6 @@ class CoincidentBumpsFixture : public CheckerFixture
   // Create a bump on a chip region.
   // - Creates dbInst at (x,y) in the chip's block
   // - Creates dbChipBump on the region
-  // - Creates dbNet, dbBTerm, dbBPin with a box at the bump location
-  // - Sets the bump's net and bterm
   // Returns the dbChipBump for further use.
   dbChipBump* createBump(dbChip* chip,
                          dbChipRegion* region,
@@ -63,62 +60,40 @@ class CoincidentBumpsFixture : public CheckerFixture
   dbMaster* bump_master_;
 };
 
-// Same-region, same XY → violation
-TEST_F(CoincidentBumpsFixture, test_same_region_same_xy_is_violation)
+TEST_F(BumpsFixture, bumpAlignmentSuccess)
 {
-  // Two bumps stacked at (200, 200) on chip1's front region
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "bA", 200, 200);
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "bB", 200, 200);
-  // A non-coincident bump to confirm it doesn't get caught
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "bC", 400, 400);
+  auto chip1_r1_fr = chip1_->findChipRegion("r1_fr");
+  createBump(chip1_, chip1_r1_fr, "bump1", 500, 500);
 
   auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
   inst1->setLoc(Point3D(0, 0, 0));
   inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  auto markers = getMarkers(coincident_bumps_category);
-  ASSERT_EQ(markers.size(), 1);
-  EXPECT_TRUE(markers[0]->getComment().find("2 coincident bumps")
-              != std::string::npos);
-  EXPECT_TRUE(markers[0]->getComment().find("(200, 200)") != std::string::npos);
+
+  auto markers = getMarkers(CheckerFixture::bump_alignment_category);
+  EXPECT_EQ(markers.size(), 0);
 }
 
-// Cross-chip, same XY → not a violation (that's how connections work)
-TEST_F(CoincidentBumpsFixture, test_cross_chip_same_xy_no_violation)
+TEST_F(BumpsFixture, bumpAlignmentFailure)
 {
-  // chip1 FRONT and chip2 BACK at the same global XY — intentional, no marker
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "b1", 100, 100);
-  createBump(chip2_, chip2_->findChipRegion("r2_bk"), "b2", 100, 100);
-
-  auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
-  inst1->setLoc(Point3D(0, 0, 0));
-  inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
-
-  auto inst2 = dbChipInst::create(top_chip_, chip2_, "inst2");
-  inst2->setLoc(Point3D(0, 0, 500));
-  inst2->setOrient(dbOrientType3D(dbOrientType::R0, false));
-
-  check();
-  EXPECT_TRUE(getMarkers(coincident_bumps_category).empty());
-}
-
-// Three bumps at the same XY on the same region → one marker, count=3
-TEST_F(CoincidentBumpsFixture, test_three_way_coincidence)
-{
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "b1", 300, 300);
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "b2", 300, 300);
-  createBump(chip1_, chip1_->findChipRegion("r1_fr"), "b3", 300, 300);
+  auto chip1_r1_fr = chip1_->findChipRegion("r1_fr");
+  // Region is (0,0) to (2000, 2000)
+  // Placing bump outside at (-100, -100)
+  createBump(chip1_, chip1_r1_fr, "bump1", -100, -100);
 
   auto inst1 = dbChipInst::create(top_chip_, chip1_, "inst1");
   inst1->setLoc(Point3D(0, 0, 0));
   inst1->setOrient(dbOrientType3D(dbOrientType::R0, false));
 
   check();
-  auto markers = getMarkers(coincident_bumps_category);
-  ASSERT_EQ(markers.size(), 1);
-  EXPECT_TRUE(markers[0]->getComment().find("3 coincident bumps")
-              != std::string::npos);
+
+  auto markers = getMarkers(CheckerFixture::bump_alignment_category);
+  EXPECT_EQ(markers.size(), 1);
+  if (!markers.empty()) {
+    EXPECT_STREQ(markers[0]->getComment().c_str(),
+                 "Bump is outside its parent region r1_fr");
+  }
 }
 
 }  // namespace

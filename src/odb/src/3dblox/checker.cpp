@@ -4,12 +4,10 @@
 #include "checker.h"
 
 #include <algorithm>
-#include <boost/container_hash/hash.hpp>
 #include <cstddef>
 #include <numeric>
 #include <ranges>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -106,7 +104,6 @@ void Checker::check(dbChip* chip)
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
   checkBumpPhysicalAlignment(top_cat, model);
-  checkCoincidentBumps(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -284,77 +281,6 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
   }
 }
 
-void Checker::checkCoincidentBumps(dbMarkerCategory* top_cat,
-                                   const UnfoldedModel& model)
-{
-  // Map (region*, x, y) -> list of bump indices within that region
-  using Key = std::tuple<const UnfoldedRegion*, int, int>;
-  struct KeyHash
-  {
-    size_t operator()(const Key& k) const
-    {
-      size_t seed = 0;
-      boost::hash_combine(seed, std::get<0>(k));
-      boost::hash_combine(seed, std::get<1>(k));
-      boost::hash_combine(seed, std::get<2>(k));
-      return seed;
-    }
-  };
-
-  int violation_count = 0;
-  dbMarkerCategory* cat = nullptr;
-
-  for (const auto& chip : model.getChips()) {
-    for (const auto& region : chip.regions) {
-      std::unordered_map<Key, std::vector<const UnfoldedBump*>, KeyHash>
-          pos_map;
-
-      for (const auto& bump : region.bumps) {
-        Key key{&region, bump.global_position.x(), bump.global_position.y()};
-        pos_map[key].push_back(&bump);
-      }
-
-      for (const auto& [key, bumps] : pos_map) {
-        if (bumps.size() > 1) {
-          if (!cat) {
-            cat = dbMarkerCategory::createOrReplace(top_cat,
-                                                    "Coincident bumps");
-          }
-          violation_count++;
-          auto* marker = dbMarker::create(cat);
-          const auto& [ignored_region, x, y] = key;
-          marker->addShape(Rect(x, y, x, y));
-          for (const auto* bump : bumps) {
-            if (bump->bump_inst) {
-              marker->addSource(bump->bump_inst);
-            }
-          }
-          logger_->warn(
-              utl::ODB,
-              406,
-              "Region {}/{} has {} bumps at the same position ({}, {})",
-              chip.name,
-              region.region_inst->getChipRegion()->getName(),
-              bumps.size(),
-              x,
-              y);
-          marker->setComment(
-              fmt::format("Region {}/{} has {} coincident bumps at ({}, {})",
-                          chip.name,
-                          region.region_inst->getChipRegion()->getName(),
-                          bumps.size(),
-                          x,
-                          y));
-        }
-      }
-    }
-  }
-  if (violation_count > 0) {
-    logger_->warn(
-        utl::ODB, 407, "Found {} coincident bump group(s).", violation_count);
-  }
-}
-
 void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
                                          const UnfoldedModel& model)
 {
@@ -364,15 +290,13 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
     for (const auto& region : chip.regions) {
       for (const auto& bump : region.bumps) {
         const auto& p = bump.global_position;
-        if (p.x() < region.cuboid.xMin() || p.x() > region.cuboid.xMax()
-            || p.y() < region.cuboid.yMin() || p.y() > region.cuboid.yMax()) {
+        if (!region.cuboid.getEnclosingRect().intersects({p.x(), p.y()})) {
           violation_count++;
           if (!cat) {
             cat = dbMarkerCategory::createOrReplace(top_cat, "Bump Alignment");
           }
           auto* marker = dbMarker::create(cat);
-          marker->addSource(bump.bump_inst ? (dbObject*) bump.bump_inst
-                                           : (dbObject*) region.region_inst);
+          marker->addSource(bump.bump_inst);
           marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
                                 p.y() - kBumpMarkerHalfSize,
                                 p.x() + kBumpMarkerHalfSize,

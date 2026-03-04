@@ -80,7 +80,7 @@ class CheckerFixture : public tst::Fixture
       = "Unused internal_ext";
   static constexpr const char* connected_regions_category
       = "Connection regions";
-  static constexpr const char* coincident_bumps_category = "Coincident bumps";
+  static constexpr const char* bump_alignment_category = "Bump Alignment";
 };
 
 }  // namespace odb

@@ -34,8 +34,6 @@ class Checker
                              const UnfoldedModel& model);
   void checkConnectionRegions(dbMarkerCategory* top_cat,
                               const UnfoldedModel& model);
-  void checkCoincidentBumps(dbMarkerCategory* top_cat,
-                            const UnfoldedModel& model);
   void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
                                   const UnfoldedModel& model);
   void checkNetConnectivity(dbMarkerCategory* top_cat,
