@@ -281,3 +281,11 @@ html, body {
 .inspector-group-children.collapsed {
     display: none;
 }
+.inspector-link {
+    color: #4fc3f7;
+    cursor: pointer;
+    text-decoration: none;
+}
+.inspector-link:hover {
+    text-decoration: underline;
+}

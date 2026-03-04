@@ -714,11 +714,44 @@ static std::string json_escape(const std::string& s)
   return out;
 }
 
+// Store a Selected in the clickables vector and return its index.
+static int storeSelectable(std::vector<gui::Selected>& selectables,
+                           const gui::Selected& sel)
+{
+  int id = static_cast<int>(selectables.size());
+  selectables.push_back(sel);
+  return id;
+}
+
+// Serialize a std::any value that might be a Selected.  If it is,
+// write "value":"<name>", "select_id":<N> so the client can navigate.
+// Otherwise just write "value":"<string>".
+static void serializeAnyValue(std::stringstream& ss,
+                              const char* field,
+                              const std::any& value,
+                              std::vector<gui::Selected>& selectables,
+                              bool short_name = false)
+{
+  if (auto* sel = std::any_cast<gui::Selected>(&value)) {
+    if (*sel) {
+      std::string name = short_name ? sel->getShortName() : sel->getName();
+      int id = storeSelectable(selectables, *sel);
+      ss << "\"" << field << "\": \"" << json_escape(name) << "\", \""
+         << field << "_select_id\": " << id;
+      return;
+    }
+  }
+  std::string str = gui::Descriptor::Property::toString(value);
+  ss << "\"" << field << "\": \"" << json_escape(str) << "\"";
+}
+
 // Serialize a Descriptor::Property value to a JSON fragment.
 // Leaf values: {"name":"...", "value":"..."}
 // PropertyList / SelectionSet: {"name":"...", "children":[...]}
+// Selected values get an additional select_id for click navigation.
 static void serializeProperty(std::stringstream& ss,
-                              const gui::Descriptor::Property& prop)
+                              const gui::Descriptor::Property& prop,
+                              std::vector<gui::Selected>& selectables)
 {
   ss << "{\"name\": \"" << json_escape(prop.name) << "\"";
 
@@ -731,17 +764,11 @@ static void serializeProperty(std::stringstream& ss,
       if (!first) {
         ss << ", ";
       }
-      // Use getShortName() for Selected keys so that e.g. ITerms
-      // under an instance show just the pin name, not inst/pin.
-      std::string key_str;
-      if (auto* sel = std::any_cast<gui::Selected>(&key)) {
-        key_str = sel->getShortName();
-      } else {
-        key_str = gui::Descriptor::Property::toString(key);
-      }
-      std::string val_str = gui::Descriptor::Property::toString(val);
-      ss << "{\"name\": \"" << json_escape(key_str) << "\", \"value\": \""
-         << json_escape(val_str) << "\"}";
+      ss << "{";
+      serializeAnyValue(ss, "name", key, selectables, /*short_name=*/true);
+      ss << ", ";
+      serializeAnyValue(ss, "value", val, selectables);
+      ss << "}";
       first = false;
     }
     ss << "]";
@@ -753,13 +780,22 @@ static void serializeProperty(std::stringstream& ss,
       if (!first) {
         ss << ", ";
       }
+      int id = storeSelectable(selectables, sel);
       ss << "{\"name\": \"" << json_escape(sel.getName())
-         << "\", \"value\": \"" << json_escape(sel.getTypeName()) << "\"}";
+         << "\", \"value\": \"" << json_escape(sel.getTypeName())
+         << "\", \"name_select_id\": " << id << "}";
       first = false;
     }
     ss << "]";
+  } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
+    // Single Selected leaf value (e.g., "Master" → dbMaster*)
+    if (*sel) {
+      int id = storeSelectable(selectables, *sel);
+      ss << ", \"value\": \"" << json_escape(sel->getName())
+         << "\", \"value_select_id\": " << id;
+    }
   } else {
-    // Leaf value — convert to string.
+    // Plain leaf value — convert to string.
     std::string val_str = prop.toString();
     ss << ", \"value\": \"" << json_escape(val_str) << "\"";
   }
@@ -777,6 +813,7 @@ struct WsRequest
     LAYERS,
     INFO,
     SELECT,
+    INSPECT,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -789,6 +826,9 @@ struct WsRequest
   int select_x = 0;
   int select_y = 0;
   int select_zoom = 0;
+
+  // INSPECT fields
+  int select_id = -1;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -922,6 +962,9 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.type = WsRequest::LAYERS;
   } else if (type_str == "info") {
     req.type = WsRequest::INFO;
+  } else if (type_str == "inspect") {
+    req.type = WsRequest::INSPECT;
+    req.select_id = extract_int(msg, "select_id");
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -1147,6 +1190,11 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   std::mutex selection_mutex_;
   std::set<odb::dbInst*> selected_insts_;
 
+  // Clickable objects from the last property response.
+  // Index in this vector is the select_id sent to the client.
+  std::mutex selectables_mutex_;
+  std::vector<gui::Selected> selectables_;
+
   // Write serialization: strand + queue ensures one async_write at a time
   net::strand<net::any_io_executor> strand_;
   std::deque<std::vector<unsigned char>> write_queue_;
@@ -1250,6 +1298,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           ss << "]";
 
           // Add properties for the first selected instance
+          std::vector<gui::Selected> new_selectables;
           if (!results.empty()) {
             auto* registry = gui::DescriptorRegistry::instance();
             gui::Selected sel
@@ -1262,14 +1311,78 @@ class ws_session : public std::enable_shared_from_this<ws_session>
                 if (!pfirst) {
                   ss << ", ";
                 }
-                serializeProperty(ss, prop);
+                serializeProperty(ss, prop, new_selectables);
                 pfirst = false;
               }
               ss << "]";
             }
           }
+          {
+            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
+            self->selectables_ = std::move(new_selectables);
+          }
 
           ss << "}";
+          const std::string json = ss.str();
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
+    } else if (req.type == WsRequest::INSPECT) {
+      // Navigate to a previously-serialized Selected object by its ID
+      net::post(ws_.get_executor(), [self, req]() {
+        WsResponse resp;
+        resp.id = req.id;
+        try {
+          gui::Selected sel;
+          {
+            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
+            if (req.select_id >= 0
+                && req.select_id
+                       < static_cast<int>(self->selectables_.size())) {
+              sel = self->selectables_[req.select_id];
+            }
+          }
+
+          // Clear the old tile-highlight selection
+          {
+            std::lock_guard<std::mutex> lock(self->selection_mutex_);
+            self->selected_insts_.clear();
+          }
+
+          resp.type = 0;
+          std::stringstream ss;
+          if (sel) {
+            auto props = sel.getProperties();
+            std::vector<gui::Selected> new_selectables;
+            ss << "{\"properties\": [";
+            bool first = true;
+            for (const auto& prop : props) {
+              if (!first) {
+                ss << ", ";
+              }
+              serializeProperty(ss, prop, new_selectables);
+              first = false;
+            }
+            ss << "]";
+            // Include bbox for highlight
+            odb::Rect bbox;
+            if (sel.getBBox(bbox)) {
+              ss << ", \"bbox\": [" << bbox.xMin() << ", " << bbox.yMin()
+                 << ", " << bbox.xMax() << ", " << bbox.yMax() << "]";
+            }
+            ss << "}";
+            {
+              std::lock_guard<std::mutex> lock(self->selectables_mutex_);
+              self->selectables_ = std::move(new_selectables);
+            }
+          } else {
+            ss << "{\"error\": \"invalid select_id\"}";
+          }
           const std::string json = ss.str();
           resp.payload.assign(json.begin(), json.end());
         } catch (const std::exception& e) {

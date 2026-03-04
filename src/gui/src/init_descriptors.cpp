@@ -13,6 +13,7 @@
 #include "gui/gui.h"
 #include "odb/db.h"
 
+#include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
 #include "staDescriptors.h"
 
@@ -42,6 +43,10 @@ Descriptor::Actions Selected::getActions() const
 void DescriptorRegistry::initDescriptors(odb::dbDatabase* db,
                                          sta::dbSta* sta)
 {
+  // Initialize BufferTree with STA so that DbNetDescriptor::getDBProperties()
+  // can call BufferTree::isAggregate() safely.
+  BufferTree::setSTA(sta);
+
   // Static empty sets for DbNetDescriptor — in the full GUI build,
   // MainWindow::init() re-registers with real widget-owned sets.
   static const std::set<odb::dbNet*> empty_net_set;

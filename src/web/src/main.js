@@ -468,6 +468,51 @@ function createTclConsole(container) {
 
 let inspectorEl = null;
 
+function makeClickable(el, selectId) {
+    el.classList.add('inspector-link');
+    el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navigateInspector(selectId);
+    });
+}
+
+function navigateInspector(selectId) {
+    console.log('navigateInspector: select_id =', selectId);
+    wsManager.request({ type: 'inspect', select_id: selectId })
+        .then(data => {
+            console.log('Inspect response:', data);
+            if (data.error) {
+                console.error('Inspect error:', data.error);
+                return;
+            }
+            updateInspector(data);
+            // Highlight bbox on map if available
+            if (data.bbox && map && designScale) {
+                const [x1, y1, x2, y2] = data.bbox;
+                highlightBBox(x1, y1, x2, y2);
+            }
+            // Redraw tiles to clear the old instance highlight
+            redrawAllLayers();
+        })
+        .catch(err => console.error('Inspect failed:', err));
+}
+
+let highlightRect = null;
+function highlightBBox(x1, y1, x2, y2) {
+    if (highlightRect) {
+        map.removeLayer(highlightRect);
+    }
+    // Tile rendering applies two Y-flips (tile index + pixel), so
+    // the correct mapping is: lat = (dbu_y - maxDXDY) * scale
+    const bounds = [
+        [(y1 - designMaxDXDY) * designScale, x1 * designScale],
+        [(y2 - designMaxDXDY) * designScale, x2 * designScale],
+    ];
+    highlightRect = L.rectangle(bounds, {
+        color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
+    }).addTo(map);
+}
+
 function renderProperty(prop) {
     // Group with children (PropertyList or SelectionSet)
     if (prop.children) {
@@ -516,12 +561,21 @@ function renderProperty(prop) {
     row.className = 'inspector-prop';
     const nameEl = document.createElement('span');
     nameEl.className = 'inspector-prop-name';
-    nameEl.textContent = prop.name;
+    nameEl.textContent = prop.name || '';
     const valEl = document.createElement('span');
     valEl.className = 'inspector-prop-value';
     valEl.textContent = prop.value || '';
     row.appendChild(nameEl);
     row.appendChild(valEl);
+
+    // Make name/value clickable if they have a select_id
+    if (prop.name_select_id !== undefined) {
+        makeClickable(nameEl, prop.name_select_id);
+    }
+    if (prop.value_select_id !== undefined) {
+        makeClickable(valEl, prop.value_select_id);
+    }
+
     return row;
 }
 
@@ -914,6 +968,11 @@ wsManager.readyPromise.then(async () => {
                                 `<strong>${inst.name}</strong><br>${inst.master}<br><small style="color:#888">(${dbu_x}, ${dbu_y})</small>`)
                             .openOn(map);
                         updateInspector(data);
+                        // Highlight selected instance bbox
+                        if (inst.bbox) {
+                            highlightBBox(inst.bbox[0], inst.bbox[1],
+                                          inst.bbox[2], inst.bbox[3]);
+                        }
                     } else {
                         L.popup()
                             .setLatLng(e.latlng)
@@ -921,6 +980,10 @@ wsManager.readyPromise.then(async () => {
                                 `<em>No instance at (${dbu_x}, ${dbu_y})</em>`)
                             .openOn(map);
                         updateInspector(null);
+                        if (highlightRect) {
+                            map.removeLayer(highlightRect);
+                            highlightRect = null;
+                        }
                     }
                     redrawAllLayers();
                 })
