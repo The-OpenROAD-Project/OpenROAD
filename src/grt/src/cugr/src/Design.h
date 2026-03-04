@@ -93,7 +93,6 @@ class Design
   odb::dbBlock* block_;
   odb::dbTech* tech_;
   utl::Logger* logger_;
-  sta::dbSta* sta_;
 
   // For detailed routing
   CostT unit_length_wire_cost_;

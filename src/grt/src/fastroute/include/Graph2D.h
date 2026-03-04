@@ -79,6 +79,7 @@ class Graph2D
 
   void addCapH(int x, int y, int cap);
   void addCapV(int x, int y, int cap);
+  void rebuildUsedGrids();
   void addEstUsageToUsage();
   void addRedH(int x, int y, int red);
   void addRedV(int x, int y, int red);

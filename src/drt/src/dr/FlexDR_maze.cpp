@@ -640,6 +640,7 @@ void FlexDRWorker::modMinimumcutCostVia(const odb::Rect& box,
             case setFixedShape:
               gridGraph_.setFixedShapeCostVia(gridGraph_.getIdx(i, j, z),
                                               1);  // safe access
+              break;
             default:;
           }
         }

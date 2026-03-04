@@ -17,13 +17,7 @@ bazel_dep(name = "rules_jvm_external", version = "6.4")
 bazel_dep(name = "rules_python", version = "1.8.5")
 
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
-bazel_dep(name = "rules_scala")
-git_override(
-    module_name = "rules_scala",
-    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
-    remote = "https://github.com/bazelbuild/rules_scala",
-)
-
+bazel_dep(name = "rules_scala", version = "7.1.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
@@ -89,7 +83,7 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "970b93291b28ecb23f10abde796584ecbf904818",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -147,7 +141,7 @@ orfs.default(
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.16"
+SCALA_VERSION = "2.13.17"
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
