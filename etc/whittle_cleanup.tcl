@@ -8,17 +8,15 @@
 # Prints to stdout:
 #   REMOVED <count>
 
-set db [odb::dbDatabase_create]
-odb::read_db $db $env(WHITTLE_DB_INPUT)
+read_db $env(WHITTLE_DB_INPUT)
 
-set removed [$db removeUnusedMasters]
+set removed [[ord::get_db] removeUnusedMasters]
 puts "REMOVED $removed"
 
-odb::write_db $db $env(WHITTLE_DB_OUTPUT)
+write_db $env(WHITTLE_DB_OUTPUT)
 
 if { [info exists env(WHITTLE_DEF_OUTPUT)] } {
-  set block [[$db getChip] getBlock]
-  odb::write_def $block $env(WHITTLE_DEF_OUTPUT)
+  odb::write_def [ord::get_db_block] $env(WHITTLE_DEF_OUTPUT)
 }
 
 exit

@@ -12,10 +12,9 @@
 #   INSTS <count>
 #   NETS <count>
 
-set db [odb::dbDatabase_create]
-odb::read_db $db $env(WHITTLE_DB_INPUT)
+read_db $env(WHITTLE_DB_INPUT)
 
-set block [[$db getChip] getBlock]
+set block [ord::get_db_block]
 set cut_level $env(WHITTLE_CUT_LEVEL)
 set start $env(WHITTLE_CUT_START)
 set end $env(WHITTLE_CUT_END)
@@ -26,8 +25,7 @@ if { $cut_level eq "insts" } {
   set elms [$block getNets]
 }
 
-for { set i $start } { $i < $end } { incr i } {
-  set elm [lindex $elms $i]
+foreach elm [lrange $elms $start [expr {$end - 1}]] {
   if { $cut_level eq "insts" } {
     $elm setDoNotTouch false
     foreach iterm [$elm getITerms] {
@@ -46,13 +44,12 @@ for { set i $start } { $i < $end } { incr i } {
   }
 }
 
-odb::write_db $db $env(WHITTLE_DB_OUTPUT)
+write_db $env(WHITTLE_DB_OUTPUT)
 
 if { [info exists env(WHITTLE_DEF_OUTPUT)] } {
   odb::write_def $block $env(WHITTLE_DEF_OUTPUT)
 }
 
-set block [[$db getChip] getBlock]
 puts "INSTS [llength [$block getInsts]]"
 puts "NETS [llength [$block getNets]]"
 
