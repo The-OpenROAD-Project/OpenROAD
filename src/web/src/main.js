@@ -934,8 +934,9 @@ wsManager.readyPromise.then(async () => {
 
             // Parent checkbox toggles all layers
             layerParentCb.addEventListener('change', () => {
+                const checked = layerParentCb.checked;
                 for (const cb of layerCbs) {
-                    cb.checked = layerParentCb.checked;
+                    cb.checked = checked;
                     cb.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
