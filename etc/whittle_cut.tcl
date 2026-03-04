@@ -25,7 +25,7 @@ if { $cut_level eq "insts" } {
   set elms [$block getNets]
 }
 
-foreach elm [lrange $elms $start [expr {$end - 1}]] {
+foreach elm [lrange $elms $start [expr { $end - 1 }]] {
   if { $cut_level eq "insts" } {
     $elm setDoNotTouch false
     foreach iterm [$elm getITerms] {
