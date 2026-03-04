@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"

@@ -191,8 +191,6 @@ void RamGen::makeCellByte(Grid& ram_grid,
                clock_gate_cell_,
                {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
 
-  odb::dbSet<odb::dbMTerm> and_mTerms = and2_cell_->getMTerms();
-
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port
