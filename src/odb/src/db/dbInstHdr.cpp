@@ -71,7 +71,6 @@ _dbInstHdr::_dbInstHdr(_dbDatabase*, const _dbInstHdr& i)
       lib_(i.lib_),
       master_(i.master_),
       mterms_(i.mterms_),
-      mterm_ptrs_(i.mterm_ptrs_),
       inst_cnt_(i.inst_cnt_)
 {
 }
@@ -165,14 +164,11 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   // MACRO until the complete MACRO is parsed...
   //
   inst_hdr->mterms_.resize(master->mterm_cnt_);
-  inst_hdr->mterm_ptrs_.resize(master->mterm_cnt_);
 
   // mterms, this set is ordered: {output, inout, input}
   int i = 0;
   for (dbMTerm* mterm : master_->getMTerms()) {
-    inst_hdr->mterms_[i] = mterm->getImpl()->getOID();
-    inst_hdr->mterm_ptrs_[i] = (_dbMTerm*) mterm;
-    i++;
+    inst_hdr->mterms_[i++] = mterm->getImpl()->getOID();
   }
 
   return (dbInstHdr*) inst_hdr;

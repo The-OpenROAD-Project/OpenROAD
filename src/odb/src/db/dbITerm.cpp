@@ -110,7 +110,11 @@ _dbMTerm* _dbITerm::getMTerm() const
   _dbBlock* block = (_dbBlock*) getOwner();
   _dbInst* inst = block->inst_tbl_->getPtr(inst_);
   _dbInstHdr* inst_hdr = block->inst_hdr_tbl_->getPtr(inst->inst_hdr_);
-  return inst_hdr->mterm_ptrs_[flags_.mterm_idx];
+  _dbDatabase* db = getDatabase();
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
+  _dbMaster* master = lib->master_tbl_->getPtr(inst_hdr->master_);
+  dbId<_dbMTerm> mterm = inst_hdr->mterms_[flags_.mterm_idx];
+  return master->mterm_tbl_->getPtr(mterm);
 }
 
 _dbInst* _dbITerm::getInst() const
@@ -157,7 +161,11 @@ dbMTerm* dbITerm::getMTerm() const
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
   _dbInst* inst = block->inst_tbl_->getPtr(iterm->inst_);
   _dbInstHdr* inst_hdr = block->inst_hdr_tbl_->getPtr(inst->inst_hdr_);
-  return (dbMTerm*) inst_hdr->mterm_ptrs_[iterm->flags_.mterm_idx];
+  _dbDatabase* db = iterm->getDatabase();
+  _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
+  _dbMaster* master = lib->master_tbl_->getPtr(inst_hdr->master_);
+  dbId<_dbMTerm> mterm = inst_hdr->mterms_[iterm->flags_.mterm_idx];
+  return (dbMTerm*) master->mterm_tbl_->getPtr(mterm);
 }
 
 dbBTerm* dbITerm::getBTerm()

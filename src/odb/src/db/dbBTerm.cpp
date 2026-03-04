@@ -665,7 +665,6 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     master_impl->flags_.frozen = 1;
     mterm->order_id_ = inst_hdr->mterms_.size();
     inst_hdr->mterms_.push_back(mterm->getOID());
-    inst_hdr->mterm_ptrs_.push_back(mterm);
 
     _dbInst* inst_impl = (_dbInst*) inst;
     _dbHier* hier = parent_block->hier_tbl_->getPtr(inst_impl->hierarchy_);

@@ -72,11 +72,8 @@
 #include "dbIsolation.h"
 #include "dbJournal.h"
 #include "dbLevelShifter.h"
-#include "dbLib.h"
 #include "dbLogicPort.h"
-#include "dbMTerm.h"
 #include "dbMarkerCategory.h"
-#include "dbMaster.h"
 #include "dbModBTerm.h"
 #include "dbModITerm.h"
 #include "dbModInst.h"
@@ -984,18 +981,6 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> *block.iterm_tbl_;
   stream >> *block.net_tbl_;
   stream >> *block.inst_hdr_tbl_;
-
-  for (dbInstHdr* hdr_public :
-       dbSet<dbInstHdr>((dbBlock*) &block, block.inst_hdr_tbl_)) {
-    _dbInstHdr* inst_hdr = (_dbInstHdr*) hdr_public;
-    _dbLib* lib = db->lib_tbl_->getPtr(inst_hdr->lib_);
-    _dbMaster* master = lib->master_tbl_->getPtr(inst_hdr->master_);
-    inst_hdr->mterm_ptrs_.resize(master->mterm_cnt_);
-    for (int i = 0; i < master->mterm_cnt_; ++i) {
-      dbId<_dbMTerm> mterm = inst_hdr->mterms_[i];
-      inst_hdr->mterm_ptrs_[i] = master->mterm_tbl_->getPtr(mterm);
-    }
-  }
   if (db->isSchema(kSchemaDbRemoveHash)) {
     stream >> *block.module_tbl_;
     stream >> *block.inst_tbl_;
