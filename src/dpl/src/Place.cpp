@@ -281,7 +281,8 @@ class CellPlaceOrderLess
   const Opendp* opendp_;
 };
 
-CellPlaceOrderLess::CellPlaceOrderLess(const odb::Rect& core, const Opendp* opendp)
+CellPlaceOrderLess::CellPlaceOrderLess(const odb::Rect& core,
+                                       const Opendp* opendp)
     : center_x_((core.xMin() + core.xMax()) / 2),
       center_y_((core.yMin() + core.yMax()) / 2),
       opendp_(opendp)
@@ -318,7 +319,8 @@ bool CellPlaceOrderLess::operator()(const Node* cell1, const Node* cell2) const
 
 void Opendp::place()
 {
-  auto report_placement = [this](Node* cell, bool diamond_move, bool rip_up_move) {
+  auto report_placement = [this](
+                              Node* cell, bool diamond_move, bool rip_up_move) {
     if (debug_observer_) {
       const char* type = isMultiRow(cell) ? "multi-row" : "single-row";
       if (diamond_move) {
@@ -328,15 +330,17 @@ void Opendp::place()
                         move_count_);
       } else {
         logger_->report(
-            "Failed diamondMove(), {} cell {}, trying ripUpAndReplace(), #moves: {}",
+            "Failed diamondMove(), {} cell {}, trying ripUpAndReplace(), "
+            "#moves: {}",
             type,
             cell->name(),
             move_count_);
         if (rip_up_move) {
-          logger_->report("Successful ripUpAndReplace(), {} cell {}, #moves: {}",
-                          type,
-                          cell->name(),
-                          move_count_);
+          logger_->report(
+              "Successful ripUpAndReplace(), {} cell {}, #moves: {}",
+              type,
+              cell->name(),
+              move_count_);
         } else {
           logger_->report("Unsuccessful placement, {} cell {}, #moves: {}",
                           type,
@@ -397,8 +401,7 @@ void Opendp::place()
     if (iterative_debug_) {
       odb::Point initial_location = getOdbLocation(cell);
       odb::Point final_location = getDplLocation(cell);
-      float len
-          = odb::Point::squaredDistance(initial_location, final_location);
+      float len = odb::Point::squaredDistance(initial_location, final_location);
       if (len > 0) {
         report_placement(cell, diamond_move, rip_up_move);
       }
@@ -408,20 +411,20 @@ void Opendp::place()
   const size_t total_cells = sorted_cells.size();
   const int success_rip_up = failed_diamond_move - failed_rip_up;
 
-  logger_->report("Placement Summary");
+  logger_->report("Movements Summary");
   logger_->report("---------------------------------------");
   logger_->report("Total cells:                {:8d}", total_cells);
-  logger_->report("diamondMove Success:            {:8d} ({:6.2f}%)",
-                  success_diamond_move,
-                  total_cells > 0 ? 100.0 * success_diamond_move / total_cells
-                                  : 0.0);
-  logger_->report("diamondMove Failure:            {:8d}", failed_diamond_move);
-  logger_->report("ripUpAndReplace Success:          {:8d} ({:6.2f}% of diamond failures)",
-                  success_rip_up,
-                  failed_diamond_move > 0
-                      ? 100.0 * success_rip_up / failed_diamond_move
-                      : 0.0);
-  logger_->report("ripUpAndReplace Failure:          {:8d}", failed_rip_up);
+  logger_->report(
+      "Diamond Move Success:       {:8d} ({:6.2f}%)",
+      success_diamond_move,
+      total_cells > 0 ? 100.0 * success_diamond_move / total_cells : 0.0);
+  logger_->report("Diamond Move Failure:       {:8d}", failed_diamond_move);
+  logger_->report(
+      "Rip-up and replace Success: {:8d} ({:6.2f}% of diamond failures)",
+      success_rip_up,
+      failed_diamond_move > 0 ? 100.0 * success_rip_up / failed_diamond_move
+                              : 0.0);
+  logger_->report("Rip-up and replace Failure: {:8d}", failed_rip_up);
   logger_->report("Total Placement Failures:   {:8d}",
                   (int) placement_failures_.size());
   logger_->report("---------------------------------------");
@@ -709,19 +712,22 @@ bool Opendp::ripUpAndReplace(Node* target_cell)
   // place target cell
   bool success = true;
   if (!diamondMove(target_cell)) {
-    deepIterativePause("failed diamondMove() inside ripUpAndReplace() for target cell "
-                           + target_cell->name(),
-                       /*only_print=*/true);
+    deepIterativePause(
+        "failed diamondMove() inside ripUpAndReplace() for target cell "
+            + target_cell->name(),
+        /*only_print=*/true);
     placement_failures_.push_back(target_cell);
     success = false;
   }
 
-  deepIterativePause("pause after placing target cell inside ripUpAndReplace()");
+  deepIterativePause(
+      "pause after placing target cell inside ripUpAndReplace()");
 
   // re-place erased cells
   for (Node* around_cell : region_cells) {
     deepIterativePause(
-        "pause before diamondMove() inside ripUpAndReplace() for surrounding cell "
+        "pause before diamondMove() inside ripUpAndReplace() for surrounding "
+        "cell "
         + around_cell->name());
 
     if (target_cell->inGroup() == around_cell->inGroup()

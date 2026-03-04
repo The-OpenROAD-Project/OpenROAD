@@ -141,6 +141,12 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
 
+  logger_->info(DPL,
+                5,
+                "Setting maximum displacement to {} {} units.",
+                max_displacement_x,
+                max_displacement_y);
+
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
   detailedPlacement();
