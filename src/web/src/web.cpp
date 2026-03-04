@@ -731,7 +731,14 @@ static void serializeProperty(std::stringstream& ss,
       if (!first) {
         ss << ", ";
       }
-      std::string key_str = gui::Descriptor::Property::toString(key);
+      // Use getShortName() for Selected keys so that e.g. ITerms
+      // under an instance show just the pin name, not inst/pin.
+      std::string key_str;
+      if (auto* sel = std::any_cast<gui::Selected>(&key)) {
+        key_str = sel->getShortName();
+      } else {
+        key_str = gui::Descriptor::Property::toString(key);
+      }
       std::string val_str = gui::Descriptor::Property::toString(val);
       ss << "{\"name\": \"" << json_escape(key_str) << "\", \"value\": \""
          << json_escape(val_str) << "\"}";
