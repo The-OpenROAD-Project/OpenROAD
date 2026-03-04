@@ -285,6 +285,7 @@ filegroup(
         "data/example1.bmap",
         "data/example2.bmap",
         "data/example3.bmap",
+        "data/example4.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
