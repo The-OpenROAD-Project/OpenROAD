@@ -40,9 +40,9 @@ Label::Label(const odb::Point& pt,
 
 LabelDescriptor::LabelDescriptor(
     const std::vector<std::unique_ptr<Label>>& labels,
-    odb::dbDatabase* db,
+    odb::dbDatabase* /*db not-used*/,
     utl::Logger* logger)
-    : labels_(labels), db_(db), logger_(logger)
+    : labels_(labels), logger_(logger)
 {
 }
 
