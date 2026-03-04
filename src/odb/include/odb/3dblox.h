@@ -41,7 +41,7 @@ class ThreeDBlox
   void readDbv(const std::string& dbv_file);
   void readDbx(const std::string& dbx_file);
   void readBMap(const std::string& bmap_file);
-  void check();
+  void check(int bump_pitch_tolerance = 0);
   void writeDbv(const std::string& dbv_file, odb::dbChip* chip);
   void writeDbx(const std::string& dbx_file, odb::dbChip* chip);
   void writeBMap(const std::string& bmap_file, odb::dbChipRegion* region);
