@@ -345,15 +345,13 @@ void NesterovPlace::updateIterGraphics(
           fmt::format("{}/1_routability_final_{:05d}.png",
                       routability_driven_dir,
                       iter),
-          label,
-          /* select_buffers = */ false);
+          label);
 
       graphics_->saveLabeledImage(
           fmt::format("{}/1_density_routability_final_{:05d}.png",
                       routability_driven_dir,
                       iter),
           label,
-          false,
           "Heat Maps/Placement Density");
 
       graphics_->saveLabeledImage(
@@ -361,7 +359,6 @@ void NesterovPlace::updateIterGraphics(
                       routability_driven_dir,
                       iter),
           label,
-          false,
           "Heat Maps/Estimated Congestion (RUDY)");
 
       graphics_->saveLabeledImage(
@@ -371,8 +368,7 @@ void NesterovPlace::updateIterGraphics(
           fmt::format("Iter {} |R: {} |T: {} final route",
                       iter,
                       routability_driven_revert_count,
-                      timing_driven_count),
-          false);
+                      timing_driven_count));
     }
     final_routability_image_saved = true;
   }
@@ -403,8 +399,7 @@ void NesterovPlace::runTimingDriven(int iter,
             fmt::format("Iter {} |R: {} |T: {} before TD",
                         iter,
                         routability_driven_revert_count,
-                        timing_driven_count),
-            /* select_buffers = */ false);
+                        timing_driven_count));
       }
     }
 
@@ -474,14 +469,12 @@ void NesterovPlace::runTimingDriven(int iter,
 
     if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       updateDb();
-      bool select_buffers = !virtual_td_iter;
       graphics_->saveLabeledImage(
           fmt::format("{}/timing_{:05d}_1.png", timing_driven_dir, iter),
           fmt::format("Iter {} |R: {} |T: {} after TD",
                       iter,
                       routability_driven_revert_count,
-                      timing_driven_count),
-          select_buffers);
+                      timing_driven_count));
     }
 
     if (!virtual_td_iter) {
@@ -699,8 +692,7 @@ void NesterovPlace::routabilitySnapshot(
           fmt::format("Iter {} |R: {} |T: {} save snapshot",
                       iter,
                       routability_driven_revert_count,
-                      timing_driven_count),
-          /* select_buffers = */ false);
+                      timing_driven_count));
     }
   }
 }
@@ -732,14 +724,12 @@ void NesterovPlace::runRoutability(int iter,
                       routability_driven_dir,
                       iter),
           label,
-          /* select_buffers = */ false,
           "Heat Maps/Placement Density");
 
       graphics_->saveLabeledImage(
           fmt::format(
               "{}/rudy_routability_{:05d}.png", routability_driven_dir, iter),
           label,
-          /* select_buffers = */ false,
           "Heat Maps/Estimated Congestion (RUDY)");
 
       odb::Rect region;
@@ -955,8 +945,7 @@ void NesterovPlace::reportResults(int nesterov_iter,
       graphics_->saveLabeledImage(
           fmt::format(
               "{}/final_nesterov_{:05d}.png", getReportsDir(), nesterov_iter),
-          label,
-          /* select_buffers = */ false);
+          label);
     }
   }
 
@@ -1059,9 +1048,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     std::string label = fmt::format("init_nesterov");
 
     graphics_->saveLabeledImage(
-        fmt::format("{}/init_nesterov.png", getReportsDir()),
-        label,
-        /* select_buffers = */ false);
+        fmt::format("{}/init_nesterov.png", getReportsDir()), label);
   }
 
   // Core Nesterov Loop
@@ -1163,8 +1150,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       graphics_->saveLabeledImage(fmt::format("{}/2_final_placement_{:05d}.png",
                                               routability_driven_dir,
                                               nesterov_iter),
-                                  label,
-                                  /* select_buffers = */ false);
+                                  label);
     }
   }
 
@@ -1251,18 +1237,66 @@ nesterovDbCbk::nesterovDbCbk(NesterovPlace* nesterov_place)
 void NesterovPlace::createCbkGCell(odb::dbInst* db_inst)
 {
   auto gcell_index = nbc_->createCbkGCell(db_inst);
-  // Always create gcell on top-level
-  nbVec_[0]->createCbkGCell(db_inst, gcell_index);
-  // TODO: create new gcell in its proper region
-  // for (auto& nesterov : nbVec_) {
-  //   nesterov->createCbkGCell(db_inst, gcell_index);
-  // }
+
+  odb::dbRegion* region = db_inst->getRegion();
+  if (!region) {
+    nbVec_[0]->createCbkGCell(db_inst, gcell_index);
+    return;
+  }
+
+  for (auto group : region->getGroups()) {
+    bool found_nb = false;
+    for (auto& nb : nbVec_) {
+      if (group == nb->getGroup()) {
+        nb->createCbkGCell(db_inst, gcell_index);
+        found_nb = true;
+      }
+    }
+    if (!found_nb) {
+      log_->warn(
+          GPL,
+          8,
+          "Unable to find NesterovBase for group ({}) to insert instance ({}).",
+          group->getName(),
+          db_inst->getName());
+    }
+  }
 }
 
 void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 {
+  if (db_inst == nullptr) {
+    log_->warn(GPL, 328, "Trying to destroy odb::dbInst* nullptr");
+    return;
+  }
+
+  bool destroyed = false;
   for (auto& nesterov : nbVec_) {
-    nesterov->destroyCbkGCell(db_inst);
+    std::pair<odb::dbInst*, size_t> replaced
+        = nesterov->destroyCbkGCell(db_inst);
+    if (replaced.first) {
+      bool updated = false;
+      for (auto& nesterov : nbVec_) {
+        updated |= nesterov->updateHandle(replaced.first, replaced.second);
+      }
+      if (!updated) {
+        log_->error(GPL,
+                    329,
+                    "NesterovPlace destroyCbkGCell failed to update db_inst {}",
+                    replaced.first->getName());
+      }
+    }
+    if (replaced.second >= 0) {
+      destroyed = true;
+    }
+  }
+  if (!destroyed) {
+    debugPrint(log_,
+               GPL,
+               "callbacks",
+               1,
+               "warn db_inst ({}) not destroyed inside GPL",
+               db_inst->getName());
   }
 }
 
@@ -1319,11 +1353,6 @@ void nesterovDbCbk::inDbPostMoveInst(odb::dbInst* db_inst)
 void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst)
 {
   nesterov_place_->createCbkGCell(db_inst);
-}
-
-// TODO: use the region to create new gcell.
-void nesterovDbCbk::inDbInstCreate(odb::dbInst* db_inst, odb::dbRegion* region)
-{
 }
 
 void nesterovDbCbk::inDbInstDestroy(odb::dbInst* db_inst)

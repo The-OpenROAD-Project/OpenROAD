@@ -49,6 +49,7 @@ Cell type report:                       Count       Area
   Inverter                                  9      33.78
   Multi-Input combinational cell           37     192.68
   Total                                    62     346.58
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
@@ -62,33 +63,29 @@ Path Type: max
    0.32    0.32 v dpath.b_reg.out[4]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
    0.00    0.32 v _330_/A (sky130_fd_sc_hd__xnor2_1)
    0.58    0.89 ^ _330_/Y (sky130_fd_sc_hd__xnor2_1)
-   0.00    0.89 ^ _551_/_103_/A (sky130_fd_sc_hd__nand4_1)
-   0.19    1.08 v _551_/_103_/Y (sky130_fd_sc_hd__nand4_1)
-   0.00    1.08 v _551_/_104_/A2 (sky130_fd_sc_hd__o221ai_1)
-   0.25    1.33 ^ _551_/_104_/Y (sky130_fd_sc_hd__o221ai_1)
-   0.00    1.33 ^ _551_/_163_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.46 ^ _551_/_163_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.46 ^ _551_/_080_/A (sky130_fd_sc_hd__nand2_1)
-   0.07    1.53 v _551_/_080_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    1.53 v _551_/_095_/A1 (sky130_fd_sc_hd__a21oi_1)
-   0.14    1.67 ^ _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    1.67 ^ _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
-   0.09    1.76 v _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    1.76 v _551_/_173_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.88 v _551_/_173_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.88 v _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
-   0.15    2.03 v _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
-   0.00    2.03 v carry_out (out)
-           2.03   data arrival time
+   0.00    0.89 ^ _551_/_091_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.17    1.06 v _551_/_091_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.06 v _551_/_092_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.23    1.29 ^ _551_/_092_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.29 ^ _551_/_095_/B1 (sky130_fd_sc_hd__a21oi_1)
+   0.07    1.36 v _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.36 v _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.14    1.50 ^ _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.50 ^ _551_/_173_/A (sky130_fd_sc_hd__buf_4)
+   0.12    1.62 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.62 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
+   0.14    1.76 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.76 ^ carry_out (out)
+           1.76   data arrival time
 
    1.00    1.00   max_delay
    0.00    1.00   output external delay
            1.00   data required time
 ---------------------------------------------------------
            1.00   data required time
-          -2.03   data arrival time
+          -1.76   data arrival time
 ---------------------------------------------------------
-          -1.03   slack (VIOLATED)
+          -0.76   slack (VIOLATED)
 
 
 Cell type report for _551_ (LCU_16_KOGGE_STONE__551_)
@@ -97,6 +94,7 @@ Cell type report:                       Count       Area
   Inverter                                  5      18.77
   Multi-Input combinational cell           82     384.12
   Total                                   103     523.00
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
@@ -147,6 +145,7 @@ Cell type report:                       Count       Area
   Total                                    62     346.58
 Checking equivalence after swap #2 (Rollback)...
 Repair timing output passed/skipped equivalence test
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)
@@ -160,33 +159,29 @@ Path Type: max
    0.32    0.32 v dpath.b_reg.out[4]$_DFFE_PP_/Q (sky130_fd_sc_hd__dfxtp_1)
    0.00    0.32 v _330_/A (sky130_fd_sc_hd__xnor2_1)
    0.58    0.89 ^ _330_/Y (sky130_fd_sc_hd__xnor2_1)
-   0.00    0.89 ^ _551_/_103_/A (sky130_fd_sc_hd__nand4_1)
-   0.19    1.08 v _551_/_103_/Y (sky130_fd_sc_hd__nand4_1)
-   0.00    1.08 v _551_/_104_/A2 (sky130_fd_sc_hd__o221ai_1)
-   0.25    1.33 ^ _551_/_104_/Y (sky130_fd_sc_hd__o221ai_1)
-   0.00    1.33 ^ _551_/_163_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.46 ^ _551_/_163_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.46 ^ _551_/_080_/A (sky130_fd_sc_hd__nand2_1)
-   0.07    1.53 v _551_/_080_/Y (sky130_fd_sc_hd__nand2_1)
-   0.00    1.53 v _551_/_095_/A1 (sky130_fd_sc_hd__a21oi_1)
-   0.14    1.67 ^ _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
-   0.00    1.67 ^ _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
-   0.09    1.76 v _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
-   0.00    1.76 v _551_/_173_/A (sky130_fd_sc_hd__buf_4)
-   0.13    1.88 v _551_/_173_/X (sky130_fd_sc_hd__buf_4)
-   0.00    1.88 v _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
-   0.15    2.03 v _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
-   0.00    2.03 v carry_out (out)
-           2.03   data arrival time
+   0.00    0.89 ^ _551_/_091_/A1 (sky130_fd_sc_hd__a21oi_1)
+   0.17    1.06 v _551_/_091_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.06 v _551_/_092_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.23    1.29 ^ _551_/_092_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.29 ^ _551_/_095_/B1 (sky130_fd_sc_hd__a21oi_1)
+   0.07    1.36 v _551_/_095_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.00    1.36 v _551_/_134_/A2 (sky130_fd_sc_hd__o21ai_0)
+   0.14    1.50 ^ _551_/_134_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00    1.50 ^ _551_/_173_/A (sky130_fd_sc_hd__buf_4)
+   0.12    1.62 ^ _551_/_173_/X (sky130_fd_sc_hd__buf_4)
+   0.00    1.62 ^ _carry_out_and_/C (sky130_fd_sc_hd__and4_1)
+   0.14    1.76 ^ _carry_out_and_/X (sky130_fd_sc_hd__and4_1)
+   0.00    1.76 ^ carry_out (out)
+           1.76   data arrival time
 
    1.00    1.00   max_delay
    0.00    1.00   output external delay
            1.00   data required time
 ---------------------------------------------------------
            1.00   data required time
-          -2.03   data arrival time
+          -1.76   data arrival time
 ---------------------------------------------------------
-          -1.03   slack (VIOLATED)
+          -0.76   slack (VIOLATED)
 
 
 Cell type report for _551_ (LCU_16_KOGGE_STONE__551__1)
@@ -195,6 +190,7 @@ Cell type report:                       Count       Area
   Inverter                                  5      18.77
   Multi-Input combinational cell           82     384.12
   Total                                   103     523.00
+[INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
 Startpoint: dpath.b_reg.out[4]$_DFFE_PP_
             (rising edge-triggered flip-flop clocked by CLK)

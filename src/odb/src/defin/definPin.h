@@ -9,6 +9,7 @@
 
 #include "definBase.h"
 #include "definPolygon.h"
+#include "definTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 

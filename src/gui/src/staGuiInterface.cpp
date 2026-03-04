@@ -1191,7 +1191,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
           e_thrus,
           e_to,
           include_unconstrained_,
-          // corner, min_max,
+          // scene, min_max,
           search_scenes,
           minMaxAll(),
           // group_count, endpoint_count, unique_pins

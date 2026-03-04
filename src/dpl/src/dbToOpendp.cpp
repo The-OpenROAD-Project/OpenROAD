@@ -137,6 +137,11 @@ void Opendp::createNetwork()
     if (!net || net->getSigType().isSupply()) {
       continue;
     }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
+      // skip unplaced terminals
+      continue;
+    }
     if (bterm->getBBox().isInverted()) {
       logger_->error(
           utl::DPL, 386, "BTerm {} has no shapes.", bterm->getName());

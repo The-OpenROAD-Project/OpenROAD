@@ -53,7 +53,8 @@ class _dbMarker : public _dbObject
     kPoint = 0,
     kLine = 1,
     kRect = 2,
-    kPolygon = 3
+    kPolygon = 3,
+    kCuboid = 4
   };
   // User Code End Enums
 

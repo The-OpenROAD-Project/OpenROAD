@@ -828,7 +828,7 @@ class Gui
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
                           const std::string& filename,
-                          const std::string& corner = "",
+                          const std::string& scene = "",
                           int width_px = 0,
                           int height_px = 0);
   void selectClockviewerClock(const std::string& clock_name,

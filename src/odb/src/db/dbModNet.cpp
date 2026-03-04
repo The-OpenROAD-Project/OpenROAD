@@ -264,6 +264,15 @@ void dbModNet::dump() const
                  getParent()->getName(),
                  getParent()->getId());
 
+  dbNet* related_net = findRelatedNet();
+  if (related_net != nullptr) {
+    logger->report("  Related dbNet: {} (id={})",
+                   related_net->getName(),
+                   related_net->getId());
+  } else {
+    logger->report("  Related dbNet: <null>");
+  }
+
   logger->report("  ModITerms ({}):", getModITerms().size());
   for (dbModITerm* moditerm : getModITerms()) {
     // For dbModITerm, get types from child dbModBTerm
@@ -728,6 +737,18 @@ std::vector<dbModNet*> dbModNet::getNextModNetsInFanout() const
   }
 
   return next_modnets;
+}
+
+dbModNet* dbModNet::getFirstParentModNet() const
+{
+  for (dbModBTerm* mod_bterm : getModBTerms()) {
+    if (dbModITerm* parent_iterm = mod_bterm->getParentModITerm()) {
+      if (dbModNet* parent_net = parent_iterm->getModNet()) {
+        return parent_net;
+      }
+    }
+  }
+  return nullptr;
 }
 
 dbModNet* dbModNet::findInHierarchy(

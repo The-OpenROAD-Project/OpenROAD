@@ -11,6 +11,7 @@
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"

@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/maps.h"
 #include "lemon/network_simplex.h"

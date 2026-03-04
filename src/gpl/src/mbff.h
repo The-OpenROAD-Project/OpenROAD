@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 
 namespace utl {
@@ -89,7 +90,8 @@ class MBFF
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
   };
-  using DataToOutputsMap = std::map<const sta::LibertyPort*, FlopOutputs>;
+  using DataToOutputsMap
+      = std::map<const sta::LibertyPort*, FlopOutputs, sta::LibertyPortLess>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions

@@ -28,7 +28,7 @@ report_tns
 
 puts "-- After --\n"
 
-resynth_annealing -corner fast -initial_ops 5 -iters 30
+resynth_annealing -corner fast -initial_ops 5 -iters 30 -seed 189
 report_timing_histogram
 report_cell_usage
 report_checks

@@ -104,6 +104,7 @@ class SteinerTree
   stt::Tree& fluteTree() { return tree_; }
   void createSteinerPtToPinMap();
   void locAddPin(const odb::Point& loc, const sta::Pin* pin);
+  int getMaxIndex() const;
 
   static constexpr SteinerPt null_pt = -1;
 

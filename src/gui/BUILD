@@ -63,9 +63,10 @@ QT_GUI_PLATFORMS = {
             "include/gui/gui.h",
             "include/gui/heatMap.h",
         ],
-        defines = [
-            "STATIC_QPA_PLUGIN_XCB=1",
-        ],
+        defines = select({
+            "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
+            "//conditions:default": [],
+        }),
         includes = [
             "include",
             "src",
