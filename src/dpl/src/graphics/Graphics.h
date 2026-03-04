@@ -42,7 +42,6 @@ class Graphics : public gui::Renderer, public DplObserver
   Opendp* dp_;
   const odb::dbInst* debug_instance_;
   odb::dbBlock* block_ = nullptr;
-  float min_displacement_;  // in row height
   bool paint_pixels_;
   std::vector<odb::Rect> searched_;
 };

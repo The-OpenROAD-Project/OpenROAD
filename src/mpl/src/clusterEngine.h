@@ -227,7 +227,6 @@ class ClusteringEngine
   bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
-  sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
   MplObserver* graphics_;
