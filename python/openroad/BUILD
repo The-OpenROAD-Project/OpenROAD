@@ -13,7 +13,7 @@ py_library(
         "odb.py",
         "utl.py",
     ],
-    imports = ["pypi"],
+    imports = [".."],
     visibility = ["//visibility:public"],
     deps = [
         "//:ord_py",
