@@ -26,6 +26,8 @@
 
 #include "color.h"
 #include "db_sta/dbSta.hh"
+#include "gui/descriptor_registry.h"
+#include "gui/gui.h"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -712,6 +714,52 @@ static std::string json_escape(const std::string& s)
   return out;
 }
 
+// Serialize a Descriptor::Property value to a JSON fragment.
+// Leaf values: {"name":"...", "value":"..."}
+// PropertyList / SelectionSet: {"name":"...", "children":[...]}
+static void serializeProperty(std::stringstream& ss,
+                              const gui::Descriptor::Property& prop)
+{
+  ss << "{\"name\": \"" << json_escape(prop.name) << "\"";
+
+  // Check for compound types that should be rendered as expandable groups.
+  if (auto* plist
+      = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+    ss << ", \"children\": [";
+    bool first = true;
+    for (const auto& [key, val] : *plist) {
+      if (!first) {
+        ss << ", ";
+      }
+      std::string key_str = gui::Descriptor::Property::toString(key);
+      std::string val_str = gui::Descriptor::Property::toString(val);
+      ss << "{\"name\": \"" << json_escape(key_str) << "\", \"value\": \""
+         << json_escape(val_str) << "\"}";
+      first = false;
+    }
+    ss << "]";
+  } else if (auto* sel_set
+             = std::any_cast<gui::SelectionSet>(&prop.value)) {
+    ss << ", \"children\": [";
+    bool first = true;
+    for (const auto& sel : *sel_set) {
+      if (!first) {
+        ss << ", ";
+      }
+      ss << "{\"name\": \"" << json_escape(sel.getName())
+         << "\", \"value\": \"" << json_escape(sel.getTypeName()) << "\"}";
+      first = false;
+    }
+    ss << "]";
+  } else {
+    // Leaf value — convert to string.
+    std::string val_str = prop.toString();
+    ss << ", \"value\": \"" << json_escape(val_str) << "\"";
+  }
+
+  ss << "}";
+}
+
 struct WsRequest
 {
   uint32_t id = 0;
@@ -1176,7 +1224,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
             self->selected_insts_ = std::move(new_selection);
           }
 
-          // Build JSON response directly from results
+          // Build JSON response with selection and properties
           resp.type = 0;  // JSON
           std::stringstream ss;
           ss << "{\"selected\": [";
@@ -1192,7 +1240,29 @@ class ws_session : public std::enable_shared_from_this<ws_session>
                << r.bbox.yMax() << "]}";
             first = false;
           }
-          ss << "]}";
+          ss << "]";
+
+          // Add properties for the first selected instance
+          if (!results.empty()) {
+            auto* registry = gui::DescriptorRegistry::instance();
+            gui::Selected sel
+                = registry->makeSelected(std::any(results[0].inst));
+            if (sel) {
+              auto props = sel.getProperties();
+              ss << ", \"properties\": [";
+              bool pfirst = true;
+              for (const auto& prop : props) {
+                if (!pfirst) {
+                  ss << ", ";
+                }
+                serializeProperty(ss, prop);
+                pfirst = false;
+              }
+              ss << "]";
+            }
+          }
+
+          ss << "}";
           const std::string json = ss.str();
           resp.payload.assign(json.begin(), json.end());
         } catch (const std::exception& e) {

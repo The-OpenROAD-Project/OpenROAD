@@ -225,3 +225,59 @@ html, body {
     font-size: 12px;
     color: #ddd;
 }
+
+/* Inspector panel */
+.inspector {
+    padding: 8px;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+}
+.inspector-prop {
+    display: flex;
+    padding: 2px 0;
+    border-bottom: 1px solid #2a2a2a;
+}
+.inspector-prop-name {
+    color: #87cfff;
+    min-width: 120px;
+    flex-shrink: 0;
+    padding-right: 8px;
+}
+.inspector-prop-value {
+    color: #ccc;
+    word-break: break-all;
+}
+.inspector-group {
+    margin: 1px 0;
+}
+.inspector-group-header {
+    display: flex;
+    align-items: center;
+    padding: 2px 0;
+    cursor: pointer;
+    color: #ccc;
+    border-bottom: 1px solid #2a2a2a;
+}
+.inspector-group-header:hover {
+    background: #2a2a2a;
+}
+.inspector-group-header .vis-arrow {
+    font-size: 9px;
+    width: 14px;
+    text-align: center;
+    color: #888;
+    flex-shrink: 0;
+}
+.inspector-count {
+    color: #666;
+    margin-left: 6px;
+    font-size: 11px;
+}
+.inspector-group-children {
+    padding-left: 16px;
+}
+.inspector-group-children.collapsed {
+    display: none;
+}

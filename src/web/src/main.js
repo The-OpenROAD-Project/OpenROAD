@@ -464,9 +464,94 @@ function createTclConsole(container) {
     });
 }
 
+// ─── Inspector Panel ────────────────────────────────────────────────────────
+
+let inspectorEl = null;
+
+function renderProperty(prop) {
+    // Group with children (PropertyList or SelectionSet)
+    if (prop.children) {
+        const group = document.createElement('div');
+        group.className = 'inspector-group';
+
+        const header = document.createElement('div');
+        header.className = 'inspector-group-header';
+        const arrow = document.createElement('span');
+        arrow.className = 'vis-arrow';
+        arrow.textContent = '\u25B6';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'inspector-prop-name';
+        nameSpan.textContent = prop.name;
+        const countSpan = document.createElement('span');
+        countSpan.className = 'inspector-count';
+        countSpan.textContent = `(${prop.children.length})`;
+        header.appendChild(arrow);
+        header.appendChild(nameSpan);
+        header.appendChild(countSpan);
+        group.appendChild(header);
+
+        const kids = document.createElement('div');
+        kids.className = 'inspector-group-children collapsed';
+        for (const child of prop.children) {
+            kids.appendChild(renderProperty(child));
+        }
+        group.appendChild(kids);
+
+        arrow.addEventListener('click', () => {
+            kids.classList.toggle('collapsed');
+            arrow.textContent = kids.classList.contains('collapsed')
+                ? '\u25B6' : '\u25BC';
+        });
+        header.addEventListener('click', () => {
+            kids.classList.toggle('collapsed');
+            arrow.textContent = kids.classList.contains('collapsed')
+                ? '\u25B6' : '\u25BC';
+        });
+
+        return group;
+    }
+
+    // Leaf property: name + value
+    const row = document.createElement('div');
+    row.className = 'inspector-prop';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'inspector-prop-name';
+    nameEl.textContent = prop.name;
+    const valEl = document.createElement('span');
+    valEl.className = 'inspector-prop-value';
+    valEl.textContent = prop.value || '';
+    row.appendChild(nameEl);
+    row.appendChild(valEl);
+    return row;
+}
+
+function updateInspector(data) {
+    if (!inspectorEl) return;
+    inspectorEl.innerHTML = '';
+
+    if (!data || !data.properties || data.properties.length === 0) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'stub-panel';
+        placeholder.innerHTML =
+            '<div class="stub-title">Inspector</div>' +
+            '<div class="stub-desc">Select an object in the layout to inspect its properties.</div>';
+        inspectorEl.appendChild(placeholder);
+        return;
+    }
+
+    for (const prop of data.properties) {
+        inspectorEl.appendChild(renderProperty(prop));
+    }
+}
+
 function createInspector(container) {
-    createStubPanel(container, 'Inspector',
-        'Select an object in the layout to inspect its properties.');
+    const el = document.createElement('div');
+    el.className = 'inspector';
+    inspectorEl = el;
+    container.element.appendChild(el);
+
+    // Show placeholder initially
+    updateInspector(null);
 }
 
 function createBrowser(container) {
@@ -828,12 +913,14 @@ wsManager.readyPromise.then(async () => {
                             .setContent(
                                 `<strong>${inst.name}</strong><br>${inst.master}<br><small style="color:#888">(${dbu_x}, ${dbu_y})</small>`)
                             .openOn(map);
+                        updateInspector(data);
                     } else {
                         L.popup()
                             .setLatLng(e.latlng)
                             .setContent(
                                 `<em>No instance at (${dbu_x}, ${dbu_y})</em>`)
                             .openOn(map);
+                        updateInspector(null);
                     }
                     redrawAllLayers();
                 })

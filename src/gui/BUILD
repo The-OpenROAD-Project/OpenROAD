@@ -19,19 +19,35 @@ cc_library(
     srcs = [
         "src/stub.cpp",
         "src/stub_heatMap.cpp",
+        "src/descriptor_registry.cpp",
+        "src/init_descriptors.cpp",
+        "src/dbDescriptors.cpp",
+        "src/dbDescriptors.h",
+        "src/staDescriptors.cpp",
+        "src/staDescriptors.h",
+        "src/bufferTreeDescriptor.h",
         ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
+        "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
     includes = ["include"],
+    copts = ["-Isrc/gui/src"],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
         "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
         "@boost.multi_array",
         "@tcl_lang//:tcl",
+        "@spdlog",
+        "@tk_tcl//:tcl",
     ],
 )
 
@@ -60,6 +76,7 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
+            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
             "include/gui/heatMap.h",
         ],

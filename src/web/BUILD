@@ -31,6 +31,7 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/gui",
         "//src/odb",
         "//src/utl",
         "//third-party/lodepng",
