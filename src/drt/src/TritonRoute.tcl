@@ -42,6 +42,7 @@ proc detailed_route { args } {
            -single_step_dr -save_guide_updates}
   sta::check_argc_eq0 "detailed_route" $args
 
+  set MAX_DROUTE_END_ITER 64
   set enable_via_gen [expr ![info exists flags(-disable_via_gen)]]
   set clean_patches [expr [info exists flags(-clean_patches)]]
   set no_pin_access [expr [info exists flags(-no_pin_access)]]
@@ -87,9 +88,10 @@ proc detailed_route { args } {
   }
   if { [info exists keys(-droute_end_iter)] } {
     sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-    if { $keys(-droute_end_iter) > 64 } {
-      utl::warn DRT 518 "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
-      set droute_end_iter 64
+    if { $keys(-droute_end_iter) > $MAX_DROUTE_END_ITER } {
+      utl::warn DRT 518 "-droute_end_iter cannot be greater than $MAX_DROUTE_END_ITER. \
+        Setting -droute_end_iter to $MAX_DROUTE_END_ITER."
+      set droute_end_iter $MAX_DROUTE_END_ITER
     } else {
       set droute_end_iter $keys(-droute_end_iter)
     }
