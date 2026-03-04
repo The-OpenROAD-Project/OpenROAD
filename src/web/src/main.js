@@ -468,11 +468,51 @@ function createTclConsole(container) {
 
 let inspectorEl = null;
 
+let hoverRect = null;
+function clearHoverHighlight() {
+    if (hoverRect) {
+        map.removeLayer(hoverRect);
+        hoverRect = null;
+    }
+}
+
 function makeClickable(el, selectId) {
     el.classList.add('inspector-link');
     el.addEventListener('click', (e) => {
         e.stopPropagation();
         navigateInspector(selectId);
+    });
+    el.addEventListener('mouseenter', () => {
+        wsManager.request({ type: 'hover', select_id: selectId })
+            .then(data => {
+                if (data.bbox && map && designScale) {
+                    clearHoverHighlight();
+                    const [x1, y1, x2, y2] = data.bbox;
+                    // Enforce a minimum visible size (in pixels) centered on
+                    // the object, so tiny items like ITerms are still visible.
+                    const minPx = 20;
+                    const zoom = map.getZoom();
+                    const scale = Math.pow(2, zoom);
+                    const minDbu = minPx / (designScale * scale);
+                    const cx = (x1 + x2) / 2;
+                    const cy = (y1 + y2) / 2;
+                    const hw = Math.max((x2 - x1) / 2, minDbu / 2);
+                    const hh = Math.max((y2 - y1) / 2, minDbu / 2);
+                    const bounds = [
+                        [((cy - hh) - designMaxDXDY) * designScale, (cx - hw) * designScale],
+                        [((cy + hh) - designMaxDXDY) * designScale, (cx + hw) * designScale],
+                    ];
+                    hoverRect = L.rectangle(bounds, {
+                        className: 'hover-highlight',
+                        color: '#fff', weight: 2, fill: true,
+                        fillColor: '#fff', fillOpacity: 0.15,
+                    }).addTo(map);
+                }
+            })
+            .catch(() => {});
+    });
+    el.addEventListener('mouseleave', () => {
+        clearHoverHighlight();
     });
 }
 

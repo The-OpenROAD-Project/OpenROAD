@@ -313,3 +313,12 @@ html, body {
     background: #444;
     color: #fff;
 }
+
+/* Hover highlight pulse animation */
+.hover-highlight {
+    animation: hover-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes hover-pulse {
+    from { opacity: 0.3; }
+    to   { opacity: 0.8; }
+}

@@ -813,6 +813,7 @@ struct WsRequest
     INFO,
     SELECT,
     INSPECT,
+    HOVER,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -963,6 +964,9 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.type = WsRequest::INFO;
   } else if (type_str == "inspect") {
     req.type = WsRequest::INSPECT;
+    req.select_id = extract_int(msg, "select_id");
+  } else if (type_str == "hover") {
+    req.type = WsRequest::HOVER;
     req.select_id = extract_int(msg, "select_id");
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
@@ -1393,6 +1397,44 @@ class ws_session : public std::enable_shared_from_this<ws_session>
             {
               std::lock_guard<std::mutex> lock(self->selectables_mutex_);
               self->selectables_ = std::move(new_selectables);
+            }
+          } else {
+            ss << "{\"error\": \"invalid select_id\"}";
+          }
+          const std::string json = ss.str();
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
+    } else if (req.type == WsRequest::HOVER) {
+      // Return just the bbox for a selectable (no state changes)
+      net::post(ws_.get_executor(), [self, req]() {
+        WsResponse resp;
+        resp.id = req.id;
+        try {
+          gui::Selected sel;
+          {
+            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
+            if (req.select_id >= 0
+                && req.select_id
+                       < static_cast<int>(self->selectables_.size())) {
+              sel = self->selectables_[req.select_id];
+            }
+          }
+
+          resp.type = 0;
+          std::stringstream ss;
+          if (sel) {
+            odb::Rect bbox;
+            if (sel.getBBox(bbox)) {
+              ss << "{\"bbox\": [" << bbox.xMin() << ", " << bbox.yMin()
+                 << ", " << bbox.xMax() << ", " << bbox.yMax() << "]}";
+            } else {
+              ss << "{\"error\": \"no bbox\"}";
             }
           } else {
             ss << "{\"error\": \"invalid select_id\"}";
