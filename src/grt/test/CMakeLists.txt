@@ -9,15 +9,12 @@ or_integration_tests(
     clock_route_error1
     clock_route_error2
     congestion1
-    congestion1_snapshot_batched
     congestion2
-    congestion2_snapshot_batched
     congestion3
     congestion4
     congestion5
     congestion6
     congestion7
-    congestion7_snapshot_batched
     critical_nets_percentage
     critical_nets_percentage_cugr
     cugr_adjustment1

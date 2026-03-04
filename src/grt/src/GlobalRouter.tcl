@@ -235,7 +235,7 @@ proc global_route { args } {
     sta::check_positive_integer "-snapshot_batched_width" \
       $snapshot_batched_width
   } else {
-    set snapshot_batched_width 0
+    set snapshot_batched_width 16
   }
   grt::set_snapshot_batched_width $snapshot_batched_width
 

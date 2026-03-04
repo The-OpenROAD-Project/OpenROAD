@@ -122,6 +122,12 @@ get_snapshot_batched_width()
   return getGlobalRouter()->getSnapshotBatchedWidth();
 }
 
+int
+get_snapshot_batch_count()
+{
+  return getGlobalRouter()->getSnapshotBatchCount();
+}
+
 void
 set_critical_nets_percentage(float criticalNetsPercentage)
 {

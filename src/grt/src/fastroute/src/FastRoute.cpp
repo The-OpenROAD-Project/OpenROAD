@@ -33,6 +33,9 @@ namespace {
 // benchmarked best, while letting execution width follow the user-requested
 // thread count.
 constexpr int kSnapshotSemanticWidth = 16;
+constexpr int kSnapshotLowOverflowForSerialCleanup = 1500;
+constexpr int kSnapshotLowMaxOverflowForSerialCleanup = 32;
+constexpr int kSnapshotOverflowContinuationThreshold = 5000;
 
 }
 
@@ -47,7 +50,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       congestion_report_iter_step_(0),
       num_threads_(1),
       owns_nets_(true),
-      snapshot_batched_width_(0),
+      snapshot_batched_width_(16),
       x_range_(0),
       y_range_(0),
       num_adjust_(0),
@@ -151,6 +154,7 @@ void FastRouteCore::clear()
   snapshot_batch_count_ = 0;
   snapshot_batch_net_count_ = 0;
   snapshot_batch_wave_count_ = 0;
+  snapshot_batch_disabled_for_run_ = false;
 }
 
 void FastRouteCore::clearNets()
@@ -934,7 +938,8 @@ int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
 
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
-  return snapshot_batched_width_ > 0 && !debug_->isOn()
+  return snapshot_batched_width_ > 0 && !snapshot_batch_disabled_for_run_
+         && !debug_->isOn()
          && net_count > resolveSnapshotBaseBatchSize(net_count)
          && !hasNonSoftNdrNets();
 }
@@ -1592,6 +1597,7 @@ NetRouteMap FastRouteCore::run()
   snapshot_batch_count_ = 0;
   snapshot_batch_net_count_ = 0;
   snapshot_batch_wave_count_ = 0;
+  snapshot_batch_disabled_for_run_ = false;
 
   double total_run_time = 0.0;
   double initial_rsmt_time = 0.0;
@@ -1773,6 +1779,13 @@ NetRouteMap FastRouteCore::run()
   graph2d_.InitLastUsage(upType);
   if (total_overflow_ > 0 && overflow_iterations_ > 0 && verbose_) {
     logger_->info(GRT, 101, "Running extra iterations to remove overflow.");
+  }
+
+  if (useSnapshotBatchRouting(net_ids_.size())
+      && ((total_overflow_ < kSnapshotLowOverflowForSerialCleanup
+           && maxOverflow < kSnapshotLowMaxOverflowForSerialCleanup)
+          || total_overflow_ < net_ids_.size())) {
+    snapshot_batch_disabled_for_run_ = true;
   }
 
   // debug mode Rectilinear Steiner Tree before overflow iterations

@@ -1,14 +1,21 @@
 source "helpers.tcl"
 read_lef "Nangate45/Nangate45.lef"
-read_def "gcd.def"
+read_def "shuffle_stress.def"
 
 set_thread_count 16
 
+set_routing_layers -signal metal2-metal6
+set_global_routing_layer_adjustment * 0.20
+foreach layer {metal2 metal3 metal4 metal5} {
+  set_global_routing_region_adjustment {7.8 2.8 10.2 140.0} \
+    -layer $layer \
+    -adjustment 0.20
+}
+
 set output ""
 tee -variable output -quiet {
-  global_route \
-    -snapshot_batched_width 16 \
-    -verbose
+  global_route -allow_congestion -snapshot_batched_width 16 \
+    -congestion_iterations 200 -verbose
 }
 
 set report_file [make_result_file "snapshot_batched_smoke.rpt"]
@@ -30,6 +37,8 @@ foreach line [split $output "\n"] {
 if { $wirelength <= 0 || $vias < 0 } {
   utl::error GRT 706 "Failed to capture snapshot-batched global-route summary output."
 }
+
+require_snapshot_batched_activity "snapshot_batched_smoke"
 
 puts "pass"
 exit 0
