@@ -1300,9 +1300,15 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           // Add properties for the first selected instance
           std::vector<gui::Selected> new_selectables;
           if (!results.empty()) {
+            // Top-level bbox for the toolbar zoom button
+            const auto& r0 = results[0];
+            ss << ", \"bbox\": [" << r0.bbox.xMin() << ", "
+               << r0.bbox.yMin() << ", " << r0.bbox.xMax() << ", "
+               << r0.bbox.yMax() << "]";
+
             auto* registry = gui::DescriptorRegistry::instance();
             gui::Selected sel
-                = registry->makeSelected(std::any(results[0].inst));
+                = registry->makeSelected(std::any(r0.inst));
             if (sel) {
               auto props = sel.getProperties();
               ss << ", \"properties\": [";

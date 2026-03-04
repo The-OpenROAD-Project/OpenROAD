@@ -289,3 +289,27 @@ html, body {
 .inspector-link:hover {
     text-decoration: underline;
 }
+.inspector-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 2px 0 6px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 4px;
+}
+.inspector-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    cursor: pointer;
+}
+.inspector-btn:hover {
+    background: #444;
+    color: #fff;
+}
