@@ -143,9 +143,10 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
   logger_->info(DPL,
                 5,
-                "Setting maximum displacement to {} {} units.",
-                max_displacement_x,
-                max_displacement_y);
+                "Max displacement: {} multiples of cell width, {} multiples of "
+                "row height.",
+                max_displacement_x_,
+                max_displacement_y_);
 
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
