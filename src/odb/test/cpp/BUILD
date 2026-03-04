@@ -236,7 +236,9 @@ cc_test(
 cc_test(
     name = "Test3DBloxChecker",
     srcs = [
+        "Test3DBloxCheckerFixture.h",
         "Test3DBloxChecker.cpp",
+        "Test3DBloxCheckerLogicalConn.cpp",
     ],
     data = [
         "//src/odb/test:regression_resources",
