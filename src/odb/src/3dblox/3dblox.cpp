@@ -352,14 +352,15 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
                         chip,
                         /*issue_callback*/ false);
   }
+  const int dbu_per_micron = db_->getDbuPerMicron();
   if (chiplet.design_width != -1.0) {
-    chip->setWidth(std::round(chiplet.design_width * db_->getDbuPerMicron()));
+    chip->setWidth(std::round(chiplet.design_width * dbu_per_micron));
   }
   if (chiplet.design_height != -1.0) {
-    chip->setHeight(std::round(chiplet.design_height * db_->getDbuPerMicron()));
+    chip->setHeight(std::round(chiplet.design_height * dbu_per_micron));
   }
   if (chiplet.thickness != -1.0) {
-    chip->setThickness(std::round(chiplet.thickness * db_->getDbuPerMicron()));
+    chip->setThickness(std::round(chiplet.thickness * dbu_per_micron));
   }
   if (chiplet.shrink != -1.0) {
     chip->setShrink(chiplet.shrink);
@@ -368,27 +369,24 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   if (chiplet.scribe_line_right != -1.0) {
     chip->setScribeLineEast(
-        std::round(chiplet.scribe_line_right * db_->getDbuPerMicron()));
+        std::round(chiplet.scribe_line_right * dbu_per_micron));
     chip->setScribeLineWest(
-        std::round(chiplet.scribe_line_left * db_->getDbuPerMicron()));
+        std::round(chiplet.scribe_line_left * dbu_per_micron));
     chip->setScribeLineNorth(
-        std::round(chiplet.scribe_line_top * db_->getDbuPerMicron()));
+        std::round(chiplet.scribe_line_top * dbu_per_micron));
     chip->setScribeLineSouth(
-        std::round(chiplet.scribe_line_bottom * db_->getDbuPerMicron()));
+        std::round(chiplet.scribe_line_bottom * dbu_per_micron));
   }
   if (chiplet.seal_ring_right != -1.0) {
-    chip->setSealRingEast(
-        std::round(chiplet.seal_ring_right * db_->getDbuPerMicron()));
-    chip->setSealRingWest(
-        std::round(chiplet.seal_ring_left * db_->getDbuPerMicron()));
-    chip->setSealRingNorth(
-        std::round(chiplet.seal_ring_top * db_->getDbuPerMicron()));
+    chip->setSealRingEast(std::round(chiplet.seal_ring_right * dbu_per_micron));
+    chip->setSealRingWest(std::round(chiplet.seal_ring_left * dbu_per_micron));
+    chip->setSealRingNorth(std::round(chiplet.seal_ring_top * dbu_per_micron));
     chip->setSealRingSouth(
-        std::round(chiplet.seal_ring_bottom * db_->getDbuPerMicron()));
+        std::round(chiplet.seal_ring_bottom * dbu_per_micron));
   }
 
-  chip->setOffset(Point(std::round(chiplet.offset.x * db_->getDbuPerMicron()),
-                        std::round(chiplet.offset.y * db_->getDbuPerMicron())));
+  chip->setOffset(Point(std::round(chiplet.offset.x * dbu_per_micron),
+                        std::round(chiplet.offset.y * dbu_per_micron)));
   if (chip->getChipType() != dbChip::ChipType::HIER
       && chip->getBlock() == nullptr) {
     // blackbox stage, create block
@@ -436,9 +434,10 @@ void ThreeDBlox::createRegion(const ChipletRegion& region, dbChip* chip)
       chip, region.name, getChipRegionSide(region.side, logger_), layer);
   Rect box;
   box.mergeInit();
+  const int dbu_per_micron = db_->getDbuPerMicron();
   for (const auto& coord : region.coords) {
-    box.merge(Point(std::round(coord.x * db_->getDbuPerMicron()),
-                    std::round(coord.y * db_->getDbuPerMicron())),
+    box.merge(Point(std::round(coord.x * dbu_per_micron),
+                    std::round(coord.y * dbu_per_micron)),
               box);
   }
   chip_region->setBox(box);
@@ -480,12 +479,13 @@ void ThreeDBlox::createBump(const BumpMapEntry& entry,
     inst = dbInst::create(block, master, entry.bump_inst_name.c_str());
   }
   auto bump = dbChipBump::create(chip_region, inst);
+  const int dbu_per_micron = db_->getDbuPerMicron();
 
   Rect bbox;
   inst->getMaster()->getPlacementBoundary(bbox);
-  int x = std::round(entry.x * db_->getDbuPerMicron()) - bbox.xCenter()
+  int x = std::round(entry.x * dbu_per_micron) - bbox.xCenter()
           + chip->getOffset().x();
-  int y = std::round(entry.y * db_->getDbuPerMicron()) - bbox.yCenter()
+  int y = std::round(entry.y * dbu_per_micron) - bbox.yCenter()
           + chip->getOffset().y();
 
   inst->setOrigin(x, y);
@@ -578,10 +578,11 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
                    chip_inst.name);
   }
   inst->setOrient(orient.value());
+  const int dbu_per_micron = db_->getDbuPerMicron();
   inst->setLoc(Point3D{
-      static_cast<int>(std::round(chip_inst.loc.x * db_->getDbuPerMicron())),
-      static_cast<int>(std::round(chip_inst.loc.y * db_->getDbuPerMicron())),
-      static_cast<int>(std::round(chip_inst.z * db_->getDbuPerMicron())),
+      static_cast<int>(std::round(chip_inst.loc.x * dbu_per_micron)),
+      static_cast<int>(std::round(chip_inst.loc.y * dbu_per_micron)),
+      static_cast<int>(std::round(chip_inst.z * dbu_per_micron)),
   });
 }
 static std::vector<std::string> splitPath(const std::string& path)
