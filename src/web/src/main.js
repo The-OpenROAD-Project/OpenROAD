@@ -504,8 +504,8 @@ function makeClickable(el, selectId) {
                     ];
                     hoverRect = L.rectangle(bounds, {
                         className: 'hover-highlight',
-                        color: '#fff', weight: 2, fill: true,
-                        fillColor: '#fff', fillOpacity: 0.15,
+                        color: '#ff0', weight: 2, fill: true,
+                        fillColor: '#ff0', fillOpacity: 0.15,
                     }).addTo(map);
                 }
             })
@@ -524,6 +524,9 @@ function navigateInspector(selectId) {
                 return;
             }
             updateInspector(data);
+
+            // Clear hover highlight from the link we just clicked
+            clearHoverHighlight();
 
             // Show popup and highlight on the map
             map.closePopup();
@@ -593,7 +596,9 @@ function renderProperty(prop) {
         group.appendChild(header);
 
         const kids = document.createElement('div');
-        kids.className = 'inspector-group-children collapsed';
+        const autoExpand = prop.children.length < 10;
+        kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
+        arrow.textContent = autoExpand ? '\u25BC' : '\u25B6';
         for (const child of prop.children) {
             kids.appendChild(renderProperty(child));
         }
