@@ -88,6 +88,24 @@ void Graph2D::clearUsed()
   h_used_ggrid_.clear();
 }
 
+void Graph2D::rebuildUsedGrids()
+{
+  for (int x = 0; x < x_grid_ - 1; x++) {
+    for (int y = 0; y < y_grid_; y++) {
+      if (h_edges_[x][y].usage > 0) {
+        h_used_ggrid_.insert({x, y});
+      }
+    }
+  }
+  for (int x = 0; x < x_grid_; x++) {
+    for (int y = 0; y < y_grid_ - 1; y++) {
+      if (v_edges_[x][y].usage > 0) {
+        v_used_ggrid_.insert({x, y});
+      }
+    }
+  }
+}
+
 // Clears the NDR lists
 void Graph2D::clearNDRnets()
 {
