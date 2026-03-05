@@ -1296,8 +1296,7 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
     if (replaced->first) {
       bool updated = false;
       for (auto& nesterov : nbVec_) {
-        updated |= nesterov->updateHandle(replaced->first,
-                                          replaced->second);
+        updated |= nesterov->updateHandle(replaced->first, replaced->second);
       }
       if (!updated) {
         log_->error(GPL,
