@@ -115,13 +115,22 @@ void Tapcell::cutRows(const Options& options)
 
   EndcapCellOptions bopts = correctEndcapOptions(options);
   int max_corner_width = 0;
-  for (auto* corner : {bopts.left_top_corner, bopts.left_bottom_corner, bopts.right_top_corner, bopts.right_bottom_corner, bopts.left_top_edge, bopts.left_bottom_edge, bopts.right_top_edge, bopts.right_bottom_edge}) {
+  for (auto* corner : {bopts.left_top_corner,
+                       bopts.left_bottom_corner,
+                       bopts.right_top_corner,
+                       bopts.right_bottom_corner,
+                       bopts.left_top_edge,
+                       bopts.left_bottom_edge,
+                       bopts.right_top_edge,
+                       bopts.right_bottom_edge}) {
     if (corner != nullptr) {
-      max_corner_width = std::max(max_corner_width, static_cast<int>(corner->getWidth()));
+      max_corner_width
+          = std::max(max_corner_width, static_cast<int>(corner->getWidth()));
     }
   }
   if (options.endcap_master != nullptr) {
-      max_corner_width = std::max(max_corner_width, static_cast<int>(options.endcap_master->getWidth()));
+    max_corner_width = std::max(
+        max_corner_width, static_cast<int>(options.endcap_master->getWidth()));
   }
 
   if (max_corner_width > 0) {
@@ -183,7 +192,9 @@ void Tapcell::removeRowMinSteps(int min_step)
             break;
           }
         }
-        if (modified) break;
+        if (modified) {
+          break;
+        }
       }
     }
   }
