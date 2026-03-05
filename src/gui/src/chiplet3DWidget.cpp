@@ -40,6 +40,7 @@ constexpr float kZoomInFactor = 0.9f;
 constexpr float kZoomOutFactor = 1.1f;
 constexpr float kMinDistanceBound = 50.0f;
 constexpr float kMaxDistanceBound = 1e7f;
+constexpr float kZScale = 2.0f;
 
 // Rendering constants
 const QColor kBackgroundColor(26, 26, 26);
@@ -213,7 +214,7 @@ void Chiplet3DWidget::buildGeometries()
 
     const uint32_t base = vertices_.size();
     for (const auto& p : draw_cuboid.getPoints()) {
-      vertices_.push_back({QVector3D(p.x(), p.y(), p.z() * 2.0f), color});
+      vertices_.push_back({QVector3D(p.x(), p.y(), p.z() * kZScale), color});
     }
 
     QColor baseColor;
@@ -368,7 +369,7 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
           if (c_rect.intersects(bbox)) {
             odb::Cuboid draw_cuboid = cuboid;
             center_transform_.apply(draw_cuboid);
-            target_z = draw_cuboid.zMax() * 2.0f + kHighlightZOffset;
+            target_z = draw_cuboid.zMax() * kZScale + kHighlightZOffset;
             break;
           }
         }
