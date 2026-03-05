@@ -13,11 +13,14 @@
 #include "GRTree.h"
 #include "Layers.h"
 #include "geo.h"
+#include "GeoTypes.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "robin_hood.h"
 
 namespace grt {
+
+struct GPoint3D;
 
 using CapacityT = double;
 class GRNet;
@@ -34,10 +37,8 @@ struct AccessPoint
   }
 };
 
-// Only hash and compare on the point, not the layers
 class AccessPointHash
 {
- public:
   AccessPointHash(int y_size) : y_size_(y_size) {}
 
   std::size_t operator()(const AccessPoint& ap) const
@@ -71,6 +72,7 @@ struct GraphEdge
 class GridGraph
 {
  public:
+  int findPointIndex(const std::vector<GPoint3D>& path, int x, int y, int layer) const;
   GridGraph(const Design* design,
             const Constants& constants,
             utl::Logger* logger);
@@ -105,53 +107,43 @@ class GridGraph
     return graph_edges_[layer_index][x][y];
   }
 
-  // Costs
   int getEdgeLength(int direction, int edge_index) const;
   CostT getWireCost(int layer_index, PointT u, PointT v) const;
   CostT getViaCost(int layer_index, PointT loc) const;
   CostT getUnitViaCost() const { return unit_via_cost_; }
 
-  // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
 
-  // Methods for updating demands
   void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
 
-  // Checks
   bool checkOverflow(int layer_index, int x, int y) const
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
   int checkOverflow(int layer_index,
                     PointT u,
-                    PointT v) const;  // Check wire overflow
+                    PointT v) const;
   int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
-      const;  // Check routing tree overflow (Only wires are checked)
+      const;
   std::string getPythonString(
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
-  // 2D maps
   void extractBlockageView(GridGraphView<bool>& view) const;
   void extractCongestionView(
-      GridGraphView<bool>& view) const;  // 2D overflow look-up table
+      GridGraphView<bool>& view) const;
   void extractWireCostView(GridGraphView<CostT>& view) const;
   void updateWireCostView(
       GridGraphView<CostT>& view,
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
-  // For visualization
   void write(const std::string& heatmap_file = "heatmap.txt") const;
 
  private:
   IntervalT rangeSearchGridlines(int dimension,
                                  const IntervalT& loc_interval) const;
-  // Find the gridlines_ within [locInterval.low, locInterval.high]
   IntervalT rangeSearchRows(int dimension, const IntervalT& loc_interval) const;
-  // Find the rows/columns overlapping with [locInterval.low, locInterval.high]
 
-  // Utility functions for cost calculation
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
-  // CostT getUnitViaCost() const { return unit_via_cost_; }
   CostT getUnitLengthShortCost(int layer_index) const
   {
     return unit_length_short_costs_[layer_index];
@@ -169,7 +161,6 @@ class GridGraph
                     PointT lower,
                     CapacityT demand = 1.0) const;
 
-  // Methods for updating demands
   void commit(int layer_index, PointT lower, CapacityT demand);
   void commitWire(int layer_index, PointT lower, bool rip_up = false);
   void commitVia(int layer_index, PointT loc, bool rip_up = false);
@@ -190,15 +181,12 @@ class GridGraph
 
   const Design* design_;
 
-  // Unit costs
   CostT unit_length_wire_cost_;
   CostT unit_via_cost_;
   std::vector<CostT> unit_length_short_costs_;
 
   int total_length_ = 0;
   int total_num_vias_ = 0;
-  // gridEdges[l][x][y] stores the edge {(l, x, y), (l, x+1, y)} or {(l, x, y),
-  // (l, x, y+1)} depending on the routing direction of the layer
   std::vector<std::vector<std::vector<GraphEdge>>> graph_edges_;
   const Constants constants_;
 };
@@ -250,4 +238,4 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
   }
 };
 
-}  // namespace grt
+}
