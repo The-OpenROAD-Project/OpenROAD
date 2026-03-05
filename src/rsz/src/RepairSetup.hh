@@ -114,9 +114,9 @@ class RepairSetup : public sta::dbStaState
 
  private:
   void init();
-  bool repairPath(sta::Path* path,
-                  sta::Slack path_slack,
-                  float setup_slack_margin);
+  bool repairEndpoint(sta::Pin* end_pin,
+                      sta::Slack path_slack,
+                      float setup_slack_margin);
   bool repairPins(
       const std::vector<const sta::Pin*>& pins,
       float setup_slack_margin,

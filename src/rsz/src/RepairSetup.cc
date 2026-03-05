@@ -561,7 +561,6 @@ void RepairSetup::repairSetup(const sta::Pin* end_pin)
 
   sta::Vertex* vertex = graph_->pinLoadVertex(end_pin);
   const sta::Slack slack = sta_->slack(vertex, max_);
-  sta::Path* path = sta_->vertexWorstSlackPath(vertex, max_);
 
   move_sequence_.clear();
   move_sequence_ = {resizer_->unbuffer_move_.get(),
@@ -575,7 +574,7 @@ void RepairSetup::repairSetup(const sta::Pin* end_pin)
 
   {
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-    repairPath(path, slack, 0.0);
+    repairEndpoint(vertex->pin(), slack, 0.0);
   }
 
   int unbuffer_moves_ = resizer_->unbuffer_move_->numCommittedMoves();
@@ -754,10 +753,12 @@ bool RepairSetup::repairPins(
   return changed > 0;
 }
 
-bool RepairSetup::repairPath(sta::Path* path,
-                             const sta::Slack path_slack,
-                             const float setup_slack_margin)
+bool RepairSetup::repairEndpoint(sta::Pin* end_pin,
+                                 const sta::Slack path_slack,
+                                 const float setup_slack_margin)
 {
+  sta::Vertex* end_vertex = graph_->pinLoadVertex(end_pin);
+  sta::Path* path = sta_->vertexWorstSlackPath(end_vertex, max_);
   sta::PathExpanded expanded(path, sta_);
   int changed = 0;
 
@@ -1180,10 +1181,10 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
         break;
       }
 
-      sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
       float prev_tns_local = sta_->totalNegativeSlack(max_);
 
-      const bool changed = repairPath(end_path, end_slack, setup_slack_margin);
+      const bool changed
+          = repairEndpoint(end->pin(), end_slack, setup_slack_margin);
 
       if (!changed) {
         if (pass != 1) {
@@ -1273,7 +1274,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                      "non-improving passes "
                      "(limit {})",
                      phase_marker,
-                     network_->pathName(end_path->pin(sta_)),
+                     network_->pathName(end->pin()),
                      decreasing_slack_passes,
                      decreasing_slack_max_passes);
           debugPrint(logger_,
@@ -2973,10 +2974,9 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
         journal_open = false;
         break;
       }
-      sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
 
       const bool changed
-          = repairPath(end_path, end_slack, params.setup_slack_margin);
+          = repairEndpoint(end->pin(), end_slack, params.setup_slack_margin);
 
       if (!changed) {
         if (pass != 1) {
