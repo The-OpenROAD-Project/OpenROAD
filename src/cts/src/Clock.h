@@ -146,7 +146,7 @@ class ClockSubNet
 
   ClockInst* getDriver() const
   {
-    assert(instances_.size() > 0);
+    assert(!instances_.empty());
     return instances_[0];
   }
 
