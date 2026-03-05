@@ -421,14 +421,14 @@ RCTreeNodePtr UvDRCSlewBuffer::BuildRCTree(const sta::Pin* drvr_pin,
                                            LocVec& locs,
                                            PinVec& pins)
 {
-  if (locs.size() != tree.deg) {
+  std::size_t pin_count = pins.size();
+  if (pin_count != tree.deg) {
     throw std::runtime_error(
         "Pins count does not match the Steiner Tree degree.");
   }
-  std::size_t pin_count = pins.size();
   RCTreeNodePtr root = nullptr;
-  std::unordered_map<odb::Point, RCTreeNodePtr, LocHash, LocEqual>
-      loc_node_map{};
+  // std::unordered_map<odb::Point, RCTreeNodePtr, LocHash, LocEqual>
+  //     loc_node_map{};
 
   std::vector<RCTreeNodePtr> nodes;
   std::vector<std::vector<std::size_t>> adjacents(tree.branchCount(),
