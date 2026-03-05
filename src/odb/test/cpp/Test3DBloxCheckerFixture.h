@@ -84,6 +84,7 @@ class CheckerFixture : public tst::Fixture
       = "Connection regions";
   static constexpr const char* logical_connectivity_category
       = "Logical Connectivity";
+  static constexpr const char* bump_alignment_category = "Bump Alignment";
 };
 
 }  // namespace odb

@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@openroad_rules_python//python:pip.bzl", "compile_pip_requirements")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 
 package(features = ["layering_check"])
 

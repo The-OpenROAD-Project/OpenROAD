@@ -96,12 +96,10 @@ class AbstractGraphics
 
   void saveLabeledImage(std::string_view path,
                         std::string_view label,
-                        bool select_buffers,
                         std::string_view heatmap_control = "",
                         int image_width_px = 500)
   {
-    saveLabeledImageImpl(
-        path, label, select_buffers, heatmap_control, image_width_px);
+    saveLabeledImageImpl(path, label, heatmap_control, image_width_px);
   }
 
   // Gui functions.
@@ -129,7 +127,6 @@ class AbstractGraphics
       = 0;
   virtual void saveLabeledImageImpl(std::string_view path,
                                     std::string_view label,
-                                    bool select_buffers,
                                     std::string_view heatmap_control,
                                     int image_width_px)
       = 0;

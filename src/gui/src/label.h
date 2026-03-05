@@ -90,7 +90,6 @@ class LabelDescriptor : public Descriptor
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);
 
   const Labels& labels_;
-  odb::dbDatabase* db_;
   utl::Logger* logger_;
 };
 
