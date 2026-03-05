@@ -363,7 +363,8 @@ void Opendp::place()
   int failed_diamond_move = 0, failed_rip_up = 0, success_diamond_move = 0;
 
   for (auto& cell : network_->getNodes()) {
-    if (cell->getType() != Node::CELL) {
+    if (cell->getType() != Node::CELL
+        || !cell->getDbInst()->getMaster()->isCore()) {
       continue;
     }
     if (!(cell->isFixed() || cell->inGroup() || cell->isPlaced())) {
@@ -382,8 +383,9 @@ void Opendp::place()
   for (Node* cell : sorted_cells) {
     if (iterative_debug_) {
       count++;
-      logger_->report("Placing cell {}, count {}, %: {:.2f}",
+      logger_->report("Placing cell {}, multi-row: {}, count {}, %: {:.2f}",
                       cell->name(),
+                      isMultiRow(cell),
                       count,
                       100.0 * count / sorted_cells.size());
     }
