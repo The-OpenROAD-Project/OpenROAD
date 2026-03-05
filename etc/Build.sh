@@ -58,6 +58,8 @@ OPTIONS:
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
                                                  or from system "/etc".
+  -local                                        Install OpenROAD in \${HOME}/.local.
+  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
 
 EOF
     exit "${1:-1}"
@@ -77,6 +79,12 @@ while [ "$#" -gt 0 ]; do
     case "${1}" in
         -h|-help)
             _help 0
+            ;;
+        -local)
+            cmakeOptions+=" -DCMAKE_INSTALL_PREFIX=${HOME}/.local"
+            ;;
+        -prefix=*)
+            cmakeOptions+=" -DCMAKE_INSTALL_PREFIX=${1#*=}"
             ;;
         -no-gui)
             cmakeOptions+=" -DBUILD_GUI=OFF"
