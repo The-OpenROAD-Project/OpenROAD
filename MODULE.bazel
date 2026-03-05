@@ -179,15 +179,9 @@ maven.install(
 )
 use_repo(maven, "maven")
 
-http_archive_dev = use_repo_rule(
-    "@bazel_tools//tools/build_defs/repo:http.bzl",
-    "http_archive",
-    dev_dependency = True,
-)
-
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-http_archive_dev(
+http_archive(
     name = "circt",
     build_file_content = """
 exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
