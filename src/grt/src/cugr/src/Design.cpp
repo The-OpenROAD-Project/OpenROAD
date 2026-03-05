@@ -144,6 +144,77 @@ void Design::readNetlist()
   }
 }
 
+void Design::updateNet(odb::dbNet* db_net)
+{
+  if (db_net->isSpecial() || db_net->getSigType().isSupply()
+      || !db_net->getSWires().empty() || db_net->isConnectedByAbutment()) {
+    return;
+  }
+
+  std::vector<CUGRPin> pins;
+  int pin_count = 0;
+  for (odb::dbBTerm* db_bterm : db_net->getBTerms()) {
+    int x, y;
+    std::vector<BoxOnLayer> pin_shapes;
+    if (db_bterm->getFirstPinLocation(x, y)) {
+      odb::Point position(x, y);
+      for (odb::dbBPin* bpin : db_bterm->getBPins()) {
+        for (odb::dbBox* bpin_box : bpin->getBoxes()) {
+          // adjust layer idx to start with zero
+          int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
+          pin_shapes.emplace_back(layer_idx,
+                                  getBoxFromRect(bpin_box->getBox()));
+        }
+      }
+    }
+
+    pins.emplace_back(pin_count, db_bterm, pin_shapes);
+    pin_count++;
+  }
+
+  for (odb::dbITerm* db_iterm : db_net->getITerms()) {
+    std::vector<BoxOnLayer> pin_shapes;
+    odb::dbTransform xform = db_iterm->getInst()->getTransform();
+    for (odb::dbMPin* mpin : db_iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* tech_layer = box->getTechLayer();
+        if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+
+        odb::Rect rect = box->getBox();
+        xform.apply(rect);
+
+        int layerIndex = tech_layer->getRoutingLevel() - 1;
+        pin_shapes.emplace_back(
+            layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+      }
+    }
+
+    pins.emplace_back(pin_count, db_iterm, pin_shapes);
+    pin_count++;
+  }
+
+  LayerRange layer_range
+      = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+  if (clock_nets_.find(db_net) != clock_nets_.end()) {
+    layer_range.min_layer = block_->getMinLayerForClock() - 1;
+    layer_range.max_layer = block_->getMaxLayerForClock() - 1;
+  }
+
+  for (CUGRNet& net : nets_) {
+    if (net.getDbNet() == db_net) {
+      net.setPins(std::move(pins));
+      net.setLayerRange(layer_range);
+      return;
+    }
+  }
+
+  // Net is new: add it to the end
+  const int net_index = static_cast<int>(nets_.size());
+  nets_.emplace_back(net_index, db_net, pins, layer_range);
+}
+
 void Design::readInstanceObstructions()
 {
   for (odb::dbInst* db_inst : block_->getInsts()) {

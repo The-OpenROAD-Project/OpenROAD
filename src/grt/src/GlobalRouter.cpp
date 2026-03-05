@@ -325,7 +325,9 @@ bool GlobalRouter::haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets)
 void GlobalRouter::startIncremental()
 {
   is_incremental_ = true;
-  if (!initialized_ || haveDetailedRoutes()) {
+  if (use_cugr_) {
+    cugr_->startIncremental();
+  } else if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
@@ -337,8 +339,14 @@ void GlobalRouter::startIncremental()
 void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
-  fastroute_->setResistanceAware(resistance_aware_);
-  updateDirtyRoutes();
+  if (use_cugr_) {
+    cugr_->endIncremental();
+    routes_ = cugr_->getRoutes();
+    updatePinAccessPoints();
+  } else {
+    fastroute_->setResistanceAware(resistance_aware_);
+    updateDirtyRoutes();
+  }
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
@@ -5848,6 +5856,13 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   db_net_map_[net]->setDirtyNet(true);
   db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
+}
+
+void GlobalRouter::updateNet(odb::dbNet* net)
+{
+  if (use_cugr_) {
+    cugr_->updateNet(net);
+  }
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)

@@ -134,7 +134,8 @@ void CUGR::updateOverflowNets(std::vector<int>& netIndices)
 {
   netIndices.clear();
   for (const auto& net : gr_nets_) {
-    if (grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
+    if (net->getRoutingTree()
+        && grid_graph_->checkOverflow(net->getRoutingTree()) > 0) {
       netIndices.push_back(net->getIndex());
     }
   }
@@ -152,6 +153,9 @@ void CUGR::patternRoute(std::vector<int>& netIndices)
 
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
+    if (gr_nets_[netIndex]->getNumPins() < 2) {
+      continue;
+    }
     PatternRoute patternRoute(gr_nets_[netIndex].get(),
                               grid_graph_.get(),
                               stt_builder_,
@@ -183,6 +187,9 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
   sortNetIndices(netIndices);
   for (const int netIndex : netIndices) {
     GRNet* net = gr_nets_[netIndex].get();
+    if (net->getNumPins() < 2) {
+      continue;
+    }
     grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
     PatternRoute patternRoute(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
@@ -218,6 +225,9 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   SparseGrid grid(10, 10, 0, 0);
   for (const int netIndex : netIndices) {
     GRNet* net = gr_nets_[netIndex].get();
+    if (net->getNumPins() < 2) {
+      continue;
+    }
     MazeRoute mazeRoute(net, grid_graph_.get(), logger_);
     mazeRoute.constructSparsifiedGraph(wireCostView, grid);
     mazeRoute.run();
@@ -626,6 +636,33 @@ void CUGR::addDirtyNet(odb::dbNet* net)
   }
 }
 
+void CUGR::updateNet(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    GRNet* gr_net = it->second;
+    grid_graph_->commitTree(gr_net->getRoutingTree(), /*ripup=*/true);
+    design_->updateNet(db_net);
+    const int idx = gr_net->getIndex();
+    const CUGRNet& base_net = design_->getAllNets()[idx];
+    gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
+    db_net_map_[db_net] = gr_nets_[idx].get();
+    if (incremental_mode_) {
+      dirty_net_indices_.insert(idx);
+    }
+  } else {
+    design_->updateNet(db_net);
+    const CUGRNet& base_net = design_->getAllNets().back();
+    const int new_index = static_cast<int>(gr_nets_.size());
+    gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
+    net_indices_.push_back(new_index);
+    db_net_map_[db_net] = gr_nets_.back().get();
+    if (incremental_mode_) {
+      dirty_net_indices_.insert(new_index);
+    }
+  }
+}
+
 void CUGR::startIncremental()
 {
   incremental_mode_ = true;
@@ -651,6 +688,10 @@ void CUGR::endIncremental()
 
   std::vector<int> nets_to_route(dirty_net_indices_.begin(),
                                  dirty_net_indices_.end());
+
+  for (const int idx : dirty_net_indices_) {
+    updateNet(gr_nets_[idx]->getDbNet());
+  }
 
   rerouteNets(nets_to_route);
 

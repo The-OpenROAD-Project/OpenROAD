@@ -92,6 +92,7 @@ class CUGR
     critical_nets_percentage_ = percentage;
   }
   void addDirtyNet(odb::dbNet* net);
+  void updateNet(odb::dbNet* net);
   void startIncremental();
   void endIncremental();
 

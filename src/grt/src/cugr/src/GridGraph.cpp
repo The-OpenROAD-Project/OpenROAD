@@ -600,6 +600,9 @@ void GridGraph::commitVia(const int layer_index,
 void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
                            const bool rip_up)
 {
+  if (!tree) {
+    return;
+  }
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
     for (const auto& child : node->getChildren()) {
       if (node->getLayerIdx() == child->getLayerIdx()) {
