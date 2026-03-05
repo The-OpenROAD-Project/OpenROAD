@@ -97,8 +97,8 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
 
 void ThreeDBlox::check()
 {
-  Checker checker(logger_);
-  checker.check(db_->getChip());
+  Checker checker(logger_, db_);
+  checker.check();
 }
 
 namespace {

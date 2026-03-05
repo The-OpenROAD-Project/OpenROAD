@@ -184,6 +184,8 @@ class dbExtControl;
 // Custom iterators
 class dbModuleBusPortModBTermItr;
 
+class UnfoldedModel;
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// A box is the element used to represent layout shapes.
@@ -7550,6 +7552,7 @@ class dbDatabase : public dbObject
   ///
   dbChip* getChip();
 
+  UnfoldedModel* getUnfoldedModel();
   ////////////////////////
   /// DEPRECATED
   ////////////////////////

@@ -90,13 +90,14 @@ bool isValid(const UnfoldedConnection& conn)
 
 }  // namespace
 
-Checker::Checker(utl::Logger* logger) : logger_(logger)
+Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
 {
 }
 
-void Checker::check(dbChip* chip)
+void Checker::check()
 {
-  UnfoldedModel model(logger_, chip);
+  dbChip* chip = db_->getChip();
+  const UnfoldedModel* model = db_->getUnfoldedModel();
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
 
   checkFloatingChips(top_cat, model);
@@ -107,9 +108,9 @@ void Checker::check(dbChip* chip)
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
-                                 const UnfoldedModel& model)
+                                 const UnfoldedModel* model)
 {
-  const auto& chips = model.getChips();
+  const auto& chips = model->getChips();
   // Add one more node for "ground" (external world: package, PCB, ...)
   utl::UnionFind uf(chips.size() + 1);
   const size_t ground_node = chips.size();
@@ -119,7 +120,7 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     chip_map[&chips[i]] = i;
   }
 
-  for (const auto& conn : model.getConnections()) {
+  for (const auto& conn : model->getConnections()) {
     if (isValid(conn)) {
       // Case 1: Both regions exist - connect the two chips together
       if (conn.top_region && conn.bottom_region) {
@@ -180,9 +181,9 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel& model)
+                                    const UnfoldedModel* model)
 {
-  const auto& chips = model.getChips();
+  const auto& chips = model->getChips();
   std::vector<int> sorted(chips.size());
   std::iota(sorted.begin(), sorted.end(), 0);
   std::ranges::sort(sorted, [&](int a, int b) {
@@ -219,10 +220,10 @@ void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
-                                    const UnfoldedModel& model)
+                                    const UnfoldedModel* model)
 {
   dbMarkerCategory* cat = nullptr;
-  for (const auto& chip : model.getChips()) {
+  for (const auto& chip : model->getChips()) {
     for (const auto& region : chip.regions) {
       if (region.isInternalExt() && !region.isUsed) {
         if (!cat) {
@@ -245,7 +246,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
-                                     const UnfoldedModel& model)
+                                     const UnfoldedModel* model)
 {
   auto describe = [](const UnfoldedRegion* r, dbMarker* marker) {
     marker->addSource(r->region_inst);
@@ -260,7 +261,7 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
   };
   int count = 0;
   dbMarkerCategory* cat = nullptr;
-  for (const auto& conn : model.getConnections()) {
+  for (const auto& conn : model->getConnections()) {
     if (!isValid(conn)) {
       if (!cat) {
         cat = dbMarkerCategory::createOrReplace(top_cat, "Connection regions");
@@ -282,11 +283,11 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
-                                         const UnfoldedModel& model)
+                                         const UnfoldedModel* model)
 {
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
-  for (const auto& chip : model.getChips()) {
+  for (const auto& chip : model->getChips()) {
     for (const auto& region : chip.regions) {
       for (const auto& bump : region.bumps) {
         const auto& p = bump.global_position;
@@ -317,7 +318,7 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 }
 
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
-                                   const UnfoldedModel& model)
+                                   const UnfoldedModel* model)
 {
 }
 
