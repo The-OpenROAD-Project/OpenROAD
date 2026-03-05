@@ -593,8 +593,6 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
   NetRouteMap routes;
   if (!nets.empty()) {
     routes = fastroute_->run();
-    int wl_after_routing = fastroute_->computeTotalWirelength();
-    logger_->info(GRT, 300, "Total wirelength after routing: {} tiles", wl_after_routing);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {
