@@ -9,19 +9,19 @@
 #include <QVector2D>
 #include <QVector3D>
 #include <QWidget>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <array>
 
 #include "gui/gui.h"
-#include "odb/geom.h"
 #include "odb/dbTransform.h"
+#include "odb/geom.h"
 
 namespace odb {
 class dbChip;
 class dbBlock;
-}
+}  // namespace odb
 namespace utl {
 class Logger;
 }
@@ -84,7 +84,8 @@ class Chiplet3DWidget : public QWidget
 
   float bounding_radius_ = 10.0f;  // Rotation-invariant bounding sphere radius
   QVector3D center_ = QVector3D(0, 0, 0);
-  odb::dbTransform center_transform_;  // identity transform; updated in buildGeometries()
+  odb::dbTransform
+      center_transform_;  // identity transform; updated in buildGeometries()
 
   struct VertexData
   {
@@ -123,7 +124,7 @@ class Chiplet3DWidget : public QWidget
   std::vector<Face> faces_;
   std::vector<odb::Cuboid> chip_cuboids_;
   std::vector<ProjectedFace> sorted_faces_;
-  
+
   // Reusable buffers for drawFace3D to avoid per-frame heap allocations
   std::vector<QVector3D> face_view_points_;
   std::vector<QVector3D> face_clipped_points_;

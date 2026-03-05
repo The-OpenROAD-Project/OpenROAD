@@ -3,15 +3,16 @@
 
 #include "chiplet3DWidget.h"
 
+#include <QDateTime>
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
-#include <QDateTime>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -100,12 +101,13 @@ void Chiplet3DWidget::zoomTo(const Selected& selection)
   }
 
   const odb::Cuboid global_cuboid = chip_->getCuboid();
-  
+
   float target_x = bbox.xCenter() - global_cuboid.xCenter();
   float target_y = bbox.yCenter() - global_cuboid.yCenter();
-  
+
   // Set pan to negative of target because we translate the scene
-  // TODO: Normalize pan calculations by dbUnitsPerMicron to prevent scale issues on extreme layouts
+  // TODO: Normalize pan calculations by dbUnitsPerMicron to prevent scale
+  // issues on extreme layouts
   pan_x_ = -target_x;
   pan_y_ = -target_y;
 
@@ -114,12 +116,12 @@ void Chiplet3DWidget::zoomTo(const Selected& selection)
 
   // Set distance based on rect size to zoom in
   float max_dim = std::max(bbox.dx(), bbox.dy());
-  
+
   float min_distance = 100.0f;
   if (chip_->getBlock()) {
     min_distance = chip_->getBlock()->getDbUnitsPerMicron() * 10.0f;
   }
-  
+
   distance_ = std::max(max_dim * 1.5f, min_distance);
 
   update();
@@ -135,36 +137,37 @@ void Chiplet3DWidget::selectionFocus(const Selected& focus)
   if (focus) {
     const int update_interval = 100;
     const int state_reset_interval = 3;
-    animate_selection_ = std::make_unique<AnimatedSelected>(
-        AnimatedSelected{focus,
-                         0,
-                         state_reset_interval * kAnimationRepeats,
-                         state_reset_interval,
-                         nullptr});
+    animate_selection_ = std::make_unique<AnimatedSelected>(AnimatedSelected{
+        .selection = focus,
+        .state_count = 0,
+        .max_state_count = state_reset_interval * kAnimationRepeats,
+        .state_modulo = state_reset_interval,
+        .timer = nullptr});
     animate_selection_->timer = std::make_unique<QTimer>();
     animate_selection_->timer->setInterval(update_interval);
 
     const qint64 max_animate_time = QDateTime::currentMSecsSinceEpoch()
                                     + (animate_selection_->max_state_count + 2)
                                           * (qint64) update_interval;
-    connect(animate_selection_->timer.get(),
-            &QTimer::timeout,
-            this,
-            [this, max_animate_time]() {
-              if (animate_selection_ == nullptr) {
-                return;
-              }
+    connect(
+        animate_selection_->timer.get(),
+        &QTimer::timeout,
+        this,
+        [this, max_animate_time]() {
+          if (animate_selection_ == nullptr) {
+            return;
+          }
 
-              animate_selection_->state_count++;
-              if (animate_selection_->max_state_count != 0
-                  && (animate_selection_->state_count
-                          == animate_selection_->max_state_count
-                      || QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
-                animate_selection_->timer->stop();
-                animate_selection_ = nullptr;
-              }
-              update();
-            });
+          animate_selection_->state_count++;
+          if (animate_selection_->max_state_count != 0
+              && (animate_selection_->state_count
+                      == animate_selection_->max_state_count
+                  || QDateTime::currentMSecsSinceEpoch() > max_animate_time)) {
+            animate_selection_->timer->stop();
+            animate_selection_ = nullptr;
+          }
+          update();
+        });
 
     animate_selection_->timer->start();
   }
@@ -224,18 +227,28 @@ void Chiplet3DWidget::buildGeometries()
     } else if (chip_) {
       block = chip_->getBlock();
     }
-    
+
     Selected sel;
     if (block) {
       sel = Gui::get()->makeSelected(block);
     }
 
-    faces_.push_back({{base + 0, base + 3, base + 2, base + 1}, baseColor.darker(kBottomFaceDarkness), sel}); // Bottom
-    faces_.push_back({{base + 4, base + 5, base + 6, base + 7}, baseColor.lighter(kTopFaceLightness), sel}); // Top
-    faces_.push_back({{base + 0, base + 1, base + 5, base + 4}, baseColor.darker(kSideFaceDarkness), sel}); // Front
-    faces_.push_back({{base + 1, base + 2, base + 6, base + 5}, baseColor, sel});             // Right
-    faces_.push_back({{base + 2, base + 3, base + 7, base + 6}, baseColor.darker(kSideFaceDarkness), sel}); // Back
-    faces_.push_back({{base + 0, base + 4, base + 7, base + 3}, baseColor, sel});             // Left
+    faces_.push_back({{base + 0, base + 3, base + 2, base + 1},
+                      baseColor.darker(kBottomFaceDarkness),
+                      sel});  // Bottom
+    faces_.push_back({{base + 4, base + 5, base + 6, base + 7},
+                      baseColor.lighter(kTopFaceLightness),
+                      sel});  // Top
+    faces_.push_back({{base + 0, base + 1, base + 5, base + 4},
+                      baseColor.darker(kSideFaceDarkness),
+                      sel});  // Front
+    faces_.push_back(
+        {{base + 1, base + 2, base + 6, base + 5}, baseColor, sel});  // Right
+    faces_.push_back({{base + 2, base + 3, base + 7, base + 6},
+                      baseColor.darker(kSideFaceDarkness),
+                      sel});  // Back
+    faces_.push_back(
+        {{base + 0, base + 4, base + 7, base + 3}, baseColor, sel});  // Left
   }
 }
 
@@ -274,7 +287,7 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
   modelView.rotate(rotation_);
 
   // 3. Draw Grid
-  painter.setPen(QPen(kGridColor, 1));  
+  painter.setPen(QPen(kGridColor, 1));
   const float grid_size
       = safe_size * kGridSizeFactor;  // Adjust grid to scene size
   const float step = grid_size / kGridSteps;
@@ -318,20 +331,22 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
     // Back-face culling: Normal in view space
     QVector3D normal = QVector3D::crossProduct(v1 - v0, v2 - v0);
     // In perspective projection, the view vector from eye to vertex is just v0
-    // A face is visible if it points towards the camera: dot(normal, view_vector) < 0
+    // A face is visible if it points towards the camera: dot(normal,
+    // view_vector) < 0
     if (QVector3D::dotProduct(normal, v0) >= 0.0f) {
       continue;
     }
 
     QVector3D v3 = modelView * vertices_[face.indices[3]].position;
     float minZ = std::min({v0.z(), v1.z(), v2.z(), v3.z()});
-    
+
     sorted_faces_.push_back({&face, minZ});
   }
 
-  std::sort(sorted_faces_.begin(), sorted_faces_.end(), [](const ProjectedFace& a, const ProjectedFace& b) {
-    return a.sortZ < b.sortZ;
-  });
+  std::ranges::sort(sorted_faces_,
+                    [](const ProjectedFace& a, const ProjectedFace& b) {
+                      return a.sortZ < b.sortZ;
+                    });
 
   for (const auto& pf : sorted_faces_) {
     drawFace3D(painter, *(pf.face), modelView, projection, rect(), zNear);
@@ -339,7 +354,8 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
 
   if (animate_selection_ != nullptr) {
     bool draw_highlight = true;
-    if (animate_selection_->state_count % animate_selection_->state_modulo == 0) {
+    if (animate_selection_->state_count % animate_selection_->state_modulo
+        == 0) {
       draw_highlight = false;
     }
     odb::Rect bbox;
@@ -347,7 +363,8 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
       float target_z = 0.0f;
       if (chip_) {
         for (const auto& cuboid : chip_cuboids_) {
-          odb::Rect c_rect(cuboid.xMin(), cuboid.yMin(), cuboid.xMax(), cuboid.yMax());
+          odb::Rect c_rect(
+              cuboid.xMin(), cuboid.yMin(), cuboid.xMax(), cuboid.yMax());
           if (c_rect.intersects(bbox)) {
             odb::Cuboid draw_cuboid = cuboid;
             center_transform_.apply(draw_cuboid);
@@ -366,12 +383,43 @@ void Chiplet3DWidget::paintEvent(QPaintEvent* event)
         QVector3D p3(pt_max.x(), pt_max.y(), target_z);
         QVector3D p4(pt_min.x(), pt_max.y(), target_z);
 
-        QColor highlight_color(Painter::kHighlight.r, Painter::kHighlight.g, Painter::kHighlight.b, 200);
+        QColor highlight_color(Painter::kHighlight.r,
+                               Painter::kHighlight.g,
+                               Painter::kHighlight.b,
+                               200);
 
-        drawLine3D(painter, p1, p2, highlight_color, modelView, projection, rect(), zNear);
-        drawLine3D(painter, p2, p3, highlight_color, modelView, projection, rect(), zNear);
-        drawLine3D(painter, p3, p4, highlight_color, modelView, projection, rect(), zNear);
-        drawLine3D(painter, p4, p1, highlight_color, modelView, projection, rect(), zNear);
+        drawLine3D(painter,
+                   p1,
+                   p2,
+                   highlight_color,
+                   modelView,
+                   projection,
+                   rect(),
+                   zNear);
+        drawLine3D(painter,
+                   p2,
+                   p3,
+                   highlight_color,
+                   modelView,
+                   projection,
+                   rect(),
+                   zNear);
+        drawLine3D(painter,
+                   p3,
+                   p4,
+                   highlight_color,
+                   modelView,
+                   projection,
+                   rect(),
+                   zNear);
+        drawLine3D(painter,
+                   p4,
+                   p1,
+                   highlight_color,
+                   modelView,
+                   projection,
+                   rect(),
+                   zNear);
       }
     }
   }
@@ -441,7 +489,8 @@ void Chiplet3DWidget::drawFace3D(QPainter& painter,
 
   face_view_points_.clear();
   for (int i = 0; i < 4; ++i) {
-    face_view_points_.push_back(modelView * vertices_[face.indices[i]].position);
+    face_view_points_.push_back(modelView
+                                * vertices_[face.indices[i]].position);
   }
 
   face_clipped_points_.clear();
@@ -484,7 +533,7 @@ void Chiplet3DWidget::drawFace3D(QPainter& painter,
     int highlight_group = 0;
     bool is_highlighted = false;
     for (const auto& h_set : highlighted_) {
-      if (h_set.count(face.selection)) {
+      if (h_set.contains(face.selection)) {
         is_highlighted = true;
         break;
       }
@@ -492,11 +541,15 @@ void Chiplet3DWidget::drawFace3D(QPainter& painter,
     }
 
     if (is_highlighted) {
-      Painter::Color hc = Painter::kHighlightColors[highlight_group % gui::kNumHighlightSet];
+      Painter::Color hc
+          = Painter::kHighlightColors[highlight_group % gui::kNumHighlightSet];
       color = QColor(hc.r, hc.g, hc.b, 200);
       pen_width = 3;
-    } else if (selected_.count(face.selection)) {
-      color = QColor(Painter::kHighlight.r, Painter::kHighlight.g, Painter::kHighlight.b, 200);
+    } else if (selected_.contains(face.selection)) {
+      color = QColor(Painter::kHighlight.r,
+                     Painter::kHighlight.g,
+                     Painter::kHighlight.b,
+                     200);
       pen_width = 3;
     }
 
@@ -508,9 +561,13 @@ void Chiplet3DWidget::drawFace3D(QPainter& painter,
     }
 
     if (matches_anim) {
-      int state = animate_selection_->state_count % animate_selection_->state_modulo;
+      int state
+          = animate_selection_->state_count % animate_selection_->state_modulo;
       pen_width = state + 2;
-      color = QColor(Painter::kHighlight.r, Painter::kHighlight.g, Painter::kHighlight.b, 200);
+      color = QColor(Painter::kHighlight.r,
+                     Painter::kHighlight.g,
+                     Painter::kHighlight.b,
+                     200);
     }
   }
 
