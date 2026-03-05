@@ -85,7 +85,6 @@ class RulerDescriptor : public Descriptor
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);
 
   const std::vector<std::unique_ptr<Ruler>>& rulers_;
-  odb::dbDatabase* db_;
 };
 
 }  // namespace gui

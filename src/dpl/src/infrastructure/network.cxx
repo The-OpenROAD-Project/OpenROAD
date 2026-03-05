@@ -134,7 +134,8 @@ void Network::addEdge(odb::dbNet* net)
   setEdgeName(id, net->getName());
 
   for (auto iterm : net->getITerms()) {
-    if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (!inst->getMaster()->isCoreAutoPlaceable() || getNode(inst) == nullptr) {
       continue;
     }
     Pin* ptr = addPin(iterm);

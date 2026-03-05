@@ -574,11 +574,11 @@ TritonCTS forced slew degradation on these wires.
 [INFO RSZ-0048] Inserted 87 buffers in 41 nets.
 Placement Analysis
 ---------------------------------
-total displacement       3934.8 u
-average displacement        1.2 u
+total displacement       3932.9 u
+average displacement        1.3 u
 max displacement          127.1 u
 original HPWL          200643.6 u
-legalized HPWL         201452.1 u
+legalized HPWL         201452.2 u
 delta HPWL                    0 %
 
 Clock clk

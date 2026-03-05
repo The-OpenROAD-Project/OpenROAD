@@ -310,7 +310,6 @@ class TechChar
 
   CtsOptions* options_;
   odb::dbDatabase* db_;
-  rsz::Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;
   std::unique_ptr<sta::dbSta> openStaChar_;
