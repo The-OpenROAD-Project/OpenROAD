@@ -411,5 +411,7 @@ sh_binary(
     name = "install",
     srcs = ["//bazel:install.sh"],
     args = [],
-    data = [":openroad"],
+    data = [
+        ":openroad",
+    ],
 )
