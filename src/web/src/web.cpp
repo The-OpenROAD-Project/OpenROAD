@@ -692,7 +692,7 @@ void TileGenerator::drawSelection(std::vector<unsigned char>& image,
                                   const odb::Rect& dbu_tile,
                                   const double scale)
 {
-  const Color fill{255, 255, 0, 80};
+  const Color fill{255, 255, 0, 30};
   const Color border{255, 255, 0, 255};
 
   for (odb::dbInst* inst : selected) {
