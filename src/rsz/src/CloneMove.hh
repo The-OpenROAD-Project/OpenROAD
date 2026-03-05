@@ -19,7 +19,7 @@ class CloneMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const sta::Pin* drvr_pin, float setup_slack_margin) override;
+  bool doMove(const sta::Path* drvr_path, float setup_slack_margin) override;
 
   const char* name() override { return "CloneMove"; }
 

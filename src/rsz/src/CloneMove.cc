@@ -76,8 +76,9 @@ Point CloneMove::computeCloneGateLocation(
 // - No pending-move cell
 // - No multiple output cell
 //
-bool CloneMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool CloneMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
 
   const int fanout = this->fanout(drvr_vertex);
@@ -139,15 +140,17 @@ bool CloneMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
     return false;
   }
 
+  const sta::RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.
-  const sta::Slack drvr_slack = sta_->slack(drvr_vertex, resizer_->max_);
+  const sta::Slack drvr_slack = sta_->slack(drvr_vertex, rf, resizer_->max_);
   vector<pair<sta::Vertex*, sta::Slack>> fanout_slacks;
   sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
     sta::Edge* edge = edge_iter.next();
     sta::Vertex* fanout_vertex = edge->to(graph_);
-    const sta::Slack fanout_slack = sta_->slack(fanout_vertex, resizer_->max_);
+    const sta::Slack fanout_slack
+        = sta_->slack(fanout_vertex, rf, resizer_->max_);
     const sta::Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,

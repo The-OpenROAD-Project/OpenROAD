@@ -21,8 +21,9 @@ using std::string;
 
 using utl::RSZ;
 
-bool SizeUpMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool SizeUpMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Instance* drvr = network_->instance(drvr_pin);
 
   if (resizer_->dontTouch(drvr)) {
@@ -47,10 +48,10 @@ bool SizeUpMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
     return false;
   }
 
-  sta::Pin* prev_drvr_pin;
-  sta::Pin* drvr_input_pin;
-  sta::Pin* load_pin;
-  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
+  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
+  sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
+  sta::Pin* prev_drvr_pin
+      = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;
 
   float prev_drive;
   if (prev_drvr_pin) {
@@ -63,10 +64,8 @@ bool SizeUpMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
     prev_drive = 0.0;
   }
 
-  sta::Scene* scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(drvr_pin, scene, rf, min_max);
+  sta::Scene* scene = drvr_path->scene(sta_);
+  const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
   sta::LibertyPort* in_port = network_->libertyPort(drvr_input_pin);
   sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
@@ -111,12 +110,13 @@ bool SizeUpMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
 // Compare drive strength with previous stage
 // and match if needed
 // For example, if BUFX16 drives BUFX1, replace BUFX1 with BUFX16
-bool SizeUpMatchMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool SizeUpMatchMove::doMove(const sta::Path* drvr_path,
+                             float setup_slack_margin)
 {
-  sta::Pin* prev_drvr_pin;
-  sta::Pin* drvr_input_pin;
-  sta::Pin* load_pin;
-  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
+  sta::Pin* drvr_pin = drvr_path->pin(sta_);
+  sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
+  sta::Pin* prev_drvr_pin
+      = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;
 
   if (prev_drvr_pin == nullptr) {
     debugPrint(logger_,

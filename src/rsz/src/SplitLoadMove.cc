@@ -57,8 +57,9 @@ using utl::RSZ;
 ///
 /// Precondition: Fanout count must exceed split_load_min_fanout_
 ///
-bool SplitLoadMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool SplitLoadMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
 
   const int fanout = this->fanout(drvr_vertex);
@@ -84,10 +85,7 @@ bool SplitLoadMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
     return false;
   }
 
-  sta::Scene* scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(drvr_pin, scene, rf, min_max);
+  const sta::RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.
   const sta::Slack drvr_slack = sta_->slack(drvr_vertex, resizer_->max_);

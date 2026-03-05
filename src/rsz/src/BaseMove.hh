@@ -57,6 +57,8 @@ struct SlackEstimatorParams
   sta::Pin* driver_input_pin{nullptr};
   sta::Instance* driver{nullptr};
   sta::LibertyCell* driver_cell{nullptr};
+  const sta::Path* driver_path{nullptr};
+  const sta::Path* prev_driver_path{nullptr};
   const float setup_slack_margin;
   const sta::Scene* scene;
 };
@@ -67,9 +69,15 @@ class BaseMove : public sta::dbStaState
   BaseMove(Resizer* resizer);
   ~BaseMove() override = default;
 
-  virtual bool doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+  virtual bool doMove(const sta::Path* drvr_path, float setup_slack_margin)
   {
     return false;
+  }
+  bool doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+  {
+    const sta::Path* path = sta_->vertexWorstSlackPath(
+        graph_->pinDrvrVertex(drvr_pin), sta::MinMax::max());
+    return doMove(path, setup_slack_margin);
   }
 
   virtual const char* name() = 0;
@@ -127,20 +135,6 @@ class BaseMove : public sta::dbStaState
 
   double area(sta::Cell* cell);
   double area(odb::dbMaster* master);
-
-  // Return the previous and next pins of the driver along the worst path
-  void getPrevNextPins(const sta::Pin* drvr_pin,
-                       // Return values
-                       sta::Pin*& prev_drvr_pin,
-                       sta::Pin*& input_pin,
-                       sta::Pin*& load_pin);
-  // Return the scene, transition, and min/max of the worst slack path through
-  // pin.
-  void getWorstSceneTransitionMinMax(const sta::Pin* pin,
-                                     // Return values
-                                     sta::Scene*& scene,
-                                     const sta::RiseFall*& rf,
-                                     const sta::MinMax*& min_max);
 
   bool isPortEqiv(sta::FuncExpr* expr,
                   const sta::LibertyCell* cell,

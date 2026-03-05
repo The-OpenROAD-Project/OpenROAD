@@ -16,8 +16,10 @@ namespace rsz {
 
 using utl::RSZ;
 
-bool VTSwapSpeedMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool VTSwapSpeedMove::doMove(const sta::Path* drvr_path,
+                             float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::LibertyCell* drvr_cell;
   sta::LibertyCell* best_cell;
 

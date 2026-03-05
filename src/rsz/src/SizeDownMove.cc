@@ -30,8 +30,9 @@ using std::vector;
 
 using utl::RSZ;
 
-bool SizeDownMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool SizeDownMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
   const int fanout = this->fanout(drvr_vertex);
   // Skip nets with large fanout because we will need to buffer them.
@@ -110,10 +111,8 @@ bool SizeDownMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
                delayAsString(drvr_slack, sta_, 3))
   }
 
-  sta::Scene* scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(drvr_pin, scene, rf, min_max);
+  sta::Scene* scene = drvr_path->scene(sta_);
+  const sta::MinMax* min_max = drvr_path->minMax(sta_);
 
   int num_down_sizes = 0;
 

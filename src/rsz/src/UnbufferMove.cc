@@ -37,8 +37,9 @@ using utl::RSZ;
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
 // 4) it doesn't worsen slack
-bool UnbufferMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool UnbufferMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Instance* drvr = network_->instance(drvr_pin);
   sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
   sta::LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
@@ -95,15 +96,12 @@ bool UnbufferMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
 
   // Don't remove buffer if new max fanout violations are created
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
-  sta::Pin* prev_drvr_pin;
-  sta::Pin* drvr_input_pin;
-  sta::Pin* load_pin;
-  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
+  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
+  sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
+  sta::Pin* prev_drvr_pin
+      = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;
 
-  sta::Scene* scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(drvr_pin, scene, rf, min_max);
+  sta::Scene* scene = drvr_path->scene(sta_);
   float curr_fanout, max_fanout, load_slack;
   sta_->checkFanout(prev_drvr_pin,
                     scene->mode(),
@@ -147,7 +145,7 @@ bool UnbufferMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
   // Watch out for new max cap violations
   float cap, max_cap, cap_slack;
   const sta::Scene* prev_drvr_scene;
-  const sta::RiseFall* prev_drvr_tr;
+  const sta::RiseFall* prev_drvr_rf;
   sta_->checkCapacitance(prev_drvr_pin,
                          sta_->scenes(),
                          resizer_->max_,
@@ -155,7 +153,7 @@ bool UnbufferMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
                          cap,
                          max_cap,
                          cap_slack,
-                         prev_drvr_tr,
+                         prev_drvr_rf,
                          prev_drvr_scene);
   if (max_cap > 0.0 && prev_drvr_scene) {
     sta::GraphDelayCalc* dcalc = sta_->graphDelayCalc();
@@ -187,6 +185,8 @@ bool UnbufferMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
   params.driver_input_pin = drvr_input_pin;
   params.driver = drvr;
   params.driver_cell = drvr_cell;
+  params.driver_path = drvr_path;
+  params.prev_driver_path = drvr_path->prevPath()->prevPath();
   if (!estimatedSlackOK(params)) {
     debugPrint(logger_,
                RSZ,

@@ -35,8 +35,9 @@ using std::string;
 
 using utl::RSZ;
 
-bool SwapPinsMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
   sta::Instance* drvr = network_->instance(drvr_pin);
 
   // Skip if this is don't touch
@@ -90,15 +91,10 @@ bool SwapPinsMove::doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
     return false;
   }
 
-  sta::Scene* scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(drvr_pin, scene, rf, min_max);
+  sta::Scene* scene = drvr_path->scene(sta_);
+  const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);
-  sta::Pin* prev_drvr_pin;
-  sta::Pin* drvr_input_pin;
-  sta::Pin* load_pin;
-  getPrevNextPins(drvr_pin, prev_drvr_pin, drvr_input_pin, load_pin);
+  sta::Pin* drvr_input_pin = drvr_path->prevPath()->pin(sta_);
 
   // We get the driver port and the cell for that port.
   sta::LibertyPort* input_port = network_->libertyPort(drvr_input_pin);

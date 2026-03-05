@@ -328,17 +328,9 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     return false;
   }
 
-  sta::Scene* unused_scene;
-  const sta::RiseFall* rf;
-  const sta::MinMax* min_max;
-  getWorstSceneTransitionMinMax(params.driver_pin, unused_scene, rf, min_max);
-  sta::Scene* unused_prev_driver_scene;
-  const sta::RiseFall* prev_driver_rf;
-  const sta::MinMax* unused_prev_driver_min_max;
-  getWorstSceneTransitionMinMax(params.prev_driver_pin,
-                                unused_prev_driver_scene,
-                                prev_driver_rf,
-                                unused_prev_driver_min_max);
+  const sta::RiseFall* rf = params.driver_path->transition(sta_);
+  const sta::RiseFall* prev_driver_rf
+      = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
   float delay_imp = resizer_->bufferDelay(
@@ -960,99 +952,6 @@ sta::LibertyCellSeq BaseMove::getSwappableCells(sta::LibertyCell* base)
     return buffer_sizes;
   }
   return resizer_->getSwappableCells(base);
-}
-
-void BaseMove::getPrevNextPins(const sta::Pin* drvr_pin,
-                               // Return values
-                               sta::Pin*& prev_drvr_pin,
-                               sta::Pin*& input_pin,
-                               sta::Pin*& load_pin)
-{
-  sta::Vertex* drvr_vertex = graph_->vertex(network_->vertexId(drvr_pin));
-
-  // Find the worst slack fanout (load)
-  sta::Vertex* load_vertex = nullptr;
-  sta::Slack load_slack = sta::INF;
-  sta::VertexOutEdgeIterator out_edge_iter(drvr_vertex, graph_);
-  while (out_edge_iter.hasNext()) {
-    sta::Edge* edge = out_edge_iter.next();
-    sta::Vertex* fanout_vertex = edge->to(graph_);
-    sta::Slack fanout_slack = sta_->slack(fanout_vertex, resizer_->max_);
-    if (fanout_slack < load_slack || load_vertex == nullptr) {
-      load_vertex = fanout_vertex;
-      load_slack = fanout_slack;
-    }
-  }
-  load_pin = load_vertex ? load_vertex->pin() : nullptr;
-
-  // Find the input pin with the worst slack (similar to getEffortDelays)
-  // Skip output-to-output arcs in libraries like asap7
-  sta::Vertex* worst_input_vertex = nullptr;
-  sta::Slack worst_input_slack = sta::INF;
-  sta::VertexInEdgeIterator in_edge_iter(drvr_vertex, graph_);
-  while (in_edge_iter.hasNext()) {
-    sta::Edge* prev_edge = in_edge_iter.next();
-    sta::Vertex* from_vertex = prev_edge->from(graph_);
-    const sta::Pin* from_pin = from_vertex->pin();
-
-    // Skip output pins (output-to-output arcs in asap7 multi-output gates)
-    if (!from_pin || network_->direction(from_pin)->isOutput()) {
-      continue;
-    }
-
-    // Get slack for this input
-    sta::Slack from_slack = sta_->slack(from_vertex, resizer_->max_);
-    if (from_slack < worst_input_slack || worst_input_vertex == nullptr) {
-      worst_input_slack = from_slack;
-      worst_input_vertex = from_vertex;
-    }
-  }
-  input_pin = worst_input_vertex ? worst_input_vertex->pin() : nullptr;
-
-  // Find the driver of the input pin (previous driver)
-  if (worst_input_vertex) {
-    sta::Vertex* prev_drvr_vertex = nullptr;
-    sta::Slack prev_drvr_slack = sta::INF;
-    sta::VertexInEdgeIterator prev_edge_iter(worst_input_vertex, graph_);
-    while (prev_edge_iter.hasNext()) {
-      sta::Edge* edge = prev_edge_iter.next();
-      sta::Vertex* from_vertex = edge->from(graph_);
-      sta::Slack from_slack = sta_->slack(from_vertex, resizer_->max_);
-      if (from_slack < prev_drvr_slack || prev_drvr_vertex == nullptr) {
-        prev_drvr_slack = from_slack;
-        prev_drvr_vertex = from_vertex;
-      }
-    }
-    prev_drvr_pin = prev_drvr_vertex ? prev_drvr_vertex->pin() : nullptr;
-  } else {
-    prev_drvr_pin = nullptr;
-  }
-}
-
-void BaseMove::getWorstSceneTransitionMinMax(const sta::Pin* pin,
-                                             // Return values
-                                             sta::Scene*& scene,
-                                             const sta::RiseFall*& rf,
-                                             const sta::MinMax*& min_max)
-{
-  scene = nullptr;
-  rf = nullptr;
-  min_max = sta::MinMax::max();
-
-  sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
-  if (!vertex) {
-    vertex = graph_->pinLoadVertex(pin);
-  }
-  if (!vertex) {
-    return;
-  }
-  sta::Path* path = sta_->vertexWorstSlackPath(vertex, resizer_->max_);
-  if (!path || path->isNull()) {
-    return;
-  }
-  scene = path->scene(sta_);
-  rf = path->transition(sta_);
-  min_max = path->minMax(sta_);
 }
 
 }  // namespace rsz
