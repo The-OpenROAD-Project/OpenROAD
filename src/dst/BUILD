@@ -37,7 +37,6 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
-        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",

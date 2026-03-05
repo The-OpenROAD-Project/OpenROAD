@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "BalancerConnection.h"
-#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
@@ -83,8 +82,6 @@ class LoadBalancer
   boost::thread workers_lookup_thread_;
   std::vector<std::string> broadcastData_;
 
-  void removeWorkerLocked(const ip::address& ip, uint16_t port)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(workers_mutex_);
   void start_accept();
   void handle_accept(const BalancerConnection::Pointer& connection,
                      const boost::system::error_code& err);
