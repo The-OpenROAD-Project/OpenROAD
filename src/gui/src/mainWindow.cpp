@@ -107,7 +107,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewers_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
-      chiplet_viewer_(new Chiplet3DWidget(this)),
+      chiplet_viewer_(new Chiplet3DWidget(selected_, highlighted_, this)),
       chiplet_dock_(new QDockWidget("3D Viewer", this)),
       help_widget_(new HelpWidget(this)),
       find_dialog_(new FindObjectDialog(this)),
@@ -168,6 +168,14 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::chipLoaded,
           chiplet_viewer_,
           &Chiplet3DWidget::setChip);
+  connect(this,
+          &MainWindow::selectionChanged,
+          chiplet_viewer_,
+          qOverload<>(&QWidget::update));
+  connect(this,
+          &MainWindow::highlightChanged,
+          chiplet_viewer_,
+          qOverload<>(&QWidget::update));
   connect(this, &MainWindow::redraw, viewers_, &LayoutTabs::fullRepaint);
   connect(
       this, &MainWindow::blockLoaded, controls_, &DisplayControls::blockLoaded);
@@ -256,8 +264,11 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           &MainWindow::updateSelectedStatus);
   connect(inspector_, &Inspector::selection, viewers_, &LayoutTabs::selection);
   connect(inspector_, &Inspector::focus, viewers_, &LayoutTabs::selectionFocus);
+  connect(inspector_, &Inspector::focus, chiplet_viewer_, &Chiplet3DWidget::selectionFocus);
   connect(
       drc_viewer_, &DRCWidget::focus, viewers_, &LayoutTabs::selectionFocus);
+  connect(
+      drc_viewer_, &DRCWidget::focus, chiplet_viewer_, &Chiplet3DWidget::selectionFocus);
   connect(
       this, &MainWindow::highlightChanged, inspector_, &Inspector::loadActions);
   connect(viewers_,
@@ -404,6 +415,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
             bbox.set_xhi(bbox.xMax() + zoomout_margin);
             bbox.set_yhi(bbox.yMax() + zoomout_margin);
             zoomTo(bbox);
+            chiplet_viewer_->zoomTo(selected);
           });
   connect(this, &MainWindow::selectionChanged, [this]() {
     if (!selected_.empty()) {
