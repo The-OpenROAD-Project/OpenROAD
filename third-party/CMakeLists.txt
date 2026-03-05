@@ -59,6 +59,10 @@ endif()
 
 add_library(mockturtle INTERFACE)
 
+find_package(absl REQUIRED)
+
+target_link_libraries(mockturtle INTERFACE absl::random_random)
+
 target_include_directories(mockturtle
   INTERFACE
     ./mockturtle/include/
