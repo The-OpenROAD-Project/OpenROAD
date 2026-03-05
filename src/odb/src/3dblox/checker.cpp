@@ -23,6 +23,8 @@ namespace odb {
 
 namespace {
 
+constexpr int kBumpMarkerHalfSize = 50;
+
 const char* sideToString(UnfoldedRegionSide side)
 {
   switch (side) {
@@ -101,6 +103,7 @@ void Checker::check(dbChip* chip)
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
+  checkBumpPhysicalAlignment(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -281,6 +284,36 @@ void Checker::checkConnectionRegions(dbMarkerCategory* top_cat,
 void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
                                          const UnfoldedModel& model)
 {
+  dbMarkerCategory* cat = nullptr;
+  int violation_count = 0;
+  for (const auto& chip : model.getChips()) {
+    for (const auto& region : chip.regions) {
+      for (const auto& bump : region.bumps) {
+        const auto& p = bump.global_position;
+        if (!region.cuboid.getEnclosingRect().intersects({p.x(), p.y()})) {
+          violation_count++;
+          if (!cat) {
+            cat = dbMarkerCategory::createOrReplace(top_cat, "Bump Alignment");
+          }
+          auto* marker = dbMarker::create(cat);
+          marker->addSource(bump.bump_inst);
+          marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
+                                p.y() - kBumpMarkerHalfSize,
+                                p.x() + kBumpMarkerHalfSize,
+                                p.y() + kBumpMarkerHalfSize));
+          marker->setComment(
+              fmt::format("Bump is outside its parent region {}",
+                          region.region_inst->getChipRegion()->getName()));
+        }
+      }
+    }
+  }
+  if (violation_count > 0) {
+    logger_->warn(utl::ODB,
+                  463,
+                  "Found {} bump(s) outside their parent region(s)",
+                  violation_count);
+  }
 }
 
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
