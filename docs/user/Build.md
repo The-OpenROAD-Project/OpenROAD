@@ -103,6 +103,7 @@ sudo ./etc/DependencyInstaller.sh -base
 ./etc/DependencyInstaller.sh -common -local
 ```
 
+
 ```{warning}
 `sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
 installing packages on /usr/local.
@@ -126,6 +127,7 @@ Options:
   -threads=<N>                Limit the number of compiling threads.
   -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
+  -h, -help                   Show this help message.
 ```
 
 ### Build OpenROAD
