@@ -634,6 +634,7 @@ void CUGR::startIncremental()
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
+  sortNetIndices(net_indices);
   for (const int idx : net_indices) {
     grid_graph_->commitTree(gr_nets_[idx]->getRoutingTree(), /*rip_up=*/true);
   }
@@ -657,9 +658,8 @@ void CUGR::endIncremental()
   std::vector<int> overflow_nets;
   updateOverflowNets(overflow_nets);
   std::vector<int> secondary_nets;
-  std::ranges::set_difference(overflow_nets,
-                              dirty_net_indices_,
-                              std::back_inserter(secondary_nets));
+  std::ranges::set_difference(
+      overflow_nets, dirty_net_indices_, std::back_inserter(secondary_nets));
   if (!secondary_nets.empty()) {
     rerouteNets(secondary_nets);
   }
