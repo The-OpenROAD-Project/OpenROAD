@@ -24,6 +24,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"

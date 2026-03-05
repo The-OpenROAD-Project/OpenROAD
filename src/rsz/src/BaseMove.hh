@@ -26,6 +26,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/Sdc.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"

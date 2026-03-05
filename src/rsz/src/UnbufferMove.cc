@@ -21,6 +21,7 @@
 #include "sta/Liberty.hh"
 #include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 

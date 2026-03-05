@@ -3,6 +3,7 @@
 
 #include "BaseMove.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 
 namespace rsz {
 

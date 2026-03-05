@@ -9,6 +9,7 @@
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/Scene.hh"
 
 namespace rsz {

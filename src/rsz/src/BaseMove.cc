@@ -44,8 +44,6 @@ using std::string;
 using std::vector;
 
 using odb::dbMaster;
-
-using odb::dbMaster;
 using odb::Point;
 
 using utl::RSZ;
