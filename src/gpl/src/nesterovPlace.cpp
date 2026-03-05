@@ -1293,17 +1293,17 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
       continue;
     }
     destroyed = true;
-    if (replaced.value().first) {
+    if (replaced->first) {
       bool updated = false;
       for (auto& nesterov : nbVec_) {
-        updated |= nesterov->updateHandle(replaced.value().first,
-                                          replaced.value().second);
+        updated |= nesterov->updateHandle(replaced->first,
+                                          replaced->second);
       }
       if (!updated) {
         log_->error(GPL,
                     329,
                     "NesterovPlace destroyCbkGCell failed to update db_inst {}",
-                    replaced.value().first->getName());
+                    replaced->first->getName());
       }
     }
   }

@@ -3533,11 +3533,11 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
   auto db_it = db_inst_to_nb_index_.find(db_inst);
   if (db_it == db_inst_to_nb_index_.end()) {
     // not found
-    return {};
+    return std::nullopt;
   }
 
-  size_t last_index = nb_gcells_.size() - 1;
-  size_t gcell_index = db_it->second;
+  const size_t last_index = nb_gcells_.size() - 1;
+  const size_t gcell_index = db_it->second;
   debugPrint(
       log_,
       GPL,
@@ -3557,7 +3557,7 @@ std::optional<std::pair<odb::dbInst*, size_t>> NesterovBase::destroyCbkGCell(
                "callbacks",
                1,
                "error: trying to destroy filler gcell during callback!");
-    return {};
+    return std::nullopt;
   }
 
   if (gcell_index != last_index) {
@@ -3614,7 +3614,7 @@ NesterovBaseCommon::destroyCbkGCell(odb::dbInst* db_inst)
                "trying to "
                "destroy GCell on NBC",
                db_inst->getName());
-    return {};
+    return std::nullopt;
   }
 
   size_t index_remove = it->second;
@@ -3622,7 +3622,7 @@ NesterovBaseCommon::destroyCbkGCell(odb::dbInst* db_inst)
 
   size_t last_index = gCellStor_.size() - 1;
 
-  std::optional<std::pair<odb::dbInst*, size_t>> replacement = {};
+  std::optional<std::pair<odb::dbInst*, size_t>> replacement = std::nullopt;
   if (index_remove != last_index) {
     std::swap(gCellStor_[index_remove], gCellStor_[last_index]);
     std::swap(minRcCellSize_[index_remove], minRcCellSize_[last_index]);
