@@ -1565,11 +1565,10 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
       }
 
       // Initialize tracking for this endpoint if needed
-      if (endpoint_pass_limits.find(worst_pin) == endpoint_pass_limits.end()) {
+      if (!endpoint_pass_limits.contains(worst_pin)) {
         endpoint_pass_limits[worst_pin] = initial_decreasing_slack_max_passes_;
       }
-      if (decreasing_slack_counts.find(worst_pin)
-          == decreasing_slack_counts.end()) {
+      if (!decreasing_slack_counts.contains(worst_pin)) {
         decreasing_slack_counts[worst_pin] = 0;
       }
     }
@@ -1577,8 +1576,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
     const sta::Pin* endpoint_pin = current_endpoint->pin();
 
     // Ensure this endpoint is tracked (initialize to 0 if new)
-    if (wns_endpoint_pass_counts_.find(endpoint_pin)
-        == wns_endpoint_pass_counts_.end()) {
+    if (!wns_endpoint_pass_counts_.contains(endpoint_pin)) {
       wns_endpoint_pass_counts_[endpoint_pin] = 0;
     }
 
@@ -2158,7 +2156,7 @@ void RepairSetup::repairSetup_TNS(const float setup_slack_margin,
                delayAsString(endpoint_slack, sta_, digits));
 
     // Initialize adaptive pass limit for this endpoint
-    if (endpoint_pass_limits.find(endpoint_pin) == endpoint_pass_limits.end()) {
+    if (!endpoint_pass_limits.contains(endpoint_pin)) {
       endpoint_pass_limits[endpoint_pin] = initial_decreasing_slack_max_passes_;
     }
     int current_limit = endpoint_pass_limits[endpoint_pin];
@@ -3179,7 +3177,7 @@ void RepairSetup::traverseFaninCone(
     const OptoParams& params)
 
 {
-  if (visited.find(endpoint) != visited.end()) {
+  if (visited.contains(endpoint)) {
     return;
   }
 
@@ -3210,8 +3208,7 @@ void RepairSetup::traverseFaninCone(
         const sta::Slack inst_slack = getInstanceSlack(inst);
         if (sta::fuzzyLess(inst_slack, params.setup_slack_margin)) {
           // Update worst slack for this instance
-          auto it = crit_insts.find(inst);
-          if (it == crit_insts.end()) {
+          if (!crit_insts.contains(inst)) {
             crit_insts[inst] = inst_slack;
             endpoint_insts++;
             debugPrint(logger_,
@@ -3236,7 +3233,7 @@ void RepairSetup::traverseFaninCone(
       }
 
       // Only traverse if we haven't visited and the fanin has negative slack
-      if (visited.find(fanin_vertex) == visited.end()) {
+      if (!visited.contains(fanin_vertex)) {
         const sta::Slack fanin_slack = sta_->slack(fanin_vertex, max_);
         if (sta::fuzzyLess(fanin_slack, params.setup_slack_margin)) {
           queue.push(fanin_vertex);

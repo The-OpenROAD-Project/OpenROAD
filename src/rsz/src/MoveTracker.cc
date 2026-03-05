@@ -63,8 +63,7 @@ void MoveTracker::setCurrentEndpoint(const sta::Pin* endpoint_pin)
 
   // If this is a new endpoint not yet in our tracking map, initialize it
   // with current slack for all three values (will be updated later)
-  if (endpoint_pin
-      && endpoint_slack_.find(endpoint_pin) == endpoint_slack_.end()) {
+  if (endpoint_pin && !endpoint_slack_.contains(endpoint_pin)) {
     sta::Vertex* vertex = sta_->graph()->pinLoadVertex(endpoint_pin);
     if (vertex) {
       sta::Slack current_slack = sta_->slack(vertex, sta::MinMax::max());
@@ -138,7 +137,7 @@ void MoveTracker::clearMoveSummary()
 
 void MoveTracker::trackViolator(const sta::Pin* pin)
 {
-  if (visit_count_.find(pin) == visit_count_.end()) {
+  if (!visit_count_.contains(pin)) {
     visit_count_[pin] = 0;
   }
   visit_count_.at(pin)++;
@@ -147,7 +146,7 @@ void MoveTracker::trackViolator(const sta::Pin* pin)
   all_visited_pins_.insert(pin);
 
   // Track which endpoint this pin was visited on (basic info only)
-  if (current_endpoint_ && pin_info_.find(pin) == pin_info_.end()) {
+  if (current_endpoint_ && !pin_info_.contains(pin)) {
     pin_info_[pin] = PinInfo(current_endpoint_, "unknown", 0.0, 0.0, 0.0, 0.0);
   }
 }
@@ -160,7 +159,7 @@ void MoveTracker::trackViolatorWithInfo(const sta::Pin* pin,
                                         float endpoint_slack)
 {
   // First track as regular violator
-  if (visit_count_.find(pin) == visit_count_.end()) {
+  if (!visit_count_.contains(pin)) {
     visit_count_[pin] = 0;
   }
   visit_count_.at(pin)++;
@@ -181,7 +180,7 @@ void MoveTracker::trackMove(const sta::Pin* pin,
                             const string& move_type,
                             MoveStateType state)
 {
-  assert(visit_count_.find(pin) != visit_count_.end()
+  assert(visit_count_.contains(pin)
          && "Pin must be visited before tracking moves.");
   pending_moves_.emplace_back(pin, move_type, state);
 }
@@ -1066,8 +1065,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
   vector<const sta::Pin*> visited_no_attempt;
   for (const sta::Pin* pin : all_visited_pins_) {
     // Check if this pin has any moves in history
-    if (pin_move_history_.find(pin) == pin_move_history_.end()
-        || pin_move_history_[pin].empty()) {
+    if (!pin_move_history_.contains(pin) || pin_move_history_[pin].empty()) {
       // Only include if pin has meaningful negative slack
       auto it = pin_info_.find(pin);
       if (it != pin_info_.end()) {
@@ -1224,7 +1222,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
   // Category 2: Critical pins never visited
   vector<const sta::Pin*> critical_never_visited;
   for (const sta::Pin* pin : all_critical_pins_) {
-    if (all_visited_pins_.find(pin) == all_visited_pins_.end()) {
+    if (!all_visited_pins_.contains(pin)) {
       critical_never_visited.push_back(pin);
     }
   }

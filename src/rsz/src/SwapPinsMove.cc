@@ -116,7 +116,7 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   // Find the equivalent pins for a cell (simple implementation for now)
   // stash them. Ports are unique to a cell so we can just cache by port
   // and that should apply to all instances of that cell with this input_port.
-  if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
+  if (!equiv_pin_map_.contains(input_port)) {
     equivCellPins(drvr_cell, input_port, ports);
     equiv_pin_map_.insert({input_port, ports});
   }
@@ -379,7 +379,7 @@ void SwapPinsMove::findSwapPinCandidate(sta::LibertyPort* input_port,
         if (port == input_port) {
           base_delay = std::max(base_delay, gate_delay);
         } else {
-          if (port_delays.find(port) == port_delays.end()) {
+          if (!port_delays.contains(port)) {
             port_delays.insert(std::make_pair(port, gate_delay));
           } else {
             port_delays[input_port] = std::max(port_delays[port], gate_delay);

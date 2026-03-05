@@ -912,7 +912,7 @@ sta::Slack ViolatorCollector::getStartpointTNS(
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
       sta::Vertex* to_vertex = edge->to(graph_);
-      if (visited.find(to_vertex) == visited.end()) {
+      if (!visited.contains(to_vertex)) {
         visited.insert(to_vertex);
         to_visit.push(to_vertex);
       }
@@ -961,7 +961,7 @@ sta::Slack ViolatorCollector::getEndpointTNS(const sta::Pin* endpoint_pin) const
     while (edge_iter.hasNext()) {
       sta::Edge* edge = edge_iter.next();
       sta::Vertex* from_vertex = edge->from(graph_);
-      if (visited.find(from_vertex) == visited.end()) {
+      if (!visited.contains(from_vertex)) {
         visited.insert(from_vertex);
         to_visit.push(from_vertex);
       }
@@ -1321,7 +1321,7 @@ vector<const sta::Pin*> ViolatorCollector::collectViolatorsByFaninTraversal(
       sta::Vertex* from_vertex = edge->from(graph_);
 
       // Skip if already visited
-      if (visited_vertices.find(from_vertex) != visited_vertices.end()) {
+      if (visited_vertices.contains(from_vertex)) {
         continue;
       }
 
@@ -1474,7 +1474,7 @@ vector<const sta::Pin*> ViolatorCollector::collectViolatorsByFanoutTraversal(
       sta::Vertex* to_vertex = edge->to(graph_);
 
       // Skip if already visited
-      if (visited_vertices.find(to_vertex) != visited_vertices.end()) {
+      if (visited_vertices.contains(to_vertex)) {
         continue;
       }
 
@@ -1525,8 +1525,7 @@ vector<const sta::Pin*> ViolatorCollector::collectViolatorsByFanoutTraversal(
                 }
 
                 // Continue traversing through this output
-                if (visited_vertices.find(out_vertex)
-                    == visited_vertices.end()) {
+                if (!visited_vertices.contains(out_vertex)) {
                   to_visit.push(out_vertex);
                   visited_vertices.insert(out_vertex);
                 }
@@ -1632,7 +1631,7 @@ ViolatorCollector::collectViolatorsByFaninTraversalForEndpoint(
       sta::Vertex* from_vertex = edge->from(graph_);
 
       // Skip if already visited
-      if (visited_vertices.find(from_vertex) != visited_vertices.end()) {
+      if (visited_vertices.contains(from_vertex)) {
         continue;
       }
 
@@ -1756,7 +1755,7 @@ void ViolatorCollector::traverseFaninCone(
       sta::Edge* edge = edge_iter.next();
       sta::Vertex* from_vertex = edge->from(graph_);
 
-      if (visited_vertices.find(from_vertex) != visited_vertices.end()) {
+      if (visited_vertices.contains(from_vertex)) {
         continue;
       }
 
@@ -1839,9 +1838,7 @@ void ViolatorCollector::traverseFaninCone(
             sta::Pin* inst_pin = pin_iter->next();
             if (network_->direction(inst_pin)->isInput()) {
               sta::Vertex* input_vertex = graph_->pinLoadVertex(inst_pin);
-              if (input_vertex
-                  && visited_vertices.find(input_vertex)
-                         == visited_vertices.end()) {
+              if (input_vertex && !visited_vertices.contains(input_vertex)) {
                 to_visit.push(input_vertex);
                 visited_vertices.insert(input_vertex);
                 debugPrint(logger_,
