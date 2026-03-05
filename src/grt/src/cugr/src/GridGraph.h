@@ -71,6 +71,8 @@ struct GraphEdge
 class GridGraph
 {
  public:
+  void clearNetCapacity(const int net_id);
+  void clearNetCapacity(const int net_id);
   GridGraph(const Design* design,
             const Constants& constants,
             utl::Logger* logger);
@@ -207,6 +209,7 @@ template <typename Type>
 class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 {
  public:
+  void clearNetCapacity(const int net_id);
   bool check(const PointT& u, const PointT& v) const
   {
     static_assert(std::is_same_v<Type, bool>, "Template argument must be bool");
@@ -251,3 +254,5 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 };
 
 }  // namespace grt
+
+
