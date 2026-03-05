@@ -2205,6 +2205,27 @@ void NesterovBase::initFillerGCells()
 
 NesterovBase::~NesterovBase() = default;
 
+float NesterovBase::getGradientMomentumStoppingHeuristic() const
+{
+  float dot_product = 0.0f;
+
+  // Iterate over all instances (standard cells and macros) in this region
+  for (int i = 0; i < nb_gcells_.size(); i++) {
+    FloatPoint grad = curSLPSumGrads_[i];
+
+    // The Step (Next Coordinate - Prev Coordinate)
+    // curSLPCoordi_ holds the current position (x^k)
+    // prevSLPCoordi_ holds the previous position (x^{k-1})
+    FloatPoint step;
+    step.x = curSLPCoordi_[i].x - prevSLPCoordi_[i].x;
+    step.y = curSLPCoordi_[i].y - prevSLPCoordi_[i].y;
+
+    dot_product += (grad.x * step.x) + (grad.y * step.y);
+  }
+
+  return dot_product;
+}
+
 // gcell update
 void NesterovBase::updateGCellCenterLocation(
     const std::vector<FloatPoint>& coordis)
