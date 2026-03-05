@@ -211,7 +211,7 @@ struct cut_enumeration_emap_cut
   uint32_t pattern_index;
 
   /* function */
-  kitty::static_truth_table<6> function;
+  kitty::static_truth_table<NInputs> function;
 
   /* list of supergates matching the cut for positive and negative output phases */
   std::array<std::vector<supergate<NInputs>> const*, 2> supergates;
@@ -767,7 +767,7 @@ public:
   using cut_merge_t = typename std::array<cut_set_t*, Ntk::max_fanin_size + 1>;
   using fanin_cut_t = typename std::array<cut_t const*, Ntk::max_fanin_size>;
   using support_t = typename std::array<uint8_t, CutSize>;
-  using TT = kitty::static_truth_table<6>;
+  using TT = kitty::static_truth_table<NInputs>;
   using truth_compute_t = typename std::array<TT, CutSize>;
   using node_match_t = std::vector<node_match_emap<NInputs>>;
   using klut_map = std::unordered_map<uint32_t, std::array<signal<klut_network>, 2>>;
@@ -1592,7 +1592,7 @@ private:
     assert( fanin_indexes.size() <= CutSize );
 
     cut_t new_cut = rcuts.add_cut( fanin_indexes.begin(), fanin_indexes.end() );
-    new_cut->function = kitty::extend_to<6>( ntk.node_function( n ) );
+    new_cut->function = kitty::extend_to<NInputs>( ntk.node_function( n ) );
 
     /* match cut and compute data */
     compute_cut_data( new_cut, n );
@@ -3123,7 +3123,7 @@ private:
   {
     auto& node_data = node_match[index];
 
-    kitty::static_truth_table<6> zero_tt;
+    kitty::static_truth_table<NInputs> zero_tt;
     auto const supergates_zero = library.get_supergates( zero_tt );
     auto const supergates_one = library.get_supergates( ~zero_tt );
 
@@ -4196,7 +4196,7 @@ private:
       {
         if ( node_data.map_refs[1] > 0 )
         {
-          old2new[index][1] = res.create_not( old2new[n][0] );
+          old2new[index][1] = res.create_not( old2new[index][0] );
           res.add_binding( res.get_node( old2new[index][1] ), lib_inv_id );
         }
         continue;
@@ -4314,7 +4314,7 @@ private:
       {
         if ( node_data.map_refs[1] > 0 )
         {
-          old2new[index][1] = res.create_not( old2new[n][0] );
+          old2new[index][1] = res.create_not( old2new[index][0] );
           res.add_cell( res.get_node( old2new[index][1] ), genlib_to_cell[lib_inv_id] );
         }
         continue;
@@ -4709,7 +4709,7 @@ private:
     }
 
     const auto tt = cut->function;
-    const kitty::static_truth_table<6> fe = kitty::extend_to<6>( tt );
+    const kitty::static_truth_table<NInputs> fe = kitty::extend_to<NInputs>( tt );
     auto fe_canon = fe;
 
     uint16_t negations_pos = 0;
@@ -5170,7 +5170,7 @@ private:
             continue;
 
           /* check compatibility */
-          if ( !multi_check_partally_dangling( index_i, index_j, cut_i ) )
+          if ( !multi_check_partially_dangling( index_i, index_j, cut_i ) )
             continue;
 
           multi_node_match_local.push_back( { data_i, data_j } );
@@ -5219,8 +5219,8 @@ private:
       cut_t new_cut1, new_cut2;
       new_cut1.set_leaves( cut1.begin(), cut1.end() );
       new_cut2.set_leaves( cut2.begin(), cut2.end() );
-      new_cut1->function = kitty::extend_to<6>( multi_cuts.truth_table( cut1 ) );
-      new_cut2->function = kitty::extend_to<6>( multi_cuts.truth_table( cut2 ) );
+      new_cut1->function = kitty::extend_to<NInputs>( multi_cuts.truth_table( cut1 ) );
+      new_cut2->function = kitty::extend_to<NInputs>( multi_cuts.truth_table( cut2 ) );
 
       /* Multi-output Boolean matching, continue if no match */
       std::array<cut_t, max_multioutput_output_size> cut_pair = { new_cut1, new_cut2 };
@@ -5269,8 +5269,8 @@ private:
 
   bool multi_compute_cut_data( std::array<cut_t, max_multioutput_output_size>& cut_tuple )
   {
-    std::array<kitty::static_truth_table<6>, max_multioutput_output_size> tts;
-    std::array<kitty::static_truth_table<6>, max_multioutput_output_size> tts_order;
+    std::array<kitty::static_truth_table<NInputs>, max_multioutput_output_size> tts;
+    std::array<kitty::static_truth_table<NInputs>, max_multioutput_output_size> tts_order;
     std::array<size_t, max_multioutput_output_size> order = {};
     std::array<uint16_t, max_multioutput_output_size> phase = { 0 };
     std::array<uint8_t, max_multioutput_output_size> phase_order;
@@ -5279,11 +5279,19 @@ private:
 
     for ( auto i = 0; i < max_multioutput_output_size; ++i )
     {
-      tts[i] = kitty::extend_to<6>( cut_tuple[i]->function );
-      if ( ( tts[i]._bits & 1 ) == 1 )
-      {
-        tts[i] = ~tts[i];
-        phase[i] = 1;
+      tts[i] = kitty::extend_to<NInputs>( cut_tuple[i]->function );
+      if constexpr (NInputs <= 6) {
+        if ( ( tts[i]._bits & 1 ) == 1 )
+        {
+          tts[i] = ~tts[i];
+          phase[i] = 1;
+        }
+      } else {
+        if ( ( tts[i]._bits[0] & 1 ) == 1 )
+        {
+          tts[i] = ~tts[i];
+          phase[i] = 1;
+        }
       }
     }
 
@@ -5318,7 +5326,7 @@ private:
     return true;
   }
 
-  inline bool multi_check_partally_dangling( uint32_t index1, uint32_t index2, multi_cut_t const& cut1 )
+  inline bool multi_check_partially_dangling( uint32_t index1, uint32_t index2, multi_cut_t const& cut1 )
   {
     bool valid = true;
 
