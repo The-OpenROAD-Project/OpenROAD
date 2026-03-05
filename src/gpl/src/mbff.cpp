@@ -751,11 +751,11 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
   }
 
   DataToOutputsMap ret;
-  if (q_pins.size() && qn_pins.size()) {
+  if (!q_pins.empty() && !qn_pins.empty()) {
     for (size_t i = 0; i < d_pins.size(); i++) {
       ret[d_pins[i]] = {q_pins[i], qn_pins[i]};
     }
-  } else if (q_pins.size()) {
+  } else if (!q_pins.empty()) {
     for (size_t i = 0; i < d_pins.size(); i++) {
       ret[d_pins[i]] = {q_pins[i], nullptr};
     }
@@ -1957,7 +1957,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
 
   // recurse on each new cluster
   for (int i = 0; i < best_k; i++) {
-    if (nxt_clusters[i].size()) {
+    if (!nxt_clusters[i].empty()) {
       std::vector<std::vector<Flop>> R;
       KMeansDecomp(nxt_clusters[i], max_sz, R);
       for (auto& x : R) {
@@ -2249,7 +2249,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
     dbInst* ff_inst = insts_[FFs[i].back().idx];
     const Mask array_mask = GetArrayMask(ff_inst, false);
     // do we even have trays to cluster these flops?
-    if (!best_master_[array_mask].size()) {
+    if (best_master_[array_mask].empty()) {
       tot_ilp += (alpha * FFs[i].size());
       tray_sizes_used_[1] += FFs[i].size();
       log_->info(GPL,
@@ -2420,7 +2420,7 @@ void MBFF::ReadLibs()
 
         // slots w.r.t. bottom-left corner
         for (int i = 0; i < num_slots; i++) {
-          if (q.size() && qn.size()) {
+          if (!q.empty() && !qn.empty()) {
             slot_to_tray_x_[array_mask][idx].push_back(
                 (std::max(d[i].x, std::max(q[i].x, qn[i].x))
                  + std::min(d[i].x, std::min(q[i].x, qn[i].x)))
@@ -2429,7 +2429,7 @@ void MBFF::ReadLibs()
                 (std::max(d[i].y, std::max(q[i].y, qn[i].y))
                  + std::min(d[i].y, std::min(q[i].y, qn[i].y)))
                 / 2.0);
-          } else if (q.size()) {
+          } else if (!q.empty()) {
             slot_to_tray_x_[array_mask][idx].push_back(
                 (std::max(d[i].x, q[i].x) + std::min(d[i].x, q[i].x)) / 2.0);
             slot_to_tray_y_[array_mask][idx].push_back(

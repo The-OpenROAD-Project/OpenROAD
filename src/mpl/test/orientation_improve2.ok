@@ -9,8 +9,7 @@ Die Area: (0.00, 0.00) (120.00, 120.00),  Floorplan Area: (9.00, 9.80) (110.84, 
 	Area of std cell instances: 0.00
 	Number of macros: 1
 	Area of macros: 10000.00
-	Halo width: 0.30
-	Halo height: 0.30
+	Default halo (L, B, R, T): (0.30, 0.30, 0.30, 0.30)
 	Area of macros with halos: 10120.36
 	Area of std cell instances + Area of macros: 10000.00
 	Floorplan area: 10265.47

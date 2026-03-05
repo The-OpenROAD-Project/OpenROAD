@@ -121,10 +121,32 @@ void Opendp::createNetwork()
   std::ranges::stable_sort(
       insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
 
+  // Build an R-tree of row bounding boxes for efficient overlap queries.
+  std::vector<bgBox> row_boxes;
+  for (odb::dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    Rect row_bbox = row->getBBox();
+    row_boxes.emplace_back(bgPoint(row_bbox.xMin(), row_bbox.yMin()),
+                           bgPoint(row_bbox.xMax(), row_bbox.yMax()));
+  }
+  RtreeBox row_rtree(row_boxes.begin(), row_boxes.end());
+
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
+    }
+    // Skip fixed instances that don't overlap any row.
+    if (inst->isFixed()) {
+      namespace bgi = boost::geometry::index;
+      Rect inst_bbox = inst->getBBox()->getBox();
+      bgBox query_box(bgPoint(inst_bbox.xMin(), inst_bbox.yMin()),
+                      bgPoint(inst_bbox.xMax(), inst_bbox.yMax()));
+      if (row_rtree.qbegin(bgi::intersects(query_box)) == row_rtree.qend()) {
+        continue;
+      }
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
@@ -140,6 +162,11 @@ void Opendp::createNetwork()
     // Skip supply nets.
     odb::dbNet* net = bterm->getNet();
     if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
+      // skip unplaced terminals
       continue;
     }
     if (bterm->getBBox().isInverted()) {
