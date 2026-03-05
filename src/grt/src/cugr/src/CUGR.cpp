@@ -36,6 +36,8 @@
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 
+using utl::GRT;
+
 namespace grt {
 
 CUGR::CUGR(odb::dbDatabase* db,
@@ -610,6 +612,67 @@ void CUGR::getBTermsAccessPoints(
     const int y = grid_graph_->getGridline(1, ap.point.y());
     access_points[bterm] = odb::Point3D(x, y, ap.layers.high() + 1);
   }
+}
+
+void CUGR::addDirtyNet(odb::dbNet* net)
+{
+  auto it = db_net_map_.find(net);
+  if (it != db_net_map_.end()) {
+    dirty_net_indices_.insert(it->second->getIndex());
+  } else {
+    logger_->warn(
+        GRT, 600, "Net {} not found in CUGR net map.", net->getConstName());
+  }
+}
+
+void CUGR::startIncremental()
+{
+  incremental_mode_ = true;
+  dirty_net_indices_.clear();
+}
+
+void CUGR::endIncremental()
+{
+  if (!incremental_mode_ || dirty_net_indices_.empty()) {
+    return;
+  }
+
+  std::vector<int> nets_to_route(dirty_net_indices_.begin(),
+                                 dirty_net_indices_.end());
+
+  // Rip up current routing trees for dirty nets
+  for (const int net_index : nets_to_route) {
+    grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree(),
+                            /*ripup*/ true);
+  }
+
+  patternRoute(nets_to_route);
+  patternRouteWithDetours(nets_to_route);
+  mazeRoute(nets_to_route);
+
+  // Check for secondary overflow caused by rerouting
+  std::vector<int> overflow_nets;
+  updateOverflowNets(overflow_nets);
+  std::vector<int> secondary_nets;
+  for (const int net_index : overflow_nets) {
+    if (dirty_net_indices_.find(net_index) == dirty_net_indices_.end()) {
+      secondary_nets.push_back(net_index);
+    }
+  }
+  if (!secondary_nets.empty()) {
+    for (const int net_index : secondary_nets) {
+      grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree(),
+                              /*ripup*/ true);
+    }
+    patternRoute(secondary_nets);
+    patternRouteWithDetours(secondary_nets);
+    mazeRoute(secondary_nets);
+  }
+
+  incremental_mode_ = false;
+  dirty_net_indices_.clear();
+
+  printStatistics();
 }
 
 }  // namespace grt

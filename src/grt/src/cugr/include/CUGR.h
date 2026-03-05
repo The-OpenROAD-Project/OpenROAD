@@ -91,6 +91,9 @@ class CUGR
   {
     critical_nets_percentage_ = percentage;
   }
+  void addDirtyNet(odb::dbNet* net);
+  void startIncremental();
+  void endIncremental();
 
  private:
   float calculatePartialSlack();
@@ -124,6 +127,9 @@ class CUGR
   int area_of_wire_patches_ = 0;
 
   float critical_nets_percentage_ = 0;
+
+  std::set<int> dirty_net_indices_;
+  bool incremental_mode_ = false;
 };
 
 }  // namespace grt
