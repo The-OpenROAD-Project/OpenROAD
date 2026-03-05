@@ -42,6 +42,11 @@ class PowerDensityDataSource
 {
 };
 
+Options* Painter::getOptions()
+{
+  return options_;
+}
+
 ////
 
 Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
@@ -50,7 +55,8 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  return nullptr;
+  static Gui* singleton = new Gui();
+  return singleton;
 }
 
 bool gui::Gui::enabled()

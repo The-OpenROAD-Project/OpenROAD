@@ -186,6 +186,17 @@ Descriptor::Properties Selected::getProperties() const
   return props;
 }
 
+void Selected::highlight(Painter& painter,
+                         const Painter::Color& pen,
+                         int pen_width,
+                         const Painter::Color& brush,
+                         const Painter::Brush& brush_style) const
+{
+  painter.setPen(pen, true, pen_width);
+  painter.setBrush(brush, brush_style);
+  descriptor_->highlight(object_, painter);
+}
+
 // Selected::getActions() is defined in init_descriptors.cpp because it
 // references Gui::get() / Gui::zoomTo(), which are not available in the
 // lightweight gui_descriptors library.

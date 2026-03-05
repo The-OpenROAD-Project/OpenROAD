@@ -299,7 +299,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const int x,
     int y,
     const TileVisibility& vis,
-    const std::set<odb::dbInst*>& selected)
+    const std::vector<odb::Rect>& highlight_rects)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -536,8 +536,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
     }
 
-    if (!selected.empty()) {
-      drawSelection(image_buffer, selected, dbu_tile, scale);
+    if (!highlight_rects.empty()) {
+      drawHighlight(image_buffer, highlight_rects, dbu_tile, scale);
     }
   }
 
@@ -687,20 +687,63 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
   image[i + 3] = std::max(image[i + 3], c.a);
 }
 
-void TileGenerator::drawSelection(std::vector<unsigned char>& image,
-                                  const std::set<odb::dbInst*>& selected,
+// ShapeCollector — a gui::Painter that collects rectangles from
+// descriptor->highlight() calls for use in tile rendering.
+class ShapeCollector : public gui::Painter
+{
+ public:
+  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
+
+  std::vector<odb::Rect> rects;
+
+  void drawRect(const odb::Rect& rect, int, int) override
+  {
+    rects.push_back(rect);
+  }
+  void drawPolygon(const odb::Polygon& polygon) override
+  {
+    rects.push_back(polygon.getEnclosingRect());
+  }
+  void drawOctagon(const odb::Oct& oct) override
+  {
+    rects.push_back(oct.getEnclosingRect());
+  }
+
+  // No-ops
+  Color getPenColor() override { return {}; }
+  void setPen(odb::dbTechLayer*, bool) override {}
+  void setPen(const Color&, bool, int) override {}
+  void setPenWidth(int) override {}
+  void setBrush(odb::dbTechLayer*, int) override {}
+  void setBrush(const Color&, const Brush&) override {}
+  void setFont(const Font&) override {}
+  void saveState() override {}
+  void restoreState() override {}
+  void drawLine(const odb::Point&, const odb::Point&) override {}
+  void drawCircle(int, int, int) override {}
+  void drawX(int, int, int) override {}
+  void drawPolygon(const std::vector<odb::Point>&) override {}
+  void drawString(int, int, Anchor, const std::string&, bool) override {}
+  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
+  {
+    return {};
+  }
+  void drawRuler(int, int, int, int, bool, const std::string&) override {}
+};
+
+void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
+                                  const std::vector<odb::Rect>& rects,
                                   const odb::Rect& dbu_tile,
                                   const double scale)
 {
   const Color fill{255, 255, 0, 30};
   const Color border{255, 255, 0, 255};
 
-  for (odb::dbInst* inst : selected) {
-    const odb::Rect inst_bbox = inst->getBBox()->getBox();
-    if (!dbu_tile.overlaps(inst_bbox)) {
+  for (const odb::Rect& rect : rects) {
+    if (!dbu_tile.overlaps(rect)) {
       continue;
     }
-    const odb::Rect overlap = inst_bbox.intersect(dbu_tile);
+    const odb::Rect overlap = rect.intersect(dbu_tile);
     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
     // Semi-transparent yellow fill
@@ -710,28 +753,24 @@ void TileGenerator::drawSelection(std::vector<unsigned char>& image,
       }
     }
 
-    // Solid yellow border (only where instance edge is within the tile)
-    const odb::Rect full_draw = toPixels(scale, inst_bbox, dbu_tile);
-    // Left edge
+    // Solid yellow border (only where edge is within the tile)
+    const odb::Rect full_draw = toPixels(scale, rect, dbu_tile);
     if (full_draw.xMin() >= 0 && full_draw.xMin() < kTileSizeInPixel) {
       for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
         setPixel(image, full_draw.xMin(), 255 - iy, border);
       }
     }
-    // Right edge
     const int rx = std::min(full_draw.xMax() - 1, kTileSizeInPixel - 1);
     if (rx >= 0 && full_draw.xMax() > 0) {
       for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
         setPixel(image, rx, 255 - iy, border);
       }
     }
-    // Bottom edge
     if (full_draw.yMin() >= 0 && full_draw.yMin() < kTileSizeInPixel) {
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
         setPixel(image, ix, 255 - full_draw.yMin(), border);
       }
     }
-    // Top edge
     const int ty = std::min(full_draw.yMax() - 1, kTileSizeInPixel - 1);
     if (ty >= 0 && full_draw.yMax() > 0) {
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
@@ -1137,7 +1176,7 @@ static WsRequest parse_ws_request(const std::string& msg)
 static WsResponse dispatch_request(
     const WsRequest& req,
     const std::shared_ptr<TileGenerator>& gen,
-    const std::set<odb::dbInst*>& selected = {})
+    const std::vector<odb::Rect>& highlight_rects = {})
 {
   WsResponse resp;
   resp.id = req.id;
@@ -1173,7 +1212,7 @@ static WsResponse dispatch_request(
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
       resp.payload = gen->generateTile(
-          req.layer, req.z, req.x, req.y, req.vis, selected);
+          req.layer, req.z, req.x, req.y, req.vis, highlight_rects);
       break;
     }
     case WsRequest::INFO: {
@@ -1320,9 +1359,9 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
 
-  // Per-session selection state
+  // Per-session highlight shapes (collected via descriptor->highlight())
   std::mutex selection_mutex_;
-  std::set<odb::dbInst*> selected_insts_;
+  std::vector<odb::Rect> highlight_rects_;
 
   // Clickable objects from the last property response.
   // Index in this vector is the select_id sent to the client.
@@ -1406,14 +1445,20 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           auto results = gen->selectAt(
               req.select_x, req.select_y, req.select_zoom, req.vis);
 
-          // Update session selection state
-          std::set<odb::dbInst*> new_selection;
-          for (const auto& r : results) {
-            new_selection.insert(r.inst);
-          }
+          // Collect highlight shapes from the first selected instance
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
-            self->selected_insts_ = std::move(new_selection);
+            self->highlight_rects_.clear();
+            if (!results.empty()) {
+              auto* registry = gui::DescriptorRegistry::instance();
+              gui::Selected sel
+                  = registry->makeSelected(std::any(results[0].inst));
+              if (sel) {
+                ShapeCollector collector;
+                sel.highlight(collector);
+                self->highlight_rects_ = std::move(collector.rects);
+              }
+            }
           }
 
           // Build JSON response with selection and properties
@@ -1491,16 +1536,14 @@ class ws_session : public std::enable_shared_from_this<ws_session>
             }
           }
 
-          // Update tile-highlight selection: if the inspected object
-          // is an instance, highlight it; otherwise clear the old one.
+          // Collect highlight shapes from the inspected object
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
-            self->selected_insts_.clear();
-            if (sel && sel.isInst()) {
-              if (auto* inst
-                  = std::any_cast<odb::dbInst*>(&sel.getObject())) {
-                self->selected_insts_.insert(*inst);
-              }
+            self->highlight_rects_.clear();
+            if (sel) {
+              ShapeCollector collector;
+              sel.highlight(collector);
+              self->highlight_rects_ = std::move(collector.rects);
             }
           }
 
@@ -1563,12 +1606,29 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           resp.type = 0;
           std::stringstream ss;
           if (sel) {
-            odb::Rect bbox;
-            if (sel.getBBox(bbox)) {
-              ss << "{\"bbox\": [" << bbox.xMin() << ", " << bbox.yMin()
-                 << ", " << bbox.xMax() << ", " << bbox.yMax() << "]}";
+            ShapeCollector collector;
+            sel.highlight(collector);
+            if (!collector.rects.empty()) {
+              ss << "{\"rects\": [";
+              bool first = true;
+              for (const auto& r : collector.rects) {
+                if (!first) {
+                  ss << ", ";
+                }
+                ss << "[" << r.xMin() << ", " << r.yMin() << ", "
+                   << r.xMax() << ", " << r.yMax() << "]";
+                first = false;
+              }
+              ss << "]}";
             } else {
-              ss << "{\"error\": \"no bbox\"}";
+              // Fall back to bbox if no shapes
+              odb::Rect bbox;
+              if (sel.getBBox(bbox)) {
+                ss << "{\"rects\": [[" << bbox.xMin() << ", " << bbox.yMin()
+                   << ", " << bbox.xMax() << ", " << bbox.yMax() << "]]}";
+              } else {
+                ss << "{\"error\": \"no bbox\"}";
+              }
             }
           } else {
             ss << "{\"error\": \"invalid select_id\"}";
@@ -1605,20 +1665,20 @@ class ws_session : public std::enable_shared_from_this<ws_session>
         self->queue_response(resp);
       });
     } else {
-      // Capture current selection for tile rendering
-      std::set<odb::dbInst*> selected;
+      // Capture current highlight rects for tile rendering
+      std::vector<odb::Rect> rects;
       {
         std::lock_guard<std::mutex> lock(selection_mutex_);
-        selected = selected_insts_;
+        rects = highlight_rects_;
       }
 
       // Dispatch tile generation to the thread pool (not to the strand).
       // This lets multiple tiles render concurrently across all 32 threads.
       net::post(
-          ws_.get_executor(), [self, gen, req, selected = std::move(selected)]() {
+          ws_.get_executor(), [self, gen, req, rects = std::move(rects)]() {
             WsResponse resp;
             try {
-              resp = dispatch_request(req, gen, selected);
+              resp = dispatch_request(req, gen, rects);
             } catch (const std::exception& e) {
               resp.id = req.id;
               resp.type = 2;  // error

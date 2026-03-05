@@ -292,7 +292,7 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions() { return options_; }
+  Options* getOptions();
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:

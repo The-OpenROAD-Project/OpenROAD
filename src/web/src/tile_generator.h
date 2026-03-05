@@ -4,7 +4,6 @@
 #pragma once
 
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -131,7 +130,7 @@ class TileGenerator
       int x,
       int y,
       const TileVisibility& vis = {},
-      const std::set<odb::dbInst*>& selected = {});
+      const std::vector<odb::Rect>& highlight_rects = {});
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -148,8 +147,8 @@ class TileGenerator
                         int x,
                         int y);
 
-  void drawSelection(std::vector<unsigned char>& image,
-                     const std::set<odb::dbInst*>& selected,
+  void drawHighlight(std::vector<unsigned char>& image,
+                     const std::vector<odb::Rect>& rects,
                      const odb::Rect& dbu_tile,
                      double scale);
 

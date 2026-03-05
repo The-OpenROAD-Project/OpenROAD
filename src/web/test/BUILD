@@ -40,6 +40,7 @@ cc_test(
         "//test:nangate45_data",
     ],
     deps = [
+        "//src/gui",
         "//src/odb",
         "//src/tst",
         "//src/tst:nangate45_fixture",

@@ -61,6 +61,89 @@ extern char** cmd_argv;
 
 namespace gui {
 
+// Default Options implementation for Painters without a real Options
+// (e.g. the web viewer's ShapeCollector).  Returns sensible defaults:
+// everything visible, no exclusive modes.
+class DefaultOptions : public Options
+{
+ public:
+  QColor background() override { return Qt::black; }
+  QColor color(const odb::dbTechLayer*) override { return Qt::white; }
+  Qt::BrushStyle pattern(const odb::dbTechLayer*) override
+  {
+    return Qt::SolidPattern;
+  }
+  QColor placementBlockageColor() override { return Qt::darkGray; }
+  Qt::BrushStyle placementBlockagePattern() override
+  {
+    return Qt::SolidPattern;
+  }
+  QColor regionColor() override { return Qt::darkGray; }
+  Qt::BrushStyle regionPattern() override { return Qt::SolidPattern; }
+  QColor instanceNameColor() override { return Qt::white; }
+  QFont instanceNameFont() override { return {}; }
+  QColor itermLabelColor() override { return Qt::white; }
+  QFont itermLabelFont() override { return {}; }
+  QColor siteColor(odb::dbSite*) override { return Qt::darkGray; }
+  bool isVisible(const odb::dbTechLayer*) override { return true; }
+  bool isSelectable(const odb::dbTechLayer*) override { return true; }
+  bool isNetVisible(odb::dbNet*) override { return true; }
+  bool isNetSelectable(odb::dbNet*) override { return true; }
+  bool isInstanceVisible(odb::dbInst*) override { return true; }
+  bool isInstanceSelectable(odb::dbInst*) override { return true; }
+  bool areInstanceNamesVisible() override { return true; }
+  bool areInstancePinsVisible() override { return true; }
+  bool areInstancePinsSelectable() override { return true; }
+  bool areInstancePinNamesVisible() override { return true; }
+  bool areInstanceBlockagesVisible() override { return true; }
+  bool areBlockagesVisible() override { return true; }
+  bool areBlockagesSelectable() override { return true; }
+  bool areObstructionsVisible() override { return true; }
+  bool areObstructionsSelectable() override { return true; }
+  bool areSitesVisible() override { return false; }
+  bool areSitesSelectable() override { return false; }
+  bool isSiteSelectable(odb::dbSite*) override { return false; }
+  bool isSiteVisible(odb::dbSite*) override { return false; }
+  bool arePrefTracksVisible() override { return false; }
+  bool areNonPrefTracksVisible() override { return false; }
+  bool areIOPinsVisible() const override { return true; }
+  bool areIOPinsSelectable() const override { return true; }
+  bool areIOPinNamesVisible() const override { return true; }
+  QFont ioPinMarkersFont() const override { return {}; }
+  bool areRoutingSegmentsVisible() const override { return true; }
+  bool areRoutingViasVisible() const override { return true; }
+  bool areSpecialRoutingSegmentsVisible() const override { return true; }
+  bool areSpecialRoutingViasVisible() const override { return true; }
+  bool areFillsVisible() const override { return true; }
+  QColor rulerColor() override { return Qt::cyan; }
+  QFont rulerFont() override { return {}; }
+  bool areRulersVisible() override { return true; }
+  bool areRulersSelectable() override { return true; }
+  QFont labelFont() override { return {}; }
+  bool areLabelsVisible() override { return true; }
+  bool areLabelsSelectable() override { return true; }
+  bool isDetailedVisibility() override { return false; }
+  bool areSelectedVisible() override { return true; }
+  bool isScaleBarVisible() const override { return false; }
+  bool areAccessPointsVisible() const override { return false; }
+  bool areRegionsVisible() const override { return true; }
+  bool areRegionsSelectable() const override { return true; }
+  bool isManufacturingGridVisible() const override { return false; }
+  bool isModuleView() const override { return false; }
+  bool isGCellGridVisible() const override { return false; }
+  bool isFlywireHighlightOnly() const override { return false; }
+  bool areFocusedNetsGuidesVisible() const override { return false; }
+};
+
+Options* Painter::getOptions()
+{
+  if (!options_) {
+    static DefaultOptions defaults;
+    return &defaults;
+  }
+  return options_;
+}
+
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
                             const QMessageLogContext& context,
@@ -1873,18 +1956,6 @@ int startGui(int& argc,
   }
 
   return exit_code;
-}
-
-void Selected::highlight(Painter& painter,
-                         const Painter::Color& pen,
-                         int pen_width,
-                         const Painter::Color& brush,
-                         const Painter::Brush& brush_style) const
-{
-  painter.setPen(pen, true, pen_width);
-  painter.setBrush(brush, brush_style);
-
-  descriptor_->highlight(object_, painter);
 }
 
 // Tcl files encoded into strings.

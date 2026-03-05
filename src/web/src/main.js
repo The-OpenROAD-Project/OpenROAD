@@ -480,12 +480,12 @@ function createTclConsole(container) {
 
 let inspectorEl = null;
 
-let hoverRect = null;
+let hoverRects = [];
 function clearHoverHighlight() {
-    if (hoverRect) {
-        map.removeLayer(hoverRect);
-        hoverRect = null;
+    for (const r of hoverRects) {
+        map.removeLayer(r);
     }
+    hoverRects = [];
 }
 
 function makeClickable(el, selectId) {
@@ -497,28 +497,27 @@ function makeClickable(el, selectId) {
     el.addEventListener('mouseenter', () => {
         wsManager.request({ type: 'hover', select_id: selectId })
             .then(data => {
-                if (data.bbox && map && designScale) {
+                if (data.rects && map && designScale) {
                     clearHoverHighlight();
-                    const [x1, y1, x2, y2] = data.bbox;
-                    // Enforce a minimum visible size (in pixels) centered on
-                    // the object, so tiny items like ITerms are still visible.
                     const minPx = 20;
                     const zoom = map.getZoom();
                     const scale = Math.pow(2, zoom);
                     const minDbu = minPx / (designScale * scale);
-                    const cx = (x1 + x2) / 2;
-                    const cy = (y1 + y2) / 2;
-                    const hw = Math.max((x2 - x1) / 2, minDbu / 2);
-                    const hh = Math.max((y2 - y1) / 2, minDbu / 2);
-                    const bounds = [
-                        [((cy - hh) - designMaxDXDY) * designScale, (cx - hw) * designScale],
-                        [((cy + hh) - designMaxDXDY) * designScale, (cx + hw) * designScale],
-                    ];
-                    hoverRect = L.rectangle(bounds, {
-                        className: 'hover-highlight',
-                        color: '#ff0', weight: 2, fill: true,
-                        fillColor: '#ff0', fillOpacity: 0.15,
-                    }).addTo(map);
+                    for (const [x1, y1, x2, y2] of data.rects) {
+                        const cx = (x1 + x2) / 2;
+                        const cy = (y1 + y2) / 2;
+                        const hw = Math.max((x2 - x1) / 2, minDbu / 2);
+                        const hh = Math.max((y2 - y1) / 2, minDbu / 2);
+                        const bounds = [
+                            [((cy - hh) - designMaxDXDY) * designScale, (cx - hw) * designScale],
+                            [((cy + hh) - designMaxDXDY) * designScale, (cx + hw) * designScale],
+                        ];
+                        hoverRects.push(L.rectangle(bounds, {
+                            className: 'hover-highlight',
+                            color: '#ff0', weight: 3, fill: true,
+                            fillColor: '#ff0', fillOpacity: 0.2,
+                        }).addTo(map));
+                    }
                 }
             })
             .catch(() => {});
