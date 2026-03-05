@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -1272,22 +1273,23 @@ void NesterovPlace::destroyCbkGCell(odb::dbInst* db_inst)
 
   bool destroyed = false;
   for (auto& nesterov : nbVec_) {
-    std::pair<odb::dbInst*, size_t> replaced
+    std::optional<std::pair<odb::dbInst*, size_t>> replaced
         = nesterov->destroyCbkGCell(db_inst);
-    if (replaced.first) {
+    if (!replaced) {
+      continue;
+    }
+    destroyed = true;
+    if (replaced->first) {
       bool updated = false;
       for (auto& nesterov : nbVec_) {
-        updated |= nesterov->updateHandle(replaced.first, replaced.second);
+        updated |= nesterov->updateHandle(replaced->first, replaced->second);
       }
       if (!updated) {
         log_->error(GPL,
                     329,
                     "NesterovPlace destroyCbkGCell failed to update db_inst {}",
-                    replaced.first->getName());
+                    replaced->first->getName());
       }
-    }
-    if (replaced.second >= 0) {
-      destroyed = true;
     }
   }
   if (!destroyed) {
