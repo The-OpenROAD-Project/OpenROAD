@@ -1,4 +1,4 @@
-import { GoldenLayout } from 'https://esm.sh/golden-layout@2.6.0';
+import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 
 // ─── WebSocket Manager ──────────────────────────────────────────────────────
 
@@ -854,7 +854,23 @@ goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget
 goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
-goldenLayout.loadLayout(defaultLayoutConfig);
+// Restore saved layout or use default
+const savedLayout = localStorage.getItem('gl-layout');
+if (savedLayout) {
+    try {
+        const resolved = JSON.parse(savedLayout);
+        goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
+    } catch (e) {
+        goldenLayout.loadLayout(defaultLayoutConfig);
+    }
+} else {
+    goldenLayout.loadLayout(defaultLayoutConfig);
+}
+
+// Persist layout on changes (drag, resize, close, etc.)
+goldenLayout.on('stateChanged', () => {
+    localStorage.setItem('gl-layout', JSON.stringify(goldenLayout.saveLayout()));
+});
 
 // Handle window resize
 window.addEventListener('resize', () => {
