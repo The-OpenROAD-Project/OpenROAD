@@ -134,7 +134,8 @@ void Network::addEdge(odb::dbNet* net)
   setEdgeName(id, net->getName());
 
   for (auto iterm : net->getITerms()) {
-    if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
+    odb::dbInst* inst = iterm->getInst();
+    if (!inst->getMaster()->isCoreAutoPlaceable() || getNode(inst) == nullptr) {
       continue;
     }
     Pin* ptr = addPin(iterm);
@@ -142,6 +143,10 @@ void Network::addEdge(odb::dbNet* net)
     connect(ptr, edge);
   }
   for (auto bterm : net->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      // skip unplaced terminals
+      continue;
+    }
     Pin* ptr = addPin(bterm);
     connect(ptr, getNode(bterm));
     connect(ptr, edge);

@@ -7,22 +7,20 @@ module(
 
 bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "coin-or-lemon", version = "1.3.1")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
-bazel_dep(name = "rules_cc", version = "0.1.2")
-bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_bison", version = "0.3.1")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_jvm_external", version = "6.4")
-bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_scala")
-git_override(
-    module_name = "rules_scala",
-    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
-    remote = "https://github.com/bazelbuild/rules_scala",
-)
+bazel_dep(name = "rules_python", version = "1.8.5")
 
+# Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
+bazel_dep(name = "rules_scala", version = "7.1.5")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 BOOST_VERSION = "1.89.0.bcr.2"
@@ -70,19 +68,12 @@ bazel_dep(name = "or-tools", version = "9.14.bcr.1")
 bazel_dep(name = "spdlog", version = "1.15.1")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
-bazel_dep(name = "yaml-cpp", version = "0.8.0")
+bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
-
-# Use HEAD of master upstream to fix bugs such as missing stdint include
-git_override(
-    module_name = "yaml-cpp",
-    commit = "a83cd31548b19d50f3f983b069dceb4f4d50756d",
-    remote = "https://github.com/jbeder/yaml-cpp.git",
-)
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -92,16 +83,9 @@ git_override(
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
-
-# Updated dependencies of qt_bazel_prebuilts. Once the updated versions
-# have been added to qt_bazel_prebuilts, they can be removed here.
-# (But CAVE, right now that would result in cyclic dependencies with,
-# WORKSPACE so that also has to go first).
-bazel_dep(name = "harfbuzz", version = "11.0.1.bcr.1")
-bazel_dep(name = "glib", version = "2.82.2.bcr.8")
 
 ## Lock the compiler version and avoid any local compiler
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
@@ -120,21 +104,14 @@ register_toolchains(
     "@rules_verilator//verilator:verilator_toolchain",
 )
 
-bazel_dep(
-    name = "rules_python",
-    version = "1.2.0",
-    # reduce namespace collisions by prefixing with openroad
-    repo_name = "openroad_rules_python",
-)
-
-python = use_extension("@openroad_rules_python//python/extensions:python.bzl", "python")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     ignore_root_user_error = True,
     python_version = "3.13",
 )
 use_repo(python, "python_3_13")
 
-pip = use_extension("@openroad_rules_python//python/extensions:pip.bzl", "pip")
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "openroad-pip",
     python_version = "3.13",
@@ -147,7 +124,7 @@ bazel_dep(name = "bazel-orfs")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "63ecaa366a7418d7afaa3777b96daa8401a64983",
+    commit = "dea261e6445ffc790989b22e85e15ae64172aa1f",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -156,15 +133,15 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-333-g9ad095627",
+    image = "docker.io/openroad/orfs:26Q1-473-gb75a51133",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "c89d51c311c16d2f0e6aae43648d6ffb0b1befd4cc4a122c683684361776f838",
+    sha256 = "0d811b5bbb44861ded130e10989a64b35163341f7300da66f7b17a67e3676e6b",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.16"
+SCALA_VERSION = "2.13.17"
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
@@ -183,7 +160,6 @@ scala_deps.settings(
     fetch_sources = True,
 )
 scala_deps.scala()
-scala_deps.scalatest()
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 maven.install(

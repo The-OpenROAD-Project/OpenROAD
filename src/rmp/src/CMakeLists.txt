@@ -55,7 +55,6 @@ target_include_directories(rmp_lib
 
 target_link_libraries(rmp_lib
   PUBLIC
-    absl::synchronization
     odb
     dbSta_lib
     OpenSTA
@@ -63,8 +62,9 @@ target_link_libraries(rmp_lib
     utl_lib
     cut
     ${ABC_LIBRARY}
-    absl_hash
-    absl_city
+    absl::synchronization
+    absl::hash
+    absl::city
 )
 
 target_link_libraries(rmp

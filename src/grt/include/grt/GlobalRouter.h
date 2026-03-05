@@ -165,6 +165,7 @@ class GlobalRouter
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
+  void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
@@ -457,6 +458,7 @@ class GlobalRouter
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  bool loadRoutingFromDBGuides(odb::dbNet* db_net);
   void shrinkNetRoute(odb::dbNet* db_net);
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
@@ -591,6 +593,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
   void inDbNetCreate(odb::dbNet* net) override;
   void inDbNetPostMerge(odb::dbNet* preserved_net,
                         odb::dbNet* removed_net) override;
+  void inDbNetPostGuideRestore(odb::dbNet* net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
@@ -613,7 +616,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = false);
+  std::vector<Net*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

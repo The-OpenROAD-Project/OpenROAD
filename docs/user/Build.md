@@ -21,6 +21,12 @@ Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
 
     bazelisk run --//:platform=gui //:install
 
+To embed the real git version string, add `--config=release`:
+
+    bazelisk run --config=release --//:platform=gui //:install
+
+See [Bazel](Bazel.md) for more details on testing, profiling and build configurations.
+
 ## Build with Prebuilt Binaries
 
 Courtesy of [Precision Innovations](https://precisioninno.com/), there are prebuilt binaries
