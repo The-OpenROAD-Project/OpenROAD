@@ -631,6 +631,16 @@ void CUGR::startIncremental()
   dirty_net_indices_.clear();
 }
 
+void CUGR::rerouteNets(std::vector<int>& net_indices)
+{
+  for (const int idx : net_indices) {
+    grid_graph_->commitTree(gr_nets_[idx]->getRoutingTree(), /*rip_up=*/true);
+  }
+  patternRoute(net_indices);
+  patternRouteWithDetours(net_indices);
+  mazeRoute(net_indices);
+}
+
 void CUGR::endIncremental()
 {
   if (!incremental_mode_ || dirty_net_indices_.empty()) {
@@ -640,15 +650,7 @@ void CUGR::endIncremental()
   std::vector<int> nets_to_route(dirty_net_indices_.begin(),
                                  dirty_net_indices_.end());
 
-  // Rip up current routing trees for dirty nets
-  for (const int net_index : nets_to_route) {
-    grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree(),
-                            /*ripup*/ true);
-  }
-
-  patternRoute(nets_to_route);
-  patternRouteWithDetours(nets_to_route);
-  mazeRoute(nets_to_route);
+  rerouteNets(nets_to_route);
 
   // Check for secondary overflow caused by rerouting
   std::vector<int> overflow_nets;
@@ -660,13 +662,7 @@ void CUGR::endIncremental()
     }
   }
   if (!secondary_nets.empty()) {
-    for (const int net_index : secondary_nets) {
-      grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree(),
-                              /*ripup*/ true);
-    }
-    patternRoute(secondary_nets);
-    patternRouteWithDetours(secondary_nets);
-    mazeRoute(secondary_nets);
+    rerouteNets(secondary_nets);
   }
 
   incremental_mode_ = false;
