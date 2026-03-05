@@ -1091,7 +1091,7 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                "repair_setup",
                1,
                "LEGACY{} Phase: Doing endpoint {} ({}/{}) "
-               "endpoint slack = {}, WNS = {}, TNS = {}",
+               "WNS = {}, endpoint slack = {}, TNS = {}",
                phase_marker,
                end->name(network_),
                end_index,
