@@ -499,12 +499,35 @@ RCTreeNodePtr UvDRCSlewBuffer::BuildRCTreeHelper(
 {
   RCTreeNodePtr current_node = nodes[current_index];
   auto& children = adjacents[current_index];
+  if (children.empty()) {
+    return current_node;
+  }
+
+  if (current_node->Type() == RCTreeNodeType::DRIVER) {
+    if (children.size() >= 2) {
+      auto prev = BuildRCTreeHelper(nodes, adjacents, children[0]);
+      for (std::size_t i = 1; i < children.size(); i++) {
+        auto new_node = std::make_shared<JuncNode>(current_node->Location());
+        new_node->AddDownstreamNode(prev);
+        new_node->AddDownstreamNode(
+            BuildRCTreeHelper(nodes, adjacents, children[i]));
+        prev = new_node;
+      }
+      current_node->AddDownstreamNode(prev);
+      return current_node;
+    }
+    if (children.size() == 1) {
+      current_node->AddDownstreamNode(
+          BuildRCTreeHelper(nodes, adjacents, children[0]));
+      return current_node;
+    }
+    throw std::runtime_error(
+        "Driver node must have at least one downstream node.");
+  }
+
   if (children.size() > 2) {
     throw std::runtime_error(
         "RCTreeNode cannot have more than two downstream nodes.");
-  }
-  if (children.empty()) {
-    return current_node;
   }
 
   if (current_node->Type() == RCTreeNodeType::LOAD) {
@@ -527,25 +550,6 @@ RCTreeNodePtr UvDRCSlewBuffer::BuildRCTreeHelper(
           BuildRCTreeHelper(nodes, adjacents, children[1]));
       return new_node;
     }
-  }
-
-  if (current_node->Type() == RCTreeNodeType::DRIVER) {
-    if (children.size() == 2) {
-      auto new_node = std::make_shared<JuncNode>(current_node->Location());
-      current_node->AddDownstreamNode(new_node);
-      new_node->AddDownstreamNode(
-          BuildRCTreeHelper(nodes, adjacents, children[0]));
-      new_node->AddDownstreamNode(
-          BuildRCTreeHelper(nodes, adjacents, children[1]));
-      return current_node;
-    }
-    if (children.size() == 1) {
-      current_node->AddDownstreamNode(
-          BuildRCTreeHelper(nodes, adjacents, children[0]));
-      return current_node;
-    }
-    throw std::runtime_error(
-        "Driver node must have at least one downstream node.");
   }
 
   for (auto& n_index : children) {

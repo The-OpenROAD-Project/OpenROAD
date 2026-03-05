@@ -1,16 +1,17 @@
 # UvDRC (Univista DRC fixing project)
 
-## Regrs
-
-- 11: my area 7, openroad 4. (different delay model?)
-- 12: violation after `repair_design`
-  - [x] max cap 使用了整形，导致为0。
-  - [x] Buffer Cell 的 load cap 限制为 INF。要看 OpenROAD 是怎么得到这一数据的。
-    - `MaxLengthForCap()` 中用到的 `out->capacitanceLimit()`
-- 17: crash
-  - 当 alpha 为 0 时，OpenROAD 不会使用 PD 算法，而是调用 flute 引擎做 virtual routing，其返回的 SteinerTree 数据结构会有一些不合标准之处。
-
 ## TODOs
 
 1. Support slew & cap margin settings
 2. Benchmark tests
+
+## LIMITATION
+
+一些 case 里，OpenROAD 会认为 PD 算法得到的 SteinerTree 有 overlap，判为不合法。此时它会调用 Flute 引擎做一个快速的 virtual routing 得到一颗 RC 树。但我们现有的代码是基于 PD 算法的 SteinerTree 写的，用这颗 RC 树可能 CRASH。
+
+## WEEKLY
+
+1. 修 BUG，目前已经能够修复 cap violation
+2. TODO: 代码进到我们的 branch 里
+3. 更多的 BM 测试
+4. 研究 OpenROAD 在 Routing 后 fix slew 的代码
