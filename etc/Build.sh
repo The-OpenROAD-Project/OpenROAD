@@ -18,7 +18,8 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=""
+cmakeOptions=()
+isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
@@ -81,36 +82,47 @@ while [ "$#" -gt 0 ]; do
             _help 0
             ;;
         -local)
-            cmakeOptions+=" -DCMAKE_INSTALL_PREFIX=${HOME}/.local"
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${HOME}/.local")
+            INSTALL_PREFIX_SET=1
             ;;
         -prefix=*)
-            cmakeOptions+=" -DCMAKE_INSTALL_PREFIX=${1#*=}"
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
+            INSTALL_PREFIX_SET=1
             ;;
         -no-gui)
-            cmakeOptions+=" -DBUILD_GUI=OFF"
+            cmakeOptions+=("-DBUILD_GUI=OFF")
             ;;
         -no-tests)
-            cmakeOptions+=" -DENABLE_TESTS=OFF"
+            cmakeOptions+=("-DENABLE_TESTS=OFF")
+            ;;
+        -ninja)
+            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache" "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache" "-GNinja")
+            isNinja=yes
             ;;
         -cpp20)
-            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
             ;;
         -build-man)
-            cmakeOptions+=" -DBUILD_MAN=ON"
+            cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
+            cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
-            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
-            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug" "-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage" "-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            cmakeOptions+=" ${1#*=}"
+            eval "temp_arr=(${1#*=})"
+            cmakeOptions+=("${temp_arr[@]}")
             ;;
         -clean )
             cleanBefore=yes
@@ -137,7 +149,7 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=" -DGPU=ON"
+            cmakeOptions+=("-DGPU=ON")
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -155,7 +167,11 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+    while read -r dep; do
+        if [[ -n "$dep" && "$dep" != \#* ]]; then
+            cmakeOptions+=("$dep")
+        fi
+    done < <(xargs -n1 < "$depsPrefixesFile")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -208,57 +224,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-# ==============================================================================
-# PRE-COMPILATION SYSTEM CHECKS
-# ==============================================================================
-if [[ -t 1 ]]; then
-    RED=$(tput setaf 1)
-    GREEN=$(tput setaf 2)
-    YELLOW=$(tput setaf 3)
-    NC=$(tput sgr0) # No Color
-else
-    RED=''
-    GREEN=''
-    YELLOW=''
-    NC=''
-fi
-
-echo -e "${YELLOW}Running pre-compilation system checks...${NC}"
-
-check_command() {
-    if ! command -v "$1" &> /dev/null; then
-        echo -e "${RED}[ERROR] Required dependency '$1' is missing!${NC}"
-        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
-        exit 1
-    else
-        echo -e "${GREEN}[OK] Found $1${NC}"
-    fi
-}
-
-# Essential build tools required for OpenROAD
-check_command "cmake"
-check_command "bison"
-check_command "flex"
-check_command "swig"
-
-# Compiler check based on user selection
-if [[ "${compiler:-gcc}" == "gcc" ]]; then
-    check_command "gcc"
-    check_command "g++"
-elif [[ "${compiler}" == "clang" ]]; then
-    check_command "clang"
-    check_command "clang++"
-elif [[ "${compiler}" == "clang-16" ]]; then
-    check_command "clang-16"
-    check_command "clang++-16"
-else
-    # Handle unknown compilers gracefully - suggested by gemini-bot
-    echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
-fi
-
-echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
-# ==============================================================================
-
 echo "[INFO] Using ${numThreads} threads."
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+if [[ "$isNinja" == "yes" ]]; then
+    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+    cd "${buildDir}"
+    CLICOLOR_FORCE=1 ninja build_and_test
+    exit 0
+fi
+cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"
