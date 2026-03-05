@@ -4,11 +4,11 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
-#include <iterator>
 #include <cstdint>
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -657,8 +657,10 @@ void CUGR::endIncremental()
   std::vector<int> overflow_nets;
   updateOverflowNets(overflow_nets);
   std::vector<int> secondary_nets;
-  std::set_difference(overflow_nets.begin(), overflow_nets.end(),
-                      dirty_net_indices_.begin(), dirty_net_indices_.end(),
+  std::set_difference(overflow_nets.begin(),
+                      overflow_nets.end(),
+                      dirty_net_indices_.begin(),
+                      dirty_net_indices_.end(),
                       std::back_inserter(secondary_nets));
   if (!secondary_nets.empty()) {
     rerouteNets(secondary_nets);
