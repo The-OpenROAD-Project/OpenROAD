@@ -118,7 +118,7 @@ class TileGenerator
 
   odb::Rect getBounds();
 
-  std::vector<std::string> getRoutingLayers();
+  std::vector<std::string> getLayers();
 
   std::vector<SelectionResult> selectAt(int dbu_x,
                                         int dbu_y,

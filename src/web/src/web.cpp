@@ -94,12 +94,13 @@ odb::Rect TileGenerator::getBounds()
   return bounds;
 }
 
-std::vector<std::string> TileGenerator::getRoutingLayers()
+std::vector<std::string> TileGenerator::getLayers()
 {
   std::vector<std::string> layers;
   odb::dbTech* tech = db_->getTech();
   for (odb::dbTechLayer* layer : tech->getLayers()) {
-    if (layer->getRoutingLevel() > 0) {
+    if (layer->getRoutingLevel() > 0
+        || layer->getType() == odb::dbTechLayerType::CUT) {
       layers.push_back(layer->getName());
     }
   }
@@ -322,7 +323,11 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
   int layer_index = 0;
   if (tech_layer) {
-    layer_index = std::max(0, tech_layer->getRoutingLevel() - 1);
+    const auto all_layers = getLayers();
+    auto it = std::find(all_layers.begin(), all_layers.end(), layer);
+    if (it != all_layers.end()) {
+      layer_index = std::distance(all_layers.begin(), it);
+    }
   }
   const Color color = palette[layer_index % palette_size];
   Color obs_color = color.lighter();
@@ -486,6 +491,46 @@ std::vector<unsigned char> TileGenerator::generateTile(
           for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
             const int draw_y = (255 - iy);
             setPixel(image_buffer, ix, draw_y, color);
+          }
+        }
+      }
+    }
+
+    // Draw special net vias — decompose into individual cut boxes
+    if (!instances_only && tech_layer && vis.special_nets) {
+      for (const auto& shape : search_->searchSNetViaShapes(
+               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+        if (!vis.isNetVisible(std::get<1>(shape))) {
+          continue;
+        }
+        odb::dbSBox* sbox = std::get<0>(shape);
+        std::vector<odb::dbBox*> via_boxes;
+        if (auto tech_via = sbox->getTechVia()) {
+          via_boxes.assign(tech_via->getBoxes().begin(),
+                           tech_via->getBoxes().end());
+        } else if (auto block_via = sbox->getBlockVia()) {
+          via_boxes.assign(block_via->getBoxes().begin(),
+                           block_via->getBoxes().end());
+        }
+        const odb::Point origin(
+            (sbox->xMin() + sbox->xMax()) / 2,
+            (sbox->yMin() + sbox->yMax()) / 2);
+        for (odb::dbBox* vbox : via_boxes) {
+          if (vbox->getTechLayer() != tech_layer) {
+            continue;
+          }
+          odb::Rect box = vbox->getBox();
+          box.moveDelta(origin.x(), origin.y());
+          if (!box.overlaps(dbu_tile)) {
+            continue;
+          }
+          const odb::Rect overlap = box.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+              const int draw_y = (255 - iy);
+              setPixel(image_buffer, ix, draw_y, color);
+            }
           }
         }
       }
@@ -1113,7 +1158,7 @@ static WsResponse dispatch_request(
       std::stringstream ss;
       ss << "{\"layers\": [";
       bool first = true;
-      for (const auto& name : gen->getRoutingLayers()) {
+      for (const auto& name : gen->getLayers()) {
         if (!first) {
           ss << ", ";
         }

@@ -87,11 +87,12 @@ TEST_F(TileGeneratorTest, GetBoundsReflectsInstances)
   EXPECT_LE(bounds.yMin(), 10000);
 }
 
-TEST_F(TileGeneratorTest, GetRoutingLayers)
+TEST_F(TileGeneratorTest, GetLayers)
 {
   makeTileGen();
-  std::vector<std::string> layers = tile_gen_->getRoutingLayers();
-  EXPECT_EQ(layers.size(), 10);
+  std::vector<std::string> layers = tile_gen_->getLayers();
+  // 10 routing + 9 cut layers
+  EXPECT_EQ(layers.size(), 19);
   EXPECT_EQ(layers.front(), "metal1");
   EXPECT_EQ(layers.back(), "metal10");
 }
