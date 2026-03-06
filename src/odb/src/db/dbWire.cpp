@@ -143,9 +143,7 @@ uint32_t dbWire::getTermJid(const int term_id) const
         = static_cast<WireOp>(wire->opcodes_[junction_id] & WOP_OPCODE_MASK);
 
     if (junction_op_code == target_op_code) {
-      const int term_id = wire->data_[junction_id];
-
-      if (term_id == target_term_id) {
+      if (wire->data_[junction_id] == target_term_id) {
         break;
       }
     }
