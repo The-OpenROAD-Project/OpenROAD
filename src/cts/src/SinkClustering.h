@@ -85,6 +85,8 @@ class SinkClustering
   std::vector<std::vector<unsigned>> bestSolution_;
   float maxInternalDiameter_;
   float capPerUnit_;
+  bool use_max_diameter_;
+  bool use_max_size_;
   bool useMaxCapLimit_;
   int scaleFactor_;
   static constexpr double kMaxCapFactor = 10;
