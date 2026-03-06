@@ -338,11 +338,11 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   fastroute_->setResistanceAware(resistance_aware_);
-  updateDirtyRoutes();
+  std::vector<Net*> dirty_nets = updateDirtyRoutes();
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
-  finishGlobalRouting(save_guides);
+  finishGlobalRouting(dirty_nets, save_guides);
 }
 
 void GlobalRouter::globalRoute(bool save_guides)
@@ -364,14 +364,15 @@ void GlobalRouter::globalRoute(bool save_guides)
     return;
   }
 
+  clear();
+  block_ = db_->getChip()->getBlock();
+
+  int min_layer, max_layer;
+  getMinMaxLayer(min_layer, max_layer);
+
+  std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+
   try {
-    clear();
-    block_ = db_->getChip()->getBlock();
-
-    int min_layer, max_layer;
-    getMinMaxLayer(min_layer, max_layer);
-
-    std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
     if (use_cugr_) {
       std::set<odb::dbNet*> clock_nets;
       findClockNets(nets, clock_nets);
@@ -393,7 +394,7 @@ void GlobalRouter::globalRoute(bool save_guides)
     throw;
   }
 
-  finishGlobalRouting(save_guides);
+  finishGlobalRouting(nets, save_guides);
   auto end = std::chrono::steady_clock::now();
   if (verbose_) {
     auto runtime
@@ -406,7 +407,7 @@ void GlobalRouter::globalRoute(bool save_guides)
   }
 }
 
-void GlobalRouter::finishGlobalRouting(bool save_guides)
+void GlobalRouter::finishGlobalRouting(std::vector<Net*> nets, bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
@@ -419,12 +420,12 @@ void GlobalRouter::finishGlobalRouting(bool save_guides)
     logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
   }
   if (save_guides) {
-    std::vector<odb::dbNet*> nets;
-    nets.reserve(block_->getNets().size());
-    for (odb::dbNet* db_net : block_->getNets()) {
-      nets.push_back(db_net);
+    std::vector<odb::dbNet*> db_nets;
+    db_nets.reserve(nets.size());
+    for (Net* net : nets) {
+      db_nets.push_back(net->getDbNet());
     }
-    saveGuides(nets);
+    saveGuides(db_nets);
   }
 
   if (is_congested_) {

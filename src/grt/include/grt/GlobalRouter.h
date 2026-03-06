@@ -331,7 +331,7 @@ class GlobalRouter
   void writePinLocations(const char* file_name);
 
  private:
-  void finishGlobalRouting(bool save_guides = false);
+  void finishGlobalRouting(std::vector<Net*> nets, bool save_guides = false);
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
