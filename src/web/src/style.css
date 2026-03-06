@@ -448,3 +448,22 @@ html, body {
 .timing-table tbody td.slack-negative {
     color: #f55;
 }
+
+.col-resize-grip {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: col-resize;
+}
+
+.col-resize-grip:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.timing-table td:first-child {
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: break-word;
+}

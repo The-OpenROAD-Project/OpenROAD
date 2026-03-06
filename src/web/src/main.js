@@ -842,6 +842,43 @@ function createTimingWidget(container) {
         updateBtn.textContent = 'Update';
     });
 
+    // --- Resizable column headers ---
+    function makeResizableHeaders(table) {
+        // Reset to auto layout so browser computes natural column widths
+        table.style.tableLayout = 'auto';
+        const headers = table.querySelectorAll('thead th');
+        headers.forEach((th) => th.style.width = '');
+        // Force reflow to get natural widths
+        const widths = Array.from(headers, (th) => th.offsetWidth);
+        // Now lock in widths and switch to fixed layout
+        headers.forEach((th, i) => th.style.width = widths[i] + 'px');
+        table.style.tableLayout = 'fixed';
+
+        headers.forEach((th, idx) => {
+            if (idx === headers.length - 1) return; // skip last column
+            const grip = document.createElement('div');
+            grip.className = 'col-resize-grip';
+            th.style.position = 'relative';
+            th.appendChild(grip);
+
+            let startX, startW;
+            const onMouseMove = (e) => {
+                th.style.width = Math.max(30, startW + e.clientX - startX) + 'px';
+            };
+            const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            grip.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startX = e.clientX;
+                startW = th.offsetWidth;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+        });
+    }
+
     // --- Render path listing ---
     const pathCols = ['Clock', 'Required', 'Arrival', 'Slack', 'Start', 'End'];
 
@@ -895,6 +932,7 @@ function createTimingWidget(container) {
             tbody.appendChild(tr);
         });
         pathTable.appendChild(tbody);
+        makeResizableHeaders(pathTable);
     }
 
     // --- Render detail table ---
@@ -966,6 +1004,12 @@ function createTimingWidget(container) {
             tbody.appendChild(tr);
         });
         detailTable.appendChild(tbody);
+        makeResizableHeaders(detailTable);
+        // Pin column: set initial width to 30 characters
+        const pinTh = detailTable.querySelector('thead th');
+        if (pinTh) {
+            pinTh.style.width = '30ch';
+        }
     }
 
     detailTable.setAttribute('tabindex', '0');
