@@ -79,14 +79,16 @@ sta::define_cmd_args "generate_ram" {-bytes_per_word bits
                                      -hor_layer config
                                      -filler_cells fillers
                                      [-tapcell name]
-                                     [-max_tap_dist value]}
+                                     [-max_tap_dist value]
+                                     [-write_behavioral_verilog filename]
+                                     }
 
 # user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
     keys { -bytes_per_word -word_count -storage_cell -tristate_cell -inv_cell -read_ports
       -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
-        -tapcell -max_tap_dist } flags {}
+        -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -121,6 +123,11 @@ proc generate_ram { args } {
 
   if { [info exists keys(-max_tap_dist)] } {
     lappend ram_netlist_args -max_tap_dist $keys(-max_tap_dist)
+  }
+
+  if { [info exists keys(-write_behavioral_verilog)] } {
+    set behavioral_verilog_file $keys(-write_behavioral_verilog)
+    ram::set_behavioral_verilog_filename $behavioral_verilog_file
   }
 
   generate_ram_netlist {*}$ram_netlist_args
