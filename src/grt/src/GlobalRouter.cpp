@@ -858,10 +858,6 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
 
 void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
-  int min_layer, max_layer;
-  getMinMaxLayer(min_layer, max_layer);
-  initRoutingLayers(min_layer, max_layer);
-
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     updateNetPins(net);
@@ -5860,6 +5856,7 @@ std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
     int min_layer, max_layer;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
+    initRoutingLayers(min_layer, max_layer);
   }
 
   if (!dirty_nets_.empty()) {
