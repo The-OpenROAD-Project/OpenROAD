@@ -239,3 +239,4 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 };
 
 }
+
