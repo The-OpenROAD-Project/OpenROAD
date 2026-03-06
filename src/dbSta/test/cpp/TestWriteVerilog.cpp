@@ -88,8 +88,7 @@ TEST_F(TestWriteVerilog, RemoveCellsIdCollision)
         EXPECT_NE(network->id(cell), hier_id)
             << "ObjectId collision between ConcreteCell '"
             << network->name(cell) << "' and dbModule '"
-            << network->name(hier_cell)
-            << "' — tagging should prevent this";
+            << network->name(hier_cell) << "' — tagging should prevent this";
       }
     }
   }
