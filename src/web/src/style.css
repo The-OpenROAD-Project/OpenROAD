@@ -408,6 +408,7 @@ html, body {
 .timing-table thead th {
     position: sticky;
     top: 0;
+    z-index: 1;
     background: #2a2a2a;
     color: #aaa;
     padding: 4px 8px;
