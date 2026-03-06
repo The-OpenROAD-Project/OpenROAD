@@ -2,7 +2,7 @@
 
 The DEF (Design Exchange Format) grammar defines the syntax for design
 description files used by OpenROAD's ODB module. The grammar is implemented
-as a Bison parser in [`def.y`](../../src/def/def/def.y).
+as a Bison parser in [`def.y`](../src/def/def/def.y).
 
 ## Viewing the Railroad Diagram
 
