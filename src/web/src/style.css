@@ -437,9 +437,7 @@ html, body {
     background: #3a3a1c;
 }
 
-.timing-table:focus {
-    outline: none;
-}
+
 
 .timing-table tbody tr.timing-clock-row td {
     color: #888;

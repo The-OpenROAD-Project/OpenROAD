@@ -882,6 +882,23 @@ function createTimingWidget(container) {
     // --- Render path listing ---
     const pathCols = ['Clock', 'Required', 'Arrival', 'Slack', 'Start', 'End'];
 
+    function selectPathRow(idx) {
+        const rows = pathTable.querySelectorAll('tbody tr');
+        if (idx < 0 || idx >= rows.length) return;
+        selectedPathIndex = idx;
+        for (const row of rows) row.classList.remove('selected');
+        rows[idx].classList.add('selected');
+        rows[idx].scrollIntoView({ block: 'nearest' });
+        pathTableContainer.focus();
+        renderDetailTable();
+        wsManager.request({
+            type: 'timing_highlight',
+            path_index: idx,
+            is_setup: currentTab === 'setup' ? 1 : 0,
+        }).then(() => redrawAllLayers())
+          .catch(err => console.error('timing_highlight error:', err));
+    }
+
     function renderPathTable() {
         const paths = currentTab === 'setup' ? setupPaths : holdPaths;
         pathCountLabel.textContent = paths.length + ' paths';
@@ -915,25 +932,30 @@ function createTimingWidget(container) {
                 if (ci === 3 && p.slack < 0) td.classList.add('slack-negative');
                 tr.appendChild(td);
             });
-            tr.addEventListener('click', () => {
-                selectedPathIndex = idx;
-                renderPathTable();
-                renderDetailTable();
-                // Highlight timing path shapes in the layout
-                wsManager.request({
-                    type: 'timing_highlight',
-                    path_index: idx,
-                    is_setup: currentTab === 'setup' ? 1 : 0,
-                }).then((resp) => {
-                    console.log('timing_highlight response:', resp);
-                    redrawAllLayers();
-                }).catch(err => console.error('timing_highlight error:', err));
-            });
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => selectPathRow(idx));
             tbody.appendChild(tr);
         });
         pathTable.appendChild(tbody);
         makeResizableHeaders(pathTable);
     }
+
+    pathTableContainer.setAttribute('tabindex', '0');
+    pathTableContainer.style.outline = 'none';
+    pathTableContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const rows = pathTable.querySelectorAll('tbody tr');
+            if (selectedPathIndex < rows.length - 1) {
+                selectPathRow(selectedPathIndex + 1);
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (selectedPathIndex > 0) {
+                selectPathRow(selectedPathIndex - 1);
+            }
+        }
+    });
 
     // --- Render detail table ---
     const detailCols = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
@@ -949,7 +971,7 @@ function createTimingWidget(container) {
         }
         rows[idx].classList.add('timing-selected-row');
         rows[idx].scrollIntoView({ block: 'nearest' });
-        detailTable.focus();
+        detailTableContainer.focus();
 
         const paths = currentTab === 'setup' ? setupPaths : holdPaths;
         const path = paths[selectedPathIndex];
@@ -1012,8 +1034,9 @@ function createTimingWidget(container) {
         }
     }
 
-    detailTable.setAttribute('tabindex', '0');
-    detailTable.addEventListener('keydown', (e) => {
+    detailTableContainer.setAttribute('tabindex', '0');
+    detailTableContainer.style.outline = 'none';
+    detailTableContainer.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             const rows = detailTable.querySelectorAll('tbody tr');
