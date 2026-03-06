@@ -785,6 +785,10 @@ function createTimingWidget(container) {
     container.element.appendChild(el);
 
     // --- Tab switching ---
+    function clearTimingHighlight() {
+        wsManager.request({ type: 'timing_highlight', path_index: -1 })
+            .then(() => redrawAllLayers());
+    }
     setupTab.addEventListener('click', () => {
         currentTab = 'setup';
         setupTab.classList.add('active');
@@ -792,6 +796,7 @@ function createTimingWidget(container) {
         selectedPathIndex = -1;
         renderPathTable();
         renderDetailTable();
+        clearTimingHighlight();
     });
     holdTab.addEventListener('click', () => {
         currentTab = 'hold';
@@ -800,6 +805,7 @@ function createTimingWidget(container) {
         selectedPathIndex = -1;
         renderPathTable();
         renderDetailTable();
+        clearTimingHighlight();
     });
     dataTab.addEventListener('click', () => {
         detailTab = 'data';
@@ -828,6 +834,7 @@ function createTimingWidget(container) {
             selectedPathIndex = -1;
             renderPathTable();
             renderDetailTable();
+            clearTimingHighlight();
         } catch (e) {
             console.error('Timing fetch failed:', e);
         }
@@ -875,6 +882,15 @@ function createTimingWidget(container) {
                 selectedPathIndex = idx;
                 renderPathTable();
                 renderDetailTable();
+                // Highlight timing path shapes in the layout
+                wsManager.request({
+                    type: 'timing_highlight',
+                    path_index: idx,
+                    is_setup: currentTab === 'setup' ? 1 : 0,
+                }).then((resp) => {
+                    console.log('timing_highlight response:', resp);
+                    redrawAllLayers();
+                }).catch(err => console.error('timing_highlight error:', err));
             });
             tbody.appendChild(tr);
         });

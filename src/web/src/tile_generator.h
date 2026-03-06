@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "color.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -20,8 +21,21 @@ class Logger;
 
 namespace web {
 
-struct Color;
 class Search;
+
+struct ColoredRect
+{
+  odb::Rect rect;
+  Color color;
+  std::string layer;  // empty = draw on all layers
+};
+
+struct FlightLine
+{
+  odb::Point p1;
+  odb::Point p2;
+  Color color;
+};
 
 struct SelectionResult
 {
@@ -124,13 +138,17 @@ class TileGenerator
                                         int zoom = 0,
                                         const TileVisibility& vis = {});
 
+  odb::dbBlock* getBlock() const;
+
   std::vector<unsigned char> generateTile(
       const std::string& layer,
       int z,
       int x,
       int y,
       const TileVisibility& vis = {},
-      const std::vector<odb::Rect>& highlight_rects = {});
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {});
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -152,12 +170,30 @@ class TileGenerator
                      const odb::Rect& dbu_tile,
                      double scale);
 
+  void drawColoredHighlight(std::vector<unsigned char>& image,
+                            const std::vector<ColoredRect>& rects,
+                            const std::string& current_layer,
+                            const odb::Rect& dbu_tile,
+                            double scale);
+
+  void drawFlightLines(std::vector<unsigned char>& image,
+                       const std::vector<FlightLine>& lines,
+                       const odb::Rect& dbu_tile,
+                       double scale);
+
   bool isInstVisible(odb::dbInst* inst, const TileVisibility& vis) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
                          int y,
                          const Color& c);
+
+  static void drawLine(std::vector<unsigned char>& image,
+                       int x0,
+                       int y0,
+                       int x1,
+                       int y1,
+                       const Color& c);
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;

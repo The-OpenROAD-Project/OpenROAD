@@ -30,6 +30,7 @@
 #include "gui/gui.h"
 #include "lodepng.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "search.h"
 #include "tile_generator.h"
@@ -294,13 +295,20 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
   return results;
 }
 
+odb::dbBlock* TileGenerator::getBlock() const
+{
+  return db_->getChip()->getBlock();
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
     const int x,
     int y,
     const TileVisibility& vis,
-    const std::vector<odb::Rect>& highlight_rects)
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -539,6 +547,12 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
     if (!highlight_rects.empty()) {
       drawHighlight(image_buffer, highlight_rects, dbu_tile, scale);
+    }
+    if (!colored_rects.empty()) {
+      drawColoredHighlight(image_buffer, colored_rects, layer, dbu_tile, scale);
+    }
+    if (!flight_lines.empty()) {
+      drawFlightLines(image_buffer, flight_lines, dbu_tile, scale);
     }
   }
 
@@ -781,6 +795,229 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
   }
 }
 
+void TileGenerator::drawColoredHighlight(
+    std::vector<unsigned char>& image,
+    const std::vector<ColoredRect>& rects,
+    const std::string& current_layer,
+    const odb::Rect& dbu_tile,
+    const double scale)
+{
+  const bool is_instances_layer = (current_layer == "_instances");
+  for (const auto& cr : rects) {
+    // Layer filtering: draw on _instances (overview) or matching layer
+    if (!is_instances_layer && !cr.layer.empty()
+        && cr.layer != current_layer) {
+      continue;
+    }
+    if (!dbu_tile.overlaps(cr.rect)) {
+      continue;
+    }
+    const odb::Rect overlap = cr.rect.intersect(dbu_tile);
+    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+    // Draw a fixed-width centerline through the shape (cosmetic pen style,
+    // matching the GUI's 2px cosmetic pen approach from dbDescriptors.cpp).
+    // This ensures consistent visibility regardless of zoom level.
+    const int cx = (draw.xMin() + draw.xMax()) / 2;
+    const int cy = (draw.yMin() + draw.yMax()) / 2;
+
+    Color line_color = cr.color;
+    line_color.a = 255;
+
+    if (draw.dx() >= draw.dy()) {
+      // Horizontal shape: draw horizontal centerline
+      drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+    } else {
+      // Vertical shape: draw vertical centerline
+      drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+    }
+  }
+}
+
+/* static */
+void TileGenerator::drawLine(std::vector<unsigned char>& image,
+                              int x0,
+                              int y0,
+                              int x1,
+                              int y1,
+                              const Color& c)
+{
+  // Bresenham's line algorithm
+  int dx = std::abs(x1 - x0);
+  int dy = std::abs(y1 - y0);
+  int sx = x0 < x1 ? 1 : -1;
+  int sy = y0 < y1 ? 1 : -1;
+  int err = dx - dy;
+
+  while (true) {
+    // Draw 3px wide
+    for (int dy2 = -1; dy2 <= 1; dy2++) {
+      for (int dx2 = -1; dx2 <= 1; dx2++) {
+        blendPixel(image, x0 + dx2, y0 + dy2, c);
+      }
+    }
+
+    if (x0 == x1 && y0 == y1) {
+      break;
+    }
+    int e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
+void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
+                                     const std::vector<FlightLine>& lines,
+                                     const odb::Rect& dbu_tile,
+                                     const double scale)
+{
+  for (const auto& fl : lines) {
+    // Convert DBU to pixel coordinates
+    int px0
+        = static_cast<int>((fl.p1.x() - dbu_tile.xMin()) * scale);
+    int py0 = 255
+              - static_cast<int>((fl.p1.y() - dbu_tile.yMin()) * scale);
+    int px1
+        = static_cast<int>((fl.p2.x() - dbu_tile.xMin()) * scale);
+    int py1 = 255
+              - static_cast<int>((fl.p2.y() - dbu_tile.yMin()) * scale);
+
+    // Rough bounding-box check: skip if line can't cross this tile
+    int lx0 = std::min(px0, px1), lx1 = std::max(px0, px1);
+    int ly0 = std::min(py0, py1), ly1 = std::max(py0, py1);
+    if (lx1 < 0 || lx0 >= kTileSizeInPixel || ly1 < 0
+        || ly0 >= kTileSizeInPixel) {
+      continue;
+    }
+
+    Color c = fl.color;
+    c.a = 220;
+    drawLine(image, px0, py0, px1, py1, c);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Timing path highlight shape collection
+//------------------------------------------------------------------------------
+
+static std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(
+    odb::dbBlock* block,
+    const std::string& pin_name)
+{
+  size_t slash = pin_name.find('/');
+  if (slash != std::string::npos) {
+    std::string inst_name = pin_name.substr(0, slash);
+    std::string term_name = pin_name.substr(slash + 1);
+    odb::dbInst* inst = block->findInst(inst_name.c_str());
+    if (inst) {
+      return {inst->findITerm(term_name.c_str()), nullptr};
+    }
+  }
+  return {nullptr, block->findBTerm(pin_name.c_str())};
+}
+
+static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+{
+  if (iterm) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      return {x, y};
+    }
+    // Fallback to instance center
+    odb::Rect bbox = iterm->getInst()->getBBox()->getBox();
+    return {(bbox.xMin() + bbox.xMax()) / 2, (bbox.yMin() + bbox.yMax()) / 2};
+  }
+  if (bterm) {
+    for (odb::dbBPin* bpin : bterm->getBPins()) {
+      odb::Rect r = bpin->getBBox();
+      return {(r.xMin() + r.xMax()) / 2, (r.yMin() + r.yMax()) / 2};
+    }
+  }
+  return {0, 0};
+}
+
+static void collectNetShapes(odb::dbNet* net,
+                              odb::dbITerm* drv_iterm,
+                              odb::dbBTerm* drv_bterm,
+                              odb::dbITerm* snk_iterm,
+                              odb::dbBTerm* snk_bterm,
+                              const Color& color,
+                              std::vector<ColoredRect>& rects,
+                              std::vector<FlightLine>& lines)
+{
+  odb::dbWire* wire = net->getWire();
+  if (wire) {
+    odb::dbWireShapeItr itr;
+    odb::dbShape shape;
+    for (itr.begin(wire); itr.next(shape);) {
+      if (shape.isVia()) {
+        std::vector<odb::dbShape> via_boxes;
+        odb::dbShape::getViaBoxes(shape, via_boxes);
+        for (const auto& vbox : via_boxes) {
+          odb::dbTechLayer* layer = vbox.getTechLayer();
+          rects.push_back(
+              {vbox.getBox(), color, layer ? layer->getName() : ""});
+        }
+      } else {
+        odb::dbTechLayer* layer = shape.getTechLayer();
+        rects.push_back(
+            {shape.getBox(), color, layer ? layer->getName() : ""});
+      }
+    }
+  } else {
+    // Unrouted: draw flight line between driver and sink
+    odb::Point p1 = getPinLocation(drv_iterm, drv_bterm);
+    odb::Point p2 = getPinLocation(snk_iterm, snk_bterm);
+    lines.push_back({p1, p2, color});
+  }
+}
+
+static void collectTimingPathShapes(odb::dbBlock* block,
+                                     const TimingPathSummary& path,
+                                     std::vector<ColoredRect>& rects,
+                                     std::vector<FlightLine>& lines)
+{
+  static const Color kLaunchClkColor{0, 255, 255, 180};   // Cyan (match GUI)
+  static const Color kSignalColor{255, 0, 0, 180};         // Red (match GUI)
+  static const Color kCaptureClkColor{0, 255, 0, 180};     // Green (match GUI)
+
+  // Track nets already collected to avoid duplicates
+  std::set<odb::dbNet*> seen_nets;
+
+  auto processNodes = [&](const std::vector<TimingNode>& nodes,
+                          const Color& clk_color,
+                          const Color& data_color) {
+    for (size_t i = 0; i + 1 < nodes.size(); i++) {
+      auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
+      auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
+
+      odb::dbNet* net_a
+          = a_iterm ? a_iterm->getNet() : (a_bterm ? a_bterm->getNet() : nullptr);
+      odb::dbNet* net_b
+          = b_iterm ? b_iterm->getNet() : (b_bterm ? b_bterm->getNet() : nullptr);
+
+      // Only draw when consecutive pins are on the same net (wire segment)
+      if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {
+        const Color& c = nodes[i].is_clock ? clk_color : data_color;
+        collectNetShapes(
+            net_a, a_iterm, a_bterm, b_iterm, b_bterm, c, rects, lines);
+      }
+    }
+  };
+
+  // data_nodes: launch clock (is_clock=true) then signal portion
+  processNodes(path.data_nodes, kLaunchClkColor, kSignalColor);
+
+  // capture_nodes: capture clock path
+  processNodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
+}
+
 //------------------------------------------------------------------------------
 // Transport-agnostic request/response types and dispatch
 //------------------------------------------------------------------------------
@@ -964,6 +1201,7 @@ struct WsRequest
     HOVER,
     TCL_EVAL,
     TIMING_REPORT,
+    TIMING_HIGHLIGHT,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -986,6 +1224,10 @@ struct WsRequest
   // TIMING_REPORT fields
   bool timing_is_setup = true;
   int timing_max_paths = 100;
+
+  // TIMING_HIGHLIGHT fields
+  int timing_path_index = -1;  // -1 = clear
+  bool timing_highlight_setup = true;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -1147,6 +1389,10 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.type = WsRequest::TIMING_REPORT;
     req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
     req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
+  } else if (type_str == "timing_highlight") {
+    req.type = WsRequest::TIMING_HIGHLIGHT;
+    req.timing_path_index = extract_int_or(msg, "path_index", -1);
+    req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -1186,7 +1432,9 @@ static WsRequest parse_ws_request(const std::string& msg)
 static WsResponse dispatch_request(
     const WsRequest& req,
     const std::shared_ptr<TileGenerator>& gen,
-    const std::vector<odb::Rect>& highlight_rects = {})
+    const std::vector<odb::Rect>& highlight_rects = {},
+    const std::vector<ColoredRect>& colored_rects = {},
+    const std::vector<FlightLine>& flight_lines = {})
 {
   WsResponse resp;
   resp.id = req.id;
@@ -1222,7 +1470,8 @@ static WsResponse dispatch_request(
     case WsRequest::TILE: {
       resp.type = 1;  // PNG
       resp.payload = gen->generateTile(
-          req.layer, req.z, req.x, req.y, req.vis, highlight_rects);
+          req.layer, req.z, req.x, req.y, req.vis, highlight_rects,
+          colored_rects, flight_lines);
       break;
     }
     case WsRequest::INFO: {
@@ -1373,6 +1622,8 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   // Per-session highlight shapes (collected via descriptor->highlight())
   std::mutex selection_mutex_;
   std::vector<odb::Rect> highlight_rects_;
+  std::vector<ColoredRect> timing_rects_;
+  std::vector<FlightLine> timing_lines_;
 
   // Clickable objects from the last property response.
   // Index in this vector is the select_id sent to the client.
@@ -1462,6 +1713,8 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
             self->highlight_rects_.clear();
+            self->timing_rects_.clear();
+            self->timing_lines_.clear();
             if (!results.empty()) {
               auto* registry = gui::DescriptorRegistry::instance();
               gui::Selected sel
@@ -1553,6 +1806,8 @@ class ws_session : public std::enable_shared_from_this<ws_session>
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
             self->highlight_rects_.clear();
+            self->timing_rects_.clear();
+            self->timing_lines_.clear();
             if (sel) {
               ShapeCollector collector;
               sel.highlight(collector);
@@ -1747,21 +2002,69 @@ class ws_session : public std::enable_shared_from_this<ws_session>
         }
         self->queue_response(resp);
       });
+    } else if (req.type == WsRequest::TIMING_HIGHLIGHT) {
+      auto gen = generator_;
+      auto tr = timing_report_;
+      auto tcl = tcl_eval_;
+      net::post(ws_.get_executor(), [self, gen, tr, tcl, req]() {
+        WsResponse resp;
+        resp.id = req.id;
+        resp.type = 0;
+        try {
+          std::vector<ColoredRect> new_rects;
+          std::vector<FlightLine> new_lines;
+
+          if (req.timing_path_index >= 0) {
+            // Re-fetch timing paths to get the selected path's data
+            std::lock_guard<std::mutex> sta_lock(tcl->mutex);
+            auto paths = tr->getReport(req.timing_highlight_setup);
+            if (req.timing_path_index < static_cast<int>(paths.size())) {
+              odb::dbBlock* block = gen->getBlock();
+              collectTimingPathShapes(
+                  block, paths[req.timing_path_index], new_rects, new_lines);
+            }
+          }
+
+          std::cerr << "TIMING_HIGHLIGHT: " << new_rects.size()
+                    << " rects, " << new_lines.size() << " lines\n";
+
+          {
+            std::lock_guard<std::mutex> lock(self->selection_mutex_);
+            self->timing_rects_ = std::move(new_rects);
+            self->timing_lines_ = std::move(new_lines);
+            self->highlight_rects_.clear();
+          }
+
+          const std::string json = "{\"ok\": true}";
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
     } else {
       // Capture current highlight rects for tile rendering
       std::vector<odb::Rect> rects;
+      std::vector<ColoredRect> colored;
+      std::vector<FlightLine> lines;
       {
         std::lock_guard<std::mutex> lock(selection_mutex_);
         rects = highlight_rects_;
+        colored = timing_rects_;
+        lines = timing_lines_;
       }
 
       // Dispatch tile generation to the thread pool (not to the strand).
       // This lets multiple tiles render concurrently across all 32 threads.
       net::post(
-          ws_.get_executor(), [self, gen, req, rects = std::move(rects)]() {
+          ws_.get_executor(),
+          [self, gen, req, rects = std::move(rects),
+           colored = std::move(colored), lines = std::move(lines)]() {
             WsResponse resp;
             try {
-              resp = dispatch_request(req, gen, rects);
+              resp = dispatch_request(req, gen, rects, colored, lines);
             } catch (const std::exception& e) {
               resp.id = req.id;
               resp.type = 2;  // error
