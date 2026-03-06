@@ -909,16 +909,3 @@ void GridGraph::write(const std::string& heatmap_file) const
 }
 
 }  // namespace grt
-
-
-int GridGraph::findPointIndex(const std::vector<GPoint3D>& path, int x, int y, int layer) const
-{
-  for (size_t i = 0; i < path.size(); ++i) {
-    if (path[i].x == x && path[i].y == y && path[i].z == layer) {
-      return static_cast<int>(i);
-    }
-  }
-  return -1;
-}
-
-
