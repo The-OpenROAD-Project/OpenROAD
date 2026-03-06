@@ -1,12 +1,11 @@
 # Contributing to OpenROAD
 
-Thank you for contributing to OpenROAD. This document provides guidelines
-for contributors and for AI/LLM code review tools assisting with pull
-request reviews.
-
-For detailed setup and workflow instructions, see the
+Thank you for contributing to OpenROAD. This document summarizes the
+most important review priorities and coding conventions. For full
+details, see the
 [Developer Guide](docs/contrib/DeveloperGuide.md),
-[Coding Practices](docs/contrib/CodingPractices.md), and
+[Coding Practices](docs/contrib/CodingPractices.md),
+[Logger Guide](docs/contrib/Logger.md), and
 [Getting Involved](docs/contrib/GettingInvolved.md).
 
 ## Review Priorities
@@ -32,7 +31,8 @@ Any change that could affect placement, routing, timing, or other
 physical design metrics must be validated.
 
 - Ask: "Does this have a QoR impact?" Changes affecting QoR require
-  secure-CI runs on real designs, not just unit tests.
+  validation on real designs, not just unit tests. Maintainers will
+  trigger the necessary CI runs for this.
 - Be skeptical of QoR improvements claimed from a single design.
   Improvements should be validated across multiple designs and
   technologies.
@@ -46,7 +46,6 @@ Every code change should have accompanying tests.
 - Regression tests must be runnable from any directory and must
   not leave the source tree dirty.
 - Regression output should be concise -- not thousands of lines.
-- Tests should pass `-no_init` to `openroad`.
 - New features without tests are unlikely to be accepted.
 
 ### 4. Architecture and Dependencies
@@ -78,25 +77,24 @@ Key project-specific practices:
   `TritonCTS`).
 - No global variables. All state in classes.
 - No magic numbers. Use named constants with documented units.
-- No `continue` -- wrap the body in an `if` instead.
-- No `== true` / `== false`. Use the boolean directly.
 - No nested `if` -- use `&&`.
 - Use `nullptr` not `NULL`, `std::vector` not C arrays, `new` not
   `malloc`, `std::abs` not C `abs`.
 - Use `#pragma once` not `#ifndef` guards.
 - Use `""` for project headers, `<>` only for system headers.
 - Use range-based for loops, not iterator loops.
-- Use forward declarations instead of includes where possible.
-- Don't use `using namespace std`. Prefer `using namespace::symbol`.
+- Don't use `using namespace std;`. Prefer `using` declarations for
+  specific symbols (e.g., `using std::vector;`).
 - Break long functions into smaller ones that fit on one screen.
 - Don't duplicate code fragments -- write functions.
 - Run `clang-format` on all changed C++ files before committing.
 
 ### 6. User-Facing Quality
 
-- Log messages must use the OpenROAD logger (`utl::info`, `utl::warn`,
-  `utl::error`), not `printf` or `std::cout`. Use `utl::report`
-  instead of `puts`.
+- Log messages must use the OpenROAD logger, not `printf` or
+  `std::cout`. In C++ use `Logger::info`, `Logger::warn`,
+  `Logger::error`. In Tcl use `utl::info`, `utl::warn`, `utl::error`.
+  Use `utl::report` (Tcl) or `Logger::report` (C++) instead of `puts`.
 - Messages start with a capital letter and end with a period.
 - Error and warning messages should be actionable -- tell the user
   what to do, not just what went wrong.
@@ -133,7 +131,7 @@ Specific guidance:
 - **Ask probing questions** rather than prescribing fixes for
   non-obvious issues (e.g., "Have you tested this on a real design?"
   or "Could this hide a bug?").
-- **Flag QoR-affecting changes** that lack secure-CI validation.
+- **Flag QoR-affecting changes** that lack validation on real designs.
 - **Don't generate summaries** of the PR unless asked. The config
   disables automatic summaries.
 - **Do flag** unreachable code after `error()`/`throw`, missing
