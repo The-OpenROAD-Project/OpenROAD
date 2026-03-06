@@ -275,10 +275,17 @@ void NesterovPlace::updateIterGraphics(
     int timing_driven_count,
     bool& final_routability_image_saved)
 {
+  if (graphics_) {
+    graphics_->addIter(iter, average_overflow_unscaled_);
+  }
+
   if (!graphics_ || !graphics_->enabled()) {
     return;
   }
 
+  if (!npVars_.debug) {
+    return;
+  }
   // For JPEG Saving
   updateDb();
 
@@ -291,11 +298,6 @@ void NesterovPlace::updateIterGraphics(
     rb_->updateRudyAverage(/*verbose=*/false);
   }
 
-  graphics_->addIter(iter, average_overflow_unscaled_);
-
-  if (!npVars_.debug) {
-    return;
-  }
   int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
     bool update

@@ -76,7 +76,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void setDebugOn(bool set_on) override { debug_on_ = set_on; }
 
   void setDisplayControl(std::string_view name, bool value) override;
-
   const char* getDisplayControlGroupName() override { return "GPL"; }
 
   int gifStart(std::string_view path) override;
@@ -183,7 +182,8 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   gui::Chart* routing_chart_{nullptr};
   bool debug_on_{false};
 
-  void initHeatmap();
+  void initCharts();
+  void initDebugHeatmap();
   void drawNesterov(gui::Painter& painter);
   void drawInitial(gui::Painter& painter);
   void drawMBFF(gui::Painter& painter);
