@@ -16,6 +16,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <iterator>
 #include <string>
 
 #include "gtest/gtest.h"
