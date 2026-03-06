@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
@@ -39,6 +39,7 @@ struct AccessPoint
 
 class AccessPointHash
 {
+ public:
   AccessPointHash(int y_size) : y_size_(y_size) {}
 
   std::size_t operator()(const AccessPoint& ap) const
@@ -239,5 +240,8 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
 };
 
 }
+
+
+
 
 
