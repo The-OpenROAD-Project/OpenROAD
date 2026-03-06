@@ -18,6 +18,7 @@ target_sources(web
   PRIVATE
     src/color.cpp
     src/search.cpp
+    src/timing_report.cpp
     src/web.cpp
     src/MakeWeb.cpp
 )
@@ -38,6 +39,8 @@ target_include_directories(web
   PRIVATE
     src
     ${TCL_LIBRARY}
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
     ${OPENROAD_HOME}/third-party
 )
 

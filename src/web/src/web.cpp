@@ -33,6 +33,7 @@
 #include "odb/dbTransform.h"
 #include "search.h"
 #include "tile_generator.h"
+#include "timing_report.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
@@ -962,6 +963,7 @@ struct WsRequest
     INSPECT,
     HOVER,
     TCL_EVAL,
+    TIMING_REPORT,
     UNKNOWN
   } type
       = UNKNOWN;
@@ -980,6 +982,10 @@ struct WsRequest
 
   // TCL_EVAL fields
   std::string tcl_cmd;
+
+  // TIMING_REPORT fields
+  bool timing_is_setup = true;
+  int timing_max_paths = 100;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -1137,6 +1143,10 @@ static WsRequest parse_ws_request(const std::string& msg)
   } else if (type_str == "tcl_eval") {
     req.type = WsRequest::TCL_EVAL;
     req.tcl_cmd = extract_string(msg, "cmd");
+  } else if (type_str == "timing_report") {
+    req.type = WsRequest::TIMING_REPORT;
+    req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
+    req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -1358,6 +1368,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::shared_ptr<TimingReport> timing_report_;
 
   // Per-session highlight shapes (collected via descriptor->highlight())
   std::mutex selection_mutex_;
@@ -1376,10 +1387,12 @@ class ws_session : public std::enable_shared_from_this<ws_session>
  public:
   ws_session(tcp::socket&& socket,
              std::shared_ptr<TileGenerator> generator,
-             std::shared_ptr<TclEvaluator> tcl_eval)
+             std::shared_ptr<TclEvaluator> tcl_eval,
+             std::shared_ptr<TimingReport> timing_report)
       : ws_(std::move(socket)),
         generator_(std::move(generator)),
         tcl_eval_(std::move(tcl_eval)),
+        timing_report_(std::move(timing_report)),
         strand_(net::make_strand(ws_.get_executor()))
   {
   }
@@ -1664,6 +1677,76 @@ class ws_session : public std::enable_shared_from_this<ws_session>
         }
         self->queue_response(resp);
       });
+    } else if (req.type == WsRequest::TIMING_REPORT) {
+      auto tr = timing_report_;
+      auto tcl = tcl_eval_;
+      net::post(ws_.get_executor(), [self, tr, tcl, req]() {
+        WsResponse resp;
+        resp.id = req.id;
+        resp.type = 0;
+        try {
+          // STA is not thread-safe; serialize with the Tcl evaluator mutex
+          std::lock_guard<std::mutex> lock(tcl->mutex);
+          auto paths = tr->getReport(req.timing_is_setup, req.timing_max_paths);
+          std::stringstream ss;
+          ss << "{\"paths\": [";
+          bool first_path = true;
+          for (const auto& p : paths) {
+            if (!first_path) {
+              ss << ", ";
+            }
+            first_path = false;
+            ss << "{\"start_clk\": \"" << json_escape(p.start_clk)
+               << "\", \"end_clk\": \"" << json_escape(p.end_clk)
+               << "\", \"required\": " << p.required
+               << ", \"arrival\": " << p.arrival << ", \"slack\": " << p.slack
+               << ", \"skew\": " << p.skew
+               << ", \"path_delay\": " << p.path_delay
+               << ", \"logic_depth\": " << p.logic_depth
+               << ", \"fanout\": " << p.fanout << ", \"start_pin\": \""
+               << json_escape(p.start_pin) << "\", \"end_pin\": \""
+               << json_escape(p.end_pin) << "\", \"data_nodes\": [";
+            bool first_node = true;
+            for (const auto& n : p.data_nodes) {
+              if (!first_node) {
+                ss << ", ";
+              }
+              first_node = false;
+              ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
+                 << ", \"fanout\": " << n.fanout
+                 << ", \"rise\": " << (n.is_rising ? "true" : "false")
+                 << ", \"clk\": " << (n.is_clock ? "true" : "false")
+                 << ", \"time\": " << n.time << ", \"delay\": " << n.delay
+                 << ", \"slew\": " << n.slew << ", \"load\": " << n.load
+                 << "}";
+            }
+            ss << "], \"capture_nodes\": [";
+            first_node = true;
+            for (const auto& n : p.capture_nodes) {
+              if (!first_node) {
+                ss << ", ";
+              }
+              first_node = false;
+              ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
+                 << ", \"fanout\": " << n.fanout
+                 << ", \"rise\": " << (n.is_rising ? "true" : "false")
+                 << ", \"clk\": " << (n.is_clock ? "true" : "false")
+                 << ", \"time\": " << n.time << ", \"delay\": " << n.delay
+                 << ", \"slew\": " << n.slew << ", \"load\": " << n.load
+                 << "}";
+            }
+            ss << "]}";
+          }
+          ss << "]}";
+          const std::string json = ss.str();
+          resp.payload.assign(json.begin(), json.end());
+        } catch (const std::exception& e) {
+          resp.type = 2;
+          std::string err = std::string("server error: ") + e.what();
+          resp.payload.assign(err.begin(), err.end());
+        }
+        self->queue_response(resp);
+      });
     } else {
       // Capture current highlight rects for tile rendering
       std::vector<odb::Rect> rects;
@@ -1839,6 +1922,7 @@ class detect_session : public std::enable_shared_from_this<detect_session>
   beast::flat_buffer buffer_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::shared_ptr<TimingReport> timing_report_;
   http::request<http::string_body> req_;
   std::string doc_root_;
 
@@ -1846,10 +1930,12 @@ class detect_session : public std::enable_shared_from_this<detect_session>
   detect_session(tcp::socket&& socket,
                  std::shared_ptr<TileGenerator> generator,
                  std::shared_ptr<TclEvaluator> tcl_eval,
+                 std::shared_ptr<TimingReport> timing_report,
                  std::string doc_root)
       : stream_(std::move(socket)),
         generator_(std::move(generator)),
         tcl_eval_(std::move(tcl_eval)),
+        timing_report_(std::move(timing_report)),
         doc_root_(std::move(doc_root))
   {
   }
@@ -1876,7 +1962,7 @@ class detect_session : public std::enable_shared_from_this<detect_session>
     if (websocket::is_upgrade(req_)) {
       // WebSocket upgrade - hand off to ws_session
       auto ws = std::make_shared<ws_session>(
-          stream_.release_socket(), generator_, tcl_eval_);
+          stream_.release_socket(), generator_, tcl_eval_, timing_report_);
       ws->run(std::move(req_));
     } else {
       // Regular HTTP - hand off to session with already-read request
@@ -1897,6 +1983,7 @@ class listener : public std::enable_shared_from_this<listener>
   tcp::acceptor acceptor_;
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
+  std::shared_ptr<TimingReport> timing_report_;
   std::string doc_root_;
 
  public:
@@ -1904,11 +1991,13 @@ class listener : public std::enable_shared_from_this<listener>
            tcp::endpoint endpoint,
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
+           std::shared_ptr<TimingReport> timing_report,
            std::string doc_root)
       : ioc_(ioc),
         acceptor_(ioc),
         generator_(generator),
         tcl_eval_(std::move(tcl_eval)),
+        timing_report_(std::move(timing_report)),
         doc_root_(std::move(doc_root))
   {
     beast::error_code ec;
@@ -1953,7 +2042,7 @@ class listener : public std::enable_shared_from_this<listener>
     } else {
       // Route through detect_session to handle both HTTP and WebSocket
       std::make_shared<detect_session>(
-          std::move(socket), generator_, tcl_eval_, doc_root_)
+          std::move(socket), generator_, tcl_eval_, timing_report_, doc_root_)
           ->run();
     }
     do_accept();
@@ -1974,6 +2063,7 @@ void WebServer::serve(const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+    auto timing_report = std::make_shared<TimingReport>(sta_);
 
     // Create Tcl evaluator with logger sink for output capture
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
@@ -1994,7 +2084,12 @@ void WebServer::serve(const std::string& doc_root)
     net::io_context ioc{num_threads};
 
     std::make_shared<listener>(
-        ioc, tcp::endpoint{address, port}, generator_, tcl_eval, doc_root)
+        ioc,
+        tcp::endpoint{address, port},
+        generator_,
+        tcl_eval,
+        timing_report,
+        doc_root)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);

@@ -325,3 +325,118 @@ html, body {
     from { opacity: 0.3; }
     to   { opacity: 0.8; }
 }
+
+/* ─── Timing Widget ────────────────────────────────────────────────────── */
+
+.timing-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
+}
+
+.timing-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.timing-btn {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.timing-btn:hover { background: #444; color: #fff; }
+.timing-btn:disabled { opacity: 0.5; cursor: default; }
+
+.timing-path-count {
+    color: #888;
+    font-size: 12px;
+}
+
+.timing-tab-bar {
+    display: flex;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+}
+
+.timing-tab {
+    background: #2d2d2d;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #888;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+}
+.timing-tab.active {
+    color: #eee;
+    border-bottom-color: #4fc3f7;
+    background: #252525;
+}
+.timing-tab:hover { color: #ccc; }
+
+.timing-path-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 80px;
+}
+
+.timing-detail-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 80px;
+    border-top: 1px solid #444;
+}
+
+.timing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.timing-table thead th {
+    position: sticky;
+    top: 0;
+    background: #2a2a2a;
+    color: #aaa;
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.timing-table tbody td {
+    padding: 3px 8px;
+    border-bottom: 1px solid #2a2a2a;
+    white-space: nowrap;
+    color: #ccc;
+}
+
+.timing-table tbody tr:hover {
+    background: #2d2d2d;
+}
+
+.timing-table tbody tr.selected {
+    background: #1a3a5c;
+}
+
+.timing-table tbody tr.timing-clock-row td {
+    color: #888;
+    font-style: italic;
+}
+
+.timing-table tbody td.slack-negative {
+    color: #f55;
+}

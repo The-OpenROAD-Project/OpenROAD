@@ -715,8 +715,220 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    createStubPanel(container, 'Timing',
-        'Timing path analysis.');
+    const el = document.createElement('div');
+    el.className = 'timing-widget';
+
+    // State
+    let currentTab = 'setup';
+    let setupPaths = [];
+    let holdPaths = [];
+    let selectedPathIndex = -1;
+    let detailTab = 'data';
+
+    // --- Toolbar ---
+    const toolbar = document.createElement('div');
+    toolbar.className = 'timing-toolbar';
+
+    const updateBtn = document.createElement('button');
+    updateBtn.className = 'timing-btn';
+    updateBtn.textContent = 'Update';
+
+    const pathCountLabel = document.createElement('span');
+    pathCountLabel.className = 'timing-path-count';
+
+    toolbar.appendChild(updateBtn);
+    toolbar.appendChild(pathCountLabel);
+    el.appendChild(toolbar);
+
+    // --- Setup/Hold Tab Bar ---
+    const tabBar = document.createElement('div');
+    tabBar.className = 'timing-tab-bar';
+
+    function makeTab(label, active) {
+        const btn = document.createElement('button');
+        btn.className = 'timing-tab' + (active ? ' active' : '');
+        btn.textContent = label;
+        return btn;
+    }
+
+    const setupTab = makeTab('Setup', true);
+    const holdTab = makeTab('Hold', false);
+    tabBar.appendChild(setupTab);
+    tabBar.appendChild(holdTab);
+    el.appendChild(tabBar);
+
+    // --- Path listing table ---
+    const pathTableContainer = document.createElement('div');
+    pathTableContainer.className = 'timing-path-table-container';
+    const pathTable = document.createElement('table');
+    pathTable.className = 'timing-table';
+    pathTableContainer.appendChild(pathTable);
+    el.appendChild(pathTableContainer);
+
+    // --- Detail Tab Bar ---
+    const detailTabBar = document.createElement('div');
+    detailTabBar.className = 'timing-tab-bar';
+    const dataTab = makeTab('Data Path', true);
+    const captureTab = makeTab('Capture Path', false);
+    detailTabBar.appendChild(dataTab);
+    detailTabBar.appendChild(captureTab);
+    el.appendChild(detailTabBar);
+
+    // --- Detail table ---
+    const detailTableContainer = document.createElement('div');
+    detailTableContainer.className = 'timing-detail-table-container';
+    const detailTable = document.createElement('table');
+    detailTable.className = 'timing-table';
+    detailTableContainer.appendChild(detailTable);
+    el.appendChild(detailTableContainer);
+
+    container.element.appendChild(el);
+
+    // --- Tab switching ---
+    setupTab.addEventListener('click', () => {
+        currentTab = 'setup';
+        setupTab.classList.add('active');
+        holdTab.classList.remove('active');
+        selectedPathIndex = -1;
+        renderPathTable();
+        renderDetailTable();
+    });
+    holdTab.addEventListener('click', () => {
+        currentTab = 'hold';
+        holdTab.classList.add('active');
+        setupTab.classList.remove('active');
+        selectedPathIndex = -1;
+        renderPathTable();
+        renderDetailTable();
+    });
+    dataTab.addEventListener('click', () => {
+        detailTab = 'data';
+        dataTab.classList.add('active');
+        captureTab.classList.remove('active');
+        renderDetailTable();
+    });
+    captureTab.addEventListener('click', () => {
+        detailTab = 'capture';
+        captureTab.classList.add('active');
+        dataTab.classList.remove('active');
+        renderDetailTable();
+    });
+
+    // --- Fetch paths ---
+    updateBtn.addEventListener('click', async () => {
+        updateBtn.disabled = true;
+        updateBtn.textContent = 'Loading...';
+        try {
+            const [setupData, holdData] = await Promise.all([
+                wsManager.request({ type: 'timing_report', is_setup: 1, max_paths: 100 }),
+                wsManager.request({ type: 'timing_report', is_setup: 0, max_paths: 100 }),
+            ]);
+            setupPaths = setupData.paths || [];
+            holdPaths = holdData.paths || [];
+            selectedPathIndex = -1;
+            renderPathTable();
+            renderDetailTable();
+        } catch (e) {
+            console.error('Timing fetch failed:', e);
+        }
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Update';
+    });
+
+    // --- Render path listing ---
+    const pathCols = ['Clock', 'Required', 'Arrival', 'Slack', 'Start', 'End'];
+
+    function renderPathTable() {
+        const paths = currentTab === 'setup' ? setupPaths : holdPaths;
+        pathCountLabel.textContent = paths.length + ' paths';
+        pathTable.innerHTML = '';
+
+        const thead = document.createElement('thead');
+        const hr = document.createElement('tr');
+        for (const col of pathCols) {
+            const th = document.createElement('th');
+            th.textContent = col;
+            hr.appendChild(th);
+        }
+        thead.appendChild(hr);
+        pathTable.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        paths.forEach((p, idx) => {
+            const tr = document.createElement('tr');
+            if (idx === selectedPathIndex) tr.classList.add('selected');
+            const vals = [
+                p.end_clk,
+                fmtTime(p.required),
+                fmtTime(p.arrival),
+                fmtTime(p.slack),
+                p.start_pin,
+                p.end_pin,
+            ];
+            vals.forEach((v, ci) => {
+                const td = document.createElement('td');
+                td.textContent = v;
+                if (ci === 3 && p.slack < 0) td.classList.add('slack-negative');
+                tr.appendChild(td);
+            });
+            tr.addEventListener('click', () => {
+                selectedPathIndex = idx;
+                renderPathTable();
+                renderDetailTable();
+            });
+            tbody.appendChild(tr);
+        });
+        pathTable.appendChild(tbody);
+    }
+
+    // --- Render detail table ---
+    const detailCols = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
+
+    function renderDetailTable() {
+        detailTable.innerHTML = '';
+        const paths = currentTab === 'setup' ? setupPaths : holdPaths;
+        if (selectedPathIndex < 0 || selectedPathIndex >= paths.length) return;
+
+        const path = paths[selectedPathIndex];
+        const nodes = detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+
+        const thead = document.createElement('thead');
+        const hr = document.createElement('tr');
+        for (const col of detailCols) {
+            const th = document.createElement('th');
+            th.textContent = col;
+            hr.appendChild(th);
+        }
+        thead.appendChild(hr);
+        detailTable.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        for (const n of nodes) {
+            const tr = document.createElement('tr');
+            if (n.clk) tr.classList.add('timing-clock-row');
+            const vals = [
+                n.pin,
+                n.fanout,
+                n.rise ? '\u2191' : '\u2193',
+                fmtTime(n.time),
+                fmtTime(n.delay),
+                fmtTime(n.slew),
+                fmtTime(n.load),
+            ];
+            for (const v of vals) {
+                const td = document.createElement('td');
+                td.textContent = v;
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        detailTable.appendChild(tbody);
+    }
+
+    function fmtTime(v) {
+        if (v === undefined || v === null) return '';
+        return typeof v === 'number' ? v.toFixed(4) : String(v);
+    }
 }
 
 function createDRCWidget(container) {
