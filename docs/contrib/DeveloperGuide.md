@@ -132,7 +132,7 @@ OpenSTA has Tcl utilities to parse keyword arguments
 examples. Use swig to define internal functions to C++ functionality.
 
 Tcl files can be included by encoding them in CMake into a string that
-is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
+is evaluated at run time (See [`Resizer::init()`](../../src/rsz/src/Resizer.cc)).
 
 :::{Note}
 Please refer to the top-level Tcl formatting [guide](TclFormat.md).
@@ -230,29 +230,29 @@ manpages.
 Tool namespaces are usually three-lettered lowercase letters.
 
 - Verilog to DB (dbSTA)
-- OpenDB: Open Database ([odb](../main/src/odb/README.md))
-- TritonPart: constraints-driven paritioner ([par](../main/src/par/README.md))
-- Floorplan Initialization ([ifp](../main/src/ifp/README.md))
-- ICeWall chip-level connections ([pad](../main/src/pad/README.md))
-- I/O Placement ([ppl](../main/src/ppl/README.md))
-- PDN Generation ([pdn](../main/src/pdn/README.md))
-- Tapcell and Welltie Insertion ([tap](../main/src/tap/README.md))
-- Macro Placer ([mpl](../main/src/mpl/README.md))
-- RePlAce Global Placer ([gpl](../main/src/gpl/README.md))
-- Gate resizing and buffering ([rsz](../main/src/rsz/README.md))
-- Parasitics estimation ([est](../main/src/est/README.md))
-- Detailed placement ([dpl](../main/src/dpl/README.md))
-- Clock tree synthesis ([cts](../main/src/cts/README.md))
-- FastRoute Global routing ([grt](../main/src/grt/README.md))
-- Antenna check and diode insertion ([ant](../main/src/ant/README.md))
-- TritonRoute Detailed routing ([drt](../main/src/drt/README.md))
-- Metal fill insertion ([fin](../main/src/fin/README.md))
-- Design for Test ([dft](../main/src/dft/README.md))
-- OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
+- OpenDB: Open Database ([odb](../../src/odb/README.md))
+- TritonPart: constraints-driven paritioner ([par](../../src/par/README.md))
+- Floorplan Initialization ([ifp](../../src/ifp/README.md))
+- ICeWall chip-level connections ([pad](../../src/pad/README.md))
+- I/O Placement ([ppl](../../src/ppl/README.md))
+- PDN Generation ([pdn](../../src/pdn/README.md))
+- Tapcell and Welltie Insertion ([tap](../../src/tap/README.md))
+- Macro Placer ([mpl](../../src/mpl/README.md))
+- RePlAce Global Placer ([gpl](../../src/gpl/README.md))
+- Gate resizing and buffering ([rsz](../../src/rsz/README.md))
+- Parasitics estimation ([est](../../src/est/README.md))
+- Detailed placement ([dpl](../../src/dpl/README.md))
+- Clock tree synthesis ([cts](../../src/cts/README.md))
+- FastRoute Global routing ([grt](../../src/grt/README.md))
+- Antenna check and diode insertion ([ant](../../src/ant/README.md))
+- TritonRoute Detailed routing ([drt](../../src/drt/README.md))
+- Metal fill insertion ([fin](../../src/fin/README.md))
+- Design for Test ([dft](../../src/dft/README.md))
+- OpenRCX Parasitic Extraction ([rcx](../../src/rcx/README.md))
 - OpenSTA timing/power analyzer ([sta](https://github.com/The-OpenROAD-Project/OpenSTA/blob/master/README.md))
-- Graphical User Interface ([gui](../main/src/gui/README.md))
-- Static IR analyzer ([psm](../main/src/psm/README.md))
-- Example tool ([exa](../main/src/exa/README.md))
+- Graphical User Interface ([gui](../../src/gui/README.md))
+- Static IR analyzer ([psm](../../src/psm/README.md))
+- Example tool ([exa](../../src/exa/README.md))
 
 ## Tool Checklist
 
