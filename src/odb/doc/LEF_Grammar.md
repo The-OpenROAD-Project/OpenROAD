@@ -2,21 +2,39 @@
 
 The LEF (Library Exchange Format) grammar defines the syntax for library
 description files used by OpenROAD's ODB module. The grammar is implemented
-as a Bison parser in [`lef.y`](../../src/lef/lef/lef.y).
+as a Bison parser in [`lef.y`](../src/lef/lef/lef.y).
 
-## Viewing the Railroad Diagram
+## Railroad Diagrams
 
-A **railroad diagram** (or syntax diagram) is a visual representation of a
-grammar that makes it easy to understand the valid syntax at a glance.
+Railroad diagrams (syntax diagrams) give a visual representation of each
+grammar rule. The SVGs below are auto-generated from `lef.y` by
+[`generate_railroad_diagrams.py`](generate_railroad_diagrams.py) and
+regenerated automatically via CI whenever `lef.y` changes.
 
-To view the full LEF grammar as an interactive railroad diagram:
+### `lef_file`
+![lef_file](img/lef_lef_file.svg)
 
-1. Open the [Railroad Diagram Generator](https://www.bottlecaps.de/rr/ui)
-2. Paste the EBNF grammar from [GitHub issue #2488](https://github.com/The-OpenROAD-Project/OpenROAD/issues/2488) (LEF section)
-3. Click the **View Diagram** tab
+### `rule`
+![rule](img/lef_rule.svg)
 
-The EBNF was converted from `lef.y` using
-[bison-to-w3c](https://www.bottlecaps.de/convert/).
+### `layer_rule`
+![layer_rule](img/lef_layer_rule.svg)
+
+### `macro`
+![macro](img/lef_macro.svg)
+
+### `via`
+![via](img/lef_via.svg)
+
+### `site`
+![site](img/lef_site.svg)
+
+To regenerate the diagrams after editing `lef.y`:
+
+```bash
+pip install railroad-diagrams
+python3 src/odb/doc/generate_railroad_diagrams.py lef
+```
 
 ## Top-Level Grammar Structure
 
@@ -41,5 +59,5 @@ end_library ::= ( "END" "LIBRARY" )?
 
 ## Source
 
-- Grammar file: [`lef.y`](../../src/lef/lef/lef.y) (LEF 5.6, Bison format)
+- Grammar file: [`lef.y`](../src/lef/lef/lef.y) (LEF 5.6, Bison format)
 - Full EBNF: [Issue #2488](https://github.com/The-OpenROAD-Project/OpenROAD/issues/2488)
