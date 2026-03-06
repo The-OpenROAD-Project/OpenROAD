@@ -87,6 +87,14 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
 
+double LatencyBalancer::computeWireLumpedDelay(std::string load, double wl, double& wireCap)
+{
+  wireCap = wl * capPerDBU_;
+  double wireRes = wl * resPerDBU_;
+
+  return wireRes * wireCap * std::pow(10, 14);
+}
+
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
 {
   if (builder->isLeafTree()) {
@@ -390,7 +398,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
       logger_, CTS, "insertion delay", 4, "Initial best = {}", dp[target]);
   debugPrint(logger_, CTS, "insertion delay", 4, "Initial n bufs = {}", nBufs);
 
-  // Adjust buffers delay for wire cap
+  // Compute wiredelay and adjust buffers delay for wire cap
   odb::Rect loadPinsBbox = odb::Rect();
   loadPinsBbox.mergeInit();
   for (odb::dbITerm* sinkInput : sinks) {
@@ -399,10 +407,12 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     loadPinsBbox.merge({sinkX, sinkY});
   }
 
-  float offsetX = (float) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
-  float offsetY = (float) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
+  double offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
+  double offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
   std::vector<int> adjustedBuffersDelay;
-  double extraOutCap = (std::abs(offsetX) + std::abs(offsetY)) * capPerDBU_;
+
+  double extraOutCap;
+  double wireDly = computeWireLumpedDelay(" ", std::abs(offsetX) + std::abs(offsetY), extraOutCap);
   computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
 
   // Compute best buffer combination with more accurate values
@@ -410,7 +420,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   dp_elements.assign(target + 1, -1);
   for (int w = 0; w <= target; w++) {
     for (int i = 0; i < adjustedBuffersDelay.size(); i++) {
-      const int bufDelay = adjustedBuffersDelay[i];
+      const int bufDelay = adjustedBuffersDelay[i] + wireDly;
       int bestPrevWeight;
       int prevBuf;
       if (bufDelay > w) {
@@ -425,11 +435,11 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
       if (prevBuf == -1) {
         updatedDelay
             = techChar_->computeBufferDelay(dlyBuffers[i], sinks, extraOutCap)
-              * std::pow(10, 14);
+              * std::pow(10, 14) + wireDly;
       } else {
         updatedDelay = techChar_->computeBufferDelay(
                            dlyBuffers[i], dlyBuffers[prevBuf], extraOutCap)
-                       * std::pow(10, 14);
+                       * std::pow(10, 14) + wireDly;
       }
 
       if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + updatedDelay - w)) {

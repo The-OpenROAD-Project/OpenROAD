@@ -2577,6 +2577,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // convert from per meter to per dbu
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
+  double resPerDBU = estimate_parasitics_->wireClkResistance(corner) * 1e-6
+                     / block_->getDbUnitsPerMicron();
 
   for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
@@ -2588,7 +2590,8 @@ void TritonCTS::balanceMacroRegisterLatencies()
                                                  network_,
                                                  openSta_,
                                                  techChar_.get(),
-                                                 capPerDBU);
+                                                 capPerDBU,
+                                                 resPerDBU);
       totalDelayBuff += balancer.run();
     }
   }
