@@ -1,12 +1,12 @@
 # Contributing to OpenROAD
 
-Thank you for contributing to OpenROAD. This document summarizes the
-most important review priorities and coding conventions. For full
-details, see the
-[Developer Guide](docs/contrib/DeveloperGuide.md),
-[Coding Practices](docs/contrib/CodingPractices.md),
-[Logger Guide](docs/contrib/Logger.md), and
-[Getting Involved](docs/contrib/GettingInvolved.md).
+Thank you for contributing to OpenROAD. For setup, coding standards,
+and workflow details, see the existing guides:
+
+- [Getting Involved](docs/contrib/GettingInvolved.md) -- how to contribute, licensing, DCO
+- [Developer Guide](docs/contrib/DeveloperGuide.md) -- architecture, tool structure, testing
+- [Coding Practices](docs/contrib/CodingPractices.md) -- C++ style and idioms
+- [Logger Guide](docs/contrib/Logger.md) -- logging API for C++ and Tcl
 
 ## Review Priorities
 
@@ -39,76 +39,25 @@ physical design metrics must be validated.
 
 ### 3. Testing
 
-Every code change should have accompanying tests.
-
-- No database (`.db`) files in tests. Read LEF/DEF/Verilog to
-  create the database.
-- Regression tests must be runnable from any directory and must
-  not leave the source tree dirty.
-- Regression output should be concise -- not thousands of lines.
-- New features without tests are unlikely to be accepted.
+Every code change should have accompanying tests. See the
+[Developer Guide](docs/contrib/DeveloperGuide.md#test) for test
+conventions.
 
 ### 4. Architecture and Dependencies
 
-OpenROAD is a single-process, single-database tool. Respect this
-architecture.
+OpenROAD is a single-process, single-database tool. See the
+[Developer Guide](docs/contrib/DeveloperGuide.md#tool-philosophy) for
+architectural guidelines and the
+[tool checklist](docs/contrib/DeveloperGuide.md#tool-checklist).
 
-- All tools reside in one process with one database. File-based
-  communication between tools and forking processes is strongly
-  discouraged.
-- Do not add runtime or build dependencies without serious
-  justification. Consider copying a small relevant subset rather than
-  taking a full library dependency.
-- Code should be in the right module. Low-level utilities (`utl`) should
-  not depend on higher-level tools. Consider where code naturally
-  belongs in the dependency graph.
-- Tool state belongs in classes, not global variables. Global variables
-  prevent multi-threading and multiple tool instances.
-- Submodules for new code are strongly discouraged.
-
-### 5. C++ Style
+### 5. C++ Style and Logging
 
 We follow the [Google C++ style guide](https://google.github.io/styleguide/cppguide.html).
-Key project-specific practices:
+See [Coding Practices](docs/contrib/CodingPractices.md) for
+project-specific idioms and the
+[Logger Guide](docs/contrib/Logger.md) for the logging API.
 
-- Don't comment out code -- remove it. Git has history.
-- Don't use prefixes on class/function/file names. Use namespaces.
-- Namespaces should be short, lowercase (e.g., `drt`, `gpl`, not
-  `TritonCTS`).
-- No global variables. All state in classes.
-- No magic numbers. Use named constants with documented units.
-- No nested `if` -- use `&&`.
-- Use `nullptr` not `NULL`, `std::vector` not C arrays, `new` not
-  `malloc`, `std::abs` not C `abs`.
-- Use `#pragma once` not `#ifndef` guards.
-- Use `""` for project headers, `<>` only for system headers.
-- Use range-based for loops, not iterator loops.
-- Don't use `using namespace std;`. Prefer `using` declarations for
-  specific symbols (e.g., `using std::vector;`).
-- Break long functions into smaller ones that fit on one screen.
-- Don't duplicate code fragments -- write functions.
-- Run `clang-format` on all changed C++ files before committing.
-
-### 6. User-Facing Quality
-
-- Log messages must use the OpenROAD logger, not `printf` or
-  `std::cout`. In C++ use `Logger::info`, `Logger::warn`,
-  `Logger::error`. In Tcl use `utl::info`, `utl::warn`, `utl::error`.
-  Use `utl::report` (Tcl) or `Logger::report` (C++) instead of `puts`.
-- Messages start with a capital letter and end with a period.
-- Error and warning messages should be actionable -- tell the user
-  what to do, not just what went wrong.
-- Don't abbreviate English words in messages (`Number` not `Num`,
-  `Total` not `Tot`).
-- Tcl commands use `snake_case`, not `camelCase`.
-- User-visible commands go in the global namespace. Internal commands
-  stay in the tool namespace.
-- Tools should use Tcl commands exclusively for control -- no external
-  configuration files.
-- All database units are `int` internally. Microns only appear in the
-  user interface.
-
-### 7. Process
+### 6. Process
 
 - Every commit must include a DCO sign-off (`git commit -s`).
 - CI must be green before review. Reviewers may not look at
