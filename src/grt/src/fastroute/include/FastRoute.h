@@ -111,7 +111,8 @@ class FastRouteCore
                 int min_layer,
                 int max_layer,
                 float slack,
-                std::vector<int8_t>* edge_cost_per_layer);
+                std::vector<int8_t>* edge_cost_per_layer,
+                bool routed = false);
   void deleteNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
   void mergeNet(odb::dbNet* removed_net, odb::dbNet* preserved_net);
@@ -220,6 +221,18 @@ class FastRouteCore
                              int layer,
                              int new_layer,
                              odb::dbNet* db_net);
+  void addTreeEdge(int x1,
+                   int y1,
+                   int x2,
+                   int y2,
+                   int layer,
+                   odb::dbNet* db_net);
+  bool hasAvailableResources(int x1,
+                             int y1,
+                             int x2,
+                             int y2,
+                             int layer,
+                             odb::dbNet* db_net);
   void setVerbose(bool v);
   void setCriticalNetsPercentage(float u);
   float getCriticalNetsPercentage() { return critical_nets_percentage_; };
@@ -277,6 +290,8 @@ class FastRouteCore
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
   void setIncrementalGrt(bool is_incremental);
+
+  void writeCongestionMap(const std::string& filename);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);

@@ -1168,6 +1168,25 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
         } else {
           reqSpcVal += isCurrDirY ? cutBox2.dy() : cutBox2.dx();
         }
+      } else if (dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
+        const frCoord center_to_center_spacing
+            = dbRule->getSpacing(cutClass1,
+                                 isSide1,
+                                 cutClass2,
+                                 isSide2,
+                                 odb::dbTechLayerCutSpacingTableDefRule::MAX);
+        const frCoord edge_to_edge_spacing
+            = dbRule->getSpacing(cutClass1,
+                                 isSide1,
+                                 cutClass2,
+                                 isSide2,
+                                 odb::dbTechLayerCutSpacingTableDefRule::MIN);
+        const frCoord req_edge_to_edge_spacing
+            = edge_to_edge_spacing
+              + (isCurrDirY ? (cutBox1.dy() + cutBox2.dy()) / 2
+                            : (cutBox1.dx() + cutBox2.dx()) / 2);
+        reqSpcVal
+            = std::max(center_to_center_spacing, req_edge_to_edge_spacing);
       }
       if (reqSpcVal != 0) {
         forbiddenRanges.emplace_back(0, reqSpcVal);

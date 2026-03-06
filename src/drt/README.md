@@ -281,4 +281,4 @@ Bangqi Xu from UC San Diego, and serves as the detailed router in the
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.
