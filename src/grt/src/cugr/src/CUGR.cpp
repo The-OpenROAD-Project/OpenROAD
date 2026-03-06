@@ -641,18 +641,21 @@ void CUGR::updateNet(odb::dbNet* db_net)
   auto it = db_net_map_.find(db_net);
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
-    grid_graph_->commitTree(gr_net->getRoutingTree(), /*ripup=*/true);
+    grid_graph_->commitTree(gr_net->getRoutingTree(), /*rip_up=*/true);
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
     db_net_map_[db_net] = gr_nets_[idx].get();
-    if (incremental_mode_) {
+    if (incremental_mode_ && gr_nets_[idx]->getNumPins() >= 2) {
       dirty_net_indices_.insert(idx);
     }
   } else {
     design_->updateNet(db_net);
     const CUGRNet& base_net = design_->getAllNets().back();
+    if (base_net.getNumPins() < 2) {
+      return;
+    }
     const int new_index = static_cast<int>(gr_nets_.size());
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
     net_indices_.push_back(new_index);

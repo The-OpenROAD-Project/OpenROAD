@@ -20,9 +20,9 @@ global_route -verbose -use_cugr
 global_route -start_incremental
 
 set block [ord::get_db_block]
-set b1     [$block findInst "b1"]
-set b2     [$block findInst "b2"]
-set n2_net [$block findNet  "n2"]
+set b1 [$block findInst "b1"]
+set b2 [$block findInst "b2"]
+set n2_net [$block findNet "n2"]
 
 # Create the bypass net (will carry b2/Z -> b1/A, currently on n2)
 set n_bypass_net [odb::dbNet_create $block "n_bypass"]

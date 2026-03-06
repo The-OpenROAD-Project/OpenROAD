@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "CUGR.h"
