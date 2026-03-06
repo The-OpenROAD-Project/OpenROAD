@@ -432,6 +432,14 @@ html, body {
     background: #1a3a5c;
 }
 
+.timing-table tbody tr.timing-selected-row {
+    background: #3a3a1c;
+}
+
+.timing-table:focus {
+    outline: none;
+}
+
 .timing-table tbody tr.timing-clock-row td {
     color: #888;
     font-style: italic;

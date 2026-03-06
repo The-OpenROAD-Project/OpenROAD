@@ -900,8 +900,33 @@ function createTimingWidget(container) {
     // --- Render detail table ---
     const detailCols = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
 
+    let selectedDetailIndex = -1;
+
+    function selectDetailRow(idx) {
+        const rows = detailTable.querySelectorAll('tbody tr');
+        if (idx < 0 || idx >= rows.length) return;
+        selectedDetailIndex = idx;
+        for (const row of rows) {
+            row.classList.remove('timing-selected-row');
+        }
+        rows[idx].classList.add('timing-selected-row');
+        rows[idx].scrollIntoView({ block: 'nearest' });
+        detailTable.focus();
+
+        const paths = currentTab === 'setup' ? setupPaths : holdPaths;
+        const path = paths[selectedPathIndex];
+        const nodes = detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        wsManager.request({
+            type: 'timing_highlight',
+            path_index: selectedPathIndex,
+            is_setup: currentTab === 'setup' ? 1 : 0,
+            pin_name: nodes[idx].pin,
+        }).then(() => redrawAllLayers());
+    }
+
     function renderDetailTable() {
         detailTable.innerHTML = '';
+        selectedDetailIndex = -1;
         const paths = currentTab === 'setup' ? setupPaths : holdPaths;
         if (selectedPathIndex < 0 || selectedPathIndex >= paths.length) return;
 
@@ -919,7 +944,7 @@ function createTimingWidget(container) {
         detailTable.appendChild(thead);
 
         const tbody = document.createElement('tbody');
-        for (const n of nodes) {
+        nodes.forEach((n, idx) => {
             const tr = document.createElement('tr');
             if (n.clk) tr.classList.add('timing-clock-row');
             const vals = [
@@ -936,10 +961,28 @@ function createTimingWidget(container) {
                 td.textContent = v;
                 tr.appendChild(td);
             }
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => selectDetailRow(idx));
             tbody.appendChild(tr);
-        }
+        });
         detailTable.appendChild(tbody);
     }
+
+    detailTable.setAttribute('tabindex', '0');
+    detailTable.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const rows = detailTable.querySelectorAll('tbody tr');
+            if (selectedDetailIndex < rows.length - 1) {
+                selectDetailRow(selectedDetailIndex + 1);
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (selectedDetailIndex > 0) {
+                selectDetailRow(selectedDetailIndex - 1);
+            }
+        }
+    });
 
     function fmtTime(v) {
         if (v === undefined || v === null) return '';

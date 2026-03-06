@@ -910,14 +910,9 @@ static std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(
     odb::dbBlock* block,
     const std::string& pin_name)
 {
-  size_t slash = pin_name.find('/');
-  if (slash != std::string::npos) {
-    std::string inst_name = pin_name.substr(0, slash);
-    std::string term_name = pin_name.substr(slash + 1);
-    odb::dbInst* inst = block->findInst(inst_name.c_str());
-    if (inst) {
-      return {inst->findITerm(term_name.c_str()), nullptr};
-    }
+  odb::dbITerm* iterm = block->findITerm(pin_name.c_str());
+  if (iterm) {
+    return {iterm, nullptr};
   }
   return {nullptr, block->findBTerm(pin_name.c_str())};
 }
@@ -1228,6 +1223,7 @@ struct WsRequest
   // TIMING_HIGHLIGHT fields
   int timing_path_index = -1;  // -1 = clear
   bool timing_highlight_setup = true;
+  std::string timing_pin_name;  // optional: highlight this pin's net in yellow
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -1393,6 +1389,7 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.type = WsRequest::TIMING_HIGHLIGHT;
     req.timing_path_index = extract_int_or(msg, "path_index", -1);
     req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
+    req.timing_pin_name = extract_string(msg, "pin_name");
   } else if (type_str == "select") {
     req.type = WsRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -2022,11 +2019,26 @@ class ws_session : public std::enable_shared_from_this<ws_session>
               odb::dbBlock* block = gen->getBlock();
               collectTimingPathShapes(
                   block, paths[req.timing_path_index], new_rects, new_lines);
+
+              // If a specific pin is selected, highlight its net in yellow
+              if (!req.timing_pin_name.empty()) {
+                static const Color kStageColor{255, 255, 0, 180};
+                auto [iterm, bterm]
+                    = resolvePin(block, req.timing_pin_name);
+                odb::dbNet* net = iterm   ? iterm->getNet()
+                                  : bterm ? bterm->getNet()
+                                          : nullptr;
+                if (net) {
+                  collectNetShapes(net, iterm, bterm, nullptr, nullptr,
+                                   kStageColor, new_rects, new_lines);
+                }
+              }
             }
           }
 
           std::cerr << "TIMING_HIGHLIGHT: " << new_rects.size()
-                    << " rects, " << new_lines.size() << " lines\n";
+                    << " rects, " << new_lines.size() << " lines"
+                    << " pin_name='" << req.timing_pin_name << "'\n";
 
           {
             std::lock_guard<std::mutex> lock(self->selection_mutex_);
