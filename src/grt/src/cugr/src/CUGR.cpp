@@ -661,6 +661,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
       dirty_net_indices_.insert(new_index);
     }
   }
+  updated_nets_.insert(db_net);
 }
 
 void CUGR::startIncremental()
@@ -671,7 +672,6 @@ void CUGR::startIncremental()
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
-  sortNetIndices(net_indices);
   for (const int idx : net_indices) {
     grid_graph_->commitTree(gr_nets_[idx]->getRoutingTree(), /*rip_up=*/true);
   }
@@ -690,8 +690,12 @@ void CUGR::endIncremental()
                                  dirty_net_indices_.end());
 
   for (const int idx : dirty_net_indices_) {
-    updateNet(gr_nets_[idx]->getDbNet());
+    odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
+    if (updated_nets_.find(db_net) == updated_nets_.end()) {
+      updateNet(db_net);
+    }
   }
+  updated_nets_.clear();
 
   rerouteNets(nets_to_route);
 

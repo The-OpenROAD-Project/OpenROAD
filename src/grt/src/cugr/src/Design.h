@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "CUGR.h"
@@ -76,6 +77,7 @@ class Design
   void read();
   void readLayers();
   void readNetlist();
+  std::vector<CUGRPin> readNetPins(odb::dbNet* db_net);
   void readInstanceObstructions();
   int readSpecialNetObstructions();
   void readDesignObstructions();
@@ -90,6 +92,7 @@ class Design
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
   std::vector<CUGRNet> nets_;
+  std::unordered_map<odb::dbNet*, int> db_net_to_design_idx_;
   std::vector<BoxOnLayer> obstacles_;
 
   odb::dbBlock* block_;
