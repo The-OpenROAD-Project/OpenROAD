@@ -727,8 +727,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   // Don't need to reroute every net during first GRT run, let it for the
   // incremental optimizations
-  const int endIND = is_incremental_grt_ ? tree_order_pv_.size()
-                                         : tree_order_pv_.size() * 0.9;
+  const int endIND = (enable_resistance_aware_ && is_incremental_grt_)
+                         ? tree_order_pv_.size()
+                         : tree_order_pv_.size() * 0.9;
   const int max_reroute_iter
       = (is_incremental_grt_ && enable_resistance_aware_) ? 5 : 0;
 
