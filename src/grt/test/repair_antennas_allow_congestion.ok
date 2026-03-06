@@ -6,13 +6,13 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [WARNING GRT-0115] Global routing finished with congestion. Check the congestion regions in the DRC Viewer.
-[INFO ANT-0002] Found 6 net violations.
-[INFO ANT-0001] Found 7 pin violations.
-[INFO GRT-0012] Found 6 antenna violations.
+[INFO ANT-0002] Found 5 net violations.
+[INFO ANT-0001] Found 5 pin violations.
+[INFO GRT-0012] Found 5 antenna violations.
 [INFO GRT-0302] Inserted 0 jumpers for 0 nets.
-[INFO GRT-0012] Found 6 antenna violations.
-[INFO GRT-0015] Inserted 7 diodes.
-[INFO ANT-0002] Found 1 net violations.
-[INFO ANT-0001] Found 1 pin violations.
+[INFO GRT-0012] Found 5 antenna violations.
+[INFO GRT-0015] Inserted 5 diodes.
+[INFO ANT-0002] Found 0 net violations.
+[INFO ANT-0001] Found 0 pin violations.
 No differences found.
 No differences found.
