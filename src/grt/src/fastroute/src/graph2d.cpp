@@ -285,8 +285,10 @@ void Graph2D::addUsageH(const Interval& xi, const int y, const int used)
 void Graph2D::addUsageH(const int x, const int y, const int used)
 {
   h_edges_[x][y].usage += used;
-  if (used > 0) {
+  if (h_edges_[x][y].usage > 0) {
     h_used_ggrid_.insert({x, y});
+  } else {
+    h_used_ggrid_.erase({x, y});
   }
 }
 
@@ -302,8 +304,10 @@ void Graph2D::addUsageV(const int x, const Interval& yi, const int used)
 void Graph2D::addUsageV(const int x, const int y, const int used)
 {
   v_edges_[x][y].usage += used;
-  if (used > 0) {
+  if (v_edges_[x][y].usage > 0) {
     v_used_ggrid_.insert({x, y});
+  } else {
+    v_used_ggrid_.erase({x, y});
   }
 }
 
@@ -346,8 +350,10 @@ void Graph2D::updateUsageH(const int x,
   h_edges_[x][y].usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Horizontal);
 
-  if (usage > 0) {
+  if (h_edges_[x][y].usage > 0) {
     h_used_ggrid_.insert({x, y});
+  } else {
+    h_used_ggrid_.erase({x, y});
   }
 }
 
@@ -371,8 +377,10 @@ void Graph2D::updateUsageV(const int x,
   v_edges_[x][y].usage
       += getCostNDRAware(net, x, y, usage, EdgeDirection::Vertical);
 
-  if (usage > 0) {
+  if (v_edges_[x][y].usage > 0) {
     v_used_ggrid_.insert({x, y});
+  } else {
+    v_used_ggrid_.erase({x, y});
   }
 }
 
