@@ -40,19 +40,17 @@ void FlexTAGraphics::drawIrouteGuide(frNet* net,
                                      odb::dbTechLayer* layer,
                                      gui::Painter& painter)
 {
-  frLayerNum layerNum;
-
-  layerNum = layer_map_.at(layer->getNumber());
-  if (layerNum < 0) {
+  const frLayerNum layer_num = layer_map_.at(layer->getNumber());
+  if (layer_num < 0) {
     return;
   }
 
   for (auto& guide : net->getGuides()) {
-    for (auto& uConnFig : guide->getRoutes()) {
-      auto connFig = uConnFig.get();
-      if (connFig->typeId() == frcPathSeg) {
-        auto seg = static_cast<frPathSeg*>(connFig);
-        if (seg->getLayerNum() == layerNum) {
+    for (auto& conn_fig_ptr : guide->getRoutes()) {
+      auto conn_fig = conn_fig_ptr.get();
+      if (conn_fig->typeId() == frcPathSeg) {
+        auto seg = static_cast<frPathSeg*>(conn_fig);
+        if (seg->getLayerNum() == layer_num) {
           painter.drawRect(seg->getBBox());
         }
       }
