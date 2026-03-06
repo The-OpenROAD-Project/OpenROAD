@@ -659,14 +659,13 @@ void Resizer::findFastBuffers()
   float R_max = bufferDriveResistance(buffer_lowest_drive_);
   sta::LibertyCellSeq sizes_by_inp_cap;
   sizes_by_inp_cap = buffer_cells_;
-  std::ranges::sort(
-      sizes_by_inp_cap,
-      [](const sta::LibertyCell* buffer1, const sta::LibertyCell* buffer2) {
-        sta::LibertyPort *port1, *port2, *scratch;
-        buffer1->bufferPorts(port1, scratch);
-        buffer2->bufferPorts(port2, scratch);
-        return port1->capacitance() < port2->capacitance();
-      });
+  sort(sizes_by_inp_cap,
+       [](const sta::LibertyCell* buffer1, const sta::LibertyCell* buffer2) {
+         sta::LibertyPort *port1, *port2, *scratch;
+         buffer1->bufferPorts(port1, scratch);
+         buffer2->bufferPorts(port2, scratch);
+         return port1->capacitance() < port2->capacitance();
+       });
 
   sta::LibertyCellSeq fast_buffers;
   for (auto size : sizes_by_inp_cap) {
@@ -967,12 +966,12 @@ void Resizer::findBuffersNoPruning()
     if (buffer_cells_.empty()) {
       logger_->error(RSZ, 52, "no buffers found.");
     } else {
-      std::ranges::sort(buffer_cells_,
-                        [this](const sta::LibertyCell* buffer1,
-                               const sta::LibertyCell* buffer2) {
-                          return bufferDriveResistance(buffer1)
-                                 > bufferDriveResistance(buffer2);
-                        });
+      sort(buffer_cells_,
+           [this](const sta::LibertyCell* buffer1,
+                  const sta::LibertyCell* buffer2) {
+             return bufferDriveResistance(buffer1)
+                    > bufferDriveResistance(buffer2);
+           });
 
       buffer_lowest_drive_ = buffer_cells_[0];
     }
@@ -1848,19 +1847,19 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
 
   if (!buffer_list.empty()) {
     // Sort buffer list by VT type, then by drive resistance
-    std::ranges::sort(buffer_list,
-                      [this](const sta::LibertyCell* buffer1,
-                             const sta::LibertyCell* buffer2) {
-                        odb::dbMaster* master1 = db_network_->staToDb(buffer1);
-                        odb::dbMaster* master2 = db_network_->staToDb(buffer2);
-                        auto vt_type1 = cellVTType(master1);
-                        auto vt_type2 = cellVTType(master2);
-                        if (vt_type1 != vt_type2) {
-                          return vt_type1 < vt_type2;
-                        }
-                        return bufferDriveResistance(buffer1)
-                               < bufferDriveResistance(buffer2);
-                      });
+    sort(buffer_list,
+         [this](const sta::LibertyCell* buffer1,
+                const sta::LibertyCell* buffer2) {
+           odb::dbMaster* master1 = db_network_->staToDb(buffer1);
+           odb::dbMaster* master2 = db_network_->staToDb(buffer2);
+           auto vt_type1 = cellVTType(master1);
+           auto vt_type2 = cellVTType(master2);
+           if (vt_type1 != vt_type2) {
+             return vt_type1 < vt_type2;
+           }
+           return bufferDriveResistance(buffer1)
+                  < bufferDriveResistance(buffer2);
+         });
 
     // Sort VT categories by average leakage
     lib_data_->sort_vt_categories();
@@ -3590,10 +3589,9 @@ void Resizer::findLongWires(sta::VertexSeq& drvrs)
       }
     }
   }
-  std::ranges::sort(drvr_dists,
-                    [](const DrvrDist& drvr_dist1, const DrvrDist& drvr_dist2) {
-                      return drvr_dist1.second > drvr_dist2.second;
-                    });
+  sort(drvr_dists, [](const DrvrDist& drvr_dist1, const DrvrDist& drvr_dist2) {
+    return drvr_dist1.second > drvr_dist2.second;
+  });
   drvrs.reserve(drvr_dists.size());
   for (DrvrDist& drvr_dist : drvr_dists) {
     drvrs.emplace_back(drvr_dist.first);
