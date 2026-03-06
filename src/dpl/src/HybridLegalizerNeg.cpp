@@ -35,11 +35,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <ranges>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "HybridLegalizer.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -47,7 +51,8 @@ namespace dpl {
 // runNegotiation – top-level negotiation driver
 // ===========================================================================
 
-void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells) {
+void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
+{
   // Seed with illegal cells and all movable neighbors within the search
   // window so the loop can create space organically.
   std::unordered_set<int> activeSet(illegalCells.begin(), illegalCells.end());
@@ -103,8 +108,8 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells) {
              kMaxIterNeg2);
 
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    const int overflows =
-        negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
+    const int overflows
+        = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
     if (overflows == 0) {
       debugPrint(logger_,
                  utl::DPL,
@@ -130,8 +135,10 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells) {
 // negotiationIter – one full rip-up/replace sweep over activeCells
 // ===========================================================================
 
-int HybridLegalizer::negotiationIter(
-    std::vector<int>& activeCells, int iter, bool updateHistory) {
+int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
+                                     int iter,
+                                     bool updateHistory)
+{
   sortByNegotiationOrder(activeCells);
 
   for (int idx : activeCells) {
@@ -175,11 +182,13 @@ int HybridLegalizer::negotiationIter(
 // ripUp / place
 // ===========================================================================
 
-void HybridLegalizer::ripUp(int cellIdx) {
+void HybridLegalizer::ripUp(int cellIdx)
+{
   addUsage(cellIdx, -1);
 }
 
-void HybridLegalizer::place(int cellIdx, int x, int y) {
+void HybridLegalizer::place(int cellIdx, int x, int y)
+{
   cells_[cellIdx].x = x;
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
@@ -189,7 +198,8 @@ void HybridLegalizer::place(int cellIdx, int x, int y) {
 // findBestLocation – enumerate candidates within the search window
 // ===========================================================================
 
-std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const {
+std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const
+{
   const HLCell& cell = cells_[cellIdx];
 
   auto bestCost = static_cast<double>(kInfCost);
@@ -238,7 +248,8 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const {
 //   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
 // ===========================================================================
 
-double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const {
+double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
+{
   const HLCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
 
@@ -271,11 +282,12 @@ double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const {
 //   b(x,y) = δ + mf * max(δ − th, 0)
 // ===========================================================================
 
-double HybridLegalizer::targetCost(int cellIdx, int x, int y) const {
+double HybridLegalizer::targetCost(int cellIdx, int x, int y) const
+{
   const HLCell& cell = cells_[cellIdx];
   const int disp = std::abs(x - cell.initX) + std::abs(y - cell.initY);
-  return static_cast<double>(disp) +
-         mf_ * static_cast<double>(std::max(0, disp - th_));
+  return static_cast<double>(disp)
+         + mf_ * static_cast<double>(std::max(0, disp - th_));
 }
 
 // ===========================================================================
@@ -283,7 +295,8 @@ double HybridLegalizer::targetCost(int cellIdx, int x, int y) const {
 //   pf = 1.0 + α * exp(−β * exp(−γ * (i − ith)))
 // ===========================================================================
 
-double HybridLegalizer::adaptivePf(int iter) const {
+double HybridLegalizer::adaptivePf(int iter) const
+{
   return 1.0 + kAlpha * std::exp(-kBeta * std::exp(-kGamma * (iter - kIth)));
 }
 
@@ -292,7 +305,8 @@ double HybridLegalizer::adaptivePf(int iter) const {
 //   h_new = h_old + hf * overuse
 // ===========================================================================
 
-void HybridLegalizer::updateHistoryCosts() {
+void HybridLegalizer::updateHistoryCosts()
+{
   for (auto& g : grid_) {
     const int ov = g.overuse();
     if (ov > 0) {
@@ -308,7 +322,8 @@ void HybridLegalizer::updateHistoryCosts() {
 //   Tertiary:  width ascending
 // ===========================================================================
 
-void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const {
+void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
+{
   auto cellOveruse = [this](int idx) {
     const HLCell& cell = cells_[idx];
     int ov = 0;
@@ -340,7 +355,8 @@ void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const {
 // new overlaps.
 // ===========================================================================
 
-void HybridLegalizer::greedyImprove(int passes) {
+void HybridLegalizer::greedyImprove(int passes)
+{
   std::vector<int> order;
   order.reserve(cells_.size());
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
@@ -411,22 +427,27 @@ void HybridLegalizer::greedyImprove(int passes) {
 // without exceeding the current maximum displacement.
 // ===========================================================================
 
-void HybridLegalizer::cellSwap() {
+void HybridLegalizer::cellSwap()
+{
   const int maxDisp = maxDisplacement();
 
   // Group movable cells by (height, width, railType).
-  struct GroupKey {
+  struct GroupKey
+  {
     int height;
     int width;
     HLPowerRailType rail;
-    bool operator==(const GroupKey& o) const {
+    bool operator==(const GroupKey& o) const
+    {
       return height == o.height && width == o.width && rail == o.rail;
     }
   };
-  struct GroupKeyHash {
-    size_t operator()(const GroupKey& k) const {
-      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8) ^
-             (std::hash<int>()(static_cast<int>(k.rail)) << 16);
+  struct GroupKeyHash
+  {
+    size_t operator()(const GroupKey& k) const
+    {
+      return std::hash<int>()(k.height) ^ (std::hash<int>()(k.width) << 8)
+             ^ (std::hash<int>()(static_cast<int>(k.rail)) << 16);
     }
   };
 
@@ -447,10 +468,10 @@ void HybridLegalizer::cellSwap() {
         HLCell& cb = cells_[b];
 
         const int dispBefore = ca.displacement() + cb.displacement();
-        const int newDispA =
-            std::abs(cb.x - ca.initX) + std::abs(cb.y - ca.initY);
-        const int newDispB =
-            std::abs(ca.x - cb.initX) + std::abs(ca.y - cb.initY);
+        const int newDispA
+            = std::abs(cb.x - ca.initX) + std::abs(cb.y - ca.initY);
+        const int newDispB
+            = std::abs(ca.x - cb.initX) + std::abs(ca.y - cb.initY);
         const int dispAfter = newDispA + newDispB;
 
         if (dispAfter >= dispBefore) {

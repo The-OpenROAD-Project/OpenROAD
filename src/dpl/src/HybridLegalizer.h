@@ -44,6 +44,8 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
 #include <utility>
 #include <vector>
@@ -73,19 +75,25 @@ inline constexpr int kIth = 300;           // pf ramp-up threshold iteration
 // ---------------------------------------------------------------------------
 // HLPowerRailType
 // ---------------------------------------------------------------------------
-enum class HLPowerRailType { kVss = 0, kVdd = 1 };
+enum class HLPowerRailType
+{
+  kVss = 0,
+  kVdd = 1
+};
 
 // ---------------------------------------------------------------------------
 // FenceRect / FenceRegion
 // ---------------------------------------------------------------------------
-struct FenceRect {
+struct FenceRect
+{
   int xlo{0};
   int ylo{0};
   int xhi{0};
   int yhi{0};
 };
 
-struct FenceRegion {
+struct FenceRegion
+{
   int id{-1};
   std::vector<FenceRect> rects;
 
@@ -99,7 +107,8 @@ struct FenceRegion {
 // ---------------------------------------------------------------------------
 // HLCell – per-instance legalisation state
 // ---------------------------------------------------------------------------
-struct HLCell {
+struct HLCell
+{
   odb::dbInst* inst{nullptr};
 
   int initX{0};   // position after global placement (sites)
@@ -115,7 +124,8 @@ struct HLCell {
   bool flippable{true};  // odd-height cells may flip vertically
   bool legal{false};     // updated each negotiation iteration
 
-  [[nodiscard]] int displacement() const {
+  [[nodiscard]] int displacement() const
+  {
     return std::abs(x - initX) + std::abs(y - initY);
   }
 };
@@ -123,7 +133,8 @@ struct HLCell {
 // ---------------------------------------------------------------------------
 // HLGrid – one placement site
 // ---------------------------------------------------------------------------
-struct HLGrid {
+struct HLGrid
+{
   int usage{0};
   int capacity{1};  // 0 = blockage
   double histCost{0.0};
@@ -134,7 +145,8 @@ struct HLGrid {
 // ---------------------------------------------------------------------------
 // AbacusCluster – transient state during the Abacus row sweep
 // ---------------------------------------------------------------------------
-struct AbacusCluster {
+struct AbacusCluster
+{
   std::vector<int> cellIndices;  // ordered left-to-right within the row
   double optX{0.0};              // solved optimal left-edge (fractional)
   double totalWeight{0.0};
@@ -145,7 +157,8 @@ struct AbacusCluster {
 // ---------------------------------------------------------------------------
 // HybridLegalizer
 // ---------------------------------------------------------------------------
-class HybridLegalizer {
+class HybridLegalizer
+{
  public:
   HybridLegalizer(odb::dbDatabase* db, utl::Logger* logger);
   ~HybridLegalizer() = default;
@@ -189,8 +202,9 @@ class HybridLegalizer {
 
   // Negotiation pass
   void runNegotiation(const std::vector<int>& illegalCells);
-  int negotiationIter(
-      std::vector<int>& activeCells, int iter, bool updateHistory);
+  int negotiationIter(std::vector<int>& activeCells,
+                      int iter,
+                      bool updateHistory);
   void ripUp(int cellIdx);
   void place(int cellIdx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cellIdx) const;
@@ -208,15 +222,18 @@ class HybridLegalizer {
   [[nodiscard]] bool isValidRow(int rowIdx, const HLCell& cell) const;
   [[nodiscard]] bool respectsFence(int cellIdx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
-  [[nodiscard]] std::pair<int, int> snapToLegal(
-      int cellIdx, int x, int y) const;
+  [[nodiscard]] std::pair<int, int> snapToLegal(int cellIdx,
+                                                int x,
+                                                int y) const;
 
   // HLGrid helpers
   HLGrid& gridAt(int x, int y) { return grid_[y * gridW_ + x]; }
-  [[nodiscard]] const HLGrid& gridAt(int x, int y) const {
+  [[nodiscard]] const HLGrid& gridAt(int x, int y) const
+  {
     return grid_[y * gridW_ + x];
   }
-  [[nodiscard]] bool gridExists(int x, int y) const {
+  [[nodiscard]] bool gridExists(int x, int y) const
+  {
     return x >= 0 && x < gridW_ && y >= 0 && y < gridH_;
   }
   void addUsage(int cellIdx, int delta);

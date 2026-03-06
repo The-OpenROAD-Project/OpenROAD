@@ -38,11 +38,14 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <limits>
-#include <ranges>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace dpl {
 
@@ -50,7 +53,8 @@ namespace dpl {
 // FenceRegion
 // ===========================================================================
 
-bool FenceRegion::contains(int x, int y, int w, int h) const {
+bool FenceRegion::contains(int x, int y, int w, int h) const
+{
   for (const auto& r : rects) {
     if (x >= r.xlo && y >= r.ylo && x + w <= r.xhi && y + h <= r.yhi) {
       return true;
@@ -59,7 +63,8 @@ bool FenceRegion::contains(int x, int y, int w, int h) const {
   return false;
 }
 
-FenceRect FenceRegion::nearestRect(int cx, int cy) const {
+FenceRect FenceRegion::nearestRect(int cx, int cy) const
+{
   assert(!rects.empty());
   const FenceRect* best = rects.data();
   int bestDist = std::numeric_limits<int>::max();
@@ -80,14 +85,21 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const {
 // ===========================================================================
 
 HybridLegalizer::HybridLegalizer(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger) {}
+    : db_(db), logger_(logger)
+{
+}
 
 // ===========================================================================
 // legalize – top-level entry point
 // ===========================================================================
 
-void HybridLegalizer::legalize() {
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: starting legalization.");
+void HybridLegalizer::legalize()
+{
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "HybridLegalizer: starting legalization.");
 
   initFromDb();
   buildGrid();
@@ -103,7 +115,8 @@ void HybridLegalizer::legalize() {
              gridH_);
 
   // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
+  debugPrint(
+      logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
   std::vector<int> illegal = runAbacus();
 
   debugPrint(logger_,
@@ -125,7 +138,8 @@ void HybridLegalizer::legalize() {
   }
 
   // --- Phase 3: Post-optimisation ------------------------------------------
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
+  debugPrint(
+      logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
   greedyImprove(5);
   cellSwap();
   greedyImprove(1);
@@ -155,7 +169,8 @@ void HybridLegalizer::legalize() {
 // Initialisation
 // ===========================================================================
 
-void HybridLegalizer::initFromDb() {
+void HybridLegalizer::initFromDb()
+{
   auto* block = db_->getChip()->getBlock();
 
   const odb::Rect coreArea = block->getCoreArea();
@@ -194,10 +209,9 @@ void HybridLegalizer::initFromDb() {
 
     HLCell cell;
     cell.inst = inst;
-    cell.fixed =
-        (status == odb::dbPlacementStatus::FIRM ||
-         status == odb::dbPlacementStatus::LOCKED ||
-         status == odb::dbPlacementStatus::COVER);
+    cell.fixed = (status == odb::dbPlacementStatus::FIRM
+                  || status == odb::dbPlacementStatus::LOCKED
+                  || status == odb::dbPlacementStatus::COVER);
 
     int dbX = 0;
     int dbY = 0;
@@ -224,24 +238,25 @@ void HybridLegalizer::initFromDb() {
   }
 }
 
-HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const {
+HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const
+{
   if (rowIdx >= 0 && rowIdx < static_cast<int>(rowRail_.size())) {
     return rowRail_[rowIdx];
   }
   return HLPowerRailType::kVss;
 }
 
-void HybridLegalizer::buildGrid() {
+void HybridLegalizer::buildGrid()
+{
   gridW_ = (dieXhi_ - dieXlo_) / siteWidth_;
   gridH_ = (dieYhi_ - dieYlo_) / rowHeight_;
-  grid_.assign(static_cast<size_t>(gridW_ * gridH_), HLGrid{});
+  grid_.assign(static_cast<size_t>(gridW_) * gridH_, HLGrid{});
 
   // Mark blockages and record fixed-cell usage in one pass.
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
+  for (const HLCell& cell : cells_) {
+    if (!cell.fixed) {
       continue;
     }
-    const HLCell& cell = cells_[i];
     for (int dy = 0; dy < cell.height; ++dy) {
       for (int dx = 0; dx < cell.width; ++dx) {
         const int gx = cell.x + dx;
@@ -255,7 +270,8 @@ void HybridLegalizer::buildGrid() {
   }
 }
 
-void HybridLegalizer::initFenceRegions() {
+void HybridLegalizer::initFenceRegions()
+{
   fences_.clear();  // Guard against double-population if legalize() is re-run.
 
   auto* block = db_->getChip()->getBlock();
@@ -301,7 +317,8 @@ void HybridLegalizer::initFenceRegions() {
 // HLGrid helpers
 // ===========================================================================
 
-void HybridLegalizer::addUsage(int cellIdx, int delta) {
+void HybridLegalizer::addUsage(int cellIdx, int delta)
+{
   const HLCell& cell = cells_[cellIdx];
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int dx = 0; dx < cell.width; ++dx) {
@@ -318,11 +335,13 @@ void HybridLegalizer::addUsage(int cellIdx, int delta) {
 // Constraint helpers
 // ===========================================================================
 
-bool HybridLegalizer::inDie(int x, int y, int w, int h) const {
+bool HybridLegalizer::inDie(int x, int y, int w, int h) const
+{
   return x >= 0 && y >= 0 && x + w <= gridW_ && y + h <= gridH_;
 }
 
-bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const {
+bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const
+{
   if (rowIdx < 0 || rowIdx + cell.height > gridH_) {
     return false;
   }
@@ -336,7 +355,8 @@ bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const {
   return rowBot == cell.railType;
 }
 
-bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const {
+bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const
+{
   const HLCell& cell = cells_[cellIdx];
   if (cell.fenceId < 0) {
     // Default region: must not overlap any named fence.
@@ -350,8 +370,10 @@ bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const {
   return fences_[cell.fenceId].contains(x, y, cell.width, cell.height);
 }
 
-std::pair<int, int> HybridLegalizer::snapToLegal(
-    int cellIdx, int x, int y) const {
+std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
+                                                 int x,
+                                                 int y) const
+{
   const HLCell& cell = cells_[cellIdx];
   x = std::max(0, std::min(x, gridW_ - cell.width));
 
@@ -373,7 +395,8 @@ std::pair<int, int> HybridLegalizer::snapToLegal(
 // Abacus pass
 // ===========================================================================
 
-std::vector<int> HybridLegalizer::runAbacus() {
+std::vector<int> HybridLegalizer::runAbacus()
+{
   // Build sorted order: ascending y then x.
   std::vector<int> order;
   order.reserve(cells_.size());
@@ -431,7 +454,8 @@ std::vector<int> HybridLegalizer::runAbacus() {
   return illegal;
 }
 
-void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow) {
+void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
+{
   std::vector<AbacusCluster> clusters;
 
   for (int idx : cellsInRow) {
@@ -463,8 +487,9 @@ void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow) {
   }
 }
 
-void HybridLegalizer::collapseClusters(
-    std::vector<AbacusCluster>& clusters, int /*rowIdx*/) {
+void HybridLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
+                                       int /*rowIdx*/)
+{
   while (clusters.size() >= 2) {
     AbacusCluster& last = clusters[clusters.size() - 1];
     AbacusCluster& prev = clusters[clusters.size() - 2];
@@ -502,8 +527,9 @@ void HybridLegalizer::collapseClusters(
   }
 }
 
-void HybridLegalizer::assignClusterPositions(
-    const AbacusCluster& cluster, int rowIdx) {
+void HybridLegalizer::assignClusterPositions(const AbacusCluster& cluster,
+                                             int rowIdx)
+{
   int curX = static_cast<int>(std::round(cluster.optX));
   curX = std::max(0, std::min(curX, gridW_ - cluster.totalWidth));
 
@@ -514,7 +540,8 @@ void HybridLegalizer::assignClusterPositions(
   }
 }
 
-bool HybridLegalizer::isCellLegal(int cellIdx) const {
+bool HybridLegalizer::isCellLegal(int cellIdx) const
+{
   const HLCell& cell = cells_[cellIdx];
   if (!inDie(cell.x, cell.y, cell.width, cell.height)) {
     return false;
@@ -539,7 +566,8 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const {
 // Metrics
 // ===========================================================================
 
-double HybridLegalizer::avgDisplacement() const {
+double HybridLegalizer::avgDisplacement() const
+{
   double sum = 0.0;
   int count = 0;
   for (const auto& cell : cells_) {
@@ -551,7 +579,8 @@ double HybridLegalizer::avgDisplacement() const {
   return count > 0 ? sum / count : 0.0;
 }
 
-int HybridLegalizer::maxDisplacement() const {
+int HybridLegalizer::maxDisplacement() const
+{
   int mx = 0;
   for (const auto& cell : cells_) {
     if (!cell.fixed) {
@@ -561,7 +590,8 @@ int HybridLegalizer::maxDisplacement() const {
   return mx;
 }
 
-int HybridLegalizer::numViolations() const {
+int HybridLegalizer::numViolations() const
+{
   int count = 0;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed && !isCellLegal(i)) {
