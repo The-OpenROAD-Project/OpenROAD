@@ -362,152 +362,172 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 
  public:
   WebSocketSession(tcp::socket&& socket,
-             std::shared_ptr<TileGenerator> generator,
-             std::shared_ptr<TclEvaluator> tcl_eval,
-             std::shared_ptr<TimingReport> timing_report,
-             utl::Logger* logger)
-      : ws_(std::move(socket)),
-        logger_(logger),
-        select_handler_(generator),
-        tcl_handler_(tcl_eval),
-        timing_handler_(generator, timing_report, tcl_eval),
-        tile_handler_(generator),
-        strand_(net::make_strand(ws_.get_executor()))
-  {
-  }
+                   std::shared_ptr<TileGenerator> generator,
+                   std::shared_ptr<TclEvaluator> tcl_eval,
+                   std::shared_ptr<TimingReport> timing_report,
+                   utl::Logger* logger);
 
-  // Accept the WebSocket upgrade using the already-read HTTP request
-  void run(http::request<http::string_body>&& req)
-  {
-    ws_.set_option(
-        websocket::stream_base::timeout::suggested(beast::role_type::server));
-    ws_.set_option(
-        websocket::stream_base::decorator([](websocket::response_type& res) {
-          res.set(http::field::server, "OpenROAD WebSocket Server");
-        }));
-
-    ws_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
-      self->on_accept(ec);
-    });
-  }
+  void run(http::request<http::string_body>&& req);
 
  private:
-  void on_accept(beast::error_code ec)
-  {
-    if (ec) {
-      debugPrint(logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
-      return;
-    }
-    do_read();
-  }
-
-  void do_read()
-  {
-    ws_.async_read(
-        buffer_,
-        [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          self->on_read(ec);
-        });
-  }
-
-  void on_read(beast::error_code ec)
-  {
-    if (ec) {
-      if (ec != websocket::error::closed) {
-        debugPrint(logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
-      }
-      return;
-    }
-
-    const std::string msg = beast::buffers_to_string(buffer_.data());
-    buffer_.consume(buffer_.size());
-
-    const WsRequest req = parse_ws_request(msg);
-    auto self = shared_from_this();
-
-    switch (req.type) {
-      case WsRequest::SELECT:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->select_handler_.handleSelect(req, self->state_));
-        });
-        break;
-      case WsRequest::INSPECT:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->select_handler_.handleInspect(req, self->state_));
-        });
-        break;
-      case WsRequest::HOVER:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->select_handler_.handleHover(req, self->state_));
-        });
-        break;
-      case WsRequest::TCL_EVAL:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(self->tcl_handler_.handleTclEval(req));
-        });
-        break;
-      case WsRequest::TIMING_REPORT:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->timing_handler_.handleTimingReport(req));
-        });
-        break;
-      case WsRequest::TIMING_HIGHLIGHT:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->timing_handler_.handleTimingHighlight(req, self->state_));
-        });
-        break;
-      default:
-        net::post(ws_.get_executor(), [self, req]() {
-          self->queue_response(
-              self->tile_handler_.handleTile(req, self->state_));
-        });
-        break;
-    }
-
-    do_read();
-  }
-
-  void queue_response(const WsResponse& resp)
-  {
-    std::vector<unsigned char> frame = serialize_response(resp);
-
-    // Post to the strand to serialize write queue access
-    net::post(strand_,
-              [self = shared_from_this(), frame = std::move(frame)]() mutable {
-                self->write_queue_.push_back(std::move(frame));
-                if (!self->writing_) {
-                  self->do_write();
-                }
-              });
-  }
-
-  void do_write()
-  {
-    if (write_queue_.empty()) {
-      writing_ = false;
-      return;
-    }
-    writing_ = true;
-    ws_.binary(true);
-    ws_.async_write(
-        net::buffer(write_queue_.front()),
-        [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          net::post(self->strand_, [self, ec]() {
-            if (ec) {
-              debugPrint(self->logger_, utl::WEB, "ws", 1, "ws write error: {}", ec.message());
-              return;
-            }
-            self->write_queue_.pop_front();
-            self->do_write();
-          });
-        });
-  }
+  void on_accept(beast::error_code ec);
+  void do_read();
+  void on_read(beast::error_code ec);
+  void queue_response(const WsResponse& resp);
+  void do_write();
 };
+
+WebSocketSession::WebSocketSession(
+    tcp::socket&& socket,
+    std::shared_ptr<TileGenerator> generator,
+    std::shared_ptr<TclEvaluator> tcl_eval,
+    std::shared_ptr<TimingReport> timing_report,
+    utl::Logger* logger)
+    : ws_(std::move(socket)),
+      logger_(logger),
+      select_handler_(generator),
+      tcl_handler_(tcl_eval),
+      timing_handler_(generator, timing_report, tcl_eval),
+      tile_handler_(generator),
+      strand_(net::make_strand(ws_.get_executor()))
+{
+}
+
+void WebSocketSession::run(http::request<http::string_body>&& req)
+{
+  ws_.set_option(
+      websocket::stream_base::timeout::suggested(beast::role_type::server));
+  ws_.set_option(
+      websocket::stream_base::decorator([](websocket::response_type& res) {
+        res.set(http::field::server, "OpenROAD WebSocket Server");
+      }));
+
+  ws_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
+    self->on_accept(ec);
+  });
+}
+
+void WebSocketSession::on_accept(beast::error_code ec)
+{
+  if (ec) {
+    debugPrint(
+        logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
+    return;
+  }
+  do_read();
+}
+
+void WebSocketSession::do_read()
+{
+  ws_.async_read(
+      buffer_,
+      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        self->on_read(ec);
+      });
+}
+
+void WebSocketSession::on_read(beast::error_code ec)
+{
+  if (ec) {
+    if (ec != websocket::error::closed) {
+      debugPrint(
+          logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
+    }
+    return;
+  }
+
+  const std::string msg = beast::buffers_to_string(buffer_.data());
+  buffer_.consume(buffer_.size());
+
+  const WsRequest req = parse_ws_request(msg);
+  auto self = shared_from_this();
+
+  switch (req.type) {
+    case WsRequest::SELECT:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleSelect(req, self->state_));
+      });
+      break;
+    case WsRequest::INSPECT:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleInspect(req, self->state_));
+      });
+      break;
+    case WsRequest::HOVER:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleHover(req, self->state_));
+      });
+      break;
+    case WsRequest::TCL_EVAL:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(self->tcl_handler_.handleTclEval(req));
+      });
+      break;
+    case WsRequest::TIMING_REPORT:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(self->timing_handler_.handleTimingReport(req));
+      });
+      break;
+    case WsRequest::TIMING_HIGHLIGHT:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->timing_handler_.handleTimingHighlight(req, self->state_));
+      });
+      break;
+    default:
+      net::post(ws_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->tile_handler_.handleTile(req, self->state_));
+      });
+      break;
+  }
+
+  do_read();
+}
+
+void WebSocketSession::queue_response(const WsResponse& resp)
+{
+  std::vector<unsigned char> frame = serialize_response(resp);
+
+  // Post to the strand to serialize write queue access
+  net::post(strand_,
+            [self = shared_from_this(), frame = std::move(frame)]() mutable {
+              self->write_queue_.push_back(std::move(frame));
+              if (!self->writing_) {
+                self->do_write();
+              }
+            });
+}
+
+void WebSocketSession::do_write()
+{
+  if (write_queue_.empty()) {
+    writing_ = false;
+    return;
+  }
+  writing_ = true;
+  ws_.binary(true);
+  ws_.async_write(
+      net::buffer(write_queue_.front()),
+      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        net::post(self->strand_, [self, ec]() {
+          if (ec) {
+            debugPrint(self->logger_,
+                       utl::WEB,
+                       "ws",
+                       1,
+                       "ws write error: {}",
+                       ec.message());
+            return;
+          }
+          self->write_queue_.pop_front();
+          self->do_write();
+        });
+      });
+}
 
 //------------------------------------------------------------------------------
 // HTTP session - handles traditional HTTP connections
@@ -525,88 +545,103 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
 
  public:
   HttpSession(tcp::socket&& socket,
-          std::shared_ptr<TileGenerator> generator,
-          std::string doc_root,
-          utl::Logger* logger)
-      : stream_(std::move(socket)),
-        generator_(generator),
-        doc_root_(std::move(doc_root)),
-        logger_(logger)
-  {
-  }
+              std::shared_ptr<TileGenerator> generator,
+              std::string doc_root,
+              utl::Logger* logger);
 
   void run() { do_read(); }
 
-  // Entry point when the first request was already read by DetectSession
   void run_with_request(http::request<http::string_body> req,
-                        beast::flat_buffer buffer)
-  {
-    req_ = std::move(req);
-    buffer_ = std::move(buffer);
-    on_read({});
-  }
+                        beast::flat_buffer buffer);
 
  private:
-  void do_read()
-  {
-    req_ = {};
-    http::async_read(
-        stream_,
-        buffer_,
-        req_,
-        [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          self->on_read(ec);
-        });
-  }
-
-  void on_read(beast::error_code ec)
-  {
-    if (ec == http::error::end_of_stream) {
-      return do_close();
-    }
-    if (ec) {
-      debugPrint(logger_, utl::WEB, "http", 1, "http read error: {}", ec.message());
-      return;
-    }
-
-    res_ = std::make_shared<http::response<http::string_body>>(
-        handle_request(std::move(req_), generator_, doc_root_));
-    do_write();
-  }
-
-  void do_write()
-  {
-    http::async_write(
-        stream_,
-        *res_,
-        [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          self->on_write(ec);
-        });
-  }
-
-  void on_write(beast::error_code ec)
-  {
-    if (ec) {
-      debugPrint(logger_, utl::WEB, "http", 1, "http write error: {}", ec.message());
-      return;
-    }
-
-    bool keep_alive = res_->keep_alive();
-    res_ = nullptr;
-
-    if (keep_alive) {
-      do_read();
-    } else {
-      do_close();
-    }
-  }
-
-  void do_close()
-  {
-    beast::error_code ec;
-    stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
-  }
+  void do_read();
+  void on_read(beast::error_code ec);
+  void do_write();
+  void on_write(beast::error_code ec);
+  void do_close();
 };
+
+HttpSession::HttpSession(tcp::socket&& socket,
+                         std::shared_ptr<TileGenerator> generator,
+                         std::string doc_root,
+                         utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(generator),
+      doc_root_(std::move(doc_root)),
+      logger_(logger)
+{
+}
+
+void HttpSession::run_with_request(http::request<http::string_body> req,
+                                   beast::flat_buffer buffer)
+{
+  req_ = std::move(req);
+  buffer_ = std::move(buffer);
+  on_read({});
+}
+
+void HttpSession::do_read()
+{
+  req_ = {};
+  http::async_read(
+      stream_,
+      buffer_,
+      req_,
+      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        self->on_read(ec);
+      });
+}
+
+void HttpSession::on_read(beast::error_code ec)
+{
+  if (ec == http::error::end_of_stream) {
+    return do_close();
+  }
+  if (ec) {
+    debugPrint(
+        logger_, utl::WEB, "http", 1, "http read error: {}", ec.message());
+    return;
+  }
+
+  res_ = std::make_shared<http::response<http::string_body>>(
+      handle_request(std::move(req_), generator_, doc_root_));
+  do_write();
+}
+
+void HttpSession::do_write()
+{
+  http::async_write(
+      stream_,
+      *res_,
+      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        self->on_write(ec);
+      });
+}
+
+void HttpSession::on_write(beast::error_code ec)
+{
+  if (ec) {
+    debugPrint(
+        logger_, utl::WEB, "http", 1, "http write error: {}", ec.message());
+    return;
+  }
+
+  bool keep_alive = res_->keep_alive();
+  res_ = nullptr;
+
+  if (keep_alive) {
+    do_read();
+  } else {
+    do_close();
+  }
+}
+
+void HttpSession::do_close()
+{
+  beast::error_code ec;
+  stream_.socket().shutdown(tcp::socket::shutdown_send, ec);
+}
 
 //------------------------------------------------------------------------------
 // Detect session - reads first HTTP request, routes to WS or HTTP session
@@ -625,52 +660,68 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
 
  public:
   DetectSession(tcp::socket&& socket,
-                 std::shared_ptr<TileGenerator> generator,
-                 std::shared_ptr<TclEvaluator> tcl_eval,
-                 std::shared_ptr<TimingReport> timing_report,
-                 std::string doc_root,
-                 utl::Logger* logger)
-      : stream_(std::move(socket)),
-        generator_(std::move(generator)),
-        tcl_eval_(std::move(tcl_eval)),
-        timing_report_(std::move(timing_report)),
-        doc_root_(std::move(doc_root)),
-        logger_(logger)
-  {
-  }
+                std::shared_ptr<TileGenerator> generator,
+                std::shared_ptr<TclEvaluator> tcl_eval,
+                std::shared_ptr<TimingReport> timing_report,
+                std::string doc_root,
+                utl::Logger* logger);
 
-  void run()
-  {
-    http::async_read(
-        stream_,
-        buffer_,
-        req_,
-        [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          self->on_read(ec);
-        });
-  }
+  void run();
 
  private:
-  void on_read(beast::error_code ec)
-  {
-    if (ec) {
-      debugPrint(logger_, utl::WEB, "http", 1, "detect read error: {}", ec.message());
-      return;
-    }
-
-    if (websocket::is_upgrade(req_)) {
-      // WebSocket upgrade - hand off to WebSocketSession
-      auto ws = std::make_shared<WebSocketSession>(
-          stream_.release_socket(), generator_, tcl_eval_, timing_report_, logger_);
-      ws->run(std::move(req_));
-    } else {
-      // Regular HTTP - hand off to session with already-read request
-      auto s = std::make_shared<HttpSession>(
-          stream_.release_socket(), generator_, doc_root_, logger_);
-      s->run_with_request(std::move(req_), std::move(buffer_));
-    }
-  }
+  void on_read(beast::error_code ec);
 };
+
+DetectSession::DetectSession(tcp::socket&& socket,
+                             std::shared_ptr<TileGenerator> generator,
+                             std::shared_ptr<TclEvaluator> tcl_eval,
+                             std::shared_ptr<TimingReport> timing_report,
+                             std::string doc_root,
+                             utl::Logger* logger)
+    : stream_(std::move(socket)),
+      generator_(std::move(generator)),
+      tcl_eval_(std::move(tcl_eval)),
+      timing_report_(std::move(timing_report)),
+      doc_root_(std::move(doc_root)),
+      logger_(logger)
+{
+}
+
+void DetectSession::run()
+{
+  http::async_read(
+      stream_,
+      buffer_,
+      req_,
+      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+        self->on_read(ec);
+      });
+}
+
+void DetectSession::on_read(beast::error_code ec)
+{
+  if (ec) {
+    debugPrint(
+        logger_, utl::WEB, "http", 1, "detect read error: {}", ec.message());
+    return;
+  }
+
+  if (websocket::is_upgrade(req_)) {
+    // WebSocket upgrade - hand off to WebSocketSession
+    auto ws = std::make_shared<WebSocketSession>(
+        stream_.release_socket(),
+        generator_,
+        tcl_eval_,
+        timing_report_,
+        logger_);
+    ws->run(std::move(req_));
+  } else {
+    // Regular HTTP - hand off to session with already-read request
+    auto s = std::make_shared<HttpSession>(
+        stream_.release_socket(), generator_, doc_root_, logger_);
+    s->run_with_request(std::move(req_), std::move(buffer_));
+  }
+}
 
 //------------------------------------------------------------------------------
 // Listener - accepts incoming connections
@@ -693,63 +744,83 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
            std::string doc_root,
-           utl::Logger* logger)
-      : ioc_(ioc),
-        acceptor_(ioc),
-        generator_(generator),
-        tcl_eval_(std::move(tcl_eval)),
-        timing_report_(std::move(timing_report)),
-        doc_root_(std::move(doc_root)),
-        logger_(logger)
-  {
-    beast::error_code ec;
-
-    acceptor_.open(endpoint.protocol(), ec);
-    if (ec) {
-      return;
-    }
-
-    acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-    if (ec) {
-      return;
-    }
-
-    acceptor_.bind(endpoint, ec);
-    if (ec) {
-      return;
-    }
-
-    acceptor_.listen(net::socket_base::max_listen_connections, ec);
-    if (ec) {
-      return;
-    }
-  }
+           utl::Logger* logger);
 
   void run() { do_accept(); }
 
  private:
-  void do_accept()
-  {
-    acceptor_.async_accept(
-        ioc_,
-        [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
-          self->on_accept(ec, std::move(socket));
-        });
+  void do_accept();
+  void on_accept(beast::error_code ec, tcp::socket socket);
+};
+
+Listener::Listener(net::io_context& ioc,
+                   tcp::endpoint endpoint,
+                   std::shared_ptr<TileGenerator> generator,
+                   std::shared_ptr<TclEvaluator> tcl_eval,
+                   std::shared_ptr<TimingReport> timing_report,
+                   std::string doc_root,
+                   utl::Logger* logger)
+    : ioc_(ioc),
+      acceptor_(ioc),
+      generator_(generator),
+      tcl_eval_(std::move(tcl_eval)),
+      timing_report_(std::move(timing_report)),
+      doc_root_(std::move(doc_root)),
+      logger_(logger)
+{
+  beast::error_code ec;
+
+  acceptor_.open(endpoint.protocol(), ec);
+  if (ec) {
+    return;
   }
 
-  void on_accept(beast::error_code ec, tcp::socket socket)
-  {
-    if (ec) {
-      debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
-    } else {
-      // Route through DetectSession to handle both HTTP and WebSocket
-      std::make_shared<DetectSession>(
-          std::move(socket), generator_, tcl_eval_, timing_report_, doc_root_, logger_)
-          ->run();
-    }
-    do_accept();
+  acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+  if (ec) {
+    return;
   }
-};
+
+  acceptor_.bind(endpoint, ec);
+  if (ec) {
+    return;
+  }
+
+  acceptor_.listen(net::socket_base::max_listen_connections, ec);
+  if (ec) {
+    return;
+  }
+}
+
+void Listener::do_accept()
+{
+  acceptor_.async_accept(
+      ioc_,
+      [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
+        self->on_accept(ec, std::move(socket));
+      });
+}
+
+void Listener::on_accept(beast::error_code ec, tcp::socket socket)
+{
+  if (ec) {
+    debugPrint(
+        logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
+  } else {
+    // Route through DetectSession to handle both HTTP and WebSocket
+    std::make_shared<DetectSession>(std::move(socket),
+                                    generator_,
+                                    tcl_eval_,
+                                    timing_report_,
+                                    doc_root_,
+                                    logger_)
+        ->run();
+  }
+  do_accept();
+}
+
+//------------------------------------------------------------------------------
+// WebServer
+//------------------------------------------------------------------------------
 
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
@@ -785,14 +856,13 @@ void WebServer::serve(const std::string& doc_root)
 
     net::io_context ioc{num_threads};
 
-    std::make_shared<Listener>(
-        ioc,
-        tcp::endpoint{address, port},
-        generator_,
-        tcl_eval,
-        timing_report,
-        doc_root,
-        logger_)
+    std::make_shared<Listener>(ioc,
+                                tcp::endpoint{address, port},
+                                generator_,
+                                tcl_eval,
+                                timing_report,
+                                doc_root,
+                                logger_)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);
