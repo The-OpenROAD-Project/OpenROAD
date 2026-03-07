@@ -121,7 +121,7 @@ class RamGen
                                     std::vector<odb::dbNet*>& data_output);
   void makeCellByte(
       int start_idx,
-      const std::string& prefix,
+      int row_idx,
       int read_ports,
       odb::dbNet* clock,
       odb::dbNet* write_enable,
@@ -131,7 +131,7 @@ class RamGen
 
   void makeWordSlice(
       int word_number,
-      const std::string& prefix,
+      int row_idx,
       int read_ports,
       odb::dbNet* clock,
       odb::dbNet* write_enable,
