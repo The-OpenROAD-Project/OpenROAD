@@ -6009,8 +6009,10 @@ void GlobalRouter::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 void GlobalRouter::initFastRouteIncr(std::vector<Net*>& nets)
 {
   initNetlist(nets, true);
-  fastroute_->initAuxVar();
   fastroute_->setIncrementalGrt(true);
+  if (!initialized_) {
+    fastroute_->initAuxVar();
+  }
 }
 
 GRouteDbCbk::GRouteDbCbk(GlobalRouter* grouter) : grouter_(grouter)
