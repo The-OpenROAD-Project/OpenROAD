@@ -687,7 +687,7 @@ http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
-class ws_session : public std::enable_shared_from_this<ws_session>
+class WsSession : public std::enable_shared_from_this<WsSession>
 {
   websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
@@ -712,7 +712,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
   bool writing_ = false;
 
  public:
-  ws_session(tcp::socket&& socket,
+  WsSession(tcp::socket&& socket,
              std::shared_ptr<TileGenerator> generator,
              std::shared_ptr<TclEvaluator> tcl_eval,
              std::shared_ptr<TimingReport> timing_report)
@@ -1214,7 +1214,7 @@ class ws_session : public std::enable_shared_from_this<ws_session>
 // HTTP session - handles traditional HTTP connections
 //------------------------------------------------------------------------------
 
-class session : public std::enable_shared_from_this<session>
+class HttpSession : public std::enable_shared_from_this<HttpSession>
 {
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
@@ -1224,7 +1224,7 @@ class session : public std::enable_shared_from_this<session>
   std::string doc_root_;
 
  public:
-  session(tcp::socket&& socket,
+  HttpSession(tcp::socket&& socket,
           std::shared_ptr<TileGenerator> generator,
           std::string doc_root)
       : stream_(std::move(socket)),
@@ -1235,7 +1235,7 @@ class session : public std::enable_shared_from_this<session>
 
   void run() { do_read(); }
 
-  // Entry point when the first request was already read by detect_session
+  // Entry point when the first request was already read by DetectSession
   void run_with_request(http::request<http::string_body> req,
                         beast::flat_buffer buffer)
   {
@@ -1310,7 +1310,7 @@ class session : public std::enable_shared_from_this<session>
 // Detect session - reads first HTTP request, routes to WS or HTTP session
 //------------------------------------------------------------------------------
 
-class detect_session : public std::enable_shared_from_this<detect_session>
+class DetectSession : public std::enable_shared_from_this<DetectSession>
 {
   beast::tcp_stream stream_;
   beast::flat_buffer buffer_;
@@ -1321,7 +1321,7 @@ class detect_session : public std::enable_shared_from_this<detect_session>
   std::string doc_root_;
 
  public:
-  detect_session(tcp::socket&& socket,
+  DetectSession(tcp::socket&& socket,
                  std::shared_ptr<TileGenerator> generator,
                  std::shared_ptr<TclEvaluator> tcl_eval,
                  std::shared_ptr<TimingReport> timing_report,
@@ -1354,13 +1354,13 @@ class detect_session : public std::enable_shared_from_this<detect_session>
     }
 
     if (websocket::is_upgrade(req_)) {
-      // WebSocket upgrade - hand off to ws_session
-      auto ws = std::make_shared<ws_session>(
+      // WebSocket upgrade - hand off to WsSession
+      auto ws = std::make_shared<WsSession>(
           stream_.release_socket(), generator_, tcl_eval_, timing_report_);
       ws->run(std::move(req_));
     } else {
       // Regular HTTP - hand off to session with already-read request
-      auto s = std::make_shared<session>(
+      auto s = std::make_shared<HttpSession>(
           stream_.release_socket(), generator_, doc_root_);
       s->run_with_request(std::move(req_), std::move(buffer_));
     }
@@ -1371,7 +1371,7 @@ class detect_session : public std::enable_shared_from_this<detect_session>
 // Listener - accepts incoming connections
 //------------------------------------------------------------------------------
 
-class listener : public std::enable_shared_from_this<listener>
+class Listener : public std::enable_shared_from_this<Listener>
 {
   net::io_context& ioc_;
   tcp::acceptor acceptor_;
@@ -1381,7 +1381,7 @@ class listener : public std::enable_shared_from_this<listener>
   std::string doc_root_;
 
  public:
-  listener(net::io_context& ioc,
+  Listener(net::io_context& ioc,
            tcp::endpoint endpoint,
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
@@ -1434,8 +1434,8 @@ class listener : public std::enable_shared_from_this<listener>
     if (ec) {
       std::cerr << "Listener accept error: " << ec.message() << "\n";
     } else {
-      // Route through detect_session to handle both HTTP and WebSocket
-      std::make_shared<detect_session>(
+      // Route through DetectSession to handle both HTTP and WebSocket
+      std::make_shared<DetectSession>(
           std::move(socket), generator_, tcl_eval_, timing_report_, doc_root_)
           ->run();
     }
@@ -1477,7 +1477,7 @@ void WebServer::serve(const std::string& doc_root)
 
     net::io_context ioc{num_threads};
 
-    std::make_shared<listener>(
+    std::make_shared<Listener>(
         ioc,
         tcp::endpoint{address, port},
         generator_,
