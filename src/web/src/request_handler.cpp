@@ -86,12 +86,24 @@ std::string extract_string(const std::string& json, const std::string& key)
   for (size_t i = quote_start + 1; i < json.size(); i++) {
     if (json[i] == '\\' && i + 1 < json.size()) {
       switch (json[i + 1]) {
-        case '"': result += '"'; break;
-        case '\\': result += '\\'; break;
-        case 'n': result += '\n'; break;
-        case 'r': result += '\r'; break;
-        case 't': result += '\t'; break;
-        default: result += json[i + 1]; break;
+        case '"':
+          result += '"';
+          break;
+        case '\\':
+          result += '\\';
+          break;
+        case 'n':
+          result += '\n';
+          break;
+        case 'r':
+          result += '\r';
+          break;
+        case 't':
+          result += '\t';
+          break;
+        default:
+          result += json[i + 1];
+          break;
       }
       i++;  // skip the escaped char
     } else if (json[i] == '"') {
@@ -161,8 +173,7 @@ std::string json_escape(const std::string& s)
       default:
         if (static_cast<unsigned char>(c) < 0x20) {
           char buf[8];
-          snprintf(
-              buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
+          snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
           out += buf;
         } else {
           out += c;
@@ -192,8 +203,8 @@ static void serializeAnyValue(std::stringstream& ss,
     if (*sel) {
       std::string name = short_name ? sel->getShortName() : sel->getName();
       int id = storeSelectable(selectables, *sel);
-      ss << "\"" << field << "\": \"" << json_escape(name) << "\", \""
-         << field << "_select_id\": " << id;
+      ss << "\"" << field << "\": \"" << json_escape(name) << "\", \"" << field
+         << "_select_id\": " << id;
       return;
     }
   }
@@ -202,13 +213,12 @@ static void serializeAnyValue(std::stringstream& ss,
 }
 
 static void serializeProperty(std::stringstream& ss,
-                               const gui::Descriptor::Property& prop,
-                               std::vector<gui::Selected>& selectables)
+                              const gui::Descriptor::Property& prop,
+                              std::vector<gui::Selected>& selectables)
 {
   ss << "{\"name\": \"" << json_escape(prop.name) << "\"";
 
-  if (auto* plist
-      = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+  if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
     ss << ", \"children\": [";
     bool first = true;
     for (const auto& [key, val] : *plist) {
@@ -223,8 +233,7 @@ static void serializeProperty(std::stringstream& ss,
       first = false;
     }
     ss << "]";
-  } else if (auto* sel_set
-             = std::any_cast<gui::SelectionSet>(&prop.value)) {
+  } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
     ss << ", \"children\": [";
     bool first = true;
     for (const auto& sel : *sel_set) {
@@ -255,12 +264,11 @@ static void serializeProperty(std::stringstream& ss,
 // dispatch_request — handles BOUNDS, LAYERS, TILE, INFO
 //------------------------------------------------------------------------------
 
-WsResponse dispatch_request(
-    const WsRequest& req,
-    const std::shared_ptr<TileGenerator>& gen,
-    const std::vector<odb::Rect>& highlight_rects,
-    const std::vector<ColoredRect>& colored_rects,
-    const std::vector<FlightLine>& flight_lines)
+WsResponse dispatch_request(const WsRequest& req,
+                            const std::shared_ptr<TileGenerator>& gen,
+                            const std::vector<odb::Rect>& highlight_rects,
+                            const std::vector<ColoredRect>& colored_rects,
+                            const std::vector<FlightLine>& flight_lines)
 {
   WsResponse resp;
   resp.id = req.id;
@@ -349,8 +357,7 @@ WsResponse SelectHandler::handleSelect(const WsRequest& req,
       state.timing_lines.clear();
       if (!results.empty()) {
         auto* registry = gui::DescriptorRegistry::instance();
-        gui::Selected sel
-            = registry->makeSelected(std::any(results[0].inst));
+        gui::Selected sel = registry->makeSelected(std::any(results[0].inst));
         if (sel) {
           ShapeCollector collector;
           sel.highlight(collector);
@@ -369,9 +376,9 @@ WsResponse SelectHandler::handleSelect(const WsRequest& req,
         ss << ", ";
       }
       ss << "{\"name\": \"" << json_escape(r.name) << "\", \"master\": \""
-         << json_escape(r.master) << "\", \"bbox\": [" << r.bbox.xMin()
-         << ", " << r.bbox.yMin() << ", " << r.bbox.xMax() << ", "
-         << r.bbox.yMax() << "]}";
+         << json_escape(r.master) << "\", \"bbox\": [" << r.bbox.xMin() << ", "
+         << r.bbox.yMin() << ", " << r.bbox.xMax() << ", " << r.bbox.yMax()
+         << "]}";
       first = false;
     }
     ss << "]";
@@ -380,8 +387,8 @@ WsResponse SelectHandler::handleSelect(const WsRequest& req,
     std::vector<gui::Selected> new_selectables;
     if (!results.empty()) {
       const auto& r0 = results[0];
-      ss << ", \"bbox\": [" << r0.bbox.xMin() << ", " << r0.bbox.yMin()
-         << ", " << r0.bbox.xMax() << ", " << r0.bbox.yMax() << "]";
+      ss << ", \"bbox\": [" << r0.bbox.xMin() << ", " << r0.bbox.yMin() << ", "
+         << r0.bbox.xMax() << ", " << r0.bbox.yMax() << "]";
 
       auto* registry = gui::DescriptorRegistry::instance();
       gui::Selected sel = registry->makeSelected(std::any(r0.inst));
@@ -425,8 +432,7 @@ WsResponse SelectHandler::handleInspect(const WsRequest& req,
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       if (req.select_id >= 0
-          && req.select_id
-                 < static_cast<int>(state.selectables.size())) {
+          && req.select_id < static_cast<int>(state.selectables.size())) {
         sel = state.selectables[req.select_id];
       }
     }
@@ -449,9 +455,8 @@ WsResponse SelectHandler::handleInspect(const WsRequest& req,
     if (sel) {
       auto props = sel.getProperties();
       std::vector<gui::Selected> new_selectables;
-      ss << "{\"name\": \"" << json_escape(sel.getName())
-         << "\", \"type\": \"" << json_escape(sel.getTypeName())
-         << "\", \"properties\": [";
+      ss << "{\"name\": \"" << json_escape(sel.getName()) << "\", \"type\": \""
+         << json_escape(sel.getTypeName()) << "\", \"properties\": [";
       bool first = true;
       for (const auto& prop : props) {
         if (!first) {
@@ -484,8 +489,7 @@ WsResponse SelectHandler::handleInspect(const WsRequest& req,
   return resp;
 }
 
-WsResponse SelectHandler::handleHover(const WsRequest& req,
-                                      SessionState& state)
+WsResponse SelectHandler::handleHover(const WsRequest& req, SessionState& state)
 {
   WsResponse resp;
   resp.id = req.id;
@@ -494,8 +498,7 @@ WsResponse SelectHandler::handleHover(const WsRequest& req,
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       if (req.select_id >= 0
-          && req.select_id
-                 < static_cast<int>(state.selectables.size())) {
+          && req.select_id < static_cast<int>(state.selectables.size())) {
         sel = state.selectables[req.select_id];
       }
     }
@@ -512,16 +515,16 @@ WsResponse SelectHandler::handleHover(const WsRequest& req,
           if (!first) {
             ss << ", ";
           }
-          ss << "[" << r.xMin() << ", " << r.yMin() << ", " << r.xMax()
-             << ", " << r.yMax() << "]";
+          ss << "[" << r.xMin() << ", " << r.yMin() << ", " << r.xMax() << ", "
+             << r.yMax() << "]";
           first = false;
         }
         ss << "]}";
       } else {
         odb::Rect bbox;
         if (sel.getBBox(bbox)) {
-          ss << "{\"rects\": [[" << bbox.xMin() << ", " << bbox.yMin()
-             << ", " << bbox.xMax() << ", " << bbox.yMax() << "]]}";
+          ss << "{\"rects\": [[" << bbox.xMin() << ", " << bbox.yMin() << ", "
+             << bbox.xMax() << ", " << bbox.yMax() << "]]}";
         } else {
           ss << "{\"error\": \"no bbox\"}";
         }
@@ -558,8 +561,7 @@ WsResponse TclHandler::handleTclEval(const WsRequest& req)
     std::stringstream ss;
     ss << "{\"output\": \"" << json_escape(result.output)
        << "\", \"result\": \"" << json_escape(result.result)
-       << "\", \"is_error\": " << (result.is_error ? "true" : "false")
-       << "}";
+       << "\", \"is_error\": " << (result.is_error ? "true" : "false") << "}";
     const std::string json = ss.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -602,9 +604,9 @@ WsResponse TimingHandler::handleTimingReport(const WsRequest& req)
       first_path = false;
       ss << "{\"start_clk\": \"" << json_escape(p.start_clk)
          << "\", \"end_clk\": \"" << json_escape(p.end_clk)
-         << "\", \"required\": " << p.required
-         << ", \"arrival\": " << p.arrival << ", \"slack\": " << p.slack
-         << ", \"skew\": " << p.skew << ", \"path_delay\": " << p.path_delay
+         << "\", \"required\": " << p.required << ", \"arrival\": " << p.arrival
+         << ", \"slack\": " << p.slack << ", \"skew\": " << p.skew
+         << ", \"path_delay\": " << p.path_delay
          << ", \"logic_depth\": " << p.logic_depth
          << ", \"fanout\": " << p.fanout << ", \"start_pin\": \""
          << json_escape(p.start_pin) << "\", \"end_pin\": \""

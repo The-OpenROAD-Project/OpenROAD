@@ -15,9 +15,9 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "request_handler.h"
 #include "search.h"
 #include "timing_report.h"
-#include "request_handler.h"
 #include "utl/Logger.h"
 
 namespace web {
@@ -101,8 +101,7 @@ bool TileVisibility::isNetVisible(odb::dbNet* net) const
   return true;
 }
 
-bool TileVisibility::isInstVisible(odb::dbInst* inst,
-                                   sta::dbSta* sta) const
+bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 {
   odb::dbMaster* master = inst->getMaster();
   odb::dbMasterType mtype = master->getType();
@@ -295,8 +294,9 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
   // Leaflet CRS.Simple coordinates and the server's DBU space.
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
-      = std::max(1, static_cast<int>(getBounds().maxDXDY()
-                                     / (kTileSizeInPixel * num_tiles) * 2));
+      = std::max(1,
+                 static_cast<int>(getBounds().maxDXDY()
+                                  / (kTileSizeInPixel * num_tiles) * 2));
   debugPrint(logger_,
              utl::WEB,
              "select",
@@ -308,10 +308,10 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
              margin);
   int rtree_count = 0;
   for (odb::dbInst* inst : search_->searchInsts(block,
-                                                 dbu_x - margin,
-                                                 dbu_y - margin,
-                                                 dbu_x + margin,
-                                                 dbu_y + margin)) {
+                                                dbu_x - margin,
+                                                dbu_y - margin,
+                                                dbu_x + margin,
+                                                dbu_y + margin)) {
     ++rtree_count;
     const odb::Rect bbox = inst->getBBox()->getBox();
     const bool hits = bbox.intersects(odb::Point(dbu_x, dbu_y));
@@ -575,9 +575,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
           via_boxes.assign(block_via->getBoxes().begin(),
                            block_via->getBoxes().end());
         }
-        const odb::Point origin(
-            (sbox->xMin() + sbox->xMax()) / 2,
-            (sbox->yMin() + sbox->yMax()) / 2);
+        const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
+                                (sbox->yMin() + sbox->yMax()) / 2);
         for (odb::dbBox* vbox : via_boxes) {
           if (vbox->getTechLayer() != tech_layer) {
             continue;
@@ -805,18 +804,16 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
   }
 }
 
-void TileGenerator::drawColoredHighlight(
-    std::vector<unsigned char>& image,
-    const std::vector<ColoredRect>& rects,
-    const std::string& current_layer,
-    const odb::Rect& dbu_tile,
-    const double scale)
+void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
+                                         const std::vector<ColoredRect>& rects,
+                                         const std::string& current_layer,
+                                         const odb::Rect& dbu_tile,
+                                         const double scale)
 {
   const bool is_instances_layer = (current_layer == "_instances");
   for (const auto& cr : rects) {
     // Layer filtering: draw on _instances (overview) or matching layer
-    if (!is_instances_layer && !cr.layer.empty()
-        && cr.layer != current_layer) {
+    if (!is_instances_layer && !cr.layer.empty() && cr.layer != current_layer) {
       continue;
     }
     if (!dbu_tile.overlaps(cr.rect)) {
@@ -846,11 +843,11 @@ void TileGenerator::drawColoredHighlight(
 
 /* static */
 void TileGenerator::drawLine(std::vector<unsigned char>& image,
-                              int x0,
-                              int y0,
-                              int x1,
-                              int y1,
-                              const Color& c)
+                             int x0,
+                             int y0,
+                             int x1,
+                             int y1,
+                             const Color& c)
 {
   // Bresenham's line algorithm
   int dx = std::abs(x1 - x0);
@@ -883,20 +880,16 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
 }
 
 void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
-                                     const std::vector<FlightLine>& lines,
-                                     const odb::Rect& dbu_tile,
-                                     const double scale)
+                                    const std::vector<FlightLine>& lines,
+                                    const odb::Rect& dbu_tile,
+                                    const double scale)
 {
   for (const auto& fl : lines) {
     // Convert DBU to pixel coordinates
-    int px0
-        = static_cast<int>((fl.p1.x() - dbu_tile.xMin()) * scale);
-    int py0 = 255
-              - static_cast<int>((fl.p1.y() - dbu_tile.yMin()) * scale);
-    int px1
-        = static_cast<int>((fl.p2.x() - dbu_tile.xMin()) * scale);
-    int py1 = 255
-              - static_cast<int>((fl.p2.y() - dbu_tile.yMin()) * scale);
+    int px0 = static_cast<int>((fl.p1.x() - dbu_tile.xMin()) * scale);
+    int py0 = 255 - static_cast<int>((fl.p1.y() - dbu_tile.yMin()) * scale);
+    int px1 = static_cast<int>((fl.p2.x() - dbu_tile.xMin()) * scale);
+    int py1 = 255 - static_cast<int>((fl.p2.y() - dbu_tile.yMin()) * scale);
 
     // Rough bounding-box check: skip if line can't cross this tile
     int lx0 = std::min(px0, px1), lx1 = std::max(px0, px1);
@@ -916,9 +909,8 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
 // Timing path highlight shape collection
 //------------------------------------------------------------------------------
 
-std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(
-    odb::dbBlock* block,
-    const std::string& pin_name)
+std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
+                                                   const std::string& pin_name)
 {
   odb::dbITerm* iterm = block->findITerm(pin_name.c_str());
   if (iterm) {
@@ -948,13 +940,13 @@ static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
 }
 
 void collectNetShapes(odb::dbNet* net,
-                              odb::dbITerm* drv_iterm,
-                              odb::dbBTerm* drv_bterm,
-                              odb::dbITerm* snk_iterm,
-                              odb::dbBTerm* snk_bterm,
-                              const Color& color,
-                              std::vector<ColoredRect>& rects,
-                              std::vector<FlightLine>& lines)
+                      odb::dbITerm* drv_iterm,
+                      odb::dbBTerm* drv_bterm,
+                      odb::dbITerm* snk_iterm,
+                      odb::dbBTerm* snk_bterm,
+                      const Color& color,
+                      std::vector<ColoredRect>& rects,
+                      std::vector<FlightLine>& lines)
 {
   odb::dbWire* wire = net->getWire();
   if (wire) {
@@ -971,8 +963,7 @@ void collectNetShapes(odb::dbNet* net,
         }
       } else {
         odb::dbTechLayer* layer = shape.getTechLayer();
-        rects.push_back(
-            {shape.getBox(), color, layer ? layer->getName() : ""});
+        rects.push_back({shape.getBox(), color, layer ? layer->getName() : ""});
       }
     }
   } else {
@@ -986,11 +977,11 @@ void collectNetShapes(odb::dbNet* net,
 void collectTimingPathShapes(odb::dbBlock* block,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
-                                     std::vector<FlightLine>& lines)
+                             std::vector<FlightLine>& lines)
 {
-  static const Color kLaunchClkColor{0, 255, 255, 180};   // Cyan (match GUI)
-  static const Color kSignalColor{255, 0, 0, 180};         // Red (match GUI)
-  static const Color kCaptureClkColor{0, 255, 0, 180};     // Green (match GUI)
+  static const Color kLaunchClkColor{0, 255, 255, 180};  // Cyan (match GUI)
+  static const Color kSignalColor{255, 0, 0, 180};       // Red (match GUI)
+  static const Color kCaptureClkColor{0, 255, 0, 180};   // Green (match GUI)
 
   // Track nets already collected to avoid duplicates
   std::set<odb::dbNet*> seen_nets;
@@ -1002,10 +993,10 @@ void collectTimingPathShapes(odb::dbBlock* block,
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
 
-      odb::dbNet* net_a
-          = a_iterm ? a_iterm->getNet() : (a_bterm ? a_bterm->getNet() : nullptr);
-      odb::dbNet* net_b
-          = b_iterm ? b_iterm->getNet() : (b_bterm ? b_bterm->getNet() : nullptr);
+      odb::dbNet* net_a = a_iterm ? a_iterm->getNet()
+                                  : (a_bterm ? a_bterm->getNet() : nullptr);
+      odb::dbNet* net_b = b_iterm ? b_iterm->getNet()
+                                  : (b_bterm ? b_bterm->getNet() : nullptr);
 
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {

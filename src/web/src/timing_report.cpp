@@ -10,7 +10,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/Units.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
@@ -23,6 +22,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/Units.hh"
 
 namespace web {
 
@@ -62,8 +62,7 @@ void TimingReport::expandPath(sta::Path* path,
     const auto pin = vertex->pin();
     const bool pin_is_clock = sta_->isClock(pin);
     const bool is_driver = network->isDriver(pin);
-    const bool is_rising
-        = ref->transition(sta_) == sta::RiseFall::rise();
+    const bool is_rising = ref->transition(sta_) == sta::RiseFall::rise();
 
     // Compute fanout (wire edges from this vertex)
     int node_fanout = 0;
@@ -74,9 +73,9 @@ void TimingReport::expandPath(sta::Path* path,
         const sta::Pin* to_pin = edge->to(graph)->pin();
         if (network->isTopLevelPort(to_pin)) {
           sta::Port* port = network->port(to_pin);
-          node_fanout
-              += sdc->portExtFanout(port, dcalc_ap->corner(), sta::MinMax::max())
-                 + 1;
+          node_fanout += sdc->portExtFanout(
+                             port, dcalc_ap->corner(), sta::MinMax::max())
+                         + 1;
         } else {
           node_fanout++;
         }
@@ -181,8 +180,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
 
     // Clocks
     auto* src_edge = path_end->sourceClkEdge(sta_);
-    summary.start_clk
-        = src_edge ? src_edge->clock()->name() : "<No clock>";
+    summary.start_clk = src_edge ? src_edge->clock()->name() : "<No clock>";
     auto* end_clk = path_end->targetClk(sta_);
     summary.end_clk = end_clk ? end_clk->name() : "<No clock>";
 
@@ -195,8 +193,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
     auto* pd = path_end->pathDelay();
     summary.path_delay = pd ? pd->delay() / time_scale : 0.0f;
 
-    bool clock_propagated
-        = src_edge && src_edge->clock()->isPropagated();
+    bool clock_propagated = src_edge && src_edge->clock()->isPropagated();
 
     // Expand data path
     expandPath(path,

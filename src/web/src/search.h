@@ -243,9 +243,9 @@ class Search : public odb::dbBlockCallBackObj
   void inDbRowDestroy(odb::dbRow* row) override;
   void inDbWirePostModify(odb::dbWire* wire) override;
 
- // signals:
- //  void modified();
- //  void newChip(odb::dbChip* chip);
+  // signals:
+  //  void modified();
+  //  void newChip(odb::dbChip* chip);
 
  private:
   struct BlockData;

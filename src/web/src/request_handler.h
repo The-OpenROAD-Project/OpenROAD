@@ -129,12 +129,11 @@ int extract_int_or(const std::string& json,
 std::string json_escape(const std::string& s);
 
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
-WsResponse dispatch_request(
-    const WsRequest& req,
-    const std::shared_ptr<TileGenerator>& gen,
-    const std::vector<odb::Rect>& highlight_rects = {},
-    const std::vector<ColoredRect>& colored_rects = {},
-    const std::vector<FlightLine>& flight_lines = {});
+WsResponse dispatch_request(const WsRequest& req,
+                            const std::shared_ptr<TileGenerator>& gen,
+                            const std::vector<odb::Rect>& highlight_rects = {},
+                            const std::vector<ColoredRect>& colored_rects = {},
+                            const std::vector<FlightLine>& flight_lines = {});
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler

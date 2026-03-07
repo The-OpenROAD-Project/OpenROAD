@@ -237,12 +237,11 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void do_write();
 };
 
-WebSocketSession::WebSocketSession(
-    tcp::socket&& socket,
-    std::shared_ptr<TileGenerator> generator,
-    std::shared_ptr<TclEvaluator> tcl_eval,
-    std::shared_ptr<TimingReport> timing_report,
-    utl::Logger* logger)
+WebSocketSession::WebSocketSession(tcp::socket&& socket,
+                                   std::shared_ptr<TileGenerator> generator,
+                                   std::shared_ptr<TclEvaluator> tcl_eval,
+                                   std::shared_ptr<TimingReport> timing_report,
+                                   utl::Logger* logger)
     : ws_(std::move(socket)),
       logger_(logger),
       select_handler_(generator),
@@ -270,8 +269,7 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
 void WebSocketSession::on_accept(beast::error_code ec)
 {
   if (ec) {
-    debugPrint(
-        logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
+    debugPrint(logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
     return;
   }
   do_read();
@@ -280,8 +278,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
 void WebSocketSession::do_read()
 {
   ws_.async_read(
-      buffer_,
-      [self = shared_from_this()](beast::error_code ec, std::size_t) {
+      buffer_, [self = shared_from_this()](beast::error_code ec, std::size_t) {
         self->on_read(ec);
       });
 }
@@ -290,8 +287,7 @@ void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
     if (ec != websocket::error::closed) {
-      debugPrint(
-          logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
+      debugPrint(logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
     }
     return;
   }
@@ -339,8 +335,7 @@ void WebSocketSession::on_read(beast::error_code ec)
       break;
     default:
       net::post(ws_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleTile(req, self->state_));
+        self->queue_response(self->tile_handler_.handleTile(req, self->state_));
       });
       break;
   }
@@ -568,12 +563,11 @@ void DetectSession::on_read(beast::error_code ec)
 
   if (websocket::is_upgrade(req_)) {
     // WebSocket upgrade - hand off to WebSocketSession
-    auto ws = std::make_shared<WebSocketSession>(
-        stream_.release_socket(),
-        generator_,
-        tcl_eval_,
-        timing_report_,
-        logger_);
+    auto ws = std::make_shared<WebSocketSession>(stream_.release_socket(),
+                                                 generator_,
+                                                 tcl_eval_,
+                                                 timing_report_,
+                                                 logger_);
     ws->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
@@ -663,8 +657,7 @@ void Listener::do_accept()
 void Listener::on_accept(beast::error_code ec, tcp::socket socket)
 {
   if (ec) {
-    debugPrint(
-        logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
+    debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
   } else {
     // Route through DetectSession to handle both HTTP and WebSocket
     std::make_shared<DetectSession>(std::move(socket),
@@ -717,12 +710,12 @@ void WebServer::serve(const std::string& doc_root)
     net::io_context ioc{num_threads};
 
     std::make_shared<Listener>(ioc,
-                                tcp::endpoint{address, port},
-                                generator_,
-                                tcl_eval,
-                                timing_report,
-                                doc_root,
-                                logger_)
+                               tcp::endpoint{address, port},
+                               generator_,
+                               tcl_eval,
+                               timing_report,
+                               doc_root,
+                               logger_)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);

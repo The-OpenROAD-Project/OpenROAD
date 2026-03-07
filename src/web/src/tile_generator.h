@@ -143,10 +143,7 @@ class TileGenerator
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
 
-  void drawDebugOverlay(std::vector<unsigned char>& image,
-                        int z,
-                        int x,
-                        int y);
+  void drawDebugOverlay(std::vector<unsigned char>& image, int z, int x, int y);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -185,9 +182,8 @@ class TileGenerator
 
 struct TimingPathSummary;
 
-std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(
-    odb::dbBlock* block,
-    const std::string& pin_name);
+std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
+                                                   const std::string& pin_name);
 
 void collectNetShapes(odb::dbNet* net,
                       odb::dbITerm* drv_iterm,
