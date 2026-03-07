@@ -141,9 +141,14 @@ void TimingWidget::setColumnDisplayMenu()
 
     // Uncheck boxes and hide columns based on settings.
     if (!initial_columns_visibility_.isEmpty()) {
-      if (!initial_columns_visibility_[column_index]) {
+      if (column_index < initial_columns_visibility_.size()
+          && !initial_columns_visibility_[column_index]) {
         action->trigger();
       }
+    } else if (QString(name).startsWith("Src Clk Ins")
+               || QString(name).startsWith("Tgt Clk Ins")) {
+      // Hide insertion delay columns by default.
+      action->trigger();
     }
 
     ++column_index;

@@ -169,6 +169,10 @@ class TimingPath
   void setPathDelay(float del) { path_delay_ = del; }
   float getSkew() const { return skew_; }
   void setSkew(float skew) { skew_ = skew; }
+  float getSrcClkInsertion() const { return src_clk_insertion_; }
+  void setSrcClkInsertion(float val) { src_clk_insertion_ = val; }
+  float getTgtClkInsertion() const { return tgt_clk_insertion_; }
+  void setTgtClkInsertion(float val) { tgt_clk_insertion_ = val; }
   float getLogicDelay() const { return logic_delay_; }
   int getLogicDepth() const { return logic_depth_; }
   int getFanout() const { return fanout_; }
@@ -202,6 +206,8 @@ class TimingPath
   std::string end_clk_;
   float slack_;
   float skew_;
+  float src_clk_insertion_;
+  float tgt_clk_insertion_;
   float path_delay_;
   float arr_time_;
   float req_time_;

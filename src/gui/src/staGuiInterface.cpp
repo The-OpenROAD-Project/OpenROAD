@@ -161,6 +161,8 @@ odb::Rect TimingPathNode::getPinLargestBox() const
 TimingPath::TimingPath()
     : slack_(0),
       skew_(0),
+      src_clk_insertion_(0),
+      tgt_clk_insertion_(0),
       path_delay_(0),
       arr_time_(0),
       req_time_(0),
@@ -1239,6 +1241,10 @@ TimingPathList STAGuiInterface::getTimingPaths(
     timing_path->setPathArrivalTime(path_end->dataArrivalTime(sta_));
     timing_path->setPathRequiredTime(path_end->requiredTime(sta_));
     timing_path->setSkew(path_end->clkSkew(sta_));
+    timing_path->setSrcClkInsertion(
+        sta::delayAsFloat(path_end->sourceClkInsertionDelay(sta_)));
+    timing_path->setTgtClkInsertion(
+        sta::delayAsFloat(path_end->targetClkInsertionDelay(sta_)));
 
     bool clock_propagated = false;
     if (start_clock_edge != nullptr) {

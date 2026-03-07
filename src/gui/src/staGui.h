@@ -59,6 +59,8 @@ class TimingPathsModel : public QAbstractTableModel
     kLogicDelay,
     kLogicDepth,
     kFanout,
+    kSrcClkInsertion,
+    kTgtClkInsertion,
     kStart,
     kEnd
   };
@@ -75,6 +77,8 @@ class TimingPathsModel : public QAbstractTableModel
            {kLogicDelay, "Logic Delay"},
            {kLogicDepth, "Logic Depth"},
            {kFanout, "Fanout"},
+           {kSrcClkInsertion, "Src Clk Ins."},
+           {kTgtClkInsertion, "Tgt Clk Ins."},
            {kStart, "Start"},
            {kEnd, "End"}};
     return kColumnNames;

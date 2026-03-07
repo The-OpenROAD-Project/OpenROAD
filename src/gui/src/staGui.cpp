@@ -122,6 +122,8 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case kFanout:
       case kSlack:
       case kSkew:
+      case kSrcClkInsertion:
+      case kTgtClkInsertion:
         return Qt::AlignRight;
     }
   } else if (role == Qt::DisplayRole) {
@@ -144,6 +146,10 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
         return timing_path->getLogicDepth();
       case kFanout:
         return timing_path->getFanout();
+      case kSrcClkInsertion:
+        return convertDelay(timing_path->getSrcClkInsertion(), time_units);
+      case kTgtClkInsertion:
+        return convertDelay(timing_path->getTgtClkInsertion(), time_units);
       case kStart:
         return QString::fromStdString(timing_path->getStartStageName());
       case kEnd:
@@ -186,6 +192,14 @@ QVariant TimingPathsModel::headerData(int section,
       case kLogicDepth:
         return "Path instances (excluding buffers and consecutive inverter "
                "pairs)";
+      case kSrcClkInsertion:
+        return "Source (launch) clock insertion delay.\n"
+               "Internal clock latency from liberty\n"
+               "max/min_clock_tree_path timing groups.";
+      case kTgtClkInsertion:
+        return "Target (capture) clock insertion delay.\n"
+               "Internal clock latency from liberty\n"
+               "max/min_clock_tree_path timing groups.";
     }
   }
 
@@ -247,6 +261,16 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
                    const std::unique_ptr<TimingPath>& path2) {
       return path1->getFanout() < path2->getFanout();
+    };
+  } else if (col_index == kSrcClkInsertion) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getSrcClkInsertion() < path2->getSrcClkInsertion();
+    };
+  } else if (col_index == kTgtClkInsertion) {
+    sort_func = [](const std::unique_ptr<TimingPath>& path1,
+                   const std::unique_ptr<TimingPath>& path2) {
+      return path1->getTgtClkInsertion() < path2->getTgtClkInsertion();
     };
   } else if (col_index == kStart) {
     sort_func = [](const std::unique_ptr<TimingPath>& path1,
@@ -376,8 +400,15 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {
-        case kPin:
+        case kPin: {
+          float insertion = is_capture_ ? path_->getTgtClkInsertion()
+                                        : path_->getSrcClkInsertion();
+          if (insertion != 0.0f) {
+            return QString("clock network delay (ins: %1)")
+                .arg(convertDelay(insertion, time_units));
+          }
           return "clock network delay";
+        }
         case kTime:
           return convertDelay(node->getArrival(), time_units);
         case kDelay:
