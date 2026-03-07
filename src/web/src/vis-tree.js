@@ -99,7 +99,7 @@ export class VisTree {
         header.className = 'vis-group-header';
         const arrow = document.createElement('span');
         arrow.className = 'vis-arrow';
-        arrow.textContent = '\u25B6';
+        arrow.textContent = '▶';
         header.appendChild(arrow);
         header.appendChild(cb);
         header.appendChild(document.createTextNode(node.label));
@@ -116,7 +116,7 @@ export class VisTree {
             e.stopPropagation();
             kids.classList.toggle('collapsed');
             arrow.textContent = kids.classList.contains('collapsed')
-                ? '\u25B6' : '\u25BC';
+                ? '▶' : '▼';
         });
 
         return div;

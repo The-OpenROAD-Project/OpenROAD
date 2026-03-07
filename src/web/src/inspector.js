@@ -112,7 +112,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             header.className = 'inspector-group-header';
             const arrow = document.createElement('span');
             arrow.className = 'vis-arrow';
-            arrow.textContent = '\u25B6';
+            arrow.textContent = '▶';
             const nameSpan = document.createElement('span');
             nameSpan.className = 'inspector-prop-name';
             nameSpan.textContent = prop.name;
@@ -127,7 +127,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             const kids = document.createElement('div');
             const autoExpand = prop.children.length < 10;
             kids.className = 'inspector-group-children' + (autoExpand ? '' : ' collapsed');
-            arrow.textContent = autoExpand ? '\u25BC' : '\u25B6';
+            arrow.textContent = autoExpand ? '▼' : '▶';
             for (const child of prop.children) {
                 kids.appendChild(renderProperty(child));
             }
@@ -136,12 +136,12 @@ export function createInspectorPanel(app, redrawAllLayers) {
             arrow.addEventListener('click', () => {
                 kids.classList.toggle('collapsed');
                 arrow.textContent = kids.classList.contains('collapsed')
-                    ? '\u25B6' : '\u25BC';
+                    ? '▶' : '▼';
             });
             header.addEventListener('click', () => {
                 kids.classList.toggle('collapsed');
                 arrow.textContent = kids.classList.contains('collapsed')
-                    ? '\u25B6' : '\u25BC';
+                    ? '▶' : '▼';
             });
 
             return group;

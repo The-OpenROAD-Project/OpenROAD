@@ -39,7 +39,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     layerHeader.className = 'vis-group-header';
     const layerArrow = document.createElement('span');
     layerArrow.className = 'vis-arrow';
-    layerArrow.textContent = '\u25BC';
+    layerArrow.textContent = '▼';
     layerHeader.appendChild(layerArrow);
     const layerParentCb = document.createElement('input');
     layerParentCb.type = 'checkbox';
@@ -106,7 +106,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         e.preventDefault();
         e.stopPropagation();
         const collapsed = layerChildren.classList.toggle('collapsed');
-        layerArrow.textContent = collapsed ? '\u25B6' : '\u25BC';
+        layerArrow.textContent = collapsed ? '▶' : '▼';
     });
 
     app.displayControlsEl.appendChild(layerGroup);

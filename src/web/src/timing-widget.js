@@ -295,7 +295,7 @@ export class TimingWidget {
             const vals = [
                 n.pin,
                 n.fanout,
-                n.rise ? '\u2191' : '\u2193',
+                n.rise ? '↑' : '↓',
                 this._fmtTime(n.time),
                 this._fmtTime(n.delay),
                 this._fmtTime(n.slew),
