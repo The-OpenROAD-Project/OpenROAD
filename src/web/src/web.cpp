@@ -142,29 +142,29 @@ http::response<http::string_body> handle_request(
   std::string target_path(req.target());
 
   if (req.method() == http::verb::get && req.target() == "/bounds") {
-    WebSocketRequest ws_req;
-    ws_req.type = WebSocketRequest::BOUNDS;
-    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketRequest websocket_req;
+    websocket_req.type = WebSocketRequest::BOUNDS;
+    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
   } else if (req.method() == http::verb::get && req.target() == "/layers") {
-    WebSocketRequest ws_req;
-    ws_req.type = WebSocketRequest::LAYERS;
-    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketRequest websocket_req;
+    websocket_req.type = WebSocketRequest::LAYERS;
+    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
   } else if (req.method() == http::verb::get
              && std::regex_match(target_path, match_pieces, tile_regex)) {
-    WebSocketRequest ws_req;
-    ws_req.type = WebSocketRequest::TILE;
-    ws_req.layer = match_pieces[1].str();
-    ws_req.z = std::stoi(match_pieces[2].str());
-    ws_req.x = std::stoi(match_pieces[3].str());
-    ws_req.y = std::stoi(match_pieces[4].str());
-    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketRequest websocket_req;
+    websocket_req.type = WebSocketRequest::TILE;
+    websocket_req.layer = match_pieces[1].str();
+    websocket_req.z = std::stoi(match_pieces[2].str());
+    websocket_req.x = std::stoi(match_pieces[3].str());
+    websocket_req.y = std::stoi(match_pieces[4].str());
+    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
 
     res.set(http::field::content_type, "image/png");
-    res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
   } else if (req.method() == http::verb::get && !doc_root.empty()) {
     // Serve static files from doc_root
@@ -204,7 +204,7 @@ http::response<http::string_body> handle_request(
 
 class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
-  websocket::stream<beast::tcp_stream> ws_;
+  websocket::stream<beast::tcp_stream> websocket_;
   beast::flat_buffer buffer_;
   utl::Logger* logger_;
 
@@ -242,26 +242,26 @@ WebSocketSession::WebSocketSession(tcp::socket&& socket,
                                    std::shared_ptr<TclEvaluator> tcl_eval,
                                    std::shared_ptr<TimingReport> timing_report,
                                    utl::Logger* logger)
-    : ws_(std::move(socket)),
+    : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator),
       tcl_handler_(tcl_eval),
       timing_handler_(generator, timing_report, tcl_eval),
       tile_handler_(generator),
-      strand_(net::make_strand(ws_.get_executor()))
+      strand_(net::make_strand(websocket_.get_executor()))
 {
 }
 
 void WebSocketSession::run(http::request<http::string_body>&& req)
 {
-  ws_.set_option(
+  websocket_.set_option(
       websocket::stream_base::timeout::suggested(beast::role_type::server));
-  ws_.set_option(
+  websocket_.set_option(
       websocket::stream_base::decorator([](websocket::response_type& res) {
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
 
-  ws_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
+  websocket_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
     self->on_accept(ec);
   });
 }
@@ -269,7 +269,7 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
 void WebSocketSession::on_accept(beast::error_code ec)
 {
   if (ec) {
-    debugPrint(logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
+    debugPrint(logger_, utl::WEB, "websocket", 1, "websocket accept error: {}", ec.message());
     return;
   }
   do_read();
@@ -277,7 +277,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
 
 void WebSocketSession::do_read()
 {
-  ws_.async_read(
+  websocket_.async_read(
       buffer_, [self = shared_from_this()](beast::error_code ec, std::size_t) {
         self->on_read(ec);
       });
@@ -287,7 +287,7 @@ void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
     if (ec != websocket::error::closed) {
-      debugPrint(logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
+      debugPrint(logger_, utl::WEB, "websocket", 1, "websocket read error: {}", ec.message());
     }
     return;
   }
@@ -300,41 +300,41 @@ void WebSocketSession::on_read(beast::error_code ec)
 
   switch (req.type) {
     case WebSocketRequest::SELECT:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSelect(req, self->state_));
       });
       break;
     case WebSocketRequest::INSPECT:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleInspect(req, self->state_));
       });
       break;
     case WebSocketRequest::HOVER:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleHover(req, self->state_));
       });
       break;
     case WebSocketRequest::TCL_EVAL:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(self->tcl_handler_.handleTclEval(req));
       });
       break;
     case WebSocketRequest::TIMING_REPORT:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(self->timing_handler_.handleTimingReport(req));
       });
       break;
     case WebSocketRequest::TIMING_HIGHLIGHT:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->timing_handler_.handleTimingHighlight(req, self->state_));
       });
       break;
     default:
-      net::post(ws_.get_executor(), [self, req]() {
+      net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(self->tile_handler_.handleTile(req, self->state_));
       });
       break;
@@ -364,17 +364,17 @@ void WebSocketSession::do_write()
     return;
   }
   writing_ = true;
-  ws_.binary(true);
-  ws_.async_write(
+  websocket_.binary(true);
+  websocket_.async_write(
       net::buffer(write_queue_.front()),
       [self = shared_from_this()](beast::error_code ec, std::size_t) {
         net::post(self->strand_, [self, ec]() {
           if (ec) {
             debugPrint(self->logger_,
                        utl::WEB,
-                       "ws",
+                       "websocket",
                        1,
-                       "ws write error: {}",
+                       "websocket write error: {}",
                        ec.message());
             return;
           }
@@ -563,12 +563,12 @@ void DetectSession::on_read(beast::error_code ec)
 
   if (websocket::is_upgrade(req_)) {
     // WebSocket upgrade - hand off to WebSocketSession
-    auto ws = std::make_shared<WebSocketSession>(stream_.release_socket(),
+    auto websocket_session = std::make_shared<WebSocketSession>(stream_.release_socket(),
                                                  generator_,
                                                  tcl_eval_,
                                                  timing_report_,
                                                  logger_);
-    ws->run(std::move(req_));
+    websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
     auto s = std::make_shared<HttpSession>(

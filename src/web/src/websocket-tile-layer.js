@@ -3,10 +3,10 @@
 
 // Leaflet tile layer that fetches tiles via WebSocket.
 
-export function createWSTileLayer(visibility) {
+export function createWebSocketTileLayer(visibility) {
     return L.GridLayer.extend({
-        initialize: function(wsManager, layerName, options) {
-            this._wsManager = wsManager;
+        initialize: function(websocketManager, layerName, options) {
+            this._websocketManager = websocketManager;
             this._layerName = layerName;
             L.GridLayer.prototype.initialize.call(this, options);
         },
@@ -16,14 +16,14 @@ export function createWSTileLayer(visibility) {
             tile.alt = '';
             tile.setAttribute('role', 'presentation');
 
-            const requestId = this._wsManager.nextId;
-            tile._wsRequestId = requestId;
+            const requestId = this._websocketManager.nextId;
+            tile._websocketRequestId = requestId;
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = v ? 1 : 0;
             }
-            this._wsManager.request({
+            this._websocketManager.request({
                 type: 'tile',
                 layer: this._layerName,
                 z: coords.z,
@@ -64,14 +64,14 @@ export function createWSTileLayer(visibility) {
                 const coords = tileInfo.coords;
 
                 // Cancel any pending request for this tile
-                if (tile._wsRequestId !== undefined) {
-                    this._wsManager.cancel(tile._wsRequestId);
+                if (tile._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile._websocketRequestId);
                 }
 
-                const requestId = this._wsManager.nextId;
-                tile._wsRequestId = requestId;
+                const requestId = this._websocketManager.nextId;
+                tile._websocketRequestId = requestId;
 
-                this._wsManager.request({
+                this._websocketManager.request({
                     type: 'tile',
                     layer: this._layerName,
                     z: coords.z,
@@ -92,8 +92,8 @@ export function createWSTileLayer(visibility) {
         _removeTile: function(key) {
             const tile = this._tiles[key];
             if (tile && tile.el) {
-                if (tile.el._wsRequestId !== undefined) {
-                    this._wsManager.cancel(tile.el._wsRequestId);
+                if (tile.el._websocketRequestId !== undefined) {
+                    this._websocketManager.cancel(tile.el._websocketRequestId);
                 }
                 if (tile.el.src && tile.el.src.startsWith('blob:')) {
                     URL.revokeObjectURL(tile.el.src);

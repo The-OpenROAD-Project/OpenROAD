@@ -6,7 +6,7 @@
 export class WebSocketManager {
     constructor(url, onStatusChange) {
         this.url = url;
-        this.ws = null;
+        this.socket = null;
         this.nextId = 1;
         this.pending = new Map(); // id -> {resolve, reject}
         this.reconnectDelay = 1000;
@@ -21,20 +21,20 @@ export class WebSocketManager {
             this.readyResolve = resolve;
         });
 
-        this.ws = new WebSocket(this.url);
-        this.ws.binaryType = 'arraybuffer';
+        this.socket = new WebSocket(this.url);
+        this.socket.binaryType = 'arraybuffer';
 
-        this.ws.onopen = () => {
+        this.socket.onopen = () => {
             console.log('WebSocket connected');
             this.reconnectDelay = 1000;
             this.readyResolve();
         };
 
-        this.ws.onmessage = (event) => {
+        this.socket.onmessage = (event) => {
             this.handleMessage(event.data);
         };
 
-        this.ws.onclose = () => {
+        this.socket.onclose = () => {
             console.log('WebSocket closed, reconnecting...');
             for (const [id, handler] of this.pending) {
                 handler.reject(new Error('WebSocket closed'));
@@ -44,7 +44,7 @@ export class WebSocketManager {
             this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
         };
 
-        this.ws.onerror = (err) => {
+        this.socket.onerror = (err) => {
             console.error('WebSocket error:', err);
         };
     }
@@ -77,12 +77,12 @@ export class WebSocketManager {
         const id = this.nextId++;
         msg.id = id;
         return new Promise((resolve, reject) => {
-            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
                 reject(new Error('WebSocket not connected'));
                 return;
             }
             this.pending.set(id, { resolve, reject });
-            this.ws.send(JSON.stringify(msg));
+            this.socket.send(JSON.stringify(msg));
             this.onStatusChange();
         });
     }

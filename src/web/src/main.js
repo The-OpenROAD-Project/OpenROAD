@@ -3,18 +3,18 @@
 
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
-import { WebSocketManager } from './ws-manager.js';
-import { createWSTileLayer } from './ws-tile-layer.js';
+import { WebSocketManager } from './websocket-manager.js';
+import { createWebSocketTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
-const statusDiv = document.getElementById('ws-status');
+const statusDiv = document.getElementById('websocket-status');
 
 function updateStatus() {
-    const n = app.wsManager ? app.wsManager.pending.size : 0;
+    const n = app.websocketManager ? app.websocketManager.pending.size : 0;
     if (n === 0) {
         statusDiv.textContent = '';
         statusDiv.style.display = 'none';
@@ -37,7 +37,7 @@ const app = {
     allLayers: [],
     designScale: null,   // pixels-per-DBU for coordinate conversion
     designMaxDXDY: null, // max(width, height) in DBU for Y-axis mapping
-    wsManager: null,     // set after construction below
+    websocketManager: null,     // set after construction below
     goldenLayout: null,  // set after GL init below
     hasLiberty: false,
     inspectorEl: null,
@@ -92,7 +92,7 @@ const visibility = {
     debug: false,
 };
 
-const WSTileLayer = createWSTileLayer(visibility);
+const WebSocketTileLayer = createWebSocketTileLayer(visibility);
 
 function redrawAllLayers() {
     for (const layer of app.allLayers) {
@@ -157,7 +157,7 @@ function createTclConsole(container) {
             if (!cmd) return;
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
             input.value = '';
-            app.wsManager.request({ type: 'tcl_eval', cmd })
+            app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
                     if (data.output) {
                         tclAppend(data.output,
@@ -364,15 +364,15 @@ function focusComponent(componentType) {
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 
-const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
-app.wsManager = new WebSocketManager(wsUrl, updateStatus);
+const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
+app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
-app.wsManager.readyPromise.then(async () => {
+app.websocketManager.readyPromise.then(async () => {
     try {
         const [layersData, boundsData, infoData] = await Promise.all([
-            app.wsManager.request({ type: 'layers' }),
-            app.wsManager.request({ type: 'bounds' }),
-            app.wsManager.request({ type: 'info' }),
+            app.websocketManager.request({ type: 'layers' }),
+            app.websocketManager.request({ type: 'bounds' }),
+            app.websocketManager.request({ type: 'info' }),
         ]);
         app.hasLiberty = infoData.has_liberty;
 
@@ -407,7 +407,7 @@ app.wsManager.readyPromise.then(async () => {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = v ? 1 : 0;
             }
-            app.wsManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), ...vf })
+            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), ...vf })
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
@@ -444,7 +444,7 @@ app.wsManager.readyPromise.then(async () => {
                 });
         });
 
-        populateDisplayControls(app, visibility, WSTileLayer,
+        populateDisplayControls(app, visibility, WebSocketTileLayer,
                                 layersData, redrawAllLayers);
     } catch (err) {
         console.error('Failed to load initial data from server:', err);

@@ -18,14 +18,14 @@ const layerPalette = [
 ];
 
 // Populate display controls with layer checkboxes and visibility tree.
-export function populateDisplayControls(app, visibility, WSTileLayer,
+export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                                          layersData, redrawAllLayers) {
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
 
     // Instance borders layer (always below routing layers)
-    const instancesLayer = new WSTileLayer(app.wsManager, '_instances', {
+    const instancesLayer = new WebSocketTileLayer(app.websocketManager, '_instances', {
         zIndex: 0,
     });
     instancesLayer.addTo(app.map);
@@ -53,7 +53,7 @@ export function populateDisplayControls(app, visibility, WSTileLayer,
     const layerCbs = [];
 
     layersData.layers.forEach((name, index) => {
-        const layer = new WSTileLayer(app.wsManager, name, {
+        const layer = new WebSocketTileLayer(app.websocketManager, name, {
             opacity: 0.7,
             zIndex: index + 1
         });

@@ -52,7 +52,7 @@ html, body {
 }
 
 /* Status overlay */
-#ws-status {
+#websocket-status {
     position: fixed;
     top: 8px;
     right: 8px;

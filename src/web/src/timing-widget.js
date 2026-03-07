@@ -164,8 +164,8 @@ export class TimingWidget {
         this._updateBtn.textContent = 'Loading...';
         try {
             const [setupData, holdData] = await Promise.all([
-                this._app.wsManager.request({ type: 'timing_report', is_setup: 1, max_paths: 100 }),
-                this._app.wsManager.request({ type: 'timing_report', is_setup: 0, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: 1, max_paths: 100 }),
+                this._app.websocketManager.request({ type: 'timing_report', is_setup: 0, max_paths: 100 }),
             ]);
             this._setupPaths = setupData.paths || [];
             this._holdPaths = holdData.paths || [];
@@ -181,7 +181,7 @@ export class TimingWidget {
     }
 
     _clearTimingHighlight() {
-        this._app.wsManager.request({ type: 'timing_highlight', path_index: -1 })
+        this._app.websocketManager.request({ type: 'timing_highlight', path_index: -1 })
             .then(() => this._redrawAllLayers());
     }
 
@@ -194,7 +194,7 @@ export class TimingWidget {
         rows[idx].scrollIntoView({ block: 'nearest' });
         this._pathTableContainer.focus();
         this._renderDetailTable();
-        this._app.wsManager.request({
+        this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: idx,
             is_setup: this._currentTab === 'setup' ? 1 : 0,
@@ -261,7 +261,7 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
-        this._app.wsManager.request({
+        this._app.websocketManager.request({
             type: 'timing_highlight',
             path_index: this._selectedPathIndex,
             is_setup: this._currentTab === 'setup' ? 1 : 0,

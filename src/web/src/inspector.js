@@ -20,7 +20,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
-            app.wsManager.request({ type: 'hover', select_id: selectId })
+            app.websocketManager.request({ type: 'hover', select_id: selectId })
                 .then(data => {
                     if (data.rects && app.map && app.designScale) {
                         clearHoverHighlight();
@@ -52,7 +52,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
     }
 
     function navigateInspector(selectId) {
-        app.wsManager.request({ type: 'inspect', select_id: selectId })
+        app.websocketManager.request({ type: 'inspect', select_id: selectId })
             .then(data => {
                 if (data.error) {
                     console.error('Inspect error:', data.error);
