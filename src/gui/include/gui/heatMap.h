@@ -215,6 +215,7 @@ class HeatMapDataSource
   bool populated_;
   bool colors_correct_;
   bool issue_redraw_;
+  bool registered_with_gui_;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;

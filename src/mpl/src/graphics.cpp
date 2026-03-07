@@ -36,6 +36,12 @@ Graphics::Graphics(bool coarse,
       block_(block),
       logger_(logger)
 {
+  if (!gui::Gui::enabled()) {
+    active_ = false;
+    chart_ = nullptr;
+    return;
+  }
+
   gui::Gui* gui = gui::Gui::get();
   gui->registerRenderer(this);
 
@@ -48,11 +54,19 @@ Graphics::Graphics(bool coarse,
 
 void Graphics::startCoarse()
 {
+  if (!gui::Gui::enabled()) {
+    active_ = false;
+    return;
+  }
   active_ = coarse_;
 }
 
 void Graphics::startFine()
 {
+  if (!gui::Gui::enabled()) {
+    active_ = false;
+    return;
+  }
   active_ = fine_;
 }
 
@@ -84,7 +98,7 @@ void Graphics::startSA(const char* type,
 
 void Graphics::endSA(const float norm_cost)
 {
-  if (!active_) {
+  if (!gui::Gui::enabled() || !active_) {
     return;
   }
 
@@ -156,6 +170,10 @@ void Graphics::report(const float norm_cost)
 
 void Graphics::drawResult()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (max_level_) {
     std::vector<std::vector<odb::Rect>> outlines(max_level_.value() + 1);
     int level = 0;
@@ -203,7 +221,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
-  if (!active_) {
+  if (!gui::Gui::enabled() || !active_) {
     return;
   }
   iter_++;

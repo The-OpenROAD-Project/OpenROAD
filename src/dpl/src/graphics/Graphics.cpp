@@ -24,7 +24,9 @@ Graphics::Graphics(Opendp* dp,
                    bool paint_pixels)
     : dp_(dp), debug_instance_(debug_instance), paint_pixels_(paint_pixels)
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void Graphics::startPlacement(odb::dbBlock* block)
@@ -34,6 +36,10 @@ void Graphics::startPlacement(odb::dbBlock* block)
 
 void Graphics::placeInstance(odb::dbInst* instance)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (!instance || instance != debug_instance_) {
     return;
   }
@@ -65,6 +71,10 @@ void Graphics::binSearch(const Node* cell,
 
 void Graphics::redrawAndPause()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   auto gui = gui::Gui::get();
   gui->redraw();
   gui->pause();
@@ -72,6 +82,10 @@ void Graphics::redrawAndPause()
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (!block_) {
     return;
   }

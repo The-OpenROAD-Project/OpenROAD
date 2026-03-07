@@ -27,7 +27,7 @@ void initReplace(Tcl_Interp* tcl_interp)
 
 void initReplaceGraphics(Replace* replace, utl::Logger* log)
 {
-  if (gui::Gui::get() == nullptr) {
+  if (!gui::Gui::enabled()) {
     replace->setGraphicsInterface(gpl::GraphicsNone());
   } else {
     replace->setGraphicsInterface(gpl::GraphicsImpl(log));

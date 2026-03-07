@@ -12,7 +12,9 @@ namespace rsz {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void Graphics::setNet(odb::dbNet* net)
@@ -30,6 +32,10 @@ void Graphics::stopOnSubdivideStep(const bool stop)
 
 void Graphics::subdivideStart(odb::dbNet* net)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   lines_.clear();
   if (net_) {
     subdivide_ignore_ = (net != net_);
@@ -38,6 +44,9 @@ void Graphics::subdivideStart(odb::dbNet* net)
 
 void Graphics::subdivide(const odb::Line& line)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   if (subdivide_ignore_) {
     return;
   }
@@ -50,6 +59,10 @@ void Graphics::subdivide(const odb::Line& line)
 
 void Graphics::subdivideDone()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (!subdivide_ignore_) {
     gui::Gui::get()->redraw();
     gui::Gui::get()->pause();
@@ -58,6 +71,10 @@ void Graphics::subdivideDone()
 
 void Graphics::repairNetStart(const BufferedNetPtr& bnet, odb::dbNet* net)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   lines_.clear();
   if (net_) {
     repair_net_ignore_ = (net != net_);
@@ -71,6 +88,10 @@ void Graphics::repairNetStart(const BufferedNetPtr& bnet, odb::dbNet* net)
 
 void Graphics::makeBuffer(odb::dbInst* inst)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (!repair_net_ignore_) {
     buffers_.push_back(inst);
     gui::Gui::get()->redraw();
@@ -80,6 +101,10 @@ void Graphics::makeBuffer(odb::dbInst* inst)
 
 void Graphics::repairNetDone()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (!repair_net_ignore_) {
     gui::Gui::get()->redraw();
     gui::Gui::get()->pause();

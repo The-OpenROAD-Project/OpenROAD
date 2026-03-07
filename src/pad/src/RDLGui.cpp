@@ -233,6 +233,10 @@ void RDLGui::addSnap(const odb::Point& pt0, const odb::Point& pt1)
 
 void RDLGui::zoomToSnap(bool preview)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (snap_.empty()) {
     return;
   }
@@ -269,6 +273,10 @@ void RDLGui::setRouter(RDLRouter* router)
 
 void RDLGui::pause(bool timeout) const
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   gui::Gui::get()->redraw();
 
   if (timeout) {

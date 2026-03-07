@@ -11,7 +11,9 @@ namespace est {
 
 SteinerRenderer::SteinerRenderer()
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void SteinerRenderer::highlight(SteinerTree* tree)

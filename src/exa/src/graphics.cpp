@@ -10,11 +10,17 @@ namespace exa {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void Graphics::makeInstance(odb::dbInst* instance)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   instance_ = instance;
 
   auto gui = gui::Gui::get();
