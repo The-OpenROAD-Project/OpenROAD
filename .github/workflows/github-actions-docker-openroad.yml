@@ -3,6 +3,7 @@ name: OpenROAD Docker Build
 on:
   push:
     branches: [ "master" ,"docker-openroad"]
+  workflow_dispatch:
 
 jobs:
   docker:
