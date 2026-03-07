@@ -1,0 +1,37 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Startpoint: in[7] (input port clocked by clk)
+Endpoint: out[0] (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 v input external delay
+   0.00    0.00 v in[7] (in)
+   0.05    0.05 v _4_/Z (XOR2_X1)
+   0.06    0.11 v _6_/Z (XOR2_X1)
+   0.06    0.17 v _7_/Z (XOR2_X1)
+   0.03    0.20 v _8_/ZN (AND2_X1)
+   0.00    0.20 v out[0] (out)
+           0.20   data arrival time
+
+   1.00    1.00   clock clk (rise edge)
+   0.00    1.00   clock network delay (ideal)
+   0.00    1.00   clock reconvergence pessimism
+  -1.00    0.00   output external delay
+           0.00   data required time
+---------------------------------------------------------
+           0.00   data required time
+          -0.20   data arrival time
+---------------------------------------------------------
+          -0.20   slack (VIOLATED)
+
+
+Top 5 timing bottlenecks:
+ - _7_/Z (metric 0.856)
+ - _6_/Z (metric 0.713)
+ - _5_/Z (metric 0.711)
+ - _10_/ZN (metric 0.639)
+ - _8_/ZN (metric 0.639)
