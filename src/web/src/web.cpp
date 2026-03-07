@@ -3,7 +3,6 @@
 
 #include "web/web.h"
 
-#include <algorithm>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -18,26 +17,12 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <set>
 #include <string>
 #include <thread>
-#include <utility>
 #include <vector>
 
-#include "color.h"
-#include "db_sta/dbSta.hh"
-#include "gui/descriptor_registry.h"
-#include "gui/gui.h"
-#include "lodepng.h"
-#include "odb/db.h"
-#include "odb/dbShape.h"
-#include "odb/dbTransform.h"
-#include "search.h"
-#include "tile_generator.h"
+#include "request_handler.h"
 #include "timing_report.h"
-#include "tcl.h"
-#include "utl/Logger.h"
-#include "utl/timer.h"
 
 namespace web {
 
@@ -47,274 +32,8 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
-// ShapeCollector — a gui::Painter that collects rectangles from
-// descriptor->highlight() calls for use in tile rendering.
-class ShapeCollector : public gui::Painter
-{
- public:
-  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
-
-  std::vector<odb::Rect> rects;
-
-  void drawRect(const odb::Rect& rect, int, int) override
-  {
-    rects.push_back(rect);
-  }
-  void drawPolygon(const odb::Polygon& polygon) override
-  {
-    rects.push_back(polygon.getEnclosingRect());
-  }
-  void drawOctagon(const odb::Oct& oct) override
-  {
-    rects.push_back(oct.getEnclosingRect());
-  }
-
-  // No-ops
-  Color getPenColor() override { return {}; }
-  void setPen(odb::dbTechLayer*, bool) override {}
-  void setPen(const Color&, bool, int) override {}
-  void setPenWidth(int) override {}
-  void setBrush(odb::dbTechLayer*, int) override {}
-  void setBrush(const Color&, const Brush&) override {}
-  void setFont(const Font&) override {}
-  void saveState() override {}
-  void restoreState() override {}
-  void drawLine(const odb::Point&, const odb::Point&) override {}
-  void drawCircle(int, int, int) override {}
-  void drawX(int, int, int) override {}
-  void drawPolygon(const std::vector<odb::Point>&) override {}
-  void drawString(int, int, Anchor, const std::string&, bool) override {}
-  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
-  {
-    return {};
-  }
-  void drawRuler(int, int, int, int, bool, const std::string&) override {}
-};
-
-// TileGenerator methods and collectTimingPathShapes are in tile_generator.cpp
 //------------------------------------------------------------------------------
-// Transport-agnostic request/response types and dispatch
 //------------------------------------------------------------------------------
-
-// Escape a string for safe inclusion in a JSON string value.
-// Handles backslash and double-quote (the common offenders in Verilog names).
-static std::string json_escape(const std::string& s)
-{
-  std::string out;
-  out.reserve(s.size());
-  for (char c : s) {
-    switch (c) {
-      case '\\':
-        out += "\\\\";
-        break;
-      case '"':
-        out += "\\\"";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      default:
-        if (static_cast<unsigned char>(c) < 0x20) {
-          // Escape other control characters as \u00XX
-          char buf[8];
-          snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
-          out += buf;
-        } else {
-          out += c;
-        }
-        break;
-    }
-  }
-  return out;
-}
-
-// Store a Selected in the clickables vector and return its index.
-static int storeSelectable(std::vector<gui::Selected>& selectables,
-                           const gui::Selected& sel)
-{
-  int id = static_cast<int>(selectables.size());
-  selectables.push_back(sel);
-  return id;
-}
-
-// Serialize a std::any value that might be a Selected.  If it is,
-// write "value":"<name>", "select_id":<N> so the client can navigate.
-// Otherwise just write "value":"<string>".
-static void serializeAnyValue(std::stringstream& ss,
-                              const char* field,
-                              const std::any& value,
-                              std::vector<gui::Selected>& selectables,
-                              bool short_name = false)
-{
-  if (auto* sel = std::any_cast<gui::Selected>(&value)) {
-    if (*sel) {
-      std::string name = short_name ? sel->getShortName() : sel->getName();
-      int id = storeSelectable(selectables, *sel);
-      ss << "\"" << field << "\": \"" << json_escape(name) << "\", \""
-         << field << "_select_id\": " << id;
-      return;
-    }
-  }
-  std::string str = gui::Descriptor::Property::toString(value);
-  ss << "\"" << field << "\": \"" << json_escape(str) << "\"";
-}
-
-// Serialize a Descriptor::Property value to a JSON fragment.
-// Leaf values: {"name":"...", "value":"..."}
-// PropertyList / SelectionSet: {"name":"...", "children":[...]}
-// Selected values get an additional select_id for click navigation.
-static void serializeProperty(std::stringstream& ss,
-                              const gui::Descriptor::Property& prop,
-                              std::vector<gui::Selected>& selectables)
-{
-  ss << "{\"name\": \"" << json_escape(prop.name) << "\"";
-
-  // Check for compound types that should be rendered as expandable groups.
-  if (auto* plist
-      = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
-    ss << ", \"children\": [";
-    bool first = true;
-    for (const auto& [key, val] : *plist) {
-      if (!first) {
-        ss << ", ";
-      }
-      ss << "{";
-      serializeAnyValue(ss, "name", key, selectables, /*short_name=*/true);
-      ss << ", ";
-      serializeAnyValue(ss, "value", val, selectables);
-      ss << "}";
-      first = false;
-    }
-    ss << "]";
-  } else if (auto* sel_set
-             = std::any_cast<gui::SelectionSet>(&prop.value)) {
-    ss << ", \"children\": [";
-    bool first = true;
-    for (const auto& sel : *sel_set) {
-      if (!first) {
-        ss << ", ";
-      }
-      int id = storeSelectable(selectables, sel);
-      ss << "{\"name\": \"" << json_escape(sel.getName())
-         << "\", \"name_select_id\": " << id << "}";
-      first = false;
-    }
-    ss << "]";
-  } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
-    // Single Selected leaf value (e.g., "Master" → dbMaster*)
-    if (*sel) {
-      int id = storeSelectable(selectables, *sel);
-      ss << ", \"value\": \"" << json_escape(sel->getName())
-         << "\", \"value_select_id\": " << id;
-    }
-  } else {
-    // Plain leaf value — convert to string.
-    std::string val_str = prop.toString();
-    ss << ", \"value\": \"" << json_escape(val_str) << "\"";
-  }
-
-  ss << "}";
-}
-
-//------------------------------------------------------------------------------
-// TclEvaluator — thread-safe Tcl command evaluation with output capture.
-// Uses Logger::redirectStringBegin/End to capture all output (puts, logger
-// messages) without echoing to the server console.
-//------------------------------------------------------------------------------
-
-struct TclEvaluator
-{
-  Tcl_Interp* interp;
-  utl::Logger* logger;
-  std::mutex mutex;
-
-  struct Result
-  {
-    std::string output;
-    std::string result;
-    bool is_error;
-  };
-
-  TclEvaluator(Tcl_Interp* interp, utl::Logger* logger)
-      : interp(interp), logger(logger)
-  {
-  }
-
-  Result eval(const std::string& cmd)
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    logger->redirectStringBegin();
-    int rc = Tcl_Eval(interp, cmd.c_str());
-    Result r;
-    r.output = logger->redirectStringEnd();
-    r.result = Tcl_GetStringResult(interp);
-    r.is_error = (rc != TCL_OK);
-    return r;
-  }
-};
-
-//------------------------------------------------------------------------------
-
-struct WsRequest
-{
-  uint32_t id = 0;
-  enum Type
-  {
-    TILE,
-    BOUNDS,
-    LAYERS,
-    INFO,
-    SELECT,
-    INSPECT,
-    HOVER,
-    TCL_EVAL,
-    TIMING_REPORT,
-    TIMING_HIGHLIGHT,
-    UNKNOWN
-  } type
-      = UNKNOWN;
-  std::string layer;
-  int z = 0;
-  int x = 0;
-  int y = 0;
-
-  // SELECT fields
-  int select_x = 0;
-  int select_y = 0;
-  int select_zoom = 0;
-
-  // INSPECT / HOVER fields
-  int select_id = -1;
-
-  // TCL_EVAL fields
-  std::string tcl_cmd;
-
-  // TIMING_REPORT fields
-  bool timing_is_setup = true;
-  int timing_max_paths = 100;
-
-  // TIMING_HIGHLIGHT fields
-  int timing_path_index = -1;  // -1 = clear
-  bool timing_highlight_setup = true;
-  std::string timing_pin_name;  // optional: highlight this pin's net in yellow
-
-  // Visibility flags (default: all visible)
-  TileVisibility vis;
-};
-
-struct WsResponse
-{
-  uint32_t id = 0;
-  // 0 = JSON payload, 1 = PNG payload, 2 = error
-  uint8_t type = 0;
-  std::vector<unsigned char> payload;
-};
 
 // Minimal JSON field extraction (no JSON library dependency)
 static std::string extract_string(const std::string& json,
@@ -505,69 +224,6 @@ static WsRequest parse_ws_request(const std::string& msg)
   return req;
 }
 
-static WsResponse dispatch_request(
-    const WsRequest& req,
-    const std::shared_ptr<TileGenerator>& gen,
-    const std::vector<odb::Rect>& highlight_rects = {},
-    const std::vector<ColoredRect>& colored_rects = {},
-    const std::vector<FlightLine>& flight_lines = {})
-{
-  WsResponse resp;
-  resp.id = req.id;
-
-  switch (req.type) {
-    case WsRequest::BOUNDS: {
-      resp.type = 0;  // JSON
-      const odb::Rect bounds = gen->getBounds();
-      std::stringstream ss;
-      ss << "{\"bounds\": [[" << bounds.yMin() << ", " << bounds.xMin()
-         << "], [" << bounds.yMax() << ", " << bounds.xMax() << "]]}";
-      const std::string json = ss.str();
-      resp.payload.assign(json.begin(), json.end());
-      break;
-    }
-    case WsRequest::LAYERS: {
-      resp.type = 0;  // JSON
-      std::stringstream ss;
-      ss << "{\"layers\": [";
-      bool first = true;
-      for (const auto& name : gen->getLayers()) {
-        if (!first) {
-          ss << ", ";
-        }
-        ss << "\"" << name << "\"";
-        first = false;
-      }
-      ss << "]}";
-      const std::string json = ss.str();
-      resp.payload.assign(json.begin(), json.end());
-      break;
-    }
-    case WsRequest::TILE: {
-      resp.type = 1;  // PNG
-      resp.payload = gen->generateTile(
-          req.layer, req.z, req.x, req.y, req.vis, highlight_rects,
-          colored_rects, flight_lines);
-      break;
-    }
-    case WsRequest::INFO: {
-      resp.type = 0;  // JSON
-      const std::string json = gen->hasSta() ? "{\"has_liberty\": true}"
-                                             : "{\"has_liberty\": false}";
-      resp.payload.assign(json.begin(), json.end());
-      break;
-    }
-    default: {
-      resp.type = 2;  // error
-      const std::string err = "Unknown request type";
-      resp.payload.assign(err.begin(), err.end());
-      break;
-    }
-  }
-
-  return resp;
-}
-
 // Serialize a WsResponse into the binary wire format:
 //   [0..3] uint32_t id (big-endian)
 //   [4]    uint8_t  type
@@ -691,20 +347,13 @@ class WsSession : public std::enable_shared_from_this<WsSession>
 {
   websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
-  std::shared_ptr<TileGenerator> generator_;
-  std::shared_ptr<TclEvaluator> tcl_eval_;
-  std::shared_ptr<TimingReport> timing_report_;
 
-  // Per-session highlight shapes (collected via descriptor->highlight())
-  std::mutex selection_mutex_;
-  std::vector<odb::Rect> highlight_rects_;
-  std::vector<ColoredRect> timing_rects_;
-  std::vector<FlightLine> timing_lines_;
-
-  // Clickable objects from the last property response.
-  // Index in this vector is the select_id sent to the client.
-  std::mutex selectables_mutex_;
-  std::vector<gui::Selected> selectables_;
+  // Handler objects (transport-independent, testable)
+  SessionState state_;
+  SelectHandler select_handler_;
+  TclHandler tcl_handler_;
+  TimingHandler timing_handler_;
+  TileHandler tile_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
   net::strand<net::any_io_executor> strand_;
@@ -717,9 +366,10 @@ class WsSession : public std::enable_shared_from_this<WsSession>
              std::shared_ptr<TclEvaluator> tcl_eval,
              std::shared_ptr<TimingReport> timing_report)
       : ws_(std::move(socket)),
-        generator_(std::move(generator)),
-        tcl_eval_(std::move(tcl_eval)),
-        timing_report_(std::move(timing_report)),
+        select_handler_(generator),
+        tcl_handler_(tcl_eval),
+        timing_handler_(generator, timing_report, tcl_eval),
+        tile_handler_(generator),
         strand_(net::make_strand(ws_.get_executor()))
   {
   }
@@ -767,408 +417,56 @@ class WsSession : public std::enable_shared_from_this<WsSession>
       return;
     }
 
-    // Parse the incoming text message as a request
     const std::string msg = beast::buffers_to_string(buffer_.data());
     buffer_.consume(buffer_.size());
 
     const WsRequest req = parse_ws_request(msg);
-
     auto self = shared_from_this();
-    auto gen = generator_;
 
-    if (req.type == WsRequest::SELECT) {
-      // Handle selection on the thread pool — single selectAt call
-      net::post(ws_.get_executor(), [self, gen, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        try {
-          auto results = gen->selectAt(
-              req.select_x, req.select_y, req.select_zoom, req.vis);
-
-          // Collect highlight shapes from the first selected instance
-          {
-            std::lock_guard<std::mutex> lock(self->selection_mutex_);
-            self->highlight_rects_.clear();
-            self->timing_rects_.clear();
-            self->timing_lines_.clear();
-            if (!results.empty()) {
-              auto* registry = gui::DescriptorRegistry::instance();
-              gui::Selected sel
-                  = registry->makeSelected(std::any(results[0].inst));
-              if (sel) {
-                ShapeCollector collector;
-                sel.highlight(collector);
-                self->highlight_rects_ = std::move(collector.rects);
-              }
-            }
-          }
-
-          // Build JSON response with selection and properties
-          resp.type = 0;  // JSON
-          std::stringstream ss;
-          ss << "{\"selected\": [";
-          bool first = true;
-          for (const auto& r : results) {
-            if (!first) {
-              ss << ", ";
-            }
-            ss << "{\"name\": \"" << json_escape(r.name)
-               << "\", \"master\": \"" << json_escape(r.master)
-               << "\", \"bbox\": [" << r.bbox.xMin() << ", "
-               << r.bbox.yMin() << ", " << r.bbox.xMax() << ", "
-               << r.bbox.yMax() << "]}";
-            first = false;
-          }
-          ss << "]";
-
-          // Add properties for the first selected instance
-          std::vector<gui::Selected> new_selectables;
-          if (!results.empty()) {
-            // Top-level bbox for the toolbar zoom button
-            const auto& r0 = results[0];
-            ss << ", \"bbox\": [" << r0.bbox.xMin() << ", "
-               << r0.bbox.yMin() << ", " << r0.bbox.xMax() << ", "
-               << r0.bbox.yMax() << "]";
-
-            auto* registry = gui::DescriptorRegistry::instance();
-            gui::Selected sel
-                = registry->makeSelected(std::any(r0.inst));
-            if (sel) {
-              auto props = sel.getProperties();
-              ss << ", \"properties\": [";
-              bool pfirst = true;
-              for (const auto& prop : props) {
-                if (!pfirst) {
-                  ss << ", ";
-                }
-                serializeProperty(ss, prop, new_selectables);
-                pfirst = false;
-              }
-              ss << "]";
-            }
-          }
-          {
-            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
-            self->selectables_ = std::move(new_selectables);
-          }
-
-          ss << "}";
-          const std::string json = ss.str();
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else if (req.type == WsRequest::INSPECT) {
-      // Navigate to a previously-serialized Selected object by its ID
-      net::post(ws_.get_executor(), [self, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        try {
-          gui::Selected sel;
-          {
-            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
-            if (req.select_id >= 0
-                && req.select_id
-                       < static_cast<int>(self->selectables_.size())) {
-              sel = self->selectables_[req.select_id];
-            }
-          }
-
-          // Collect highlight shapes from the inspected object
-          {
-            std::lock_guard<std::mutex> lock(self->selection_mutex_);
-            self->highlight_rects_.clear();
-            self->timing_rects_.clear();
-            self->timing_lines_.clear();
-            if (sel) {
-              ShapeCollector collector;
-              sel.highlight(collector);
-              self->highlight_rects_ = std::move(collector.rects);
-            }
-          }
-
-          resp.type = 0;
-          std::stringstream ss;
-          if (sel) {
-            auto props = sel.getProperties();
-            std::vector<gui::Selected> new_selectables;
-            ss << "{\"name\": \"" << json_escape(sel.getName())
-               << "\", \"type\": \"" << json_escape(sel.getTypeName())
-               << "\", \"properties\": [";
-            bool first = true;
-            for (const auto& prop : props) {
-              if (!first) {
-                ss << ", ";
-              }
-              serializeProperty(ss, prop, new_selectables);
-              first = false;
-            }
-            ss << "]";
-            // Include bbox for highlight
-            odb::Rect bbox;
-            if (sel.getBBox(bbox)) {
-              ss << ", \"bbox\": [" << bbox.xMin() << ", " << bbox.yMin()
-                 << ", " << bbox.xMax() << ", " << bbox.yMax() << "]";
-            }
-            ss << "}";
-            {
-              std::lock_guard<std::mutex> lock(self->selectables_mutex_);
-              self->selectables_ = std::move(new_selectables);
-            }
-          } else {
-            ss << "{\"error\": \"invalid select_id\"}";
-          }
-          const std::string json = ss.str();
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else if (req.type == WsRequest::HOVER) {
-      // Return just the bbox for a selectable (no state changes)
-      net::post(ws_.get_executor(), [self, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        try {
-          gui::Selected sel;
-          {
-            std::lock_guard<std::mutex> lock(self->selectables_mutex_);
-            if (req.select_id >= 0
-                && req.select_id
-                       < static_cast<int>(self->selectables_.size())) {
-              sel = self->selectables_[req.select_id];
-            }
-          }
-
-          resp.type = 0;
-          std::stringstream ss;
-          if (sel) {
-            ShapeCollector collector;
-            sel.highlight(collector);
-            if (!collector.rects.empty()) {
-              ss << "{\"rects\": [";
-              bool first = true;
-              for (const auto& r : collector.rects) {
-                if (!first) {
-                  ss << ", ";
-                }
-                ss << "[" << r.xMin() << ", " << r.yMin() << ", "
-                   << r.xMax() << ", " << r.yMax() << "]";
-                first = false;
-              }
-              ss << "]}";
-            } else {
-              // Fall back to bbox if no shapes
-              odb::Rect bbox;
-              if (sel.getBBox(bbox)) {
-                ss << "{\"rects\": [[" << bbox.xMin() << ", " << bbox.yMin()
-                   << ", " << bbox.xMax() << ", " << bbox.yMax() << "]]}";
-              } else {
-                ss << "{\"error\": \"no bbox\"}";
-              }
-            }
-          } else {
-            ss << "{\"error\": \"invalid select_id\"}";
-          }
-          const std::string json = ss.str();
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else if (req.type == WsRequest::TCL_EVAL) {
-      // Evaluate a Tcl command and return the result + logger output
-      net::post(ws_.get_executor(), [self, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        resp.type = 0;
-        try {
-          auto result = self->tcl_eval_->eval(req.tcl_cmd);
-          std::stringstream ss;
-          ss << "{\"output\": \"" << json_escape(result.output)
-             << "\", \"result\": \"" << json_escape(result.result)
-             << "\", \"is_error\": "
-             << (result.is_error ? "true" : "false") << "}";
-          const std::string json = ss.str();
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else if (req.type == WsRequest::TIMING_REPORT) {
-      auto tr = timing_report_;
-      auto tcl = tcl_eval_;
-      net::post(ws_.get_executor(), [self, tr, tcl, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        resp.type = 0;
-        try {
-          // STA is not thread-safe; serialize with the Tcl evaluator mutex
-          std::lock_guard<std::mutex> lock(tcl->mutex);
-          auto paths = tr->getReport(req.timing_is_setup, req.timing_max_paths);
-          std::stringstream ss;
-          ss << "{\"paths\": [";
-          bool first_path = true;
-          for (const auto& p : paths) {
-            if (!first_path) {
-              ss << ", ";
-            }
-            first_path = false;
-            ss << "{\"start_clk\": \"" << json_escape(p.start_clk)
-               << "\", \"end_clk\": \"" << json_escape(p.end_clk)
-               << "\", \"required\": " << p.required
-               << ", \"arrival\": " << p.arrival << ", \"slack\": " << p.slack
-               << ", \"skew\": " << p.skew
-               << ", \"path_delay\": " << p.path_delay
-               << ", \"logic_depth\": " << p.logic_depth
-               << ", \"fanout\": " << p.fanout << ", \"start_pin\": \""
-               << json_escape(p.start_pin) << "\", \"end_pin\": \""
-               << json_escape(p.end_pin) << "\", \"data_nodes\": [";
-            bool first_node = true;
-            for (const auto& n : p.data_nodes) {
-              if (!first_node) {
-                ss << ", ";
-              }
-              first_node = false;
-              ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
-                 << ", \"fanout\": " << n.fanout
-                 << ", \"rise\": " << (n.is_rising ? "true" : "false")
-                 << ", \"clk\": " << (n.is_clock ? "true" : "false")
-                 << ", \"time\": " << n.time << ", \"delay\": " << n.delay
-                 << ", \"slew\": " << n.slew << ", \"load\": " << n.load
-                 << "}";
-            }
-            ss << "], \"capture_nodes\": [";
-            first_node = true;
-            for (const auto& n : p.capture_nodes) {
-              if (!first_node) {
-                ss << ", ";
-              }
-              first_node = false;
-              ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
-                 << ", \"fanout\": " << n.fanout
-                 << ", \"rise\": " << (n.is_rising ? "true" : "false")
-                 << ", \"clk\": " << (n.is_clock ? "true" : "false")
-                 << ", \"time\": " << n.time << ", \"delay\": " << n.delay
-                 << ", \"slew\": " << n.slew << ", \"load\": " << n.load
-                 << "}";
-            }
-            ss << "]}";
-          }
-          ss << "]}";
-          const std::string json = ss.str();
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else if (req.type == WsRequest::TIMING_HIGHLIGHT) {
-      auto gen = generator_;
-      auto tr = timing_report_;
-      auto tcl = tcl_eval_;
-      net::post(ws_.get_executor(), [self, gen, tr, tcl, req]() {
-        WsResponse resp;
-        resp.id = req.id;
-        resp.type = 0;
-        try {
-          std::vector<ColoredRect> new_rects;
-          std::vector<FlightLine> new_lines;
-
-          if (req.timing_path_index >= 0) {
-            // Re-fetch timing paths to get the selected path's data
-            std::lock_guard<std::mutex> sta_lock(tcl->mutex);
-            auto paths = tr->getReport(req.timing_highlight_setup);
-            if (req.timing_path_index < static_cast<int>(paths.size())) {
-              odb::dbBlock* block = gen->getBlock();
-              collectTimingPathShapes(
-                  block, paths[req.timing_path_index], new_rects, new_lines);
-
-              // If a specific pin is selected, highlight its net in yellow
-              if (!req.timing_pin_name.empty()) {
-                static const Color kStageColor{255, 255, 0, 180};
-                auto [iterm, bterm]
-                    = resolvePin(block, req.timing_pin_name);
-                odb::dbNet* net = iterm   ? iterm->getNet()
-                                  : bterm ? bterm->getNet()
-                                          : nullptr;
-                if (net) {
-                  collectNetShapes(net, iterm, bterm, nullptr, nullptr,
-                                   kStageColor, new_rects, new_lines);
-                }
-              }
-            }
-          }
-
-          std::cerr << "TIMING_HIGHLIGHT: " << new_rects.size()
-                    << " rects, " << new_lines.size() << " lines"
-                    << " pin_name='" << req.timing_pin_name << "'\n";
-
-          {
-            std::lock_guard<std::mutex> lock(self->selection_mutex_);
-            self->timing_rects_ = std::move(new_rects);
-            self->timing_lines_ = std::move(new_lines);
-            self->highlight_rects_.clear();
-          }
-
-          const std::string json = "{\"ok\": true}";
-          resp.payload.assign(json.begin(), json.end());
-        } catch (const std::exception& e) {
-          resp.type = 2;
-          std::string err = std::string("server error: ") + e.what();
-          resp.payload.assign(err.begin(), err.end());
-        }
-        self->queue_response(resp);
-      });
-    } else {
-      // Capture current highlight rects for tile rendering
-      std::vector<odb::Rect> rects;
-      std::vector<ColoredRect> colored;
-      std::vector<FlightLine> lines;
-      {
-        std::lock_guard<std::mutex> lock(selection_mutex_);
-        rects = highlight_rects_;
-        colored = timing_rects_;
-        lines = timing_lines_;
-      }
-
-      // Dispatch tile generation to the thread pool (not to the strand).
-      // This lets multiple tiles render concurrently across all 32 threads.
-      net::post(
-          ws_.get_executor(),
-          [self, gen, req, rects = std::move(rects),
-           colored = std::move(colored), lines = std::move(lines)]() {
-            WsResponse resp;
-            try {
-              resp = dispatch_request(req, gen, rects, colored, lines);
-            } catch (const std::exception& e) {
-              resp.id = req.id;
-              resp.type = 2;  // error
-              std::string err = std::string("server error: ") + e.what();
-              resp.payload.assign(err.begin(), err.end());
-              std::cerr << "dispatch error for request " << req.id << ": "
-                        << e.what() << "\n";
-            }
-            self->queue_response(resp);
-          });
+    switch (req.type) {
+      case WsRequest::SELECT:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->select_handler_.handleSelect(req, self->state_));
+        });
+        break;
+      case WsRequest::INSPECT:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->select_handler_.handleInspect(req, self->state_));
+        });
+        break;
+      case WsRequest::HOVER:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->select_handler_.handleHover(req, self->state_));
+        });
+        break;
+      case WsRequest::TCL_EVAL:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(self->tcl_handler_.handleTclEval(req));
+        });
+        break;
+      case WsRequest::TIMING_REPORT:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->timing_handler_.handleTimingReport(req));
+        });
+        break;
+      case WsRequest::TIMING_HIGHLIGHT:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->timing_handler_.handleTimingHighlight(req, self->state_));
+        });
+        break;
+      default:
+        net::post(ws_.get_executor(), [self, req]() {
+          self->queue_response(
+              self->tile_handler_.handleTile(req, self->state_));
+        });
+        break;
     }
 
-    // Immediately start reading the next request
     do_read();
   }
 
@@ -1197,7 +495,6 @@ class WsSession : public std::enable_shared_from_this<WsSession>
     ws_.async_write(
         net::buffer(write_queue_.front()),
         [self = shared_from_this()](beast::error_code ec, std::size_t) {
-          // Post back to the strand to serialize queue access
           net::post(self->strand_, [self, ec]() {
             if (ec) {
               std::cerr << "ws write error: " << ec.message() << "\n";

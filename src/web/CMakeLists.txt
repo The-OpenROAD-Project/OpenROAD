@@ -17,6 +17,7 @@ swig_lib(NAME         web
 target_sources(web
   PRIVATE
     src/color.cpp
+    src/request_handler.cpp
     src/search.cpp
     src/tile_generator.cpp
     src/timing_report.cpp
