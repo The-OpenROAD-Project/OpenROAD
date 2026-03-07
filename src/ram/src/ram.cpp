@@ -137,8 +137,8 @@ std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
   return bit_cell;
 }
 
-void RamGen::makeCellByte(const int start_idx,
-                          const std::string& prefix,
+void RamGen::makeCellByte(const int start_col_idx,
+                          const int row_idx,
                           const int read_ports,
                           dbNet* clock,
                           dbNet* write_enable,
@@ -156,7 +156,7 @@ void RamGen::makeCellByte(const int start_idx,
 
   for (int local_bit = 0; local_bit < 8; ++local_bit) {
     // For naming
-    const int global_bit_idx = start_idx + local_bit;
+    const int global_bit_idx = start_col_idx + local_bit;
 
     auto name = fmt::format("{}.bit{}", prefix, global_bit_idx);
     vector<dbNet*> outs;
@@ -199,11 +199,11 @@ void RamGen::makeCellByte(const int start_idx,
                  {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
 
-  ram_grid_.addCell(std::move(sel_cell), start_idx + 8);
+  ram_grid_.addCell(std::move(sel_cell), start_col_idx + 8);
 }
 
 void RamGen::makeWordSlice(const int bytes_per_word,
-                          const std::string& prefix,
+                          const int row_idx,
                           const int read_ports,
                           dbNet* clock, 
                           dbNet* write_enable,
@@ -211,15 +211,21 @@ void RamGen::makeWordSlice(const int bytes_per_word,
                           const array<dbNet*, 8>& data_input,
                           const vector<array<dbBTerm*, 8>>& data_output)
 {
- /*
- Psuedocode:
- iterates through number of bytes per word
- creates bytes for reach one
-  - takes in select nets 
-  - takes in the data_input nets for the word
-  - takes in the data_output nets
-  - 
- */ 
+  /*
+  Psuedocode:
+  iterates through number of bytes per word
+  creates bytes for reach one
+    - takes in select nets 
+    - takes in the data_input nets for the word
+    - takes in the data_output nets
+    - 
+  */ 
+
+  for (int i = 0; i < bytes_per_word; ++i) {
+    int start_col_index = i * 8;
+    makeCellByte(start_col_index, row_idx, read_ports, clock, write_enable, selects, data_input, data_output);
+  }
+
 }
 
 std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
@@ -704,6 +710,34 @@ void RamGen::generate(const int bytes_per_word,
 
       ram_grid_.addCell(std::move(decoder_and_cell), col_cell_count);
     }
+  }
+
+  const int num_bits = bytes_per_word * 8;
+  vector<dbNet*> D_nets(num_bits);
+  for (int col = 0; col < num_bits; ++col) {
+    for (int bit = 0; bit < num_bits; ++bit) {
+      data_inputs_.push_back(
+          makeBTerm(fmt::format("D[{}]", bit), dbIoType::INPUT));
+      D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit), "net");
+
+      // if readports == 1, only have Q outputs
+    if (read_ports == 1) {
+      array<dbBTerm*, 8> q_bTerms;
+      auto out_name = fmt::format("Q[{}]", bit + col * 8);
+      q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
+      q_outputs_.push_back(q_bTerms);
+    } else {
+      for (int read_port = 0; read_port < read_ports; ++read_port) {
+        array<dbBTerm*, 8> q_bTerms;
+        auto out_name = fmt::format("Q{}[{}]", read_port, bit);
+        q_bTerms[bit] = makeBTerm(out_name, dbIoType::OUTPUT);
+        q_outputs_.push_back(q_bTerms);
+      }
+    }
+    }
+  }
+
+  for (int row = 0; row < word_count; ++row) {
   }
 
 
