@@ -116,13 +116,36 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
 
   auto storage_net = makeNet(prefix, "storage");
 
+  // Resolve the clock-pin name for the storage cell by querying the
+  // Liberty data.  This avoids hard-coding technology-specific pin names
+  // (e.g. "CLK", "CK") and works with any technology node.
+  const char* clk_pin = nullptr;
+  auto sta_cell = network_->dbToSta(storage_cell_);
+  if (sta_cell) {
+    auto liberty = network_->libertyCell(sta_cell);
+    if (liberty) {
+      auto port_iter = liberty->portIterator();
+      while (port_iter->hasNext()) {
+        auto lib_port = port_iter->next();
+        if (lib_port->libertyPort() && lib_port->libertyPort()->isClock()) {
+          clk_pin = lib_port->name();
+          break;
+        }
+      }
+      delete port_iter;
+    }
+  }
+  if (!clk_pin) {
+    logger_->error(RAM,
+                   12,
+                   "No clock pin found on storage cell {}.",
+                   storage_cell_->getName());
+  }
   makeInst(bit_cell.get(),
            prefix,
            "bit",
            storage_cell_,
-           {{storage_cell_->findMTerm("CLK") ? "CLK" : "GATE", clock},
-            {"D", data_input},
-            {"Q", storage_net}});
+           {{clk_pin, clock}, {"D", data_input}, {"Q", storage_net}});
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
     makeInst(bit_cell.get(),
