@@ -3298,19 +3298,6 @@ void GlobalRouter::boxToGlobalRouting(const odb::Rect& route_bds,
   const int x1 = (tile_size * (route_bds.xMax() / tile_size)) - (tile_size / 2);
   const int y1 = (tile_size * (route_bds.yMax() / tile_size)) - (tile_size / 2);
 
-  if (x0 != x1 && y0 != y1) {
-    logger_->error(
-        GRT,
-        305,
-        "Segment ({}, {}, {}, {}, {}, {}) is not horizontal/vertical.",
-        x0,
-        y0,
-        layer,
-        x1,
-        y1,
-        layer);
-  }
-
   if (x0 == x1 && y0 == y1) {
     route.emplace_back(x0, y0, layer, x1, y1, via_layer);
   } else {
