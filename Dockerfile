@@ -41,7 +41,7 @@ RUN DEPS_ARGS="" && \
     fi && \
     cmake -B build -S . \
       -DCMAKE_BUILD_TYPE=Release \
-      -DOPENROAD_VERSION=${orVersion} \
+      -DOPENROAD_VERSION="${orVersion}" \
       $DEPS_ARGS && \
     cmake --build build -j$(nproc)
 
@@ -51,7 +51,7 @@ RUN DEPS_ARGS="" && \
 
 FROM ${fromImage}
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libtcl8.6 \
     libqt5core5t64 \
     libqt5gui5t64 \
