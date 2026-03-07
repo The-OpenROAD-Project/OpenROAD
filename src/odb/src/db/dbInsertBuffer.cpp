@@ -477,21 +477,23 @@ dbNet* dbInsertBuffer::createNewFlatNet(
           dbNameUniquifyType::ALWAYS);
     };
 
-    // Rename the original flat net if it has the same name as the port.
-    std::string avoidance_name;
-    if (bterm_name == block_->getBaseName(net_->getConstName())) {
-      avoidance_name = make_avoidance_name();
-      net_->rename(avoidance_name.c_str());
-    }
-
-    // Rename the modnet if it has the same name as the port.
+    // Rename the original flat net and/or modnet if they have the same name as
+    // the port.
+    const bool flat_net_collides
+        = (bterm_name == block_->getBaseName(net_->getConstName()));
     dbModNet* load_mnet = bterm->getModNet();
-    if (load_mnet
-        && std::string_view{load_mnet->getConstName()} == bterm_name) {
-      if (avoidance_name.empty()) {
-        avoidance_name = make_avoidance_name();
+    const bool mod_net_collides
+        = (load_mnet
+           && std::string_view{load_mnet->getConstName()} == bterm_name);
+
+    if (flat_net_collides || mod_net_collides) {
+      const std::string avoidance_name = make_avoidance_name();
+      if (flat_net_collides) {
+        net_->rename(avoidance_name.c_str());
       }
-      load_mnet->rename(avoidance_name.c_str());
+      if (mod_net_collides) {
+        load_mnet->rename(avoidance_name.c_str());
+      }
     }
 
     new_net_name = bterm_name;
