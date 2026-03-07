@@ -1,5 +1,5 @@
 ################################################################################
-# Base image and dependencies
+# Base image
 ################################################################################
 
 ARG fromImage=ubuntu:24.04
@@ -12,13 +12,12 @@ ENV LC_ALL=C.UTF-8
 
 WORKDIR /tmp
 
-# Install dependencies
 COPY etc/DependencyInstaller.sh .
 
 RUN chmod +x DependencyInstaller.sh && \
     ./DependencyInstaller.sh -ci -base && \
     ./DependencyInstaller.sh -ci -common && \
-    rm -f DependencyInstaller.sh
+    rm DependencyInstaller.sh
 
 ################################################################################
 # Build OpenROAD
@@ -34,13 +33,8 @@ RUN groupadd -g 9000 user && \
 USER user
 WORKDIR /OpenROAD
 
-# Copy repository
 COPY --chown=user:user . .
 
-# Ensure git submodules exist
-RUN git submodule update --init --recursive
-
-# Build OpenROAD
 RUN cmake -B build -S . \
     -DCMAKE_BUILD_TYPE=Release \
     -DOPENROAD_VERSION=${orVersion} && \
@@ -61,11 +55,9 @@ RUN apt-get update && apt-get install -y \
     libyaml-cpp0.8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Create runtime user
 RUN groupadd -g 9000 user && \
     useradd -m -u 9000 -g user -s /bin/bash user
 
-# Copy compiled binary
 COPY --from=builder /OpenROAD/build/bin/openroad /usr/bin/openroad
 
 ENV OPENROAD_EXE=/usr/bin/openroad
