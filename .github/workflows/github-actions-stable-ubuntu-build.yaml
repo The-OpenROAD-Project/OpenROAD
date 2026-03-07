@@ -20,6 +20,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt upgrade -y
+          sudo apt install -y patchelf
 
       - name: Install Dependencies
         run: |
@@ -35,12 +36,22 @@ jobs:
           ls build/bin
           ./build/bin/openroad -version
 
-      - name: Create Debian Package
+      - name: Prepare Package Structure
         run: |
           mkdir -p package/usr/bin
+          mkdir -p package/usr/lib/openroad
+          mkdir -p package/DEBIAN
+
           cp build/bin/openroad package/usr/bin/
 
-          mkdir -p package/DEBIAN
+          # copy OR-Tools runtime library
+          cp ~/.local/lib/libortools.so* package/usr/lib/openroad/ || true
+
+          # set runtime path
+          patchelf --set-rpath '$ORIGIN/../lib/openroad' package/usr/bin/openroad
+
+      - name: Create Control File
+        run: |
           cat <<EOF > package/DEBIAN/control
           Package: openroad
           Version: 1.0
@@ -51,6 +62,8 @@ jobs:
           Description: OpenROAD physical design automation tool
           EOF
 
+      - name: Build Debian Package
+        run: |
           dpkg-deb --build package openroad_amd64.deb
 
       - name: Upload Artifact
@@ -67,4 +80,4 @@ jobs:
           prerelease: true
           files: openroad_amd64.deb
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
