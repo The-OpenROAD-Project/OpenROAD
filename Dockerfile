@@ -16,7 +16,7 @@ COPY etc/DependencyInstaller.sh .
 
 RUN chmod +x DependencyInstaller.sh && \
     ./DependencyInstaller.sh -ci -base && \
-    ./DependencyInstaller.sh -ci -common && \
+    ./DependencyInstaller.sh -ci -common -save-deps-prefixes=/etc/openroad_deps_prefixes.txt && \
     rm DependencyInstaller.sh
 
 ################################################################################
@@ -35,9 +35,14 @@ WORKDIR /OpenROAD
 
 COPY --chown=user:user . .
 
-RUN cmake -B build -S . \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DOPENROAD_VERSION=${orVersion} && \
+RUN DEPS_ARGS="" && \
+    if [ -f /etc/openroad_deps_prefixes.txt ]; then \
+      DEPS_ARGS=$(cat /etc/openroad_deps_prefixes.txt); \
+    fi && \
+    cmake -B build -S . \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DOPENROAD_VERSION=${orVersion} \
+      $DEPS_ARGS && \
     cmake --build build -j$(nproc)
 
 ################################################################################
