@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "color.h"
@@ -201,5 +202,25 @@ class TileGenerator
   std::unique_ptr<Search> search_;
   static constexpr int kTileSizeInPixel = 256;
 };
+
+struct TimingPathSummary;
+
+std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(
+    odb::dbBlock* block,
+    const std::string& pin_name);
+
+void collectNetShapes(odb::dbNet* net,
+                      odb::dbITerm* drv_iterm,
+                      odb::dbBTerm* drv_bterm,
+                      odb::dbITerm* snk_iterm,
+                      odb::dbBTerm* snk_bterm,
+                      const Color& color,
+                      std::vector<ColoredRect>& rects,
+                      std::vector<FlightLine>& lines);
+
+void collectTimingPathShapes(odb::dbBlock* block,
+                             const TimingPathSummary& path,
+                             std::vector<ColoredRect>& rects,
+                             std::vector<FlightLine>& lines);
 
 }  // namespace web

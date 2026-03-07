@@ -18,6 +18,7 @@ target_sources(web
   PRIVATE
     src/color.cpp
     src/search.cpp
+    src/tile_generator.cpp
     src/timing_report.cpp
     src/web.cpp
     src/MakeWeb.cpp
@@ -28,7 +29,7 @@ target_link_libraries(web
     odb
   PRIVATE
     gui_descriptors
-    dbSta
+    dbSta_lib
     lodepng
     utl_lib
 )
