@@ -343,7 +343,7 @@ http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
-class WsSession : public std::enable_shared_from_this<WsSession>
+class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
   websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
@@ -361,7 +361,7 @@ class WsSession : public std::enable_shared_from_this<WsSession>
   bool writing_ = false;
 
  public:
-  WsSession(tcp::socket&& socket,
+  WebSocketSession(tcp::socket&& socket,
              std::shared_ptr<TileGenerator> generator,
              std::shared_ptr<TclEvaluator> tcl_eval,
              std::shared_ptr<TimingReport> timing_report)
@@ -651,8 +651,8 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
     }
 
     if (websocket::is_upgrade(req_)) {
-      // WebSocket upgrade - hand off to WsSession
-      auto ws = std::make_shared<WsSession>(
+      // WebSocket upgrade - hand off to WebSocketSession
+      auto ws = std::make_shared<WebSocketSession>(
           stream_.release_socket(), generator_, tcl_eval_, timing_report_);
       ws->run(std::move(req_));
     } else {
