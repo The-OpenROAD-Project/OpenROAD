@@ -22,7 +22,9 @@ FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)
       x_corner_(0),
       y_corner_(0)
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void FastRouteRenderer::setGridVariables(int tile_size,
@@ -36,6 +38,10 @@ void FastRouteRenderer::setGridVariables(int tile_size,
 
 void FastRouteRenderer::redrawAndPause()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   auto* gui = gui::Gui::get();
   gui->redraw();
   gui->pause();

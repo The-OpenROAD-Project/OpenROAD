@@ -22,8 +22,8 @@ void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder,
   clock_ = &clock;
   h_tree_builder_ = h_tree_builder;
   sink_clustering_ = nullptr;
-  gui::Gui::get()->registerRenderer(this);
   if (guiActive()) {
+    gui::Gui::get()->registerRenderer(this);
     clockPlot(true);
   }
 }
@@ -35,8 +35,8 @@ void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
   h_tree_builder_ = nullptr;
   sink_clustering_ = SinkClustering;
   points_ = points;
-  gui::Gui::get()->registerRenderer(this);
   if (guiActive()) {
+    gui::Gui::get()->registerRenderer(this);
     clockPlot(true);
   }
 }
@@ -156,6 +156,10 @@ void CtsGraphics::drawObjects(gui::Painter& painter)
 
 void CtsGraphics::clockPlot(bool pause)
 {
+  if (!guiActive()) {
+    return;
+  }
+
   gui::Gui::get()->redraw();
   if (pause) {
     gui::Gui::get()->pause();
@@ -164,7 +168,9 @@ void CtsGraphics::clockPlot(bool pause)
 
 void CtsGraphics::status(const std::string& message)
 {
-  gui::Gui::get()->status(message);
+  if (guiActive()) {
+    gui::Gui::get()->status(message);
+  }
 }
 
 /* static */
