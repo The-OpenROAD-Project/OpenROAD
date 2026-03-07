@@ -1,0 +1,35 @@
+name: Ubuntu Stable Build
+
+on:
+  push:
+    branches:
+      - ubuntu-build
+jobs:
+  build:
+    name: Compile OpenROAD
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Update System
+        run: |
+          sudo apt update
+          sudo apt upgrade -y
+
+      - name: Install Dependencies
+        run: |
+          sudo ./etc/DependencyInstaller.sh -base
+          ./etc/DependencyInstaller.sh -common -local
+
+      - name: Build OpenROAD
+        run: |
+          ./etc/Build.sh
+
+      - name: Check Binary
+        run: |
+          ls build/bin
+          ./build/bin/openroad -version
