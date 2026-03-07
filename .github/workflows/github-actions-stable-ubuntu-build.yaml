@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - ubuntu-build
+
 jobs:
   build:
     name: Compile OpenROAD
@@ -29,7 +30,41 @@ jobs:
         run: |
           ./etc/Build.sh
 
-      - name: Check Binary
+      - name: Verify Binary
         run: |
           ls build/bin
           ./build/bin/openroad -version
+
+      - name: Create Debian Package
+        run: |
+          mkdir -p package/usr/bin
+          cp build/bin/openroad package/usr/bin/
+
+          mkdir -p package/DEBIAN
+          cat <<EOF > package/DEBIAN/control
+          Package: openroad
+          Version: 1.0
+          Section: electronics
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Hemant Kumar
+          Description: OpenROAD physical design automation tool
+          EOF
+
+          dpkg-deb --build package openroad_amd64.deb
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openroad-deb
+          path: openroad_amd64.deb
+
+      - name: Create Pre Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ubuntu-build-${{ github.run_number }}
+          name: OpenROAD Pre-release
+          prerelease: true
+          files: openroad_amd64.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
