@@ -2,15 +2,21 @@ name: OpenROAD Docker Build
 
 on:
   push:
-    branches: ["master", "docker-openroad"]
+    branches:
+      - master
+      - docker-openroad
+  workflow_dispatch:
 
 jobs:
   docker:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (with submodules)
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -28,7 +34,10 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/openroad:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/openroad:${{ github.sha }}
+            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/openroad:latest
+            docker.io/${{ secrets.DOCKERHUB_USERNAME }}/openroad:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
