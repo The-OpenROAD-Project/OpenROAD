@@ -47,7 +47,9 @@ PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 
   update();
 
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void PDNRenderer::update()

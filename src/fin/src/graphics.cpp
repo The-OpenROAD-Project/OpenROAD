@@ -15,11 +15,17 @@ namespace fin {
 
 Graphics::Graphics()
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (guiActive()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void Graphics::drawPolygon90Set(const Polygon90Set& set)
 {
+  if (!guiActive()) {
+    return;
+  }
+
   // It is much faster to decompose the set to rectangles once using boost
   // than trying to have Qt draw the polygons directly.
   polygon_rects_.clear();
@@ -43,7 +49,9 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::status(const std::string& message)
 {
-  gui::Gui::get()->status(message);
+  if (guiActive()) {
+    gui::Gui::get()->status(message);
+  }
 }
 
 /* static */

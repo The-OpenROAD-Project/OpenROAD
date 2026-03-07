@@ -48,6 +48,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       populated_(false),
       colors_correct_(false),
       issue_redraw_(true),
+      registered_with_gui_(false),
       block_(nullptr),
       logger_(logger),
       grid_x_size_(10.0),
@@ -73,11 +74,19 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
 
 HeatMapDataSource::~HeatMapDataSource()
 {
-  Gui::get()->unregisterHeatMap(this);
+  if (registered_with_gui_ && Gui::enabled()) {
+    Gui::get()->unregisterHeatMap(this);
+  }
 }
 
 void HeatMapDataSource::registerHeatMap()
 {
+  if (!Gui::enabled()) {
+    registered_with_gui_ = false;
+    return;
+  }
+
+  registered_with_gui_ = true;
   Gui::get()->registerHeatMap(this);
 }
 
@@ -120,7 +129,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
 
 void HeatMapDataSource::redraw()
 {
-  if (issue_redraw_) {
+  if (issue_redraw_ && Gui::enabled()) {
     renderer_->redraw();
   }
 }

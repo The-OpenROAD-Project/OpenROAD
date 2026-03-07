@@ -101,6 +101,10 @@ highlight_stt_tree(std::vector<int> x,
   auto builder = getSteinerTreeBuilder();
   auto tree = builder->makeSteinerTree(x, y, drvr_index, alpha);
 
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   gui::Gui *gui = gui::Gui::get();
   stt::highlightSteinerTree(tree, gui);
 }
@@ -111,6 +115,10 @@ highlight_pd_tree(std::vector<int> x,
                   int drvr_index,
                   float alpha)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   utl::Logger *logger = ord::getLogger();
   gui::Gui *gui = gui::Gui::get();
   stt::Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger);
@@ -121,6 +129,10 @@ void
 highlight_flute_tree(std::vector<int> x,
                      std::vector<int> y)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   gui::Gui *gui = gui::Gui::get();
   auto builder = getSteinerTreeBuilder();
   stt::Tree tree = builder->flute(x, y, 3);
