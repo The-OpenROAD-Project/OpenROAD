@@ -21,6 +21,149 @@
 
 namespace web {
 
+bool TileVisibility::isNetVisible(odb::dbNet* net) const
+{
+  switch (net->getSigType().getValue()) {
+    case odb::dbSigType::SIGNAL:
+      return net_signal;
+    case odb::dbSigType::POWER:
+      return net_power;
+    case odb::dbSigType::GROUND:
+      return net_ground;
+    case odb::dbSigType::CLOCK:
+      return net_clock;
+    case odb::dbSigType::RESET:
+      return net_reset;
+    case odb::dbSigType::TIEOFF:
+      return net_tieoff;
+    case odb::dbSigType::SCAN:
+      return net_scan;
+    case odb::dbSigType::ANALOG:
+      return net_analog;
+  }
+  return true;
+}
+
+bool TileVisibility::isInstVisible(odb::dbInst* inst,
+                                   sta::dbSta* sta) const
+{
+  odb::dbMaster* master = inst->getMaster();
+  odb::dbMasterType mtype = master->getType();
+
+  if (sta) {
+    using IT = sta::dbSta::InstType;
+    switch (sta->getInstanceType(inst)) {
+      case IT::BLOCK:
+        return macros;
+      case IT::PAD_INPUT:
+        return pad_input;
+      case IT::PAD_OUTPUT:
+        return pad_output;
+      case IT::PAD_INOUT:
+        return pad_inout;
+      case IT::PAD_POWER:
+        return pad_power;
+      case IT::PAD_SPACER:
+        return pad_spacer;
+      case IT::PAD_AREAIO:
+        return pad_areaio;
+      case IT::PAD:
+        return pad_other;
+      case IT::ENDCAP:
+        return phys_endcap;
+      case IT::FILL:
+        return phys_fill;
+      case IT::TAPCELL:
+        return phys_welltap;
+      case IT::TIE:
+        return phys_tie;
+      case IT::ANTENNA:
+        return phys_antenna;
+      case IT::COVER:
+        return phys_cover;
+      case IT::BUMP:
+        return phys_bump;
+      case IT::LEF_OTHER:
+        return phys_other;
+      case IT::STD_BUF:
+      case IT::STD_INV:
+        return std_bufinv;
+      case IT::STD_BUF_TIMING_REPAIR:
+      case IT::STD_INV_TIMING_REPAIR:
+        return std_bufinv_timing;
+      case IT::STD_BUF_CLK_TREE:
+      case IT::STD_INV_CLK_TREE:
+        return std_clock_bufinv;
+      case IT::STD_CLOCK_GATE:
+        return std_clock_gate;
+      case IT::STD_LEVEL_SHIFT:
+        return std_level_shift;
+      case IT::STD_SEQUENTIAL:
+        return std_sequential;
+      case IT::STD_COMBINATIONAL:
+        return std_combinational;
+      case IT::STD_CELL:
+      case IT::STD_PHYSICAL:
+      case IT::STD_OTHER:
+      default:
+        return stdcells;
+    }
+  }
+
+  // Fallback: dbMasterType-only classification (no Liberty)
+  if (mtype.isBlock()) {
+    return macros;
+  }
+  if (mtype.isPad()) {
+    if (mtype == odb::dbMasterType::PAD_INPUT) {
+      return pad_input;
+    }
+    if (mtype == odb::dbMasterType::PAD_OUTPUT) {
+      return pad_output;
+    }
+    if (mtype == odb::dbMasterType::PAD_INOUT) {
+      return pad_inout;
+    }
+    if (mtype == odb::dbMasterType::PAD_POWER) {
+      return pad_power;
+    }
+    if (mtype == odb::dbMasterType::PAD_SPACER) {
+      return pad_spacer;
+    }
+    if (mtype == odb::dbMasterType::PAD_AREAIO) {
+      return pad_areaio;
+    }
+    return pad_other;
+  }
+  if (mtype.isEndCap()) {
+    return phys_endcap;
+  }
+  if (master->isFiller()) {
+    return phys_fill;
+  }
+  if (mtype == odb::dbMasterType::CORE_WELLTAP) {
+    return phys_welltap;
+  }
+  if (mtype == odb::dbMasterType::CORE_TIEHIGH
+      || mtype == odb::dbMasterType::CORE_TIELOW) {
+    return phys_tie;
+  }
+  if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
+    return phys_antenna;
+  }
+  if (mtype.isCover()) {
+    if (mtype == odb::dbMasterType::COVER_BUMP) {
+      return phys_bump;
+    }
+    return phys_cover;
+  }
+  if (mtype == odb::dbMasterType::CORE_SPACER
+      || inst->getSourceType() == odb::dbSourceType::DIST) {
+    return phys_other;
+  }
+  return stdcells;
+}
+
 TileGenerator::TileGenerator(odb::dbDatabase* db,
                              sta::dbSta* sta,
                              utl::Logger* logger)
@@ -83,126 +226,6 @@ std::vector<std::string> TileGenerator::getLayers()
   return layers;
 }
 
-bool TileGenerator::isInstVisible(odb::dbInst* inst,
-                                  const TileVisibility& vis) const
-{
-  odb::dbMaster* master = inst->getMaster();
-  odb::dbMasterType mtype = master->getType();
-
-  if (sta_) {
-    using IT = sta::dbSta::InstType;
-    switch (sta_->getInstanceType(inst)) {
-      case IT::BLOCK:
-        return vis.macros;
-      case IT::PAD_INPUT:
-        return vis.pad_input;
-      case IT::PAD_OUTPUT:
-        return vis.pad_output;
-      case IT::PAD_INOUT:
-        return vis.pad_inout;
-      case IT::PAD_POWER:
-        return vis.pad_power;
-      case IT::PAD_SPACER:
-        return vis.pad_spacer;
-      case IT::PAD_AREAIO:
-        return vis.pad_areaio;
-      case IT::PAD:
-        return vis.pad_other;
-      case IT::ENDCAP:
-        return vis.phys_endcap;
-      case IT::FILL:
-        return vis.phys_fill;
-      case IT::TAPCELL:
-        return vis.phys_welltap;
-      case IT::TIE:
-        return vis.phys_tie;
-      case IT::ANTENNA:
-        return vis.phys_antenna;
-      case IT::COVER:
-        return vis.phys_cover;
-      case IT::BUMP:
-        return vis.phys_bump;
-      case IT::LEF_OTHER:
-        return vis.phys_other;
-      case IT::STD_BUF:
-      case IT::STD_INV:
-        return vis.std_bufinv;
-      case IT::STD_BUF_TIMING_REPAIR:
-      case IT::STD_INV_TIMING_REPAIR:
-        return vis.std_bufinv_timing;
-      case IT::STD_BUF_CLK_TREE:
-      case IT::STD_INV_CLK_TREE:
-        return vis.std_clock_bufinv;
-      case IT::STD_CLOCK_GATE:
-        return vis.std_clock_gate;
-      case IT::STD_LEVEL_SHIFT:
-        return vis.std_level_shift;
-      case IT::STD_SEQUENTIAL:
-        return vis.std_sequential;
-      case IT::STD_COMBINATIONAL:
-        return vis.std_combinational;
-      case IT::STD_CELL:
-      case IT::STD_PHYSICAL:
-      case IT::STD_OTHER:
-      default:
-        return vis.stdcells;
-    }
-  }
-
-  // Fallback: dbMasterType-only classification (no Liberty)
-  if (mtype.isBlock()) {
-    return vis.macros;
-  }
-  if (mtype.isPad()) {
-    if (mtype == odb::dbMasterType::PAD_INPUT) {
-      return vis.pad_input;
-    }
-    if (mtype == odb::dbMasterType::PAD_OUTPUT) {
-      return vis.pad_output;
-    }
-    if (mtype == odb::dbMasterType::PAD_INOUT) {
-      return vis.pad_inout;
-    }
-    if (mtype == odb::dbMasterType::PAD_POWER) {
-      return vis.pad_power;
-    }
-    if (mtype == odb::dbMasterType::PAD_SPACER) {
-      return vis.pad_spacer;
-    }
-    if (mtype == odb::dbMasterType::PAD_AREAIO) {
-      return vis.pad_areaio;
-    }
-    return vis.pad_other;
-  }
-  if (mtype.isEndCap()) {
-    return vis.phys_endcap;
-  }
-  if (master->isFiller()) {
-    return vis.phys_fill;
-  }
-  if (mtype == odb::dbMasterType::CORE_WELLTAP) {
-    return vis.phys_welltap;
-  }
-  if (mtype == odb::dbMasterType::CORE_TIEHIGH
-      || mtype == odb::dbMasterType::CORE_TIELOW) {
-    return vis.phys_tie;
-  }
-  if (mtype == odb::dbMasterType::CORE_ANTENNACELL) {
-    return vis.phys_antenna;
-  }
-  if (mtype.isCover()) {
-    if (mtype == odb::dbMasterType::COVER_BUMP) {
-      return vis.phys_bump;
-    }
-    return vis.phys_cover;
-  }
-  if (mtype == odb::dbMasterType::CORE_SPACER
-      || inst->getSourceType() == odb::dbSourceType::DIST) {
-    return vis.phys_other;
-  }
-  return vis.stdcells;
-}
-
 std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
                                                      const int dbu_y,
                                                      const int zoom,
@@ -235,7 +258,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
     ++rtree_count;
     const odb::Rect bbox = inst->getBBox()->getBox();
     const bool hits = bbox.intersects(odb::Point(dbu_x, dbu_y));
-    const bool visible = isInstVisible(inst, vis);
+    const bool visible = vis.isInstVisible(inst, sta_);
     debugPrint(logger_,
                utl::WEB,
                "select",
@@ -341,7 +364,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
       odb::dbMaster* master = inst->getMaster();
 
-      if (!isInstVisible(inst, vis)) {
+      if (!vis.isInstVisible(inst, sta_)) {
         continue;
       }
       const int xl = inst_bbox.xMin();

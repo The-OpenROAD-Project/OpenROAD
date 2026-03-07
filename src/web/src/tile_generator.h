@@ -98,28 +98,8 @@ struct TileVisibility
   // Debug
   bool debug = false;
 
-  bool isNetVisible(odb::dbNet* net) const
-  {
-    switch (net->getSigType().getValue()) {
-      case odb::dbSigType::SIGNAL:
-        return net_signal;
-      case odb::dbSigType::POWER:
-        return net_power;
-      case odb::dbSigType::GROUND:
-        return net_ground;
-      case odb::dbSigType::CLOCK:
-        return net_clock;
-      case odb::dbSigType::RESET:
-        return net_reset;
-      case odb::dbSigType::TIEOFF:
-        return net_tieoff;
-      case odb::dbSigType::SCAN:
-        return net_scan;
-      case odb::dbSigType::ANALOG:
-        return net_analog;
-    }
-    return true;
-  }
+  bool isNetVisible(odb::dbNet* net) const;
+  bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
 };
 
 class TileGenerator
@@ -181,8 +161,6 @@ class TileGenerator
                        const std::vector<FlightLine>& lines,
                        const odb::Rect& dbu_tile,
                        double scale);
-
-  bool isInstVisible(odb::dbInst* inst, const TileVisibility& vis) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
