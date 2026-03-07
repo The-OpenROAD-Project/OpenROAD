@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-      - docker-openroad
-  workflow_dispatch:
 
 jobs:
   docker:
