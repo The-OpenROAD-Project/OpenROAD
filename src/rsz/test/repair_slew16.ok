@@ -11,6 +11,16 @@
 [INFO IFP-0103] Total instances area:                94.962 um^2
 [INFO IFP-0104] Effective utilization:                0.012
 [INFO IFP-0105] Number of instances:                     21
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                      21
+Diamond Move Success:             21 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement          7.5 u
