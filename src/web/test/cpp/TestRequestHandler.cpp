@@ -13,7 +13,7 @@ namespace web {
 namespace {
 
 // Helper to extract payload as string.
-std::string payloadStr(const WsResponse& resp)
+std::string payloadStr(const WebSocketResponse& resp)
 {
   return std::string(resp.payload.begin(), resp.payload.end());
 }
@@ -61,9 +61,9 @@ class DispatchRequestTest : public tst::Nangate45Fixture
 
 TEST_F(DispatchRequestTest, BoundsReturnsJson)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 42;
-  req.type = WsRequest::BOUNDS;
+  req.type = WebSocketRequest::BOUNDS;
 
   auto resp = dispatch_request(req, gen_);
   EXPECT_EQ(resp.id, 42u);
@@ -75,9 +75,9 @@ TEST_F(DispatchRequestTest, BoundsReturnsJson)
 
 TEST_F(DispatchRequestTest, LayersReturnsJson)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 7;
-  req.type = WsRequest::LAYERS;
+  req.type = WebSocketRequest::LAYERS;
 
   auto resp = dispatch_request(req, gen_);
   EXPECT_EQ(resp.id, 7u);
@@ -90,9 +90,9 @@ TEST_F(DispatchRequestTest, LayersReturnsJson)
 
 TEST_F(DispatchRequestTest, InfoWithoutSta)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 1;
-  req.type = WsRequest::INFO;
+  req.type = WebSocketRequest::INFO;
 
   auto resp = dispatch_request(req, gen_);
   EXPECT_EQ(resp.type, 0);
@@ -103,9 +103,9 @@ TEST_F(DispatchRequestTest, InfoWithoutSta)
 
 TEST_F(DispatchRequestTest, TileReturnsPng)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 99;
-  req.type = WsRequest::TILE;
+  req.type = WebSocketRequest::TILE;
   req.layer = "metal1";
   req.z = 0;
   req.x = 0;
@@ -125,9 +125,9 @@ TEST_F(DispatchRequestTest, TileReturnsPng)
 
 TEST_F(DispatchRequestTest, UnknownTypeReturnsError)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 5;
-  req.type = WsRequest::UNKNOWN;
+  req.type = WebSocketRequest::UNKNOWN;
 
   auto resp = dispatch_request(req, gen_);
   EXPECT_EQ(resp.type, 2);  // error
@@ -155,9 +155,9 @@ class TileHandlerTest : public tst::Nangate45Fixture
 
 TEST_F(TileHandlerTest, EmptyTile)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 1;
-  req.type = WsRequest::TILE;
+  req.type = WebSocketRequest::TILE;
   req.layer = "metal1";
   req.z = 0;
   req.x = 0;
@@ -176,9 +176,9 @@ TEST_F(TileHandlerTest, UsesHighlightState)
     state_.highlight_rects.push_back(odb::Rect(0, 0, 50000, 50000));
   }
 
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 2;
-  req.type = WsRequest::TILE;
+  req.type = WebSocketRequest::TILE;
   req.layer = "_instances";
   req.z = 0;
   req.x = 0;
@@ -226,9 +226,9 @@ class SelectHandlerTest : public tst::Nangate45Fixture
 
 TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 10;
-  req.type = WsRequest::SELECT;
+  req.type = WebSocketRequest::SELECT;
   req.select_x = 1000;
   req.select_y = 1000;
   req.select_zoom = 0;
@@ -243,9 +243,9 @@ TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 
 TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 11;
-  req.type = WsRequest::SELECT;
+  req.type = WebSocketRequest::SELECT;
   req.select_x = 99000;
   req.select_y = 99000;
   req.select_zoom = 10;  // high zoom = small area
@@ -259,9 +259,9 @@ TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
 
 TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 12;
-  req.type = WsRequest::INSPECT;
+  req.type = WebSocketRequest::INSPECT;
   req.select_id = 999;  // no selectables stored
 
   auto resp = handler_->handleInspect(req, state_);
@@ -273,9 +273,9 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 
 TEST_F(SelectHandlerTest, HoverInvalidIdReturnsError)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 13;
-  req.type = WsRequest::HOVER;
+  req.type = WebSocketRequest::HOVER;
   req.select_id = 999;
 
   auto resp = handler_->handleHover(req, state_);
@@ -296,9 +296,9 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
         {odb::Point(0, 0), odb::Point(1, 1), {0, 255, 0, 255}});
   }
 
-  WsRequest req;
+  WebSocketRequest req;
   req.id = 14;
-  req.type = WsRequest::SELECT;
+  req.type = WebSocketRequest::SELECT;
   req.select_x = 1000;
   req.select_y = 1000;
   req.select_zoom = 0;

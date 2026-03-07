@@ -41,7 +41,7 @@ struct TclEvaluator
   {
     std::lock_guard<std::mutex> lock(mutex);
     logger->redirectStringBegin();
-    int rc = Tcl_Eval(interp, cmd.c_str());
+    const int rc = Tcl_Eval(interp, cmd.c_str());
     Result r;
     r.output = logger->redirectStringEnd();
     r.result = Tcl_GetStringResult(interp);
@@ -50,9 +50,8 @@ struct TclEvaluator
   }
 };
 
-struct WsRequest
+struct WebSocketRequest
 {
-  uint32_t id = 0;
   enum Type
   {
     TILE,
@@ -66,8 +65,10 @@ struct WsRequest
     TIMING_REPORT,
     TIMING_HIGHLIGHT,
     UNKNOWN
-  } type
-      = UNKNOWN;
+  };
+
+  uint32_t id = 0;
+  Type type = UNKNOWN;
   std::string layer;
   int z = 0;
   int x = 0;
@@ -97,7 +98,7 @@ struct WsRequest
   TileVisibility vis;
 };
 
-struct WsResponse
+struct WebSocketResponse
 {
   uint32_t id = 0;
   // 0 = JSON payload, 1 = PNG payload, 2 = error
@@ -106,7 +107,7 @@ struct WsResponse
 };
 
 // Shared mutable state for a WebSocket session.
-// Handlers receive a reference; WsSession owns the instance.
+// Handlers receive a reference; WebSocketSession owns the instance.
 struct SessionState
 {
   std::mutex selection_mutex;
@@ -129,11 +130,12 @@ int extract_int_or(const std::string& json,
 std::string json_escape(const std::string& s);
 
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
-WsResponse dispatch_request(const WsRequest& req,
-                            const std::shared_ptr<TileGenerator>& gen,
-                            const std::vector<odb::Rect>& highlight_rects = {},
-                            const std::vector<ColoredRect>& colored_rects = {},
-                            const std::vector<FlightLine>& flight_lines = {});
+WebSocketResponse dispatch_request(
+    const WebSocketRequest& req,
+    const std::shared_ptr<TileGenerator>& gen,
+    const std::vector<odb::Rect>& highlight_rects = {},
+    const std::vector<ColoredRect>& colored_rects = {},
+    const std::vector<FlightLine>& flight_lines = {});
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -141,9 +143,12 @@ class SelectHandler
  public:
   explicit SelectHandler(std::shared_ptr<TileGenerator> gen);
 
-  WsResponse handleSelect(const WsRequest& req, SessionState& state);
-  WsResponse handleInspect(const WsRequest& req, SessionState& state);
-  WsResponse handleHover(const WsRequest& req, SessionState& state);
+  WebSocketResponse handleSelect(const WebSocketRequest& req,
+                                 SessionState& state);
+  WebSocketResponse handleInspect(const WebSocketRequest& req,
+                                  SessionState& state);
+  WebSocketResponse handleHover(const WebSocketRequest& req,
+                                SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
@@ -155,7 +160,7 @@ class TclHandler
  public:
   explicit TclHandler(std::shared_ptr<TclEvaluator> tcl_eval);
 
-  WsResponse handleTclEval(const WsRequest& req);
+  WebSocketResponse handleTclEval(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TclEvaluator> tcl_eval_;
@@ -169,8 +174,9 @@ class TimingHandler
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<TclEvaluator> tcl_eval);
 
-  WsResponse handleTimingReport(const WsRequest& req);
-  WsResponse handleTimingHighlight(const WsRequest& req, SessionState& state);
+  WebSocketResponse handleTimingReport(const WebSocketRequest& req);
+  WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
+                                          SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
@@ -184,7 +190,8 @@ class TileHandler
  public:
   explicit TileHandler(std::shared_ptr<TileGenerator> gen);
 
-  WsResponse handleTile(const WsRequest& req, SessionState& state);
+  WebSocketResponse handleTile(const WebSocketRequest& req,
+                               SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

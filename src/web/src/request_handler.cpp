@@ -264,17 +264,17 @@ static void serializeProperty(std::stringstream& ss,
 // dispatch_request — handles BOUNDS, LAYERS, TILE, INFO
 //------------------------------------------------------------------------------
 
-WsResponse dispatch_request(const WsRequest& req,
+WebSocketResponse dispatch_request(const WebSocketRequest& req,
                             const std::shared_ptr<TileGenerator>& gen,
                             const std::vector<odb::Rect>& highlight_rects,
                             const std::vector<ColoredRect>& colored_rects,
                             const std::vector<FlightLine>& flight_lines)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
 
   switch (req.type) {
-    case WsRequest::BOUNDS: {
+    case WebSocketRequest::BOUNDS: {
       resp.type = 0;
       const odb::Rect bounds = gen->getBounds();
       std::stringstream ss;
@@ -284,7 +284,7 @@ WsResponse dispatch_request(const WsRequest& req,
       resp.payload.assign(json.begin(), json.end());
       break;
     }
-    case WsRequest::LAYERS: {
+    case WebSocketRequest::LAYERS: {
       resp.type = 0;
       std::stringstream ss;
       ss << "{\"layers\": [";
@@ -301,7 +301,7 @@ WsResponse dispatch_request(const WsRequest& req,
       resp.payload.assign(json.begin(), json.end());
       break;
     }
-    case WsRequest::TILE: {
+    case WebSocketRequest::TILE: {
       resp.type = 1;
       resp.payload = gen->generateTile(req.layer,
                                        req.z,
@@ -313,7 +313,7 @@ WsResponse dispatch_request(const WsRequest& req,
                                        flight_lines);
       break;
     }
-    case WsRequest::INFO: {
+    case WebSocketRequest::INFO: {
       resp.type = 0;
       const std::string json = gen->hasSta() ? "{\"has_liberty\": true}"
                                              : "{\"has_liberty\": false}";
@@ -340,10 +340,10 @@ SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
-WsResponse SelectHandler::handleSelect(const WsRequest& req,
+WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
                                        SessionState& state)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   try {
     auto results
@@ -422,10 +422,10 @@ WsResponse SelectHandler::handleSelect(const WsRequest& req,
   return resp;
 }
 
-WsResponse SelectHandler::handleInspect(const WsRequest& req,
+WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
                                         SessionState& state)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   try {
     gui::Selected sel;
@@ -489,9 +489,9 @@ WsResponse SelectHandler::handleInspect(const WsRequest& req,
   return resp;
 }
 
-WsResponse SelectHandler::handleHover(const WsRequest& req, SessionState& state)
+WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req, SessionState& state)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   try {
     gui::Selected sel;
@@ -551,9 +551,9 @@ TclHandler::TclHandler(std::shared_ptr<TclEvaluator> tcl_eval)
 {
 }
 
-WsResponse TclHandler::handleTclEval(const WsRequest& req)
+WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   resp.type = 0;
   try {
@@ -585,9 +585,9 @@ TimingHandler::TimingHandler(std::shared_ptr<TileGenerator> gen,
 {
 }
 
-WsResponse TimingHandler::handleTimingReport(const WsRequest& req)
+WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   resp.type = 0;
   try {
@@ -651,10 +651,10 @@ WsResponse TimingHandler::handleTimingReport(const WsRequest& req)
   return resp;
 }
 
-WsResponse TimingHandler::handleTimingHighlight(const WsRequest& req,
+WebSocketResponse TimingHandler::handleTimingHighlight(const WebSocketRequest& req,
                                                 SessionState& state)
 {
-  WsResponse resp;
+  WebSocketResponse resp;
   resp.id = req.id;
   resp.type = 0;
   try {
@@ -724,7 +724,7 @@ TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
-WsResponse TileHandler::handleTile(const WsRequest& req, SessionState& state)
+WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req, SessionState& state)
 {
   // Snapshot current highlight state
   std::vector<odb::Rect> rects;

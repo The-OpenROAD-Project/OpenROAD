@@ -220,6 +220,8 @@ bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
   return stdcells;
 }
 
+//////////////////////////////////////////////////
+
 TileGenerator::TileGenerator(odb::dbDatabase* db,
                              sta::dbSta* sta,
                              utl::Logger* logger)

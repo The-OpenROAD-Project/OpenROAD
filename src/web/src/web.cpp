@@ -34,61 +34,61 @@ using tcp = net::ip::tcp;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-static WsRequest parse_ws_request(const std::string& msg)
+static WebSocketRequest parse_web_socket_request(const std::string& msg)
 {
-  WsRequest req;
+  WebSocketRequest req;
   req.id = static_cast<uint32_t>(extract_int(msg, "id"));
 
   std::string type_str = extract_string(msg, "type");
   if (type_str == "tile") {
-    req.type = WsRequest::TILE;
+    req.type = WebSocketRequest::TILE;
     req.layer = extract_string(msg, "layer");
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
     req.vis.parseFromJson(msg);
   } else if (type_str == "bounds") {
-    req.type = WsRequest::BOUNDS;
+    req.type = WebSocketRequest::BOUNDS;
   } else if (type_str == "layers") {
-    req.type = WsRequest::LAYERS;
+    req.type = WebSocketRequest::LAYERS;
   } else if (type_str == "info") {
-    req.type = WsRequest::INFO;
+    req.type = WebSocketRequest::INFO;
   } else if (type_str == "inspect") {
-    req.type = WsRequest::INSPECT;
+    req.type = WebSocketRequest::INSPECT;
     req.select_id = extract_int(msg, "select_id");
   } else if (type_str == "hover") {
-    req.type = WsRequest::HOVER;
+    req.type = WebSocketRequest::HOVER;
     req.select_id = extract_int(msg, "select_id");
   } else if (type_str == "tcl_eval") {
-    req.type = WsRequest::TCL_EVAL;
+    req.type = WebSocketRequest::TCL_EVAL;
     req.tcl_cmd = extract_string(msg, "cmd");
   } else if (type_str == "timing_report") {
-    req.type = WsRequest::TIMING_REPORT;
+    req.type = WebSocketRequest::TIMING_REPORT;
     req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
     req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
   } else if (type_str == "timing_highlight") {
-    req.type = WsRequest::TIMING_HIGHLIGHT;
+    req.type = WebSocketRequest::TIMING_HIGHLIGHT;
     req.timing_path_index = extract_int_or(msg, "path_index", -1);
     req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
     req.timing_pin_name = extract_string(msg, "pin_name");
   } else if (type_str == "select") {
-    req.type = WsRequest::SELECT;
+    req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
     req.select_y = extract_int(msg, "dbu_y");
     req.select_zoom = extract_int_or(msg, "zoom", 0);
     req.vis.parseFromJson(msg);
   } else {
-    req.type = WsRequest::UNKNOWN;
+    req.type = WebSocketRequest::UNKNOWN;
   }
   return req;
 }
 
-// Serialize a WsResponse into the binary wire format:
+// Serialize a WebSocketResponse into the binary wire format:
 //   [0..3] uint32_t id (big-endian)
 //   [4]    uint8_t  type
 //   [5..7] reserved
 //   [8..]  payload
-static std::vector<unsigned char> serialize_response(const WsResponse& resp)
+static std::vector<unsigned char> serialize_response(const WebSocketResponse& resp)
 {
   std::vector<unsigned char> frame(8 + resp.payload.size());
   const uint32_t id_be = htonl(resp.id);
@@ -142,26 +142,26 @@ http::response<http::string_body> handle_request(
   std::string target_path(req.target());
 
   if (req.method() == http::verb::get && req.target() == "/bounds") {
-    WsRequest ws_req;
-    ws_req.type = WsRequest::BOUNDS;
-    WsResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketRequest ws_req;
+    ws_req.type = WebSocketRequest::BOUNDS;
+    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
     res.set(http::field::content_type, "application/json");
     res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
   } else if (req.method() == http::verb::get && req.target() == "/layers") {
-    WsRequest ws_req;
-    ws_req.type = WsRequest::LAYERS;
-    WsResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketRequest ws_req;
+    ws_req.type = WebSocketRequest::LAYERS;
+    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
     res.set(http::field::content_type, "application/json");
     res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
   } else if (req.method() == http::verb::get
              && std::regex_match(target_path, match_pieces, tile_regex)) {
-    WsRequest ws_req;
-    ws_req.type = WsRequest::TILE;
+    WebSocketRequest ws_req;
+    ws_req.type = WebSocketRequest::TILE;
     ws_req.layer = match_pieces[1].str();
     ws_req.z = std::stoi(match_pieces[2].str());
     ws_req.x = std::stoi(match_pieces[3].str());
     ws_req.y = std::stoi(match_pieces[4].str());
-    WsResponse ws_resp = dispatch_request(ws_req, generator);
+    WebSocketResponse ws_resp = dispatch_request(ws_req, generator);
 
     res.set(http::field::content_type, "image/png");
     res.body() = std::string(ws_resp.payload.begin(), ws_resp.payload.end());
@@ -233,7 +233,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void on_accept(beast::error_code ec);
   void do_read();
   void on_read(beast::error_code ec);
-  void queue_response(const WsResponse& resp);
+  void queue_response(const WebSocketResponse& resp);
   void do_write();
 };
 
@@ -295,39 +295,39 @@ void WebSocketSession::on_read(beast::error_code ec)
   const std::string msg = beast::buffers_to_string(buffer_.data());
   buffer_.consume(buffer_.size());
 
-  const WsRequest req = parse_ws_request(msg);
+  const WebSocketRequest req = parse_web_socket_request(msg);
   auto self = shared_from_this();
 
   switch (req.type) {
-    case WsRequest::SELECT:
+    case WebSocketRequest::SELECT:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSelect(req, self->state_));
       });
       break;
-    case WsRequest::INSPECT:
+    case WebSocketRequest::INSPECT:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleInspect(req, self->state_));
       });
       break;
-    case WsRequest::HOVER:
+    case WebSocketRequest::HOVER:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleHover(req, self->state_));
       });
       break;
-    case WsRequest::TCL_EVAL:
+    case WebSocketRequest::TCL_EVAL:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(self->tcl_handler_.handleTclEval(req));
       });
       break;
-    case WsRequest::TIMING_REPORT:
+    case WebSocketRequest::TIMING_REPORT:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(self->timing_handler_.handleTimingReport(req));
       });
       break;
-    case WsRequest::TIMING_HIGHLIGHT:
+    case WebSocketRequest::TIMING_HIGHLIGHT:
       net::post(ws_.get_executor(), [self, req]() {
         self->queue_response(
             self->timing_handler_.handleTimingHighlight(req, self->state_));
@@ -343,7 +343,7 @@ void WebSocketSession::on_read(beast::error_code ec)
   do_read();
 }
 
-void WebSocketSession::queue_response(const WsResponse& resp)
+void WebSocketSession::queue_response(const WebSocketResponse& resp)
 {
   std::vector<unsigned char> frame = serialize_response(resp);
 
