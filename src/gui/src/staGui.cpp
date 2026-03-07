@@ -44,10 +44,12 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
 
@@ -389,9 +391,26 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     } else {
       const auto* node = getNodeAt(index);
       switch (col_index) {
-        case kPin:
-          return QString::fromStdString(
+        case kPin: {
+          QString name = QString::fromStdString(
               node->getNodeName(/* include_master */ true));
+          const sta::Pin* sta_pin = node->getPinAsSTA();
+          if (sta_pin != nullptr) {
+            sta::LibertyPort* lib_port
+                = sta_->getDbNetwork()->libertyPort(sta_pin);
+            if (lib_port != nullptr) {
+              const sta::MinMax* min_max
+                  = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
+              float clk_tree_delay
+                  = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
+              if (clk_tree_delay != 0.0f) {
+                name += QString(" [clk ins: %1]")
+                            .arg(convertDelay(clk_tree_delay, time_units));
+              }
+            }
+          }
+          return name;
+        }
         case kRiseFall:
           return node->isRisingEdge() ? kUpArrow : kDownArrow;
         case kTime:
