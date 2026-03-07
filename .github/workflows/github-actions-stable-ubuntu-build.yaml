@@ -5,6 +5,7 @@ on:
     branches:
       - ubuntu-build
   workflow_dispatch:
+
 jobs:
   build:
     name: Compile OpenROAD
@@ -42,12 +43,16 @@ jobs:
           mkdir -p package/usr/lib/openroad
           mkdir -p package/DEBIAN
 
+          # copy binary
           cp build/bin/openroad package/usr/bin/
 
-          # copy OR-Tools runtime library
-          cp ~/.local/lib/libortools.so* package/usr/lib/openroad/ || true
+          # copy runtime libraries
+          cp ~/.local/lib/*.so* package/usr/lib/openroad/ || true
 
-          # set runtime path
+          # reduce binary size
+          strip package/usr/bin/openroad || true
+
+          # set runtime path so binary finds local libs
           patchelf --set-rpath '$ORIGIN/../lib/openroad' package/usr/bin/openroad
 
       - name: Create Control File
