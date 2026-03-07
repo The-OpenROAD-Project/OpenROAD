@@ -98,7 +98,7 @@ void Graphics::startSA(const char* type,
 
 void Graphics::endSA(const float norm_cost)
 {
-  if (!gui::Gui::enabled() || !active_) {
+  if (!active_) {
     return;
   }
 
@@ -221,7 +221,7 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
 
 void Graphics::penaltyCalculated(float norm_cost)
 {
-  if (!gui::Gui::enabled() || !active_) {
+  if (!active_) {
     return;
   }
   iter_++;
