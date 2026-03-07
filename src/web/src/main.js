@@ -1214,6 +1214,22 @@ window.addEventListener('resize', () => {
     goldenLayout.setSize(window.innerWidth, window.innerHeight);
 });
 
+// Focus a Golden Layout component tab by its componentType name.
+function focusComponent(componentType) {
+    function find(item) {
+        if (item.isComponent && item.componentType === componentType) return item;
+        if (item.contentItems) {
+            for (const child of item.contentItems) {
+                const found = find(child);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+    const item = find(goldenLayout.rootItem);
+    if (item) item.focus();
+}
+
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 
 const wsUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
@@ -1424,6 +1440,7 @@ wsManager.readyPromise.then(async () => {
                                 `<strong>${inst.name}</strong><br>${inst.master}<br><small style="color:#888">(${dbu_x}, ${dbu_y})</small>`)
                             .openOn(map);
                         updateInspector(data);
+                        focusComponent('Inspector');
                         // Highlight selected instance bbox
                         if (inst.bbox) {
                             highlightBBox(inst.bbox[0], inst.bbox[1],
