@@ -2413,10 +2413,15 @@ void GlobalRouter::readGuides(const char* file_name)
       odb::Rect rect(
           stoi(tokens[0]), stoi(tokens[1]), stoi(tokens[2]), stoi(tokens[3]));
       guides[net].emplace_back(layer->getRoutingLevel(), rect);
-      int layer_idx = layer->getRoutingLevel();
-      boxToGlobalRouting(rect, layer_idx, layer_idx, routes_[net]);
     } else {
       logger_->error(GRT, 236, "Error reading guide file {}.", file_name);
+    }
+  }
+
+  computeGCellGridPatternFromGuides(guides);
+  for (auto& [net, guide_rects] : guides) {
+    for (auto& [layer_idx, rect] : guide_rects) {
+      boxToGlobalRouting(rect, layer_idx, layer_idx, routes_[net]);
     }
   }
 
@@ -2429,7 +2434,6 @@ void GlobalRouter::readGuides(const char* file_name)
   }
 
   updateEdgesUsage();
-  computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
   heatmap_->update();
   saveGuidesFromFile(guides);
