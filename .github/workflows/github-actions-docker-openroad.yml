@@ -2,7 +2,7 @@ name: OpenROAD Docker Build
 
 on:
   push:
-    branches: [ "master" ,"docker-openroad"]
+    branches: ["master", "docker-openroad"]
   workflow_dispatch:
 
 jobs:
@@ -27,6 +27,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/openroad:latest
+          platforms: linux/amd64
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/openroad:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/openroad:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
