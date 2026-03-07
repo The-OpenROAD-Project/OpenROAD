@@ -118,6 +118,13 @@ struct SessionState
   std::vector<gui::Selected> selectables;
 };
 
+// Minimal JSON field extraction (no JSON library dependency).
+std::string extract_string(const std::string& json, const std::string& key);
+int extract_int(const std::string& json, const std::string& key);
+int extract_int_or(const std::string& json,
+                   const std::string& key,
+                   int default_val);
+
 // Escape a string for safe inclusion in a JSON string value.
 std::string json_escape(const std::string& s);
 

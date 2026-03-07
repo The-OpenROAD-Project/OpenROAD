@@ -66,6 +66,77 @@ class ShapeCollector : public gui::Painter
 // JSON utilities
 //------------------------------------------------------------------------------
 
+std::string extract_string(const std::string& json, const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return {};
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return {};
+  }
+  auto quote_start = json.find('"', pos + 1);
+  if (quote_start == std::string::npos) {
+    return {};
+  }
+  // Find closing quote, skipping escaped quotes
+  std::string result;
+  for (size_t i = quote_start + 1; i < json.size(); i++) {
+    if (json[i] == '\\' && i + 1 < json.size()) {
+      switch (json[i + 1]) {
+        case '"': result += '"'; break;
+        case '\\': result += '\\'; break;
+        case 'n': result += '\n'; break;
+        case 'r': result += '\r'; break;
+        case 't': result += '\t'; break;
+        default: result += json[i + 1]; break;
+      }
+      i++;  // skip the escaped char
+    } else if (json[i] == '"') {
+      break;  // closing quote
+    } else {
+      result += json[i];
+    }
+  }
+  return result;
+}
+
+int extract_int(const std::string& json, const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  // Skip whitespace after colon
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  try {
+    return std::stoi(json.substr(pos));
+  } catch (...) {
+    return 0;
+  }
+}
+
+int extract_int_or(const std::string& json,
+                   const std::string& key,
+                   int default_val)
+{
+  const std::string needle = "\"" + key + "\"";
+  if (json.find(needle) == std::string::npos) {
+    return default_val;
+  }
+  return extract_int(json, key);
+}
+
 std::string json_escape(const std::string& s)
 {
   std::string out;

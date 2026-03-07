@@ -17,9 +17,66 @@
 #include "odb/dbTransform.h"
 #include "search.h"
 #include "timing_report.h"
+#include "request_handler.h"
 #include "utl/Logger.h"
 
 namespace web {
+
+void TileVisibility::parseFromJson(const std::string& json)
+{
+  struct BoolField
+  {
+    const char* key;
+    bool TileVisibility::*field;
+    bool default_val;
+  };
+
+  // clang-format off
+  static const BoolField fields[] = {
+    {"stdcells",           &TileVisibility::stdcells,           true},
+    {"macros",             &TileVisibility::macros,             true},
+    {"pad_input",          &TileVisibility::pad_input,          true},
+    {"pad_output",         &TileVisibility::pad_output,         true},
+    {"pad_inout",          &TileVisibility::pad_inout,          true},
+    {"pad_power",          &TileVisibility::pad_power,          true},
+    {"pad_spacer",         &TileVisibility::pad_spacer,         true},
+    {"pad_areaio",         &TileVisibility::pad_areaio,         true},
+    {"pad_other",          &TileVisibility::pad_other,          true},
+    {"phys_fill",          &TileVisibility::phys_fill,          true},
+    {"phys_endcap",        &TileVisibility::phys_endcap,        true},
+    {"phys_welltap",       &TileVisibility::phys_welltap,       true},
+    {"phys_tie",           &TileVisibility::phys_tie,           true},
+    {"phys_antenna",       &TileVisibility::phys_antenna,       true},
+    {"phys_cover",         &TileVisibility::phys_cover,         true},
+    {"phys_bump",          &TileVisibility::phys_bump,          true},
+    {"phys_other",         &TileVisibility::phys_other,         true},
+    {"std_bufinv",         &TileVisibility::std_bufinv,         true},
+    {"std_bufinv_timing",  &TileVisibility::std_bufinv_timing,  true},
+    {"std_clock_bufinv",   &TileVisibility::std_clock_bufinv,   true},
+    {"std_clock_gate",     &TileVisibility::std_clock_gate,     true},
+    {"std_level_shift",    &TileVisibility::std_level_shift,    true},
+    {"std_sequential",     &TileVisibility::std_sequential,     true},
+    {"std_combinational",  &TileVisibility::std_combinational,  true},
+    {"net_signal",         &TileVisibility::net_signal,         true},
+    {"net_power",          &TileVisibility::net_power,          true},
+    {"net_ground",         &TileVisibility::net_ground,         true},
+    {"net_clock",          &TileVisibility::net_clock,          true},
+    {"net_reset",          &TileVisibility::net_reset,          true},
+    {"net_tieoff",         &TileVisibility::net_tieoff,         true},
+    {"net_scan",           &TileVisibility::net_scan,           true},
+    {"net_analog",         &TileVisibility::net_analog,         true},
+    {"routing",            &TileVisibility::routing,            true},
+    {"special_nets",       &TileVisibility::special_nets,       true},
+    {"pins",               &TileVisibility::pins,               true},
+    {"blockages",          &TileVisibility::blockages,          true},
+    {"debug",              &TileVisibility::debug,              false},
+  };
+  // clang-format on
+
+  for (const auto& f : fields) {
+    this->*(f.field) = extract_int_or(json, f.key, f.default_val ? 1 : 0);
+  }
+}
 
 bool TileVisibility::isNetVisible(odb::dbNet* net) const
 {

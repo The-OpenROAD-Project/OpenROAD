@@ -98,6 +98,8 @@ struct TileVisibility
   // Debug
   bool debug = false;
 
+  void parseFromJson(const std::string& json);
+
   bool isNetVisible(odb::dbNet* net) const;
   bool isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const;
 };

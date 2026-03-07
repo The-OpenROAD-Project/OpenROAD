@@ -34,80 +34,6 @@ using tcp = net::ip::tcp;
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-// Minimal JSON field extraction (no JSON library dependency)
-static std::string extract_string(const std::string& json,
-                                  const std::string& key)
-{
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return {};
-  }
-  pos = json.find(':', pos + needle.size());
-  if (pos == std::string::npos) {
-    return {};
-  }
-  auto quote_start = json.find('"', pos + 1);
-  if (quote_start == std::string::npos) {
-    return {};
-  }
-  // Find closing quote, skipping escaped quotes
-  std::string result;
-  for (size_t i = quote_start + 1; i < json.size(); i++) {
-    if (json[i] == '\\' && i + 1 < json.size()) {
-      switch (json[i + 1]) {
-        case '"': result += '"'; break;
-        case '\\': result += '\\'; break;
-        case 'n': result += '\n'; break;
-        case 'r': result += '\r'; break;
-        case 't': result += '\t'; break;
-        default: result += json[i + 1]; break;
-      }
-      i++;  // skip the escaped char
-    } else if (json[i] == '"') {
-      break;  // closing quote
-    } else {
-      result += json[i];
-    }
-  }
-  return result;
-}
-
-static int extract_int(const std::string& json, const std::string& key)
-{
-  const std::string needle = "\"" + key + "\"";
-  auto pos = json.find(needle);
-  if (pos == std::string::npos) {
-    return 0;
-  }
-  pos = json.find(':', pos + needle.size());
-  if (pos == std::string::npos) {
-    return 0;
-  }
-  // Skip whitespace after colon
-  pos++;
-  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
-    pos++;
-  }
-  try {
-    return std::stoi(json.substr(pos));
-  } catch (...) {
-    return 0;
-  }
-}
-
-// Like extract_int but returns default_val when key is absent
-static int extract_int_or(const std::string& json,
-                          const std::string& key,
-                          int default_val)
-{
-  const std::string needle = "\"" + key + "\"";
-  if (json.find(needle) == std::string::npos) {
-    return default_val;
-  }
-  return extract_int(json, key);
-}
-
 static WsRequest parse_ws_request(const std::string& msg)
 {
   WsRequest req;
@@ -120,49 +46,7 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
-    req.vis.stdcells = extract_int_or(msg, "stdcells", 1);
-    req.vis.macros = extract_int_or(msg, "macros", 1);
-    // Pad sub-types
-    req.vis.pad_input = extract_int_or(msg, "pad_input", 1);
-    req.vis.pad_output = extract_int_or(msg, "pad_output", 1);
-    req.vis.pad_inout = extract_int_or(msg, "pad_inout", 1);
-    req.vis.pad_power = extract_int_or(msg, "pad_power", 1);
-    req.vis.pad_spacer = extract_int_or(msg, "pad_spacer", 1);
-    req.vis.pad_areaio = extract_int_or(msg, "pad_areaio", 1);
-    req.vis.pad_other = extract_int_or(msg, "pad_other", 1);
-    // Physical sub-types
-    req.vis.phys_fill = extract_int_or(msg, "phys_fill", 1);
-    req.vis.phys_endcap = extract_int_or(msg, "phys_endcap", 1);
-    req.vis.phys_welltap = extract_int_or(msg, "phys_welltap", 1);
-    req.vis.phys_tie = extract_int_or(msg, "phys_tie", 1);
-    req.vis.phys_antenna = extract_int_or(msg, "phys_antenna", 1);
-    req.vis.phys_cover = extract_int_or(msg, "phys_cover", 1);
-    req.vis.phys_bump = extract_int_or(msg, "phys_bump", 1);
-    req.vis.phys_other = extract_int_or(msg, "phys_other", 1);
-    // Std cell sub-types
-    req.vis.std_bufinv = extract_int_or(msg, "std_bufinv", 1);
-    req.vis.std_bufinv_timing = extract_int_or(msg, "std_bufinv_timing", 1);
-    req.vis.std_clock_bufinv = extract_int_or(msg, "std_clock_bufinv", 1);
-    req.vis.std_clock_gate = extract_int_or(msg, "std_clock_gate", 1);
-    req.vis.std_level_shift = extract_int_or(msg, "std_level_shift", 1);
-    req.vis.std_sequential = extract_int_or(msg, "std_sequential", 1);
-    req.vis.std_combinational = extract_int_or(msg, "std_combinational", 1);
-    // Net sub-types
-    req.vis.net_signal = extract_int_or(msg, "net_signal", 1);
-    req.vis.net_power = extract_int_or(msg, "net_power", 1);
-    req.vis.net_ground = extract_int_or(msg, "net_ground", 1);
-    req.vis.net_clock = extract_int_or(msg, "net_clock", 1);
-    req.vis.net_reset = extract_int_or(msg, "net_reset", 1);
-    req.vis.net_tieoff = extract_int_or(msg, "net_tieoff", 1);
-    req.vis.net_scan = extract_int_or(msg, "net_scan", 1);
-    req.vis.net_analog = extract_int_or(msg, "net_analog", 1);
-    // Shapes
-    req.vis.routing = extract_int_or(msg, "routing", 1);
-    req.vis.special_nets = extract_int_or(msg, "special_nets", 1);
-    req.vis.pins = extract_int_or(msg, "pins", 1);
-    req.vis.blockages = extract_int_or(msg, "blockages", 1);
-    // Debug
-    req.vis.debug = extract_int_or(msg, "debug", 0);
+    req.vis.parseFromJson(msg);
   } else if (type_str == "bounds") {
     req.type = WsRequest::BOUNDS;
   } else if (type_str == "layers") {
@@ -192,31 +76,7 @@ static WsRequest parse_ws_request(const std::string& msg)
     req.select_x = extract_int(msg, "dbu_x");
     req.select_y = extract_int(msg, "dbu_y");
     req.select_zoom = extract_int_or(msg, "zoom", 0);
-    // Visibility flags for filtering selectable instances
-    req.vis.stdcells = extract_int_or(msg, "stdcells", 1);
-    req.vis.macros = extract_int_or(msg, "macros", 1);
-    req.vis.pad_input = extract_int_or(msg, "pad_input", 1);
-    req.vis.pad_output = extract_int_or(msg, "pad_output", 1);
-    req.vis.pad_inout = extract_int_or(msg, "pad_inout", 1);
-    req.vis.pad_power = extract_int_or(msg, "pad_power", 1);
-    req.vis.pad_spacer = extract_int_or(msg, "pad_spacer", 1);
-    req.vis.pad_areaio = extract_int_or(msg, "pad_areaio", 1);
-    req.vis.pad_other = extract_int_or(msg, "pad_other", 1);
-    req.vis.phys_fill = extract_int_or(msg, "phys_fill", 1);
-    req.vis.phys_endcap = extract_int_or(msg, "phys_endcap", 1);
-    req.vis.phys_welltap = extract_int_or(msg, "phys_welltap", 1);
-    req.vis.phys_tie = extract_int_or(msg, "phys_tie", 1);
-    req.vis.phys_antenna = extract_int_or(msg, "phys_antenna", 1);
-    req.vis.phys_cover = extract_int_or(msg, "phys_cover", 1);
-    req.vis.phys_bump = extract_int_or(msg, "phys_bump", 1);
-    req.vis.phys_other = extract_int_or(msg, "phys_other", 1);
-    req.vis.std_bufinv = extract_int_or(msg, "std_bufinv", 1);
-    req.vis.std_bufinv_timing = extract_int_or(msg, "std_bufinv_timing", 1);
-    req.vis.std_clock_bufinv = extract_int_or(msg, "std_clock_bufinv", 1);
-    req.vis.std_clock_gate = extract_int_or(msg, "std_clock_gate", 1);
-    req.vis.std_level_shift = extract_int_or(msg, "std_level_shift", 1);
-    req.vis.std_sequential = extract_int_or(msg, "std_sequential", 1);
-    req.vis.std_combinational = extract_int_or(msg, "std_combinational", 1);
+    req.vis.parseFromJson(msg);
   } else {
     req.type = WsRequest::UNKNOWN;
   }
