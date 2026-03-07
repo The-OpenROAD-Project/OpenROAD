@@ -880,7 +880,8 @@ function createTimingWidget(container) {
     }
 
     // --- Render path listing ---
-    const pathCols = ['Clock', 'Required', 'Arrival', 'Slack', 'Start', 'End'];
+    const pathCols = ['Clock', 'Required', 'Arrival', 'Slack', 'Skew',
+                      'Logic Delay', 'Logic Depth', 'Fanout', 'Start', 'End'];
 
     function selectPathRow(idx) {
         const rows = pathTable.querySelectorAll('tbody tr');
@@ -923,6 +924,10 @@ function createTimingWidget(container) {
                 fmtTime(p.required),
                 fmtTime(p.arrival),
                 fmtTime(p.slack),
+                fmtTime(p.skew),
+                fmtTime(p.path_delay),
+                p.logic_depth,
+                p.fanout,
                 p.start_pin,
                 p.end_pin,
             ];
