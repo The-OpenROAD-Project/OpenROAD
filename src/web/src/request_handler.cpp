@@ -4,7 +4,6 @@
 #include "request_handler.h"
 
 #include <any>
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -617,9 +616,14 @@ WsResponse TimingHandler::handleTimingHighlight(const WsRequest& req,
       }
     }
 
-    std::cerr << "TIMING_HIGHLIGHT: " << new_rects.size() << " rects, "
-              << new_lines.size() << " lines"
-              << " pin_name='" << req.timing_pin_name << "'\n";
+    debugPrint(tcl_eval_->logger,
+               utl::WEB,
+               "timing",
+               1,
+               "TIMING_HIGHLIGHT: {} rects, {} lines, pin_name='{}'",
+               new_rects.size(),
+               new_lines.size(),
+               req.timing_pin_name);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);

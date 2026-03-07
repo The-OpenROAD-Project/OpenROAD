@@ -14,7 +14,6 @@
 #include <deque>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -347,6 +346,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
   websocket::stream<beast::tcp_stream> ws_;
   beast::flat_buffer buffer_;
+  utl::Logger* logger_;
 
   // Handler objects (transport-independent, testable)
   SessionState state_;
@@ -364,8 +364,10 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   WebSocketSession(tcp::socket&& socket,
              std::shared_ptr<TileGenerator> generator,
              std::shared_ptr<TclEvaluator> tcl_eval,
-             std::shared_ptr<TimingReport> timing_report)
+             std::shared_ptr<TimingReport> timing_report,
+             utl::Logger* logger)
       : ws_(std::move(socket)),
+        logger_(logger),
         select_handler_(generator),
         tcl_handler_(tcl_eval),
         timing_handler_(generator, timing_report, tcl_eval),
@@ -393,7 +395,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void on_accept(beast::error_code ec)
   {
     if (ec) {
-      std::cerr << "ws accept error: " << ec.message() << "\n";
+      debugPrint(logger_, utl::WEB, "ws", 1, "ws accept error: {}", ec.message());
       return;
     }
     do_read();
@@ -412,7 +414,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   {
     if (ec) {
       if (ec != websocket::error::closed) {
-        std::cerr << "ws read error: " << ec.message() << "\n";
+        debugPrint(logger_, utl::WEB, "ws", 1, "ws read error: {}", ec.message());
       }
       return;
     }
@@ -497,7 +499,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
         [self = shared_from_this()](beast::error_code ec, std::size_t) {
           net::post(self->strand_, [self, ec]() {
             if (ec) {
-              std::cerr << "ws write error: " << ec.message() << "\n";
+              debugPrint(self->logger_, utl::WEB, "ws", 1, "ws write error: {}", ec.message());
               return;
             }
             self->write_queue_.pop_front();
@@ -519,14 +521,17 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   std::shared_ptr<http::response<http::string_body>> res_;
   http::request<http::string_body> req_;
   std::string doc_root_;
+  utl::Logger* logger_;
 
  public:
   HttpSession(tcp::socket&& socket,
           std::shared_ptr<TileGenerator> generator,
-          std::string doc_root)
+          std::string doc_root,
+          utl::Logger* logger)
       : stream_(std::move(socket)),
         generator_(generator),
-        doc_root_(std::move(doc_root))
+        doc_root_(std::move(doc_root)),
+        logger_(logger)
   {
   }
 
@@ -560,7 +565,7 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
       return do_close();
     }
     if (ec) {
-      std::cerr << "Session read error: " << ec.message() << "\n";
+      debugPrint(logger_, utl::WEB, "http", 1, "http read error: {}", ec.message());
       return;
     }
 
@@ -582,7 +587,7 @@ class HttpSession : public std::enable_shared_from_this<HttpSession>
   void on_write(beast::error_code ec)
   {
     if (ec) {
-      std::cerr << "Session write error: " << ec.message() << "\n";
+      debugPrint(logger_, utl::WEB, "http", 1, "http write error: {}", ec.message());
       return;
     }
 
@@ -616,18 +621,21 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TimingReport> timing_report_;
   http::request<http::string_body> req_;
   std::string doc_root_;
+  utl::Logger* logger_;
 
  public:
   DetectSession(tcp::socket&& socket,
                  std::shared_ptr<TileGenerator> generator,
                  std::shared_ptr<TclEvaluator> tcl_eval,
                  std::shared_ptr<TimingReport> timing_report,
-                 std::string doc_root)
+                 std::string doc_root,
+                 utl::Logger* logger)
       : stream_(std::move(socket)),
         generator_(std::move(generator)),
         tcl_eval_(std::move(tcl_eval)),
         timing_report_(std::move(timing_report)),
-        doc_root_(std::move(doc_root))
+        doc_root_(std::move(doc_root)),
+        logger_(logger)
   {
   }
 
@@ -646,19 +654,19 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   void on_read(beast::error_code ec)
   {
     if (ec) {
-      std::cerr << "Detect read error: " << ec.message() << "\n";
+      debugPrint(logger_, utl::WEB, "http", 1, "detect read error: {}", ec.message());
       return;
     }
 
     if (websocket::is_upgrade(req_)) {
       // WebSocket upgrade - hand off to WebSocketSession
       auto ws = std::make_shared<WebSocketSession>(
-          stream_.release_socket(), generator_, tcl_eval_, timing_report_);
+          stream_.release_socket(), generator_, tcl_eval_, timing_report_, logger_);
       ws->run(std::move(req_));
     } else {
       // Regular HTTP - hand off to session with already-read request
       auto s = std::make_shared<HttpSession>(
-          stream_.release_socket(), generator_, doc_root_);
+          stream_.release_socket(), generator_, doc_root_, logger_);
       s->run_with_request(std::move(req_), std::move(buffer_));
     }
   }
@@ -676,6 +684,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::string doc_root_;
+  utl::Logger* logger_;
 
  public:
   Listener(net::io_context& ioc,
@@ -683,13 +692,15 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
-           std::string doc_root)
+           std::string doc_root,
+           utl::Logger* logger)
       : ioc_(ioc),
         acceptor_(ioc),
         generator_(generator),
         tcl_eval_(std::move(tcl_eval)),
         timing_report_(std::move(timing_report)),
-        doc_root_(std::move(doc_root))
+        doc_root_(std::move(doc_root)),
+        logger_(logger)
   {
     beast::error_code ec;
 
@@ -729,11 +740,11 @@ class Listener : public std::enable_shared_from_this<Listener>
   void on_accept(beast::error_code ec, tcp::socket socket)
   {
     if (ec) {
-      std::cerr << "Listener accept error: " << ec.message() << "\n";
+      debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
     } else {
       // Route through DetectSession to handle both HTTP and WebSocket
       std::make_shared<DetectSession>(
-          std::move(socket), generator_, tcl_eval_, timing_report_, doc_root_)
+          std::move(socket), generator_, tcl_eval_, timing_report_, doc_root_, logger_)
           ->run();
     }
     do_accept();
@@ -780,7 +791,8 @@ void WebServer::serve(const std::string& doc_root)
         generator_,
         tcl_eval,
         timing_report,
-        doc_root)
+        doc_root,
+        logger_)
         ->run();
 
     net::signal_set signals(ioc, SIGINT, SIGTERM);
@@ -801,7 +813,7 @@ void WebServer::serve(const std::string& doc_root)
       t.join();
     }
 
-    std::cout << "Server stopped.\n";
+    logger_->info(utl::WEB, 5, "Server stopped.");
   } catch (std::exception const& e) {
     logger_->error(utl::WEB, 2, "Server error : {}", e.what());
   }
