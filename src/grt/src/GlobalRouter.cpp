@@ -407,7 +407,8 @@ void GlobalRouter::globalRoute(bool save_guides)
   }
 }
 
-void GlobalRouter::finishGlobalRouting(std::vector<Net*> nets, bool save_guides)
+void GlobalRouter::finishGlobalRouting(const std::vector<Net*>& nets,
+                                       bool save_guides)
 {
   updateDbCongestion();
   saveCongestion();
