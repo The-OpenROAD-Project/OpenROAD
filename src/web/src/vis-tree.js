@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // Data-model-driven checkbox tree (mirrors Qt's QStandardItemModel pattern).
 // State lives in a plain JS tree; DOM is synced from model after every change.
 // No event delegation, no bubbling — avoids the cascade bugs of the old approach.

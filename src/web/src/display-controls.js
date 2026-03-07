@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // Display controls — layer checkboxes and visibility tree.
 
 import { VisTree } from './vis-tree.js';

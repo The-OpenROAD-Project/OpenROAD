@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // DBU <-> Leaflet coordinate conversion.
 //
 // The tile renderer uses two Y-flips (tile index + pixel row), so the

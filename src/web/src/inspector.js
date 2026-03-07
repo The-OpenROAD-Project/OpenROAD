@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // Inspector panel — property tree, hover highlights, bbox display.
 
 import { dbuToLatLng, dbuRectToBounds } from './coordinates.js';

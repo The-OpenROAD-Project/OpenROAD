@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // Leaflet tile layer that fetches tiles via WebSocket.
 
 export function createWSTileLayer(visibility) {

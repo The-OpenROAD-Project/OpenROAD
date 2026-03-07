@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // WebSocket manager with request/response tracking and auto-reconnect.
 
 export class WebSocketManager {

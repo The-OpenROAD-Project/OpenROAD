@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 // Timing report widget — path summary + detail tables.
 
 import { makeResizableHeaders } from './ui-utils.js';

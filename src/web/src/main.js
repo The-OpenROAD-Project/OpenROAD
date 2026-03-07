@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './ws-manager.js';
