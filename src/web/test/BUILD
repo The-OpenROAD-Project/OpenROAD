@@ -58,6 +58,27 @@ js_test(
 )
 
 cc_test(
+    name = "request_handler_test",
+    srcs = ["cpp/TestRequestHandler.cpp"],
+    features = ["-layering_check"],
+    copts = ["-Isrc/web/src"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web",
+        "//third-party/lodepng",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "tile_generator_test",
     srcs = ["cpp/TestTileGenerator.cpp"],
     features = ["-layering_check"],
