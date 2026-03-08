@@ -1,0 +1,85 @@
+name: Ubuntu Stable Build
+
+on:
+  push:
+    branches:
+      - ubuntu-build
+
+jobs:
+  build:
+    name: Compile OpenROAD
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Update System
+        run: |
+          sudo apt update
+          sudo apt upgrade -y
+          sudo apt install -y patchelf
+
+      - name: Install Dependencies
+        run: |
+          sudo ./etc/DependencyInstaller.sh -base
+          ./etc/DependencyInstaller.sh -common -local
+
+      - name: Build OpenROAD
+        run: |
+          ./etc/Build.sh
+
+      - name: Verify Binary
+        run: |
+          ls build/bin
+          ./build/bin/openroad -version
+
+      - name: Prepare Package Structure
+        run: |
+          mkdir -p package/usr/bin
+          mkdir -p package/usr/lib/openroad
+          mkdir -p package/DEBIAN
+
+          # copy binary
+          cp build/bin/openroad package/usr/bin/
+
+          # copy runtime libraries
+          cp ~/.local/lib/*.so* package/usr/lib/openroad/ || true
+
+          # reduce binary size
+          strip package/usr/bin/openroad || true
+
+          # set runtime path so binary finds local libs
+          patchelf --set-rpath '$ORIGIN/../lib/openroad' package/usr/bin/openroad
+
+      - name: Create Control File
+        run: |
+          cat <<EOF > package/DEBIAN/control
+          Package: openroad
+          Version: 1.0
+          Architecture: amd64
+          Maintainer: Hemant Kumar
+          Description: OpenROAD is an integrated chip physical design tool that takes a design from synthesized Verilog to routed layout.
+          EOF
+
+      - name: Build Debian Package
+        run: |
+          dpkg-deb --build package openroad_amd64.deb
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openroad-deb
+          path: openroad_stable-release-${{ github.run_number }}.deb
+
+      - name: Create Pre Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ubuntu-stable-release-${{ github.run_number }}
+          name: OpenROAD Pre-release
+          prerelease: true
+          files: openroad_stable-release-${{ github.run_number }}.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
