@@ -59,8 +59,6 @@ jobs:
           cat <<EOF > package/DEBIAN/control
           Package: openroad
           Version: 1.0
-          Section: electronics
-          Priority: optional
           Architecture: amd64
           Maintainer: Hemant Kumar
           Description: OpenROAD physical design automation tool
