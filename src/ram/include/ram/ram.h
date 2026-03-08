@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -118,16 +119,24 @@ class RamGen
                                     std::vector<odb::dbNet*>& select,
                                     odb::dbNet* data_input,
                                     std::vector<odb::dbNet*>& data_output);
-  void makeCellByte(
-      Grid& ram_grid,
-      int byte_number,
-      const std::string& prefix,
-      int read_ports,
+  void makeCellByte(int byte_idx,
+                    int row_idx,
+                    int read_ports,
+                    odb::dbNet* clock,
+                    odb::dbNet* write_enable,
+                    const std::vector<odb::dbNet*>& selects,
+                    const std::vector<odb::dbNet*>& data_input,
+                    const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+
+  void makeWordSlice(
+      const int bytes_per_word,
+      const int row_idx,
+      const int read_ports,
       odb::dbNet* clock,
-      odb::dbNet* write_enable,
+      std::vector<odb::dbBTerm*>& write_enable,
       const std::vector<odb::dbNet*>& selects,
-      const std::array<odb::dbNet*, 8>& data_input,
-      const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
+      const std::vector<odb::dbNet*>& data_input,
+      const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
@@ -162,8 +171,9 @@ class RamGen
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
-  std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
+  std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  Grid ram_grid_;
 };
 
 }  // namespace ram
