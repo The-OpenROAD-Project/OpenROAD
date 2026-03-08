@@ -66,7 +66,7 @@ jobs:
 
       - name: Build Debian Package
         run: |
-          dpkg-deb --build package openroad_amd64.deb
+          dpkg-deb --build package openroad_stable-release-${{ github.run_number }}.deb
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
