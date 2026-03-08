@@ -3,7 +3,7 @@ name: Ubuntu Stable Build
 on:
   push:
     branches:
-      - ubuntu-build
+      - master
 
 jobs:
   build:
