@@ -102,7 +102,9 @@ while [ "$#" -gt 0 ]; do
             cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
         -ninja)
-            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache" "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache" "-GNinja")
+            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-GNinja")
             isNinja=yes
             ;;
         -cpp20)
@@ -118,10 +120,12 @@ while [ "$#" -gt 0 ]; do
             cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug" "-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage" "-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            eval "temp_arr=(${1#*=})"
+            read -ra temp_arr <<< "${1#*=}"
             cmakeOptions+=("${temp_arr[@]}")
             ;;
         -clean )
@@ -167,11 +171,8 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    while read -r dep; do
-        if [[ -n "$dep" && "$dep" != \#* ]]; then
-            cmakeOptions+=("$dep")
-        fi
-    done < <(xargs -n1 < "$depsPrefixesFile")
+    read -ra newOpts <<< "$(cat "$depsPrefixesFile")"
+    cmakeOptions+=("${newOpts[@]}")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -223,6 +224,57 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
+
+# ==============================================================================
+# PRE-COMPILATION SYSTEM CHECKS
+# ==============================================================================
+if [[ -t 1 ]]; then
+    RED=$(tput setaf 1)
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    NC=$(tput sgr0) # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    NC=''
+fi
+
+echo -e "${YELLOW}Running pre-compilation system checks...${NC}"
+
+check_command() {
+    if ! command -v "$1" &> /dev/null; then
+        echo -e "${RED}[ERROR] Required dependency '$1' is missing!${NC}"
+        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
+        exit 1
+    else
+        echo -e "${GREEN}[OK] Found $1${NC}"
+    fi
+}
+
+# Essential build tools required for OpenROAD
+check_command "cmake"
+check_command "bison"
+check_command "flex"
+check_command "swig"
+
+# Compiler check based on user selection
+if [[ "${compiler:-gcc}" == "gcc" ]]; then
+    check_command "gcc"
+    check_command "g++"
+elif [[ "${compiler}" == "clang" ]]; then
+    check_command "clang"
+    check_command "clang++"
+elif [[ "${compiler}" == "clang-16" ]]; then
+    check_command "clang-16"
+    check_command "clang++-16"
+else
+    # Handle unknown compilers gracefully - suggested by gemini-bot
+    echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+fi
+
+echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
+# ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
 if [[ "$isNinja" == "yes" ]]; then
