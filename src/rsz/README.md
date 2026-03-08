@@ -639,6 +639,58 @@ Simply run the following script:
 
 ## Limitations
 
+## Using the Python interface to rsz
+
+```{warning}
+The `Python` interface is currently in development and is subject to change.
+```
+
+The Python API for the Resizer is provided through `rsz_aux.py`, located in
+[`src/rsz/test/rsz_aux.py`](./test/rsz_aux.py). It wraps the `rsz` Python
+module (built from `Resizer-py.i`) and exposes the same commands as the Tcl
+API with Pythonic keyword arguments and automatic unit conversions
+(microns → metres, nanoseconds → seconds, percentages → fractions).
+
+When initializing a design, a typical sequence of Python commands looks like:
+
+```python
+from openroad import Design, Tech
+import helpers
+import rsz_aux
+
+tech = Tech()
+tech.readLiberty("my_lib.lib")
+tech.readLef("my_tech.lef")
+
+design = helpers.make_design(tech)
+design.readDef("my_design.def")
+```
+
+### Common commands
+
+```python
+# Buffer primary I/O ports
+rsz_aux.buffer_ports(design)
+
+# Fix max-slew, max-cap, max-fanout and long-wire violations
+rsz_aux.repair_design(design, max_wire_length=1000, slew_margin=10, cap_margin=10)
+
+# Repair setup and hold timing (margins in nanoseconds)
+rsz_aux.repair_timing(design, setup_margin=0.0, hold_margin=0.2)
+
+# Power recovery (skips setup/hold repair)
+rsz_aux.repair_timing(design, recover_power=30)
+
+# Reporting
+rsz_aux.report_design_area(design)
+rsz_aux.report_floating_nets(design)
+rsz_aux.report_long_wires(design, 10)
+```
+
+There are also some useful Python functions located in the file
+[`rsz_aux.py`](./test/rsz_aux.py) but these are not considered part of the
+*final* API and may be subject to change.
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
