@@ -90,7 +90,7 @@ More explictly ORFS only:
 
 This is a bit more verbose, but eliminates any concerns about what the `/tmp/place/make` might be doing differently than ORFS only.
 
-## Running a `make issue` with `cfg=exec` configuraiton
+## Running a `make issue` with `cfg=exec` configuration
 
 [TL;DR](../../docs/user/Bazel-targets.md), `bazelisk test ...` builds and uses the `cfg=exec` configuration when setting up paths:
 

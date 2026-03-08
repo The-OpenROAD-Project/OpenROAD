@@ -7,6 +7,10 @@ namespace utl {
 class Logger;
 }
 
+namespace sta {
+class Sta;
+}
+
 namespace odb {
 class dbDatabase;
 class UnfoldedModel;
@@ -27,6 +31,8 @@ class Checker
   void check();
 
  private:
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat,
+                                const UnfoldedModel* model);
   void checkFloatingChips(dbMarkerCategory* top_cat,
                           const UnfoldedModel* model);
   void checkOverlappingChips(dbMarkerCategory* top_cat,
