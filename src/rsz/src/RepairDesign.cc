@@ -2228,12 +2228,12 @@ sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
   sta::LibertyCellSeq swappable_cells
       = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
   if (!swappable_cells.empty()) {
-    sort(swappable_cells,
-         [this](const sta::LibertyCell* buffer1,
-                const sta::LibertyCell* buffer2) {
-           return resizer_->bufferDriveResistance(buffer1)
-                  > resizer_->bufferDriveResistance(buffer2);
-         });
+    std::ranges::sort(swappable_cells,
+                      [this](const sta::LibertyCell* buffer1,
+                             const sta::LibertyCell* buffer2) {
+                        return resizer_->bufferDriveResistance(buffer1)
+                               > resizer_->bufferDriveResistance(buffer2);
+                      });
     for (sta::LibertyCell* buffer : swappable_cells) {
       float slew = resizer_->bufferSlew(
           buffer, load_cap, resizer_->tgt_slew_corner_, resizer_->max_);

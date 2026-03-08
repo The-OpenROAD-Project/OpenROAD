@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -16,27 +15,21 @@
 #include "dpl/Opendp.h"
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
-#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
-#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/StaState.hh"
 #include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -51,10 +44,12 @@ using BufferedNetSeq = std::vector<BufferedNetPtr>;
 using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
+class BaseMove;
+
 struct SlackEstimatorParams
 {
-  SlackEstimatorParams(const float margin, const sta::Scene* corner)
-      : setup_slack_margin(margin), corner(corner)
+  SlackEstimatorParams(const float margin, const sta::Scene* scene)
+      : setup_slack_margin(margin), scene(scene)
   {
   }
 
@@ -62,11 +57,11 @@ struct SlackEstimatorParams
   sta::Pin* prev_driver_pin{nullptr};
   sta::Pin* driver_input_pin{nullptr};
   sta::Instance* driver{nullptr};
+  sta::LibertyCell* driver_cell{nullptr};
   const sta::Path* driver_path{nullptr};
   const sta::Path* prev_driver_path{nullptr};
-  sta::LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
-  const sta::Scene* corner;
+  const sta::Scene* scene;
 };
 
 class BaseMove : public sta::dbStaState
@@ -75,19 +70,23 @@ class BaseMove : public sta::dbStaState
   BaseMove(Resizer* resizer);
   ~BaseMove() override = default;
 
-  virtual bool doMove(const sta::Path* drvr_path,
-                      int drvr_index,
-                      sta::Slack drvr_slack,
-                      sta::PathExpanded* expanded,
-                      float setup_slack_margin)
+  virtual bool doMove(const sta::Path* drvr_path, float setup_slack_margin)
   {
     return false;
+  }
+  bool doMove(const sta::Pin* drvr_pin, float setup_slack_margin)
+  {
+    const sta::Path* path = sta_->vertexWorstSlackPath(
+        graph_->pinDrvrVertex(drvr_pin), sta::MinMax::max());
+    return doMove(path, setup_slack_margin);
   }
 
   virtual const char* name() = 0;
 
   void init();
 
+  // Count a new pending optimization
+  void countMove(sta::Instance* inst, int count = 1);
   // Accept the pending optimizations
   void commitMoves();
   // Abandon the pending optimizations
@@ -104,8 +103,6 @@ class BaseMove : public sta::dbStaState
   int hasMoves(sta::Instance* inst) const;
   // Total accepted and pending optimizations
   int numMoves() const;
-  // Add a new pending optimization
-  void addMove(sta::Instance* inst, int count = 1);
 
  protected:
   Resizer* resizer_;
@@ -117,17 +114,19 @@ class BaseMove : public sta::dbStaState
   odb::dbDatabase* db_ = nullptr;
   int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;
-  const sta::Scene* corner_ = nullptr;
+  const sta::Scene* scene_ = nullptr;
 
-  // Need to track these so we don't optimize the optimzations.
+  // Need to track these so we don't optimize the optimizations.
   // This can result in long run-time.
-  // These are all of the optimized insts of this type .
+  // These are all of the optimized insts of this type.
   // Some may not have been accepted, but this replicates the prior behavior.
   sta::InstanceSet all_inst_set_;
+  sta::InstanceSet accepted_inst_set_;
   // This is just the set of the pending moves.
   sta::InstanceSet pending_inst_set_;
-  int pending_count_ = 0;
+  // These are move change counts
   int all_count_ = 0;
+  int pending_count_ = 0;
   int rejected_count_ = 0;
   int accepted_count_ = 0;
 
@@ -158,7 +157,7 @@ class BaseMove : public sta::dbStaState
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool estimateInputSlewImpact(
       sta::Instance* instance,
-      const sta::Scene* corner,
+      const sta::Scene* scene,
       const sta::MinMax* min_max,
       sta::Slew old_in_slew[sta::RiseFall::index_count],
       sta::Slew new_in_slew[sta::RiseFall::index_count],
@@ -173,7 +172,7 @@ class BaseMove : public sta::dbStaState
                                sta::LibertyPort* drvr_port,
                                float load_cap,
                                float prev_drive,
-                               const sta::Scene* corner,
+                               const sta::Scene* scene,
                                const sta::MinMax* min_max);
   bool replaceCell(sta::Instance* inst, const sta::LibertyCell* replacement);
   bool checkMaxCapViolation(sta::Instance* inst,
@@ -188,7 +187,7 @@ class BaseMove : public sta::dbStaState
                              sta::LibertyPort* output_port,
                              float output_slew_factor,
                              float output_cap,
-                             const sta::Scene* corner);
+                             const sta::Scene* scene);
   float computeElmoreSlewFactor(const sta::Pin* output_pin,
                                 sta::LibertyPort* output_port,
                                 float output_load_cap);
