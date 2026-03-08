@@ -74,14 +74,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openroad-deb
-          path: openroad_amd64.deb
+          path: openroad_stable-release-${{ github.run_number }}.deb
 
       - name: Create Pre Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ubuntu-build-${{ github.run_number }}
+          tag_name: ubuntu-stable-release-${{ github.run_number }}
           name: OpenROAD Pre-release
           prerelease: true
-          files: openroad_amd64.deb
+          files: openroad_stable-release-${{ github.run_number }}.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
