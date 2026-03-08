@@ -60,6 +60,7 @@
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/timer.h"
 
 using odb::dbTechLayerType;
 
@@ -977,6 +978,7 @@ void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
 
 int TritonRoute::main()
 {
+  utl::Timer timer;
   // Just to verify that OMP support is compiled in correctly.
   omp_set_num_threads(2);
 #pragma omp parallel
@@ -1075,6 +1077,7 @@ int TritonRoute::main()
   if (!router_cfg_->SINGLE_STEP_DR) {
     endFR();
   }
+  logger_->info(utl::DRT, 501, "Runtime: {:.2f}s", timer.elapsed());
   return 0;
 }
 
