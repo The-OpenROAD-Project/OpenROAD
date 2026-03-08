@@ -119,7 +119,7 @@ class RamGen
                                     std::vector<odb::dbNet*>& select,
                                     odb::dbNet* data_input,
                                     std::vector<odb::dbNet*>& data_output);
-  void makeCellByte(int start_idx,
+  void makeCellByte(int byte_idx,
                     int row_idx,
                     int read_ports,
                     odb::dbNet* clock,
