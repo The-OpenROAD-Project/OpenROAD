@@ -6138,3 +6138,11 @@ std::size_t GSegmentHash::operator()(const GSegment& seg) const
 }
 
 }  // namespace grt
+
+
+void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
+{
+  logger_->info(GRT, 301, "Reporting detour metric for net: {}", net->getName());
+  // TODO: Hook up computeNetSttWirelength and computeNetFinalWirelength
+  // using the FastRoute netID mapping
+}

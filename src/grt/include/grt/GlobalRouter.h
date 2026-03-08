@@ -286,6 +286,7 @@ class GlobalRouter
   void updateVias();
 
   // Report wire length
+  void reportNetGlobalRoutingDetour(odb::dbNet* net);
   void reportNetWireLength(odb::dbNet* net,
                            bool global_route,
                            bool detailed_route,
@@ -625,3 +626,4 @@ class IncrementalGRoute
 };
 
 }  // namespace grt
+
