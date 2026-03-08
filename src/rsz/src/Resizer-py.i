@@ -3,6 +3,8 @@
 
 %{
 
+#include <memory>
+
 #include "rsz/Resizer.hh"
 #include "ord/OpenRoad.hh"
 
@@ -227,28 +229,23 @@ double utilization()
 int find_floating_nets_count()
 {
   ensureLinked();
-  auto* nets = getResizer()->findFloatingNets();
-  int count = nets ? static_cast<int>(nets->size()) : 0;
-  delete nets;
-  return count;
+  std::unique_ptr<sta::NetSeq> nets(getResizer()->findFloatingNets());
+  return nets ? static_cast<int>(nets->size()) : 0;
 }
 
 int find_floating_pins_count()
 {
   ensureLinked();
-  auto* pins = getResizer()->findFloatingPins();
-  int count = pins ? static_cast<int>(pins->size()) : 0;
-  delete pins;
-  return count;
+  std::unique_ptr<sta::PinSet> pins(getResizer()->findFloatingPins());
+  return pins ? static_cast<int>(pins->size()) : 0;
 }
 
 int find_overdriven_nets_count(bool include_parallel_driven)
 {
   ensureLinked();
-  auto* nets = getResizer()->findOverdrivenNets(include_parallel_driven);
-  int count = nets ? static_cast<int>(nets->size()) : 0;
-  delete nets;
-  return count;
+  std::unique_ptr<sta::NetSeq> nets(
+      getResizer()->findOverdrivenNets(include_parallel_driven));
+  return nets ? static_cast<int>(nets->size()) : 0;
 }
 
 void report_long_wires_cmd(int count, int digits)
