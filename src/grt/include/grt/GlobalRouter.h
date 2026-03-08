@@ -178,7 +178,6 @@ class GlobalRouter
   AdjacencyList buildNetGraph(odb::dbNet* net);
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
-  bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer,
                                   int max_routing_layer,
                                   bool check_pin_placement = true);

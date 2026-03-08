@@ -2755,6 +2755,19 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
       point_to_pins = findRoutePtPins(net);
     }
 
+    // Store port pin locations in a set for quick lookup when determining if a
+    // via is connected to a port pin.
+    std::set<RoutePt> port_pin_pts;
+    if (!net->isLocal()) {
+      for (const Pin& pin : net->getPins()) {
+        if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
+          const odb::Point& pos = pin.getOnGridPosition();
+          port_pin_pts.emplace(
+              pos.getX(), pos.getY(), pin.getConnectionLayer());
+        }
+      }
+    }
+
     int jumper_count = 0;
     if (!route.empty()) {
       db_net->clearGuides();
@@ -2769,7 +2782,10 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
                            db_net->getConstName());
           }
 
-          if (net->isLocal() || (isCoveringPin(net, segment))) {
+          const int top_layer
+              = std::max(segment.init_layer, segment.final_layer);
+          const RoutePt via_pt(segment.final_x, segment.final_y, top_layer);
+          if (net->isLocal() || port_pin_pts.count(via_pt)) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
@@ -3140,22 +3156,6 @@ bool GlobalRouter::segmentsConnect(const GSegment& segment1,
   return (s1_max_x >= s2_min_x && s1_min_x <= s2_max_x)
          && (s1_max_y >= s2_min_y && s1_min_y <= s2_max_y)
          && (s1_max_z >= s2_min_z && s1_min_z <= s2_max_z);
-}
-
-bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
-{
-  for (const auto& pin : net->getPins()) {
-    int seg_top_layer = std::max(segment.final_layer, segment.init_layer);
-    int seg_x = segment.final_x;
-    int seg_y = segment.final_y;
-    if (pin.getConnectionLayer() == seg_top_layer
-        && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)
-        && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
