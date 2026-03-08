@@ -97,37 +97,18 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 
 ### Install Dependencies
 
-You may follow our helper script to install dependencies as follows:
+We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
+
+Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
 sudo ./etc/DependencyInstaller.sh -base
 ./etc/DependencyInstaller.sh -common -local
 ```
 
-
 ```{warning}
 `sudo ./etc/DependencyInstaller.sh [-all|-common]` defaults to
 installing packages on /usr/local.
 To avoid this bahavior use -local flag or -prefix <PATH> argument.
-```
-
-The installer script natively supports the following arguments:
-```shell
-Options:
-  -all                        Install all dependencies (base and common). Requires privileged access.
-  -base                       Install base dependencies using package managers. Requires privileged access.
-  -common                     Install common dependencies.
-  -eqy                        Install equivalence dependencies (yosys, eqy, sby).
-  -prefix=DIR                 Install common dependencies in a user-specified directory.
-  -local                      Install common dependencies in ${HOME}/.local.
-  -ci                         Install dependencies required for CI.
-  -nocert                     Disable certificate checks for downloads.
-  -skip-system-or-tools       Skip searching for a system-installed or-tools library.
-  -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
-  -constant-build-dir         Use a constant build directory instead of a random one.
-  -threads=<N>                Limit the number of compiling threads.
-  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
-  -verbose                    Show all output from build commands.
-  -h, -help                   Show this help message.
 ```
 
 ### Build OpenROAD
