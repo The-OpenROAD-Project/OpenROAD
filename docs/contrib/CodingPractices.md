@@ -411,9 +411,15 @@ Don't nest namespaces.
 
 ### Practice #28
 
-Avoid `using namespace`. It increases the likelihood of conflicts
-and doesn't explicity declare what in the namespace is being used. Use
-`using namespace::symbol;` instead. And especially do not use `using namespace std`. 
+Never use `using namespace`. It increases the likelihood of conflicts
+and doesn't explicitly declare what in the namespace is being used.
+And especially do not use `using namespace std`.
+
+Sometimes if using a symbol would impact readability, it might be useful to
+have a specific `using namespace::symbol;` but _never_ in header files (as it
+would pollute the namespace), only in compilation units. Keep the scope as close
+as possible for `using namespace::symbol;`; ideally within a class definition,
+or the function itself.
 
 The following is especially confused because it is trying to "use" the
 symbols in code that are already in the MacroPlace namespace.
