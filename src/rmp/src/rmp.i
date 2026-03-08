@@ -91,7 +91,7 @@ set_genetic_population_size(int genetic_population_size)
 }
 
 void
-  set_genetic_mutation_probability(float genetic_mutation_probability)
+set_genetic_mutation_probability(float genetic_mutation_probability)
 {
   getRestructure()->setGeneticMutationProbability(genetic_mutation_probability);
 }
@@ -126,15 +126,21 @@ set_genetic_initial_ops(int genetic_initial_ops)
   getRestructure()->setGeneticInitialOps(genetic_initial_ops);
 }
 
-void resynth_cmd(Scene* corner) {
-  getRestructure()->resynth(corner);
+void
+resynth_cmd(Scene* scene)
+{
+  getRestructure()->resynth(scene);
 }
 
-void resynth_annealing_cmd(Scene* corner) {
-  getRestructure()->resynthAnnealing(corner);
+void
+resynth_annealing_cmd(Scene* scene)
+{
+  getRestructure()->resynthAnnealing(scene);
 }
 
-void resynth_genetic_cmd(Scene* corner) {
+void
+resynth_genetic_cmd(Scene* corner)
+{
   getRestructure()->resynthGenetic(corner);
 }
 
@@ -162,6 +168,11 @@ void blif_dump(cut::Blif* blif_, const char* file_name){
 
 int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
+}
+
+void resynth_emap_cmd(Scene* scene, char* target, bool map_multioutput, bool verbose, char* workdir_name) {
+  getRestructure()->setMode(target);
+  getRestructure()->resynthEmap(scene, map_multioutput, verbose, workdir_name);
 }
 
 %}
