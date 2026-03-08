@@ -148,7 +148,7 @@ void RamGen::makeCellByte(const int byte_idx,
 {
   const int bits_per_byte = 8;
   const int start_bit_idx = byte_idx * bits_per_byte;
-  std::string prefix = fmt::format("storage{}_{}", row_idx, start_bit_idx);
+  std::string prefix = fmt::format("storage_{}_{}", row_idx, start_bit_idx);
   vector<dbNet*> select_b_nets(selects.size());
   for (int i = 0; i < selects.size(); ++i) {
     select_b_nets[i] = makeNet(prefix, fmt::format("select{}_b", i));
@@ -159,7 +159,6 @@ void RamGen::makeCellByte(const int byte_idx,
 
   for (int local_bit = 0; local_bit < bits_per_byte; ++local_bit) {
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
-    logger_->info(RAM, 60, "bit creation start {}", start_bit_idx + local_bit);
     vector<dbNet*> outs(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
       outs[read_port] = data_output[read_port][local_bit]->getNet();
@@ -222,7 +221,6 @@ void RamGen::makeWordSlice(const int bytes_per_word,
     -
   */
   const int bits_per_byte = 8;
-  logger_->info(RAM, 69, "making word {}", row_idx);
 
   for (int byte = 0; byte < bytes_per_word; ++byte) {
     int start_idx
@@ -230,16 +228,13 @@ void RamGen::makeWordSlice(const int bytes_per_word,
 
     vector<dbNet*> byte_inputs(data_input.begin() + start_idx,
                                data_input.begin() + start_idx + bits_per_byte);
-    logger_->info(RAM, 45, "copied byte inputs {}", byte);
     vector<vector<dbBTerm*>> byte_outputs(read_ports,
                                           vector<dbBTerm*>(bits_per_byte));
     for (int port = 0; port < read_ports; ++port) {
-      logger_->info(RAM, 48, "read_port copy {}", port);
       std::copy_n(data_output[port].begin() + start_idx,
                   bits_per_byte,
                   byte_outputs[port].begin());
     }
-    logger_->info(RAM, 47, "created_read_port {}", byte_outputs.size());
 
     makeCellByte(byte,
                  row_idx,
@@ -744,7 +739,6 @@ void RamGen::generate(const int bytes_per_word,
     data_inputs_.push_back(
         makeBTerm(fmt::format("D[{}]", bit), dbIoType::INPUT));
     D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit), "net");
-    logger_->info(RAM, 50, "D_nets complete {}", bit);
 
     // if readports == 1, only have Q outputs
     if (read_ports == 1) {
