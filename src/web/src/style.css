@@ -152,6 +152,29 @@ html, body {
     pointer-events: none;
 }
 
+/* Layer context menu */
+.context-menu {
+    position: fixed;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    min-width: 180px;
+    z-index: 10000;
+    padding: 4px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    font-size: 13px;
+    color: #ccc;
+}
+.context-menu-item {
+    padding: 5px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.context-menu-item:hover {
+    background: #3a3a3a;
+    color: #fff;
+}
+
 /* Tcl Console */
 .tcl-console {
     display: flex;

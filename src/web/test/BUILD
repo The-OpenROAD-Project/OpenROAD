@@ -57,6 +57,13 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "display_controls_test",
+    entry_point = "js/test-display-controls.js",
+    data = ["//src/web:js_sources"],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
 cc_test(
     name = "request_handler_test",
     srcs = ["cpp/TestRequestHandler.cpp"],

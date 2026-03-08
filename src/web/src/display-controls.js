@@ -5,6 +5,16 @@
 
 import { VisTree } from './vis-tree.js';
 
+// Compute a Set of layer indices around `center` within [0, count).
+// `lower` layers below and `upper` layers above are included.
+export function layerRangeSet(center, lower, upper, count) {
+    const indices = new Set();
+    const lo = Math.max(0, center - lower);
+    const hi = Math.min(count - 1, center + upper);
+    for (let i = lo; i <= hi; i++) indices.add(i);
+    return indices;
+}
+
 // Layer color palette (must match server-side palette in web.cpp)
 const layerPalette = [
     [70, 130, 210],  // moderate blue
@@ -85,6 +95,68 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         layerChildren.appendChild(label);
     });
     layerGroup.appendChild(layerChildren);
+
+    // --- Layer context menu (right-click) ---
+    const contextMenu = document.createElement('div');
+    contextMenu.className = 'context-menu';
+    contextMenu.style.display = 'none';
+    document.body.appendChild(contextMenu);
+
+    function showOnlyLayers(indices) {
+        layerCbs.forEach((cb, i) => {
+            const want = indices.has(i);
+            if (cb.checked !== want) {
+                cb.checked = want;
+                cb.dispatchEvent(new Event('change'));
+            }
+        });
+        // Update parent checkbox state
+        const allChecked = layerCbs.every(cb => cb.checked);
+        const someChecked = layerCbs.some(cb => cb.checked);
+        layerParentCb.checked = allChecked;
+        layerParentCb.indeterminate = someChecked && !allChecked;
+    }
+
+    function hideContextMenu() {
+        contextMenu.style.display = 'none';
+    }
+
+    const n = layerCbs.length;
+    const menuItems = [
+        { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
+        { label: 'Show layer range \u2195',   fn: (i) => layerRangeSet(i, 1, 1, n) },
+        { label: 'Show layer range \u2195\u2195', fn: (i) => layerRangeSet(i, 2, 2, n) },
+        { label: 'Show layer range \u2193',   fn: (i) => layerRangeSet(i, 1, 0, n) },
+        { label: 'Show layer range \u2191',   fn: (i) => layerRangeSet(i, 0, 1, n) },
+    ];
+
+    layerChildren.querySelectorAll('label').forEach((label, index) => {
+        label.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            contextMenu.innerHTML = '';
+            for (const item of menuItems) {
+                const div = document.createElement('div');
+                div.className = 'context-menu-item';
+                div.textContent = item.label;
+                div.addEventListener('click', () => {
+                    showOnlyLayers(item.fn(index));
+                    hideContextMenu();
+                });
+                contextMenu.appendChild(div);
+            }
+            contextMenu.style.left = e.clientX + 'px';
+            contextMenu.style.top = e.clientY + 'px';
+            contextMenu.style.display = 'block';
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!contextMenu.contains(e.target)) hideContextMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideContextMenu();
+    });
 
     // Parent checkbox toggles all layers
     layerParentCb.addEventListener('change', () => {
