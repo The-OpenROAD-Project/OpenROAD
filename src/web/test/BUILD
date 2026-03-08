@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -30,6 +31,31 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+js_test(
+    name = "coordinates_test",
+    entry_point = "js/test-coordinates.js",
+    data = ["//src/web:js_sources"],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+js_test(
+    name = "vis_tree_test",
+    entry_point = "js/test-vis-tree.js",
+    data = [
+        "//src/web:js_sources",
+        "js/setup-dom.js",
+        "//src/web:node_modules/jsdom",
+    ],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+js_test(
+    name = "websocket_manager_test",
+    entry_point = "js/test-websocket-manager.js",
+    data = ["//src/web:js_sources"],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
 
 cc_test(
     name = "tile_generator_test",

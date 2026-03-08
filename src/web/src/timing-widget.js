@@ -223,11 +223,11 @@ export class TimingWidget {
             if (idx === this._selectedPathIndex) tr.classList.add('selected');
             const vals = [
                 p.end_clk,
-                this._fmtTime(p.required),
-                this._fmtTime(p.arrival),
-                this._fmtTime(p.slack),
-                this._fmtTime(p.skew),
-                this._fmtTime(p.path_delay),
+                fmtTime(p.required),
+                fmtTime(p.arrival),
+                fmtTime(p.slack),
+                fmtTime(p.skew),
+                fmtTime(p.path_delay),
                 p.logic_depth,
                 p.fanout,
                 p.start_pin,
@@ -296,10 +296,10 @@ export class TimingWidget {
                 n.pin,
                 n.fanout,
                 n.rise ? '↑' : '↓',
-                this._fmtTime(n.time),
-                this._fmtTime(n.delay),
-                this._fmtTime(n.slew),
-                this._fmtTime(n.load),
+                fmtTime(n.time),
+                fmtTime(n.delay),
+                fmtTime(n.slew),
+                fmtTime(n.load),
             ];
             for (const v of vals) {
                 const td = document.createElement('td');
@@ -319,10 +319,11 @@ export class TimingWidget {
         }
     }
 
-    _fmtTime(v) {
-        if (v === undefined || v === null) return '';
-        return typeof v === 'number' ? v.toFixed(4) : String(v);
-    }
+}
+
+export function fmtTime(v) {
+    if (v === undefined || v === null) return '';
+    return typeof v === 'number' ? v.toFixed(4) : String(v);
 }
 
 TimingWidget.PATH_COLS = ['Clock', 'Required', 'Arrival', 'Slack', 'Skew',

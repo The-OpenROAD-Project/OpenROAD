@@ -47,7 +47,6 @@ cc_library(
         "@boost.multi_array",
         "@tcl_lang//:tcl",
         "@spdlog",
-        "@tk_tcl//:tcl",
     ],
 )
 

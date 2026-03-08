@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -10,14 +12,21 @@ package(
     features = ["layering_check"],
 )
 
+npm_link_all_packages(name = "node_modules")
+
 cc_library(
     name = "web",
     srcs = [
         "src/color.cpp",
         "src/color.h",
+        "src/request_handler.cpp",
+        "src/request_handler.h",
         "src/search.cpp",
         "src/search.h",
+        "src/tile_generator.cpp",
         "src/tile_generator.h",
+        "src/timing_report.cpp",
+        "src/timing_report.h",
         "src/web.cpp",
     ],
     hdrs = [
@@ -31,14 +40,16 @@ cc_library(
     ],
     deps = [
         "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/gui",
         "//src/odb",
+        "//src/sta:opensta_lib",
         "//src/utl",
         "//third-party/lodepng",
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -63,7 +74,7 @@ cc_library(
         "//:ord",
         "//src/odb",
         "//src/utl",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -91,4 +102,10 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+js_library(
+    name = "js_sources",
+    srcs = glob(["src/*.js"]),
+    visibility = ["//src/web:__subpackages__"],
 )
