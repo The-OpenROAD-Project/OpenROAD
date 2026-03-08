@@ -158,6 +158,12 @@ set_infinite_cap(bool infinite_capacity)
   getGlobalRouter()->setInfiniteCapacity(infinite_capacity);
 }
 
+void
+update_net(odb::dbNet* net)
+{
+  getGlobalRouter()->updateNet(net);
+}
+
 void start_incremental()
 {
   getGlobalRouter()->startIncremental();
