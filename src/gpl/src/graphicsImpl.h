@@ -189,6 +189,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawMBFF(gui::Painter& painter);
   void drawBounds(gui::Painter& painter);
   void reportSelected();
+  std::optional<size_t> getSelectedNbIndex() const;
 };
 
 }  // namespace gpl
