@@ -908,4 +908,42 @@ void GridGraph::write(const std::string& heatmap_file) const
   fout.close();
 }
 
+void GridGraph::clearNetCapacity(const int net_id)
+{
+  Tree& tree = getRoutingTree(net_id);
+  for (const Segment& segment : tree.getSegments()) {
+    int x1 = segment.x1;
+    int y1 = segment.y1;
+    int x2 = segment.x2;
+    int y2 = segment.y2;
+    int layer = segment.layer;
+    bool isHorizontal = (y1 == y2);
+    if (isHorizontal) {
+      int min_x = std::min(x1, x2);
+      int max_x = std::max(x1, x2);
+      for (int x = min_x; x < max_x; ++x) {
+        GridEdge* edge = getEdge(x, y1, layer, Direction::Horizontal);
+        if (edge->getUsage() > 0) {
+          edge->decrementUsage(1);
+        }
+        edge->decayHistoryCost();
+      }
+    } else {
+      int min_y = std::min(y1, y2);
+      int max_y = std::max(y1, y2);
+      for (int y = min_y; y < max_y; ++y) {
+        GridEdge* edge = getEdge(x1, y, layer, Direction::Vertical);
+        if (edge->getUsage() > 0) {
+          edge->decrementUsage(1);
+        }
+        edge->decayHistoryCost();
+      }
+    }
+  }
+  setNetRoutedStatus(net_id, false);
+}
+
 }  // namespace grt
+
+
+
