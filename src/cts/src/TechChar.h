@@ -134,7 +134,6 @@ class TechChar
   TechChar(CtsOptions* options,
            odb::dbDatabase* db,
            sta::dbSta* sta,
-           rsz::Resizer* resizer,
            est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
            utl::Logger* logger);
