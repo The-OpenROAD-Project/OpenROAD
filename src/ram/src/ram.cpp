@@ -211,20 +211,11 @@ void RamGen::makeWordSlice(const int bytes_per_word,
                            const vector<dbNet*>& data_input,
                            const vector<vector<dbBTerm*>>& data_output)
 {
-  /*
-  Psuedocode:
-  iterates through number of bytes per word
-  creates bytes for reach one
-    - takes in select nets
-    - takes in the data_input nets for the word
-    - takes in the data_output nets
-    -
-  */
   const int bits_per_byte = 8;
 
   for (int byte = 0; byte < bytes_per_word; ++byte) {
     int start_idx
-        = byte * bits_per_byte;  // eventually replace with bits per byte
+        = byte * bits_per_byte;
 
     vector<dbNet*> byte_inputs(data_input.begin() + start_idx,
                                data_input.begin() + start_idx + bits_per_byte);

@@ -240,7 +240,7 @@ int Grid::numLayouts() const
 void Grid::setNumLayouts(int tracks)
 {
   if (tracks > layouts_.size()) {
-    for (int size = layouts_.size(); size <= tracks; ++size) {
+    for (int size = layouts_.size(); size < tracks; ++size) {
       if (orientation_ == odb::horizontal) {
         layouts_.push_back(std::make_unique<Layout>(odb::vertical));
       } else {
