@@ -61,7 +61,7 @@ jobs:
           Version: 1.0
           Architecture: amd64
           Maintainer: Hemant Kumar
-          Description: OpenROAD physical design automation tool
+          Description: OpenROAD is an integrated chip physical design tool that takes a design from synthesized Verilog to routed layout.
           EOF
 
       - name: Build Debian Package
