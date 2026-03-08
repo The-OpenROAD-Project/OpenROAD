@@ -15,10 +15,11 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
+#include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
@@ -31,7 +32,6 @@ TimingReport::TimingReport(sta::dbSta* sta) : sta_(sta)
 }
 
 void TimingReport::expandPath(sta::Path* path,
-                              sta::DcalcAnalysisPt* dcalc_ap,
                               float offset,
                               bool clock_expanded,
                               std::vector<TimingNode>& nodes,
@@ -51,7 +51,8 @@ void TimingReport::expandPath(sta::Path* path,
   sta::PathExpanded expand(path, sta_);
   auto* graph = sta_->graph();
   auto* network = sta_->network();
-  auto* sdc = sta_->sdc();
+  auto* mode = sta_->cmdMode();
+  auto* sdc = mode->sdc();
 
   // Track logic instances for depth computation
   std::set<sta::Instance*> logic_insts;
@@ -60,7 +61,7 @@ void TimingReport::expandPath(sta::Path* path,
     const auto* ref = expand.path(i);
     sta::Vertex* vertex = ref->vertex(sta_);
     const auto pin = vertex->pin();
-    const bool pin_is_clock = sta_->isClock(pin);
+    const bool pin_is_clock = sta_->isClock(pin, mode);
     const bool is_driver = network->isDriver(pin);
     const bool is_rising = ref->transition(sta_) == sta::RiseFall::rise();
 
@@ -74,7 +75,7 @@ void TimingReport::expandPath(sta::Path* path,
         if (network->isTopLevelPort(to_pin)) {
           sta::Port* port = network->port(to_pin);
           node_fanout += sdc->portExtFanout(
-                             port, dcalc_ap->corner(), sta::MinMax::max())
+                             port, sta::MinMax::max())
                          + 1;
         } else {
           node_fanout++;
@@ -86,7 +87,7 @@ void TimingReport::expandPath(sta::Path* path,
     float cap = 0.0f;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
       sta::GraphDelayCalc* gdc = sta_->graphDelayCalc();
-      cap = gdc->loadCap(pin, ref->transition(sta_), dcalc_ap);
+      cap = gdc->loadCap(pin, ref->transition(sta_), ref->scene(sta_), ref->minMax(sta_));
     }
 
     // Pin name via dbNetwork
@@ -104,7 +105,7 @@ void TimingReport::expandPath(sta::Path* path,
 
     // Arrival and slew
     float slew = 0.0f;
-    if (!sta_->isIdealClock(pin)) {
+    if (!sta_->isIdealClock(pin, mode)) {
       arrival_cur = ref->arrival();
       slew = ref->slew(sta_);
     }
@@ -149,12 +150,14 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
   sta_->searchPreamble();
 
   sta::Search* search = sta_->search();
+  sta::SceneSeq scenes = sta_->scenes();
+  sta::StdStringSeq group_names;
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
       /*thrus*/ nullptr,
       /*to*/ nullptr,
       /*unconstrained*/ false,
-      /*corner*/ nullptr,
+      scenes,
       is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
       /*group_count*/ max_paths,
       /*endpoint_count*/ 1,
@@ -163,7 +166,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       -sta::INF,
       sta::INF,
       /*sort_by_slack*/ true,
-      /*group_names*/ nullptr,
+      group_names,
       /*setup*/ is_setup,
       /*hold*/ !is_setup,
       /*recovery*/ false,
@@ -175,8 +178,6 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
     TimingPathSummary summary;
 
     sta::Path* path = path_end->path();
-    sta::DcalcAnalysisPt* dcalc_ap
-        = path->pathAnalysisPt(sta_)->dcalcAnalysisPt();
 
     // Clocks
     auto* src_edge = path_end->sourceClkEdge(sta_);
@@ -197,7 +198,6 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
 
     // Expand data path
     expandPath(path,
-               dcalc_ap,
                0.0f,
                clock_propagated,
                summary.data_nodes,
@@ -208,7 +208,6 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
     int capture_depth = 0;
     int capture_fanout = 0;
     expandPath(path_end->targetClkPath(),
-               dcalc_ap,
                path_end->targetClkOffset(sta_),
                clock_propagated,
                summary.capture_nodes,

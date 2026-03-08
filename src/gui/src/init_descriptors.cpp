@@ -113,7 +113,7 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db,
       new DbCellEdgeSpacingDescriptor(db));
 
   // STA descriptors
-  registerDescriptor<sta::Corner*>(new CornerDescriptor(sta));
+  registerDescriptor<sta::Scene*>(new SceneDescriptor(sta));
   registerDescriptor<sta::LibertyLibrary*>(new LibertyLibraryDescriptor(sta));
   registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));
   registerDescriptor<sta::LibertyPort*>(new LibertyPortDescriptor(sta));

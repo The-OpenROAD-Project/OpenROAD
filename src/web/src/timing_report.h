@@ -8,7 +8,6 @@
 
 namespace sta {
 class dbSta;
-class DcalcAnalysisPt;
 class Path;
 }  // namespace sta
 
@@ -53,7 +52,6 @@ class TimingReport
 
  private:
   void expandPath(sta::Path* path,
-                  sta::DcalcAnalysisPt* dcalc_ap,
                   float offset,
                   bool clock_expanded,
                   std::vector<TimingNode>& nodes,
