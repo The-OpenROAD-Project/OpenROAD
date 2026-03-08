@@ -435,6 +435,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     stt_py
     psm_py
     pdn_py
+    rsz_py
     dft_py
     par_py
   )
