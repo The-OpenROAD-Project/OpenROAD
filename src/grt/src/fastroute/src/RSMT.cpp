@@ -723,11 +723,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
     if (reRoute) {
       // update the est_usage due to the segments in this net
-      newrouteL(
-          netID,
-          RouteType::NoRoute,
-          true);  // route the net with no previous route for each tree edge
-    }
+      newrouteL(netID, RouteType::NoRoute, true);
+      }
+    stt_wirelengths_[netID] = computeNetSttWirelength(netID);
   }  // loop i
 
   debugPrint(logger_,
