@@ -74,6 +74,7 @@ constexpr int kMagic2 = 0x4E414442;  // NADB
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
 static absl::Mutex* db_tbl_mutex = new absl::Mutex;
+static absl::Mutex* unfolded_model_mutex = new absl::Mutex;
 static std::atomic<uint32_t> db_unique_id = 0;
 // User Code End Static
 
@@ -691,12 +692,16 @@ dbChip* dbDatabase::getChip()
   return (dbChip*) db->chip_tbl_->getPtr(db->chip_);
 }
 
-UnfoldedModel* dbDatabase::getUnfoldedModel()
+void dbDatabase::constructUnfoldedModel()
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  if (db->unfolded_model_ == nullptr) {
-    db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
-  }
+  absl::MutexLock lock(unfolded_model_mutex);
+  db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
+}
+
+const UnfoldedModel* dbDatabase::getUnfoldedModel() const
+{
+  _dbDatabase* db = (_dbDatabase*) this;
   return db->unfolded_model_;
 }
 
@@ -1008,6 +1013,7 @@ void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
+  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()

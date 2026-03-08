@@ -98,6 +98,9 @@ void Checker::check()
 {
   dbChip* chip = db_->getChip();
   const UnfoldedModel* model = db_->getUnfoldedModel();
+  if (model == nullptr || chip == nullptr) {
+    return;
+  }
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
 
   checkFloatingChips(top_cat, model);

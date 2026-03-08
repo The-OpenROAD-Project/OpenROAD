@@ -7552,7 +7552,9 @@ class dbDatabase : public dbObject
   ///
   dbChip* getChip();
 
-  UnfoldedModel* getUnfoldedModel();
+  void constructUnfoldedModel();
+
+  const UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
