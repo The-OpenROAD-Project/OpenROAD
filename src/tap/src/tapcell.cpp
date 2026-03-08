@@ -27,6 +27,40 @@ namespace tap {
 using std::string;
 using std::vector;
 
+namespace {
+
+void recreateRow(odb::dbBlock* block,
+                 odb::dbRow* to_modify,
+                 int new_xmin,
+                 int new_xmax)
+{
+  odb::dbSite* site = to_modify->getSite();
+  std::string name = to_modify->getName();
+  odb::Point origin = to_modify->getOrigin();
+  odb::dbOrientType orient = to_modify->getOrient();
+  odb::dbRowDir direction = to_modify->getDirection();
+
+  odb::dbRow::destroy(to_modify);
+
+  int site_width = site->getWidth();
+  int start_x = odb::makeSiteLoc(new_xmin, site_width, false, origin.getX());
+  int end_x = odb::makeSiteLoc(new_xmax, site_width, true, origin.getX());
+  int new_sites = (end_x - start_x) / site_width;
+  if (new_sites > 0) {
+    odb::dbRow::create(block,
+                       name.c_str(),
+                       site,
+                       start_x,
+                       origin.getY(),
+                       orient,
+                       direction,
+                       new_sites,
+                       site_width);
+  }
+}
+
+}  // namespace
+
 Tapcell::Tapcell(odb::dbDatabase* db, utl::Logger* logger)
     : db_(db), logger_(logger)
 {
@@ -78,6 +112,92 @@ void Tapcell::cutRows(const Options& options)
                           : 0;
   min_row_width = std::max(min_row_width, options.row_min_width);
   odb::cutRows(block, min_row_width, blockages, halo_x, halo_y, logger_);
+
+  EndcapCellOptions bopts = correctEndcapOptions(options);
+  int max_corner_width = 0;
+  for (auto* corner : {bopts.left_top_corner,
+                       bopts.left_bottom_corner,
+                       bopts.right_top_corner,
+                       bopts.right_bottom_corner,
+                       bopts.left_top_edge,
+                       bopts.left_bottom_edge,
+                       bopts.right_top_edge,
+                       bopts.right_bottom_edge}) {
+    if (corner != nullptr) {
+      max_corner_width
+          = std::max(max_corner_width, static_cast<int>(corner->getWidth()));
+    }
+  }
+  if (options.endcap_master != nullptr) {
+    max_corner_width = std::max(
+        max_corner_width, static_cast<int>(options.endcap_master->getWidth()));
+  }
+
+  if (max_corner_width > 0) {
+    removeRowMinSteps(max_corner_width);
+  }
+}
+
+void Tapcell::removeRowMinSteps(int min_step)
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  bool modified = true;
+  while (modified) {
+    modified = false;
+    std::map<int, std::vector<odb::dbRow*>> rows_by_y;
+    for (odb::dbRow* row : block->getRows()) {
+      rows_by_y[row->getBBox().yMin()].push_back(row);
+    }
+
+    for (const auto& [y, rows] : rows_by_y) {
+      if (modified) {
+        break;
+      }
+      int row_height = 0;
+      if (!rows.empty()) {
+        row_height = rows[0]->getBBox().dy();
+      }
+      auto it = rows_by_y.find(y + row_height);
+      if (it == rows_by_y.end()) {
+        continue;
+      }
+
+      const std::vector<odb::dbRow*>& next_rows = it->second;
+
+      for (odb::dbRow* row1 : rows) {
+        odb::Rect bbox1 = row1->getBBox();
+        for (odb::dbRow* row2 : next_rows) {
+          odb::Rect bbox2 = row2->getBBox();
+          if (bbox1.xMax() <= bbox2.xMin() || bbox1.xMin() >= bbox2.xMax()) {
+            continue;
+          }
+
+          int left_diff = std::abs(bbox1.xMin() - bbox2.xMin());
+          if (left_diff > 0 && left_diff < min_step) {
+            int max_left = std::max<int>(bbox1.xMin(), bbox2.xMin());
+            odb::dbRow* to_modify = (bbox1.xMin() < max_left) ? row1 : row2;
+            const int new_xmax = to_modify->getBBox().xMax();
+            recreateRow(block, to_modify, max_left, new_xmax);
+            modified = true;
+            break;
+          }
+
+          int right_diff = std::abs(bbox1.xMax() - bbox2.xMax());
+          if (right_diff > 0 && right_diff < min_step) {
+            int min_right = std::min<int>(bbox1.xMax(), bbox2.xMax());
+            odb::dbRow* to_modify = (bbox1.xMax() > min_right) ? row1 : row2;
+            const int new_xmin = to_modify->getBBox().xMin();
+            recreateRow(block, to_modify, new_xmin, min_right);
+            modified = true;
+            break;
+          }
+        }
+        if (modified) {
+          break;
+        }
+      }
+    }
+  }
 }
 
 void Tapcell::run(const Options& options)
