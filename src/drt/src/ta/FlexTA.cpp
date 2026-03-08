@@ -28,6 +28,37 @@ using odb::dbTechLayerType;
 
 namespace drt {
 
+namespace {
+
+constexpr int kMaxTaThreads = 8;
+
+bool isBottomRoutingLayerHorizontal(frDesign* design)
+{
+  frLayerNum bottom_layer_num = design->getTech()->getBottomLayerNum();
+  auto* bottom_layer = design->getTech()->getLayer(bottom_layer_num);
+  if (bottom_layer->getType() != dbTechLayerType::ROUTING) {
+    bottom_layer_num++;
+    bottom_layer = design->getTech()->getLayer(bottom_layer_num);
+  }
+  return bottom_layer->getDir() == dbTechLayerDir::HORIZONTAL;
+}
+
+std::string getOrdinalSuffix(int iter)
+{
+  if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
+    return "st";
+  }
+  if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
+    return "nd";
+  }
+  if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
+    return "rd";
+  }
+  return "th";
+}
+
+}  // namespace
+
 int FlexTAWorker::main_mt()
 {
   ProfileTask profile("TA:main_mt");
@@ -100,91 +131,94 @@ FlexTA::~FlexTA() = default;
 int FlexTA::initTA_helper(int iter,
                           int size,
                           int offset,
-                          bool isH,
-                          int& numPanels)
+                          bool is_horizontal,
+                          int& num_panels)
 {
-  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
-  auto& xgp = gCellPatterns.at(0);
-  auto& ygp = gCellPatterns.at(1);
-  int sol = 0;
-  numPanels = 0;
-  std::vector<std::vector<std::unique_ptr<FlexTAWorker>>> workers;
-  if (isH) {
-    for (int i = offset; i < (int) ygp.getCount(); i += size) {
-      auto uworker = std::make_unique<FlexTAWorker>(
+  const auto g_cell_patterns = getDesign()->getTopBlock()->getGCellPatterns();
+  const auto& x_gp = g_cell_patterns.at(0);
+  const auto& y_gp = g_cell_patterns.at(1);
+  int num_assigned = 0;
+  num_panels = 0;
+  std::vector<std::vector<std::unique_ptr<FlexTAWorker>>> worker_batches;
+  if (is_horizontal) {
+    for (int i = offset; i < static_cast<int>(y_gp.getCount()); i += size) {
+      auto worker_uptr = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
-      auto& worker = *(uworker.get());
-      odb::Rect beginBox
+      auto& worker = *worker_uptr;
+      const odb::Rect begin_box
           = getDesign()->getTopBlock()->getGCellBox(odb::Point(0, i));
-      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          odb::Point((int) xgp.getCount() - 1,
-                     std::min(i + size - 1, (int) ygp.getCount() - 1)));
-      odb::Rect routeBox(
-          beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      odb::Rect extBox;
-      routeBox.bloat(ygp.getSpacing() / 2, extBox);
-      worker.setRouteBox(routeBox);
-      worker.setExtBox(extBox);
+      const odb::Rect end_box
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(
+              static_cast<int>(x_gp.getCount()) - 1,
+              std::min(i + size - 1, static_cast<int>(y_gp.getCount()) - 1)));
+      const odb::Rect route_box(
+          begin_box.xMin(), begin_box.yMin(), end_box.xMax(), end_box.yMax());
+      odb::Rect ext_box;
+      route_box.bloat(y_gp.getSpacing() / 2, ext_box);
+      worker.setRouteBox(route_box);
+      worker.setExtBox(ext_box);
       worker.setDir(dbTechLayerDir::HORIZONTAL);
       worker.setTAIter(iter);
-      if (workers.empty()
-          || (int) workers.back().size() >= router_cfg_->BATCHSIZETA) {
-        workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
+      if (worker_batches.empty()
+          || static_cast<int>(worker_batches.back().size())
+                 >= router_cfg_->BATCHSIZETA) {
+        worker_batches.emplace_back();
       }
-      workers.back().emplace_back(std::move(uworker));
+      worker_batches.back().emplace_back(std::move(worker_uptr));
     }
   } else {
-    for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      auto uworker = std::make_unique<FlexTAWorker>(
+    for (int i = offset; i < static_cast<int>(x_gp.getCount()); i += size) {
+      auto worker_uptr = std::make_unique<FlexTAWorker>(
           getDesign(), logger_, router_cfg_, save_updates_);
-      auto& worker = *(uworker.get());
-      odb::Rect beginBox
+      auto& worker = *worker_uptr;
+      const odb::Rect begin_box
           = getDesign()->getTopBlock()->getGCellBox(odb::Point(i, 0));
-      odb::Rect endBox = getDesign()->getTopBlock()->getGCellBox(
-          odb::Point(std::min(i + size - 1, (int) xgp.getCount() - 1),
-                     (int) ygp.getCount() - 1));
-      odb::Rect routeBox(
-          beginBox.xMin(), beginBox.yMin(), endBox.xMax(), endBox.yMax());
-      odb::Rect extBox;
-      routeBox.bloat(xgp.getSpacing() / 2, extBox);
-      worker.setRouteBox(routeBox);
-      worker.setExtBox(extBox);
+      const odb::Rect end_box
+          = getDesign()->getTopBlock()->getGCellBox(odb::Point(
+              std::min(i + size - 1, static_cast<int>(x_gp.getCount()) - 1),
+              static_cast<int>(y_gp.getCount()) - 1));
+      const odb::Rect route_box(
+          begin_box.xMin(), begin_box.yMin(), end_box.xMax(), end_box.yMax());
+      odb::Rect ext_box;
+      route_box.bloat(x_gp.getSpacing() / 2, ext_box);
+      worker.setRouteBox(route_box);
+      worker.setExtBox(ext_box);
       worker.setDir(dbTechLayerDir::VERTICAL);
       worker.setTAIter(iter);
-      if (workers.empty()
-          || (int) workers.back().size() >= router_cfg_->BATCHSIZETA) {
-        workers.emplace_back(std::vector<std::unique_ptr<FlexTAWorker>>());
+      if (worker_batches.empty()
+          || static_cast<int>(worker_batches.back().size())
+                 >= router_cfg_->BATCHSIZETA) {
+        worker_batches.emplace_back();
       }
-      workers.back().push_back(std::move(uworker));
+      worker_batches.back().emplace_back(std::move(worker_uptr));
     }
   }
 
-  omp_set_num_threads(std::min(8, router_cfg_->MAX_THREADS));
-  // parallel execution
-  // multi thread
-  for (auto& workerBatch : workers) {
+  omp_set_num_threads(std::min(kMaxTaThreads, router_cfg_->MAX_THREADS));
+  // Execute each worker batch in parallel and merge assignment counts.
+  for (auto& worker_batch : worker_batches) {
     ProfileTask profile("TA:batch");
     utl::ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < (int) workerBatch.size(); i++) {
+    for (int i = 0; i < static_cast<int>(worker_batch.size()); i++) {
       try {
-        workerBatch[i]->main_mt();
+        worker_batch[i]->main_mt();
 #pragma omp critical
         {
-          sol += workerBatch[i]->getNumAssigned();
-          numPanels++;
+          num_assigned += worker_batch[i]->getNumAssigned();
+          num_panels++;
         }
       } catch (...) {
         exception.capture();
       }
     }
     exception.rethrow();
-    for (auto& worker : workerBatch) {
+    for (auto& worker : worker_batch) {
       worker->end();
     }
-    workerBatch.clear();
+    worker_batch.clear();
   }
-  return sol;
+  return num_assigned;
 }
 
 void FlexTA::initTA(int size)
@@ -196,49 +230,43 @@ void FlexTA::initTA(int size)
     std::cout << std::endl << "start initial track assignment ..." << std::endl;
   }
 
-  auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
-  auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
-    bottomLNum++;
-    bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  const bool is_bottom_layer_h = isBottomRoutingLayerHorizontal(getDesign());
 
   // H first
-  if (isBottomLayerH) {
-    int numPanelsH;
-    int numAssignedH = initTA_helper(0, size, 0, true, numPanelsH);
+  if (is_bottom_layer_h) {
+    int num_panels_h;
+    int num_assigned_h = initTA_helper(0, size, 0, true, num_panels_h);
 
-    int numPanelsV;
-    int numAssignedV = initTA_helper(0, size, 0, false, numPanelsV);
+    int num_panels_v;
+    int num_assigned_v = initTA_helper(0, size, 0, false, num_panels_v);
 
     if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     183,
                     "Done with {} horizontal wires in {} frboxes and "
                     "{} vertical wires in {} frboxes.",
-                    numAssignedH,
-                    numPanelsH,
-                    numAssignedV,
-                    numPanelsV);
+                    num_assigned_h,
+                    num_panels_h,
+                    num_assigned_v,
+                    num_panels_v);
     }
     // V first
   } else {
-    int numPanelsV;
-    int numAssignedV = initTA_helper(0, size, 0, false, numPanelsV);
+    int num_panels_v;
+    int num_assigned_v = initTA_helper(0, size, 0, false, num_panels_v);
 
-    int numPanelsH;
-    int numAssignedH = initTA_helper(0, size, 0, true, numPanelsH);
+    int num_panels_h;
+    int num_assigned_h = initTA_helper(0, size, 0, true, num_panels_h);
 
     if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     184,
                     "Done with {} vertical wires in {} frboxes and "
                     "{} horizontal wires in {} frboxes.",
-                    numAssignedV,
-                    numPanelsV,
-                    numAssignedH,
-                    numPanelsH);
+                    num_assigned_v,
+                    num_panels_v,
+                    num_assigned_h,
+                    num_panels_h);
     }
   }
 }
@@ -250,61 +278,46 @@ void FlexTA::searchRepair(int iter, int size, int offset)
 
   if (router_cfg_->VERBOSE > 1) {
     std::cout << std::endl << "start " << iter;
-    std::string suffix;
-    if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
-      suffix = "st";
-    } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
-      suffix = "nd";
-    } else if (iter == 3 || (iter > 20 && iter % 10 == 3)) {
-      suffix = "rd";
-    } else {
-      suffix = "th";
-    }
-    std::cout << suffix << " optimization iteration ..." << std::endl;
+    std::cout << getOrdinalSuffix(iter) << " optimization iteration ..."
+              << std::endl;
   }
-  auto bottomLNum = getDesign()->getTech()->getBottomLayerNum();
-  auto bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  if (bottomLayer->getType() != dbTechLayerType::ROUTING) {
-    bottomLNum++;
-    bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
-  }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  const bool is_bottom_layer_h = isBottomRoutingLayerHorizontal(getDesign());
 
   // H first
-  if (isBottomLayerH) {
-    int numPanelsH;
-    int numAssignedH = initTA_helper(iter, size, offset, true, numPanelsH);
+  if (is_bottom_layer_h) {
+    int num_panels_h;
+    int num_assigned_h = initTA_helper(iter, size, offset, true, num_panels_h);
 
-    int numPanelsV;
-    int numAssignedV = initTA_helper(iter, size, offset, false, numPanelsV);
+    int num_panels_v;
+    int num_assigned_v = initTA_helper(iter, size, offset, false, num_panels_v);
 
     if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     268,
                     "Done with {} horizontal wires in {} frboxes and "
                     "{} vertical wires in {} frboxes.",
-                    numAssignedH,
-                    numPanelsH,
-                    numAssignedV,
-                    numPanelsV);
+                    num_assigned_h,
+                    num_panels_h,
+                    num_assigned_v,
+                    num_panels_v);
     }
     // V first
   } else {
-    int numPanelsV;
-    int numAssignedV = initTA_helper(iter, size, offset, false, numPanelsV);
+    int num_panels_v;
+    int num_assigned_v = initTA_helper(iter, size, offset, false, num_panels_v);
 
-    int numPanelsH;
-    int numAssignedH = initTA_helper(iter, size, offset, true, numPanelsH);
+    int num_panels_h;
+    int num_assigned_h = initTA_helper(iter, size, offset, true, num_panels_h);
 
     if (router_cfg_->VERBOSE > 0) {
       logger_->info(DRT,
                     186,
                     "Done with {} vertical wires in {} frboxes and "
                     "{} horizontal wires in {} frboxes.",
-                    numAssignedV,
-                    numPanelsV,
-                    numAssignedH,
-                    numPanelsH);
+                    num_assigned_v,
+                    num_panels_v,
+                    num_assigned_h,
+                    num_panels_h);
     }
   }
 }
