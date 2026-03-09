@@ -3,12 +3,12 @@
 
 // Canvas-based clock tree viewer widget.
 
-const kNodeSpacing = 24;    // pixels between adjacent leaf bins
-const kNodeSize = 10;       // base node shape size in pixels
-const kTopMargin = 40;      // pixels above the first node
-const kBottomMargin = 40;   // pixels below the last node
-const kLeftMargin = 70;     // room for time-axis labels
-const kRightMargin = 20;
+export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
+export const kNodeSize = 10;       // base node shape size in pixels
+export const kTopMargin = 40;      // pixels above the first node
+export const kBottomMargin = 40;   // pixels below the last node
+export const kLeftMargin = 70;     // room for time-axis labels
+export const kRightMargin = 20;
 
 // Node type → fill colour
 const kTypeColors = {
@@ -20,6 +20,123 @@ const kTypeColors = {
     macro:      '#00b0b0',
     unknown:    '#888888',
 };
+
+// Pure layout computation — extracted for testability.
+export function computeClockTreeLayout(clockData) {
+    const nodes = clockData.nodes;
+    if (!nodes || nodes.length === 0) {
+        return {
+            layout: [],
+            layoutWidth: 0,
+            layoutHeight: 0,
+            timeMin: 0,
+            timeMax: 0,
+            timeUnit: '',
+            sceneHeight: 0,
+            layoutById: new Map(),
+        };
+    }
+
+    // Build children map
+    const childrenMap = new Map();
+    for (const n of nodes) {
+        childrenMap.set(n.id, []);
+    }
+    for (const n of nodes) {
+        if (n.parent_id >= 0 && childrenMap.has(n.parent_id)) {
+            childrenMap.get(n.parent_id).push(n.id);
+        }
+    }
+    const nodeById = new Map();
+    for (const n of nodes) {
+        nodeById.set(n.id, n);
+    }
+
+    // Compute total leaf-equivalent width for each subtree
+    const widthOf = new Map();
+    const computeWidth = (id) => {
+        const kids = childrenMap.get(id) || [];
+        if (kids.length === 0) {
+            widthOf.set(id, 1);
+            return 1;
+        }
+        let w = 0;
+        for (const kid of kids) {
+            w += computeWidth(kid);
+        }
+        widthOf.set(id, w);
+        return w;
+    };
+
+    // Find root nodes (parent_id == -1)
+    const roots = nodes.filter(n => n.parent_id === -1);
+    let totalWidth = 0;
+    for (const r of roots) {
+        totalWidth += computeWidth(r.id);
+    }
+
+    // Time range
+    const minArr = clockData.min_arrival;
+    const maxArr = clockData.max_arrival;
+    const timeRange = maxArr - minArr || 1;
+    const sceneHeight = Math.max(200, totalWidth * kNodeSpacing * 0.6);
+
+    // Assign x positions: each node gets the centre of its allocated bins
+    const layout = [];
+    const assignPositions = (id, binStart) => {
+        const n = nodeById.get(id);
+        const w = widthOf.get(id);
+        const x = kLeftMargin + (binStart + w / 2) * kNodeSpacing;
+        const y = kTopMargin +
+            ((n.arrival - minArr) / timeRange) * sceneHeight;
+
+        layout.push({
+            id: n.id,
+            x,
+            y,
+            type: n.type,
+            name: n.name,
+            pin_name: n.pin_name,
+            arrival: n.arrival,
+            delay: n.delay,
+            fanout: n.fanout,
+            level: n.level,
+            parent_id: n.parent_id,
+        });
+
+        let offset = binStart;
+        const kids = childrenMap.get(id) || [];
+        for (const kid of kids) {
+            assignPositions(kid, offset);
+            offset += widthOf.get(kid);
+        }
+    };
+
+    let rootOffset = 0;
+    for (const r of roots) {
+        assignPositions(r.id, rootOffset);
+        rootOffset += widthOf.get(r.id);
+    }
+
+    const layoutWidth = kLeftMargin + totalWidth * kNodeSpacing + kRightMargin;
+    const layoutHeight = kTopMargin + sceneHeight + kBottomMargin;
+
+    const layoutById = new Map();
+    for (const item of layout) {
+        layoutById.set(item.id, item);
+    }
+
+    return {
+        layout,
+        layoutWidth,
+        layoutHeight,
+        timeMin: minArr,
+        timeMax: maxArr,
+        timeUnit: clockData.time_unit || '',
+        sceneHeight,
+        layoutById,
+    };
+}
 
 export class ClockTreeWidget {
     constructor(container, app, redrawAllLayers) {
@@ -59,9 +176,13 @@ export class ClockTreeWidget {
         this._updateBtn = document.createElement('button');
         this._updateBtn.className = 'timing-btn';
         this._updateBtn.textContent = 'Update';
+        this._fitBtn = document.createElement('button');
+        this._fitBtn.className = 'timing-btn';
+        this._fitBtn.textContent = 'Fit';
         this._statusLabel = document.createElement('span');
         this._statusLabel.className = 'timing-path-count';
         toolbar.appendChild(this._updateBtn);
+        toolbar.appendChild(this._fitBtn);
         toolbar.appendChild(this._statusLabel);
         el.appendChild(toolbar);
 
@@ -88,8 +209,22 @@ export class ClockTreeWidget {
         this._bindEvents();
     }
 
+    _fit() {
+        this._sizeCanvas();
+        this._fitToView();
+        this._render();
+    }
+
     _bindEvents() {
         this._updateBtn.addEventListener('click', () => this.update());
+        this._fitBtn.addEventListener('click', () => this._fit());
+
+        this._canvas.addEventListener('keydown', (e) => {
+            if (e.key === 'f') {
+                this._fit();
+            }
+        });
+        this._canvas.tabIndex = 0;  // make canvas focusable for key events
 
         this._canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -155,7 +290,6 @@ export class ClockTreeWidget {
         try {
             const data = await this._app.websocketManager.request(
                 { type: 'clock_tree' });
-            console.log('clock_tree response:', JSON.stringify(data).substring(0, 2000));
             this._clockData = data.clocks || [];
             this._buildTabs();
             this._selectClock(0);
@@ -163,7 +297,7 @@ export class ClockTreeWidget {
                 this._clockData.length + ' clock' +
                 (this._clockData.length !== 1 ? 's' : '');
         } catch (err) {
-            console.error('clock_tree error:', err);
+            console.error('Clock tree error:', err);
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
     }
@@ -192,17 +326,10 @@ export class ClockTreeWidget {
         });
 
         this._computeLayout(this._clockData[idx]);
-        console.log('layout:', this._layout.length, 'nodes,',
-            'canvas rect:', this._canvas.getBoundingClientRect(),
-            'layoutW:', this._layoutWidth, 'layoutH:', this._layoutHeight);
         // Defer fit+render to ensure canvas has been laid out
         requestAnimationFrame(() => {
             this._sizeCanvas();
-            const rect = this._canvas.getBoundingClientRect();
-            console.log('rAF canvas rect:', rect.width, 'x', rect.height,
-                'scale:', this._scale, 'tx:', this._tx, 'ty:', this._ty);
             this._fitToView();
-            console.log('after fit: scale:', this._scale, 'tx:', this._tx, 'ty:', this._ty);
             this._render();
         });
     }
@@ -210,108 +337,15 @@ export class ClockTreeWidget {
     // ---- Layout computation ----
 
     _computeLayout(clockData) {
-        const nodes = clockData.nodes;
-        if (!nodes || nodes.length === 0) {
-            this._layout = [];
-            this._layoutWidth = 0;
-            this._layoutHeight = 0;
-            return;
-        }
-
-        // Build children map
-        const childrenMap = new Map();
-        for (const n of nodes) {
-            childrenMap.set(n.id, []);
-        }
-        for (const n of nodes) {
-            if (n.parent_id >= 0 && childrenMap.has(n.parent_id)) {
-                childrenMap.get(n.parent_id).push(n.id);
-            }
-        }
-        const nodeById = new Map();
-        for (const n of nodes) {
-            nodeById.set(n.id, n);
-        }
-
-        // Compute total leaf-equivalent width for each subtree
-        const widthOf = new Map();
-        const computeWidth = (id) => {
-            const kids = childrenMap.get(id) || [];
-            if (kids.length === 0) {
-                widthOf.set(id, 1);
-                return 1;
-            }
-            let w = 0;
-            for (const kid of kids) {
-                w += computeWidth(kid);
-            }
-            widthOf.set(id, w);
-            return w;
-        };
-
-        // Find root nodes (parent_id == -1)
-        const roots = nodes.filter(n => n.parent_id === -1);
-        let totalWidth = 0;
-        for (const r of roots) {
-            totalWidth += computeWidth(r.id);
-        }
-
-        // Time range
-        const minArr = clockData.min_arrival;
-        const maxArr = clockData.max_arrival;
-        const timeRange = maxArr - minArr || 1;
-        const sceneHeight = Math.max(200, totalWidth * kNodeSpacing * 0.6);
-
-        // Assign x positions: each node gets the centre of its allocated bins
-        const layout = [];
-        const assignPositions = (id, binStart) => {
-            const n = nodeById.get(id);
-            const w = widthOf.get(id);
-            const x = kLeftMargin + (binStart + w / 2) * kNodeSpacing;
-            const y = kTopMargin +
-                ((n.arrival - minArr) / timeRange) * sceneHeight;
-
-            layout.push({
-                id: n.id,
-                x,
-                y,
-                type: n.type,
-                name: n.name,
-                pin_name: n.pin_name,
-                arrival: n.arrival,
-                delay: n.delay,
-                fanout: n.fanout,
-                level: n.level,
-                parent_id: n.parent_id,
-            });
-
-            let offset = binStart;
-            const kids = childrenMap.get(id) || [];
-            for (const kid of kids) {
-                assignPositions(kid, offset);
-                offset += widthOf.get(kid);
-            }
-        };
-
-        let rootOffset = 0;
-        for (const r of roots) {
-            assignPositions(r.id, rootOffset);
-            rootOffset += widthOf.get(r.id);
-        }
-
-        this._layout = layout;
-        this._layoutWidth = kLeftMargin + totalWidth * kNodeSpacing + kRightMargin;
-        this._layoutHeight = kTopMargin + sceneHeight + kBottomMargin;
-        this._timeMin = minArr;
-        this._timeMax = maxArr;
-        this._timeUnit = clockData.time_unit || '';
-        this._sceneHeight = sceneHeight;
-
-        // Build lookup for connections
-        this._layoutById = new Map();
-        for (const item of layout) {
-            this._layoutById.set(item.id, item);
-        }
+        const result = computeClockTreeLayout(clockData);
+        this._layout = result.layout;
+        this._layoutWidth = result.layoutWidth;
+        this._layoutHeight = result.layoutHeight;
+        this._timeMin = result.timeMin;
+        this._timeMax = result.timeMax;
+        this._timeUnit = result.timeUnit;
+        this._sceneHeight = result.sceneHeight;
+        this._layoutById = result.layoutById;
     }
 
     _fitToView() {
@@ -367,8 +401,8 @@ export class ClockTreeWidget {
     }
 
     _drawConnections(ctx) {
-        ctx.strokeStyle = '#338833';
-        ctx.lineWidth = 1.5 / this._scale;
+        const lw = 1.5 / this._scale;
+        const timeRange = this._timeMax - this._timeMin || 1;
 
         for (const item of this._layout) {
             if (item.parent_id < 0) continue;
@@ -376,14 +410,31 @@ export class ClockTreeWidget {
             if (!parent) continue;
 
             const px = parent.x;
-            const py = parent.y + kNodeSize / 2;  // bottom of parent
+            const py = parent.y + kNodeSize / 2;  // bottom of parent node
             const cx = item.x;
-            const cy = item.y - kNodeSize / 2;    // top of child
+            const cy = item.y - kNodeSize / 2;    // top of child node
 
-            const midY = (py + cy) / 2;
+            // Cell delay: vertical segment below parent node
+            const cellDelayPx = (parent.delay || 0) / timeRange
+                * this._sceneHeight;
+            const splitY = py + cellDelayPx;
 
+            // Cell delay segment (orange)
+            if (cellDelayPx > 0) {
+                ctx.strokeStyle = '#886644';
+                ctx.lineWidth = lw;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px, splitY);
+                ctx.stroke();
+            }
+
+            // Wire delay segment (green Bezier from splitY to child)
+            ctx.strokeStyle = '#338833';
+            ctx.lineWidth = lw;
+            const midY = (splitY + cy) / 2;
             ctx.beginPath();
-            ctx.moveTo(px, py);
+            ctx.moveTo(px, splitY);
             ctx.bezierCurveTo(px, midY, cx, midY, cx, cy);
             ctx.stroke();
         }

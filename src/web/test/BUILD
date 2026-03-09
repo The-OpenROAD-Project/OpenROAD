@@ -64,6 +64,34 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "clock_tree_widget_test",
+    entry_point = "js/test-clock-tree-widget.js",
+    data = ["//src/web:js_sources"],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+cc_test(
+    name = "clock_tree_report_test",
+    srcs = ["cpp/TestClockTreeReport.cpp"],
+    features = ["-layering_check"],
+    copts = ["-Isrc/web/src"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web",
+        "//third-party/lodepng",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_test(
     name = "request_handler_test",
     srcs = ["cpp/TestRequestHandler.cpp"],
