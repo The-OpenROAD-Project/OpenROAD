@@ -16,6 +16,7 @@ swig_lib(NAME         web
 # to minimize pulling the many transitive dependencies of the GUI.
 target_sources(web
   PRIVATE
+    src/clock_tree_report.cpp
     src/color.cpp
     src/request_handler.cpp
     src/search.cpp

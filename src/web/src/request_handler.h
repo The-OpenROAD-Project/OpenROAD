@@ -17,6 +17,7 @@
 namespace web {
 
 class TimingReport;
+class ClockTreeReport;
 
 // Thread-safe Tcl command evaluation with output capture.
 struct TclEvaluator
@@ -63,6 +64,8 @@ struct WebSocketRequest
     TCL_EVAL,
     TIMING_REPORT,
     TIMING_HIGHLIGHT,
+    CLOCK_TREE,
+    CLOCK_TREE_HIGHLIGHT,
     UNKNOWN
   };
 
@@ -92,6 +95,9 @@ struct WebSocketRequest
   int timing_path_index = -1;  // -1 = clear
   bool timing_highlight_setup = true;
   std::string timing_pin_name;  // optional: highlight this pin's net in yellow
+
+  // CLOCK_TREE_HIGHLIGHT fields
+  std::string clock_tree_inst_name;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -180,6 +186,24 @@ class TimingHandler
  private:
   std::shared_ptr<TileGenerator> gen_;
   std::shared_ptr<TimingReport> timing_report_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
+};
+
+// Handles CLOCK_TREE and CLOCK_TREE_HIGHLIGHT requests.
+class ClockTreeHandler
+{
+ public:
+  ClockTreeHandler(std::shared_ptr<TileGenerator> gen,
+                   std::shared_ptr<ClockTreeReport> clock_report,
+                   std::shared_ptr<TclEvaluator> tcl_eval);
+
+  WebSocketResponse handleClockTree(const WebSocketRequest& req);
+  WebSocketResponse handleClockTreeHighlight(const WebSocketRequest& req,
+                                             SessionState& state);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<ClockTreeReport> clock_report_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
 };
 

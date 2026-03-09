@@ -17,6 +17,8 @@ npm_link_all_packages(name = "node_modules")
 cc_library(
     name = "web",
     srcs = [
+        "src/clock_tree_report.cpp",
+        "src/clock_tree_report.h",
         "src/color.cpp",
         "src/color.h",
         "src/request_handler.cpp",

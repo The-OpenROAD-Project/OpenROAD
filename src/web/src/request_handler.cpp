@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include "clock_tree_report.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -706,6 +707,101 @@ WebSocketResponse TimingHandler::handleTimingHighlight(const WebSocketRequest& r
       state.timing_rects = std::move(new_rects);
       state.timing_lines = std::move(new_lines);
       state.highlight_rects.clear();
+    }
+
+    const std::string json = "{\"ok\": true}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// ClockTreeHandler
+//------------------------------------------------------------------------------
+
+ClockTreeHandler::ClockTreeHandler(
+    std::shared_ptr<TileGenerator> gen,
+    std::shared_ptr<ClockTreeReport> clock_report,
+    std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)),
+      clock_report_(std::move(clock_report)),
+      tcl_eval_(std::move(tcl_eval))
+{
+}
+
+WebSocketResponse ClockTreeHandler::handleClockTree(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto clocks = clock_report_->getReport();
+    std::stringstream ss;
+    ss << "{\"clocks\": [";
+    bool first_clk = true;
+    for (const auto& clk : clocks) {
+      if (!first_clk) {
+        ss << ", ";
+      }
+      first_clk = false;
+      ss << "{\"name\": \"" << json_escape(clk.clock_name)
+         << "\", \"min_arrival\": " << clk.min_arrival
+         << ", \"max_arrival\": " << clk.max_arrival << ", \"time_unit\": \""
+         << json_escape(clk.time_unit) << "\", \"nodes\": [";
+      bool first_node = true;
+      for (const auto& n : clk.nodes) {
+        if (!first_node) {
+          ss << ", ";
+        }
+        first_node = false;
+        ss << "{\"id\": " << n.id << ", \"parent_id\": " << n.parent_id
+           << ", \"name\": \"" << json_escape(n.name) << "\", \"pin_name\": \""
+           << json_escape(n.pin_name) << "\", \"type\": \""
+           << ClockTreeNode::typeToString(n.type) << "\", \"arrival\": "
+           << n.arrival << ", \"delay\": " << n.delay
+           << ", \"fanout\": " << n.fanout << ", \"level\": " << n.level
+           << ", \"dbu_x\": " << n.dbu_x << ", \"dbu_y\": " << n.dbu_y << "}";
+      }
+      ss << "]}";
+    }
+    ss << "]}";
+    const std::string json = ss.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    state.highlight_rects.clear();
+    state.timing_rects.clear();
+    state.timing_lines.clear();
+
+    if (!req.clock_tree_inst_name.empty()) {
+      odb::dbBlock* block = gen_->getBlock();
+      if (block) {
+        odb::dbInst* inst = block->findInst(req.clock_tree_inst_name.c_str());
+        if (inst) {
+          state.highlight_rects.push_back(inst->getBBox()->getBox());
+        }
+      }
     }
 
     const std::string json = "{\"ok\": true}";

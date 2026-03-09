@@ -6,6 +6,7 @@ import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
 import { createWebSocketTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
+import { ClockTreeWidget } from './clock-tree-widget.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 
@@ -203,8 +204,7 @@ function createDRCWidget(container) {
 }
 
 function createClockWidget(container) {
-    createStubPanel(container, 'Clock Tree',
-        'Clock tree visualization.');
+    new ClockTreeWidget(container, app, redrawAllLayers);
 }
 
 function createChartsWidget(container) {
@@ -331,9 +331,13 @@ app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWi
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
+// Layout version — bump this to force a layout reset when components change.
+const LAYOUT_VERSION = 2;
+
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
-if (savedLayout) {
+const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
+if (savedLayout && savedVersion === LAYOUT_VERSION) {
     try {
         const resolved = JSON.parse(savedLayout);
         app.goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
@@ -343,6 +347,7 @@ if (savedLayout) {
 } else {
     app.goldenLayout.loadLayout(defaultLayoutConfig);
 }
+localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
 
 // Persist layout on changes (drag, resize, close, etc.)
 app.goldenLayout.on('stateChanged', () => {

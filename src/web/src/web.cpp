@@ -20,6 +20,7 @@
 #include <thread>
 #include <vector>
 
+#include "clock_tree_report.h"
 #include "request_handler.h"
 #include "timing_report.h"
 
@@ -69,6 +70,11 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.timing_path_index = extract_int_or(msg, "path_index", -1);
     req.timing_highlight_setup = extract_int_or(msg, "is_setup", 1);
     req.timing_pin_name = extract_string(msg, "pin_name");
+  } else if (type_str == "clock_tree") {
+    req.type = WebSocketRequest::CLOCK_TREE;
+  } else if (type_str == "clock_tree_highlight") {
+    req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
+    req.clock_tree_inst_name = extract_string(msg, "inst_name");
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -211,6 +217,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   SelectHandler select_handler_;
   TclHandler tcl_handler_;
   TimingHandler timing_handler_;
+  ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
@@ -223,6 +230,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
+                   std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger);
 
   void run(http::request<http::string_body>&& req);
@@ -239,12 +247,14 @@ WebSocketSession::WebSocketSession(tcp::socket&& socket,
                                    std::shared_ptr<TileGenerator> generator,
                                    std::shared_ptr<TclEvaluator> tcl_eval,
                                    std::shared_ptr<TimingReport> timing_report,
+                                   std::shared_ptr<ClockTreeReport> clock_report,
                                    utl::Logger* logger)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator),
       tcl_handler_(tcl_eval),
       timing_handler_(generator, timing_report, tcl_eval),
+      clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor()))
 {
@@ -329,6 +339,19 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->timing_handler_.handleTimingHighlight(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::CLOCK_TREE:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->clock_tree_handler_.handleClockTree(req));
+      });
+      break;
+    case WebSocketRequest::CLOCK_TREE_HIGHLIGHT:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->clock_tree_handler_.handleClockTreeHighlight(
+                req, self->state_));
       });
       break;
     default:
@@ -507,6 +530,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
+  std::shared_ptr<ClockTreeReport> clock_report_;
   http::request<http::string_body> req_;
   std::string doc_root_;
   utl::Logger* logger_;
@@ -516,6 +540,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TileGenerator> generator,
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
+                std::shared_ptr<ClockTreeReport> clock_report,
                 std::string doc_root,
                 utl::Logger* logger);
 
@@ -529,12 +554,14 @@ DetectSession::DetectSession(tcp::socket&& socket,
                              std::shared_ptr<TileGenerator> generator,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
+                             std::shared_ptr<ClockTreeReport> clock_report,
                              std::string doc_root,
                              utl::Logger* logger)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
+      clock_report_(std::move(clock_report)),
       doc_root_(std::move(doc_root)),
       logger_(logger)
 {
@@ -565,6 +592,7 @@ void DetectSession::on_read(beast::error_code ec)
                                                  generator_,
                                                  tcl_eval_,
                                                  timing_report_,
+                                                 clock_report_,
                                                  logger_);
     websocket_session->run(std::move(req_));
   } else {
@@ -586,6 +614,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<TileGenerator> generator_;
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
+  std::shared_ptr<ClockTreeReport> clock_report_;
   std::string doc_root_;
   utl::Logger* logger_;
 
@@ -595,6 +624,7 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
+           std::shared_ptr<ClockTreeReport> clock_report,
            std::string doc_root,
            utl::Logger* logger);
 
@@ -610,6 +640,7 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
+                   std::shared_ptr<ClockTreeReport> clock_report,
                    std::string doc_root,
                    utl::Logger* logger)
     : ioc_(ioc),
@@ -617,6 +648,7 @@ Listener::Listener(net::io_context& ioc,
       generator_(generator),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
+      clock_report_(std::move(clock_report)),
       doc_root_(std::move(doc_root)),
       logger_(logger)
 {
@@ -662,6 +694,7 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
                                     generator_,
                                     tcl_eval_,
                                     timing_report_,
+                                    clock_report_,
                                     doc_root_,
                                     logger_)
         ->run();
@@ -688,6 +721,7 @@ void WebServer::serve(const std::string& doc_root)
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
     auto timing_report = std::make_shared<TimingReport>(sta_);
+    auto clock_report = std::make_shared<ClockTreeReport>(sta_);
 
     // Create Tcl evaluator with logger sink for output capture
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
@@ -712,6 +746,7 @@ void WebServer::serve(const std::string& doc_root)
                                generator_,
                                tcl_eval,
                                timing_report,
+                               clock_report,
                                doc_root,
                                logger_)
         ->run();
