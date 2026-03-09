@@ -4,7 +4,6 @@
 #include "request_handler.h"
 
 #include <any>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -150,41 +149,6 @@ int extract_int_or(const std::string& json,
   return extract_int(json, key);
 }
 
-std::string json_escape(const std::string& s)
-{
-  std::string out;
-  out.reserve(s.size());
-  for (char c : s) {
-    switch (c) {
-      case '\\':
-        out += "\\\\";
-        break;
-      case '"':
-        out += "\\\"";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      default:
-        if (static_cast<unsigned char>(c) < 0x20) {
-          char buf[8];
-          snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
-          out += buf;
-        } else {
-          out += c;
-        }
-        break;
-    }
-  }
-  return out;
-}
-
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
@@ -194,8 +158,21 @@ static int storeSelectable(std::vector<gui::Selected>& selectables,
   return id;
 }
 
-static void serializeAnyValue(std::stringstream& ss,
-                              const char* field,
+// Emit a bbox as a JSON array field: "key": [xMin, yMin, xMax, yMax]
+static void writeBBox(JsonBuilder& builder,
+                      const char* key,
+                      const odb::Rect& r)
+{
+  builder.beginArray(key);
+  builder.value(r.xMin());
+  builder.value(r.yMin());
+  builder.value(r.xMax());
+  builder.value(r.yMax());
+  builder.endArray();
+}
+
+static void serializeAnyValue(JsonBuilder& builder,
+                              const char* field_name,
                               const std::any& value,
                               std::vector<gui::Selected>& selectables,
                               bool short_name = false)
@@ -204,61 +181,72 @@ static void serializeAnyValue(std::stringstream& ss,
     if (*sel) {
       std::string name = short_name ? sel->getShortName() : sel->getName();
       int id = storeSelectable(selectables, *sel);
-      ss << "\"" << field << "\": \"" << json_escape(name) << "\", \"" << field
-         << "_select_id\": " << id;
+      builder.field(field_name, name);
+      std::string id_key = std::string(field_name) + "_select_id";
+      builder.field(id_key, id);
       return;
     }
   }
   std::string str = gui::Descriptor::Property::toString(value);
-  ss << "\"" << field << "\": \"" << json_escape(str) << "\"";
+  builder.field(field_name, str);
 }
 
-static void serializeProperty(std::stringstream& ss,
+static void serializeProperty(JsonBuilder& builder,
                               const gui::Descriptor::Property& prop,
                               std::vector<gui::Selected>& selectables)
 {
-  ss << "{\"name\": \"" << json_escape(prop.name) << "\"";
+  builder.beginObject();
+  builder.field("name", prop.name);
 
-  if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
-    ss << ", \"children\": [";
-    bool first = true;
+  if (auto* plist
+      = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+    builder.beginArray("children");
     for (const auto& [key, val] : *plist) {
-      if (!first) {
-        ss << ", ";
-      }
-      ss << "{";
-      serializeAnyValue(ss, "name", key, selectables, /*short_name=*/true);
-      ss << ", ";
-      serializeAnyValue(ss, "value", val, selectables);
-      ss << "}";
-      first = false;
+      builder.beginObject();
+      serializeAnyValue(
+          builder, "name", key, selectables, /*short_name=*/true);
+      serializeAnyValue(builder, "value", val, selectables);
+      builder.endObject();
     }
-    ss << "]";
-  } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
-    ss << ", \"children\": [";
-    bool first = true;
+    builder.endArray();
+  } else if (auto* sel_set
+             = std::any_cast<gui::SelectionSet>(&prop.value)) {
+    builder.beginArray("children");
     for (const auto& sel : *sel_set) {
-      if (!first) {
-        ss << ", ";
-      }
+      builder.beginObject();
       int id = storeSelectable(selectables, sel);
-      ss << "{\"name\": \"" << json_escape(sel.getName())
-         << "\", \"name_select_id\": " << id << "}";
-      first = false;
+      builder.field("name", sel.getName());
+      builder.field("name_select_id", id);
+      builder.endObject();
     }
-    ss << "]";
+    builder.endArray();
   } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
     if (*sel) {
       int id = storeSelectable(selectables, *sel);
-      ss << ", \"value\": \"" << json_escape(sel->getName())
-         << "\", \"value_select_id\": " << id;
+      builder.field("value", sel->getName());
+      builder.field("value_select_id", id);
     }
   } else {
     std::string val_str = prop.toString();
-    ss << ", \"value\": \"" << json_escape(val_str) << "\"";
+    builder.field("value", val_str);
   }
 
-  ss << "}";
+  builder.endObject();
+}
+
+// Serialize a TimingNode to JSON.
+static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
+{
+  builder.beginObject();
+  builder.field("pin", n.pin_name);
+  builder.field("fanout", n.fanout);
+  builder.field("rise", n.is_rising);
+  builder.field("clk", n.is_clock);
+  builder.field("time", n.time);
+  builder.field("delay", n.delay);
+  builder.field("slew", n.slew);
+  builder.field("load", n.load);
+  builder.endObject();
 }
 
 //------------------------------------------------------------------------------
@@ -278,37 +266,40 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
     case WebSocketRequest::BOUNDS: {
       resp.type = 0;
       const odb::Rect bounds = gen->getBounds();
-      std::stringstream ss;
-      ss << "{\"bounds\": [[" << bounds.yMin() << ", " << bounds.xMin()
-         << "], [" << bounds.yMax() << ", " << bounds.xMax() << "]]}";
-      const std::string json = ss.str();
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.beginArray("bounds");
+      builder.beginArray();
+      builder.value(bounds.yMin());
+      builder.value(bounds.xMin());
+      builder.endArray();
+      builder.beginArray();
+      builder.value(bounds.yMax());
+      builder.value(bounds.xMax());
+      builder.endArray();
+      builder.endArray();
+      builder.endObject();
+      const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
     }
     case WebSocketRequest::TECH: {
       resp.type = 0;
-      std::stringstream ss;
-      ss << "{\"layers\": [";
-      bool first = true;
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.beginArray("layers");
       for (const auto& name : gen->getLayers()) {
-        if (!first) {
-          ss << ", ";
-        }
-        ss << "\"" << name << "\"";
-        first = false;
+        builder.value(name);
       }
-      ss << "], \"sites\": [";
-      first = true;
+      builder.endArray();
+      builder.beginArray("sites");
       for (const auto& name : gen->getSites()) {
-        if (!first) {
-          ss << ", ";
-        }
-        ss << "\"" << name << "\"";
-        first = false;
+        builder.value(name);
       }
-      ss << "], \"has_liberty\": " << (gen->hasSta() ? "true" : "false")
-         << "}";
-      const std::string json = ss.str();
+      builder.endArray();
+      builder.field("has_liberty", gen->hasSta());
+      builder.endObject();
+      const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
     }
@@ -372,42 +363,33 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
 
     // Build JSON response with selection and properties
     resp.type = 0;
-    std::stringstream ss;
-    ss << "{\"selected\": [";
-    bool first = true;
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("selected");
     for (const auto& r : results) {
-      if (!first) {
-        ss << ", ";
-      }
-      ss << "{\"name\": \"" << json_escape(r.name) << "\", \"master\": \""
-         << json_escape(r.master) << "\", \"bbox\": [" << r.bbox.xMin() << ", "
-         << r.bbox.yMin() << ", " << r.bbox.xMax() << ", " << r.bbox.yMax()
-         << "]}";
-      first = false;
+      builder.beginObject();
+      builder.field("name", r.name);
+      builder.field("master", r.master);
+      writeBBox(builder, "bbox", r.bbox);
+      builder.endObject();
     }
-    ss << "]";
+    builder.endArray();
 
     // Add properties for the first selected instance
     std::vector<gui::Selected> new_selectables;
     if (!results.empty()) {
       const auto& r0 = results[0];
-      ss << ", \"bbox\": [" << r0.bbox.xMin() << ", " << r0.bbox.yMin() << ", "
-         << r0.bbox.xMax() << ", " << r0.bbox.yMax() << "]";
+      writeBBox(builder, "bbox", r0.bbox);
 
       auto* registry = gui::DescriptorRegistry::instance();
       gui::Selected sel = registry->makeSelected(std::any(r0.inst));
       if (sel) {
         auto props = sel.getProperties();
-        ss << ", \"properties\": [";
-        bool pfirst = true;
+        builder.beginArray("properties");
         for (const auto& prop : props) {
-          if (!pfirst) {
-            ss << ", ";
-          }
-          serializeProperty(ss, prop, new_selectables);
-          pfirst = false;
+          serializeProperty(builder, prop, new_selectables);
         }
-        ss << "]";
+        builder.endArray();
       }
     }
     {
@@ -415,8 +397,8 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       state.selectables = std::move(new_selectables);
     }
 
-    ss << "}";
-    const std::string json = ss.str();
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -455,35 +437,31 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     }
 
     resp.type = 0;
-    std::stringstream ss;
+    JsonBuilder builder;
+    builder.beginObject();
     if (sel) {
       auto props = sel.getProperties();
       std::vector<gui::Selected> new_selectables;
-      ss << "{\"name\": \"" << json_escape(sel.getName()) << "\", \"type\": \""
-         << json_escape(sel.getTypeName()) << "\", \"properties\": [";
-      bool first = true;
+      builder.field("name", sel.getName());
+      builder.field("type", sel.getTypeName());
+      builder.beginArray("properties");
       for (const auto& prop : props) {
-        if (!first) {
-          ss << ", ";
-        }
-        serializeProperty(ss, prop, new_selectables);
-        first = false;
+        serializeProperty(builder, prop, new_selectables);
       }
-      ss << "]";
+      builder.endArray();
       odb::Rect bbox;
       if (sel.getBBox(bbox)) {
-        ss << ", \"bbox\": [" << bbox.xMin() << ", " << bbox.yMin() << ", "
-           << bbox.xMax() << ", " << bbox.yMax() << "]";
+        writeBBox(builder, "bbox", bbox);
       }
-      ss << "}";
       {
         std::lock_guard<std::mutex> lock(state.selectables_mutex);
         state.selectables = std::move(new_selectables);
       }
     } else {
-      ss << "{\"error\": \"invalid select_id\"}";
+      builder.field("error", "invalid select_id");
     }
-    const std::string json = ss.str();
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -493,7 +471,8 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
   return resp;
 }
 
-WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req, SessionState& state)
+WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
+                                             SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -508,35 +487,42 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req, Sessio
     }
 
     resp.type = 0;
-    std::stringstream ss;
+    JsonBuilder builder;
+    builder.beginObject();
     if (sel) {
       ShapeCollector collector;
       sel.highlight(collector);
       if (!collector.rects.empty()) {
-        ss << "{\"rects\": [";
-        bool first = true;
+        builder.beginArray("rects");
         for (const auto& r : collector.rects) {
-          if (!first) {
-            ss << ", ";
-          }
-          ss << "[" << r.xMin() << ", " << r.yMin() << ", " << r.xMax() << ", "
-             << r.yMax() << "]";
-          first = false;
+          builder.beginArray();
+          builder.value(r.xMin());
+          builder.value(r.yMin());
+          builder.value(r.xMax());
+          builder.value(r.yMax());
+          builder.endArray();
         }
-        ss << "]}";
+        builder.endArray();
       } else {
         odb::Rect bbox;
         if (sel.getBBox(bbox)) {
-          ss << "{\"rects\": [[" << bbox.xMin() << ", " << bbox.yMin() << ", "
-             << bbox.xMax() << ", " << bbox.yMax() << "]]}";
+          builder.beginArray("rects");
+          builder.beginArray();
+          builder.value(bbox.xMin());
+          builder.value(bbox.yMin());
+          builder.value(bbox.xMax());
+          builder.value(bbox.yMax());
+          builder.endArray();
+          builder.endArray();
         } else {
-          ss << "{\"error\": \"no bbox\"}";
+          builder.field("error", "no bbox");
         }
       }
     } else {
-      ss << "{\"error\": \"invalid select_id\"}";
+      builder.field("error", "invalid select_id");
     }
-    const std::string json = ss.str();
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -562,11 +548,13 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   resp.type = 0;
   try {
     auto result = tcl_eval_->eval(req.tcl_cmd);
-    std::stringstream ss;
-    ss << "{\"output\": \"" << json_escape(result.output)
-       << "\", \"result\": \"" << json_escape(result.result)
-       << "\", \"is_error\": " << (result.is_error ? "true" : "false") << "}";
-    const std::string json = ss.str();
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("output", result.output);
+    builder.field("result", result.result);
+    builder.field("is_error", result.is_error);
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -598,54 +586,37 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto paths
         = timing_report_->getReport(req.timing_is_setup, req.timing_max_paths);
-    std::stringstream ss;
-    ss << "{\"paths\": [";
-    bool first_path = true;
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("paths");
     for (const auto& p : paths) {
-      if (!first_path) {
-        ss << ", ";
-      }
-      first_path = false;
-      ss << "{\"start_clk\": \"" << json_escape(p.start_clk)
-         << "\", \"end_clk\": \"" << json_escape(p.end_clk)
-         << "\", \"required\": " << p.required << ", \"arrival\": " << p.arrival
-         << ", \"slack\": " << p.slack << ", \"skew\": " << p.skew
-         << ", \"path_delay\": " << p.path_delay
-         << ", \"logic_depth\": " << p.logic_depth
-         << ", \"fanout\": " << p.fanout << ", \"start_pin\": \""
-         << json_escape(p.start_pin) << "\", \"end_pin\": \""
-         << json_escape(p.end_pin) << "\", \"data_nodes\": [";
-      bool first_node = true;
+      builder.beginObject();
+      builder.field("start_clk", p.start_clk);
+      builder.field("end_clk", p.end_clk);
+      builder.field("required", p.required);
+      builder.field("arrival", p.arrival);
+      builder.field("slack", p.slack);
+      builder.field("skew", p.skew);
+      builder.field("path_delay", p.path_delay);
+      builder.field("logic_depth", p.logic_depth);
+      builder.field("fanout", p.fanout);
+      builder.field("start_pin", p.start_pin);
+      builder.field("end_pin", p.end_pin);
+      builder.beginArray("data_nodes");
       for (const auto& n : p.data_nodes) {
-        if (!first_node) {
-          ss << ", ";
-        }
-        first_node = false;
-        ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
-           << ", \"fanout\": " << n.fanout
-           << ", \"rise\": " << (n.is_rising ? "true" : "false")
-           << ", \"clk\": " << (n.is_clock ? "true" : "false")
-           << ", \"time\": " << n.time << ", \"delay\": " << n.delay
-           << ", \"slew\": " << n.slew << ", \"load\": " << n.load << "}";
+        serializeTimingNode(builder, n);
       }
-      ss << "], \"capture_nodes\": [";
-      first_node = true;
+      builder.endArray();
+      builder.beginArray("capture_nodes");
       for (const auto& n : p.capture_nodes) {
-        if (!first_node) {
-          ss << ", ";
-        }
-        first_node = false;
-        ss << "{\"pin\": \"" << json_escape(n.pin_name) << "\""
-           << ", \"fanout\": " << n.fanout
-           << ", \"rise\": " << (n.is_rising ? "true" : "false")
-           << ", \"clk\": " << (n.is_clock ? "true" : "false")
-           << ", \"time\": " << n.time << ", \"delay\": " << n.delay
-           << ", \"slew\": " << n.slew << ", \"load\": " << n.load << "}";
+        serializeTimingNode(builder, n);
       }
-      ss << "]}";
+      builder.endArray();
+      builder.endObject();
     }
-    ss << "]}";
-    const std::string json = ss.str();
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -655,8 +626,9 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   return resp;
 }
 
-WebSocketResponse TimingHandler::handleTimingHighlight(const WebSocketRequest& req,
-                                                SessionState& state)
+WebSocketResponse TimingHandler::handleTimingHighlight(
+    const WebSocketRequest& req,
+    SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -742,36 +714,37 @@ WebSocketResponse ClockTreeHandler::handleClockTree(
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto clocks = clock_report_->getReport();
-    std::stringstream ss;
-    ss << "{\"clocks\": [";
-    bool first_clk = true;
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("clocks");
     for (const auto& clk : clocks) {
-      if (!first_clk) {
-        ss << ", ";
-      }
-      first_clk = false;
-      ss << "{\"name\": \"" << json_escape(clk.clock_name)
-         << "\", \"min_arrival\": " << clk.min_arrival
-         << ", \"max_arrival\": " << clk.max_arrival << ", \"time_unit\": \""
-         << json_escape(clk.time_unit) << "\", \"nodes\": [";
-      bool first_node = true;
+      builder.beginObject();
+      builder.field("name", clk.clock_name);
+      builder.field("min_arrival", clk.min_arrival);
+      builder.field("max_arrival", clk.max_arrival);
+      builder.field("time_unit", clk.time_unit);
+      builder.beginArray("nodes");
       for (const auto& n : clk.nodes) {
-        if (!first_node) {
-          ss << ", ";
-        }
-        first_node = false;
-        ss << "{\"id\": " << n.id << ", \"parent_id\": " << n.parent_id
-           << ", \"name\": \"" << json_escape(n.name) << "\", \"pin_name\": \""
-           << json_escape(n.pin_name) << "\", \"type\": \""
-           << ClockTreeNode::typeToString(n.type) << "\", \"arrival\": "
-           << n.arrival << ", \"delay\": " << n.delay
-           << ", \"fanout\": " << n.fanout << ", \"level\": " << n.level
-           << ", \"dbu_x\": " << n.dbu_x << ", \"dbu_y\": " << n.dbu_y << "}";
+        builder.beginObject();
+        builder.field("id", n.id);
+        builder.field("parent_id", n.parent_id);
+        builder.field("name", n.name);
+        builder.field("pin_name", n.pin_name);
+        builder.field("type", ClockTreeNode::typeToString(n.type));
+        builder.field("arrival", n.arrival);
+        builder.field("delay", n.delay);
+        builder.field("fanout", n.fanout);
+        builder.field("level", n.level);
+        builder.field("dbu_x", n.dbu_x);
+        builder.field("dbu_y", n.dbu_y);
+        builder.endObject();
       }
-      ss << "]}";
+      builder.endArray();
+      builder.endObject();
     }
-    ss << "]}";
-    const std::string json = ss.str();
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -823,7 +796,8 @@ TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
-WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req, SessionState& state)
+WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
+                                          SessionState& state)
 {
   // Snapshot current highlight state
   std::vector<odb::Rect> rects;

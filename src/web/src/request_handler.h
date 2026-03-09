@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "gui/gui.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "tcl.h"
 #include "tile_generator.h"
@@ -130,9 +131,6 @@ int extract_int(const std::string& json, const std::string& key);
 int extract_int_or(const std::string& json,
                    const std::string& key,
                    int default_val);
-
-// Escape a string for safe inclusion in a JSON string value.
-std::string json_escape(const std::string& s);
 
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
 WebSocketResponse dispatch_request(

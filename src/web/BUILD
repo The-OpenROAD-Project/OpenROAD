@@ -21,6 +21,7 @@ cc_library(
         "src/clock_tree_report.h",
         "src/color.cpp",
         "src/color.h",
+        "src/json_builder.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
         "src/search.cpp",
