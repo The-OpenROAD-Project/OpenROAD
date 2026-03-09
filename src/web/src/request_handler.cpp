@@ -691,6 +691,41 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
   return resp;
 }
 
+WebSocketResponse TimingHandler::handleSlackHistogram(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto histogram = timing_report_->getSlackHistogram(req.histogram_is_setup);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("bins");
+    for (const auto& bin : histogram.bins) {
+      builder.beginObject();
+      builder.field("lower", bin.lower);
+      builder.field("upper", bin.upper);
+      builder.field("count", bin.count);
+      builder.field("negative", bin.is_negative);
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.field("unconstrained_count", histogram.unconstrained_count);
+    builder.field("total_endpoints", histogram.total_endpoints);
+    builder.field("time_unit", histogram.time_unit);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 //------------------------------------------------------------------------------
 // ClockTreeHandler
 //------------------------------------------------------------------------------

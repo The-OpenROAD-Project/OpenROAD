@@ -67,6 +67,7 @@ struct WebSocketRequest
     TIMING_HIGHLIGHT,
     CLOCK_TREE,
     CLOCK_TREE_HIGHLIGHT,
+    SLACK_HISTOGRAM,
     UNKNOWN
   };
 
@@ -99,6 +100,9 @@ struct WebSocketRequest
 
   // CLOCK_TREE_HIGHLIGHT fields
   std::string clock_tree_inst_name;
+
+  // SLACK_HISTOGRAM fields
+  bool histogram_is_setup = true;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -180,6 +184,7 @@ class TimingHandler
   WebSocketResponse handleTimingReport(const WebSocketRequest& req);
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

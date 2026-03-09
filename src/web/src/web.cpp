@@ -75,6 +75,9 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "clock_tree_highlight") {
     req.type = WebSocketRequest::CLOCK_TREE_HIGHLIGHT;
     req.clock_tree_inst_name = extract_string(msg, "inst_name");
+  } else if (type_str == "slack_histogram") {
+    req.type = WebSocketRequest::SLACK_HISTOGRAM;
+    req.histogram_is_setup = extract_int_or(msg, "is_setup", 1);
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -352,6 +355,12 @@ void WebSocketSession::on_read(beast::error_code ec)
         self->queue_response(
             self->clock_tree_handler_.handleClockTreeHighlight(
                 req, self->state_));
+      });
+      break;
+    case WebSocketRequest::SLACK_HISTOGRAM:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->timing_handler_.handleSlackHistogram(req));
       });
       break;
     default:

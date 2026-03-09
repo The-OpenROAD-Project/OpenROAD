@@ -7,6 +7,7 @@ import { WebSocketManager } from './websocket-manager.js';
 import { createWebSocketTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
+import { ChartsWidget } from './charts-widget.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 
@@ -208,8 +209,7 @@ function createClockWidget(container) {
 }
 
 function createChartsWidget(container) {
-    createStubPanel(container, 'Charts',
-        'Timing histograms and charts.');
+    new ChartsWidget(container, app, redrawAllLayers);
 }
 
 function createHelpWidget(container) {

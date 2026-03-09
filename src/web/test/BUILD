@@ -71,6 +71,13 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "charts_widget_test",
+    entry_point = "js/test-charts-widget.js",
+    data = ["//src/web:js_sources"],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],

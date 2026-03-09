@@ -42,6 +42,22 @@ struct TimingPathSummary
   std::vector<TimingNode> capture_nodes;
 };
 
+struct SlackHistogramBin
+{
+  float lower;       // bin lower edge (user units)
+  float upper;       // bin upper edge (user units)
+  int count;         // number of endpoints in this bin
+  bool is_negative;  // true if bin center < 0
+};
+
+struct SlackHistogramResult
+{
+  std::vector<SlackHistogramBin> bins;
+  int unconstrained_count = 0;
+  int total_endpoints = 0;
+  std::string time_unit;
+};
+
 class TimingReport
 {
  public:
@@ -49,6 +65,8 @@ class TimingReport
 
   std::vector<TimingPathSummary> getReport(bool is_setup,
                                            int max_paths = 100) const;
+
+  SlackHistogramResult getSlackHistogram(bool is_setup) const;
 
  private:
   void expandPath(sta::Path* path,

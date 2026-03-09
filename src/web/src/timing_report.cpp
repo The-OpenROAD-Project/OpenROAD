@@ -3,6 +3,9 @@
 
 #include "timing_report.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <set>
 #include <string>
 #include <vector>
@@ -237,6 +240,123 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
     }
 
     result.push_back(std::move(summary));
+  }
+
+  return result;
+}
+
+// Snap an exact bin interval to a "nice" value (1, 2, 5, or 10 × 10^n).
+// Matches the Qt GUI algorithm in chartsWidget.cpp:computeSnapBucketInterval().
+static float snapBinInterval(float exact_interval)
+{
+  const int exp = static_cast<int>(std::floor(std::log10(exact_interval)));
+  const double mag = std::pow(10.0, exp);
+  const double residual = exact_interval / mag;
+
+  double nice_coeff;
+  if (residual < 1.5) {
+    nice_coeff = 1.0;
+  } else if (residual < 3.0) {
+    nice_coeff = 2.0;
+  } else if (residual < 7.0) {
+    nice_coeff = 5.0;
+  } else {
+    nice_coeff = 10.0;
+  }
+
+  return static_cast<float>(nice_coeff * mag);
+}
+
+SlackHistogramResult TimingReport::getSlackHistogram(bool is_setup) const
+{
+  SlackHistogramResult result;
+  if (!sta_) {
+    return result;
+  }
+
+  sta_->ensureGraph();
+  sta_->searchPreamble();
+
+  const sta::MinMax* min_max
+      = is_setup ? sta::MinMax::max() : sta::MinMax::min();
+  sta::SceneSeq scenes = sta_->scenes();
+  const float time_scale = sta_->units()->timeUnit()->scale();
+
+  result.time_unit = sta_->units()->timeUnit()->scaleAbbrevSuffix();
+
+  // Collect slack values for all constrained endpoints.
+  std::vector<float> slacks;
+  float min_slack = std::numeric_limits<float>::max();
+  float max_slack = std::numeric_limits<float>::lowest();
+
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    result.total_endpoints++;
+    const sta::Pin* pin = vertex->pin();
+    float slack = sta_->slack(
+        pin, sta::RiseFallBoth::riseFall(), scenes, min_max);
+
+    // Skip unconstrained endpoints (infinite slack).
+    if (slack >= sta::INF || slack <= -sta::INF) {
+      result.unconstrained_count++;
+      continue;
+    }
+
+    // Convert to user units.
+    slack /= time_scale;
+    slacks.push_back(slack);
+    min_slack = std::min(min_slack, slack);
+    max_slack = std::max(max_slack, slack);
+  }
+
+  if (slacks.empty()) {
+    return result;
+  }
+
+  // Extend range to include zero so negative/positive split is meaningful.
+  min_slack = std::min(0.0f, min_slack);
+  max_slack = std::max(0.0f, max_slack);
+
+  // Compute nice bin interval and boundaries.
+  int num_bins;
+  float bin_min;
+  float bin_width;
+
+  if (min_slack == max_slack) {
+    // Degenerate case: all slacks identical.
+    num_bins = 1;
+    bin_min = min_slack - 0.1f;
+    bin_width = 0.3f;
+  } else {
+    constexpr int kDefaultBuckets = 10;
+    bin_width = snapBinInterval((max_slack - min_slack) / kDefaultBuckets);
+    bin_min = std::floor(min_slack / bin_width) * bin_width;
+    const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
+    num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
+    if (num_bins < 1) {
+      num_bins = 1;
+    }
+  }
+
+  // Count endpoints per bin.
+  std::vector<int> counts(num_bins, 0);
+  for (float s : slacks) {
+    int idx = static_cast<int>((s - bin_min) / bin_width);
+    if (idx < 0) {
+      idx = 0;
+    }
+    if (idx >= num_bins) {
+      idx = num_bins - 1;
+    }
+    counts[idx]++;
+  }
+
+  // Build result bins.
+  result.bins.reserve(num_bins);
+  for (int i = 0; i < num_bins; i++) {
+    float lower = bin_min + i * bin_width;
+    float upper = lower + bin_width;
+    float center = (lower + upper) / 2.0f;
+    result.bins.push_back({lower, upper, counts[i], center < 0});
   }
 
   return result;
