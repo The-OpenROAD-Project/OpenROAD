@@ -186,7 +186,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
             = owner_->workers_.size() - failed_workers.size();
         if (!failed_workers.empty()) {
           for (const auto& worker : failed_workers) {
-            owner_->removeWorker(worker.first, worker.second, false);
+            owner_->removeWorkerLocked(worker.first, worker.second);
           }
           logger_->warn(utl::DST,
                         207,

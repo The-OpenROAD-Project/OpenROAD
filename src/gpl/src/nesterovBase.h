@@ -11,6 +11,7 @@
 #include <deque>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -859,7 +860,8 @@ class NesterovBaseCommon
   size_t createCbkGCell(odb::dbInst* db_inst);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
-  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
+      odb::dbInst* db_inst);
   void destroyCbkGNet(odb::dbNet*);
   void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
@@ -1113,7 +1115,8 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
+      odb::dbInst* db_inst);
   bool updateHandle(odb::dbInst* db_inst, size_t handle);
 
   // Must be called after fixPointers() to initialize internal values of gcells,

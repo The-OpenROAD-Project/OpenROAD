@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "BalancerConnection.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
@@ -43,7 +44,8 @@ class LoadBalancer
   bool addWorker(const std::string& ip, uint16_t port);
   void updateWorker(const ip::address& ip, uint16_t port);
   void getNextWorker(ip::address& ip, uint16_t& port);
-  void removeWorker(const ip::address& ip, uint16_t port, bool lock = true);
+  void removeWorkerLocked(const ip::address& ip, uint16_t port)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(workers_mutex_);
   void punishWorker(const ip::address& ip, uint16_t port);
 
  private:
@@ -73,7 +75,9 @@ class LoadBalancer
   tcp::acceptor acceptor_;
   asio::io_context* service_;
   utl::Logger* logger_;
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> workers_;
+  using WorkerQueue
+      = std::priority_queue<Worker, std::vector<Worker>, CompareWorker>;
+  WorkerQueue workers_ ABSL_GUARDED_BY(workers_mutex_);
   absl::Mutex workers_mutex_;
   std::unique_ptr<asio::thread_pool> pool_;
   absl::Mutex pool_mutex_;

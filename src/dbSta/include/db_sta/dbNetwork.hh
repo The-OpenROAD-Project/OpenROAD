@@ -470,6 +470,7 @@ class dbNetwork : public ConcreteNetwork
   static constexpr unsigned DBMODINST_ID = 0x6;
   static constexpr unsigned DBMODNET_ID = 0x7;
   static constexpr unsigned DBMODULE_ID = 0x8;
+  static constexpr unsigned CONCRETE_OBJECT_ID = 0xF;
   // Number of lower bits used
   static constexpr unsigned DBIDTAG_WIDTH = 0x4;
 

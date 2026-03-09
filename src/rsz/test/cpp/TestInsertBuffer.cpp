@@ -3199,4 +3199,74 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case32)
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
+// Reproduce the real bug: remove_buffers + insertBufferBeforeLoad
+// on a hierarchical design.
+//
+// Synthesis creates a submodule (MOD0) with two output ports:
+//   MOD0: LOGIC0_X1 drvr -> Z_a, BUF_X1 cross_buf: Z_a -> Z_b
+// At the top level:
+//   MOD0 mod0 (.Z_a(port_a), .Z_b(port_b))
+//
+// The cross_buf connects two port-named nets (port_a and port_b).
+// remove_buffers removes it, merging port_b into port_a.
+// BTerm port_b ends up on net port_a — name mismatch.
+//
+// Then insertBufferBeforeLoad inserts a buffer before port_b.
+// Without the fix, createNewFlatNet gives the new net a generic name,
+// and write_verilog produces:
+//   MOD0 mod0 (.Z_a(port_a), .Z_b(port_b));  -- submodule drives port_b
+//   assign port_b = net1;                     -- assign also drives port_b
+// This is a multi-driver on port_b, rejected by Kepler LEC.
+TEST_F(TestInsertBuffer, BeforeLoads_Case33)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // Verify initial state: BTerm port_b matches its net name
+  dbBTerm* bterm_b = block_->findBTerm("port_b");
+  ASSERT_NE(bterm_b, nullptr);
+  EXPECT_STREQ(bterm_b->getConstName(), bterm_b->getNet()->getConstName());
+
+  // --- Step 1: remove_buffers (reproduces the real flow) ---
+  // Removes cross_buf that connects port_a -> port_b.
+  // Both nets have BTerms, so survivor = input net (port_a).
+  // BTerm port_b moves to net port_a — name mismatch.
+  resizer_.removeBuffers({});
+
+  EXPECT_EQ(block_->findInst("cross_buf"), nullptr)
+      << "cross_buf should have been removed by remove_buffers";
+  EXPECT_STREQ(bterm_b->getNet()->getConstName(), "port_a")
+      << "After remove_buffers, BTerm port_b should be on net port_a "
+         "(name mismatch)";
+
+  // --- Step 2: insertBufferBeforeLoad on port_b (reproduces buffer_ports) ---
+  dbNet* target_net = bterm_b->getNet();
+  dbInst* new_buf = target_net->insertBufferBeforeLoad(
+      bterm_b, buf_x4_master, nullptr, "output");
+  ASSERT_NE(new_buf, nullptr);
+
+  // The buffer output net must be named "port_b" — not a generic name.
+  // Without the fix, createNewFlatNet produces "net1" because
+  // bterm_name ("port_b") != net_name ("port_a"), skipping the rename.
+  // This causes write_verilog to emit a spurious assign statement,
+  // and in hierarchical designs, creates a multi-driver because the
+  // submodule port map still references port_b.
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+  EXPECT_EQ(bterm_b->getNet(), buf_out_net);
+  EXPECT_STREQ(buf_out_net->getConstName(), "port_b")
+      << "Buffer output net must be named after the BTerm (port_b), "
+         "not a generic name. Without the fix, this would be 'net1' "
+         "and write_verilog would emit 'assign port_b = net1;'";
+
+  // Write verilog and compare
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
 }  // namespace odb

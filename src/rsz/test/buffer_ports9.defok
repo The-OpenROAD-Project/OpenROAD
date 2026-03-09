@@ -100,7 +100,7 @@ PINS 4 ;
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 100510 199930 ) N ;
-    - out2 + NET net4 + DIRECTION OUTPUT + USE SIGNAL
+    - out2 + NET out2 + DIRECTION OUTPUT + USE SIGNAL
       + PORT
         + LAYER metal2 ( -70 -70 ) ( 70 70 )
         + PLACED ( 98990 199930 ) N ;
@@ -111,7 +111,7 @@ NETS 7 ;
     - net1 ( input1 Z ) ( r1 CK ) + USE SIGNAL ;
     - net2 ( input2 Z ) ( r1 D ) + USE SIGNAL ;
     - net3 ( output4 A ) ( output3 A ) ( r1 Q ) + USE SIGNAL ;
-    - net4 ( PIN out2 ) ( output4 Z ) + USE SIGNAL ;
     - out1 ( PIN out1 ) ( output3 Z ) + USE SIGNAL ;
+    - out2 ( PIN out2 ) ( output4 Z ) + USE SIGNAL ;
 END NETS
 END DESIGN

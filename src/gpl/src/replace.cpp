@@ -122,13 +122,7 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
     // which just skips initial placement and runs nesterov.
     log_->info(GPL,
                156,
-               "Identified all instances as placed. Unlocking all instances "
-               "and running nesterov from scratch.");
-    for (auto& pb : pbVec_) {
-      pb->unlockAll();
-    }
-
-    doNesterovPlace(threads, options);
+               "Identified all instances as placed. Skipping incremental mode");
     return;
   }
 

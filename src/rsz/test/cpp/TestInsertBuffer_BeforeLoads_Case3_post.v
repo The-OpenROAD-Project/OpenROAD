@@ -5,13 +5,11 @@ module top (in,
 
  wire n2;
  wire n1;
- wire net2;
 
  MOD0 mod0 (.out(n2),
     .in(n1));
  BUF_X4 new_buf22 (.A(n2),
-    .Z(net2));
- assign out = net2;
+    .Z(out));
 endmodule
 module MOD0 (out,
     in);

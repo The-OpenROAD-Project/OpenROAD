@@ -13,11 +13,13 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_jvm_external", version = "6.4")
 bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_pkg", version = "1.2.0")
 
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
-bazel_dep(name = "rules_scala", version = "7.1.5")
+bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
+bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
+
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
@@ -119,24 +121,24 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
-bazel_dep(name = "bazel-orfs")
+bazel_dep(name = "bazel-orfs", dev_dependency = True)
 
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "dea261e6445ffc790989b22e85e15ae64172aa1f",
+    commit = "d1f1301b0d3544d2609963d3e995d4427a707946",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
-orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
 
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-473-gb75a51133",
+    image = "docker.io/openroad/orfs:26Q1-534-g510137693",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "0d811b5bbb44861ded130e10989a64b35163341f7300da66f7b17a67e3676e6b",
+    sha256 = "e360317c5c9688a7093e89b7a0406a6cf19d72f3ba852365cc68ecfe5fb60a07",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -146,6 +148,7 @@ SCALA_VERSION = "2.13.17"
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
     "scala_config",
+    dev_dependency = True,
 )
 scala_config.settings(
     scala_version = SCALA_VERSION,
@@ -155,13 +158,14 @@ use_repo(scala_config, "rules_scala_config")
 scala_deps = use_extension(
     "@rules_scala//scala/extensions:deps.bzl",
     "scala_deps",
+    dev_dependency = True,
 )
 scala_deps.settings(
     fetch_sources = True,
 )
 scala_deps.scala()
 
-maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven", dev_dependency = True)
 maven.install(
     name = "maven",
     artifacts = [

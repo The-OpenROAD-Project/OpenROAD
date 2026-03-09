@@ -158,7 +158,7 @@ sta::define_cmd_args "resynth_genetic" {
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-population_size population_size]
-                                            [-mututation_probability mututation_probability]
+                                            [-mutation_probability mutation_probability]
                                             [-crossover_probability crossover_probability]
                                             [-tournament_probability tournament_probability]
                                             [-tournament_size tournament_size]

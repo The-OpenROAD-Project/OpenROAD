@@ -16,4 +16,4 @@ with the BSD-3 open source license as given in the FastRoute
 
 ## License
 
-See [LICENSE](LICENSE) file.
+See [LICENSE](../../../../LICENSE) file.

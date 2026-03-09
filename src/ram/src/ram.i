@@ -123,6 +123,12 @@ void ram_routing()
   ram_gen->ramRouting(thread_count);
 }
 
+void set_behavioral_verilog_filename(const char* filename)
+{
+  RamGen* ram_gen = ord::getRamGen();
+  ram_gen->setBehavioralVerilogFilename(filename);
+}
+
 } //namespace_ram
 
 %} // inline
