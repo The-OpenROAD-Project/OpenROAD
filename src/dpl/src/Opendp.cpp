@@ -23,7 +23,6 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
-#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -363,12 +362,11 @@ void Opendp::setInitialGridCells()
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
       const GridX x = grid_->gridX(node.get());
       const GridY y = grid_->gridSnapDownY(node.get());
-      bool flip = false;
       if (node->getLeft() != gridToDbu(x, site_width)
           || node->getBottom() != grid_->gridYToDbu(y)
           || !canBePlaced(node.get(), x, y)
-          || !arch_->powerCompatible(node.get(), arch_->getRow(y.v), flip)
-          || flip) {
+          || grid_->getSiteOrientation(x, y, node->getSite())
+                 != node->getOrient()) {
         conflicted.insert(node.get());
       }
     }
