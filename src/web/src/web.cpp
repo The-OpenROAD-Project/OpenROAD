@@ -88,6 +88,9 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.type = WebSocketRequest::CHART_FILTERS;
   } else if (type_str == "module_hierarchy") {
     req.type = WebSocketRequest::MODULE_HIERARCHY;
+  } else if (type_str == "set_module_colors") {
+    req.type = WebSocketRequest::SET_MODULE_COLORS;
+    req.vis.parseFromJson(msg);
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -383,6 +386,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->tile_handler_.handleModuleHierarchy(req));
+      });
+      break;
+    case WebSocketRequest::SET_MODULE_COLORS:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->tile_handler_.handleSetModuleColors(req, self->state_));
       });
       break;
     default:

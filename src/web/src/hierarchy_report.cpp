@@ -213,6 +213,7 @@ static ModuleStats addModule(odb::dbModule* module,
   nodes[my_id].parent_id = parent_id;
   nodes[my_id].inst_name = inst_name;
   nodes[my_id].module_name = module->getName();
+  nodes[my_id].odb_id = module->getId();
 
   // Count local instances and area (skip physical cell types to match GUI)
   ModuleStats local;

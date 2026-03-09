@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-// Hierarchy browser widget — module tree with 9 columns.
+// Hierarchy browser widget — module tree with coloring.
 
 import { makeResizableHeaders } from './ui-utils.js';
 
@@ -13,6 +13,17 @@ const COLS = [
 // Must match HierarchyNodeKind enum on the server.
 const NODE_KIND = { MODULE: 0, LEAF_GROUP: 1, TYPE_GROUP: 2, INSTANCE: 3 };
 
+// 31-color palette matching the Qt GUI's ColorGenerator.
+const MODULE_COLORS = [
+    [255,0,0], [255,140,0], [255,215,0], [0,255,0], [148,0,211],
+    [0,250,154], [220,20,60], [0,255,255], [0,191,255], [0,0,255],
+    [173,255,47], [218,112,214], [255,0,255], [30,144,255], [250,128,114],
+    [176,224,230], [255,20,147], [123,104,238], [255,250,205], [255,182,193],
+    [85,107,47], [139,69,19], [72,61,139], [0,128,0], [60,179,113],
+    [184,134,11], [0,139,139], [0,0,139], [50,205,50], [128,0,128],
+    [176,48,96],
+];
+
 export class HierarchyBrowser {
     constructor(container, app, redrawAllLayers) {
         this._app = app;
@@ -22,7 +33,13 @@ export class HierarchyBrowser {
         this._childrenMap = new Map();  // id → [child ids]
         this._collapsed = new Set();   // collapsed node ids
 
+        // Module coloring state: odb_id → {color, effectiveColor, visible}
+        this._moduleState = new Map();
+
         this._build(container);
+
+        // Expose on app so display-controls can interact
+        app.hierarchyBrowser = this;
     }
 
     _build(container) {
@@ -70,10 +87,13 @@ export class HierarchyBrowser {
             });
             this._nodes = data.nodes || [];
             this._buildTree();
+            this._assignColors();
+            this._computeEffectiveColors();
             this._render();
             const nMods = this._nodes.filter(
                 n => (n.node_kind || 0) === NODE_KIND.MODULE).length;
             this._statusLabel.textContent = nMods + ' modules';
+            await this._sendModuleColors();
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
@@ -123,6 +143,95 @@ export class HierarchyBrowser {
         }
     }
 
+    // Assign a color from the palette to each MODULE node in DFS order.
+    _assignColors() {
+        this._moduleState.clear();
+        let colorIdx = 0;
+        for (const row of this._rows) {
+            const node = this._nodeMap.get(row.id);
+            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
+            if (node.odb_id == null) continue;
+            const c = MODULE_COLORS[colorIdx % MODULE_COLORS.length];
+            this._moduleState.set(node.odb_id, {
+                color: c,
+                effectiveColor: c,
+                visible: true,
+                nodeId: node.id,
+            });
+            colorIdx++;
+        }
+    }
+
+    // DFS to compute effective colors based on collapse state.
+    // When a MODULE is collapsed, all descendant MODULEs inherit its effective color.
+    _computeEffectiveColors() {
+        for (const row of this._rows) {
+            const node = this._nodeMap.get(row.id);
+            if (!node || (node.node_kind || 0) !== NODE_KIND.MODULE) continue;
+            const st = this._moduleState.get(node.odb_id);
+            if (!st) continue;
+
+            // Find nearest ancestor MODULE that is collapsed
+            let parentId = node.parent_id;
+            let inheritedColor = null;
+            while (parentId >= 0) {
+                const parent = this._nodeMap.get(parentId);
+                if (!parent) break;
+                if ((parent.node_kind || 0) === NODE_KIND.MODULE) {
+                    const pst = this._moduleState.get(parent.odb_id);
+                    if (pst && this._collapsed.has(parent.id)) {
+                        inheritedColor = pst.effectiveColor;
+                        // Don't break — keep walking up, the highest
+                        // collapsed ancestor's effective color wins.
+                    }
+                }
+                parentId = parent.parent_id;
+            }
+            st.effectiveColor = inheritedColor || st.color;
+        }
+    }
+
+    // Check if a node has MODULE children (not just LEAF_GROUP/TYPE_GROUP).
+    _hasModuleChildren(nodeId) {
+        const children = this._childrenMap.get(nodeId) || [];
+        return children.some(cid => {
+            const c = this._nodeMap.get(cid);
+            return c && (c.node_kind || 0) === NODE_KIND.MODULE;
+        });
+    }
+
+    // Send the current effective color map to the server.
+    // Expanded modules with sub-modules are excluded — their "background"
+    // instances stay uncolored so child module colors are clearly visible.
+    async _sendModuleColors() {
+        const parts = [];
+        for (const [odbId, st] of this._moduleState) {
+            if (!st.visible) continue;
+            // Skip expanded modules that have child modules — only
+            // collapsed or leaf modules contribute to the color overlay.
+            const expanded = !this._collapsed.has(st.nodeId);
+            if (expanded && this._hasModuleChildren(st.nodeId)) continue;
+            const [r, g, b] = st.effectiveColor;
+            parts.push(`${odbId}:${r},${g},${b},100`);
+        }
+        const colors = parts.join(';');
+        try {
+            const resp = await this._app.websocketManager.request({
+                type: 'set_module_colors',
+                colors,
+            });
+            console.log('set_module_colors:', resp.count, 'modules,',
+                         parts.length, 'sent');
+        } catch (err) {
+            console.error('set_module_colors failed:', err);
+        }
+
+        // Refresh the modules layer if it exists
+        if (this._app.modulesLayer && this._app.map.hasLayer(this._app.modulesLayer)) {
+            this._app.modulesLayer.refreshTiles();
+        }
+    }
+
     _dfs(id, depth) {
         this._rows.push({ id, depth });
         const children = this._childrenMap.get(id) || [];
@@ -168,10 +277,33 @@ export class HierarchyBrowser {
                 tr.style.color = '#aaa';
             }
 
-            // Column 0: Instance (with tree indent and arrow)
+            // Column 0: Instance (with tree indent, color swatch, and arrow)
             const tdInst = document.createElement('td');
             tdInst.style.paddingLeft = (8 + row.depth * 16) + 'px';
             tdInst.style.whiteSpace = 'nowrap';
+
+            // Module color swatch + visibility checkbox
+            if (kind === NODE_KIND.MODULE && node.odb_id != null) {
+                const st = this._moduleState.get(node.odb_id);
+                if (st) {
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = st.visible;
+                    cb.className = 'hierarchy-module-cb';
+                    cb.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        st.visible = cb.checked;
+                        this._sendModuleColors();
+                    });
+                    tdInst.appendChild(cb);
+
+                    const swatch = document.createElement('span');
+                    swatch.className = 'hierarchy-color-swatch';
+                    const [r, g, b] = st.effectiveColor;
+                    swatch.style.backgroundColor = `rgb(${r},${g},${b})`;
+                    tdInst.appendChild(swatch);
+                }
+            }
 
             if (hasChildren) {
                 const arrow = document.createElement('span');
@@ -239,7 +371,10 @@ export class HierarchyBrowser {
         } else {
             this._collapsed.add(id);
         }
+        // Recompute effective colors since collapse state changed
+        this._computeEffectiveColors();
         this._render();
+        this._sendModuleColors();
     }
 }
 

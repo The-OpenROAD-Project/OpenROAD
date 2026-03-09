@@ -4,6 +4,7 @@
 #pragma once
 
 #include <limits>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -71,6 +72,7 @@ struct WebSocketRequest
     SLACK_HISTOGRAM,
     CHART_FILTERS,
     MODULE_HIERARCHY,
+    SET_MODULE_COLORS,
     UNKNOWN
   };
 
@@ -134,6 +136,9 @@ struct SessionState
 
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;
+
+  std::mutex module_colors_mutex;
+  std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
 };
 
 // Minimal JSON field extraction (no JSON library dependency).
@@ -152,7 +157,8 @@ WebSocketResponse dispatch_request(
     const std::shared_ptr<TileGenerator>& gen,
     const std::vector<odb::Rect>& highlight_rects = {},
     const std::vector<ColoredRect>& colored_rects = {},
-    const std::vector<FlightLine>& flight_lines = {});
+    const std::vector<FlightLine>& flight_lines = {},
+    const std::map<uint32_t, Color>* module_colors = nullptr);
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -230,6 +236,8 @@ class TileHandler
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
+  WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
+                                          SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

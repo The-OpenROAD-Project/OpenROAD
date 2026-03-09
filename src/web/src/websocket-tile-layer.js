@@ -16,8 +16,24 @@ export function createWebSocketTileLayer(visibility) {
             tile.alt = '';
             tile.setAttribute('role', 'presentation');
 
-            const requestId = this._websocketManager.nextId;
-            tile._websocketRequestId = requestId;
+            // Set up onload/onerror BEFORE any src assignment so that
+            // refreshTiles() can set tile.src and still trigger done().
+            tile._tileDone = false;
+            tile.onload = () => {
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(null, tile);
+                }
+            };
+            tile.onerror = () => {
+                if (!tile._tileDone) {
+                    tile._tileDone = true;
+                    done(new Error('tile image load error'), tile);
+                }
+            };
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
@@ -31,16 +47,9 @@ export function createWebSocketTileLayer(visibility) {
                 y: coords.y,
                 ...vf,
             }).then(blob => {
-                tile.onload = () => {
-                    URL.revokeObjectURL(tile.src);
-                    done(null, tile);
-                };
-                tile.onerror = () => {
-                    done(new Error('tile image load error'), tile);
-                };
                 tile.src = URL.createObjectURL(blob);
-            }).catch(err => {
-                done(err, tile);
+            }).catch(() => {
+                // Request was cancelled (e.g. by refreshTiles); ignore
             });
 
             return tile;

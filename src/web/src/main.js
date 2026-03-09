@@ -47,6 +47,8 @@ const app = {
     tclOutputEl: null,
     highlightRect: null,
     hoverRects: [],
+    modulesLayer: null,
+    hierarchyBrowser: null,
 };
 
 const visibility = {
@@ -99,6 +101,8 @@ const visibility = {
     // Tracks (off by default, matching GUI)
     tracks_pref: false,
     tracks_non_pref: false,
+    // Module view
+    module_view: false,
     // Debug
     debug: false,
 };
@@ -106,6 +110,14 @@ const visibility = {
 const WebSocketTileLayer = createWebSocketTileLayer(visibility);
 
 function redrawAllLayers() {
+    // Show/hide modules layer based on module_view visibility
+    if (app.modulesLayer) {
+        if (visibility.module_view && !app.map.hasLayer(app.modulesLayer)) {
+            app.modulesLayer.addTo(app.map);
+        } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
+            app.map.removeLayer(app.modulesLayer);
+        }
+    }
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }

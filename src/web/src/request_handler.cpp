@@ -282,7 +282,8 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
                             const std::shared_ptr<TileGenerator>& gen,
                             const std::vector<odb::Rect>& highlight_rects,
                             const std::vector<ColoredRect>& colored_rects,
-                            const std::vector<FlightLine>& flight_lines)
+                            const std::vector<FlightLine>& flight_lines,
+                            const std::map<uint32_t, Color>* module_colors)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -337,7 +338,8 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
                                        req.vis,
                                        highlight_rects,
                                        colored_rects,
-                                       flight_lines);
+                                       flight_lines,
+                                       module_colors);
       break;
     }
     default: {
@@ -907,7 +909,16 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     lines = state.timing_lines;
   }
 
-  return dispatch_request(req, gen_, rects, colored, lines);
+  // Snapshot module colors for _modules layer
+  std::map<uint32_t, Color> mod_colors;
+  {
+    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
+    mod_colors = state.module_colors;
+  }
+  const std::map<uint32_t, Color>* mod_ptr
+      = mod_colors.empty() ? nullptr : &mod_colors;
+
+  return dispatch_request(req, gen_, rects, colored, lines, mod_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(
@@ -940,6 +951,9 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
       if (n.node_kind != HierarchyNodeKind::MODULE) {
         builder.field("node_kind", static_cast<int>(n.node_kind));
       }
+      if (n.node_kind == HierarchyNodeKind::MODULE) {
+        builder.field("odb_id", static_cast<int>(n.odb_id));
+      }
       builder.endObject();
     }
     builder.endArray();
@@ -951,6 +965,57 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
     std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleSetModuleColors(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  // Parse compact format: "id:r,g,b,a;id:r,g,b,a;..."
+  std::map<uint32_t, Color> colors;
+  const std::string data = extract_string(req.vis.raw_json_, "colors");
+  if (!data.empty()) {
+    size_t pos = 0;
+    while (pos < data.size()) {
+      size_t colon = data.find(':', pos);
+      if (colon == std::string::npos) {
+        break;
+      }
+      const uint32_t mod_id
+          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+      pos = colon + 1;
+
+      auto next_num = [&]() -> int {
+        size_t end = data.find_first_of(",;", pos);
+        if (end == std::string::npos) {
+          end = data.size();
+        }
+        const int val = std::stoi(data.substr(pos, end - pos));
+        pos = end + 1;
+        return val;
+      };
+
+      const uint8_t r = static_cast<uint8_t>(next_num());
+      const uint8_t g = static_cast<uint8_t>(next_num());
+      const uint8_t b = static_cast<uint8_t>(next_num());
+      const uint8_t a = static_cast<uint8_t>(next_num());
+      colors[mod_id] = Color{r, g, b, a};
+    }
+  }
+
+  const int count = static_cast<int>(colors.size());
+  {
+    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
+    state.module_colors = std::move(colors);
+  }
+
+  const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
+  resp.payload.assign(ok.begin(), ok.end());
   return resp;
 }
 

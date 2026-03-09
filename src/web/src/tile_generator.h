@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -146,7 +147,8 @@ class TileGenerator
       const TileVisibility& vis = {},
       const std::vector<odb::Rect>& highlight_rects = {},
       const std::vector<ColoredRect>& colored_rects = {},
-      const std::vector<FlightLine>& flight_lines = {});
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::map<uint32_t, Color>* module_colors = nullptr);
 
  private:
   void setPixel(std::vector<unsigned char>& image,

@@ -518,6 +518,20 @@ html, body {
     margin-right: 4px;
 }
 
+.hierarchy-color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid #555;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.hierarchy-module-cb {
+    margin-right: 4px;
+}
+
 /* ─── Clock Tree Widget ───────────────────────────────────────────────── */
 
 .clock-tree-widget {

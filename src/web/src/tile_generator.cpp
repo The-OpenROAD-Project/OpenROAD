@@ -396,7 +396,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const TileVisibility& vis,
     const std::vector<odb::Rect>& highlight_rects,
     const std::vector<ColoredRect>& colored_rects,
-    const std::vector<FlightLine>& flight_lines)
+    const std::vector<FlightLine>& flight_lines,
+    const std::map<uint32_t, Color>* module_colors)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -443,8 +444,43 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
     odb::dbBlock* block = db_->getChip()->getBlock();
 
+    // Special "_modules" layer: draw filled module-colored rectangles
+    const bool modules_layer
+        = (layer == "_modules" && module_colors && !module_colors->empty());
+    if (modules_layer) {
+      for (odb::dbInst* inst : search_->searchInsts(
+               block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+        odb::Rect inst_bbox = inst->getBBox()->getBox();
+        if (!dbu_tile.overlaps(inst_bbox)) {
+          continue;
+        }
+        odb::dbModule* mod = inst->getModule();
+        if (!mod) {
+          continue;
+        }
+        auto it = module_colors->find(mod->getId());
+        if (it == module_colors->end()) {
+          continue;
+        }
+        const Color& c = it->second;
+        const int pxl = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
+        const int pyl = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+        const int pxh = std::min(255, (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+        const int pyh = std::min(255, (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+        for (int iy = pyl; iy < pyh; ++iy) {
+          for (int ix = pxl; ix < pxh; ++ix) {
+            blendPixel(image_buffer, ix, 255 - iy, c);
+          }
+        }
+      }
+    }
+
     // Special "_instances" layer: only draw instance borders, no routing
     const bool instances_only = (layer == "_instances");
+
+    // "_modules" layer only draws filled module-color rects (already done above);
+    // skip all other drawing (instances, routing, etc.)
+    if (!modules_layer) {
 
     // Draw instances
     for (odb::dbInst* inst : search_->searchInsts(
@@ -789,6 +825,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
     }
+
+    }  // end if (!modules_layer)
 
     if (!highlight_rects.empty()) {
       drawHighlight(image_buffer, highlight_rects, dbu_tile, scale);

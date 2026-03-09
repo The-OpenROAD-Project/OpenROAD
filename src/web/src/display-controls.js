@@ -41,6 +41,14 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     instancesLayer.addTo(app.map);
     app.allLayers.push(instancesLayer);
 
+    // Module coloring overlay layer (between instances and routing layers)
+    const modulesLayer = new WebSocketTileLayer(app.websocketManager, '_modules', {
+        zIndex: 1,
+    });
+    // Don't add to map until "Module view" is enabled
+    app.modulesLayer = modulesLayer;
+    app.allLayers.push(modulesLayer);
+
     // --- Layers group ---
     const layerGroup = document.createElement('div');
     layerGroup.className = 'vis-group';
@@ -65,7 +73,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     techData.layers.forEach((name, index) => {
         const layer = new WebSocketTileLayer(app.websocketManager, name, {
             opacity: 0.7,
-            zIndex: index + 1
+            zIndex: index + 2
         });
         layer.addTo(app.map);
         app.allLayers.push(layer);
@@ -251,6 +259,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'tracks_pref', label: 'Pref' },
         { key: 'tracks_non_pref', label: 'Non Pref' },
     ]});
+    visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });
     visTree.render(app.displayControlsEl);
 }

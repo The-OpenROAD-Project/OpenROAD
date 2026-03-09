@@ -39,6 +39,7 @@ struct HierarchyNode
   int local_macros = 0;      // direct macro count
   int local_modules = 0;     // direct child module count
   HierarchyNodeKind node_kind = HierarchyNodeKind::MODULE;
+  unsigned int odb_id = 0;   // dbModule::getId() for MODULE nodes
 };
 
 struct HierarchyResult
