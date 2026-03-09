@@ -536,12 +536,8 @@ decode_loop: {
     case kRect:
     case kNop:
     case kColor:
-    case kViaColor: {
-      utl::Logger* logger = getImpl()->getLogger();
-      logger->error(
-          utl::ODB, 1115, "Unexpected {} in dbWire::getSegment", wire_op);
+    case kViaColor:
       break;
-    }
   }
 
   --idx;
