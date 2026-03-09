@@ -1421,7 +1421,9 @@ void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
   if (has_macros_or_pads_ && !incremental) {
     addResourcesForPinAccess(nets);
   }
-  fastroute_->initAuxVar();
+  if (!initialized_) {
+    fastroute_->initAuxVar();
+  }
 }
 
 bool GlobalRouter::pinPositionsChanged(Net* net)
