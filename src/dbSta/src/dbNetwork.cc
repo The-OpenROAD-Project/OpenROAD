@@ -752,8 +752,9 @@ ObjectId dbNetwork::id(const Port* port) const
     const dbObject* obj = reinterpret_cast<const dbObject*>(port);
     return getDbNwkObjectId(obj);
   }
-  // default
-  return ConcreteNetwork::id(port);
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
+  return (ConcreteNetwork::id(port) << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 // Note:
@@ -766,16 +767,16 @@ ObjectId dbNetwork::id(const Port* port) const
 
 ObjectId dbNetwork::id(const Cell* cell) const
 {
-  // in hierarchical flow we use the object id for the index
-  if (hasHierarchy()) {
-    if (!isConcreteCell(cell)) {
-      const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
-      return getDbNwkObjectId(obj);
-    }
+  // top_cell_ is a ConcreteCell but isConcreteCell() returns false for it;
+  // guard against reinterpret_cast to dbObject which would crash.
+  if (hasHierarchy() && !isConcreteCell(cell) && cell != top_cell_) {
+    const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
+    return getDbNwkObjectId(obj);
   }
-  // default behaviour use the concrete cell.
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  return ccell->id();
+  return (ccell->id() << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 ////////////////////////////////////////////////////////////////
