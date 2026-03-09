@@ -528,7 +528,7 @@ dbBlock* dbBTerm::getBlock() const
 
 dbChipBump* dbBTerm::getChipBump() const
 {
-  _dbBTerm* obj = (_dbBTerm*) this;
+  const _dbBTerm* obj = (const _dbBTerm*) this;
   if (obj->chip_bump_ == 0) {
     return nullptr;
   }
