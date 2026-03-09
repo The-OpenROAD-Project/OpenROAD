@@ -129,9 +129,9 @@ class RamGen
                     const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
   void makeWordSlice(
-      const int bytes_per_word,
-      const int row_idx,
-      const int read_ports,
+      int bytes_per_word,
+      int row_idx,
+      int read_ports,
       odb::dbNet* clock,
       std::vector<odb::dbBTerm*>& write_enable,
       const std::vector<odb::dbNet*>& selects,

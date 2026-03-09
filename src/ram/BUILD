@@ -22,7 +22,7 @@ cc_library(
     ],
     hdrs = [
         "include/ram/MakeRam.h",
-	"include/ram/layout.h",
+        "include/ram/layout.h",
         "include/ram/ram.h",
     ],
     includes = [
