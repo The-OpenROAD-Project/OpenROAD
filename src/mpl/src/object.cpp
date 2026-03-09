@@ -807,7 +807,7 @@ int HardMacro::getRealX() const
 {
   switch (getOrientation().getValue()) {
     case odb::dbOrientType::Value::R180:
-    case odb::dbOrientType::Value::MX:
+    case odb::dbOrientType::Value::MY:
       return x_ + halo_.right;
     default:
       return x_ + halo_.left;
@@ -818,7 +818,7 @@ int HardMacro::getRealY() const
 {
   switch (getOrientation().getValue()) {
     case odb::dbOrientType::Value::R180:
-    case odb::dbOrientType::Value::MY:
+    case odb::dbOrientType::Value::MX:
       return y_ + halo_.top;
     default:
       return y_ + halo_.bottom;
