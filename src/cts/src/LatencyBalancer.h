@@ -55,7 +55,8 @@ class LatencyBalancer
                   sta::dbNetwork* network,
                   sta::dbSta* sta,
                   TechChar* techChar,
-                  double capPerDBU)
+                  double capPerDBU,
+                  double resPerDBU)
       : root_(root),
         options_(options),
         logger_(logger),
@@ -64,6 +65,7 @@ class LatencyBalancer
         openSta_(sta),
         techChar_(techChar),
         capPerDBU_(capPerDBU),
+        resPerDBU_(resPerDBU),
         worseDelay_(std::numeric_limits<float>::min())
   {
   }
@@ -75,6 +77,7 @@ class LatencyBalancer
   void findLeafBuilders(TreeBuilder* builder);
   void computeBuffersDelay(std::vector<int>& buffersDelay,
                            double extra_out_cap);
+  double computeWireLumpedDelay(std::string load, double wl, double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -116,6 +119,7 @@ class LatencyBalancer
   double wireSegmentUnit_;
   float bufferDelay_;
   double capPerDBU_;
+  double resPerDBU_;
   float worseDelay_;
   int delayBufIndex_{0};
   std::vector<int> buffersDelay_;
