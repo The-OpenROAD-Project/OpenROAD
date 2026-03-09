@@ -10,6 +10,7 @@
 #include "clock_tree_report.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "hierarchy_report.h"
 #include "odb/db.h"
 #include "timing_report.h"
 
@@ -907,6 +908,50 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   }
 
   return dispatch_request(req, gen_, rects, colored, lines);
+}
+
+WebSocketResponse TileHandler::handleModuleHierarchy(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    HierarchyReport report(block, gen_->getSta());
+    auto result = report.getReport();
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("nodes");
+    for (const auto& n : result.nodes) {
+      builder.beginObject();
+      builder.field("id", n.id);
+      builder.field("parent_id", n.parent_id);
+      builder.field("inst_name", n.inst_name);
+      builder.field("module_name", n.module_name);
+      builder.field("insts", n.insts);
+      builder.field("macros", n.macros);
+      builder.field("modules", n.modules);
+      builder.field("area", n.area);
+      builder.field("local_insts", n.local_insts);
+      builder.field("local_macros", n.local_macros);
+      builder.field("local_modules", n.local_modules);
+      if (n.node_kind != HierarchyNodeKind::MODULE) {
+        builder.field("node_kind", static_cast<int>(n.node_kind));
+      }
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
 }
 
 }  // namespace web

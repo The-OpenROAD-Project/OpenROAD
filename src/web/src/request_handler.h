@@ -70,6 +70,7 @@ struct WebSocketRequest
     CLOCK_TREE_HIGHLIGHT,
     SLACK_HISTOGRAM,
     CHART_FILTERS,
+    MODULE_HIERARCHY,
     UNKNOWN
   };
 
@@ -228,6 +229,7 @@ class TileHandler
 
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
+  WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

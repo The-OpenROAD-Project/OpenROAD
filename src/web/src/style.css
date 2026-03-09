@@ -490,6 +490,34 @@ html, body {
     overflow-wrap: break-word;
 }
 
+/* ─── Hierarchy Browser ──────────────────────────────────────────────── */
+
+.hierarchy-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
+}
+
+.hierarchy-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.hierarchy-arrow {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+    cursor: pointer;
+    color: #888;
+    user-select: none;
+    font-size: 9px;
+    margin-right: 4px;
+}
+
 /* ─── Clock Tree Widget ───────────────────────────────────────────────── */
 
 .clock-tree-widget {

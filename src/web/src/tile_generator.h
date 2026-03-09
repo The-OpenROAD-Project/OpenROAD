@@ -124,6 +124,7 @@ class TileGenerator
   ~TileGenerator();
 
   bool hasSta() const { return sta_ != nullptr; }
+  sta::dbSta* getSta() const { return sta_; }
 
   odb::Rect getBounds();
 

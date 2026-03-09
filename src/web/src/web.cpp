@@ -86,6 +86,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.histogram_clock = extract_string(msg, "clock_name");
   } else if (type_str == "chart_filters") {
     req.type = WebSocketRequest::CHART_FILTERS;
+  } else if (type_str == "module_hierarchy") {
+    req.type = WebSocketRequest::MODULE_HIERARCHY;
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -375,6 +377,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->timing_handler_.handleChartFilters(req));
+      });
+      break;
+    case WebSocketRequest::MODULE_HIERARCHY:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->tile_handler_.handleModuleHierarchy(req));
       });
       break;
     default:

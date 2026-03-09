@@ -8,6 +8,7 @@ import { createWebSocketTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
 import { ChartsWidget } from './charts-widget.js';
+import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 
@@ -191,8 +192,7 @@ const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
 
 function createBrowser(container) {
-    createStubPanel(container, 'Hierarchy',
-        'Design hierarchy browser.');
+    new HierarchyBrowser(container, app, redrawAllLayers);
 }
 
 function createTimingWidget(container) {
