@@ -1554,7 +1554,7 @@ void TritonPart::BuildTimingPaths()
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
-  sta::StdStringSeq group_names_empty;
+  sta::StringSeq group_names_empty;
   sta::PathEndSeq path_ends = sta_->search()->findPathEnds(  // from, thrus, to,
                                                              // unconstrained
       e_from,   // return paths from a list of clocks/instances/ports/register
