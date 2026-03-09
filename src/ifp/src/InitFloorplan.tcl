@@ -276,7 +276,7 @@ proc insert_tiecells { args } {
   }
 
   set mterm [$master findMTerm $port]
-  if { $master == "NULL" } {
+  if { $mterm == "NULL" } {
     utl::error "IFP" 32 "Unable to find master pin: $args"
   }
 

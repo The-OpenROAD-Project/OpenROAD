@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <string>
@@ -30,7 +31,10 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
+#include "sta/ConcreteNetwork.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Sta.hh"
+#include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
 namespace odb {
@@ -79,6 +83,111 @@ void ThreeDBlox::readDbv(const std::string& dbv_file)
   }
 }
 
+void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
+{
+  // Read Verilog and create nets
+  if (!sta_ || data.design.external.verilog_file.empty()) {
+    return;
+  }
+
+  std::string verilog_file = data.design.external.verilog_file;
+  if (!std::filesystem::exists(verilog_file)) {
+    return;
+  }
+
+  sta::ConcreteNetwork temp_network;
+  temp_network.copyState(sta_);
+  sta::VerilogReader verilog_reader(&temp_network);
+
+  if (!verilog_reader.read(verilog_file.c_str())) {
+    return;
+  }
+
+  sta::Instance* top_inst
+      = verilog_reader.linkNetwork(data.design.name.c_str(), true, false);
+  if (!top_inst) {
+    logger_->warn(utl::ODB,
+                  555,
+                  "Verilog module {} not found in Verilog file {}.",
+                  data.design.name,
+                  verilog_file);
+    return;
+  }
+
+  // Pre-process master chips to map port names to bumps
+  std::map<dbChip*, std::map<std::string, dbChipBump*>> master_bump_map;
+  for (auto* inst : chip->getChipInsts()) {
+    dbChip* master = inst->getMasterChip();
+
+    // Skip if already processed
+    if (master_bump_map.contains(master)) {
+      continue;
+    }
+
+    for (auto* region : master->getChipRegions()) {
+      for (auto* bump : region->getChipBumps()) {
+        if (auto* bterm = bump->getBTerm()) {
+          master_bump_map[master][bterm->getName()] = bump;
+        }
+      }
+    }
+  }
+
+  // Process nets
+  std::unique_ptr<sta::NetIterator> net_iter(
+      temp_network.netIterator(top_inst));
+  while (net_iter->hasNext()) {
+    auto* net = net_iter->next();
+    const char* net_name = temp_network.name(net);
+    auto* chip_net = dbChipNet::create(chip, net_name);
+
+    debugPrint(logger_,
+               utl::ODB,
+               "3dblox",
+               1,
+               "Created dbChipNet {} for chip {} from Verilog",
+               net_name,
+               chip->getName());
+
+    std::unique_ptr<sta::NetPinIterator> pin_iter(
+        temp_network.pinIterator(net));
+    while (pin_iter->hasNext()) {
+      const sta::Pin* pin = pin_iter->next();
+      const sta::Instance* instance = temp_network.instance(pin);
+
+      if (instance == top_inst) {
+        continue;
+      }
+
+      auto* chip_inst = chip->findChipInst(temp_network.name(instance));
+      if (!chip_inst) {
+        continue;
+      }
+
+      const char* port_name = temp_network.name(temp_network.port(pin));
+      dbChip* master = chip_inst->getMasterChip();
+
+      auto bump_it = master_bump_map[master].find(port_name);
+      if (bump_it == master_bump_map[master].end()) {
+        continue;
+      }
+
+      dbChipBump* bump = bump_it->second;
+      auto* region_inst = chip_inst->findChipRegionInst(bump->getChipRegion());
+      if (!region_inst) {
+        continue;
+      }
+
+      for (auto bump_inst : region_inst->getChipBumpInsts()) {
+        if (bump_inst->getChipBump() == bump) {
+          chip_net->addBumpInst(bump_inst, {chip_inst});
+          break;
+        }
+      }
+    }
+  }
+}
+
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
   read_files_.insert(std::filesystem::absolute(dbx_file).string());
@@ -89,6 +198,9 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   for (const auto& [_, chip_inst] : data.chiplet_instances) {
     createChipInst(chip_inst);
   }
+
+  buildChipNetsFromVerilog(chip, data);
+
   for (const auto& [_, connection] : data.connections) {
     createConnection(connection);
   }
@@ -333,12 +445,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
     chip = dbChip::create(
         db_, tech, chiplet.name, getChipType(chiplet.type, logger_));
   }
-  if (!chiplet.external.verilog_file.empty()) {
-    if (odb::dbProperty::find(chip, "verilog_file") == nullptr) {
-      odb::dbStringProperty::create(
-          chip, "verilog_file", chiplet.external.verilog_file.c_str());
-    }
-  }
+
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
     odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);

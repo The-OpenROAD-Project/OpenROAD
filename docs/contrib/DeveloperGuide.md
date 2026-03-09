@@ -198,9 +198,9 @@ Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The directory `OpenRoad/src/example` 
+The directory [src/exa](../main/src/exa/README.md)
 illustrates a tool named "Example" that uses the file structure described above.
- It defines a command to run the tool as illustrated below:
+It defines a command to run the tool as illustrated below:
 
 ```tcl
 > example_instance -name test
