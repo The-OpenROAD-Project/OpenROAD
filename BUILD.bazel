@@ -181,8 +181,14 @@ cc_binary(
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tcl_lang//:tcl",
+        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
+        # On systems without tclreadline these are empty stub targets (no-op).
+        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+        "@tclreadline//:tclreadline",
+        "@tclreadline//:tclreadline_defs",
     ],
 )
+
 
 GUI_BUILD_FLAGS = select(
     {

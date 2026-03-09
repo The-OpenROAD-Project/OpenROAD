@@ -184,6 +184,15 @@ use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# System tclreadline library (detected at build time on Linux).
+# On Ubuntu/Debian: sudo apt install tcl-tclreadline
+# On RHEL/CentOS:   sudo yum install tcl-tclreadline-devel
+# Enables the `openroad>` interactive prompt (ENABLE_READLINE) instead of `%`.
+# See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+tclreadline_system_repo = use_repo_rule("//bazel:tclreadline.bzl", "tclreadline_system_repo")
+
+tclreadline_system_repo(name = "tclreadline")
+
 http_archive(
     name = "circt",
     build_file_content = """
