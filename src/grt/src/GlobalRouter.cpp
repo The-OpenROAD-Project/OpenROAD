@@ -2787,7 +2787,7 @@ void GlobalRouter::saveGuides(const std::vector<odb::dbNet*>& nets)
           const int top_layer
               = std::max(segment.init_layer, segment.final_layer);
           const RoutePt via_pt(segment.final_x, segment.final_y, top_layer);
-          if (net->isLocal() || port_pin_pts.count(via_pt)) {
+          if (net->isLocal() || port_pin_pts.contains(via_pt)) {
             int layer_idx1 = segment.init_layer;
             int layer_idx2 = segment.final_layer;
             odb::dbTechLayer* layer1 = routing_layers_[layer_idx1];
