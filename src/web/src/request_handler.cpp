@@ -149,6 +149,30 @@ int extract_int_or(const std::string& json,
   return extract_int(json, key);
 }
 
+float extract_float_or(const std::string& json,
+                       const std::string& key,
+                       float default_val)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return default_val;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return default_val;
+  }
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  try {
+    return std::stof(json.substr(pos));
+  } catch (...) {
+    return default_val;
+  }
+}
+
 // Store a Selected in the clickables vector and return its index.
 static int storeSelectable(std::vector<gui::Selected>& selectables,
                            const gui::Selected& sel)
@@ -584,8 +608,10 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   resp.type = 0;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto paths
-        = timing_report_->getReport(req.timing_is_setup, req.timing_max_paths);
+    auto paths = timing_report_->getReport(req.timing_is_setup,
+                                              req.timing_max_paths,
+                                              req.timing_slack_min,
+                                              req.timing_slack_max);
     JsonBuilder builder;
     builder.beginObject();
     builder.beginArray("paths");
@@ -699,7 +725,10 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   resp.type = 0;
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
-    auto histogram = timing_report_->getSlackHistogram(req.histogram_is_setup);
+    auto histogram = timing_report_->getSlackHistogram(
+        req.histogram_is_setup,
+        req.histogram_path_group,
+        req.histogram_clock);
     JsonBuilder builder;
     builder.beginObject();
     builder.beginArray("bins");
@@ -715,6 +744,38 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     builder.field("unconstrained_count", histogram.unconstrained_count);
     builder.field("total_endpoints", histogram.total_endpoints);
     builder.field("time_unit", histogram.time_unit);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleChartFilters(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto filters = timing_report_->getChartFilters();
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("path_groups");
+    for (const auto& name : filters.path_groups) {
+      builder.value(name);
+    }
+    builder.endArray();
+    builder.beginArray("clocks");
+    for (const auto& name : filters.clocks) {
+      builder.value(name);
+    }
+    builder.endArray();
     builder.endObject();
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());

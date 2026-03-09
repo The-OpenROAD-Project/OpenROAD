@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -68,6 +69,7 @@ struct WebSocketRequest
     CLOCK_TREE,
     CLOCK_TREE_HIGHLIGHT,
     SLACK_HISTOGRAM,
+    CHART_FILTERS,
     UNKNOWN
   };
 
@@ -92,6 +94,8 @@ struct WebSocketRequest
   // TIMING_REPORT fields
   bool timing_is_setup = true;
   int timing_max_paths = 100;
+  float timing_slack_min = -std::numeric_limits<float>::max();
+  float timing_slack_max = std::numeric_limits<float>::max();
 
   // TIMING_HIGHLIGHT fields
   int timing_path_index = -1;  // -1 = clear
@@ -103,6 +107,8 @@ struct WebSocketRequest
 
   // SLACK_HISTOGRAM fields
   bool histogram_is_setup = true;
+  std::string histogram_path_group;
+  std::string histogram_clock;
 
   // Visibility flags (default: all visible)
   TileVisibility vis;
@@ -135,6 +141,9 @@ int extract_int(const std::string& json, const std::string& key);
 int extract_int_or(const std::string& json,
                    const std::string& key,
                    int default_val);
+float extract_float_or(const std::string& json,
+                       const std::string& key,
+                       float default_val);
 
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
 WebSocketResponse dispatch_request(
@@ -185,6 +194,7 @@ class TimingHandler
   WebSocketResponse handleTimingHighlight(const WebSocketRequest& req,
                                           SessionState& state);
   WebSocketResponse handleSlackHistogram(const WebSocketRequest& req);
+  WebSocketResponse handleChartFilters(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

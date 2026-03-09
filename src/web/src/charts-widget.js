@@ -145,6 +145,32 @@ export class ChartsWidget {
         tabBar.appendChild(this._holdTab);
         el.appendChild(tabBar);
 
+        // Filter row
+        const filterRow = document.createElement('div');
+        filterRow.className = 'charts-toolbar';
+
+        const pgLabel = document.createElement('span');
+        pgLabel.textContent = 'Path Group:';
+        pgLabel.style.color = '#888';
+        pgLabel.style.fontSize = '12px';
+        this._pathGroupSelect = document.createElement('select');
+        this._pathGroupSelect.className = 'charts-select';
+        this._pathGroupSelect.innerHTML = '<option value="">All</option>';
+
+        const clkLabel = document.createElement('span');
+        clkLabel.textContent = 'Clock:';
+        clkLabel.style.color = '#888';
+        clkLabel.style.fontSize = '12px';
+        this._clockSelect = document.createElement('select');
+        this._clockSelect.className = 'charts-select';
+        this._clockSelect.innerHTML = '<option value="">All</option>';
+
+        filterRow.appendChild(pgLabel);
+        filterRow.appendChild(this._pathGroupSelect);
+        filterRow.appendChild(clkLabel);
+        filterRow.appendChild(this._clockSelect);
+        el.appendChild(filterRow);
+
         // Canvas
         this._canvas = document.createElement('canvas');
         this._canvas.className = 'charts-canvas';
@@ -182,12 +208,16 @@ export class ChartsWidget {
             this.update();
         });
 
+        this._pathGroupSelect.addEventListener('change', () => this._fetchHistogram());
+        this._clockSelect.addEventListener('change', () => this._fetchHistogram());
+
         this._canvas.addEventListener('mousemove', (e) => this._handleHover(e));
         this._canvas.addEventListener('mouseleave', () => {
             this._hoveredBar = null;
             this._tooltip.style.display = 'none';
             this._render();
         });
+        this._canvas.addEventListener('click', (e) => this._handleClick(e));
 
         // Re-render on resize
         const ro = new ResizeObserver(() => {
@@ -211,10 +241,51 @@ export class ChartsWidget {
         this._updateBtn.textContent = 'Loading...';
         this._statusLabel.textContent = '';
         try {
-            const data = await this._app.websocketManager.request({
+            await this._fetchFilters();
+            await this._fetchHistogram();
+        } catch (err) {
+            this._statusLabel.textContent = 'Error: ' + err.message;
+        }
+        this._updateBtn.disabled = false;
+        this._updateBtn.textContent = 'Update';
+    }
+
+    async _fetchFilters() {
+        const filters = await this._app.websocketManager.request({
+            type: 'chart_filters',
+        });
+        this._populateSelect(this._pathGroupSelect, filters.path_groups || []);
+        this._populateSelect(this._clockSelect, filters.clocks || []);
+    }
+
+    _populateSelect(select, items) {
+        const prev = select.value;
+        select.innerHTML = '<option value="">All</option>';
+        for (const name of items) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            select.appendChild(opt);
+        }
+        // Restore previous selection if still valid
+        if (items.includes(prev)) {
+            select.value = prev;
+        }
+    }
+
+    async _fetchHistogram() {
+        try {
+            const req = {
                 type: 'slack_histogram',
                 is_setup: this._currentTab === 'setup' ? 1 : 0,
-            });
+            };
+            if (this._pathGroupSelect.value) {
+                req.path_group = this._pathGroupSelect.value;
+            }
+            if (this._clockSelect.value) {
+                req.clock_name = this._clockSelect.value;
+            }
+            const data = await this._app.websocketManager.request(req);
             this._histogramData = data;
             this._sizeCanvas();
             this._computeLayout();
@@ -228,8 +299,6 @@ export class ChartsWidget {
         } catch (err) {
             this._statusLabel.textContent = 'Error: ' + err.message;
         }
-        this._updateBtn.disabled = false;
-        this._updateBtn.textContent = 'Update';
     }
 
     _computeLayout() {
@@ -415,6 +484,31 @@ export class ChartsWidget {
             this._tooltip.style.top = ty + 'px';
         } else {
             this._tooltip.style.display = 'none';
+        }
+    }
+
+    async _handleClick(e) {
+        const bar = this._hitTestBar(e);
+        if (!bar || bar.count === 0) return;
+
+        try {
+            const resp = await this._app.websocketManager.request({
+                type: 'timing_report',
+                is_setup: this._currentTab === 'setup' ? 1 : 0,
+                max_paths: 50,
+                slack_min: bar.lower,
+                slack_max: bar.upper,
+            });
+
+            if (this._app.timingWidget) {
+                this._app.timingWidget.showPaths(
+                    this._currentTab, resp.paths || []);
+                if (this._app.focusComponent) {
+                    this._app.focusComponent('TimingWidget');
+                }
+            }
+        } catch (err) {
+            console.error('Charts bar click error:', err);
         }
     }
 }

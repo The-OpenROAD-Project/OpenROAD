@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -58,15 +59,29 @@ struct SlackHistogramResult
   std::string time_unit;
 };
 
+struct ChartFilters
+{
+  std::vector<std::string> path_groups;
+  std::vector<std::string> clocks;
+};
+
 class TimingReport
 {
  public:
   explicit TimingReport(sta::dbSta* sta);
 
-  std::vector<TimingPathSummary> getReport(bool is_setup,
-                                           int max_paths = 100) const;
+  std::vector<TimingPathSummary> getReport(
+      bool is_setup,
+      int max_paths = 100,
+      float slack_min = -std::numeric_limits<float>::max(),
+      float slack_max = std::numeric_limits<float>::max()) const;
 
-  SlackHistogramResult getSlackHistogram(bool is_setup) const;
+  SlackHistogramResult getSlackHistogram(
+      bool is_setup,
+      const std::string& path_group = "",
+      const std::string& clock_name = "") const;
+
+  ChartFilters getChartFilters() const;
 
  private:
   void expandPath(sta::Path* path,

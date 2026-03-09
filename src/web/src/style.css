@@ -553,6 +553,20 @@ html, body {
     flex-shrink: 0;
 }
 
+.charts-select {
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 3px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    cursor: pointer;
+}
+.charts-select:hover {
+    border-color: #777;
+}
+
 .charts-canvas {
     flex: 1;
     min-height: 0;

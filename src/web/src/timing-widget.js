@@ -159,6 +159,24 @@ export class TimingWidget {
         });
     }
 
+    showPaths(tab, paths) {
+        this._currentTab = tab;
+        if (tab === 'setup') {
+            this._setupPaths = paths;
+            this._setupTab.classList.add('active');
+            this._holdTab.classList.remove('active');
+        } else {
+            this._holdPaths = paths;
+            this._holdTab.classList.add('active');
+            this._setupTab.classList.remove('active');
+        }
+        this._selectedPathIndex = -1;
+        this._pathCountLabel.textContent = paths.length + ' paths';
+        this._renderPathTable();
+        this._renderDetailTable();
+        this._clearTimingHighlight();
+    }
+
     async update() {
         this._updateBtn.disabled = true;
         this._updateBtn.textContent = 'Loading...';

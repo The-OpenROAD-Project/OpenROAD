@@ -65,6 +65,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.type = WebSocketRequest::TIMING_REPORT;
     req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
     req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
+    req.timing_slack_min = extract_float_or(
+        msg, "slack_min", -std::numeric_limits<float>::max());
+    req.timing_slack_max = extract_float_or(
+        msg, "slack_max", std::numeric_limits<float>::max());
   } else if (type_str == "timing_highlight") {
     req.type = WebSocketRequest::TIMING_HIGHLIGHT;
     req.timing_path_index = extract_int_or(msg, "path_index", -1);
@@ -78,6 +82,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "slack_histogram") {
     req.type = WebSocketRequest::SLACK_HISTOGRAM;
     req.histogram_is_setup = extract_int_or(msg, "is_setup", 1);
+    req.histogram_path_group = extract_string(msg, "path_group");
+    req.histogram_clock = extract_string(msg, "clock_name");
+  } else if (type_str == "chart_filters") {
+    req.type = WebSocketRequest::CHART_FILTERS;
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -361,6 +369,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->timing_handler_.handleSlackHistogram(req));
+      });
+      break;
+    case WebSocketRequest::CHART_FILTERS:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->timing_handler_.handleChartFilters(req));
       });
       break;
     default:

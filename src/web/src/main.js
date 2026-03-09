@@ -196,7 +196,7 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    new TimingWidget(container, app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(container, app, redrawAllLayers);
 }
 
 function createDRCWidget(container) {
@@ -374,6 +374,8 @@ function focusComponent(componentType) {
     const item = find(app.goldenLayout.rootItem);
     if (item) item.focus();
 }
+
+app.focusComponent = focusComponent;
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 
