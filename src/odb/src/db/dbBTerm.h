@@ -20,6 +20,8 @@ class _dbBlock;
 class _dbBPin;
 class _dbITerm;
 class _dbDatabase;
+class _dbChipRegion;
+class _dbChipBump;
 class dbIStream;
 class dbOStream;
 
@@ -81,6 +83,8 @@ class _dbBTerm : public _dbObject
   Rect constraint_region_;
   dbId<_dbBTerm> mirrored_bterm_;
   bool is_mirrored_;
+  dbId<_dbChipRegion> chip_region_;
+  dbId<_dbChipBump> chip_bump_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm);
