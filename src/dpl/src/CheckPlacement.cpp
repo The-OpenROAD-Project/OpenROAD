@@ -11,6 +11,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/isotropy.h"
@@ -49,8 +50,12 @@ void Opendp::checkPlacement(const bool verbose,
     }
     if (cell->isStdCell()) {
       // Site alignment check
+      bool flip = false;
+      const GridY y = grid_->gridSnapDownY(cell.get());
       if (cell->getLeft() % grid_->getSiteWidth() != 0
-          || row_coords.find(cell->getBottom().v) == row_coords.end()) {
+          || row_coords.find(cell->getBottom().v) == row_coords.end()
+          || !arch_->powerCompatible(cell.get(), arch_->getRow(y.v), flip)
+          || flip) {
         site_align_failures.push_back(cell.get());
         continue;
       }
