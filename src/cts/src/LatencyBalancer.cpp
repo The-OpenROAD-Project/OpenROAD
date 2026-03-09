@@ -90,9 +90,21 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
 double LatencyBalancer::computeWireLumpedDelay(std::string load, double wl, double& wireCap)
 {
   wireCap = wl * capPerDBU_;
+  double totalCap = wireCap;
   double wireRes = wl * resPerDBU_;
 
-  return wireRes * wireCap * std::pow(10, 14);
+
+  if(load != "") {
+    odb::dbMaster* loadMaster = db_->findMaster(load.c_str());
+    sta::Cell* loadMasterCell = network_->dbToSta(loadMaster);
+    sta::LibertyCell* libertyLoadCell
+        = network_->libertyCell(loadMasterCell);
+    sta::LibertyPort *input, *output;
+    libertyLoadCell->bufferPorts(input, output);
+    totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+  }
+
+  return wireRes * totalCap * std::pow(10, 14);
 }
 
 void LatencyBalancer::findLeafBuilders(TreeBuilder* builder)
@@ -412,7 +424,7 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
   std::vector<int> adjustedBuffersDelay;
 
   double extraOutCap;
-  double wireDly = computeWireLumpedDelay(" ", std::abs(offsetX) + std::abs(offsetY), extraOutCap);
+  double wireDly = computeWireLumpedDelay(options_->getRootBuffer(), std::abs(offsetX) + std::abs(offsetY), extraOutCap);
   computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
 
   // Compute best buffer combination with more accurate values
