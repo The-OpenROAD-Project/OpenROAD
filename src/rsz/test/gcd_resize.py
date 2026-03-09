@@ -34,6 +34,6 @@ design.evalTclString("report_check_types -max_slew -max_fanout -max_capacitance"
 
 rsz_aux.report_long_wires(design, 10)
 
-rsz_aux.report_floating_nets(design, verbose=True)
+rsz_aux.report_floating_nets(design)
 
 rsz_aux.report_design_area(design)
