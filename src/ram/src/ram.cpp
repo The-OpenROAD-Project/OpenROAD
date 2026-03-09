@@ -3,6 +3,7 @@
 
 #include "ram/ram.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <fstream>
@@ -214,8 +215,7 @@ void RamGen::makeWordSlice(const int bytes_per_word,
   const int bits_per_byte = 8;
 
   for (int byte = 0; byte < bytes_per_word; ++byte) {
-    int start_idx
-        = byte * bits_per_byte;
+    int start_idx = byte * bits_per_byte;
 
     vector<dbNet*> byte_inputs(data_input.begin() + start_idx,
                                data_input.begin() + start_idx + bits_per_byte);
