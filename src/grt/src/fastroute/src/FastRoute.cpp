@@ -37,6 +37,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       congestion_report_iter_step_(0),
       x_range_(0),
       y_range_(0),
+      worst_fanout_(0),
       num_adjust_(0),
       v_capacity_(0),
       h_capacity_(0),
@@ -67,8 +68,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       stt_builder_(stt_builder),
       sta_(sta),
       debug_(new DebugSetting()),
-      detour_penalty_(0),
-      worst_fanout_(0)
+      detour_penalty_(0)
 {
 }
 
