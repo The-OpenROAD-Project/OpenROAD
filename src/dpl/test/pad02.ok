@@ -4,5 +4,6 @@
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 2 connections.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [ERROR DPL-0015] instance _277_ does not fit inside the ROW core area.
 DPL-0015
