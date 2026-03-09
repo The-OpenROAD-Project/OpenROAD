@@ -56,8 +56,7 @@ struct WebSocketRequest
   {
     TILE,
     BOUNDS,
-    LAYERS,
-    INFO,
+    TECH,
     SELECT,
     INSPECT,
     HOVER,
@@ -184,7 +183,7 @@ class TimingHandler
   std::shared_ptr<TclEvaluator> tcl_eval_;
 };
 
-// Handles TILE/BOUNDS/LAYERS/INFO requests.
+// Handles TILE/BOUNDS/TECH requests.
 class TileHandler
 {
  public:

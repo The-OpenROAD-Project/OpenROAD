@@ -87,6 +87,11 @@ export class VisTree {
 
         if (!node.children.length) {
             const label = document.createElement('label');
+            const spacer = document.createElement('span');
+            spacer.className = 'vis-arrow';
+            spacer.style.visibility = 'hidden';
+            spacer.textContent = '\u25B6';
+            label.appendChild(spacer);
             label.appendChild(cb);
             label.appendChild(document.createTextNode(node.label));
             return label;

@@ -29,7 +29,7 @@ const layerPalette = [
 
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                         layersData, redrawAllLayers) {
+                                         techData, redrawAllLayers) {
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
@@ -62,7 +62,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     layerChildren.className = 'vis-group-children';
     const layerCbs = [];
 
-    layersData.layers.forEach((name, index) => {
+    techData.layers.forEach((name, index) => {
         const layer = new WebSocketTileLayer(app.websocketManager, name, {
             opacity: 0.7,
             zIndex: index + 1
@@ -235,6 +235,21 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'special_nets', label: 'Special Nets' },
         { key: 'pins', label: 'Pins' },
         { key: 'blockages', label: 'Blockages' },
+    ]});
+    visTree.add({ label: 'Blockages', children: [
+        { key: 'placement_blockages', label: 'Placement' },
+        { key: 'routing_obstructions', label: 'Routing' },
+    ]});
+    if (techData.sites && techData.sites.length > 0) {
+        visTree.add({ label: 'Rows', visKey: 'rows', children:
+            techData.sites.map(name => ({
+                key: 'site_' + name, label: name,
+            })),
+        });
+    }
+    visTree.add({ label: 'Tracks', children: [
+        { key: 'tracks_pref', label: 'Pref' },
+        { key: 'tracks_non_pref', label: 'Non Pref' },
     ]});
     visTree.add({ key: 'debug', label: 'Debug tiles' });
     visTree.render(app.displayControlsEl);

@@ -261,7 +261,7 @@ static void serializeProperty(std::stringstream& ss,
 }
 
 //------------------------------------------------------------------------------
-// dispatch_request — handles BOUNDS, LAYERS, TILE, INFO
+// dispatch_request — handles BOUNDS, TECH, TILE
 //------------------------------------------------------------------------------
 
 WebSocketResponse dispatch_request(const WebSocketRequest& req,
@@ -284,7 +284,7 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
       resp.payload.assign(json.begin(), json.end());
       break;
     }
-    case WebSocketRequest::LAYERS: {
+    case WebSocketRequest::TECH: {
       resp.type = 0;
       std::stringstream ss;
       ss << "{\"layers\": [";
@@ -296,7 +296,17 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
         ss << "\"" << name << "\"";
         first = false;
       }
-      ss << "]}";
+      ss << "], \"sites\": [";
+      first = true;
+      for (const auto& name : gen->getSites()) {
+        if (!first) {
+          ss << ", ";
+        }
+        ss << "\"" << name << "\"";
+        first = false;
+      }
+      ss << "], \"has_liberty\": " << (gen->hasSta() ? "true" : "false")
+         << "}";
       const std::string json = ss.str();
       resp.payload.assign(json.begin(), json.end());
       break;
@@ -311,13 +321,6 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
                                        highlight_rects,
                                        colored_rects,
                                        flight_lines);
-      break;
-    }
-    case WebSocketRequest::INFO: {
-      resp.type = 0;
-      const std::string json = gen->hasSta() ? "{\"has_liberty\": true}"
-                                             : "{\"has_liberty\": false}";
-      resp.payload.assign(json.begin(), json.end());
       break;
     }
     default: {

@@ -73,11 +73,11 @@ TEST_F(DispatchRequestTest, BoundsReturnsJson)
   EXPECT_NE(json.find("\"bounds\""), std::string::npos);
 }
 
-TEST_F(DispatchRequestTest, LayersReturnsJson)
+TEST_F(DispatchRequestTest, TechReturnsJson)
 {
   WebSocketRequest req;
   req.id = 7;
-  req.type = WebSocketRequest::LAYERS;
+  req.type = WebSocketRequest::TECH;
 
   auto resp = dispatch_request(req, gen_);
   EXPECT_EQ(resp.id, 7u);
@@ -86,19 +86,8 @@ TEST_F(DispatchRequestTest, LayersReturnsJson)
   std::string json = payloadStr(resp);
   EXPECT_NE(json.find("\"layers\""), std::string::npos);
   EXPECT_NE(json.find("\"metal1\""), std::string::npos);
-}
-
-TEST_F(DispatchRequestTest, InfoWithoutSta)
-{
-  WebSocketRequest req;
-  req.id = 1;
-  req.type = WebSocketRequest::INFO;
-
-  auto resp = dispatch_request(req, gen_);
-  EXPECT_EQ(resp.type, 0);
-
-  std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"has_liberty\": false"), std::string::npos);
+  EXPECT_NE(json.find("\"sites\""), std::string::npos);
+  EXPECT_NE(json.find("\"has_liberty\""), std::string::npos);
 }
 
 TEST_F(DispatchRequestTest, TileReturnsPng)

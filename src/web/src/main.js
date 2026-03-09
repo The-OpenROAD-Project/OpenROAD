@@ -88,6 +88,14 @@ const visibility = {
     special_nets: true,
     pins: true,
     blockages: true,
+    // Blockages
+    placement_blockages: true,
+    routing_obstructions: true,
+    // Rows (off by default, matching GUI)
+    rows: false,
+    // Tracks (off by default, matching GUI)
+    tracks_pref: false,
+    tracks_non_pref: false,
     // Debug
     debug: false,
 };
@@ -369,12 +377,11 @@ app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 app.websocketManager.readyPromise.then(async () => {
     try {
-        const [layersData, boundsData, infoData] = await Promise.all([
-            app.websocketManager.request({ type: 'layers' }),
+        const [techData, boundsData] = await Promise.all([
+            app.websocketManager.request({ type: 'tech' }),
             app.websocketManager.request({ type: 'bounds' }),
-            app.websocketManager.request({ type: 'info' }),
         ]);
-        app.hasLiberty = infoData.has_liberty;
+        app.hasLiberty = techData.has_liberty;
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
@@ -445,7 +452,7 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                layersData, redrawAllLayers);
+                                techData, redrawAllLayers);
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }

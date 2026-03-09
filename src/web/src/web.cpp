@@ -49,10 +49,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.vis.parseFromJson(msg);
   } else if (type_str == "bounds") {
     req.type = WebSocketRequest::BOUNDS;
-  } else if (type_str == "layers") {
-    req.type = WebSocketRequest::LAYERS;
-  } else if (type_str == "info") {
-    req.type = WebSocketRequest::INFO;
+  } else if (type_str == "tech") {
+    req.type = WebSocketRequest::TECH;
   } else if (type_str == "inspect") {
     req.type = WebSocketRequest::INSPECT;
     req.select_id = extract_int(msg, "select_id");
@@ -147,9 +145,9 @@ http::response<http::string_body> handle_request(
     WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
     res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
-  } else if (req.method() == http::verb::get && req.target() == "/layers") {
+  } else if (req.method() == http::verb::get && req.target() == "/tech") {
     WebSocketRequest websocket_req;
-    websocket_req.type = WebSocketRequest::LAYERS;
+    websocket_req.type = WebSocketRequest::TECH;
     WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
     res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());

@@ -68,14 +68,29 @@ void TileVisibility::parseFromJson(const std::string& json)
     {"routing",            &TileVisibility::routing,            true},
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"pins",               &TileVisibility::pins,               true},
-    {"blockages",          &TileVisibility::blockages,          true},
-    {"debug",              &TileVisibility::debug,              false},
+    {"blockages",              &TileVisibility::blockages,              true},
+    {"placement_blockages",    &TileVisibility::placement_blockages,    true},
+    {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
+    {"rows",                   &TileVisibility::rows,                   false},
+    {"tracks_pref",            &TileVisibility::tracks_pref,            false},
+    {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
+    {"debug",                  &TileVisibility::debug,                  false},
   };
   // clang-format on
 
   for (const auto& f : fields) {
     this->*(f.field) = extract_int_or(json, f.key, f.default_val ? 1 : 0);
   }
+  raw_json_ = json;
+}
+
+bool TileVisibility::isSiteVisible(const std::string& site_name) const
+{
+  if (!rows) {
+    return false;
+  }
+  const std::string key = "site_" + site_name;
+  return extract_int_or(raw_json_, key, 0);
 }
 
 bool TileVisibility::isNetVisible(odb::dbNet* net) const
@@ -282,6 +297,23 @@ std::vector<std::string> TileGenerator::getLayers()
     }
   }
   return layers;
+}
+
+std::vector<std::string> TileGenerator::getSites()
+{
+  std::set<std::string> seen;
+  std::vector<std::string> sites;
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  if (!block) {
+    return sites;
+  }
+  for (odb::dbRow* row : block->getRows()) {
+    odb::dbSite* site = row->getSite();
+    if (site && seen.insert(site->getName()).second) {
+      sites.push_back(site->getName());
+    }
+  }
+  return sites;
 }
 
 std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
@@ -594,6 +626,164 @@ std::vector<unsigned char> TileGenerator::generateTile(
             for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
               const int draw_y = (255 - iy);
               setPixel(image_buffer, ix, draw_y, color);
+            }
+          }
+        }
+      }
+    }
+
+    // Draw placement blockages (dbBlockage) on the _instances layer.
+    // Diagonal white hash lines in pixel space, with period anchored in dbu
+    // coordinates so the pattern is seamless across tile boundaries.
+    if (instances_only && vis.placement_blockages) {
+      const Color hash_color{255, 255, 255, 180};
+      constexpr int kPixelPeriod = 20;  // pixels between line centers
+      constexpr int kLineWidth = 2;     // pixels wide
+      for (odb::dbBlockage* blk :
+           search_->searchBlockages(block, dbu_x_min, dbu_y_min,
+                                    dbu_x_max, dbu_y_max)) {
+        odb::Rect box = blk->getBBox()->getBox();
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+        // Offset in absolute pixel coordinates for seamless tiling
+        const int ox = (int) (dbu_x_min * scale);
+        const int oy = (int) (dbu_y_min * scale);
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+              blendPixel(image_buffer, ix, 255 - iy, hash_color);
+            }
+          }
+        }
+      }
+    }
+
+    // Draw routing obstructions (dbObstruction) on per-layer tiles.
+    // Same diagonal white hash lines.
+    if (!instances_only && tech_layer && vis.routing_obstructions) {
+      const Color hash_color{255, 255, 255, 180};
+      constexpr int kPixelPeriod = 20;
+      constexpr int kLineWidth = 2;
+      for (odb::dbObstruction* obs :
+           search_->searchObstructions(block, tech_layer, dbu_x_min, dbu_y_min,
+                                       dbu_x_max, dbu_y_max)) {
+        odb::Rect box = obs->getBBox()->getBox();
+        if (!box.overlaps(dbu_tile)) {
+          continue;
+        }
+        const odb::Rect overlap = box.intersect(dbu_tile);
+        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+        const int ox = (int) (dbu_x_min * scale);
+        const int oy = (int) (dbu_y_min * scale);
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+            if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+              blendPixel(image_buffer, ix, 255 - iy, hash_color);
+            }
+          }
+        }
+      }
+    }
+
+    // Draw rows as outlines on the _instances layer
+    if (instances_only && vis.rows) {
+      const Color row_color{60, 180, 60, 180};  // green outlines
+      for (const auto& [row_rect, row] :
+           search_->searchRows(block, dbu_x_min, dbu_y_min,
+                               dbu_x_max, dbu_y_max)) {
+        if (!row_rect.overlaps(dbu_tile)) {
+          continue;
+        }
+        odb::dbSite* site = row->getSite();
+        if (site && !vis.isSiteVisible(site->getName())) {
+          continue;
+        }
+        const odb::Rect draw = toPixels(scale, row_rect, dbu_tile);
+        // Draw outline only (top, bottom, left, right edges)
+        for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
+          blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
+          blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
+        }
+        for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
+          blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
+          blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+        }
+      }
+    }
+
+    // Draw tracks on per-layer tiles
+    if (!instances_only && tech_layer
+        && (vis.tracks_pref || vis.tracks_non_pref)) {
+      odb::dbTrackGrid* grid = block->findTrackGrid(tech_layer);
+      debugPrint(logger_,
+                 utl::WEB,
+                 "tile",
+                 1,
+                 "tracks: layer={} grid={} pref={} non_pref={}",
+                 layer,
+                 grid != nullptr,
+                 vis.tracks_pref,
+                 vis.tracks_non_pref);
+      if (grid) {
+        Color track_color = color;
+        track_color.a = 150;
+        const bool is_horizontal
+            = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+        // X-direction tracks (vertical lines on screen)
+        // Preferred for vertical layers, non-preferred for horizontal layers
+        if ((!is_horizontal && vis.tracks_pref)
+            || (is_horizontal && vis.tracks_non_pref)) {
+          std::vector<int> x_grid;
+          grid->getGridX(x_grid);
+          debugPrint(logger_,
+                     utl::WEB,
+                     "tile",
+                     1,
+                     "  x_tracks: count={} tile=[{},{},{},{}]",
+                     x_grid.size(),
+                     dbu_x_min,
+                     dbu_y_min,
+                     dbu_x_max,
+                     dbu_y_max);
+          for (int tx : x_grid) {
+            if (tx < dbu_x_min || tx > dbu_x_max) {
+              continue;
+            }
+            const int px = static_cast<int>((tx - dbu_x_min) * scale);
+            if (px >= 0 && px < kTileSizeInPixel) {
+              for (int py = 0; py < kTileSizeInPixel; ++py) {
+                blendPixel(image_buffer, px, py, track_color);
+              }
+            }
+          }
+        }
+
+        // Y-direction tracks (horizontal lines on screen)
+        // Preferred for horizontal layers, non-preferred for vertical layers
+        if ((is_horizontal && vis.tracks_pref)
+            || (!is_horizontal && vis.tracks_non_pref)) {
+          std::vector<int> y_grid;
+          grid->getGridY(y_grid);
+          debugPrint(logger_,
+                     utl::WEB,
+                     "tile",
+                     1,
+                     "  y_tracks: count={}",
+                     y_grid.size());
+          for (int ty : y_grid) {
+            if (ty < dbu_y_min || ty > dbu_y_max) {
+              continue;
+            }
+            const int py
+                = 255 - static_cast<int>((ty - dbu_y_min) * scale);
+            if (py >= 0 && py < kTileSizeInPixel) {
+              for (int px = 0; px < kTileSizeInPixel; ++px) {
+                blendPixel(image_buffer, px, py, track_color);
+              }
             }
           }
         }

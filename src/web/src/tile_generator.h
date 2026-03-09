@@ -95,6 +95,19 @@ struct TileVisibility
   bool pins = true;
   bool blockages = true;
 
+  // Blockages (dbBlockage / dbObstruction)
+  bool placement_blockages = true;
+  bool routing_obstructions = true;
+
+  // Rows (off by default, matching GUI)
+  bool rows = false;
+  std::string raw_json_;  // stored for dynamic per-site lookups
+  bool isSiteVisible(const std::string& site_name) const;
+
+  // Tracks (off by default, matching GUI)
+  bool tracks_pref = false;
+  bool tracks_non_pref = false;
+
   // Debug
   bool debug = false;
 
@@ -115,6 +128,7 @@ class TileGenerator
   odb::Rect getBounds();
 
   std::vector<std::string> getLayers();
+  std::vector<std::string> getSites();
 
   std::vector<SelectionResult> selectAt(int dbu_x,
                                         int dbu_y,
