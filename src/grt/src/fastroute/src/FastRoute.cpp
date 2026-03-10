@@ -37,6 +37,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       congestion_report_iter_step_(0),
       x_range_(0),
       y_range_(0),
+      worst_fanout_(0),
       num_adjust_(0),
       v_capacity_(0),
       h_capacity_(0),
@@ -880,7 +881,7 @@ void FastRouteCore::addTreeEdge(int x1,
 
   new_edge.route.routelen = new_edge.route.grids.size() - 1;
 
-  treeedges.push_back(new_edge);
+  treeedges.push_back(std::move(new_edge));
 }
 
 bool FastRouteCore::hasAvailableResources(int x1,

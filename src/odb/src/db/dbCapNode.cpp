@@ -806,13 +806,13 @@ uint32_t dbCapNode::getShapeId()
     if (!iterm->getNet() || !iterm->getNet()->getWire()) {
       return 0;
     }
-    return iterm->getNet()->getWire()->getTermJid(iterm->getId());
+    return iterm->getNet()->getWire()->getTermShapeJunctionId(iterm->getId());
   }
   dbBTerm* bterm = dbBTerm::getBTerm(block, seg->node_num_);
   if (!bterm->getNet() || !bterm->getNet()->getWire()) {
     return 0;
   }
-  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
+  return bterm->getNet()->getWire()->getTermShapeJunctionId(-bterm->getId());
 }
 
 void dbCapNode::setSortIndex(uint32_t idx)

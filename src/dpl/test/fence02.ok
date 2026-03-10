@@ -3,6 +3,16 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                       0
+Diamond Move Success:              0 (  0.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement          9.6 u

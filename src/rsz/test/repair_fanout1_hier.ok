@@ -48,6 +48,16 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 33512
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34116
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34042
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                      36
+Diamond Move Success:             36 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement        253.5 u

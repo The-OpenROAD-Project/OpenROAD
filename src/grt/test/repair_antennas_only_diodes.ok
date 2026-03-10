@@ -8,6 +8,16 @@
 [INFO ANT-0002] Found 8 net violations.
 [INFO ANT-0001] Found 8 pin violations.
 [INFO GRT-0012] Found 8 antenna violations.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                     367
+Diamond Move Success:            367 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 [INFO GRT-0015] Inserted 8 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

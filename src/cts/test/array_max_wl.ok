@@ -572,6 +572,16 @@ TritonCTS forced slew degradation on these wires.
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 41 long wires.
 [INFO RSZ-0048] Inserted 87 buffers in 41 nets.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                    3088
+Diamond Move Success:           3088 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement       3934.8 u

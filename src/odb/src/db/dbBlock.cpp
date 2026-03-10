@@ -1125,6 +1125,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     block.core_area_ = blk->computeCoreArea();
   }
 
+  // Resolve cached mterm pointers now that all tables are loaded
+  dbSet<dbITerm> iterms((dbBlock*) &block, block.iterm_tbl_);
+  for (dbITerm* iterm : iterms) {
+    ((_dbITerm*) iterm)->resolveMTerm();
+  }
+
   return stream;
 }
 
