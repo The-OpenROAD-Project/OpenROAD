@@ -101,7 +101,7 @@ static int logCommandCallback(ClientData client_data,
                               int objc,
                               Tcl_Obj* const objv[]);
 static void deleteCommandTrace(ClientData client_data);
-static Tcl_Trace command_trace = nullptr;
+
 
 static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
@@ -463,12 +463,12 @@ static int tclAppInit(int& argc,
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
 
-    command_trace = Tcl_CreateObjTrace(interp,
-                                       0,
-                                       0,
-                                       logCommandCallback,
-                                       ord::OpenRoad::openRoad()->getLogger(),
-                                       deleteCommandTrace);
+    Tcl_CreateObjTrace(interp,
+                       0,
+                       0,
+                       logCommandCallback,
+                       ord::OpenRoad::openRoad()->getLogger(),
+                       deleteCommandTrace);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
