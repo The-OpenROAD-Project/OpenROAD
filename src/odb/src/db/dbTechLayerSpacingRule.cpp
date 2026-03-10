@@ -291,25 +291,20 @@ bool dbTechLayerSpacingRule::getLengthThresholdRange(uint32_t& rmin,
 bool dbTechLayerSpacingRule::hasRange() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_.rule != _dbTechLayerSpacingRule::kRangeOnly)
-      && (_lsp->flags_.rule != _dbTechLayerSpacingRule::kRangeRange)
-      && (_lsp->flags_.rule != _dbTechLayerSpacingRule::kRangeUseLength)
-      && (_lsp->flags_.rule != _dbTechLayerSpacingRule::kRangeInfluence)
-      && (_lsp->flags_.rule != _dbTechLayerSpacingRule::kRangeInfluenceRange)) {
-    return false;
-  }
-  return true;
+  return (_lsp->flags_.rule == _dbTechLayerSpacingRule::kRangeOnly)
+         || (_lsp->flags_.rule == _dbTechLayerSpacingRule::kRangeRange)
+         || (_lsp->flags_.rule == _dbTechLayerSpacingRule::kRangeUseLength)
+         || (_lsp->flags_.rule == _dbTechLayerSpacingRule::kRangeInfluence)
+         || (_lsp->flags_.rule
+             == _dbTechLayerSpacingRule::kRangeInfluenceRange);
 }
 
 bool dbTechLayerSpacingRule::hasLengthThreshold() const
 {
   _dbTechLayerSpacingRule* _lsp = (_dbTechLayerSpacingRule*) this;
-  if ((_lsp->flags_.rule != _dbTechLayerSpacingRule::kLengthThreshold)
-      && (_lsp->flags_.rule
-          != _dbTechLayerSpacingRule::kLengthThresholdRange)) {
-    return false;
-  }
-  return true;
+  return (_lsp->flags_.rule == _dbTechLayerSpacingRule::kLengthThreshold)
+         || (_lsp->flags_.rule
+             == _dbTechLayerSpacingRule::kLengthThresholdRange);
 }
 
 void dbTechLayerSpacingRule::setSpacingNotchLengthValid(bool val)
