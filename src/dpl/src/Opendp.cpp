@@ -357,6 +357,9 @@ void Opendp::setInitialGridCells()
   std::unordered_set<Node*> conflicted;
   const DbuX site_width = grid_->getSiteWidth();
 
+  const bool old_disallow_one_site_gaps = disallow_one_site_gaps_;
+  disallow_one_site_gaps_ = false;
+
   // Check which cells are missaligned with rows
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
@@ -371,6 +374,7 @@ void Opendp::setInitialGridCells()
       }
     }
   }
+  disallow_one_site_gaps_ = old_disallow_one_site_gaps;
 
   // Check which cells are overlapping with other cells
   for (auto& node : network_->getNodes()) {
@@ -394,6 +398,19 @@ void Opendp::setInitialGridCells()
 
       if (node_conflicted) {
         conflicted.insert(node.get());
+      }
+    }
+  }
+
+  if (disallow_one_site_gaps_) {
+    for (auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+        if (conflicted.contains(node.get())) {
+          continue;
+        }
+        if (checkOneSiteGaps(*node)) {
+          conflicted.insert(node.get());
+        }
       }
     }
   }
