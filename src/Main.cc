@@ -18,6 +18,7 @@
 
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
+#include "utl/Logger.h"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed
@@ -40,7 +41,6 @@
 #include "ord/Tech.h"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
-#include "utl/Logger.h"
 #include "utl/decode.h"
 
 using sta::findCmdLineFlag;
@@ -92,6 +92,16 @@ static bool no_settings = false;
 static bool minimize = false;
 
 static const char* init_filename = ".openroad";
+
+static int logCommandCallback(ClientData client_data,
+                              Tcl_Interp* interp,
+                              int level,
+                              const char* command,
+                              Tcl_Command command_info,
+                              int objc,
+                              Tcl_Obj* const objv[]);
+static void deleteCommandTrace(ClientData client_data);
+static Tcl_Trace command_trace = nullptr;
 
 static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
@@ -170,6 +180,32 @@ static void initPython()
 #endif
 
 static volatile sig_atomic_t fatal_error_in_progress = 0;
+
+static int logCommandCallback(ClientData client_data,
+                              Tcl_Interp* interp,
+                              int level,
+                              const char* command,
+                              Tcl_Command command_info,
+                              int objc,
+                              Tcl_Obj* const objv[])
+{
+  if (level != 0 || command == nullptr) {
+    return TCL_OK;
+  }
+
+  auto* logger = static_cast<utl::Logger*>(client_data);
+  if (logger != nullptr && log_filename != nullptr) {
+    logger->redirectFileAppendBegin(log_filename);
+    logger->report("cmd: {}", command);
+    logger->redirectFileEnd();
+  }
+
+  return TCL_OK;
+}
+
+static void deleteCommandTrace(ClientData client_data)
+{
+}
 
 // When we enter through main() we have a single tech and design.
 // Custom applications using OR as a library might define multiple.
@@ -426,6 +462,13 @@ static int tclAppInit(int& argc,
 
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
+
+    command_trace = Tcl_CreateObjTrace(interp,
+                                       0,
+                                       0,
+                                       logCommandCallback,
+                                       ord::OpenRoad::openRoad()->getLogger(),
+                                       deleteCommandTrace);
 
     bool no_splash = findCmdLineFlag(argc, argv, "-no_splash");
     if (!no_splash) {
