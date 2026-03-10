@@ -51,7 +51,7 @@ RamGen::RamGen(sta::dbNetwork* network,
                odb::dbDatabase* db,
                utl::Logger* logger,
                pdn::PdnGen* pdngen,
-               ppl::IOPlacer* ioPlacer,
+               ppl::IOPlacer* io_placer,
                dpl::Opendp* opendp,
                grt::GlobalRouter* global_router,
                drt::TritonRoute* detailed_router)
@@ -60,7 +60,7 @@ RamGen::RamGen(sta::dbNetwork* network,
       db_(db),
       logger_(logger),
       pdngen_(pdngen),
-      ioPlacer_(ioPlacer),
+      io_placer_(io_placer),
       opendp_(opendp),
       global_router_(global_router),
       detailed_router_(detailed_router),
@@ -68,7 +68,7 @@ RamGen::RamGen(sta::dbNetwork* network,
 {
 }
 
-dbInst* RamGen::makeCellInst(
+dbInst* RamGen::makeInst(
     Cell* cell,
     const std::string& prefix,
     const std::string& name,
@@ -106,46 +106,46 @@ dbBTerm* RamGen::makeBTerm(const std::string& name, dbIoType io_type)
   return bTerm;
 }
 
-std::unique_ptr<Cell> RamGen::makeCellBit(const std::string& prefix,
-                                          const int read_ports,
-                                          dbNet* clock,
-                                          vector<odb::dbNet*>& select,
-                                          dbNet* data_input,
-                                          vector<odb::dbNet*>& data_output)
+std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
+                                      const int read_ports,
+                                      dbNet* clock,
+                                      vector<odb::dbNet*>& select,
+                                      dbNet* data_input,
+                                      vector<odb::dbNet*>& data_output)
 {
   auto bit_cell = std::make_unique<Cell>();
 
   auto storage_net = makeNet(prefix, "storage");
 
-  makeCellInst(bit_cell.get(),
-               prefix,
-               "bit",
-               storage_cell_,
-               {{storage_cell_->findMTerm("CLK") ? "CLK" : "GATE", clock},
-                {"D", data_input},
-                {"Q", storage_net}});
+  makeInst(bit_cell.get(),
+           prefix,
+           "bit",
+           storage_cell_,
+           {{storage_cell_->findMTerm("CLK") ? "CLK" : "GATE", clock},
+            {"D", data_input},
+            {"Q", storage_net}});
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
-    makeCellInst(bit_cell.get(),
-                 prefix,
-                 fmt::format("obuf{}", read_port),
-                 tristate_cell_,
-                 {{"A", storage_net},
-                  {"TE_B", select[read_port]},
-                  {"Z", data_output[read_port]}});
+    makeInst(bit_cell.get(),
+             prefix,
+             fmt::format("obuf{}", read_port),
+             tristate_cell_,
+             {{"A", storage_net},
+              {"TE_B", select[read_port]},
+              {"Z", data_output[read_port]}});
   }
 
   return bit_cell;
 }
 
-void RamGen::makeCellByte(const int byte_idx,
-                          const int row_idx,
-                          const int read_ports,
-                          dbNet* clock,
-                          dbNet* write_enable,
-                          const vector<dbNet*>& selects,
-                          const vector<dbNet*>& data_input,
-                          const vector<vector<dbBTerm*>>& data_output)
+void RamGen::makeSlice(const int byte_idx,
+                       const int row_idx,
+                       const int read_ports,
+                       dbNet* clock,
+                       dbNet* write_enable,
+                       const vector<dbNet*>& selects,
+                       const vector<dbNet*>& data_input,
+                       const vector<vector<dbBTerm*>>& data_output)
 {
   const int bits_per_byte = 8;
   const int start_bit_idx = byte_idx * bits_per_byte;
@@ -164,53 +164,53 @@ void RamGen::makeCellByte(const int byte_idx,
     for (int read_port = 0; read_port < read_ports; ++read_port) {
       outs[read_port] = data_output[read_port][local_bit]->getNet();
     }
-    ram_grid_.addCell(makeCellBit(name,
-                                  read_ports,
-                                  gclock_net,
-                                  select_b_nets,
-                                  data_input[local_bit],
-                                  outs),
+    ram_grid_.addCell(makeBit(name,
+                              read_ports,
+                              gclock_net,
+                              select_b_nets,
+                              data_input[local_bit],
+                              outs),
                       start_bit_idx + local_bit + byte_idx);
   }
 
   auto sel_cell = std::make_unique<Cell>();
   // Make clock gate
-  makeCellInst(sel_cell.get(),
-               prefix,
-               "cg",
-               clock_gate_cell_,
-               {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
+  makeInst(sel_cell.get(),
+           prefix,
+           "cg",
+           clock_gate_cell_,
+           {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port
-  makeCellInst(sel_cell.get(),
-               prefix,
-               "gcand",
-               and2_cell_,
-               {{"A", selects[0]}, {"B", write_enable}, {"X", we0_net}});
+  makeInst(sel_cell.get(),
+           prefix,
+           "gcand",
+           and2_cell_,
+           {{"A", selects[0]}, {"B", write_enable}, {"X", we0_net}});
 
   // Make select inverters
   for (int i = 0; i < selects.size(); ++i) {
-    makeCellInst(sel_cell.get(),
-                 prefix,
-                 fmt::format("select_inv_{}", i),
-                 inv_cell_,
-                 {{"A", selects[i]}, {"Y", select_b_nets[i]}});
+    makeInst(sel_cell.get(),
+             prefix,
+             fmt::format("select_inv_{}", i),
+             inv_cell_,
+             {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
 
   ram_grid_.addCell(std::move(sel_cell),
                     start_bit_idx + bits_per_byte + byte_idx);
 }
 
-void RamGen::makeWordSlice(const int bytes_per_word,
-                           const int row_idx,
-                           const int read_ports,
-                           dbNet* clock,
-                           vector<dbBTerm*>& write_enable,
-                           const vector<dbNet*>& selects,
-                           const vector<dbNet*>& data_input,
-                           const vector<vector<dbBTerm*>>& data_output)
+void RamGen::makeWord(const int bytes_per_word,
+                      const int row_idx,
+                      const int read_ports,
+                      dbNet* clock,
+                      vector<dbBTerm*>& write_enable,
+                      const vector<dbNet*>& selects,
+                      const vector<dbNet*>& data_input,
+                      const vector<vector<dbBTerm*>>& data_output)
 {
   const int bits_per_byte = 8;
 
@@ -227,14 +227,14 @@ void RamGen::makeWordSlice(const int bytes_per_word,
                   byte_outputs[port].begin());
     }
 
-    makeCellByte(byte,
-                 row_idx,
-                 read_ports,
-                 clock,
-                 write_enable[byte]->getNet(),
-                 selects,
-                 byte_inputs,
-                 byte_outputs);
+    makeSlice(byte,
+              row_idx,
+              read_ports,
+              clock,
+              write_enable[byte]->getNet(),
+              selects,
+              byte_inputs,
+              byte_outputs);
   }
 }
 
@@ -244,11 +244,11 @@ std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
   auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
   for (int i = 0; i <= word_count; ++i) {
     auto tapcell_cell = std::make_unique<Cell>();
-    makeCellInst(tapcell_cell.get(),
-                 "tapcell",
-                 fmt::format("cell{}_{}", tapcell_col, i),
-                 tapcell_,
-                 {});
+    makeInst(tapcell_cell.get(),
+             "tapcell",
+             fmt::format("cell{}_{}", tapcell_col, i),
+             tapcell_,
+             {});
     tapcell_layout->addCell(std::move(tapcell_cell));
   }
   return tapcell_layout;
@@ -276,46 +276,44 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
     auto input_net = makeNet(prefix, fmt::format("layer_in{}", i));
     // sets up first AND gate, closest to byte's select + write enable gate
     if (i == 0 && i == layers - 1) {
-      makeCellInst(word_cell.get(),
-                   prefix,
-                   fmt::format("and_layer{}", i),
-                   and2_cell_,
-                   {{"A", addr_nets[i]},
-                    {"B", addr_nets[i + 1]},
-                    {"X", decoder_out_net}});
+      makeInst(word_cell.get(),
+               prefix,
+               fmt::format("and_layer{}", i),
+               and2_cell_,
+               {{"A", addr_nets[i]},
+                {"B", addr_nets[i + 1]},
+                {"X", decoder_out_net}});
       prev_net = input_net;
     } else if (i == 0) {
-      makeCellInst(
-          word_cell.get(),
-          prefix,
-          fmt::format("and_layer{}", i),
-          and2_cell_,
-          {{"A", addr_nets[i]}, {"B", input_net}, {"X", decoder_out_net}});
+      makeInst(word_cell.get(),
+               prefix,
+               fmt::format("and_layer{}", i),
+               and2_cell_,
+               {{"A", addr_nets[i]}, {"B", input_net}, {"X", decoder_out_net}});
       prev_net = input_net;
     } else if (i == layers - 1) {  // last AND gate layer
-      makeCellInst(
-          word_cell.get(),
-          prefix,
-          fmt::format("and_layer{}", i),
-          and2_cell_,
-          {{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", prev_net}});
+      makeInst(word_cell.get(),
+               prefix,
+               fmt::format("and_layer{}", i),
+               and2_cell_,
+               {{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", prev_net}});
       prev_net = input_net;
     } else {  // middle AND gate layers
-      makeCellInst(word_cell.get(),
-                   prefix,
-                   fmt::format("and_layer{}", i),
-                   and2_cell_,
-                   {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
+      makeInst(word_cell.get(),
+               prefix,
+               fmt::format("and_layer{}", i),
+               and2_cell_,
+               {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
       prev_net = input_net;
     }
   }
 
   for (int port = 0; port < read_ports; ++port) {
-    makeCellInst(word_cell.get(),
-                 prefix,
-                 fmt::format("buf_port{}", port),
-                 buffer_cell_,
-                 {{"A", decoder_out_net}, {"X", selects[port]}});
+    makeInst(word_cell.get(),
+             prefix,
+             fmt::format("buf_port{}", port),
+             buffer_cell_,
+             {{"A", decoder_out_net}, {"X", selects[port]}});
   }
 
   return word_cell;
@@ -575,9 +573,9 @@ void RamGen::ramPinplacer(const char* ver_name, const char* hor_name)
 
   block_->addBTermsToConstraint(data_inputs_, top_constraint);
   auto pin_tech = block_->getDb()->getTech();
-  ioPlacer_->addHorLayer(pin_tech->findLayer(hor_name));
-  ioPlacer_->addVerLayer(pin_tech->findLayer(ver_name));
-  ioPlacer_->runHungarianMatching();
+  io_placer_->addHorLayer(pin_tech->findLayer(hor_name));
+  io_placer_->addVerLayer(pin_tech->findLayer(ver_name));
+  io_placer_->runHungarianMatching();
 }
 
 void RamGen::ramFiller(const vector<std::string>& filler_cells)
@@ -744,21 +742,21 @@ void RamGen::generate(const int bytes_per_word,
   }
 
   for (int row = 0; row < word_count; ++row) {
-    makeWordSlice(bytes_per_word,
-                  row,
-                  read_ports,
-                  clock->getNet(),
-                  write_enable,
-                  word_decoder_nets[row],
-                  D_nets,
-                  q_outputs_);
+    makeWord(bytes_per_word,
+             row,
+             read_ports,
+             clock->getNet(),
+             write_enable,
+             word_decoder_nets[row],
+             D_nets,
+             q_outputs_);
   }
 
   for (int byte = 0; byte < bytes_per_word; ++byte) {
     for (int bit = 0; bit < bits_per_byte; ++bit) {
       int bit_idx = bit + byte * 8;
       auto buffer_grid_cell = std::make_unique<Cell>();
-      makeCellInst(
+      makeInst(
           buffer_grid_cell.get(),
           "buffer",
           fmt::format("in[{}]", bit_idx),
@@ -772,11 +770,11 @@ void RamGen::generate(const int bytes_per_word,
   if (num_inputs > 1) {
     for (int i = num_inputs - 1; i >= 0; --i) {
       auto inv_grid_cell = std::make_unique<Cell>();
-      makeCellInst(inv_grid_cell.get(),
-                   "decoder",
-                   fmt::format("inv_{}", i),
-                   inv_cell_,
-                   {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
+      makeInst(inv_grid_cell.get(),
+               "decoder",
+               fmt::format("inv_{}", i),
+               inv_cell_,
+               {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
       for (int filler_count = 0; filler_count < num_inputs - 1;
            ++filler_count) {
@@ -785,11 +783,11 @@ void RamGen::generate(const int bytes_per_word,
     }
   } else {
     auto inv_grid_cell = std::make_unique<Cell>();
-    makeCellInst(inv_grid_cell.get(),
-                 "decoder",
-                 fmt::format("inv_{}", 0),
-                 inv_cell_,
-                 {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
+    makeInst(inv_grid_cell.get(),
+             "decoder",
+             fmt::format("inv_{}", 0),
+             inv_cell_,
+             {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 
@@ -837,7 +835,10 @@ void RamGen::generate(const int bytes_per_word,
   auto sites_width = db_sites->getWidth();
 
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
-  for (int i = 0; i <= word_count; ++i) {  // extra for the layer of buffers
+
+  // One extra row at the top for placing input buffers
+  const int num_rows = word_count + 1;
+  for (int i = 0; i < num_rows; ++i) {
     auto row_name = fmt::format("RAM_ROW{}", i);
     auto y_coord = i * ram_grid_.getHeight();
     auto row_orient = odb::dbOrientType::R0;
@@ -857,7 +858,7 @@ void RamGen::generate(const int bytes_per_word,
 
   ram_grid_.placeGrid();
 
-  int max_y_coord = ram_grid_.getHeight() * (word_count + 1);
+  int max_y_coord = ram_grid_.getHeight() * (num_rows);
   int max_x_coord = ram_grid_.getRowWidth();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));

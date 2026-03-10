@@ -149,9 +149,7 @@ Grid::Grid(odb::Orientation2D orientation, int tracks)
     : orientation_(orientation)
 {
   for (int i = 0; i < tracks; ++i) {
-    if (orientation_ == odb::horizontal) {
-      layouts_.push_back(std::make_unique<Layout>(odb::vertical));
-    }
+    layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
   }
 }
 
@@ -165,30 +163,26 @@ void Grid::addLayout(std::unique_ptr<Layout> layout)
   layouts_.push_back(std::move(layout));
 }
 
-bool Grid::insertLayout(std::unique_ptr<Layout> layout, int index)
+bool Grid::insertLayout(std::unique_ptr<Layout> layout, int idx)
 {
-  if (index == layouts_.size()) {
+  if (idx == layouts_.size()) {
     layouts_.push_back(std::move(layout));
-  } else if (index < layouts_.size()) {
-    layouts_.insert(layouts_.begin() + index, std::move(layout));
-  } else if (index > layouts_.size()) {
+  } else if (idx < layouts_.size()) {
+    layouts_.insert(layouts_.begin() + idx, std::move(layout));
+  } else if (idx > layouts_.size()) {
     return false;
   }
   return true;
 }
 
-void Grid::addCell(std::unique_ptr<Cell> cell, int track)
+void Grid::addCell(std::unique_ptr<Cell> cell, int idx)
 {
-  if (track >= layouts_.size()) {
-    for (int size = layouts_.size(); size <= track; ++size) {
-      if (orientation_ == odb::horizontal) {
-        layouts_.push_back(std::make_unique<Layout>(odb::vertical));
-      } else {
-        layouts_.push_back(std::make_unique<Layout>(odb::horizontal));
-      }
+  if (idx >= layouts_.size()) {
+    for (int size = layouts_.size(); size <= idx; ++size) {
+      layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
     }
   }
-  layouts_[track]->addCell(std::move(cell));
+  layouts_[idx]->addCell(std::move(cell));
 }
 
 void Grid::gridInit()
@@ -237,27 +231,23 @@ int Grid::numLayouts() const
   return layouts_.size();
 }
 
-void Grid::setNumLayouts(int tracks)
+void Grid::setNumLayouts(int num_layouts)
 {
-  if (tracks > layouts_.size()) {
-    for (int size = layouts_.size(); size < tracks; ++size) {
-      if (orientation_ == odb::horizontal) {
-        layouts_.push_back(std::make_unique<Layout>(odb::vertical));
-      } else {
-        layouts_.push_back(std::make_unique<Layout>(odb::horizontal));
-      }
+  if (num_layouts > layouts_.size()) {
+    for (int size = layouts_.size(); size < num_layouts; ++size) {
+      layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
     }
   }
 }
 
-int Grid::getLayoutWidth(int index) const
+int Grid::getLayoutWidth(int idx) const
 {
-  return layouts_[index]->getWidth();
+  return layouts_[idx]->getWidth();
 }
 
-int Grid::getLayoutHeight(int index) const
+int Grid::getLayoutHeight(int idx) const
 {
-  return layouts_[index]->getHeight();
+  return layouts_[idx]->getHeight();
 }
 
 int Grid::getRowWidth() const
