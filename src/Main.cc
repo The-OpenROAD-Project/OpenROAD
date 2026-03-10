@@ -465,7 +465,7 @@ static int tclAppInit(int& argc,
 
     Tcl_CreateObjTrace(interp,
                        0,
-                       0,
+                       1,
                        logCommandCallback,
                        ord::OpenRoad::openRoad()->getLogger(),
                        deleteCommandTrace);
