@@ -9,6 +9,7 @@
 %}
 
 %include "../../Exception-py.i"
+%include <typemaps.i>
 %include <std_string.i>
 %include <std_vector.i>
 
@@ -29,25 +30,22 @@
 %ignore rsz::Resizer::findOverdrivenNets;
 
 %ignore rsz::Resizer::parseMoveSequence;
-%ignore rsz::Resizer::parseMove;
 
 %ignore rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool,
                                   const std::vector<rsz::MoveType>&,
                                   bool, bool, bool, bool, bool, bool, bool, bool);
-%ignore rsz::Resizer::repairSetup(const sta::Pin*);
 
-%ignore rsz::Resizer::bufferWireDelay;
 %ignore rsz::Resizer::computeNewDelaysSlews;
 %ignore rsz::Resizer::estimateSlewsAfterBufferRemoval;
 %ignore rsz::Resizer::estimateSlewsInTree;
 %ignore rsz::Resizer::annotateInputSlews;
-%ignore rsz::Resizer::resetInputSlews;
 %ignore rsz::Resizer::findDriverSlewForLoad;
-%ignore rsz::Resizer::getSlewRCFactor;
 
 %ignore rsz::Resizer::lib_data_;
 
 %ignore rsz::Resizer::removeBuffers;
+
+%apply float& OUTPUT { sta::Delay& delay, sta::Slew& slew };
 
 %include "rsz/Resizer.hh"
 
