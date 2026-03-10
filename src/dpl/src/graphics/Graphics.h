@@ -20,7 +20,6 @@ class Graphics : public gui::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp,
-           float min_displacement,
            const odb::dbInst* debug_instance,
            bool paint_pixels = true);
   ~Graphics() override = default;
