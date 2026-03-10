@@ -4342,8 +4342,13 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
-  Net* deleted_net = db_net_map_[db_net];
-  if (deleted_net != nullptr && deleted_net->isMergedNet()) {
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end() || it->second == nullptr) {
+    return;
+  }
+  Net* deleted_net = it->second;
+
+  if (deleted_net->isMergedNet()) {
     Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
     if (preserved_net->areSegmentsRestored()
         && deleted_net->areSegmentsRestored()) {

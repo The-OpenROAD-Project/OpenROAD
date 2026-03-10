@@ -91,14 +91,14 @@ void Opendp::setJumpMoves(const int jump_moves)
 
 void Opendp::setIterativePlacement(const bool iterative)
 {
-  iterative_placement_ = iterative;
+  iterative_debug_ = iterative;
 }
 
 void Opendp::setDeepIterativePlacement(const bool deep_iterative)
 {
-  deep_iterative_placement_ = deep_iterative;
+  deep_iterative_debug_ = deep_iterative;
   if (deep_iterative) {
-    iterative_placement_ = true;
+    iterative_debug_ = true;
   }
 }
 
@@ -140,6 +140,13 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
+
+  logger_->info(
+      DPL,
+      5,
+      "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
+      max_displacement_x_,
+      max_displacement_y_);
 
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
