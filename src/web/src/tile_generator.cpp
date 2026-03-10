@@ -397,7 +397,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::vector<odb::Rect>& highlight_rects,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
-    const std::map<uint32_t, Color>* module_colors)
+    const std::map<uint32_t, Color>* module_colors,
+    const std::set<uint32_t>* focus_net_ids)
 {
   static_assert(sizeof(Color) == 4);
   std::vector<unsigned char> image_buffer(
@@ -587,7 +588,12 @@ std::vector<unsigned char> TileGenerator::generateTile(
     if (!instances_only && tech_layer && vis.routing) {
       for (const auto& shape : search_->searchBoxShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        if (!vis.isNetVisible(std::get<2>(shape))) {
+        odb::dbNet* net = std::get<2>(shape);
+        if (!vis.isNetVisible(net)) {
+          continue;
+        }
+        if (focus_net_ids && !focus_net_ids->empty()
+            && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
           continue;
         }
         const odb::Rect& box = std::get<0>(shape);
@@ -610,7 +616,12 @@ std::vector<unsigned char> TileGenerator::generateTile(
     if (!instances_only && tech_layer && vis.special_nets) {
       for (const auto& shape : search_->searchSNetShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        if (!vis.isNetVisible(std::get<2>(shape))) {
+        odb::dbNet* snet = std::get<2>(shape);
+        if (!vis.isNetVisible(snet)) {
+          continue;
+        }
+        if (focus_net_ids && !focus_net_ids->empty()
+            && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
           continue;
         }
         const odb::Rect box = std::get<0>(shape)->getBox();
@@ -633,7 +644,12 @@ std::vector<unsigned char> TileGenerator::generateTile(
     if (!instances_only && tech_layer && vis.special_nets) {
       for (const auto& shape : search_->searchSNetViaShapes(
                block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        if (!vis.isNetVisible(std::get<1>(shape))) {
+        odb::dbNet* via_net = std::get<1>(shape);
+        if (!vis.isNetVisible(via_net)) {
+          continue;
+        }
+        if (focus_net_ids && !focus_net_ids->empty()
+            && focus_net_ids->find(via_net->getId()) == focus_net_ids->end()) {
           continue;
         }
         odb::dbSBox* sbox = std::get<0>(shape);

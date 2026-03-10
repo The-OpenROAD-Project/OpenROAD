@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -73,6 +74,7 @@ struct WebSocketRequest
     CHART_FILTERS,
     MODULE_HIERARCHY,
     SET_MODULE_COLORS,
+    SET_FOCUS_NETS,
     UNKNOWN
   };
 
@@ -113,6 +115,10 @@ struct WebSocketRequest
   std::string histogram_path_group;
   std::string histogram_clock;
 
+  // SET_FOCUS_NETS fields
+  std::string focus_action;   // "add", "remove", "clear"
+  std::string focus_net_name;
+
   // Visibility flags (default: all visible)
   TileVisibility vis;
 };
@@ -139,6 +145,9 @@ struct SessionState
 
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
+
+  std::mutex focus_nets_mutex;
+  std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
 };
 
 // Minimal JSON field extraction (no JSON library dependency).
@@ -158,7 +167,8 @@ WebSocketResponse dispatch_request(
     const std::vector<odb::Rect>& highlight_rects = {},
     const std::vector<ColoredRect>& colored_rects = {},
     const std::vector<FlightLine>& flight_lines = {},
-    const std::map<uint32_t, Color>* module_colors = nullptr);
+    const std::map<uint32_t, Color>* module_colors = nullptr,
+    const std::set<uint32_t>* focus_net_ids = nullptr);
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -172,6 +182,8 @@ class SelectHandler
                                   SessionState& state);
   WebSocketResponse handleHover(const WebSocketRequest& req,
                                 SessionState& state);
+  WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
+                                       SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

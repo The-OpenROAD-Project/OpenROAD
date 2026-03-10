@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -148,7 +149,8 @@ class TileGenerator
       const std::vector<odb::Rect>& highlight_rects = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
-      const std::map<uint32_t, Color>* module_colors = nullptr);
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::set<uint32_t>* focus_net_ids = nullptr);
 
  private:
   void setPixel(std::vector<unsigned char>& image,

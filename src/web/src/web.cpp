@@ -91,6 +91,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "set_module_colors") {
     req.type = WebSocketRequest::SET_MODULE_COLORS;
     req.vis.parseFromJson(msg);
+  } else if (type_str == "set_focus_nets") {
+    req.type = WebSocketRequest::SET_FOCUS_NETS;
+    req.focus_action = extract_string(msg, "action");
+    req.focus_net_name = extract_string(msg, "net_name");
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -392,6 +396,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->tile_handler_.handleSetModuleColors(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::SET_FOCUS_NETS:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleSetFocusNets(req, self->state_));
       });
       break;
     default:

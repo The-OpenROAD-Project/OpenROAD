@@ -78,6 +78,17 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "inspector_test",
+    entry_point = "js/test-inspector.js",
+    data = [
+        "//src/web:js_sources",
+        "js/setup-dom.js",
+        "//src/web:node_modules/jsdom",
+    ],
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],

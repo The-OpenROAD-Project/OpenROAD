@@ -300,5 +300,170 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
   EXPECT_TRUE(state_.timing_lines.empty());
 }
 
+//------------------------------------------------------------------------------
+// Focus nets tests
+//------------------------------------------------------------------------------
+
+TEST_F(SelectHandlerTest, FocusNetAddValid)
+{
+  // Create a net in the block
+  odb::dbNet::create(block_, "clk");
+
+  WebSocketRequest req;
+  req.id = 20;
+  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.focus_action = "add";
+  req.focus_net_name = "clk";
+
+  auto resp = handler_->handleSetFocusNets(req, state_);
+  EXPECT_EQ(resp.id, 20u);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\":1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\":1"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+  EXPECT_EQ(state_.focus_net_ids.size(), 1u);
+}
+
+TEST_F(SelectHandlerTest, FocusNetAddInvalidNetReturnsZeroCount)
+{
+  WebSocketRequest req;
+  req.id = 21;
+  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.focus_action = "add";
+  req.focus_net_name = "nonexistent_net";
+
+  auto resp = handler_->handleSetFocusNets(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"count\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+  EXPECT_TRUE(state_.focus_net_ids.empty());
+}
+
+TEST_F(SelectHandlerTest, FocusNetRemove)
+{
+  odb::dbNet* net = odb::dbNet::create(block_, "data");
+
+  // Add first
+  {
+    std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+    state_.focus_net_ids.insert(net->getId());
+  }
+
+  WebSocketRequest req;
+  req.id = 22;
+  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.focus_action = "remove";
+  req.focus_net_name = "data";
+
+  auto resp = handler_->handleSetFocusNets(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"count\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+  EXPECT_TRUE(state_.focus_net_ids.empty());
+}
+
+TEST_F(SelectHandlerTest, FocusNetClear)
+{
+  odb::dbNet* n1 = odb::dbNet::create(block_, "net1");
+  odb::dbNet* n2 = odb::dbNet::create(block_, "net2");
+
+  {
+    std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+    state_.focus_net_ids.insert(n1->getId());
+    state_.focus_net_ids.insert(n2->getId());
+  }
+
+  WebSocketRequest req;
+  req.id = 23;
+  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.focus_action = "clear";
+  req.focus_net_name = "";
+
+  auto resp = handler_->handleSetFocusNets(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"count\":0"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+  EXPECT_TRUE(state_.focus_net_ids.empty());
+}
+
+TEST_F(SelectHandlerTest, FocusNetAddMultiple)
+{
+  odb::dbNet::create(block_, "clk");
+  odb::dbNet::create(block_, "reset");
+
+  WebSocketRequest req1;
+  req1.id = 24;
+  req1.type = WebSocketRequest::SET_FOCUS_NETS;
+  req1.focus_action = "add";
+  req1.focus_net_name = "clk";
+  handler_->handleSetFocusNets(req1, state_);
+
+  WebSocketRequest req2;
+  req2.id = 25;
+  req2.type = WebSocketRequest::SET_FOCUS_NETS;
+  req2.focus_action = "add";
+  req2.focus_net_name = "reset";
+  auto resp = handler_->handleSetFocusNets(req2, state_);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"count\":2"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+  EXPECT_EQ(state_.focus_net_ids.size(), 2u);
+}
+
+TEST_F(SelectHandlerTest, FocusNetAddDuplicateNoop)
+{
+  odb::dbNet::create(block_, "clk");
+
+  WebSocketRequest req;
+  req.id = 26;
+  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.focus_action = "add";
+  req.focus_net_name = "clk";
+
+  handler_->handleSetFocusNets(req, state_);
+  auto resp = handler_->handleSetFocusNets(req, state_);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"count\":1"), std::string::npos);
+}
+
+TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
+{
+  // Verify that TileHandler passes focus net state through to tiles.
+  odb::dbNet* net = odb::dbNet::create(block_, "focused_net");
+  {
+    std::lock_guard<std::mutex> lock(state_.focus_nets_mutex);
+    state_.focus_net_ids.insert(net->getId());
+  }
+
+  auto tile_handler = std::make_unique<TileHandler>(gen_);
+  WebSocketRequest req;
+  req.id = 27;
+  req.type = WebSocketRequest::TILE;
+  req.layer = "metal1";
+  req.z = 0;
+  req.x = 0;
+  req.y = 0;
+
+  // Should not crash and should return valid PNG
+  auto resp = tile_handler->handleTile(req, state_);
+  EXPECT_EQ(resp.type, 1);  // PNG
+  EXPECT_FALSE(resp.payload.empty());
+}
+
 }  // namespace
 }  // namespace web

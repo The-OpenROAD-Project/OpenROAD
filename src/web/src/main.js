@@ -49,6 +49,7 @@ const app = {
     hoverRects: [],
     modulesLayer: null,
     hierarchyBrowser: null,
+    focusNets: new Set(),
 };
 
 const visibility = {

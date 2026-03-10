@@ -257,5 +257,76 @@ TEST_F(TileGeneratorTest, DebugDefaultOff)
   EXPECT_FALSE(vis.debug);
 }
 
+//------------------------------------------------------------------------------
+// Focus net filtering tests
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, FocusNetEmptySetSameAsNull)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // Empty focus_net_ids should behave the same as nullptr (all nets visible).
+  std::set<uint32_t> empty_set;
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
+                                     &empty_set);
+  ASSERT_FALSE(png.empty());
+
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 256u);
+  EXPECT_EQ(h, 256u);
+}
+
+TEST_F(TileGeneratorTest, FocusNetNonMatchingIdProducesValidTile)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // Focus on a net ID that doesn't correspond to any routing.
+  // Should produce a valid tile (instances still drawn, just net shapes
+  // filtered).
+  std::set<uint32_t> focus_ids{99999};
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
+                                     &focus_ids);
+  ASSERT_FALSE(png.empty());
+
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 256u);
+  EXPECT_EQ(h, 256u);
+}
+
+TEST_F(TileGeneratorTest, FocusNetWithRealNetId)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  odb::dbNet* net = odb::dbNet::create(block_, "focus_test_net");
+  makeTileGen();
+
+  // Focus on the created net's ID.  Even without routing shapes,
+  // the tile should be generated without errors.
+  std::set<uint32_t> focus_ids{net->getId()};
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
+                                     &focus_ids);
+  ASSERT_FALSE(png.empty());
+
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_EQ(w, 256u);
+  EXPECT_EQ(h, 256u);
+}
+
+TEST_F(TileGeneratorTest, FocusNetNullPtrAllowsAllNets)
+{
+  placeInst("BUF_X16", "buf1", 0, 0);
+  makeTileGen();
+
+  // nullptr means no focus filtering — should match default behavior.
+  auto png_default = tile_gen_->generateTile("metal1", 0, 0, 0);
+  auto png_null = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {},
+                                          nullptr, nullptr);
+  EXPECT_EQ(png_default, png_null);
+}
+
 }  // namespace
 }  // namespace web

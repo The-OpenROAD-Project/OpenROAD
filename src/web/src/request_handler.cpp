@@ -283,7 +283,8 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
                             const std::vector<odb::Rect>& highlight_rects,
                             const std::vector<ColoredRect>& colored_rects,
                             const std::vector<FlightLine>& flight_lines,
-                            const std::map<uint32_t, Color>* module_colors)
+                            const std::map<uint32_t, Color>* module_colors,
+                            const std::set<uint32_t>* focus_net_ids)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -339,7 +340,8 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
                                        highlight_rects,
                                        colored_rects,
                                        flight_lines,
-                                       module_colors);
+                                       module_colors,
+                                       focus_net_ids);
       break;
     }
     default: {
@@ -550,6 +552,40 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     }
     builder.endObject();
     const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
+                                                    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    if (req.focus_action == "clear") {
+      state.focus_net_ids.clear();
+    } else {
+      odb::dbBlock* block = gen_->getBlock();
+      odb::dbNet* net
+          = block ? block->findNet(req.focus_net_name.c_str()) : nullptr;
+      if (net) {
+        if (req.focus_action == "add") {
+          state.focus_net_ids.insert(net->getId());
+        } else if (req.focus_action == "remove") {
+          state.focus_net_ids.erase(net->getId());
+        }
+      }
+    }
+    const int count = static_cast<int>(state.focus_net_ids.size());
+    const std::string json
+        = R"({"ok":1,"count":)" + std::to_string(count) + "}";
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
@@ -918,7 +954,16 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::map<uint32_t, Color>* mod_ptr
       = mod_colors.empty() ? nullptr : &mod_colors;
 
-  return dispatch_request(req, gen_, rects, colored, lines, mod_ptr);
+  // Snapshot focus nets
+  std::set<uint32_t> focus_nets;
+  {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    focus_nets = state.focus_net_ids;
+  }
+  const std::set<uint32_t>* focus_ptr
+      = focus_nets.empty() ? nullptr : &focus_nets;
+
+  return dispatch_request(req, gen_, rects, colored, lines, mod_ptr, focus_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(
