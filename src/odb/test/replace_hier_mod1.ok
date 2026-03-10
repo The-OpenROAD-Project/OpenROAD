@@ -232,9 +232,6 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1008]     - For 80% usage of free space: 0.0014
 [INFO GPL-1009]     - For 50% usage of free space: 0.0023
 [INFO GPL-1014] Final placement area: 54.55 (+0.00%)
-[INFO GPL-0133] Unlocking all instances
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
-[INFO GPL-1014] Final placement area: 54.55 (+0.00%)
 [INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 Movements Summary
 ---------------------------------------
