@@ -141,8 +141,7 @@ void TimingWidget::setColumnDisplayMenu()
 
     // Uncheck boxes and hide columns based on settings.
     if (!initial_columns_visibility_.isEmpty()) {
-      if (column_index < initial_columns_visibility_.size()
-          && !initial_columns_visibility_[column_index]) {
+      if (!initial_columns_visibility_[column_index]) {
         action->trigger();
       }
     }

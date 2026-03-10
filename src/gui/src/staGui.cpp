@@ -9,6 +9,7 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
+#include <QBrush>
 #include <QComboBox>
 #include <QDialog>
 #include <QKeyEvent>
@@ -368,6 +369,23 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         return Qt::AlignRight;
       case kRiseFall:
         return Qt::AlignCenter;
+    }
+  } else if (role == Qt::ForegroundRole) {
+    if (col_index == kPin && index.row() != kClockSummaryRow) {
+      const auto* node = getNodeAt(index);
+      const sta::Pin* sta_pin = node->getPinAsSTA();
+      if (sta_pin != nullptr) {
+        sta::LibertyPort* lib_port = sta_->getDbNetwork()->libertyPort(sta_pin);
+        if (lib_port != nullptr) {
+          const sta::MinMax* min_max
+              = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
+          float clk_tree_delay
+              = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
+          if (clk_tree_delay != 0.0f) {
+            return QBrush(Qt::blue);
+          }
+        }
+      }
     }
   } else if (role == Qt::DisplayRole) {
     const auto time_units = sta_->units()->timeUnit();
