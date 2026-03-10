@@ -40,6 +40,36 @@ The install process will install the binary "openroad" and the runfile directory
 
 See [Bazel](Bazel.md) for more details on testing, profiling and build configurations.
 
+### Setup ORFS flow dependencies
+
+When using Bazel to build OpenROAD, the remaining ORFS flow dependencies
+(Yosys, eqy, sby, KLayout, etc.) can be installed with a single command:
+
+    bazelisk run //:setup-orfs
+
+If system packages are missing (compilers, dev libraries), the command
+prints the exact `sudo` command to run and exits. This design is
+intentional:
+
+- The user sees exactly what will be installed with root privileges
+  before it happens — no silent modifications to `/usr/local` or system
+  directories.
+- In educational and corporate environments, `sudo` is often controlled
+  by IT policy. Printing the command lets the user hand it off to an
+  administrator or request approval.
+- Running `sudo` separately benefits from the system's apt cache,
+  so repeated runs are fast.
+- User-level tools (Yosys, eqy, sby) are built and installed into the
+  project's `dependencies/` directory with user permissions only.
+
+After installing system packages, re-run `bazelisk run //:setup-orfs` to
+complete the user-level setup.
+
+This sets up the minimum tooling that Bazel does not yet provide. Over
+time, more of these tools may be built and managed by Bazel directly,
+but that is an implementation detail — `bazelisk run //:setup-orfs` will
+remain the single entry point for developers.
+
 ## Build with Prebuilt Binaries
 
 Courtesy of [Precision Innovations](https://precisioninno.com/), there are prebuilt binaries

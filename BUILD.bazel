@@ -423,3 +423,8 @@ pkg_tar(
     include_runfiles = True,
     package_file_name = "openroad.tar",
 )
+
+alias(
+    name = "setup-orfs",
+    actual = "//etc:setup-orfs",
+)
