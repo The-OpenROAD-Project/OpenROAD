@@ -1245,14 +1245,17 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // The next two steps invalidates any dbSet<dbITerm> iterators.
 
-  // 1) update the iterm-mterm-idx
+  // 1) update the iterm-mterm-idx and cached mterm pointer
+  _dbMaster* new_master = (_dbMaster*) new_master_;
   uint32_t cnt = inst->iterms_.size();
 
   uint32_t i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->iterm_tbl_->getPtr(inst->iterms_[i]);
     uint32_t old_idx = it->flags_.mterm_idx;
-    it->flags_.mterm_idx = idx_map[old_idx];
+    uint32_t new_idx = idx_map[old_idx];
+    it->flags_.mterm_idx = new_idx;
+    it->mterm_ = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
   }
 
   // 2) reorder the iterms vector
@@ -1345,6 +1348,7 @@ dbInst* dbInst::create(dbBlock* block_,
     inst_impl->iterms_[i] = iterm->getOID();
     iterm->flags_.mterm_idx = i;
     iterm->inst_ = inst_impl->getOID();
+    iterm->mterm_ = master->mterm_tbl_->getPtr(inst_hdr->mterms_[i]);
   }
 
   _dbBox* box = block->box_tbl_->create();
