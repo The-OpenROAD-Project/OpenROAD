@@ -667,7 +667,7 @@ resizer = design.getResizer()
 Here are some common operations on the `Resizer` object:
 
 ```python
-resizer.setMaxUtilization(0.8)        
+resizer.setMaxUtilization(0.8)
 resizer.bufferInputs(buffer_cell, False)
 resizer.bufferOutputs(buffer_cell, False)
 resizer.repairDesign(0.0, 0.0, 0.0, 0.0, False, False)
