@@ -267,7 +267,6 @@ proc repair_antennas { args } {
 
   if { [grt::have_routes] || [grt::have_detailed_routes] } {
     if { [llength $args] == 0 } {
-      # repairAntennas locates diode
       set diode_mterm "NULL"
     } elseif { [llength $args] == 1 } {
       set db [ord::get_db]
@@ -648,4 +647,32 @@ proc have_detailed_route { block } {
 }
 
 # grt namespace end
+}
+
+sta::define_cmd_args "report_net_global_routing_detour" { [-nets net_list] }
+
+proc report_net_global_routing_detour { args } {
+  sta::parse_key_args "report_net_global_routing_detour" args \
+    keys {-nets} \
+    flags {}
+
+  set block [ord::get_db_block]
+  if { $block == "NULL" } {
+    utl::error GRT 242 "Missing dbBlock."
+  }
+
+  if { [info exists keys(-nets)] } {
+    foreach net [get_nets $keys(-nets)] {
+      set db_net [sta::sta_to_db_net $net]
+      if {
+        [$db_net getSigType] != "POWER" &&
+        [$db_net getSigType] != "GROUND" &&
+        ![$db_net isSpecial]
+      } {
+        grt::report_net_global_routing_detour $db_net
+      }
+    }
+  } else {
+    utl::error GRT 243 "-nets is required."
+  }
 }

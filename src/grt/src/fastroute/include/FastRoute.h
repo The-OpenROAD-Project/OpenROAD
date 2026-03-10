@@ -290,10 +290,16 @@ class FastRouteCore
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
   void setIncrementalGrt(bool is_incremental);
+  int computeNetSttWirelength(int netID);
+  int computeNetFinalWirelength(int netID);
+  const std::unordered_map<int, int>& getSttWirelengths() { return stt_wirelengths_; }
+  int computeTotalWirelength();
 
   void writeCongestionMap(const std::string& filename);
 
  private:
+  std::vector<int> stt_wirelengths_;
+  int computeNetSttWirelength(int netID);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);
@@ -736,6 +742,7 @@ class FastRouteCore
       horizontal_blocked_intervals_;
 
   std::vector<int> net_ids_;
+  std::unordered_map<int, int> stt_wirelengths_;  // netID -> STT wirelength
 
   // Maze 3D variables
   multi_array<Direction, 3> directions_3D_;
@@ -753,3 +760,6 @@ class FastRouteCore
 extern const char* getNetName(odb::dbNet* db_net);
 
 }  // namespace grt
+
+
+
