@@ -50,10 +50,6 @@ class TritonRoute;
 
 namespace ram {
 
-class Cell;
-class Layout;
-class Grid;
-
 class RamGen
 {
  public:
@@ -61,10 +57,10 @@ class RamGen
          odb::dbDatabase* db,
          utl::Logger* logger,
          pdn::PdnGen* pdngen,
-         ppl::IOPlacer* ioPlacer,
-         dpl::Opendp* opendp_,
-         grt::GlobalRouter* global_router_,
-         drt::TritonRoute* detailed_router_);
+         ppl::IOPlacer* io_placer,
+         dpl::Opendp* opendp,
+         grt::GlobalRouter* global_router,
+         drt::TritonRoute* detailed_router);
   ~RamGen() = default;
 
   void generate(int bytes_per_word,
@@ -107,36 +103,35 @@ class RamGen
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
-  odb::dbInst* makeCellInst(
+  odb::dbInst* makeInst(
       Cell* cell,
       const std::string& prefix,
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
-  std::unique_ptr<Cell> makeCellBit(const std::string& prefix,
-                                    int read_ports,
-                                    odb::dbNet* clock,
-                                    std::vector<odb::dbNet*>& select,
-                                    odb::dbNet* data_input,
-                                    std::vector<odb::dbNet*>& data_output);
-  void makeCellByte(int byte_idx,
-                    int row_idx,
-                    int read_ports,
-                    odb::dbNet* clock,
-                    odb::dbNet* write_enable,
-                    const std::vector<odb::dbNet*>& selects,
-                    const std::vector<odb::dbNet*>& data_input,
-                    const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+  std::unique_ptr<Cell> makeBit(const std::string& prefix,
+                                int read_ports,
+                                odb::dbNet* clock,
+                                std::vector<odb::dbNet*>& select,
+                                odb::dbNet* data_input,
+                                std::vector<odb::dbNet*>& data_output);
+  void makeSlice(int slice_idx,
+                 int row_idx,
+                 int read_ports,
+                 odb::dbNet* clock,
+                 odb::dbNet* write_enable,
+                 const std::vector<odb::dbNet*>& selects,
+                 const std::vector<odb::dbNet*>& data_input,
+                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
-  void makeWordSlice(
-      int bytes_per_word,
-      int row_idx,
-      int read_ports,
-      odb::dbNet* clock,
-      std::vector<odb::dbBTerm*>& write_enable,
-      const std::vector<odb::dbNet*>& selects,
-      const std::vector<odb::dbNet*>& data_input,
-      const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+  void makeWord(int slices_per_word,
+                int row_idx,
+                int read_ports,
+                odb::dbNet* clock,
+                std::vector<odb::dbBTerm*>& write_enable,
+                const std::vector<odb::dbNet*>& selects,
+                const std::vector<odb::dbNet*>& data_input,
+                const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
@@ -156,7 +151,7 @@ class RamGen
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_;
   pdn::PdnGen* pdngen_{nullptr};
-  ppl::IOPlacer* ioPlacer_{nullptr};
+  ppl::IOPlacer* io_placer_{nullptr};
   dpl::Opendp* opendp_{nullptr};
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
