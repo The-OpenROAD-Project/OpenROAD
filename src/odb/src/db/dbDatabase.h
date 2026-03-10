@@ -50,7 +50,13 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 126;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 128;  // Current revision number
+
+// Revision where the ignore_usage_ flag was removed from dbGuide
+inline constexpr uint32_t kSchemaIgnoreUsageRemoved = 128;
+
+// Revision where the ignore_usage_ flag was added to dbGuide
+inline constexpr uint32_t kSchemaIgnoreUsage = 127;
 
 // Revision where dbTechLayer::wrong_way_min_width_ was added
 inline constexpr uint32_t kSchemaTechLayerMinWidthWrongway = 126;
