@@ -999,8 +999,7 @@ int FlexTAWorker::assignIroute_clampStartTrackIdx(frLayerNum layer_num,
 {
   const auto& track_locs = getTrackLocs(layer_num);
   int start_track_idx = static_cast<int>(
-      std::lower_bound(track_locs.begin(), track_locs.end(), pin_coord)
-      - track_locs.begin());
+      std::ranges::lower_bound(track_locs, pin_coord) - track_locs.begin());
   start_track_idx = std::min(start_track_idx, idx_2);
   start_track_idx = std::max(start_track_idx, idx_1);
   return start_track_idx;

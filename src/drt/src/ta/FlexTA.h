@@ -399,12 +399,12 @@ class FlexTAWorker
   void assignIroute_init(taPin* iroute, frOrderedIdSet<taPin*>* pinS);
   void assignIroute_availTracks(taPin* iroute,
                                 frLayerNum& layer_num,
-                                int& idx1,
-                                int& idx2);
+                                int& idx_1,
+                                int& idx_2);
   int assignIroute_bestTrack(taPin* iroute,
                              frLayerNum layer_num,
-                             int idx1,
-                             int idx2);
+                             int idx_1,
+                             int idx_2);
   int assignIroute_clampStartTrackIdx(frLayerNum layer_num,
                                       frCoord pin_coord,
                                       int idx_1,
