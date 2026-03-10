@@ -1070,7 +1070,7 @@ PlacerBase::PlacerBase() = default;
 PlacerBase::PlacerBase(odb::dbDatabase* db,
                        std::shared_ptr<PlacerBaseCommon> pbCommon,
                        utl::Logger* log,
-                       bool check,
+                       bool check_density,
                        odb::dbGroup* group)
     : PlacerBase()
 {
@@ -1082,7 +1082,7 @@ PlacerBase::PlacerBase(odb::dbDatabase* db,
              32,
              "---- Initialize Region: {}",
              (group_ == nullptr) ? "Top-level" : group_->getName());
-  init(check);
+  init(check_density);
 }
 
 PlacerBase::~PlacerBase()
@@ -1090,7 +1090,7 @@ PlacerBase::~PlacerBase()
   reset();
 }
 
-void PlacerBase::init(bool check)
+void PlacerBase::init(bool check_density)
 {
   die_ = pbCommon_->getDie();
   if (group_ != nullptr) {
@@ -1182,7 +1182,7 @@ void PlacerBase::init(bool check)
     pb_insts_.push_back(&inst);
   }
 
-  printInfo(check);
+  printInfo(check_density);
 }
 
 // Use dummy instance to fill unusable sites.  Sites are unusable
@@ -1376,7 +1376,7 @@ void PlacerBase::reset()
   nonPlaceInsts_.clear();
 }
 
-void PlacerBase::printInfo(bool check) const
+void PlacerBase::printInfo(bool check_density) const
 {
   dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
@@ -1458,7 +1458,7 @@ void PlacerBase::printInfo(bool check) const
              "Large instances area:",
              block->dbuAreaToMicrons(macroInstsArea_));
 
-  if (check && util >= 100.1) {
+  if (check_density && util >= 100.1) {
     log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
   }
 }

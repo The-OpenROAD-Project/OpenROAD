@@ -211,17 +211,18 @@ void Replace::runMBFF(const int max_sz,
 
 bool Replace::initNesterovPlace(const PlaceOptions& options,
                                 const int threads,
-                                bool check)
+                                bool check_density)
 {
   if (!pbc_) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
-    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, check));
+    pbVec_.push_back(
+        std::make_shared<PlacerBase>(db_, pbc_, log_, check_density));
 
     for (auto pd : db_->getChip()->getBlock()->getRegions()) {
       for (auto group : pd->getGroups()) {
-        pbVec_.push_back(
-            std::make_shared<PlacerBase>(db_, pbc_, log_, check, group));
+        pbVec_.push_back(std::make_shared<PlacerBase>(
+            db_, pbc_, log_, check_density, group));
       }
     }
 
