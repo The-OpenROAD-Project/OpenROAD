@@ -124,32 +124,52 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->opcodes_.push_back(op);
 }
 
-uint32_t dbWire::getTermJid(const int termid) const
+uint32_t dbWire::getTermShapeJunctionId(const int term_id) const
 {
   _dbWire* wire = (_dbWire*) this;
-  int topcd = kIterm;
-  int ttid = termid;
-  if (termid < 0) {
-    topcd = kBterm;
-    ttid = -termid;
+  int target_op_code = kIterm;
+  int target_term_id = term_id;
+
+  if (term_id < 0) {
+    target_op_code = kBterm;
+    target_term_id = -term_id;
   }
-  const uint32_t wlen = wire->length();
-  uint32_t jj;
-  for (jj = 0; jj < wlen; jj++) {
-    if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == topcd) {
-      if (wire->data_[jj] == ttid) {
+
+  const uint32_t number_of_junctions = wire->length();
+
+  uint32_t junction_id;
+  for (junction_id = 0; junction_id < number_of_junctions; junction_id++) {
+    const WireOp junction_op_code
+        = static_cast<WireOp>(wire->opcodes_[junction_id] & WOP_OPCODE_MASK);
+
+    if (junction_op_code == target_op_code) {
+      if (wire->data_[junction_id] == target_term_id) {
         break;
       }
     }
   }
-  if (jj == wlen) {
+
+  if (junction_id == number_of_junctions) {
     return 0;
   }
-  jj--;
-  if ((wire->opcodes_[jj] & WOP_OPCODE_MASK) == kProperty) {
-    jj--;
+
+  // It may exist junctions for annotations after the junction of the
+  // wire shape connected to the terminal, so we need to walk backwards
+  // and look for it.
+  while (junction_id > 0) {
+    const WireOp junction_op_code
+        = static_cast<WireOp>(wire->opcodes_[junction_id] & WOP_OPCODE_MASK);
+
+    if (junction_op_code == kX || junction_op_code == kY
+        || junction_op_code == kColinear || junction_op_code == kVia
+        || junction_op_code == kTechVia || junction_op_code == kRect) {
+      break;
+    }
+
+    --junction_id;
   }
-  return jj;
+
+  return junction_id;
 }
 
 std::optional<Rect> dbWire::getBBox()
@@ -516,12 +536,8 @@ decode_loop: {
     case kRect:
     case kNop:
     case kColor:
-    case kViaColor: {
-      utl::Logger* logger = getImpl()->getLogger();
-      logger->error(
-          utl::ODB, 1115, "Unexpected {} in dbWire::getSegment", wire_op);
+    case kViaColor:
       break;
-    }
   }
 
   --idx;

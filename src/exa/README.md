@@ -17,4 +17,4 @@ example_instance
 
 | Switch Name | Description |
 | ----- | ----- |
-| `[-name]` | The name of the instance to create`. Defauts to example. |
+| `[-name]` | The name of the instance to create. Defaults to example. |

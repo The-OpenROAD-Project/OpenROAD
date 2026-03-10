@@ -3663,9 +3663,9 @@ class dbWire : public dbObject
   void append(dbWire* wire, bool singleSegmentWire = false);
 
   ///
-  /// Get junction id associated with the term
+  /// Get junction id of the wire shape connected to the terminal.
   ///
-  uint32_t getTermJid(int termid) const;
+  uint32_t getTermShapeJunctionId(int term_id) const;
 
   ///
   /// Get the shape of this shape-id.

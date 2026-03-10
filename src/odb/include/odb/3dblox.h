@@ -32,6 +32,7 @@ struct ChipletInst;
 struct Connection;
 struct DesignDef;
 struct BumpMapEntry;
+struct DbxData;
 
 class ThreeDBlox
 {
@@ -59,6 +60,7 @@ class ThreeDBlox
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
   void calculateSize(dbChip* chip);
+  void buildChipNetsFromVerilog(dbChip* chip, const DbxData& data);
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
