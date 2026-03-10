@@ -359,6 +359,56 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
     }
   }
 
+  int cluster_count = 0;
+  // Test to delete one sink on cluster
+  for (unsigned j = 1; j < groupSize; ++j) {
+    unsigned cluster_num = solutions[j].size();
+    for (unsigned c = 0; c < cluster_num; ++c) {
+      if (solutionPoints[j][c].size() == 1) {
+        cluster_count++;
+        const unsigned idx = solutionPointsIdx[j][c][0];
+        const Point<double>& p = points_[idx];
+	// Find cluster to add one sink
+	for (unsigned k = 0; k < cluster_num; ++k) {
+	  if (k == c) continue;
+          unsigned pointIdx = 0;
+          double distanceCost = 0;
+          double capCost = pointsCap_[idx];
+          for (Point<double> comparisonPoint : solutionPoints[j][k]) {
+            const double cost = HTree_->computeDist(p, comparisonPoint);
+            if (useMaxCapLimit_) {
+              capCost += cost * capPerUnit_
+                        + pointsCap_[solutionPointsIdx[j][k][pointIdx]];
+            }
+            pointIdx++;
+            distanceCost = std::max(cost, distanceCost);
+          }
+
+          if (!isLimitExceeded(solutionPoints[j][k].size(),
+                        distanceCost,
+                        capCost,
+                        groupSize)) {
+            //logger_->report("For solution {} cluster {} has one sink, cluster {} could adopt it, size {} dia {:.3}", j, c, k, solutionPoints[j][k].size(), distanceCost);
+	    //Add sink to found cluster
+	    solutionPoints[j][k].push_back(p);
+	    solutionPointsIdx[j][k].push_back(idx);
+            solutions[j][k].push_back(idx);
+	    costs[j] -= maxInternalDiameter_;
+            // delete cluster
+	    swap(solutionPoints[j][c], solutionPoints[j][cluster_num - 1]);
+	    solutionPoints[j].pop_back();
+	    swap(solutionPointsIdx[j][c], solutionPointsIdx[j][cluster_num - 1]);
+	    solutionPointsIdx[j].pop_back();
+	    swap(solutions[j][c], solutions[j][cluster_num - 1]);
+	    solutions[j].pop_back();
+	    cluster_num--;
+	    break;
+	  }
+	}
+      }
+    }
+  }
+  printf("Number of cluster with single sink %d\n", cluster_count);
   unsigned bestSolution = 0;
   bool bestSolutionFound = false;
 
