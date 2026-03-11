@@ -57,13 +57,13 @@ CAT3_PAGES = $(patsubst $(SRC3_DIR)/%.md,$(CAT3_DIR)/%.3,$(MAN3_FILES))
 # Default target
 all: doc web cat
 
-# Target to do symlinks and pandoc-compatible conversion
-preprocess:
-	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
-
 # Run unit tests with coverage (requires pytest and pytest-cov)
 test:
 	python3 -m pytest
+
+# Target to do symlinks and pandoc-compatible conversion
+preprocess: test
+	./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 
 # Target to generate all man pages
 doc: $(MAN1_PAGES) $(MAN2_PAGES) $(MAN3_PAGES)
