@@ -200,6 +200,61 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
 }
 
+static std::vector<std::string> splitPath(const std::string& path)
+{
+  std::vector<std::string> parts;
+  std::istringstream stream(path);
+  std::string part;
+
+  while (std::getline(stream, part, '/')) {
+    if (!part.empty()) {
+      parts.push_back(part);
+    }
+  }
+
+  return parts;
+}
+
+// Resolves a path string of the form "inst1/inst2.regions.regionName" into a
+// dbChipRegionInst* by walking the chip hierarchy starting from root_chip.
+// If path_insts is non-null, each visited dbChipInst* is appended to it.
+// Returns nullptr if any component of the path is not found; does not log.
+static dbChipRegionInst* walkRegionPath(const std::string& path,
+                                        dbChip* root_chip,
+                                        std::vector<dbChipInst*>* path_insts)
+{
+  auto path_parts = splitPath(path);
+  if (path_parts.empty()) {
+    return nullptr;
+  }
+  const size_t regions_pos = path_parts.back().find(".regions.");
+  if (regions_pos == std::string::npos) {
+    return nullptr;
+  }
+  const std::string region_name = path_parts.back().substr(regions_pos + 9);
+  path_parts.back() = path_parts.back().substr(0, regions_pos);
+
+  if (path_insts) {
+    path_insts->reserve(path_parts.size());
+  }
+  dbChip* curr_chip = root_chip;
+  dbChipInst* curr_inst = nullptr;
+  for (const auto& inst_name : path_parts) {
+    curr_inst = curr_chip->findChipInst(inst_name);
+    if (!curr_inst) {
+      return nullptr;
+    }
+    if (path_insts) {
+      path_insts->push_back(curr_inst);
+    }
+    curr_chip = curr_inst->getMasterChip();
+  }
+  if (!curr_inst) {
+    return nullptr;
+  }
+  return curr_inst->findChipRegionInst(region_name);
+}
+
 void ThreeDBlox::check()
 {
   Checker checker(logger_, db_);
@@ -503,6 +558,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   if (chip->getChipType() != dbChip::ChipType::HIER
       && chip->getBlock() == nullptr) {
     // blackbox stage, create block
+    chip->setBlackbox(true);
     auto block = odb::dbBlock::create(chip, chiplet.name.c_str());
     const int x_min = chip->getScribeLineWest() + chip->getSealRingWest();
     const int y_min = chip->getScribeLineSouth() + chip->getSealRingSouth();
@@ -698,67 +754,41 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
       static_cast<int>(std::round(chip_inst.z * dbu_per_micron)),
   });
 }
-static std::vector<std::string> splitPath(const std::string& path)
-{
-  std::vector<std::string> parts;
-  std::istringstream stream(path);
-  std::string part;
-
-  while (std::getline(stream, part, '/')) {
-    if (!part.empty()) {
-      parts.push_back(part);
-    }
-  }
-
-  return parts;
-}
-
 dbChipRegionInst* ThreeDBlox::resolvePath(const std::string& path,
                                           std::vector<dbChipInst*>& path_insts)
 {
-  if (path == "~") {
+  if (path == "~" || path == "null") {
     return nullptr;
   }
-  // Split the path by '/'
-  std::vector<std::string> path_parts = splitPath(path);
-
-  if (path_parts.empty()) {
-    logger_->error(utl::ODB, 524, "3DBX Parser Error: Invalid path {}", path);
-  }
-
-  // The last part should contain ".regions.regionName"
-  std::string last_part = path_parts.back();
-  size_t regions_pos = last_part.find(".regions.");
-  if (regions_pos == std::string::npos) {
-    return nullptr;  // Invalid format
-  }
-
-  // Extract chip instance name and region name from last part
-  std::string last_chip_inst = last_part.substr(0, regions_pos);
-  std::string region_name = last_part.substr(regions_pos + 9);
-
-  // Replace the last part with just the chip instance name
-  path_parts.back() = last_chip_inst;
-
-  // Traverse hierarchy and find region
-  path_insts.reserve(path_parts.size());
-  dbChip* curr_chip = db_->getChip();
-  dbChipInst* curr_chip_inst = nullptr;
-
-  for (const auto& inst_name : path_parts) {
-    curr_chip_inst = curr_chip->findChipInst(inst_name);
-    if (curr_chip_inst == nullptr) {
-      logger_->error(utl::ODB,
-                     522,
-                     "3DBX Parser Error: Chip instance {} not found in path {}",
-                     inst_name,
-                     path);
+  auto* region = walkRegionPath(path, db_->getChip(), &path_insts);
+  if (!region) {
+    // Determine which component failed for a specific error message.
+    // Re-walk without collecting path_insts to find the failing step.
+    auto path_parts = splitPath(path);
+    if (path_parts.empty()) {
+      logger_->error(utl::ODB, 524, "3DBX Parser Error: Invalid path {}", path);
     }
-    path_insts.push_back(curr_chip_inst);
-    curr_chip = curr_chip_inst->getMasterChip();
-  }
-  auto region = curr_chip_inst->findChipRegionInst(region_name);
-  if (region == nullptr) {
+    // Check if the path has ".regions." at all
+    const std::string& last = path_parts.back();
+    size_t rpos = last.find(".regions.");
+    if (rpos == std::string::npos) {
+      return nullptr;  // Invalid format
+    }
+    std::string region_name = last.substr(rpos + 9);
+    path_parts.back() = last.substr(0, rpos);
+
+    dbChip* curr_chip = db_->getChip();
+    for (const auto& inst_name : path_parts) {
+      if (!curr_chip->findChipInst(inst_name)) {
+        logger_->error(
+            utl::ODB,
+            522,
+            "3DBX Parser Error: Chip instance {} not found in path {}",
+            inst_name,
+            path);
+      }
+      curr_chip = curr_chip->findChipInst(inst_name)->getMasterChip();
+    }
     logger_->error(utl::ODB,
                    523,
                    "3DBX Parser Error: Chip region {} not found in path {}",

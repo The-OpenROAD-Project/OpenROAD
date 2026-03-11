@@ -10,7 +10,6 @@
 #include "dbHashTable.h"
 #include "odb/dbId.h"
 // User Code Begin Includes
-#include <iostream>
 #include <set>
 
 #include "dbChipRegionInstItr.h"
@@ -58,6 +57,9 @@ inline constexpr uint32_t kSchemaLef58AntennaGatePlusDiff = 129;
 
 // Revision where dbChipPath was added to dbChip
 inline constexpr uint32_t kSchemaChipPath = 128;
+
+// Revision where dbChip::blackbox_ was added
+inline constexpr uint32_t kSchemaChipBlackbox = 129;
 
 // Revision where chip_bump_ back-reference was added to dbBTerm
 inline constexpr uint32_t kSchemaBtermChipBump = 127;

@@ -14,6 +14,7 @@ add_library(3dblox
   dbxWriter.cpp
   verilogWriter.cpp
   3dblox.cpp
+  routingGraph.cpp
   checker.cpp
 )
 
