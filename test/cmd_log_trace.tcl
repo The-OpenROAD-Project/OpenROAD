@@ -46,20 +46,22 @@ close $fp
 
 # Look for traced commands emitted by Main.cc callback:
 #   cmd: <command>
-set expected_cmds {
-  {cmd: source {helpers.tcl}}
-  {cmd: puts {TEST: Verifying command tracing in log}}
+# Match with regex to avoid Tcl-version-specific formatting differences
+# in command rendering (quotes vs braces, spacing, etc.).
+set expected_patterns {
+  {cmd:[[:space:]]+source.*helpers\.tcl}
+  {cmd:[[:space:]]+puts[[:space:]].*TEST: Verifying command tracing in log}
 }
 
 set missing {}
-foreach pat $expected_cmds {
-  if {[string first $pat $log_text] == -1} {
+foreach pat $expected_patterns {
+  if {![regexp -nocase -- $pat $log_text]} {
     lappend missing $pat
   }
 }
 
 if {[llength $missing] > 0} {
-  puts "FAIL: Missing traced command lines:"
+  puts "FAIL: Missing traced command lines (regex):"
   foreach m $missing {
     puts "  $m"
   }
@@ -67,7 +69,7 @@ if {[llength $missing] > 0} {
 }
 
 # Ensure command tracing does not include commands executed inside sourced files.
-if {[string first {cmd: set ::nested_trace_marker 1} $log_text] != -1} {
+if {[regexp -nocase -- {cmd:[[:space:]]+set[[:space:]]+::nested_trace_marker[[:space:]]+1} $log_text]} {
   puts "FAIL: Nested sourced command should not be traced"
   exit 1
 }
