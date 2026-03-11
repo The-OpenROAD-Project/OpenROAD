@@ -16,25 +16,23 @@ namespace drt {
 void FlexTAWorker::saveToGuides()
 {
   for (auto& iroute : iroutes_) {
-    for (auto& uPinFig : iroute->getFigs()) {
-      if (uPinFig->typeId() == tacPathSeg) {
-        std::unique_ptr<frPathSeg> pathSeg = std::make_unique<frPathSeg>(
-            *static_cast<taPathSeg*>(uPinFig.get()));
+    auto* guide = iroute->getGuide();
+    for (auto& pin_fig : iroute->getFigs()) {
+      if (pin_fig->typeId() == tacPathSeg) {
+        auto path_seg = std::make_unique<frPathSeg>(
+            *static_cast<taPathSeg*>(pin_fig.get()));
         if (save_updates_) {
           drUpdate update(drUpdate::ADD_GUIDE);
-          update.setPathSeg(*pathSeg);
-          update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
-          update.setNet(iroute->getGuide()->getNet());
+          update.setPathSeg(*path_seg);
+          update.setIndexInOwner(guide->getIndexInOwner());
+          update.setNet(guide->getNet());
           design_->addUpdate(update);
         }
-        pathSeg->addToNet(iroute->getGuide()->getNet());
-        auto guide = iroute->getGuide();
-        std::vector<std::unique_ptr<frConnFig>> tmp;
-        tmp.push_back(std::move(pathSeg));
-        guide->setRoutes(tmp);
+        path_seg->addToNet(guide->getNet());
+        std::vector<std::unique_ptr<frConnFig>> routes;
+        routes.push_back(std::move(path_seg));
+        guide->setRoutes(routes);
       }
-      // modify upper/lower segs
-      // upper/lower seg will have longest wirelength
     }
   }
 }
