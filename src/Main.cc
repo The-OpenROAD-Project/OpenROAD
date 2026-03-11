@@ -468,6 +468,7 @@ static int tclAppInit(int& argc,
     ord::initOpenRoad(
         interp, log_filename, metrics_filename, exit_after_cmd_file);
 
+    // NOLINTNEXTLINE(misc-include-cleaner): Tcl_CreateObjTrace is provided by tcl.h
     Tcl_CreateObjTrace(interp,
                        0,
                        1,
