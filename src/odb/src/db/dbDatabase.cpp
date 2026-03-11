@@ -694,9 +694,7 @@ dbChip* dbDatabase::getChip()
 void dbDatabase::constructUnfoldedModel()
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  if (db->unfolded_model_) {
-    delete db->unfolded_model_;
-  }
+  delete db->unfolded_model_;
   db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
 }
 
