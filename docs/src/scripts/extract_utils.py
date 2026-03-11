@@ -46,6 +46,9 @@ def extract_arguments(text):
     level2 = extract_headers(text, 2)
     level3 = extract_headers(text, 3)
 
+    if not level3:
+        return [], []
+
     # form these 2 regex styles.
     # ### Header 1 {text} ### Header2; ### Header n-2 {text} ### Header n-1
     # ### Header n {text} ## closest_level2_header

@@ -222,6 +222,12 @@ class TestExtractArguments:
         assert options[0] == []
         assert args[0] == []
 
+    def test_no_level3_returns_empty(self):
+        md = "## Commands\n\nNo sections.\n\n## License\n"
+        options, args = extract_arguments(md)
+        assert options == []
+        assert args == []
+
     def test_no_level2_after_last_level3_raises(self):
         md = "## Commands\n\n### Only Section\n\nDesc.\n\n```tcl\ncmd\n```\n"
         with pytest.raises(ValueError, match="No level-2 header found"):
