@@ -76,6 +76,7 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
+bazel_dep(name = "readline", version = "8.2.bcr.3")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
@@ -184,14 +185,15 @@ use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# System tclreadline library (detected at build time on Linux).
-# On Ubuntu/Debian: sudo apt install tcl-tclreadline
-# On RHEL/CentOS:   sudo yum install tcl-tclreadline-devel
-# Enables the `openroad>` interactive prompt (ENABLE_READLINE) instead of `%`.
-# See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
-tclreadline_system_repo = use_repo_rule("//bazel:tclreadline.bzl", "tclreadline_system_repo")
-
-tclreadline_system_repo(name = "tclreadline")
+http_archive(
+    name = "tclreadline",
+    build_file = "//bazel:tclreadline.BUILD",
+    sha256 = "a64e0faed5957b8e1ac16f179948e21cdd6d3b8313590b7ab049a3192ab864fb",
+    strip_prefix = "tclreadline-2.3.8",
+    urls = [
+        "https://github.com/flightaware/tclreadline/archive/refs/tags/v2.3.8.tar.gz",
+    ],
+)
 
 http_archive(
     name = "circt",
