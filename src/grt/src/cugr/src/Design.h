@@ -92,7 +92,7 @@ class Design
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
   std::vector<CUGRNet> nets_;
-  std::unordered_map<odb::dbNet*, int> db_net_to_design_idx_;
+  std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;
 
   odb::dbBlock* block_;

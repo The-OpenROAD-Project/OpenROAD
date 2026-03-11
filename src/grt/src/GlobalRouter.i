@@ -16,16 +16,19 @@
   using sta::LibertyPort;
 %}
 
-% include "../../Exception.i"
+%include "../../Exception.i"
 
-    % ignore grt::GlobalRouter::init;
-% ignore grt::GlobalRouter::initDebugFastRoute;
-% ignore grt::GlobalRouter::getDebugFastRoute;
-% ignore grt::GlobalRouter::setRenderer;
+%ignore grt::GlobalRouter::init;
+%ignore grt::GlobalRouter::initDebugFastRoute;
+%ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::setRenderer;
 
-% import<stl.i> % import<std_vector.i> % template(vector_int) std::vector<int>;
+%import <stl.i>
+%import <std_vector.i>
+%template(vector_int) std::vector<int>;
 
-% inline %{
+%inline %{
+
   namespace grt {
 
   bool have_routes()
@@ -299,5 +302,4 @@
 
   }  // namespace grt
 
-  %
-}  // inline
+%}  // inline
