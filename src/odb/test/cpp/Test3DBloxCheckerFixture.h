@@ -21,13 +21,16 @@ class CheckerFixture : public tst::Fixture
     top_chip_
         = dbChip::create(db_.get(), nullptr, "TopChip", dbChip::ChipType::HIER);
 
-    // Create master chips
+    // Create master chips (blackbox: no DEF loaded, so all regions within each
+    // chip are assumed internally connected per the blackbox-stage spec).
     chip1_ = dbChip::create(db_.get(), tech_, "Chip1", dbChip::ChipType::DIE);
+    chip1_->setBlackbox(true);
     chip1_->setWidth(2000);
     chip1_->setHeight(2000);
     chip1_->setThickness(500);
 
     chip2_ = dbChip::create(db_.get(), tech_, "Chip2", dbChip::ChipType::DIE);
+    chip2_->setBlackbox(true);
     chip2_->setWidth(1500);
     chip2_->setHeight(1500);
     chip2_->setThickness(500);
@@ -86,6 +89,7 @@ class CheckerFixture : public tst::Fixture
   static constexpr const char* logical_connectivity_category
       = "Logical Connectivity";
   static constexpr const char* bump_alignment_category = "Bump Alignment";
+  static constexpr const char* path_assertions_category = "Path Assertions";
 };
 
 }  // namespace odb
