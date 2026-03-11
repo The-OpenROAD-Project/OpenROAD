@@ -8,3 +8,5 @@ cat
 
 # for doc tests
 src/test/results
+.coverage
+src/test/.coverage
