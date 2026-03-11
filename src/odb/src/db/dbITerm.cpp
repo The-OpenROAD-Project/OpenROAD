@@ -202,9 +202,9 @@ void dbITerm::setClocked(bool v)
 
 bool dbITerm::isClocked()
 {
-  bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK ? true : false;
+  bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK;
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->flags_.clocked > 0 || masterFlag ? true : false;
+  return iterm->flags_.clocked > 0 || masterFlag;
 }
 
 void dbITerm::setMark(uint32_t v)
@@ -216,7 +216,7 @@ void dbITerm::setMark(uint32_t v)
 bool dbITerm::isSetMark()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return iterm->flags_.mark > 0 ? true : false;
+  return iterm->flags_.mark > 0;
 }
 
 bool dbITerm::isSpecial()
@@ -246,7 +246,7 @@ void dbITerm::setSpef(uint32_t v)
 bool dbITerm::isSpef()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  return (iterm->flags_.spef > 0) ? true : false;
+  return iterm->flags_.spef > 0;
 }
 
 void dbITerm::setExtId(uint32_t v)
