@@ -99,7 +99,7 @@ void Design::readNetlist()
     }
 
     nets_.emplace_back(net_index, db_net, pins, layer_range);
-    db_net_to_design_idx_[db_net] = net_index;
+    db_net_to_id_[db_net] = net_index;
     net_index++;
   }
 }
@@ -169,14 +169,14 @@ void Design::updateNet(odb::dbNet* db_net)
     layer_range.max_layer = block_->getMaxLayerForClock() - 1;
   }
 
-  auto it = db_net_to_design_idx_.find(db_net);
-  if (it != db_net_to_design_idx_.end()) {
+  auto it = db_net_to_id_.find(db_net);
+  if (it != db_net_to_id_.end()) {
     nets_[it->second].setPins(std::move(pins));
     nets_[it->second].setLayerRange(layer_range);
   } else {
     // Net is new — add it
     const int net_index = static_cast<int>(nets_.size());
-    db_net_to_design_idx_[db_net] = net_index;
+    db_net_to_id_[db_net] = net_index;
     nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
   }
 }
