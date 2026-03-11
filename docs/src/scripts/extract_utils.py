@@ -57,7 +57,12 @@ def extract_arguments(text):
     closest_level2 = [
         text.find(f"## {x}") - text.find(f"### {level3[-1]}") for x in level2
     ]
-    closest_level2_idx = [idx for idx, x in enumerate(closest_level2) if x > 0][0]
+    candidates = [idx for idx, x in enumerate(closest_level2) if x > 0]
+    if not candidates:
+        raise ValueError(
+            f"No level-2 header found after the last level-3 header '{level3[-1]}'"
+        )
+    closest_level2_idx = candidates[0]
 
     # This will disambiguate cases where different level headers share the same name.
     second = [rf"### ({level3[-1]})(.*?)## ({level2[closest_level2_idx]})"]
