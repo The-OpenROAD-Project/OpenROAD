@@ -74,7 +74,7 @@ next_state:
         dbBox* box = *box_itr_;
         ++box_itr_;
 
-        if ((expand_vias_ == false) || (box->isVia() == false)) {
+        if ((!expand_vias_) || (!box->isVia())) {
           getShape(box, shape);
           return true;
         }
