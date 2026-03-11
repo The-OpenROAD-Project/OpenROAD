@@ -7,7 +7,8 @@ import re
 
 
 def extract_headers(text, level=1):
-    assert isinstance(level, int) and level >= 1
+    if not isinstance(level, int) or level < 1:
+        raise ValueError(f"level must be a positive integer, got {level!r}")
     pattern = r"^#{%d}\s+(.*)$" % level
     headers = re.findall(pattern, text, flags=re.MULTILINE)
     # TODO: Handle developer commands
