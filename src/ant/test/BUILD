@@ -1,4 +1,4 @@
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -11,13 +11,7 @@ COMPULSORY_TESTS = [
     "check_grt1",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "ant_man_tcl_check",
-    "ant_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -73,4 +67,19 @@ filegroup(
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
+]
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/ant:README.md",
+            "//src/ant:messages_txt",
+        ] + (["//src/ant:src/AntennaChecker.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "ant_man_tcl_check",
+        "ant_readme_msgs_check",
+    ]
 ]

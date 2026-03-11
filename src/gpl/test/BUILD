@@ -1,6 +1,6 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -170,3 +170,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/gpl:README.md",
+            "//src/gpl:messages_txt",
+        ] + (["//src/gpl:src/replace.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "gpl_man_tcl_check",
+        "gpl_readme_msgs_check",
+    ]
+]
