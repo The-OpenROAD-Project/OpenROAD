@@ -228,8 +228,7 @@ def man3_translate(doc, path):
             manpage = ManPage()
             manpage.name = f"{module}-{num}"
             if "with-total" in manpage.name:
-                print(parts)
-                exit()
+                raise ValueError(f"Unexpected 'with-total' token in {doc}: {parts}")
             manpage.synopsis = "N/A."
             manpage.desc = f"Type: {level}\n\n{message}"
             # man3 messages typically don't have examples or see also
