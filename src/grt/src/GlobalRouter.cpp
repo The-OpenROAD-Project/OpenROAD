@@ -494,6 +494,7 @@ int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
 {
   if (!initialized_ || haveDetailedRoutes()) {
     int min_layer, max_layer;
+    initialized_ = false;
     getMinMaxLayer(min_layer, max_layer);
     initFastRoute(min_layer, max_layer);
   }
