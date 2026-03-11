@@ -110,7 +110,7 @@ set_debug_cmd(float min_displacement,
   opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, min_displacement, debug_instance, paint_pixels);
+          opendp, debug_instance, paint_pixels);
       opendp->setDebug(graphics);
   }
 }
