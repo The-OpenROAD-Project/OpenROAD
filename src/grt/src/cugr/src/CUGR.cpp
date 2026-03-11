@@ -164,9 +164,7 @@ void CUGR::patternRoute(std::vector<int>& netIndices)
     patternRoute.constructSteinerTree();
     patternRoute.constructRoutingDAG();
     patternRoute.run();
-    if (gr_nets_[netIndex]->getRoutingTree()) {
-      grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree());
-    }
+    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree());
   }
 
   updateOverflowNets(netIndices);
@@ -192,9 +190,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
     if (net->getNumPins() < 2) {
       continue;
     }
-    if (net->getRoutingTree()) {
-      grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
-    }
+    grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
     PatternRoute patternRoute(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
     patternRoute.constructSteinerTree();
@@ -202,9 +198,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& netIndices)
     // KEY DIFFERENCE compared to stage 1 (patternRoute)
     patternRoute.constructDetours(congestionView);
     patternRoute.run();
-    if (net->getRoutingTree()) {
-      grid_graph_->commitTree(net->getRoutingTree());
-    }
+    grid_graph_->commitTree(net->getRoutingTree());
   }
 
   updateOverflowNets(netIndices);
@@ -222,10 +216,8 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
   }
 
   for (const int netIndex : netIndices) {
-    if (gr_nets_[netIndex]->getRoutingTree()) {
-      grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
-                              /*ripup*/ true);
-    }
+    grid_graph_->commitTree(gr_nets_[netIndex]->getRoutingTree(),
+                            /*ripup*/ true);
   }
   GridGraphView<CostT> wireCostView;
   grid_graph_->extractWireCostView(wireCostView);
@@ -248,9 +240,7 @@ void CUGR::mazeRoute(std::vector<int>& netIndices)
     patternRoute.constructRoutingDAG();
     patternRoute.run();
 
-    if (net->getRoutingTree()) {
-      grid_graph_->commitTree(net->getRoutingTree());
-    }
+    grid_graph_->commitTree(net->getRoutingTree());
     grid_graph_->updateWireCostView(wireCostView, net->getRoutingTree());
     grid.step();
   }
