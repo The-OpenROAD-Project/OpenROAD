@@ -216,3 +216,29 @@ python_wrap_cc(
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
 )
+
+exports_files(
+    [
+        "README.md",
+        "src/swig/tcl/odb.tcl",
+    ],
+    visibility = ["//src/odb/test:__pkg__"],
+)
+
+genrule(
+    name = "messages_txt",
+    srcs = glob(
+        [
+            "src/**/*.cc",
+            "src/**/*.cpp",
+            "src/**/*.h",
+            "src/**/*.hh",
+            "src/**/*.tcl",
+        ],
+        allow_empty = True,
+    ),
+    outs = ["messages.txt"],
+    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+    tools = ["//etc:find_messages.py"],
+    visibility = ["//src/odb/test:__pkg__"],
+)

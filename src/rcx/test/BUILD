@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -20,8 +20,6 @@ COMPULSORY_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "generate_rules",
-    "rcx_man_tcl_check",
-    "rcx_readme_msgs_check",
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -120,3 +118,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/rcx:README.md",
+            "//src/rcx:messages_txt",
+        ] + (["//src/rcx:src/OpenRCX.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "rcx_man_tcl_check",
+        "rcx_readme_msgs_check",
+    ]
+]

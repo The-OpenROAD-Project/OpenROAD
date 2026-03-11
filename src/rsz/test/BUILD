@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -336,3 +336,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/rsz:README.md",
+            "//src/rsz:messages_txt",
+        ] + (["//src/rsz:src/Resizer.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "rsz_man_tcl_check",
+        "rsz_readme_msgs_check",
+    ]
+]

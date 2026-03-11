@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -19,13 +19,7 @@ COMPULSORY_TESTS = [
     "sub_modules_sky130",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "dft_man_tcl_check",
-    "dft_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -105,3 +99,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/dft:README.md",
+            "//src/dft:messages_txt",
+        ] + (["//src/dft:src/dft.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "dft_man_tcl_check",
+        "dft_readme_msgs_check",
+    ]
+]

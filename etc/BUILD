@@ -10,3 +10,11 @@ py_binary(
     main = "file_to_string.py",
     visibility = ["//visibility:public"],
 )
+
+exports_files(
+    [
+        "find_dup_ids.sh",
+        "find_messages.py",
+    ],
+    visibility = ["//visibility:public"],
+)

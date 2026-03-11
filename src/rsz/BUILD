@@ -143,3 +143,24 @@ tcl_wrap_cc(
         "src",
     ],
 )
+
+exports_files(
+    [
+        "README.md",
+        "src/Resizer.tcl",
+    ],
+    visibility = ["//src/rsz/test:__pkg__"],
+)
+
+genrule(
+    name = "messages_txt",
+    srcs = glob([
+        "src/*.cc",
+        "src/*.hh",
+        "src/*.tcl",
+    ]),
+    outs = ["messages.txt"],
+    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+    tools = ["//etc:find_messages.py"],
+    visibility = ["//src/rsz/test:__pkg__"],
+)

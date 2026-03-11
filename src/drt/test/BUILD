@@ -2,7 +2,7 @@
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -24,12 +24,6 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "drt_man_tcl_check",
-    "drt_readme_msgs_check",
-]
-
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "down_access_term",
@@ -43,7 +37,7 @@ MANUAL_FOR_BAZEL_TESTS = [
     "top_level_term2",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -116,8 +110,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -143,3 +136,18 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/drt:README.md",
+            "//src/drt:messages_txt",
+        ] + (["//src/drt:src/TritonRoute.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "drt_man_tcl_check",
+        "drt_readme_msgs_check",
+    ]
+]

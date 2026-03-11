@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -11,19 +11,13 @@ COMPULSORY_TESTS = [
     "write_artnet",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "par_man_tcl_check",
-    "par_readme_msgs_check",
-]
-
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "partition_gcd",
     "write_artnet",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -86,9 +80,23 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
+]
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/par:README.md",
+            "//src/par:messages_txt",
+        ] + (["//src/par:src/partitionmgr.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "par_man_tcl_check",
+        "par_readme_msgs_check",
+    ]
 ]
