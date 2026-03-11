@@ -11,9 +11,6 @@ swig_lib(NAME         web
                        ${ODB_HOME}/include
 )
 
-# exa_lib is intended to be the functional code of this module with
-# without GUI dependencies.  C++ unit test will depend on exa_lib
-# to minimize pulling the many transitive dependencies of the GUI.
 target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
