@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -422,4 +423,70 @@ pkg_tar(
     ],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+)
+
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test //:doc_test    # all documentation checks
+#   bazelisk test //:dup_id_test # duplicate message ID check
+
+test_suite(
+    name = "doc_test",
+    tests = [
+        "//src/ant/test:ant_man_tcl_check-py_test",
+        "//src/ant/test:ant_readme_msgs_check-py_test",
+        "//src/cts/test:cts_man_tcl_check-py_test",
+        "//src/cts/test:cts_readme_msgs_check-py_test",
+        "//src/dft/test:dft_man_tcl_check-py_test",
+        "//src/dft/test:dft_readme_msgs_check-py_test",
+        "//src/dpl/test:dpl_man_tcl_check-py_test",
+        "//src/dpl/test:dpl_readme_msgs_check-py_test",
+        "//src/drt/test:drt_man_tcl_check-py_test",
+        "//src/drt/test:drt_readme_msgs_check-py_test",
+        "//src/fin/test:fin_man_tcl_check-py_test",
+        "//src/fin/test:fin_readme_msgs_check-py_test",
+        "//src/gpl/test:gpl_man_tcl_check-py_test",
+        "//src/gpl/test:gpl_readme_msgs_check-py_test",
+        "//src/grt/test:grt_man_tcl_check-py_test",
+        "//src/grt/test:grt_readme_msgs_check-py_test",
+        "//src/gui/test:gui_man_tcl_check-py_test",
+        "//src/gui/test:gui_readme_msgs_check-py_test",
+        "//src/ifp/test:ifp_man_tcl_check-py_test",
+        "//src/ifp/test:ifp_readme_msgs_check-py_test",
+        "//src/mpl/test:mpl_man_tcl_check-py_test",
+        "//src/mpl/test:mpl_readme_msgs_check-py_test",
+        "//src/odb/test:odb_man_tcl_check-py_test",
+        "//src/odb/test:odb_readme_msgs_check-py_test",
+        "//src/pad/test:pad_man_tcl_check-py_test",
+        "//src/pad/test:pad_readme_msgs_check-py_test",
+        "//src/par/test:par_man_tcl_check-py_test",
+        "//src/par/test:par_readme_msgs_check-py_test",
+        "//src/pdn/test:pdn_man_tcl_check-py_test",
+        "//src/pdn/test:pdn_readme_msgs_check-py_test",
+        "//src/ppl/test:ppl_man_tcl_check-py_test",
+        "//src/ppl/test:ppl_readme_msgs_check-py_test",
+        "//src/psm/test:psm_man_tcl_check-py_test",
+        "//src/psm/test:psm_readme_msgs_check-py_test",
+        "//src/rcx/test:rcx_man_tcl_check-py_test",
+        "//src/rcx/test:rcx_readme_msgs_check-py_test",
+        "//src/rmp/test:rmp_man_tcl_check-py_test",
+        "//src/rmp/test:rmp_readme_msgs_check-py_test",
+        "//src/rsz/test:rsz_man_tcl_check-py_test",
+        "//src/rsz/test:rsz_readme_msgs_check-py_test",
+        "//src/stt/test:stt_man_tcl_check-py_test",
+        "//src/stt/test:stt_readme_msgs_check-py_test",
+        "//src/tap/test:tap_man_tcl_check-py_test",
+        "//src/tap/test:tap_readme_msgs_check-py_test",
+        "//src/upf/test:upf_man_tcl_check-py_test",
+        "//src/upf/test:upf_readme_msgs_check-py_test",
+        "//src/utl/test:utl_man_tcl_check-py_test",
+        "//src/utl/test:utl_readme_msgs_check-py_test",
+    ],
+)
+
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
 )
