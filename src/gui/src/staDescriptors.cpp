@@ -709,7 +709,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       port_id = network->name(port);
     }
 
-    if (is_lib_port) {
+    if (is_lib_port
+        && !network->libertyPort(port)->direction()->isPowerGround()) {
       const std::string freq
           = Descriptor::convertUnits(power.density(), false, kFloatPrecision);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
@@ -720,7 +721,7 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
       const auto setup_arrival
-          = sta_->arrival(pin, nullptr, sta::MinMax::max());
+          = sta_->arrival(pin, sta::RiseFallBoth::riseFall(), sta::MinMax::max());
       const std::string setup_text
           = is_inf(setup_arrival)
                 ? "None"

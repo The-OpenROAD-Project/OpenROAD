@@ -359,8 +359,9 @@ WebSocketResponse dispatch_request(const WebSocketRequest& req,
 // SelectHandler
 //------------------------------------------------------------------------------
 
-SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen)
-    : gen_(std::move(gen))
+SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
+                             std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)), tcl_eval_(std::move(tcl_eval))
 {
 }
 
@@ -372,6 +373,10 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
   try {
     auto results
         = gen_->selectAt(req.select_x, req.select_y, req.select_zoom, req.vis);
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
 
     // Collect highlight shapes from the first selected instance
     {
@@ -451,6 +456,10 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
         sel = state.selectables[req.select_id];
       }
     }
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
 
     // Collect highlight shapes from the inspected object
     {

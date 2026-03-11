@@ -174,7 +174,8 @@ WebSocketResponse dispatch_request(
 class SelectHandler
 {
  public:
-  explicit SelectHandler(std::shared_ptr<TileGenerator> gen);
+  SelectHandler(std::shared_ptr<TileGenerator> gen,
+                std::shared_ptr<TclEvaluator> tcl_eval);
 
   WebSocketResponse handleSelect(const WebSocketRequest& req,
                                  SessionState& state);
@@ -187,6 +188,7 @@ class SelectHandler
 
  private:
   std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
 };
 
 // Handles TCL_EVAL requests.

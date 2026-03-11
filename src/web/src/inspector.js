@@ -33,6 +33,18 @@ const CLEAR_FOCUS_SVG =
 
 export function createInspectorPanel(app, redrawAllLayers) {
     let lastInspectData = null;
+    let pendingInspectId = null;
+
+    function showLoading() {
+        if (!app.inspectorEl) return;
+        app.inspectorEl.innerHTML = '';
+        const loading = document.createElement('div');
+        loading.className = 'stub-panel';
+        loading.innerHTML =
+            '<div class="stub-title">Loading\u2026</div>' +
+            '<div class="stub-desc">Fetching properties from server.</div>';
+        app.inspectorEl.appendChild(loading);
+    }
 
     async function toggleFocusNet(name) {
         const action = app.focusNets.has(name) ? 'remove' : 'add';
@@ -108,8 +120,22 @@ export function createInspectorPanel(app, redrawAllLayers) {
     }
 
     function navigateInspector(selectId) {
-        app.websocketManager.request({ type: 'inspect', select_id: selectId })
+        // Cancel previous in-flight inspect request
+        if (pendingInspectId !== null) {
+            app.websocketManager.cancel(pendingInspectId);
+            pendingInspectId = null;
+        }
+
+        // Show loading state immediately
+        showLoading();
+
+        const promise = app.websocketManager.request(
+            { type: 'inspect', select_id: selectId });
+        pendingInspectId = promise.requestId;
+
+        promise
             .then(data => {
+                pendingInspectId = null;
                 if (data.error) {
                     console.error('Inspect error:', data.error);
                     return;
@@ -145,7 +171,10 @@ export function createInspectorPanel(app, redrawAllLayers) {
                 // Redraw tiles to update instance highlight
                 redrawAllLayers();
             })
-            .catch(err => console.error('Inspect failed:', err));
+            .catch(err => {
+                pendingInspectId = null;
+                console.error('Inspect failed:', err);
+            });
     }
 
     function highlightBBox(x1, y1, x2, y2) {

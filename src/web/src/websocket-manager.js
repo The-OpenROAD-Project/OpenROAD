@@ -76,7 +76,7 @@ export class WebSocketManager {
     request(msg) {
         const id = this.nextId++;
         msg.id = id;
-        return new Promise((resolve, reject) => {
+        const promise = new Promise((resolve, reject) => {
             if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
                 reject(new Error('WebSocket not connected'));
                 return;
@@ -85,6 +85,8 @@ export class WebSocketManager {
             this.socket.send(JSON.stringify(msg));
             this.onStatusChange();
         });
+        promise.requestId = id;
+        return promise;
     }
 
     cancel(id) {

@@ -26,10 +26,14 @@ function makeApp() {
         designScale: null,
         designMaxDXDY: null,
         websocketManager: {
+            _nextId: 1,
             request(msg) {
                 requests.push(msg);
-                return Promise.resolve({ ok: 1, count: 0 });
+                const p = Promise.resolve({ ok: 1, count: 0 });
+                p.requestId = this._nextId++;
+                return p;
             },
+            cancel() {},
         },
         _requests: requests,
     };

@@ -192,7 +192,8 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     placeInst("BUF_X16", "buf1", 0, 0);
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
-    handler_ = std::make_unique<SelectHandler>(gen_);
+    tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
+    handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -209,6 +210,7 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   }
 
   std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<TclEvaluator> tcl_eval_;
   std::unique_ptr<SelectHandler> handler_;
   SessionState state_;
 };
