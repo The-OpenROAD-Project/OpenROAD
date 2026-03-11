@@ -200,3 +200,24 @@ python_wrap_cc(
     ],
     visibility = ["//visibility:public"],
 )
+
+exports_files(
+    [
+        "README.md",
+        "src/Utl.tcl",
+    ],
+    visibility = ["//src/utl/test:__pkg__"],
+)
+
+genrule(
+    name = "messages_txt",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "src/*.tcl",
+    ]),
+    outs = ["messages.txt"],
+    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+    tools = ["//etc:find_messages.py"],
+    visibility = ["//src/utl/test:__pkg__"],
+)

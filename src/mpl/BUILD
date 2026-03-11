@@ -109,3 +109,24 @@ tcl_wrap_cc(
         "//src/odb:swig",
     ],
 )
+
+exports_files(
+    [
+        "README.md",
+        "src/mpl.tcl",
+    ],
+    visibility = ["//src/mpl/test:__pkg__"],
+)
+
+genrule(
+    name = "messages_txt",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "src/*.tcl",
+    ]),
+    outs = ["messages.txt"],
+    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+    tools = ["//etc:find_messages.py"],
+    visibility = ["//src/mpl/test:__pkg__"],
+)
