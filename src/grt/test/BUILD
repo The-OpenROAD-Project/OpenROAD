@@ -1,4 +1,4 @@
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -136,3 +136,18 @@ MANUAL_FOR_BAZEL_TESTS = [
     data = [":test_resources"],
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/grt:README.md",
+            "//src/grt:messages_txt",
+        ] + (["//src/grt:src/GlobalRouter.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "grt_man_tcl_check",
+        "grt_readme_msgs_check",
+    ]
+]

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -34,4 +34,19 @@ filegroup(
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
+]
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/gui:README.md",
+            "//src/gui:messages_txt",
+        ] + (["//src/gui:src/gui.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "gui_man_tcl_check",
+        "gui_readme_msgs_check",
+    ]
 ]

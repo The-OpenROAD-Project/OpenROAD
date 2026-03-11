@@ -1,4 +1,4 @@
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -34,3 +34,18 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+[
+    doc_check_test(
+        name = test_name,
+        data = [
+            "//src/stt:README.md",
+            "//src/stt:messages_txt",
+        ] + (["//src/stt:src/SteinerTreeBuilder.tcl"] if "man_tcl" in test_name else []),
+        visibility = ["//visibility:public"],
+    )
+    for test_name in [
+        "stt_man_tcl_check",
+        "stt_readme_msgs_check",
+    ]
+]
