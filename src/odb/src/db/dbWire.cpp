@@ -469,7 +469,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -573,7 +573,7 @@ state_machine_update: {
 }
 }
 
-  while ((layer == nullptr) || (found_width == false)) {
+  while ((layer == nullptr) || (!found_width)) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 
@@ -720,7 +720,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -803,7 +803,7 @@ state_machine_update: {
 }
 }
 
-  while (found_width == false) {
+  while (!found_width) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 

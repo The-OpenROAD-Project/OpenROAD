@@ -347,12 +347,12 @@ void dbBTerm::setSpefMark(uint32_t v)
 bool dbBTerm::isSetSpefMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.spef > 0 ? true : false;
+  return bterm->flags_.spef > 0;
 }
 bool dbBTerm::isSpecial() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.special > 0 ? true : false;
+  return bterm->flags_.special > 0;
 }
 void dbBTerm::setSpecial()
 {
@@ -367,7 +367,7 @@ void dbBTerm::setMark(uint32_t v)
 bool dbBTerm::isSetMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.mark > 0 ? true : false;
+  return bterm->flags_.mark > 0;
 }
 void dbBTerm::setExtId(uint32_t v)
 {

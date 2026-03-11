@@ -584,10 +584,7 @@ void tmg_conn::dfsClear()
 bool tmg_conn_graph::dfsStart(int& j)
 {
   e_ = getFirstNonShortEdge(j);
-  if (!e_) {
-    return false;
-  }
-  return true;
+  return e_ != nullptr;
 }
 
 bool tmg_conn::dfsStart(int& j)
@@ -609,7 +606,7 @@ bool tmg_conn_graph::dfsNext(int* from,
   *from = e->fr;
   *to = e->to;
   *k = e->k;
-  *is_short = (e->s ? true : false);
+  *is_short = (e->s != nullptr);
   e->visited = true;
   e->reverse->visited = true;
   pgV[e->fr].visited = 1;
