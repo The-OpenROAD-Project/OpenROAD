@@ -937,20 +937,6 @@ gui::select_chart
 | ---- | ---- |
 | `name` | of the chart. For example, "Endpoint Slack". |
 
-### Clock Insertion Latency in Timing Reports
-
-In the Data Path Details and Capture Path Details views, pins whose
-Liberty cell defines `max_clock_tree_path` / `min_clock_tree_path`
-timing groups display the internal clock latency inline:
-
-![Clock insertion annotation in Data Path Details](doc/image/timing_report_clk_insertion.png)
-
-To view this, run the MockArray example and look at reg2reg paths:
-
-```
-bazelisk run --//:platform=gui //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
-```
-
 ### Update timing report
 
 Update the paths in the Timing Report widget:
