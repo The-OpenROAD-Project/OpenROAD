@@ -89,7 +89,7 @@ void Design::readNetlist()
       continue;
     }
 
-    auto pins = readNetPins(db_net);
+    auto pins = makeNetPins(db_net);
 
     LayerRange layer_range
         = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
@@ -104,7 +104,7 @@ void Design::readNetlist()
   }
 }
 
-std::vector<CUGRPin> Design::readNetPins(odb::dbNet* db_net)
+std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
 {
   std::vector<CUGRPin> pins;
   int pin_count = 0;
@@ -160,7 +160,7 @@ void Design::updateNet(odb::dbNet* db_net)
     return;
   }
 
-  auto pins = readNetPins(db_net);
+  auto pins = makeNetPins(db_net);
 
   LayerRange layer_range
       = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
@@ -173,13 +173,12 @@ void Design::updateNet(odb::dbNet* db_net)
   if (it != db_net_to_design_idx_.end()) {
     nets_[it->second].setPins(std::move(pins));
     nets_[it->second].setLayerRange(layer_range);
-    return;
+  } else {
+    // Net is new — add it
+    const int net_index = static_cast<int>(nets_.size());
+    db_net_to_design_idx_[db_net] = net_index;
+    nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
   }
-
-  // Net is new — add it
-  const int net_index = static_cast<int>(nets_.size());
-  db_net_to_design_idx_[db_net] = net_index;
-  nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
 }
 
 void Design::readInstanceObstructions()

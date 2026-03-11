@@ -77,7 +77,7 @@ class Design
   void read();
   void readLayers();
   void readNetlist();
-  std::vector<CUGRPin> readNetPins(odb::dbNet* db_net);
+  std::vector<CUGRPin> makeNetPins(odb::dbNet* db_net);
   void readInstanceObstructions();
   int readSpecialNetObstructions();
   void readDesignObstructions();
