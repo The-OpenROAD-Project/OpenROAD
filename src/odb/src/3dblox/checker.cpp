@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <map>
 #include <numeric>
 #include <ranges>
 #include <string>
@@ -96,9 +97,9 @@ Checker::Checker(utl::Logger* logger) : logger_(logger)
 
 void Checker::check(dbChip* chip)
 {
-  UnfoldedModel model(logger_, chip);
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
-
+  UnfoldedModel model(logger_, chip);
+  checkLogicalConnectivity(top_cat, model);
   checkFloatingChips(top_cat, model);
   checkOverlappingChips(top_cat, model);
   checkInternalExtUsage(top_cat, model);
@@ -319,6 +320,80 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
                                    const UnfoldedModel& model)
 {
+}
+
+void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
+                                       const UnfoldedModel& model)
+{
+  std::unordered_map<const UnfoldedBump*, const UnfoldedNet*> bump_net_map;
+  for (const auto& net : model.getNets()) {
+    for (const auto* bump : net.connected_bumps) {
+      bump_net_map[bump] = &net;
+    }
+  }
+
+  auto get_net_name = [&](const UnfoldedBump* bump) -> std::string {
+    auto it = bump_net_map.find(bump);
+    if (it != bump_net_map.end()) {
+      return it->second->chip_net->getName();
+    }
+    return "defines no net";
+  };
+
+  dbMarkerCategory* cat = nullptr;
+  for (const auto& conn : model.getConnections()) {
+    if (!isValid(conn)) {
+      continue;
+    }
+    if (!conn.top_region || !conn.bottom_region) {
+      continue;
+    }
+
+    std::map<Point, const UnfoldedBump*> bot_bumps;
+    for (const auto& bump : conn.bottom_region->bumps) {
+      Point p(bump.global_position.x(), bump.global_position.y());
+      bot_bumps[p] = &bump;
+    }
+
+    for (const auto& top_bump : conn.top_region->bumps) {
+      Point p(top_bump.global_position.x(), top_bump.global_position.y());
+      auto it = bot_bumps.find(p);
+      if (it != bot_bumps.end()) {
+        const UnfoldedBump* bot_bump = it->second;
+
+        // Check logical connectivity
+        auto top_net_it = bump_net_map.find(&top_bump);
+        auto bot_net_it = bump_net_map.find(bot_bump);
+
+        const UnfoldedNet* top_net
+            = top_net_it != bump_net_map.end() ? top_net_it->second : nullptr;
+        const UnfoldedNet* bot_net
+            = bot_net_it != bump_net_map.end() ? bot_net_it->second : nullptr;
+
+        if (top_net != bot_net) {
+          if (!cat) {
+            cat = dbMarkerCategory::createOrReplace(top_cat,
+                                                    "Logical Connectivity");
+          }
+          auto* marker = dbMarker::create(cat);
+          marker->addSource(top_bump.bump_inst);
+          marker->addSource(bot_bump->bump_inst);
+          marker->addShape(conn.top_region->cuboid.intersect(
+              conn.bottom_region->cuboid));  // Mark overlap region
+
+          std::string msg = fmt::format(
+              "Bumps at ({}, {}) align physically but logical connectivity "
+              "mismatch: Top bump {} vs Bottom bump {}",
+              p.x(),
+              p.y(),
+              get_net_name(&top_bump),
+              get_net_name(bot_bump));
+          marker->setComment(msg);
+          logger_->warn(utl::ODB, 208, msg);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace odb

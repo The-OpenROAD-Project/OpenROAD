@@ -55,6 +55,7 @@ class _dbITerm : public _dbObject
 
   _dbMTerm* getMTerm() const;
   _dbInst* getInst() const;
+  void resolveMTerm();
 
   dbITermFlags flags_;
   uint32_t ext_id_;
@@ -65,7 +66,8 @@ class _dbITerm : public _dbObject
   dbId<_dbITerm> prev_net_iterm_;
   dbId<_dbITerm> next_modnet_iterm_;
   dbId<_dbITerm> prev_modnet_iterm_;
-  uint32_t sta_vertex_id_;  // not saved
+  _dbMTerm* mterm_ = nullptr;  // not saved - cached pointer
+  uint32_t sta_vertex_id_;     // not saved
   boost::container::flat_map<dbId<_dbMPin>, dbId<_dbAccessPoint>> aps_;
 };
 

@@ -84,7 +84,7 @@ struct CouplingConfig
   void reset_calc_flow_flag(uint32_t level)
   {
     if (metal_flag > 0) {
-      new_calc_flow = level <= metal_flag ? true : false;
+      new_calc_flow = level <= metal_flag;
     }
   }
 
