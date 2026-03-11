@@ -347,6 +347,7 @@ void GlobalRouter::endIncremental(bool save_guides)
 
 void GlobalRouter::globalRoute(bool save_guides)
 {
+  initialized_ = false;
   auto start = std::chrono::steady_clock::now();
   bool has_routable_nets = false;
 
