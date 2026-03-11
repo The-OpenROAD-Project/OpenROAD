@@ -1,8 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025-2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 
 """Instantiate a regression test based on .py or .tcl
-files using resources in //test:regression_resources"""
+files using resources in //test:regression_resources.
+
+Also provides doc_check_test for lightweight Python-only
+documentation tests that do not require the OpenROAD binary."""
 
 def _regression_test_impl(ctx):
     # Declare the test script output
@@ -109,6 +112,76 @@ regression_rule_test = rule(
     test = True,
 )
 
+def _doc_check_test_impl(ctx):
+    """Lightweight test rule for pure-Python doc checks (no OpenROAD binary)."""
+    test_script = ctx.actions.declare_file(ctx.label.name + "_test.sh")
+
+    ctx.actions.write(
+        output = test_script,
+        content = """
+#!/bin/bash
+set -ex
+export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
+export TEST_FILE={TEST_FILE}
+export TEST_TYPE=standalone_python
+export OPENROAD_EXE=
+export REGRESSION_TEST={REGRESSION_TEST}
+export TEST_CHECK_LOG={TEST_CHECK_LOG}
+export TEST_CHECK_PASSFAIL=False
+exec "{bazel_test_sh}" "$@"
+""".format(
+            bazel_test_sh = ctx.file.bazel_test_sh.short_path,
+            TEST_NAME_BAZEL = ctx.attr.test_name,
+            TEST_FILE = ctx.file.test_file.short_path,
+            REGRESSION_TEST = ctx.file.regression_test.short_path,
+            TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
+        ),
+        is_executable = True,
+    )
+
+    return DefaultInfo(
+        executable = test_script,
+        runfiles = ctx.runfiles(
+            files = ctx.files.data + [
+                ctx.file.test_file,
+                ctx.file.bazel_test_sh,
+                ctx.file.regression_test,
+            ],
+        ),
+    )
+
+doc_check_rule_test = rule(
+    implementation = _doc_check_test_impl,
+    attrs = {
+        "bazel_test_sh": attr.label(
+            doc = "The Bazel test shell script.",
+            allow_single_file = True,
+        ),
+        "check_log": attr.bool(
+            doc = "Diff the output log against <test_name>.ok",
+            default = True,
+        ),
+        "data": attr.label_list(
+            doc = "Additional test files required for the test.",
+            allow_files = True,
+        ),
+        "regression_test": attr.label(
+            doc = "The regression test script.",
+            allow_single_file = True,
+        ),
+        "test_file": attr.label(
+            doc = "The primary test file (.py).",
+            allow_single_file = True,
+        ),
+        "test_name": attr.string(
+            doc = "The name of the test.",
+            mandatory = True,
+        ),
+    },
+    executable = True,
+    test = True,
+)
+
 def _pop(kwargs, key, default):
     """BUILD does not support kwargs, use None as a "kwargs at home" workaround"""
     if key in kwargs:
@@ -116,6 +189,35 @@ def _pop(kwargs, key, default):
         if popped != None:
             return popped
     return default
+
+def doc_check_test(name, **kwargs):
+    """Macro for lightweight Python doc check tests (no OpenROAD dependency).
+
+    These tests validate documentation consistency (README, messages, man pages)
+    and run in seconds without any C++ compilation.
+
+    Args:
+        name: The base name of the test (e.g., "cts_readme_msgs_check").
+        **kwargs: Additional keyword arguments passed to doc_check_rule_test.
+    """
+    test_file = name + ".py"
+    data = _pop(kwargs, "data", [])
+    tags = _pop(kwargs, "tags", [])
+
+    doc_check_rule_test(
+        name = name + "-py_test",
+        test_file = test_file,
+        test_name = name,
+        data = native.glob([name + ".*"]) + [
+            "extract_utils.py",
+            "manpage.py",
+            "md_roff_compat.py",
+        ] + data,
+        bazel_test_sh = "//test:bazel_test.sh",
+        regression_test = "//test:regression_test.sh",
+        tags = tags,
+        **kwargs
+    )
 
 def regression_test(
         name,
