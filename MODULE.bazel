@@ -66,6 +66,10 @@ bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 # cudd 3.0.0.bcr.1 available but BCR entry has a broken upstream download URL (404)
 bazel_dep(name = "cudd", version = "3.0.0")
+# eigen 5.0.1.bcr.1 available but NOT upgraded: Eigen 4.x and 5.x are major
+# rewrites with breaking API changes relative to 3.4.x. Many downstream users
+# (incl. OpenROAD tool modules) rely on Eigen 3 APIs. Upgrade requires
+# coordinated code changes across the codebase.
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 # or-tools 9.15 available but blocked: it pulls soplex@7.1.4.bcr.1 which
 # requires boost.multiprecision@1.87.0 (compat level 108700), conflicting with
@@ -76,6 +80,10 @@ bazel_dep(name = "spdlog", version = "1.17.0")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.2")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
+# tcl_lang 9.0.2.bcr.1 available but NOT upgraded: Tcl 9.x has breaking API
+# changes vs 8.x (e.g. Tcl_Channel I/O, integer type changes, VFS updates).
+# OpenROAD and its dependencies (OpenSTA, etc.) have not been validated against
+# Tcl 9. Revisit once upstream projects add Tcl 9 support.
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
 
 # Make compilation DB (and possibly build cleaner)
