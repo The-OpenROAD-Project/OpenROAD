@@ -130,6 +130,13 @@ Command description pending.
 balance_row_usage
 ```
 
+### Fully Rebuffer
+
+Use the `fully_rebuffer` command to recreate the buffer tree of all driver pins.
+This command goes through each driver pin, stripping all buffers then resteinering
+the pin's buffer tree, before attempting to recover some area for pins that have leeway in
+their slack.
+
 ### Repair Design
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
