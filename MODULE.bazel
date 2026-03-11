@@ -21,9 +21,9 @@ bazel_dep(name = "rules_jvm_external", version = "6.10", dev_dependency = True)
 bazel_dep(name = "rules_scala", version = "7.2.4", dev_dependency = True)
 
 bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "rules_verilator", version = "0.2.0")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
-bazel_dep(name = "verilator", version = "5.036.bcr.3")
+bazel_dep(name = "verilator", version = "5.044")
 
 BOOST_VERSION = "1.89.0.bcr.2"
 
