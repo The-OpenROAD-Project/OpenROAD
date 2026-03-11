@@ -515,50 +515,42 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
-    gui::Selected sel;
+    int count = 0;
     {
-      std::lock_guard<std::mutex> lock(state.selectables_mutex);
-      if (req.select_id >= 0
-          && req.select_id < static_cast<int>(state.selectables.size())) {
-        sel = state.selectables[req.select_id];
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+
+      if (req.select_id >= 0) {
+        gui::Selected sel;
+        {
+          std::lock_guard<std::mutex> slock(state.selectables_mutex);
+          if (req.select_id
+              < static_cast<int>(state.selectables.size())) {
+            sel = state.selectables[req.select_id];
+          }
+        }
+        if (sel) {
+          ShapeCollector collector;
+          sel.highlight(collector);
+          if (!collector.rects.empty()) {
+            state.hover_rects = std::move(collector.rects);
+          } else {
+            odb::Rect bbox;
+            if (sel.getBBox(bbox)) {
+              state.hover_rects.push_back(bbox);
+            }
+          }
+          count = static_cast<int>(state.hover_rects.size());
+        }
       }
+      // select_id < 0 just clears hover_rects (mouseleave)
     }
 
     resp.type = 0;
     JsonBuilder builder;
     builder.beginObject();
-    if (sel) {
-      ShapeCollector collector;
-      sel.highlight(collector);
-      if (!collector.rects.empty()) {
-        builder.beginArray("rects");
-        for (const auto& r : collector.rects) {
-          builder.beginArray();
-          builder.value(r.xMin());
-          builder.value(r.yMin());
-          builder.value(r.xMax());
-          builder.value(r.yMax());
-          builder.endArray();
-        }
-        builder.endArray();
-      } else {
-        odb::Rect bbox;
-        if (sel.getBBox(bbox)) {
-          builder.beginArray("rects");
-          builder.beginArray();
-          builder.value(bbox.xMin());
-          builder.value(bbox.yMin());
-          builder.value(bbox.xMax());
-          builder.value(bbox.yMax());
-          builder.endArray();
-          builder.endArray();
-        } else {
-          builder.field("error", "no bbox");
-        }
-      }
-    } else {
-      builder.field("error", "invalid select_id");
-    }
+    builder.field("ok", 1);
+    builder.field("count", count);
     builder.endObject();
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
@@ -950,6 +942,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     rects = state.highlight_rects;
+    rects.insert(rects.end(),
+                 state.hover_rects.begin(), state.hover_rects.end());
     colored = state.timing_rects;
     lines = state.timing_lines;
   }

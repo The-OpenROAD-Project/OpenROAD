@@ -75,10 +75,10 @@ export function createInspectorPanel(app, redrawAllLayers) {
     }
 
     function clearHoverHighlight() {
-        for (const r of app.hoverRects) {
-            app.map.removeLayer(r);
-        }
-        app.hoverRects = [];
+        // Send select_id=-1 to clear server-side hover rects, then redraw.
+        app.websocketManager.request({ type: 'hover', select_id: -1 })
+            .then(() => redrawAllLayers())
+            .catch(() => {});
     }
 
     function makeClickable(el, selectId) {
@@ -88,30 +88,10 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
+            // Hover highlights are rendered server-side in tiles to avoid
+            // creating thousands of SVG overlays for large objects.
             app.websocketManager.request({ type: 'hover', select_id: selectId })
-                .then(data => {
-                    if (data.rects && app.map && app.designScale) {
-                        clearHoverHighlight();
-                        const minPx = 20;
-                        const zoom = app.map.getZoom();
-                        const scale = Math.pow(2, zoom);
-                        const minDbu = minPx / (app.designScale * scale);
-                        for (const [x1, y1, x2, y2] of data.rects) {
-                            const cx = (x1 + x2) / 2;
-                            const cy = (y1 + y2) / 2;
-                            const hw = Math.max((x2 - x1) / 2, minDbu / 2);
-                            const hh = Math.max((y2 - y1) / 2, minDbu / 2);
-                            const bounds = dbuRectToBounds(
-                                cx - hw, cy - hh, cx + hw, cy + hh,
-                                app.designScale, app.designMaxDXDY);
-                            app.hoverRects.push(L.rectangle(bounds, {
-                                className: 'hover-highlight',
-                                color: '#ff0', weight: 3, fill: true,
-                                fillColor: '#ff0', fillOpacity: 0.2,
-                            }).addTo(app.map));
-                        }
-                    }
-                })
+                .then(() => redrawAllLayers())
                 .catch(() => {});
         });
         el.addEventListener('mouseleave', () => {
@@ -141,9 +121,6 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     return;
                 }
                 updateInspector(data);
-
-                // Clear hover highlight from the link we just clicked
-                clearHoverHighlight();
 
                 // Show popup and highlight on the map
                 app.map.closePopup();

@@ -46,7 +46,6 @@ const app = {
     inspectorEl: null,
     tclOutputEl: null,
     highlightRect: null,
-    hoverRects: [],
     modulesLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),

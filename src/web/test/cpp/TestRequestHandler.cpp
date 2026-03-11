@@ -262,7 +262,7 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
   EXPECT_NE(json.find("\"error\""), std::string::npos);
 }
 
-TEST_F(SelectHandlerTest, HoverInvalidIdReturnsError)
+TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
 {
   WebSocketRequest req;
   req.id = 13;
@@ -273,7 +273,8 @@ TEST_F(SelectHandlerTest, HoverInvalidIdReturnsError)
   EXPECT_EQ(resp.type, 0);
 
   std::string json = payloadStr(resp);
-  EXPECT_NE(json.find("\"error\""), std::string::npos);
+  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_NE(json.find("\"count\": 0"), std::string::npos);
 }
 
 TEST_F(SelectHandlerTest, SelectClearsTimingState)
