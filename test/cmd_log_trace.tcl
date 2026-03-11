@@ -9,6 +9,15 @@ source "helpers.tcl"
 
 puts "TEST: Verifying command tracing in log"
 
+# Create and source a nested script with a simple command so this test can
+# verify that only the top-level source command is traced.
+make_result_dir
+set nested_script [file join $result_dir "cmd_log_trace_nested.tcl"]
+set nested_stream [open $nested_script w]
+puts $nested_stream {set ::nested_trace_marker 1}
+close $nested_stream
+source $nested_script
+
 # Find the log path from argv: ... -log <file> ...
 set log_file ""
 set argc [llength $argv]
@@ -54,6 +63,12 @@ if {[llength $missing] > 0} {
   foreach m $missing {
     puts "  $m"
   }
+  exit 1
+}
+
+# Ensure command tracing does not include commands executed inside sourced files.
+if {[string first {cmd: set ::nested_trace_marker 1} $log_text] != -1} {
+  puts "FAIL: Nested sourced command should not be traced"
   exit 1
 }
 

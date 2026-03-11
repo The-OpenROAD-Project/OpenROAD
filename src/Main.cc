@@ -189,7 +189,12 @@ static int logCommandCallback(ClientData client_data,
                               int objc,
                               Tcl_Obj* const objv[])
 {
-  if (level != 0 || command == nullptr) {
+  (void) interp;
+  (void) command_info;
+  (void) objc;
+  (void) objv;
+  // Tcl levels are 1-based: 1 is top-level, 2+ are nested (e.g. sourced body).
+  if (level != 1 || command == nullptr) {
     return TCL_OK;
   }
 
@@ -205,6 +210,7 @@ static int logCommandCallback(ClientData client_data,
 
 static void deleteCommandTrace(ClientData client_data)
 {
+  (void) client_data;
 }
 
 // When we enter through main() we have a single tech and design.
