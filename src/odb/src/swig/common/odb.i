@@ -61,7 +61,14 @@ using namespace odb;
     if (tech == nullptr) {
       return 0;
     }
-    return tech->micronsAreaToDbu($self->getArea());
+    const int dbu_per_micron = tech->getDbUnitsPerMicron();
+    if (dbu_per_micron <= 0) {
+      return 0;
+    }
+    const int64_t dbu_per_square_micron
+        = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+    const double dbu_area = $self->getArea() * dbu_per_square_micron;
+    return static_cast<int64_t>(std::round(dbu_area));
   }
 
   void setArea(int64_t area)
@@ -73,7 +80,13 @@ using namespace odb;
     if (tech == nullptr) {
       return;
     }
-    $self->setArea(tech->dbuAreaToMicrons(area));
+    const int dbu_per_micron = tech->getDbUnitsPerMicron();
+    if (dbu_per_micron <= 0) {
+      return;
+    }
+    const int64_t dbu_per_square_micron
+        = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+    $self->setArea(static_cast<double>(area) / dbu_per_square_micron);
   }
 }
 
