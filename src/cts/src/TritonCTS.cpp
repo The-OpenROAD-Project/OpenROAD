@@ -243,13 +243,8 @@ void TritonCTS::setupCharacterization()
   options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
 
   // A new characteriztion is always created.
-  techChar_ = std::make_unique<TechChar>(options_,
-                                         db_,
-                                         openSta_,
-                                         resizer_,
-                                         estimate_parasitics_,
-                                         network_,
-                                         logger_);
+  techChar_ = std::make_unique<TechChar>(
+      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -1580,7 +1575,7 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 
 void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
 {
-  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+  if (pin_driver == nullptr || !network_->hasHierarchy()) {
     return;
   }
 

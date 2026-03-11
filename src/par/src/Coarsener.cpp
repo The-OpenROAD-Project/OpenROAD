@@ -77,7 +77,7 @@ CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
   hierarchy.push_back(hgraph);  // push original hgraph to hierarchy
   debugPrint(
       logger_, PAR, "coarsening", 1, "Running FC Multilevel Coarsening...");
-  if (timing_flag == true) {
+  if (timing_flag) {
     debugPrint(logger_,
                PAR,
                "coarsening",
@@ -107,7 +107,7 @@ CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
               // previous iteration
     }
     hierarchy.push_back(hg);
-    if (timing_flag == true) {
+    if (timing_flag) {
       debugPrint(logger_,
                  PAR,
                  "coarsening",
@@ -534,7 +534,7 @@ void Coarsener::ClusterBasedGroupInfo(
     Matrix<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
-  if (group_attr.empty() == true && hgraph->GetFixedAttrSize() == 0) {
+  if (group_attr.empty() && hgraph->GetFixedAttrSize() == 0) {
     // no need to any group based on group_attr and hgraph->fixed_attr_
     vertex_cluster_id_vec.clear();
     vertex_cluster_id_vec.resize(hgraph->GetNumVertices());
@@ -562,7 +562,7 @@ void Coarsener::ClusterBasedGroupInfo(
 
   std::vector<std::vector<int>> fixed_group;
   for (auto& group : temp_fixed_group) {
-    if (group.empty() == false) {
+    if (!group.empty()) {
       fixed_group.push_back(group);
     }
   }
@@ -835,7 +835,7 @@ HGraphPtr Coarsener::Contraction(
       std::vector<int> path_c;  // create path_c
       for (const int vertex_id : path_range) {
         const int cluster_id = vertex_cluster_id_vec[vertex_id];
-        if (path_c.empty() == true || path_c.back() != cluster_id) {
+        if (path_c.empty() || path_c.back() != cluster_id) {
           path_c.push_back(cluster_id);
         }
       }
@@ -853,7 +853,7 @@ HGraphPtr Coarsener::Contraction(
           // if hyperedge_c_id is -1, that means that hyperedge has been merged
           // during coarsening
           if ((hyperedge_c_id > -1)
-              && (arcs_c.empty() == true || arcs_c.back() != hyperedge_c_id)) {
+              && (arcs_c.empty() || arcs_c.back() != hyperedge_c_id)) {
             arcs_c.push_back(hyperedge_c_id);
           }
         }
@@ -883,8 +883,7 @@ HGraphPtr Coarsener::Contraction(
           for (const int edge : hgraph->PathEdges(p)) {
             const int hyperedge_c_id = hyperedge_cluster_id_vec[edge];
             if ((hyperedge_c_id > -1)
-                && (arcs_c.empty() == true
-                    || arcs_c.back() != hyperedge_c_id)) {
+                && (arcs_c.empty() || arcs_c.back() != hyperedge_c_id)) {
               arcs_c.push_back(hyperedge_c_id);
             }
           }

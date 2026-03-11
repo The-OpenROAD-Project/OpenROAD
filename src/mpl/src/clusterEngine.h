@@ -97,7 +97,6 @@ class ClusteringEngine
 {
  public:
   ClusteringEngine(odb::dbBlock* block,
-                   sta::dbNetwork* network,
                    utl::Logger* logger,
                    par::PartitionMgr* triton_part,
                    MplObserver* graphics);
@@ -227,7 +226,6 @@ class ClusteringEngine
   bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
-  sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
   MplObserver* graphics_;

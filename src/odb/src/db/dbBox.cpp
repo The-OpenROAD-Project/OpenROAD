@@ -1055,7 +1055,7 @@ bool dbBox::isVisited() const
 void dbBox::setVisited(const bool value)
 {
   _dbBox* box = (_dbBox*) this;
-  box->flags_.visited = (value == true) ? 1 : 0;
+  box->flags_.visited = (value) ? 1 : 0;
 }
 
 void _dbBox::collectMemInfo(MemInfo& info) const

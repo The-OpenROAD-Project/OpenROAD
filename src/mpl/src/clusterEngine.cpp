@@ -32,12 +32,10 @@ namespace mpl {
 using utl::MPL;
 
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
-                                   sta::dbNetwork* network,
                                    utl::Logger* logger,
                                    par::PartitionMgr* triton_part,
                                    MplObserver* graphics)
     : block_(block),
-      network_(network),
       logger_(logger),
       triton_part_(triton_part),
       graphics_(graphics)

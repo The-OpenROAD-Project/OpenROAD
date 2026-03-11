@@ -47,13 +47,11 @@ using utl::CTS;
 TechChar::TechChar(CtsOptions* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
-                   rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
                    utl::Logger* logger)
     : options_(options),
       db_(db),
-      resizer_(resizer),
       estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
       openStaChar_(nullptr),
@@ -1299,7 +1297,7 @@ void TechChar::updateBufferTopologiesOld(TechChar::SolutionData& solution)
       odb::dbInst* inst = solution.instVector[index];
       inst->swapMaster(newBufMaster);
       // clang-format off
-      --masterItr; 
+      --masterItr;
       debugPrint(logger_, CTS, "tech char", 1, "updateBufferTopologies swap "
                  "from {} to {}, index:{}",
                  *(masterItr), newBufMaster->getName(), index);

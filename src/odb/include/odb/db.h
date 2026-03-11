@@ -1547,6 +1547,12 @@ class dbBTerm : public dbObject
   dbBlock* getBlock() const;
 
   ///
+  /// Get the chip bump associated with this block-terminal.
+  /// Returns nullptr if no chip bump is associated.
+  ///
+  dbChipBump* getChipBump() const;
+
+  ///
   /// Get the hierarchical parent iterm of this bterm.
   ///
   /// Returns nullptr if this bterm has no parent iterm.
@@ -3663,9 +3669,9 @@ class dbWire : public dbObject
   void append(dbWire* wire, bool singleSegmentWire = false);
 
   ///
-  /// Get junction id associated with the term
+  /// Get junction id of the wire shape connected to the terminal.
   ///
-  uint32_t getTermJid(int termid) const;
+  uint32_t getTermShapeJunctionId(int term_id) const;
 
   ///
   /// Get the shape of this shape-id.

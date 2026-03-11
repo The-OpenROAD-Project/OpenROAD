@@ -101,8 +101,8 @@ resynth_annealing
 Resynthesize parts of the design with an ABC script found via genetic algorithm.
 An individual in a population is a series of operations on ABC's internal AIG data structure.
 Each such operation is considered a gene. Genotype can be changed by a mutation with operations such
-as adding, removing or swapping genes with a `mut_prob` probability. Individual can also be changed
-by crossing two genes together with a `cross_prob` probability.
+as adding, removing or swapping genes with a `mutation_probability` probability. Individual can also be changed
+by crossing two genes together with a `crossover_probability` probability.
 The optimization function is defined as the worst slack.
 
 ```tcl
@@ -110,11 +110,11 @@ resynth_genetic
     [-corner corner]
     [-slack_threshold slack_threshold]
     [-seed seed]
-    [-pop_size pop_size]
-    [-mut_prob mut_prob]
-    [-cross_prob cross_prob]
-    [-tourn_prob tourn_prob]
-    [-tourn_size tourn_size]
+    [-population_size population_size]
+    [-mutation_probability mutation_probability]
+    [-crossover_probability crossover_probability]
+    [-tournament_probability tournament_probability]
+    [-tournament_size tournament_size]
     [-iters iters]
     [-initial_ops initial_ops]
 ```
@@ -126,11 +126,11 @@ resynth_genetic
 | `-corner` | Process corner to use. |
 | `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
 | `-seed` | Seed to use for randomness. |
-| `-pop_size` | Population size. |
-| `-mut_prob` | Probability of applying mutation operator. |
-| `-cross_prob` | Probability of applying crossover operator. |
-| `-tourn_prob` | Tournament probability. |
-| `-tourn_size` | Tournament size. |
+| `-population_size` | Population size. |
+| `-mutation_probability` | Probability of applying mutation operator. |
+| `-crossover_probability` | Probability of applying crossover operator. |
+| `-tournament_probability` | Tournament probability. |
+| `-tournament_size` | Tournament size. |
 | `-iters` | Number of iterations to run genetic algorithm. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
@@ -167,4 +167,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

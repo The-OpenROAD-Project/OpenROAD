@@ -391,11 +391,7 @@ bool LayoutViewer::isCursorInsideViewport()
   QPoint mouse_pos = scroller_->mapFromGlobal(QCursor::pos());
   QRect layout_boundaries = scroller_->viewport()->rect();
 
-  if (layout_boundaries.contains(mouse_pos)) {
-    return true;
-  }
-
-  return false;
+  return layout_boundaries.contains(mouse_pos);
 }
 
 void LayoutViewer::updateCursorCoordinates()
@@ -2127,9 +2123,7 @@ void LayoutViewer::selectHighlightConnectedBufferTrees(bool select_flag,
 
 void LayoutViewer::updateContextMenuItems()
 {
-  if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
-      == false)  // No Instance in selected set
-  {
+  if (!Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)) {
     menu_actions_[kSelectOutputNetsAct]->setDisabled(true);
     menu_actions_[kSelectInputNetsAct]->setDisabled(true);
     menu_actions_[kSelectAllNetsAct]->setDisabled(true);
@@ -2151,8 +2145,7 @@ void LayoutViewer::updateContextMenuItems()
     highlight_color_menu_->setDisabled(false);
   }
 
-  if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
-      == false) {  // No Net in selected set
+  if (!Gui::get()->anyObjectInSet(true, odb::dbNetObj)) {
     menu_actions_[kSelectConnectedInstAct]->setDisabled(true);
     menu_actions_[kHighlightConnectedInstAct]->setDisabled(true);
   } else {
@@ -2507,11 +2500,7 @@ bool LayoutViewer::hasDesign() const
   }
 
   const Rect bounds = getBounds();
-  if (bounds.dx() == 0 || bounds.dy() == 0) {
-    return false;
-  }
-
-  return true;
+  return bounds.dx() != 0 && bounds.dy() != 0;
 }
 
 bool LayoutViewer::isNetVisible(odb::dbNet* net)

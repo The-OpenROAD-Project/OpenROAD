@@ -1,0 +1,16 @@
+# Lightweight lock file check on Linux only.
+# The macOS bazel build does not need to duplicate this.
+name: Check MODULE.bazel.lock
+
+on:
+  pull_request:
+
+jobs:
+  Check-Bazel-Lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+
+      - name: Verify lock file is up to date
+        run: bazelisk mod deps --lockfile_mode=error
