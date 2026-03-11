@@ -10,6 +10,7 @@ Goal:
 
 import re
 import sys
+from typing import Dict, List
 from pathlib import Path
 
 
@@ -18,7 +19,7 @@ def _norm(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower())
 
 
-def _contains_any(text: str, patterns: list[str]) -> bool:
+def _contains_any(text: str, patterns: List[str]) -> bool:
     return any(re.search(p, text, flags=re.IGNORECASE) for p in patterns)
 
 
@@ -40,7 +41,7 @@ def main() -> int:
             print(f"  - {p}")
         return 1
 
-    content_by_file: dict[str, str] = {}
+    content_by_file: Dict[str, str] = {}
     for path in required_files:
         content_by_file[path.name] = _norm(path.read_text(encoding="utf-8"))
 
