@@ -189,6 +189,7 @@ static int logCommandCallback(ClientData client_data,
                               int objc,
                               Tcl_Obj* const objv[])
 {
+  (void) interp;
   (void) command_info;
   // Tcl levels are 1-based: 1 is top-level, 2+ are nested (e.g. sourced body).
   if (level != 1 || command == nullptr) {
