@@ -409,7 +409,7 @@ void Opendp::setInitialGridCells()
     }
   }
 
-  // Clear non-fixed footprints from the grid to prepare for Pass 3 population.
+  // Clear non-fixed footprints from the grid
   for (GridY y{0}; y < grid_->getRowCount(); y++) {
     for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
       Pixel& pixel = grid_->pixel(y, x);
@@ -420,11 +420,10 @@ void Opendp::setInitialGridCells()
     }
   }
 
-  // Pass 3: Comprehensive DRC check (Padding, Edge Spacing, Gaps)
-  // Since padding is painted as we go, this catch conflicts between all cells.
   if (drc_engine_) {
     for (auto& node : network_->getNodes()) {
-      if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
+      if (node->getType() == Node::CELL && !node->isFixed()
+          && node->isPlaced()) {
         if (conflicted.contains(node.get())) {
           continue;
         }
@@ -435,7 +434,6 @@ void Opendp::setInitialGridCells()
                                    node->getOrient())) {
           conflicted.insert(node.get());
         } else {
-          // Tentatively paint into the grid so subsequent cells can check against it.
           grid_->visitCellPixels(*node, false, [&](Pixel* pixel, bool padded) {
             pixel->cell = node.get();
             pixel->util = 1.0;
@@ -446,7 +444,7 @@ void Opendp::setInitialGridCells()
     }
   }
 
-  // Final population: synchronized with the conflicted set.
+  // synchronized with the conflicted set.
   for (GridY y{0}; y < grid_->getRowCount(); y++) {
     for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
       Pixel& pixel = grid_->pixel(y, x);
