@@ -64,6 +64,7 @@ bazel_dep(name = "boost.thread", version = BOOST_VERSION)
 bazel_dep(name = "boost.tokenizer", version = BOOST_VERSION)
 bazel_dep(name = "boost.unordered", version = BOOST_VERSION)
 bazel_dep(name = "boost.utility", version = BOOST_VERSION)
+# cudd 3.0.0.bcr.1 available but BCR entry has a broken upstream download URL (404)
 bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
 bazel_dep(name = "or-tools", version = "9.14.bcr.1")
@@ -74,7 +75,7 @@ bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
 
 # Make compilation DB (and possibly build cleaner)
-bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
+bazel_dep(name = "bant", version = "0.2.5", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 
 # A from source build of QT that allows it to link into OpenROAD.
