@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -422,4 +423,55 @@ pkg_tar(
     ],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+)
+
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test //:doc_test    # all documentation checks
+#   bazelisk test //:dup_id_test # duplicate message ID check
+
+DOC_TEST_MODULES = [
+    "ant",
+    "cts",
+    "dft",
+    "dpl",
+    "drt",
+    "fin",
+    "gpl",
+    "grt",
+    "gui",
+    "ifp",
+    "mpl",
+    "odb",
+    "pad",
+    "par",
+    "pdn",
+    "ppl",
+    "psm",
+    "rcx",
+    "rmp",
+    "rsz",
+    "stt",
+    "tap",
+    "upf",
+    "utl",
+]
+
+test_suite(
+    name = "doc_test",
+    tests = [
+        "//src/{}/test:{}_{}-py_test".format(module, module, check)
+        for module in DOC_TEST_MODULES
+        for check in [
+            "man_tcl_check",
+            "readme_msgs_check",
+        ]
+    ],
+)
+
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
 )
