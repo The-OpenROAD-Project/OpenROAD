@@ -67,7 +67,8 @@ def extract_arguments(text):
         # print(regex)
         # get text until the next header
         a = match[0][1]
-        a = a[a.find("#") :]
+        hash_pos = a.find("#")
+        a = a[hash_pos:] if hash_pos != -1 else ""
         options = a.split("####")[1:]
         if not options:
             final_options.append([])
