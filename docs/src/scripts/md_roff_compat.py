@@ -18,7 +18,7 @@ def extract_global_examples(text):
     Returns the examples text or None if not found.
     """
     lines = text.split("\n")
-    examples_text = ""
+    collected = []
     in_examples = False
 
     for line in lines:
@@ -28,9 +28,10 @@ def extract_global_examples(text):
         elif line.strip().startswith("####") and in_examples:
             break
         elif in_examples:
-            examples_text += line + "\n"
+            collected.append(line)
 
-    return examples_text.strip() if examples_text.strip() else None
+    examples_text = "\n".join(collected).strip()
+    return examples_text if examples_text else None
 
 
 def extract_global_see_also(text):
