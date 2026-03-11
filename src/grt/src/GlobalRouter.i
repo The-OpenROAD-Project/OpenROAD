@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
-
-%
-{
+%{
 #include "FastRouteRenderer.h"
 #include "GrouteRenderer.h"
 #include "grt/GlobalRouter.h"
@@ -16,8 +14,7 @@
 
   using ord::getGlobalRouter;
   using sta::LibertyPort;
-  %
-}
+%}
 
 % include "../../Exception.i"
 
@@ -28,8 +25,7 @@
 
 % import<stl.i> % import<std_vector.i> % template(vector_int) std::vector<int>;
 
-% inline %
-{
+% inline %{
   namespace grt {
 
   bool have_routes()
