@@ -144,19 +144,26 @@ def man2_translate(doc, path):
         print(f"Global Examples: {'Found' if global_examples else 'None'}")
         print(f"Global See Also: {'Found' if global_see_also else 'None'}")
 
-        assert (
-            len(func_names)
-            == len(func_descs)
-            == len(func_synopsis)
-            == len(func_options)
-            == len(func_args)
-        ), f"""Counts for all 5 categories must match up.\n
-            Names: {len(func_names)}\n
-            Descs: {len(func_descs)}\n
-            Synopsis: {len(func_synopsis)}\n
-            Options: {len(func_options)}\n
-            Args: {len(func_args)}\n
-            """
+        counts = {
+            "Names (```tcl first word)": len(func_names),
+            "Descs (### header to ```tcl)": len(func_descs),
+            "Synopsis (```tcl blocks)": len(func_synopsis),
+            "Options (### section count)": len(func_options),
+            "Args (### section count)": len(func_args),
+        }
+        expected = len(func_synopsis)
+        mismatches = {k: v for k, v in counts.items() if v != expected}
+        if mismatches:
+            raise ValueError(
+                f"Documentation parse error in {os.path.basename(doc)}: "
+                f"all 5 categories must have the same count.\n"
+                f"  Counts: { {k: v for k, v in counts.items()} }\n"
+                f"  Mismatches: {mismatches}\n"
+                f"Common causes:\n"
+                f"  - Options/Args > others: a '###' section heading has no ```tcl block "
+                f"(e.g. a feature description added as a ### section instead of ####)\n"
+                f"  - Names/Synopsis > others: a ```tcl block exists outside a ### section"
+            )
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()
