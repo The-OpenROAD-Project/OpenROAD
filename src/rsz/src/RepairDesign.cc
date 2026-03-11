@@ -113,7 +113,7 @@ void RepairDesign::computeSlewRCFactor()
     // scale by slew derate
     float rf_factor = (t_low - t_high) / library->slewDerateFromLibrary();
     // check the factor has the right order of magnitude
-    if (!(rf_factor > 0.1 && rf_factor < 10.0)) {
+    if (rf_factor <= 0.1 || rf_factor >= 10.0) {
       logger_->error(
           RSZ,
           101,

@@ -88,14 +88,14 @@ bool dbWirePathItr::getNextPath(dbWirePath& path)
       prev_ext_ = 0;
       has_prev_ext_ = false;
 
-      if (path.is_branch == false) {
+      if (!path.is_branch) {
         path.junction_id = decoder_.getJunctionId();
       }
     } else if (opcode_ == dbWireDecoder::POINT_EXT) {
       decoder_.getPoint(prev_x_, prev_y_, prev_ext_);
       has_prev_ext_ = true;
 
-      if (path.is_branch == false) {
+      if (!path.is_branch) {
         path.junction_id = decoder_.getJunctionId();
       }
 
