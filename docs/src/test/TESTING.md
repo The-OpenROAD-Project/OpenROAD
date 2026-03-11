@@ -37,13 +37,13 @@ runs the integration-level check: it links all module READMEs and runs
 `md_roff_compat.py` over every one of them, raising `ValueError` on any
 structural mismatch.
 
-The unit tests are run via `make test` and should be added as a separate
-CI step alongside `make preprocess`. To add it to a GitHub Actions
-workflow:
+The unit tests run automatically before the integration check because
+`preprocess` depends on `test` in the Makefile:
 
-```yaml
-- name: Run doc script unit tests
-  run: |
-    pip install -r docs/requirements.txt
-    make -C docs test
+```makefile
+preprocess: test
+    ./src/scripts/link_readmes.sh && python3 src/scripts/md_roff_compat.py
 ```
+
+Any CI step calling `make preprocess -C docs` will run the unit tests
+first. A broken parser fails fast before attempting to generate man-pages.
