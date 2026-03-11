@@ -48,6 +48,34 @@ using namespace odb;
 %ignore odb::dbTechLayerAntennaRule::getDiffPSR() const;
 %ignore odb::dbTechLayerAntennaRule::getDiffCSR() const;
 %ignore odb::dbTechLayerAntennaRule::getAreaDiffReduce() const;
+%ignore odb::dbTechLayer::getArea() const;
+%ignore odb::dbTechLayer::setArea(double area);
+
+%extend odb::dbTechLayer {
+  int64_t getArea() const
+  {
+    if ($self == nullptr) {
+      return 0;
+    }
+    odb::dbTech* tech = $self->getTech();
+    if (tech == nullptr) {
+      return 0;
+    }
+    return tech->micronsAreaToDbu($self->getArea());
+  }
+
+  void setArea(int64_t area)
+  {
+    if ($self == nullptr) {
+      return;
+    }
+    odb::dbTech* tech = $self->getTech();
+    if (tech == nullptr) {
+      return;
+    }
+    $self->setArea(tech->dbuAreaToMicrons(area));
+  }
+}
 
 // Swig can't handle non-assignable types
 %ignore odb::Point::get(Orientation2D orient) const;
