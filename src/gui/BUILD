@@ -142,3 +142,24 @@ tcl_encode(
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
 )
+
+exports_files(
+    [
+        "README.md",
+        "src/gui.tcl",
+    ],
+    visibility = ["//src/gui/test:__pkg__"],
+)
+
+genrule(
+    name = "messages_txt",
+    srcs = glob([
+        "src/*.cpp",
+        "src/*.h",
+        "src/*.tcl",
+    ]),
+    outs = ["messages.txt"],
+    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+    tools = ["//etc:find_messages.py"],
+    visibility = ["//src/gui/test:__pkg__"],
+)
