@@ -435,5 +435,56 @@ TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
   EXPECT_EQ(bump->getChipRegion(), region);
 }
 
+// ---------------------------------------------------------------------------
+// Path Assertion Parser Tests
+// ---------------------------------------------------------------------------
+
+class PathAssertionFixture : public tst::Fixture
+{
+ protected:
+  ThreeDBlox parser_{&logger_, db_.get()};
+};
+
+TEST_F(PathAssertionFixture, test_path_assertions_from_file)
+{
+  std::string path = getFilePath(prefix + "data/path_assertions.3dbx");
+  parser_.readDbx(path);
+  const auto& assertions = parser_.getPathAssertions();
+
+  ASSERT_EQ(assertions.size(), 2);
+
+  // Path1: 3 entries, one negated
+  const auto& p1 = assertions.at("Path1");
+  EXPECT_EQ(p1.name, "Path1");
+  ASSERT_EQ(p1.entries.size(), 3);
+
+  EXPECT_EQ(p1.entries[0].region, "soc_inst.regions.front_reg");
+  EXPECT_FALSE(p1.entries[0].negated);
+
+  EXPECT_EQ(p1.entries[1].region, "soc_inst_duplicate.regions.back_reg");
+  EXPECT_TRUE(p1.entries[1].negated);
+
+  EXPECT_EQ(p1.entries[2].region, "soc_inst_duplicate.regions.front_reg");
+  EXPECT_FALSE(p1.entries[2].negated);
+
+  // Path2: 2 entries, none negated
+  const auto& p2 = assertions.at("Path2");
+  EXPECT_EQ(p2.name, "Path2");
+  ASSERT_EQ(p2.entries.size(), 2);
+
+  EXPECT_EQ(p2.entries[0].region, "soc_inst.regions.back_reg");
+  EXPECT_FALSE(p2.entries[0].negated);
+
+  EXPECT_EQ(p2.entries[1].region, "soc_inst_duplicate.regions.back_reg");
+  EXPECT_FALSE(p2.entries[1].negated);
+}
+
+TEST_F(PathAssertionFixture, test_path_assertions_no_path_block)
+{
+  std::string path = getFilePath(prefix + "data/example.3dbx");
+  parser_.readDbx(path);
+  EXPECT_TRUE(parser_.getPathAssertions().empty());
+}
+
 }  // namespace
 }  // namespace odb

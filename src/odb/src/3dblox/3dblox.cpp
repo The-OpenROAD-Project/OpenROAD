@@ -188,6 +188,13 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
     createConnection(connection);
   }
   calculateSize(chip);
+  path_assertions_ = std::move(data.path_assertions);
+}
+
+const std::map<std::string, PathAssertion>& ThreeDBlox::getPathAssertions()
+    const
+{
+  return path_assertions_;
 }
 
 void ThreeDBlox::check()

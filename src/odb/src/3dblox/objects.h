@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "odb/3dblox.h"
+
 namespace odb {
 
 struct Coordinate
@@ -121,6 +123,7 @@ struct DbxData
   DesignDef design;
   std::map<std::string, ChipletInst> chiplet_instances;
   std::map<std::string, Connection> connections;
+  std::map<std::string, PathAssertion> path_assertions;
 };
 
 struct BumpMapEntry

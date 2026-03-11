@@ -8,6 +8,7 @@
 
 #include "baseParser.h"
 #include "objects.h"
+#include "odb/3dblox.h"
 #include "yaml-cpp/yaml.h"
 
 namespace odb {
@@ -39,6 +40,9 @@ class DbxParser : public BaseParser
                         const YAML::Node& connections_node);
   void parseConnection(Connection& connection,
                        const YAML::Node& connection_node);
+  void parsePaths(std::map<std::string, PathAssertion>& paths,
+                  const YAML::Node& paths_node);
+  void parsePath(PathAssertion& path, const YAML::Node& path_node);
 };
 
 }  // namespace odb
