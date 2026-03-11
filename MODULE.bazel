@@ -17,8 +17,8 @@ bazel_dep(name = "rules_python", version = "1.9.0")
 bazel_dep(name = "rules_pkg", version = "1.2.0")
 
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
-bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
-bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
+bazel_dep(name = "rules_jvm_external", version = "6.10", dev_dependency = True)
+bazel_dep(name = "rules_scala", version = "7.2.4", dev_dependency = True)
 
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_verilator", version = "0.1.0")
@@ -67,6 +67,10 @@ bazel_dep(name = "boost.utility", version = BOOST_VERSION)
 # cudd 3.0.0.bcr.1 available but BCR entry has a broken upstream download URL (404)
 bazel_dep(name = "cudd", version = "3.0.0")
 bazel_dep(name = "eigen", version = "3.4.0.bcr.3")
+# or-tools 9.15 available but blocked: it pulls soplex@7.1.4.bcr.1 which
+# requires boost.multiprecision@1.87.0 (compat level 108700), conflicting with
+# our boost.geometry@1.89.0.bcr.2 that requires boost.multiprecision@1.89.0.bcr.2
+# (compat level 0). Needs a boost upgrade or a newer or-tools/soplex that aligns.
 bazel_dep(name = "or-tools", version = "9.14.bcr.1")
 bazel_dep(name = "spdlog", version = "1.17.0")
 bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
@@ -144,7 +148,7 @@ orfs.default(
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.17"
+SCALA_VERSION = "2.13.18"
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
