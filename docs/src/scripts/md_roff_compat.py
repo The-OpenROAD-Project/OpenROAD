@@ -157,7 +157,7 @@ def man2_translate(doc, path):
             raise ValueError(
                 f"Documentation parse error in {os.path.basename(doc)}: "
                 f"all 5 categories must have the same count.\n"
-                f"  Counts: { {k: v for k, v in counts.items()} }\n"
+                f"  Counts: {counts}\n"
                 f"  Mismatches: {mismatches}\n"
                 f"Common causes:\n"
                 f"  - Options/Args > others: a '###' section heading has no ```tcl block "
