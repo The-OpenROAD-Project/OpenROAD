@@ -318,7 +318,7 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
 
   for (dbBox* box : swire->getWires()) {
     if (box->isVia()) {
-      if (draw_vias == true) {
+      if (draw_vias) {
         getShape(box, shape);
 
         if (!callback_->nextBoxShape(box, shape)) {
@@ -327,7 +327,7 @@ bool dbHierInstShapeItr::iterate_swire(unsigned filter,
         }
       }
     } else {
-      if (draw_segments == true) {
+      if (draw_segments) {
         getShape(box, shape);
 
         if (!callback_->nextBoxShape(box, shape)) {
@@ -365,7 +365,7 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
 
   for (itr.begin(wire); itr.next(shape);) {
     if (shape.isVia()) {
-      if (draw_vias == true) {
+      if (draw_vias) {
         transform(shape);
 
         if (!callback_->nextWireShape(wire, itr.getShapeId(), shape)) {
@@ -374,7 +374,7 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
         }
       }
     } else {
-      if (draw_segments == true) {
+      if (draw_segments) {
         transform(shape);
 
         if (!callback_->nextWireShape(wire, itr.getShapeId(), shape)) {

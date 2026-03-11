@@ -246,10 +246,7 @@ int dbBusPort::getSize() const
 bool dbBusPort::getUpdown() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;
-  if (obj->to_ >= obj->from_) {
-    return true;
-  }
-  return false;
+  return obj->to_ >= obj->from_;
 }
 
 dbBusPort* dbBusPort::create(dbModule* parentModule,

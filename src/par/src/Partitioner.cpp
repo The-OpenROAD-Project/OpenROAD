@@ -126,7 +126,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   if (hgraph->GetNumTimingPaths() > 0) {
     for (int i = 0; i < hgraph->GetNumTimingPaths(); ++i) {
       for (const int v : hgraph->PathVertices(i)) {
-        if (visited[v] == false) {
+        if (!visited[v]) {
           visited[v] = true;
           path_vertices.push_back(v);
         }
@@ -138,7 +138,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   }
   // Step 3: check remaining vertices
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    if (visited[v] == false) {
+    if (!visited[v]) {
       vertices.push_back(v);
     }
   }
@@ -149,7 +149,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   // Hopefully we can push all the path_vertices into one block
   vertices.insert(vertices.begin(), path_vertices.begin(), path_vertices.end());
 
-  if (vile_mode == false) {
+  if (!vile_mode) {
     // try to generate balanced random partitioning
     int block_id = 0;
     for (const auto& v : vertices) {
@@ -172,7 +172,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
       block_balance[block_id]
           = block_balance[block_id] + hgraph->GetVertexWeights(v);
       if (block_balance[block_id] >= upper_block_balance[block_id]
-          && stop_flag == false) {
+          && !stop_flag) {
         block_id++;
         solution[v] = block_id;  // move the vertex to next block
         if (block_id == num_parts_ - 1) {

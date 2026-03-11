@@ -468,11 +468,8 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
       = (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum())
             ? getDesign()->getTech()->getLayer(layer_num + 2)
             : nullptr;
-  if (!is_macro_cell_pin && upper_layer
-      && upper_layer->getLef58RightWayOnGridOnlyConstraint()) {
-    return true;
-  }
-  return false;
+  return !is_macro_cell_pin && upper_layer
+         && upper_layer->getLef58RightWayOnGridOnlyConstraint();
 }
 
 void FlexPA::genAPsFromLayerShapes(

@@ -1,4 +1,7 @@
 #include <exception>
+#include <filesystem>
+#include <fstream>
+#include <ios>
 #include <set>
 #include <vector>
 
@@ -343,10 +346,14 @@ TEST_F(ChipHierarchyFixture, test_chip_bumps)
   EXPECT_EQ(io_bump->getBTerm(), nullptr);
   dbNet* net = dbNet::create(io_chip->getBlock(), "net1");
   dbBTerm* bterm = dbBTerm::create(net, "bterm1");
+  // Before setBTerm, getChipBump returns nullptr
+  EXPECT_EQ(bterm->getChipBump(), nullptr);
   io_bump->setNet(net);
   io_bump->setBTerm(bterm);
   EXPECT_EQ(io_bump->getNet(), net);
   EXPECT_EQ(io_bump->getBTerm(), bterm);
+  // After setBTerm, getChipBump returns the bump (back-reference)
+  EXPECT_EQ(bterm->getChipBump(), io_bump);
 
   EXPECT_EQ(io_chip_region_r1->getChipBumps().size(), 1);
   EXPECT_EQ(*io_chip_region_r1->getChipBumps().begin(), io_bump);
@@ -387,6 +394,68 @@ TEST_F(ChipHierarchyFixture, test_chip_bumps)
   EXPECT_EQ(path[0], io_inst);
   dbInst* io_cell = memory_chip->getBlock()->findInst("io_bump");
   EXPECT_THROW(dbChipBump::create(io_chip_region_r1, io_cell), std::exception);
+}
+
+TEST_F(SimpleDbFixture, test_chip_bump_bterm_serialization)
+{
+  createSimpleDB();
+
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+
+  // Create a chip region and a bump backed by an inst
+  dbChipRegion* region = dbChipRegion::create(
+      chip, "bump_region", dbChipRegion::Side::BACK, nullptr);
+  dbLib* lib = db_->findLib("lib1");
+  dbMaster* bump_master = dbMaster::create(lib, "BUMP_CELL");
+  bump_master->setType(dbMasterType::COVER_BUMP);
+  bump_master->setFrozen();
+  dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
+  dbChipBump* bump = dbChipBump::create(region, bump_inst);
+  ASSERT_NE(bump, nullptr);
+
+  // Associate a bterm with the bump
+  dbBTerm* bterm = dbBTerm::create(dbNet::create(block, "SIG1"), "SIG1");
+  bump->setBTerm(bterm);
+  ASSERT_EQ(bterm->getChipBump(), bump);
+
+  // Write the database to a temp file
+  std::filesystem::create_directory("results");
+  const std::string tmp_path = "results/test_chip_bump_bterm_serialization.odb";
+  {
+    std::ofstream out;
+    out.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                   | std::ios::eofbit);
+    out.open(tmp_path, std::ios::binary);
+    db_->write(out);
+  }
+
+  // Read it back into a fresh database
+  dbDatabase* db2 = dbDatabase::create();
+  {
+    std::ifstream in;
+    in.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+    in.open(tmp_path, std::ios::binary);
+    db2->read(in);
+  }
+
+  // Locate the deserialized objects
+  dbBlock* block2 = db2->getChip()->getBlock();
+  ASSERT_NE(block2, nullptr);
+
+  dbBTerm* bterm2 = block2->findBTerm("SIG1");
+  ASSERT_NE(bterm2, nullptr);
+
+  dbChipRegion* region2 = db2->getChip()->findChipRegion("bump_region");
+  ASSERT_NE(region2, nullptr);
+  ASSERT_EQ(region2->getChipBumps().size(), 1);
+  dbChipBump* bump2 = *region2->getChipBumps().begin();
+  ASSERT_NE(bump2, nullptr);
+
+  // Verify the back-reference survived serialization
+  EXPECT_EQ(bterm2->getChipBump(), bump2);
+  EXPECT_EQ(bump2->getBTerm(), bterm2);
 }
 
 }  // namespace

@@ -114,25 +114,6 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
     return;
   }
 
-  // Pre-process master chips to map port names to bumps
-  std::map<dbChip*, std::map<std::string, dbChipBump*>> master_bump_map;
-  for (auto* inst : chip->getChipInsts()) {
-    dbChip* master = inst->getMasterChip();
-
-    // Skip if already processed
-    if (master_bump_map.contains(master)) {
-      continue;
-    }
-
-    for (auto* region : master->getChipRegions()) {
-      for (auto* bump : region->getChipBumps()) {
-        if (auto* bterm = bump->getBTerm()) {
-          master_bump_map[master][bterm->getName()] = bump;
-        }
-      }
-    }
-  }
-
   // Process nets
   std::unique_ptr<sta::NetIterator> net_iter(
       temp_network.netIterator(top_inst));
@@ -167,12 +148,14 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       const char* port_name = temp_network.name(temp_network.port(pin));
       dbChip* master = chip_inst->getMasterChip();
 
-      auto bump_it = master_bump_map[master].find(port_name);
-      if (bump_it == master_bump_map[master].end()) {
+      dbBTerm* bterm = master->getBlock()->findBTerm(port_name);
+      if (!bterm) {
         continue;
       }
-
-      dbChipBump* bump = bump_it->second;
+      dbChipBump* bump = bterm->getChipBump();
+      if (!bump) {
+        continue;
+      }
       auto* region_inst = chip_inst->findChipRegionInst(bump->getChipRegion());
       if (!region_inst) {
         continue;

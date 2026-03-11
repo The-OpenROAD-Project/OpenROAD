@@ -178,28 +178,23 @@ Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can fi
 
 To create an ORFS `make issue`, follow these steps:
 
-    rm -rf /tmp/floorplan
-    bazelisk run //test/orfs/mock-array:MockArray_floorplan_deps /tmp/floorplan
+    bazelisk run //test/orfs/mock-array:MockArray_floorplan_deps
 
 - In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
 - bazel-orfs adds a `//test/orfs/mock-array:MockArray_floorplan_deps` target that sets up all the dependencies for running `make do-floorplan`, similarly for `_synth/place/cts/grt/route/final`.
-- `tmp/floorplan` folder that contains a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
+- Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
 
 First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
 
-    /tmp/floorplan/make do-floorplan
+    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make do-floorplan
 
 Now create an issue for e.g. `macro_place.tcl`:
 
-    $ /tmp/floorplan/make macro_place_issue
-    ++ dirname /tmp/floorplan/make
-    + cd /tmp/floorplan/_main
-    + exec ./make_MockArray_floorplan_base_2_floorplan floorplan_issue
-    [deleted]
+    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make macro_place_issue
 
-The generated file is placed into /tmp/floorplan/_main:
+The generated file is placed into the `_main` subfolder:
 
-    /tmp/floorplan/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
+    tmp/test/orfs/mock-array/MockArray_floorplan_deps/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
 
 ## Creating an ORFS issue with bazel-orfs targets using `--sandbox_debug`
 
@@ -356,7 +351,7 @@ To test a PR with the GUI on gcd, run:
 ```
     $ git fetch origin pull/7856/head
     $ git checkout FETCH_HEAD
-    $ bazelisk run test/orfs/gcd:gcd_final /tmp/gcd -- gui_final
+    $ bazelisk run test/orfs/gcd:gcd_final gui_final
 ```
 
 This will:
@@ -364,20 +359,20 @@ This will:
 - fetch and checkout pull request 7856
 - build OpenROAD
 - run bazel-orfs flow on gcd
-- create a /tmp/gcd folder with the ORFS project
+- set up ORFS project in `tmp/test/orfs/gcd/gcd_final/`
 - launch the GUI opening gui_final gcd
 
-`bazelisk run test/orfs/gcd:gcd_final` run alone would create the `/tmp/gcd` folder and the arguments. The arguments after `--` are forwarded to the `/tmp/gcd/make` script that invokes make with the gcd ORFS project set up in `/tmp/gcd/_main/config.mk`.
+`bazelisk run test/orfs/gcd:gcd_final` run alone would set up the project. Additional arguments are forwarded to the `tmp/test/orfs/gcd/gcd_final/make` script.
 
 ## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
 
-First create a local work folder with all dependencies for the step that you want to work on:
+First set up a local work folder with all dependencies for the step that you want to work on:
 
-    bazelisk run //test/orfs/gcd:gcd_floorplan_deps /tmp/floorplan
+    bazelisk run //test/orfs/gcd:gcd_floorplan_deps
 
-Now run make directly with the `/tmp/floorplan/_main` work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
+Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
 
-    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir /tmp/floorplan/_main DESIGN_CONFIG=config.mk do-floorplan
+    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/test/orfs/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
 
 ## Whittling down .odb files with deltaDebug.py
 
@@ -387,14 +382,14 @@ Consider an error such as:
 
     [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
 
-First create a folder with all the dependencies to run global placement:
+First set up a folder with all the dependencies to run global placement:
 
-    bazelisk run //test/orfs/gcd:gcd_deps /tmp/bug
+    bazelisk run //test/orfs/gcd:gcd_place_deps
 
 Drop into a shell that has the build environment set up:
 
-    $ /tmp/bug/make bash
-    Makefile Environment  /tmp/bug/_main
+    $ tmp/test/orfs/gcd/gcd_place_deps/make bash
+    Makefile Environment  tmp/test/orfs/gcd/gcd_place_deps/_main
 
 Run up to the failing stage and stop with ctrl-c on the step that you want to run the whittling down on:
 
@@ -406,4 +401,4 @@ Now run deltaDebug.py:
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
-    /tmp/bug/make global_place_issue
+    tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue

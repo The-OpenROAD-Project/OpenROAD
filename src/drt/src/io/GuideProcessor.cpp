@@ -1826,7 +1826,7 @@ bool GuidePathFinder::traverseGraph()
         continue;
       }
       if (curr_wavefront.node_idx > getGuideCount()
-          && visited_[curr_wavefront.node_idx] == false) {
+          && !visited_[curr_wavefront.node_idx]) {
         visited_[curr_wavefront.node_idx] = true;
         prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
         visited_pin = curr_wavefront.node_idx;

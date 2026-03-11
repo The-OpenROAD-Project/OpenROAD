@@ -456,12 +456,8 @@ bool IpChecker::hasAccessibleEdge(odb::dbMaster* master,
       break;
     }
   }
-  if (!below_blocked && pin_routing_level > 1) {
-    return true;  // Can access via from below
-  }
-
-  // All access paths blocked
-  return false;
+  // Can access via from below ?
+  return !below_blocked && pin_routing_level > 1;
 }
 
 // LEF-CHK-004-005: Pin accessibility (signal and power)

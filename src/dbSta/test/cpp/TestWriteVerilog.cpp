@@ -105,7 +105,7 @@ TEST_F(TestWriteVerilog, RemoveCellsIdCollision)
                            /*nocase=*/false,
                            sta_->tclInterp());
     CellSeq cells = network->findCellsMatching(lib, &inv_match);
-    if (cells.empty() == false) {
+    if (!cells.empty()) {
       inv_cell = cells[0];
       break;
     }

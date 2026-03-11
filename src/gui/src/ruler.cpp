@@ -97,8 +97,7 @@ double Ruler::getLength() const
 ////////////
 
 RulerDescriptor::RulerDescriptor(
-    const std::vector<std::unique_ptr<Ruler>>& rulers,
-    odb::dbDatabase* /*db not-used*/)
+    const std::vector<std::unique_ptr<Ruler>>& rulers)
     : rulers_(rulers)
 {
 }

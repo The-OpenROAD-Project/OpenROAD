@@ -86,11 +86,12 @@ void Replace::doIncrementalPlace(const int threads, const PlaceOptions& options)
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
-    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, true));
 
     for (auto pd : db_->getChip()->getBlock()->getRegions()) {
       for (auto group : pd->getGroups()) {
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, true, group));
       }
     }
 
@@ -159,11 +160,12 @@ void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
-    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, true));
 
     for (auto pd : db_->getChip()->getBlock()->getRegions()) {
       for (auto group : pd->getGroups()) {
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, true, group));
       }
     }
 
@@ -207,16 +209,20 @@ void Replace::runMBFF(const int max_sz,
   pntset.Run(max_sz, alpha, beta);
 }
 
-bool Replace::initNesterovPlace(const PlaceOptions& options, const int threads)
+bool Replace::initNesterovPlace(const PlaceOptions& options,
+                                const int threads,
+                                bool check_density)
 {
   if (!pbc_) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
 
-    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+    pbVec_.push_back(
+        std::make_shared<PlacerBase>(db_, pbc_, log_, check_density));
 
     for (auto pd : db_->getChip()->getBlock()->getRegions()) {
       for (auto group : pd->getGroups()) {
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, group));
+        pbVec_.push_back(std::make_shared<PlacerBase>(
+            db_, pbc_, log_, check_density, group));
       }
     }
 
@@ -292,7 +298,7 @@ int Replace::doNesterovPlace(const int threads,
                              const int start_iter)
 {
   checkHasCoreRows();
-  if (!initNesterovPlace(options, threads)) {
+  if (!initNesterovPlace(options, threads, true)) {
     return 0;
   }
 
@@ -333,7 +339,7 @@ float Replace::getUniformTargetDensity(const PlaceOptions& options,
   options_no_io.skipIo();  // in case bterms are not placed
 
   float density = 1.0f;
-  if (initNesterovPlace(options_no_io, threads)) {
+  if (initNesterovPlace(options_no_io, threads, false)) {
     density = nbVec_[0]->getUniformTargetDensity();
   }
 

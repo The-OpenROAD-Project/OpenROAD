@@ -898,11 +898,8 @@ bool Connect::generateRuleContains(odb::dbTechViaGenerateRule* rule,
   for (uint32_t l = 0; l < layer_count; l++) {
     rule_layers.insert(rule->getViaLayerRule(l)->getLayer());
   }
-  if (rule_layers.find(lower) != rule_layers.end()
-      && rule_layers.find(upper) != rule_layers.end()) {
-    return true;
-  }
-  return false;
+  return rule_layers.find(lower) != rule_layers.end()
+         && rule_layers.find(upper) != rule_layers.end();
 }
 
 bool Connect::techViaContains(odb::dbTechVia* via,

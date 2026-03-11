@@ -259,7 +259,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
   //
   odb::dbNet* source_db_net = source_pin->getNet();
   odb::dbNet* dest_db_net = dest_pin->getNet();
-  if (db_network_->hasHierarchy() == false) {
+  if (!db_network_->hasHierarchy()) {
     // If both source pin and dest pin do not have a corresponding flat net,
     // Create a new net and connect it with source pin.
     if (source_db_net == nullptr && dest_db_net == nullptr) {

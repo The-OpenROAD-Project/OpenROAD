@@ -73,13 +73,13 @@ void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
   }
   double res_factor = resFactor / _resFactor;
   _resFactor = resFactor;
-  _resModify = resFactor == 1.0 ? false : true;
+  _resModify = resFactor != 1.0;
   double cc_factor = ccFactor / _ccFactor;
   _ccFactor = ccFactor;
-  _ccModify = ccFactor == 1.0 ? false : true;
+  _ccModify = ccFactor != 1.0;
   double gndc_factor = gndcFactor / _gndcFactor;
   _gndcFactor = gndcFactor;
-  _gndcModify = gndcFactor == 1.0 ? false : true;
+  _gndcModify = gndcFactor != 1.0;
   _block->adjustRC(res_factor, cc_factor, gndc_factor);
 }
 

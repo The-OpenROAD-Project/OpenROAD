@@ -35,7 +35,6 @@ class Design
  public:
   Design(odb::dbDatabase* db,
          utl::Logger* logger,
-         sta::dbSta* sta,
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,

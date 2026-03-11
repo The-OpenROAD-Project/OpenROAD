@@ -27,7 +27,7 @@ class frGuide : public frConnFig
 
   frLayerNum getBeginLayerNum() const { return beginLayer_; }
   frLayerNum getEndLayerNum() const { return endLayer_; }
-  bool hasRoutes() const { return routeObj_.empty() ? false : true; }
+  bool hasRoutes() const { return !routeObj_.empty(); }
   const std::vector<std::unique_ptr<frConnFig>>& getRoutes() const
   {
     return routeObj_;

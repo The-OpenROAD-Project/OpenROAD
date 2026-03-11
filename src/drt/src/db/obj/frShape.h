@@ -92,7 +92,7 @@ class frRect : public frShape
   {
     frCoord xSpan = box_.dx();
     frCoord ySpan = box_.dy();
-    return (xSpan >= ySpan) ? true : false;
+    return xSpan >= ySpan;
   }
   frCoord width() const
   {

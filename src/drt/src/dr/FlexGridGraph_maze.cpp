@@ -682,7 +682,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.emplace_back(currX, currY, currZ);

@@ -689,7 +689,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   bool hasEndPrlSpacing() const { return endPrlSpacing_; }
   bool hasEndToEndConstraint() const
   {
-    return (endToEndConstraint_) ? true : false;
+    return static_cast<bool>(endToEndConstraint_);
   }
   std::shared_ptr<frLef58SpacingEndOfLineWithinEndToEndConstraint>
   getEndToEndConstraint() const
@@ -706,7 +706,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasParallelEdgeConstraint() const
   {
-    return (parallelEdgeConstraint_) ? true : false;
+    return static_cast<bool>(parallelEdgeConstraint_);
   }
   std::shared_ptr<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>
   getParallelEdgeConstraint() const
@@ -715,7 +715,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasMaxMinLengthConstraint() const
   {
-    return (maxMinLengthConstraint_) ? true : false;
+    return static_cast<bool>(maxMinLengthConstraint_);
   }
   std::shared_ptr<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>
   getMaxMinLengthConstraint() const
@@ -724,7 +724,7 @@ class frLef58SpacingEndOfLineWithinConstraint : public frConstraint
   }
   bool hasEncloseCutConstraint() const
   {
-    return (encloseCutConstraint_) ? true : false;
+    return static_cast<bool>(encloseCutConstraint_);
   }
   std::shared_ptr<frLef58SpacingEndOfLineWithinEncloseCutConstraint>
   getEncloseCutConstraint() const
@@ -827,7 +827,7 @@ class frLef58SpacingEndOfLineConstraint : public frConstraint
   frCoord getWrongDirSpace() const { return wrongDirSpace_; }
   bool hasWithinConstraint() const
   {
-    return (withinConstraint_) ? true : false;
+    return static_cast<bool>(withinConstraint_);
   }
   std::shared_ptr<frLef58SpacingEndOfLineWithinConstraint> getWithinConstraint()
       const

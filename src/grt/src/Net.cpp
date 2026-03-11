@@ -150,11 +150,7 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
     }
   }
 
-  if (via_points.size() != bterms_above_max_layer) {
-    return false;
-  }
-
-  return true;
+  return via_points.size() == bterms_above_max_layer;
 }
 
 void Net::saveLastPinPositions()

@@ -21,7 +21,6 @@ Checks: >
   -readability-named-parameter,
   -readability-qualified-auto,
   -readability-redundant-access-specifiers,
-  -readability-simplify-boolean-expr,
   -readability-static-definition-in-anonymous-namespace,
   -readability-uppercase-literal-suffix,
   -readability-use-anyofallof,

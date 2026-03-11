@@ -396,7 +396,7 @@ bool FlexDRConnectivityChecker::astar(
         continue;
       }
       if (wfront.nodeIdx > nNetRouteObjs && wfront.nodeIdx < nNetObjs
-          && adjVisited[wfront.nodeIdx] == false) {
+          && !adjVisited[wfront.nodeIdx]) {
         adjVisited[wfront.nodeIdx] = true;
         adjPrevIdx[wfront.nodeIdx] = wfront.prevIdx;
         lastNodeIdx = wfront.nodeIdx;

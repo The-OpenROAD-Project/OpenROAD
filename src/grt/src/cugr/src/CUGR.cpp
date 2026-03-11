@@ -59,7 +59,6 @@ void CUGR::init(const int min_routing_layer,
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
-                                     sta_,
                                      constants_,
                                      min_routing_layer,
                                      max_routing_layer,

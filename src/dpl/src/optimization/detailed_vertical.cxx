@@ -150,7 +150,7 @@ void DetailedVerticalSwap::verticalSwap()
   double currHpwl = hpwlObj.curr();
   // Consider each candidate cell once.
   for (Node* ndi : candidates) {
-    if (generate(ndi) == false) {
+    if (!generate(ndi)) {
       continue;
     }
 

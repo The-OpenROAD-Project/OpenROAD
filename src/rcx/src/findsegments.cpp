@@ -59,11 +59,7 @@ bool extMeasureRC::OverlapOnly(int xy1, int len1, int xy2, int len2)
 bool extMeasureRC::Enclosed(int x1, int x2, int y1, int y2)
 {
   // segmet (x1,x2) vs. (y1,y2)
-  if (x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2) {
-    return true;
-  }
-
-  return false;
+  return x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2;
 }
 uint32_t extMeasureRC::FindSegments(bool lookUp,
                                     uint32_t dir,

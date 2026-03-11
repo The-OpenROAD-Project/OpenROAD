@@ -100,16 +100,15 @@ float IlpRefine::Pass(
   const int vertex_weight_dimension = hgraph->GetVertexDimensions();
   // call the ILP solver
   std::vector<int> solution_extracted;
-  if (ILPPartitionInst(num_parts_,
-                       vertex_weight_dimension,
-                       solution_extracted,
-                       fixed_vertices_extracted,
-                       hyperedges_extracted,
-                       hyperedges_weight_extracted,
-                       vertices_weight_extracted,
-                       upper_block_balance,
-                       lower_block_balance)
-      == false) {
+  if (!ILPPartitionInst(num_parts_,
+                        vertex_weight_dimension,
+                        solution_extracted,
+                        fixed_vertices_extracted,
+                        hyperedges_extracted,
+                        hyperedges_weight_extracted,
+                        vertices_weight_extracted,
+                        upper_block_balance,
+                        lower_block_balance)) {
     debugPrint(logger_,
                PAR,
                "partitioning",

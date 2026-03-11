@@ -460,7 +460,7 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
 
       const int from_index = network_->fromIndex(port);
       const int to_index = network_->toIndex(port);
-      const bool updown = (from_index <= to_index) ? true : false;
+      const bool updown = from_index <= to_index;
       const int size
           = updown ? to_index - from_index + 1 : from_index - to_index + 1;
       for (int i = 0; i < size; i++) {
@@ -537,7 +537,7 @@ void Verilog2db::makeChildInsts(Instance* inst,
       Instance* parent_instance = network_->parent(child);
       dbModule* parent_module = nullptr;
       Cell* parent_cell = nullptr;
-      if (parent_instance == network_->topInstance() || hierarchy_ == false) {
+      if (parent_instance == network_->topInstance() || !hierarchy_) {
         parent_module = block_->getTopModule();
         parent_cell = network_->cell(parent_instance);
       } else {

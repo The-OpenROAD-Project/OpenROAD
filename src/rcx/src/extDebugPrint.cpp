@@ -255,10 +255,7 @@ bool extMeasure::isVia(uint32_t rsegId)
 
   bool rvia1
       = rseg1 != nullptr
-                && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId())
-                       > 0
-            ? true
-            : false;
+        && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId()) > 0;
   return rvia1;
 }
 

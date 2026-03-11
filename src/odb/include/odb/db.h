@@ -1547,6 +1547,12 @@ class dbBTerm : public dbObject
   dbBlock* getBlock() const;
 
   ///
+  /// Get the chip bump associated with this block-terminal.
+  /// Returns nullptr if no chip bump is associated.
+  ///
+  dbChipBump* getChipBump() const;
+
+  ///
   /// Get the hierarchical parent iterm of this bterm.
   ///
   /// Returns nullptr if this bterm has no parent iterm.

@@ -713,9 +713,9 @@ void FlexDRWorker::initNets_initDR(
         const auto& box = getRouteBox();
         const bool onBorder = segOnBorder(box, bp, ep);
         if (box.intersects(bp) && box.intersects(ep)
-            && !(onBorder
-                 && (style.getBeginStyle() != frcTruncateEndStyle
-                     || style.getEndStyle() != frcTruncateEndStyle))) {
+            && (!onBorder
+                || (style.getBeginStyle() == frcTruncateEndStyle
+                    && style.getEndStyle() == frcTruncateEndStyle))) {
           if (onBorder) {
             initNets_segmentTerms(bp, ps->getLayerNum(), net, netTerms[net]);
             initNets_segmentTerms(ep, ps->getLayerNum(), net, netTerms[net]);

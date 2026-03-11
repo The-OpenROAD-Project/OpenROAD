@@ -787,11 +787,7 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 
   resizer_->checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
   slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
-  }
-
-  return true;
+  return slack_limit_ratio >= hold_slack_limit_ratio_max_;
 }
 
 void RepairHold::printProgress(int iteration, bool force, bool end) const

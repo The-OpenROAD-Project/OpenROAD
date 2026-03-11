@@ -984,10 +984,7 @@ dbModulePortIterator::dbModulePortIterator(dbModule* cell)
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_ != end_) {
-    return true;
-  }
-  return false;
+  return iter_ != end_;
 }
 
 Port* dbModulePortIterator::next()
@@ -1108,10 +1105,7 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module) {
-      return false;
-    }
-    return true;
+    return db_module == nullptr;
   }
   return instance != top_instance_;
 }
@@ -3438,7 +3432,7 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
 
 LibertyCell* dbNetwork::libertyCell(Cell* cell) const
 {
-  if (isConcreteCell(cell) == false) {
+  if (!isConcreteCell(cell)) {
     dbMaster* master = nullptr;
     dbModule* module = nullptr;
     staToDb(cell, master, module);
@@ -3544,10 +3538,7 @@ bool dbNetwork::isBus(const Port* port) const
   dbBTerm* bterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
-  if (modbterm && modbterm->isBusPort()) {
-    return true;
-  }
-  return false;
+  return modbterm && modbterm->isBusPort();
 }
 
 int dbNetwork::fromIndex(const Port* port) const
@@ -3803,7 +3794,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
         dbModITerm* moditerm = nullptr;
         staToDb(pin, iterm, bterm, moditerm);
         driver_pin = const_cast<Pin*>(pin);
-        if (hier == false) {
+        if (!hier) {
           return modnet->getParent();
         }
         if (bterm) {
@@ -3910,11 +3901,7 @@ bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
 
   dbNet* flat_net1 = findFlatDbNet(net1);
   dbNet* flat_net2 = findFlatDbNet(net2);
-  if (flat_net1 != nullptr && flat_net1 == flat_net2) {
-    return true;
-  }
-
-  return false;
+  return flat_net1 != nullptr && flat_net1 == flat_net2;
 }
 
 void DbNetConnectedToBTerm::operator()(const Pin* pin)
@@ -4203,7 +4190,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
     //
     //
 
-    if (db_net_search_ == false) {
+    if (!db_net_search_) {
       dbNet* db_net;
       odb::dbModNet* db_modnet;
       db_network_->staToDb(search_net_, db_net, db_modnet);
@@ -4314,10 +4301,7 @@ odb::dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 
 bool dbNetwork::hasHierarchicalElements() const
 {
-  if (!block()->getModNets().empty()) {
-    return true;
-  }
-  return false;
+  return !block()->getModNets().empty();
 }
 
 class AccumulateNetFlatLoadPins : public PinVisitor
@@ -4846,7 +4830,7 @@ void dbNetwork::checkSanityNetNames() const
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
     std::set<odb::dbModNet*> mod_nets;
-    if (net->findRelatedModNets(mod_nets) && mod_nets.empty() == false) {
+    if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
         if (net->getName() == mod_net->getHierarchicalName()) {
@@ -5017,7 +5001,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
     }
 
     // Report inconsistent point details
-    if (consistent == false) {
+    if (!consistent) {
       logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
       logger_->report("  Netlist drivers:");
       for (const Pin* pin : netlist_drivers) {

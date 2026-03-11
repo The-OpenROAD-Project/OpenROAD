@@ -207,10 +207,7 @@ bool Design::isInClock(odb::dbInst* inst)
 bool Design::isInClock(odb::dbITerm* iterm)
 {
   auto* net = iterm->getNet();
-  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
-    return true;
-  }
-  return false;
+  return net != nullptr && net->getSigType() == odb::dbSigType::CLOCK;
 }
 
 std::string Design::getITermName(odb::dbITerm* pin)

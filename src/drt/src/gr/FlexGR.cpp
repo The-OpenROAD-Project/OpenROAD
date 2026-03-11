@@ -472,32 +472,30 @@ void FlexGR::reportCong2D(FlexGRCMap* cmap2D)
       // update num overCon GCell
       auto supplyH = cmap2D->getSupply(xIdx, yIdx, 0, frDirEnum::E);
       auto demandH = cmap2D->getDemand(xIdx, yIdx, 0, frDirEnum::E);
-      if (demandH > supplyH
-          && cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+      if (demandH > supplyH && !cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         numOverConGCellH++;
       }
       // update worstCon
       if ((demandH * 100.0 / supplyH) > worstConH
-          && cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+          && !cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         worstConH = demandH * 100.0 / supplyH;
       }
-      if (cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+      if (!cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         conH.push_back(demandH * 100.0 / supplyH);
       }
       // V
       // update num overCon GCell
       auto supplyV = cmap2D->getSupply(xIdx, yIdx, 0, frDirEnum::N);
       auto demandV = cmap2D->getDemand(xIdx, yIdx, 0, frDirEnum::N);
-      if (demandV > supplyV
-          && cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+      if (demandV > supplyV && !cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         numOverConGCellV++;
       }
       // update worstCon
       if ((demandV * 100.0 / supplyV) > worstConV
-          && cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+          && !cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         worstConV = demandV * 100.0 / supplyV;
       }
-      if (cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+      if (!cmap2D->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         conV.push_back(demandV * 100.0 / supplyV);
       }
     }
@@ -565,15 +563,15 @@ void FlexGR::reportCong2D()
       auto supplyH = cmap2D_->getSupply(xIdx, yIdx, 0, frDirEnum::E);
       auto demandH = cmap2D_->getDemand(xIdx, yIdx, 0, frDirEnum::E);
       if (demandH > supplyH
-          && cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+          && !cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         numOverConGCellH++;
       }
       // update worstCon
       if ((demandH * 100.0 / supplyH) > worstConH
-          && cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+          && !cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         worstConH = demandH * 100.0 / supplyH;
       }
-      if (cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E) == false) {
+      if (!cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::E)) {
         conH.push_back(demandH * 100.0 / supplyH);
       }
       // V
@@ -581,15 +579,15 @@ void FlexGR::reportCong2D()
       auto supplyV = cmap2D_->getSupply(xIdx, yIdx, 0, frDirEnum::N);
       auto demandV = cmap2D_->getDemand(xIdx, yIdx, 0, frDirEnum::N);
       if (demandV > supplyV
-          && cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+          && !cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         numOverConGCellV++;
       }
       // update worstCon
       if ((demandV * 100.0 / supplyV) > worstConV
-          && cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+          && !cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         worstConV = demandV * 100.0 / supplyV;
       }
-      if (cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N) == false) {
+      if (!cmap2D_->hasBlock(xIdx, yIdx, 0, frDirEnum::N)) {
         conV.push_back(demandV * 100.0 / supplyV);
       }
     }
@@ -750,11 +748,10 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
           auto demand
               = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           if (demand > supply
-              && cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
-                     == false) {
+              && !cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
             numOverConGCell++;
           }
-          if (cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E) == false) {
+          if (!cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
             con.push_back(demand * 100.0 / supply);
           }
         } else {
@@ -763,11 +760,10 @@ void FlexGR::reportCong3D(FlexGRCMap* cmap)
           auto demand
               = cmap->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
           if (demand > supply
-              && cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
-                     == false) {
+              && !cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
             numOverConGCell++;
           }
-          if (cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N) == false) {
+          if (!cmap->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
             con.push_back(demand * 100.0 / supply);
           }
         }
@@ -824,12 +820,10 @@ void FlexGR::reportCong3D()
           auto demand
               = cmap_->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::E);
           if (demand > supply
-              && cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
-                     == false) {
+              && !cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
             numOverConGCell++;
           }
-          if (cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)
-              == false) {
+          if (!cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::E)) {
             con.push_back(demand * 100.0 / supply);
           }
         } else {
@@ -838,12 +832,10 @@ void FlexGR::reportCong3D()
           auto demand
               = cmap_->getRawDemand(xIdx, yIdx, cmapLayerIdx, frDirEnum::N);
           if (demand > supply
-              && cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
-                     == false) {
+              && !cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
             numOverConGCell++;
           }
-          if (cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)
-              == false) {
+          if (!cmap_->hasBlock(xIdx, yIdx, cmapLayerIdx, frDirEnum::N)) {
             con.push_back(demand * 100.0 / supply);
           }
         }
@@ -1725,114 +1717,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
   net->setRootGCellNode(gcellNodes[0]);
 
   auto& steinerNodes = net2SteinerNodes_[net];
-  // if (gcellNodes.size() >= 150) {
-  // TODO: remove connFig instantiation to match FLUTE behavior
-  if (false) {
-    // generate mst topology
-    genMSTTopology(gcellNodes);
-
-    // sanity check
-    for (unsigned i = 1; i < gcellNodes.size(); i++) {
-      if (gcellNodes[i]->getParent() == nullptr) {
-        std::cout << "Error: non-root gcell node does not have parent\n";
-      }
-    }
-
-    // generate steiner tree from MST
-    genSTTopology_HVW(gcellNodes, steinerNodes);
-    // generate shapes and update congestion map
-    for (auto node : gcellNodes) {
-      // add shape from child to parent
-      if (node->getParent()) {
-        auto parent = node->getParent();
-        odb::Point childLoc = node->getLoc();
-        odb::Point parentLoc = parent->getLoc();
-        odb::Point bp, ep;
-        if (childLoc < parentLoc) {
-          bp = childLoc;
-          ep = parentLoc;
-        } else {
-          bp = parentLoc;
-          ep = childLoc;
-        }
-
-        auto uPathSeg = std::make_unique<grPathSeg>();
-        uPathSeg->setChild(node);
-        uPathSeg->setParent(parent);
-        uPathSeg->addToNet(net);
-        uPathSeg->setPoints(bp, ep);
-        // 2D shapes are all on layerNum == 2
-        // assuming (layerNum / - 1) == congestion map idx
-        uPathSeg->setLayerNum(2);
-
-        odb::Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-        odb::Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-
-        // update congestion map
-        // horizontal
-        unsigned zIdx = 0;
-        if (bpIdx.y() == epIdx.y()) {
-          for (int xIdx = bpIdx.x(); xIdx < epIdx.x(); xIdx++) {
-            cmap_->addDemand(xIdx, bpIdx.y(), zIdx, frDirEnum::E);
-          }
-        } else {
-          for (int yIdx = bpIdx.y(); yIdx < epIdx.y(); yIdx++) {
-            cmap_->addDemand(bpIdx.x(), yIdx, zIdx, frDirEnum::N);
-          }
-        }
-
-        std::unique_ptr<grShape> uShape(std::move(uPathSeg));
-        net->addGRShape(uShape);
-      }
-    }
-
-    for (auto node : steinerNodes) {
-      // add shape from child to parent
-      if (node->getParent()) {
-        auto parent = node->getParent();
-        odb::Point childLoc = node->getLoc();
-        odb::Point parentLoc = parent->getLoc();
-        odb::Point bp, ep;
-        if (childLoc < parentLoc) {
-          bp = childLoc;
-          ep = parentLoc;
-        } else {
-          bp = parentLoc;
-          ep = childLoc;
-        }
-
-        auto uPathSeg = std::make_unique<grPathSeg>();
-        uPathSeg->setChild(node);
-        uPathSeg->setParent(parent);
-        uPathSeg->addToNet(net);
-        uPathSeg->setPoints(bp, ep);
-        // 2D shapes are all on layerNum == 2
-        // assuming (layerNum / - 1) == congestion map idx
-        uPathSeg->setLayerNum(2);
-
-        odb::Point bpIdx = design_->getTopBlock()->getGCellIdx(bp);
-        odb::Point epIdx = design_->getTopBlock()->getGCellIdx(ep);
-
-        // update congestion map
-        // horizontal
-        unsigned zIdx = 0;
-        if (bpIdx.y() == epIdx.y()) {
-          for (int xIdx = bpIdx.x(); xIdx < epIdx.x(); xIdx++) {
-            cmap_->addDemand(xIdx, bpIdx.y(), zIdx, frDirEnum::E);
-          }
-        } else {
-          for (int yIdx = bpIdx.y(); yIdx < epIdx.y(); yIdx++) {
-            cmap_->addDemand(bpIdx.x(), yIdx, zIdx, frDirEnum::N);
-          }
-        }
-
-        std::unique_ptr<grShape> uShape(std::move(uPathSeg));
-        net->addGRShape(uShape);
-      }
-    }
-  } else {
-    genSTTopology_FLUTE(gcellNodes, steinerNodes);
-  }
+  genSTTopology_FLUTE(gcellNodes, steinerNodes);
 
   // connect rpin node to gcell center node
   for (auto& [gcellNode, localNodes] : gcellNode2RPinNodes) {
