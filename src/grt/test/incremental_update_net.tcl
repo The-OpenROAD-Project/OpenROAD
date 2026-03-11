@@ -40,8 +40,8 @@ odb::dbITerm_connect $b1_a $n_bypass_net
 # Refresh CUGR state:
 #   n2      now has 0 pins  -> will be skipped during routing
 #   n_bypass now has 2 pins -> will be routed
-grt::update_net $n2_net
-grt::update_net $n_bypass_net
+grt::update_cugr_net $n2_net
+grt::update_cugr_net $n_bypass_net
 
 global_route -end_incremental
 # --- end topology mutation ---
