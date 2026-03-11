@@ -18,7 +18,6 @@
 
 #include "boost/stacktrace/stacktrace.hpp"
 #include "tcl.h"
-#include "utl/Logger.h"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed
@@ -41,6 +40,7 @@
 #include "ord/Tech.h"
 #include "sta/StaMain.hh"
 #include "sta/StringUtil.hh"
+#include "utl/Logger.h"
 #include "utl/decode.h"
 
 using sta::findCmdLineFlag;
@@ -101,7 +101,6 @@ static int logCommandCallback(ClientData client_data,
                               int objc,
                               Tcl_Obj* const objv[]);
 static void deleteCommandTrace(ClientData client_data);
-
 
 static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
