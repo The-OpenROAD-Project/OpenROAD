@@ -359,9 +359,10 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
     }
   }
 
-  int cluster_count = 0;
   // Test to delete one sink on cluster
   for (unsigned j = 1; j < groupSize; ++j) {
+    int cluster_count = 0;
+    int solved_cluster = 0;
     unsigned cluster_num = solutions[j].size();
     for (unsigned c = 0; c < cluster_num; ++c) {
       if (solutionPoints[j][c].size() == 1) {
@@ -388,12 +389,13 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                         distanceCost,
                         capCost,
                         groupSize)) {
+            solved_cluster++;
             //logger_->report("For solution {} cluster {} has one sink, cluster {} could adopt it, size {} dia {:.3}", j, c, k, solutionPoints[j][k].size(), distanceCost);
 	    //Add sink to found cluster
 	    solutionPoints[j][k].push_back(p);
 	    solutionPointsIdx[j][k].push_back(idx);
             solutions[j][k].push_back(idx);
-	    costs[j] -= maxInternalDiameter_;
+	    costs[j] += distanceCost;
             // delete cluster
 	    swap(solutionPoints[j][c], solutionPoints[j][cluster_num - 1]);
 	    solutionPoints[j].pop_back();
@@ -401,14 +403,15 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
 	    solutionPointsIdx[j].pop_back();
 	    swap(solutions[j][c], solutions[j][cluster_num - 1]);
 	    solutions[j].pop_back();
+	    costs[j] -= maxInternalDiameter_;
 	    cluster_num--;
 	    break;
 	  }
 	}
       }
     }
+    printf("Solution %d has %d clusters with single sink, %d clusters move to nearby cluster\n", j, cluster_count, solved_cluster);
   }
-  printf("Number of cluster with single sink %d\n", cluster_count);
   unsigned bestSolution = 0;
   bool bestSolutionFound = false;
 
@@ -426,6 +429,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
       bestSolutionFound = true;
     }
   }
+  printf("Best solution is: %d\n", bestSolution);
   debugPrint(logger_,
              CTS,
              "Stree",
