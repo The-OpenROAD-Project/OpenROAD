@@ -28,7 +28,7 @@ works identically on every developer's machine and in CI. No virtualenvs, no
 bazelisk test //:lint_test
 
 # Auto-fix formatting
-bazelisk run //:lint
+bazelisk run //:fix_lint
 ```
 
 ## Available targets
@@ -36,7 +36,7 @@ bazelisk run //:lint
 | Target | Type | What it does |
 |--------|------|-------------|
 | `//:lint_test` | `test_suite` | Umbrella: runs all lint checks |
-| `//:lint` | `sh_binary` | Umbrella: auto-fixes what can be fixed |
+| `//:fix_lint` | `alias` | Umbrella: auto-fixes what can be fixed |
 | `//:tcl_lint_test` | `sh_test` | Runs `tclint .` (lint rules) |
 | `//:tcl_fmt_test` | `sh_test` | Runs `tclfmt --check .` (formatting) |
 | `//:tcl_tidy` | `sh_binary` | Runs `tclfmt --in-place .` (auto-format) |
@@ -54,7 +54,7 @@ Current settings:
 
 ## Adding new linters
 
-The umbrella targets (`//:lint_test` and `//:lint`) are designed for extension.
+The umbrella targets (`//:lint_test` and `//:fix_lint`) are designed for extension.
 To add a new linter (e.g., C++ tidy):
 
 1. Add the tool dependency to `bazel/requirements.in` (pip) or as a Bazel
@@ -66,7 +66,7 @@ To add a new linter (e.g., C++ tidy):
 ## Planned additions
 
 The following linters and formatters are planned for `//:lint_test` and
-`//:lint`, replacing their ad-hoc CI equivalents:
+`//:fix_lint`, replacing their ad-hoc CI equivalents:
 
 - **C++ clang-tidy** — static analysis for C++ sources
 - **C++ clang-format** — formatting check/fix for C++ and header files

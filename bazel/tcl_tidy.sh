@@ -5,5 +5,5 @@
 # Auto-format all TCL files in-place.
 set -euo pipefail
 TOOL="$(readlink -f "$1")"
-cd "$BUILD_WORKSPACE_DIRECTORY"
+cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
 exec "$TOOL" --in-place .

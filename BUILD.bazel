@@ -429,7 +429,7 @@ pkg_tar(
 # Lint & tidy targets
 #
 # bazelisk test //:lint_test   — run all linters (currently: tclint + tclfmt)
-# bazelisk run  //:lint        — auto-fix what can be fixed  (currently: tclfmt)
+# bazelisk run  //:fix_lint    — auto-fix what can be fixed  (currently: tclfmt)
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -480,12 +480,7 @@ test_suite(
     ],
 )
 
-sh_binary(
-    name = "lint",
-    srcs = ["//bazel:tcl_tidy.sh"],
-    args = ["$(rootpath //bazel:tclfmt)"],
-    data = [
-        "tclint.toml",
-        "//bazel:tclfmt",
-    ],
+alias(
+    name = "fix_lint",
+    actual = ":tcl_tidy",
 )
