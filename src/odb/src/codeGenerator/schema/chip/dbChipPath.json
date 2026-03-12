@@ -28,6 +28,9 @@
     "h_includes": [
         "odb/dbId.h"
     ],
+    "cpp_sys_includes": [
+        "algorithm"
+    ],
     "cpp_includes": [
         "dbChip.h"
     ]
