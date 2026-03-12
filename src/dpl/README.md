@@ -59,7 +59,7 @@ detailed_placement
     [-max_displacement disp|{disp_x disp_y}]
     [-disallow_one_site_gaps]
     [-report_file_name filename]
-    [-hybrid_legalization]
+    [-disable_hybrid_legalization]
 ```
 
 #### Options
@@ -70,7 +70,7 @@ detailed_placement
 | `-disallow_one_site_gaps` | Option is deprecated. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
-| `-hybrid_legalization` | Enable two-pass flow consistingh of fast legalization based on Abacus pass followed by negotiation-based pass if needed.  This option is disabled by default. |
+| `-disable_hybrid_legalization` | Disable two-pass flow consisting of fast legalization based on Abacus pass followed by negotiation-based pass if needed.  The default is to enable the hybrid flow. |
 
 ### Set Placement Padding
 

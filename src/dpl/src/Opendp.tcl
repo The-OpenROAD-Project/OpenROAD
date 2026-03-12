@@ -6,12 +6,12 @@ sta::define_cmd_args "detailed_placement" { \
                            [-disallow_one_site_gaps] \
                            [-incremental] \
                            [-report_file_name file_name] \
-                           [-hybrid_legalization]}
+                           [-disable_hybrid_legalization]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} \
-    flags {-disallow_one_site_gaps -incremental -hybrid_legalization}
+    flags {-disallow_one_site_gaps -incremental -disable_hybrid_legalization}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -51,7 +51,7 @@ proc detailed_placement { args } {
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
-      [info exists flags(-hybrid_legalization)]
+      [info exists flags(-disable_hybrid_legalization)]
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."

@@ -28,11 +28,11 @@ detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
                        bool incremental,
-                       bool use_hybrid_legalizer){
+                       bool disable_hybrid_legalizer){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, use_hybrid_legalizer);
+                            incremental, disable_hybrid_legalizer);
 }
 
 void

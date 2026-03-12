@@ -108,7 +108,7 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool use_hybrid_legalizer = false);
+                         bool disable_hybrid_legalizer = false);
   int hybridLegalize();
   void reportLegalizationStats() const;
 

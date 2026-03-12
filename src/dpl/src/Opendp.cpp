@@ -117,7 +117,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_hybrid_legalizer)
+                               const bool disable_hybrid_legalizer)
 {
   incremental_ = incremental;
   importDb();
@@ -158,7 +158,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   updateDbInstLocations();
 
   if (!placement_failures_.empty()) {
-    if (use_hybrid_legalizer) {
+    if (!disable_hybrid_legalizer) {
       // Standard engine left some cells illegal.  Give the hybrid
       // Abacus+Negotiation legalizer a chance to recover before treating
       // the run as a hard failure.  HybridLegalizer re-reads current OpenDB

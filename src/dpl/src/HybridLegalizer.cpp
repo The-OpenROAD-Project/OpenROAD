@@ -101,7 +101,9 @@ void HybridLegalizer::legalize()
              1,
              "HybridLegalizer: starting legalization.");
 
-  initFromDb();
+  if (!initFromDb()) {
+    return;
+  }
   buildGrid();
   initFenceRegions();
 
@@ -169,9 +171,15 @@ void HybridLegalizer::legalize()
 // Initialisation
 // ===========================================================================
 
-void HybridLegalizer::initFromDb()
+bool HybridLegalizer::initFromDb()
 {
+  if (db_->getChip() == nullptr) {
+    return false;
+  }
   auto* block = db_->getChip()->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
 
   const odb::Rect coreArea = block->getCoreArea();
   dieXlo_ = coreArea.xMin();
@@ -236,6 +244,8 @@ void HybridLegalizer::initFromDb()
 
     cells_.push_back(cell);
   }
+
+  return true;
 }
 
 HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const

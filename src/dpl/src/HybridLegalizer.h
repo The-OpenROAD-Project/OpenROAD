@@ -188,7 +188,7 @@ class HybridLegalizer
 
  private:
   // Initialisation
-  void initFromDb();
+  bool initFromDb();
   void buildGrid();
   void initFenceRegions();
   [[nodiscard]] HLPowerRailType inferRailType(int rowIdx) const;
