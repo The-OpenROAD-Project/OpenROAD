@@ -63,8 +63,7 @@ using Rulers = std::vector<std::unique_ptr<Ruler>>;
 class RulerDescriptor : public Descriptor
 {
  public:
-  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers,
-                  odb::dbDatabase* db);
+  RulerDescriptor(const std::vector<std::unique_ptr<Ruler>>& rulers);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;

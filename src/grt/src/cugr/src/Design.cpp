@@ -20,7 +20,6 @@ namespace grt {
 
 Design::Design(odb::dbDatabase* db,
                utl::Logger* logger,
-               sta::dbSta* /*not-used*/,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,

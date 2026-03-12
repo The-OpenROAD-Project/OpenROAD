@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2026, The OpenROAD Authors
 
+#pragma once
+
 #include <vector>
 
 #include "odb/3dblox.h"
@@ -47,6 +49,7 @@ class CheckerFixture : public tst::Fixture
   void check()
   {
     db_->setTopChip(top_chip_);
+    db_->constructUnfoldedModel();
     ThreeDBlox three_dblox(&logger_, db_.get());
     three_dblox.check();
   }
@@ -80,6 +83,8 @@ class CheckerFixture : public tst::Fixture
       = "Unused internal_ext";
   static constexpr const char* connected_regions_category
       = "Connection regions";
+  static constexpr const char* logical_connectivity_category
+      = "Logical Connectivity";
   static constexpr const char* bump_alignment_category = "Bump Alignment";
 };
 

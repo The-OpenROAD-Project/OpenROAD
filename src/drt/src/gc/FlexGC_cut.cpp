@@ -111,10 +111,7 @@ bool FlexGCWorker::Impl::checkLef58CutSpacingTbl_helper(
                                    isSide2,
                                    odb::dbTechLayerCutSpacingTableDefRule::MIN);
     reqSpcSqr *= reqSpcSqr;
-    if (distSquare < reqSpcSqr) {
-      return true;
-    }
-    return false;
+    return distSquare < reqSpcSqr;
   }
   if (class1 == class2 && !dbRule->isLayerValid()) {
     bool exactlyAligned = false;

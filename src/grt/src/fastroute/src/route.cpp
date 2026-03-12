@@ -999,7 +999,7 @@ void FastRouteCore::spiralRouteAll()
       for (int k = 0; k < treenodes[nodeID].conCNT; k++) {
         const int edgeID = treenodes[nodeID].eID[k];
 
-        if (treeedges[edgeID].assigned == false) {
+        if (!treeedges[edgeID].assigned) {
           edgeQueue.push(edgeID);
           treeedges[edgeID].assigned = true;
         }

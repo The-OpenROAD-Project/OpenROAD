@@ -877,10 +877,7 @@ bool Track::checkAndplacerOnMarker(Wire* w, int markIndex)
 }
 bool Track::checkMarker(int markIndex)
 {
-  if (_marker[markIndex] == nullptr) {
-    return true;
-  }
-  return false;
+  return _marker[markIndex] == nullptr;
 }
 bool Track::checkAndplace(Wire* w, int markIndex1)
 {
@@ -2718,7 +2715,7 @@ void GridTable::setExtControl_v2(odb::dbBlock* block,
 void GridTable::reverseTargetTrack()
 {
   _ccTargetHighTracks = _ccTargetHighTracks == 2 ? 0 : 2;
-  _targetTrackReversed = _targetTrackReversed ? false : true;
+  _targetTrackReversed = !_targetTrackReversed;
 }
 
 void GridTable::setMaxArea(int x1, int y1, int x2, int y2)
