@@ -50,6 +50,7 @@
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"

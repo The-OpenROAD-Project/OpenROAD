@@ -308,11 +308,6 @@ void NesterovPlace::updateIterGraphics(
     }
   }
 
-  if (npVars_.debug_generate_images && iter == 0) {
-    std::string gif_path = fmt::format("{}/placement.gif", reports_dir);
-    placement_gif_key_ = graphics_->gifStart(gif_path);
-  }
-
   if (npVars_.debug_generate_images && iter % 10 == 0) {
     odb::Rect region;
     int width_px = 500;
@@ -831,6 +826,7 @@ bool NesterovPlace::isConverged(int gpl_iter_count,
   if (num_region_converge == nbVec_.size()) {
     if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
       graphics_->gifEnd(placement_gif_key_);
+      placement_gif_key_ = -1;
     }
     return true;
   }
@@ -1035,6 +1031,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     nb->setIter(start_iter);
     nb->setMaxPhiCoefChanged(false);
     nb->resetMinSumOverflow();
+    nb->resetConverged();
     original_area += nb->getNesterovInstsArea();
   }
 
@@ -1044,6 +1041,16 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       = reports_dir + "/gpl_routability_driven";
 
   cleanReportsDirs(timing_driven_dir, routability_driven_dir);
+  if (graphics_ && graphics_->enabled() && npVars_.debug
+      && npVars_.debug_generate_images) {
+    if (placement_gif_key_ != -1) {
+      graphics_->gifEnd(placement_gif_key_);
+    }
+    const std::string gif_name
+        = (start_iter == 0) ? "placement.gif" : "placement_stage2.gif";
+    placement_gif_key_
+        = graphics_->gifStart(fmt::format("{}/{}", reports_dir, gif_name));
+  }
   if (graphics_ && graphics_->enabled() && npVars_.debug_generate_images) {
     updateDb();
     std::string label = fmt::format("init_nesterov");

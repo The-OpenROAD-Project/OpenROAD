@@ -70,6 +70,12 @@ using namespace odb;
 %include "polygon.i"
 %include "odb/db.h"
 
+// Prevent compiler problems when including dbShape.h.
+%ignore odb::dbShapeItrCallback;
+%ignore odb::dbWireShapeItr;
+
+%include "odb/dbShape.h"
+
 %include "dbhelpers.i"  
 
 %rename(getPoint_ext) odb::dbWireDecoder::getPoint(int& x, int& y, int& ext) const;

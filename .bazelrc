@@ -91,8 +91,9 @@ build:profile --copt -g --host_copt -g
 build:profile --copt -gmlt --host_copt -gmlt
 build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 
-# TODO: document
+# Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
+build --nosandbox_default_allow_network
 
 test --build_tests_only
 
