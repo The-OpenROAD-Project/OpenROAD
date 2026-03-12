@@ -435,7 +435,7 @@ pkg_tar(
 # --- TCL linting (tclint) -------------------------------------------------
 
 sh_test(
-    name = "tcl_lint_test",
+    name = "lint_tcl_test",
     srcs = ["//bazel:tcl_lint_test.sh"],
     args = ["$(rootpath //bazel:tclint)"],
     data = [
@@ -448,7 +448,7 @@ sh_test(
 # --- TCL formatting check (tclfmt --check) --------------------------------
 
 sh_test(
-    name = "tcl_fmt_test",
+    name = "fmt_tcl_test",
     srcs = ["//bazel:tcl_fmt_test.sh"],
     args = ["$(rootpath //bazel:tclfmt)"],
     data = [
@@ -461,7 +461,7 @@ sh_test(
 # --- TCL auto-format (tclfmt --in-place) ----------------------------------
 
 sh_binary(
-    name = "tcl_tidy",
+    name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
     args = ["$(rootpath //bazel:tclfmt)"],
     data = [
@@ -475,12 +475,12 @@ sh_binary(
 test_suite(
     name = "lint_test",
     tests = [
-        ":tcl_fmt_test",
-        ":tcl_lint_test",
+        ":fmt_tcl_test",
+        ":lint_tcl_test",
     ],
 )
 
 alias(
     name = "fix_lint",
-    actual = ":tcl_tidy",
+    actual = ":tidy_tcl",
 )

@@ -37,9 +37,9 @@ bazelisk run //:fix_lint
 |--------|------|-------------|
 | `//:lint_test` | `test_suite` | Umbrella: runs all lint checks |
 | `//:fix_lint` | `alias` | Umbrella: auto-fixes what can be fixed |
-| `//:tcl_lint_test` | `sh_test` | Runs `tclint .` (lint rules) |
-| `//:tcl_fmt_test` | `sh_test` | Runs `tclfmt --check .` (formatting) |
-| `//:tcl_tidy` | `sh_binary` | Runs `tclfmt --in-place .` (auto-format) |
+| `//:lint_tcl_test` | `sh_test` | Runs `tclint .` (lint rules) |
+| `//:fmt_tcl_test` | `sh_test` | Runs `tclfmt --check .` (formatting) |
+| `//:tidy_tcl` | `sh_binary` | Runs `tclfmt --in-place .` (auto-format) |
 
 ## Configuration
 
