@@ -5055,6 +5055,7 @@ private:
 
   void multi_init_topo_order()
   {
+    bool topo_ok = true;
     /* create and initialize a choice view to store the tuples */
     choice_view<Ntk> choice_ntk{ ntk };
     multi_add_choices( choice_ntk );
@@ -5083,10 +5084,14 @@ private:
 
     /* sort topologically */
     ntk.foreach_co( [&]( auto const& f ) {
+      if (!topo_ok)
+        return;
       if ( ntk.visited( ntk.get_node( f ) ) == ntk.trav_id() )
         return;
-      multi_topo_sort_rec( choice_ntk, ntk.get_node( f ) );
+      topo_ok = multi_topo_sort_rec( choice_ntk, ntk.get_node( f ) );
     } );
+
+    assert(topo_ok);
   }
 
   /* Experimental code resticted to only half adders and full adders */
@@ -5179,29 +5184,72 @@ private:
     }
   }
 
+  bool node_in_tfi( uint32_t dst_idx, uint32_t src_idx )
+  {
+    if ( dst_idx == src_idx )
+      return true;
+
+    ntk.incr_trav_id();
+    const auto mark = ntk.trav_id();
+
+    bool found = false;
+
+    std::function<void(node<Ntk> const&)> rec = [&]( node<Ntk> const& n ) {
+      if ( found )
+        return;
+
+      if ( ntk.visited( n ) == mark )
+        return;
+      ntk.set_visited( n, mark );
+
+      if ( ntk.node_to_index( n ) == dst_idx )
+      {
+        found = true;
+        return;
+      }
+
+      ntk.foreach_fanin( n, [&]( auto const& f ) {
+        rec( ntk.get_node( f ) );
+      } );
+    };
+
+    rec( ntk.index_to_node( src_idx ) );
+    return found;
+  }
+
   /* Experimental code */
   template<bool OverlapFilter>
   void multi_filter_and_match( multi_cuts_t const& multi_cuts, multi_single_matches_t const& multi_node_match_local )
   {
+    multi_cut_set.clear();
+    multi_node_match.clear();
     multi_cut_set.reserve( multi_node_match_local.size() );
     multi_node_match.reserve( multi_node_match_local.size() );
 
-    ntk.incr_trav_id();
-
-    for ( auto& pair : multi_node_match_local )
+    for ( auto const& pair : multi_node_match_local )
     {
       uint32_t index1 = pair[0].node_index;
       uint32_t index2 = pair[1].node_index;
       uint32_t cut_index1 = pair[0].cut_index;
       uint32_t cut_index2 = pair[1].cut_index;
+
+      assert( index1 < index2 );
+
       multi_cut_t const& cut1 = multi_cuts.cuts( index1 )[cut_index1];
       multi_cut_t const& cut2 = multi_cuts.cuts( index2 )[cut_index2];
 
-      assert( index1 < index2 );
+      /* Reject structurally dependent pairs. */
+      const bool index1_in_tfi_of_index2 = node_in_tfi( index1, index2 );
+      const bool index2_in_tfi_of_index1 = node_in_tfi( index2, index1 );
+      if ( index1_in_tfi_of_index2 || index2_in_tfi_of_index1 )
+      {
+        continue;
+      }
 
       /* remove incompatible multi-output cuts */
       bool is_new = true;
       uint32_t insertion_index = multi_node_match.size();
+
       if constexpr ( OverlapFilter )
       {
         if ( multi_gate_check_overlapping( index1, index2, cut1 ) )
@@ -5211,8 +5259,6 @@ private:
       {
         if ( multi_gate_check_incompatible( index1, index2, is_new, insertion_index ) )
           continue;
-        // if ( is_new && multi_gate_check_overlapping( index1, index2, cut1 ) )
-        //   continue;
       }
 
       /* copy cuts */
@@ -5240,7 +5286,6 @@ private:
       }
       else
       {
-        // multi_gate_mark_visited( index1, index2, cut1 );
         multi_gate_mark_compatibility( index1, index2, insertion_index );
       }
 
@@ -5248,11 +5293,17 @@ private:
       multi_cut_set.push_back( cut_pair );
 
       /* re-index data */
-      multi_match_data new_data1, new_data2;
+      multi_match_data new_data1{};
+      multi_match_data new_data2{};
+
       new_data1.node_index = index1;
-      new_data1.cut_index = multi_cut_set.size() - 1;
+      new_data1.cut_index = static_cast<uint32_t>( multi_cut_set.size() - 1 );
+      new_data1.in_tfi = index1_in_tfi_of_index2 ? 1 : 0;
+
       new_data2.node_index = index2;
-      new_data2.cut_index = multi_cut_set.size() - 1;
+      new_data2.cut_index = static_cast<uint32_t>( multi_cut_set.size() - 1 );
+      new_data2.in_tfi = index2_in_tfi_of_index1 ? 1 : 0;
+
       multi_match_t p = { new_data1, new_data2 };
 
       /* add cuts to the correct bucket */
@@ -5581,7 +5632,10 @@ private:
         {
           /* fix cycle: remove multi-output match */
           choice_ntk.foreach_choice( repr, [&]( auto const& p ) {
-            node_tuple_match[ntk.node_to_index( p )].data = 0;
+            auto idx = ntk.node_to_index( p );
+            node_tuple_match[idx].data = 0;
+            node_match[idx].multioutput_match[0] = false;
+            node_match[idx].multioutput_match[1] = false;
             return true;
           } );
           choice_ntk.remove_choice( g );
