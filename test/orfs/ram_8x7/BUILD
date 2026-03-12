@@ -29,7 +29,10 @@ orfs_flow(
     },
     tags = ["manual"],
     test_kwargs = {
-        "tags": ["orfs"],
+        "tags": [
+            "manual",
+            "orfs",
+        ],
     },
     verilog_files = ["ram_8x7.sv"],
 )
@@ -69,6 +72,7 @@ filegroup(
     srcs = [
         "ram_8x7.sv",
     ],
+    tags = ["manual"],
 )
 
 [filegroup(
@@ -76,6 +80,7 @@ filegroup(
     srcs = [
         ":ram_8x7_{stage}_verilog".format(stage = stage),
     ],
+    tags = ["manual"],
 ) for stage in STAGES[2:]]
 
 [eqy_test(

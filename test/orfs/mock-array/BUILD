@@ -28,6 +28,7 @@ filegroup(
     data = [
         ":util.tcl",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 
@@ -36,6 +37,7 @@ filegroup(
     srcs = [
         "constraints.sdc",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 
@@ -47,6 +49,7 @@ filegroup(
     data = [
         ":util.tcl",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 

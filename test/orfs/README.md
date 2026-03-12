@@ -97,17 +97,25 @@ This is more verbose, but eliminates any concerns about what the `make` script m
     [ERROR GPL-0305] RePlAce diverged during gradient descent calculation, resulting in an invalid step length (Inf or NaN). This is often caused by numerical instability or high placement density. Consider reducing placement density to potentially resolve the issue.
     Error: global_place_skip_io.tcl, 12 GPL-0305
 
-## Adding `tags = ["manual"]` and `test_kwargs = ["orfs"]` to BUILD files
+## Tagging policy for `test/orfs/` BUILD files
 
-In OpenROAD, `bazelisk build ...` should not build ORFS targets, only OpenROAD binaries.
+All targets under `test/orfs/` must have `tags = ["manual"]` so that `bazelisk build //...` builds only OpenROAD binaries and never ORFS test artifacts. The `manual` tag excludes targets from Bazel wildcard patterns like `//...`.
 
-Since bazel-orfs also has build targets, builds in Bazel can build anything, not just executables, the policy in OpenROAD is to mark non-binary build targets as `tags = ["manual"]`.
+Test targets (from `orfs_flow` `test_kwargs`, `sh_test`, etc.) should use `tags = ["manual", "orfs"]`. The `orfs` tag is used in CI to select these tests for execution. The `.bazelrc` line `build --build_tag_filters=-orfs` provides an additional layer of protection.
 
-To hunt down missing `tags = ["manual"]` run a query like:
+To find targets missing `tags = ["manual"]`, run:
 
-    bazelisk query 'kind(".*", //test/orfs/mock-array/...) except attr(tags, "manual", //test/orfs/mock-array/...)'
+    bazelisk query 'kind(".*", //test/orfs/...) except attr(tags, "manual", //test/orfs/...)'
 
-Note that OpenROAD *does* want `bazelisk test ...` to run all tests, so test targets should be marked `tags = ["orfs"]` instead, so that `.bazelrc` can skip builds of those targets with the `build --build_tag_filters=-orfs` line.
+This should return no results. If it does, add `tags = ["manual"]` to the offending targets.
+
+To verify that building does nothing under `test/orfs/`:
+
+    bazelisk build //test/orfs/...
+
+This should report `0 processes` and build nothing. To verify tests can still be run explicitly:
+
+    bazelisk test //test/orfs/gcd:gcd_test
 
 ## eqy tests
 

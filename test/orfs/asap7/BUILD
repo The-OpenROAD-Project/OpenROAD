@@ -7,5 +7,6 @@ filegroup(
         "asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
         "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
     ],
+    tags = ["manual"],
     visibility = ["//visibility:public"],
 )

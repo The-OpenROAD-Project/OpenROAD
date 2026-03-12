@@ -25,7 +25,10 @@ orfs_flow(
     },
     tags = ["manual"],
     test_kwargs = {
-        "tags": ["orfs"],
+        "tags": [
+            "manual",
+            "orfs",
+        ],
     },
     verilog_files = ["gcd.v"],
 )
@@ -61,5 +64,8 @@ sh_test(
         "//etc:whittle_cleanup.tcl",
         "//etc:whittle_cut.tcl",
     ],
-    tags = ["orfs"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
 )
