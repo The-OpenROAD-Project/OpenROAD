@@ -150,7 +150,7 @@ void dbJournal::updateField(dbObject* obj,
 
 void dbJournal::beginAction(Action action)
 {
-  if (start_action_ != false) {
+  if (start_action_) {
     logger_->critical(
         utl::ODB, 398, "In journal, nested actions are not allowed.");
   }
