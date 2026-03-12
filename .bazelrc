@@ -95,6 +95,16 @@ build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 build --incompatible_strict_action_env
 build --nosandbox_default_allow_network
 
+# Simple: bazel build --config=ccache //...
+# --config=ccache passes HOME so ccache can find its default cache dir.
+# If CCACHE_DIR is also set, ccache prefers it over HOME/.ccache.
+# For minimal environment leakage, prefer setting CCACHE_DIR explicitly
+# instead of using --config=ccache:
+#   bazel build --strategy=CppCompile=local --action_env=CCACHE_DIR=/path/to/cache //...
+build:ccache --strategy=CppCompile=local
+build:ccache --action_env=HOME
+build:ccache --action_env=CCACHE_DIR
+
 test --build_tests_only
 
 # --- Performance Optimizations ---

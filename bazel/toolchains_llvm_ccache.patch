@@ -1,0 +1,17 @@
+--- a/toolchain/cc_wrapper.sh.tpl
++++ b/toolchain/cc_wrapper.sh.tpl
+@@ -132,8 +132,12 @@
+   fi
+ done
+
+-# Call the C++ compiler.
+-"${cmd[@]}"
++# Use ccache if available (--config=ccache).
++if [[ -z "${CCACHE_DISABLE:-}" ]] && command -v ccache &>/dev/null; then
++  ccache "${cmd[@]}"
++else
++  "${cmd[@]}"
++fi
+
+ # Generate an empty file if header processing succeeded.
+ if [[ "${OUTPUT}" == *.h.processed ]]; then
