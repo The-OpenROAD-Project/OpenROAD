@@ -5,10 +5,11 @@
 #  into individual functions for man2 and man3 level.
 
 import os
+import re
 from manpage import ManPage
 from extract_utils import extract_tcl_command, extract_description
 from extract_utils import extract_tcl_code, extract_arguments
-from extract_utils import extract_tables, parse_switch
+from extract_utils import parse_switch, extract_headers
 
 
 # Simplified extraction functions for EXAMPLES and SEE ALSO
@@ -142,19 +143,41 @@ def man2_translate(doc, path):
         print(f"Global Examples: {'Found' if global_examples else 'None'}")
         print(f"Global See Also: {'Found' if global_see_also else 'None'}")
 
+        # Identify ### headers that are missing a ```tcl block — these cause count mismatches.
+        all_h3 = extract_headers(text, 3)
+        segments = re.split(r"^### ", text, flags=re.MULTILINE)
+        h3_with_tcl_set = set()
+        for seg in segments[1:]:
+            header_match = re.match(r"^(.+?)$", seg, flags=re.MULTILINE)
+            if header_match and "```tcl" in seg:
+                h3_with_tcl_set.add(header_match.group(1))
+        missing_tcl_headers = [h for h in all_h3 if h not in h3_with_tcl_set]
+
+        missing_info = ""
+        if missing_tcl_headers:
+            missing_info = (
+                "\n\n### headers without a ```tcl block (each ### must be a Tcl command):\n"
+                + "\n".join(f"  - ### {h}" for h in missing_tcl_headers)
+                + "\n\nHeading levels in this README:\n"
+                "  ##    top-level section (e.g. Commands, TCL functions, License)\n"
+                "  ###   individual Tcl command — must be followed by a ```tcl block\n"
+                "  ####  command sub-section (Options, Arguments, etc.)"
+            )
+
         assert (
             len(func_names)
             == len(func_descs)
             == len(func_synopsis)
             == len(func_options)
             == len(func_args)
-        ), f"""Counts for all 5 categories must match up.\n
-            Names: {len(func_names)}\n
-            Descs: {len(func_descs)}\n
-            Synopsis: {len(func_synopsis)}\n
-            Options: {len(func_options)}\n
-            Args: {len(func_args)}\n
-            """
+        ), (
+            f"Counts for all 5 categories must match up in {os.path.basename(doc)}:\n"
+            f"  Names:    {len(func_names)}\n"
+            f"  Descs:    {len(func_descs)}\n"
+            f"  Synopsis: {len(func_synopsis)}\n"
+            f"  Options:  {len(func_options)}\n"
+            f"  Args:     {len(func_args)}" + missing_info
+        )
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()
