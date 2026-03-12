@@ -1,6 +1,3 @@
-# Downloaded tool JARs — fetch with generate_railroad_diagrams.py
-tools/
-
 # Intermediate conversion files
 *.ebnf
 *.zip

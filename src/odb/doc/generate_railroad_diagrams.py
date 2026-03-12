@@ -58,11 +58,19 @@ def _download(url: str, dest: Path) -> None:
 
 
 def ensure_tools() -> None:
-    """Download the two WAR files if they are not already in TOOLS_DIR."""
+    """Check that the required WAR files exist in the tools directory."""
+    missing = []
     if not EBNF_WAR.exists():
-        _download(EBNF_URL, EBNF_WAR)
+        missing.append(f"  ebnf-convert.war  (build from: https://github.com/GuntherRademacher/ebnf-convert)")
     if not RR_WAR.exists():
-        _download(RR_URL, RR_WAR)
+        missing.append(f"  rr.war            (download lib from Maven Central: de.bottlecaps.rr:rr-lib:2.6)")
+    if missing:
+        print("Error: Missing required tool(s) in src/odb/doc/tools/:", file=sys.stderr)
+        for m in missing:
+            print(m, file=sys.stderr)
+        print("\nSee src/odb/doc/README.md for setup instructions.", file=sys.stderr)
+        sys.exit(1)
+
 
 
 def _extract_rr_deps(tmp_dir: str) -> list[str]:
