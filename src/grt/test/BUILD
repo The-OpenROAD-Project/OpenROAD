@@ -32,6 +32,7 @@ TESTS = [
     "gcd_cugr",
     "gcd_flute",
     "increase_capacity1",
+    "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
@@ -127,6 +128,7 @@ MANUAL_FOR_BAZEL_TESTS = [
     "cugr_adjustment2",
     "cugr_adjustment3",
     "gcd_cugr",
+    "incremental_update_net",
     "pin_access1_cugr",
     "pin_access2_cugr",
 ]

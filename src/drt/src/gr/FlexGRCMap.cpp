@@ -430,11 +430,7 @@ void FlexGRCMap::getTrackLocs(
 {
   for (auto& tp : tps) {
     bool skip = true;
-    if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-      skip = false;
-    } else {
-      skip = true;
-    }
+    skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
     if (skip) {
       continue;
@@ -468,11 +464,7 @@ unsigned FlexGRCMap::getNumTracks(
   if (line2ViaPitch == 0) {
     for (auto& tp : tps) {
       bool skip = true;
-      if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-        skip = false;
-      } else {
-        skip = true;
-      }
+      skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
       if (skip) {
         continue;
@@ -494,11 +486,7 @@ unsigned FlexGRCMap::getNumTracks(
     frCoord startCoord = INT_MAX;
     for (auto& tp : tps) {
       bool skip = true;
-      if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-        skip = false;
-      } else {
-        skip = true;
-      }
+      skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
       if (skip) {
         continue;

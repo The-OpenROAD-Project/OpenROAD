@@ -38,26 +38,17 @@ namespace dpl {
 
 bool DetailedRandom::isOperator(char ch) const
 {
-  if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^') {
-    return true;
-  }
-  return false;
+  return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^';
 }
 
 bool DetailedRandom::isObjective(char ch) const
 {
-  if (ch >= 'a' && ch <= 'z') {
-    return true;
-  }
-  return false;
+  return ch >= 'a' && ch <= 'z';
 }
 
 bool DetailedRandom::isNumber(char ch) const
 {
-  if (ch >= '0' && ch <= '9') {
-    return true;
-  }
-  return false;
+  return ch >= '0' && ch <= '9';
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -409,7 +400,7 @@ double DetailedRandom::go()
     int g = mgrPtr_->getRandom(generators_.size());
     ++gen_count[g];
     // Generate a move list.
-    if (generators_[g]->generate(mgrPtr_, candidates_) == false) {
+    if (!generators_[g]->generate(mgrPtr_, candidates_)) {
       // Failed to generate anything so just move on to the next attempt.
       continue;
     }
@@ -680,7 +671,9 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     // and original position; (iii) the original position itself.  Should
     // this also be a randomized choice??????????????????????????????????
     double xj, yj;
-    if (true) {
+    constexpr bool option_1 = true;
+    constexpr bool option_2 = false;
+    if (option_1) {
       // Centered at the original position within a box.
       const double orig_yc = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
       const double orig_xc = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
@@ -700,13 +693,11 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
 
       xj = arch_->getMinX().v + grid_xj * xwid;
       yj = arch_->getMinY().v + grid_yj * ywid;
-    }
-    if (false) {
+    } else if (option_2) {
       // The original position.
       xj = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;
       yj = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
-    }
-    if (false) {
+    } else {
       // Somewhere between current position and original position.
       double orig_yc = ndi->getOrigBottom().v + 0.5 * ndi->getHeight().v;
       double orig_xc = ndi->getOrigLeft().v + 0.5 * ndi->getWidth().v;

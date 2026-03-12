@@ -628,8 +628,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
     // If the flat net has external connection (external instance or BTerm),
     // it should be inserted into modbterm_name_flat_net_map.
-    bool has_external_connection = (flat_net->getBTerms().empty() == false);
-    if (has_external_connection == false) {
+    bool has_external_connection = (!flat_net->getBTerms().empty());
+    if (!has_external_connection) {
       for (dbITerm* iterm : flat_net->getITerms()) {
         if (!old_module->containsDbInst(iterm->getInst())) {
           has_external_connection = true;

@@ -358,6 +358,7 @@ class PlacerBase
   PlacerBase(odb::dbDatabase* db,
              std::shared_ptr<PlacerBaseCommon> pbCommon,
              utl::Logger* log,
+             bool check_density,
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
@@ -383,7 +384,7 @@ class PlacerBase
   int getSiteSizeY() const { return siteSizeY_; }
 
   int64_t getHpwl() const;
-  void printInfo() const;
+  void printInfo(bool check_density) const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
@@ -427,7 +428,7 @@ class PlacerBase
   std::shared_ptr<PlacerBaseCommon> pbCommon_;
   odb::dbGroup* group_ = nullptr;
 
-  void init();
+  void init(bool check_density);
   void initInstsForUnusableSites();
 
   void reset();

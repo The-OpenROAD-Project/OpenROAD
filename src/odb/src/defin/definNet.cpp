@@ -97,7 +97,7 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 
 void definNet::connection(const char* iname, const char* tname)
 {
-  if (_skip_signal_connections == true) {
+  if (_skip_signal_connections) {
     return;
   }
 

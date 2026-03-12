@@ -1767,11 +1767,7 @@ bool HierRTLMP::singleArraySingleStdCellCluster(
     }
   }
 
-  if (number_of_macro_arrays == 0 || number_of_std_clusters == 0) {
-    return false;
-  }
-
-  return true;
+  return number_of_macro_arrays != 0 && number_of_std_clusters != 0;
 }
 
 void HierRTLMP::placeMacros(Cluster* cluster)

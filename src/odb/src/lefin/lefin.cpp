@@ -1482,7 +1482,7 @@ void lefinReader::nonDefault(LefParser::lefiNonDefault* rule)
 
 void lefinReader::obstruction(LefParser::lefiObstruction* obs)
 {
-  if ((master_ == nullptr) || (skip_obstructions_ == true)) {
+  if ((master_ == nullptr) || (skip_obstructions_)) {
     return;
   }
 
@@ -1847,7 +1847,7 @@ void lefinReader::spacingBegin(void* /* unused: ptr */)
 
 void lefinReader::spacing(LefParser::lefiSpacing* spacing)
 {
-  if (create_tech_ == false) {
+  if (!create_tech_) {
     return;
   }
 

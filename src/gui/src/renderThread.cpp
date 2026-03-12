@@ -969,9 +969,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const int shape_limit = viewer_->shapeSizeLimit();
 
   // Skip the cut layer if the cuts will be too small to see
-  const bool draw_shapes
-      = !(layer->getType() == dbTechLayerType::CUT
-          && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool draw_shapes = layer->getType() != dbTechLayerType::CUT
+                           || viewer_->cut_maximum_size_[layer] >= shape_limit;
   const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
                                 || layer->getType() == dbTechLayerType::ROUTING;
 

@@ -213,7 +213,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->flags_.physical_only) {
+  if (!isTop() && _inst->flags_.physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -910,7 +910,7 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       dbModNet* old_mod_net = old_iterm->getModNet();
       bool has_parent_modnet
           = (old_mod_net && old_mod_net->getFirstParentModNet());
-      if (old_net->isInternalTo(old_module) == false && has_parent_modnet) {
+      if (!old_net->isInternalTo(old_module) && has_parent_modnet) {
         // Skip external net crossing module boundary.
         // It will be connected later.
         debugPrint(logger,

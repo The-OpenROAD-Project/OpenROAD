@@ -52,7 +52,7 @@ void Grid::gridContextOn(int orig, int len, int base, int width)
   Track *track, *btrack;
   uint32_t jj;
   uint32_t firstContextTrack = 1;
-  bool tohi = _gridtable->targetHighTracks() > 0 ? true : false;
+  bool tohi = _gridtable->targetHighTracks() > 0;
   for (jj = lowTrack; jj <= hiTrack; jj++) {
     btrack = _trackTable[jj];
     if (btrack == nullptr) {
@@ -107,8 +107,7 @@ uint32_t Track::findOverlap(Wire* origWire,
   int TTTnoInNetCC = 0;
   int len1, len2, len3, rc;
   Wire* w2 = getTargetWire();
-  bool targetHiTrack
-      = _grid->getGridTable()->targetHighTracks() > 0 ? true : false;
+  bool targetHiTrack = _grid->getGridTable()->targetHighTracks() > 0;
   bool targetReversed = _grid->getGridTable()->targetTrackReversed();
   bool useDbSdb = _grid->getGridTable()->usingDbSdb();
 
@@ -146,7 +145,7 @@ uint32_t Track::findOverlap(Wire* origWire,
                   || (needMarkedNetW2 && !w2->getNet()->isMarked());
       rc = w1->wireOverlap(w2, &len1, &len2, &len3);
 
-      if (inThreshold == true && rc == 0) {
+      if (inThreshold && rc == 0) {
         if (len1 > 0) {
           // create empty wire and ADD on emptyTable!
           Wire* newEmptyWire = origWire->makeWire(wirePool, w1->_xy, len1);
@@ -233,7 +232,7 @@ uint32_t Track::findOverlap(Wire* origWire,
         wirePool->free(w1);
         break;
       }
-      if (inThreshold == false && rc == 0) {
+      if (!inThreshold && rc == 0) {
         if (len3 > 0) {
           w2 = nextTargetWire(NoPowerTarget);
           if (!w2) {
@@ -266,8 +265,7 @@ uint32_t Track::initTargetTracks(uint32_t srcTrack,
 {
   uint32_t delt = 0;
   uint32_t trackFound = 0;
-  bool noPowerTarget
-      = _grid->getGridTable()->noPowerTarget() > 0 ? true : false;
+  bool noPowerTarget = _grid->getGridTable()->noPowerTarget() > 0;
   Track* tstrack = this;
   while (nextSubTrackInRange(tstrack, delt, trackDist, srcTrack, tohi)) {
     tstrack->initTargetWire(noPowerTarget);
@@ -326,7 +324,7 @@ uint32_t Track::couplingCaps(Grid* ccGrid,
                              bool ttttGetDgOverlap)
 {
   Track* tstrack;
-  bool tohi = _grid->getGridTable()->targetHighTracks() > 0 ? true : false;
+  bool tohi = _grid->getGridTable()->targetHighTracks() > 0;
   initTargetTracks(srcTrack, trackDist, tohi);
 
   uint32_t dir = _grid->getDir();
@@ -544,7 +542,7 @@ class compareAthWire
  public:
   bool operator()(Wire* wire1, Wire* wire2)
   {
-    return (wire1->getXY() < wire2->getXY() ? true : false);
+    return (wire1->getXY() < wire2->getXY());
   }
 };
 

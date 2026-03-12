@@ -399,7 +399,7 @@ uint32_t extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   initJunctionIdMaps(net);
 
@@ -805,7 +805,7 @@ void extMain::initJunctionIdMaps(dbNet* net)
   }
   uint32_t srcJid;
   dbWirePathItr pitr;
-  if (!(_mergeResBound != 0.0 || _mergeViaRes)) {
+  if (_mergeResBound == 0.0 && !_mergeViaRes) {
     return;
   }
   dbWire* wire = net->getWire();

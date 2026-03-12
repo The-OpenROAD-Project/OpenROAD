@@ -125,10 +125,7 @@ class TreeBuilder
                     double x2,
                     double y2)
   {
-    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
-      return true;
-    }
-    return false;
+    return (x > x1) && (x < x2) && (y > y1) && (y < y2);
   }
   bool isAlongBbox(double x,
                    double y,

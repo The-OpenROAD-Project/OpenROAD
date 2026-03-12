@@ -2095,7 +2095,7 @@ dbModNet* dbBlock::findModNet(const char* hierarchical_name) const
   const char delimiter = getHierarchyDelimiter();
 
   while (std::getline(ss, token, delimiter)) {
-    if (token.empty() == false) {
+    if (!token.empty()) {
       tokens.push_back(token);
     }
   }

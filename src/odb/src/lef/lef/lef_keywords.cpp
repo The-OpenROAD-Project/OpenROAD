@@ -289,7 +289,7 @@ char* qStrCopy(char* string)
 
 void lefAddStringDefine(const char* token, const char* str)
 {
-  std::string tmpStr((lefData->lefDefIf == true) ? "" : "\"");
+  std::string tmpStr(lefData->lefDefIf ? "" : "\"");
 
   tmpStr += str;
 

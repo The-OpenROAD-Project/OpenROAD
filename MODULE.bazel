@@ -72,6 +72,7 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
+bazel_dep(name = "readline", version = "8.2.bcr.3")
 
 # Make compilation DB (and possibly build cleaner)
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
@@ -126,7 +127,7 @@ bazel_dep(name = "bazel-orfs", dev_dependency = True)
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "d1f1301b0d3544d2609963d3e995d4427a707946",
+    commit = "858b4fdbba5c9ec58f04a7a6b49ed5fb5049b79b",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -135,10 +136,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dep
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-534-g510137693",
+    image = "docker.io/openroad/orfs:26Q1-554-g62c47396f",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "e360317c5c9688a7093e89b7a0406a6cf19d72f3ba852365cc68ecfe5fb60a07",
+    sha256 = "6a624867afd1d39bc1cc6884c2d9cef7cfb899f92d4bf0e9233a831ab82c5436",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
@@ -181,6 +182,16 @@ maven.install(
 use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "tclreadline",
+    build_file = "//bazel:tclreadline.BUILD",
+    sha256 = "a64e0faed5957b8e1ac16f179948e21cdd6d3b8313590b7ab049a3192ab864fb",
+    strip_prefix = "tclreadline-2.3.8",
+    urls = [
+        "https://github.com/flightaware/tclreadline/archive/refs/tags/v2.3.8.tar.gz",
+    ],
+)
 
 http_archive(
     name = "circt",

@@ -74,12 +74,8 @@ uint32_t extRCModel::measureWithVar(extMeasure* measure)
           } else {
             s = measure->_spaceTable.get(sIndex);  // layout
           }
-          if (sIndex == scnt - 1 && wIndex == wcnt - 1
-              && !measure->_overUnder) {
-            measure->_plate = true;
-          } else {
-            measure->_plate = false;
-          }
+          measure->_plate = sIndex == scnt - 1 && wIndex == wcnt - 1
+                            && !measure->_overUnder;
         } else {
           s = measure->_diagSpaceTable0.get(sIndex);
         }

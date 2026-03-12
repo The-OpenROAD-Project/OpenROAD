@@ -792,7 +792,7 @@ void dbSta::checkSanityDrvrVertexEdges(const odb::dbObject* term) const
 
 void dbSta::checkSanityDrvrVertexEdges(const Pin* pin) const
 {
-  if (pin == nullptr || db_network_->isDriver(pin) == false) {
+  if (pin == nullptr || !db_network_->isDriver(pin)) {
     return;
   }
 

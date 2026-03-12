@@ -150,9 +150,9 @@ bool UniqueInsts::hasTrackPattern(frTrackPattern* tp,
   const frCoord low = tp->getStartCoord();
   const frCoord high = low + tp->getTrackSpacing() * (tp->getNumTracks() - 1);
   if (is_vertical_track) {
-    return !(low > box.xMax() || high < box.xMin());
+    return low <= box.xMax() && high >= box.xMin();
   }
-  return !(low > box.yMax() || high < box.yMin());
+  return low <= box.yMax() && high >= box.yMin();
 }
 
 bool UniqueInsts::isNDRInst(frInst* inst) const

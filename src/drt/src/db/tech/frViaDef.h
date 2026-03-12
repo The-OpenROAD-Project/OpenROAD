@@ -27,7 +27,7 @@ class frLef58CutClass
   void getName(std::string& in) const { in = name_; }
   std::string getName() const { return name_; }
   frCoord getViaWidth() const { return viaWidth_; }
-  bool hasViaLength() const { return (viaLength_ == viaWidth_) ? false : true; }
+  bool hasViaLength() const { return viaLength_ != viaWidth_; }
   frCoord getViaLength() const { return viaLength_; }
   frUInt4 getNumCut() const { return numCut_; }
   // setters

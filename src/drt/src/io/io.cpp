@@ -1075,10 +1075,10 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
        db_path_segs) {
     frPathSeg path_seg;
     path_seg.setPoints_safe(db_rect.ll(), db_rect.ur());
-    if (begin_style_trunc == true) {
+    if (begin_style_trunc) {
       path_seg.setBeginStyle(frcTruncateEndStyle);
     }
-    if (end_style_trunc == true) {
+    if (end_style_trunc) {
       path_seg.setEndStyle(frcTruncateEndStyle);
     }
 
@@ -3289,7 +3289,7 @@ void io::Writer::mergeSplitConnFigs(
         continue;  // if segment length = 0, ignore
       }
       // std::cout << "xxx\n";
-      bool isH = (begin.x() == end.x()) ? false : true;
+      bool isH = begin.x() != end.x();
       frCoord trackLoc = isH ? begin.y() : begin.x();
       frCoord beginCoord = isH ? begin.x() : begin.y();
       frCoord endCoord = isH ? end.x() : end.y();
@@ -4027,11 +4027,7 @@ bool io::TopLayerBTermHandler::netHasStackedVias(odb::dbNet* net)
     }
   }
 
-  if (via_points.size() != bterms_above_max_layer) {
-    return false;
-  }
-
-  return true;
+  return via_points.size() == bterms_above_max_layer;
 }
 
 void io::TopLayerBTermHandler::stackVias(odb::dbBTerm* bterm,

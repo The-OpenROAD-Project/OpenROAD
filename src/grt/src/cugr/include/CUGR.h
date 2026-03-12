@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -91,6 +92,10 @@ class CUGR
   {
     critical_nets_percentage_ = percentage;
   }
+  void addDirtyNet(odb::dbNet* net);
+  void updateNet(odb::dbNet* net);
+  void startIncremental();
+  void endIncremental();
 
  private:
   float calculatePartialSlack();
@@ -100,6 +105,7 @@ class CUGR
   void patternRoute(std::vector<int>& netIndices);
   void patternRouteWithDetours(std::vector<int>& netIndices);
   void mazeRoute(std::vector<int>& netIndices);
+  void rerouteNets(std::vector<int>& net_indices);
   void sortNetIndices(std::vector<int>& netIndices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
@@ -124,6 +130,10 @@ class CUGR
   int area_of_wire_patches_ = 0;
 
   float critical_nets_percentage_ = 0;
+
+  std::set<int> dirty_net_indices_;
+  std::unordered_set<odb::dbNet*> updated_nets_;
+  bool incremental_mode_ = false;
 };
 
 }  // namespace grt

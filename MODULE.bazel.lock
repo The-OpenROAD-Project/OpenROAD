@@ -373,6 +373,7 @@
     "https://bcr.bazel.build/modules/mbedtls/3.6.0/source.json": "1dbe7eb5258050afcc3806b9d43050f71c6f539ce0175535c670df606790b30c",
     "https://bcr.bazel.build/modules/ncurses/6.4.20221231.bcr.11/MODULE.bazel": "ef03f49137ca4abaf6648c795635abb21024d74e97822016cda9dc817e1418ae",
     "https://bcr.bazel.build/modules/ncurses/6.4.20221231.bcr.11/source.json": "3119380662482b112a2f34769793785a10b3734f27f2bef6c778217745935efb",
+    "https://bcr.bazel.build/modules/ncurses/6.4.20221231.bcr.9/MODULE.bazel": "95b2f3dcfb1d2ecaeea67293a10b654a08206414759a761e82fa59bdfe29d0dc",
     "https://bcr.bazel.build/modules/nlohmann_json/3.11.3/MODULE.bazel": "87023db2f55fc3a9949c7b08dc711fae4d4be339a80a99d04453c4bb3998eefc",
     "https://bcr.bazel.build/modules/nlohmann_json/3.11.3/source.json": "296c63a90c6813e53b3812d24245711981fc7e563d98fe15625f55181494488a",
     "https://bcr.bazel.build/modules/nlohmann_json/3.6.1/MODULE.bazel": "6f7b417dcc794d9add9e556673ad25cb3ba835224290f4f848f8e2db1e1fca74",
@@ -456,6 +457,7 @@
     "https://bcr.bazel.build/modules/re2/2024-07-02/MODULE.bazel": "0eadc4395959969297cbcf31a249ff457f2f1d456228c67719480205aa306daa",
     "https://bcr.bazel.build/modules/re2/2025-08-12.bcr.1/MODULE.bazel": "e09b434b122bfb786a69179f9b325e35cb1856c3f56a7a81dd61609260ed46e1",
     "https://bcr.bazel.build/modules/re2/2025-08-12.bcr.1/source.json": "a8ae7c09533bf67f9f6e5122d884d5741600b09d78dca6fc0f2f8d2ee0c2d957",
+    "https://bcr.bazel.build/modules/readline/8.2.bcr.3/MODULE.bazel": "800b9efaba7e9d9fdd204f459601002adb4eac33b13c4760c9e16169bf2307a8",
     "https://bcr.bazel.build/modules/readline/8.3/MODULE.bazel": "60b0062649137ab4c8a3521fd2a6976bcc65f16a5344c55b9132c80b361ddafe",
     "https://bcr.bazel.build/modules/readline/8.3/source.json": "a5cb19f9b0ca4f29763fd4757e36654f64d9b8ef3c21b135347e1dc8e15fb0af",
     "https://bcr.bazel.build/modules/riegeli/0.0.0-20240606-973b6f0/MODULE.bazel": "3e8067b12d3a3bb4bc297b29c66a778af0c1da0cddbfde37d18c077ffc365602",
@@ -698,8 +700,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "mXT67CG7L5OLVmAL21N/b1fUYtLkKfGcDS9/BHvSBuY=",
-        "usagesDigest": "4k1IlnSfBWHqBTPggeOhm4T1AUyCszvpv08LhmMeCoY=",
+        "bzlTransitiveDigest": "We8lHiP0MwXcNMkjeB/9G1WfFWL4xDQs48mA+auBrqE=",
+        "usagesDigest": "QYMEZjCifa480IHH2FVQK/IEHH8+A6DshYGhikqmHjs=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -717,8 +719,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-534-g510137693",
-              "sha256": "e360317c5c9688a7093e89b7a0406a6cf19d72f3ba852365cc68ecfe5fb60a07",
+              "image": "docker.io/openroad/orfs:26Q1-554-g62c47396f",
+              "sha256": "6a624867afd1d39bc1cc6884c2d9cef7cfb899f92d4bf0e9233a831ab82c5436",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -759,6 +761,11 @@
             "bazel-orfs+",
             "docker_orfs",
             "bazel-orfs++orfs_repositories+docker_orfs"
+          ],
+          [
+            "bazel-orfs+",
+            "python_3_13_host",
+            "rules_python++python+python_3_13_host"
           ]
         ]
       }

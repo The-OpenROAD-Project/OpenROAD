@@ -101,18 +101,18 @@ void dbRSeg::addAllRes(double* res)
 bool dbRSeg::updatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.update_cap == 1 ? true : false);
+  return (seg->flags_.update_cap == 1);
 }
 bool dbRSeg::allocatedCap()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.allocated_cap == 1 ? true : false);
+  return (seg->flags_.allocated_cap == 1);
 }
 
 bool dbRSeg::pathLowToHigh()
 {
   _dbRSeg* seg = (_dbRSeg*) this;
-  return (seg->flags_.path_dir == 0 ? true : false);
+  return (seg->flags_.path_dir == 0);
 }
 
 void dbRSeg::addRSegCapacitance(dbRSeg* other)

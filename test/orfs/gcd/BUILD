@@ -1,4 +1,5 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_flow")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
@@ -35,4 +36,30 @@ eqy_flow_test(
     module_top = "gcd",
     tags = ["manual"],
     verilog_files = ["gcd.v"],
+)
+
+filegroup(
+    name = "gcd_floorplan_odb",
+    srcs = [":gcd_floorplan"],
+    output_group = "2_floorplan.odb",
+    tags = ["manual"],
+)
+
+sh_test(
+    name = "gcd_whittle_test",
+    timeout = "long",
+    srcs = ["test_whittle.sh"],
+    args = [
+        "$(rootpath //:openroad)",
+        "$(rootpath //etc:whittle.py)",
+        "$(rootpath :gcd_floorplan_odb)",
+    ],
+    data = [
+        ":gcd_floorplan_odb",
+        "//:openroad",
+        "//etc:whittle.py",
+        "//etc:whittle_cleanup.tcl",
+        "//etc:whittle_cut.tcl",
+    ],
+    tags = ["orfs"],
 )
