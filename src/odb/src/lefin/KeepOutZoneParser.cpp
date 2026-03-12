@@ -96,7 +96,7 @@ bool KeepOutZoneParser::parseSubRule(const std::string& s)
               _1,
               &odb::dbTechLayerKeepOutZoneRule::setSpiralExtension)]));
 
-  qi::rule<std::string::const_iterator, space_type> lef58_keepoutzone_rule
+  qi::rule<std::string::const_iterator, space_type> lef58_keepout_zone_rule
       = (lit("KEEPOUTZONE") >> lit("CUTCLASS") >> _string[boost::bind(
              &dbTechLayerKeepOutZoneRule::setFirstCutClass, rule_, _1)]
          >> -(lit("TO") >> _string[boost::bind(
@@ -105,7 +105,7 @@ bool KeepOutZoneParser::parseSubRule(const std::string& s)
          >> spiral_extension_rule >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, lef58_keepoutzone_rule, space)
+  bool valid = qi::phrase_parse(first, last, lef58_keepout_zone_rule, space)
                && first == last;
 
   if (!valid && rule_ != nullptr) {  // fail if we did not get a full match

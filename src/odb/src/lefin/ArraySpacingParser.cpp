@@ -73,7 +73,7 @@ bool ArraySpacingParser::parse(const std::string& s)
       = (lit("WITHIN") >> double_ >> lit("ARRAYWIDTH")
          >> double_)[boost::bind(&ArraySpacingParser::setWithin, this, _1)];
 
-  qi::rule<std::string::const_iterator, space_type> lef58_arrayspacing_rule
+  qi::rule<std::string::const_iterator, space_type> lef58_array_spacing_rule
       = (lit("ARRAYSPACING") >> -(cut_class_rule)
          >> -lit("PARALLELOVERLAP")[boost::bind(
              &dbTechLayerArraySpacingRule::setParallelOverlap, rule_, true)]
@@ -84,7 +84,7 @@ bool ArraySpacingParser::parse(const std::string& s)
          >> +array_cuts_rule >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, lef58_arrayspacing_rule, space)
+  bool valid = qi::phrase_parse(first, last, lef58_array_spacing_rule, space)
                && first == last;
 
   if (!valid && rule_ != nullptr) {  // fail if we did not get a full match
