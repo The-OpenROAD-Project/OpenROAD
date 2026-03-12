@@ -38,6 +38,7 @@ RUN apt-get -y update \
       libxcb-sync1 \
       libxcb-xfixes0 \
       libxcb-xkb1 \
+      libxkbcommon0 \
       openjdk-21-jre-headless \
       python3 \
       python3-yaml \
