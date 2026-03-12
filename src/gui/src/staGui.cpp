@@ -9,7 +9,6 @@
 #include <QAbstractItemView>
 #include <QAction>
 #include <QApplication>
-#include <QBrush>
 #include <QComboBox>
 #include <QDialog>
 #include <QKeyEvent>
@@ -370,19 +369,40 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case kRiseFall:
         return Qt::AlignCenter;
     }
-  } else if (role == Qt::ForegroundRole) {
+  } else if (role == Qt::ToolTipRole) {
     if (col_index == kPin && index.row() != kClockSummaryRow) {
       const auto* node = getNodeAt(index);
-      const sta::Pin* sta_pin = node->getPinAsSTA();
-      if (sta_pin != nullptr) {
-        sta::LibertyPort* lib_port = sta_->getDbNetwork()->libertyPort(sta_pin);
-        if (lib_port != nullptr) {
+      odb::dbInst* inst = node->getInstance();
+      if (inst != nullptr) {
+        // Show clock insertion latency tooltip on any pin of a macro
+        // whose liberty model defines max/min_clock_tree_path. This
+        // represents the delay through the macro's internal clock tree
+        // to its sequential elements — it can exceed the data path
+        // delay through the macro, which is normal.
+        auto* db_network = sta_->getDbNetwork();
+        for (odb::dbITerm* iterm : inst->getITerms()) {
+          const sta::Pin* iterm_pin = db_network->dbToSta(iterm);
+          if (iterm_pin == nullptr) {
+            continue;
+          }
+          sta::LibertyPort* lib_port = db_network->libertyPort(iterm_pin);
+          if (lib_port == nullptr || !lib_port->isClock()) {
+            continue;
+          }
+          const auto time_units = sta_->units()->timeUnit();
           const sta::MinMax* min_max
               = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
           float clk_tree_delay
               = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
           if (clk_tree_delay != 0.0f) {
-            return QBrush(Qt::blue);
+            const char* path_type
+                = is_capture_ ? "min_clock_tree_path" : "max_clock_tree_path";
+            return QString(
+                       "Macro %1 liberty %2 (internal clock tree "
+                       "delay to sequential elements): %3")
+                .arg(inst->getMaster()->getName().c_str())
+                .arg(path_type)
+                .arg(convertDelay(clk_tree_delay, time_units));
           }
         }
       }
@@ -409,26 +429,9 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
     } else {
       const auto* node = getNodeAt(index);
       switch (col_index) {
-        case kPin: {
-          QString name = QString::fromStdString(
+        case kPin:
+          return QString::fromStdString(
               node->getNodeName(/* include_master */ true));
-          const sta::Pin* sta_pin = node->getPinAsSTA();
-          if (sta_pin != nullptr) {
-            sta::LibertyPort* lib_port
-                = sta_->getDbNetwork()->libertyPort(sta_pin);
-            if (lib_port != nullptr) {
-              const sta::MinMax* min_max
-                  = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
-              float clk_tree_delay
-                  = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
-              if (clk_tree_delay != 0.0f) {
-                name += QString(" [clk ins: %1]")
-                            .arg(convertDelay(clk_tree_delay, time_units));
-              }
-            }
-          }
-          return name;
-        }
         case kRiseFall:
           return node->isRisingEdge() ? kUpArrow : kDownArrow;
         case kTime:
