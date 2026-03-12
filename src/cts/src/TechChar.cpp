@@ -30,6 +30,7 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -50,6 +51,7 @@ using utl::CTS;
 TechChar::TechChar(CtsOptions* options,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
+                   rsz::Resizer* resizer,
                    est::EstimateParasitics* estimate_parasitics,
                    sta::dbNetwork* db_network,
                    utl::Logger* logger)
@@ -57,6 +59,7 @@ TechChar::TechChar(CtsOptions* options,
       db_(db),
       estimate_parasitics_(estimate_parasitics),
       openSta_(sta),
+      resizer_(resizer),
       openStaChar_(nullptr),
       db_network_(db_network),
       logger_(logger),
@@ -711,13 +714,12 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
   libertyLoadCell->bufferPorts(inputLoad, outputLoad);
 
   load_cap += inputLoad->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
-  for (sta::Corner* corner : *openSta_->corners()) {
-    const sta::DcalcAnalysisPt* dcalc_ap
-        = corner->findDcalcAnalysisPt(sta::MinMax::max());
-    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  for (sta::Scene* corner : openSta_->scenes()) {
+    const sta::Pvt* pvt
+        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
 
     for (sta::TimingArcSet* arc_set :
-         libertyDriverCell->timingArcSets(input, output)) {
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -765,13 +767,12 @@ sta::ArcDelay TechChar::computeBufferDelay(
                                              sta::MinMax::max());
   }
 
-  for (sta::Corner* corner : *openSta_->corners()) {
-    const sta::DcalcAnalysisPt* dcalc_ap
-        = corner->findDcalcAnalysisPt(sta::MinMax::max());
-    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  for (sta::Scene* corner : openSta_->scenes()) {
+    const sta::Pvt* pvt
+        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
 
     for (sta::TimingArcSet* arc_set :
-         libertyDriverCell->timingArcSets(input, output)) {
+         libertyDriverCell->sceneCell(corner, sta::MinMax::max())->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());

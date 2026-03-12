@@ -245,7 +245,7 @@ void TritonCTS::setupCharacterization()
 
   // A new characteriztion is always created.
   techChar_ = std::make_unique<TechChar>(
-      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
+      options_, db_, openSta_, resizer_, estimate_parasitics_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done

@@ -134,6 +134,7 @@ class TechChar
   TechChar(CtsOptions* options,
            odb::dbDatabase* db,
            sta::dbSta* sta,
+           rsz::Resizer* resizer,
            est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
            utl::Logger* logger);
@@ -321,6 +322,7 @@ class TechChar
 
   CtsOptions* options_;
   odb::dbDatabase* db_;
+  rsz::Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;
   std::unique_ptr<sta::dbSta> openStaChar_;
