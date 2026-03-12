@@ -250,6 +250,7 @@ GridGraph::GridGraph(const Design* design,
 IntervalT GridGraph::rangeSearchGridlines(const int dimension,
                                           const IntervalT& loc_interval) const
 {
+  if (dimension < 0 || dimension > 1) return {0, 0};
   IntervalT range;
   range.Set(lower_bound(gridlines_[dimension].begin(),
                         gridlines_[dimension].end(),
@@ -270,13 +271,20 @@ IntervalT GridGraph::rangeSearchGridlines(const int dimension,
 IntervalT GridGraph::rangeSearchRows(const int dimension,
                                      const IntervalT& loc_interval) const
 {
+  if (dimension < 0 || dimension > 1) return {0, 0};
   const auto& lineRange = rangeSearchGridlines(dimension, loc_interval);
-  return {gridlines_[dimension][lineRange.low()] == loc_interval.low()
-              ? lineRange.low()
-              : std::max(lineRange.low() - 1, 0),
-          gridlines_[dimension][lineRange.high()] == loc_interval.high()
-              ? lineRange.high() - 1
-              : std::min(lineRange.high(), getSize(dimension) - 1)};
+  
+  // BOUNDARY SHIELD: Safely clamp to array boundaries
+  const int max_idx = std::max(0, (int)gridlines_[dimension].size() - 1);
+  const int l = std::min(lineRange.low(), max_idx);
+  const int h = std::min(lineRange.high(), max_idx);
+
+  return {gridlines_[dimension][l] == loc_interval.low()
+              ? l
+              : std::max(l - 1, 0),
+          gridlines_[dimension][h] == loc_interval.high()
+              ? h - 1
+              : std::min(h, getSize(dimension) - 1)};
 }
 
 BoxT GridGraph::getCellBox(PointT point) const
