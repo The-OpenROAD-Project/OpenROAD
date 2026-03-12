@@ -149,7 +149,7 @@ def man2_translate(doc, path):
         if len(segments) > 1:
             for i in range(1, len(segments), 2):
                 header = segments[i]
-                content = segments[i+1]
+                content = segments[i + 1]
                 if "```tcl" not in content:
                     header_text = header.lstrip("# ").strip()
                     missing_tcl_headers.append(header_text)
