@@ -144,14 +144,15 @@ def man2_translate(doc, path):
         print(f"Global See Also: {'Found' if global_see_also else 'None'}")
 
         # Identify ### headers that are missing a ```tcl block — these cause count mismatches.
-        all_h3 = extract_headers(text, 3)
-        segments = re.split(r"^### ", text, flags=re.MULTILINE)
-        h3_with_tcl_set = set()
-        for seg in segments[1:]:
-            header_match = re.match(r"^(.+?)$", seg, flags=re.MULTILINE)
-            if header_match and "```tcl" in seg:
-                h3_with_tcl_set.add(header_match.group(1))
-        missing_tcl_headers = [h for h in all_h3 if h not in h3_with_tcl_set]
+        missing_tcl_headers = []
+        segments = re.split(r"(^### .*$)", text, flags=re.MULTILINE)
+        if len(segments) > 1:
+            for i in range(1, len(segments), 2):
+                header = segments[i]
+                content = segments[i+1]
+                if "```tcl" not in content:
+                    header_text = header.lstrip("# ").strip()
+                    missing_tcl_headers.append(header_text)
 
         missing_info = ""
         if missing_tcl_headers:

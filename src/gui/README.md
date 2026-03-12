@@ -977,7 +977,7 @@ In the Data Path Details and Capture Path Details views, pins whose
 Liberty cell defines `max_clock_tree_path` / `min_clock_tree_path`
 timing groups display the internal clock latency inline:
 
-![Clock insertion annotation in Data Path Details](doc/image/timing_report_clk_insertion.png)
+![Clock insertion annotation in Data Path Details](../../docs/images/timing_report_clk_insertion.png)
 
 To view this, run the MockArray example and look at reg2reg paths:
 
