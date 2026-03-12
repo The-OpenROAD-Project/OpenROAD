@@ -272,16 +272,10 @@ bool Architecture::powerCompatible(const Node* ndi,
 
     const int ndBot = ndi->getBottomPower();
     const int ndTop = ndi->getTopPower();
-    if ((ndBot == rowBot || ndBot == Architecture::Row::Power_UNK
-         || rowBot == Architecture::Row::Power_UNK)
-        && (ndTop == rowTop || ndTop == Architecture::Row::Power_UNK
-            || rowTop == Architecture::Row::Power_UNK)) {
-      // Power matches as it is.
-      flip = false;
-    } else {
-      // Assume we need to flip.
-      flip = true;
-    }
+    flip = (ndBot != rowBot && ndBot != Architecture::Row::Power_UNK
+            && rowBot != Architecture::Row::Power_UNK)
+           || (ndTop != rowTop && ndTop != Architecture::Row::Power_UNK
+               && rowTop != Architecture::Row::Power_UNK);
 
     return true;
   }

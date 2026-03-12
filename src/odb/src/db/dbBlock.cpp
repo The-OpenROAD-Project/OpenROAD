@@ -1125,6 +1125,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     block.core_area_ = blk->computeCoreArea();
   }
 
+  // Resolve cached mterm pointers now that all tables are loaded
+  dbSet<dbITerm> iterms((dbBlock*) &block, block.iterm_tbl_);
+  for (dbITerm* iterm : iterms) {
+    ((_dbITerm*) iterm)->resolveMTerm();
+  }
+
   return stream;
 }
 
@@ -2089,7 +2095,7 @@ dbModNet* dbBlock::findModNet(const char* hierarchical_name) const
   const char delimiter = getHierarchyDelimiter();
 
   while (std::getline(ss, token, delimiter)) {
-    if (token.empty() == false) {
+    if (!token.empty()) {
       tokens.push_back(token);
     }
   }

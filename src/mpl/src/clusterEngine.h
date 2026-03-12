@@ -97,7 +97,6 @@ class ClusteringEngine
 {
  public:
   ClusteringEngine(odb::dbBlock* block,
-                   sta::dbNetwork* network,
                    utl::Logger* logger,
                    par::PartitionMgr* triton_part,
                    MplObserver* graphics);

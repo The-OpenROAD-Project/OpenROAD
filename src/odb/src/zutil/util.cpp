@@ -154,11 +154,7 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
   const int row_llx = rowBB.xMin();
   const int row_urx = rowBB.xMax();
 
-  if (blockage_llx >= row_urx || row_llx >= blockage_urx) {
-    return false;
-  }
-
-  return true;
+  return blockage_llx < row_urx && row_llx < blockage_urx;
 }
 
 int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
@@ -171,11 +167,8 @@ int makeSiteLoc(int x, double site_width, bool at_left_from_macro, int offset)
 template <typename T>
 bool hasOverflow(T a, T b)
 {
-  if ((b > 0 && a > std::numeric_limits<T>::max() - b)
-      || (b < 0 && a < std::numeric_limits<T>::lowest() - b)) {
-    return true;
-  }
-  return false;
+  return (b > 0 && a > std::numeric_limits<T>::max() - b)
+         || (b < 0 && a < std::numeric_limits<T>::lowest() - b);
 }
 
 void cutRows(dbBlock* block,

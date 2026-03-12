@@ -253,7 +253,7 @@ void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
+      block_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
@@ -267,7 +267,7 @@ void HierRTLMP::init()
 void HierRTLMP::runMultilevelAutoclustering()
 {
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
+      block_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
@@ -1767,11 +1767,7 @@ bool HierRTLMP::singleArraySingleStdCellCluster(
     }
   }
 
-  if (number_of_macro_arrays == 0 || number_of_std_clusters == 0) {
-    return false;
-  }
-
-  return true;
+  return number_of_macro_arrays != 0 && number_of_std_clusters != 0;
 }
 
 void HierRTLMP::placeMacros(Cluster* cluster)

@@ -2384,14 +2384,14 @@ void RepairChannelStraps::repairGridChannels(
   for (const auto& channel : channels) {
     bool dont_repair = false;
     for (const auto& other : areas_repaired) {
-      if (!(channel.area.xMax() <= other.xMin()
-            || channel.area.xMin() >= other.xMax())) {
+      if (channel.area.xMax() > other.xMin()
+          && channel.area.xMin() < other.xMax()) {
         // channels cover similar x regions
         dont_repair = true;
         break;
       }
-      if (!(channel.area.yMax() <= other.yMin()
-            || channel.area.yMin() >= other.yMax())) {
+      if (channel.area.yMax() > other.yMin()
+          && channel.area.yMin() < other.yMax()) {
         // channels cover similar y regions
         dont_repair = true;
         break;
