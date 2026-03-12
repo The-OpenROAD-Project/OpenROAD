@@ -1,0 +1,34 @@
+{
+    "name": "dbChipPath",
+    "type": "dbObject",
+    "fields": [
+        {
+            "name": "name_",
+            "type": "std::string",
+            "flags": [
+                "no-set"
+            ]
+        },
+        {
+            "name": "chip_",
+            "type": "dbId<_dbChip>",
+            "flags": [
+                "private"
+            ]
+        },
+        {
+            "name": "entries_",
+            "type": "std::vector<std::pair<std::string, bool>>",
+            "flags": [
+                "private",
+                "no-cmp"
+            ]
+        }
+    ],
+    "h_includes": [
+        "odb/dbId.h"
+    ],
+    "cpp_includes": [
+        "dbChip.h"
+    ]
+}

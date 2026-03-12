@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -7273,6 +7274,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipNet> getChipNets() const;
 
+  std::vector<dbChipPath*> getChipPaths() const;
+
   dbChipInst* findChipInst(const std::string& name) const;
 
   dbChipRegion* findChipRegion(const std::string& name) const;
@@ -7434,6 +7437,24 @@ class dbChipNet : public dbObject
   // User Code End dbChipNet
 };
 
+class dbChipPath : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  // User Code Begin dbChipPath
+  dbChip* getChip() const;
+
+  const std::vector<std::pair<std::string, bool>>& getEntries() const;
+
+  void addEntry(const std::string& region, bool negated);
+
+  static dbChipPath* create(dbChip* chip, const std::string& name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
+};
+
 class dbChipRegion : public dbObject
 {
  public:
@@ -7507,6 +7528,8 @@ class dbDatabase : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   dbSet<dbChipNet> getChipNets() const;
+
+  dbSet<dbChipPath> getChipPaths() const;
 
   // User Code Begin dbDatabase
 

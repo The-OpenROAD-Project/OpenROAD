@@ -162,6 +162,12 @@
       "schema": "kSchemaChipBump"
     },
     {
+      "name": "paths_",
+      "type": "std::vector<dbId<_dbChipPath>>",
+      "flags": ["private", "no-cmp"],
+      "schema": "kSchemaChipPath"
+    },
+    {
       "name": "chipinsts_map_",
       "type": "std::unordered_map<std::string, dbId<_dbChipInst>>",
       "flags": ["private", "no-serial"]
@@ -200,6 +206,7 @@
     "dbChipInstItr.h",
     "dbChipNet.h",
     "dbChipNetItr.h",
+    "dbChipPath.h",
     "dbCommon.h",
     "odb/dbChipCallBackObj.h",
     "odb/dbObject.h",

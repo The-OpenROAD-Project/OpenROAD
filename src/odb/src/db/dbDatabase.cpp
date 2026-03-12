@@ -11,6 +11,7 @@
 #include "dbChipConn.h"
 #include "dbChipInst.h"
 #include "dbChipNet.h"
+#include "dbChipPath.h"
 #include "dbChipRegionInst.h"
 #include "dbCore.h"
 #include "dbProperty.h"
@@ -111,6 +112,9 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   if (*chip_net_tbl_ != *rhs.chip_net_tbl_) {
     return false;
   }
+  if (*chip_path_tbl_ != *rhs.chip_path_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   //
@@ -174,6 +178,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
                                      dbChipBumpInstObj);
   chip_net_tbl_ = new dbTable<_dbChipNet>(
       this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipNetObj);
+  chip_path_tbl_ = new dbTable<_dbChipPath>(
+      this, this, (GetObjTbl_t) &_dbDatabase::getObjectTable, dbChipPathObj);
   // User Code Begin Constructor
   magic1_ = kMagic1;
   magic2_ = kMagic2;
@@ -280,6 +286,9 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
   if (obj.isSchema(kSchemaChipBump)) {
     stream >> *obj.chip_net_tbl_;
   }
+  if (obj.isSchema(kSchemaChipPath)) {
+    stream >> *obj.chip_path_tbl_;
+  }
   if (obj.isSchema(kSchemaDbuPerMicron)) {
     if (obj.isLessThanSchema(kSchemaRemoveDbuPerMicron)) {
       // Should already have a value from dbTech, so only need to update this if
@@ -361,6 +370,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbDatabase& obj)
   stream << *obj.chip_conn_tbl_;
   stream << *obj.chip_bump_inst_tbl_;
   stream << *obj.chip_net_tbl_;
+  stream << *obj.chip_path_tbl_;
   stream << obj.dbu_per_micron_;
   stream << obj.hierarchy_;
   // User Code End <<
@@ -384,6 +394,8 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       return chip_bump_inst_tbl_;
     case dbChipNetObj:
       return chip_net_tbl_;
+    case dbChipPathObj:
+      return chip_path_tbl_;
       // User Code Begin getObjectTable
     case dbTechObj:
       return tech_tbl_;
@@ -418,6 +430,8 @@ void _dbDatabase::collectMemInfo(MemInfo& info)
 
   chip_net_tbl_->collectMemInfo(info.children["chip_net_tbl_"]);
 
+  chip_path_tbl_->collectMemInfo(info.children["chip_path_tbl_"]);
+
   // User Code Begin collectMemInfo
   tech_tbl_->collectMemInfo(info.children["tech"]);
   lib_tbl_->collectMemInfo(info.children["lib"]);
@@ -435,6 +449,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_tbl_;
   delete chip_bump_inst_tbl_;
   delete chip_net_tbl_;
+  delete chip_path_tbl_;
   // User Code Begin Destructor
   delete tech_tbl_;
   delete lib_tbl_;
@@ -578,6 +593,12 @@ dbSet<dbChipNet> dbDatabase::getChipNets() const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
   return dbSet<dbChipNet>(obj, obj->chip_net_tbl_);
+}
+
+dbSet<dbChipPath> dbDatabase::getChipPaths() const
+{
+  _dbDatabase* obj = (_dbDatabase*) this;
+  return dbSet<dbChipPath>(obj, obj->chip_path_tbl_);
 }
 
 // User Code Begin dbDatabasePublicMethods

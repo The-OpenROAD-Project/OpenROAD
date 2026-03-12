@@ -449,41 +449,47 @@ TEST_F(PathAssertionFixture, test_path_assertions_from_file)
 {
   std::string path = getFilePath(prefix + "data/path_assertions.3dbx");
   parser_.readDbx(path);
-  const auto& assertions = parser_.getPathAssertions();
 
-  ASSERT_EQ(assertions.size(), 2);
+  dbChip* chip = db_->findChip("TopDesign");
+  ASSERT_NE(chip, nullptr);
+  auto chip_paths = chip->getChipPaths();
+  ASSERT_EQ(chip_paths.size(), 2);
+
+  // Build a map for lookup by name
+  std::map<std::string, dbChipPath*> paths_by_name;
+  for (auto* p : chip_paths) {
+    paths_by_name[p->getName()] = p;
+  }
 
   // Path1: 3 entries, one negated
-  const auto& p1 = assertions.at("Path1");
-  EXPECT_EQ(p1.name, "Path1");
-  ASSERT_EQ(p1.entries.size(), 3);
-
-  EXPECT_EQ(p1.entries[0].region, "soc_inst.regions.front_reg");
-  EXPECT_FALSE(p1.entries[0].negated);
-
-  EXPECT_EQ(p1.entries[1].region, "soc_inst_duplicate.regions.back_reg");
-  EXPECT_TRUE(p1.entries[1].negated);
-
-  EXPECT_EQ(p1.entries[2].region, "soc_inst_duplicate.regions.front_reg");
-  EXPECT_FALSE(p1.entries[2].negated);
+  ASSERT_EQ(paths_by_name.count("Path1"), 1u);
+  const auto& e1 = paths_by_name["Path1"]->getEntries();
+  ASSERT_EQ(e1.size(), 3u);
+  EXPECT_EQ(e1[0].first, "soc_inst.regions.front_reg");
+  EXPECT_FALSE(e1[0].second);
+  EXPECT_EQ(e1[1].first, "soc_inst_duplicate.regions.back_reg");
+  EXPECT_TRUE(e1[1].second);
+  EXPECT_EQ(e1[2].first, "soc_inst_duplicate.regions.front_reg");
+  EXPECT_FALSE(e1[2].second);
 
   // Path2: 2 entries, none negated
-  const auto& p2 = assertions.at("Path2");
-  EXPECT_EQ(p2.name, "Path2");
-  ASSERT_EQ(p2.entries.size(), 2);
-
-  EXPECT_EQ(p2.entries[0].region, "soc_inst.regions.back_reg");
-  EXPECT_FALSE(p2.entries[0].negated);
-
-  EXPECT_EQ(p2.entries[1].region, "soc_inst_duplicate.regions.back_reg");
-  EXPECT_FALSE(p2.entries[1].negated);
+  ASSERT_EQ(paths_by_name.count("Path2"), 1u);
+  const auto& e2 = paths_by_name["Path2"]->getEntries();
+  ASSERT_EQ(e2.size(), 2u);
+  EXPECT_EQ(e2[0].first, "soc_inst.regions.back_reg");
+  EXPECT_FALSE(e2[0].second);
+  EXPECT_EQ(e2[1].first, "soc_inst_duplicate.regions.back_reg");
+  EXPECT_FALSE(e2[1].second);
 }
 
 TEST_F(PathAssertionFixture, test_path_assertions_no_path_block)
 {
   std::string path = getFilePath(prefix + "data/example.3dbx");
   parser_.readDbx(path);
-  EXPECT_TRUE(parser_.getPathAssertions().empty());
+
+  dbChip* chip = db_->findChip("TopDesign");
+  ASSERT_NE(chip, nullptr);
+  EXPECT_EQ(chip->getChipPaths().size(), 0u);
 }
 
 }  // namespace

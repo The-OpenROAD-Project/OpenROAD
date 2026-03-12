@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
@@ -17,6 +18,7 @@
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "dbChipPath.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -120,6 +122,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   }
 
   // User Code Begin ==
+  if (paths_ != rhs.paths_) {
+    return false;
+  }
   if (*block_tbl_ != *rhs.block_tbl_) {
     return false;
   }
@@ -235,6 +240,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> obj.nets_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
+    stream >> obj.paths_;
+  }
   if (obj.getDatabase()->isSchema(kSchemaChipTech)) {
     stream >> obj.tech_;
   }
@@ -286,6 +294,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.chipinsts_;
   stream << obj.conns_;
   stream << obj.nets_;
+  stream << obj.paths_;
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
   stream << *obj.marker_categories_tbl_;
@@ -599,6 +608,18 @@ dbSet<dbChipNet> dbChip::getChipNets() const
   _dbChip* chip = (_dbChip*) this;
   _dbDatabase* db = (_dbDatabase*) chip->getOwner();
   return dbSet<dbChipNet>(chip, db->chip_net_itr_);
+}
+
+std::vector<dbChipPath*> dbChip::getChipPaths() const
+{
+  _dbChip* chip = (_dbChip*) this;
+  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
+  std::vector<dbChipPath*> result;
+  result.reserve(chip->paths_.size());
+  for (const auto& id : chip->paths_) {
+    result.emplace_back((dbChipPath*) db->chip_path_tbl_->getPtr(id));
+  }
+  return result;
 }
 
 dbChipInst* dbChip::findChipInst(const std::string& name) const

@@ -96,6 +96,7 @@ add_library(db
     dbChipConn.cpp
     dbChipInst.cpp
     dbChipNet.cpp
+    dbChipPath.cpp
     dbChipRegion.cpp
     dbChipRegionInst.cpp
     dbDatabase.cpp

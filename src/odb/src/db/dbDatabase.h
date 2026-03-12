@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 127;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 128;  // Current revision number
+
+// Revision where dbChipPath was added to dbChip
+inline constexpr uint32_t kSchemaChipPath = 128;
 
 // Revision where chip_bump_ back-reference was added to dbBTerm
 inline constexpr uint32_t kSchemaBtermChipBump = 127;
@@ -274,6 +277,7 @@ class _dbChipRegionInst;
 class _dbChipConn;
 class _dbChipBumpInst;
 class _dbChipNet;
+class _dbChipPath;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
@@ -321,6 +325,7 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipConn>* chip_conn_tbl_;
   dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
   dbTable<_dbChipNet>* chip_net_tbl_;
+  dbTable<_dbChipPath>* chip_path_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* tech_tbl_;

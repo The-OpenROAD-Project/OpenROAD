@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <map>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -34,17 +33,6 @@ struct Connection;
 struct DesignDef;
 struct BumpMapEntry;
 struct DbxData;
-struct PathAssertionEntry
-{
-  std::string region;    // e.g. "HBM_1.regions.r1"
-  bool negated = false;  // true when prefixed with "NOT"
-};
-
-struct PathAssertion
-{
-  std::string name;  // e.g. "Path1"
-  std::vector<PathAssertionEntry> entries;
-};
 
 class ThreeDBlox
 {
@@ -55,7 +43,6 @@ class ThreeDBlox
   void readDbx(const std::string& dbx_file);
   void readBMap(const std::string& bmap_file);
   void check();
-  const std::map<std::string, PathAssertion>& getPathAssertions() const;
   void writeDbv(const std::string& dbv_file, odb::dbChip* chip);
   void writeDbx(const std::string& dbx_file, odb::dbChip* chip);
   void writeBMap(const std::string& bmap_file, odb::dbChipRegion* region);
@@ -81,6 +68,5 @@ class ThreeDBlox
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
   std::unordered_set<std::string> read_files_;
-  std::map<std::string, PathAssertion> path_assertions_;
 };
 }  // namespace odb

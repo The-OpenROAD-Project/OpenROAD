@@ -7,9 +7,19 @@
 #include <string>
 #include <vector>
 
-#include "odb/3dblox.h"
-
 namespace odb {
+
+struct PathAssertionEntry
+{
+  std::string region;    // e.g. "HBM_1.regions.r1"
+  bool negated = false;  // true when prefixed with "NOT"
+};
+
+struct PathAssertion
+{
+  std::string name;  // e.g. "Path1"
+  std::vector<PathAssertionEntry> entries;
+};
 
 struct Coordinate
 {

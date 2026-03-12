@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
@@ -32,6 +33,7 @@ class _dbBlock;
 class _dbChipInst;
 class _dbChipConn;
 class _dbChipNet;
+class _dbChipPath;
 class _dbTech;
 
 class _dbChip : public _dbObject
@@ -72,6 +74,7 @@ class _dbChip : public _dbObject
   dbId<_dbChipInst> chipinsts_;
   dbId<_dbChipConn> conns_;
   dbId<_dbChipNet> nets_;
+  std::vector<dbId<_dbChipPath>> paths_;
   std::unordered_map<std::string, dbId<_dbChipInst>> chipinsts_map_;
   std::unordered_map<std::string, dbId<_dbChipRegion>> chip_region_map_;
   dbId<_dbTech> tech_;
