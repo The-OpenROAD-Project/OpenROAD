@@ -1,0 +1,10 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+py_binary(
+    name = "gantt_chart",
+    srcs = ["gantt_chart.py"],
+    deps = [
+        "@pip//matplotlib",
+        "@pip//numpy",
+    ],
+)
