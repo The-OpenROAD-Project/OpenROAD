@@ -121,6 +121,16 @@
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 42 long wires.
 [INFO RSZ-0048] Inserted 92 buffers in 42 nets.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                    2907
+Diamond Move Success:           2907 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement       3754.4 u
@@ -131,9 +141,9 @@ legalized HPWL         194510.2 u
 delta HPWL                    0 %
 
 Clock clk
-   1.01 source latency inst_10_5/clk ^
-  -1.14 target latency inst_11_5/clk ^
+   1.25 source latency inst_3_13/clk ^
+  -1.13 target latency inst_5_13/clk ^
    0.00 CRPR
 --------------
-  -0.13 setup skew
+   0.12 setup skew
 

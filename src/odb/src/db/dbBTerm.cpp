@@ -674,6 +674,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     inst_impl->iterms_.push_back(iterm->getOID());
     iterm->flags_.mterm_idx = mterm->order_id_;
     iterm->inst_ = inst_impl->getOID();
+    iterm->mterm_ = mterm;
 
     bterm->parent_block_ = parent_block->getOID();
     bterm->parent_iterm_ = inst_impl->iterms_[mterm->order_id_];

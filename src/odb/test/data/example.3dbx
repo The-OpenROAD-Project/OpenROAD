@@ -40,6 +40,6 @@ Connection:
     bot: soc_inst.regions.front_reg
     thickness: 0.0
   soc_to_virtual:
-    top: soc_inst_duplicate.regions.back_reg
+    top: soc_inst.regions.back_reg
     bot: ~
     thickness: 0.0

@@ -12,12 +12,14 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "CellEdgeSpacingTableParser.h"
+#include "absl/base/attributes.h"
+#include "absl/base/const_init.h"
+#include "absl/synchronization/mutex.h"
 #include "lefLayerPropParser.h"
 #include "lefMacroPropParser.h"
 #include "lefiDebug.hpp"
@@ -36,7 +38,7 @@ namespace odb {
 using LefParser::lefrSetRelaxMode;
 
 // Protects the LefParser namespace that has static variables
-std::mutex lefin::lef_mutex_;
+ABSL_CONST_INIT absl::Mutex lefin::lef_mutex_(absl::kConstInit);
 
 extern bool lefin_parse(lefinReader*, utl::Logger*, const char*);
 
@@ -2591,13 +2593,13 @@ int lefin::dbdist(double value)
 
 dbTech* lefin::createTech(const char* name, const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createTech(name, lef_file);
 }
 
 dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createLib(tech, name, lef_file);
 }
 
@@ -2605,25 +2607,25 @@ dbLib* lefin::createTechAndLib(const char* tech_name,
                                const char* lib_name,
                                const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->createTechAndLib(tech_name, lib_name, lef_file);
 }
 
 bool lefin::updateLib(dbLib* lib, const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateLib(lib, lef_file);
 }
 
 bool lefin::updateTech(dbTech* tech, const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateTech(tech, lef_file);
 }
 
 bool lefin::updateTechAndLib(dbLib* lib, const char* lef_file)
 {
-  std::lock_guard<std::mutex> lock(lef_mutex_);
+  absl::MutexLock lock(&lef_mutex_);
   return reader_->updateTechAndLib(lib, lef_file);
 }
 

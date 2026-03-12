@@ -80,7 +80,11 @@ class HierRTLMP
   void setDefaultHalo(int halo_width, int halo_height);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
-  void setMacroHalo(odb::dbInst* macro, int halo_width, int halo_height);
+  void setMacroHalo(odb::dbInst* macro,
+                    int left,
+                    int bottom,
+                    int right,
+                    int top);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,

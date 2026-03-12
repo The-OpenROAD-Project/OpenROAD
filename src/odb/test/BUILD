@@ -1,4 +1,4 @@
-load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
@@ -30,7 +30,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -43,7 +43,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -56,7 +56,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -69,7 +69,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -82,7 +82,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -95,7 +95,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -108,7 +108,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -121,7 +121,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -134,7 +134,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -197,6 +197,7 @@ COMPULSORY_TESTS = [
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
+    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
@@ -284,6 +285,7 @@ filegroup(
         "data/example1.bmap",
         "data/example2.bmap",
         "data/example3.bmap",
+        "data/example4.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",

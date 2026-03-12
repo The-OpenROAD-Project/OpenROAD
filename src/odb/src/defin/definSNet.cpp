@@ -13,6 +13,7 @@
 
 #include "create_box.h"
 #include "definPolygon.h"
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"

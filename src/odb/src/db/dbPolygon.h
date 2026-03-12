@@ -9,6 +9,9 @@
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/geom.h"
+// User Code Begin Includes
+#include <vector>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;

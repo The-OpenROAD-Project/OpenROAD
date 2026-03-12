@@ -78,9 +78,8 @@ class HistogramView : public QChartView
   void contextMenuEvent(QContextMenuEvent* event) override;
 
  private:
-  float computeBucketInterval();
+  float computeBucketInterval(float min_slack, float max_slack);
   float computeSnapBucketInterval(float exact_interval);
-  float computeSnapBucketDecimalInterval(float minimum_interval);
   int computeNumberOfDigits(float value);
 
   void populateBins();
@@ -118,8 +117,7 @@ class HistogramView : public QChartView
   Buckets buckets_;
   std::unique_ptr<utl::Histogram<float>> histogram_;
 
-  static constexpr int kDefaultNumberOfBuckets = 15;
-  static constexpr int kMinimumNumberOfBuckets = 8;
+  static constexpr int kDefaultNumberOfBuckets = 10;
 };
 
 class ChartsWidget : public QDockWidget

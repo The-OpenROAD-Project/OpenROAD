@@ -12,7 +12,6 @@
 #include "gui/heatMap.h"
 #include "odb/dbTypes.h"
 #include "psm/pdnsim.h"
-#include "sta/Corner.hh"
 #include "sta/Sta.hh"
 
 namespace psm {
@@ -80,8 +79,8 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       "Corner:",
       [this]() {
         std::vector<std::string> corners;
-        for (auto* corner : *sta_->corners()) {
-          corners.emplace_back(corner->name());
+        for (auto* scene : sta_->scenes()) {
+          corners.emplace_back(scene->name());
         }
         return corners;
       },
@@ -230,7 +229,7 @@ void IRDropDataSource::setLayer(const std::string& name)
 
 void IRDropDataSource::setCorner(const std::string& name)
 {
-  corner_ = sta_->findCorner(name.c_str());
+  corner_ = sta_->findScene(name);
 }
 
 void IRDropDataSource::ensureCorner()
@@ -239,12 +238,7 @@ void IRDropDataSource::ensureCorner()
     return;
   }
 
-  auto corners = sta_->corners()->corners();
-  if (!corners.empty()) {
-    corner_ = *corners.begin();
-  }
-
-  corner_ = sta_->cmdCorner();
+  corner_ = sta_->cmdScene();
 }
 
 }  // namespace psm

@@ -15,6 +15,7 @@
 #include "dbBlock.h"
 #include "dbChipRegion.h"
 #include "dbNet.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipBump>;

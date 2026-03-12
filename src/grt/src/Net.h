@@ -60,6 +60,21 @@ class Net
   bool isDirtyNet() const { return is_dirty_net_; }
   void setIsClockNet(bool is_clk) { is_clk_ = is_clk; }
   bool isClockNet() const { return is_clk_; }
+  void setRestoreRouteFromGuides(bool restore_route_from_guides)
+  {
+    restore_route_from_guides_ = restore_route_from_guides;
+  }
+  bool restoreRouteFromGuides() const { return restore_route_from_guides_; }
+  void setAreSegmentsRestored(bool are_segments_restored)
+  {
+    are_segments_restored_ = are_segments_restored;
+  }
+  bool areSegmentsRestored() const { return are_segments_restored_; }
+  void setIsConnectedToPadOrMacro(bool is_connected)
+  {
+    is_connected_to_pad_or_macro_ = is_connected;
+  }
+  bool isConnectedToPadOrMacro() const { return is_connected_to_pad_or_macro_; }
 
  private:
   int getNumBTermsAboveMaxLayer(odb::dbTechLayer* max_routing_layer);
@@ -74,6 +89,9 @@ class Net
   bool is_merged_net_;
   bool is_dirty_net_;
   bool is_clk_;
+  bool restore_route_from_guides_;
+  bool are_segments_restored_;
+  bool is_connected_to_pad_or_macro_;
 };
 
 }  // namespace grt

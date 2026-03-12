@@ -11,8 +11,7 @@
 #include <vector>
 
 #include "BaseMove.hh"
-#include "sta/ArcDelayCalc.hh"
-#include "sta/DcalcAnalysisPt.hh"
+#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
@@ -23,7 +22,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -34,35 +32,18 @@ using std::vector;
 
 using utl::RSZ;
 
-using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
-using sta::Edge;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::LoadPinIndexMap;
-using sta::NetConnectedPinIterator;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Pin;
-using sta::Slack;
-using sta::Slew;
-using sta::Vertex;
-using sta::VertexOutEdgeIterator;
-
-bool SizeDownMove::doMove(const Path* drvr_path,
+bool SizeDownMove::doMove(const sta::Path* drvr_path,
                           int drvr_index,
-                          Slack drvr_slack,
-                          PathExpanded* expanded,
+                          sta::Slack drvr_slack,
+                          sta::PathExpanded* expanded,
                           float setup_slack_margin)
 {
-  Pin* drvr_pin = drvr_path->pin(this);
-  LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const Path* load_path = expanded->path(drvr_index + 1);
-  Vertex* load_vertex = load_path->vertex(sta_);
-  Pin* load_pin = load_vertex->pin();
+  sta::Pin* drvr_pin = drvr_path->pin(this);
+  sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+  sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
+  const sta::Path* load_path = expanded->path(drvr_index + 1);
+  sta::Vertex* load_vertex = load_path->vertex(sta_);
+  sta::Pin* load_pin = load_vertex->pin();
 
   // Skip nets with large fanout because we will need to buffer them.
   const int fanout = this->fanout(drvr_vertex);
@@ -79,20 +60,18 @@ bool SizeDownMove::doMove(const Path* drvr_path,
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
 
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
-
   // Sort fanouts of the drvr by slack
-  vector<pair<Vertex*, Slack>> fanout_slacks;
-  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+  vector<pair<sta::Vertex*, sta::Slack>> fanout_slacks;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
+    sta::Edge* edge = edge_iter.next();
     // Watch out for problematic asap7 output->output timing arcs.
     if (edge->isWire()) {
-      Vertex* fanout_vertex = edge->to(graph_);
-      const Slack fanout_slack
-          = sta_->vertexSlack(fanout_vertex, resizer_->max_);
-      Pin* fanout_pin = fanout_vertex->pin();
-      Instance* fanout_inst = network_->instance(fanout_pin);
+      sta::Vertex* fanout_vertex = edge->to(graph_);
+      const sta::Slack fanout_slack
+          = sta_->slack(fanout_vertex, resizer_->max_);
+      sta::Pin* fanout_pin = fanout_vertex->pin();
+      sta::Instance* fanout_inst = network_->instance(fanout_pin);
       // If we already have a move on the fanout gate, don't try to size down
       // again
       if (!hasMoves(fanout_inst)) {
@@ -103,8 +82,8 @@ bool SizeDownMove::doMove(const Path* drvr_path,
 
   // Sort fanouts by slack margin, so we can try the most margin first.
   std::ranges::sort(fanout_slacks,
-                    [this](const pair<Vertex*, Slack>& pair1,
-                           const pair<Vertex*, Slack>& pair2) {
+                    [this](const pair<sta::Vertex*, sta::Slack>& pair1,
+                           const pair<sta::Vertex*, sta::Slack>& pair2) {
                       return (pair1.second > pair2.second
                               || (pair1.second == pair2.second
                                   && network_->pathNameLess(
@@ -125,24 +104,28 @@ bool SizeDownMove::doMove(const Path* drvr_path,
   bool accept_move = false;
 
   for (auto& fanout_slack : fanout_slacks) {
-    Vertex* load_vertex = fanout_slack.first;
+    sta::Vertex* load_vertex = fanout_slack.first;
 
-    Pin* load_pin = load_vertex->pin();
-    LibertyPort* load_port = network_->libertyPort(load_pin);
+    sta::Pin* load_pin = load_vertex->pin();
+    sta::LibertyPort* load_port = network_->libertyPort(load_pin);
     // Skip primary outputs
     if (!load_port) {
       continue;
     }
-    LibertyCell* load_cell = load_port->libertyCell();
-    Instance* load_inst = network_->instance(load_pin);
+    sta::LibertyCell* load_cell = load_port->libertyCell();
+    sta::Instance* load_inst = network_->instance(load_pin);
 
     if (resizer_->dontTouch(load_inst)
         || !resizer_->isLogicStdCell(load_inst)) {
       continue;
     }
 
-    LibertyCell* new_cell = downSizeGate(
-        drvr_port, load_port, load_pin, dcalc_ap, fanout_slack.second);
+    sta::LibertyCell* new_cell = downSizeGate(drvr_port,
+                                              load_port,
+                                              load_pin,
+                                              drvr_path->scene(sta_),
+                                              drvr_path->minMax(sta_),
+                                              fanout_slack.second);
     if (new_cell && replaceCell(load_inst, new_cell)) {
       debugPrint(logger_,
                  RSZ,
@@ -186,41 +169,48 @@ bool SizeDownMove::doMove(const Path* drvr_path,
 
 // This will downsize the gate to the smallest input capacitance that that
 // satisfies the given slack margin.
-LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
-                                        const LibertyPort* load_port,
-                                        const Pin* load_pin,
-                                        const DcalcAnalysisPt* dcalc_ap,
-                                        float slack_margin)
+sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
+                                             const sta::LibertyPort* load_port,
+                                             const sta::Pin* load_pin,
+                                             const sta::Scene* scene,
+                                             const sta::MinMax* min_max,
+                                             float slack_margin)
 {
-  const int lib_ap = dcalc_ap->libertyIndex();
-  LibertyCell* load_cell = load_port->libertyCell();
+  const int lib_ap = scene->libertyIndex(min_max);
+  sta::LibertyCell* load_cell = load_port->libertyCell();
   const char* load_port_name = load_port->name();
 
   sta::LibertyCellSeq swappable_cells = BaseMove::getSwappableCells(load_cell);
-  LibertyCell* best_cell = nullptr;
+  sta::LibertyCell* best_cell = nullptr;
 
   if (swappable_cells.size() > 1) {
     // Sort from the smallest input capacitance to the smallest
     // breaking tie by the intrinsic delay
     sort(&swappable_cells,
-         [=, this](const LibertyCell* cell1, const LibertyCell* cell2) {
-           LibertyPort* port1
-               = cell1->findLibertyPort(load_port_name)->cornerPort(lib_ap);
-           const LibertyPort* port2
-               = cell2->findLibertyPort(load_port_name)->cornerPort(lib_ap);
+         [=, this](const sta::LibertyCell* cell1,
+                   const sta::LibertyCell* cell2) {
+           // Cast to const to use the public version of scenePort
+           const sta::LibertyPort* port1
+               = static_cast<const sta::LibertyPort*>(
+                     cell1->findLibertyPort(load_port_name))
+                     ->scenePort(lib_ap);
+           const sta::LibertyPort* port2
+               = static_cast<const sta::LibertyPort*>(
+                     cell2->findLibertyPort(load_port_name))
+                     ->scenePort(lib_ap);
 
            const float cap1 = port1->capacitance();
            const float cap2 = port2->capacitance();
 
-           const ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
-           const ArcDelay intrinsic2 = getWorstIntrinsicDelay(port2);
+           const sta::ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
+           const sta::ArcDelay intrinsic2 = getWorstIntrinsicDelay(port2);
            return (std::tie(cap1, intrinsic2) < std::tie(cap2, intrinsic1));
          });
   }
 
   if (logger_->debugCheck(RSZ, "size_down", 3)) {
     string swappable_names;
-    for (LibertyCell* swappable : swappable_cells) {
+    for (sta::LibertyCell* swappable : swappable_cells) {
       if (swappable == load_cell) {
         swappable_names += "*";
       }
@@ -239,11 +229,11 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
                swappable_names.c_str());
   }
 
-  const float load_input_cap = load_port->cornerPort(lib_ap)->capacitance();
+  const float load_input_cap = load_port->scenePort(lib_ap)->capacitance();
 
   // Get fanouts based on Liberty since STA arcs are not present in DFFs
   // Could have more than one fanout (e.g. Q and QN of a flop)
-  const Instance* fanout_inst = network_->instance(load_pin);
+  const sta::Instance* fanout_inst = network_->instance(load_pin);
   auto output_pins = getOutputPins(fanout_inst);
 
   vector<float> output_caps;
@@ -252,18 +242,21 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
   vector<const char*> output_port_names;
 
   for (const auto& output_pin : output_pins) {
-    LibertyPort* output_port = network_->libertyPort(output_pin);
+    sta::LibertyPort* output_port = network_->libertyPort(output_pin);
     const char* output_port_name = output_port->name();
     output_port_names.push_back(output_port_name);
-    Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
+    sta::Vertex* output_vertex = graph_->pinLoadVertex(output_pin);
 
     // Find output capacitance
     const float output_load_cap
-        = graph_delay_calc_->loadCap(output_pin, dcalc_ap);
+        = graph_delay_calc_->loadCap(output_pin, scene, min_max);
     output_caps.push_back(output_load_cap);
 
     // Find output slew and slew factor
-    const Slew output_slew = sta_->vertexSlew(output_vertex, resizer_->max_);
+    const sta::Slew output_slew = sta_->slew(output_vertex,
+                                             sta::RiseFallBoth::riseFall(),
+                                             sta_->scenes(),
+                                             resizer_->max_);
     float output_res = output_port->driveResistance();
     float elmore_slew_factor = 0.0;
     // Can have gates without fanout (e.g. QN of flop) which have no load
@@ -274,7 +267,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
 
     // Compute the baseline delay of the existing fanout cell outputs
     const float load_delay
-        = resizer_->gateDelay(output_port, output_load_cap, dcalc_ap);
+        = resizer_->gateDelay(output_port, output_load_cap, scene, min_max);
     output_delays.push_back(load_delay);
 
     debugPrint(logger_,
@@ -294,7 +287,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
   best_cell = load_cell;
   float best_cap = load_input_cap;
   float best_area = load_cell->area();
-  for (LibertyCell* swappable : swappable_cells) {
+  for (sta::LibertyCell* swappable : swappable_cells) {
     if (swappable == load_cell) {
       continue;
     }
@@ -306,8 +299,11 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
                network_->pathName(load_pin),
                load_cell->name(),
                swappable->name());
-    LibertyPort* new_load_port = swappable->findLibertyPort(load_port_name);
-    float new_input_cap = new_load_port->cornerPort(lib_ap)->capacitance();
+    sta::LibertyPort* new_load_port
+        = swappable->findLibertyPort(load_port_name);
+    float new_input_cap = static_cast<const sta::LibertyPort*>(new_load_port)
+                              ->scenePort(lib_ap)
+                              ->capacitance();
     float new_area = swappable->area();
 
     // Input cap and area improvement checking
@@ -331,7 +327,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     // Max capacitance and slew checking
     bool skip_cell = false;
     for (int i = 0; i < output_pins.size(); i++) {
-      LibertyPort* output_port
+      sta::LibertyPort* output_port
           = swappable->findLibertyPort(output_port_names[i]);
 
       // FIXME: Only applies to current corner
@@ -344,7 +340,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
                                 output_port,
                                 output_slew_factors[i],
                                 output_caps[i],
-                                dcalc_ap)) {
+                                scene)) {
         skip_cell = true;
         break;
       }
@@ -357,7 +353,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
 
     // Compute actual slack margin once before the loop
     float actual_slack_margin = slack_margin;
-    Instance* load_inst = network_->instance(load_pin);
+    sta::Instance* load_inst = network_->instance(load_pin);
     if (load_cell->hasSequentials()) {
       // Sequential elements: use worst output slack
       actual_slack_margin = getWorstOutputSlack(load_inst);
@@ -371,7 +367,7 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
           delayAsString(slack_margin, sta_, 3));
     } else {
       // For combinational gates, consider worst slack of all input pins
-      Slack worst_input_slack = getWorstInputSlack(load_inst);
+      sta::Slack worst_input_slack = getWorstInputSlack(load_inst);
       actual_slack_margin = std::min(slack_margin, worst_input_slack);
       debugPrint(logger_,
                  RSZ,
@@ -391,10 +387,10 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     // Check delay change for each output pin
     for (int output_index = 0; output_index < output_pins.size();
          output_index++) {
-      LibertyPort* output_port
+      sta::LibertyPort* output_port
           = swappable->findLibertyPort(output_port_names[output_index]);
       float new_load_delay = resizer_->gateDelay(
-          output_port, output_caps[output_index], dcalc_ap);
+          output_port, output_caps[output_index], scene, min_max);
       float delay_change = 0.0;
 
       if (load_cell->hasSequentials()) {
@@ -412,10 +408,10 @@ LibertyCell* SizeDownMove::downSizeGate(const LibertyPort* drvr_port,
     }
 
     // Use first output for debug display (representative)
-    LibertyPort* first_output_port
+    sta::LibertyPort* first_output_port
         = swappable->findLibertyPort(output_port_names[0]);
-    float first_new_load_delay
-        = resizer_->gateDelay(first_output_port, output_caps[0], dcalc_ap);
+    float first_new_load_delay = resizer_->gateDelay(
+        first_output_port, output_caps[0], scene, min_max);
 
     debugPrint(logger_,
                RSZ,

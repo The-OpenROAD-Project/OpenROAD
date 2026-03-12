@@ -109,7 +109,7 @@ class MazeRoute
 {
  public:
   MazeRoute(GRNet* net, const GridGraph* graph, utl::Logger* logger)
-      : net_(net), grid_graph_(graph), graph_(net, graph), logger_(logger)
+      : net_(net), graph_(net, graph), logger_(logger)
   {
   }
 
@@ -123,7 +123,6 @@ class MazeRoute
 
  private:
   const GRNet* net_;
-  const GridGraph* grid_graph_;
   SparseGraph graph_;
   utl::Logger* logger_;
 

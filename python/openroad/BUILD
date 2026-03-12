@@ -1,8 +1,8 @@
-load("@openroad_rules_python//python:defs.bzl", "py_library")
+load("@rules_python//python:defs.bzl", "py_library")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
-load("@openroad_rules_python//python:packaging.bzl", "py_package", "py_wheel")
+load("@rules_python//python:packaging.bzl", "py_package", "py_wheel")
 
 package(features = ["layering_check"])
 
@@ -13,7 +13,7 @@ py_library(
         "odb.py",
         "utl.py",
     ],
-    imports = ["pypi"],
+    imports = [".."],
     visibility = ["//visibility:public"],
     deps = [
         "//:ord_py",

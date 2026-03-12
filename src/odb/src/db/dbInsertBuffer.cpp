@@ -447,46 +447,57 @@ dbNet* dbInsertBuffer::createNewFlatNet(
   // Algorithm:
   // - The new net will drive the connected_terms, and the original net will be
   //   connected to the buffer terminal.
-  // - If the original net name matches a connected BTerm, rename the original
-  //   net to a unique name and assign the BTerm's name to the new net.
-  //   This ensures that the net name matches the port name for Verilog
-  //   compatibility.
+  // - If connected_terms contains a BTerm, the new net is always named after
+  //   the BTerm to ensure Verilog compatibility. If the original net or its
+  //   modnet has the same name, they are renamed first to avoid collision.
+  //   This handles the case where remove_buffers merges two port-named nets,
+  //   leaving a BTerm on a net with a different port's name.
 
   std::string new_net_name = (new_net_base_name_) ? new_net_base_name_ : "net";
   dbNameUniquifyType new_net_uniquify = uniquify_;
 
-  // Check if the net name conflicts with any port name
+  // Find the first BTerm in connected_terms (if any) to use its port name
+  // as the new net name for Verilog compatibility.
+  dbBTerm* bterm = nullptr;
   for (dbObject* obj : connected_terms) {
-    if (obj->getObjectType() != dbBTermObj) {
-      continue;
+    if (obj->getObjectType() == dbBTermObj) {
+      bterm = static_cast<dbBTerm*>(obj);
+      break;
     }
+  }
 
-    dbBTerm* bterm = static_cast<dbBTerm*>(obj);
+  if (bterm) {
     std::string_view bterm_name{bterm->getConstName()};
-    if (bterm_name == block_->getBaseName(net_->getConstName())) {
-      // The original net names uses the BTerm name.
-      // Rename this net if its name is the same as a port name in loads_pins
-      std::string new_orig_net_name = block_->makeNewNetName(
+
+    // Helper: generate a unique name to avoid collision with the port name.
+    auto make_avoidance_name = [&]() {
+      return block_->makeNewNetName(
           target_module_ ? target_module_->getModInst() : nullptr,
           new_net_name.c_str(),
           dbNameUniquifyType::ALWAYS);
-      net_->rename(new_orig_net_name.c_str());
+    };
 
-      // Rename the mod net name connected to the load pin if it is the
-      // same as the port name
-      dbModNet* load_mnet = bterm->getModNet();
-      if (load_mnet) {
-        std::string_view mnet_name{load_mnet->getConstName()};
-        if (mnet_name == bterm_name) {
-          load_mnet->rename(new_orig_net_name.c_str());
-        }
+    // Rename the original flat net and/or modnet if they have the same name as
+    // the port.
+    const bool flat_net_collides
+        = (bterm_name == block_->getBaseName(net_->getConstName()));
+    dbModNet* load_mnet = bterm->getModNet();
+    const bool mod_net_collides
+        = (load_mnet
+           && std::string_view{load_mnet->getConstName()} == bterm_name);
+
+    if (flat_net_collides || mod_net_collides) {
+      const std::string avoidance_name = make_avoidance_name();
+      if (flat_net_collides) {
+        net_->rename(avoidance_name.c_str());
       }
-
-      // New net name should be the port name
-      new_net_name = bterm_name;
-      new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
-      break;
+      if (mod_net_collides) {
+        load_mnet->rename(avoidance_name.c_str());
+      }
     }
+
+    new_net_name = bterm_name;
+    new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
   }
 
   // Create a new net

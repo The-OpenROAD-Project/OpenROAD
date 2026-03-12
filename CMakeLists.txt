@@ -12,9 +12,11 @@ cmake_policy(SET CMP0086 NEW)
 # Allows <PackageName>_ROOT to be used
 cmake_policy(SET CMP0074 NEW)
 
-# Disallows <PACKAGENAME>_ROOT in find_package.
-# TODO: resolve absl/or-tools issue and switch to NEW
-cmake_policy(SET CMP0144 OLD)
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
+  # Disallows <PACKAGENAME>_ROOT in find_package.
+  # TODO: resolve absl/or-tools issue and switch to NEW
+  cmake_policy(SET CMP0144 OLD)
+endif()
 
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)

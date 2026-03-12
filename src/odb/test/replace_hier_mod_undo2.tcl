@@ -53,6 +53,7 @@ if { $block eq "NULL" } {
 }
 odb::dbDatabase_beginEco $block
 
+set_debug_level ODB replace_design_check_sanity 1
 puts "### module is swapped to Brent-Kung ###"
 replace_hier_module gcd_1/_552_ LCU_16_BRENT_KUNG
 report_cell_usage gcd_1/_552_

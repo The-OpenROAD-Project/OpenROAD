@@ -19,6 +19,7 @@
 
 #include "dbMarkerCategory.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 // User Code End Includes
 
 namespace odb {
@@ -52,7 +53,8 @@ class _dbMarker : public _dbObject
     kPoint = 0,
     kLine = 1,
     kRect = 2,
-    kPolygon = 3
+    kPolygon = 3,
+    kCuboid = 4
   };
   // User Code End Enums
 

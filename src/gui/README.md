@@ -126,7 +126,7 @@ save_clocktree_image
     -clock clock_name
     [-width width]
     [-height height]
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
@@ -135,7 +135,7 @@ save_clocktree_image
 | ---- | ---- |
 |`filename`| path to save the image to. |
 |`-clock`| name of the clock to save the clocktree for. |
-|`-corner`| name of the timing corner to save the clocktree for, default to the first corner defined. |
+|`-scene`| name of the timing scene to save the clocktree for, default to the first scene defined. |
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 

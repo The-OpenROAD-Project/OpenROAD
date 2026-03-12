@@ -36,7 +36,11 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
+#include <algorithm>
 #include <cstdlib>
+#include <iterator>
+#include <ranges>
+#include <string>
 
 #include "dbCommon.h"
 #include "dbHashTable.hpp"
@@ -44,7 +48,9 @@
 #include "dbTechLayerAntennaRule.h"
 #include "dbTechLayerSpacingRule.h"
 #include "dbTechMinCutOrAreaRule.h"
+#include "dbVector.h"
 #include "odb/dbObject.h"
+#include "odb/dbTypes.h"
 #include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 #include "utl/Logger.h"

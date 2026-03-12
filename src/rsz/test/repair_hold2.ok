@@ -21,13 +21,13 @@ Path Type: min
    0.08    0.08   clock network delay (propagated)
    0.00    0.08   clock reconvergence pessimism
            0.08 ^ r2/CK (DFF_X1)
-   0.01    0.08   library hold time
-           0.08   data required time
+   0.01    0.09   library hold time
+           0.09   data required time
 ---------------------------------------------------------
-           0.08   data required time
+           0.09   data required time
           -0.00   data arrival time
 ---------------------------------------------------------
-          -0.08   slack (VIOLATED)
+          -0.09   slack (VIOLATED)
 
 
 Startpoint: r1 (rising edge-triggered flip-flop clocked by clk)
@@ -41,21 +41,21 @@ Path Type: min
    0.02    0.02   clock network delay (propagated)
    0.00    0.02 ^ r1/CK (DFF_X1)
    0.08    0.10 v r1/Q (DFF_X1)
-   0.03    0.12 v u2/ZN (AND2_X1)
-   0.00    0.12 v r3/D (DFF_X1)
-           0.12   data arrival time
+   0.03    0.13 v u2/ZN (AND2_X1)
+   0.00    0.13 v r3/D (DFF_X1)
+           0.13   data arrival time
 
    0.00    0.00   clock clk (rise edge)
-   0.15    0.15   clock network delay (propagated)
-   0.00    0.15   clock reconvergence pessimism
-           0.15 ^ r3/CK (DFF_X1)
-   0.00    0.16   library hold time
-           0.16   data required time
+   0.16    0.16   clock network delay (propagated)
+   0.00    0.16   clock reconvergence pessimism
+           0.16 ^ r3/CK (DFF_X1)
+   0.00    0.17   library hold time
+           0.17   data required time
 ---------------------------------------------------------
-           0.16   data required time
-          -0.12   data arrival time
+           0.17   data required time
+          -0.13   data arrival time
 ---------------------------------------------------------
-          -0.03   slack (VIOLATED)
+          -0.04   slack (VIOLATED)
 
 
 Startpoint: r3 (rising edge-triggered flip-flop clocked by clk)
@@ -66,11 +66,11 @@ Path Type: min
   Delay    Time   Description
 ---------------------------------------------------------
    0.00    0.00   clock clk (rise edge)
-   0.15    0.15   clock network delay (propagated)
-   0.00    0.15 ^ r3/CK (DFF_X1)
-   0.09    0.24 v r3/Q (DFF_X1)
-   0.00    0.24 v out (out)
-           0.24   data arrival time
+   0.16    0.16   clock network delay (propagated)
+   0.00    0.16 ^ r3/CK (DFF_X1)
+   0.09    0.25 v r3/Q (DFF_X1)
+   0.00    0.26 v out (out)
+           0.26   data arrival time
 
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock network delay (propagated)
@@ -79,24 +79,24 @@ Path Type: min
            0.30   data required time
 ---------------------------------------------------------
            0.30   data required time
-          -0.24   data arrival time
+          -0.26   data arrival time
 ---------------------------------------------------------
-          -0.06   slack (VIOLATED)
+          -0.04   slack (VIOLATED)
 
 
 [INFO RSZ-0046] Found 4 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |    +0.0% |  -0.083 |  -0.196 | r2/D
-    final |       0 |      11 |            0 |   +40.2% |   0.017 |   0.000 | r2/D
+        0 |       0 |       0 |            0 |    +0.0% |  -0.088 |  -0.196 | r2/D
+    final |       0 |       9 |            0 |   +32.9% |   0.001 |   0.000 | r1/D
 --------------------------------------------------------------------------------------
-[INFO RSZ-0032] Inserted 11 hold buffers.
-worst slack min 0.02
+[INFO RSZ-0032] Inserted 9 hold buffers.
+worst slack min 0.00
 worst slack max 1.88
 Net in2
  Pin capacitance: 0.70-0.78
- Wire capacitance: 0.01-0.09
- Total capacitance: 0.71-0.87
+ Wire capacitance: 0.79-0.79
+ Total capacitance: 1.49-1.57
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -105,18 +105,18 @@ Driver pins
  in2 input port (20, 0)
 
 Load pins
- hold11/A input (CLKBUF_X1) 0.70-0.78 (23, 6)
+ hold9/A input (CLKBUF_X1) 0.70-0.78 (23, 6)
 
 Net out
  Pin capacitance: 0.00
- Wire capacitance: 2.01
- Total capacitance: 2.01
+ Wire capacitance: 3.83
+ Total capacitance: 3.83
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
 
 Driver pins
- hold9/Z output (CLKBUF_X1) (12, 11)
+ hold2/Z output (CLKBUF_X1) (24, 21)
 
 Load pins
  out output port (0, 0)

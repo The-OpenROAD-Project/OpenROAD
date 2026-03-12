@@ -116,13 +116,13 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst)
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
 {
   const sta::dbNetwork* db_network = sta->getDbNetwork();
-  const sta::ClockSet clock_set = sta->clocks(db_network->dbToSta(iterm));
+  const sta::ClockSet clock_set
+      = sta->clocks(db_network->dbToSta(iterm), sta->cmdMode());
 
-  sta::ClockSet::ConstIterator iter(clock_set);
-  if (!iter.container()->empty()) {
+  if (!clock_set.empty()) {
     // Returns the first clock for the given iterm, TODO can we have more than
     // one clock driver?
-    return *iter.container()->begin();
+    return *clock_set.begin();
   }
 
   return std::nullopt;

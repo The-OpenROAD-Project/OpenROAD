@@ -124,8 +124,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     // Watch out for problematic asap7 output->output timing arcs.
     if (edge->isWire()) {
       Vertex* fanout_vertex = edge->to(graph_);
-      const Slack fanout_slack
-          = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
+      const Slack fanout_slack = sta_->slack(fanout_vertex, rf, resizer_->max_);
       const Slack slack_margin = fanout_slack - drvr_slack;
       debugPrint(logger_,
                  RSZ,

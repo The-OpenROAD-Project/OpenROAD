@@ -194,7 +194,7 @@ void ARuleRatio::setRatio(double ratio)
 void ARuleRatio::setDiff(double ratio)
 {
   assert(ratio > 0);
-  assert((diff_idx_.size() == 0) && (diff_ratio_.size() == 0));
+  assert((diff_idx_.empty()) && (diff_ratio_.empty()));
   diff_idx_.assign(1, 0.0);
   diff_ratio_.assign(1, ratio);
 }
@@ -202,7 +202,7 @@ void ARuleRatio::setDiff(double ratio)
 void ARuleRatio::setDiff(const vector<double>& diff_idx,
                          const vector<double>& ratios)
 {
-  assert((diff_idx_.size() == 0) && (diff_ratio_.size() == 0));
+  assert((diff_idx_.empty()) && (diff_ratio_.empty()));
   diff_idx_ = diff_idx;
   diff_ratio_ = ratios;
 }

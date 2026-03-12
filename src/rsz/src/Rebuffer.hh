@@ -14,13 +14,13 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/geom.h"
-#include "sta/Corner.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/Scene.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -45,7 +45,7 @@ class Rebuffer : public sta::dbStaState
 
  protected:
   void init();
-  void initOnCorner(sta::Corner* corner);
+  void initOnCorner(sta::Scene* corner);
 
   void annotateLoadSlacks(BufferedNetPtr& tree, sta::Vertex* root_vertex);
   void annotateTiming(const BufferedNetPtr& tree);
@@ -82,7 +82,7 @@ class Rebuffer : public sta::dbStaState
                          int level = -1);
 
   BufferedNetPtr importBufferTree(const sta::Pin* drvr_pin,
-                                  const sta::Corner* corner);
+                                  const sta::Scene* corner);
 
   void insertBufferOptions(BufferedNetSeq& opts,
                            int level,
@@ -145,7 +145,7 @@ class Rebuffer : public sta::dbStaState
   float fanout_limit_ = 0.0f;
   float drvr_pin_max_slew_ = 0.0f;
   float drvr_load_high_water_mark_ = 0.0f;
-  const sta::Corner* corner_ = nullptr;
+  const sta::Scene* corner_ = nullptr;
   sta::LibertyPort* drvr_port_ = nullptr;
   sta::Path* arrival_paths_[sta::RiseFall::index_count] = {nullptr};
 

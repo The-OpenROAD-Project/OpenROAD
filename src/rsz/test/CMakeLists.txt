@@ -86,6 +86,7 @@ or_integration_tests(
     repair_setup_sizedown
     repair_setup_sizeup_match
     repair_setup1
+    repair_setup2
     repair_setup3
     repair_setup4
     repair_setup4_flat
@@ -180,6 +181,7 @@ or_integration_tests(
     replace_arith_modules2
     replace_arith_modules3
     report_buffers_asap7
+    report_buffers_asap7_augmented
     report_buffers_nangate45
     report_buffers_ihp
     report_buffers_sky130hs

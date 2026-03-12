@@ -42,7 +42,7 @@ write_verilog_for_eqy $test_name before "None"
 
 puts "-- After --\n"
 
-resynth_annealing -corner fast -temp 1e-10
+resynth_annealing -corner fast -temp 1e-10 -seed 66
 report_timing_histogram
 report_cell_usage
 report_checks

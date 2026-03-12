@@ -1,0 +1,25 @@
+source "helpers.tcl"
+read_liberty asap7_augmented/asap7sc7p5t_INVBUF_RVT_TT_nldm_220122.lib.gz
+read_liberty asap7_augmented/asap7sc7p5t_INVBUF_LVT_TT_nldm_220122.lib.gz
+read_liberty asap7_augmented/asap7sc7p5t_INVBUF_SLVT_TT_nldm_220122.lib.gz
+read_liberty asap7_augmented/asap7sc7p5t_INVBUF_ULVT_TT_nldm_220122.lib.gz
+read_liberty asap7_augmented/asap7sc7p5t_INVBUF_ELVT_TT_nldm_220122.lib.gz
+read_lef asap7_augmented/asap7_tech_1x_201209.lef
+read_lef asap7_augmented/asap7sc7p5t_28_R_1x_220121a.lef
+read_lef asap7_augmented/asap7sc7p5t_28_L_1x_220121a.lef
+read_lef asap7_augmented/asap7sc7p5t_28_SL_1x_220121a.lef
+read_lef asap7_augmented/asap7sc7p5t_28_UL_1x_220121a.lef
+read_lef asap7_augmented/asap7sc7p5t_28_EL_1x_220121a.lef
+
+read_verilog gcd_asap7.v
+link gcd
+
+set_opt_config -disable_buffer_pruning true
+
+report_buffers -filtered
+rsz::report_fast_buffer_sizes
+
+reset_opt_config -limit_sizing_area -limit_sizing_leakage
+report_equiv_cells CLKBUFx2_ASAP7_75t_R
+report_equiv_cells -match_cell_footprint CLKBUFx2_ASAP7_75t_R
+report_equiv_cells BUFx2_ASAP7_75t_R

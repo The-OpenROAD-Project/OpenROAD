@@ -7,10 +7,12 @@
 #include <cmath>
 #include <cstdint>
 #include <istream>
-#include <mutex>
 #include <ostream>
 #include <string>
 
+#include "absl/base/attributes.h"
+#include "absl/base/const_init.h"
+#include "absl/synchronization/mutex.h"
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -26,7 +28,7 @@
 
 namespace ord {
 
-std::mutex Design::interp_mutex;
+ABSL_CONST_INIT absl::Mutex Design::interp_mutex(absl::kConstInit);
 
 Design::Design(Tech* tech) : tech_(tech)
 {
@@ -133,7 +135,7 @@ ant::AntennaChecker* Design::getAntennaChecker()
 
 std::string Design::evalTclString(const std::string& cmd)
 {
-  const std::lock_guard<std::mutex> lock(interp_mutex);
+  const absl::MutexLock lock(&interp_mutex);
   auto openroad = getOpenRoad();
   ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
   Tcl_Interp* tcl_interp = openroad->tclInterp();

@@ -301,13 +301,13 @@ void save_image(const char* filename, double xlo, double ylo, double xhi, double
   gui->saveImage(filename, make_rect(xlo, ylo, xhi, yhi), width_px, dbu_per_pixel, display_settings);
 }
 
-void save_clocktree_image(const char* filename, const char* clock_name, const char* corner = "", int width_px = 0, int height_px = 0)
+void save_clocktree_image(const char* filename, const char* clock_name, const char* scene = "", int width_px = 0, int height_px = 0)
 {
   if (!check_gui("save_clocktree_image")) {
     return;
   }
   auto gui = gui::Gui::get();
-  gui->saveClockTreeImage(clock_name, filename, corner, width_px, height_px);
+  gui->saveClockTreeImage(clock_name, filename, scene, width_px, height_px);
 }
 
 void select_clockviewer_clock(const char* clock_name, int depth = 0)

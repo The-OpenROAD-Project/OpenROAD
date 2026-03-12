@@ -4,6 +4,7 @@
 #include "db/infra/frTime.h"
 
 #include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <ios>
 #include <iostream>

@@ -29,7 +29,6 @@
 #include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
@@ -135,7 +134,6 @@ class TechChar
   TechChar(CtsOptions* options,
            odb::dbDatabase* db,
            sta::dbSta* sta,
-           rsz::Resizer* resizer,
            est::EstimateParasitics* estimate_parasitics,
            sta::dbNetwork* db_network,
            utl::Logger* logger);
@@ -323,14 +321,12 @@ class TechChar
 
   CtsOptions* options_;
   odb::dbDatabase* db_;
-  rsz::Resizer* resizer_;
   est::EstimateParasitics* estimate_parasitics_;
   sta::dbSta* openSta_;
   std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   utl::Logger* logger_;
-  sta::PathAnalysisPt* charPathAnalysis_ = nullptr;
-  sta::Corner* charCorner_ = nullptr;
+  sta::Scene* charCorner_ = nullptr;
   odb::dbBlock* charBlock_ = nullptr;
   odb::dbMaster* charBuf_ = nullptr;
   odb::dbMTerm* charBufIn_ = nullptr;

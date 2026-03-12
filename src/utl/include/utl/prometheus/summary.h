@@ -24,9 +24,9 @@
 
 #include <chrono>
 #include <cstdint>
-#include <mutex>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "utl/prometheus/builder.h"
 #include "utl/prometheus/ckms_quantiles.h"
 #include "utl/prometheus/client_metric.h"
@@ -72,7 +72,7 @@ class Summary : PrometheusMetric
   using Quantiles = std::vector<detail::CKMSQuantiles::Quantile>;
 
   const Quantiles quantiles_;
-  mutable std::mutex mutex_;
+  mutable absl::Mutex mutex_;
   std::uint64_t count_{0};
   double sum_{0};
   detail::TimeWindowQuantiles quantile_values_;
@@ -117,7 +117,7 @@ class Summary : PrometheusMetric
   /// \brief Observe the given amount.
   void Observe(const double value)
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+    absl::MutexLock lock(&mutex_);
 
     count_ += 1;
     sum_ += value;
@@ -131,7 +131,7 @@ class Summary : PrometheusMetric
   {
     auto metric = ClientMetric{};
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    absl::MutexLock lock(&mutex_);
 
     metric.summary.quantile.reserve(quantiles_.size());
     for (const auto& quantile : quantiles_) {

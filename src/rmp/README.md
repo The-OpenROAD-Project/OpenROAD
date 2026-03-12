@@ -96,6 +96,45 @@ resynth_annealing
 | `-revert_after` | After the given number of iterations that worsen slack, revert to best found solution. |
 | `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
 
+### Resynth with genetic slack tuning
+
+Resynthesize parts of the design with an ABC script found via genetic algorithm.
+An individual in a population is a series of operations on ABC's internal AIG data structure.
+Each such operation is considered a gene. Genotype can be changed by a mutation with operations such
+as adding, removing or swapping genes with a `mutation_probability` probability. Individual can also be changed
+by crossing two genes together with a `crossover_probability` probability.
+The optimization function is defined as the worst slack.
+
+```tcl
+resynth_genetic
+    [-corner corner]
+    [-slack_threshold slack_threshold]
+    [-seed seed]
+    [-population_size population_size]
+    [-mutation_probability mutation_probability]
+    [-crossover_probability crossover_probability]
+    [-tournament_probability tournament_probability]
+    [-tournament_size tournament_size]
+    [-iters iters]
+    [-initial_ops initial_ops]
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-corner` | Process corner to use. |
+| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. The default value is `0`. |
+| `-seed` | Seed to use for randomness. |
+| `-population_size` | Population size. |
+| `-mutation_probability` | Probability of applying mutation operator. |
+| `-crossover_probability` | Probability of applying crossover operator. |
+| `-tournament_probability` | Tournament probability. |
+| `-tournament_size` | Tournament size. |
+| `-iters` | Number of iterations to run genetic algorithm. |
+| `-initial_ops` | Size of the initial random solution (number of commands in the script for ABC). |
+
+
 ## Example scripts
 
 Example scripts on running `rmp` for a sample design of `gcd` as follows:
@@ -128,4 +167,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

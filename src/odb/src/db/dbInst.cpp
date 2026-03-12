@@ -878,7 +878,46 @@ dbBox* dbInst::getHalo()
 
   _dbBlock* block = (_dbBlock*) inst->getOwner();
   _dbBox* b = block->box_tbl_->getPtr(inst->halo_);
+
   return (dbBox*) b;
+}
+
+Rect dbInst::getTransformedHalo()
+{
+  _dbInst* inst = (_dbInst*) this;
+  Rect halo = Rect();
+
+  if (inst->halo_ == 0) {
+    return halo;
+  }
+
+  _dbBlock* block = (_dbBlock*) inst->getOwner();
+  _dbBox* b = block->box_tbl_->getPtr(inst->halo_);
+
+  Rect rect = b->shape_.rect;
+  dbTransform transform(inst->flags_.orient, Point(0, 0));
+
+  transform.apply(rect);
+
+  int x1 = std::abs(std::min(rect.xMin(), rect.xMax()));
+  int y1 = std::abs(std::min(rect.yMin(), rect.yMax()));
+  int x2 = std::abs(std::max(rect.xMin(), rect.xMax()));
+  int y2 = std::abs(std::max(rect.yMin(), rect.yMax()));
+
+  halo.reset(x1, y1, x2, y2);
+
+  return halo;
+}
+
+void dbInst::setHalo(int left, int bottom, int right, int top)
+{
+  dbBox* halo = getHalo();
+
+  if (halo != nullptr) {
+    dbBox::destroy(halo);
+  }
+
+  dbBox::create(this, left, bottom, right, top);
 }
 
 void dbInst::getConnectivity(std::vector<dbInst*>& result,
@@ -1206,14 +1245,17 @@ bool dbInst::swapMaster(dbMaster* new_master_)
 
   // The next two steps invalidates any dbSet<dbITerm> iterators.
 
-  // 1) update the iterm-mterm-idx
+  // 1) update the iterm-mterm-idx and cached mterm pointer
+  _dbMaster* new_master = (_dbMaster*) new_master_;
   uint32_t cnt = inst->iterms_.size();
 
   uint32_t i;
   for (i = 0; i < cnt; ++i) {
     _dbITerm* it = block->iterm_tbl_->getPtr(inst->iterms_[i]);
     uint32_t old_idx = it->flags_.mterm_idx;
-    it->flags_.mterm_idx = idx_map[old_idx];
+    uint32_t new_idx = idx_map[old_idx];
+    it->flags_.mterm_idx = new_idx;
+    it->mterm_ = new_master->mterm_tbl_->getPtr(new_inst_hdr->mterms_[new_idx]);
   }
 
   // 2) reorder the iterms vector
@@ -1306,6 +1348,7 @@ dbInst* dbInst::create(dbBlock* block_,
     inst_impl->iterms_[i] = iterm->getOID();
     iterm->flags_.mterm_idx = i;
     iterm->inst_ = inst_impl->getOID();
+    iterm->mterm_ = master->mterm_tbl_->getPtr(inst_hdr->mterms_[i]);
   }
 
   _dbBox* box = block->box_tbl_->create();
@@ -1330,13 +1373,9 @@ dbInst* dbInst::create(dbBlock* block_,
 
   if (region) {
     region->addInst((dbInst*) inst_impl);
-    for (dbBlockCallBackObj* cb : block->callbacks_) {
-      cb->inDbInstCreate((dbInst*) inst_impl, region);
-    }
-  } else {
-    for (dbBlockCallBackObj* cb : block->callbacks_) {
-      cb->inDbInstCreate((dbInst*) inst_impl);
-    }
+  }
+  for (dbBlockCallBackObj* cb : block->callbacks_) {
+    cb->inDbInstCreate((dbInst*) inst_impl);
   }
 
   for (int i = 0; i < mterm_cnt; ++i) {

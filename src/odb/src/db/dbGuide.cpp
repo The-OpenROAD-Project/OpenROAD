@@ -15,6 +15,9 @@
 
 #include "dbBlock.h"
 #include "dbJournal.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -212,6 +215,8 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->pushParam(_guide->layer_);
     block->journal_->pushParam(_guide->via_layer_);
     block->journal_->pushParam(_guide->is_congested_);
+    block->journal_->pushParam(_guide->is_jumper_);
+    block->journal_->pushParam(_guide->is_connect_to_term_);
     block->journal_->endAction();
   }
 

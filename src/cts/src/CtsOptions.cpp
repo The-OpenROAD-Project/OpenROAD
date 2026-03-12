@@ -24,11 +24,6 @@ void CtsOptions::inDbInstCreate(odb::dbInst* inst)
   recordBuffer(inst->getMaster(), getType(inst));
 }
 
-void CtsOptions::inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region)
-{
-  recordBuffer(inst->getMaster(), getType(inst));
-}
-
 void CtsOptions::limitSinkClusteringSizes(unsigned limit)
 {
   if (sinkClustersSizeSet_) {

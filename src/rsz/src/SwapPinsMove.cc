@@ -37,19 +37,20 @@ using utl::RSZ;
 
 using sta::ArcDcalcResult;
 using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
 using sta::INF;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
+using sta::MinMax;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
+using sta::Scene;
 using sta::Slack;
 using sta::Slew;
 using sta::TimingArc;
@@ -76,9 +77,10 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     return false;
   }
   Instance* drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
-  const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  const float load_cap = graph_delay_calc_->loadCap(
+      drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const int in_index = drvr_index - 1;
   const Path* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
@@ -105,14 +107,19 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     // and that should apply to all instances of that cell with this input_port.
     if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
       equivCellPins(cell, input_port, ports);
-      equiv_pin_map_.insert(input_port, ports);
+      equiv_pin_map_.insert({input_port, ports});
     }
     ports = equiv_pin_map_[input_port];
     if (!ports.empty()) {
       // Pass slews at input pins for more accurate delay/slew estimation
-      annotateInputSlews(drvr, dcalc_ap);
-      findSwapPinCandidate(
-          input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
+      annotateInputSlews(drvr, drvr_path->scene(sta_), drvr_path->minMax(sta_));
+      findSwapPinCandidate(input_port,
+                           drvr_port,
+                           ports,
+                           load_cap,
+                           drvr_path->scene(sta_),
+                           drvr_path->minMax(sta_),
+                           &swap_port);
       resetInputSlews();
 
       if (!sta::LibertyPort::equiv(swap_port, input_port)) {
@@ -322,7 +329,8 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
                                         LibertyPort* drvr_port,
                                         const LibertyPortVec& equiv_ports,
                                         float load_cap,
-                                        const DcalcAnalysisPt* dcalc_ap,
+                                        const Scene* corner,
+                                        const MinMax* min_max,
                                         LibertyPort** swap_port)
 {
   LibertyCell* cell = drvr_port->libertyCell();
@@ -351,7 +359,8 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
                                          load_cap,
                                          nullptr,
                                          load_pin_index_map,
-                                         dcalc_ap);
+                                         corner,
+                                         min_max);
 
         const ArcDelay& gate_delay = dcalc_result.gateDelay();
 
@@ -389,7 +398,8 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
 }
 
 void SwapPinsMove::annotateInputSlews(Instance* inst,
-                                      const DcalcAnalysisPt* dcalc_ap)
+                                      const Scene* scene,
+                                      const MinMax* min_max)
 {
   input_slew_map_.clear();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
@@ -401,10 +411,12 @@ void SwapPinsMove::annotateInputSlews(Instance* inst,
       if (port) {
         Vertex* vertex = graph_->pinDrvrVertex(pin);
         InputSlews slews;
+        auto ap_index = scene->dcalcAnalysisPtIndex(min_max);
+        sta_->findDelays(vertex);
         slews[RiseFall::rise()->index()]
-            = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+            = sta_->graph()->slew(vertex, RiseFall::rise(), ap_index);
         slews[RiseFall::fall()->index()]
-            = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+            = sta_->graph()->slew(vertex, RiseFall::fall(), ap_index);
         input_slew_map_.emplace(port, slews);
       }
     }

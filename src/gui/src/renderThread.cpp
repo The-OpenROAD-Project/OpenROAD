@@ -13,13 +13,13 @@
 #include <cstdint>
 #include <exception>
 #include <iterator>
-#include <mutex>
 #include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/parameters.hpp"
 #include "boost/geometry/index/predicates.hpp"
@@ -34,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "ruler.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -201,7 +202,7 @@ void RenderThread::draw(QImage& image,
   }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
-  std::lock_guard<std::mutex> lock(drawing_mutex_);
+  absl::MutexLock lock(&drawing_mutex_);
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 
@@ -313,6 +314,7 @@ bool RenderThread::instanceBelowMinSize(dbInst* inst)
 
 void RenderThread::drawTracks(dbTechLayer* layer,
                               QPainter* painter,
+                              odb::dbBlock* block,
                               const Rect& bounds)
 {
   if (!viewer_->options_->arePrefTracksVisible()
@@ -320,12 +322,16 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  dbTrackGrid* grid = viewer_->getBlock()->findTrackGrid(layer);
+  if (block == nullptr) {
+    return;
+  }
+
+  dbTrackGrid* grid = block->findTrackGrid(layer);
   if (!grid) {
     return;
   }
 
-  Rect block_bounds = viewer_->getBlock()->getDieArea();
+  Rect block_bounds = block->getDieArea();
   if (!block_bounds.intersects(bounds)) {
     return;
   }
@@ -1103,7 +1109,7 @@ void RenderThread::drawLayer(QPainter* painter,
                  io_pins);
     }
 
-    drawTracks(layer, painter, bounds);
+    drawTracks(layer, painter, block, bounds);
     drawRouteGuides(gui_painter, layer);
     drawNetTracks(gui_painter, layer);
   }
@@ -1195,7 +1201,7 @@ void RenderThread::drawChip(QPainter* painter,
     gui_painter.drawPolygon(core_area);
   }
 
-  drawManufacturingGrid(painter, bounds);
+  drawManufacturingGrid(painter, block, bounds);
   debugPrint(logger_,
              GUI,
              "draw",
@@ -1239,28 +1245,30 @@ void RenderThread::drawChip(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
-  std::set<dbTech*> child_techs;
-  for (auto child : block->getChildren()) {
-    dbTech* child_tech = child->getTech();
-    if (child_tech != tech) {
-      child_techs.insert(child_tech);
+  if (tech != nullptr) {
+    std::set<dbTech*> child_techs;
+    for (auto child : block->getChildren()) {
+      dbTech* child_tech = child->getTech();
+      if (child_tech != tech) {
+        child_techs.insert(child_tech);
+      }
     }
-  }
 
-  for (dbTech* child_tech : child_techs) {
-    for (dbTechLayer* layer : child_tech->getLayers()) {
+    for (dbTech* child_tech : child_techs) {
+      for (dbTechLayer* layer : child_tech->getLayers()) {
+        if (restart_) {
+          break;
+        }
+        drawLayer(painter, block, layer, insts, bounds, gui_painter);
+      }
+    }
+
+    for (dbTechLayer* layer : tech->getLayers()) {
       if (restart_) {
         break;
       }
       drawLayer(painter, block, layer, insts, bounds, gui_painter);
     }
-  }
-
-  for (dbTechLayer* layer : tech->getLayers()) {
-    if (restart_) {
-      break;
-    }
-    drawLayer(painter, block, layer, insts, bounds, gui_painter);
   }
 
   utl::Timer inst_names;
@@ -1290,25 +1298,31 @@ void RenderThread::drawChip(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
   utl::Timer inst_cell_grid;
-  drawGCellGrid(painter, bounds);
+  drawGCellGrid(painter, block, bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
 
-void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
+void RenderThread::drawGCellGrid(QPainter* painter,
+                                 odb::dbBlock* block,
+                                 const odb::Rect& bounds)
 {
   if (!viewer_->options_->isGCellGridVisible()) {
     return;
   }
 
-  odb::dbGCellGrid* grid = viewer_->getBlock()->getGCellGrid();
+  if (block == nullptr) {
+    return;
+  }
+
+  odb::dbGCellGrid* grid = block->getGCellGrid();
 
   if (grid == nullptr) {
     return;
   }
 
-  const auto die_area = viewer_->getBlock()->getDieArea();
+  const auto die_area = block->getDieArea();
 
   if (!bounds.intersects(die_area)) {
     return;
@@ -1346,14 +1360,19 @@ void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
 }
 
 void RenderThread::drawManufacturingGrid(QPainter* painter,
+                                         odb::dbBlock* block,
                                          const odb::Rect& bounds)
 {
   if (!viewer_->options_->isManufacturingGridVisible()) {
     return;
   }
 
-  odb::dbTech* tech = viewer_->getBlock()->getDb()->getTech();
-  if (!tech->hasManufacturingGrid()) {
+  if (block == nullptr) {
+    return;
+  }
+
+  odb::dbTech* tech = block->getTech();
+  if (tech == nullptr || !tech->hasManufacturingGrid()) {
     return;
   }
 
@@ -1513,6 +1532,9 @@ void RenderThread::drawAccessPoints(Painter& painter,
   }
 
   odb::dbTech* tech = block->getTech();
+  if (tech == nullptr) {
+    return;
+  }
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     for (const auto& [box, pin] : viewer_->search_.searchBPins(block,
                                                                layer,

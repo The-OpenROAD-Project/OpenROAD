@@ -92,8 +92,8 @@ execute_dft_plan
 
 ### Scan Optimization
 
-**Note: This is currently not implement and this command currently operates as a
-nop**
+**Note: This is currently not implemented and this command currently operates as a
+nop.**
 
 Performs scan optimizations on the design reordering the flops of the scan
 chains using the latest placement information.

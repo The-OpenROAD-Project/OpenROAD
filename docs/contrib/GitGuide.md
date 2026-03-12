@@ -31,7 +31,7 @@ feature branch for making your changes. For example:
 git checkout master && git branch shiny-new-feature
 git checkout shiny-new-feature
 # Or equivalently, 
-git checkout master && checkout -b shiny-new-feature 
+git checkout master && git checkout -b shiny-new-feature
 ```
 
 This changes your working directory to the shiny-new-feature branch.  Keep any

@@ -28,9 +28,9 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
@@ -66,7 +66,9 @@ int LatencyBalancer::run()
 void LatencyBalancer::initSta()
 {
   openSta_->ensureGraph();
-  openSta_->ensureClkNetwork();
+  for (auto mode : openSta_->modes()) {
+    openSta_->ensureClkNetwork(mode);
+  }
   openSta_->updateTiming(false);
   timingGraph_ = openSta_->graph();
 }
@@ -244,7 +246,7 @@ float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
       continue;
     }
 
-    if (path->dcalcAnalysisPt(openSta_)->delayMinMax() != sta::MinMax::max()) {
+    if (path->minMax(openSta_) != sta::MinMax::max()) {
       continue;
       // only populate with max delay
     }

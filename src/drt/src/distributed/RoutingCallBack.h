@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <utility>

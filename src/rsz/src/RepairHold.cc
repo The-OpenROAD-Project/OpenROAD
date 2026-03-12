@@ -17,8 +17,7 @@
 #include "odb/dbObject.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
+#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
@@ -28,6 +27,7 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Path.hh"
@@ -38,7 +38,6 @@
 #include "sta/SearchPred.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
 
@@ -50,12 +49,6 @@ using std::string;
 using std::vector;
 
 using utl::RSZ;
-
-using sta::Edge;
-using sta::fuzzyLess;
-using sta::INF;
-using sta::PathExpanded;
-using sta::VertexOutEdgeIterator;
 
 RepairHold::RepairHold(Resizer* resizer) : resizer_(resizer)
 {
@@ -82,17 +75,17 @@ bool RepairHold::repairHold(
 {
   bool repaired = false;
   init();
-  sta_->checkSlewLimitPreamble();
-  sta_->checkCapacitanceLimitPreamble();
+  sta_->checkSlewsPreamble();
+  sta_->checkCapacitancesPreamble(sta_->scenes());
   sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   sta_->findRequireds();
-  sta::VertexSet* ends = sta_->search()->endpoints();
+  sta::VertexSet& ends = sta_->search()->endpoints();
   sta::VertexSeq ends1;
-  for (sta::Vertex* end : *ends) {
+  for (sta::Vertex* end : ends) {
     ends1.push_back(end);
   }
-  sort(ends1, sta::VertexIdLess(graph_));
+  sta::sort(ends1, sta::VertexIdLess(graph_));
 
   int max_buffer_count = max_buffer_percent * network_->instanceCount();
   // Prevent it from being too small on trivial designs
@@ -123,8 +116,8 @@ void RepairHold::repairHold(const sta::Pin* end_pin,
                             const int max_passes)
 {
   init();
-  sta_->checkSlewLimitPreamble();
-  sta_->checkCapacitanceLimitPreamble();
+  sta_->checkSlewsPreamble();
+  sta_->checkCapacitancesPreamble(sta_->scenes());
   sta::LibertyCell* buffer_cell = findHoldBuffer();
 
   sta::Vertex* end = graph_->pinLoadVertex(end_pin);
@@ -372,14 +365,15 @@ void RepairHold::bufferHoldDelays(sta::LibertyCell* buffer,
   for (int rf_index : sta::RiseFall::rangeIndex()) {
     delays[rf_index] = sta::MinMax::min()->initValue();
   }
-  for (sta::Corner* corner : *sta_->corners()) {
-    sta::LibertyPort* corner_port
-        = input->cornerPort(corner->libertyIndex(max_));
-    const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(max_);
+  for (sta::Scene* corner : sta_->scenes()) {
+    const sta::LibertyPort* corner_port
+        = static_cast<const sta::LibertyPort*>(input)->scenePort(
+            corner->libertyIndex(max_));
+
     const float load_cap = corner_port->capacitance();
     sta::ArcDelay gate_delays[sta::RiseFall::index_count];
     sta::Slew slews[sta::RiseFall::index_count];
-    resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+    resizer_->gateDelays(output, load_cap, corner, max_, gate_delays, slews);
     for (int rf_index : sta::RiseFall::rangeIndex()) {
       delays[rf_index] = min(delays[rf_index], gate_delays[rf_index]);
     }
@@ -444,9 +438,9 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
     printProgress(pass, true, true);
-    if (hold_margin == 0.0 && fuzzyLess(worst_slack, 0.0)) {
+    if (hold_margin == 0.0 && sta::fuzzyLess(worst_slack, 0.0)) {
       logger_->warn(RSZ, 66, "Unable to repair all hold violations.");
-    } else if (fuzzyLess(worst_slack, hold_margin)) {
+    } else if (sta::fuzzyLess(worst_slack, hold_margin)) {
       logger_->warn(RSZ, 64, "Unable to repair all hold checks within margin.");
     }
 
@@ -478,12 +472,12 @@ void RepairHold::findHoldViolations(sta::VertexSeq& ends,
                                     sta::Slack& worst_slack,
                                     sta::VertexSeq& hold_violations)
 {
-  worst_slack = INF;
+  worst_slack = sta::INF;
   hold_violations.clear();
   debugPrint(logger_, RSZ, "repair_hold", 3, "Hold violations");
   for (sta::Vertex* end : ends) {
-    const sta::Slack slack = sta_->vertexSlack(end, min_);
-    if (!sta_->isClock(end->pin()) && slack < hold_margin) {
+    const sta::Slack slack = sta_->slack(end, min_);
+    if (!sta_->isClock(end->pin(), sta_->cmdMode()) && slack < hold_margin) {
       debugPrint(logger_,
                  RSZ,
                  "repair_hold",
@@ -491,7 +485,7 @@ void RepairHold::findHoldViolations(sta::VertexSeq& ends,
                  " {} hold_slack={} setup_slack={}",
                  end->name(sdc_network_),
                  delayAsString(slack, sta_),
-                 delayAsString(sta_->vertexSlack(end, max_), sta_));
+                 delayAsString(sta_->slack(end, max_), sta_));
       worst_slack = std::min(slack, worst_slack);
       hold_violations.push_back(end);
     }
@@ -508,8 +502,8 @@ void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
                                 int& pass)
 {
   estimate_parasitics_->updateParasitics();
-  sort(hold_failures, [=, this](sta::Vertex* end1, sta::Vertex* end2) {
-    return sta_->vertexSlack(end1, min_) < sta_->vertexSlack(end2, min_);
+  sta::sort(hold_failures, [=, this](sta::Vertex* end1, sta::Vertex* end2) {
+    return sta_->slack(end1, min_) < sta_->slack(end2, min_);
   });
   for (sta::Vertex* end_vertex : hold_failures) {
     if (verbose) {
@@ -529,6 +523,19 @@ void RepairHold::repairHoldPass(sta::VertexSeq& hold_failures,
   }
 }
 
+class RepairHoldPredicate : public sta::SearchPred1
+{
+ public:
+  RepairHoldPredicate(sta::StaState* sta) : sta::SearchPred1(sta) {}
+
+  bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override
+  {
+    const sta::TimingRole* role = edge->role();
+    return sta::SearchPred1::searchThru(edge, mode)
+           && role != sta::TimingRole::latchDtoQ();
+  }
+};
+
 void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                sta::LibertyCell* buffer_cell,
                                const double setup_margin,
@@ -536,6 +543,7 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                const bool allow_setup_violations)
 {
   sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
+  sta::Mode* mode = end_path->mode(sta_);
   if (end_path) {
     debugPrint(logger_,
                RSZ,
@@ -544,9 +552,9 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                "repair end {} hold_slack={} setup_slack={}",
                end_vertex->name(network_),
                delayAsString(end_path->slack(sta_), sta_),
-               delayAsString(sta_->vertexSlack(end_vertex, max_), sta_));
-    PathExpanded expanded(end_path, sta_);
-    sta::SearchPredNonLatch2 pred(sta_);
+               delayAsString(sta_->slack(end_vertex, max_), sta_));
+    sta::PathExpanded expanded(end_path, sta_);
+    RepairHoldPredicate pred(sta_);
     const int path_length = expanded.size();
     if (path_length > 1) {
       sta::VertexSeq path_vertices;
@@ -567,17 +575,17 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
           mergeInit(slacks);
           float excluded_cap = 0.0;
           bool loads_have_out_port = false;
-          VertexOutEdgeIterator edge_iter(path_vertex, graph_);
+          sta::VertexOutEdgeIterator edge_iter(path_vertex, graph_);
           while (edge_iter.hasNext()) {
-            Edge* edge = edge_iter.next();
+            sta::Edge* edge = edge_iter.next();
             sta::Vertex* fanout = edge->to(graph_);
-            if (pred.searchTo(fanout) && pred.searchThru(edge)) {
-              sta::Slack fanout_hold_slack = sta_->vertexSlack(fanout, min_);
+            if (pred.searchTo(fanout, mode) && pred.searchThru(edge, mode)) {
+              sta::Slack fanout_hold_slack = sta_->slack(fanout, min_);
               sta::Pin* load_pin = fanout->pin();
               if (fanout_hold_slack < hold_margin) {
                 load_pins.push_back(load_pin);
                 Slacks fanout_slacks;
-                sta_->vertexSlacks(fanout, fanout_slacks);
+                sta_->slacks(fanout, fanout_slacks);
                 mergeInto(fanout_slacks, slacks);
                 if (network_->direction(load_pin)->isAnyOutput()
                     && network_->isTopLevelPort(load_pin)) {
@@ -603,15 +611,18 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                        delayAsString(slacks[rise_index_][max_index_], sta_),
                        delayAsString(slacks[fall_index_][max_index_], sta_),
                        load_pins.size());
-            const sta::DcalcAnalysisPt* dcalc_ap
-                = sta_->cmdCorner()->findDcalcAnalysisPt(max_);
+            sta::Scene* corner = sta_->cmdScene();
             float load_cap
-                = graph_delay_calc_->loadCap(end_vertex->pin(), dcalc_ap)
+                = graph_delay_calc_->loadCap(end_vertex->pin(), corner, max_)
                   - excluded_cap;
             sta::ArcDelay buffer_delays[sta::RiseFall::index_count];
             sta::Slew buffer_slews[sta::RiseFall::index_count];
-            resizer_->bufferDelays(
-                buffer_cell, load_cap, dcalc_ap, buffer_delays, buffer_slews);
+            resizer_->bufferDelays(buffer_cell,
+                                   load_cap,
+                                   corner,
+                                   max_,
+                                   buffer_delays,
+                                   buffer_slews);
             // setup_slack > -hold_slack
             if (allow_setup_violations
                 || (slacks[rise_index_][max_index_] - setup_margin
@@ -637,20 +648,26 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               // the hold buffer blows through the setup margin.
               resizer_->journalBegin();
               sta::Slack setup_slack_before = sta_->worstSlack(max_);
-              sta::Slew slew_before = sta_->vertexSlew(path_vertex, max_);
+              sta::Slew slew_before = sta_->slew(path_vertex,
+                                                 sta::RiseFallBoth::riseFall(),
+                                                 sta_->scenes(),
+                                                 max_);
               makeHoldDelay(path_vertex,
                             load_pins,
                             loads_have_out_port,
                             buffer_cell,
                             buffer_loc);
-              sta::Slew slew_after = sta_->vertexSlew(path_vertex, max_);
+              sta::Slew slew_after = sta_->slew(path_vertex,
+                                                sta::RiseFallBoth::riseFall(),
+                                                sta_->scenes(),
+                                                max_);
               sta::Slack setup_slack_after = sta_->worstSlack(max_);
               float slew_factor
                   = (slew_before > 0) ? slew_after / slew_before : 1.0;
 
               if (slew_factor > 1.20
                   || (!allow_setup_violations
-                      && fuzzyLess(setup_slack_after, setup_slack_before)
+                      && sta::fuzzyLess(setup_slack_after, setup_slack_before)
                       && setup_slack_after < setup_margin)) {
                 resizer_->journalRestore();
                 inserted_buffer_count_ = 0;
@@ -667,10 +684,10 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
 
 void RepairHold::mergeInit(Slacks& slacks)
 {
-  slacks[rise_index_][min_index_] = INF;
-  slacks[fall_index_][min_index_] = INF;
-  slacks[rise_index_][max_index_] = -INF;
-  slacks[fall_index_][max_index_] = -INF;
+  slacks[rise_index_][min_index_] = sta::INF;
+  slacks[fall_index_][min_index_] = sta::INF;
+  slacks[rise_index_][max_index_] = -sta::INF;
+  slacks[fall_index_][max_index_] = -sta::INF;
 }
 
 void RepairHold::mergeInto(Slacks& from, Slacks& result)
@@ -751,10 +768,10 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
 bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 {
   float cap, limit, slack;
-  const sta::Corner* corner;
+  const sta::Scene* corner;
   const sta::RiseFall* tr;
   sta_->checkCapacitance(
-      drvr_pin, nullptr, max_, corner, tr, cap, limit, slack);
+      drvr_pin, sta_->scenes(), max_, cap, limit, slack, tr, corner);
   float slack_limit_ratio = slack / limit;
   if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
     return false;
@@ -762,7 +779,7 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 
   sta::Slew slew;
   sta_->checkSlew(
-      drvr_pin, nullptr, max_, false, corner, tr, slew, limit, slack);
+      drvr_pin, sta_->scenes(), max_, false, slew, limit, slack, tr, corner);
   slack_limit_ratio = slack / limit;
   if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
     return false;

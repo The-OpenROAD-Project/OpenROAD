@@ -175,7 +175,7 @@ proc improve_placement { args } {
   }
 
   if { [info exists flags(-disallow_one_site_gaps)] } {
-    utl::warn DPL 343"-disallow_one_site_gaps is deprecated"
+    utl::warn DPL 343 "-disallow_one_site_gaps is deprecated"
   }
   set seed 1
   if { [info exists keys(-random_seed)] } {

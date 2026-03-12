@@ -54,7 +54,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@eigen",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -72,11 +72,13 @@ tcl_wrap_cc(
     srcs = [
         "src/pdnsim.i",
         "//:error_swig",
+        "//src/sta:sta_swig_files",
     ],
     module = "psm",
     namespace_prefix = "psm",
     root_swig_src = "src/pdnsim.i",
     swig_includes = [
+        "../sta",
         "src/psm/src",
     ],
     deps = [

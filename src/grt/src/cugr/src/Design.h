@@ -35,7 +35,6 @@ class Design
  public:
   Design(odb::dbDatabase* db,
          utl::Logger* logger,
-         sta::dbSta* sta,
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
@@ -93,7 +92,6 @@ class Design
   odb::dbBlock* block_;
   odb::dbTech* tech_;
   utl::Logger* logger_;
-  sta::dbSta* sta_;
 
   // For detailed routing
   CostT unit_length_wire_cost_;

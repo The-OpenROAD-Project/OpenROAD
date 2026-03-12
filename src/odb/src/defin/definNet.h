@@ -33,8 +33,6 @@ class definNet : public definBase
   dbWireShapeType _wire_shape_type{dbWireShapeType::NONE};
   int _prev_x{0};
   int _prev_y{0};
-  int _width{0};
-  int _point_cnt{0};
   dbTechLayerRule* _taper_rule{nullptr};
   dbTechNonDefaultRule* _non_default_rule{nullptr};
   dbTechNonDefaultRule* _rule_for_path{nullptr};

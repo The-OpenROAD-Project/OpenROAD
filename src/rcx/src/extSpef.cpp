@@ -357,7 +357,7 @@ void extSpef::writeITerm(const uint32_t node)
     int jid = 0;
     dbWire* wire = _d_net->getWire();
     if (wire) {
-      jid = wire->getTermJid(iterm->getId());
+      jid = wire->getTermShapeJunctionId(iterm->getId());
     }
     Point pt;
     if (_termJxy && jid) {
@@ -492,7 +492,7 @@ void extSpef::writePort(const uint32_t node)
   int jid = 0;
   dbWire* wire = _d_net->getWire();
   if (wire) {
-    jid = wire->getTermJid(-bterm->getId());
+    jid = wire->getTermShapeJunctionId(-bterm->getId());
   }
   Point pt;
   if (_termJxy && jid) {

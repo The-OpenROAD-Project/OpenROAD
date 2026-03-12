@@ -59,7 +59,6 @@ void CUGR::init(const int min_routing_layer,
 {
   design_ = std::make_unique<Design>(db_,
                                      logger_,
-                                     sta_,
                                      constants_,
                                      min_routing_layer,
                                      max_routing_layer,
@@ -115,7 +114,7 @@ float CUGR::getNetSlack(odb::dbNet* net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
-  float slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  float slack = sta_->slack(sta_net, sta::MinMax::max());
   return slack;
 }
 

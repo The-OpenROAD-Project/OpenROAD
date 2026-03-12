@@ -44,6 +44,7 @@ set num_instances [llength [get_cells -hier *]]
 puts "number instances in verilog is $num_instances"
 
 #set_debug_level RSZ replace_arith 1
+set_debug_level ODB replace_design_check_sanity 1
 report_wns
 report_tns
 
@@ -53,7 +54,6 @@ report_wns
 report_tns
 
 # QoR must be the same after sta::network_changed
-sta::network_changed
 estimate_parasitics -placement
 report_wns
 report_tns

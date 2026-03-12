@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstddef>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -19,8 +20,6 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
@@ -39,7 +38,6 @@
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "sta/Transition.hh"
-#include "sta/UnorderedMap.hh"
 #include "utl/Logger.h"
 
 namespace est {
@@ -55,7 +53,7 @@ using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
 struct SlackEstimatorParams
 {
-  SlackEstimatorParams(const float margin, const sta::Corner* corner)
+  SlackEstimatorParams(const float margin, const sta::Scene* corner)
       : setup_slack_margin(margin), corner(corner)
   {
   }
@@ -68,7 +66,7 @@ struct SlackEstimatorParams
   const sta::Path* prev_driver_path{nullptr};
   sta::LibertyCell* driver_cell{nullptr};
   const float setup_slack_margin;
-  const sta::Corner* corner;
+  const sta::Scene* corner;
 };
 
 class BaseMove : public sta::dbStaState
@@ -119,7 +117,7 @@ class BaseMove : public sta::dbStaState
   odb::dbDatabase* db_ = nullptr;
   int dbu_ = 0;
   dpl::Opendp* opendp_ = nullptr;
-  const sta::Corner* corner_ = nullptr;
+  const sta::Scene* corner_ = nullptr;
 
   // Need to track these so we don't optimize the optimzations.
   // This can result in long run-time.
@@ -134,32 +132,11 @@ class BaseMove : public sta::dbStaState
   int accepted_count_ = 0;
 
   // Use actual input slews for accurate delay/slew estimation
-  sta::UnorderedMap<sta::LibertyPort*, InputSlews> input_slew_map_;
+  std::unordered_map<sta::LibertyPort*, InputSlews> input_slew_map_;
   TgtSlews tgt_slews_;
 
   double area(sta::Cell* cell);
   double area(odb::dbMaster* master);
-
-  void gateDelays(const sta::LibertyPort* drvr_port,
-                  float load_cap,
-                  const sta::DcalcAnalysisPt* dcalc_ap,
-                  // Return values.
-                  sta::ArcDelay delays[sta::RiseFall::index_count],
-                  sta::Slew slews[sta::RiseFall::index_count]);
-  void gateDelays(const sta::LibertyPort* drvr_port,
-                  float load_cap,
-                  const sta::Slew in_slews[sta::RiseFall::index_count],
-                  const sta::DcalcAnalysisPt* dcalc_ap,
-                  // Return values.
-                  sta::ArcDelay delays[sta::RiseFall::index_count],
-                  sta::Slew out_slews[sta::RiseFall::index_count]);
-  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
-                          float load_cap,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
-  sta::ArcDelay gateDelay(const sta::LibertyPort* drvr_port,
-                          const sta::RiseFall* rf,
-                          float load_cap,
-                          const sta::DcalcAnalysisPt* dcalc_ap);
 
   bool isPortEqiv(sta::FuncExpr* expr,
                   const sta::LibertyCell* cell,
@@ -167,12 +144,12 @@ class BaseMove : public sta::dbStaState
                   const sta::LibertyPort* port_b);
 
   bool simulateExpr(sta::FuncExpr* expr,
-                    sta::UnorderedMap<const sta::LibertyPort*,
-                                      std::vector<bool>>& port_stimulus,
+                    std::unordered_map<const sta::LibertyPort*,
+                                       std::vector<bool>>& port_stimulus,
                     size_t table_index);
   std::vector<bool> simulateExpr(
       sta::FuncExpr* expr,
-      sta::UnorderedMap<const sta::LibertyPort*, std::vector<bool>>&
+      std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
           port_stimulus);
   sta::Instance* makeBuffer(sta::LibertyCell* cell,
                             const char* name,
@@ -181,7 +158,8 @@ class BaseMove : public sta::dbStaState
   bool estimatedSlackOK(const SlackEstimatorParams& params);
   bool estimateInputSlewImpact(
       sta::Instance* instance,
-      const sta::DcalcAnalysisPt* dcalc_ap,
+      const sta::Scene* corner,
+      const sta::MinMax* min_max,
       sta::Slew old_in_slew[sta::RiseFall::index_count],
       sta::Slew new_in_slew[sta::RiseFall::index_count],
       // delay adjustment from prev stage
@@ -195,7 +173,8 @@ class BaseMove : public sta::dbStaState
                                sta::LibertyPort* drvr_port,
                                float load_cap,
                                float prev_drive,
-                               const sta::DcalcAnalysisPt* dcalc_ap);
+                               const sta::Scene* corner,
+                               const sta::MinMax* min_max);
   bool replaceCell(sta::Instance* inst, const sta::LibertyCell* replacement);
   bool checkMaxCapViolation(sta::Instance* inst,
                             const sta::LibertyCell* replacement);
@@ -209,7 +188,7 @@ class BaseMove : public sta::dbStaState
                              sta::LibertyPort* output_port,
                              float output_slew_factor,
                              float output_cap,
-                             const sta::DcalcAnalysisPt* dcalc_ap);
+                             const sta::Scene* corner);
   float computeElmoreSlewFactor(const sta::Pin* output_pin,
                                 sta::LibertyPort* output_port,
                                 float output_load_cap);
