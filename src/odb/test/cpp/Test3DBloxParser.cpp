@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <map>
 #include <string>
 
 #include "gtest/gtest.h"

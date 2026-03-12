@@ -281,6 +281,7 @@ filegroup(
         "data/design58.def",
         "data/example.3dbv",
         "data/example.3dbx",
+        "data/path_assertions.3dbx",
         "data/example.bmap",
         "data/example1.bmap",
         "data/example2.bmap",

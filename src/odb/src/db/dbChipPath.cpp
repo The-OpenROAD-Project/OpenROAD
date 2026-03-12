@@ -112,7 +112,7 @@ void dbChipPath::destroy(dbChipPath* path)
 
   auto& paths = chip->paths_;
   const dbId<_dbChipPath> id = _path->getOID();
-  paths.erase(std::find(paths.begin(), paths.end(), id));
+  paths.erase(std::ranges::find(paths, id));
 
   db->chip_path_tbl_->destroy(_path);
 }
