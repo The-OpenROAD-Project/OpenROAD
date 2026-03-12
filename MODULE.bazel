@@ -87,6 +87,8 @@ bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
     commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    patch_strip = 1,
+    patches = ["//bazel:qt_bazel_bootstrap_headers.patch"],
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 

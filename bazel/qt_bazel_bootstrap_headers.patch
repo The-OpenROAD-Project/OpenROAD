@@ -1,0 +1,17 @@
+--- a/qt_source/BUILD.bazel
++++ b/qt_source/BUILD.bazel
+@@ -776,6 +776,14 @@
+     hdrs = glob([
+         QT_BASE + "/build/include/QtCore/**/Q*",
+         QT_BASE + "/build/include/QtCore/**/*.h",
++        QT_BASE + "/src/corelib/global/*.h",
++        QT_BASE + "/src/corelib/io/*.h",
++        QT_BASE + "/src/corelib/kernel/*.h",
++        QT_BASE + "/src/corelib/plugin/*.h",
++        QT_BASE + "/src/corelib/serialization/*.h",
++        QT_BASE + "/src/corelib/text/*.h",
++        QT_BASE + "/src/corelib/time/*.h",
++        QT_BASE + "/src/corelib/tools/*.h",
+     ]) + select({
+         "@platforms//os:osx": [
+         ] + glob([
