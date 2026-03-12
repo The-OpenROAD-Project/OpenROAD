@@ -212,6 +212,9 @@ single_version_override(
 single_version_override(
     module_name = "toolchains_llvm",
     patch_strip = 1,
-    patches = ["//bazel:toolchains_llvm_ccache.patch"],
+    patches = [
+        "//bazel:toolchains_llvm_ccache.patch",
+        "//bazel:toolchains_llvm_ccache_osx.patch",
+    ],
     version = "1.5.0",
 )

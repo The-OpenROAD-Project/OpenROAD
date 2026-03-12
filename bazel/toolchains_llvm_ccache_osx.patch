@@ -1,0 +1,17 @@
+--- a/toolchain/osx_cc_wrapper.sh.tpl
++++ b/toolchain/osx_cc_wrapper.sh.tpl
+@@ -180,8 +180,12 @@
+   PATH="${PATH}:/usr/bin"
+ fi
+
+-# Call the C++ compiler.
+-"${cmd[@]}"
++# Use ccache if available (--config=ccache).
++if [[ -z "${CCACHE_DISABLE:-}" ]] && command -v ccache &>/dev/null; then
++  ccache "${cmd[@]}"
++else
++  "${cmd[@]}"
++fi
+
+ # Generate an empty file if header processing succeeded.
+ if [[ "${OUTPUT}" == *.h.processed ]]; then
