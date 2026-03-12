@@ -395,7 +395,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
 	    solutionPoints[j][k].push_back(p);
 	    solutionPointsIdx[j][k].push_back(idx);
             solutions[j][k].push_back(idx);
-	    costs[j] += distanceCost;
+	    //costs[j] += distanceCost;
             // delete cluster
 	    swap(solutionPoints[j][c], solutionPoints[j][cluster_num - 1]);
 	    solutionPoints[j].pop_back();
@@ -403,7 +403,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
 	    solutionPointsIdx[j].pop_back();
 	    swap(solutions[j][c], solutions[j][cluster_num - 1]);
 	    solutions[j].pop_back();
-	    costs[j] -= maxInternalDiameter_;
+	    //costs[j] -= maxInternalDiameter_;
 	    cluster_num--;
 	    break;
 	  }
