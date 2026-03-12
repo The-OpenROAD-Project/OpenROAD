@@ -154,7 +154,6 @@ OPENROAD_DEFINES = [
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
-    "TCLRL_VERSION_STR=",
 ]
 
 cc_binary(
@@ -163,6 +162,9 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    data = [
+        "@tclreadline//:tclreadline_scripts",
+    ],
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
@@ -182,6 +184,11 @@ cc_binary(
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
         "@tcl_lang//:tcl",
+        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
+        # On systems without tclreadline these are empty stub targets (no-op).
+        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+        "@tclreadline",
+        "@tclreadline//:tclreadline_defs",
     ],
 )
 

@@ -74,6 +74,9 @@ void Chiplet3DWidget::buildGeometries()
   }
   const odb::Cuboid global_cuboid = chip_->getCuboid();
   const odb::UnfoldedModel* model = chip_->getDb()->getUnfoldedModel();
+  if (!model) {
+    return;
+  }
   const odb::dbTransform center_transform
       = odb::dbTransform(odb::Point3D(-global_cuboid.xCenter(),
                                       -global_cuboid.yCenter(),
