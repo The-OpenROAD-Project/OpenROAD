@@ -143,7 +143,9 @@ class Replace
                 const std::string& images_path);
 
  private:
-  bool initNesterovPlace(const PlaceOptions& options, int threads);
+  bool initNesterovPlace(const PlaceOptions& options,
+                         int threads,
+                         bool check_density);
   void checkHasCoreRows();
 
   odb::dbDatabase* db_ = nullptr;

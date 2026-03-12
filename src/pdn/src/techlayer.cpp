@@ -151,11 +151,7 @@ bool TechLayer::checkIfManufacturingGrid(odb::dbTech* tech, int value)
 
   const int grid = tech->getManufacturingGrid();
 
-  if (value % grid != 0) {
-    return false;
-  }
-
-  return true;
+  return value % grid == 0;
 }
 
 bool TechLayer::checkIfManufacturingGrid(int value,

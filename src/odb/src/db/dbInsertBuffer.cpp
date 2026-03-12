@@ -309,11 +309,7 @@ bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
   }
 
   dbNet* net = iterm->getNet();
-  if (net != nullptr && net->isDoNotTouch()) {
-    return true;
-  }
-
-  return false;
+  return net != nullptr && net->isDoNotTouch();
 }
 
 void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
@@ -923,8 +919,7 @@ bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
   dbModule* current_module = load_pin->getInst()->getModule();
   dbModITerm* top_mod_iterm = nullptr;
 
-  if (current_module == target_module
-      || block_->getDb()->hasHierarchy() == false) {
+  if (current_module == target_module || !block_->getDb()->hasHierarchy()) {
     top_mod_iterm = nullptr;  // Already in same module, no hierarchy handling
   } else {
     dbObject* load_obj = (dbObject*) load_pin;
@@ -1559,7 +1554,7 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
 bool dbInsertBuffer::isMarkedAsNotReusable(dbModNet* net) const
 {
   std::optional<bool> result = getCachedReusability(net);
-  return result && *result == false;
+  return result && !*result;
 }
 
 void dbInsertBuffer::markModNetReusability(dbModNet* net,

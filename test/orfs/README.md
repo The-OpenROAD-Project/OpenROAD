@@ -47,24 +47,20 @@ From bottom you again find "error executing Action" and the relevant action:
 
 Debugging using the Bazel `--sandbox_debug` is possible, but not terribly convenient. bazel-orfs has a debug feature specifically to debug stages and create standalone issues.
 
-First set up a /tmp/place folder with the necessary dependencies:
+First set up a folder with the necessary dependencies:
 
-    bazelisk run //test/orfs/mock-array:Element_place_deps /tmp/place
+    bazelisk run //test/orfs/mock-array:Element_place_deps
 
-This sets up a `/tmp/place/make` script that is a small shell script that calls `make` on the ORFS setup in /tmp/place, but since the place stage failed, we have to build all place sub-stages up to the failing stage:
+This sets up a `tmp/test/orfs/mock-array/Element_place_deps/make` script that calls `make` on the ORFS setup. Since the place stage failed, build all place sub-stages up to the failing stage:
 
-    /tmp/place/make do-place
+    tmp/test/orfs/mock-array/Element_place_deps/make do-place
 
 Now create a standalone issue:
 
-    /tmp/place/make global_place_skip_io_issue
+    tmp/test/orfs/mock-array/Element_place_deps/make global_place_skip_io_issue
 
-The `WORK_HOME` is in `/tmp/place/_main`:
+The `WORK_HOME` is in `tmp/test/orfs/mock-array/Element_place_deps/_main`:
 
-    $ ls /tmp/place/_main/
-    ++ dirname /tmp/place/make
-    + cd /tmp/place/_main
-    [deleted]
     Archiving issue to global_place_skip_io_Element_asap7_base_2025-07-16_08-44.tar.gz
     Using pigz to compress tar file
 
@@ -76,19 +72,19 @@ NOTE! keep in mind that these local ORFS design files have the depndencies `_dep
 
 If you're interested in some other stage, replace `place` with `synth`, `floorplan`, `cts`, `grt`, `route` or `final` below.
 
-The `/tmp/place/make` script, if `FLOW_HOME` is set, will use a local ORFS and OpenROAD built by CMake:
+The `make` script, if `FLOW_HOME` is set, will use a local ORFS and OpenROAD built by CMake:
 
     $ . ~/OpenROAD-flow-scripts/env.sh
-    $ /tmp/place/make print-FLOW_HOME print-OPENROAD_EXE
+    $ tmp/test/orfs/mock-array/Element_place_deps/make print-FLOW_HOME print-OPENROAD_EXE
     [deleted]
     FLOW_HOME = /home/<username>/OpenROAD-flow-scripts/flow
     OPENROAD_EXE = /home/<username>/OpenROAD-flow-scripts/tools/install/OpenROAD/bin/openroad
 
-More explictly ORFS only:
+More explicitly ORFS only:
 
-    make --file=~/OpenROAD-flow-scripts/flow/Makefile -C /tmp/place/_main WORK_HOME=test/orfs/mock-array DESIGN_CONFIG=config.mk do-place
+    make --file=~/OpenROAD-flow-scripts/flow/Makefile -C tmp/test/orfs/mock-array/Element_place_deps/_main WORK_HOME=test/orfs/mock-array DESIGN_CONFIG=config.mk do-place
 
-This is a bit more verbose, but eliminates any concerns about what the `/tmp/place/make` might be doing differently than ORFS only.
+This is more verbose, but eliminates any concerns about what the `make` script might be doing differently than ORFS only.
 
 ## Running a `make issue` with `cfg=exec` configuration
 

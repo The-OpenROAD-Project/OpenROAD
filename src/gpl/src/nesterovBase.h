@@ -1094,6 +1094,7 @@ class NesterovBase
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+  void resetConverged() { isConverged_ = false; }
 
   bool checkDivergence();
   void saveSnapshot();
