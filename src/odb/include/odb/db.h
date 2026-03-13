@@ -7259,6 +7259,8 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7273,8 +7275,6 @@ class dbChip : public dbObject
   dbSet<dbChipConn> getChipConns() const;
 
   dbSet<dbChipNet> getChipNets() const;
-
-  std::vector<dbChipPath*> getChipPaths() const;
 
   dbChipInst* findChipInst(const std::string& name) const;
 
@@ -7528,8 +7528,6 @@ class dbDatabase : public dbObject
   dbSet<dbChipBumpInst> getChipBumpInsts() const;
 
   dbSet<dbChipNet> getChipNets() const;
-
-  dbSet<dbChipPath> getChipPaths() const;
 
   // User Code Begin dbDatabase
 

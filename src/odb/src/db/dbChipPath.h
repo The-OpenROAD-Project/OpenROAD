@@ -10,13 +10,11 @@
 #include <vector>
 
 #include "dbCore.h"
-#include "odb/dbId.h"
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-class _dbChip;
 
 class _dbChipPath : public _dbObject
 {
@@ -29,7 +27,6 @@ class _dbChipPath : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   std::string name_;
-  dbId<_dbChip> chip_;
   std::vector<std::pair<std::string, bool>> entries_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipPath& obj);

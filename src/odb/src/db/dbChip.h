@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "dbCore.h"
 #include "odb/dbId.h"
@@ -29,11 +28,11 @@ class dbChipCallBackObj;
 class _dbProperty;
 class _dbChipRegion;
 class _dbMarkerCategory;
+class _dbChipPath;
 class _dbBlock;
 class _dbChipInst;
 class _dbChipConn;
 class _dbChipNet;
-class _dbChipPath;
 class _dbTech;
 
 class _dbChip : public _dbObject
@@ -74,7 +73,6 @@ class _dbChip : public _dbObject
   dbId<_dbChipInst> chipinsts_;
   dbId<_dbChipConn> conns_;
   dbId<_dbChipNet> nets_;
-  std::vector<dbId<_dbChipPath>> paths_;
   std::unordered_map<std::string, dbId<_dbChipInst>> chipinsts_map_;
   std::unordered_map<std::string, dbId<_dbChipRegion>> chip_region_map_;
   dbId<_dbTech> tech_;
@@ -84,6 +82,7 @@ class _dbChip : public _dbObject
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
   dbId<_dbChip> next_entry_;
+  dbTable<_dbChipPath>* chip_path_tbl_;
 
   // User Code Begin Fields
   std::list<dbChipCallBackObj*> callbacks_;

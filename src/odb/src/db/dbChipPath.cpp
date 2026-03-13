@@ -4,7 +4,6 @@
 // Generator Code Begin Cpp
 #include "dbChipPath.h"
 
-#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
@@ -20,9 +19,6 @@ template class dbTable<_dbChipPath>;
 bool _dbChipPath::operator==(const _dbChipPath& rhs) const
 {
   if (name_ != rhs.name_) {
-    return false;
-  }
-  if (chip_ != rhs.chip_) {
     return false;
   }
 
@@ -41,7 +37,6 @@ _dbChipPath::_dbChipPath(_dbDatabase* db)
 dbIStream& operator>>(dbIStream& stream, _dbChipPath& obj)
 {
   stream >> obj.name_;
-  stream >> obj.chip_;
   stream >> obj.entries_;
   return stream;
 }
@@ -49,7 +44,6 @@ dbIStream& operator>>(dbIStream& stream, _dbChipPath& obj)
 dbOStream& operator<<(dbOStream& stream, const _dbChipPath& obj)
 {
   stream << obj.name_;
-  stream << obj.chip_;
   stream << obj.entries_;
   return stream;
 }
@@ -58,6 +52,14 @@ void _dbChipPath::collectMemInfo(MemInfo& info)
 {
   info.cnt++;
   info.size += sizeof(*this);
+
+  // User Code Begin collectMemInfo
+  info.size += name_.capacity();
+  info.size += entries_.capacity() * sizeof(std::pair<std::string, bool>);
+  for (const auto& [region, _] : entries_) {
+    info.size += region.capacity();
+  }
+  // User Code End collectMemInfo
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -76,8 +78,7 @@ std::string dbChipPath::getName() const
 dbChip* dbChipPath::getChip() const
 {
   _dbChipPath* obj = (_dbChipPath*) this;
-  _dbDatabase* db = (_dbDatabase*) obj->getOwner();
-  return (dbChip*) db->chip_tbl_->getPtr(obj->chip_);
+  return (dbChip*) obj->getOwner();
 }
 
 const std::vector<std::pair<std::string, bool>>& dbChipPath::getEntries() const
@@ -95,12 +96,9 @@ void dbChipPath::addEntry(const std::string& region, bool negated)
 dbChipPath* dbChipPath::create(dbChip* chip, const std::string& name)
 {
   _dbChip* _chip = (_dbChip*) chip;
-  _dbDatabase* db = _chip->getDatabase();
 
-  _dbChipPath* chip_path = db->chip_path_tbl_->create();
+  _dbChipPath* chip_path = _chip->chip_path_tbl_->create();
   chip_path->name_ = name;
-  chip_path->chip_ = _chip->getOID();
-  _chip->paths_.emplace_back(chip_path->getOID());
 
   return (dbChipPath*) chip_path;
 }
@@ -108,14 +106,8 @@ dbChipPath* dbChipPath::create(dbChip* chip, const std::string& name)
 void dbChipPath::destroy(dbChipPath* path)
 {
   _dbChipPath* _path = (_dbChipPath*) path;
-  _dbDatabase* db = (_dbDatabase*) _path->getOwner();
-  _dbChip* chip = (_dbChip*) path->getChip();
-
-  auto& paths = chip->paths_;
-  const dbId<_dbChipPath> id = _path->getOID();
-  paths.erase(std::ranges::find(paths, id));
-
-  db->chip_path_tbl_->destroy(_path);
+  _dbChip* chip = (_dbChip*) _path->getOwner();
+  chip->chip_path_tbl_->destroy(_path);
 }
 // User Code End dbChipPathPublicMethods
 }  // namespace odb

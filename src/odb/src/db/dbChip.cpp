@@ -8,7 +8,6 @@
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
@@ -120,11 +119,11 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (next_entry_ != rhs.next_entry_) {
     return false;
   }
-
-  // User Code Begin ==
-  if (paths_ != rhs.paths_) {
+  if (*chip_path_tbl_ != *rhs.chip_path_tbl_) {
     return false;
   }
+
+  // User Code Begin ==
   if (*block_tbl_ != *rhs.block_tbl_) {
     return false;
   }
@@ -168,6 +167,8 @@ _dbChip::_dbChip(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRegionObj);
   marker_categories_tbl_ = new dbTable<_dbMarkerCategory>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
+  chip_path_tbl_ = new dbTable<_dbChipPath>(
+      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipPathObj);
   // User Code Begin Constructor
   block_tbl_ = new dbTable<_dbBlock>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbBlockObj);
@@ -240,9 +241,6 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipBump)) {
     stream >> obj.nets_;
   }
-  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
-    stream >> obj.paths_;
-  }
   if (obj.getDatabase()->isSchema(kSchemaChipTech)) {
     stream >> obj.tech_;
   }
@@ -251,6 +249,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   }
   if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
+  }
+  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
+    stream >> *obj.chip_path_tbl_;
   }
   // User Code Begin >>
   stream >> *obj.block_tbl_;
@@ -294,10 +295,10 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.chipinsts_;
   stream << obj.conns_;
   stream << obj.nets_;
-  stream << obj.paths_;
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
   stream << *obj.marker_categories_tbl_;
+  stream << *obj.chip_path_tbl_;
   // User Code Begin <<
   stream << *obj.block_tbl_;
   stream << NamedTable("prop_tbl", obj.prop_tbl_);
@@ -316,6 +317,8 @@ dbObjectTable* _dbChip::getObjectTable(dbObjectType type)
       return chip_region_tbl_;
     case dbMarkerCategoryObj:
       return marker_categories_tbl_;
+    case dbChipPathObj:
+      return chip_path_tbl_;
       // User Code Begin getObjectTable
     case dbBlockObj:
       return block_tbl_;
@@ -337,6 +340,8 @@ void _dbChip::collectMemInfo(MemInfo& info)
   marker_categories_tbl_->collectMemInfo(
       info.children["marker_categories_tbl_"]);
 
+  chip_path_tbl_->collectMemInfo(info.children["chip_path_tbl_"]);
+
   // User Code Begin collectMemInfo
   block_tbl_->collectMemInfo(info.children["block"]);
   name_cache_->collectMemInfo(info.children["name_cache"]);
@@ -351,6 +356,7 @@ _dbChip::~_dbChip()
   delete prop_tbl_;
   delete chip_region_tbl_;
   delete marker_categories_tbl_;
+  delete chip_path_tbl_;
   // User Code Begin Destructor
   delete block_tbl_;
   delete name_cache_;
@@ -570,6 +576,12 @@ dbSet<dbMarkerCategory> dbChip::getMarkerCategories() const
   return dbSet<dbMarkerCategory>(obj, obj->marker_categories_tbl_);
 }
 
+dbSet<dbChipPath> dbChip::getChipPaths() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return dbSet<dbChipPath>(obj, obj->chip_path_tbl_);
+}
+
 // User Code Begin dbChipPublicMethods
 
 dbChip::ChipType dbChip::getChipType() const
@@ -608,18 +620,6 @@ dbSet<dbChipNet> dbChip::getChipNets() const
   _dbChip* chip = (_dbChip*) this;
   _dbDatabase* db = (_dbDatabase*) chip->getOwner();
   return dbSet<dbChipNet>(chip, db->chip_net_itr_);
-}
-
-std::vector<dbChipPath*> dbChip::getChipPaths() const
-{
-  _dbChip* chip = (_dbChip*) this;
-  _dbDatabase* db = (_dbDatabase*) chip->getOwner();
-  std::vector<dbChipPath*> result;
-  result.reserve(chip->paths_.size());
-  for (const auto& id : chip->paths_) {
-    result.emplace_back((dbChipPath*) db->chip_path_tbl_->getPtr(id));
-  }
-  return result;
 }
 
 dbChipInst* dbChip::findChipInst(const std::string& name) const

@@ -277,7 +277,6 @@ class _dbChipRegionInst;
 class _dbChipConn;
 class _dbChipBumpInst;
 class _dbChipNet;
-class _dbChipPath;
 // User Code Begin Classes
 class dbPropertyItr;
 class dbChipInstItr;
@@ -325,7 +324,6 @@ class _dbDatabase : public _dbObject
   dbTable<_dbChipConn>* chip_conn_tbl_;
   dbTable<_dbChipBumpInst>* chip_bump_inst_tbl_;
   dbTable<_dbChipNet>* chip_net_tbl_;
-  dbTable<_dbChipPath>* chip_path_tbl_;
 
   // User Code Begin Fields
   dbTable<_dbTech, 2>* tech_tbl_;

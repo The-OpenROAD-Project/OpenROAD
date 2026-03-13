@@ -506,12 +506,12 @@
       "flags": ["no-serial"]
     },
     {
-      "parent":"dbDatabase",
+      "parent":"dbChip",
       "child":"dbChipPath",
       "type":"1_n",
       "tbl_name":"chip_path_tbl_",
       "schema":"kSchemaChipPath",
-      "flags": ["no-serial"]
+      "flags": []
     }
   ]
 }
