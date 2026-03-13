@@ -170,6 +170,45 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGDSOrientations",
+    srcs = ["TestGDSOrientations.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSMergeSeal",
+    srcs = ["TestGDSMergeSeal.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSDuplicateCells",
+    srcs = ["TestGDSDuplicateCells.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGeom",
     srcs = ["TestGeom.cpp"],
     deps = [

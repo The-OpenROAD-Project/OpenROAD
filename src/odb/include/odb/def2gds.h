@@ -10,11 +10,21 @@
 #include <utility>
 #include <vector>
 
-#include "odb/db.h"
-
 namespace utl {
 class Logger;
 }
+
+namespace odb {
+class dbBlock;
+class dbDatabase;
+class dbGDSLib;
+class dbGDSStructure;
+class dbTechLayer;
+class dbInst;
+class dbWire;
+class dbSWire;
+class Rect;
+}  // namespace odb
 
 namespace odb::gds {
 
@@ -64,18 +74,9 @@ class DefToGds
   void setLayerMap(const LayerMap& map) { layer_map_ = map; }
 
   // Convert a dbBlock design to a dbGDSLib.
-  // The block must have LEF/DEF loaded (tech layers, instances, wires, etc.)
-  // The resulting GDS library has:
-  //   - A top-level structure named after the block
-  //   - SREFs for each instance (pointing to structures that will be empty
-  //     until macro GDS files are merged)
-  //   - Boundaries for routing wires, special wires, pins, fills,
-  //     obstructions
-  //   - Text labels for pin names
   dbGDSLib* convert(dbBlock* block, dbDatabase* db);
 
-  // Merge additional GDS files into the library. Cell structures from the
-  // files replace any empty placeholder structures created during convert().
+  // Merge additional GDS files into the library.
   void mergeCells(dbGDSLib* lib, const std::vector<std::string>& gds_files);
 
   // Merge a seal GDS file as a child of the top cell.
@@ -83,33 +84,20 @@ class DefToGds
                  const std::string& top_cell_name,
                  const std::string& seal_file);
 
-  // Validate the GDS library:
-  //  - Flag empty cells (LEF cells with no GDS geometry)
-  //  - Flag orphan cells (cells not referenced by the top cell tree)
+  // Validate the GDS library.
   // Returns the number of errors found.
-  // If allow_empty_regex is non-empty, empty cells matching the regex
-  // are downgraded to warnings.
   int validate(dbGDSLib* lib,
                const std::string& top_cell_name,
                const std::string& allow_empty_regex = "");
 
  private:
-  // Convert a rectangle on a tech layer to a GDS boundary.
   void addBoundary(dbGDSStructure* str,
                    dbTechLayer* layer,
                    const Rect& rect,
                    const std::string& purpose);
-
-  // Convert an instance to a GDS SREF.
   void addInstance(dbGDSStructure* top_str, dbGDSLib* lib, dbInst* inst);
-
-  // Add routing wire shapes for a net.
   void addWireShapes(dbGDSStructure* str, dbWire* wire);
-
-  // Add special wire shapes for a net.
   void addSpecialWireShapes(dbGDSStructure* str, dbSWire* swire);
-
-  // Collect all cell names referenced in the top cell's SREF tree.
   void collectReferencedCells(dbGDSStructure* str,
                               std::set<std::string>& referenced);
 
