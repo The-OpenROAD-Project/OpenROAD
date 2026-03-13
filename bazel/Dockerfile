@@ -30,7 +30,6 @@ RUN apt-get -y update \
       libsm6 \
       libx11-xcb1 \
       libxcb-cursor0 \
-      libxcb1-dev \
       libxcb-icccm4 \
       libxcb-keysyms1 \
       libxcb-randr0 \
@@ -38,6 +37,8 @@ RUN apt-get -y update \
       libxcb-sync1 \
       libxcb-xfixes0 \
       libxcb-xkb1 \
+      libxcb1-dev \
+      libxkbcommon-x11-0 \
       libxkbcommon0 \
       openjdk-21-jre-headless \
       python3 \
