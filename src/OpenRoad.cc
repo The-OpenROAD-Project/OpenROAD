@@ -529,6 +529,7 @@ void OpenRoad::writeGds(const char* filename,
   // Merge macro GDS files
   if (!merge_files.empty()) {
     std::vector<std::string> files;
+    files.reserve(merge_files.size());
     for (const char* f : merge_files) {
       files.emplace_back(f);
     }
