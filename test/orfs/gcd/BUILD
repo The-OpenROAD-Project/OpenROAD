@@ -37,7 +37,10 @@ eqy_flow_test(
     name = "gcd_eqy",
     flow = "gcd",
     module_top = "gcd",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
     verilog_files = ["gcd.v"],
 )
 
