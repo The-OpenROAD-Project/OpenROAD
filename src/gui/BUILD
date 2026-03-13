@@ -17,15 +17,15 @@ package(
 cc_library(
     name = "gui",
     srcs = [
-        "src/stub.cpp",
-        "src/stub_heatMap.cpp",
-        "src/descriptor_registry.cpp",
-        "src/init_descriptors.cpp",
+        "src/bufferTreeDescriptor.h",
         "src/dbDescriptors.cpp",
         "src/dbDescriptors.h",
+        "src/descriptor_registry.cpp",
+        "src/init_descriptors.cpp",
         "src/staDescriptors.cpp",
         "src/staDescriptors.h",
-        "src/bufferTreeDescriptor.h",
+        "src/stub.cpp",
+        "src/stub_heatMap.cpp",
         ":tcl",
     ],
     hdrs = [
@@ -34,8 +34,8 @@ cc_library(
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
-    includes = ["include"],
     copts = ["-Isrc/gui/src"],
+    includes = ["include"],
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
@@ -45,8 +45,8 @@ cc_library(
         "@abseil-cpp//absl/synchronization",
         "@boost.algorithm",
         "@boost.multi_array",
-        "@tcl_lang//:tcl",
         "@spdlog",
+        "@tcl_lang//:tcl",
     ],
 )
 

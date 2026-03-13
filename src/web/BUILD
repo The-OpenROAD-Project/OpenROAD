@@ -37,11 +37,11 @@ cc_library(
     hdrs = [
         "include/web/web.h",
     ],
-    includes = [
-        "include",
-    ],
     copts = [
         "-Isrc/web/src",
+    ],
+    includes = [
+        "include",
     ],
     deps = [
         "//src/dbSta",
