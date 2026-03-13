@@ -14,7 +14,6 @@
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
-#include "odb/gdsUtil.h"
 #include "odb/gdsin.h"
 #include "utl/Logger.h"
 
