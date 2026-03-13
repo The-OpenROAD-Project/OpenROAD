@@ -496,7 +496,7 @@ void DefToGds::mergeCells(dbGDSLib* lib,
 
     if (source_dbu_per_um != target_dbu_per_um) {
       logger_->info(utl::ODB,
-                    502,
+                    504,
                     "Scaling merged GDS '{}' from {} to {} DBU/um",
                     gds_file,
                     source_dbu_per_um,
@@ -539,15 +539,13 @@ void DefToGds::mergeCells(dbGDSLib* lib,
         new_box->setLayer(box->getLayer());
         new_box->setDatatype(box->getDatatype());
         Rect bounds = box->getBounds();
-        new_box->setBounds(
-            Rect(static_cast<int>(static_cast<int64_t>(bounds.xMin())
-                                  * scale_num / scale_denom),
-                 static_cast<int>(static_cast<int64_t>(bounds.yMin())
-                                  * scale_num / scale_denom),
-                 static_cast<int>(static_cast<int64_t>(bounds.xMax())
-                                  * scale_num / scale_denom),
-                 static_cast<int>(static_cast<int64_t>(bounds.yMax())
-                                  * scale_num / scale_denom)));
+        Point ll = scalePoint(Point(bounds.xMin(), bounds.yMin()),
+                              scale_num,
+                              scale_denom);
+        Point ur = scalePoint(Point(bounds.xMax(), bounds.yMax()),
+                              scale_num,
+                              scale_denom);
+        new_box->setBounds(Rect(ll.x(), ll.y(), ur.x(), ur.y()));
         new_box->getPropattr() = box->getPropattr();
       }
 
@@ -702,7 +700,7 @@ int DefToGds::pruneUnreferencedCells(dbGDSLib* lib,
 
   if (!to_remove.empty()) {
     logger_->info(
-        utl::ODB, 501, "Pruned {} unreferenced cells.", to_remove.size());
+        utl::ODB, 505, "Pruned {} unreferenced cells.", to_remove.size());
   }
 
   return static_cast<int>(to_remove.size());
