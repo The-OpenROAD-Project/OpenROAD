@@ -3,6 +3,7 @@
 
 #include "odb/def2gds.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -191,7 +192,31 @@ bool LayerMap::lookup(const std::string& lef_layer,
                       const std::string& purpose,
                       GdsLayerSpec& spec) const
 {
+  // Try exact match first
   auto it = map_.find({lef_layer, purpose});
+  if (it != map_.end()) {
+    spec = it->second;
+    return true;
+  }
+  // KLayout .lyt files use lowercase purposes (e.g., "pin", "label")
+  // while our code uses uppercase (e.g., "PIN", "LABEL").  Try lowercase.
+  // But skip "net"/"via" — sky130 has both "met1.drawing" (68/20, primary)
+  // and "met1.net" (68/23, secondary); we want the primary layer.
+  std::string lower_purpose = purpose;
+  std::transform(
+      lower_purpose.begin(), lower_purpose.end(), lower_purpose.begin(),
+      [](unsigned char c) { return std::tolower(c); });
+  if (lower_purpose != purpose && lower_purpose != "net"
+      && lower_purpose != "via") {
+    it = map_.find({lef_layer, lower_purpose});
+    if (it != map_.end()) {
+      spec = it->second;
+      return true;
+    }
+  }
+  // KLayout uses "drawing" as the default purpose for routing geometry.
+  // Fall back to "drawing" for purposes like "NET" and "VIA".
+  it = map_.find({lef_layer, "drawing"});
   if (it != map_.end()) {
     spec = it->second;
     return true;

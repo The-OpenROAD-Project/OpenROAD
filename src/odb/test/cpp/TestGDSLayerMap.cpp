@@ -117,5 +117,72 @@ TEST(GDSLayerMapTest, parse_lyt_layer_map)
   EXPECT_EQ(spec.datatype, 0);
 }
 
+// Test that lookup falls back to "drawing" purpose and lowercase (sky130 style)
+TEST(GDSLayerMapTest, lookup_fallback_drawing_and_lowercase)
+{
+  const char* test_file = "results/test_sky130.lyt";
+  std::filesystem::create_directory("results");
+  {
+    std::ofstream f(test_file);
+    f << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+    f << "<technology>\n";
+    f << " <reader-options>\n";
+    f << "  <lefdef>\n";
+    // sky130-style: all purposes are lowercase with dots
+    f << "   <layer-map>layer_map("
+         "'met1.drawing : 68/20';"
+         "'met1.pin : 68/16';"
+         "'met1.label : 68/5';"
+         "'via.drawing : 68/44';"
+         "'met2.drawing : 69/20';"
+         "'met2.pin : 69/16';"
+         "'via2.drawing : 69/44'"
+         ")</layer-map>\n";
+    f << "  </lefdef>\n";
+    f << " </reader-options>\n";
+    f << "</technology>\n";
+  }
+
+  LayerMap map = LayerMap::parseLytLayerMap(test_file);
+  GdsLayerSpec spec;
+
+  // Routing: purpose "NET" should fall back to "drawing"
+  ASSERT_TRUE(map.lookup("met1", "NET", spec));
+  EXPECT_EQ(spec.layer, 68);
+  EXPECT_EQ(spec.datatype, 20);
+
+  ASSERT_TRUE(map.lookup("met2", "NET", spec));
+  EXPECT_EQ(spec.layer, 69);
+  EXPECT_EQ(spec.datatype, 20);
+
+  // Vias: purpose "VIA" should fall back to "drawing"
+  ASSERT_TRUE(map.lookup("via", "VIA", spec));
+  EXPECT_EQ(spec.layer, 68);
+  EXPECT_EQ(spec.datatype, 44);
+
+  ASSERT_TRUE(map.lookup("via2", "VIA", spec));
+  EXPECT_EQ(spec.layer, 69);
+  EXPECT_EQ(spec.datatype, 44);
+
+  // Pins: purpose "PIN" should fall back to lowercase "pin"
+  ASSERT_TRUE(map.lookup("met1", "PIN", spec));
+  EXPECT_EQ(spec.layer, 68);
+  EXPECT_EQ(spec.datatype, 16);
+
+  ASSERT_TRUE(map.lookup("met2", "PIN", spec));
+  EXPECT_EQ(spec.layer, 69);
+  EXPECT_EQ(spec.datatype, 16);
+
+  // Labels: purpose "LABEL" should fall back to lowercase "label"
+  ASSERT_TRUE(map.lookup("met1", "LABEL", spec));
+  EXPECT_EQ(spec.layer, 68);
+  EXPECT_EQ(spec.datatype, 5);
+
+  // Default lookup (single-arg) uses "NET" purpose
+  ASSERT_TRUE(map.lookup("met1", spec));
+  EXPECT_EQ(spec.layer, 68);
+  EXPECT_EQ(spec.datatype, 20);
+}
+
 }  // namespace
 }  // namespace odb::gds
