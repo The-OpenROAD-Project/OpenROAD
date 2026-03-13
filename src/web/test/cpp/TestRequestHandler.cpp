@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <memory>
+#include <mutex>
 #include <string>
 
 #include "gtest/gtest.h"
@@ -163,7 +165,7 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   // Put a highlight rect in the state
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.highlight_rects.push_back(odb::Rect(0, 0, 50000, 50000));
+    state_.highlight_rects.emplace_back(0, 0, 50000, 50000);
   }
 
   WebSocketRequest req;
@@ -284,9 +286,10 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
     state_.timing_rects.push_back(
-        {odb::Rect(0, 0, 1, 1), {255, 0, 0, 255}, ""});
-    state_.timing_lines.push_back(
-        {odb::Point(0, 0), odb::Point(1, 1), {0, 255, 0, 255}});
+        {odb::Rect(0, 0, 1, 1), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
+    state_.timing_lines.push_back({odb::Point(0, 0),
+                                   odb::Point(1, 1),
+                                   {.r = 0, .g = 255, .b = 0, .a = 255}});
   }
 
   WebSocketRequest req;

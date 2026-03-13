@@ -2,12 +2,14 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "clock_tree_report.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
@@ -170,9 +172,9 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
   // Pre-populate some state
   {
     std::lock_guard<std::mutex> lock(state_.selection_mutex);
-    state_.highlight_rects.push_back(odb::Rect(0, 0, 100, 100));
+    state_.highlight_rects.emplace_back(0, 0, 100, 100);
     state_.timing_rects.push_back(
-        {odb::Rect(0, 0, 1, 1), {255, 0, 0, 255}, ""});
+        {odb::Rect(0, 0, 1, 1), {.r = 255, .g = 0, .b = 0, .a = 255}, ""});
   }
 
   auto handler = std::make_unique<ClockTreeHandler>(gen_, nullptr, nullptr);
