@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "CUGR.h"
@@ -35,7 +36,6 @@ class Design
  public:
   Design(odb::dbDatabase* db,
          utl::Logger* logger,
-         sta::dbSta* sta,
          const Constants& constants,
          int min_routing_layer,
          int max_routing_layer,
@@ -70,10 +70,13 @@ class Design
 
   BoxT getDieRegion() const { return die_region_; }
 
+  void updateNet(odb::dbNet* db_net);
+
  private:
   void read();
   void readLayers();
   void readNetlist();
+  std::vector<CUGRPin> makeNetPins(odb::dbNet* db_net);
   void readInstanceObstructions();
   int readSpecialNetObstructions();
   void readDesignObstructions();
@@ -88,6 +91,7 @@ class Design
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
   std::vector<CUGRNet> nets_;
+  std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;
 
   odb::dbBlock* block_;

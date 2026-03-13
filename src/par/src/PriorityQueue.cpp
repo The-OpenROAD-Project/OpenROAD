@@ -76,17 +76,15 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
     const int vertex_id = vertices_[index]->GetVertex();
     const int to_pid = vertices_[index]->GetDestinationPart();
     const int from_pid = vertices_[index]->GetSourcePart();
-    if ((curr_block_balance[to_pid] + hgraph->GetVertexWeights(vertex_id)
-         < upper_block_balance[to_pid])
-        && (curr_block_balance[from_pid] - hgraph->GetVertexWeights(vertex_id)
-            > lower_block_balance[from_pid])) {
-      return true;
-    }
-    return false;
+    return (curr_block_balance[to_pid] + hgraph->GetVertexWeights(vertex_id)
+            < upper_block_balance[to_pid])
+           && (curr_block_balance[from_pid]
+                   - hgraph->GetVertexWeights(vertex_id)
+               > lower_block_balance[from_pid]);
   };
 
   // check the first index
-  if (check_balance(index) == true) {
+  if (check_balance(index)) {
     return vertices_[index];
   }
 
@@ -95,13 +93,13 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
     pass++;
     // Step 1: check the left child first
     const int left_child = LeftChild(index);
-    if (left_child < total_elements_ && check_balance(left_child) == true) {
+    if (left_child < total_elements_ && check_balance(left_child)) {
       candidate_index = left_child;
     }
 
     // Step 2: check the right child second
     const int right_child = RightChild(index);
-    if (right_child < total_elements_ && check_balance(right_child) == true
+    if (right_child < total_elements_ && check_balance(right_child)
         && (candidate_index == -1
             || CompareElementLargeThan(right_child, candidate_index))) {
       candidate_index = right_child;  // use the right index
@@ -114,9 +112,8 @@ std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
       // no valid candidate
       return std::make_shared<VertexGain>();  // return the dummy cell
     }
-    index = CompareElementLargeThan(right_child, left_child) == true
-                ? right_child
-                : left_child;
+    index = CompareElementLargeThan(right_child, left_child) ? right_child
+                                                             : left_child;
   }
   return std::make_shared<VertexGain>();  // return the dummy cell
 }
@@ -179,7 +176,7 @@ bool PriorityQueue::CompareElementLargeThan(int index_a, int index_b)
 // This function is called when we insert a new element
 void PriorityQueue::HeapifyUp(int index)
 {
-  while (index > 0 && CompareElementLargeThan(index, Parent(index)) == true) {
+  while (index > 0 && CompareElementLargeThan(index, Parent(index))) {
     // Update the map (exchange parent and child)
     auto& parent_heap_element = vertices_[Parent(index)];
     auto& child_heap_element = vertices_[index];
@@ -201,14 +198,14 @@ void PriorityQueue::HeapifyDown(int index)
   // Step 1: check if current index is less than left child
   const int left_child = LeftChild(index);
   if (left_child < total_elements_
-      && CompareElementLargeThan(left_child, max_index) == true) {
+      && CompareElementLargeThan(left_child, max_index)) {
     max_index = left_child;
   }
 
   // Step 2: check if the max index is less than right child
   const int right_child = RightChild(index);
   if (right_child < total_elements_
-      && CompareElementLargeThan(right_child, max_index) == true) {
+      && CompareElementLargeThan(right_child, max_index)) {
     max_index = right_child;
   }
 

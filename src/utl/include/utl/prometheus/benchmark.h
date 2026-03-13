@@ -66,7 +66,7 @@ class Benchmark : public PrometheusMetric
   void stop()
   {
 #ifndef NDEBUG
-    if (already_started == false) {
+    if (!already_started) {
       throw std::runtime_error("try to stop already stoped counter");
     }
 #endif
