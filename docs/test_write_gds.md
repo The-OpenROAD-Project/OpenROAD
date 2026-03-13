@@ -76,13 +76,21 @@ boundaries, different cell hierarchy). Remaining acceptable differences:
 | Extra pin labels | VDD/VSS on layer 60/2 | OpenROAD writes all pin labels |
 | PR boundary | Layer 235/0 missing | KLayout writes die area boundary |
 
-### Results Summary (3 tested designs)
+### Results Summary (9 tested designs)
 
 | Design | Total Diffs | Layout Match |
 |--------|-------------|-------------|
 | asap7/gcd | 5 | All routing/via/cell layers match |
 | asap7/mock-cpu | 5 | All routing/via/cell layers match |
+| asap7/uart | 5 | All routing/via/cell layers match |
+| asap7/aes | 5 | All routing/via/cell layers match |
 | nangate45/gcd | 1 | Perfect match (only PR boundary) |
+| nangate45/aes | 2 | Pin labels + PR boundary |
+| nangate45/jpeg | 2 | Pin labels + PR boundary (1.2M+ shapes) |
+| sky130hd/gcd | 2 | Pin labels + PR boundary |
+| sky130hs/gcd | 30 | Layer mapping mismatch (sky130hs GDS uses different layer numbers) |
+
+- `asap7/riscv32i` skipped: yosys-abc crashes during synthesis (unrelated to write_gds)
 
 ## Output
 
@@ -119,6 +127,7 @@ bazelisk test //src/odb/test/cpp:TestGDSDuplicateCells
 bazelisk test //src/odb/test/cpp:TestGDSPruneUnreferenced
 bazelisk test //src/odb/test/cpp:TestGDSLayerMap
 bazelisk test //src/odb/test/cpp:TestGDSValidate
+bazelisk test //src/odb/test/cpp:TestGDSWriteRoundtrip
 ```
 
 ## Bugs Found and Fixed
@@ -130,3 +139,5 @@ bazelisk test //src/odb/test/cpp:TestGDSValidate
 | Orphan cell inclusion | 174 unused std cells in output | Added pruneUnreferencedCells() after merge |
 | MYR90/MXR90 swap | (pre-existing) Rotated mirror orientations wrong | Fixed in earlier commit |
 | GDS UNITS not set | DBU mismatch between tools | Set lib UNITS from block DEF units |
+| Odd-length GDS strings | KLayout warns "Odd record length" | Pad STRING records to even byte length |
+| sky130 layer map | met2-met5 missing from sky130hd output | Fall back to "drawing" and lowercase purposes in lookup |
