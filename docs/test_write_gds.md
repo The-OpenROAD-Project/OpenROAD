@@ -25,91 +25,64 @@ hashes (not dates) to verify a fresh build.
 
 ## Test Designs
 
-Designs are tested smallest-first. Each takes a few minutes for the smallest
-designs:
+Designs are tested smallest-first. The ORFS flow must complete once to produce
+the KLayout GDS and ODB files. After that, only `write_gds` is re-run when
+OpenROAD is updated.
 
 | # | Platform  | Design   | Notes                    |
 |---|-----------|----------|--------------------------|
-| 1 | asap7     | gcd      | Baseline, must pass      |
-| 2 | asap7     | mock-cpu |                          |
-| 3 | asap7     | uart     |                          |
-| 4 | nangate45 | gcd      | Different platform       |
-| 5 | sky130hd  | gcd      | Different platform       |
-| 6 | sky130hs  | gcd      | Different platform       |
-| 7 | asap7     | riscv32i | Medium complexity        |
-| 8 | asap7     | aes      |                          |
-| 9 | nangate45 | aes      | Cross-platform check     |
-|10 | nangate45 | jpeg     | Largest in test set      |
+| 0 | asap7     | gcd      | Baseline, must pass      |
+| 1 | asap7     | mock-cpu |                          |
+| 2 | asap7     | uart     |                          |
+| 3 | nangate45 | gcd      | Different platform       |
+| 4 | sky130hd  | gcd      | Different platform       |
+| 5 | sky130hs  | gcd      | Different platform       |
+| 6 | asap7     | riscv32i | Medium complexity        |
+| 7 | asap7     | aes      |                          |
+| 8 | nangate45 | aes      | Cross-platform check     |
+| 9 | nangate45 | jpeg     | Largest in test set      |
 
 ## Running the Tests
 
-### Automated (all designs)
+### All designs
 
 ```bash
 cd /path/to/OpenROAD-flow-scripts/flow
-./util/test_write_gds.sh
+./util/run_all_gds_tests.sh
 ```
 
-### Single design
+### Single design by index
 
 ```bash
-# Run only design index 0 (asap7/gcd)
-./util/test_write_gds.sh 0
+./util/test_write_gds.sh 0   # asap7/gcd
 ```
 
-### Manual (step by step)
-
-#### 1. Run the ORFS flow to produce the KLayout GDS
+### Compare only (no flow rebuild)
 
 ```bash
-cd /path/to/OpenROAD-flow-scripts/flow
-make DESIGN_CONFIG=designs/asap7/gcd/config.mk
+./util/run_gds_compare.sh --design asap7/gcd
+./util/run_gds_compare.sh --index 0
 ```
 
-This produces `results/asap7/gcd/base/6_final.gds` (via KLayout).
+## Expected Differences
 
-#### 2. Run `write_gds` via OpenROAD
+The flattened comparison normalizes both GDS files to physical coordinates
+(microns), eliminating structural differences (VIA cells vs expanded
+boundaries, different cell hierarchy). Remaining acceptable differences:
 
-Load the finished ODB and call `write_gds` with the same inputs KLayout
-received (layer map, macro GDS files, seal GDS):
+| Category | Example | Cause |
+|----------|---------|-------|
+| Rounding | `0.8155` vs `0.815` | Different DBU resolution (4000 vs 1000 DBU/µm) |
+| Extra pin labels | VDD/VSS on layer 60/2 | OpenROAD writes all pin labels |
+| PR boundary | Layer 235/0 missing | KLayout writes die area boundary |
 
-```bash
-export RESULTS_DIR=results/asap7/gcd/base
-export OBJECTS_DIR=objects/asap7/gcd/base
+### Results Summary (3 tested designs)
 
-openroad -exit util/write_gds_test.tcl
-```
-
-This produces `results/asap7/gcd/base/6_final_openroad.gds`.
-
-The TCL script (`util/write_gds_test.tcl`) reads these environment variables:
-
-| Variable         | Source                | Description                      |
-|------------------|-----------------------|----------------------------------|
-| `RESULTS_DIR`    | ORFS make variable    | Where ODB and GDS files live     |
-| `OBJECTS_DIR`    | ORFS make variable    | Where `klayout.lyt` lives        |
-| `GDSOAS_FILES`   | Platform `config.mk`  | Standard cell GDS files to merge |
-| `WRAPPED_GDSOAS` | ORFS make variable    | Wrapped macro GDS files          |
-| `SEAL_GDSOAS`    | Platform `config.mk`  | Seal ring GDS (if any)           |
-| `GDS_ALLOW_EMPTY`| Platform `config.mk`  | Regex for allowed empty cells    |
-
-#### 3. Compare the two GDS files
-
-```bash
-klayout -b \
-    -rd gds1=results/asap7/gcd/base/6_final.gds \
-    -rd gds2=results/asap7/gcd/base/6_final_openroad.gds \
-    -rd report=results/asap7/gcd/base/gds_compare_report.txt \
-    -r util/gds_dump_compare.py
-```
-
-The comparison script loads both GDS files in KLayout and compares:
-- Cell counts and names
-- Per-cell instance (SREF) counts and transforms
-- Per-cell shape counts by GDS layer/datatype
-- Detailed shape geometry (sorted for deterministic comparison)
-
-Exit code: 0 = match, 1 = differences found, 2 = error.
+| Design | Total Diffs | Layout Match |
+|--------|-------------|-------------|
+| asap7/gcd | 5 | All routing/via/cell layers match |
+| asap7/mock-cpu | 5 | All routing/via/cell layers match |
+| nangate45/gcd | 1 | Perfect match (only PR boundary) |
 
 ## Output
 
@@ -127,8 +100,33 @@ Exit code: 0 = match, 1 = differences found, 2 = error.
 
 ## Test Scripts
 
-| File                        | Purpose                                      |
-|-----------------------------|----------------------------------------------|
-| `flow/util/test_write_gds.sh`    | Main orchestrator — runs all designs   |
+| File                              | Purpose                                |
+|-----------------------------------|----------------------------------------|
+| `flow/util/test_write_gds.sh`    | Main orchestrator — runs flow + test   |
+| `flow/util/run_all_gds_tests.sh` | Runs all 10 designs sequentially       |
+| `flow/util/run_gds_compare.sh`   | Compare two GDS files (no flow)        |
 | `flow/util/write_gds_test.tcl`   | OpenROAD TCL — calls `write_gds`       |
-| `flow/util/gds_dump_compare.py`  | KLayout Python — compares two GDS files|
+| `flow/util/gds_dump_compare.py`  | KLayout Python — flattened comparison  |
+| `flow/util/check_def_units.sh`   | Check DEF units in an ODB file         |
+
+## Unit Tests
+
+```bash
+bazelisk test //src/odb/test/cpp:TestGDSOrientations
+bazelisk test //src/odb/test/cpp:TestGDSMergeCells
+bazelisk test //src/odb/test/cpp:TestGDSMergeSeal
+bazelisk test //src/odb/test/cpp:TestGDSDuplicateCells
+bazelisk test //src/odb/test/cpp:TestGDSPruneUnreferenced
+bazelisk test //src/odb/test/cpp:TestGDSLayerMap
+bazelisk test //src/odb/test/cpp:TestGDSValidate
+```
+
+## Bugs Found and Fixed
+
+| Bug | Symptoms | Fix |
+|-----|----------|-----|
+| MY/MX orientation swap | Mirrored cells rotated 180° | Swap flipX angle for MY (180°) and MX (0°) |
+| DBU scaling in mergeCells | Merged std cell shapes 4x too large | Scale coordinates by source/target DBU ratio |
+| Orphan cell inclusion | 174 unused std cells in output | Added pruneUnreferencedCells() after merge |
+| MYR90/MXR90 swap | (pre-existing) Rotated mirror orientations wrong | Fixed in earlier commit |
+| GDS UNITS not set | DBU mismatch between tools | Set lib UNITS from block DEF units |
