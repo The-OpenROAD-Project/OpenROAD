@@ -3,8 +3,10 @@
 
 #include "hierarchy_report.h"
 
+#include <cstdint>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"

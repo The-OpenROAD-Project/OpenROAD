@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -28,6 +30,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/Sta.hh"
 #include "sta/Units.hh"
 #include "sta/VisitPathEnds.hh"
 
@@ -89,7 +92,7 @@ void TimingReport::expandPath(sta::Path* path,
 
     // Load capacitance
     float cap = 0.0f;
-    if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
+    if (is_driver && (clock_expanded || (!network->isCheckClk(pin) && i))) {
       sta::GraphDelayCalc* gdc = sta_->graphDelayCalc();
       cap = gdc->loadCap(
           pin, ref->transition(sta_), ref->scene(sta_), ref->minMax(sta_));
@@ -128,14 +131,14 @@ void TimingReport::expandPath(sta::Path* path,
       total_fanout += node_fanout;
     }
 
-    nodes.push_back(TimingNode{pin_name,
-                               node_fanout,
-                               is_rising,
-                               pin_is_clock,
-                               (arrival_cur + offset) / time_scale,
-                               pin_delay / time_scale,
-                               slew / time_scale,
-                               cap / cap_scale});
+    nodes.push_back(TimingNode{.pin_name = pin_name,
+                               .fanout = node_fanout,
+                               .is_rising = is_rising,
+                               .is_clock = pin_is_clock,
+                               .time = (arrival_cur + offset) / time_scale,
+                               .delay = pin_delay / time_scale,
+                               .slew = slew / time_scale,
+                               .load = cap / cap_scale});
 
     arrival_prev = arrival_cur;
   }
@@ -299,7 +302,7 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
   void visit(sta::PathEnd* path_end) override
   {
     sta::PathGroupSeq groups = sta_->cmdScene()->mode()->pathGroups(path_end);
-    if (std::find(groups.begin(), groups.end(), group_) == groups.end()) {
+    if (std::ranges::find(groups, group_) == groups.end()) {
       return;
     }
     if (clk_) {
@@ -442,9 +445,7 @@ static void binSlacks(const std::vector<float>& slacks,
     bin_min = std::floor(min_slack / bin_width) * bin_width;
     const float bin_max = std::ceil(max_slack / bin_width) * bin_width;
     num_bins = static_cast<int>(std::round((bin_max - bin_min) / bin_width));
-    if (num_bins < 1) {
-      num_bins = 1;
-    }
+    num_bins = std::max(num_bins, 1);
   }
 
   std::vector<int> counts(num_bins, 0);

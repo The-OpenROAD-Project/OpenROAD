@@ -16,7 +16,7 @@ struct HSL
 };
 
 // Converts your existing Color struct (RGB) to HSL
-HSL rgb_to_hsl(const Color& rgb)
+static HSL rgb_to_hsl(const Color& rgb)
 {
   // Normalize R, G, B to 0-1
   double r = rgb.r / 255.0;
@@ -54,7 +54,7 @@ HSL rgb_to_hsl(const Color& rgb)
 }
 
 // Helper for HSL to RGB conversion
-double hue_to_rgb(double p, double q, double t)
+static double hue_to_rgb(double p, double q, double t)
 {
   if (t < 0.0) {
     t += 1.0;
@@ -75,7 +75,7 @@ double hue_to_rgb(double p, double q, double t)
 }
 
 // Converts an HSL struct back to your Color struct (RGB)
-Color hsl_to_rgb(const HSL& hsl, const unsigned char a)
+static Color hsl_to_rgb(const HSL& hsl, const unsigned char a)
 {
   Color rgb;
   rgb.a = a;

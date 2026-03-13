@@ -5,8 +5,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <iterator>
+#include <map>
+#include <memory>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "color.h"
@@ -15,6 +21,8 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "request_handler.h"
 #include "search.h"
 #include "timing_report.h"
@@ -32,6 +40,7 @@ void TileVisibility::parseFromJson(const std::string& json)
   };
 
   // clang-format off
+  // NOLINTBEGIN(modernize-use-designated-initializers)
   static const BoolField fields[] = {
     {"stdcells",           &TileVisibility::stdcells,           true},
     {"macros",             &TileVisibility::macros,             true},
@@ -76,6 +85,7 @@ void TileVisibility::parseFromJson(const std::string& json)
     {"tracks_non_pref",        &TileVisibility::tracks_non_pref,        false},
     {"debug",                  &TileVisibility::debug,                  false},
   };
+  // NOLINTEND(modernize-use-designated-initializers)
   // clang-format on
 
   for (const auto& f : fields) {
@@ -328,9 +338,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
   // Leaflet CRS.Simple coordinates and the server's DBU space.
   const int num_tiles = 1 << std::max(0, zoom);
   const int margin
-      = std::max(1,
-                 static_cast<int>(getBounds().maxDXDY()
-                                  / (kTileSizeInPixel * num_tiles) * 2));
+      = std::max(1, getBounds().maxDXDY() / (kTileSizeInPixel * num_tiles) * 2);
   debugPrint(logger_,
              utl::WEB,
              "select",
@@ -377,7 +385,7 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
              rtree_count,
              results.size());
   // Sort by area descending so larger instances (macros) come first
-  std::sort(results.begin(), results.end(), [](const auto& a, const auto& b) {
+  std::ranges::sort(results, [](const auto& a, const auto& b) {
     return a.bbox.area() > b.bbox.area();
   });
   return results;
@@ -401,19 +409,23 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::set<uint32_t>* focus_net_ids)
 {
   static_assert(sizeof(Color) == 4);
-  std::vector<unsigned char> image_buffer(
-      kTileSizeInPixel * kTileSizeInPixel * 4, 0);
+  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(buffer_size, 0);
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
   static const Color palette[] = {
-      {70, 130, 210, 180},  // moderate blue
-      {200, 50, 50, 180},   // red
-      {50, 180, 80, 180},   // green
-      {200, 160, 40, 180},  // amber
-      {160, 60, 200, 180},  // purple
-      {40, 190, 190, 180},  // teal
-      {220, 120, 50, 180},  // orange
-      {180, 70, 150, 180},  // magenta
+      // clang-format off
+      // NOLINTBEGIN(modernize-use-designated-initializers)
+      { 70, 130, 210, 180},  // moderate blue
+      {200,  50,  50, 180},   // red
+      { 50, 180,  80, 180},   // green
+      {200, 160,  40, 180},  // amber
+      {160,  60, 200, 180},  // purple
+      { 40, 190, 190, 180},  // teal
+      {220, 120,  50, 180},  // orange
+      {180,  70, 150, 180},  // magenta
+      // NOLINTEND(modernize-use-designated-initializers)
+      // clang-format on
   };
   static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
 
@@ -423,7 +435,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
   int layer_index = 0;
   if (tech_layer) {
     const auto all_layers = getLayers();
-    auto it = std::find(all_layers.begin(), all_layers.end(), layer);
+    auto it = std::ranges::find(all_layers, layer);
     if (it != all_layers.end()) {
       layer_index = std::distance(all_layers.begin(), it);
     }
@@ -510,7 +522,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
         if (instances_only) {
           // Draw the rectangle border (instances-only layer)
-          Color gray{128, 128, 128, 255};
+          Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
             for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
               const int draw_y = (255 - iy);
@@ -704,7 +716,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       // Diagonal white hash lines in pixel space, with period anchored in dbu
       // coordinates so the pattern is seamless across tile boundaries.
       if (instances_only && vis.placement_blockages) {
-        const Color hash_color{255, 255, 255, 180};
+        const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
         constexpr int kPixelPeriod = 20;  // pixels between line centers
         constexpr int kLineWidth = 2;     // pixels wide
         for (odb::dbBlockage* blk : search_->searchBlockages(
@@ -731,7 +743,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       // Draw routing obstructions (dbObstruction) on per-layer tiles.
       // Same diagonal white hash lines.
       if (!instances_only && tech_layer && vis.routing_obstructions) {
-        const Color hash_color{255, 255, 255, 180};
+        const Color hash_color{.r = 255, .g = 255, .b = 255, .a = 180};
         constexpr int kPixelPeriod = 20;
         constexpr int kLineWidth = 2;
         for (odb::dbObstruction* obs : search_->searchObstructions(block,
@@ -760,7 +772,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
       // Draw rows as outlines on the _instances layer
       if (instances_only && vis.rows) {
-        const Color row_color{60, 180, 60, 180};  // green outlines
+        const Color row_color{
+            .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
         for (const auto& [row_rect, row] : search_->searchRows(
                  block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
           if (!row_rect.overlaps(dbu_tile)) {
@@ -936,7 +949,7 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   };
   // clang-format on
 
-  const Color yellow{255, 255, 0, 255};
+  const Color yellow{.r = 255, .g = 255, .b = 0, .a = 255};
   const int last = kTileSizeInPixel - 1;
 
   // Draw 1-pixel yellow border
@@ -1022,8 +1035,8 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
                                   const odb::Rect& dbu_tile,
                                   const double scale)
 {
-  const Color fill{255, 255, 0, 30};
-  const Color border{255, 255, 0, 255};
+  const Color fill{.r = 255, .g = 255, .b = 0, .a = 30};
+  const Color border{.r = 255, .g = 255, .b = 0, .a = 255};
 
   for (const odb::Rect& rect : rects) {
     if (!dbu_tile.overlaps(rect)) {
@@ -1241,9 +1254,11 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines)
 {
-  static const Color kLaunchClkColor{0, 255, 255, 180};  // Cyan (match GUI)
-  static const Color kSignalColor{255, 0, 0, 180};       // Red (match GUI)
-  static const Color kCaptureClkColor{0, 255, 0, 180};   // Green (match GUI)
+  static const Color kLaunchClkColor{
+      .r = 0, .g = 255, .b = 255, .a = 180};                            // Cyan
+  static const Color kSignalColor{.r = 255, .g = 0, .b = 0, .a = 180};  // Red
+  static const Color kCaptureClkColor{
+      .r = 0, .g = 255, .b = 0, .a = 180};  // Green
 
   // Track nets already collected to avoid duplicates
   std::set<odb::dbNet*> seen_nets;
@@ -1255,10 +1270,19 @@ void collectTimingPathShapes(odb::dbBlock* block,
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
 
-      odb::dbNet* net_a = a_iterm ? a_iterm->getNet()
-                                  : (a_bterm ? a_bterm->getNet() : nullptr);
-      odb::dbNet* net_b = b_iterm ? b_iterm->getNet()
-                                  : (b_bterm ? b_bterm->getNet() : nullptr);
+      odb::dbNet* net_a = nullptr;
+      if (a_iterm) {
+        net_a = a_iterm->getNet();
+      } else if (a_bterm) {
+        net_a = a_bterm->getNet();
+      }
+
+      odb::dbNet* net_b = nullptr;
+      if (b_iterm) {
+        net_b = b_iterm->getNet();
+      } else if (b_bterm) {
+        net_b = b_bterm->getNet();
+      }
 
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {

@@ -4,15 +4,28 @@
 #include "request_handler.h"
 
 #include <any>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "clock_tree_report.h"
+#include "color.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "hierarchy_report.h"
+#include "json_builder.h"
 #include "odb/db.h"
+#include "odb/geom.h"
+#include "tile_generator.h"
 #include "timing_report.h"
+#include "utl/Logger.h"
 
 namespace web {
 
@@ -141,7 +154,7 @@ int extract_int(const std::string& json, const std::string& key)
 
 int extract_int_or(const std::string& json,
                    const std::string& key,
-                   int default_val)
+                   const int default_val)
 {
   const std::string needle = "\"" + key + "\"";
   if (json.find(needle) == std::string::npos) {
@@ -707,11 +720,16 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
             block, paths[req.timing_path_index], new_rects, new_lines);
 
         if (!req.timing_pin_name.empty()) {
-          static const Color kStageColor{255, 255, 0, 180};
+          static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
           auto [iterm, bterm] = resolvePin(block, req.timing_pin_name);
-          odb::dbNet* net = iterm   ? iterm->getNet()
-                            : bterm ? bterm->getNet()
-                                    : nullptr;
+
+          odb::dbNet* net = nullptr;
+          if (iterm) {
+            net = iterm->getNet();
+          } else if (bterm) {
+            net = bterm->getNet();
+          }
+
           if (net) {
             collectNetShapes(net,
                              iterm,
@@ -1043,7 +1061,7 @@ WebSocketResponse TileHandler::handleSetModuleColors(
       const uint8_t g = static_cast<uint8_t>(next_num());
       const uint8_t b = static_cast<uint8_t>(next_num());
       const uint8_t a = static_cast<uint8_t>(next_num());
-      colors[mod_id] = Color{r, g, b, a};
+      colors[mod_id] = Color{.r = r, .g = g, .b = b, .a = a};
     }
   }
 

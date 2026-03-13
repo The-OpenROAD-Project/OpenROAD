@@ -3,6 +3,8 @@
 
 #include "web/web.h"
 
+#include <netinet/in.h>
+
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -10,19 +12,27 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/websocket.hpp>
+#include <csignal>
+#include <cstdint>
 #include <cstring>
 #include <deque>
+#include <exception>
 #include <filesystem>
 #include <fstream>
+#include <ios>
+#include <iterator>
+#include <limits>
 #include <memory>
-#include <mutex>
+#include <regex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "clock_tree_report.h"
 #include "request_handler.h"
 #include "timing_report.h"
+#include "utl/Logger.h"
 
 namespace web {
 
@@ -151,7 +161,7 @@ static std::string content_type_for(const std::string& path)
   return "application/octet-stream";
 }
 
-http::response<http::string_body> handle_request(
+static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
     std::shared_ptr<TileGenerator> generator,
     const std::string& doc_root)
@@ -203,7 +213,7 @@ http::response<http::string_body> handle_request(
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Reject paths with ".." to prevent directory traversal
+    // Reject paths with ".." to preventd irectory traversal
     if (file_path.find("..") == std::string::npos) {
       auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
       std::ifstream file(full_path, std::ios::binary);
@@ -792,7 +802,7 @@ void WebServer::serve(const std::string& doc_root)
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
-    unsigned short const port = 8080;
+    uint16_t const port = 8080;
     int const num_threads = 32;
 
     if (!doc_root.empty()) {

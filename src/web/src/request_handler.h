@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <memory>
@@ -11,9 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "color.h"
 #include "gui/gui.h"
-#include "json_builder.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "tcl.h"
 #include "tile_generator.h"
 #include "utl/Logger.h"

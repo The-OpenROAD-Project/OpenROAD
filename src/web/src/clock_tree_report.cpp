@@ -9,12 +9,15 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/FuncExpr.hh"
+#include "odb/geom.h"
+#include "sta/Clock.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -24,6 +27,7 @@
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 
 namespace web {
