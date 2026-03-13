@@ -19,7 +19,7 @@ default_args = argparse.Namespace(
 
 # ---------------------------------------------------------------------------
 # Mock helpers – simulate the in-memory element lists that the real TCL
-# scripts would operate on.  This mirrors the approach in test_deltaDebug.py.
+# scripts would operate on.
 # ---------------------------------------------------------------------------
 
 
@@ -112,7 +112,7 @@ class TestWhittle(TestCase):
         self.mock_prepare_new_step.side_effect = lambda self_: None
 
     # ------------------------------------------------------------------
-    # Test cases (ported from test_deltaDebug.py)
+    # Test cases
     # ------------------------------------------------------------------
 
     def test_pruned_to_one(self):
