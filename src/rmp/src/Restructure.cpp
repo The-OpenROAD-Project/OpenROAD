@@ -386,7 +386,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       bool first = true;
       for (auto pinName : *error) {
         debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str() )) {
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str())) {
           ends.insert(open_sta_->getDbNetwork()->findPin(pinName.c_str()));
         }
         first = false;
