@@ -10,9 +10,13 @@
 
 #include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
+#include "db_sta/dbSta.hh"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "odb/geom.h"
+#include "sta/Liberty.hh"
+#include "sta/Scene.hh"
 #include "staDescriptors.h"
 
 namespace gui {

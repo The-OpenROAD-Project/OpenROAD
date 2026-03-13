@@ -4,8 +4,10 @@
 #pragma once
 
 #include <any>
+#include <cstddef>
 #include <memory>
 #include <typeindex>
+#include <typeinfo>
 #include <unordered_map>
 
 namespace odb {

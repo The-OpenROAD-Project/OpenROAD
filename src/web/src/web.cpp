@@ -32,6 +32,7 @@
 #include "clock_tree_report.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "tcl.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
 

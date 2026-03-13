@@ -3,12 +3,12 @@
 
 #include "gui/descriptor_registry.h"
 
+#include <any>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <typeindex>
 #include <typeinfo>
 
