@@ -3,6 +3,7 @@
 
 add_library(gdsout
     gdsout.cpp
+    def2gds.cpp
 )
 
 target_include_directories(gdsout
