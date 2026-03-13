@@ -35,10 +35,12 @@ import signal
 import subprocess
 import sys
 import time
+from collections import deque
 from math import ceil
 
 PERSISTENCE_RANGE = range(1, 7)
 CUT_MULTIPLE = range(1, 128)
+LOG_TAIL_DELAY = 300  # seconds before showing step log tail
 
 
 class CutLevel(enum.Enum):
@@ -157,6 +159,56 @@ class Whittler:
         self.num_insts = 0
         self.num_nets = 0
 
+        # Progress tracking.
+        self._start_time = None
+        self._original_insts = 0
+        self._original_nets = 0
+        self._original_odb_size = 0
+
+    # -----------------------------------------------------------------
+    # Progress helpers
+    # -----------------------------------------------------------------
+
+    @staticmethod
+    def format_duration(seconds):
+        """Format seconds into a human-readable duration string."""
+        seconds = int(seconds)
+        if seconds < 60:
+            return f"{seconds}s"
+        if seconds < 3600:
+            return f"{seconds // 60}m"
+        return f"{seconds // 3600}h {seconds % 3600 // 60:02d}m"
+
+    @staticmethod
+    def file_size_mb(path):
+        """Return file size in MB, or 0 if the file doesn't exist."""
+        try:
+            return os.path.getsize(path) / (1024 * 1024)
+        except OSError:
+            return 0
+
+    def _record_original_counts(self):
+        """Snapshot the starting element counts and .odb size."""
+        self._start_time = time.time()
+        self._original_insts = self.num_insts
+        self._original_nets = self.num_nets
+        self._original_odb_size = self.file_size_mb(self.base_db_file)
+
+    def print_progress(self):
+        """Print a [whittle] status line with current counts and ETA."""
+        elapsed = time.time() - self._start_time
+        phase = "Insts" if self.cut_level == CutLevel.Insts else "Nets"
+        odb_size = self.file_size_mb(self.temp_base_db_file)
+        parts = [
+            f"[whittle] Phase: {phase}",
+            f"Step {self.step_count}",
+            f"Insts: {self.num_insts}",
+            f"Nets: {self.num_nets}",
+            f".odb: {odb_size:.0f}MB (was {self._original_odb_size:.0f}MB)",
+            f"Elapsed: {self.format_duration(elapsed)}",
+        ]
+        print(", ".join(parts), flush=True)
+
     # -----------------------------------------------------------------
     # TCL helpers – these shell out to ``openroad -exit``
     # -----------------------------------------------------------------
@@ -274,6 +326,8 @@ class Whittler:
 
     def _poll(self, process, poll_obj, start_time):
         error_string = None
+        log_tail = deque(maxlen=10)
+        tail_shown = False
         while True:
             if poll_obj.poll(1):
                 if not self.use_stdout:
@@ -281,15 +335,29 @@ class Whittler:
                 else:
                     output = process.stdout.readline()
 
+                if output:
+                    log_tail.append(output.rstrip())
+
                 if output.find(self.error_string) != -1:
                     error_string = self.error_string
                     break
                 elif self.exit_early_on_error and output.find("ERROR") != -1:
                     break
 
-            if (time.time() - start_time) > self.timeout:
+            elapsed = time.time() - start_time
+            if elapsed > self.timeout:
                 print(f"Step {self.step_count} timed out!", flush=True)
                 break
+
+            if not tail_shown and elapsed > LOG_TAIL_DELAY and log_tail:
+                tail_shown = True
+                print(
+                    f"[whittle] Step running for {self.format_duration(elapsed)}, "
+                    f"last {len(log_tail)} lines:",
+                    flush=True,
+                )
+                for line in log_tail:
+                    print(f"  | {line}", flush=True)
 
             if process.poll() is not None:
                 break
@@ -371,8 +439,9 @@ class Whittler:
         shutil.copy(self.base_db_file, self.original_base_db_file)
         os.rename(self.base_db_file, self.temp_base_db_file)
 
-        # Read initial element counts.
+        # Read initial element counts and record starting state.
         self.read_counts(self.temp_base_db_file)
+        self._record_original_counts()
 
         if self.timeout is None:
             self.timeout = 1e6
@@ -386,6 +455,8 @@ class Whittler:
                 sys.exit(1)
 
         for self.cut_level in (CutLevel.Insts, CutLevel.Nets):
+            phase = "Insts" if self.cut_level == CutLevel.Insts else "Nets"
+            print(f"[whittle] === Starting Phase: {phase} ===", flush=True)
             while True:
                 err = None
                 self.n = 2
@@ -395,6 +466,7 @@ class Whittler:
                     error_in_range = None
                     j = 0
                     while j == 0 or j < cuts:
+                        self.print_progress()
                         current_err, cuts = self.perform_step(cut_index=j)
                         self.step_count += 1
                         if current_err is not None:
@@ -421,7 +493,14 @@ class Whittler:
         if os.path.exists(self.original_base_db_file):
             os.rename(self.original_base_db_file, self.base_db_file)
 
+        elapsed = time.time() - self._start_time
+        result_size = self.file_size_mb(self.result_base_file)
         print("___________________________________")
+        print(f"[whittle] Total time: {self.format_duration(elapsed)}")
+        print(
+            f"[whittle] .odb: {self._original_odb_size:.0f}MB"
+            f" -> {result_size:.0f}MB"
+        )
         print(f"Resultant file is {self.result_base_file}")
         print("Whittling Done!")
 
