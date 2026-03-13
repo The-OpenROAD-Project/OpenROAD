@@ -33,6 +33,7 @@
 #include "request_handler.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "odb/db.h"
 
 namespace web {
 
@@ -163,7 +164,7 @@ static std::string content_type_for(const std::string& path)
 
 static http::response<http::string_body> handle_request(
     http::request<http::string_body>&& req,
-    std::shared_ptr<TileGenerator> generator,
+    const TileGenerator& generator,
     const std::string& doc_root)
 {
   http::response<http::string_body> res{http::status::ok, req.version()};
@@ -282,8 +283,10 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 
 WebSocketSession::WebSocketSession(
     tcp::socket&& socket,
+    // NOLINTBEGIN(performance-unnecessary-value-param)
     std::shared_ptr<TileGenerator> generator,
     std::shared_ptr<TclEvaluator> tcl_eval,
+    // NOLINTEND(performance-unnecessary-value-param)
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
     utl::Logger* logger)
@@ -291,7 +294,7 @@ WebSocketSession::WebSocketSession(
       logger_(logger),
       select_handler_(generator, tcl_eval),
       tcl_handler_(tcl_eval),
-      timing_handler_(generator, timing_report, tcl_eval),
+      timing_handler_(generator, std::move(timing_report), tcl_eval),
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor()))
@@ -517,7 +520,7 @@ HttpSession::HttpSession(tcp::socket&& socket,
                          std::string doc_root,
                          utl::Logger* logger)
     : stream_(std::move(socket)),
-      generator_(generator),
+      generator_(std::move(generator)),
       doc_root_(std::move(doc_root)),
       logger_(logger)
 {
@@ -546,7 +549,8 @@ void HttpSession::do_read()
 void HttpSession::on_read(beast::error_code ec)
 {
   if (ec == http::error::end_of_stream) {
-    return do_close();
+    do_close();
+    return;
   }
   if (ec) {
     debugPrint(
@@ -555,7 +559,7 @@ void HttpSession::on_read(beast::error_code ec)
   }
 
   res_ = std::make_shared<http::response<http::string_body>>(
-      handle_request(std::move(req_), generator_, doc_root_));
+      handle_request(std::move(req_), *generator_, doc_root_));
   do_write();
 }
 
@@ -695,7 +699,7 @@ class Listener : public std::enable_shared_from_this<Listener>
 
  public:
   Listener(net::io_context& ioc,
-           tcp::endpoint endpoint,
+           const tcp::endpoint& endpoint,
            std::shared_ptr<TileGenerator> generator,
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
@@ -711,7 +715,7 @@ class Listener : public std::enable_shared_from_this<Listener>
 };
 
 Listener::Listener(net::io_context& ioc,
-                   tcp::endpoint endpoint,
+                   const tcp::endpoint& endpoint,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
@@ -720,7 +724,7 @@ Listener::Listener(net::io_context& ioc,
                    utl::Logger* logger)
     : ioc_(ioc),
       acceptor_(ioc),
-      generator_(generator),
+      generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
@@ -728,7 +732,7 @@ Listener::Listener(net::io_context& ioc,
       logger_(logger)
 {
   beast::error_code ec;
-
+ 
   acceptor_.open(endpoint.protocol(), ec);
   if (ec) {
     return;

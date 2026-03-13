@@ -129,10 +129,10 @@ class TileGenerator
   bool hasSta() const { return sta_ != nullptr; }
   sta::dbSta* getSta() const { return sta_; }
 
-  odb::Rect getBounds();
+  odb::Rect getBounds() const;
 
-  std::vector<std::string> getLayers();
-  std::vector<std::string> getSites();
+  std::vector<std::string> getLayers() const;
+  std::vector<std::string> getSites() const;
 
   std::vector<SelectionResult> selectAt(int dbu_x,
                                         int dbu_y,
@@ -151,35 +151,38 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
-      const std::set<uint32_t>* focus_net_ids = nullptr);
+      const std::set<uint32_t>* focus_net_ids = nullptr) const;
 
  private:
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
-                const Color& c);
+                const Color& c) const;
 
-  static odb::Rect toPixels(double scale,
-                            const odb::Rect& rect,
-                            const odb::Rect& dbu_tile);
-
-  void drawDebugOverlay(std::vector<unsigned char>& image, int z, int x, int y);
+  void drawDebugOverlay(std::vector<unsigned char>& image,
+                        int z,
+                        int x,
+                        int y) const;
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
                      const odb::Rect& dbu_tile,
-                     double scale);
+                     double scale) const;
 
   void drawColoredHighlight(std::vector<unsigned char>& image,
                             const std::vector<ColoredRect>& rects,
                             const std::string& current_layer,
                             const odb::Rect& dbu_tile,
-                            double scale);
+                            double scale) const;
 
   void drawFlightLines(std::vector<unsigned char>& image,
                        const std::vector<FlightLine>& lines,
                        const odb::Rect& dbu_tile,
-                       double scale);
+                       double scale) const;
+
+  static odb::Rect toPixels(double scale,
+                            const odb::Rect& rect,
+                            const odb::Rect& dbu_tile);
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,

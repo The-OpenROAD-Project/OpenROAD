@@ -4,8 +4,10 @@
 #include <string>
 
 #include "gtest/gtest.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "request_handler.h"
+#include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
@@ -64,7 +66,7 @@ TEST_F(DispatchRequestTest, BoundsReturnsJson)
   req.id = 42;
   req.type = WebSocketRequest::BOUNDS;
 
-  auto resp = dispatch_request(req, gen_);
+  auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.id, 42u);
   EXPECT_EQ(resp.type, 0);
 
@@ -78,7 +80,7 @@ TEST_F(DispatchRequestTest, TechReturnsJson)
   req.id = 7;
   req.type = WebSocketRequest::TECH;
 
-  auto resp = dispatch_request(req, gen_);
+  auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.id, 7u);
   EXPECT_EQ(resp.type, 0);
 
@@ -99,7 +101,7 @@ TEST_F(DispatchRequestTest, TileReturnsPng)
   req.x = 0;
   req.y = 0;
 
-  auto resp = dispatch_request(req, gen_);
+  auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.id, 99u);
   EXPECT_EQ(resp.type, 1);  // PNG
   EXPECT_FALSE(resp.payload.empty());
@@ -117,7 +119,7 @@ TEST_F(DispatchRequestTest, UnknownTypeReturnsError)
   req.id = 5;
   req.type = WebSocketRequest::UNKNOWN;
 
-  auto resp = dispatch_request(req, gen_);
+  auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.type, 2);  // error
 }
 

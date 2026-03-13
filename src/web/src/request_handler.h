@@ -166,7 +166,7 @@ float extract_float_or(const std::string& json,
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
 WebSocketResponse dispatch_request(
     const WebSocketRequest& req,
-    const std::shared_ptr<TileGenerator>& gen,
+    const TileGenerator& gen,
     const std::vector<odb::Rect>& highlight_rects = {},
     const std::vector<ColoredRect>& colored_rects = {},
     const std::vector<FlightLine>& flight_lines = {},

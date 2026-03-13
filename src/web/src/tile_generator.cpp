@@ -275,7 +275,7 @@ odb::Rect TileGenerator::toPixels(const double scale,
 void TileGenerator::setPixel(std::vector<unsigned char>& image,
                              const int x,
                              const int y,
-                             const Color& c)
+                             const Color& c) const
 {
   if (x < 0 || x >= kTileSizeInPixel || y < 0 || y >= kTileSizeInPixel) {
     return;
@@ -287,7 +287,7 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
   image[index + 3] = c.a;
 }
 
-odb::Rect TileGenerator::getBounds()
+odb::Rect TileGenerator::getBounds() const
 {
   odb::Rect bounds;
   if (odb::dbBlock* block = db_->getChip()->getBlock()) {
@@ -296,7 +296,7 @@ odb::Rect TileGenerator::getBounds()
   return bounds;
 }
 
-std::vector<std::string> TileGenerator::getLayers()
+std::vector<std::string> TileGenerator::getLayers() const
 {
   std::vector<std::string> layers;
   odb::dbTech* tech = db_->getTech();
@@ -309,7 +309,7 @@ std::vector<std::string> TileGenerator::getLayers()
   return layers;
 }
 
-std::vector<std::string> TileGenerator::getSites()
+std::vector<std::string> TileGenerator::getSites() const
 {
   std::set<std::string> seen;
   std::vector<std::string> sites;
@@ -406,7 +406,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
-    const std::set<uint32_t>* focus_net_ids)
+    const std::set<uint32_t>* focus_net_ids) const
 {
   static_assert(sizeof(Color) == 4);
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
@@ -909,7 +909,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int z,
                                      const int x,
-                                     const int y)
+                                     const int y) const
 {
   // Minimal 5x7 bitmap font for digits 0-9 and punctuation.
   // Each glyph is 5 columns wide, 7 rows tall.  Stored as 7 bytes per glyph
@@ -1033,7 +1033,7 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
 void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
                                   const std::vector<odb::Rect>& rects,
                                   const odb::Rect& dbu_tile,
-                                  const double scale)
+                                  const double scale) const
 {
   const Color fill{.r = 255, .g = 255, .b = 0, .a = 30};
   const Color border{.r = 255, .g = 255, .b = 0, .a = 255};
@@ -1083,7 +1083,7 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
                                          const std::vector<ColoredRect>& rects,
                                          const std::string& current_layer,
                                          const odb::Rect& dbu_tile,
-                                         const double scale)
+                                         const double scale) const
 {
   const bool is_instances_layer = (current_layer == "_instances");
   for (const auto& cr : rects) {
@@ -1157,7 +1157,7 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
 void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
                                     const std::vector<FlightLine>& lines,
                                     const odb::Rect& dbu_tile,
-                                    const double scale)
+                                    const double scale) const
 {
   for (const auto& fl : lines) {
     // Convert DBU to pixel coordinates

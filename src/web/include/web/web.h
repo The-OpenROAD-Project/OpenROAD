@@ -3,10 +3,8 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "odb/db.h"
-#include "odb/geom.h"
 #include "tcl.h"
 #include "utl/Logger.h"
 

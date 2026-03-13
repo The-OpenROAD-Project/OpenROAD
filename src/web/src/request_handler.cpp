@@ -288,7 +288,7 @@ static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
 
 WebSocketResponse dispatch_request(
     const WebSocketRequest& req,
-    const std::shared_ptr<TileGenerator>& gen,
+    const TileGenerator& gen,
     const std::vector<odb::Rect>& highlight_rects,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
@@ -301,7 +301,7 @@ WebSocketResponse dispatch_request(
   switch (req.type) {
     case WebSocketRequest::BOUNDS: {
       resp.type = 0;
-      const odb::Rect bounds = gen->getBounds();
+      const odb::Rect bounds = gen.getBounds();
       JsonBuilder builder;
       builder.beginObject();
       builder.beginArray("bounds");
@@ -324,16 +324,16 @@ WebSocketResponse dispatch_request(
       JsonBuilder builder;
       builder.beginObject();
       builder.beginArray("layers");
-      for (const auto& name : gen->getLayers()) {
+      for (const auto& name : gen.getLayers()) {
         builder.value(name);
       }
       builder.endArray();
       builder.beginArray("sites");
-      for (const auto& name : gen->getSites()) {
+      for (const auto& name : gen.getSites()) {
         builder.value(name);
       }
       builder.endArray();
-      builder.field("has_liberty", gen->hasSta());
+      builder.field("has_liberty", gen.hasSta());
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -341,16 +341,16 @@ WebSocketResponse dispatch_request(
     }
     case WebSocketRequest::TILE: {
       resp.type = 1;
-      resp.payload = gen->generateTile(req.layer,
-                                       req.z,
-                                       req.x,
-                                       req.y,
-                                       req.vis,
-                                       highlight_rects,
-                                       colored_rects,
-                                       flight_lines,
-                                       module_colors,
-                                       focus_net_ids);
+      resp.payload = gen.generateTile(req.layer,
+                                      req.z,
+                                      req.x,
+                                      req.y,
+                                      req.vis,
+                                      highlight_rects,
+                                      colored_rects,
+                                      flight_lines,
+                                      module_colors,
+                                      focus_net_ids);
       break;
     }
     default: {
@@ -975,7 +975,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::set<uint32_t>* focus_ptr
       = focus_nets.empty() ? nullptr : &focus_nets;
 
-  return dispatch_request(req, gen_, rects, colored, lines, mod_ptr, focus_ptr);
+  return dispatch_request(req, *gen_, rects, colored, lines, mod_ptr, focus_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(

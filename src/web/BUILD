@@ -38,6 +38,7 @@ cc_library(
         "include/web/web.h",
     ],
     copts = [
+        "-DBOOST_ASIO_NO_DEPRECATED",
         "-Isrc/web/src",
     ],
     includes = [
