@@ -3,8 +3,6 @@
 
 #include "gui/gui.h"
 
-#include "gui/descriptor_registry.h"
-
 #include <QApplication>
 #include <QColor>
 #include <QPushButton>
@@ -21,6 +19,8 @@
 #include <typeindex>
 #include <utility>
 #include <variant>
+
+#include "gui/descriptor_registry.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else

@@ -16,7 +16,7 @@ struct ClockTreeNode
 {
   int id = 0;
   int parent_id = -1;  // -1 for root
-  std::string name;     // instance or port name
+  std::string name;    // instance or port name
   std::string pin_name;
 
   enum Type

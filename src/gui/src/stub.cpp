@@ -13,13 +13,12 @@
 #include <typeinfo>
 #include <vector>
 
+#include "bufferTreeDescriptor.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"
-
-#include "bufferTreeDescriptor.h"
 
 // empty gif writer class
 struct GifWriter

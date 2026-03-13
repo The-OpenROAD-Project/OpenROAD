@@ -116,7 +116,7 @@ struct WebSocketRequest
   std::string histogram_clock;
 
   // SET_FOCUS_NETS fields
-  std::string focus_action;   // "add", "remove", "clear"
+  std::string focus_action;  // "add", "remove", "clear"
   std::string focus_net_name;
 
   // Visibility flags (default: all visible)

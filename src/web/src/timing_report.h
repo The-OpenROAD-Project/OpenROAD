@@ -76,10 +76,10 @@ class TimingReport
       float slack_min = -std::numeric_limits<float>::max(),
       float slack_max = std::numeric_limits<float>::max()) const;
 
-  SlackHistogramResult getSlackHistogram(
-      bool is_setup,
-      const std::string& path_group = "",
-      const std::string& clock_name = "") const;
+  SlackHistogramResult getSlackHistogram(bool is_setup,
+                                         const std::string& path_group = "",
+                                         const std::string& clock_name
+                                         = "") const;
 
   ChartFilters getChartFilters() const;
 

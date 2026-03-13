@@ -720,8 +720,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       port_power_activity.emplace_back(port_id, activity_info);
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
-      const auto setup_arrival
-          = sta_->arrival(pin, sta::RiseFallBoth::riseFall(), sta::MinMax::max());
+      const auto setup_arrival = sta_->arrival(
+          pin, sta::RiseFallBoth::riseFall(), sta::MinMax::max());
       const std::string setup_text
           = is_inf(setup_arrival)
                 ? "None"

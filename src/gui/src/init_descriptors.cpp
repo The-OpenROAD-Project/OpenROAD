@@ -6,15 +6,13 @@
 // gui_descriptors (the lightweight CMake library used by web) does not
 // pull in dbDescriptors / staDescriptors and their heavy dependencies.
 
-#include "gui/descriptor_registry.h"
-
 #include <set>
-
-#include "gui/gui.h"
-#include "odb/db.h"
 
 #include "bufferTreeDescriptor.h"
 #include "dbDescriptors.h"
+#include "gui/descriptor_registry.h"
+#include "gui/gui.h"
+#include "odb/db.h"
 #include "staDescriptors.h"
 
 namespace gui {
@@ -40,8 +38,7 @@ Descriptor::Actions Selected::getActions() const
   return actions;
 }
 
-void DescriptorRegistry::initDescriptors(odb::dbDatabase* db,
-                                         sta::dbSta* sta)
+void DescriptorRegistry::initDescriptors(odb::dbDatabase* db, sta::dbSta* sta)
 {
   // Initialize BufferTree with STA so that DbNetDescriptor::getDBProperties()
   // can call BufferTree::isAggregate() safely.
@@ -53,10 +50,10 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db,
 
   registerDescriptor<odb::dbInst*>(new DbInstDescriptor(db, sta));
   registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db, sta));
-  registerDescriptor<odb::dbNet*>(
-      new DbNetDescriptor(db, sta, empty_net_set, empty_net_set, empty_net_set));
-  registerDescriptor<DbNetDescriptor::NetWithSink>(
-      new DbNetDescriptor(db, sta, empty_net_set, empty_net_set, empty_net_set));
+  registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
+      db, sta, empty_net_set, empty_net_set, empty_net_set));
+  registerDescriptor<DbNetDescriptor::NetWithSink>(new DbNetDescriptor(
+      db, sta, empty_net_set, empty_net_set, empty_net_set));
   registerDescriptor<odb::dbWire*>(new DbWireDescriptor(db));
   registerDescriptor<odb::dbSWire*>(new DbSWireDescriptor(db));
   registerDescriptor<odb::dbITerm*>(
@@ -89,8 +86,7 @@ void DescriptorRegistry::initDescriptors(odb::dbDatabase* db,
   registerDescriptor<odb::dbTechSameNetRule*>(
       new DbTechSameNetRuleDescriptor(db));
   registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db));
-  registerDescriptor<DbSiteDescriptor::SpecificSite>(
-      new DbSiteDescriptor(db));
+  registerDescriptor<DbSiteDescriptor::SpecificSite>(new DbSiteDescriptor(db));
   registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db));
   registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db));
   registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db));

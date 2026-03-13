@@ -2912,8 +2912,7 @@ Descriptor::Actions DbObstructionDescriptor::getActions(
   Actions actions;
 #ifdef ENABLE_QT
   actions.push_back(
-      {"Copy to layer",
-       [obs]() {
+      {"Copy to layer", [obs]() {
          odb::dbBox* box = obs->getBBox();
          odb::dbTechLayer* layer = getLayerSelection(
              obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());

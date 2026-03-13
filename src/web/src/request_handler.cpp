@@ -184,9 +184,7 @@ static int storeSelectable(std::vector<gui::Selected>& selectables,
 }
 
 // Emit a bbox as a JSON array field: "key": [xMin, yMin, xMax, yMax]
-static void writeBBox(JsonBuilder& builder,
-                      const char* key,
-                      const odb::Rect& r)
+static void writeBBox(JsonBuilder& builder, const char* key, const odb::Rect& r)
 {
   builder.beginArray(key);
   builder.value(r.xMin());
@@ -223,19 +221,16 @@ static void serializeProperty(JsonBuilder& builder,
   builder.beginObject();
   builder.field("name", prop.name);
 
-  if (auto* plist
-      = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+  if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
     builder.beginArray("children");
     for (const auto& [key, val] : *plist) {
       builder.beginObject();
-      serializeAnyValue(
-          builder, "name", key, selectables, /*short_name=*/true);
+      serializeAnyValue(builder, "name", key, selectables, /*short_name=*/true);
       serializeAnyValue(builder, "value", val, selectables);
       builder.endObject();
     }
     builder.endArray();
-  } else if (auto* sel_set
-             = std::any_cast<gui::SelectionSet>(&prop.value)) {
+  } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
     builder.beginArray("children");
     for (const auto& sel : *sel_set) {
       builder.beginObject();
@@ -278,13 +273,14 @@ static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
 // dispatch_request — handles BOUNDS, TECH, TILE
 //------------------------------------------------------------------------------
 
-WebSocketResponse dispatch_request(const WebSocketRequest& req,
-                            const std::shared_ptr<TileGenerator>& gen,
-                            const std::vector<odb::Rect>& highlight_rects,
-                            const std::vector<ColoredRect>& colored_rects,
-                            const std::vector<FlightLine>& flight_lines,
-                            const std::map<uint32_t, Color>* module_colors,
-                            const std::set<uint32_t>* focus_net_ids)
+WebSocketResponse dispatch_request(
+    const WebSocketRequest& req,
+    const std::shared_ptr<TileGenerator>& gen,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::map<uint32_t, Color>* module_colors,
+    const std::set<uint32_t>* focus_net_ids)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -366,7 +362,7 @@ SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
 }
 
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
-                                       SessionState& state)
+                                              SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -443,7 +439,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
 }
 
 WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
-                                        SessionState& state)
+                                               SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -524,8 +520,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
         gui::Selected sel;
         {
           std::lock_guard<std::mutex> slock(state.selectables_mutex);
-          if (req.select_id
-              < static_cast<int>(state.selectables.size())) {
+          if (req.select_id < static_cast<int>(state.selectables.size())) {
             sel = state.selectables[req.select_id];
           }
         }
@@ -649,9 +644,9 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto paths = timing_report_->getReport(req.timing_is_setup,
-                                              req.timing_max_paths,
-                                              req.timing_slack_min,
-                                              req.timing_slack_max);
+                                           req.timing_max_paths,
+                                           req.timing_slack_min,
+                                           req.timing_slack_max);
     JsonBuilder builder;
     builder.beginObject();
     builder.beginArray("paths");
@@ -766,9 +761,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   try {
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto histogram = timing_report_->getSlackHistogram(
-        req.histogram_is_setup,
-        req.histogram_path_group,
-        req.histogram_clock);
+        req.histogram_is_setup, req.histogram_path_group, req.histogram_clock);
     JsonBuilder builder;
     builder.beginObject();
     builder.beginArray("bins");
@@ -795,8 +788,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
   return resp;
 }
 
-WebSocketResponse TimingHandler::handleChartFilters(
-    const WebSocketRequest& req)
+WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -841,8 +833,7 @@ ClockTreeHandler::ClockTreeHandler(
 {
 }
 
-WebSocketResponse ClockTreeHandler::handleClockTree(
-    const WebSocketRequest& req)
+WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -942,8 +933,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     rects = state.highlight_rects;
-    rects.insert(rects.end(),
-                 state.hover_rects.begin(), state.hover_rects.end());
+    rects.insert(
+        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
     colored = state.timing_rects;
     lines = state.timing_lines;
   }

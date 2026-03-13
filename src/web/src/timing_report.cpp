@@ -80,9 +80,7 @@ void TimingReport::expandPath(sta::Path* path,
         const sta::Pin* to_pin = edge->to(graph)->pin();
         if (network->isTopLevelPort(to_pin)) {
           sta::Port* port = network->port(to_pin);
-          node_fanout += sdc->portExtFanout(
-                             port, sta::MinMax::max())
-                         + 1;
+          node_fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
         } else {
           node_fanout++;
         }
@@ -93,7 +91,8 @@ void TimingReport::expandPath(sta::Path* path,
     float cap = 0.0f;
     if (is_driver && !(!clock_expanded && (network->isCheckClk(pin) || !i))) {
       sta::GraphDelayCalc* gdc = sta_->graphDelayCalc();
-      cap = gdc->loadCap(pin, ref->transition(sta_), ref->scene(sta_), ref->minMax(sta_));
+      cap = gdc->loadCap(
+          pin, ref->transition(sta_), ref->scene(sta_), ref->minMax(sta_));
     }
 
     // Pin name via dbNetwork
@@ -299,8 +298,7 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
 
   void visit(sta::PathEnd* path_end) override
   {
-    sta::PathGroupSeq groups
-        = sta_->cmdScene()->mode()->pathGroups(path_end);
+    sta::PathGroupSeq groups = sta_->cmdScene()->mode()->pathGroups(path_end);
     if (std::find(groups.begin(), groups.end(), group_) == groups.end()) {
       return;
     }
@@ -501,8 +499,8 @@ SlackHistogramResult TimingReport::getSlackHistogram(
     for (sta::Vertex* vertex : sta_->endpoints()) {
       result.total_endpoints++;
       const sta::Pin* pin = vertex->pin();
-      float slack = sta_->slack(
-          pin, sta::RiseFallBoth::riseFall(), scenes, min_max);
+      float slack
+          = sta_->slack(pin, sta::RiseFallBoth::riseFall(), scenes, min_max);
 
       if (slack >= sta::INF || slack <= -sta::INF) {
         result.unconstrained_count++;

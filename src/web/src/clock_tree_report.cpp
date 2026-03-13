@@ -191,8 +191,7 @@ struct TreeNode
   }
 };
 
-ClockTreeNode::Type classifyDriver(const sta::Pin* pin,
-                                   sta::dbNetwork* network)
+ClockTreeNode::Type classifyDriver(const sta::Pin* pin, sta::dbNetwork* network)
 {
   sta::Instance* inst = network->instance(pin);
   if (!inst) {
@@ -214,8 +213,7 @@ ClockTreeNode::Type classifyDriver(const sta::Pin* pin,
   return ClockTreeNode::UNKNOWN;
 }
 
-ClockTreeNode::Type classifyLeaf(const sta::Pin* pin,
-                                 sta::dbNetwork* network)
+ClockTreeNode::Type classifyLeaf(const sta::Pin* pin, sta::dbNetwork* network)
 {
   sta::Instance* inst = network->instance(pin);
   if (!inst) {
@@ -327,8 +325,7 @@ void flattenNode(const TreeNode* tree,
 
     for (const auto& child : tree->fanout) {
       flattenNode(
-          child.get(), effective_parent, network, time_scale, clock_name,
-          data);
+          child.get(), effective_parent, network, time_scale, clock_name, data);
     }
     for (const auto& [leaf_pin, leaf_arrival] : tree->leaves) {
       ClockTreeNode leaf;
@@ -360,8 +357,7 @@ void flattenNode(const TreeNode* tree,
     node.name = inst_name;
     node.pin_name = getPinName(pin, network);
     node.type = classifyDriver(pin, network);
-    node.fanout
-        = static_cast<int>(tree->fanout.size() + tree->leaves.size());
+    node.fanout = static_cast<int>(tree->fanout.size() + tree->leaves.size());
     node.level = tree->level;
     getPinLocation(pin, network, node.dbu_x, node.dbu_y);
 
@@ -374,10 +370,8 @@ void flattenNode(const TreeNode* tree,
       if (inst) {
         for (const auto& [sink_pin, sink_arr] : tree->parent->child_sinks) {
           if (network->instance(sink_pin) == inst) {
-            node.arrival
-                = static_cast<float>(sink_arr / time_scale);
-            node.delay
-                = static_cast<float>((arrival - sink_arr) / time_scale);
+            node.arrival = static_cast<float>(sink_arr / time_scale);
+            node.delay = static_cast<float>((arrival - sink_arr) / time_scale);
             break;
           }
         }
@@ -389,8 +383,7 @@ void flattenNode(const TreeNode* tree,
 
     // Recurse into children
     for (const auto& child : tree->fanout) {
-      flattenNode(child.get(), this_id, network, time_scale, clock_name,
-                  data);
+      flattenNode(child.get(), this_id, network, time_scale, clock_name, data);
     }
 
     // Emit leaf nodes

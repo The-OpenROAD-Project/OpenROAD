@@ -124,9 +124,8 @@ static void emitLeafNodes(odb::dbModule* module,
     auto& bucket = buckets[type_name];
     bucket.count++;
     auto* box = inst->getBBox();
-    bucket.area_dbu2
-        += static_cast<int64_t>(box->getDX())
-           * static_cast<int64_t>(box->getDY());
+    bucket.area_dbu2 += static_cast<int64_t>(box->getDX())
+                        * static_cast<int64_t>(box->getDY());
     if (inst_type == sta::dbSta::InstType::BLOCK) {
       bucket.is_macro = true;
       bucket.macro_insts.push_back(inst);
@@ -190,9 +189,9 @@ static void emitLeafNodes(odb::dbModule* module,
         inst_node.macros = 1;
         inst_node.local_macros = 1;
         auto* box = inst->getBBox();
-        inst_node.area = static_cast<double>(
-            static_cast<int64_t>(box->getDX())
-            * static_cast<int64_t>(box->getDY()));
+        inst_node.area
+            = static_cast<double>(static_cast<int64_t>(box->getDX())
+                                  * static_cast<int64_t>(box->getDY()));
       }
     }
   }
@@ -242,8 +241,8 @@ static ModuleStats addModule(odb::dbModule* module,
 
   for (odb::dbModInst* child_mi : module->getChildren()) {
     odb::dbModule* child_mod = child_mi->getMaster();
-    ModuleStats child_stats = addModule(
-        child_mod, sta, my_id, child_mi->getName(), next_id, nodes);
+    ModuleStats child_stats
+        = addModule(child_mod, sta, my_id, child_mi->getName(), next_id, nodes);
     hier.insts += child_stats.insts;
     hier.macros += child_stats.macros;
     hier.modules += child_stats.modules;

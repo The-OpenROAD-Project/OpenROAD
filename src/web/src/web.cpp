@@ -67,8 +67,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.timing_max_paths = extract_int_or(msg, "max_paths", 100);
     req.timing_slack_min = extract_float_or(
         msg, "slack_min", -std::numeric_limits<float>::max());
-    req.timing_slack_max = extract_float_or(
-        msg, "slack_max", std::numeric_limits<float>::max());
+    req.timing_slack_max
+        = extract_float_or(msg, "slack_max", std::numeric_limits<float>::max());
   } else if (type_str == "timing_highlight") {
     req.type = WebSocketRequest::TIMING_HIGHLIGHT;
     req.timing_path_index = extract_int_or(msg, "path_index", -1);
@@ -112,7 +112,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
 //   [4]    uint8_t  type
 //   [5..7] reserved
 //   [8..]  payload
-static std::vector<unsigned char> serialize_response(const WebSocketResponse& resp)
+static std::vector<unsigned char> serialize_response(
+    const WebSocketResponse& resp)
 {
   std::vector<unsigned char> frame(8 + resp.payload.size());
   const uint32_t id_be = htonl(resp.id);
@@ -168,15 +169,19 @@ http::response<http::string_body> handle_request(
   if (req.method() == http::verb::get && req.target() == "/bounds") {
     WebSocketRequest websocket_req;
     websocket_req.type = WebSocketRequest::BOUNDS;
-    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
+    WebSocketResponse websocket_resp
+        = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(),
+                             websocket_resp.payload.end());
   } else if (req.method() == http::verb::get && req.target() == "/tech") {
     WebSocketRequest websocket_req;
     websocket_req.type = WebSocketRequest::TECH;
-    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
+    WebSocketResponse websocket_resp
+        = dispatch_request(websocket_req, generator);
     res.set(http::field::content_type, "application/json");
-    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(),
+                             websocket_resp.payload.end());
   } else if (req.method() == http::verb::get
              && std::regex_match(target_path, match_pieces, tile_regex)) {
     WebSocketRequest websocket_req;
@@ -185,10 +190,12 @@ http::response<http::string_body> handle_request(
     websocket_req.z = std::stoi(match_pieces[2].str());
     websocket_req.x = std::stoi(match_pieces[3].str());
     websocket_req.y = std::stoi(match_pieces[4].str());
-    WebSocketResponse websocket_resp = dispatch_request(websocket_req, generator);
+    WebSocketResponse websocket_resp
+        = dispatch_request(websocket_req, generator);
 
     res.set(http::field::content_type, "image/png");
-    res.body() = std::string(websocket_resp.payload.begin(), websocket_resp.payload.end());
+    res.body() = std::string(websocket_resp.payload.begin(),
+                             websocket_resp.payload.end());
     res.set(http::field::cache_control, "public, max-age=604800");
   } else if (req.method() == http::verb::get && !doc_root.empty()) {
     // Serve static files from doc_root
@@ -263,12 +270,13 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   void do_write();
 };
 
-WebSocketSession::WebSocketSession(tcp::socket&& socket,
-                                   std::shared_ptr<TileGenerator> generator,
-                                   std::shared_ptr<TclEvaluator> tcl_eval,
-                                   std::shared_ptr<TimingReport> timing_report,
-                                   std::shared_ptr<ClockTreeReport> clock_report,
-                                   utl::Logger* logger)
+WebSocketSession::WebSocketSession(
+    tcp::socket&& socket,
+    std::shared_ptr<TileGenerator> generator,
+    std::shared_ptr<TclEvaluator> tcl_eval,
+    std::shared_ptr<TimingReport> timing_report,
+    std::shared_ptr<ClockTreeReport> clock_report,
+    utl::Logger* logger)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -289,15 +297,21 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
 
-  websocket_.async_accept(req, [self = shared_from_this()](beast::error_code ec) {
-    self->on_accept(ec);
-  });
+  websocket_.async_accept(req,
+                          [self = shared_from_this()](beast::error_code ec) {
+                            self->on_accept(ec);
+                          });
 }
 
 void WebSocketSession::on_accept(beast::error_code ec)
 {
   if (ec) {
-    debugPrint(logger_, utl::WEB, "websocket", 1, "websocket accept error: {}", ec.message());
+    debugPrint(logger_,
+               utl::WEB,
+               "websocket",
+               1,
+               "websocket accept error: {}",
+               ec.message());
     return;
   }
   do_read();
@@ -315,7 +329,12 @@ void WebSocketSession::on_read(beast::error_code ec)
 {
   if (ec) {
     if (ec != websocket::error::closed) {
-      debugPrint(logger_, utl::WEB, "websocket", 1, "websocket read error: {}", ec.message());
+      debugPrint(logger_,
+                 utl::WEB,
+                 "websocket",
+                 1,
+                 "websocket read error: {}",
+                 ec.message());
     }
     return;
   }
@@ -363,33 +382,28 @@ void WebSocketSession::on_read(beast::error_code ec)
       break;
     case WebSocketRequest::CLOCK_TREE:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->clock_tree_handler_.handleClockTree(req));
+        self->queue_response(self->clock_tree_handler_.handleClockTree(req));
       });
       break;
     case WebSocketRequest::CLOCK_TREE_HIGHLIGHT:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->clock_tree_handler_.handleClockTreeHighlight(
-                req, self->state_));
+        self->queue_response(self->clock_tree_handler_.handleClockTreeHighlight(
+            req, self->state_));
       });
       break;
     case WebSocketRequest::SLACK_HISTOGRAM:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->timing_handler_.handleSlackHistogram(req));
+        self->queue_response(self->timing_handler_.handleSlackHistogram(req));
       });
       break;
     case WebSocketRequest::CHART_FILTERS:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->timing_handler_.handleChartFilters(req));
+        self->queue_response(self->timing_handler_.handleChartFilters(req));
       });
       break;
     case WebSocketRequest::MODULE_HIERARCHY:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleModuleHierarchy(req));
+        self->queue_response(self->tile_handler_.handleModuleHierarchy(req));
       });
       break;
     case WebSocketRequest::SET_MODULE_COLORS:
@@ -638,12 +652,13 @@ void DetectSession::on_read(beast::error_code ec)
 
   if (websocket::is_upgrade(req_)) {
     // WebSocket upgrade - hand off to WebSocketSession
-    auto websocket_session = std::make_shared<WebSocketSession>(stream_.release_socket(),
-                                                 generator_,
-                                                 tcl_eval_,
-                                                 timing_report_,
-                                                 clock_report_,
-                                                 logger_);
+    auto websocket_session
+        = std::make_shared<WebSocketSession>(stream_.release_socket(),
+                                             generator_,
+                                             tcl_eval_,
+                                             timing_report_,
+                                             clock_report_,
+                                             logger_);
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request

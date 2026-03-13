@@ -464,10 +464,14 @@ std::vector<unsigned char> TileGenerator::generateTile(
           continue;
         }
         const Color& c = it->second;
-        const int pxl = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
-        const int pyl = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
-        const int pxh = std::min(255, (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
-        const int pyh = std::min(255, (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
+        const int pxl
+            = std::max(0, (int) ((inst_bbox.xMin() - dbu_x_min) * scale));
+        const int pyl
+            = std::max(0, (int) ((inst_bbox.yMin() - dbu_y_min) * scale));
+        const int pxh = std::min(
+            255, (int) std::ceil((inst_bbox.xMax() - dbu_x_min) * scale));
+        const int pyh = std::min(
+            255, (int) std::ceil((inst_bbox.yMax() - dbu_y_min) * scale));
         for (int iy = pyl; iy < pyh; ++iy) {
           for (int ix = pxl; ix < pxh; ++ix) {
             blendPixel(image_buffer, ix, 255 - iy, c);
@@ -479,102 +483,102 @@ std::vector<unsigned char> TileGenerator::generateTile(
     // Special "_instances" layer: only draw instance borders, no routing
     const bool instances_only = (layer == "_instances");
 
-    // "_modules" layer only draws filled module-color rects (already done above);
-    // skip all other drawing (instances, routing, etc.)
+    // "_modules" layer only draws filled module-color rects (already done
+    // above); skip all other drawing (instances, routing, etc.)
     if (!modules_layer) {
-
-    // Draw instances
-    for (odb::dbInst* inst : search_->searchInsts(
-             block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-      odb::Rect inst_bbox = inst->getBBox()->getBox();
-      if (!dbu_tile.overlaps(inst_bbox)) {
-        continue;
-      }
-      odb::dbMaster* master = inst->getMaster();
-
-      if (!vis.isInstVisible(inst, sta_)) {
-        continue;
-      }
-      const int xl = inst_bbox.xMin();
-      const int yl = inst_bbox.yMin();
-      const int xh = inst_bbox.xMax();
-      const int yh = inst_bbox.yMax();
-
-      const int pixel_xl = (int) ((xl - dbu_x_min) * scale);
-      const int pixel_yl = (int) ((yl - dbu_y_min) * scale);
-      const int pixel_xh = (int) std::ceil((xh - dbu_x_min) * scale);
-      const int pixel_yh = (int) std::ceil((yh - dbu_y_min) * scale);
-
-      if (instances_only) {
-        // Draw the rectangle border (instances-only layer)
-        Color gray{128, 128, 128, 255};
-        if (dbu_x_min <= xl && xl <= dbu_x_max) {
-          for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, pixel_xl, draw_y, gray);
-          }
+      // Draw instances
+      for (odb::dbInst* inst : search_->searchInsts(
+               block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+        odb::Rect inst_bbox = inst->getBBox()->getBox();
+        if (!dbu_tile.overlaps(inst_bbox)) {
+          continue;
         }
-        if (dbu_x_min <= xh && xh <= dbu_x_max) {
-          for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, pixel_xh, draw_y, gray);
-          }
+        odb::dbMaster* master = inst->getMaster();
+
+        if (!vis.isInstVisible(inst, sta_)) {
+          continue;
         }
-        if (dbu_y_min <= yl && yl <= dbu_y_max) {
-          for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-            const int draw_y = (255 - pixel_yl);
-            setPixel(image_buffer, ix, draw_y, gray);
-          }
-        }
-        if (dbu_y_min <= yh && yh <= dbu_y_max) {
-          for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
-            const int draw_y = (255 - pixel_yh);
-            setPixel(image_buffer, ix, draw_y, gray);
-          }
-        }
-      } else {
-        // Layer-specific: obstructions and pins
-        if (vis.blockages) {
-          for (odb::dbBox* obs : master->getObstructions()) {
-            if (tech_layer && obs->getTechLayer() != tech_layer) {
-              continue;
+        const int xl = inst_bbox.xMin();
+        const int yl = inst_bbox.yMin();
+        const int xh = inst_bbox.xMax();
+        const int yh = inst_bbox.yMax();
+
+        const int pixel_xl = (int) ((xl - dbu_x_min) * scale);
+        const int pixel_yl = (int) ((yl - dbu_y_min) * scale);
+        const int pixel_xh = (int) std::ceil((xh - dbu_x_min) * scale);
+        const int pixel_yh = (int) std::ceil((yh - dbu_y_min) * scale);
+
+        if (instances_only) {
+          // Draw the rectangle border (instances-only layer)
+          Color gray{128, 128, 128, 255};
+          if (dbu_x_min <= xl && xl <= dbu_x_max) {
+            for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
+              const int draw_y = (255 - iy);
+              setPixel(image_buffer, pixel_xl, draw_y, gray);
             }
-            odb::Rect box = obs->getBox();
-            inst->getTransform().apply(box);
-            if (!box.overlaps(dbu_tile)) {
-              continue;
+          }
+          if (dbu_x_min <= xh && xh <= dbu_x_max) {
+            for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
+              const int draw_y = (255 - iy);
+              setPixel(image_buffer, pixel_xh, draw_y, gray);
             }
-            const odb::Rect overlap = box.intersect(dbu_tile);
-            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          }
+          if (dbu_y_min <= yl && yl <= dbu_y_max) {
+            for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
+              const int draw_y = (255 - pixel_yl);
+              setPixel(image_buffer, ix, draw_y, gray);
+            }
+          }
+          if (dbu_y_min <= yh && yh <= dbu_y_max) {
+            for (int ix = pixel_xl; ix < pixel_xh; ++ix) {
+              const int draw_y = (255 - pixel_yh);
+              setPixel(image_buffer, ix, draw_y, gray);
+            }
+          }
+        } else {
+          // Layer-specific: obstructions and pins
+          if (vis.blockages) {
+            for (odb::dbBox* obs : master->getObstructions()) {
+              if (tech_layer && obs->getTechLayer() != tech_layer) {
+                continue;
+              }
+              odb::Rect box = obs->getBox();
+              inst->getTransform().apply(box);
+              if (!box.overlaps(dbu_tile)) {
+                continue;
+              }
+              const odb::Rect overlap = box.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                const int draw_y = (255 - iy);
-                setPixel(image_buffer, ix, draw_y, obs_color);
+              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                  const int draw_y = (255 - iy);
+                  setPixel(image_buffer, ix, draw_y, obs_color);
+                }
               }
             }
           }
-        }
 
-        if (vis.pins) {
-          for (odb::dbMTerm* mterm : master->getMTerms()) {
-            for (odb::dbMPin* mpin : mterm->getMPins()) {
-              for (odb::dbBox* geom : mpin->getGeometry()) {
-                if (tech_layer && geom->getTechLayer() != tech_layer) {
-                  continue;
-                }
-                odb::Rect box = geom->getBox();
-                inst->getTransform().apply(box);
-                if (!box.overlaps(dbu_tile)) {
-                  continue;
-                }
-                const odb::Rect overlap = box.intersect(dbu_tile);
-                const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          if (vis.pins) {
+            for (odb::dbMTerm* mterm : master->getMTerms()) {
+              for (odb::dbMPin* mpin : mterm->getMPins()) {
+                for (odb::dbBox* geom : mpin->getGeometry()) {
+                  if (tech_layer && geom->getTechLayer() != tech_layer) {
+                    continue;
+                  }
+                  odb::Rect box = geom->getBox();
+                  inst->getTransform().apply(box);
+                  if (!box.overlaps(dbu_tile)) {
+                    continue;
+                  }
+                  const odb::Rect overlap = box.intersect(dbu_tile);
+                  const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-                for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                  for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                    const int draw_y = (255 - iy);
-                    setPixel(image_buffer, ix, draw_y, color);
+                  for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+                    for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                      const int draw_y = (255 - iy);
+                      setPixel(image_buffer, ix, draw_y, color);
+                    }
                   }
                 }
               }
@@ -582,98 +586,30 @@ std::vector<unsigned char> TileGenerator::generateTile(
           }
         }
       }
-    }
 
-    // Draw routing shapes (wires, vias, bterms) on top of instances
-    if (!instances_only && tech_layer && vis.routing) {
-      for (const auto& shape : search_->searchBoxShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        odb::dbNet* net = std::get<2>(shape);
-        if (!vis.isNetVisible(net)) {
-          continue;
-        }
-        if (focus_net_ids && !focus_net_ids->empty()
-            && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
-          continue;
-        }
-        const odb::Rect& box = std::get<0>(shape);
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, ix, draw_y, color);
-          }
-        }
-      }
-    }
-
-    // Draw special net shapes (power/ground straps) on top of instances
-    if (!instances_only && tech_layer && vis.special_nets) {
-      for (const auto& shape : search_->searchSNetShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        odb::dbNet* snet = std::get<2>(shape);
-        if (!vis.isNetVisible(snet)) {
-          continue;
-        }
-        if (focus_net_ids && !focus_net_ids->empty()
-            && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
-          continue;
-        }
-        const odb::Rect box = std::get<0>(shape)->getBox();
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            const int draw_y = (255 - iy);
-            setPixel(image_buffer, ix, draw_y, color);
-          }
-        }
-      }
-    }
-
-    // Draw special net vias — decompose into individual cut boxes
-    if (!instances_only && tech_layer && vis.special_nets) {
-      for (const auto& shape : search_->searchSNetViaShapes(
-               block, tech_layer, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
-        odb::dbNet* via_net = std::get<1>(shape);
-        if (!vis.isNetVisible(via_net)) {
-          continue;
-        }
-        if (focus_net_ids && !focus_net_ids->empty()
-            && focus_net_ids->find(via_net->getId()) == focus_net_ids->end()) {
-          continue;
-        }
-        odb::dbSBox* sbox = std::get<0>(shape);
-        std::vector<odb::dbBox*> via_boxes;
-        if (auto tech_via = sbox->getTechVia()) {
-          via_boxes.assign(tech_via->getBoxes().begin(),
-                           tech_via->getBoxes().end());
-        } else if (auto block_via = sbox->getBlockVia()) {
-          via_boxes.assign(block_via->getBoxes().begin(),
-                           block_via->getBoxes().end());
-        }
-        const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
-                                (sbox->yMin() + sbox->yMax()) / 2);
-        for (odb::dbBox* vbox : via_boxes) {
-          if (vbox->getTechLayer() != tech_layer) {
+      // Draw routing shapes (wires, vias, bterms) on top of instances
+      if (!instances_only && tech_layer && vis.routing) {
+        for (const auto& shape : search_->searchBoxShapes(block,
+                                                          tech_layer,
+                                                          dbu_x_min,
+                                                          dbu_y_min,
+                                                          dbu_x_max,
+                                                          dbu_y_max)) {
+          odb::dbNet* net = std::get<2>(shape);
+          if (!vis.isNetVisible(net)) {
             continue;
           }
-          odb::Rect box = vbox->getBox();
-          box.moveDelta(origin.x(), origin.y());
+          if (focus_net_ids && !focus_net_ids->empty()
+              && focus_net_ids->find(net->getId()) == focus_net_ids->end()) {
+            continue;
+          }
+          const odb::Rect& box = std::get<0>(shape);
           if (!box.overlaps(dbu_tile)) {
             continue;
           }
           const odb::Rect overlap = box.intersect(dbu_tile);
           const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
           for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
             for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
               const int draw_y = (255 - iy);
@@ -682,165 +618,245 @@ std::vector<unsigned char> TileGenerator::generateTile(
           }
         }
       }
-    }
 
-    // Draw placement blockages (dbBlockage) on the _instances layer.
-    // Diagonal white hash lines in pixel space, with period anchored in dbu
-    // coordinates so the pattern is seamless across tile boundaries.
-    if (instances_only && vis.placement_blockages) {
-      const Color hash_color{255, 255, 255, 180};
-      constexpr int kPixelPeriod = 20;  // pixels between line centers
-      constexpr int kLineWidth = 2;     // pixels wide
-      for (odb::dbBlockage* blk :
-           search_->searchBlockages(block, dbu_x_min, dbu_y_min,
-                                    dbu_x_max, dbu_y_max)) {
-        odb::Rect box = blk->getBBox()->getBox();
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-        // Offset in absolute pixel coordinates for seamless tiling
-        const int ox = (int) (dbu_x_min * scale);
-        const int oy = (int) (dbu_y_min * scale);
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
-              blendPixel(image_buffer, ix, 255 - iy, hash_color);
+      // Draw special net shapes (power/ground straps) on top of instances
+      if (!instances_only && tech_layer && vis.special_nets) {
+        for (const auto& shape : search_->searchSNetShapes(block,
+                                                           tech_layer,
+                                                           dbu_x_min,
+                                                           dbu_y_min,
+                                                           dbu_x_max,
+                                                           dbu_y_max)) {
+          odb::dbNet* snet = std::get<2>(shape);
+          if (!vis.isNetVisible(snet)) {
+            continue;
+          }
+          if (focus_net_ids && !focus_net_ids->empty()
+              && focus_net_ids->find(snet->getId()) == focus_net_ids->end()) {
+            continue;
+          }
+          const odb::Rect box = std::get<0>(shape)->getBox();
+          if (!box.overlaps(dbu_tile)) {
+            continue;
+          }
+          const odb::Rect overlap = box.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+              const int draw_y = (255 - iy);
+              setPixel(image_buffer, ix, draw_y, color);
             }
           }
         }
       }
-    }
 
-    // Draw routing obstructions (dbObstruction) on per-layer tiles.
-    // Same diagonal white hash lines.
-    if (!instances_only && tech_layer && vis.routing_obstructions) {
-      const Color hash_color{255, 255, 255, 180};
-      constexpr int kPixelPeriod = 20;
-      constexpr int kLineWidth = 2;
-      for (odb::dbObstruction* obs :
-           search_->searchObstructions(block, tech_layer, dbu_x_min, dbu_y_min,
-                                       dbu_x_max, dbu_y_max)) {
-        odb::Rect box = obs->getBBox()->getBox();
-        if (!box.overlaps(dbu_tile)) {
-          continue;
-        }
-        const odb::Rect overlap = box.intersect(dbu_tile);
-        const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-        const int ox = (int) (dbu_x_min * scale);
-        const int oy = (int) (dbu_y_min * scale);
-        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-          for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-            if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
-              blendPixel(image_buffer, ix, 255 - iy, hash_color);
-            }
+      // Draw special net vias — decompose into individual cut boxes
+      if (!instances_only && tech_layer && vis.special_nets) {
+        for (const auto& shape : search_->searchSNetViaShapes(block,
+                                                              tech_layer,
+                                                              dbu_x_min,
+                                                              dbu_y_min,
+                                                              dbu_x_max,
+                                                              dbu_y_max)) {
+          odb::dbNet* via_net = std::get<1>(shape);
+          if (!vis.isNetVisible(via_net)) {
+            continue;
           }
-        }
-      }
-    }
-
-    // Draw rows as outlines on the _instances layer
-    if (instances_only && vis.rows) {
-      const Color row_color{60, 180, 60, 180};  // green outlines
-      for (const auto& [row_rect, row] :
-           search_->searchRows(block, dbu_x_min, dbu_y_min,
-                               dbu_x_max, dbu_y_max)) {
-        if (!row_rect.overlaps(dbu_tile)) {
-          continue;
-        }
-        odb::dbSite* site = row->getSite();
-        if (site && !vis.isSiteVisible(site->getName())) {
-          continue;
-        }
-        const odb::Rect draw = toPixels(scale, row_rect, dbu_tile);
-        // Draw outline only (top, bottom, left, right edges)
-        for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
-          blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
-          blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
-        }
-        for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
-          blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
-          blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
-        }
-      }
-    }
-
-    // Draw tracks on per-layer tiles
-    if (!instances_only && tech_layer
-        && (vis.tracks_pref || vis.tracks_non_pref)) {
-      odb::dbTrackGrid* grid = block->findTrackGrid(tech_layer);
-      debugPrint(logger_,
-                 utl::WEB,
-                 "tile",
-                 1,
-                 "tracks: layer={} grid={} pref={} non_pref={}",
-                 layer,
-                 grid != nullptr,
-                 vis.tracks_pref,
-                 vis.tracks_non_pref);
-      if (grid) {
-        Color track_color = color;
-        track_color.a = 150;
-        const bool is_horizontal
-            = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
-
-        // X-direction tracks (vertical lines on screen)
-        // Preferred for vertical layers, non-preferred for horizontal layers
-        if ((!is_horizontal && vis.tracks_pref)
-            || (is_horizontal && vis.tracks_non_pref)) {
-          std::vector<int> x_grid;
-          grid->getGridX(x_grid);
-          debugPrint(logger_,
-                     utl::WEB,
-                     "tile",
-                     1,
-                     "  x_tracks: count={} tile=[{},{},{},{}]",
-                     x_grid.size(),
-                     dbu_x_min,
-                     dbu_y_min,
-                     dbu_x_max,
-                     dbu_y_max);
-          for (int tx : x_grid) {
-            if (tx < dbu_x_min || tx > dbu_x_max) {
+          if (focus_net_ids && !focus_net_ids->empty()
+              && focus_net_ids->find(via_net->getId())
+                     == focus_net_ids->end()) {
+            continue;
+          }
+          odb::dbSBox* sbox = std::get<0>(shape);
+          std::vector<odb::dbBox*> via_boxes;
+          if (auto tech_via = sbox->getTechVia()) {
+            via_boxes.assign(tech_via->getBoxes().begin(),
+                             tech_via->getBoxes().end());
+          } else if (auto block_via = sbox->getBlockVia()) {
+            via_boxes.assign(block_via->getBoxes().begin(),
+                             block_via->getBoxes().end());
+          }
+          const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
+                                  (sbox->yMin() + sbox->yMax()) / 2);
+          for (odb::dbBox* vbox : via_boxes) {
+            if (vbox->getTechLayer() != tech_layer) {
               continue;
             }
-            const int px = static_cast<int>((tx - dbu_x_min) * scale);
-            if (px >= 0 && px < kTileSizeInPixel) {
-              for (int py = 0; py < kTileSizeInPixel; ++py) {
-                blendPixel(image_buffer, px, py, track_color);
-              }
-            }
-          }
-        }
-
-        // Y-direction tracks (horizontal lines on screen)
-        // Preferred for horizontal layers, non-preferred for vertical layers
-        if ((is_horizontal && vis.tracks_pref)
-            || (!is_horizontal && vis.tracks_non_pref)) {
-          std::vector<int> y_grid;
-          grid->getGridY(y_grid);
-          debugPrint(logger_,
-                     utl::WEB,
-                     "tile",
-                     1,
-                     "  y_tracks: count={}",
-                     y_grid.size());
-          for (int ty : y_grid) {
-            if (ty < dbu_y_min || ty > dbu_y_max) {
+            odb::Rect box = vbox->getBox();
+            box.moveDelta(origin.x(), origin.y());
+            if (!box.overlaps(dbu_tile)) {
               continue;
             }
-            const int py
-                = 255 - static_cast<int>((ty - dbu_y_min) * scale);
-            if (py >= 0 && py < kTileSizeInPixel) {
-              for (int px = 0; px < kTileSizeInPixel; ++px) {
-                blendPixel(image_buffer, px, py, track_color);
+            const odb::Rect overlap = box.intersect(dbu_tile);
+            const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                const int draw_y = (255 - iy);
+                setPixel(image_buffer, ix, draw_y, color);
               }
             }
           }
         }
       }
-    }
+
+      // Draw placement blockages (dbBlockage) on the _instances layer.
+      // Diagonal white hash lines in pixel space, with period anchored in dbu
+      // coordinates so the pattern is seamless across tile boundaries.
+      if (instances_only && vis.placement_blockages) {
+        const Color hash_color{255, 255, 255, 180};
+        constexpr int kPixelPeriod = 20;  // pixels between line centers
+        constexpr int kLineWidth = 2;     // pixels wide
+        for (odb::dbBlockage* blk : search_->searchBlockages(
+                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          odb::Rect box = blk->getBBox()->getBox();
+          if (!box.overlaps(dbu_tile)) {
+            continue;
+          }
+          const odb::Rect overlap = box.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          // Offset in absolute pixel coordinates for seamless tiling
+          const int ox = (int) (dbu_x_min * scale);
+          const int oy = (int) (dbu_y_min * scale);
+          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+              if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+                blendPixel(image_buffer, ix, 255 - iy, hash_color);
+              }
+            }
+          }
+        }
+      }
+
+      // Draw routing obstructions (dbObstruction) on per-layer tiles.
+      // Same diagonal white hash lines.
+      if (!instances_only && tech_layer && vis.routing_obstructions) {
+        const Color hash_color{255, 255, 255, 180};
+        constexpr int kPixelPeriod = 20;
+        constexpr int kLineWidth = 2;
+        for (odb::dbObstruction* obs : search_->searchObstructions(block,
+                                                                   tech_layer,
+                                                                   dbu_x_min,
+                                                                   dbu_y_min,
+                                                                   dbu_x_max,
+                                                                   dbu_y_max)) {
+          odb::Rect box = obs->getBBox()->getBox();
+          if (!box.overlaps(dbu_tile)) {
+            continue;
+          }
+          const odb::Rect overlap = box.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          const int ox = (int) (dbu_x_min * scale);
+          const int oy = (int) (dbu_y_min * scale);
+          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+              if (((ix + ox) + (iy + oy)) % kPixelPeriod < kLineWidth) {
+                blendPixel(image_buffer, ix, 255 - iy, hash_color);
+              }
+            }
+          }
+        }
+      }
+
+      // Draw rows as outlines on the _instances layer
+      if (instances_only && vis.rows) {
+        const Color row_color{60, 180, 60, 180};  // green outlines
+        for (const auto& [row_rect, row] : search_->searchRows(
+                 block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
+          if (!row_rect.overlaps(dbu_tile)) {
+            continue;
+          }
+          odb::dbSite* site = row->getSite();
+          if (site && !vis.isSiteVisible(site->getName())) {
+            continue;
+          }
+          const odb::Rect draw = toPixels(scale, row_rect, dbu_tile);
+          // Draw outline only (top, bottom, left, right edges)
+          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
+            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
+            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
+          }
+          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
+            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
+            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+          }
+        }
+      }
+
+      // Draw tracks on per-layer tiles
+      if (!instances_only && tech_layer
+          && (vis.tracks_pref || vis.tracks_non_pref)) {
+        odb::dbTrackGrid* grid = block->findTrackGrid(tech_layer);
+        debugPrint(logger_,
+                   utl::WEB,
+                   "tile",
+                   1,
+                   "tracks: layer={} grid={} pref={} non_pref={}",
+                   layer,
+                   grid != nullptr,
+                   vis.tracks_pref,
+                   vis.tracks_non_pref);
+        if (grid) {
+          Color track_color = color;
+          track_color.a = 150;
+          const bool is_horizontal
+              = tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL;
+
+          // X-direction tracks (vertical lines on screen)
+          // Preferred for vertical layers, non-preferred for horizontal layers
+          if ((!is_horizontal && vis.tracks_pref)
+              || (is_horizontal && vis.tracks_non_pref)) {
+            std::vector<int> x_grid;
+            grid->getGridX(x_grid);
+            debugPrint(logger_,
+                       utl::WEB,
+                       "tile",
+                       1,
+                       "  x_tracks: count={} tile=[{},{},{},{}]",
+                       x_grid.size(),
+                       dbu_x_min,
+                       dbu_y_min,
+                       dbu_x_max,
+                       dbu_y_max);
+            for (int tx : x_grid) {
+              if (tx < dbu_x_min || tx > dbu_x_max) {
+                continue;
+              }
+              const int px = static_cast<int>((tx - dbu_x_min) * scale);
+              if (px >= 0 && px < kTileSizeInPixel) {
+                for (int py = 0; py < kTileSizeInPixel; ++py) {
+                  blendPixel(image_buffer, px, py, track_color);
+                }
+              }
+            }
+          }
+
+          // Y-direction tracks (horizontal lines on screen)
+          // Preferred for horizontal layers, non-preferred for vertical layers
+          if ((is_horizontal && vis.tracks_pref)
+              || (!is_horizontal && vis.tracks_non_pref)) {
+            std::vector<int> y_grid;
+            grid->getGridY(y_grid);
+            debugPrint(logger_,
+                       utl::WEB,
+                       "tile",
+                       1,
+                       "  y_tracks: count={}",
+                       y_grid.size());
+            for (int ty : y_grid) {
+              if (ty < dbu_y_min || ty > dbu_y_max) {
+                continue;
+              }
+              const int py = 255 - static_cast<int>((ty - dbu_y_min) * scale);
+              if (py >= 0 && py < kTileSizeInPixel) {
+                for (int px = 0; px < kTileSizeInPixel; ++px) {
+                  blendPixel(image_buffer, px, py, track_color);
+                }
+              }
+            }
+          }
+        }
+      }
 
     }  // end if (!modules_layer)
 
