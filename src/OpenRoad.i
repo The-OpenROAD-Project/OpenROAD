@@ -405,6 +405,13 @@ write_3dbx_cmd(const char *filename)
 }
 
 void
+write_3dblox_verilog_cmd(const char *filename)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->write3DbloxVerilog(filename);
+}
+
+void
 read_db_cmd(const char *filename, bool hierarchy)
 {
   OpenRoad *ord = getOpenRoad();

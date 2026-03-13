@@ -64,6 +64,8 @@ or_integration_tests(
     write_cdl
     write_3dbv
     write_3dbx
+    write_3dblox_verilog
+    write_3dblox_verilog_nets
     write_def58
     write_def58_gzip
     write_lef_and_def
