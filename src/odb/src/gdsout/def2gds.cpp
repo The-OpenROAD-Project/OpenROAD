@@ -287,7 +287,7 @@ void DefToGds::addInstance(dbGDSStructure* top_str, dbGDSLib* lib, dbInst* inst)
       break;
     case dbOrientType::MYR90:
       strans.flipX_ = true;
-      strans.angle_ = 90.0;
+      strans.angle_ = 270.0;
       break;
     case dbOrientType::MX:
       strans.flipX_ = true;
@@ -295,7 +295,7 @@ void DefToGds::addInstance(dbGDSStructure* top_str, dbGDSLib* lib, dbInst* inst)
       break;
     case dbOrientType::MXR90:
       strans.flipX_ = true;
-      strans.angle_ = 270.0;
+      strans.angle_ = 90.0;
       break;
   }
 
@@ -532,52 +532,55 @@ void DefToGds::mergeSeal(dbGDSLib* lib,
     return;
   }
 
-  // First merge all cells from the seal file
-  mergeCells(lib, {seal_file});
-
-  // Then add SREFs from the seal's top cells to our top cell
   dbGDSStructure* top_str = lib->findGDSStructure(top_cell_name.c_str());
   if (top_str == nullptr) {
     return;
   }
 
-  // Re-read to find the seal's top cells
-  dbDatabase* temp_db = dbDatabase::create();
-  GDSReader reader(logger_);
-  dbGDSLib* seal_lib = reader.read_gds(seal_file, temp_db);
+  // Record which structures existed before the merge so we can identify
+  // which ones came from the seal file.
+  std::set<std::string> pre_merge;
+  for (dbGDSStructure* str : lib->getGDSStructures()) {
+    pre_merge.insert(str->getName());
+  }
 
-  if (seal_lib != nullptr) {
-    // Find top cells in the seal lib (cells not referenced by any SREF)
-    std::set<std::string> referenced;
-    for (dbGDSStructure* str : seal_lib->getGDSStructures()) {
-      for (dbGDSSRef* sref : str->getGDSSRefs()) {
-        referenced.insert(sref->getStructure()->getName());
-      }
-      for (dbGDSARef* aref : str->getGDSARefs()) {
-        referenced.insert(aref->getStructure()->getName());
-      }
+  // Merge all seal cells into the main library (single file read)
+  mergeCells(lib, {seal_file});
+
+  // Find seal top cells: structures added by the merge that are not
+  // referenced by any SREF/AREF within the seal's own structures.
+  std::set<std::string> seal_referenced;
+  for (dbGDSStructure* str : lib->getGDSStructures()) {
+    if (pre_merge.count(str->getName())) {
+      continue;  // skip pre-existing structures
     }
-
-    for (dbGDSStructure* str : seal_lib->getGDSStructures()) {
-      if (referenced.find(str->getName()) == referenced.end()) {
-        // This is a top cell in the seal — add SREF from our top cell
-        const char* seal_name = str->getName();
-        dbGDSStructure* seal_str = lib->findGDSStructure(seal_name);
-        if (seal_str != nullptr && seal_str != top_str) {
-          dbGDSSRef* sref = dbGDSSRef::create(top_str, seal_str);
-          sref->setOrigin(Point(0, 0));
-          sref->setTransform(dbGDSSTrans(false, 1.0, 0.0));
-          logger_->info(utl::ODB,
-                        501,
-                        "Merging '{}' as child of '{}'",
-                        str->getName(),
-                        top_cell_name);
-        }
-      }
+    for (dbGDSSRef* sref : str->getGDSSRefs()) {
+      seal_referenced.insert(sref->getStructure()->getName());
+    }
+    for (dbGDSARef* aref : str->getGDSARefs()) {
+      seal_referenced.insert(aref->getStructure()->getName());
     }
   }
 
-  dbDatabase::destroy(temp_db);
+  for (dbGDSStructure* str : lib->getGDSStructures()) {
+    if (pre_merge.count(str->getName())) {
+      continue;  // skip pre-existing structures
+    }
+    if (seal_referenced.count(str->getName())) {
+      continue;  // referenced by another seal cell, not a top cell
+    }
+    if (str == top_str) {
+      continue;
+    }
+    dbGDSSRef* sref = dbGDSSRef::create(top_str, str);
+    sref->setOrigin(Point(0, 0));
+    sref->setTransform(dbGDSSTrans(false, 1.0, 0.0));
+    logger_->info(utl::ODB,
+                  501,
+                  "Merging '{}' as child of '{}'",
+                  str->getName(),
+                  top_cell_name);
+  }
 }
 
 void DefToGds::collectReferencedCells(dbGDSStructure* str,
