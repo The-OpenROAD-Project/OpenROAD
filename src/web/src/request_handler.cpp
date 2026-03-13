@@ -975,7 +975,8 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::set<uint32_t>* focus_ptr
       = focus_nets.empty() ? nullptr : &focus_nets;
 
-  return dispatch_request(req, *gen_, rects, colored, lines, mod_ptr, focus_ptr);
+  return dispatch_request(
+      req, *gen_, rects, colored, lines, mod_ptr, focus_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(

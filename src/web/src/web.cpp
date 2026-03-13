@@ -30,10 +30,10 @@
 #include <vector>
 
 #include "clock_tree_report.h"
+#include "odb/db.h"
 #include "request_handler.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
-#include "odb/db.h"
 
 namespace web {
 
@@ -732,7 +732,7 @@ Listener::Listener(net::io_context& ioc,
       logger_(logger)
 {
   beast::error_code ec;
- 
+
   acceptor_.open(endpoint.protocol(), ec);
   if (ec) {
     return;
