@@ -541,6 +541,9 @@ void OpenRoad::writeGds(const char* filename,
     converter.mergeSeal(lib, block->getName(), seal_file);
   }
 
+  // Prune cells from merged GDS that aren't referenced by the design
+  converter.pruneUnreferencedCells(lib, block->getName());
+
   // Validate
   std::string allow_re;
   if (allow_empty && allow_empty[0] != '\0') {

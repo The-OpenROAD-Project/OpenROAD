@@ -3,6 +3,8 @@
 
 #include "odb/def2gds.h"
 
+#include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <regex>
 #include <set>
@@ -284,6 +286,7 @@ void DefToGds::addInstance(dbGDSStructure* top_str, dbGDSLib* lib, dbInst* inst)
       break;
     case dbOrientType::MY:
       strans.flipX_ = true;
+      strans.angle_ = 180.0;
       break;
     case dbOrientType::MYR90:
       strans.flipX_ = true;
@@ -291,7 +294,6 @@ void DefToGds::addInstance(dbGDSStructure* top_str, dbGDSLib* lib, dbInst* inst)
       break;
     case dbOrientType::MX:
       strans.flipX_ = true;
-      strans.angle_ = 180.0;
       break;
     case dbOrientType::MXR90:
       strans.flipX_ = true;
@@ -347,6 +349,18 @@ dbGDSLib* DefToGds::convert(dbBlock* block, dbDatabase* db)
 {
   const std::string design_name = block->getName();
   dbGDSLib* lib = createEmptyGDSLib(db, design_name);
+
+  // Set GDS UNITS record based on the block's DEF units (DBU per micron).
+  // GDS UNITS has two fields:
+  //   1. uu_per_dbu: size of one database unit in user units (microns)
+  //   2. dbu_per_meter: size of one database unit in meters
+  // With user unit = 1 micron (standard convention):
+  //   uu_per_dbu = 1e-6 / dbu_per_micron (microns per DBU)
+  //   dbu_per_meter = 1e-6 / dbu_per_micron (meters per DBU)
+  const int dbu_per_micron = block->getDefUnits();
+  const double dbu_in_microns = 1.0 / dbu_per_micron;
+  const double dbu_in_meters = 1e-6 / dbu_per_micron;
+  lib->setUnits(dbu_in_microns, dbu_in_meters);
 
   dbGDSStructure* top_str = dbGDSStructure::create(lib, design_name.c_str());
 
@@ -421,17 +435,47 @@ dbGDSLib* DefToGds::convert(dbBlock* block, dbDatabase* db)
   return lib;
 }
 
+// Scale a Point by an integer ratio (numerator / denominator).
+static Point scalePoint(const Point& p, int num, int denom)
+{
+  if (num == denom) {
+    return p;
+  }
+  return Point(static_cast<int>(static_cast<int64_t>(p.x()) * num / denom),
+               static_cast<int>(static_cast<int64_t>(p.y()) * num / denom));
+}
+
+// Scale a vector of Points by an integer ratio.
+static std::vector<Point> scalePoints(const std::vector<Point>& pts,
+                                      int num,
+                                      int denom)
+{
+  if (num == denom) {
+    return pts;
+  }
+  std::vector<Point> result;
+  result.reserve(pts.size());
+  for (const auto& p : pts) {
+    result.push_back(scalePoint(p, num, denom));
+  }
+  return result;
+}
+
 void DefToGds::mergeCells(dbGDSLib* lib,
                           const std::vector<std::string>& gds_files)
 {
+  // Target DBU: extract from lib's UNITS (uu_per_dbu = microns per DBU).
+  auto [target_uu, target_meters] = lib->getUnits();
+  // target DBU per micron = 1/target_uu
+  // source DBU per micron = 1/source_uu
+  // scale = source_dbu_per_um / target_dbu_per_um = target_uu / source_uu
+
   for (const auto& gds_file : gds_files) {
     if (gds_file.empty()) {
       continue;
     }
 
     GDSReader reader(logger_);
-    // Read the GDS file into a temporary database
-    // We need a separate db for reading since read_gds creates a new lib
     dbDatabase* temp_db = dbDatabase::create();
     dbGDSLib* source_lib = reader.read_gds(gds_file, temp_db);
 
@@ -441,22 +485,41 @@ void DefToGds::mergeCells(dbGDSLib* lib,
       continue;
     }
 
+    // Compute integer scale factor from source DBU to target DBU.
+    // Both DBU values are microns-per-unit, so to convert source coords
+    // to target coords: multiply by (source_uu / target_uu).
+    // For precision, use integer ratio: source_dbu_per_um / target_dbu_per_um.
+    auto [source_uu, source_meters] = source_lib->getUnits();
+    // Round to get integer DBU-per-micron values
+    const int source_dbu_per_um = static_cast<int>(std::round(1.0 / source_uu));
+    const int target_dbu_per_um = static_cast<int>(std::round(1.0 / target_uu));
+
+    if (source_dbu_per_um != target_dbu_per_um) {
+      logger_->info(utl::ODB,
+                    502,
+                    "Scaling merged GDS '{}' from {} to {} DBU/um",
+                    gds_file,
+                    source_dbu_per_um,
+                    target_dbu_per_um);
+    }
+
+    const int scale_num = target_dbu_per_um;
+    const int scale_denom = source_dbu_per_um;
+
     // Merge each structure from the source into our library
     for (dbGDSStructure* source_str : source_lib->getGDSStructures()) {
       const char* cell_name = source_str->getName();
 
-      // Find or create the target structure
       dbGDSStructure* target_str = lib->findGDSStructure(cell_name);
       if (target_str == nullptr) {
         target_str = dbGDSStructure::create(lib, cell_name);
       }
 
-      // Copy all elements from source to target
       for (dbGDSBoundary* bnd : source_str->getGDSBoundaries()) {
         dbGDSBoundary* new_bnd = dbGDSBoundary::create(target_str);
         new_bnd->setLayer(bnd->getLayer());
         new_bnd->setDatatype(bnd->getDatatype());
-        new_bnd->setXy(bnd->getXY());
+        new_bnd->setXy(scalePoints(bnd->getXY(), scale_num, scale_denom));
         new_bnd->getPropattr() = bnd->getPropattr();
       }
 
@@ -464,8 +527,9 @@ void DefToGds::mergeCells(dbGDSLib* lib,
         dbGDSPath* new_path = dbGDSPath::create(target_str);
         new_path->setLayer(path->getLayer());
         new_path->setDatatype(path->getDatatype());
-        new_path->setXy(path->getXY());
-        new_path->setWidth(path->getWidth());
+        new_path->setXy(scalePoints(path->getXY(), scale_num, scale_denom));
+        new_path->setWidth(static_cast<int>(
+            static_cast<int64_t>(path->getWidth()) * scale_num / scale_denom));
         new_path->setPathType(path->getPathType());
         new_path->getPropattr() = path->getPropattr();
       }
@@ -474,7 +538,16 @@ void DefToGds::mergeCells(dbGDSLib* lib,
         dbGDSBox* new_box = dbGDSBox::create(target_str);
         new_box->setLayer(box->getLayer());
         new_box->setDatatype(box->getDatatype());
-        new_box->setBounds(box->getBounds());
+        Rect bounds = box->getBounds();
+        new_box->setBounds(
+            Rect(static_cast<int>(static_cast<int64_t>(bounds.xMin())
+                                  * scale_num / scale_denom),
+                 static_cast<int>(static_cast<int64_t>(bounds.yMin())
+                                  * scale_num / scale_denom),
+                 static_cast<int>(static_cast<int64_t>(bounds.xMax())
+                                  * scale_num / scale_denom),
+                 static_cast<int>(static_cast<int64_t>(bounds.yMax())
+                                  * scale_num / scale_denom)));
         new_box->getPropattr() = box->getPropattr();
       }
 
@@ -483,14 +556,13 @@ void DefToGds::mergeCells(dbGDSLib* lib,
         new_text->setLayer(text->getLayer());
         new_text->setDatatype(text->getDatatype());
         new_text->setText(text->getText());
-        new_text->setOrigin(text->getOrigin());
+        new_text->setOrigin(
+            scalePoint(text->getOrigin(), scale_num, scale_denom));
         new_text->setTransform(text->getTransform());
         new_text->setPresentation(text->getPresentation());
         new_text->getPropattr() = text->getPropattr();
       }
 
-      // SREFs and AREFs need special handling since they reference
-      // structures by pointer. We resolve by name.
       for (dbGDSSRef* sref : source_str->getGDSSRefs()) {
         const char* ref_name = sref->getStructure()->getName();
         dbGDSStructure* ref_str = lib->findGDSStructure(ref_name);
@@ -498,7 +570,8 @@ void DefToGds::mergeCells(dbGDSLib* lib,
           ref_str = dbGDSStructure::create(lib, ref_name);
         }
         dbGDSSRef* new_sref = dbGDSSRef::create(target_str, ref_str);
-        new_sref->setOrigin(sref->getOrigin());
+        new_sref->setOrigin(
+            scalePoint(sref->getOrigin(), scale_num, scale_denom));
         new_sref->setTransform(sref->getTransform());
         new_sref->getPropattr() = sref->getPropattr();
       }
@@ -510,9 +583,10 @@ void DefToGds::mergeCells(dbGDSLib* lib,
           ref_str = dbGDSStructure::create(lib, ref_name);
         }
         dbGDSARef* new_aref = dbGDSARef::create(target_str, ref_str);
-        new_aref->setOrigin(aref->getOrigin());
-        new_aref->setLr(aref->getLr());
-        new_aref->setUl(aref->getUl());
+        new_aref->setOrigin(
+            scalePoint(aref->getOrigin(), scale_num, scale_denom));
+        new_aref->setLr(scalePoint(aref->getLr(), scale_num, scale_denom));
+        new_aref->setUl(scalePoint(aref->getUl(), scale_num, scale_denom));
         new_aref->setNumRows(aref->getNumRows());
         new_aref->setNumColumns(aref->getNumColumns());
         new_aref->setTransform(aref->getTransform());
@@ -598,6 +672,40 @@ void DefToGds::collectReferencedCells(dbGDSStructure* str,
       collectReferencedCells(aref->getStructure(), referenced);
     }
   }
+}
+
+int DefToGds::pruneUnreferencedCells(dbGDSLib* lib,
+                                     const std::string& top_cell_name)
+{
+  dbGDSStructure* top_str = lib->findGDSStructure(top_cell_name.c_str());
+  if (top_str == nullptr) {
+    return 0;
+  }
+
+  // Collect all cells transitively referenced from the top cell
+  std::set<std::string> referenced;
+  referenced.insert(top_cell_name);
+  collectReferencedCells(top_str, referenced);
+
+  // Find unreferenced cells
+  std::vector<dbGDSStructure*> to_remove;
+  for (dbGDSStructure* str : lib->getGDSStructures()) {
+    if (referenced.find(str->getName()) == referenced.end()) {
+      to_remove.push_back(str);
+    }
+  }
+
+  // Remove them
+  for (dbGDSStructure* str : to_remove) {
+    dbGDSStructure::destroy(str);
+  }
+
+  if (!to_remove.empty()) {
+    logger_->info(
+        utl::ODB, 501, "Pruned {} unreferenced cells.", to_remove.size());
+  }
+
+  return static_cast<int>(to_remove.size());
 }
 
 int DefToGds::validate(dbGDSLib* lib,

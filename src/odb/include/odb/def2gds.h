@@ -84,6 +84,10 @@ class DefToGds
                  const std::string& top_cell_name,
                  const std::string& seal_file);
 
+  // Remove cells not reachable from the top cell (e.g., unused std cells
+  // imported during mergeCells).  Returns the number of cells removed.
+  int pruneUnreferencedCells(dbGDSLib* lib, const std::string& top_cell_name);
+
   // Validate the GDS library.
   // Returns the number of errors found.
   int validate(dbGDSLib* lib,

@@ -209,6 +209,18 @@ cc_test(
 )
 
 cc_test(
+    name = "TestGDSPruneUnreferenced",
+    srcs = ["TestGDSPruneUnreferenced.cpp"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestGeom",
     srcs = ["TestGeom.cpp"],
     deps = [

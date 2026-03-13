@@ -100,9 +100,11 @@ TEST_F(OrientationTest, R270)
   checkOrientation(dbOrientType::R270, false, 270.0);
 }
 
+// Regression: MY was previously mapping to angle=0 (incorrect, that's MX).
+// GDS flipX negates Y (= MX), then 180° rotation gives (x,y)->(-x,y) = MY.
 TEST_F(OrientationTest, MY)
 {
-  checkOrientation(dbOrientType::MY, true, 0.0);
+  checkOrientation(dbOrientType::MY, true, 180.0);
 }
 
 // Regression: MYR90 was previously mapping to angle=90 (incorrect, that's
@@ -112,9 +114,11 @@ TEST_F(OrientationTest, MYR90)
   checkOrientation(dbOrientType::MYR90, true, 270.0);
 }
 
+// Regression: MX was previously mapping to angle=180 (incorrect, that's MY).
+// GDS flipX alone: (x,y)->(x,-y) = MX.
 TEST_F(OrientationTest, MX)
 {
-  checkOrientation(dbOrientType::MX, true, 180.0);
+  checkOrientation(dbOrientType::MX, true, 0.0);
 }
 
 // Regression: MXR90 was previously mapping to angle=270 (incorrect, that's
