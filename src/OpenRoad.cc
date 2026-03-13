@@ -79,7 +79,6 @@
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
@@ -530,6 +529,12 @@ void OpenRoad::write3Dbx(const std::string& filename)
 {
   odb::ThreeDBlox writer(logger_, db_, sta_);
   writer.writeDbx(filename, db_->getChip());
+}
+
+void OpenRoad::write3DbloxVerilog(const std::string& filename)
+{
+  odb::ThreeDBlox writer(logger_, db_, sta_);
+  writer.writeVerilog(filename, db_->getChip());
 }
 
 // TODO: bool hierarchy should be removed in the future.

@@ -1,0 +1,6 @@
+module TopDesign ();
+  SoC soc_inst_duplicate (
+  );
+  SoC soc_inst (
+  );
+endmodule
