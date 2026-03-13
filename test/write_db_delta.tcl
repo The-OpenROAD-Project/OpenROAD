@@ -31,7 +31,8 @@ puts "Base: $base_size bytes, Delta: $delta_size bytes, Full: $full_size bytes"
 if { $delta_size < $full_size } {
   puts "PASS: delta is smaller ($delta_size < $full_size)"
 } else {
-  puts "INFO: delta ($delta_size) >= full ($full_size) - expected for small designs where most blocks change"
+  puts "INFO: delta ($delta_size) >= full ($full_size) -\
+    expected for small designs where most blocks change"
 }
 
 # Verify deterministic serialization
