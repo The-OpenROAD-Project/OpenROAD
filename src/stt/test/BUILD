@@ -1,3 +1,4 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -34,3 +35,36 @@ filegroup(
     name = test_name,
     data = [":test_resources"],
 ) for test_name in TESTS]
+
+cc_test(
+    name = "stt_flute_test",
+    srcs = ["cpp/TestFlute.cc"],
+    deps = [
+        "//src/stt",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "stt_pd_test",
+    srcs = ["cpp/TestPrimDijkstra.cc"],
+    deps = [
+        "//src/stt",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "stt_builder_test",
+    srcs = ["cpp/TestSteinerTreeBuilder.cc"],
+    deps = [
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
