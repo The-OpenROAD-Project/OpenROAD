@@ -340,7 +340,7 @@ void ViolatorCollector::updatePinData(const sta::Pin* pin, pinData& pd)
   pd.level = vertex->level();
   pd.slack = sta_->slack(
       pin, sta::RiseFall::rise()->asRiseFallBoth(), sta_->scenes(), max_);
-  pd.tns = getLocalPinTNS(pin);
+  pd.tns = getLocalPinTns(pin);
 }
 
 int ViolatorCollector::repairsPerPass(int max_repairs_per_pass)
@@ -634,10 +634,10 @@ void ViolatorCollector::sortPins(int numPins, ViolatorSortType sort_type)
              getEnumString(sort_type));
   switch (sort_type) {
     case ViolatorSortType::SORT_BY_TNS:
-      sortByLocalTNS();
+      sortByLocalTns();
       break;
     case ViolatorSortType::SORT_BY_WNS:
-      sortByWNS();
+      sortByWns();
       break;
     case ViolatorSortType::SORT_BY_LOAD_DELAY:
       sortByLoadDelay(0.0);  // No filtering
@@ -680,7 +680,7 @@ void ViolatorCollector::sortPins(int numPins, ViolatorSortType sort_type)
   printViolators();
 }
 
-void ViolatorCollector::sortByWNS()
+void ViolatorCollector::sortByWns()
 {
   std::ranges::sort(
       violating_pins_, [this](const sta::Pin* a, const sta::Pin* b) {
@@ -695,7 +695,7 @@ void ViolatorCollector::sortByWNS()
       });
 }
 
-sta::Delay ViolatorCollector::getLocalPinTNS(const sta::Pin* pin) const
+sta::Delay ViolatorCollector::getLocalPinTns(const sta::Pin* pin) const
 {
   sta::Delay tns = 0;
   sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(pin);
@@ -728,16 +728,16 @@ sta::Delay ViolatorCollector::getLocalPinTNS(const sta::Pin* pin) const
   return tns;
 }
 
-map<const sta::Pin*, sta::Delay> ViolatorCollector::getLocalTNS() const
+map<const sta::Pin*, sta::Delay> ViolatorCollector::getLocalTns() const
 {
   map<const sta::Pin*, sta::Delay> local_tns;
   for (auto pin : violating_pins_) {
-    local_tns[pin] = getLocalPinTNS(pin);
+    local_tns[pin] = getLocalPinTns(pin);
   }
   return local_tns;
 }
 
-void ViolatorCollector::sortByLocalTNS()
+void ViolatorCollector::sortByLocalTns()
 {
   std::ranges::sort(
       violating_pins_, [this](const sta::Pin* a, const sta::Pin* b) {
@@ -871,7 +871,7 @@ void ViolatorCollector::collectViolatingStartpoints()
                  : 0);
 }
 
-sta::Slack ViolatorCollector::getStartpointWNS(
+sta::Slack ViolatorCollector::getStartpointWns(
     const sta::Pin* startpoint_pin) const
 {
   // Return worst negative slack for this startpoint
@@ -882,7 +882,7 @@ sta::Slack ViolatorCollector::getStartpointWNS(
   return sta_->slack(vertex, max_);
 }
 
-sta::Slack ViolatorCollector::getStartpointTNS(
+sta::Slack ViolatorCollector::getStartpointTns(
     const sta::Pin* startpoint_pin) const
 {
   // Calculate TNS (Total Negative Slack) for all paths from this startpoint
@@ -922,7 +922,7 @@ sta::Slack ViolatorCollector::getStartpointTNS(
   return tns;
 }
 
-sta::Slack ViolatorCollector::getEndpointWNS(const sta::Pin* endpoint_pin) const
+sta::Slack ViolatorCollector::getEndpointWns(const sta::Pin* endpoint_pin) const
 {
   // Return worst negative slack for this endpoint
   sta::Vertex* vertex = graph_->pinLoadVertex(endpoint_pin);
@@ -932,7 +932,7 @@ sta::Slack ViolatorCollector::getEndpointWNS(const sta::Pin* endpoint_pin) const
   return 0.0;
 }
 
-sta::Slack ViolatorCollector::getEndpointTNS(const sta::Pin* endpoint_pin) const
+sta::Slack ViolatorCollector::getEndpointTns(const sta::Pin* endpoint_pin) const
 {
   // Calculate TNS (Total Negative Slack) for all paths to this endpoint
   sta::Vertex* vertex = graph_->pinDrvrVertex(endpoint_pin);
@@ -2180,17 +2180,17 @@ int ViolatorCollector::getCurrentPass() const
   return current_pass_count_;
 }
 
-void ViolatorCollector::markEndpointVisitedInWNS(const sta::Pin* endpoint)
+void ViolatorCollector::markEndpointVisitedInWns(const sta::Pin* endpoint)
 {
   wns_visited_endpoints_.insert(endpoint);
 }
 
-bool ViolatorCollector::wasEndpointVisitedInWNS(const sta::Pin* endpoint) const
+bool ViolatorCollector::wasEndpointVisitedInWns(const sta::Pin* endpoint) const
 {
   return wns_visited_endpoints_.contains(endpoint);
 }
 
-void ViolatorCollector::clearWNSVisitedEndpoints()
+void ViolatorCollector::clearWnsVisitedEndpoints()
 {
   wns_visited_endpoints_.clear();
 }
@@ -2282,12 +2282,12 @@ std::vector<const sta::Pin*> ViolatorCollector::getCriticalPinsNeverConsidered()
 }
 
 // Get overall startpoint WNS (worst slack across all start points)
-sta::Slack ViolatorCollector::getOverallStartpointWNS() const
+sta::Slack ViolatorCollector::getOverallStartpointWns() const
 {
   sta::Slack worst_slack = std::numeric_limits<float>::max();
 
   for (const auto& [startpoint_pin, slack] : violating_startpoints_) {
-    sta::Slack sp_wns = getStartpointWNS(startpoint_pin);
+    sta::Slack sp_wns = getStartpointWns(startpoint_pin);
     worst_slack = std::min(sp_wns, worst_slack);
   }
 
@@ -2295,16 +2295,16 @@ sta::Slack ViolatorCollector::getOverallStartpointWNS() const
 }
 
 // Get overall startpoint TNS (total negative slack across all startpoints)
-sta::Slack ViolatorCollector::getOverallStartpointTNS(bool use_cone) const
+sta::Slack ViolatorCollector::getOverallStartpointTns(bool use_cone) const
 {
   sta::Slack total_tns = 0.0;
 
   for (const auto& [startpoint_pin, slack] : violating_startpoints_) {
     sta::Slack sp_tns;
     if (use_cone) {
-      sp_tns = getStartpointTNS(startpoint_pin);
+      sp_tns = getStartpointTns(startpoint_pin);
     } else {
-      sp_tns = getStartpointWNS(startpoint_pin);
+      sp_tns = getStartpointWns(startpoint_pin);
     }
     if (sp_tns < 0.0) {
       total_tns += sp_tns;
@@ -2314,19 +2314,19 @@ sta::Slack ViolatorCollector::getOverallStartpointTNS(bool use_cone) const
   return total_tns;
 }
 
-sta::Slack ViolatorCollector::getOverallEndpointWNS() const
+sta::Slack ViolatorCollector::getOverallEndpointWns() const
 {
   sta::Slack worst_slack = std::numeric_limits<float>::max();
 
   for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
-    sta::Slack sp_wns = getEndpointWNS(endpoint_pin);
+    sta::Slack sp_wns = getEndpointWns(endpoint_pin);
     worst_slack = std::min(sp_wns, worst_slack);
   }
 
   return worst_slack == std::numeric_limits<float>::max() ? 0.0 : worst_slack;
 }
 
-sta::Slack ViolatorCollector::getOverallEndpointTNS(bool use_cone) const
+sta::Slack ViolatorCollector::getOverallEndpointTns(bool use_cone) const
 {
   if (!use_cone) {
     return sta_->totalNegativeSlack(max_);
@@ -2335,7 +2335,7 @@ sta::Slack ViolatorCollector::getOverallEndpointTNS(bool use_cone) const
   sta::Slack total_tns = 0.0;
 
   for (const auto& [endpoint_pin, slack] : violating_endpoints_) {
-    sta::Slack sp_tns = getEndpointTNS(endpoint_pin);
+    sta::Slack sp_tns = getEndpointTns(endpoint_pin);
     if (sp_tns < 0.0) {
       total_tns += sp_tns;
     }
@@ -2345,7 +2345,7 @@ sta::Slack ViolatorCollector::getOverallEndpointTNS(bool use_cone) const
 }
 
 // Proxy method: return WNS (same for both startpoints and endpoints)
-sta::Slack ViolatorCollector::getWNS() const
+sta::Slack ViolatorCollector::getWns() const
 {
   // WNS is the same regardless of whether we look at startpoints or endpoints
   // because the critical path is always from a startpoint to an endpoint
@@ -2356,14 +2356,14 @@ sta::Slack ViolatorCollector::getWNS() const
 }
 
 // Proxy method: return TNS based on whether we use startpoints or endpoints
-sta::Slack ViolatorCollector::getTNS(bool use_startpoints, bool use_cone) const
+sta::Slack ViolatorCollector::getTns(bool use_startpoints, bool use_cone) const
 {
   if (use_startpoints) {
     // For startpoints, sum TNS across all startpoints
-    return getOverallStartpointTNS(use_cone);
+    return getOverallStartpointTns(use_cone);
   }
   // For endpoints, use STA's totalNegativeSlack
-  return getOverallEndpointTNS(use_cone);
+  return getOverallEndpointTns(use_cone);
 }
 
 // Proxy method: return worst pin based on whether we use startpoints or
@@ -2376,7 +2376,7 @@ const sta::Pin* ViolatorCollector::getWorstPin(bool use_startpoints) const
     sta::Slack worst_slack = std::numeric_limits<float>::max();
 
     for (const auto& [startpoint_pin, slack] : violating_startpoints_) {
-      sta::Slack sp_wns = getStartpointWNS(startpoint_pin);
+      sta::Slack sp_wns = getStartpointWns(startpoint_pin);
       if (sp_wns < worst_slack) {
         worst_slack = sp_wns;
         worst_pin = startpoint_pin;

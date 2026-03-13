@@ -325,7 +325,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         move_tracker_->clear();
       }
     } else if (phase_name == "WNS_PATH" || phase_name == "WNS") {
-      repairSetup_WNS(
+      repairSetup_Wns(
           setup_slack_margin,
           max_passes,
           max_repairs_per_pass,
@@ -343,7 +343,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         move_tracker_->clear();
       }
     } else if (phase_name == "WNS_CONE") {
-      repairSetup_WNS(
+      repairSetup_Wns(
           setup_slack_margin,
           max_passes,
           max_repairs_per_pass,
@@ -361,7 +361,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         move_tracker_->clear();
       }
     } else if (phase_name == "TNS") {
-      repairSetup_TNS(setup_slack_margin,
+      repairSetup_Tns(setup_slack_margin,
                       max_passes,
                       max_repairs_per_pass,
                       verbose,
@@ -376,28 +376,30 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         move_tracker_->printEndpointSummary("TNS Phase Endpoint Profiler");
         move_tracker_->clear();
       }
-    } else if (phase_name == "EP_FI") {
-      repairSetup_EP_FI(setup_slack_margin,
-                        max_passes,
-                        verbose,
-                        opto_iteration,
-                        marker);  // phase_marker
+    } else if (phase_name == "ENDPOINT_FANIN") {
+      repairSetup_EndpointFanin(setup_slack_margin,
+                                max_passes,
+                                verbose,
+                                opto_iteration,
+                                marker);  // phase_marker
 
       if (move_tracker_) {
-        move_tracker_->printMoveSummary("EP_FI Phase Summary");
-        move_tracker_->printEndpointSummary("EP_FI Phase Endpoint Profiler");
+        move_tracker_->printMoveSummary("ENDPOINT_FANIN Phase Summary");
+        move_tracker_->printEndpointSummary(
+            "ENDPOINT_FANIN Phase Endpoint Profiler");
         move_tracker_->clear();
       }
-    } else if (phase_name == "SP_FO") {
-      repairSetup_SP_FO(setup_slack_margin,
-                        max_passes,
-                        verbose,
-                        opto_iteration,
-                        marker);  // phase_marker
+    } else if (phase_name == "STARTPOINT_FANOUT") {
+      repairSetup_StartpointFanout(setup_slack_margin,
+                                   max_passes,
+                                   verbose,
+                                   opto_iteration,
+                                   marker);  // phase_marker
 
       if (move_tracker_) {
-        move_tracker_->printMoveSummary("SP_FO Phase Summary");
-        move_tracker_->printEndpointSummary("SP_FO Phase Startpoint Profiler");
+        move_tracker_->printMoveSummary("STARTPOINT_FANOUT Phase Summary");
+        move_tracker_->printEndpointSummary(
+            "STARTPOINT_FANOUT Phase Startpoint Profiler");
         move_tracker_->clear();
       }
     } else if (phase_name == "LAST_GASP") {
@@ -428,7 +430,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
       logger_->error(RSZ,
                      217,
                      "Unknown phase name '{}'. Valid phase names are: LEGACY, "
-                     "WNS, TNS, EP_FI, SP_FO, LAST_GASP",
+                     "WNS, TNS, ENDPOINT_FANIN, STARTPOINT_FANOUT, LAST_GASP",
                      phase_name);
     }
     // Update marker for next phase
@@ -914,9 +916,9 @@ void RepairSetup::printProgress(const int iteration,
       violator_collector_->collectViolatingStartpoints();
     }
     // Always calculate both startpoint and endpoint metrics for display
-    sta::Slack wns = violator_collector_->getWNS();  // WNS is same for both
-    sta::Slack st_tns = violator_collector_->getTNS(true);   // Startpoint TNS
-    sta::Slack en_tns = violator_collector_->getTNS(false);  // Endpoint TNS
+    sta::Slack wns = violator_collector_->getWns();  // WNS is same for both
+    sta::Slack st_tns = violator_collector_->getTns(true);   // Startpoint TNS
+    sta::Slack en_tns = violator_collector_->getTns(false);  // Endpoint TNS
     const sta::Pin* worst_pin
         = violator_collector_->getWorstPin(use_startpoint_metrics);
 
@@ -1348,25 +1350,20 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
   sta_->worstSlack(max_, final_wns, final_worst);
   float final_tns = sta_->totalNegativeSlack(max_);
 
-  auto phase_end_time = std::chrono::steady_clock::now();
-  auto phase_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           phase_end_time - phase_start_time)
-                           .count();
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              1,
-             "LEGACY{} Phase complete. WNS: {}, TNS: {}, Time: {:.2f}s",
+             "LEGACY{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
              delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1),
-             phase_elapsed / 1000.0);
+             delayAsString(final_tns, sta_, 1));
 }
 
 // WNS Phase: WNS-Focused Repair
 // Focus on the worst slack endpoint at any time, switching dynamically when a
 // different endpoint becomes worst.
-void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
+void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                                   const int max_passes_per_endpoint,
                                   const int max_repairs_per_pass,
                                   const bool verbose,
@@ -1436,7 +1433,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
   // Initialize the violator collector with the actual worst endpoint
   sta::Vertex* current_endpoint = worst_endpoint;
   violator_collector_->useWorstEndpoint(worst_endpoint);
-  violator_collector_->markEndpointVisitedInWNS(worst_endpoint->pin());
+  violator_collector_->markEndpointVisitedInWns(worst_endpoint->pin());
 
   // Initialize tracking for the initial endpoint
   const sta::Pin* initial_pin = worst_endpoint->pin();
@@ -1555,7 +1552,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
       }
       current_endpoint = worst_endpoint;
       violator_collector_->useWorstEndpoint(worst_endpoint);
-      violator_collector_->markEndpointVisitedInWNS(worst_endpoint->pin());
+      violator_collector_->markEndpointVisitedInWns(worst_endpoint->pin());
       rejected_pin_moves_current_endpoint_
           .clear();  // Clear rejected moves for new endpoint
 
@@ -2015,7 +2012,7 @@ void RepairSetup::repairSetup_WNS(const float setup_slack_margin,
 
 // TNS Phase: TNS-Focused Repair
 // Work on all violating endpoints sequentially, trying to improve each one.
-void RepairSetup::repairSetup_TNS(const float setup_slack_margin,
+void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                                   const int max_passes_per_endpoint,
                                   const int max_repairs_per_pass,
                                   const bool verbose,
@@ -2127,7 +2124,7 @@ void RepairSetup::repairSetup_TNS(const float setup_slack_margin,
     }
 
     // Skip endpoints already optimized in WNS phase
-    if (violator_collector_->wasEndpointVisitedInWNS(endpoint_pin)) {
+    if (violator_collector_->wasEndpointVisitedInWns(endpoint_pin)) {
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
@@ -2393,14 +2390,14 @@ void RepairSetup::repairSetup_TNS(const float setup_slack_margin,
              phase_elapsed / 1000.0);
 }
 
-// EP_FI Phase: Iteratively refine threshold from 0 to endpoint slack
+// ENDPOINT_FANIN Phase: Iteratively refine threshold from 0 to endpoint slack
 // For each endpoint, try progressively tighter thresholds until diminishing
 // returns
-void RepairSetup::repairSetup_EP_FI(const float setup_slack_margin,
-                                    const int max_passes_per_endpoint,
-                                    const bool verbose,
-                                    int& opto_iteration,
-                                    const char phase_marker)
+void RepairSetup::repairSetup_EndpointFanin(const float setup_slack_margin,
+                                            const int max_passes_per_endpoint,
+                                            const bool verbose,
+                                            int& opto_iteration,
+                                            const char phase_marker)
 {
   // Wrapper: call unified directional function with use_startpoints=false
   repairSetup_Directional(false,  // use_startpoints
@@ -2411,11 +2408,12 @@ void RepairSetup::repairSetup_EP_FI(const float setup_slack_margin,
                           phase_marker);
 }
 
-void RepairSetup::repairSetup_SP_FO(const float setup_slack_margin,
-                                    const int max_passes_per_startpoint,
-                                    const bool verbose,
-                                    int& opto_iteration,
-                                    const char phase_marker)
+void RepairSetup::repairSetup_StartpointFanout(
+    const float setup_slack_margin,
+    const int max_passes_per_startpoint,
+    const bool verbose,
+    int& opto_iteration,
+    const char phase_marker)
 {
   // Wrapper: call unified directional function with use_startpoints=true
   repairSetup_Directional(true,  // use_startpoints
@@ -2426,7 +2424,8 @@ void RepairSetup::repairSetup_SP_FO(const float setup_slack_margin,
                           phase_marker);
 }
 
-// Unified directional repair function that handles both EP_FI and SP_FO modes
+// Unified directional repair function that handles both ENDPOINT_FANIN and
+// STARTPOINT_FANOUT modes
 void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                                           const float setup_slack_margin,
                                           const int max_passes_per_point,
@@ -2611,11 +2610,11 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                  delayAsString(threshold, sta_, digits));
 
       // Save state before repair attempt
-      sta::Slack prev_wns = violator_collector_->getWNS();
+      sta::Slack prev_wns = violator_collector_->getWns();
       sta::Slack prev_endpoint_tns
-          = violator_collector_->getTNS(false);  // Endpoint TNS
+          = violator_collector_->getTns(false);  // Endpoint TNS
       sta::Slack prev_startpoint_tns
-          = violator_collector_->getTNS(true);  // Startpoint TNS
+          = violator_collector_->getTns(true);  // Startpoint TNS
 
       // Collect violators with explicit threshold
       resizer_->journalBegin();
@@ -2688,11 +2687,11 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
 
       // Check improvement
       sta::Slack new_point_slack = sta_->slack(point, max_);
-      sta::Slack new_wns = violator_collector_->getWNS();
+      sta::Slack new_wns = violator_collector_->getWns();
       sta::Slack new_endpoint_tns
-          = violator_collector_->getTNS(false);  // Endpoint TNS
+          = violator_collector_->getTns(false);  // Endpoint TNS
       sta::Slack new_startpoint_tns
-          = violator_collector_->getTNS(true);  // Startpoint TNS
+          = violator_collector_->getTns(true);  // Startpoint TNS
 
       const bool wns_improved = sta::fuzzyGreater(new_wns, prev_wns);
       const bool wns_same = sta::fuzzyEqual(new_wns, prev_wns);
@@ -2821,8 +2820,8 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                            .count();
 
   // Get final metrics using proxy methods
-  sta::Slack final_wns = violator_collector_->getWNS();
-  sta::Slack final_tns = violator_collector_->getTNS(use_startpoints);
+  sta::Slack final_wns = violator_collector_->getWns();
+  sta::Slack final_tns = violator_collector_->getTns(use_startpoints);
 
   debugPrint(logger_,
              RSZ,
@@ -2896,7 +2895,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
   printProgress(opto_iteration, false, false, phase_marker);
 
   float prev_tns = curr_tns;
-  sta::Slack curr_worst_slack = violator_collector_->getWNS();
+  sta::Slack curr_worst_slack = violator_collector_->getWns();
   sta::Slack prev_worst_slack = curr_worst_slack;
   bool prev_termination = false;
   bool two_cons_terminations = false;

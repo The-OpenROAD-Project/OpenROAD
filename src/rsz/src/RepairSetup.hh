@@ -159,7 +159,7 @@ class RepairSetup : public sta::dbStaState
                           float initial_tns,
                           float& prev_tns,
                           char phase_marker = 'L');
-  void repairSetup_WNS(float setup_slack_margin,
+  void repairSetup_Wns(float setup_slack_margin,
                        int max_passes_per_endpoint,
                        int max_repairs_per_pass,
                        bool verbose,
@@ -171,7 +171,7 @@ class RepairSetup : public sta::dbStaState
                        char phase_marker = '1',  // Character for progress table
                        ViolatorSortType sort_type
                        = ViolatorSortType::SORT_BY_LOAD_DELAY);
-  void repairSetup_TNS(float setup_slack_margin,
+  void repairSetup_Tns(float setup_slack_margin,
                        int max_passes_per_endpoint,
                        int max_repairs_per_pass,
                        bool verbose,
@@ -181,16 +181,16 @@ class RepairSetup : public sta::dbStaState
                        char phase_marker = '*',  // Character for progress table
                        ViolatorSortType sort_type
                        = ViolatorSortType::SORT_BY_LOAD_DELAY);
-  void repairSetup_EP_FI(float setup_slack_margin,
-                         int max_passes_per_endpoint,
-                         bool verbose,
-                         int& opto_iteration,
-                         char phase_marker = '!');
-  void repairSetup_SP_FO(float setup_slack_margin,
-                         int max_passes_per_startpoint,
-                         bool verbose,
-                         int& opto_iteration,
-                         char phase_marker = '@');
+  void repairSetup_EndpointFanin(float setup_slack_margin,
+                                 int max_passes_per_endpoint,
+                                 bool verbose,
+                                 int& opto_iteration,
+                                 char phase_marker = '!');
+  void repairSetup_StartpointFanout(float setup_slack_margin,
+                                    int max_passes_per_startpoint,
+                                    bool verbose,
+                                    int& opto_iteration,
+                                    char phase_marker = '@');
   void repairSetup_Directional(bool use_startpoints,
                                float setup_slack_margin,
                                int max_passes_per_point,

@@ -180,19 +180,19 @@ class ViolatorCollector
   int getMaxStartpointCount() const { return violating_startpoints_.size(); }
 
   // Get slack metrics (worst and total across endpoints/startpoints)
-  sta::Slack getOverallStartpointWNS() const;
-  sta::Slack getOverallStartpointTNS(bool use_cone = false) const;
-  sta::Slack getOverallEndpointWNS() const;
-  sta::Slack getOverallEndpointTNS(bool use_cone = false) const;
+  sta::Slack getOverallStartpointWns() const;
+  sta::Slack getOverallStartpointTns(bool use_cone = false) const;
+  sta::Slack getOverallEndpointWns() const;
+  sta::Slack getOverallEndpointTns(bool use_cone = false) const;
 
-  sta::Slack getEndpointWNS(const sta::Pin* endpoint_pin) const;
-  sta::Slack getEndpointTNS(const sta::Pin* endpoint_pin) const;
-  sta::Slack getStartpointWNS(const sta::Pin* startpoint_pin) const;
-  sta::Slack getStartpointTNS(const sta::Pin* startpoint_pin) const;
+  sta::Slack getEndpointWns(const sta::Pin* endpoint_pin) const;
+  sta::Slack getEndpointTns(const sta::Pin* endpoint_pin) const;
+  sta::Slack getStartpointWns(const sta::Pin* startpoint_pin) const;
+  sta::Slack getStartpointTns(const sta::Pin* startpoint_pin) const;
 
   // Proxy methods that return either startpoint or endpoint metrics
-  sta::Slack getWNS() const;  // WNS is the same for both start and endpoints
-  sta::Slack getTNS(bool use_startpoints, bool use_cone = false) const;
+  sta::Slack getWns() const;  // WNS is the same for both start and endpoints
+  sta::Slack getTns(bool use_startpoints, bool use_cone = false) const;
   const sta::Pin* getWorstPin(bool use_startpoints) const;
 
   // Unified wrapper methods for directional traversal (fanin vs fanout)
@@ -233,9 +233,9 @@ class ViolatorCollector
   std::pair<sta::Delay, sta::Delay> getEffortDelays(const sta::Pin* pin);
 
   // Track endpoints visited during WNS phase
-  void markEndpointVisitedInWNS(const sta::Pin* endpoint);
-  bool wasEndpointVisitedInWNS(const sta::Pin* endpoint) const;
-  void clearWNSVisitedEndpoints();
+  void markEndpointVisitedInWns(const sta::Pin* endpoint);
+  bool wasEndpointVisitedInWns(const sta::Pin* endpoint) const;
+  void clearWnsVisitedEndpoints();
 
   // Track pins considered during optimization (for Slack phase)
   void markPinConsidered(const sta::Pin* pin);
@@ -258,11 +258,11 @@ class ViolatorCollector
                 ViolatorSortType sort_type
                 = ViolatorSortType::SORT_BY_LOAD_DELAY);
   void sortByLoadDelay(float load_delay_threshold = 0.0);
-  void sortByWNS();
-  void sortByLocalTNS();
+  void sortByWns();
+  void sortByLocalTns();
   void sortByHeuristic(float load_delay_threshold = 0.0);
-  std::map<const sta::Pin*, sta::Delay> getLocalTNS() const;
-  sta::Delay getLocalPinTNS(const sta::Pin* pin) const;
+  std::map<const sta::Pin*, sta::Delay> getLocalTns() const;
+  sta::Delay getLocalPinTns(const sta::Pin* pin) const;
 
   // Helper functions for cone-based collection
   void traverseFaninCone(

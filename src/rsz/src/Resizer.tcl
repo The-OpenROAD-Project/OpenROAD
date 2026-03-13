@@ -241,7 +241,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
                                         [-sequence move_string]\
-                                        [-phases "phase1 phase2 ..."]\
+                                        [-phases phases]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
