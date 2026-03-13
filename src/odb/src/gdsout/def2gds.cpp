@@ -9,6 +9,7 @@
 #include <regex>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "odb/db.h"
@@ -156,7 +157,7 @@ LayerMap LayerMap::parseLytLayerMap(const std::string& filename)
     int16_t gds_datatype
         = static_cast<int16_t>(std::stoi(layer_str.substr(slash_pos + 1)));
 
-    GdsLayerSpec spec{gds_layer, gds_datatype};
+    GdsLayerSpec spec{.layer = gds_layer, .datatype = gds_datatype};
 
     // Split name into layer and purpose
     // e.g., "metal1.LABEL" -> layer="metal1", purpose="LABEL"
