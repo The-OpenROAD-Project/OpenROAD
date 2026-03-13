@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "tile_generator.h"
-
 #include "gtest/gtest.h"
 #include "lodepng.h"
 #include "odb/db.h"
+#include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
@@ -54,9 +53,9 @@ class TileGeneratorTest : public tst::Nangate45Fixture
   }
 
   odb::dbInst* placeInst(const char* master_name,
-                          const char* inst_name,
-                          int x,
-                          int y)
+                         const char* inst_name,
+                         int x,
+                         int y)
   {
     odb::dbMaster* master = lib_->findMaster(master_name);
     EXPECT_NE(master, nullptr) << "Master not found: " << master_name;
@@ -268,8 +267,8 @@ TEST_F(TileGeneratorTest, FocusNetEmptySetSameAsNull)
 
   // Empty focus_net_ids should behave the same as nullptr (all nets visible).
   std::set<uint32_t> empty_set;
-  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
-                                     &empty_set);
+  auto png = tile_gen_->generateTile(
+      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &empty_set);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -287,8 +286,8 @@ TEST_F(TileGeneratorTest, FocusNetNonMatchingIdProducesValidTile)
   // Should produce a valid tile (instances still drawn, just net shapes
   // filtered).
   std::set<uint32_t> focus_ids{99999};
-  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
-                                     &focus_ids);
+  auto png = tile_gen_->generateTile(
+      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -306,8 +305,8 @@ TEST_F(TileGeneratorTest, FocusNetWithRealNetId)
   // Focus on the created net's ID.  Even without routing shapes,
   // the tile should be generated without errors.
   std::set<uint32_t> focus_ids{net->getId()};
-  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {}, nullptr,
-                                     &focus_ids);
+  auto png = tile_gen_->generateTile(
+      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -323,8 +322,8 @@ TEST_F(TileGeneratorTest, FocusNetNullPtrAllowsAllNets)
 
   // nullptr means no focus filtering — should match default behavior.
   auto png_default = tile_gen_->generateTile("metal1", 0, 0, 0);
-  auto png_null = tile_gen_->generateTile("metal1", 0, 0, 0, {}, {}, {}, {},
-                                          nullptr, nullptr);
+  auto png_null = tile_gen_->generateTile(
+      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, nullptr);
   EXPECT_EQ(png_default, png_null);
 }
 

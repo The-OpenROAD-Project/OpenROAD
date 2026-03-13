@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "clock_tree_report.h"
-
 #include <string>
 
+#include "clock_tree_report.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "request_handler.h"
@@ -111,9 +110,9 @@ class ClockTreeHighlightTest : public tst::Nangate45Fixture
   }
 
   odb::dbInst* placeInst(const char* master_name,
-                          const char* inst_name,
-                          int x,
-                          int y)
+                         const char* inst_name,
+                         int x,
+                         int y)
   {
     odb::dbMaster* master = lib_->findMaster(master_name);
     EXPECT_NE(master, nullptr);
@@ -129,8 +128,7 @@ class ClockTreeHighlightTest : public tst::Nangate45Fixture
 
 TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
 {
-  auto handler = std::make_unique<ClockTreeHandler>(
-      gen_, nullptr, nullptr);
+  auto handler = std::make_unique<ClockTreeHandler>(gen_, nullptr, nullptr);
 
   WebSocketRequest req;
   req.id = 1;
@@ -151,8 +149,7 @@ TEST_F(ClockTreeHighlightTest, HighlightExistingInstance)
 
 TEST_F(ClockTreeHighlightTest, HighlightNonExistentInstance)
 {
-  auto handler = std::make_unique<ClockTreeHandler>(
-      gen_, nullptr, nullptr);
+  auto handler = std::make_unique<ClockTreeHandler>(gen_, nullptr, nullptr);
 
   WebSocketRequest req;
   req.id = 2;
@@ -177,8 +174,7 @@ TEST_F(ClockTreeHighlightTest, EmptyNameClearsState)
         {odb::Rect(0, 0, 1, 1), {255, 0, 0, 255}, ""});
   }
 
-  auto handler = std::make_unique<ClockTreeHandler>(
-      gen_, nullptr, nullptr);
+  auto handler = std::make_unique<ClockTreeHandler>(gen_, nullptr, nullptr);
 
   WebSocketRequest req;
   req.id = 3;

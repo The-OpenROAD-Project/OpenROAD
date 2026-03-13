@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "request_handler.h"
-
 #include <string>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "request_handler.h"
 #include "tst/nangate45_fixture.h"
 
 namespace web {
@@ -197,9 +196,9 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   }
 
   odb::dbInst* placeInst(const char* master_name,
-                          const char* inst_name,
-                          int x,
-                          int y)
+                         const char* inst_name,
+                         int x,
+                         int y)
   {
     odb::dbMaster* master = lib_->findMaster(master_name);
     EXPECT_NE(master, nullptr);
