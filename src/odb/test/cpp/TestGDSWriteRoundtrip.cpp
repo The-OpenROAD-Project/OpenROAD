@@ -84,5 +84,49 @@ TEST_F(Fixture, writer)
   EXPECT_EQ(text0->getTransform().angle_, 0);
 }
 
+// Verify GDS string records are padded to even byte length (GDS spec).
+// Odd-length strings like "A" (1 byte) must be null-padded to 2 bytes.
+TEST_F(Fixture, odd_length_string_padding)
+{
+  // Create a lib with a TEXT element whose string has odd length
+  dbGDSLib* lib = dbGDSLib::create(db_.get(), "pad_test");
+  lib->setUnits(1e-3, 1e-9);
+  dbGDSStructure* str = dbGDSStructure::create(lib, "TOP");
+  dbGDSText* txt = dbGDSText::create(str);
+  txt->setLayer(1);
+  txt->setDatatype(0);
+  txt->setText("A");  // 1 byte = odd
+  txt->setOrigin(Point(0, 0));
+
+  // Also add a 3-char (odd) string
+  dbGDSText* txt3 = dbGDSText::create(str);
+  txt3->setLayer(1);
+  txt3->setDatatype(0);
+  txt3->setText("VDD");  // 3 bytes = odd
+  txt3->setOrigin(Point(100, 0));
+
+  // Write and re-read
+  std::filesystem::create_directory("results");
+  const char* outpath = "results/pad_test.gds";
+  GDSWriter writer(&logger_);
+  writer.write_gds(lib, outpath);
+
+  GDSReader reader(&logger_);
+  dbGDSLib* lib2 = reader.read_gds(outpath, db_.get());
+
+  dbGDSStructure* str2 = lib2->findGDSStructure("TOP");
+  ASSERT_NE(str2, nullptr);
+  EXPECT_EQ(str2->getGDSTexts().size(), 2);
+
+  auto it = str2->getGDSTexts().begin();
+  EXPECT_EQ((*it)->getText(), "A");
+  ++it;
+  EXPECT_EQ((*it)->getText(), "VDD");
+
+  // Verify file size is even (all records must be even-length)
+  auto fsize = std::filesystem::file_size(outpath);
+  EXPECT_EQ(fsize % 2, 0) << "GDS file size should be even (all records padded)";
+}
+
 }  // namespace
 }  // namespace odb::gds

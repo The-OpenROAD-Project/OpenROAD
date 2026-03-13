@@ -58,7 +58,11 @@ void GDSWriter::calcRecSize(record_t& r)
       break;
     case DataType::kAsciiString:
     case DataType::kBitArray:
+      // GDS requires even-length records; pad odd strings with a null byte
       r.length += r.data8.size();
+      if (r.length % 2 != 0) {
+        r.length++;
+      }
       break;
     case DataType::kNoData:
       break;
@@ -121,6 +125,11 @@ void GDSWriter::writeRecord(record_t& r)
     case DataType::kAsciiString:
     case DataType::kBitArray: {
       file_.write(r.data8.c_str(), r.data8.size());
+      // Pad to even length per GDS spec
+      if (r.data8.size() % 2 != 0) {
+        const char pad = '\0';
+        file_.write(&pad, 1);
+      }
       break;
     }
     case DataType::kNoData: {
