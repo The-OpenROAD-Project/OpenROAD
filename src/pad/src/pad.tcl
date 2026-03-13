@@ -412,7 +412,7 @@ proc rdl_route { args } {
   sta::parse_port_net_args $args sta_ports sta_nets
   set nets []
   foreach net $sta_nets {
-    lappend [sta::sta_to_db_net $net]
+    lappend nets [sta::sta_to_db_net $net]
   }
   foreach port $sta_ports {
     set bterm [sta::sta_to_db_port $port]
