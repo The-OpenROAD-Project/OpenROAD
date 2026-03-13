@@ -2018,16 +2018,8 @@ void dbNetwork::visitConnectedPins(const Net* net,
 
 const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
-  dbNet* db_net = nullptr;
-  odb::dbModNet* db_modnet = nullptr;
-  staToDb(net, db_net, db_modnet);
-  if (db_modnet) {
-    dbNet* flat_net = db_modnet->findRelatedNet();
-    if (flat_net) {
-      return dbToSta(flat_net);
-    }
-  }
-  return net;
+  const Net* flat = findFlatNet(net);
+  return flat ? flat : net;
 }
 
 ////////////////////////////////////////////////////////////////
