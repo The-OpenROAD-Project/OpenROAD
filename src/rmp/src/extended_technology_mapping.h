@@ -58,6 +58,15 @@ class ExtendedTechnologyMapping
                            mockturtle::tech_library<9u>& tech_lib,
                            utl::Logger* logger);
 
+  template <typename Ntk>
+  odb::dbNet* getDriverNet(mockturtle::topo_view<Ntk, false>& topo_ntk,
+                           odb::dbBlock* block,
+                           const odb::dbSet<odb::dbLib>& libs,
+                           sta::dbSta* sta,
+                           utl::Logger* logger,
+                           std::vector<std::vector<odb::dbNet*>>& node_out_nets,
+                           const BlockNtk::signal& f);
+
   std::vector<odb::dbMTerm*> getSignalOutputs(odb::dbMaster* master);
 
   CellMapping mapCellFromStdCell(const BlockNtk& ntk,

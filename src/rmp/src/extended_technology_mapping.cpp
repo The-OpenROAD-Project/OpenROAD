@@ -283,15 +283,11 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
   sta::dbNetwork* db_network = sta->getDbNetwork();
 
   // Delete nets that only belong to the cut set.
-  sta::NetSet nets_to_be_deleted(db_network);
   std::unordered_set<sta::Net*> primary_input_or_output_nets;
-
-  for (sta::Net* net : cut.primary_inputs()) {
-    primary_input_or_output_nets.insert(net);
-  }
-  for (sta::Net* net : cut.primary_outputs()) {
-    primary_input_or_output_nets.insert(net);
-  }
+  primary_input_or_output_nets.insert(cut.primary_inputs().begin(),
+                                      cut.primary_inputs().end());
+  primary_input_or_output_nets.insert(cut.primary_outputs().begin(),
+                                      cut.primary_outputs().end());
 
   for (const sta::Instance* instance : cut.cut_instances()) {
     auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
@@ -310,37 +306,25 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       // way this can happen is if a net is only used within the cutset, and
       // in that case we want to delete it.
       if (!primary_input_or_output_nets.contains(connected_net)) {
-        nets_to_be_deleted.insert(connected_net);
+        db_network->deleteNet(connected_net);
       }
     }
-  }
-
-  for (const sta::Instance* instance : cut.cut_instances()) {
     db_network->deleteInstance(const_cast<sta::Instance*>(instance));
-  }
-  for (const sta::Net* net : nets_to_be_deleted) {
-    db_network->deleteNet(const_cast<sta::Net*>(net));
   }
 
   // Add mapped network into design
   const auto num_nodes = topo_ntk.size();
   std::vector<std::vector<odb::dbNet*>> node_out_nets(num_nodes);
 
-  auto node_index = [&](const BlockNtk::node& n) -> uint32_t {
-    return topo_ntk.node_to_index(n);
-  };
-
   auto node_output_signal = [&](const BlockNtk::node& n, uint32_t k) {
     auto s = topo_ntk.make_signal(n);  // output pin 0
-    for (uint32_t i = 0; i < k; ++i) {
-      s = topo_ntk.next_output_pin(s);
-    }
-    return s;
+    return mockturtle::signal<decltype(topo_ntk)>{
+        s.index, s.complement, static_cast<uint64_t>(s.output) + k};
   };
 
   // Primary inputs
   topo_ntk.foreach_pi([&](const BlockNtk::node& n) {
-    const auto idx = node_index(n);
+    const auto idx = topo_ntk.node_to_index(n);
 
     const std::string name = ntk.get_name(topo_ntk.make_signal(n));
     if (name.empty()) {
@@ -352,13 +336,12 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       logger->error(utl::RMP, 72, "Failed to find PI net {}", name);
     }
 
-    node_out_nets[idx].resize(1);
-    node_out_nets[idx][0] = net;
+    node_out_nets[idx].push_back(net);
   });
 
   // Gates: create instances + output nets (no inputs connected yet)
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
-    const auto idx = node_index(n);
+    const auto idx = topo_ntk.node_to_index(n);
 
     CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
     odb::dbMaster* master = nullptr;
@@ -442,22 +425,9 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     }
   });
 
-  auto get_constant_value = [topo_ntk, logger](const BlockNtk::node &src_node, const BlockNtk::signal &f) {
-    auto gate = topo_ntk.get_cell(src_node).gates[topo_ntk.get_output_pin(f)];
-    bool value;
-    if (gate.expression == "CONST1") {
-      value = true;
-    } else if (gate.expression == "CONST0") {
-      value = false;
-    } else {
-      logger->error(utl::RMP, 78, "Unknown constant expression: {}", gate.expression);
-    }
-    return value ^ topo_ntk.is_complemented(f);
-  };
-
   // Connect gate inputs to driver nets
   topo_ntk.foreach_gate([&](const BlockNtk::node& n) {
-    const auto idx = node_index(n);
+    const auto idx = topo_ntk.node_to_index(n);
 
     CellMapping mapping = mapCellFromStdCell(topo_ntk, n, logger);
 
@@ -467,55 +437,32 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
       logger->error(utl::RMP, 79, "Instance {} not found", inst_name);
     }
 
-    uint32_t fanin_idx = 0;
-    topo_ntk.foreach_fanin(n, [&](const BlockNtk::signal& f) {
-      if (fanin_idx >= mapping.input_pins.size()) {
-        logger->error(
-            utl::RMP,
-            80,
-            "Not enough input pins in cell {} (node {}), fanins={} inputs={}",
-            mapping.master_name,
-            idx,
-            fanin_idx,
-            mapping.input_pins.size());
-      }
+    topo_ntk.foreach_fanin(
+        n, [&](const BlockNtk::signal& f, uint32_t fanin_idx) {
+          if (fanin_idx >= mapping.input_pins.size()) {
+            logger->error(utl::RMP,
+                          80,
+                          "Not enough input pins in cell {} (node {}), "
+                          "fanins={} inputs={}",
+                          mapping.master_name,
+                          idx,
+                          fanin_idx,
+                          mapping.input_pins.size());
+          }
 
-      odb::dbNet* src_net = nullptr;
-      auto src_node = topo_ntk.get_node(f);
-
-      if (topo_ntk.is_constant(src_node)) {
-        bool value = get_constant_value(src_node, f);
-        src_net = ensureConstNet(value, block, libs, sta, logger);
-      } else {
-        const auto src_idx = node_index(src_node);
-        uint32_t out_pin_idx = 0;
-        if (topo_ntk.is_multioutput(src_node)) {
-          out_pin_idx = topo_ntk.get_output_pin(f);
-        }
-
-        if (src_idx >= node_out_nets.size()
-            || out_pin_idx >= node_out_nets[src_idx].size()
-            || node_out_nets[src_idx][out_pin_idx] == nullptr) {
-          logger->error(utl::RMP,
-                        81,
-                        "Missing driver net for fanin of {} (node {})",
-                        mapping.master_name,
-                        idx);
-        }
-        src_net = node_out_nets[src_idx][out_pin_idx];
-      }
-
-      const std::string& pin_name = mapping.input_pins[fanin_idx++];
-      odb::dbITerm* it = inst->findITerm(pin_name.c_str());
-      if (!it) {
-        logger->error(utl::RMP,
-                      82,
-                      "Master {} had no input ITerm {}",
-                      mapping.master_name,
-                      pin_name);
-      }
-      it->connect(src_net);
-    });
+          odb::dbNet* src_net = getDriverNet(
+              topo_ntk, block, libs, sta, logger, node_out_nets, f);
+          const std::string& pin_name = mapping.input_pins[fanin_idx];
+          odb::dbITerm* it = inst->findITerm(pin_name.c_str());
+          if (!it) {
+            logger->error(utl::RMP,
+                          82,
+                          "Master {} had no input ITerm {}",
+                          mapping.master_name,
+                          pin_name);
+          }
+          it->connect(src_net);
+        });
   });
 
   // Connect mapped POs to the existing cut boundary nets
@@ -543,35 +490,60 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
           boundary_po_dbnets.size());
     }
 
+    odb::dbNet* driver_net
+        = getDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
     odb::dbNet* boundary_net = boundary_po_dbnets[po_index];
-
-    odb::dbNet* driver_net = nullptr;
-    auto src_node = topo_ntk.get_node(f);
-    uint32_t src_idx = 0;
-    uint32_t out_pin_idx = 0;
-
-    if (topo_ntk.is_constant(src_node)) {
-      bool value = get_constant_value(src_node, f);
-      driver_net = ensureConstNet(value, block, libs, sta, logger);
-    } else {
-      src_idx = node_index(src_node);
-      if (topo_ntk.is_multioutput(src_node)) {
-        out_pin_idx = topo_ntk.get_output_pin(f);
-      }
-
-      if (src_idx >= node_out_nets.size()
-          || out_pin_idx >= node_out_nets[src_idx].size()
-          || node_out_nets[src_idx][out_pin_idx] == nullptr) {
-        logger->error(
-            utl::RMP, 85, "Missing driver net for PO index {}", po_index);
-      }
-      driver_net = node_out_nets[src_idx][out_pin_idx];
-    }
-
     if (driver_net && boundary_net && driver_net != boundary_net) {
       driver_net->mergeNet(boundary_net);
     }
   });
+}
+
+template <typename Ntk>
+odb::dbNet* ExtendedTechnologyMapping::getDriverNet(
+    mockturtle::topo_view<Ntk, false>& topo_ntk,
+    odb::dbBlock* block,
+    const odb::dbSet<odb::dbLib>& libs,
+    sta::dbSta* sta,
+    utl::Logger* logger,
+    std::vector<std::vector<odb::dbNet*>>& node_out_nets,
+    const BlockNtk::signal& f)
+{
+  auto src_node = topo_ntk.get_node(f);
+
+  if (topo_ntk.is_constant(src_node)) {
+    auto get_constant_value = [topo_ntk, logger](const BlockNtk::node& src_node,
+                                                 const BlockNtk::signal& f) {
+      auto gate = topo_ntk.get_cell(src_node).gates[topo_ntk.get_output_pin(f)];
+      bool value;
+      if (gate.expression == "CONST1") {
+        value = true;
+      } else if (gate.expression == "CONST0") {
+        value = false;
+      } else {
+        logger->error(
+            utl::RMP, 78, "Unknown constant expression: {}", gate.expression);
+      }
+      return value ^ topo_ntk.is_complemented(f);
+    };
+
+    bool value = get_constant_value(src_node, f);
+    return ensureConstNet(value, block, libs, sta, logger);
+  }
+  const uint32_t src_idx = topo_ntk.node_to_index(src_node);
+  const uint32_t out_pin_idx
+      = topo_ntk.is_multioutput(src_node) ? topo_ntk.get_output_pin(f) : 0;
+
+  if (src_idx >= node_out_nets.size()
+      || out_pin_idx >= node_out_nets[src_idx].size()
+      || node_out_nets[src_idx][out_pin_idx] == nullptr) {
+    logger->error(utl::RMP,
+                  85,
+                  "Missing driver net for src_idx={}, out_pin_idx={}",
+                  src_idx,
+                  out_pin_idx);
+  }
+  return node_out_nets[src_idx][out_pin_idx];
 }
 
 void ExtendedTechnologyMapping::map(sta::dbSta* sta,
