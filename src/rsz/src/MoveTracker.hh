@@ -222,9 +222,13 @@ class MoveTracker
   // Map pin to detailed information (endpoint, gate type, delays)
   std::map<const sta::Pin*, PinInfo> pin_info_;
 
-  // Initial slack distribution (captured at start of optimization)
-  std::map<const sta::Pin*, float> initial_pin_slack_;
-  std::map<const sta::Pin*, float> initial_endpoint_slack_;
+  // Initial slack distribution (captured at start of optimization).
+  // Keyed by pin path name (string) to avoid dangling pointers: instances
+  // (e.g. buffers) may be destroyed during optimization (UnbufferMove), which
+  // frees the underlying dbITerm.  Looking up by name at reporting time lets
+  // us detect deleted pins via findPin() returning nullptr and skip them.
+  std::map<std::string, float> initial_pin_slack_;
+  std::map<std::string, float> initial_endpoint_slack_;
 };
 
 }  // namespace rsz

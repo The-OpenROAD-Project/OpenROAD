@@ -1503,7 +1503,8 @@ void MoveTracker::captureInitialSlackDistribution()
 
         // Only capture pins with negative slack (violating paths)
         if (slack_ns < 0.0) {
-          initial_pin_slack_[pin] = slack_ns;  // Store in nanoseconds
+          initial_pin_slack_[sta_->network()->pathName(pin)]
+              = slack_ns;  // Store in nanoseconds
           violating_pins++;
         }
       }
@@ -1539,7 +1540,8 @@ void MoveTracker::captureInitialSlackDistribution()
 
     // Only capture endpoints with negative slack (violating endpoints)
     if (slack_ns < 0.0) {
-      initial_endpoint_slack_[pin] = slack_ns;  // Store in nanoseconds
+      initial_endpoint_slack_[sta_->network()->pathName(pin)]
+          = slack_ns;  // Store in nanoseconds
       violating_endpoints++;
     }
   }
@@ -1572,9 +1574,16 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   float min_slack_ns = std::numeric_limits<float>::max();
   float max_slack_ns = std::numeric_limits<float>::lowest();
 
-  for (const auto& [pin, initial_slack_ns] : initial_pin_slack_) {
+  for (const auto& [pin_name, initial_slack_ns] : initial_pin_slack_) {
     min_slack_ns = std::min(initial_slack_ns, min_slack_ns);
     max_slack_ns = std::max(initial_slack_ns, max_slack_ns);
+
+    // Look up pin by name - may return nullptr if the pin was deleted during
+    // optimization
+    const sta::Pin* pin = sta_->network()->findPin(pin_name.c_str());
+    if (!pin) {
+      continue;
+    }
 
     // Get current (post-optimization) slack using slack (setup timing)
     sta::Slack post_slack = sta_->slack(pin,
@@ -1618,7 +1627,7 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   vector<int> post_counts(bin_edges.size() + 1, 0);
 
   // Second pass: count distribution in bins (all values in nanoseconds)
-  for (const auto& [pin, initial_slack_ns] : initial_pin_slack_) {
+  for (const auto& [pin_name, initial_slack_ns] : initial_pin_slack_) {
     // Find which bin this slack falls into
     int bin = 0;
     for (size_t i = 0; i < bin_edges.size(); i++) {
@@ -1629,6 +1638,13 @@ void MoveTracker::printSlackDistribution(const std::string& title)
       }
     }
     pre_counts[bin]++;
+
+    // Look up pin by name - may return nullptr if the pin was deleted during
+    // optimization
+    const sta::Pin* pin = sta_->network()->findPin(pin_name.c_str());
+    if (!pin) {
+      continue;
+    }
 
     // Get current (post-optimization) slack using slack
     sta::Slack post_slack = sta_->slack(pin,
@@ -1776,7 +1792,7 @@ void MoveTracker::printSlackDistribution(const std::string& title)
     vector<int> endpoint_pre_counts(bin_edges.size() + 1, 0);
     vector<int> endpoint_post_counts(bin_edges.size() + 1, 0);
 
-    for (const auto& [endpoint_pin, initial_slack_ns] :
+    for (const auto& [endpoint_pin_name, initial_slack_ns] :
          initial_endpoint_slack_) {
       // Find which bin this slack falls into
       int bin = 0;
@@ -1789,8 +1805,12 @@ void MoveTracker::printSlackDistribution(const std::string& title)
       }
       endpoint_pre_counts[bin]++;
 
+      // Look up endpoint pin by name - may be nullptr if deleted
+      const sta::Pin* endpoint_pin
+          = sta_->network()->findPin(endpoint_pin_name.c_str());
       // Get current (post-optimization) slack
-      sta::Vertex* vertex = sta_->graph()->pinLoadVertex(endpoint_pin);
+      sta::Vertex* vertex
+          = endpoint_pin ? sta_->graph()->pinLoadVertex(endpoint_pin) : nullptr;
       if (vertex) {
         sta::Slack post_slack = sta_->slack(vertex, sta::MinMax::max());
         float post_slack_ns
