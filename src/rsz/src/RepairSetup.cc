@@ -4,7 +4,6 @@
 #include "RepairSetup.hh"
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -51,6 +50,7 @@
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
+#include "utl/timer.h"
 
 namespace rsz {
 
@@ -197,7 +197,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                               const bool skip_vt_swap,
                               const bool skip_crit_vt_swap)
 {
-  auto start_time = std::chrono::steady_clock::now();
+  const utl::DebugScopedTimer timer(
+      logger_, RSZ, "repair_setup", 1, "Total setup repair time: {}");
   bool repaired = false;
   init();
   resizer_->rebuffer_->init();
@@ -540,17 +541,6 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 25, "max utilization reached.");
   }
-
-  auto end_time = std::chrono::steady_clock::now();
-  auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-                          end_time - start_time)
-                          .count();
-  debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             1,
-             "Total setup repair time: {:.2f} seconds",
-             elapsed_time / 1000.0);
 
   return repaired;
 }
@@ -1038,7 +1028,12 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                                      float& prev_tns,
                                      const char phase_marker)
 {
-  auto phase_start_time = std::chrono::steady_clock::now();
+  const utl::DebugScopedTimer timer(
+      logger_,
+      RSZ,
+      "repair_setup",
+      1,
+      fmt::format("LEGACY{} Phase Time: {{}}", phase_marker));
   constexpr int digits = 3;
 
   // FIXME: We may want to switch to dynamically increasing slack passes
@@ -1374,7 +1369,12 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                                   const char phase_marker,
                                   const ViolatorSortType sort_type)
 {
-  auto phase_start_time = std::chrono::steady_clock::now();
+  const utl::DebugScopedTimer timer(
+      logger_,
+      RSZ,
+      "repair_setup",
+      1,
+      fmt::format("WNS{} Phase Time: {{}}", phase_marker));
   constexpr int digits = 3;
 
   // Capture pre-phase slack for tracking per-phase improvements
@@ -1995,19 +1995,14 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
   sta_->worstSlack(max_, final_wns, final_worst);
   float final_tns = sta_->totalNegativeSlack(max_);
 
-  auto phase_end_time = std::chrono::steady_clock::now();
-  auto phase_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           phase_end_time - phase_start_time)
-                           .count();
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              1,
-             "WNS{} Phase complete. WNS: {}, TNS: {}, Time: {:.2f}s",
+             "WNS{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
              delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1),
-             phase_elapsed / 1000.0);
+             delayAsString(final_tns, sta_, 1));
 }
 
 // TNS Phase: TNS-Focused Repair
@@ -2022,7 +2017,12 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                                   const char phase_marker,
                                   const ViolatorSortType sort_type)
 {
-  auto phase_start_time = std::chrono::steady_clock::now();
+  const utl::DebugScopedTimer timer(
+      logger_,
+      RSZ,
+      "repair_setup",
+      1,
+      fmt::format("TNS{} Phase Time: {{}}", phase_marker));
   constexpr int digits = 3;
 
   // Capture pre-phase slack for tracking per-phase improvements
@@ -2375,19 +2375,14 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
   sta_->worstSlack(max_, final_wns, final_worst);
   float final_tns = sta_->totalNegativeSlack(max_);
 
-  auto phase_end_time = std::chrono::steady_clock::now();
-  auto phase_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           phase_end_time - phase_start_time)
-                           .count();
   debugPrint(logger_,
              RSZ,
              "repair_setup",
              1,
-             "TNS{} Phase complete. WNS: {}, TNS: {}, Time: {:.2f}s",
+             "TNS{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
              delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1),
-             phase_elapsed / 1000.0);
+             delayAsString(final_tns, sta_, 1));
 }
 
 // ENDPOINT_FANIN Phase: Iteratively refine threshold from 0 to endpoint slack
@@ -2433,7 +2428,16 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                                           int& opto_iteration,
                                           const char phase_marker)
 {
-  auto phase_start_time = std::chrono::steady_clock::now();
+  const char* phase_name
+      = use_startpoints ? "STARTPOINT_FANOUT" : "ENDPOINT_FANIN";
+  const char* point_type = use_startpoints ? "startpoint" : "endpoint";
+  const char* point_type_cap = use_startpoints ? "Startpoint" : "Endpoint";
+  const utl::DebugScopedTimer timer(
+      logger_,
+      RSZ,
+      "repair_setup",
+      1,
+      fmt::format("{}{} Phase Time: {{}}", phase_name, phase_marker));
   constexpr int digits = 3;
 
   // Capture pre-phase slack for tracking per-phase improvements
@@ -2451,10 +2455,6 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
   // Diminishing returns threshold: stop if improvement < 10ps
   // Increased from 1ps to 10ps to reduce iterations with minimal improvement
   constexpr sta::Slack diminishing_returns_threshold = 1e-11;  // 10 picoseconds
-
-  const char* phase_name = use_startpoints ? "SP_FO" : "EP_FI";
-  const char* point_type = use_startpoints ? "startpoint" : "endpoint";
-  const char* point_type_cap = use_startpoints ? "Startpoint" : "Endpoint";
 
   debugPrint(logger_,
              RSZ,
@@ -2814,11 +2814,6 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
   // Print phase completion
   printProgress(opto_iteration, true, false, phase_marker, use_startpoints);
 
-  auto phase_end_time = std::chrono::steady_clock::now();
-  auto phase_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           phase_end_time - phase_start_time)
-                           .count();
-
   // Get final metrics using proxy methods
   sta::Slack final_wns = violator_collector_->getWns();
   sta::Slack final_tns = violator_collector_->getTns(use_startpoints);
@@ -2827,15 +2822,13 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
              RSZ,
              "repair_setup",
              1,
-             "{}{} Phase complete. {}s processed: {}, WNS: {}, TNS: {}, "
-             "Time: {:.2f}s",
+             "{}{} Phase complete. {}s processed: {}, WNS: {}, TNS: {}",
              phase_name,
              phase_marker,
              point_type_cap,
              points_processed,
              delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1),
-             phase_elapsed / 1000.0);
+             delayAsString(final_tns, sta_, 1));
 }
 
 // Perform some last fixing based on sizing only.
@@ -2845,7 +2838,12 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                                        const int max_iterations,
                                        const char phase_marker)
 {
-  auto phase_start_time = std::chrono::steady_clock::now();
+  const utl::DebugScopedTimer timer(
+      logger_,
+      RSZ,
+      "repair_setup",
+      1,
+      fmt::format("LAST_GASP{} Phase Time: {{}}", phase_marker));
   constexpr int digits = 3;
 
   move_sequence_.clear();
@@ -3080,10 +3078,6 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
   sta_->worstSlack(max_, final_wns, final_worst);
   float final_tns = sta_->totalNegativeSlack(max_);
 
-  auto phase_end_time = std::chrono::steady_clock::now();
-  auto phase_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                           phase_end_time - phase_start_time)
-                           .count();
   debugPrint(logger_,
              RSZ,
              "repair_setup",
@@ -3092,7 +3086,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
              phase_marker,
              delayAsString(final_wns, sta_, digits),
              delayAsString(final_tns, sta_, 1),
-             phase_elapsed / 1000.0);
+             timer.elapsed());
 }
 
 // Perform VT swap on remaining critical cells as a last resort
