@@ -37,6 +37,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VisitPathEnds.hh"
 #include "utl/Logger.h"
 
