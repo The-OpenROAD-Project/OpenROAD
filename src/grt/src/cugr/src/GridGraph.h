@@ -13,7 +13,6 @@
 #include "GRTree.h"
 #include "Layers.h"
 #include "geo.h"
-#include "GeoTypes.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "robin_hood.h"
@@ -73,7 +72,10 @@ struct GraphEdge
 class GridGraph
 {
  public:
-  int findPointIndex(const std::vector<GPoint3D>& path, int x, int y, int layer) const;
+  int findPointIndex(const std::vector<GPoint3D>& path,
+                     int x,
+                     int y,
+                     int layer) const;
   GridGraph(const Design* design,
             const Constants& constants,
             utl::Logger* logger);
@@ -121,17 +123,13 @@ class GridGraph
   {
     return getEdge(layer_index, x, y).getResource() < 0.0;
   }
-  int checkOverflow(int layer_index,
-                    PointT u,
-                    PointT v) const;
-  int checkOverflow(const std::shared_ptr<GRTreeNode>& tree)
-      const;
+  int checkOverflow(int layer_index, PointT u, PointT v) const;
+  int checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const;
   std::string getPythonString(
       const std::shared_ptr<GRTreeNode>& routing_tree) const;
 
   void extractBlockageView(GridGraphView<bool>& view) const;
-  void extractCongestionView(
-      GridGraphView<bool>& view) const;
+  void extractCongestionView(GridGraphView<bool>& view) const;
   void extractWireCostView(GridGraphView<CostT>& view) const;
   void updateWireCostView(
       GridGraphView<CostT>& view,
@@ -239,9 +237,4 @@ class GridGraphView : public std::vector<std::vector<std::vector<Type>>>
   }
 };
 
-}
-
-
-
-
-
+}  // namespace grt

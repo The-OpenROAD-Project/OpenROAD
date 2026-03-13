@@ -1580,5 +1580,3 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 }
 
 }  // namespace grt
-
-

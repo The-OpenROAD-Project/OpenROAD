@@ -35,6 +35,7 @@ static int ordery(const Pnt* a, const Pnt* b)
   return a->y < b->y;
 }
 
+// binary search to map the new coordinates to original coordinates
 static int mapxy(const int nx,
                  const std::vector<int>& xs,
                  const std::vector<int>& nxs,
@@ -70,6 +71,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
   auto& treenodes = sttrees_[ind].nodes;
   auto& treeedges = sttrees_[ind].edges;
 
+  // initialize the nbrcnt for treenodes
   const int sizeV = 2 * nets_[ind]->getNumPins();
   std::vector<int> nbrcnt(sizeV);
   for (int i = 0; i < numnodes; i++) {
@@ -77,6 +79,8 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
   }
 
   int edgecnt = 0;
+  // original rsmt has 2*d-2 branch (one is a loop for root), in StTree 2*d-3
+  // edges (no original loop)
   for (int i = 0; i < numnodes; i++) {
     const int x1 = rsmt.branch[i].x;
     const int y1 = rsmt.branch[i].y;
@@ -90,8 +94,9 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     } else {
       treenodes[i].status = 0;
     }
-    if (n != i) {
+    if (n != i) {  // not root
       treeedges[edgecnt].len = abs(x1 - x2) + abs(y1 - y2);
+      // make x1 always less than x2
       if (x1 < x2) {
         treeedges[edgecnt].n1 = i;
         treeedges[edgecnt].n2 = n;
@@ -114,6 +119,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     }
   }
 
+  // Map the node indices to the pin indices of the net
   std::map<odb::Point, int> pos_count;
   for (int i = 0; i < d; i++) {
     odb::Point pos{treenodes[i].x, treenodes[i].y};
@@ -123,6 +129,7 @@ void FastRouteCore::copyStTree(const int ind, const stt::Tree& rsmt)
     sttrees_[ind].node_to_pin_idx[i] = pin_idx;
   }
 
+  // Copy num neighbors
   for (int i = 0; i < numnodes; i++) {
     treenodes[i].nbr_count = nbrcnt[i];
   }
@@ -250,6 +257,7 @@ void FastRouteCore::fluteNormal(const int netID,
       ptp[i]->o = i;
     }
 
+    // sort y to find s[]
     if (d < 1000) {
       for (int i = 0; i < d - 1; i++) {
         int minval = ptp[i]->y;
@@ -390,17 +398,18 @@ void FastRouteCore::fluteCongest(const int netID,
       s[i] = gs_[netID][i];
     }
 
+    // get the new coordinates considering congestion
     for (int i = 0; i < d - 1; i++) {
       x_seg[i] = (xs[i + 1] - xs[i]) * 100;
       y_seg[i] = (ys[i + 1] - ys[i]) * 100;
     }
 
-    const int height = ys[d - 1] - ys[0] + 1;
-    const int width = xs[d - 1] - xs[0] + 1;
+    const int height = ys[d - 1] - ys[0] + 1;  // # vertical grids the net span
+    const int width = xs[d - 1] - xs[0] + 1;  // # horizontal grids the net span
 
     for (int i = 0; i < d - 1; i++) {
       int usageH = 0;
-      for (int k = ys[0]; k <= ys[d - 1]; k++)
+      for (int k = ys[0]; k <= ys[d - 1]; k++)  // all grids in the column
       {
         for (int j = xs[i]; j < xs[i + 1]; j++) {
           usageH += graph2d_.getEstUsageRedH(j, k);
@@ -409,18 +418,20 @@ void FastRouteCore::fluteCongest(const int netID,
       if (x_seg[i] != 0 && usageH != 0) {
         x_seg[i]
             *= coeffH * usageH / ((xs[i + 1] - xs[i]) * height * h_capacity_);
-        x_seg[i] = std::max(1, x_seg[i]);
+        x_seg[i] = std::max(1, x_seg[i]);  // the segment len is at least 1 if
+                                           // original segment len > 0
       }
       int usageV = 0;
       for (int j = ys[i]; j < ys[i + 1]; j++) {
-        for (int k = xs[0]; k <= xs[d - 1]; k++) {
+        for (int k = xs[0]; k <= xs[d - 1]; k++) {  // all grids in the row
           usageV += graph2d_.getEstUsageRedV(k, j);
         }
       }
       if (y_seg[i] != 0 && usageV != 0) {
         y_seg[i]
             *= coeffV * usageV / ((ys[i + 1] - ys[i]) * width * v_capacity_);
-        y_seg[i] = std::max(1, y_seg[i]);
+        y_seg[i] = std::max(1, y_seg[i]);  // the segment len is at least 1 if
+                                           // original segment len > 0
       }
     }
 
@@ -433,6 +444,7 @@ void FastRouteCore::fluteCongest(const int netID,
 
     t = stt_builder_->makeSteinerTree(nxs, nys, s, acc);
 
+    // map the new coordinates back to original coordinates
     for (auto& branch : t.branch) {
       branch.x = mapxy(branch.x, xs, nxs, d);
       branch.y = mapxy(branch.y, ys, nys, d);
@@ -445,6 +457,7 @@ bool FastRouteCore::netCongestion(const int netID)
   for (const Segment& seg : seglist_[netID]) {
     const auto [ymin, ymax] = std::minmax(seg.y1, seg.y2);
 
+    // remove L routing
     if (seg.xFirst) {
       for (int i = seg.x1; i < seg.x2; i++) {
         const int cap = getEdgeCapacity(
@@ -561,6 +574,9 @@ float FastRouteCore::coeffADJ(const int netID)
         Vusage += graph2d_.getEstUsageV(i, j);
       }
     }
+    // (Husage * Vcap) resulting in zero is unlikely, but
+    // this check was added to avoid undefined behavior if
+    // the expression results in zero
     if ((Husage * Vcap) > 0) {
       coef = (Hcap * Vusage) / (Husage * Vcap);
     } else {
@@ -598,6 +614,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         const auto& treeedges = sttrees_[netID].edges;
         const auto& treenodes = sttrees_[netID].nodes;
         for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
+          // only route the non-degraded edges (len>0)
           if (sttrees_[netID].edges[j].len > 0) {
             const TreeEdge* treeedge = &(treeedges[j]);
             const int n1 = treeedge->n1;
@@ -610,12 +627,15 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
           }
         }
       } else {
+        // remove the est_usage due to the segments in this net
         for (auto& seg : seglist_[netID]) {
           ripupSegL(&seg);
         }
       }
     }
 
+    // check net alpha because FastRoute has a special implementation of flute
+    // TODO: move this flute implementation to SteinerTreeBuilder
     const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
     if (net_alpha > 0.0) {
       rsmt = stt_builder_->makeSteinerTree(
@@ -624,6 +644,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       float coeffV = 1.36;
 
       if (congestionDriven) {
+        // call congestion driven flute to generate RSMT
         bool cong;
         coeffV = noADJ ? 1.2 : coeffADJ(netID);
         cong = netCongestion(netID);
@@ -646,6 +667,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
           numShift += edgeShiftNew(rsmt, netID);
         }
       } else {
+        // call FLUTE to generate RSMT for each net
         if (noADJ || HTreeSuite(netID)) {
           coeffV = 1.2;
         }
@@ -686,7 +708,8 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
 
       wl += abs(x1 - x2) + abs(y1 - y2);
 
-      if (x1 != x2 || y1 != y2) {
+      if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
+        // the position of this segment in seglist
         const int8_t cost = nets_[netID]->getEdgeCost();
         if (x1 < x2) {
           seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
@@ -694,19 +717,18 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
           seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
         }
       }
-    }
+    }  // loop j
 
     totalNumSeg += seglist_[netID].size();
 
     if (reRoute) {
+      // update the est_usage due to the segments in this net
       newrouteL(
           netID,
           RouteType::NoRoute,
-          true);
+          true);  // route the net with no previous route for each tree edge
     }
-
-    stt_wirelengths_[netID] = computeNetSttWirelength(netID);
-  }
+  }  // loop i
 
   debugPrint(logger_,
              GRT,
@@ -720,24 +742,4 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
              numShift);
 }
 
-int FastRouteCore::computeNetSttWirelength(int netID)
-{
-  int stt_wl = 0;
-  const auto& treeedges = sttrees_[netID].edges;
-  const auto& treenodes = sttrees_[netID].nodes;
-  for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-    const TreeEdge* treeedge = &(treeedges[j]);
-    if (treeedge->len > 0) {
-      const int n1 = treeedge->n1;
-      const int n2 = treeedge->n2;
-      const int x1 = treenodes[n1].x;
-      const int y1 = treenodes[n1].y;
-      const int x2 = treenodes[n2].x;
-      const int y2 = treenodes[n2].y;
-      stt_wl += abs(x1 - x2) + abs(y1 - y2);
-    }
-  }
-  return stt_wl;
-}
-
-}
+}  // namespace grt
