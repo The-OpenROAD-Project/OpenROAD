@@ -95,12 +95,73 @@ cc_test(
 )
 
 cc_test(
-    name = "TestGDSIn",
-    srcs = ["TestGDSIn.cpp"],
+    name = "TestGDSRead",
+    srcs = ["TestGDSRead.cpp"],
     data = ["//src/odb/test:regression_resources"],
     deps = [
         "//src/odb",
-        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSWriteRoundtrip",
+    srcs = ["TestGDSWriteRoundtrip.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSCreate",
+    srcs = ["TestGDSCreate.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSLayerMap",
+    srcs = ["TestGDSLayerMap.cpp"],
+    deps = [
+        "//src/odb",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSMergeCells",
+    srcs = ["TestGDSMergeCells.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestGDSValidate",
+    srcs = ["TestGDSValidate.cpp"],
+    data = ["//src/odb/test:regression_resources"],
+    deps = [
+        "//src/odb",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
