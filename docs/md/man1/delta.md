@@ -5,6 +5,18 @@ date: 2026/03/13
 
 # Delta .odb Files
 
+**TL;DR**:  Merits some further study.
+
+bsdiff-based delta files reduce `.odb` artifact sizes by
+47-100% (gzip-9 compressed). Sub-steps within floorplan and place
+show 64-100% savings.
+
+Savings would have to be >66% to really be exciting.
+
+However, space saving isn't the most exciting here. The immediate access to the substeps are as they save time when e.g. re-running resizing or global placement, or running only up to and including a specific substep to extract information.
+
+This change could come with a more fine-grained stage attribution in variables.yaml.
+
 ## Overview
 
 Delta files (`.delta`) store only the differences between two serialized
@@ -140,6 +152,149 @@ Deltas are beneficial for nearly every stage transition:
 | grt | .delta | 62% savings |
 | route | full .odb | New base (still 52% savings possible) |
 | final | .delta | 94% savings |
+
+## Use Cases
+
+Delta files are an enabler for substage splitting — making it
+affordable to cache every intermediate `.odb` without an artifact
+explosion. The real value is what you can do once those substage
+checkpoints exist.
+
+### AI-driven optimization
+
+An AI agent (e.g. Claude) reads log output from a substage, adjusts
+`variables.yaml` parameters, and re-runs only the affected substep.
+Example workflow:
+
+1. Claude reads `3_4_place_resized` logs, sees setup slack violations
+2. Adjusts `RESIZER_SETUP_SLACK_MARGIN` in `variables.yaml`
+3. Bazel re-runs only `3_4_place_resized` + `3_5_place_dp` (~2 min)
+4. Claude reads new logs, checks if area/timing improved
+5. Repeat until converged
+
+Without substage caching, each iteration re-runs the full place
+stage (~15 min). With it, the agent gets 5-8x more experiments per
+hour. This applies to any parameter the agent wants to explore:
+placement density, PDN configuration, IO constraints, CTS settings.
+
+Fast turnaround is the critical bottleneck for AI-driven flows —
+the agent can't learn faster than the flow can produce feedback.
+Substage splitting with delta caching removes the largest source
+of wasted re-computation, making it practical for Claude to explore
+parameter spaces that would be prohibitively slow to search today.
+
+### Parameter tuning without re-running upstream steps
+
+Changing `RESIZER_SETUP_SLACK_MARGIN` currently re-runs the entire
+place stage. With fine-grained `variables.yaml` attribution, Bazel
+knows this parameter only affects `3_4_place_resized`. It re-runs
+resize + detail_place from the cached `3_3_place_gp.odb`, skipping
+global placement entirely. On large designs where global placement
+takes 10+ minutes, this turns a 15-minute iteration into 2 minutes.
+
+Similarly, changing `PDN_TCL` re-runs only `2_4_floorplan_pdn` from
+cached `2_3_floorplan_tapcell.odb`. IO constraint changes re-run
+only `3_2_place_iop`. Each parameter change costs only the substeps
+it actually affects.
+
+### Resource scheduling
+
+Different substeps have very different resource profiles: global
+placement is memory-intensive (32+ GB on large designs), resize is
+single-threaded CPU-bound, detail placement benefits from multiple
+cores. As separate Bazel actions, each substep can request exactly
+the resources it needs from the CI pool (see bazel-orfs PR #532),
+instead of every place job reserving peak resources for the full
+duration.
+
+### Debug and analysis at any checkpoint
+
+Intermediate states are currently ephemeral — they exist only during
+the flow run. With substage artifacts, you can load any intermediate
+state at any time:
+
+- `read_db 3_3_place_gp.odb` to inspect timing after global
+  placement but before resize
+- Compare `3_4_place_resized.odb` between two runs to understand
+  when a timing regression was introduced
+- Attach a specific substage `.odb` to a bug report: "the design
+  broke after tapcell insertion" becomes provable
+
+### Selective re-runs in CI
+
+A timing violation after CTS? Re-run from cached
+`3_3_place_gp.odb` with different resize parameters instead of
+re-running from synthesis. Bazel's dependency graph handles the
+invalidation automatically.
+
+### Fine-grained `variables.yaml` attribution
+
+Today, `variables.yaml` attributes parameters at the stage level
+(floorplan, place, cts, etc.). With substage splitting, parameters
+can be attributed to the specific substep they affect. This means
+Bazel can compute more precise cache keys — changing a resize
+parameter doesn't invalidate the global placement cache, even though
+both are "place" parameters today.
+
+## Is It Worth It?
+
+The value of delta files depends on the use case.
+
+### bazel-orfs (remote cache)
+
+In bazel-orfs, every stage artifact is stored in a remote cache and
+transferred over the network. Splitting stages into substages (needed
+for resource scheduling — see bazel-orfs PR #532) multiplies the
+number of artifacts. Without deltas, each substage produces a full
+`.odb` that is nearly the same size as the stage output.
+
+With deltas, substage artifacts shrink dramatically (2-33 KB vs
+235-620 KB for floorplan/place sub-steps). For a design with 9
+sub-steps across floorplan and place, deltas reduce the total cached
+data for those stages by roughly 80%. This directly reduces remote
+cache storage and CI network transfer times.
+
+**Complexity cost**: bazel-orfs needs to track which stages use
+deltas vs full `.odb` and pass the right base file. This is a
+straightforward Starlark change since bazel-orfs already knows the
+stage dependency graph.
+
+**Verdict**: High value. The savings scale with design size and
+number of substages.
+
+### Straight ORFS (Makefile flow)
+
+In the Makefile flow, `.odb` files are local and disk space is rarely
+a bottleneck. The main benefit would be faster `make issue` (smaller
+tar files) and reduced disk usage when running many designs or
+variants.
+
+However, integrating deltas into the Makefile flow adds complexity:
+
+- The `do-` sub-step targets would need to track base files and
+  produce `.delta` instead of `.odb` for intermediate steps.
+- `make issue` would need to bundle the base `.odb` alongside any
+  `.delta` files to be reproducible.
+- Error messages become less obvious — a corrupted delta produces a
+  corrupted database, not a clear file-not-found error.
+- Users running individual sub-steps (e.g. `make do-3_4_place_resized`)
+  would need the base `.odb` present, adding a dependency that
+  currently doesn't exist.
+
+**Verdict**: Low value for typical usage. The disk savings are real
+but modest in absolute terms for local workflows. The complexity cost
+of plumbing base-file tracking through the Makefile and `make issue`
+is not justified unless disk space becomes a concrete problem (e.g.
+CI runners with limited storage, or very large designs producing
+multi-GB `.odb` files).
+
+### Summary
+
+| Use case | Value | Complexity | Recommendation |
+|---|---|---|---|
+| bazel-orfs remote cache | High | Low (Starlark) | Implement |
+| ORFS Makefile (local) | Low | Medium (Make plumbing) | Defer |
+| Large designs (>1 GB .odb) | High | Same | Revisit when needed |
 
 ## Implementation
 
