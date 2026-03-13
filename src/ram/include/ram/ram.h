@@ -63,8 +63,9 @@ class RamGen
          drt::TritonRoute* detailed_router);
   ~RamGen() = default;
 
-  void generate(int bytes_per_word,
-                int word_count,
+  void generate(int mask_size,
+                int word_size,
+                int num_words,
                 int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
@@ -88,7 +89,7 @@ class RamGen
 
   void setBehavioralVerilogFilename(const std::string& filename);
   void writeBehavioralVerilog(const std::string& filename,
-                              int bytes_per_word,
+                              int slices_per_word,
                               int word_count,
                               int read_ports);
 
@@ -116,6 +117,7 @@ class RamGen
                                 odb::dbNet* data_input,
                                 std::vector<odb::dbNet*>& data_output);
   void makeSlice(int slice_idx,
+                 int mask_size,
                  int row_idx,
                  int read_ports,
                  odb::dbNet* clock,
@@ -125,6 +127,7 @@ class RamGen
                  const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
   void makeWord(int slices_per_word,
+                int mask_size,
                 int row_idx,
                 int read_ports,
                 odb::dbNet* clock,

@@ -138,7 +138,8 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   return bit_cell;
 }
 
-void RamGen::makeSlice(const int byte_idx,
+void RamGen::makeSlice(const int slice_idx,
+                       const int mask_size,
                        const int row_idx,
                        const int read_ports,
                        dbNet* clock,
@@ -147,8 +148,7 @@ void RamGen::makeSlice(const int byte_idx,
                        const vector<dbNet*>& data_input,
                        const vector<vector<dbBTerm*>>& data_output)
 {
-  const int bits_per_byte = 8;
-  const int start_bit_idx = byte_idx * bits_per_byte;
+  const int start_bit_idx = slice_idx * mask_size;
   std::string prefix = fmt::format("storage_{}_{}", row_idx, start_bit_idx);
   vector<dbNet*> select_b_nets(selects.size());
   for (int i = 0; i < selects.size(); ++i) {
@@ -158,7 +158,7 @@ void RamGen::makeSlice(const int byte_idx,
   auto gclock_net = makeNet(prefix, "gclock");
   auto we0_net = makeNet(prefix, "we0");
 
-  for (int local_bit = 0; local_bit < bits_per_byte; ++local_bit) {
+  for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
     vector<dbNet*> outs(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
@@ -170,7 +170,7 @@ void RamGen::makeSlice(const int byte_idx,
                               select_b_nets,
                               data_input[local_bit],
                               outs),
-                      start_bit_idx + local_bit + byte_idx);
+                      start_bit_idx + local_bit + slice_idx);
   }
 
   auto sel_cell = std::make_unique<Cell>();
@@ -199,11 +199,11 @@ void RamGen::makeSlice(const int byte_idx,
              {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
 
-  ram_grid_.addCell(std::move(sel_cell),
-                    start_bit_idx + bits_per_byte + byte_idx);
+  ram_grid_.addCell(std::move(sel_cell), start_bit_idx + mask_size + slice_idx);
 }
 
-void RamGen::makeWord(const int bytes_per_word,
+void RamGen::makeWord(const int slices_per_word,
+                      const int mask_size,
                       const int row_idx,
                       const int read_ports,
                       dbNet* clock,
@@ -212,37 +212,36 @@ void RamGen::makeWord(const int bytes_per_word,
                       const vector<dbNet*>& data_input,
                       const vector<vector<dbBTerm*>>& data_output)
 {
-  const int bits_per_byte = 8;
+  for (int slice = 0; slice < slices_per_word; ++slice) {
+    int start_idx = slice * mask_size;
 
-  for (int byte = 0; byte < bytes_per_word; ++byte) {
-    int start_idx = byte * bits_per_byte;
-
-    vector<dbNet*> byte_inputs(data_input.begin() + start_idx,
-                               data_input.begin() + start_idx + bits_per_byte);
-    vector<vector<dbBTerm*>> byte_outputs(read_ports,
-                                          vector<dbBTerm*>(bits_per_byte));
+    vector<dbNet*> slice_inputs(data_input.begin() + start_idx,
+                                data_input.begin() + start_idx + mask_size);
+    vector<vector<dbBTerm*>> slice_outputs(read_ports,
+                                           vector<dbBTerm*>(mask_size));
     for (int port = 0; port < read_ports; ++port) {
       std::copy_n(data_output[port].begin() + start_idx,
-                  bits_per_byte,
-                  byte_outputs[port].begin());
+                  mask_size,
+                  slice_outputs[port].begin());
     }
 
-    makeSlice(byte,
+    makeSlice(slice,
+              mask_size,
               row_idx,
               read_ports,
               clock,
-              write_enable[byte]->getNet(),
+              write_enable[slice]->getNet(),
               selects,
-              byte_inputs,
-              byte_outputs);
+              slice_inputs,
+              slice_outputs);
   }
 }
 
-std::unique_ptr<Layout> RamGen::generateTapColumn(const int word_count,
+std::unique_ptr<Layout> RamGen::generateTapColumn(const int num_words,
                                                   const int tapcell_col)
 {
   auto tapcell_layout = std::make_unique<Layout>(odb::vertical);
-  for (int i = 0; i <= word_count; ++i) {
+  for (int i = 0; i <= num_words; ++i) {
     auto tapcell_cell = std::make_unique<Cell>();
     makeInst(tapcell_cell.get(),
              "tapcell",
@@ -274,7 +273,7 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
 
   for (int i = 0; i < layers; ++i) {
     auto input_net = makeNet(prefix, fmt::format("layer_in{}", i));
-    // sets up first AND gate, closest to byte's select + write enable gate
+    // sets up first AND gate, closest to slice's select + write enable gate
     if (i == 0 && i == layers - 1) {
       makeInst(word_cell.get(),
                prefix,
@@ -608,8 +607,9 @@ void RamGen::ramRouting(int thread_count)
   detailed_router_->setDistributed(false);
 }
 
-void RamGen::generate(const int bytes_per_word,
-                      const int word_count,
+void RamGen::generate(const int mask_size,
+                      const int word_size,
+                      const int num_words,
                       const int read_ports,
                       dbMaster* storage_cell,
                       dbMaster* tristate_cell,
@@ -617,10 +617,8 @@ void RamGen::generate(const int bytes_per_word,
                       dbMaster* tapcell,
                       int max_tap_dist)
 {
-  const int bits_per_byte = 8;
-  const int bits_per_word = bytes_per_word * bits_per_byte;
-  const std::string ram_name
-      = fmt::format("RAM{}x{}", word_count, bits_per_word);
+  const int slices_per_word = word_size / mask_size;
+  const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
 
   // error checking for read ports != 1 for current version of RamGen, edit
   // later for future changes
@@ -655,19 +653,19 @@ void RamGen::generate(const int bytes_per_word,
   // 9 columns for 8 bits per word plus
   // cell for WE AND gate/inverter
   // extra column is for decoder cells
-  int col_cell_count = bytes_per_word * 9;
+  int col_cell_count = slices_per_word * 9;
   ram_grid_.setNumLayouts(col_cell_count + 1);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
 
-  vector<dbBTerm*> write_enable(bytes_per_word, nullptr);
-  for (int byte = 0; byte < bytes_per_word; ++byte) {
-    auto in_name = fmt::format("we[{}]", byte);
-    write_enable[byte] = makeBTerm(in_name, dbIoType::INPUT);
+  vector<dbBTerm*> write_enable(slices_per_word, nullptr);
+  for (int slice = 0; slice < slices_per_word; ++slice) {
+    auto in_name = fmt::format("we[{}]", slice);
+    write_enable[slice] = makeBTerm(in_name, dbIoType::INPUT);
   }
 
   // input bterms
-  int num_inputs = std::ceil(std::log2(word_count));
+  int num_inputs = std::ceil(std::log2(num_words));
   for (int i = 0; i < num_inputs; ++i) {
     addr_inputs_.push_back(
         makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
@@ -680,9 +678,9 @@ void RamGen::generate(const int bytes_per_word,
   }
 
   // decoder_layer nets
-  vector<vector<dbNet*>> decoder_input_nets(word_count,
+  vector<vector<dbNet*>> decoder_input_nets(num_words,
                                             vector<dbNet*>(num_inputs));
-  for (int word = 0; word < word_count; ++word) {
+  for (int word = 0; word < num_words; ++word) {
     int word_num = word;
     // start at right most bit
     for (int input = 0; input < num_inputs; ++input) {
@@ -697,13 +695,13 @@ void RamGen::generate(const int bytes_per_word,
   }
 
   // word decoder signals to have one deccoder per word, shared between all
-  // bytes of a word
-  vector<vector<dbNet*>> word_decoder_nets(word_count);
+  // slices of a word
+  vector<vector<dbNet*>> word_decoder_nets(num_words);
 
-  for (int row = 0; row < word_count; ++row) {
+  for (int row = 0; row < num_words; ++row) {
     auto decoder_name = fmt::format("decoder_{}", row);
 
-    if (word_count == 2) {
+    if (num_words == 2) {
       dbNet* addr_net = (row == 0 ? inv_addr[0] : addr_inputs_[0]->getNet());
       for (int i = 0; i < read_ports; ++i) {
         word_decoder_nets[row].push_back(addr_net);
@@ -712,7 +710,7 @@ void RamGen::generate(const int bytes_per_word,
       word_decoder_nets[row] = selectNets(decoder_name, read_ports);
 
       auto decoder_and_cell = makeDecoder(decoder_name,
-                                          word_count,
+                                          num_words,
                                           read_ports,
                                           word_decoder_nets[row],
                                           decoder_input_nets[row]);
@@ -723,8 +721,8 @@ void RamGen::generate(const int bytes_per_word,
 
   // start of input/output net creation
   q_outputs_.resize(read_ports);
-  vector<dbNet*> D_nets(bits_per_word);
-  for (int bit = 0; bit < bits_per_word; ++bit) {
+  vector<dbNet*> D_nets(mask_size);
+  for (int bit = 0; bit < mask_size; ++bit) {
     data_inputs_.push_back(
         makeBTerm(fmt::format("D[{}]", bit), dbIoType::INPUT));
     D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit), "net");
@@ -741,8 +739,9 @@ void RamGen::generate(const int bytes_per_word,
     }
   }
 
-  for (int row = 0; row < word_count; ++row) {
-    makeWord(bytes_per_word,
+  for (int row = 0; row < num_words; ++row) {
+    makeWord(slices_per_word,
+             mask_size,
              row,
              read_ports,
              clock->getNet(),
@@ -752,9 +751,9 @@ void RamGen::generate(const int bytes_per_word,
              q_outputs_);
   }
 
-  for (int byte = 0; byte < bytes_per_word; ++byte) {
-    for (int bit = 0; bit < bits_per_byte; ++bit) {
-      int bit_idx = bit + byte * 8;
+  for (int slice = 0; slice < slices_per_word; ++slice) {
+    for (int bit = 0; bit < mask_size; ++bit) {
+      int bit_idx = bit + slice * 8;
       auto buffer_grid_cell = std::make_unique<Cell>();
       makeInst(
           buffer_grid_cell.get(),
@@ -762,7 +761,7 @@ void RamGen::generate(const int bytes_per_word,
           fmt::format("in[{}]", bit_idx),
           buffer_cell_,
           {{"A", data_inputs_[bit_idx]->getNet()}, {"X", D_nets[bit_idx]}});
-      ram_grid_.addCell(std::move(buffer_grid_cell), bit_idx + byte);
+      ram_grid_.addCell(std::move(buffer_grid_cell), bit_idx + slice);
     }
   }
   auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
@@ -801,7 +800,7 @@ void RamGen::generate(const int bytes_per_word,
   if (tapcell_) {
     // max tap distance specified is greater than the length of ram
     if (ram_grid_.getRowWidth() <= max_tap_dist) {
-      auto tapcell_layout = generateTapColumn(word_count, 0);
+      auto tapcell_layout = generateTapColumn(num_words, 0);
       ram_grid_.insertLayout(std::move(tapcell_layout), 0);
     } else {
       // needed this calculation so first cells have right distance
@@ -812,7 +811,7 @@ void RamGen::generate(const int bytes_per_word,
       for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
         if (nearest_tap + ram_grid_.getLayoutWidth(col) >= max_tap_dist) {
           // if the nearest_tap is too far, generate tap column
-          auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
+          auto tapcell_layout = generateTapColumn(num_words, tapcell_count);
           ram_grid_.insertLayout(std::move(tapcell_layout), col);
           ++col;  // col adjustment after insertion
           nearest_tap = 0;
@@ -822,7 +821,7 @@ void RamGen::generate(const int bytes_per_word,
       }
       // check for last column in the grid
       if (nearest_tap >= max_tap_dist) {
-        auto tapcell_layout = generateTapColumn(word_count, tapcell_count);
+        auto tapcell_layout = generateTapColumn(num_words, tapcell_count);
         ram_grid_.addLayout(std::move(tapcell_layout));
       }
     }
@@ -837,7 +836,7 @@ void RamGen::generate(const int bytes_per_word,
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
 
   // One extra row at the top for placing input buffers
-  const int num_rows = word_count + 1;
+  const int num_rows = num_words + 1;
   for (int i = 0; i < num_rows; ++i) {
     auto row_name = fmt::format("RAM_ROW{}", i);
     auto y_coord = i * ram_grid_.getHeight();
@@ -865,7 +864,7 @@ void RamGen::generate(const int bytes_per_word,
   block_->setCoreArea(block_->computeCoreArea());
 
   writeBehavioralVerilog(
-      behavioral_verilog_filename_, bytes_per_word, word_count, read_ports);
+      behavioral_verilog_filename_, slices_per_word, num_words, read_ports);
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)
@@ -874,19 +873,19 @@ void RamGen::setBehavioralVerilogFilename(const std::string& filename)
 }
 
 void RamGen::writeBehavioralVerilog(const std::string& filename,
-                                    const int bytes_per_word,
-                                    const int word_count,
+                                    const int slices_per_word,
+                                    const int num_words,
                                     const int read_ports)
 {
   if (filename.empty()) {
     return;
   }
 
-  const int word_size_bit = bytes_per_word * 8;
+  const int word_size_bit = slices_per_word * 8;
   const int address_width
-      = (word_count <= 1) ? 1 : std::ceil(std::log2(word_count));
+      = (num_words <= 1) ? 1 : std::ceil(std::log2(num_words));
 
-  std::string module_name = fmt::format("RAM{}x{}", word_count, word_size_bit);
+  std::string module_name = fmt::format("RAM{}x{}", num_words, word_size_bit);
 
   // Build port list
   std::string port_list = "\n  clk,\n  D";
@@ -968,10 +967,10 @@ endmodule
                                          word_size_bit - 1,
                                          output_declaration,
                                          addr_declarations,
-                                         bytes_per_word - 1,
+                                         slices_per_word - 1,
                                          word_size_bit - 1,
-                                         word_count - 1,
-                                         bytes_per_word,
+                                         num_words - 1,
+                                         slices_per_word,
                                          read_port_logic);
 
   std::ofstream vf(filename);
