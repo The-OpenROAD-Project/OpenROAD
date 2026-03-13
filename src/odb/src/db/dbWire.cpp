@@ -124,7 +124,7 @@ void dbWire::addOneSeg(unsigned char op, int value)
   wire->opcodes_.push_back(op);
 }
 
-uint32_t dbWire::getTermJid(const int term_id) const
+uint32_t dbWire::getTermShapeJunctionId(const int term_id) const
 {
   _dbWire* wire = (_dbWire*) this;
   int target_op_code = kIterm;
@@ -153,13 +153,20 @@ uint32_t dbWire::getTermJid(const int term_id) const
     return 0;
   }
 
-  junction_id--;
+  // It may exist junctions for annotations after the junction of the
+  // wire shape connected to the terminal, so we need to walk backwards
+  // and look for it.
+  while (junction_id > 0) {
+    const WireOp junction_op_code
+        = static_cast<WireOp>(wire->opcodes_[junction_id] & WOP_OPCODE_MASK);
 
-  const WireOp junction_op_code
-      = static_cast<WireOp>(wire->opcodes_[junction_id] & WOP_OPCODE_MASK);
+    if (junction_op_code == kX || junction_op_code == kY
+        || junction_op_code == kColinear || junction_op_code == kVia
+        || junction_op_code == kTechVia || junction_op_code == kRect) {
+      break;
+    }
 
-  if (junction_op_code == kProperty) {
-    junction_id--;
+    --junction_id;
   }
 
   return junction_id;
@@ -462,7 +469,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -529,12 +536,8 @@ decode_loop: {
     case kRect:
     case kNop:
     case kColor:
-    case kViaColor: {
-      utl::Logger* logger = getImpl()->getLogger();
-      logger->error(
-          utl::ODB, 1115, "Unexpected {} in dbWire::getSegment", wire_op);
+    case kViaColor:
       break;
-    }
   }
 
   --idx;
@@ -570,7 +573,7 @@ state_machine_update: {
 }
 }
 
-  while ((layer == nullptr) || (found_width == false)) {
+  while ((layer == nullptr) || (!found_width)) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 
@@ -717,7 +720,7 @@ decode_loop: {
       goto decode_loop;
 
     case kRule:
-      if (found_width == false) {
+      if (!found_width) {
         found_width = true;
 
         if (opcode & WOP_BLOCK_RULE) {
@@ -800,7 +803,7 @@ state_machine_update: {
 }
 }
 
-  while (found_width == false) {
+  while (!found_width) {
     assert(idx >= 0);
     opcode = wire->opcodes_[idx];
 

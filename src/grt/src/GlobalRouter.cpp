@@ -1347,9 +1347,9 @@ void GlobalRouter::findFastRoutePins(Net* net,
     int pinX = ((pin_position.x() - grid_->getXMin()) / grid_->getTileSize());
     int pinY = ((pin_position.y() - grid_->getYMin()) / grid_->getTileSize());
 
-    if (!(pinX < 0 || pinX >= grid_->getXGrids() || pinY < -1
-          || pinY >= grid_->getYGrids() || conn_layer > grid_->getNumLayers()
-          || conn_layer <= 0)) {
+    if (pinX >= 0 && pinX < grid_->getXGrids() && pinY >= -1
+        && pinY < grid_->getYGrids() && conn_layer <= grid_->getNumLayers()
+        && conn_layer > 0) {
       bool duplicated = false;
       for (RoutePt& pin_pos : pins_on_grid) {
         if (pinX == pin_pos.x() && pinY == pin_pos.y()
@@ -4344,8 +4344,13 @@ Net* GlobalRouter::addNet(odb::dbNet* db_net)
 
 void GlobalRouter::removeNet(odb::dbNet* db_net)
 {
-  Net* deleted_net = db_net_map_[db_net];
-  if (deleted_net != nullptr && deleted_net->isMergedNet()) {
+  auto it = db_net_map_.find(db_net);
+  if (it == db_net_map_.end() || it->second == nullptr) {
+    return;
+  }
+  Net* deleted_net = it->second;
+
+  if (deleted_net->isMergedNet()) {
     Net* preserved_net = db_net_map_[deleted_net->getMergedNet()];
     if (preserved_net->areSegmentsRestored()
         && deleted_net->areSegmentsRestored()) {
@@ -5848,6 +5853,13 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   db_net_map_[net]->setDirtyNet(true);
   db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
+}
+
+void GlobalRouter::updateCUGRNet(odb::dbNet* net)
+{
+  if (use_cugr_) {
+    cugr_->updateNet(net);
+  }
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
