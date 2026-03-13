@@ -1,7 +1,6 @@
 """Delta-debugging tool for minimising OpenROAD .odb test cases.
 
-Unlike deltaDebug.py this script does *not* require Python to be compiled
-into OpenROAD.  Database manipulation is delegated to small TCL scripts
+This script does *not* require Python to be compiled into OpenROAD.  Database manipulation is delegated to small TCL scripts
 (whittle_cut.tcl, whittle_cleanup.tcl) that are executed via
 ``openroad -exit``.  All imports are from the Python standard library, so
 any system ``python3`` works with no extra packages.
@@ -132,13 +131,13 @@ class Whittler:
         self.step = opt.step
 
         self.original_base_db_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_original_{base_db_name}"
+            base_db_directory, f"whittle_base_original_{base_db_name}"
         )
         self.temp_base_db_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_temp_{base_db_name}"
+            base_db_directory, f"whittle_base_temp_{base_db_name}"
         )
-        self.deltaDebug_result_base_file = os.path.join(
-            base_db_directory, f"deltaDebug_base_result_{base_db_name}"
+        self.result_base_file = os.path.join(
+            base_db_directory, f"whittle_base_result_{base_db_name}"
         )
 
         _script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -418,13 +417,13 @@ class Whittler:
         self.cleanup_db(self.temp_base_db_file, self.temp_base_db_file)
 
         if os.path.exists(self.temp_base_db_file):
-            os.rename(self.temp_base_db_file, self.deltaDebug_result_base_file)
+            os.rename(self.temp_base_db_file, self.result_base_file)
         if os.path.exists(self.original_base_db_file):
             os.rename(self.original_base_db_file, self.base_db_file)
 
         print("___________________________________")
-        print(f"Resultant file is {self.deltaDebug_result_base_file}")
-        print("Delta Debugging Done!")
+        print(f"Resultant file is {self.result_base_file}")
+        print("Whittling Done!")
 
 
 def main(args=None):
