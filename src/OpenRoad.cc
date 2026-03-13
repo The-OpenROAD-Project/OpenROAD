@@ -87,6 +87,7 @@
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
+#include "utl/OdbDelta.h"
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
 #include "utl/decode.h"
@@ -580,6 +581,88 @@ void OpenRoad::writeDb(const char* filename)
 {
   utl::OutStreamHandler stream_handler(filename, true);
   writeDb(stream_handler.getStream());
+}
+
+void OpenRoad::readDbDelta(const char* base,
+                           const std::vector<std::string>& deltas,
+                           bool hierarchy)
+{
+  // Read base .odb into bytes.
+  std::vector<uint8_t> current = utl::readFileBytes(base);
+  logger_->info(ORD, 72, "Read base .odb: {} bytes", current.size());
+
+  // Apply each delta sequentially.
+  for (const auto& delta_file : deltas) {
+    std::vector<uint8_t> delta_bytes = utl::readFileBytes(delta_file.c_str());
+    current = utl::applyOdbDelta(current, delta_bytes);
+    logger_->info(
+        ORD, 73, "Applied delta {}: {} bytes result", delta_file, current.size());
+  }
+
+  // Remember final state for future write_db .odb.delta.
+  delta_base_bytes_ = current;
+
+  // Load into database.
+  std::istringstream stream(
+      std::string(current.begin(), current.end()));
+  readDb(stream);
+
+  if (hierarchy || db_->hasHierarchy()) {
+    logger_->warn(
+        ORD,
+        12,
+        "Hierarchical flow (-hier) is currently in development and may cause "
+        "multiple issues. Do not use in production environments.");
+    sta::dbSta* sta = getSta();
+    sta->getDbNetwork()->setHierarchy();
+  }
+}
+
+void OpenRoad::writeDbDelta(const char* filename, const char* explicit_base)
+{
+  // Get base bytes.
+  std::vector<uint8_t> base_bytes;
+  if (explicit_base != nullptr) {
+    base_bytes = utl::readFileBytes(explicit_base);
+  } else {
+    base_bytes = delta_base_bytes_;
+  }
+
+  if (base_bytes.empty()) {
+    logger_->error(ORD,
+                   74,
+                   "No base .odb available for delta. Use read_db with a base "
+                   ".odb first, or specify -base.");
+  }
+
+  // Serialize current database to bytes.
+  std::ostringstream oss;
+  oss.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+  writeDb(oss);
+  const std::string& current_str = oss.str();
+  std::vector<uint8_t> current_bytes(current_str.begin(), current_str.end());
+
+  // Compute delta.
+  std::vector<uint8_t> delta
+      = utl::computeOdbDelta(base_bytes, current_bytes);
+
+  logger_->info(ORD,
+                75,
+                "Delta: {} bytes (base: {}, current: {}, ratio: {:.1f}%)",
+                delta.size(),
+                base_bytes.size(),
+                current_bytes.size(),
+                100.0 * delta.size() / current_bytes.size());
+
+  // Write to file with atomic rename.
+  {
+    utl::OutStreamHandler stream_handler(filename, true);
+    std::ostream& out = stream_handler.getStream();
+    out.write(reinterpret_cast<const char*>(delta.data()), delta.size());
+  }
+
+  // Update remembered base to current state (for chained deltas).
+  delta_base_bytes_ = std::move(current_bytes);
 }
 
 void OpenRoad::readVerilog(const char* filename)

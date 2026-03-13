@@ -419,6 +419,30 @@ write_db_cmd(const char *filename)
 }
 
 void
+read_db_delta_cmd(const char *base,
+                  vector<const char*> *deltas,
+                  bool hierarchy)
+{
+  OpenRoad *ord = getOpenRoad();
+  std::vector<std::string> delta_strs;
+  if (deltas) {
+    for (const char* d : *deltas) {
+      delta_strs.emplace_back(d);
+    }
+    delete deltas;
+  }
+  ord->readDbDelta(base, delta_strs, hierarchy);
+}
+
+void
+write_db_delta_cmd(const char *filename, const char *base)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeDbDelta(filename,
+      (base != nullptr && strlen(base) > 0) ? base : nullptr);
+}
+
+void
 read_verilog_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();

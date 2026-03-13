@@ -236,33 +236,65 @@ proc check_3dblox { args } {
   ord::check_3dblox_cmd
 }
 
-sta::define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {[-base filename] filename}
 
-sta::define_cmd_args "read_db" {[-hier] filename}
+sta::define_cmd_args "read_db" {[-hier] filename...}
 
 proc read_db { args } {
   # TODO: -hier is not needed anymore.
   # - It will be removed in a future release.
   # - It is currently retained for backward compatibility.
   sta::parse_key_args "read_db" args keys {} flags {-hier}
-  sta::check_argc_eq1or2 "read_db" $args
-  set filename [file nativename [lindex $args 0]]
-  if { ![file exists $filename] } {
-    utl::error "ORD" 7 "$filename does not exist."
-  }
   set hierarchy [info exists flags(-hier)]
-  if { ![file readable $filename] } {
-    utl::error "ORD" 8 "$filename is not readable."
+
+  set deltas {}
+  set base ""
+  foreach f $args {
+    set filename [file nativename $f]
+    if { ![file exists $filename] } {
+      utl::error "ORD" 7 "$filename does not exist."
+    }
+    if { ![file readable $filename] } {
+      utl::error "ORD" 8 "$filename is not readable."
+    }
+    if { [string match "*.delta" $filename] } {
+      lappend deltas $filename
+    } else {
+      if { $base ne "" } {
+        utl::error "ORD" 70 "Multiple base .odb files specified."
+      }
+      set base $filename
+    }
   }
-  ord::read_db_cmd $filename $hierarchy
+
+  if { [llength $deltas] > 0 } {
+    if { $base eq "" } {
+      utl::error "ORD" 71 "Delta files require a base .odb file."
+    }
+    ord::read_db_delta_cmd $base $deltas $hierarchy
+  } else {
+    if { $base eq "" } {
+      utl::error "ORD" 7 "No .odb file specified."
+    }
+    ord::read_db_cmd $base $hierarchy
+  }
 }
 
-sta::define_cmd_args "write_db" {filename}
+sta::define_cmd_args "write_db" {[-base filename] filename}
 
 proc write_db { args } {
+  sta::parse_key_args "write_db" args keys {-base} flags {}
   sta::check_argc_eq1 "write_db" $args
   set filename [file nativename [lindex $args 0]]
-  ord::write_db_cmd $filename
+  if { [string match "*.delta" $filename] } {
+    set base_file ""
+    if { [info exists keys(-base)] } {
+      set base_file [file nativename $keys(-base)]
+    }
+    ord::write_db_delta_cmd $filename $base_file
+  } else {
+    ord::write_db_cmd $filename
+  }
 }
 
 sta::define_cmd_args "assign_ndr" { -ndr name (-net name | -all_clocks) }

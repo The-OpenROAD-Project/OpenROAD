@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <string>
@@ -234,6 +235,12 @@ class OpenRoad
   void writeDb(std::ostream& stream);
   void writeDb(const char* filename);
 
+  // Delta (.odb.delta) support: read base + apply deltas, write delta.
+  void readDbDelta(const char* base,
+                   const std::vector<std::string>& deltas,
+                   bool hierarchy);
+  void writeDbDelta(const char* filename, const char* explicit_base);
+
   void setThreadCount(int threads, bool print_info = true);
   void setThreadCount(const char* threads, bool print_info = true);
   int getThreadCount();
@@ -285,6 +292,9 @@ class OpenRoad
   dft::Dft* dft_ = nullptr;
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   utl::CallBackHandler* callback_handler_ = nullptr;
+
+  // Remembered serialized .odb bytes for delta computation.
+  std::vector<uint8_t> delta_base_bytes_;
 
   int threads_ = 1;
 

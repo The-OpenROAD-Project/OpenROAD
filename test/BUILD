@@ -62,6 +62,7 @@ filegroup(
 # From CMakeLists.txt or_integration_tests(TESTS
 PASSFAIL_TESTS = [
     "commands_without_load",
+    "write_db_delta",
 ]
 
 COMPULSORY_TESTS = [

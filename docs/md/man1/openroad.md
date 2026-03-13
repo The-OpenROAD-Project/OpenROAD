@@ -90,13 +90,17 @@ OpenROAD binary.
 
   - Write Verilog (.v) file based on current database.
 
-- read_db filename
+- read_db [-hier] filename...
 
-  - Read OpenDB (.odb) database files.
+  - Read OpenDB database files. Accepts a single `.odb` file, or a base
+    `.odb` file combined with one or more `.delta` files. When delta files
+    are provided, the base is loaded first and deltas are applied in order.
 
-- write_db filename
+- write_db [-base filename] filename
 
-  - Write OpenDB (.odb) database files.
+  - Write OpenDB database files. When the output filename ends in `.delta`,
+    writes a block-level delta against the base `.odb` (specified via `-base`
+    or remembered from the last `read_db`). Otherwise writes a full `.odb`.
 
 - write_abstract_lef filename
 
