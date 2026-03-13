@@ -53,6 +53,7 @@
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 

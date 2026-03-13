@@ -52,6 +52,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 namespace gpl {

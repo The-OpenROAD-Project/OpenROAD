@@ -50,6 +50,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 using utl::PAR;
