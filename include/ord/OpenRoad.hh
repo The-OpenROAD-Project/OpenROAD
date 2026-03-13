@@ -185,10 +185,7 @@ class OpenRoad
   {
     return estimate_parasitics_;
   }
-  web::WebServer* getWebServer()
-  {
-    return web_server_;
-  }
+  web::WebServer* getWebServer() { return web_server_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
