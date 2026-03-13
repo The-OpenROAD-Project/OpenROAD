@@ -244,15 +244,16 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
       clk_end = static_cast<int>(summary.data_nodes.size()) - 1;
     }
 
-    int start_idx = clk_end + 1;
-    if (start_idx >= static_cast<int>(summary.data_nodes.size())) {
-      start_idx = 0;
-    }
-    summary.start_pin = summary.data_nodes[start_idx].pin_name;
     if (!summary.data_nodes.empty()) {
-      summary.end_pin = summary.data_nodes.back().pin_name;
+      int start_idx = clk_end + 1;
+      if (start_idx >= static_cast<int>(summary.data_nodes.size())) {
+        start_idx = 0;
+      }
+      summary.start_pin = summary.data_nodes[start_idx].pin_name;
+      if (!summary.data_nodes.empty()) {
+        summary.end_pin = summary.data_nodes.back().pin_name;
+      }
     }
-
     result.push_back(std::move(summary));
   }
 

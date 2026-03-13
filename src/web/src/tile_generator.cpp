@@ -895,8 +895,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
 
-  // Debug: save tile to file for inspection
-  {
+  if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
     std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z) + "_"
                            + std::to_string(x) + "_" + std::to_string(y)
                            + ".png";

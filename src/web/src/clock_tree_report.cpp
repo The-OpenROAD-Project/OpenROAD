@@ -440,7 +440,11 @@ std::vector<ClockTreeData> ClockTreeReport::getReport() const
     root->network = network;
     root->level = 0;
     // Get the root net from the clock's first pin
-    const sta::Pin* first_pin = *clk->pins().begin();
+    const sta::PinSet& pins = clk->pins();
+    if (pins.empty()) {
+      continue;
+    }
+    const sta::Pin* first_pin = *pins.begin();
     sta::Term* term = network->term(first_pin);
     sta::Net* net = term ? network->net(term) : network->net(first_pin);
     root->net = network->findFlatNet(net);
