@@ -280,8 +280,6 @@ proc read_db { args } {
   }
 }
 
-sta::define_cmd_args "write_db" {[-base filename] filename}
-
 proc write_db { args } {
   sta::parse_key_args "write_db" args keys {-base} flags {}
   sta::check_argc_eq1 "write_db" $args

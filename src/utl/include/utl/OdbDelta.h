@@ -11,16 +11,14 @@ namespace utl {
 struct OdbDelta
 {
   static constexpr uint32_t MAGIC = 0x4F444244;  // "ODBD"
-  static constexpr uint32_t VERSION = 1;
-  static constexpr uint32_t DEFAULT_BLOCK_SIZE = 4096;
+  static constexpr uint32_t VERSION = 2;          // bsdiff-based
 };
 
-// Compute delta between base and current serialized .odb bytes.
+// Compute delta between base and current serialized .odb bytes
+// using the bsdiff algorithm (suffix-array binary diff).
 // Returns self-describing delta file content.
-std::vector<uint8_t> computeOdbDelta(
-    const std::vector<uint8_t>& base,
-    const std::vector<uint8_t>& current,
-    uint32_t block_size = OdbDelta::DEFAULT_BLOCK_SIZE);
+std::vector<uint8_t> computeOdbDelta(const std::vector<uint8_t>& base,
+                                     const std::vector<uint8_t>& current);
 
 // Apply delta to base bytes. Returns reconstructed full .odb bytes.
 std::vector<uint8_t> applyOdbDelta(const std::vector<uint8_t>& base,

@@ -103,14 +103,10 @@ for ((i=0; i < ${#AVAILABLE[@]} - 1; i++)); do
   next_file="${STAGE_DIR}/${next_stage}.odb"
   delta_file="${RESULTS_DIR}/delta_${base_stage}_to_${next_stage}.delta"
 
-  gzip -9 -k -f "$next_file" 2>/dev/null || cp "$next_file" "${next_file}.gz.tmp" && gzip -9 -c "$next_file" > "${RESULTS_DIR}/${next_stage}.odb.gz"
+  gzip -9 -c "$next_file" > "${RESULTS_DIR}/${next_stage}.odb.gz"
   gzip -9 -c "$delta_file" > "${delta_file}.gz"
 
-  if [ -f "${RESULTS_DIR}/${next_stage}.odb.gz" ]; then
-    full_gz_size=$(stat -c%s "${RESULTS_DIR}/${next_stage}.odb.gz")
-  else
-    full_gz_size=$(stat -c%s "${next_file}.gz")
-  fi
+  full_gz_size=$(stat -c%s "${RESULTS_DIR}/${next_stage}.odb.gz")
   delta_gz_size=$(stat -c%s "${delta_file}.gz")
 
   full_gz_kb=$(echo "scale=1; $full_gz_size / 1024" | bc)

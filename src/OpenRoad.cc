@@ -3,14 +3,17 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "ord/Version.hh"
@@ -646,13 +649,16 @@ void OpenRoad::writeDbDelta(const char* filename, const char* explicit_base)
   std::vector<uint8_t> delta
       = utl::computeOdbDelta(base_bytes, current_bytes);
 
+  const double ratio = current_bytes.empty()
+                           ? 0.0
+                           : 100.0 * delta.size() / current_bytes.size();
   logger_->info(ORD,
                 75,
                 "Delta: {} bytes (base: {}, current: {}, ratio: {:.1f}%)",
                 delta.size(),
                 base_bytes.size(),
                 current_bytes.size(),
-                100.0 * delta.size() / current_bytes.size());
+                ratio);
 
   // Write to file with atomic rename.
   {
