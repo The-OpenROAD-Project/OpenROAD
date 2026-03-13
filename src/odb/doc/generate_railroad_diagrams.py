@@ -3,8 +3,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 """Generate SVG railroad diagrams from the LEF and DEF Bison grammar files.
 
-Downloads ebnf-convert and rr (Railroad Diagram Generator) from Maven Central
-into doc/tools/ on first use (the JARs are not committed to the repository).
+Requires the ebnf-convert.war and rr.war tools vendored in src/odb/doc/tools/.
 Requires Java 11 or later on PATH.
 
 Usage:
@@ -14,11 +13,11 @@ Usage:
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
-import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -29,13 +28,6 @@ TOOLS_DIR = SCRIPT_DIR / "tools"
 
 EBNF_WAR = TOOLS_DIR / "ebnf-convert.war"
 RR_WAR = TOOLS_DIR / "rr.war"
-
-# Maven Central coordinates — update versions here when upstream releases new ones.
-EBNF_VERSION = "0.73"
-RR_VERSION = "2.6"
-_MVN = "https://repo1.maven.org/maven2/de/bottlecaps"
-EBNF_URL = f"{_MVN}/ebnf-convert/{EBNF_VERSION}/ebnf-convert-{EBNF_VERSION}.war"
-RR_URL = f"{_MVN}/rr/{RR_VERSION}/rr-{RR_VERSION}.war"
 
 GRAMMARS = {
     "lef": {
@@ -48,29 +40,46 @@ GRAMMARS = {
     },
 }
 
+# Background colour applied to every generated SVG for visibility in both
+# light and dark documentation themes.
+DIAGRAM_BG = "#FFFCF0"
 
-def _download(url: str, dest: Path) -> None:
-    print(f"  Downloading {dest.name} from Maven Central…")
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    with urllib.request.urlopen(url) as response, open(dest, "wb") as out:
-        shutil.copyfileobj(response, out)
-    print(f"  Saved {dest}")
+
+def fix_svg_background(svg_path: Path) -> None:
+    """Inject a solid background colour into an SVG file."""
+    content = svg_path.read_text(encoding="utf-8")
+    style_block = (
+        "<style>\n"
+        f"  :root {{ --diagram-bg: {DIAGRAM_BG}; }}\n"
+        "</style>"
+    )
+    content = re.sub(r"(<svg[^>]*>)", r"\1" + style_block, content, count=1)
+    content = re.sub(
+        r"(<svg\b)([^>]*>)",
+        rf'\1 style="background: var(--diagram-bg, {DIAGRAM_BG})"\2',
+        content,
+        count=1,
+    )
+    svg_path.write_text(content, encoding="utf-8")
 
 
 def ensure_tools() -> None:
     """Check that the required WAR files exist in the tools directory."""
     missing = []
     if not EBNF_WAR.exists():
-        missing.append(f"  ebnf-convert.war  (build from: https://github.com/GuntherRademacher/ebnf-convert)")
+        missing.append(
+            "  ebnf-convert.war  (build from: https://github.com/GuntherRademacher/ebnf-convert)"
+        )
     if not RR_WAR.exists():
-        missing.append(f"  rr.war            (download lib from Maven Central: de.bottlecaps.rr:rr-lib:2.6)")
+        missing.append(
+            "  rr.war            (download lib from Maven Central: de.bottlecaps.rr:rr-lib:2.6)"
+        )
     if missing:
         print("Error: Missing required tool(s) in src/odb/doc/tools/:", file=sys.stderr)
         for m in missing:
             print(m, file=sys.stderr)
         print("\nSee src/odb/doc/README.md for setup instructions.", file=sys.stderr)
         sys.exit(1)
-
 
 
 def _extract_rr_deps(tmp_dir: str) -> list[str]:
@@ -126,7 +135,7 @@ def generate(name: str) -> None:
             check=True,
         )
 
-        # Step 3 — Extract diagram/*.svg from the ZIP
+        # Step 3 — Extract diagram/*.svg from the ZIP and apply background fix
         print(f"[{name}] Step 3: Extracting SVGs to {out_dir}…")
         if out_dir.exists():
             shutil.rmtree(out_dir)
@@ -137,8 +146,10 @@ def generate(name: str) -> None:
             for entry in z.namelist():
                 if entry.startswith("diagram/") and entry.endswith(".svg"):
                     filename = os.path.basename(entry)
-                    with z.open(entry) as src, open(out_dir / filename, "wb") as dst:
+                    dest = out_dir / filename
+                    with z.open(entry) as src, open(dest, "wb") as dst:
                         dst.write(src.read())
+                    fix_svg_background(dest)
                     count += 1
 
         print(f"[{name}] Done — {count} SVG files written to {out_dir}")

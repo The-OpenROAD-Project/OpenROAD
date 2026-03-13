@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="399" height="37">
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="399" height="37"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
    <defs>
       <style type="text/css">
     @namespace "http://www.w3.org/2000/svg";
