@@ -212,6 +212,7 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    "write_gds",
     "test_block",
     "test_bterm",
     "test_destroy",

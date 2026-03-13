@@ -56,8 +56,10 @@
 #include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
+#include "odb/def2gds.h"
 #include "odb/defin.h"
 #include "odb/defout.h"
+#include "odb/gdsout.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
@@ -488,6 +490,69 @@ void OpenRoad::writeCdl(const char* out_filename,
           getLogger(), block, out_filename, masters_filenames, include_fillers);
     }
   }
+}
+
+void OpenRoad::writeGds(const char* filename,
+                        const char* layer_map,
+                        const std::vector<const char*>& merge_files,
+                        const char* seal_file,
+                        const char* allow_empty)
+{
+  odb::dbChip* chip = db_->getChip();
+  if (!chip) {
+    logger_->error(ORD, 80, "No design loaded.");
+  }
+  odb::dbBlock* block = chip->getBlock();
+  if (!block) {
+    logger_->error(ORD, 81, "No block in design.");
+  }
+
+  odb::gds::DefToGds converter(logger_);
+
+  // Parse layer map if provided
+  if (layer_map && layer_map[0] != '\0') {
+    std::string map_file(layer_map);
+    odb::gds::LayerMap lmap;
+    // Detect format by extension
+    if (map_file.size() >= 4
+        && map_file.substr(map_file.size() - 4) == ".lyt") {
+      lmap = odb::gds::LayerMap::parseLytLayerMap(map_file);
+    } else {
+      lmap = odb::gds::LayerMap::parseEdiLayerMap(map_file);
+    }
+    converter.setLayerMap(lmap);
+  }
+
+  // Convert design to GDS
+  odb::dbGDSLib* lib = converter.convert(block, db_);
+
+  // Merge macro GDS files
+  if (!merge_files.empty()) {
+    std::vector<std::string> files;
+    for (const char* f : merge_files) {
+      files.emplace_back(f);
+    }
+    converter.mergeCells(lib, files);
+  }
+
+  // Merge seal GDS
+  if (seal_file && seal_file[0] != '\0') {
+    converter.mergeSeal(lib, block->getName(), seal_file);
+  }
+
+  // Validate
+  std::string allow_re;
+  if (allow_empty && allow_empty[0] != '\0') {
+    allow_re = allow_empty;
+  }
+  int errors = converter.validate(lib, block->getName(), allow_re);
+  if (errors > 0) {
+    logger_->warn(ORD, 82, "GDS validation found {} issue(s).", errors);
+  }
+
+  // Write output
+  odb::gds::GDSWriter writer(logger_);
+  writer.write_gds(lib, filename);
 }
 
 void OpenRoad::read3Dbv(const std::string& filename)

@@ -149,6 +149,53 @@ proc write_abstract_lef { args } {
   ord::write_abstract_lef_cmd $filename $bloat_factor $bloat_occupied_layers
 }
 
+sta::define_cmd_args "write_gds" {[-layer_map layer_map_file]\
+                                   [-merge gds_file_list]\
+                                   [-seal seal_gds_file]\
+                                   [-allow_empty regex]\
+                                   filename}
+
+proc write_gds { args } {
+  sta::parse_key_args "write_gds" args \
+    keys {-layer_map -merge -seal -allow_empty} flags {}
+  sta::check_argc_eq1 "write_gds" $args
+  set filename [file nativename [lindex $args 0]]
+
+  set layer_map ""
+  if { [info exists keys(-layer_map)] } {
+    set layer_map [file nativename $keys(-layer_map)]
+    if { ![file exists $layer_map] } {
+      utl::error "ORD" 83 "Layer map file $layer_map does not exist."
+    }
+  }
+
+  set merge_files {}
+  if { [info exists keys(-merge)] } {
+    foreach f $keys(-merge) {
+      set f [file nativename $f]
+      if { ![file exists $f] } {
+        utl::error "ORD" 84 "Merge GDS file $f does not exist."
+      }
+      lappend merge_files $f
+    }
+  }
+
+  set seal ""
+  if { [info exists keys(-seal)] } {
+    set seal [file nativename $keys(-seal)]
+    if { ![file exists $seal] } {
+      utl::error "ORD" 85 "Seal GDS file $seal does not exist."
+    }
+  }
+
+  set allow_empty ""
+  if { [info exists keys(-allow_empty)] } {
+    set allow_empty $keys(-allow_empty)
+  }
+
+  ord::write_gds_cmd $filename $layer_map $merge_files $seal $allow_empty
+}
+
 sta::define_cmd_args "write_cdl" {[-include_fillers]
     -masters masters_filenames out_filename }
 

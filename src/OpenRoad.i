@@ -363,6 +363,17 @@ write_cdl_cmd(const char *outFilename,
 }
 
 void
+write_gds_cmd(const char *filename,
+              const char *layer_map,
+              vector<const char*>* merge_files,
+              const char *seal_file,
+              const char *allow_empty)
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->writeGds(filename, layer_map, *merge_files, seal_file, allow_empty);
+}
+
+void
 read_3dbv_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();

@@ -214,6 +214,12 @@ class OpenRoad
                 const std::vector<const char*>& masters_filenames,
                 bool include_fillers);
 
+  void writeGds(const char* filename,
+                const char* layer_map,
+                const std::vector<const char*>& merge_files,
+                const char* seal_file,
+                const char* allow_empty);
+
   void readVerilog(const char* filename);
   void linkDesign(const char* design_name,
                   bool hierarchy,
