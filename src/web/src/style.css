@@ -1,893 +1,631 @@
 /* Full viewport GL container */
-html, body
-{
-height:
-  100 % ;
-margin:
-  0;
-overflow:
-  hidden;
-background:
-# 1e1e1e;
-  font - family : -apple - system, BlinkMacSystemFont, 'Segoe UI', sans - serif;
-color:
-#ccc;
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #1e1e1e;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #ccc;
 }
 
-#gl - container {
-width : 100vw;
-height : 100vh;
+#gl-container {
+    width: 100vw;
+    height: 100vh;
 }
 
 /* GL dark theme overrides */
-.lm_goldenlayout{background : #1e1e1e;
+.lm_goldenlayout {
+    background: #1e1e1e;
 }
-.lm_content
-{
-background:
-# 252525;
-overflow:
-  hidden;
+.lm_content {
+    background: #252525;
+    overflow: hidden;
 }
-.lm_header.lm_tab{background : #2d2d2d;
-color : #aaa;
+.lm_header .lm_tab {
+    background: #2d2d2d;
+    color: #aaa;
 }
-.lm_header.lm_tab.lm_active{background : #252525;
-color : #eee;
+.lm_header .lm_tab.lm_active {
+    background: #252525;
+    color: #eee;
 }
-.lm_splitter{background : #333;
+.lm_splitter {
+    background: #333;
 }
 
 /* Leaflet tiles */
-.leaflet - tile
-{
-  image - rendering : auto;
+.leaflet-tile {
+    image-rendering: auto;
 }
 
 /* Leaflet popups */
-.leaflet - popup - content - wrapper
-{
-background:
-# 2b2b2b;
-color:
-#eee;
-  border - radius : 4px;
+.leaflet-popup-content-wrapper {
+    background: #2b2b2b;
+    color: #eee;
+    border-radius: 4px;
 }
-.leaflet - popup - content
-{
-  font - family : monospace;
+.leaflet-popup-content {
+    font-family: monospace;
 }
-.leaflet - popup - content strong{color : #87cfff;
+.leaflet-popup-content strong {
+    color: #87cfff;
 }
 
 /* Status overlay */
-#websocket - status {
-position : fixed;
-top : 8px;
-right : 8px;
-z - index : 10000;
-background : rgba(0, 0, 0, 0.7);
-color : #aaa;
-padding : 4px 10px;
-font : 12px monospace;
-border - radius : 4px;
-pointer - events : none;
-display : none;
+#websocket-status {
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    z-index: 10000;
+    background: rgba(0,0,0,0.7);
+    color: #aaa;
+    padding: 4px 10px;
+    font: 12px monospace;
+    border-radius: 4px;
+    pointer-events: none;
+    display: none;
 }
 
 /* Stub panel placeholder */
-.stub - panel
-{
-display:
-  flex;
-  flex - direction : column;
-  align - items : center;
-  justify - content : center;
-height:
-  100 % ;
-color:
-# 666;
-  font - size : 14px;
-  text - align : center;
-padding:
-  20px;
+.stub-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+    padding: 20px;
 }
-.stub - title
-{
-  font - size : 15px;
-  font - weight : 600;
-color:
-# 888;
-  margin - bottom : 8px;
+.stub-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #888;
+    margin-bottom: 8px;
 }
-.stub - desc
-{
-color:
-# 555;
-  max - width : 300px;
-  line - height : 1.5;
+.stub-desc {
+    color: #555;
+    max-width: 300px;
+    line-height: 1.5;
 }
 
 /* Display Controls panel */
-.display - controls
-{
-padding:
-  8px;
-  overflow - y : auto;
-height:
-  100 % ;
-  font - size : 13px;
+.display-controls {
+    padding: 8px;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
 }
-.display - controls.loading
-{
-color:
-# 666;
-padding:
-  12px 0;
+.display-controls .loading {
+    color: #666;
+    padding: 12px 0;
 }
-.display - controls label
-{
-display:
-  flex;
-  align - items : center;
-padding:
-  3px 0;
-color:
-#ccc;
-cursor:
-  pointer;
+.display-controls label {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    color: #ccc;
+    cursor: pointer;
 }
-.display - controls input[type = "checkbox"]
-{
-  margin - right : 8px;
+.display-controls input[type="checkbox"] {
+    margin-right: 8px;
 }
-.display - controls.layer - color
-{
-display:
-  inline - block;
-width:
-  12px;
-height:
-  12px;
-  border - radius : 2px;
-  margin - right : 6px;
-border:
-  1px solid #555;
+.display-controls .layer-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 6px;
+    border: 1px solid #555;
 }
-.display - controls.vis - group
-{
-margin:
-  1px 0;
+.display-controls .vis-group {
+    margin: 1px 0;
 }
-.display - controls.vis - group - header
-{
-display:
-  flex;
-  align - items : center;
-padding:
-  3px 0;
-color:
-#ccc;
-cursor:
-  pointer;
+.display-controls .vis-group-header {
+    display: flex;
+    align-items: center;
+    padding: 3px 0;
+    color: #ccc;
+    cursor: pointer;
 }
-.display - controls.vis - arrow
-{
-  font - size : 9px;
-width:
-  14px;
-  text - align : center;
-color:
-# 888;
-cursor:
-  pointer;
-  user - select : none;
-  flex - shrink : 0;
+.display-controls .vis-arrow {
+    font-size: 9px;
+    width: 14px;
+    text-align: center;
+    color: #888;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
 }
-.display - controls.vis - group - children
-{
-  padding - left : 22px;
+.display-controls .vis-group-children {
+    padding-left: 22px;
 }
-.display - controls.vis - group - children > label
-{
-  margin - left : 14px;
+.display-controls .vis-group-children > label {
+    margin-left: 14px;
 }
-.display - controls.vis - group - children.collapsed
-{
-display:
-  none;
+.display-controls .vis-group-children.collapsed {
+    display: none;
 }
-.display - controls.vis - group - children.disabled
-{
-opacity:
-  0.4;
-  pointer - events : none;
+.display-controls .vis-group-children.disabled {
+    opacity: 0.4;
+    pointer-events: none;
 }
 
 /* Layer context menu */
-.context - menu
-{
-position:
-  fixed;
-background:
-# 2a2a2a;
-border:
-  1px solid #555;
-  border - radius : 4px;
-  min - width : 180px;
-  z - index : 10000;
-padding:
-  4px 0;
-  box - shadow : 0 2px 8px rgba(0, 0, 0, 0.5);
-  font - size : 13px;
-color:
-#ccc;
+.context-menu {
+    position: fixed;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 4px;
+    min-width: 180px;
+    z-index: 10000;
+    padding: 4px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    font-size: 13px;
+    color: #ccc;
 }
-.context - menu - item
-{
-padding:
-  5px 12px;
-cursor:
-  pointer;
-  white - space : nowrap;
+.context-menu-item {
+    padding: 5px 12px;
+    cursor: pointer;
+    white-space: nowrap;
 }
-.context - menu - item : hover{background : #3a3a3a;
-color : #fff;
+.context-menu-item:hover {
+    background: #3a3a3a;
+    color: #fff;
 }
 
 /* Tcl Console */
-.tcl - console
-{
-display:
-  flex;
-  flex - direction : column;
-height:
-  100 % ;
-  font - family : monospace;
-  font - size : 13px;
+.tcl-console {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: monospace;
+    font-size: 13px;
 }
-.tcl - output
-{
-flex:
-  1;
-width:
-  100 % ;
-  box - sizing : border - box;
-background:
-# 1a1a1a;
-color:
-#aaa;
-padding:
-  8px;
-  overflow - y : auto;
-  white - space : pre - wrap;
-  font - family : inherit;
-  font - size : inherit;
+.tcl-output {
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+    background: #1a1a1a;
+    color: #aaa;
+    padding: 8px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: inherit;
 }
-.tcl - cmd{color : #87cfff;
+.tcl-cmd {
+    color: #87cfff;
 }
-.tcl - error{color : #f55;
+.tcl-error {
+    color: #f55;
 }
-.tcl - input - row
-{
-display:
-  flex;
-  align - items : center;
-background:
-# 111;
-  border - top : 1px solid #444;
+.tcl-input-row {
+    display: flex;
+    align-items: center;
+    background: #111;
+    border-top: 1px solid #444;
 }
-.tcl - prompt
-{
-color:
-# 87cfff;
-padding:
-  6px 4px 6px 8px;
-  user - select : none;
+.tcl-prompt {
+    color: #87cfff;
+    padding: 6px 4px 6px 8px;
+    user-select: none;
 }
-.tcl - input
-{
-flex:
-  1;
-background:
-# 111;
-color:
-#eee;
-border:
-  none;
-outline:
-  none;
-padding:
-  6px 8px 6px 0;
-  font - family : monospace;
-  font - size : 13px;
+.tcl-input {
+    flex: 1;
+    background: #111;
+    color: #eee;
+    border: none;
+    outline: none;
+    padding: 6px 8px 6px 0;
+    font-family: monospace;
+    font-size: 13px;
 }
 
 /* Help panel */
-.help - panel
-{
-padding:
-  16px;
-  font - size : 13px;
-  line - height : 1.6;
-  overflow - y : auto;
-height:
-  100 % ;
+.help-panel {
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-y: auto;
+    height: 100%;
 }
-.help - panel h3
-{
-color:
-#aaa;
-margin:
-  0 0 12px 0;
-  font - size : 14px;
+.help-panel h3 {
+    color: #aaa;
+    margin: 0 0 12px 0;
+    font-size: 14px;
 }
-.help - panel table
-{
-  border - collapse : collapse;
+.help-panel table {
+    border-collapse: collapse;
 }
-.help - panel td
-{
-padding:
-  2px 16px 2px 0;
+.help-panel td {
+    padding: 2px 16px 2px 0;
 }
-.help - panel kbd
-{
-background:
-# 333;
-border:
-  1px solid #555;
-  border - radius : 3px;
-padding:
-  1px 6px;
-  font - family : monospace;
-  font - size : 12px;
-color:
-#ddd;
+.help-panel kbd {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #ddd;
 }
 
 /* Inspector panel */
-.inspector
-{
-padding:
-  8px;
-  overflow - y : auto;
-height:
-  100 % ;
-  font - size : 13px;
-  font - family : monospace;
+.inspector {
+    padding: 8px;
+    overflow-y: auto;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
 }
-.inspector - prop
-{
-display:
-  flex;
-padding:
-  2px 0;
-  border - bottom : 1px solid #2a2a2a;
+.inspector-prop {
+    display: flex;
+    padding: 2px 0;
+    border-bottom: 1px solid #2a2a2a;
 }
-.inspector - prop - name
-{
-color:
-# 87cfff;
-  min - width : 120px;
-  padding - right : 8px;
-  word - break : break - all;
+.inspector-prop-name {
+    color: #87cfff;
+    min-width: 120px;
+    padding-right: 8px;
+    word-break: break-all;
 }
-.inspector - prop - value
-{
-color:
-#ccc;
-  word - break : break - all;
+.inspector-prop-value {
+    color: #ccc;
+    word-break: break-all;
 }
-.inspector - group
-{
-margin:
-  1px 0;
+.inspector-group {
+    margin: 1px 0;
 }
-.inspector - group - header
-{
-display:
-  flex;
-  align - items : center;
-padding:
-  2px 0;
-cursor:
-  pointer;
-color:
-#ccc;
-  border - bottom : 1px solid #2a2a2a;
+.inspector-group-header {
+    display: flex;
+    align-items: center;
+    padding: 2px 0;
+    cursor: pointer;
+    color: #ccc;
+    border-bottom: 1px solid #2a2a2a;
 }
-.inspector - group - header : hover{background : #2a2a2a;
+.inspector-group-header:hover {
+    background: #2a2a2a;
 }
-.inspector - group - header.vis - arrow
-{
-  font - size : 9px;
-width:
-  14px;
-  text - align : center;
-color:
-# 888;
-  flex - shrink : 0;
+.inspector-group-header .vis-arrow {
+    font-size: 9px;
+    width: 14px;
+    text-align: center;
+    color: #888;
+    flex-shrink: 0;
 }
-.inspector - count
-{
-color:
-# 666;
-  margin - left : 6px;
-  font - size : 11px;
+.inspector-count {
+    color: #666;
+    margin-left: 6px;
+    font-size: 11px;
 }
-.inspector - group - children
-{
-  padding - left : 16px;
+.inspector-group-children {
+    padding-left: 16px;
 }
-.inspector - group - children.collapsed
-{
-display:
-  none;
+.inspector-group-children.collapsed {
+    display: none;
 }
-.inspector - link
-{
-color:
-# 4fc3f7;
-cursor:
-  pointer;
-  text - decoration : none;
+.inspector-link {
+    color: #4fc3f7;
+    cursor: pointer;
+    text-decoration: none;
 }
-.inspector - link : hover
-{
-  text - decoration : underline;
+.inspector-link:hover {
+    text-decoration: underline;
 }
-.inspector - toolbar
-{
-display:
-  flex;
-gap:
-  4px;
-padding:
-  2px 0 6px;
-  border - bottom : 1px solid #333;
-  margin - bottom : 4px;
+.inspector-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 2px 0 6px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 4px;
 }
-.inspector - btn
-{
-display:
-  flex;
-  align - items : center;
-  justify - content : center;
-width:
-  26px;
-height:
-  26px;
-padding:
-  0;
-background:
-# 333;
-border:
-  1px solid #555;
-  border - radius : 3px;
-color:
-#ccc;
-cursor:
-  pointer;
+.inspector-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    cursor: pointer;
 }
-.inspector - btn : hover{background : #444;
-color : #fff;
+.inspector-btn:hover {
+    background: #444;
+    color: #fff;
 }
 
 /* Hover highlight pulse animation */
-.hover - highlight
-{
-animation:
-  hover - pulse 0.8s ease - in - out infinite alternate;
+.hover-highlight {
+    animation: hover-pulse 0.8s ease-in-out infinite alternate;
 }
-@keyframes hover - pulse{from{opacity : 0.3;
-}
-to
-{
-opacity:
-  0.8;
-}
+@keyframes hover-pulse {
+    from { opacity: 0.3; }
+    to   { opacity: 0.8; }
 }
 
 /* ─── Timing Widget ────────────────────────────────────────────────────── */
 
-.timing - widget
-{
-display:
-  flex;
-  flex - direction : column;
-height:
-  100 % ;
-  font - size : 13px;
-  font - family : monospace;
-overflow:
-  hidden;
+.timing-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
 }
 
-.timing - toolbar
-{
-display:
-  flex;
-  align - items : center;
-gap:
-  8px;
-padding:
-  6px 8px;
-  border - bottom : 1px solid #333;
-  flex - shrink : 0;
+.timing-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
 }
 
-.timing - btn
-{
-background:
-# 333;
-border:
-  1px solid #555;
-  border - radius : 3px;
-color:
-#ccc;
-padding:
-  4px 12px;
-cursor:
-  pointer;
-  font - size : 12px;
+.timing-btn {
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
 }
-.timing - btn : hover
-{
-background:
-# 444;
-color:
-#fff;
-}
-.timing - btn : disabled
-{
-opacity:
-  0.5;
-cursor:
-  default;
+.timing-btn:hover { background: #444; color: #fff; }
+.timing-btn:disabled { opacity: 0.5; cursor: default; }
+
+.timing-path-count {
+    color: #888;
+    font-size: 12px;
 }
 
-.timing - path - count
-{
-color:
-# 888;
-  font - size : 12px;
+.timing-tab-bar {
+    display: flex;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
 }
 
-.timing - tab - bar
-{
-display:
-  flex;
-  border - bottom : 1px solid #333;
-  flex - shrink : 0;
+.timing-tab {
+    background: #2d2d2d;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #888;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+}
+.timing-tab.active {
+    color: #eee;
+    border-bottom-color: #4fc3f7;
+    background: #252525;
+}
+.timing-tab:hover { color: #ccc; }
+
+.timing-path-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 80px;
 }
 
-.timing - tab
-{
-background:
-# 2d2d2d;
-border:
-  none;
-  border - bottom : 2px solid transparent;
-color:
-# 888;
-padding:
-  6px 16px;
-cursor:
-  pointer;
-  font - size : 12px;
-  font - family : inherit;
-}
-.timing - tab.active{color : #eee;
-border - bottom - color : #4fc3f7;
-background : #252525;
-}
-.timing - tab : hover
-{
-color:
-#ccc;
+.timing-detail-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 80px;
+    border-top: 1px solid #444;
 }
 
-.timing - path - table - container
-{
-flex:
-  1;
-  overflow - y : auto;
-  min - height : 80px;
+.timing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
 }
 
-.timing - detail - table - container
-{
-flex:
-  1;
-  overflow - y : auto;
-  min - height : 80px;
-  border - top : 1px solid #444;
+.timing-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #2a2a2a;
+    color: #aaa;
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-.timing - table
-{
-width:
-  100 % ;
-  border - collapse : collapse;
-  font - size : 12px;
+.timing-table tbody td {
+    padding: 3px 8px;
+    border-bottom: 1px solid #2a2a2a;
+    white-space: nowrap;
+    color: #ccc;
 }
 
-.timing - table thead th
-{
-position:
-  sticky;
-top:
-  0;
-  z - index : 1;
-background:
-# 2a2a2a;
-color:
-#aaa;
-padding:
-  4px 8px;
-  text - align : left;
-  border - bottom : 1px solid #444;
-  font - weight : 600;
-  white - space : nowrap;
+.timing-table tbody tr:hover {
+    background: #2d2d2d;
 }
 
-.timing - table tbody td
-{
-padding:
-  3px 8px;
-  border - bottom : 1px solid #2a2a2a;
-  white - space : nowrap;
-color:
-#ccc;
+.timing-table tbody tr.selected {
+    background: #1a3a5c;
 }
 
-.timing - table tbody tr : hover{background : #2d2d2d;
+.timing-table tbody tr.timing-selected-row {
+    background: #3a3a1c;
 }
 
-.timing - table tbody tr.selected{background : #1a3a5c;
+
+
+.timing-table tbody tr.timing-clock-row td {
+    color: #888;
+    font-style: italic;
 }
 
-.timing - table tbody tr.timing - selected - row{background : #3a3a1c;
+.timing-table tbody td.slack-negative {
+    color: #f55;
 }
 
-.timing - table tbody tr.timing - clock - row td
-{
-color:
-# 888;
-  font - style : italic;
+.col-resize-grip {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    cursor: col-resize;
 }
 
-.timing - table tbody td.slack - negative{color : #f55;
+.col-resize-grip:hover {
+    background: rgba(255, 255, 255, 0.15);
 }
 
-.col - resize - grip
-{
-position:
-  absolute;
-right:
-  0;
-top:
-  0;
-bottom:
-  0;
-width:
-  5px;
-cursor:
-  col - resize;
-}
-
-.col - resize - grip : hover
-{
-background:
-  rgba(255, 255, 255, 0.15);
-}
-
-.timing - table td : first - child
-{
-  white - space : normal;
-  word - break : break - all;
-  overflow - wrap : break - word;
+.timing-table td:first-child {
+    white-space: normal;
+    word-break: break-all;
+    overflow-wrap: break-word;
 }
 
 /* ─── Hierarchy Browser ──────────────────────────────────────────────── */
 
-.hierarchy - widget
-{
-display:
-  flex;
-  flex - direction : column;
-height:
-  100 % ;
-  font - size : 13px;
-  font - family : monospace;
-overflow:
-  hidden;
+.hierarchy-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
 }
 
-.hierarchy - table - container
-{
-flex:
-  1;
-  overflow - y : auto;
-  min - height : 0;
+.hierarchy-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
-.hierarchy - arrow
-{
-display:
-  inline - block;
-width:
-  14px;
-  text - align : center;
-cursor:
-  pointer;
-color:
-# 888;
-  user - select : none;
-  font - size : 9px;
-  margin - right : 4px;
+.hierarchy-arrow {
+    display: inline-block;
+    width: 14px;
+    text-align: center;
+    cursor: pointer;
+    color: #888;
+    user-select: none;
+    font-size: 9px;
+    margin-right: 4px;
 }
 
-.hierarchy - color - swatch
-{
-display:
-  inline - block;
-width:
-  12px;
-height:
-  12px;
-  border - radius : 2px;
-border:
-  1px solid #555;
-  margin - right : 4px;
-  vertical - align : middle;
+.hierarchy-color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid #555;
+    margin-right: 4px;
+    vertical-align: middle;
 }
 
-.hierarchy - module - cb
-{
-  margin - right : 4px;
+.hierarchy-module-cb {
+    margin-right: 4px;
 }
 
 /* ─── Clock Tree Widget ───────────────────────────────────────────────── */
 
-.clock - tree - widget
-{
-display:
-  flex;
-  flex - direction : column;
-height:
-  100 % ;
-  font - size : 13px;
-  font - family : monospace;
-overflow:
-  hidden;
-position:
-  relative;
+.clock-tree-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
+    position: relative;
 }
 
-.clock - tree - toolbar
-{
-display:
-  flex;
-  align - items : center;
-gap:
-  8px;
-padding:
-  6px 8px;
-  border - bottom : 1px solid #333;
-  flex - shrink : 0;
+.clock-tree-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
 }
 
-.clock - tree - canvas
-{
-flex:
-  1;
-  min - height : 0;
-width:
-  100 % ;
-display:
-  block;
+.clock-tree-canvas {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: block;
 }
 
-.clock - tree - tooltip
-{
-position:
-  absolute;
-background:
-  rgba(30, 30, 30, 0.95);
-border:
-  1px solid #555;
-  border - radius : 4px;
-padding:
-  6px 10px;
-  font - size : 12px;
-color:
-#ccc;
-  pointer - events : none;
-  white - space : nowrap;
-  z - index : 100;
-display:
-  none;
+.clock-tree-tooltip {
+    position: absolute;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #ccc;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+    display: none;
 }
 
 /* ─── Charts Widget ──────────────────────────────────────────────────── */
 
-.charts - widget
-{
-display:
-  flex;
-  flex - direction : column;
-height:
-  100 % ;
-  font - size : 13px;
-  font - family : monospace;
-overflow:
-  hidden;
-position:
-  relative;
+.charts-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
+    position: relative;
 }
 
-.charts - toolbar
-{
-display:
-  flex;
-  align - items : center;
-gap:
-  8px;
-padding:
-  6px 8px;
-  border - bottom : 1px solid #333;
-  flex - shrink : 0;
+.charts-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
 }
 
-.charts - select
-{
-background:
-# 2a2a2a;
-color:
-#ccc;
-border:
-  1px solid #555;
-  border - radius : 3px;
-padding:
-  3px 6px;
-  font - family : monospace;
-  font - size : 12px;
-cursor:
-  pointer;
+.charts-select {
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 3px 6px;
+    font-family: monospace;
+    font-size: 12px;
+    cursor: pointer;
 }
-.charts - select : hover{border - color : #777;
+.charts-select:hover {
+    border-color: #777;
 }
 
-.charts - canvas
-{
-flex:
-  1;
-  min - height : 0;
-width:
-  100 % ;
-display:
-  block;
+.charts-canvas {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: block;
 }
 
-.charts - tooltip
-{
-position:
-  absolute;
-background:
-  rgba(30, 30, 30, 0.95);
-border:
-  1px solid #555;
-  border - radius : 4px;
-padding:
-  6px 10px;
-  font - size : 12px;
-color:
-#ccc;
-  pointer - events : none;
-  white - space : pre;
-  z - index : 100;
-display:
-  none;
+.charts-tooltip {
+    position: absolute;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #ccc;
+    pointer-events: none;
+    white-space: pre;
+    z-index: 100;
+    display: none;
 }
