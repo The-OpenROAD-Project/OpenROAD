@@ -26,21 +26,19 @@ namespace upf {
 bool create_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
                          const std::string& name,
-                         const std::vector<std::string>& include_scope = {})
+                         const std::vector<std::string>& include_scope)
 {
   odb::dbPowerDomain* domain = odb::dbPowerDomain::create(block, name.c_str());
+
   if (domain == nullptr) {
     logger->warn(utl::UPF, 1, "Creation of {} power domain failed", name);
     return false;
   }
 
-  for (const auto& inst_name : include_scope) {
-    odb::dbInst* inst = block->findInst(inst_name.c_str());
-    if (inst) {
-      domain->addInst(inst);  
-    } else {
-      logger->warn(utl::UPF, 1, "Instance {} not found in block {}", inst_name, block->getName());
-    }
+  if (!include_scope.empty()) {
+    logger->warn(utl::UPF,
+                 1,
+                 "include_scope option parsed but instance association is not yet implemented.");
   }
 
   return true;
