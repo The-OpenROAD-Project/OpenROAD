@@ -36,24 +36,23 @@ SteinerTreeBuilder::~SteinerTreeBuilder() = default;
 
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,
-                                         const int drvr_index)
+                                         const int drvr_index) const
 {
-  Tree tree = makeSteinerTree(x, y, drvr_index, alpha_);
-
-  return tree;
+  return makeSteinerTree(x, y, drvr_index, alpha_);
 }
 
 Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
                                          const std::vector<int>& x,
                                          const std::vector<int>& y,
-                                         const int drvr_index)
+                                         const int drvr_index) const
 {
   float net_alpha = alpha_;
   int min_fanout = min_fanout_alpha_.first;
   int min_hpwl = min_hpwl_alpha_.first;
 
-  if (net_alpha_map_.find(net) != net_alpha_map_.end()) {
-    net_alpha = net_alpha_map_[net];
+  auto it = net_alpha_map_.find(net);
+  if (it != net_alpha_map_.end()) {
+    net_alpha = it->second;
   } else if (min_hpwl > 0) {
     if (computeHPWL(net) >= min_hpwl) {
       net_alpha = min_hpwl_alpha_.second;
@@ -70,7 +69,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(odb::dbNet* net,
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,
                                          const int drvr_index,
-                                         const float alpha)
+                                         const float alpha) const
 {
   if (alpha > 0.0) {
     Tree tree = pdr::primDijkstra(x, y, drvr_index, alpha, logger_);
@@ -85,7 +84,7 @@ Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
 Tree SteinerTreeBuilder::makeSteinerTree(const std::vector<int>& x,
                                          const std::vector<int>& y,
                                          const std::vector<int>& s,
-                                         int accuracy)
+                                         int accuracy) const
 {
   return flute_->flutes(x, y, s, accuracy);
 }
@@ -200,7 +199,7 @@ void SteinerTreeBuilder::setMinHPWLAlpha(int min_hpwl, float alpha)
   min_hpwl_alpha_ = {min_hpwl, alpha};
 }
 
-int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
+int SteinerTreeBuilder::computeHPWL(odb::dbNet* net) const
 {
   if (net->getBTermCount() + net->getITermCount() == 0) {
     return 0;
@@ -256,17 +255,17 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
 Tree SteinerTreeBuilder::flute(const std::vector<int>& x,
                                const std::vector<int>& y,
-                               int acc)
+                               int acc) const
 {
   return flute_->flute(x, y, acc);
 }
 
-int SteinerTreeBuilder::wirelength(const Tree& t)
+int SteinerTreeBuilder::wirelength(const Tree& t) const
 {
   return flute_->wirelength(t);
 }
 
-void SteinerTreeBuilder::plottree(const Tree& t)
+void SteinerTreeBuilder::plottree(const Tree& t) const
 {
   flute_->plottree(t);
 }
@@ -274,10 +273,10 @@ void SteinerTreeBuilder::plottree(const Tree& t)
 Tree SteinerTreeBuilder::flutes(const std::vector<int>& xs,
                                 const std::vector<int>& ys,
                                 const std::vector<int>& s,
-                                int acc)
+                                int acc) const
 {
   return flute_->flutes(xs, ys, s, acc);
-};
+}
 
 ////////////////////////////////////////////////////////////////
 

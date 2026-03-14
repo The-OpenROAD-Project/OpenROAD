@@ -52,23 +52,25 @@ class SteinerTreeBuilder
   SteinerTreeBuilder(odb::dbDatabase* db, utl::Logger* logger);
   ~SteinerTreeBuilder();
 
+  // Tree-building methods are const and safe for concurrent use.
+  // Configuration (setAlpha, etc.) must be done before any parallel calls.
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
                        int drvr_index,
-                       float alpha);
+                       float alpha) const;
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
-                       int drvr_index);
+                       int drvr_index) const;
   Tree makeSteinerTree(odb::dbNet* net,
                        const std::vector<int>& x,
                        const std::vector<int>& y,
-                       int drvr_index);
+                       int drvr_index) const;
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
                        const std::vector<int>& s,
-                       int acc);
+                       int acc) const;
 
   bool checkTree(const Tree& tree) const;
   float getAlpha() const { return alpha_; }
@@ -78,16 +80,18 @@ class SteinerTreeBuilder
   void setMinFanoutAlpha(int min_fanout, float alpha);
   void setMinHPWLAlpha(int min_hpwl, float alpha);
 
-  Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
-  int wirelength(const Tree& t);
-  void plottree(const Tree& t);
+  Tree flute(const std::vector<int>& x,
+             const std::vector<int>& y,
+             int acc) const;
+  int wirelength(const Tree& t) const;
+  void plottree(const Tree& t) const;
   Tree flutes(const std::vector<int>& xs,
               const std::vector<int>& ys,
               const std::vector<int>& s,
-              int acc);
+              int acc) const;
 
  private:
-  int computeHPWL(odb::dbNet* net);
+  int computeHPWL(odb::dbNet* net) const;
 
   static constexpr int flute_accuracy = 3;
   float alpha_;
