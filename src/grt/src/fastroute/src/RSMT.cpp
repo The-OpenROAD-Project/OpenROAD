@@ -595,79 +595,32 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
                                  const bool newType,
                                  const bool noADJ)
 {
-  stt::Tree rsmt;
   int numShift = 0;
-
   int wl = 0;
   int wl1 = 0;
   int totalNumSeg = 0;
 
   const int flute_accuracy = 2;
 
-  for (const int& netID : net_ids_) {
-    FrNet* net = nets_[netID];
+  if (!reRoute && !congestionDriven) {
+    // Initial tree generation: per-net work is independent.
+    // Each iteration only accesses per-netID state (gxs_, gys_, gs_,
+    // seglist_, sttrees_) and const SteinerTreeBuilder methods.
+    const int num_nets = static_cast<int>(net_ids_.size());
+#pragma omp parallel for schedule(dynamic) reduction(+ : wl, totalNumSeg)
+    for (int idx = 0; idx < num_nets; idx++) {
+      const int netID = net_ids_[idx];
+      FrNet* net = nets_[netID];
+      stt::Tree rsmt;
 
-    int d = net->getNumPins();
-
-    if (reRoute) {
-      if (newType) {
-        const auto& treeedges = sttrees_[netID].edges;
-        const auto& treenodes = sttrees_[netID].nodes;
-        for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-          // only route the non-degraded edges (len>0)
-          if (sttrees_[netID].edges[j].len > 0) {
-            const TreeEdge* treeedge = &(treeedges[j]);
-            const int n1 = treeedge->n1;
-            const int n2 = treeedge->n2;
-            const int x1 = treenodes[n1].x;
-            const int y1 = treenodes[n1].y;
-            const int x2 = treenodes[n2].x;
-            const int y2 = treenodes[n2].y;
-            newRipup(treeedge, x1, y1, x2, y2, netID);
-          }
-        }
+      const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
+      if (net_alpha > 0.0) {
+        rsmt = stt_builder_->makeSteinerTree(net->getDbNet(),
+                                             net->getPinX(),
+                                             net->getPinY(),
+                                             net->getDriverIdx());
       } else {
-        // remove the est_usage due to the segments in this net
-        for (auto& seg : seglist_[netID]) {
-          ripupSegL(&seg);
-        }
-      }
-    }
-
-    // check net alpha because FastRoute has a special implementation of flute
-    // TODO: move this flute implementation to SteinerTreeBuilder
-    const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-    if (net_alpha > 0.0) {
-      rsmt = stt_builder_->makeSteinerTree(
-          net->getDbNet(), net->getPinX(), net->getPinY(), net->getDriverIdx());
-    } else {
-      float coeffV = 1.36;
-
-      if (congestionDriven) {
-        // call congestion driven flute to generate RSMT
-        bool cong;
-        coeffV = noADJ ? 1.2 : coeffADJ(netID);
-        cong = netCongestion(netID);
-        if (cong) {
-          fluteCongest(netID,
-                       net->getPinX(),
-                       net->getPinY(),
-                       flute_accuracy,
-                       coeffV,
-                       rsmt);
-        } else {
-          fluteNormal(netID,
-                      net->getPinX(),
-                      net->getPinY(),
-                      flute_accuracy,
-                      coeffV,
-                      rsmt);
-        }
-        if (d > 3) {
-          numShift += edgeShiftNew(rsmt, netID);
-        }
-      } else {
-        // call FLUTE to generate RSMT for each net
+        float coeffV = 1.36;
         if (noADJ || HTreeSuite(netID)) {
           coeffV = 1.2;
         }
@@ -678,57 +631,152 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
                     coeffV,
                     rsmt);
       }
-    }
-    if (debug_->isOn() && debug_->steinerTree
-        && net->getDbNet() == debug_->net) {
-      logger_->report("Steiner Tree 2D");
-      steinerTreeVisualization(rsmt, net);
-    }
 
-    if (genTree) {
-      copyStTree(netID, rsmt);
-    }
-
-    if (net->getNumPins() != rsmt.deg) {
-      d = rsmt.deg;
-    }
-
-    if (congestionDriven) {
-      for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
-        wl1 += sttrees_[netID].edges[j].len;
+      if (genTree) {
+        copyStTree(netID, rsmt);
       }
-    }
 
-    for (int j = 0; j < rsmt.branchCount(); j++) {
-      const int x1 = rsmt.branch[j].x;
-      const int y1 = rsmt.branch[j].y;
-      const int n = rsmt.branch[j].n;
-      const int x2 = rsmt.branch[n].x;
-      const int y2 = rsmt.branch[n].y;
+      for (int j = 0; j < rsmt.branchCount(); j++) {
+        const int x1 = rsmt.branch[j].x;
+        const int y1 = rsmt.branch[j].y;
+        const int n = rsmt.branch[j].n;
+        const int x2 = rsmt.branch[n].x;
+        const int y2 = rsmt.branch[n].y;
 
-      wl += abs(x1 - x2) + abs(y1 - y2);
+        wl += abs(x1 - x2) + abs(y1 - y2);
 
-      if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
-        // the position of this segment in seglist
-        const int8_t cost = nets_[netID]->getEdgeCost();
-        if (x1 < x2) {
-          seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
-        } else {
-          seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
+        if (x1 != x2 || y1 != y2) {
+          const int8_t cost = nets_[netID]->getEdgeCost();
+          if (x1 < x2) {
+            seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
+          } else {
+            seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
+          }
         }
       }
-    }  // loop j
 
-    totalNumSeg += seglist_[netID].size();
-
-    if (reRoute) {
-      // update the est_usage due to the segments in this net
-      newrouteL(
-          netID,
-          RouteType::NoRoute,
-          true);  // route the net with no previous route for each tree edge
+      totalNumSeg += seglist_[netID].size();
     }
-  }  // loop i
+  } else {
+    // Sequential path: reRoute and/or congestionDriven modify shared
+    // routing state (rip-up, congestion queries, edge shifts, reroute).
+    stt::Tree rsmt;
+    for (const int& netID : net_ids_) {
+      FrNet* net = nets_[netID];
+
+      int d = net->getNumPins();
+
+      if (reRoute) {
+        if (newType) {
+          const auto& treeedges = sttrees_[netID].edges;
+          const auto& treenodes = sttrees_[netID].nodes;
+          for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
+            if (sttrees_[netID].edges[j].len > 0) {
+              const TreeEdge* treeedge = &(treeedges[j]);
+              const int n1 = treeedge->n1;
+              const int n2 = treeedge->n2;
+              const int x1 = treenodes[n1].x;
+              const int y1 = treenodes[n1].y;
+              const int x2 = treenodes[n2].x;
+              const int y2 = treenodes[n2].y;
+              newRipup(treeedge, x1, y1, x2, y2, netID);
+            }
+          }
+        } else {
+          for (auto& seg : seglist_[netID]) {
+            ripupSegL(&seg);
+          }
+        }
+      }
+
+      const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
+      if (net_alpha > 0.0) {
+        rsmt = stt_builder_->makeSteinerTree(net->getDbNet(),
+                                             net->getPinX(),
+                                             net->getPinY(),
+                                             net->getDriverIdx());
+      } else {
+        float coeffV = 1.36;
+
+        if (congestionDriven) {
+          coeffV = noADJ ? 1.2 : coeffADJ(netID);
+          const bool cong = netCongestion(netID);
+          if (cong) {
+            fluteCongest(netID,
+                         net->getPinX(),
+                         net->getPinY(),
+                         flute_accuracy,
+                         coeffV,
+                         rsmt);
+          } else {
+            fluteNormal(netID,
+                        net->getPinX(),
+                        net->getPinY(),
+                        flute_accuracy,
+                        coeffV,
+                        rsmt);
+          }
+          if (d > 3) {
+            numShift += edgeShiftNew(rsmt, netID);
+          }
+        } else {
+          if (noADJ || HTreeSuite(netID)) {
+            coeffV = 1.2;
+          }
+          fluteNormal(netID,
+                      net->getPinX(),
+                      net->getPinY(),
+                      flute_accuracy,
+                      coeffV,
+                      rsmt);
+        }
+      }
+      if (debug_->isOn() && debug_->steinerTree
+          && net->getDbNet() == debug_->net) {
+        logger_->report("Steiner Tree 2D");
+        steinerTreeVisualization(rsmt, net);
+      }
+
+      if (genTree) {
+        copyStTree(netID, rsmt);
+      }
+
+      if (net->getNumPins() != rsmt.deg) {
+        d = rsmt.deg;
+      }
+
+      if (congestionDriven) {
+        for (int j = 0; j < sttrees_[netID].num_edges(); j++) {
+          wl1 += sttrees_[netID].edges[j].len;
+        }
+      }
+
+      for (int j = 0; j < rsmt.branchCount(); j++) {
+        const int x1 = rsmt.branch[j].x;
+        const int y1 = rsmt.branch[j].y;
+        const int n = rsmt.branch[j].n;
+        const int x2 = rsmt.branch[n].x;
+        const int y2 = rsmt.branch[n].y;
+
+        wl += abs(x1 - x2) + abs(y1 - y2);
+
+        if (x1 != x2 || y1 != y2) {
+          const int8_t cost = nets_[netID]->getEdgeCost();
+          if (x1 < x2) {
+            seglist_[netID].emplace_back(netID, x1, y1, x2, y2, cost);
+          } else {
+            seglist_[netID].emplace_back(netID, x2, y2, x1, y1, cost);
+          }
+        }
+      }
+
+      totalNumSeg += seglist_[netID].size();
+
+      if (reRoute) {
+        newrouteL(netID, RouteType::NoRoute, true);
+      }
+    }
+  }
 
   debugPrint(logger_,
              GRT,
