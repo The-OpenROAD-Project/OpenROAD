@@ -142,6 +142,10 @@ class dbInsertBuffer
   void connectPeerITerms(dbModule* mod,
                          dbModNet* mod_net,
                          dbNet* corresponding_flat_net);
+  dbModBTerm* findOrCreateTracePort(dbModule* current_mod,
+                                    dbModNet* mod_net,
+                                    dbIoType io_type,
+                                    const char* suffix);
 
   ///
   /// Trace up the module hierarchy from current_mod to target_mod,
