@@ -3338,14 +3338,14 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case34)
   std::set<dbObject*> load_pins;
   load_pins.insert(load2_a);
 
-  dbInst* new_buf = orig_net->insertBufferBeforeLoads(
-      load_pins,
-      buf_x4_master,
-      nullptr,
-      "split",
-      nullptr,
-      dbNameUniquifyType::IF_NEEDED,
-      false);
+  dbInst* new_buf
+      = orig_net->insertBufferBeforeLoads(load_pins,
+                                          buf_x4_master,
+                                          nullptr,
+                                          "split",
+                                          nullptr,
+                                          dbNameUniquifyType::IF_NEEDED,
+                                          false);
   ASSERT_NE(new_buf, nullptr);
 
   // Post sanity check - detects flat net / ModNet name collision
