@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <set>
@@ -49,35 +50,42 @@ LayerMap LayerMap::parseEdiLayerMap(const std::string& filename)
     spec.layer = static_cast<int16_t>(gds_layer);
     spec.datatype = static_cast<int16_t>(gds_datatype);
 
-    // Map EDI type names to our purpose strings
-    std::string purpose;
-    if (edi_type == "NET" || edi_type == "SPNET") {
-      purpose = "NET";
-    } else if (edi_type == "PIN" || edi_type == "LEFPIN") {
-      purpose = "PIN";
-    } else if (edi_type == "FILL" || edi_type == "FILLOPC") {
-      purpose = "FILL";
-    } else if (edi_type == "VIA" || edi_type == "VIAFILL"
-               || edi_type == "VIAFILLOPC") {
-      purpose = "VIA";
-    } else if (edi_type == "LEFOBS") {
-      purpose = "OBS";
-    } else if (edi_type == "ALL") {
-      purpose = "";
-    } else {
-      purpose = edi_type;
-    }
-
     // Handle NAME entries which have format "Metal1/PIN"
     if (lef_name == "NAME") {
       const size_t slash = edi_type.find('/');
       if (slash != std::string::npos) {
-        lef_name = edi_type.substr(0, slash);
-        purpose = "LABEL";
+        std::string name = edi_type.substr(0, slash);
+        map.map_[{name, "LABEL"}] = spec;
       }
+      continue;
     }
 
-    map.map_[{lef_name, purpose}] = spec;
+    // EDI type field can be comma-separated (e.g., "NET,SPNET,PIN,LEFPIN,VIA")
+    // Split and create a mapping for each type.
+    std::istringstream type_stream(edi_type);
+    std::string single_type;
+    while (std::getline(type_stream, single_type, ',')) {
+      std::string purpose;
+      if (single_type == "NET" || single_type == "SPNET") {
+        purpose = "NET";
+      } else if (single_type == "PIN" || single_type == "LEFPIN") {
+        purpose = "PIN";
+      } else if (single_type == "FILL" || single_type == "FILLOPC") {
+        purpose = "FILL";
+      } else if (single_type == "VIA" || single_type == "VIAFILL"
+                 || single_type == "VIAFILLOPC") {
+        purpose = "VIA";
+      } else if (single_type == "LEFOBS") {
+        purpose = "OBS";
+      } else if (single_type == "ALL") {
+        purpose = "";
+      } else {
+        purpose = single_type;
+      }
+      // Later entries override earlier ones (more specific lines come after
+      // general comma-separated lines in EDI maps).
+      map.map_[{lef_name, purpose}] = spec;
+    }
   }
 
   return map;
@@ -177,13 +185,32 @@ LayerMap LayerMap::parseLytLayerMap(const std::string& filename)
     map.map_[{lef_name, purpose}] = spec;
   }
 
-  // Also extract default datatype conventions from the lefdef section
-  // These are used when the layer map doesn't have an explicit entry:
-  //   <routing-datatype>0</routing-datatype>
-  //   <labels-datatype>1</labels-datatype>
-  //   <pins-datatype>2</pins-datatype>
-  //   <obstructions-datatype>3</obstructions-datatype>
-  //   <blockages-datatype>4</blockages-datatype>
+  // If the inline layer_map() was empty, check for a <map-file> reference
+  // to an EDI-format layer map (e.g., ihp-sg13g2 uses this pattern).
+  if (map.empty()) {
+    const std::string mapfile_tag = "<map-file>";
+    const std::string mapfile_end = "</map-file>";
+    auto mf_start = content.find(mapfile_tag);
+    auto mf_stop = content.find(mapfile_end);
+    if (mf_start != std::string::npos && mf_stop != std::string::npos) {
+      std::string map_path = content.substr(
+          mf_start + mapfile_tag.size(),
+          mf_stop - mf_start - mapfile_tag.size());
+      // Trim whitespace
+      map_path.erase(0, map_path.find_first_not_of(" \t\n\r"));
+      map_path.erase(map_path.find_last_not_of(" \t\n\r") + 1);
+      if (!map_path.empty()) {
+        // Resolve relative paths against the .lyt file's directory
+        std::filesystem::path mp(map_path);
+        if (mp.is_relative()) {
+          mp = std::filesystem::path(filename).parent_path() / mp;
+        }
+        if (std::filesystem::exists(mp)) {
+          map = parseEdiLayerMap(mp.string());
+        }
+      }
+    }
+  }
 
   return map;
 }
