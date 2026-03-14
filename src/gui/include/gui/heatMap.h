@@ -71,6 +71,16 @@ class HeatMapDataSource
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource();
 
+  bool getUseSelectedOnly() const { return use_selected_only_; }
+  void setUseSelectedOnly(bool value)
+  {
+    if (use_selected_only_ != value) {
+      use_selected_only_ = value;
+      destroyMap();
+      redraw();
+    }
+  }
+
   void registerHeatMap();
 
   virtual void setBlock(odb::dbBlock* block) { block_ = block; }
@@ -184,8 +194,7 @@ class HeatMapDataSource
                               double new_data,
                               double data_area,
                               double intersection_area,
-                              double rect_area)
-      = 0;
+                              double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
@@ -204,6 +213,10 @@ class HeatMapDataSource
   }
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
+
+  // Returns the set of selected dbInst* objects when use_selected_only_ is
+  // enabled, or an empty set (meaning no filtering) when it is disabled.
+  std::set<odb::dbInst*> getSelectedInsts() const;
 
  private:
   const std::string name_;
@@ -229,6 +242,7 @@ class HeatMapDataSource
   bool reverse_log_;
   bool show_numbers_;
   bool show_legend_;
+  bool use_selected_only_;
 
   Map map_;
   std::vector<int> map_x_grid_;

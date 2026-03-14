@@ -8,6 +8,7 @@
 #include <QString>
 #include <QThread>
 #include <algorithm>
+#include <any>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -61,6 +62,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
+      use_selected_only_(false),
       renderer_(std::make_unique<HeatMapRenderer>(*this)),
       setup_(nullptr),
       color_generator_(SpectrumGenerator(100.0))
@@ -287,7 +289,8 @@ Renderer::Settings HeatMapDataSource::getSettings() const
                               {"LogScale", log_scale_},
                               {"ReverseLog", reverse_log_},
                               {"ShowNumbers", show_numbers_},
-                              {"ShowLegend", show_legend_}};
+                              {"ShowLegend", show_legend_},
+                              {"UseSelectedOnly", use_selected_only_}};
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
@@ -313,6 +316,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   Renderer::setSetting<bool>(settings, "ReverseLog", reverse_log_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
+  Renderer::setSetting<bool>(settings, "UseSelectedOnly", use_selected_only_);
 
   for (const auto& setting : settings_) {
     if (std::holds_alternative<MapSettingBoolean>(setting)) {
@@ -332,6 +336,20 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   setDisplayRange(display_range_min_, display_range_max_);
   setGridSizes(grid_x_size_, grid_y_size_);
   setColorAlpha(color_alpha_);
+}
+
+std::set<odb::dbInst*> HeatMapDataSource::getSelectedInsts() const
+{
+  std::set<odb::dbInst*> selected_insts;
+  if (!getUseSelectedOnly() || !gui::Gui::enabled()) {
+    return selected_insts;
+  }
+  for (const gui::Selected& item : gui::Gui::get()->selection()) {
+    if (item.isInst()) {
+      selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
+    }
+  }
+  return selected_insts;
 }
 
 HeatMapDataSource::MapView HeatMapDataSource::getMapView(
@@ -1121,10 +1139,17 @@ bool PowerDensityDataSource::populateMap()
 
   auto* network = sta_->getDbNetwork();
 
+  // Collect selected instances if filter is enabled
+  const std::set<odb::dbInst*> selected_insts = getSelectedInsts();
+  const bool filter = !selected_insts.empty();
+
   const bool include_all
       = include_internal_ && include_leakage_ && include_switching_;
   for (auto* inst : getBlock()->getInsts()) {
     if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    if (filter && selected_insts.find(inst) == selected_insts.end()) {
       continue;
     }
 
