@@ -513,10 +513,8 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
-  std::string full
-      = block_->makeNewNetName(const_cast<dbModule*>(module),
-                               name.c_str(),
-                               dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  std::string full = block_->makeNewNetName(
+      module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
   return std::string(block_->getBaseName(full.c_str()));
 }
 
