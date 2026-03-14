@@ -658,9 +658,8 @@ void CUGR::routeIncremental()
   }
 
   std::ranges::sort(nets_to_route_);
-  nets_to_route_.erase(
-      std::unique(nets_to_route_.begin(), nets_to_route_.end()),
-      nets_to_route_.end());
+  auto [first, last] = std::ranges::unique(nets_to_route_);
+  nets_to_route_.erase(first, last);
 
   std::vector<int> nets_to_reroute = nets_to_route_;
   rerouteNets(nets_to_reroute);
