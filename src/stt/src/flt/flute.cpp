@@ -82,41 +82,15 @@ extern const char* powv9[];
 ////////////////////////////////////////////////////////////////
 
 Flute::Flute()
+    : lut_(std::make_unique<LutArray>(
+          // NOLINTNEXTLINE(misc-include-cleaner)
+          boost::extents[kMaxLutDegree + 1][kMaxGroup])),
+      numsoln_(kMaxLutDegree + 1)
 {
-  readLUT();
-}
-
-void Flute::readLUT()
-{
-  makeLUT(lut_, numsoln_);
-  initLUT(kMaxLutDegree, lut_, numsoln_);
-}
-
-void Flute::makeLUT(LutType& lut, NumSoln& numsoln)
-{
-  lut = new boost::multi_array<std::shared_ptr<Csoln[]>, 2>(
-      // NOLINTNEXTLINE(misc-include-cleaner)
-      boost::extents[kMaxLutDegree + 1][kMaxGroup]);
-  numsoln = new int*[kMaxLutDegree + 1];
   for (int d = 4; d <= kMaxLutDegree; d++) {
-    numsoln[d] = new int[kMaxGroup];
+    numsoln_[d].resize(kMaxGroup);
   }
-}
-
-void Flute::deleteLUT()
-{
-  deleteLUT(lut_, numsoln_);
-}
-
-void Flute::deleteLUT(LutType& lut, NumSoln& numsoln)
-{
-  if (lut) {
-    delete lut;
-    for (int d = 4; d <= kMaxLutDegree; d++) {
-      delete[] numsoln[d];
-    }
-    delete[] numsoln;
-  }
+  initLUT(kMaxLutDegree);
 }
 
 static unsigned char charNum(const unsigned char c)
@@ -149,7 +123,7 @@ static const char* readDecimalInt(const char* s, int& value)
 }
 
 // Init LUTs from base64 encoded string variables.
-void Flute::initLUT(const int to_d, LutType lut, NumSoln numsoln)
+void Flute::initLUT(const int to_d)
 {
   const std::string pwv_string = utl::base64_decode(powv9);
   const char* pwv = pwv_string.c_str();
@@ -177,13 +151,13 @@ void Flute::initLUT(const int to_d, LutType lut, NumSoln numsoln)
       if (ns == 0) {  // same as some previous group
         int kk;
         pwv = readDecimalInt(pwv, kk) + 1;
-        numsoln[d][k] = numsoln[d][kk];
-        (*lut)[d][k] = (*lut)[d][kk];
+        numsoln_[d][k] = numsoln_[d][kk];
+        (*lut_)[d][k] = (*lut_)[d][kk];
       } else {
         pwv++;  // '\n'
-        numsoln[d][k] = ns;
+        numsoln_[d][k] = ns;
         Csoln* p = new Csoln[ns];
-        (*lut)[d][k] = std::shared_ptr<Csoln[]>(p);
+        (*lut_)[d][k] = std::shared_ptr<Csoln[]>(p);
         for (int i = 1; i <= ns; i++) {
           p->parent = charNum(*pwv++);
 

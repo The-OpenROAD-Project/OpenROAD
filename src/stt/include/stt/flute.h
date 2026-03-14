@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#pragma once
+
 #include <memory>
 #include <vector>
 
 #include "boost/multi_array.hpp"
 #include "stt/SteinerTreeBuilder.h"
-
-#pragma once
 
 namespace stt::flt {
 
@@ -15,7 +15,7 @@ class Flute
 {
  public:
   Flute();
-  ~Flute() { deleteLUT(); }
+  ~Flute() = default;
 
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
   int wirelength(const Tree& t);
@@ -32,14 +32,9 @@ class Flute
  private:
   struct Csoln;
 
-  using LutType = boost::multi_array<std::shared_ptr<Csoln[]>, 2>*;
-  using NumSoln = int**;
+  using LutArray = boost::multi_array<std::shared_ptr<Csoln[]>, 2>;
 
-  void readLUT();
-  void makeLUT(LutType& lut, NumSoln& numsoln);
-  void initLUT(int to_d, LutType lut, NumSoln numsoln);
-  void deleteLUT();
-  void deleteLUT(LutType& lut, NumSoln& numsoln);
+  void initLUT(int to_d);
 
   Tree d_merge_tree(const Tree& t1, const Tree& t2) const;
   Tree h_merge_tree(const Tree& t1, const Tree& t2, const std::vector<int>& s);
@@ -79,8 +74,8 @@ class Flute
 
   // LUTs are eagerly initialized to max degree at construction
   // and are immutable thereafter (safe for concurrent read access).
-  LutType lut_ = nullptr;
-  NumSoln numsoln_ = nullptr;
+  std::unique_ptr<LutArray> lut_;
+  std::vector<std::vector<int>> numsoln_;
 
   static constexpr int kNumGroup[10]
       = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
