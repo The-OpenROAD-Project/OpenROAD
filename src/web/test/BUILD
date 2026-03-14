@@ -59,6 +59,13 @@ js_test(
 )
 
 js_test(
+    name = "checkbox_tree_model_test",
+    data = ["//src/web:js_sources"],
+    entry_point = "js/test-checkbox-tree-model.js",
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+js_test(
     name = "display_controls_test",
     data = ["//src/web:js_sources"],
     entry_point = "js/test-display-controls.js",

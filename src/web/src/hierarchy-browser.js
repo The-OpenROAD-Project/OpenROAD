@@ -3,6 +3,7 @@
 
 // Hierarchy browser widget — module tree with coloring.
 
+import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { makeResizableHeaders } from './ui-utils.js';
 
 const COLS = [
@@ -35,6 +36,9 @@ export class HierarchyBrowser {
 
         // Module coloring state: odb_id → {color, effectiveColor, visible}
         this._moduleState = new Map();
+
+        // Checkbox tree model for module visibility (tri-state propagation).
+        this._checkModel = null;
 
         this._build(container);
 
@@ -141,6 +145,25 @@ export class HierarchyBrowser {
         for (const root of roots) {
             this._dfs(root.id, 0);
         }
+
+        // Build checkbox model for module visibility.
+        // Only MODULE nodes with odb_id get checkboxes; others are structural.
+        this._checkModel = new CheckboxTreeModel(() => {
+            this._checkModel.forEach(node => {
+                if (!node.hasCheckbox) return;
+                const st = this._moduleState.get(node.data.odb_id);
+                if (st) st.visible = node.checked;
+            });
+            this._sendModuleColors();
+        });
+        this._checkModel.buildFromNodes(this._nodes.map(n => ({
+            id: n.id,
+            parentId: n.parent_id,
+            hasCheckbox: (n.node_kind || 0) === NODE_KIND.MODULE
+                         && n.odb_id != null,
+            checked: true,
+            data: n,
+        })));
     }
 
     // Assign a color from the palette to each MODULE node in DFS order.
@@ -285,15 +308,19 @@ export class HierarchyBrowser {
             // Module color swatch + visibility checkbox
             if (kind === NODE_KIND.MODULE && node.odb_id != null) {
                 const st = this._moduleState.get(node.odb_id);
-                if (st) {
+                const modelNode = this._checkModel
+                    ? this._checkModel.get(node.id) : null;
+                if (st && modelNode) {
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
-                    cb.checked = st.visible;
+                    cb.checked = modelNode.checked;
+                    cb.indeterminate = modelNode.indeterminate;
                     cb.className = 'hierarchy-module-cb';
+                    modelNode.cb = cb;
                     cb.addEventListener('change', (e) => {
                         e.stopPropagation();
-                        st.visible = cb.checked;
-                        this._sendModuleColors();
+                        this._checkModel.check(node.id, cb.checked);
+                        this._render();
                     });
                     tdInst.appendChild(cb);
 

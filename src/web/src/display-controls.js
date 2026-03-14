@@ -3,6 +3,7 @@
 
 // Display controls — layer checkboxes and visibility tree.
 
+import { CheckboxTreeModel } from './checkbox-tree-model.js';
 import { VisTree } from './vis-tree.js';
 
 // Compute a Set of layer indices around `center` within [0, count).
@@ -49,7 +50,48 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     app.modulesLayer = modulesLayer;
     app.allLayers.push(modulesLayer);
 
-    // --- Layers group ---
+    // --- Layers group (using CheckboxTreeModel) ---
+
+    // Create Leaflet layers and build a model spec.
+    const leafletLayers = [];  // index → WebSocketTileLayer
+    const layerIds = [];       // index → model node id
+
+    const layerSpec = {
+        id: 'layers_parent',
+        children: techData.layers.map((name, index) => {
+            const layer = new WebSocketTileLayer(app.websocketManager, name, {
+                opacity: 0.7,
+                zIndex: index + 2,
+            });
+            layer.addTo(app.map);
+            app.allLayers.push(layer);
+            leafletLayers.push(layer);
+
+            const id = `layer_${index}`;
+            layerIds.push(id);
+            return { id, data: { name, layer, colorIndex: index }, checked: true };
+        }),
+    };
+
+    const layerModel = new CheckboxTreeModel(() => {
+        // Sync DOM and Leaflet layer visibility from model.
+        layerModel.forEach(node => {
+            if (node.cb) {
+                node.cb.checked = node.checked;
+                node.cb.indeterminate = node.indeterminate;
+            }
+            if (node.data && node.data.layer) {
+                if (node.checked) {
+                    node.data.layer.addTo(app.map);
+                } else {
+                    app.map.removeLayer(node.data.layer);
+                }
+            }
+        });
+    });
+    layerModel.addFromSpec(layerSpec);
+
+    // Build layer DOM.
     const layerGroup = document.createElement('div');
     layerGroup.className = 'vis-group';
 
@@ -59,39 +101,36 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     layerArrow.className = 'vis-arrow';
     layerArrow.textContent = '▼';
     layerHeader.appendChild(layerArrow);
-    const layerParentCb = document.createElement('input');
-    layerParentCb.type = 'checkbox';
-    layerParentCb.checked = true;
-    layerHeader.appendChild(layerParentCb);
+
+    const parentNode = layerModel.get('layers_parent');
+    const parentCb = document.createElement('input');
+    parentCb.type = 'checkbox';
+    parentCb.checked = true;
+    parentNode.cb = parentCb;
+    parentCb.addEventListener('change', () => {
+        layerModel.check('layers_parent', parentCb.checked);
+    });
+    layerHeader.appendChild(parentCb);
     layerHeader.appendChild(document.createTextNode('Layers'));
     layerGroup.appendChild(layerHeader);
 
     const layerChildren = document.createElement('div');
     layerChildren.className = 'vis-group-children';
-    const layerCbs = [];
 
     techData.layers.forEach((name, index) => {
-        const layer = new WebSocketTileLayer(app.websocketManager, name, {
-            opacity: 0.7,
-            zIndex: index + 2
-        });
-        layer.addTo(app.map);
-        app.allLayers.push(layer);
+        const id = layerIds[index];
+        const modelNode = layerModel.get(id);
 
         const label = document.createElement('label');
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = true;
+        modelNode.cb = checkbox;
         checkbox.addEventListener('change', () => {
-            if (checkbox.checked) {
-                layer.addTo(app.map);
-            } else {
-                app.map.removeLayer(layer);
-            }
+            layerModel.check(id, checkbox.checked);
         });
         label.appendChild(checkbox);
-        layerCbs.push(checkbox);
 
         const colorSwatch = document.createElement('span');
         colorSwatch.className = 'layer-color';
@@ -111,25 +150,18 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     document.body.appendChild(contextMenu);
 
     function showOnlyLayers(indices) {
-        layerCbs.forEach((cb, i) => {
-            const want = indices.has(i);
-            if (cb.checked !== want) {
-                cb.checked = want;
-                cb.dispatchEvent(new Event('change'));
-            }
+        const updates = {};
+        layerIds.forEach((id, i) => {
+            updates[id] = indices.has(i);
         });
-        // Update parent checkbox state
-        const allChecked = layerCbs.every(cb => cb.checked);
-        const someChecked = layerCbs.some(cb => cb.checked);
-        layerParentCb.checked = allChecked;
-        layerParentCb.indeterminate = someChecked && !allChecked;
+        layerModel.checkSet(updates);
     }
 
     function hideContextMenu() {
         contextMenu.style.display = 'none';
     }
 
-    const n = layerCbs.length;
+    const n = techData.layers.length;
     const menuItems = [
         { label: 'Show only this layer',  fn: (i) => layerRangeSet(i, 0, 0, n) },
         { label: 'Show layer range \u2195',   fn: (i) => layerRangeSet(i, 1, 1, n) },
@@ -166,21 +198,6 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         if (e.key === 'Escape') hideContextMenu();
     });
 
-    // Parent checkbox toggles all layers
-    layerParentCb.addEventListener('change', () => {
-        const checked = layerParentCb.checked;
-        for (const cb of layerCbs) {
-            cb.checked = checked;
-            cb.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    });
-    // Update parent state when children change
-    layerChildren.addEventListener('change', () => {
-        const allChecked = layerCbs.every(cb => cb.checked);
-        const someChecked = layerCbs.some(cb => cb.checked);
-        layerParentCb.checked = allChecked;
-        layerParentCb.indeterminate = someChecked && !allChecked;
-    });
     // Toggle collapse
     layerArrow.addEventListener('click', (e) => {
         e.preventDefault();
