@@ -14,7 +14,7 @@ namespace stt::flt {
 class Flute
 {
  public:
-  Flute() = default;
+  Flute();
   ~Flute() { deleteLUT(); }
 
   Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc);
@@ -38,7 +38,6 @@ class Flute
   void readLUT();
   void makeLUT(LutType& lut, NumSoln& numsoln);
   void initLUT(int to_d, LutType lut, NumSoln numsoln);
-  void ensureLUT(int d);
   void deleteLUT();
   void deleteLUT(LutType& lut, NumSoln& numsoln);
 
@@ -78,13 +77,11 @@ class Flute
                          const std::vector<int>& s,
                          int acc);
 
-  // Dynamically allocate LUTs.
+  // LUTs are eagerly initialized to max degree at construction
+  // and are immutable thereafter (safe for concurrent read access).
   LutType lut_ = nullptr;
   NumSoln numsoln_ = nullptr;
-  int lut_valid_d_ = 0;
 
-  // LUTs are initialized to this order at startup.
-  static constexpr int kLutInitialDegree = 8;
   static constexpr int kNumGroup[10]
       = {0, 0, 0, 0, 6, 30, 180, 1260, 10080, 90720};
 };

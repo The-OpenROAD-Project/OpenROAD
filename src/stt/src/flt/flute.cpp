@@ -81,12 +81,15 @@ extern const char* powv9[];
 
 ////////////////////////////////////////////////////////////////
 
+Flute::Flute()
+{
+  readLUT();
+}
+
 void Flute::readLUT()
 {
   makeLUT(lut_, numsoln_);
-
-  // Only init to d=8 on startup because d=9 is big and slow.
-  initLUT(kLutInitialDegree, lut_, numsoln_);
+  initLUT(kMaxLutDegree, lut_, numsoln_);
 }
 
 void Flute::makeLUT(LutType& lut, NumSoln& numsoln)
@@ -221,17 +224,6 @@ void Flute::initLUT(const int to_d, LutType lut, NumSoln numsoln)
       }
     }
   }
-  lut_valid_d_ = to_d;
-}
-
-void Flute::ensureLUT(const int d)
-{
-  if (lut_ == nullptr) {
-    readLUT();
-  }
-  if (d > lut_valid_d_ && d <= kMaxLutDegree) {
-    initLUT(kMaxLutDegree, lut_, numsoln_);
-  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -254,8 +246,6 @@ int Flute::flute_wl(const int d,
     const auto [yl, yu] = std::ranges::minmax(y);
     return (xu - xl) + (yu - yl);
   }
-
-  ensureLUT(d);
 
   /* allocate the dynamic pieces on the heap rather than the stack */
   std::vector<Point> pt(d + 1);
@@ -302,8 +292,6 @@ int Flute::flutes_wl_low_degree(const int d,
   if (d <= 3) {
     return xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
   }
-
-  ensureLUT(d);
 
   int k = 0;
   if (s[0] < s[2]) {
@@ -371,8 +359,6 @@ int Flute::flutes_wl_medium_degree(int d,
                                    const std::vector<int>& s,
                                    int acc)
 {
-  ensureLUT(d);
-
   int extral = 0;
 
   const int degree = d + 1;
@@ -669,8 +655,6 @@ Tree Flute::flute(const std::vector<int>& x,
                     {.x = x[1], .y = y[1], .n = 1}}};
   }
 
-  ensureLUT(d);
-
   std::vector<Point> pt(d + 1);
   std::vector<Point*> ptp(d + 1);
 
@@ -779,8 +763,6 @@ Tree Flute::flutes_low_degree(int d,
                 {.x = xs[1], .y = ys[1], .n = 3},
             }};
   }
-
-  ensureLUT(d);
 
   int k = 0;
   if (s[0] < s[2]) {
