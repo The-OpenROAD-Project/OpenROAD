@@ -81,6 +81,11 @@ class HeatMapDataSource
     }
   }
 
+  // Returns the label for the "use selected only" checkbox in the setup dialog.
+  // An empty string means this heatmap does not support selection filtering
+  // and the checkbox will not be shown.
+  virtual std::string getSelectionFilterLabel() const { return ""; }
+
   void registerHeatMap();
 
   virtual void setBlock(odb::dbBlock* block) { block_ = block; }
@@ -347,6 +352,11 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
 
  protected:
   bool populateMap() override;

@@ -67,7 +67,10 @@ HeatMapSetup::HeatMapSetup(HeatMapDataSource& source,
 
   form->addRow(tr("Show legend"), show_legend_);
 
-  form->addRow(tr("Only use selected items"), use_selected_only_);
+  const std::string selection_filter_label = source_.getSelectionFilterLabel();
+  if (!selection_filter_label.empty()) {
+    form->addRow(tr(selection_filter_label.c_str()), use_selected_only_);
+  }
 
   QHBoxLayout* grid_layout = new QHBoxLayout;
   if (!use_dbu_) {
