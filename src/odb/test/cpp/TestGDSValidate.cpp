@@ -2,6 +2,7 @@
 // Copyright (c) 2025, The OpenROAD Authors
 
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
@@ -9,7 +10,6 @@
 #include "odb/gdsUtil.h"
 #include "odb/geom.h"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 
 namespace odb::gds {
 namespace {

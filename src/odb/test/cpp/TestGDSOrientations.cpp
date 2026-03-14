@@ -4,17 +4,13 @@
 // Regression test for MYR90/MXR90 orientation mapping (PR review fix).
 // Verifies that all 8 dbOrientType values produce the correct GDS STRANS.
 
-#include <cmath>
-#include <filesystem>
 #include <string>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/def2gds.h"
-#include "odb/gdsUtil.h"
 #include "odb/geom.h"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 
 namespace odb::gds {
 namespace {

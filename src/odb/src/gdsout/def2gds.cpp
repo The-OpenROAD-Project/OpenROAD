@@ -4,18 +4,24 @@
 #include "odb/def2gds.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <regex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "odb/db.h"
 #include "odb/dbShape.h"
+#include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "odb/gdsin.h"
 #include "utl/Logger.h"
 
@@ -532,7 +538,7 @@ void DefToGds::mergeCells(dbGDSLib* lib,
     dbGDSLib* source_lib = reader.read_gds(gds_file, temp_db);
 
     if (source_lib == nullptr) {
-      logger_->warn(utl::ODB, 500, "Failed to read GDS file: {}", gds_file);
+      logger_->warn(utl::ODB, 546, "Failed to read GDS file: {}", gds_file);
       dbDatabase::destroy(temp_db);
       continue;
     }
@@ -548,7 +554,7 @@ void DefToGds::mergeCells(dbGDSLib* lib,
 
     if (source_dbu_per_um != target_dbu_per_um) {
       logger_->info(utl::ODB,
-                    504,
+                    547,
                     "Scaling merged GDS '{}' from {} to {} DBU/um",
                     gds_file,
                     source_dbu_per_um,
@@ -675,7 +681,7 @@ void DefToGds::mergeSeal(dbGDSLib* lib,
   // referenced by any SREF/AREF within the seal's own structures.
   std::set<std::string> seal_referenced;
   for (dbGDSStructure* str : lib->getGDSStructures()) {
-    if (pre_merge.count(str->getName())) {
+    if (pre_merge.contains(str->getName())) {
       continue;  // skip pre-existing structures
     }
     for (dbGDSSRef* sref : str->getGDSSRefs()) {
@@ -687,10 +693,10 @@ void DefToGds::mergeSeal(dbGDSLib* lib,
   }
 
   for (dbGDSStructure* str : lib->getGDSStructures()) {
-    if (pre_merge.count(str->getName())) {
+    if (pre_merge.contains(str->getName())) {
       continue;  // skip pre-existing structures
     }
-    if (seal_referenced.count(str->getName())) {
+    if (seal_referenced.contains(str->getName())) {
       continue;  // referenced by another seal cell, not a top cell
     }
     if (str == top_str) {
@@ -700,7 +706,7 @@ void DefToGds::mergeSeal(dbGDSLib* lib,
     sref->setOrigin(Point(0, 0));
     sref->setTransform(dbGDSSTrans(false, 1.0, 0.0));
     logger_->info(utl::ODB,
-                  501,
+                  548,
                   "Merging '{}' as child of '{}'",
                   str->getName(),
                   top_cell_name);
@@ -740,7 +746,7 @@ int DefToGds::pruneUnreferencedCells(dbGDSLib* lib,
   // Find unreferenced cells
   std::vector<dbGDSStructure*> to_remove;
   for (dbGDSStructure* str : lib->getGDSStructures()) {
-    if (referenced.find(str->getName()) == referenced.end()) {
+    if (!referenced.contains(str->getName())) {
       to_remove.push_back(str);
     }
   }
@@ -752,7 +758,7 @@ int DefToGds::pruneUnreferencedCells(dbGDSLib* lib,
 
   if (!to_remove.empty()) {
     logger_->info(
-        utl::ODB, 505, "Pruned {} unreferenced cells.", to_remove.size());
+        utl::ODB, 549, "Pruned {} unreferenced cells.", to_remove.size());
   }
 
   return static_cast<int>(to_remove.size());
@@ -766,7 +772,7 @@ int DefToGds::validate(dbGDSLib* lib,
 
   dbGDSStructure* top_str = lib->findGDSStructure(top_cell_name.c_str());
   if (top_str == nullptr) {
-    logger_->error(utl::ODB, 502, "Top cell '{}' not found", top_cell_name);
+    logger_->error(utl::ODB, 550, "Top cell '{}' not found", top_cell_name);
     return 1;
   }
 
@@ -774,7 +780,7 @@ int DefToGds::validate(dbGDSLib* lib,
   bool has_allow_re = !allow_empty_regex.empty();
   if (has_allow_re) {
     allow_re = std::regex(allow_empty_regex);
-    logger_->info(utl::ODB, 503, "GDS_ALLOW_EMPTY={}", allow_empty_regex);
+    logger_->info(utl::ODB, 551, "GDS_ALLOW_EMPTY={}", allow_empty_regex);
   }
 
   // Collect all cells referenced from the top cell tree
@@ -794,16 +800,16 @@ int DefToGds::validate(dbGDSLib* lib,
                     && str->getGDSSRefs().empty() && str->getGDSARefs().empty()
                     && str->getGDSTexts().empty();
 
-    if (is_empty && referenced.count(str->getName())) {
+    if (is_empty && referenced.contains(str->getName())) {
       has_empty = true;
       if (has_allow_re && std::regex_match(str->getName(), allow_re)) {
         logger_->warn(utl::ODB,
-                      504,
+                      552,
                       "LEF Cell '{}' ignored. Matches GDS_ALLOW_EMPTY.",
                       str->getName());
       } else {
         logger_->warn(utl::ODB,
-                      505,
+                      553,
                       "LEF Cell '{}' has no matching GDS/OAS cell."
                       " Cell will be empty.",
                       str->getName());
@@ -813,21 +819,21 @@ int DefToGds::validate(dbGDSLib* lib,
   }
 
   if (!has_empty) {
-    logger_->info(utl::ODB, 506, "All LEF cells have matching GDS/OAS cells");
+    logger_->info(utl::ODB, 554, "All LEF cells have matching GDS/OAS cells");
   }
 
   // Check for orphan cells (cells not reachable from top cell)
   bool has_orphan = false;
   for (dbGDSStructure* str : lib->getGDSStructures()) {
-    if (referenced.count(str->getName()) == 0) {
+    if (!referenced.contains(str->getName())) {
       has_orphan = true;
-      logger_->warn(utl::ODB, 507, "Found orphan cell '{}'", str->getName());
+      logger_->warn(utl::ODB, 558, "Found orphan cell '{}'", str->getName());
       errors++;
     }
   }
 
   if (!has_orphan) {
-    logger_->info(utl::ODB, 508, "No orphan cells in the final layout");
+    logger_->info(utl::ODB, 559, "No orphan cells in the final layout");
   }
 
   return errors;

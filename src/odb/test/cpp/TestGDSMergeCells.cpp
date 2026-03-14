@@ -3,16 +3,15 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/def2gds.h"
 #include "odb/gdsUtil.h"
-#include "odb/gdsin.h"
 #include "odb/gdsout.h"
 #include "odb/geom.h"
 #include "tst/fixture.h"
-#include "utl/Logger.h"
 
 namespace odb::gds {
 namespace {
