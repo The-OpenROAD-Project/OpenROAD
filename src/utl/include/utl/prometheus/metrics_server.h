@@ -46,10 +46,10 @@ class PrometheusMetricsServer
  private:
   std::thread worker_thread_;
   std::shared_ptr<PrometheusRegistry> registry_ptr_{nullptr};
-  uint16_t port_;
+  std::atomic<uint16_t> port_;
   std::atomic<utl::Logger*> logger_;
-  bool shutdown_ = false;
-  bool is_ready_ = false;
+  std::atomic<bool> shutdown_ = false;
+  std::atomic<bool> is_ready_ = false;
 
   void RunServer();
   void WorkerFunction();

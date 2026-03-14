@@ -95,7 +95,7 @@ void PrometheusMetricsServer::RunServer()
                        104,
                        "Starting Prometheus collection endpoint: "
                        "http://localhost:{}/metrics",
-                       port_);
+                       port_.load());
 
   while (!shutdown_) {
     tcp::socket socket(io_context);
