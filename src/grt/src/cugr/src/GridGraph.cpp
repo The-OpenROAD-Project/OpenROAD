@@ -908,4 +908,18 @@ void GridGraph::write(const std::string& heatmap_file) const
   fout.close();
 }
 
+void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree)
+{
+  if (tree) {
+    commitTree(tree, false);
+  }
+}
+
+void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree)
+{
+  if (tree) {
+    commitTree(tree, true);
+  }
+}
+
 }  // namespace grt
