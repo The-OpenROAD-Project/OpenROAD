@@ -1,6 +1,17 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+sta::define_cmd_args "upf_version" {version}
+proc upf_version { args } {
+  sta::parse_key_args "upf_version" args keys {} flags {}
+  sta::check_argc_eq1 "upf_version" $args
+  
+  set version [lindex $args 0]
+  if {![upf::upf_version_cmd $version]} {
+    utl::error UPF 63 "Failed to set UPF version."
+  }
+}
+
 sta::define_cmd_args "read_upf" { [-file file] }
 proc read_upf { args } {
   sta::parse_key_args "read_upf" args \

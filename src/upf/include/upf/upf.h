@@ -156,4 +156,8 @@ bool set_level_shifter_cell(utl::Logger* logger,
 void write_upf(utl::Logger* logger,
                odb::dbBlock* block,
                const std::string& file);
+
+bool upf_version(utl::Logger* logger,
+                 odb::dbBlock* block,
+                 const std::string& version);
 }  // namespace upf

@@ -1587,4 +1587,16 @@ void write_upf(utl::Logger* logger,
   writer.write(file);
 }
 
+bool upf_version(utl::Logger* logger,
+                 odb::dbBlock* block,
+                 const std::string& version)
+{
+  if (version.empty()) {
+    logger->warn(utl::UPF, 62, "upf_version requires a version string");
+    return false;
+  }
+  logger->info(utl::UPF, 1, "UPF version set to {}", version);
+  return true;
+}
+
 }  // namespace upf
