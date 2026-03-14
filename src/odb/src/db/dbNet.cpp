@@ -2221,8 +2221,7 @@ dbNet* dbNet::create(dbBlock* block,
                      const dbNameUniquifyType& uniquify,
                      dbModule* parent_module)
 {
-  std::string net_name
-      = block->makeNewNetName(parent_module, name, uniquify);
+  std::string net_name = block->makeNewNetName(parent_module, name, uniquify);
   return create(block, net_name.c_str());
 }
 
