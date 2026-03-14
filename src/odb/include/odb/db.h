@@ -1318,7 +1318,7 @@ class dbBlock : public dbObject
   /// If corresponding_flat_net is non-null, only internal flat nets excluding
   /// the corresponding one are collisions (lenient mode for ModNet creation).
   ///
-  std::string makeNewNetName(dbModule* parent = nullptr,
+  std::string makeNewNetName(const dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
                              = dbNameUniquifyType::ALWAYS,
@@ -2566,7 +2566,7 @@ class dbNet : public dbObject
   /// connected to a module output port that is unconnected in its parent
   /// module (isInternalTo == true).
   ///
-  bool isInternalTo(dbModule* module) const;
+  bool isInternalTo(const dbModule* module) const;
 
   ///
   /// Check issues such as multiple drivers, no driver, or dangling net

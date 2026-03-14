@@ -2631,7 +2631,7 @@ void dbNet::renameWithModNetInHighestHier()
   }
 }
 
-bool dbNet::isInternalTo(dbModule* module) const
+bool dbNet::isInternalTo(const dbModule* module) const
 {
   // If it's connected to any top-level ports (BTerms), it's not internal.
   if (!getBTerms().empty()) {

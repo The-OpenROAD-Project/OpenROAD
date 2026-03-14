@@ -3930,12 +3930,12 @@ std::string _dbBlock::makeNewName(
 // (strict mode for flat net creation).
 // If corresponding_flat_net is non-null, only internal flat nets excluding
 // the corresponding one collide (lenient mode for ModNet creation).
-std::string dbBlock::makeNewNetName(dbModule* parent,
+std::string dbBlock::makeNewNetName(const dbModule* parent,
                                     const char* base_name,
                                     const dbNameUniquifyType& uniquify,
                                     dbNet* corresponding_flat_net)
 {
-  dbModule* scope = parent ? parent : getTopModule();
+  const dbModule* scope = parent ? parent : getTopModule();
   dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
 
   auto exists = [this, scope, corresponding_flat_net](const char* name) {
