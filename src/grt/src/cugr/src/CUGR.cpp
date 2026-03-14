@@ -674,7 +674,8 @@ void CUGR::routeIncremental()
       std::unique(nets_to_route_.begin(), nets_to_route_.end()),
       nets_to_route_.end());
 
-  rerouteNets(nets_to_route_);
+  std::vector<int> nets_to_reroute = nets_to_route_;
+  rerouteNets(nets_to_reroute);
 
   // Check for secondary overflow caused by rerouting
   std::vector<int> overflow_nets;
