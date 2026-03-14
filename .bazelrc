@@ -85,6 +85,15 @@ build:asan --copt=-g
 build:asan --copt=-fno-omit-frame-pointer
 build:asan --linkopt=-fsanitize=address
 
+# Settings for --config=tsan thread sanitizer build
+build:tsan --strip=never
+build:tsan --copt=-fsanitize=thread
+build:tsan --copt=-DTHREAD_SANITIZER
+build:tsan --copt=-O1
+build:tsan --copt=-g
+build:tsan --copt=-fno-omit-frame-pointer
+build:tsan --linkopt=-fsanitize=thread
+
 # Flags with enough debug symbols to get useful outputs with Linux `perf`
 build:profile --strip=never
 build:profile --copt -g --host_copt -g
