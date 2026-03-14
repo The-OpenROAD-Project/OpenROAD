@@ -1308,23 +1308,21 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
-  /// Make a unique net/instance name
+  /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
   /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
   /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
   /// unique suffix.
+  /// If corresponding_flat_net is nullptr, any findNet() hit is a collision.
+  /// If corresponding_flat_net is non-null, only internal flat nets excluding
+  /// the corresponding one are collisions (lenient mode for ModNet creation).
   ///
-  std::string makeNewNetName(dbModInst* parent = nullptr,
+  std::string makeNewNetName(dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
-                             = dbNameUniquifyType::ALWAYS);
-
-  std::string makeNewModNetName(dbModule* parent,
-                                const char* base_name = "net",
-                                const dbNameUniquifyType& uniquify
-                                = dbNameUniquifyType::ALWAYS,
-                                dbNet* corresponding_flat_net = nullptr);
+                             = dbNameUniquifyType::ALWAYS,
+                             dbNet* corresponding_flat_net = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify

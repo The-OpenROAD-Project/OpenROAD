@@ -468,9 +468,7 @@ dbNet* dbInsertBuffer::createNewFlatNet(
     // Helper: generate a unique name to avoid collision with the port name.
     auto make_avoidance_name = [&]() {
       return block_->makeNewNetName(
-          target_module_ ? target_module_->getModInst() : nullptr,
-          new_net_name.c_str(),
-          dbNameUniquifyType::ALWAYS);
+          target_module_, new_net_name.c_str(), dbNameUniquifyType::ALWAYS);
     };
 
     // Rename the original flat net and/or modnet if they have the same name as
@@ -515,35 +513,11 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
-  dbModInst* mod_inst = module->getModInst();
-  const char hier_delim = block_->getHierarchyDelimiter();
-  const std::string hier_prefix
-      = module->isTop() ? "" : (module->getHierarchicalName() + hier_delim);
-
-  // Helper to check if a dbNet is an internal net of the 'module'.
-  // Note that the new name must not conflict with any internal flat nets.
-  auto hasInternalDbNet = [&](const std::string& net_base_name) {
-    dbNet* net = block_->findNet((hier_prefix + net_base_name).c_str());
-    return net != nullptr && net->isInternalTo(const_cast<dbModule*>(module));
-  };
-
-  auto hasParentModITerm = [&](const std::string& candidate_name) {
-    return mod_inst != nullptr
-           && mod_inst->findModITerm(candidate_name.c_str()) != nullptr;
-  };
-
-  // Ensure uniqueness against ModNets, ModBTerms, internal dbNets,
-  // and the matching parent ModITerm namespace.
-  int id = 0;
-  std::string unique_name = name;
-  while (module->getModNet(unique_name.c_str())
-         || module->findModBTerm(unique_name.c_str())
-         || hasInternalDbNet(unique_name)
-         || hasParentModITerm(unique_name)) {
-    unique_name = fmt::format("{}_{}", name, id++);
-  }
-
-  return unique_name;
+  std::string full = block_->makeNewNetName(
+      const_cast<dbModule*>(module),
+      name.c_str(),
+      dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  return std::string(block_->getBaseName(full.c_str()));
 }
 
 int dbInsertBuffer::getModuleDepth(const dbModule* mod) const

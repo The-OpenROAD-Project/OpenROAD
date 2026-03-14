@@ -385,7 +385,7 @@ dbModNet* dbModNet::create(dbModule* parent_module,
                            dbNet* corresponding_flat_net)
 {
   dbBlock* block = parent_module->getOwner();
-  std::string net_name = block->makeNewModNetName(
+  std::string net_name = block->makeNewNetName(
       parent_module, base_name, uniquify, corresponding_flat_net);
   return create(parent_module, block->getBaseName(net_name.c_str()));
 }
