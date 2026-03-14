@@ -68,3 +68,15 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "stt_thread_safety_test",
+    srcs = ["cpp/TestThreadSafety.cc"],
+    deps = [
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
