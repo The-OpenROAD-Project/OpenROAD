@@ -76,7 +76,7 @@ boundaries, different cell hierarchy). Remaining acceptable differences:
 | Extra pin labels | VDD/VSS on layer 60/2 | OpenROAD writes all pin labels |
 | PR boundary | Layer 235/0 missing | KLayout writes die area boundary |
 
-### Results Summary (9 tested designs)
+### Results Summary (13 tested designs, 6 platforms)
 
 | Design | Total Diffs | Layout Match |
 |--------|-------------|-------------|
@@ -87,10 +87,15 @@ boundaries, different cell hierarchy). Remaining acceptable differences:
 | nangate45/gcd | 1 | Perfect match (only PR boundary) |
 | nangate45/aes | 2 | Pin labels + PR boundary |
 | nangate45/jpeg | 2 | Pin labels + PR boundary (1.2M+ shapes) |
+| nangate45/dynamic_node | 2 | Pin labels + PR boundary |
 | sky130hd/gcd | 2 | Pin labels + PR boundary |
+| sky130hd/chameleon | N/A | write_gds succeeds (377MB, too large for flattened comparison) |
 | sky130hs/gcd | 30 | Layer mapping mismatch (sky130hs GDS uses different layer numbers) |
+| ihp-sg13g2/gcd | 7 | Pin shapes, labels, PR boundary |
+| ihp-sg13g2/spi | 7 | Pin shapes, labels, PR boundary |
 
 - `asap7/riscv32i` skipped: yosys-abc crashes during synthesis (unrelated to write_gds)
+- `gf180/uart-blocks` skipped: yosys synthesis fails (PDK issue, unrelated to write_gds)
 
 ## Output
 
@@ -141,3 +146,5 @@ bazelisk test //src/odb/test/cpp:TestGDSWriteRoundtrip
 | GDS UNITS not set | DBU mismatch between tools | Set lib UNITS from block DEF units |
 | Odd-length GDS strings | KLayout warns "Odd record length" | Pad STRING records to even byte length |
 | sky130 layer map | met2-met5 missing from sky130hd output | Fall back to "drawing" and lowercase purposes in lookup |
+| EDI comma-separated types | All routing missing on ihp-sg13g2 | Split comma-separated EDI purpose types (e.g., "NET,SPNET,PIN") |
+| Empty .lyt layer map | No layer mapping for ihp-sg13g2 | Fall back to `<map-file>` EDI reference when inline map is empty |
