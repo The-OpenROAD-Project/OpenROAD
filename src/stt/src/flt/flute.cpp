@@ -205,7 +205,7 @@ void Flute::initLUT(const int to_d)
 int Flute::flute_wl(const int d,
                     const std::vector<int>& x,
                     const std::vector<int>& y,
-                    const int acc)
+                    const int acc) const
 {
   if (d <= 1) {
     return 0;
@@ -261,7 +261,7 @@ int Flute::flute_wl(const int d,
 int Flute::flutes_wl_low_degree(const int d,
                                 const std::vector<int>& xs,
                                 const std::vector<int>& ys,
-                                const std::vector<int>& s)
+                                const std::vector<int>& s) const
 {
   if (d <= 3) {
     return xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
@@ -331,7 +331,7 @@ int Flute::flutes_wl_medium_degree(int d,
                                    const std::vector<int>& xs,
                                    const std::vector<int>& ys,
                                    const std::vector<int>& s,
-                                   int acc)
+                                   int acc) const
 {
   int extral = 0;
 
@@ -614,7 +614,7 @@ static bool ordery(const Point* a, const Point* b)
 
 Tree Flute::flute(const std::vector<int>& x,
                   const std::vector<int>& y,
-                  const int acc)
+                  const int acc) const
 {
   const int d = x.size();
 
@@ -695,7 +695,7 @@ int Flute::flutes_wl_all_degree(const int d,
                                 const std::vector<int>& xs,
                                 const std::vector<int>& ys,
                                 const std::vector<int>& s,
-                                const int acc)
+                                const int acc) const
 {
   if (d <= kMaxLutDegree) {
     return flutes_wl_low_degree(d, xs, ys, s);
@@ -707,7 +707,7 @@ Tree Flute::flutes_all_degree(const int d,
                               const std::vector<int>& xs,
                               const std::vector<int>& ys,
                               const std::vector<int>& s,
-                              const int acc)
+                              const int acc) const
 {
   if (d <= kMaxLutDegree) {
     return flutes_low_degree(d, xs, ys, s);
@@ -719,7 +719,7 @@ Tree Flute::flutes_all_degree(const int d,
 Tree Flute::flutes_low_degree(int d,
                               const std::vector<int>& xs,
                               const std::vector<int>& ys,
-                              const std::vector<int>& s)
+                              const std::vector<int>& s) const
 {
   if (d == 2) {
     return {.deg = d,
@@ -868,7 +868,7 @@ Tree Flute::flutes_medium_degree(const int d,
                                  const std::vector<int>& xs,
                                  const std::vector<int>& ys,
                                  const std::vector<int>& s,
-                                 int acc)
+                                 int acc) const
 {
   const int degree = d + 1;
   std::vector<float> score(size_t(2) * degree);
@@ -1213,7 +1213,7 @@ Tree Flute::d_merge_tree(const Tree& t1, const Tree& t2) const
 
 Tree Flute::h_merge_tree(const Tree& t1,
                          const Tree& t2,
-                         const std::vector<int>& s)
+                         const std::vector<int>& s) const
 {
   Tree t;
 
@@ -1351,7 +1351,7 @@ Tree Flute::v_merge_tree(const Tree& t1, const Tree& t2) const
   return t;
 }
 
-void Flute::local_refinement(const int deg, Tree* tp, const int p)
+void Flute::local_refinement(const int deg, Tree* tp, const int p) const
 {
   const int root = tp->branch[p].n;
 
@@ -1460,7 +1460,7 @@ void Flute::local_refinement(const int deg, Tree* tp, const int p)
   }
 }
 
-int Flute::wirelength(const Tree& t)
+int Flute::wirelength(const Tree& t) const
 {
   int l = 0;
 
@@ -1474,7 +1474,7 @@ int Flute::wirelength(const Tree& t)
 }
 
 // Output in a format that can be plotted by gnuplot
-void Flute::plottree(const Tree& t)
+void Flute::plottree(const Tree& t) const
 {
   for (int i = 0; i < 2 * t.deg - 2; i++) {
     printf("%d %d\n", t.branch[i].x, t.branch[i].y);
@@ -1485,7 +1485,7 @@ void Flute::plottree(const Tree& t)
 Tree Flute::flutes(const std::vector<int>& xs,
                    const std::vector<int>& ys,
                    const std::vector<int>& s,
-                   const int acc)
+                   const int acc) const
 {
   const int d = xs.size();
   return flutes_all_degree(d, xs, ys, s, acc);
