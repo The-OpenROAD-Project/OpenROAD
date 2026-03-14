@@ -22,6 +22,7 @@ TEST(SteinerTreeBuilderThreadSafety, ConcurrentMakeSteinerTree)
   constexpr int kNumThreads = 8;
   constexpr int kNetsPerThread = 100;
   std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
   std::vector<bool> results(kNumThreads, true);
 
   for (int t = 0; t < kNumThreads; ++t) {
@@ -77,6 +78,7 @@ TEST(SteinerTreeBuilderThreadSafety, ConcurrentFluteOnly)
   constexpr int kNumThreads = 8;
   constexpr int kNetsPerThread = 200;
   std::vector<std::thread> threads;
+  threads.reserve(kNumThreads);
   std::vector<int> total_wl(kNumThreads, 0);
 
   for (int t = 0; t < kNumThreads; ++t) {

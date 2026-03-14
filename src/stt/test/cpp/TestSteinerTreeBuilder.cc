@@ -19,6 +19,8 @@ class SteinerTreeBuilderTest : public ::testing::Test
   {
   }
 
+  ~SteinerTreeBuilderTest() override { odb::dbDatabase::destroy(db_); }
+
   utl::Logger logger_;
   odb::dbDatabase* db_;
   SteinerTreeBuilder builder_;

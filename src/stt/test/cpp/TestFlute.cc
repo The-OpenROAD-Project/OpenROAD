@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <numeric>
 #include <vector>
 
 #include "gtest/gtest.h"
