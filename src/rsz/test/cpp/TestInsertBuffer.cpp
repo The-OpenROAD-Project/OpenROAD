@@ -2919,8 +2919,16 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case28)
   ASSERT_NE(internal_net_after, nullptr);
   EXPECT_EQ(internal_net, internal_net_after);
 
-  // Verify that a new port "_019__0" is created in H1 to avoid collision
-  dbModBTerm* punched_port = mod_h1->findModBTerm("_019__0");
+  // Verify that a new port is created in H1 to avoid collision with "_019_".
+  // The exact suffix depends on the global uniquify counter.
+  dbModBTerm* punched_port = nullptr;
+  for (dbModBTerm* bterm : mod_h1->getModBTerms()) {
+    std::string bname = bterm->getName();
+    if (bname.substr(0, 5) == "_019_" && bname != "_019_") {
+      punched_port = bterm;
+      break;
+    }
+  }
   ASSERT_NE(punched_port, nullptr);
   EXPECT_EQ(punched_port->getIoType(), dbIoType::INPUT);
 
