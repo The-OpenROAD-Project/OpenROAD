@@ -76,7 +76,7 @@ boundaries, different cell hierarchy). Remaining acceptable differences:
 | Extra pin labels | VDD/VSS on layer 60/2 | OpenROAD writes all pin labels |
 | PR boundary | Layer 235/0 missing | KLayout writes die area boundary |
 
-### Results Summary (13 tested designs, 6 platforms)
+### Results Summary (18 tested designs, 6 platforms)
 
 | Design | Total Diffs | Layout Match |
 |--------|-------------|-------------|
@@ -88,11 +88,16 @@ boundaries, different cell hierarchy). Remaining acceptable differences:
 | nangate45/aes | 2 | Pin labels + PR boundary |
 | nangate45/jpeg | 2 | Pin labels + PR boundary (1.2M+ shapes) |
 | nangate45/dynamic_node | 2 | Pin labels + PR boundary |
+| nangate45/ibex | 2 | Pin labels + PR boundary |
+| nangate45/swerv | 2 | Pin labels + PR boundary (168K shapes) |
 | sky130hd/gcd | 2 | Pin labels + PR boundary |
+| sky130hd/jpeg | 2 | Pin labels + PR boundary |
 | sky130hd/chameleon | N/A | write_gds succeeds (377MB, too large for flattened comparison) |
 | sky130hs/gcd | 30 | Layer mapping mismatch (sky130hs GDS uses different layer numbers) |
+| sky130hs/ibex | 30 | Same sky130hs layer numbering issue |
 | ihp-sg13g2/gcd | 7 | Pin shapes, labels, PR boundary |
 | ihp-sg13g2/spi | 7 | Pin shapes, labels, PR boundary |
+| gf180/aes | 3 | Pin labels only (all geometry matches) |
 
 - `asap7/riscv32i` skipped: yosys-abc crashes during synthesis (unrelated to write_gds)
 - `gf180/uart-blocks` skipped: yosys synthesis fails (PDK issue, unrelated to write_gds)
