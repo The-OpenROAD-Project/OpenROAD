@@ -616,7 +616,7 @@ void CUGR::addDirtyNet(odb::dbNet* net)
 {
   auto it = db_net_map_.find(net);
   if (it != db_net_map_.end()) {
-    dirty_net_indices_.insert(it->second->getIndex());
+    nets_to_route_.push_back(it->second->getIndex());
   } else {
     logger_->warn(
         GRT, 600, "Net {} not found in CUGR net map.", net->getConstName());
@@ -636,9 +636,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
     db_net_map_[db_net] = gr_nets_[idx].get();
-    if (incremental_mode_ && gr_nets_[idx]->getNumPins() >= 2) {
-      dirty_net_indices_.insert(idx);
-    }
+    nets_to_route_.push_back(idx);
   } else {
     design_->updateNet(db_net);
     const CUGRNet& base_net = design_->getAllNets().back();
@@ -649,17 +647,36 @@ void CUGR::updateNet(odb::dbNet* db_net)
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
     net_indices_.push_back(new_index);
     db_net_map_[db_net] = gr_nets_.back().get();
-    if (incremental_mode_) {
-      dirty_net_indices_.insert(new_index);
-    }
+    nets_to_route_.push_back(new_index);
   }
-  updated_nets_.insert(db_net);
 }
 
-void CUGR::startIncremental()
+void CUGR::routeIncremental()
 {
-  incremental_mode_ = true;
-  dirty_net_indices_.clear();
+  if (nets_to_route_.empty()) {
+    return;
+  }
+
+  std::ranges::sort(nets_to_route_);
+  nets_to_route_.erase(
+      std::unique(nets_to_route_.begin(), nets_to_route_.end()),
+      nets_to_route_.end());
+
+  rerouteNets(nets_to_route_);
+
+  // Check for secondary overflow caused by rerouting
+  std::vector<int> overflow_nets;
+  updateOverflowNets(overflow_nets);
+  std::vector<int> secondary_nets;
+  std::ranges::set_difference(
+      overflow_nets, nets_to_route_, std::back_inserter(secondary_nets));
+  if (!secondary_nets.empty()) {
+    rerouteNets(secondary_nets);
+  }
+
+  nets_to_route_.clear();
+
+  printStatistics();
 }
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
@@ -672,41 +689,6 @@ void CUGR::rerouteNets(std::vector<int>& net_indices)
   patternRoute(net_indices);
   patternRouteWithDetours(net_indices);
   mazeRoute(net_indices);
-}
-
-void CUGR::endIncremental()
-{
-  if (!incremental_mode_ || dirty_net_indices_.empty()) {
-    return;
-  }
-
-  std::vector<int> nets_to_route(dirty_net_indices_.begin(),
-                                 dirty_net_indices_.end());
-
-  for (const int idx : dirty_net_indices_) {
-    odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
-    if (updated_nets_.find(db_net) == updated_nets_.end()) {
-      updateNet(db_net);
-    }
-  }
-  updated_nets_.clear();
-
-  rerouteNets(nets_to_route);
-
-  // Check for secondary overflow caused by rerouting
-  std::vector<int> overflow_nets;
-  updateOverflowNets(overflow_nets);
-  std::vector<int> secondary_nets;
-  std::ranges::set_difference(
-      overflow_nets, dirty_net_indices_, std::back_inserter(secondary_nets));
-  if (!secondary_nets.empty()) {
-    rerouteNets(secondary_nets);
-  }
-
-  incremental_mode_ = false;
-  dirty_net_indices_.clear();
-
-  printStatistics();
 }
 
 }  // namespace grt

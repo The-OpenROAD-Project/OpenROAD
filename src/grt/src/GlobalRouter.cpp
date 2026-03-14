@@ -337,8 +337,14 @@ void GlobalRouter::startIncremental()
 void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
-  fastroute_->setResistanceAware(resistance_aware_);
-  updateDirtyRoutes();
+  if (use_cugr_) {
+    cugr_->routeIncremental();
+    routes_ = cugr_->getRoutes();
+    updatePinAccessPoints();
+  } else {
+    fastroute_->setResistanceAware(resistance_aware_);
+    updateDirtyRoutes();
+  }
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
