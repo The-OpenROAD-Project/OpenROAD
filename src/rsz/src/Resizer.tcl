@@ -240,7 +240,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
-                                        [-sequence move_string]\
+                                        [-sequence move_list]\
                                         [-phases phases]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\

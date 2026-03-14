@@ -5530,7 +5530,7 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
   std::vector<rsz::MoveType> result;
   std::stringstream ss(sequence);
   std::string item;
-  while (std::getline(ss, item, ',')) {
+  while (std::getline(ss, item, ' ')) {
     result.push_back(parseMove(item));
   }
   return result;
