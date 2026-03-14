@@ -163,6 +163,7 @@ cc_binary(
     ],
     copts = OPENROAD_COPTS,
     data = [
+        "//docs:man_pages",
         "@tclreadline//:tclreadline_scripts",
     ],
     features = ["-use_header_modules"],

@@ -13,6 +13,8 @@ package(
     features = ["layering_check"],
 )
 
+exports_files(["README.md"])
+
 filegroup(
     name = "swig_imports",
     srcs = glob([
