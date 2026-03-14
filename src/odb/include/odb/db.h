@@ -2589,6 +2589,12 @@ class dbNet : public dbObject
   void checkSanityModNetConsistency() const;
 
   ///
+  /// Check if this flat net's base name collides with a ModNet or ModBTerm
+  /// in its parent module scope without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
+
+  ///
   /// Dump dbNet connectivity for debugging
   ///
   void dumpConnectivity(int level = 1) const;
@@ -8612,6 +8618,12 @@ class dbModNet : public dbObject
   // and returns the first dbNet it finds.
   dbNet* findRelatedNet() const;
   void checkSanity() const;
+
+  ///
+  /// Check if any flat net in this module scope has a base name matching
+  /// this ModNet's name without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
 
   ///
   /// Merge the terminals of the in_modnet with this modnet

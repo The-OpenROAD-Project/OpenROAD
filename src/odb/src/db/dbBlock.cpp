@@ -3931,7 +3931,20 @@ std::string dbBlock::makeNewNetName(dbModInst* parent,
                                     const dbNameUniquifyType& uniquify)
 {
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [this](const char* name) { return findNet(name) != nullptr; };
+
+  auto exists = [this, parent](const char* name) {
+    if (findNet(name) != nullptr) {
+      return true;
+    }
+
+    dbModule* scope = parent ? parent->getMaster() : getTopModule();
+    if (scope == nullptr) {
+      return false;
+    }
+    const char* base = getBaseName(name);
+    return scope->getModNet(base) || scope->findModBTerm(base);
+  };
+
   return block->makeNewName(
       parent, base_name, uniquify, block->unique_net_index_, exists);
 }
