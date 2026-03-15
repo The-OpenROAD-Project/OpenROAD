@@ -46,6 +46,20 @@ proc create_power_domain { args } {
   }
 }
 
+sta::define_cmd_args "create_supply_net" { name }
+proc create_supply_net { args } {
+    upf::check_block_exists
+
+    sta::parse_key_args "create_supply_net" args \
+        keys {} flags {}
+
+    sta::check_argc_eq1 "create_supply_net" $args
+
+    set net_name [lindex $args 0]
+
+    upf::create_supply_net_cmd $net_name
+}
+
 # Create a logic port to be used within defined domains
 #
 # Arguments:

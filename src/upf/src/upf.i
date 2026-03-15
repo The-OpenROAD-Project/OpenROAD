@@ -30,6 +30,12 @@
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, element); 
   }
 
+  void create_supply_net_cmd(const char* name)
+  {
+      odb::dbDatabase* db = getOpenRoad()->getDb();
+      create_supply_net(getOpenRoad()->getLogger(), db->getChip()->getBlock(), name);
+  }
+
   void create_logic_port_cmd(const char* name, const char* direction)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
