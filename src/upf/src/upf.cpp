@@ -56,7 +56,8 @@ bool update_power_domain(utl::Logger* logger,
 
 bool create_supply_net(utl::Logger* logger,
                        odb::dbBlock* block,
-                       const std::string& name)
+                       const std::string& name,
+                       odb::dbSigType type = odb::dbSigType::POWER)
 {
     odb::dbNet* net = block->findNet(name.c_str());
     if (net) {
@@ -66,12 +67,12 @@ bool create_supply_net(utl::Logger* logger,
 
     net = odb::dbNet::create(block, name.c_str());
     if (!net) {
-        logger->error(utl::UPF, 62, "Failed to create net '{}'", name);
+        logger->error(utl::UPF, 63, "Failed to create net '{}'", name);
         return false;
     }
 
-    logger->info(utl::UPF, 62, "Created supply net '{}'", name);
-
+    net->setSigType(type);
+    logger->info(utl::UPF, 64, "Created supply net '{}'", name);
     return true;
 }
 
