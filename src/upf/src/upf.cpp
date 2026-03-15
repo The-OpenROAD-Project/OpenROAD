@@ -54,6 +54,29 @@ bool update_power_domain(utl::Logger* logger,
   return true;
 }
 
+bool create_supply_net(utl::Logger* logger,
+                       odb::dbBlock* block,
+                       const std::string& name,
+                       odb::dbSigType type = odb::dbSigType::POWER)
+{
+    odb::dbNet* net = block->findNet(name.c_str());
+    if (net) {
+        logger->warn(utl::UPF, 62, "Supply net '{}' already exists", name);
+        return false;
+    }
+
+    net = odb::dbNet::create(block, name.c_str());
+    if (!net) {
+        logger->error(utl::UPF, 63, "Failed to create net '{}'", name);
+        return false;
+    }
+
+    net->setSigType(type);
+    logger->info(utl::UPF, 64, "Created supply net '{}'", name);
+    return true;
+}
+
+
 bool create_logic_port(utl::Logger* logger,
                        odb::dbBlock* block,
                        const std::string& name,

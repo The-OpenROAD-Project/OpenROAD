@@ -30,6 +30,18 @@
         getOpenRoad()->getLogger(), db->getChip()->getBlock(), name, element); 
   }
 
+ void create_supply_net_cmd(const char* name, const char* type_str = "POWER")
+  {
+      odb::dbDatabase* db = getOpenRoad()->getDb();
+      odb::dbBlock* block = db->getChip()->getBlock();
+
+      odb::dbSigType type = odb::dbSigType::POWER;
+      if (strcasecmp(type_str, "GROUND") == 0)
+          type = odb::dbSigType::GROUND;
+
+      create_supply_net(getOpenRoad()->getLogger(), block, name, type);
+  }
+
   void create_logic_port_cmd(const char* name, const char* direction)
   {
     odb::dbDatabase* db = getOpenRoad()->getDb();
