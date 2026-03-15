@@ -17,7 +17,8 @@ namespace upf {
 
 bool create_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
-                         const std::string& name);
+                         const std::string& name,
+                         const std::vector<std::string>& include_scope = {});
 
 bool update_power_domain(utl::Logger* logger,
                          odb::dbBlock* block,
