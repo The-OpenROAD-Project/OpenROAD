@@ -129,7 +129,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       populated_(false),
       colors_correct_(false),
       issue_redraw_(true),
-      block_(nullptr),
+      chip_(nullptr),
       logger_(logger),
       grid_x_size_(10.0),
       grid_y_size_(10.0),
@@ -170,12 +170,17 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
     logger_->error(utl::GUI, 72, "\"{}\" is not populated with data.", name_);
   }
 
+  if (getChip() == nullptr) {
+    logger_->error(utl::GUI, 82, "No chip available for \"{}\".", name_);
+    return;
+  }
+
   std::ofstream csv(file);
   if (!csv.is_open()) {
     logger_->error(utl::GUI, 73, "Unable to open {}", file);
   }
 
-  const double dbu_to_micron = block_->getDbUnitsPerMicron();
+  const double dbu_to_micron = getChip()->getDb()->getDbuPerMicron();
 
   csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")\n";
   for (const auto& map_col : map_) {
@@ -308,7 +313,7 @@ Painter::Color HeatMapDataSource::getColor(double value) const
 
 void HeatMapDataSource::showSetup()
 {
-  if (block_ == nullptr) {
+  if (chip_ == nullptr) {
     return;
   }
 
@@ -316,7 +321,7 @@ void HeatMapDataSource::showSetup()
     setup_ = new HeatMapSetup(*this,
                               QString::fromStdString(name_),
                               use_dbu_,
-                              block_->getDbUnitsPerMicron());
+                              getChip()->getDb()->getDbuPerMicron());
 
     QObject::connect(setup_, &QDialog::finished, &QObject::deleteLater);
     QObject::connect(
@@ -473,6 +478,9 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 
 odb::Rect HeatMapDataSource::getBounds() const
 {
+  if (getBlock() == nullptr) {
+    return getChip()->getBBox();
+  }
   return getBlock()->getDieArea();
 }
 
@@ -485,7 +493,7 @@ void HeatMapDataSource::clearMap()
 
 bool HeatMapDataSource::setupMap()
 {
-  if (getBlock() == nullptr || getBlock()->getDieArea().area() == 0) {
+  if (getChip() == nullptr || getBounds().area() == 0) {
     return false;
   }
 
@@ -528,8 +536,9 @@ bool HeatMapDataSource::setupMap()
 
 void HeatMapDataSource::populateXYGrid()
 {
-  const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
-  const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
+  const int dbu_per_micron = getChip()->getDb()->getDbuPerMicron();
+  const int dx = getGridXSize() * dbu_per_micron;
+  const int dy = getGridYSize() * dbu_per_micron;
 
   const odb::Rect bounds = getBounds();
 
@@ -804,7 +813,8 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   // minimum box size is 2 pixels
   const double min_dbu = 2.0 / painter.getPixelsPerDBU();
 
-  const double dbu_per_micron = datasource_.getBlock()->getDbUnitsPerMicron();
+  const double dbu_per_micron
+      = datasource_.getChip()->getDb()->getDbuPerMicron();
   const int x_scale
       = std::ceil(min_dbu / (datasource_.getGridXSize() * dbu_per_micron));
   const int y_scale
@@ -1106,7 +1116,7 @@ std::pair<double, double> GlobalRoutingDataSource::getReportableXYGrid() const
   const double y_grid = grid_mode(gcell_grid->getNumGridPatternsY(),
                                   &odb::dbGCellGrid::getGridPatternY);
 
-  const double dbus = getBlock()->getDbUnitsPerMicron();
+  const double dbus = getChip()->getDb()->getDbuPerMicron();
   return {x_grid / dbus, y_grid / dbus};
 }
 
