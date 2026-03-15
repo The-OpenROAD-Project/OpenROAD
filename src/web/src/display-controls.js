@@ -346,6 +346,52 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         }).catch(err => console.error('Heat map update failed', err));
     }
 
+    function renderMapLegend(active) {
+        if (!app.heatMapLegendEl) {
+            return;
+        }
+
+        const legend = app.heatMapLegendEl;
+        legend.innerHTML = '';
+
+        if (!active || !active.show_legend || !active.legend || active.legend.length === 0) {
+            legend.classList.add('hidden');
+            return;
+        }
+
+        const title = document.createElement('div');
+        title.className = 'heatmap-map-legend-title';
+        title.textContent = active.title;
+        legend.appendChild(title);
+
+        const units = document.createElement('div');
+        units.className = 'heatmap-map-legend-units';
+        units.textContent = active.units || '';
+        legend.appendChild(units);
+
+        const list = document.createElement('div');
+        list.className = 'heatmap-map-legend-list';
+        for (const entry of active.legend) {
+            const row = document.createElement('div');
+            row.className = 'heatmap-legend-row';
+
+            const swatch = document.createElement('span');
+            swatch.className = 'heatmap-legend-swatch';
+            swatch.style.backgroundColor
+                = `rgba(${entry.color[0]}, ${entry.color[1]}, ${entry.color[2]}, ${entry.color[3] / 255})`;
+
+            const text = document.createElement('span');
+            text.textContent = entry.value;
+
+            row.appendChild(swatch);
+            row.appendChild(text);
+            list.appendChild(row);
+        }
+
+        legend.appendChild(list);
+        legend.classList.remove('hidden');
+    }
+
     app.renderHeatMapControls = (data) => {
         heatMapContainer.innerHTML = '';
 
@@ -390,6 +436,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         }
 
         const active = (data.heatmaps || []).find(h => h.name === data.active);
+        renderMapLegend(active);
         if (!active) {
             return;
         }
@@ -528,24 +575,5 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             });
         });
         settings.appendChild(rebuild);
-
-        if (active.show_legend && active.legend && active.legend.length > 0) {
-            const legend = document.createElement('div');
-            legend.className = 'heatmap-legend';
-            for (const entry of active.legend) {
-                const row = document.createElement('div');
-                row.className = 'heatmap-legend-row';
-                const swatch = document.createElement('span');
-                swatch.className = 'heatmap-legend-swatch';
-                swatch.style.backgroundColor
-                    = `rgba(${entry.color[0]}, ${entry.color[1]}, ${entry.color[2]}, ${entry.color[3] / 255})`;
-                const text = document.createElement('span');
-                text.textContent = entry.value;
-                row.appendChild(swatch);
-                row.appendChild(text);
-                legend.appendChild(row);
-            }
-            heatMapContainer.appendChild(legend);
-        }
     };
 }

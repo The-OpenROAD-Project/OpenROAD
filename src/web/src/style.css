@@ -38,6 +38,10 @@ html, body {
     image-rendering: auto;
 }
 
+.layout-viewer {
+    position: relative;
+}
+
 /* Leaflet popups */
 .leaflet-popup-content-wrapper {
     background: #2b2b2b;
@@ -650,8 +654,7 @@ html, body {
 }
 
 .heatmap-list,
-.heatmap-settings,
-.heatmap-legend {
+.heatmap-settings {
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -700,4 +703,44 @@ html, body {
     border: 1px solid #666;
     border-radius: 2px;
     flex: 0 0 auto;
+}
+
+.heatmap-map-legend {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 900;
+    min-width: 140px;
+    max-width: 220px;
+    padding: 10px 12px;
+    background: rgba(18, 20, 24, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    color: #ddd;
+    font-family: monospace;
+    font-size: 12px;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+}
+
+.heatmap-map-legend.hidden {
+    display: none;
+}
+
+.heatmap-map-legend-title {
+    color: #f2f2f2;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.heatmap-map-legend-units {
+    color: #9ca3af;
+    margin-bottom: 8px;
+}
+
+.heatmap-map-legend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }

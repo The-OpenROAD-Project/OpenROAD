@@ -53,6 +53,7 @@ const app = {
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
+    heatMapLegendEl: null,
     renderHeatMapControls: null,
 };
 
@@ -234,10 +235,16 @@ function redrawAllLayers() {
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
+    mapDiv.className = 'layout-viewer';
     mapDiv.style.width = '100%';
     mapDiv.style.height = '100%';
     mapDiv.style.backgroundColor = '#111';
     container.element.appendChild(mapDiv);
+
+    const heatMapLegend = document.createElement('div');
+    heatMapLegend.className = 'heatmap-map-legend hidden';
+    mapDiv.appendChild(heatMapLegend);
+    app.heatMapLegendEl = heatMapLegend;
 
     app.map = L.map(mapDiv, {
         crs: L.CRS.Simple,
