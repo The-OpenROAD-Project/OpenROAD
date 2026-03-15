@@ -23,6 +23,7 @@
 # N.B: step.sh shall read base.odb (or base.def in case the flag dump_def = 1)
 # and operate on it where the script manipulates base.odb between steps to
 # reduce its size.
+# Use --resume with the same arguments to continue after an interrupt.
 ################################
 
 import odb
@@ -35,12 +36,47 @@ import argparse
 import shutil
 import select
 import time
+import json
+import logging
 from math import ceil
+from dataclasses import dataclass, asdict
+from typing import Optional
 import errno
 import enum
 
 persistence_range = [1, 2, 3, 4, 5, 6]
 cut_multiple = range(1, 128)
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class _CheckpointState:
+    cut_level: str  # "Insts" or "Nets"
+    n: int
+    step_count: int
+    timeout: float
+
+
+def _save_checkpoint(path: str, state: _CheckpointState) -> None:
+    tmp = path + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(asdict(state), fh, indent=2)
+        os.replace(tmp, path)
+    except OSError as exc:
+        logger.warning("Could not save checkpoint to %s: %s", path, exc)
+
+
+def _load_checkpoint(path: str) -> Optional[_CheckpointState]:
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return _CheckpointState(**data)
+    except (OSError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        logger.error("Could not load checkpoint from %s: %s", path, exc)
+        return None
+
 
 parser = argparse.ArgumentParser("Arguments for delta debugging")
 parser.add_argument(
@@ -92,6 +128,25 @@ parser.add_argument(
     "--dump_def",
     action="store_true",
     help="Determines whether to dumb def at each step in addition to the odb",
+)
+parser.add_argument(
+    "--resume",
+    action="store_true",
+    default=False,
+    help=(
+        "Resume delta debugging from a previously saved checkpoint. "
+        "Supply the same --base_db_path and --step as the original run. "
+        "The checkpoint is read from the path set by --state_file."
+    ),
+)
+parser.add_argument(
+    "--state_file",
+    type=str,
+    default=None,
+    help=(
+        "Path to the JSON checkpoint file used by --resume. "
+        "Defaults to deltaDebug_state_<db_name>.json beside the db file."
+    ),
 )
 
 
@@ -153,35 +208,114 @@ class deltaDebugger:
         # step command
         self.step = opt.step
 
-    def debug(self):
-        # copy original base db file to avoid overwriting it
-        print("Backing up original base file.")
-        shutil.copy(self.base_db_file, self.original_base_db_file)
+        # getattr defaults keep existing callers without --resume/--state_file working.
+        self._resume: bool = getattr(opt, "resume", False)
 
-        # Rename the base db file to a temp name to keep it from
-        # overwriting across the two steps cut
-        os.rename(self.base_db_file, self.temp_base_db_file)
-
-        if self.timeout is None:
-            # timeout used to measure the time the original input takes
-            # to reach an error to use as standard timeout for different
-            # cuts.
-            self.timeout = 1e6  # Timeout in seconds
-
-            # Perform a step with no cuts to measure timeout
-            print(
-                "Performing a step with the original "
-                + "input file to calculate timeout."
+        raw_state_file: Optional[str] = getattr(opt, "state_file", None)
+        self._state_file: str = (
+            raw_state_file
+            if raw_state_file is not None
+            else os.path.join(
+                base_db_directory,
+                f"deltaDebug_state_{base_db_name}.json",
             )
-            error, _ = self.perform_step()
-            if error is None:
-                print("No error found in the original input file.")
-                sys.exit(1)
+        )
+
+        # None means fresh run; set to the resumed cut_level by _try_resume().
+        self._resume_cut_level: Optional[cutLevel] = None
+        self._resumed_n: int = 2
+
+    def _checkpoint(self) -> None:
+        state = _CheckpointState(
+            cut_level=self.cut_level.name,
+            n=self.n,
+            step_count=self.step_count,
+            timeout=self.timeout if self.timeout is not None else 1e6,
+        )
+        _save_checkpoint(self._state_file, state)
+
+    def _try_resume(self) -> bool:
+        if not self._resume:
+            return False
+
+        state = _load_checkpoint(self._state_file)
+        if state is None:
+            print(
+                f"[resume] No valid checkpoint at {self._state_file}. "
+                "Starting fresh."
+            )
+            return False
+
+        if not os.path.exists(self.temp_base_db_file):
+            print(
+                f"[resume] Checkpoint found but temp DB "
+                f"'{self.temp_base_db_file}' is missing. Starting fresh."
+            )
+            return False
+
+        self.timeout = state.timeout
+        self.step_count = state.step_count
+        self.cut_level = cutLevel[state.cut_level]
+        self.n = state.n
+        self._resume_cut_level = self.cut_level
+        self._resumed_n = state.n
+
+        print(
+            f"[resume] Resuming from checkpoint — "
+            f"cut_level={self.cut_level.name}, "
+            f"n={self.n}, "
+            f"step_count={self.step_count}, "
+            f"timeout={self.timeout:.1f}s"
+        )
+        return True
+
+    def debug(self):
+        resumed = self._try_resume()
+
+        if not resumed:
+            # copy original base db file to avoid overwriting it
+            print("Backing up original base file.")
+            shutil.copy(self.base_db_file, self.original_base_db_file)
+
+            # Rename the base db file to a temp name to keep it from
+            # overwriting across the two steps cut
+            os.rename(self.base_db_file, self.temp_base_db_file)
+
+            if self.timeout is None:
+                # timeout used to measure the time the original input takes
+                # to reach an error to use as standard timeout for different
+                # cuts.
+                self.timeout = 1e6  # Timeout in seconds
+
+                # Perform a step with no cuts to measure timeout
+                print(
+                    "Performing a step with the original "
+                    + "input file to calculate timeout."
+                )
+                error, _ = self.perform_step()
+                if error is None:
+                    print("No error found in the original input file.")
+                    sys.exit(1)
+
+        first_resumed_iter = resumed
 
         for self.cut_level in (cutLevel.Insts, cutLevel.Nets):
+            # Skip cut levels already completed before the interrupt.
+            if (
+                self._resume_cut_level is not None
+                and self.cut_level != self._resume_cut_level
+            ):
+                continue
+            self._resume_cut_level = None
+
             while True:
                 err = None
                 self.n = 2  # Initial Number of cuts
+
+                # Restore checkpoint n on first iteration of the resumed level.
+                if first_resumed_iter:
+                    self.n = self._resumed_n
+                    first_resumed_iter = False
 
                 cuts = None
 
@@ -199,6 +333,7 @@ class deltaDebugger:
                             err = current_err
                             error_in_range = current_err
                             self.prepare_new_step()
+                            self._checkpoint()
                         j += 1
 
                     if error_in_range is None:
@@ -210,6 +345,8 @@ class deltaDebugger:
                         self.n = int(self.n / 2)
                     else:
                         break
+
+                    self._checkpoint()
 
                 if err is None or cuts == 0:
                     break
@@ -225,6 +362,11 @@ class deltaDebugger:
         # Restoring the original base_db file
         if os.path.exists(self.original_base_db_file):
             os.rename(self.original_base_db_file, self.base_db_file)
+
+        try:
+            os.remove(self._state_file)
+        except OSError:
+            pass
 
         print("___________________________________")
         print(f"Resultant file is {self.deltaDebug_result_base_file}")
@@ -444,6 +586,12 @@ class deltaDebugger:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.WARNING)
+    # OpenROAD's Python runner catches SystemExit and prints a traceback;
+    # use os._exit to avoid that when --help is requested.
+    if "--help" in sys.argv or "-h" in sys.argv:
+        parser.print_help()
+        os._exit(0)
     opt = parser.parse_args()
     debugger = deltaDebugger(opt)
     debugger.debug()

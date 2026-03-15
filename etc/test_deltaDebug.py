@@ -1,5 +1,7 @@
 import argparse
+import os
 import sys
+import tempfile
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
@@ -212,3 +214,54 @@ class TestDeltaDebug(TestCase):
         self.debugger.debug()
         self.assertEqual(set(self.debugger.insts), set(error_insts))
         self.assertEqual(len(self.debugger.nets), 0)
+
+    def test_checkpoint_round_trip(self):
+        state = deltaDebug._CheckpointState(
+            cut_level="Insts", n=8, step_count=12, timeout=321.0
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            state_file = os.path.join(temp_dir, "state.json")
+            deltaDebug._save_checkpoint(state_file, state)
+            loaded = deltaDebug._load_checkpoint(state_file)
+
+        self.assertIsNotNone(loaded)
+        self.assertEqual(loaded.cut_level, "Insts")
+        self.assertEqual(loaded.n, 8)
+        self.assertEqual(loaded.step_count, 12)
+        self.assertEqual(loaded.timeout, 321.0)
+
+    @patch("deltaDebug._load_checkpoint")
+    @patch("os.path.exists")
+    def test_try_resume_missing_temp_db(self, mock_exists, mock_load_checkpoint):
+        self.debugger._resume = True
+        self.debugger.timeout = 1000
+        self.debugger.step_count = 1
+        mock_load_checkpoint.return_value = deltaDebug._CheckpointState(
+            cut_level="Nets", n=4, step_count=22, timeout=500.0
+        )
+        mock_exists.side_effect = lambda path: path != self.debugger.temp_base_db_file
+
+        resumed = self.debugger._try_resume()
+
+        self.assertFalse(resumed)
+        self.assertEqual(self.debugger.timeout, 1000)
+        self.assertEqual(self.debugger.step_count, 1)
+        self.assertIsNone(self.debugger._resume_cut_level)
+
+    @patch("deltaDebug._load_checkpoint")
+    @patch("os.path.exists", return_value=True)
+    def test_try_resume_restores_state(self, _, mock_load_checkpoint):
+        self.debugger._resume = True
+        mock_load_checkpoint.return_value = deltaDebug._CheckpointState(
+            cut_level="Nets", n=16, step_count=30, timeout=700.0
+        )
+
+        resumed = self.debugger._try_resume()
+
+        self.assertTrue(resumed)
+        self.assertEqual(self.debugger.timeout, 700.0)
+        self.assertEqual(self.debugger.step_count, 30)
+        self.assertEqual(self.debugger.cut_level, deltaDebug.cutLevel.Nets)
+        self.assertEqual(self.debugger.n, 16)
+        self.assertEqual(self.debugger._resume_cut_level, deltaDebug.cutLevel.Nets)
+        self.assertEqual(self.debugger._resumed_n, 16)
