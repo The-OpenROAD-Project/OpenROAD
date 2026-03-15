@@ -23,6 +23,7 @@ isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
+useBazel=no
 
 _help() {
     cat <<EOF
@@ -55,6 +56,7 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -bazel                                        Use Bazel instead of CMake to build
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                   its content extends -cmake argument.
                                                   By default, "openroad_deps_prefixes.txt"
@@ -137,6 +139,9 @@ while [ "$#" -gt 0 ]; do
         -gpu)
             cmakeOptions+=" -DGPU=ON"
             ;;
+        -bazel)
+            useBazel=yes
+            ;;
         *)
             echo "unknown option: ${1}" >&2
             _help
@@ -207,11 +212,20 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 echo "[INFO] Using ${numThreads} threads."
+if [[ "$useBazel" == "yes" ]]; then
+    echo "[INFO] Building with Bazel."
+    bazel_cmd="bazel"
+    if command -v bazelisk &> /dev/null; then
+        bazel_cmd="bazelisk"
+    fi
+    "${bazel_cmd}" build //:openroad
+    exit 0
+fi
 if [[ "$isNinja" == "yes" ]]; then
-    eval cmake "${cmakeOptions}" -B "${buildDir}" .
+    cmake ${cmakeOptions} -B "${buildDir}" .
     cd "${buildDir}"
     CLICOLOR_FORCE=1 ninja build_and_test
     exit 0
 fi
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+cmake ${cmakeOptions} -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"
