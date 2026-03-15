@@ -4,11 +4,22 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "timing_report.py",
         "whittle.py",
         "whittle_cleanup.tcl",
         "whittle_cut.tcl",
     ],
     visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "timing_report",
+    srcs = ["timing_report.py"],
+    main = "timing_report.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
 )
 
 py_binary(

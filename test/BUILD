@@ -87,6 +87,7 @@ PYTHON_TESTS = [
     "timing_api_2",
     "timing_api_3",
     "timing_api_4",
+    "timing_report_api",
     "two_designs",
 ]
 
