@@ -98,6 +98,8 @@ class Grid
 
   int numLayouts() const;
 
+  void setNumLayouts(int tracks);
+
   int getLayoutWidth(int index) const;
 
   int getLayoutHeight(int index) const;
