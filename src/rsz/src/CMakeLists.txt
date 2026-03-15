@@ -81,3 +81,26 @@ messages(
   TARGET rsz
   OUTPUT_DIR ..
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  swig_lib(NAME          rsz_py
+           NAMESPACE     rsz
+           LANGUAGE      python
+           I_FILE        Resizer-py.i
+           SWIG_INCLUDES ${OPENSTA_HOME}
+           SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/rsz_py.py
+  )
+
+  target_include_directories(rsz_py
+    PUBLIC
+      ../include
+    PRIVATE
+      ${OPENSTA_HOME}
+      ${OPENSTA_HOME}/include/sta
+  )
+
+  target_link_libraries(rsz_py
+    PUBLIC
+      rsz_lib
+  )
+endif()
