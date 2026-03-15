@@ -59,10 +59,11 @@ get_db_block();
 %template(EndpointSlackMap) std::vector<std::pair<std::string, float>>;
 %include "ord/Tech.h"
 %include "ord/Design.h"
+
 %include "ord/Timing.h"
-%template(ClockInfoVec) std::vector<ord::Timing::ClockInfo>;
-%template(TimingArcInfoVec) std::vector<ord::Timing::TimingArcInfo>;
-%template(TimingPathInfoVec) std::vector<ord::Timing::TimingPathInfo>;
+%template(ClockInfoVec) std::vector<ord::ClockInfo>;
+%template(TimingArcInfoVec) std::vector<ord::TimingArcInfo>;
+%template(TimingPathInfoVec) std::vector<ord::TimingPathInfo>;
 
 #ifdef BAZEL
 %include "src/gpl/src/replace-py.i"

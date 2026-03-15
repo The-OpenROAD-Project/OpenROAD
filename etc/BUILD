@@ -13,6 +13,16 @@ exports_files(
 )
 
 py_binary(
+    name = "timing_report",
+    srcs = ["timing_report.py"],
+    main = "timing_report.py",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_binary(
     name = "file_to_string",
     srcs = [
         "file_to_string.py",

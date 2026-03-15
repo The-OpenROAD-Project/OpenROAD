@@ -448,7 +448,7 @@ std::vector<std::pair<std::string, float>> Timing::getEndpointSlackMap(
   return result;
 }
 
-std::vector<Timing::ClockInfo> Timing::getClockInfo()
+std::vector<ClockInfo> Timing::getClockInfo()
 {
   sta::dbSta* sta = getSta();
   cmdLinkedNetwork();
@@ -472,9 +472,9 @@ std::vector<Timing::ClockInfo> Timing::getClockInfo()
   return result;
 }
 
-std::vector<Timing::TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
-                                                           int max_paths,
-                                                           float slack_threshold)
+std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
+                                                   int max_paths,
+                                                   float slack_threshold)
 {
   sta::dbSta* sta = getSta();
   cmdLinkedNetwork();

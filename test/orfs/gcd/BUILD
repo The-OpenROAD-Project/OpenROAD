@@ -34,7 +34,7 @@ orfs_flow(
 orfs_timing_stages(
     name = "gcd",
     stages = ["synth", "floorplan", "place", "cts", "grt", "route"],
-    timing_script = "//etc:timing_report.py",
+    timing_script = "//etc:timing_report",
     variant = None,
 )
 

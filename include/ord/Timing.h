@@ -37,6 +37,47 @@ namespace ord {
 
 class Design;
 class OpenRoad;
+
+// ── Timing report structs (top-level for SWIG compatibility) ──
+struct ClockInfo
+{
+  std::string name;
+  float period;
+  std::vector<float> waveform;
+  std::vector<std::string> sources;
+};
+
+struct TimingArcInfo
+{
+  std::string from_pin;
+  std::string to_pin;
+  std::string cell_name;
+  float delay;
+  float slew;
+  float load;
+  int fanout;
+  bool is_rising;
+  bool is_net;
+};
+
+struct TimingPathInfo
+{
+  float slack;
+  float path_delay;
+  float arrival;
+  float required;
+  float skew;
+  float logic_delay;
+  int logic_depth;
+  int fanout;
+  std::string startpoint;
+  std::string endpoint;
+  std::string start_clock;
+  std::string end_clock;
+  std::string path_group;
+  std::vector<TimingArcInfo> arcs;
+};
+
 class Timing
 {
  public:
@@ -94,47 +135,9 @@ class Timing
       MinMax minmax = Max);
 
   // ── Clock domain info ───────────────────────────────────────
-  struct ClockInfo
-  {
-    std::string name;
-    float period;
-    std::vector<float> waveform;
-    std::vector<std::string> sources;
-  };
   std::vector<ClockInfo> getClockInfo();
 
   // ── Timing paths with arc detail ────────────────────────────
-  struct TimingArcInfo
-  {
-    std::string from_pin;
-    std::string to_pin;
-    std::string cell_name;
-    float delay;
-    float slew;
-    float load;
-    int fanout;
-    bool is_rising;
-    bool is_net;
-  };
-
-  struct TimingPathInfo
-  {
-    float slack;
-    float path_delay;
-    float arrival;
-    float required;
-    float skew;
-    float logic_delay;
-    int logic_depth;
-    int fanout;
-    std::string startpoint;
-    std::string endpoint;
-    std::string start_clock;
-    std::string end_clock;
-    std::string path_group;
-    std::vector<TimingArcInfo> arcs;
-  };
-
   std::vector<TimingPathInfo> getTimingPaths(MinMax minmax = Max,
                                              int max_paths = 100,
                                              float slack_threshold = 1e30);

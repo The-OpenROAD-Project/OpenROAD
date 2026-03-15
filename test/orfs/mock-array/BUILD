@@ -1,5 +1,6 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
+load("//test/orfs:timing.bzl", "orfs_timing_stages")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
@@ -82,6 +83,20 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     name = name,
     config = config,
 ) for name, config in CONFIGS.items()]
+
+orfs_timing_stages(
+    name = "Element",
+    stages = ["synth", "floorplan", "place", "cts", "grt", "route"],
+    timing_script = "//etc:timing_report",
+    variant = "4x4_base",
+)
+
+orfs_timing_stages(
+    name = "MockArray",
+    stages = ["synth", "floorplan", "place", "cts", "grt", "route"],
+    timing_script = "//etc:timing_report",
+    variant = "4x4_base",
+)
 
 test_suite(
     name = "eqy_tests",
