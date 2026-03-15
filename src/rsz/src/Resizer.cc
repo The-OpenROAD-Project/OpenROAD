@@ -80,7 +80,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
-#include "sta/StringSeq.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -4104,7 +4103,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
   for (auto scene : sta_->scenes()) {
     scene_names.push_back(scene->name().c_str());
   }
-  sta->makeScenes(&scene_names);
+  sta->makeScenes(scene_names);
 
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
