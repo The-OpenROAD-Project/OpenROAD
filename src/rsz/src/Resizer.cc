@@ -5529,7 +5529,7 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
   std::vector<rsz::MoveType> result;
   // Replace commas with spaces to support both separators
   std::string normalized(sequence);
-  std::replace(normalized.begin(), normalized.end(), ',', ' ');
+  std::ranges::replace(normalized, ',', ' ');
   std::stringstream ss(normalized);
   std::string item;
   while (ss >> item) {
