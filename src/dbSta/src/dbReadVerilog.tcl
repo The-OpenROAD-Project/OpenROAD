@@ -34,8 +34,12 @@ sta::define_cmd_args "write_verilog" {[-sort] [-include_pwr_gnd]\
 proc write_verilog { args } {
   sta::parse_key_args "write_verilog" args keys {-remove_cells} \
     flags {-sort -include_pwr_gnd}
-  if { [info exists flags(-sort)] } {
-    utl::warn STA 2065 "The -sort flag is ignored."
+  if { [info exists ::write_verilog_sort_warned] == 0 } {
+    set ::write_verilog_sort_warned 0
+  }
+  if { [info exists flags(-sort)] && !$::write_verilog_sort_warned } {
+    utl::warn STA 2065 "-sort is deprecated and ignored."
+    set ::write_verilog_sort_warned 1
   }
   set remove_cells {}
   if { [info exists keys(-remove_cells)] } {
