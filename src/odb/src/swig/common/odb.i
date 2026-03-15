@@ -48,6 +48,47 @@ using namespace odb;
 %ignore odb::dbTechLayerAntennaRule::getDiffPSR() const;
 %ignore odb::dbTechLayerAntennaRule::getDiffCSR() const;
 %ignore odb::dbTechLayerAntennaRule::getAreaDiffReduce() const;
+%ignore odb::dbTechLayer::getArea() const;
+%ignore odb::dbTechLayer::setArea(double area);
+
+%extend odb::dbTechLayer {
+  int64_t getArea() const
+  {
+    if ($self == nullptr) {
+      return 0;
+    }
+    odb::dbTech* tech = $self->getTech();
+    if (tech == nullptr) {
+      return 0;
+    }
+    const int dbu_per_micron = tech->getDbUnitsPerMicron();
+    if (dbu_per_micron <= 0) {
+      return 0;
+    }
+    const int64_t dbu_per_square_micron
+        = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+    const double dbu_area = $self->getArea() * dbu_per_square_micron;
+    return static_cast<int64_t>(std::round(dbu_area));
+  }
+
+  void setArea(int64_t area)
+  {
+    if ($self == nullptr) {
+      return;
+    }
+    odb::dbTech* tech = $self->getTech();
+    if (tech == nullptr) {
+      return;
+    }
+    const int dbu_per_micron = tech->getDbUnitsPerMicron();
+    if (dbu_per_micron <= 0) {
+      return;
+    }
+    const int64_t dbu_per_square_micron
+        = static_cast<int64_t>(dbu_per_micron) * dbu_per_micron;
+    $self->setArea(static_cast<double>(area) / dbu_per_square_micron);
+  }
+}
 
 // Swig can't handle non-assignable types
 %ignore odb::Point::get(Orientation2D orient) const;
