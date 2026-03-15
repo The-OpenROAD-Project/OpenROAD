@@ -341,7 +341,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 std::set<odb::dbInst*> HeatMapDataSource::getSelectedInsts() const
 {
   std::set<odb::dbInst*> selected_insts;
-  if (!getUseSelectedOnly() || !gui::Gui::enabled()) {
+  if (!useSelectedOnly() || !gui::Gui::enabled()) {
     return selected_insts;
   }
   for (const gui::Selected& item : gui::Gui::get()->selection()) {

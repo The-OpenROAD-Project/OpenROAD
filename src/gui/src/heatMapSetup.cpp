@@ -262,8 +262,8 @@ void HeatMapSetup::updateWidgets()
                                                         : Qt::Unchecked);
   show_legend_->setCheckState(source_.getShowLegend() ? Qt::Checked
                                                       : Qt::Unchecked);
-  use_selected_only_->setCheckState(
-      source_.getUseSelectedOnly() ? Qt::Checked : Qt::Unchecked);
+  use_selected_only_->setCheckState(source_.useSelectedOnly() ? Qt::Checked
+                                                              : Qt::Unchecked);
 }
 
 void HeatMapSetup::destroyMap()

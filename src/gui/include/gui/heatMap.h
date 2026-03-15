@@ -71,7 +71,7 @@ class HeatMapDataSource
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource();
 
-  bool getUseSelectedOnly() const { return use_selected_only_; }
+  bool useSelectedOnly() const { return use_selected_only_; }
   void setUseSelectedOnly(bool value)
   {
     if (use_selected_only_ != value) {
