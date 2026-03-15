@@ -17,6 +17,7 @@
 #include "dbChipInstItr.h"
 #include "dbChipNet.h"
 #include "dbChipNetItr.h"
+#include "dbChipPath.h"
 #include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
@@ -118,6 +119,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (next_entry_ != rhs.next_entry_) {
     return false;
   }
+  if (*chip_path_tbl_ != *rhs.chip_path_tbl_) {
+    return false;
+  }
 
   // User Code Begin ==
   if (*block_tbl_ != *rhs.block_tbl_) {
@@ -163,6 +167,8 @@ _dbChip::_dbChip(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipRegionObj);
   marker_categories_tbl_ = new dbTable<_dbMarkerCategory>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
+  chip_path_tbl_ = new dbTable<_dbChipPath>(
+      db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipPathObj);
   // User Code Begin Constructor
   block_tbl_ = new dbTable<_dbBlock>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbBlockObj);
@@ -244,6 +250,9 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
   }
+  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
+    stream >> *obj.chip_path_tbl_;
+  }
   // User Code Begin >>
   stream >> *obj.block_tbl_;
   stream >> *obj.prop_tbl_;
@@ -289,6 +298,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
   stream << *obj.marker_categories_tbl_;
+  stream << *obj.chip_path_tbl_;
   // User Code Begin <<
   stream << *obj.block_tbl_;
   stream << NamedTable("prop_tbl", obj.prop_tbl_);
@@ -307,6 +317,8 @@ dbObjectTable* _dbChip::getObjectTable(dbObjectType type)
       return chip_region_tbl_;
     case dbMarkerCategoryObj:
       return marker_categories_tbl_;
+    case dbChipPathObj:
+      return chip_path_tbl_;
       // User Code Begin getObjectTable
     case dbBlockObj:
       return block_tbl_;
@@ -328,6 +340,8 @@ void _dbChip::collectMemInfo(MemInfo& info)
   marker_categories_tbl_->collectMemInfo(
       info.children["marker_categories_tbl_"]);
 
+  chip_path_tbl_->collectMemInfo(info.children["chip_path_tbl_"]);
+
   // User Code Begin collectMemInfo
   block_tbl_->collectMemInfo(info.children["block"]);
   name_cache_->collectMemInfo(info.children["name_cache"]);
@@ -342,6 +356,7 @@ _dbChip::~_dbChip()
   delete prop_tbl_;
   delete chip_region_tbl_;
   delete marker_categories_tbl_;
+  delete chip_path_tbl_;
   // User Code Begin Destructor
   delete block_tbl_;
   delete name_cache_;
@@ -559,6 +574,12 @@ dbSet<dbMarkerCategory> dbChip::getMarkerCategories() const
 {
   _dbChip* obj = (_dbChip*) this;
   return dbSet<dbMarkerCategory>(obj, obj->marker_categories_tbl_);
+}
+
+dbSet<dbChipPath> dbChip::getChipPaths() const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return dbSet<dbChipPath>(obj, obj->chip_path_tbl_);
 }
 
 // User Code Begin dbChipPublicMethods

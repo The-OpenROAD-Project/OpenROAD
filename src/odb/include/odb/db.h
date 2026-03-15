@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -7260,6 +7261,8 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7434,6 +7437,24 @@ class dbChipNet : public dbObject
 
   static void destroy(dbChipNet* net);
   // User Code End dbChipNet
+};
+
+class dbChipPath : public dbObject
+{
+ public:
+  std::string getName() const;
+
+  // User Code Begin dbChipPath
+  dbChip* getChip() const;
+
+  const std::vector<std::pair<std::string, bool>>& getEntries() const;
+
+  void addEntry(const std::string& region, bool negated);
+
+  static dbChipPath* create(dbChip* chip, const std::string& name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
 };
 
 class dbChipRegion : public dbObject
