@@ -19,6 +19,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace gui {
+class HeatMapDataSource;
+}
+
 namespace utl {
 class Logger;
 }
@@ -152,6 +156,11 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr) const;
+  std::vector<unsigned char> generateHeatMapTile(
+      gui::HeatMapDataSource& source,
+      int z,
+      int x,
+      int y) const;
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -163,6 +172,15 @@ class TileGenerator
                         int z,
                         int x,
                         int y) const;
+
+  static int getBitmapTextWidth(std::string_view text, int scale);
+  static int getBitmapTextHeight(int scale);
+  static void drawBitmapText(std::vector<unsigned char>& image,
+                             int x,
+                             int y,
+                             std::string_view text,
+                             int scale,
+                             const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,

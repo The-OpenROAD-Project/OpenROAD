@@ -30,7 +30,8 @@ const layerPalette = [
 
 // Populate display controls with layer checkboxes and visibility tree.
 export function populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                         techData, redrawAllLayers) {
+                                         techData, redrawAllLayers,
+                                         HeatMapTileLayer) {
     if (!app.displayControlsEl) return;
     app.displayControlsEl.innerHTML = '';
     app.allLayers = [];
@@ -279,4 +280,272 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     visTree.add({ key: 'module_view', label: 'Module view' });
     visTree.add({ key: 'debug', label: 'Debug tiles' });
     visTree.render(app.displayControlsEl);
+
+    if (!app.heatMapLayer) {
+        app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {
+            zIndex: techData.layers.length + 10,
+            opacity: 1,
+        });
+    }
+
+    const heatMapContainer = document.createElement('div');
+    heatMapContainer.className = 'heatmap-controls';
+    app.displayControlsEl.appendChild(heatMapContainer);
+
+    function addCheckbox(parent, label, checked, onChange) {
+        const row = document.createElement('label');
+        row.className = 'heatmap-setting';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = checked;
+        input.addEventListener('change', () => onChange(input.checked));
+        row.appendChild(input);
+        row.appendChild(document.createTextNode(label));
+        parent.appendChild(row);
+    }
+
+    function addNumber(parent, label, value, step, onChange) {
+        const row = document.createElement('label');
+        row.className = 'heatmap-setting';
+        const text = document.createElement('span');
+        text.textContent = label;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = String(value);
+        input.step = String(step || 1);
+        input.addEventListener('change', () => onChange(parseFloat(input.value)));
+        row.appendChild(text);
+        row.appendChild(input);
+        parent.appendChild(row);
+    }
+
+    function addSelect(parent, label, value, choices, onChange) {
+        const row = document.createElement('label');
+        row.className = 'heatmap-setting';
+        const text = document.createElement('span');
+        text.textContent = label;
+        const select = document.createElement('select');
+        for (const choice of choices) {
+            const option = document.createElement('option');
+            option.value = choice;
+            option.textContent = choice;
+            if (choice === value) option.selected = true;
+            select.appendChild(option);
+        }
+        select.addEventListener('change', () => onChange(select.value));
+        row.appendChild(text);
+        row.appendChild(select);
+        parent.appendChild(row);
+    }
+
+    function sendHeatMapUpdate(message) {
+        app.websocketManager.request(message).then(data => {
+            if (app.updateHeatMaps) {
+                app.updateHeatMaps(data);
+            }
+        }).catch(err => console.error('Heat map update failed', err));
+    }
+
+    app.renderHeatMapControls = (data) => {
+        heatMapContainer.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.className = 'heatmap-header';
+        header.textContent = 'Heat Maps';
+        heatMapContainer.appendChild(header);
+
+        const list = document.createElement('div');
+        list.className = 'heatmap-list';
+        heatMapContainer.appendChild(list);
+
+        const noneLabel = document.createElement('label');
+        noneLabel.className = 'heatmap-setting';
+        const noneInput = document.createElement('input');
+        noneInput.type = 'radio';
+        noneInput.name = 'active-heatmap';
+        noneInput.checked = !data.active;
+        noneInput.addEventListener('change', () => {
+            sendHeatMapUpdate({ type: 'set_active_heatmap', name: '' });
+        });
+        noneLabel.appendChild(noneInput);
+        noneLabel.appendChild(document.createTextNode('Off'));
+        list.appendChild(noneLabel);
+
+        for (const heatMap of data.heatmaps || []) {
+            const label = document.createElement('label');
+            label.className = 'heatmap-setting';
+            const input = document.createElement('input');
+            input.type = 'radio';
+            input.name = 'active-heatmap';
+            input.checked = heatMap.name === data.active;
+            input.addEventListener('change', () => {
+                sendHeatMapUpdate({
+                    type: 'set_active_heatmap',
+                    name: heatMap.name,
+                });
+            });
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(heatMap.title));
+            list.appendChild(label);
+        }
+
+        const active = (data.heatmaps || []).find(h => h.name === data.active);
+        if (!active) {
+            return;
+        }
+
+        const settings = document.createElement('div');
+        settings.className = 'heatmap-settings';
+        heatMapContainer.appendChild(settings);
+
+        addNumber(settings, 'Display min', active.display_min,
+                  active.display_range_increment, value => {
+                      sendHeatMapUpdate({
+                          type: 'set_heatmap',
+                          name: active.name,
+                          option: 'DisplayMin',
+                          value,
+                      });
+                  });
+        addNumber(settings, 'Display max', active.display_max,
+                  active.display_range_increment, value => {
+                      sendHeatMapUpdate({
+                          type: 'set_heatmap',
+                          name: active.name,
+                          option: 'DisplayMax',
+                          value,
+                      });
+                  });
+        addCheckbox(settings, 'Show below min', active.draw_below_min, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'ShowMin',
+                value,
+            });
+        });
+        addCheckbox(settings, 'Show above max', active.draw_above_max, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'ShowMax',
+                value,
+            });
+        });
+        addCheckbox(settings, 'Log scale', active.log_scale, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'LogScale',
+                value,
+            });
+        });
+        addCheckbox(settings, 'Reverse log', active.reverse_log, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'ReverseLog',
+                value,
+            });
+        });
+        if (active.can_adjust_grid) {
+            addNumber(settings, 'Grid X', active.grid_x, 0.1, value => {
+                sendHeatMapUpdate({
+                    type: 'set_heatmap',
+                    name: active.name,
+                    option: 'GridX',
+                    value,
+                });
+            });
+            addNumber(settings, 'Grid Y', active.grid_y, 0.1, value => {
+                sendHeatMapUpdate({
+                    type: 'set_heatmap',
+                    name: active.name,
+                    option: 'GridY',
+                    value,
+                });
+            });
+        }
+        addNumber(settings, 'Alpha', active.alpha, 1, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'Alpha',
+                value,
+            });
+        });
+        addCheckbox(settings, 'Legend', active.show_legend, value => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'ShowLegend',
+                value,
+            });
+        });
+        if (active.supports_numbers) {
+            addCheckbox(settings, 'Show numbers', active.show_numbers, value => {
+                sendHeatMapUpdate({
+                    type: 'set_heatmap',
+                    name: active.name,
+                    option: 'ShowNumbers',
+                    value,
+                });
+            });
+        }
+
+        for (const option of active.options || []) {
+            if (option.type === 'bool') {
+                addCheckbox(settings, option.label, option.value, value => {
+                    sendHeatMapUpdate({
+                        type: 'set_heatmap',
+                        name: active.name,
+                        option: option.name,
+                        value,
+                    });
+                });
+            } else if (option.type === 'choice') {
+                addSelect(settings, option.label, option.value,
+                          option.choices || [], value => {
+                              sendHeatMapUpdate({
+                                  type: 'set_heatmap',
+                                  name: active.name,
+                                  option: option.name,
+                                  value,
+                              });
+                          });
+            }
+        }
+
+        const rebuild = document.createElement('button');
+        rebuild.className = 'heatmap-rebuild';
+        rebuild.textContent = 'Rebuild data';
+        rebuild.addEventListener('click', () => {
+            sendHeatMapUpdate({
+                type: 'set_heatmap',
+                name: active.name,
+                option: 'rebuild',
+                value: 1,
+            });
+        });
+        settings.appendChild(rebuild);
+
+        if (active.show_legend && active.legend && active.legend.length > 0) {
+            const legend = document.createElement('div');
+            legend.className = 'heatmap-legend';
+            for (const entry of active.legend) {
+                const row = document.createElement('div');
+                row.className = 'heatmap-legend-row';
+                const swatch = document.createElement('span');
+                swatch.className = 'heatmap-legend-swatch';
+                swatch.style.backgroundColor
+                    = `rgba(${entry.color[0]}, ${entry.color[1]}, ${entry.color[2]}, ${entry.color[3] / 255})`;
+                const text = document.createElement('span');
+                text.textContent = entry.value;
+                row.appendChild(swatch);
+                row.appendChild(text);
+                legend.appendChild(row);
+            }
+            heatMapContainer.appendChild(legend);
+        }
+    };
 }

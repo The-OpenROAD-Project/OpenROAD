@@ -26,7 +26,6 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
-#include "AbstractRoutingCongestionDataSource.h"
 #include "CUGR.h"
 #include "DataType.h"
 #include "FastRoute.h"
@@ -35,6 +34,7 @@
 #include "Pin.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
+#include "gui/heatMap.h"
 #include "boost/icl/interval.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
@@ -109,15 +109,11 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
 }
 
-void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
-                               routing_congestion_data_source,
-                           std::unique_ptr<AbstractRoutingCongestionDataSource>
-                               routing_congestion_data_source_rudy)
+void GlobalRouter::initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
+                           gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
 {
   heatmap_ = std::move(routing_congestion_data_source);
-  heatmap_->registerHeatMap();
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
-  heatmap_rudy_->registerHeatMap();
 }
 
 void GlobalRouter::clear()
@@ -479,7 +475,12 @@ void GlobalRouter::updateDbCongestion()
   } else {
     fastroute_->updateDbCongestion(min_layer, max_layer);
   }
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
 }
 
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
@@ -2433,7 +2434,12 @@ void GlobalRouter::readGuides(const char* file_name)
   updateEdgesUsage();
   computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
   saveGuidesFromFile(guides);
 }
 
@@ -2472,7 +2478,12 @@ void GlobalRouter::loadGuidesFromDB()
   if (block_->getGCellGrid() == nullptr) {
     updateDbCongestion();
   }
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
 }
 
 void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)

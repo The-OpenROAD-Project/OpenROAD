@@ -16,6 +16,7 @@
 #include "bufferTreeDescriptor.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "tcl.h"
@@ -26,20 +27,6 @@ struct GifWriter
 };
 
 namespace gui {
-
-// empty heat map class
-class PinDensityDataSource
-{
-};
-
-// empty heat map class
-class PlacementDensityDataSource
-{
-};
-
-class PowerDensityDataSource
-{
-};
 
 Options* Painter::getOptions()
 {
@@ -64,6 +51,10 @@ bool gui::Gui::enabled()
 }
 
 void gui::Gui::registerRenderer(gui::Renderer*)
+{
+}
+
+void HeatMapDataSource::registerHeatMap()
 {
 }
 
@@ -96,10 +87,6 @@ void Renderer::redraw()
 }
 
 Renderer::~Renderer() = default;
-
-SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
-{
-}
 
 void DiscreteLegend::addLegendKey(const Painter::Color& color,
                                   const std::string& text)
@@ -193,6 +180,7 @@ void initGui(Tcl_Interp* interp,
   auto* registry = DescriptorRegistry::instance();
   registry->setLogger(logger);
   registry->initDescriptors(db, sta);
+  registerBuiltinHeatMapSources(sta, logger);
 
   // Tcl requires this to be a writable string
   std::string cmd_save_image(

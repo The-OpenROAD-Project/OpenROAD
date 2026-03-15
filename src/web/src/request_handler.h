@@ -77,6 +77,10 @@ struct WebSocketRequest
     MODULE_HIERARCHY,
     SET_MODULE_COLORS,
     SET_FOCUS_NETS,
+    HEATMAPS,
+    SET_ACTIVE_HEATMAP,
+    SET_HEATMAP,
+    HEATMAP_TILE,
     UNKNOWN
   };
 
@@ -121,6 +125,12 @@ struct WebSocketRequest
   std::string focus_action;  // "add", "remove", "clear"
   std::string focus_net_name;
 
+  // Heat map fields
+  std::string heatmap_name;
+  std::string heatmap_option;
+  std::string heatmap_string_value;
+  std::string raw_json;
+
   // Visibility flags (default: all visible)
   TileVisibility vis;
 };
@@ -151,6 +161,10 @@ struct SessionState
 
   std::mutex focus_nets_mutex;
   std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
+
+  std::mutex heatmap_mutex;
+  std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
+  std::string active_heatmap;
 };
 
 // Minimal JSON field extraction (no JSON library dependency).
@@ -250,11 +264,20 @@ class TileHandler
  public:
   explicit TileHandler(std::shared_ptr<TileGenerator> gen);
 
+  void initializeHeatMaps(SessionState& state);
   WebSocketResponse handleTile(const WebSocketRequest& req,
                                SessionState& state);
   WebSocketResponse handleModuleHierarchy(const WebSocketRequest& req);
   WebSocketResponse handleSetModuleColors(const WebSocketRequest& req,
                                           SessionState& state);
+  WebSocketResponse handleHeatMaps(const WebSocketRequest& req,
+                                   SessionState& state);
+  WebSocketResponse handleSetActiveHeatMap(const WebSocketRequest& req,
+                                           SessionState& state);
+  WebSocketResponse handleSetHeatMap(const WebSocketRequest& req,
+                                     SessionState& state);
+  WebSocketResponse handleHeatMapTile(const WebSocketRequest& req,
+                                      SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

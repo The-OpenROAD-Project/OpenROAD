@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "clock_tree_report.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tcl.h"
@@ -51,6 +52,7 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
 {
   WebSocketRequest req;
   req.id = static_cast<uint32_t>(extract_int(msg, "id"));
+  req.raw_json = msg;
 
   std::string type_str = extract_string(msg, "type");
   if (type_str == "tile") {
@@ -113,6 +115,22 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.select_y = extract_int(msg, "dbu_y");
     req.select_zoom = extract_int_or(msg, "zoom", 0);
     req.vis.parseFromJson(msg);
+  } else if (type_str == "heatmaps") {
+    req.type = WebSocketRequest::HEATMAPS;
+  } else if (type_str == "set_active_heatmap") {
+    req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
+    req.heatmap_name = extract_string(msg, "name");
+  } else if (type_str == "set_heatmap") {
+    req.type = WebSocketRequest::SET_HEATMAP;
+    req.heatmap_name = extract_string(msg, "name");
+    req.heatmap_option = extract_string(msg, "option");
+    req.heatmap_string_value = extract_string(msg, "value");
+  } else if (type_str == "heatmap_tile") {
+    req.type = WebSocketRequest::HEATMAP_TILE;
+    req.heatmap_name = extract_string(msg, "name");
+    req.z = extract_int(msg, "z");
+    req.x = extract_int(msg, "x");
+    req.y = extract_int(msg, "y");
   } else {
     req.type = WebSocketRequest::UNKNOWN;
   }
@@ -271,6 +289,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    utl::Logger* logger);
+  ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
 
@@ -300,6 +319,18 @@ WebSocketSession::WebSocketSession(
       tile_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor()))
 {
+  tile_handler_.initializeHeatMaps(state_);
+}
+
+WebSocketSession::~WebSocketSession()
+{
+  std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+  if (!state_.active_heatmap.empty()) {
+    auto active = state_.heatmaps.find(state_.active_heatmap);
+    if (active != state_.heatmaps.end()) {
+      active->second->onHide();
+    }
+  }
 }
 
 void WebSocketSession::run(http::request<http::string_body>&& req)
@@ -430,6 +461,28 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSetFocusNets(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::HEATMAPS:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->tile_handler_.handleHeatMaps(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::SET_ACTIVE_HEATMAP:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->tile_handler_.handleSetActiveHeatMap(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::SET_HEATMAP:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->tile_handler_.handleSetHeatMap(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::HEATMAP_TILE:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->tile_handler_.handleHeatMapTile(req, self->state_));
       });
       break;
     default:

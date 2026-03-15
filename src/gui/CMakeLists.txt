@@ -32,6 +32,30 @@ target_include_directories(gui_descriptors
     ${DBSTA_HOME}/include
 )
 
+add_library(gui_heatmap_core
+  src/heatMapCore.cpp
+  src/heatMapPinDensity.cpp
+  src/heatMapPlacementDensity.cpp
+)
+target_link_libraries(gui_heatmap_core
+  PUBLIC
+    odb
+  PRIVATE
+    absl::synchronization
+    dbSta_lib
+    utl_lib
+    Boost::boost
+    OpenSTA
+)
+target_include_directories(gui_heatmap_core
+  PUBLIC
+    include
+  PRIVATE
+    src
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
+)
+
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
@@ -81,8 +105,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/label.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
-    src/heatMapPinDensity.cpp
-    src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/insertBufferDialog.cpp
@@ -109,6 +131,7 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Charts
       OpenGL::GL
       gui_descriptors
+      gui_heatmap_core
       dbSta
       utl_lib
       Boost::boost
@@ -135,7 +158,6 @@ else()
   endif()
   add_library(gui
     src/stub.cpp
-    src/stub_heatMap.cpp
     src/init_descriptors.cpp
     src/dbDescriptors.cpp
     src/staDescriptors.cpp
@@ -145,6 +167,7 @@ else()
       odb
     PRIVATE
       gui_descriptors
+      gui_heatmap_core
       dbSta
       utl_lib
       OpenSTA

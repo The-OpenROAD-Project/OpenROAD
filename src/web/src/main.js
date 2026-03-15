@@ -43,12 +43,17 @@ const app = {
     websocketManager: null,     // set after construction below
     goldenLayout: null,  // set after GL init below
     hasLiberty: false,
+    techData: null,
     inspectorEl: null,
     tclOutputEl: null,
     highlightRect: null,
     modulesLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
+    heatMapData: null,
+    activeHeatMap: '',
+    heatMapLayer: null,
+    renderHeatMapControls: null,
 };
 
 const visibility = {
@@ -108,6 +113,106 @@ const visibility = {
 };
 
 const WebSocketTileLayer = createWebSocketTileLayer(visibility);
+const BLANK_TILE
+    = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
+const HeatMapTileLayer = L.GridLayer.extend({
+    initialize: function(websocketManager, appState, options) {
+        this._websocketManager = websocketManager;
+        this._appState = appState;
+        L.GridLayer.prototype.initialize.call(this, options);
+    },
+
+    createTile: function(coords, done) {
+        const tile = document.createElement('img');
+        tile.alt = '';
+        tile.setAttribute('role', 'presentation');
+        tile._tileDone = false;
+        tile.onload = () => {
+            if (tile.src && tile.src.startsWith('blob:')) {
+                URL.revokeObjectURL(tile.src);
+            }
+            if (!tile._tileDone) {
+                tile._tileDone = true;
+                done(null, tile);
+            }
+        };
+        tile.onerror = () => {
+            if (!tile._tileDone) {
+                tile._tileDone = true;
+                done(new Error('heat map tile load error'), tile);
+            }
+        };
+
+        const active = this._appState.activeHeatMap;
+        if (!active) {
+            tile.src = BLANK_TILE;
+            return tile;
+        }
+
+        this._websocketManager.request({
+            type: 'heatmap_tile',
+            name: active,
+            z: coords.z,
+            x: coords.x,
+            y: coords.y,
+        }).then(blob => {
+            tile.src = URL.createObjectURL(blob);
+        }).catch(() => {
+            tile.src = BLANK_TILE;
+        });
+
+        return tile;
+    },
+
+    refreshTiles: function() {
+        if (!this._map) return;
+        for (const key in this._tiles) {
+            const tileInfo = this._tiles[key];
+            if (!tileInfo || !tileInfo.el) continue;
+            const tile = tileInfo.el;
+            const coords = tileInfo.coords;
+            const active = this._appState.activeHeatMap;
+            if (!active) {
+                tile.src = BLANK_TILE;
+                continue;
+            }
+            this._websocketManager.request({
+                type: 'heatmap_tile',
+                name: active,
+                z: coords.z,
+                x: coords.x,
+                y: coords.y,
+            }).then(blob => {
+                if (tile.src && tile.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(tile.src);
+                }
+                tile.src = URL.createObjectURL(blob);
+            }).catch(() => {
+                tile.src = BLANK_TILE;
+            });
+        }
+    },
+});
+
+function updateHeatMaps(data) {
+    app.heatMapData = data;
+    app.activeHeatMap = data.active || '';
+    if (app.heatMapLayer) {
+        if (app.activeHeatMap) {
+            if (!app.map.hasLayer(app.heatMapLayer)) {
+                app.heatMapLayer.addTo(app.map);
+            }
+        } else if (app.map.hasLayer(app.heatMapLayer)) {
+            app.map.removeLayer(app.heatMapLayer);
+        }
+        app.heatMapLayer.refreshTiles();
+    }
+    if (app.renderHeatMapControls) {
+        app.renderHeatMapControls(data);
+    }
+}
+app.updateHeatMaps = updateHeatMaps;
 
 function redrawAllLayers() {
     // Show/hide modules layer based on module_view visibility
@@ -120,6 +225,9 @@ function redrawAllLayers() {
     }
     for (const layer of app.allLayers) {
         layer.refreshTiles();
+    }
+    if (app.heatMapLayer) {
+        app.heatMapLayer.refreshTiles();
     }
 }
 
@@ -396,11 +504,13 @@ app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 app.websocketManager.readyPromise.then(async () => {
     try {
-        const [techData, boundsData] = await Promise.all([
+        const [techData, boundsData, heatMapData] = await Promise.all([
             app.websocketManager.request({ type: 'tech' }),
             app.websocketManager.request({ type: 'bounds' }),
+            app.websocketManager.request({ type: 'heatmaps' }),
         ]);
         app.hasLiberty = techData.has_liberty;
+        app.techData = techData;
 
         // --- Set Bounds ---
         const designBounds = boundsData.bounds;
@@ -471,7 +581,8 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                techData, redrawAllLayers);
+                                techData, redrawAllLayers, HeatMapTileLayer);
+        updateHeatMaps(heatMapData);
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }

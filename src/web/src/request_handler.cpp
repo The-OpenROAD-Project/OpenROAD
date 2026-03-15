@@ -11,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,6 +20,7 @@
 #include "color.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
@@ -280,6 +282,144 @@ static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
   builder.field("slew", n.slew);
   builder.field("load", n.load);
   builder.endObject();
+}
+
+static double extract_double_value(const std::string& json)
+{
+  return extract_float_or(json, "value", 0.0F);
+}
+
+static bool extract_bool_value(const std::string& json)
+{
+  if (json.find("\"value\":true") != std::string::npos) {
+    return true;
+  }
+  if (json.find("\"value\":false") != std::string::npos) {
+    return false;
+  }
+  return extract_int_or(json, "value", 0) != 0;
+}
+
+static void writeColorArray(JsonBuilder& builder,
+                            const char* key,
+                            const gui::Painter::Color& color)
+{
+  builder.beginArray(key);
+  builder.value(color.r);
+  builder.value(color.g);
+  builder.value(color.b);
+  builder.value(color.a);
+  builder.endArray();
+}
+
+static void serializeHeatMapOption(JsonBuilder& builder,
+                                   const gui::HeatMapDataSource::MapSetting& option)
+{
+  builder.beginObject();
+  if (std::holds_alternative<gui::HeatMapDataSource::MapSettingBoolean>(
+          option)) {
+    const auto& setting
+        = std::get<gui::HeatMapDataSource::MapSettingBoolean>(option);
+    builder.field("type", "bool");
+    builder.field("name", setting.name);
+    builder.field("label", setting.label);
+    builder.field("value", setting.getter());
+  } else {
+    const auto& setting
+        = std::get<gui::HeatMapDataSource::MapSettingMultiChoice>(option);
+    builder.field("type", "choice");
+    builder.field("name", setting.name);
+    builder.field("label", setting.label);
+    builder.field("value", setting.getter());
+    builder.beginArray("choices");
+    for (const auto& choice : setting.choices()) {
+      builder.value(choice);
+    }
+    builder.endArray();
+  }
+  builder.endObject();
+}
+
+static void serializeHeatMap(JsonBuilder& builder,
+                             gui::HeatMapDataSource& source,
+                             const bool active)
+{
+  if (active) {
+    source.ensureMap();
+  }
+  const bool populated = source.isPopulated();
+  const bool has_data = source.hasData();
+
+  builder.beginObject();
+  builder.field("name", source.getShortName());
+  builder.field("title", source.getName());
+  builder.field("active", active);
+  builder.field("settings_group", source.getSettingsGroupName());
+  builder.field("has_data", has_data);
+  builder.field("can_adjust_grid", source.canAdjustGrid());
+  builder.field("show_numbers", source.getShowNumbers());
+  builder.field("show_legend", source.getShowLegend());
+  builder.field("supports_numbers", true);
+  builder.field("units", source.getValueUnits());
+  builder.field("display_range_increment", source.getDisplayRangeIncrement());
+  builder.field("display_min", source.convertPercentToValue(source.getDisplayRangeMin()));
+  builder.field("display_max", source.convertPercentToValue(source.getDisplayRangeMax()));
+  builder.field("display_min_limit",
+                source.convertPercentToValue(
+                    source.getDisplayRangeMinimumValue()));
+  builder.field("display_max_limit",
+                source.convertPercentToValue(
+                    source.getDisplayRangeMaximumValue()));
+  builder.field("draw_below_min", source.getDrawBelowRangeMin());
+  builder.field("draw_above_max", source.getDrawAboveRangeMax());
+  builder.field("log_scale", source.getLogScale());
+  builder.field("reverse_log", source.getReverseLogScale());
+  builder.field("grid_x", source.getGridXSize());
+  builder.field("grid_y", source.getGridYSize());
+  builder.field("grid_min", source.getGridSizeMinimumValue());
+  builder.field("grid_max", source.getGridSizeMaximumValue());
+  builder.field("alpha", source.getColorAlpha());
+  builder.field("alpha_min", source.getColorAlphaMinimum());
+  builder.field("alpha_max", source.getColorAlphaMaximum());
+  writeBBox(builder, "bounds", source.getBounds());
+
+  builder.beginArray("options");
+  for (const auto& option : source.getMapSettings()) {
+    serializeHeatMapOption(builder, option);
+  }
+  builder.endArray();
+
+  builder.beginArray("legend");
+  if (populated) {
+    const auto& generator = source.getColorGenerator();
+    const int color_count = generator.getColorCount();
+    for (const auto& [color_index, color_value] : source.getLegendValues()) {
+      builder.beginObject();
+      builder.field("value", source.formatValue(color_value, true));
+      const gui::Painter::Color color = generator.getColor(
+          100.0 * color_index / std::max(1, color_count),
+          source.getColorAlpha());
+      writeColorArray(builder, "color", color);
+      builder.endObject();
+    }
+  }
+  builder.endArray();
+
+  builder.endObject();
+}
+
+static std::string buildHeatMapsPayloadLocked(SessionState& state)
+{
+  JsonBuilder builder;
+  builder.beginObject();
+  builder.field("active", state.active_heatmap);
+  builder.beginArray("heatmaps");
+  for (const auto& [name, source] : state.heatmaps) {
+    serializeHeatMap(builder, *source, name == state.active_heatmap);
+  }
+  builder.endArray();
+  builder.endObject();
+  return builder.str();
 }
 
 //------------------------------------------------------------------------------
@@ -941,6 +1081,17 @@ TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
 {
 }
 
+void TileHandler::initializeHeatMaps(SessionState& state)
+{
+  std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+  state.heatmaps.clear();
+  for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
+    auto source = source_handle->createInstance();
+    source->setBlock(gen_->getBlock());
+    state.heatmaps[source_handle->getShortName()] = std::move(source);
+  }
+}
+
 WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                           SessionState& state)
 {
@@ -1074,6 +1225,132 @@ WebSocketResponse TileHandler::handleSetModuleColors(
 
   const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
   resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
+                                              SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    const std::string json = buildHeatMapsPayloadLocked(state);
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleSetActiveHeatMap(const WebSocketRequest& req,
+                                                      SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    if (!state.active_heatmap.empty()) {
+      auto current = state.heatmaps.find(state.active_heatmap);
+      if (current != state.heatmaps.end()) {
+        current->second->onHide();
+      }
+    }
+
+    state.active_heatmap.clear();
+    if (!req.heatmap_name.empty()) {
+      auto next = state.heatmaps.find(req.heatmap_name);
+      if (next == state.heatmaps.end()) {
+        throw std::runtime_error("invalid heat map");
+      }
+      state.active_heatmap = req.heatmap_name;
+      next->second->onShow();
+    }
+
+    const std::string json = buildHeatMapsPayloadLocked(state);
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
+                                                SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+    auto source_itr = state.heatmaps.find(req.heatmap_name);
+    if (source_itr == state.heatmaps.end()) {
+      throw std::runtime_error("invalid heat map");
+    }
+
+    auto& source = *source_itr->second;
+    if (req.heatmap_option == "rebuild") {
+      source.destroyMap();
+      source.ensureMap();
+    } else {
+      auto settings = source.getSettings();
+      auto setting_itr = settings.find(req.heatmap_option);
+      if (setting_itr == settings.end()) {
+        throw std::runtime_error("invalid heat map option");
+      }
+
+      const auto& current_value = setting_itr->second;
+      if (std::holds_alternative<bool>(current_value)) {
+        settings[req.heatmap_option] = extract_bool_value(req.raw_json);
+      } else if (std::holds_alternative<int>(current_value)) {
+        settings[req.heatmap_option] = extract_int(req.raw_json, "value");
+      } else if (std::holds_alternative<double>(current_value)) {
+        settings[req.heatmap_option] = extract_double_value(req.raw_json);
+      } else {
+        settings[req.heatmap_option] = req.heatmap_string_value;
+      }
+      source.setSettings(settings);
+    }
+
+    const std::string json = buildHeatMapsPayloadLocked(state);
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 1;
+  try {
+    std::shared_ptr<gui::HeatMapDataSource> source;
+    {
+      std::lock_guard<std::mutex> lock(state.heatmap_mutex);
+      const std::string name
+          = req.heatmap_name.empty() ? state.active_heatmap : req.heatmap_name;
+      auto source_itr = state.heatmaps.find(name);
+      if (source_itr == state.heatmaps.end()) {
+        throw std::runtime_error("invalid heat map");
+      }
+      source = source_itr->second;
+    }
+    resp.payload = gen_->generateHeatMapTile(*source, req.z, req.x, req.y);
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
   return resp;
 }
 

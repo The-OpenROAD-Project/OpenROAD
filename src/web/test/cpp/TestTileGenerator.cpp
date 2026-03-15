@@ -334,5 +334,27 @@ TEST_F(TileGeneratorTest, FocusNetNullPtrAllowsAllNets)
   EXPECT_EQ(png_default, png_null);
 }
 
+TEST_F(TileGeneratorTest, SemiTransparentOverlayUsesStraightAlpha)
+{
+  placeInst("BUF_X16", "buf0", 0, 0);
+  placeInst("BUF_X16", "buf1", 90000, 90000);
+  makeTileGen();
+
+  const odb::Rect rect(0, 0, 100000, 100000);
+  auto png = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0, {}, {rect});
+
+  unsigned w = 0;
+  unsigned h = 0;
+  const auto pixels = decodePng(png, w, h);
+  ASSERT_EQ(w, 256u);
+  ASSERT_EQ(h, 256u);
+
+  const int center = (128 * 256 + 128) * 4;
+  EXPECT_EQ(pixels[center + 0], 255);
+  EXPECT_EQ(pixels[center + 1], 255);
+  EXPECT_EQ(pixels[center + 2], 0);
+  EXPECT_EQ(pixels[center + 3], 30);
+}
+
 }  // namespace
 }  // namespace web

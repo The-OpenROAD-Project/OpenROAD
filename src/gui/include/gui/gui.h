@@ -39,9 +39,6 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
-class PinDensityDataSource;
-class PlacementDensityDataSource;
-class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -1035,15 +1032,13 @@ class Gui
 
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
+  std::map<HeatMapDataSource*, std::unique_ptr<Renderer>> heat_map_renderers_;
+  std::vector<std::shared_ptr<HeatMapDataSource>> owned_heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
-
-  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
-  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
 
   std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;

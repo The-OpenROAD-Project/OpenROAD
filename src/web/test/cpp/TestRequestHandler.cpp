@@ -6,6 +6,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
+#include "gui/heatMap.h"
 #include "json_builder.h"
 #include "odb/db.h"
 #include "request_handler.h"
@@ -14,6 +15,36 @@
 
 namespace web {
 namespace {
+
+class LazyMetadataHeatMap : public gui::HeatMapDataSource
+{
+ public:
+  explicit LazyMetadataHeatMap(utl::Logger* logger, int* populate_calls)
+      : gui::HeatMapDataSource(
+            logger, "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta"),
+        populate_calls_(populate_calls)
+  {
+  }
+
+ protected:
+  bool populateMap() override
+  {
+    ++(*populate_calls_);
+    return false;
+  }
+
+  void combineMapData(bool,
+                      double&,
+                      double,
+                      double,
+                      double,
+                      double) override
+  {
+  }
+
+ private:
+  int* populate_calls_;
+};
 
 // Helper to extract payload as string.
 std::string payloadStr(const WebSocketResponse& resp)
@@ -135,6 +166,7 @@ class TileHandlerTest : public tst::Nangate45Fixture
   void SetUp() override
   {
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     handler_ = std::make_unique<TileHandler>(gen_);
@@ -180,6 +212,113 @@ TEST_F(TileHandlerTest, UsesHighlightState)
   auto resp = handler_->handleTile(req, state_);
   EXPECT_EQ(resp.type, 1);
   EXPECT_FALSE(resp.payload.empty());
+}
+
+TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest req;
+  req.id = 3;
+  req.type = WebSocketRequest::HEATMAPS;
+
+  auto resp = handler_->handleHeatMaps(req, state_);
+  EXPECT_EQ(resp.type, 0);
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"heatmaps\""), std::string::npos);
+  EXPECT_NE(json.find("\"Pin\""), std::string::npos);
+  EXPECT_NE(json.find("\"Placement\""), std::string::npos);
+}
+
+TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  SessionState state1;
+  SessionState state2;
+  handler_->initializeHeatMaps(state1);
+  handler_->initializeHeatMaps(state2);
+
+  WebSocketRequest active_req;
+  active_req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
+  active_req.heatmap_name = "Pin";
+
+  EXPECT_EQ(handler_->handleSetActiveHeatMap(active_req, state1).type, 0);
+  EXPECT_EQ(handler_->handleSetActiveHeatMap(active_req, state2).type, 0);
+
+  WebSocketRequest set_req;
+  set_req.id = 4;
+  set_req.type = WebSocketRequest::SET_HEATMAP;
+  set_req.heatmap_name = "Pin";
+  set_req.heatmap_option = "DisplayMin";
+  set_req.raw_json = R"({"value":12.5})";
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state1);
+  EXPECT_EQ(set_resp.type, 0);
+
+  WebSocketRequest meta_req;
+  meta_req.id = 5;
+  meta_req.type = WebSocketRequest::HEATMAPS;
+
+  const std::string json1 = payloadStr(handler_->handleHeatMaps(meta_req, state1));
+  const std::string json2 = payloadStr(handler_->handleHeatMaps(meta_req, state2));
+
+  EXPECT_NE(json1, json2);
+}
+
+TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
+{
+  gui::registerBuiltinHeatMapSources(/*sta=*/nullptr, getLogger());
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest set_req;
+  set_req.id = 8;
+  set_req.type = WebSocketRequest::SET_HEATMAP;
+  set_req.heatmap_name = "Pin";
+  set_req.heatmap_option = "ShowNumbers";
+  set_req.raw_json = R"({"value":true})";
+
+  auto set_resp = handler_->handleSetHeatMap(set_req, state_);
+  EXPECT_EQ(set_resp.type, 0);
+  {
+    std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
+    ASSERT_TRUE(state_.heatmaps.count("Pin"));
+    EXPECT_TRUE(state_.heatmaps.at("Pin")->getShowNumbers());
+  }
+}
+
+TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
+{
+  static int populate_calls = 0;
+  populate_calls = 0;
+
+  gui::registerHeatMapSource(
+      "Lazy Metadata Heat Map",
+      "LazyMeta",
+      "LazyMeta",
+      [this]() {
+        return std::make_shared<LazyMetadataHeatMap>(getLogger(),
+                                                     &populate_calls);
+      });
+
+  handler_->initializeHeatMaps(state_);
+
+  WebSocketRequest meta_req;
+  meta_req.id = 6;
+  meta_req.type = WebSocketRequest::HEATMAPS;
+
+  auto meta_resp = handler_->handleHeatMaps(meta_req, state_);
+  EXPECT_EQ(meta_resp.type, 0);
+  EXPECT_EQ(populate_calls, 0);
+
+  WebSocketRequest active_req;
+  active_req.id = 7;
+  active_req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
+  active_req.heatmap_name = "LazyMeta";
+
+  auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
+  EXPECT_EQ(active_resp.type, 0);
+  EXPECT_EQ(populate_calls, 1);
 }
 
 //------------------------------------------------------------------------------

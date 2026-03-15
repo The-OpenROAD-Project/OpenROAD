@@ -29,6 +29,7 @@ target_link_libraries(web
     odb
   PRIVATE
     gui_descriptors
+    gui_heatmap_core
     dbSta_lib
     lodepng
     utl_lib

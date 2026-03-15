@@ -17,6 +17,7 @@
 
 #include "color.h"
 #include "db_sta/dbSta.hh"
+#include "gui/heatMap.h"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
@@ -29,6 +30,117 @@
 #include "utl/Logger.h"
 
 namespace web {
+
+namespace {
+
+constexpr int kBitmapGlyphWidth = 5;
+constexpr int kBitmapGlyphHeight = 7;
+constexpr int kBitmapGlyphSpacing = 1;
+
+const unsigned char* getBitmapGlyph(const char ch)
+{
+  // Minimal 5x7 bitmap font. Each byte is one row, only the low 5 bits are
+  // used.
+  switch (ch) {
+    case '0': {
+      static constexpr unsigned char glyph[] = {
+          0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
+      return glyph;
+    }
+    case '1': {
+      static constexpr unsigned char glyph[] = {
+          0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
+      return glyph;
+    }
+    case '2': {
+      static constexpr unsigned char glyph[] = {
+          0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
+      return glyph;
+    }
+    case '3': {
+      static constexpr unsigned char glyph[] = {
+          0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
+      return glyph;
+    }
+    case '4': {
+      static constexpr unsigned char glyph[] = {
+          0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
+      return glyph;
+    }
+    case '5': {
+      static constexpr unsigned char glyph[] = {
+          0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
+      return glyph;
+    }
+    case '6': {
+      static constexpr unsigned char glyph[] = {
+          0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
+      return glyph;
+    }
+    case '7': {
+      static constexpr unsigned char glyph[] = {
+          0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
+      return glyph;
+    }
+    case '8': {
+      static constexpr unsigned char glyph[] = {
+          0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
+      return glyph;
+    }
+    case '9': {
+      static constexpr unsigned char glyph[] = {
+          0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
+      return glyph;
+    }
+    case '.': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
+      return glyph;
+    }
+    case '-': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
+      return glyph;
+    }
+    case '/': {
+      static constexpr unsigned char glyph[] = {
+          0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
+      return glyph;
+    }
+    case '=': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
+      return glyph;
+    }
+    case 'x': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11};
+      return glyph;
+    }
+    case 'y': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04};
+      return glyph;
+    }
+    case 'z': {
+      static constexpr unsigned char glyph[] = {
+          0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F};
+      return glyph;
+    }
+    default:
+      return nullptr;
+  }
+}
+
+int getBitmapGlyphAdvance(const char ch)
+{
+  if (ch == ' ') {
+    return kBitmapGlyphWidth;
+  }
+  return kBitmapGlyphWidth + kBitmapGlyphSpacing;
+}
+
+}  // namespace
 
 void TileVisibility::parseFromJson(const std::string& json)
 {
@@ -905,49 +1017,96 @@ std::vector<unsigned char> TileGenerator::generateTile(
   return png_data;
 }
 
+std::vector<unsigned char> TileGenerator::generateHeatMapTile(
+    gui::HeatMapDataSource& source,
+    const int z,
+    const int x,
+    int y) const
+{
+  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(buffer_size, 0);
+
+  const double num_tiles_at_zoom = pow(2, z);
+  if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
+    return {};
+  }
+
+  y = num_tiles_at_zoom - 1 - y;
+  const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = x * tile_dbu_size;
+  const int dbu_y_min = y * tile_dbu_size;
+  const int dbu_x_max = std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+  const double scale = kTileSizeInPixel / tile_dbu_size;
+  constexpr double text_rect_margin = 0.8;
+  constexpr int text_scale = 2;
+  const Color text_color{255, 255, 255, 255};
+
+  for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
+    if (!map_point.rect.overlaps(dbu_tile)) {
+      continue;
+    }
+    const odb::Rect overlap = map_point.rect.intersect(dbu_tile);
+    const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+    const Color color{static_cast<uint8_t>(map_point.color.r),
+                      static_cast<uint8_t>(map_point.color.g),
+                      static_cast<uint8_t>(map_point.color.b),
+                      static_cast<uint8_t>(map_point.color.a)};
+
+    for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+      for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+        blendPixel(image_buffer, ix, 255 - iy, color);
+      }
+    }
+
+    if (!source.getShowNumbers() || !map_point.has_value) {
+      continue;
+    }
+
+    const std::string text = source.formatValue(map_point.value, false);
+    const int text_width = getBitmapTextWidth(text, text_scale);
+    const int text_height = getBitmapTextHeight(text_scale);
+    const double rect_width = map_point.rect.dx() * scale;
+    const double rect_height = map_point.rect.dy() * scale;
+    if (text_width >= text_rect_margin * rect_width
+        || text_height >= text_rect_margin * rect_height) {
+      continue;
+    }
+
+    const double center_x
+        = 0.5 * (map_point.rect.xMin() + map_point.rect.xMax());
+    const double center_y
+        = 0.5 * (map_point.rect.yMin() + map_point.rect.yMax());
+    if (center_x < dbu_tile.xMin() || center_x >= dbu_tile.xMax()
+        || center_y < dbu_tile.yMin() || center_y >= dbu_tile.yMax()) {
+      continue;
+    }
+
+    const int pixel_x = std::lround((center_x - dbu_tile.xMin()) * scale);
+    const int pixel_y = 255 - std::lround((center_y - dbu_tile.yMin()) * scale);
+    drawBitmapText(image_buffer,
+                   pixel_x - text_width / 2,
+                   pixel_y - text_height / 2,
+                   text,
+                   text_scale,
+                   text_color);
+  }
+
+  std::vector<unsigned char> png_data;
+  unsigned error = lodepng::encode(
+      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
+  if (error) {
+    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
+  }
+  return png_data;
+}
+
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int z,
                                      const int x,
                                      const int y) const
 {
-  // Minimal 5x7 bitmap font for digits 0-9 and punctuation.
-  // Each glyph is 5 columns wide, 7 rows tall.  Stored as 7 bytes per glyph
-  // where each byte is one row (MSB = leftmost pixel, only 5 bits used).
-  // clang-format off
-  static const unsigned char font[][7] = {
-    // '0'
-    {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E},
-    // '1'
-    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E},
-    // '2'
-    {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F},
-    // '3'
-    {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E},
-    // '4'
-    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02},
-    // '5'
-    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E},
-    // '6'
-    {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E},
-    // '7'
-    {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08},
-    // '8'
-    {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},
-    // '9'
-    {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C},
-    // '/'  (index 10)
-    {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10},
-    // '='  (index 11)
-    {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00},
-    // 'x'  (index 12)
-    {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11},
-    // 'y'  (index 13)
-    {0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04},
-    // 'z'  (index 14)
-    {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F},
-  };
-  // clang-format on
-
   const Color yellow{.r = 255, .g = 255, .b = 0, .a = 255};
   const int last = kTileSizeInPixel - 1;
 
@@ -963,51 +1122,70 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   std::string label = "z=" + std::to_string(z) + " " + std::to_string(x) + "/"
                       + std::to_string(y);
 
-  // Draw each character at 3x scale (5x7 glyphs become 15x21 pixels).
-  constexpr int glyph_w = 5;
-  constexpr int glyph_h = 7;
-  constexpr int scale = 3;
-  constexpr int spacing = scale;  // 3px gap between characters
-  int cx = 4;                     // starting x pixel
-  const int cy = 4;               // starting y pixel
+  drawBitmapText(image, 4, 4, label, 3, yellow);
+}
 
-  for (const char ch : label) {
-    int glyph_idx = -1;
-    if (ch >= '0' && ch <= '9') {
-      glyph_idx = ch - '0';
-    } else if (ch == '/') {
-      glyph_idx = 10;
-    } else if (ch == '=') {
-      glyph_idx = 11;
-    } else if (ch == 'x') {
-      glyph_idx = 12;
-    } else if (ch == 'y') {
-      glyph_idx = 13;
-    } else if (ch == 'z') {
-      glyph_idx = 14;
-    } else if (ch == ' ') {
-      cx += glyph_w * scale + spacing;
+/* static */
+int TileGenerator::getBitmapTextWidth(const std::string_view text,
+                                      const int scale)
+{
+  if (text.empty()) {
+    return 0;
+  }
+
+  int width = 0;
+  for (const char ch : text) {
+    width += getBitmapGlyphAdvance(ch);
+  }
+
+  return (width - kBitmapGlyphSpacing) * scale;
+}
+
+/* static */
+int TileGenerator::getBitmapTextHeight(const int scale)
+{
+  return kBitmapGlyphHeight * scale;
+}
+
+/* static */
+void TileGenerator::drawBitmapText(std::vector<unsigned char>& image,
+                                   const int x,
+                                   const int y,
+                                   const std::string_view text,
+                                   const int scale,
+                                   const Color& color)
+{
+  int cursor_x = x;
+  for (const char ch : text) {
+    if (ch == ' ') {
+      cursor_x += getBitmapGlyphAdvance(ch) * scale;
       continue;
     }
-    if (glyph_idx < 0) {
-      cx += glyph_w * scale + spacing;
+
+    const unsigned char* glyph = getBitmapGlyph(ch);
+    if (glyph == nullptr) {
+      cursor_x += getBitmapGlyphAdvance(ch) * scale;
       continue;
     }
 
-    for (int row = 0; row < glyph_h; ++row) {
-      const unsigned char bits = font[glyph_idx][row];
-      for (int col = 0; col < glyph_w; ++col) {
-        if (bits & (0x10 >> col)) {
-          for (int sy = 0; sy < scale; ++sy) {
-            for (int sx = 0; sx < scale; ++sx) {
-              setPixel(
-                  image, cx + col * scale + sx, cy + row * scale + sy, yellow);
-            }
+    for (int row = 0; row < kBitmapGlyphHeight; ++row) {
+      const unsigned char bits = glyph[row];
+      for (int col = 0; col < kBitmapGlyphWidth; ++col) {
+        if ((bits & (0x10 >> col)) == 0) {
+          continue;
+        }
+        for (int sy = 0; sy < scale; ++sy) {
+          for (int sx = 0; sx < scale; ++sx) {
+            blendPixel(image,
+                       cursor_x + col * scale + sx,
+                       y + row * scale + sy,
+                       color);
           }
         }
       }
     }
-    cx += glyph_w * scale + spacing;
+
+    cursor_x += getBitmapGlyphAdvance(ch) * scale;
   }
 }
 
@@ -1021,12 +1199,27 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
     return;
   }
   const int i = (y * kTileSizeInPixel + x) * 4;
-  const float a = c.a / 255.0f;
-  const float inv_a = 1.0f - a;
-  image[i + 0] = static_cast<unsigned char>(c.r * a + image[i + 0] * inv_a);
-  image[i + 1] = static_cast<unsigned char>(c.g * a + image[i + 1] * inv_a);
-  image[i + 2] = static_cast<unsigned char>(c.b * a + image[i + 2] * inv_a);
-  image[i + 3] = std::max(image[i + 3], c.a);
+  const float src_a = c.a / 255.0f;
+  const float dst_a = image[i + 3] / 255.0f;
+  const float out_a = src_a + dst_a * (1.0f - src_a);
+
+  if (out_a <= 0.0f) {
+    image[i + 0] = 0;
+    image[i + 1] = 0;
+    image[i + 2] = 0;
+    image[i + 3] = 0;
+    return;
+  }
+
+  const auto blend_channel = [&](const int src, const int dst) {
+    const float out = (src * src_a + dst * dst_a * (1.0f - src_a)) / out_a;
+    return static_cast<unsigned char>(std::lround(out));
+  };
+
+  image[i + 0] = blend_channel(c.r, image[i + 0]);
+  image[i + 1] = blend_channel(c.g, image[i + 1]);
+  image[i + 2] = blend_channel(c.b, image[i + 2]);
+  image[i + 3] = static_cast<unsigned char>(std::lround(out_a * 255.0f));
 }
 
 void TileGenerator::drawHighlight(std::vector<unsigned char>& image,

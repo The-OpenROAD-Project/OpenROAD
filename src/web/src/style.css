@@ -93,6 +93,8 @@ html, body {
 /* Display Controls panel */
 .display-controls {
     padding: 8px;
+    padding-bottom: 20px;
+    box-sizing: border-box;
     overflow-y: auto;
     height: 100%;
     font-size: 13px;
@@ -628,4 +630,74 @@ html, body {
     white-space: pre;
     z-index: 100;
     display: none;
+}
+
+.heatmap-controls {
+    margin-top: 12px;
+    padding-top: 8px;
+    padding-bottom: 12px;
+    border-top: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.heatmap-header {
+    color: #ddd;
+    font-weight: 700;
+}
+
+.heatmap-list,
+.heatmap-settings,
+.heatmap-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.heatmap-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #ccc;
+}
+
+.heatmap-setting input[type="number"],
+.heatmap-setting select {
+    width: 96px;
+    background: #1f1f1f;
+    color: #ddd;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.heatmap-rebuild {
+    margin-top: 6px;
+    background: #2a2a2a;
+    color: #ddd;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.heatmap-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #bbb;
+}
+
+.heatmap-legend-swatch {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #666;
+    border-radius: 2px;
+    flex: 0 0 auto;
 }
