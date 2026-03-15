@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 #
+# The Qt GUI implementation (chartsWidget.cpp, staGui.cpp,
+# timingWidget.cpp) is the single source of truth for the timing
+# report UI.  This script generates a practical facsimile as a
+# self-contained HTML file for use outside the GUI (CI, PRs, etc).
+#
 # Generates two timing report artifacts from a post-synth ODB:
 #   1_timing.html — full interactive GUI replacement (self-contained)
 #   1_timing.md   — PR comment (max info, min friction, <65KB)
@@ -112,16 +117,31 @@ def extract_timing_data(timing: Timing, design_obj: Design,
     setup_tns = timing.getTotalNegativeSlack(Timing.Max)
     endpoint_count = timing.getEndpointCount()
 
-    # Endpoint slack map for histogram
+    # Endpoint slack map — filter out unconstrained (infinite slack)
+    # endpoints, matching chartsWidget.cpp behavior.
     endpoint_slacks = []
+    unconstrained_count = 0
     for name, slack in timing.getEndpointSlackMap(Timing.Max):
-        endpoint_slacks.append({"name": name, "slack": slack})
+        if timing.isTimeInf(slack) or timing.isTimeInf(-slack):
+            unconstrained_count += 1
+        else:
+            endpoint_slacks.append({"name": name, "slack": slack})
 
-    # Timing paths via Tcl report_checks (C++ getTimingPaths crashes
-    # after getWorstSlack — see docs/timing_api_bugs.md)
+    # Timing paths via Tcl report_checks -format json
     setup_paths = _extract_paths_tcl(design_obj, endpoint_count)
 
-    # Clock domains via Tcl (C++ getClockInfo aborts — see bugs doc)
+    # All path group names (including empty groups) via Tcl
+    path_groups = []
+    try:
+        pg_str = design_obj.evalTclString(
+            "set _r {}; foreach g [sta::group_path_names] "
+            "{lappend _r $g}; set _r")
+        path_groups = pg_str.split() if pg_str.strip() else []
+    except Exception:
+        path_groups = list(set(p["group"] for p in setup_paths
+                               if p["group"]))
+
+    # Clock domains via Tcl
     clocks = []
     try:
         clk_names = design_obj.evalTclString(
@@ -148,9 +168,11 @@ def extract_timing_data(timing: Timing, design_obj: Design,
         "hold_wns": 0.0,
         "hold_tns": 0.0,
         "endpoint_count": endpoint_count,
+        "unconstrained_count": unconstrained_count,
         "endpoints": endpoint_slacks,
         "clocks": clocks,
         "paths": setup_paths,
+        "path_groups": sorted(path_groups),
     }
 
 
@@ -228,7 +250,10 @@ tr.selected{{background:#c0d8f0}}
     <canvas id="hist-canvas" height="160"></canvas>
     <div class="tooltip" id="hist-tooltip"></div>
   </div>
+  <div id="unconstrained-label" style="padding:4px 16px;font-size:12px;color:#555"></div>
 </div>
+
+<div class="sash" id="sash-hist"></div>
 
 <!-- Timing Report panel -->
 <div class="panel">
@@ -367,8 +392,8 @@ function drawHistogram() {{
     const x = pad.l + i * barW;
     const y = pad.t + plotH - bh;
     const mid = (b.lo + b.hi) / 2;
-    ctx.fillStyle = mid < 0 ? 'rgba(240,128,128,0.8)' : 'rgba(144,238,144,0.8)';
-    ctx.strokeStyle = mid < 0 ? '#d88' : '#8c8';
+    ctx.fillStyle = mid < 0 ? '#f08080' : '#90ee90';
+    ctx.strokeStyle = mid < 0 ? '#8b0000' : '#006400';
     ctx.lineWidth = 1;
     ctx.fillRect(x + 1, y, barW - 2, bh);
     ctx.strokeRect(x + 1, y, barW - 2, bh);
@@ -384,9 +409,10 @@ function drawHistogram() {{
   ctx.fillStyle = '#333';
   ctx.font = '11px system-ui';
   ctx.textAlign = 'center';
+  const binInterval = histBins[0].hi - histBins[0].lo;
   const xLabelEvery = Math.max(1, Math.ceil(nBins / 15));
   for (let i = 0; i <= nBins; i += xLabelEvery) {{
-    const val = histBins[0].lo + i * (histBins[0].hi - histBins[0].lo);
+    const val = histBins[0].lo + i * binInterval;
     const x = pad.l + i * barW;
     ctx.fillText(Math.round(val).toString(), x, pad.t + plotH + 15);
     ctx.strokeStyle = '#ccc'; ctx.lineWidth = 0.5;
@@ -437,7 +463,7 @@ histCanvas.addEventListener('mousemove', function(e) {{
     histTooltip.style.display = 'block';
     histTooltip.style.left = (e.clientX - rect.left + 10) + 'px';
     histTooltip.style.top = (e.clientY - rect.top - 30) + 'px';
-    histTooltip.innerHTML = `${{b.count}} endpoints<br>${{b.lo.toFixed(1)}} to ${{b.hi.toFixed(1)}} ps`;
+    histTooltip.innerHTML = `Number of Endpoints: ${{b.count}}<br>Interval: [${{Math.round(b.lo)}}, ${{Math.round(b.hi)}}) ps`;
   }} else histTooltip.style.display = 'none';
 }});
 histCanvas.addEventListener('mouseleave', () => histTooltip.style.display = 'none');
@@ -449,9 +475,14 @@ histCanvas.addEventListener('click', function(e) {{
   const idx = Math.floor((x - pad.l) / (plotW / histBins.length));
   if (idx >= 0 && idx < histBins.length) {{
     const b = histBins[idx];
-    slackFilter = [b.lo / PS, b.hi / PS]; // back to seconds
+    const eps = 1e-15;
+    slackFilter = [b.lo / PS - eps, b.hi / PS + eps];
     filterPaths();
   }}
+}});
+histCanvas.addEventListener('dblclick', function() {{
+  slackFilter = null;
+  filterPaths();
 }});
 
 // ─── Path table ─────────────────────────────────────────────────
@@ -475,8 +506,12 @@ function filterPaths() {{
 function sortPaths() {{
   filteredPaths.sort((a, b) => {{
     let va = a[sortCol], vb = b[sortCol];
-    if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-    return sortAsc ? va - vb : vb - va;
+    let cmp;
+    if (typeof va === 'string') cmp = va.localeCompare(vb);
+    else cmp = va - vb;
+    if (!sortAsc) cmp = -cmp;
+    if (cmp === 0) cmp = (a.end || '').localeCompare(b.end || '');
+    return cmp;
   }});
   renderPaths();
 }}
@@ -489,12 +524,12 @@ function renderPaths() {{
   body.innerHTML = shown.map((p, i) => {{
     const cls = p.slack < 0 ? 'slack-neg' : 'slack-pos';
     return `<tr onclick="showArcDetail(${{i}})" data-idx="${{i}}">
-      <td style="text-align:left">${{p.end_clk}}</td>
+      <td style="text-align:left">${{p.end_clk || '&lt;No clock&gt;'}}</td>
       <td>${{ps(p.required)}}</td>
       <td>${{ps(p.arrival)}}</td>
       <td class="${{cls}}">${{ps(p.slack)}}</td>
       <td>${{ps(p.skew)}}</td>
-      <td>${{ps(p.arrival)}}</td>
+      <td>${{ps(p.logic_delay || p.arrival)}}</td>
       <td>${{p.logic_depth}}</td>
       <td>${{p.fanout}}</td>
       <td style="text-align:left" title="${{p.start}}">${{p.start}}</td>
@@ -549,9 +584,8 @@ function showArcDetail(idx) {{
 
 // ─── Filters init ────────────────────────────────────────────────
 function initFilters() {{
-  const groups = [...new Set(D.paths.map(p => p.group))].filter(Boolean);
   const gsel = document.getElementById('group-filter');
-  groups.forEach(g => {{
+  (D.path_groups || []).forEach(g => {{
     const opt = document.createElement('option');
     opt.value = g; opt.textContent = g;
     gsel.appendChild(opt);
@@ -563,18 +597,24 @@ function initFilters() {{
     opt.value = c; opt.textContent = c;
     csel.appendChild(opt);
   }});
+  if (D.unconstrained_count > 0) {{
+    document.getElementById('unconstrained-label').textContent =
+      'Number of unconstrained pins: ' + D.unconstrained_count;
+  }}
 }}
 
 // ─── Sash drag ───────────────────────────────────────────────────
-(function() {{
-  const sash = document.getElementById('sash');
-  const table = document.getElementById('path-table-wrap');
+function initSash(sashId, targetId) {{
+  const sash = document.getElementById(sashId);
+  const target = document.getElementById(targetId);
+  if (!sash || !target) return;
   let startY, startH;
   sash.addEventListener('mousedown', function(e) {{
     startY = e.clientY;
-    startH = table.offsetHeight;
+    startH = target.offsetHeight;
     function onMove(e2) {{
-      table.style.height = Math.max(80, startH + e2.clientY - startY) + 'px';
+      target.style.height = Math.max(80, startH + e2.clientY - startY) + 'px';
+      if (targetId === 'hist-canvas') drawHistogram();
     }}
     function onUp() {{
       document.removeEventListener('mousemove', onMove);
@@ -584,7 +624,9 @@ function initFilters() {{
     document.addEventListener('mouseup', onUp);
     e.preventDefault();
   }});
-}})();
+}}
+initSash('sash-hist', 'hist-canvas');
+initSash('sash', 'path-table-wrap');
 
 // ─── Init ────────────────────────────────────────────────────────
 initFilters();
