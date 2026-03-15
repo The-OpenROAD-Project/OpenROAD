@@ -92,7 +92,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           highlighted_,
           rulers_,
           labels_,
-          Gui::get(),
+          nullptr,
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
@@ -518,6 +518,11 @@ MainWindow::~MainWindow()
   if (cli_progress_ != nullptr) {
     logger_->swapProgress(cli_progress_.release());
   }
+}
+
+void MainWindow::bindGui(gui::Gui* gui)
+{
+  viewers_->setGui(gui);
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)

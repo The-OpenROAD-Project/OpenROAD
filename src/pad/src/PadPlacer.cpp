@@ -561,7 +561,7 @@ void UniformPadPlacer::place()
     offset += getInstWidths().at(inst);
     offset += target_spacing;
 
-    if (gui_debug) {
+    if (gui_debug && gui::Gui::enabled()) {
       gui::Gui::get()->pause();
     }
   }
@@ -695,7 +695,7 @@ void BumpAlignedPadPlacer::place()
       performPadFlip(ginst);
       addInstanceObstructions(ginst);
 
-      if (gui_debug) {
+      if (gui_debug && gui::Gui::enabled()) {
         gui::Gui::get()->pause();
       }
     }

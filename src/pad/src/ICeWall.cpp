@@ -1500,6 +1500,10 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
 
 void ICeWall::routeRDLDebugGUI(bool enable)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (enable) {
     if (router_gui_ == nullptr) {
       router_gui_ = std::make_unique<RDLGui>();

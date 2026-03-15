@@ -14,12 +14,16 @@ namespace ppl {
 IOPlacerRenderer::IOPlacerRenderer()
     : painting_interval_(0), current_iteration_(0), is_no_pause_mode_(false)
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 IOPlacerRenderer::~IOPlacerRenderer()
 {
-  gui::Gui::get()->unregisterRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->unregisterRenderer(this);
+  }
 }
 
 bool IOPlacerRenderer::isDrawingNeeded() const
@@ -71,6 +75,10 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 
 void IOPlacerRenderer::redrawAndPause()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   if (isDrawingNeeded()) {
     auto* gui = gui::Gui::get();
     gui->redraw();

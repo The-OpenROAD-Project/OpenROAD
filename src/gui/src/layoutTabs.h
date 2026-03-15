@@ -113,6 +113,7 @@ class LayoutTabs : public QTabWidget
   void commandAboutToExecute();
   void commandFinishedExecuting();
   void resetCache();
+  void setGui(Gui* gui) { gui_ = gui; }
 
   // Method forwarding
   void restoreTclCommands(std::vector<std::string>& cmds);

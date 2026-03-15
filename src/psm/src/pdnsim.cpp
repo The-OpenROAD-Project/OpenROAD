@@ -47,6 +47,10 @@ PDNSim::~PDNSim() = default;
 
 void PDNSim::setDebugGui(bool enable)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
   debug_gui_enabled_ = enable;
 
   for (const auto& [net, solver] : solvers_) {

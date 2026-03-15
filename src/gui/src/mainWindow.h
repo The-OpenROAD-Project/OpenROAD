@@ -71,6 +71,7 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
 
   void setDatabase(odb::dbDatabase* db);
   void init(sta::dbSta* sta, const std::string& help_path);
+  void bindGui(gui::Gui* gui);
 
   odb::dbDatabase* getDb() const { return db_; }
 
