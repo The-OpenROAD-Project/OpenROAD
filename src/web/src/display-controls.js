@@ -288,9 +288,31 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         });
     }
 
+    const heatMapGroup = document.createElement('div');
+    heatMapGroup.className = 'vis-group heatmap-controls';
+    app.displayControlsEl.appendChild(heatMapGroup);
+
+    const heatMapHeader = document.createElement('label');
+    heatMapHeader.className = 'vis-group-header heatmap-header';
+    const heatMapArrow = document.createElement('span');
+    heatMapArrow.className = 'vis-arrow';
+    heatMapArrow.textContent = '▼';
+    heatMapHeader.appendChild(heatMapArrow);
+    heatMapHeader.appendChild(document.createTextNode('Heat Maps'));
+    heatMapGroup.appendChild(heatMapHeader);
+
     const heatMapContainer = document.createElement('div');
-    heatMapContainer.className = 'heatmap-controls';
-    app.displayControlsEl.appendChild(heatMapContainer);
+    heatMapContainer.className = 'vis-group-children heatmap-group-children collapsed';
+    heatMapGroup.appendChild(heatMapContainer);
+
+    let heatMapCollapsed = true;
+    heatMapArrow.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        heatMapCollapsed = !heatMapCollapsed;
+        heatMapContainer.classList.toggle('collapsed', heatMapCollapsed);
+        heatMapArrow.textContent = heatMapCollapsed ? '▶' : '▼';
+    });
 
     function addCheckbox(parent, label, checked, onChange) {
         const row = document.createElement('label');
@@ -394,11 +416,6 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
     app.renderHeatMapControls = (data) => {
         heatMapContainer.innerHTML = '';
-
-        const header = document.createElement('div');
-        header.className = 'heatmap-header';
-        header.textContent = 'Heat Maps';
-        heatMapContainer.appendChild(header);
 
         const list = document.createElement('div');
         list.className = 'heatmap-list';
