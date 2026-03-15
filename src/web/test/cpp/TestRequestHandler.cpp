@@ -16,6 +16,58 @@
 namespace web {
 namespace {
 
+struct FakeInspectable
+{
+  std::string name;
+  std::string type;
+  odb::Rect bbox;
+};
+
+class FakeDescriptor : public gui::Descriptor
+{
+ public:
+  std::string getName(const std::any& object) const override
+  {
+    return std::any_cast<FakeInspectable*>(object)->name;
+  }
+
+  std::string getTypeName() const override { return "Fake"; }
+
+  std::string getTypeName(const std::any& object) const override
+  {
+    return std::any_cast<FakeInspectable*>(object)->type;
+  }
+
+  bool getBBox(const std::any& object, odb::Rect& bbox) const override
+  {
+    bbox = std::any_cast<FakeInspectable*>(object)->bbox;
+    return true;
+  }
+
+  void visitAllObjects(
+      const std::function<void(const gui::Selected&)>&) const override
+  {
+  }
+
+  Properties getProperties(const std::any&) const override { return {}; }
+
+  gui::Selected makeSelected(const std::any& object) const override
+  {
+    return gui::Selected(object, this);
+  }
+
+  bool lessThan(const std::any& l, const std::any& r) const override
+  {
+    return std::any_cast<FakeInspectable*>(l)
+           < std::any_cast<FakeInspectable*>(r);
+  }
+
+  void highlight(const std::any& object, gui::Painter& painter) const override
+  {
+    painter.drawRect(std::any_cast<FakeInspectable*>(object)->bbox);
+  }
+};
+
 class LazyMetadataHeatMap : public gui::HeatMapDataSource
 {
  public:
@@ -331,11 +383,19 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   void SetUp() override
   {
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
+    fake_current_ = {"current", "FakeCurrent", odb::Rect(0, 0, 100, 100)};
+    fake_previous_ = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
     handler_ = std::make_unique<SelectHandler>(gen_, tcl_eval_);
+  }
+
+  gui::Selected makeFakeSelected(FakeInspectable* object)
+  {
+    return gui::Selected(object, &fake_descriptor_);
   }
 
   odb::dbInst* placeInst(const char* master_name,
@@ -355,6 +415,9 @@ class SelectHandlerTest : public tst::Nangate45Fixture
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::unique_ptr<SelectHandler> handler_;
   SessionState state_;
+  FakeDescriptor fake_descriptor_;
+  FakeInspectable fake_current_;
+  FakeInspectable fake_previous_;
 };
 
 TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
@@ -444,6 +507,112 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
   std::lock_guard<std::mutex> lock(state_.selection_mutex);
   EXPECT_TRUE(state_.timing_rects.empty());
   EXPECT_TRUE(state_.timing_lines.empty());
+}
+
+TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
+{
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = makeFakeSelected(&fake_current_);
+    state_.navigation_history.push_back(makeFakeSelected(&fake_previous_));
+  }
+
+  WebSocketRequest req;
+  req.id = 15;
+  req.type = WebSocketRequest::SELECT;
+  req.select_x = 99000;
+  req.select_y = 99000;
+  req.select_zoom = 10;
+
+  auto resp = handler_->handleSelect(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  const std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"can_navigate_back\": 0"), std::string::npos);
+  EXPECT_NE(json.find("\"selected\": []"), std::string::npos);
+
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_FALSE(state_.current_inspected);
+  EXPECT_TRUE(state_.navigation_history.empty());
+}
+
+TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
+{
+  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
+  const gui::Selected block_selected = makeFakeSelected(&fake_previous_);
+  ASSERT_TRUE(initial_selected);
+  ASSERT_TRUE(block_selected);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = initial_selected;
+  }
+  {
+    std::lock_guard<std::mutex> lock(state_.selectables_mutex);
+    state_.selectables = {block_selected};
+  }
+
+  WebSocketRequest inspect_req;
+  inspect_req.id = 17;
+  inspect_req.type = WebSocketRequest::INSPECT;
+  inspect_req.select_id = 0;
+
+  auto inspect_resp = handler_->handleInspect(inspect_req, state_);
+  EXPECT_EQ(inspect_resp.type, 0);
+  EXPECT_NE(payloadStr(inspect_resp).find("\"can_navigate_back\": 1"),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_TRUE(state_.current_inspected);
+    EXPECT_NE(state_.current_inspected, initial_selected);
+    ASSERT_EQ(state_.navigation_history.size(), 1u);
+    EXPECT_EQ(state_.navigation_history.back(), initial_selected);
+  }
+
+  WebSocketRequest back_req;
+  back_req.id = 18;
+  back_req.type = WebSocketRequest::INSPECT_BACK;
+
+  auto back_resp = handler_->handleInspectBack(back_req, state_);
+  EXPECT_EQ(back_resp.type, 0);
+  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\": 0"),
+            std::string::npos);
+  EXPECT_NE(payloadStr(back_resp).find(initial_selected.getName()),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.current_inspected, initial_selected);
+    EXPECT_TRUE(state_.navigation_history.empty());
+  }
+}
+
+TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
+{
+  const gui::Selected initial_selected = makeFakeSelected(&fake_current_);
+  ASSERT_TRUE(initial_selected);
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.current_inspected = initial_selected;
+  }
+
+  WebSocketRequest back_req;
+  back_req.id = 20;
+  back_req.type = WebSocketRequest::INSPECT_BACK;
+
+  auto back_resp = handler_->handleInspectBack(back_req, state_);
+  EXPECT_EQ(back_resp.type, 0);
+  EXPECT_NE(payloadStr(back_resp).find("\"can_navigate_back\": 0"),
+            std::string::npos);
+  EXPECT_NE(payloadStr(back_resp).find(initial_selected.getName()),
+            std::string::npos);
+
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    EXPECT_EQ(state_.current_inspected, initial_selected);
+    EXPECT_TRUE(state_.navigation_history.empty());
+  }
 }
 
 //------------------------------------------------------------------------------

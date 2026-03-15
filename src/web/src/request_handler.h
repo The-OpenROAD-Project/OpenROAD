@@ -66,6 +66,7 @@ struct WebSocketRequest
     TECH,
     SELECT,
     INSPECT,
+    INSPECT_BACK,
     HOVER,
     TCL_EVAL,
     TIMING_REPORT,
@@ -156,6 +157,9 @@ struct SessionState
   std::mutex selectables_mutex;
   std::vector<gui::Selected> selectables;
 
+  gui::Selected current_inspected;
+  std::vector<gui::Selected> navigation_history;
+
   std::mutex module_colors_mutex;
   std::map<uint32_t, Color> module_colors;  // odb module id → RGBA color
 
@@ -198,6 +202,8 @@ class SelectHandler
                                  SessionState& state);
   WebSocketResponse handleInspect(const WebSocketRequest& req,
                                   SessionState& state);
+  WebSocketResponse handleInspectBack(const WebSocketRequest& req,
+                                      SessionState& state);
   WebSocketResponse handleHover(const WebSocketRequest& req,
                                 SessionState& state);
   WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,

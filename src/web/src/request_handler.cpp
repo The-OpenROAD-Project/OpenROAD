@@ -269,6 +269,44 @@ static void serializeProperty(JsonBuilder& builder,
   builder.endObject();
 }
 
+static void collectHighlightShapes(const gui::Selected& sel,
+                                   std::vector<odb::Rect>& rects)
+{
+  rects.clear();
+  if (!sel) {
+    return;
+  }
+  ShapeCollector collector;
+  sel.highlight(collector);
+  rects = std::move(collector.rects);
+}
+
+static void writeInspectPayload(JsonBuilder& builder,
+                                const gui::Selected& sel,
+                                std::vector<gui::Selected>& new_selectables,
+                                bool can_navigate_back)
+{
+  builder.field("can_navigate_back", can_navigate_back ? 1 : 0);
+  if (!sel) {
+    builder.field("error", "invalid select_id");
+    return;
+  }
+
+  auto props = sel.getProperties();
+  builder.field("name", sel.getName());
+  builder.field("type", sel.getTypeName());
+  builder.beginArray("properties");
+  for (const auto& prop : props) {
+    serializeProperty(builder, prop, new_selectables);
+  }
+  builder.endArray();
+
+  odb::Rect bbox;
+  if (sel.getBBox(bbox)) {
+    writeBBox(builder, "bbox", bbox);
+  }
+}
+
 // Serialize a TimingNode to JSON.
 static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
 {
@@ -515,7 +553,7 @@ SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
 }
 
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
-                                              SessionState& state)
+                                             SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -526,23 +564,6 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
-
-    // Collect highlight shapes from the first selected instance
-    {
-      std::lock_guard<std::mutex> lock(state.selection_mutex);
-      state.highlight_rects.clear();
-      state.timing_rects.clear();
-      state.timing_lines.clear();
-      if (!results.empty()) {
-        auto* registry = gui::DescriptorRegistry::instance();
-        gui::Selected sel = registry->makeSelected(std::any(results[0].inst));
-        if (sel) {
-          ShapeCollector collector;
-          sel.highlight(collector);
-          state.highlight_rects = std::move(collector.rects);
-        }
-      }
-    }
 
     // Build JSON response with selection and properties
     resp.type = 0;
@@ -560,24 +581,28 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
 
     // Add properties for the first selected instance
     std::vector<gui::Selected> new_selectables;
+    auto* registry = gui::DescriptorRegistry::instance();
+    gui::Selected inspected_sel;
     if (!results.empty()) {
       const auto& r0 = results[0];
-      writeBBox(builder, "bbox", r0.bbox);
-
-      auto* registry = gui::DescriptorRegistry::instance();
-      gui::Selected sel = registry->makeSelected(std::any(r0.inst));
-      if (sel) {
-        auto props = sel.getProperties();
-        builder.beginArray("properties");
-        for (const auto& prop : props) {
-          serializeProperty(builder, prop, new_selectables);
-        }
-        builder.endArray();
-      }
+      inspected_sel = registry->makeSelected(std::any(r0.inst));
+      writeInspectPayload(
+          builder, inspected_sel, new_selectables, /*can_navigate_back=*/false);
+    } else {
+      builder.field("can_navigate_back", 0);
     }
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
+    }
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      collectHighlightShapes(inspected_sel, state.highlight_rects);
+      state.current_inspected = inspected_sel;
+      state.navigation_history.clear();
     }
 
     builder.endObject();
@@ -610,42 +635,78 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     // serialize with other STA callers (timing, clock tree, tcl eval).
     std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
 
-    // Collect highlight shapes from the inspected object
+    bool can_navigate_back = false;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
-      state.highlight_rects.clear();
+      state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
+      collectHighlightShapes(sel, state.highlight_rects);
       if (sel) {
-        ShapeCollector collector;
-        sel.highlight(collector);
-        state.highlight_rects = std::move(collector.rects);
+        if (state.current_inspected && state.current_inspected != sel) {
+          state.navigation_history.push_back(state.current_inspected);
+        }
+        state.current_inspected = sel;
       }
+      can_navigate_back = !state.navigation_history.empty();
     }
 
     resp.type = 0;
     JsonBuilder builder;
     builder.beginObject();
-    if (sel) {
-      auto props = sel.getProperties();
-      std::vector<gui::Selected> new_selectables;
-      builder.field("name", sel.getName());
-      builder.field("type", sel.getTypeName());
-      builder.beginArray("properties");
-      for (const auto& prop : props) {
-        serializeProperty(builder, prop, new_selectables);
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(builder, sel, new_selectables, can_navigate_back);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
+                                                   SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    gui::Selected sel;
+    bool can_navigate_back = false;
+
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+
+      if (!state.navigation_history.empty()) {
+        sel = state.navigation_history.back();
+        state.navigation_history.pop_back();
+        state.current_inspected = sel;
+      } else {
+        sel = state.current_inspected;
       }
-      builder.endArray();
-      odb::Rect bbox;
-      if (sel.getBBox(bbox)) {
-        writeBBox(builder, "bbox", bbox);
-      }
-      {
-        std::lock_guard<std::mutex> lock(state.selectables_mutex);
-        state.selectables = std::move(new_selectables);
-      }
-    } else {
-      builder.field("error", "invalid select_id");
+
+      collectHighlightShapes(sel, state.highlight_rects);
+      can_navigate_back = !state.navigation_history.empty();
+    }
+
+    resp.type = 0;
+    JsonBuilder builder;
+    builder.beginObject();
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(builder, sel, new_selectables, can_navigate_back);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
     }
     builder.endObject();
     const std::string& json = builder.str();

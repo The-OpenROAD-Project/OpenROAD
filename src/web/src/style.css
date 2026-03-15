@@ -345,6 +345,12 @@ html, body {
     background: #444;
     color: #fff;
 }
+.inspector-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+    background: #2a2a2a;
+    color: #777;
+}
 
 /* Hover highlight pulse animation */
 .hover-highlight {

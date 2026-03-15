@@ -69,6 +69,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "inspect") {
     req.type = WebSocketRequest::INSPECT;
     req.select_id = extract_int(msg, "select_id");
+  } else if (type_str == "inspect_back") {
+    req.type = WebSocketRequest::INSPECT_BACK;
   } else if (type_str == "hover") {
     req.type = WebSocketRequest::HOVER;
     req.select_id = extract_int(msg, "select_id");
@@ -401,6 +403,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleInspect(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::INSPECT_BACK:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleInspectBack(req, self->state_));
       });
       break;
     case WebSocketRequest::HOVER:

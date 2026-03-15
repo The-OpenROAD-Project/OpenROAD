@@ -13,6 +13,12 @@ const ZOOM_TO_SVG =
     '<path d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/>' +
     '</svg>';
 
+// Back: left arrow (Material "arrow_back")
+const BACK_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>' +
+    '</svg>';
+
 // Focus net: eye open (Material "visibility")
 const FOCUS_SVG =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
@@ -215,6 +221,44 @@ export function createInspectorPanel(app, redrawAllLayers) {
             });
     }
 
+    function navigateBack() {
+        if (pendingInspectId !== null) {
+            app.websocketManager.cancel(pendingInspectId);
+            pendingInspectId = null;
+        }
+
+        showLoading();
+
+        const promise = app.websocketManager.request({ type: 'inspect_back' });
+        pendingInspectId = promise.requestId;
+
+        promise
+            .then(data => {
+                pendingInspectId = null;
+                if (data.error) {
+                    console.error('Inspect back error:', data.error);
+                    return;
+                }
+                updateInspector(data);
+
+                app.map.closePopup();
+                clearClientHoverHighlight();
+                if (app.highlightRect) {
+                    app.map.removeLayer(app.highlightRect);
+                    app.highlightRect = null;
+                }
+                if (data.bbox && app.map && app.designScale && data.type !== 'Inst') {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    highlightBBox(x1, y1, x2, y2);
+                }
+                redrawAllLayers();
+            })
+            .catch(err => {
+                pendingInspectId = null;
+                console.error('Inspect back failed:', err);
+            });
+    }
+
     function highlightBBox(x1, y1, x2, y2) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
@@ -320,15 +364,26 @@ export function createInspectorPanel(app, redrawAllLayers) {
         }
 
         // Toolbar with action buttons
-        if (data.bbox) {
+        if (data) {
             const toolbar = document.createElement('div');
             toolbar.className = 'inspector-toolbar';
-            const zoomBtn = document.createElement('button');
-            zoomBtn.className = 'inspector-btn';
-            zoomBtn.title = 'Zoom to';
-            zoomBtn.innerHTML = ZOOM_TO_SVG;
-            zoomBtn.addEventListener('click', () => zoomToBBox(data.bbox));
-            toolbar.appendChild(zoomBtn);
+
+            const backBtn = document.createElement('button');
+            backBtn.className = 'inspector-btn';
+            backBtn.title = 'Back';
+            backBtn.innerHTML = BACK_SVG;
+            backBtn.disabled = !data.can_navigate_back;
+            backBtn.addEventListener('click', () => navigateBack());
+            toolbar.appendChild(backBtn);
+
+            if (data.bbox) {
+                const zoomBtn = document.createElement('button');
+                zoomBtn.className = 'inspector-btn';
+                zoomBtn.title = 'Zoom to';
+                zoomBtn.innerHTML = ZOOM_TO_SVG;
+                zoomBtn.addEventListener('click', () => zoomToBBox(data.bbox));
+                toolbar.appendChild(zoomBtn);
+            }
 
             // Focus/De-focus button for Net objects
             if (data.type === 'Net' && data.name) {
