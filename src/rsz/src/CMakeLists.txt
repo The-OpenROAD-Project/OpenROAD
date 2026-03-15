@@ -12,6 +12,7 @@ swig_lib(NAME      rsz
 
 add_library(rsz_lib
     BaseMove.cc
+    BottleneckAnalysis.cc
     BufferedNet.cc
     BufferMove.cc
     CloneMove.cc

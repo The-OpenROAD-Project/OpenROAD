@@ -20,6 +20,8 @@ class OdbCallBack : public odb::dbBlockCallBackObj
               sta::dbNetwork* db_network);
 
   void inDbNetDestroy(odb::dbNet* net) override;
+  void inDbITermDestroy(odb::dbITerm* iterm) override;
+  void inDbBTermDestroy(odb::dbBTerm* bterm) override;
 
  private:
   Resizer* resizer_;
