@@ -181,6 +181,7 @@ class Tapcell
                     bool is_edge,
                     bool disallow_one_site_gaps,
                     const InstTree& fixed_instances);
+  void removeRowMinSteps(int min_step);
 
   int defaultDistance() const;
 
