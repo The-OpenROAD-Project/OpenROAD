@@ -2016,9 +2016,18 @@ void dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
+// Caution:
+// - Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
+// net connected to the given net.
+// - But `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
+// flat net for the given net.
+// - It behaves differently to cope with the issue 9724.
+// - This redefinition may cause another issue later when
+// `Network::highestConnectedNet(Net *net)` is used elsewhere.
 const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
-  return net;
+  const Net* flat = findFlatNet(net);
+  return flat ? flat : net;
 }
 
 ////////////////////////////////////////////////////////////////
