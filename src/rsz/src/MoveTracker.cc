@@ -31,6 +31,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -2243,7 +2244,7 @@ MoveTracker::enumerateEndpointPaths(const sta::Pin* endpoint_pin, int max_paths)
                                               sta::RiseFallBoth::riseFall());
 
   // Find paths to this endpoint
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   sta::PathEndSeq path_ends
       = search->findPathEnds(nullptr,                // from
                              nullptr,                // thrus

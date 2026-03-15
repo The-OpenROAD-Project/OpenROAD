@@ -38,6 +38,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
@@ -420,7 +421,7 @@ sta::Slack ViolatorCollector::getPathSlackByIndex(const sta::Pin* endpoint_pin,
                                                sta::RiseFallBoth::riseFall());
 
   // Find paths to the endpoint - request only up to path_index+1 paths
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   int num_paths_needed = path_index + 1;
   sta::PathEndSeq path_ends
       = search_->findPathEnds(nullptr,                // from
@@ -1066,7 +1067,7 @@ set<const sta::Pin*> ViolatorCollector::collectPinsByPathEndpoint(
                                                sta::RiseFallBoth::riseFall());
 
   // 2. Find paths to the endpoint.
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   sta::PathEndSeq path_ends
       = search_->findPathEnds(nullptr,                // from
                               nullptr,                // thrus
