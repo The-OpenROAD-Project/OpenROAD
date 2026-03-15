@@ -164,131 +164,130 @@ TIMING_HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:#fff;color:#1a1a1a;font-family:system-ui,-apple-system,sans-serif;font-size:13px}}
-.hdr{{background:#f0f0f0;border-bottom:1px solid #d0d0d0;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}}
-.hdr h1{{font-size:16px;font-weight:600}}
+.hdr{{background:#f0f0f0;border-bottom:1px solid #d0d0d0;padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
+.hdr h1{{font-size:15px;font-weight:600}}
 .badge{{display:inline-block;padding:2px 8px;border-radius:12px;font-weight:600;font-size:12px}}
 .badge.pass{{background:#238636;color:#fff}}
 .badge.fail{{background:#da3633;color:#fff}}
 .metric{{font-size:12px;color:#555}}
 .metric b{{color:#1a1a1a}}
 .panels{{display:grid;grid-template-columns:1fr;gap:1px;background:#d0d0d0}}
-.panel{{background:#fff;padding:16px}}
-.panel h2{{font-size:14px;margin-bottom:10px;color:#0366d6}}
-#histogram-wrap{{position:relative}}
+.panel{{background:#fff;padding:12px 16px}}
+.toolbar{{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}}
+.toolbar select{{background:#fff;color:#1a1a1a;border:1px solid #ccc;padding:4px 8px;border-radius:4px;font-size:12px}}
+.toolbar .spacer{{flex:1}}
+#histogram-wrap{{position:relative;border:1px solid #ddd}}
 canvas{{display:block;width:100%;cursor:pointer}}
-.tooltip{{position:absolute;background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:6px;font-size:12px;pointer-events:none;display:none;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.15)}}
-.controls{{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}}
-.controls button,.controls select{{background:#f5f5f5;color:#1a1a1a;border:1px solid #ccc;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px}}
-.controls button:hover,.controls select:hover{{background:#e0e0e0}}
-.controls button.active{{background:#0366d6;color:#fff;border-color:#0366d6}}
+.tooltip{{position:absolute;background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:4px;font-size:12px;pointer-events:none;display:none;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,0.15)}}
 table{{width:100%;border-collapse:collapse}}
-th,td{{text-align:left;padding:6px 8px;border-bottom:1px solid #e0e0e0;white-space:nowrap}}
-th{{background:#f5f5f5;color:#555;font-weight:500;cursor:pointer;user-select:none;position:sticky;top:0;z-index:5}}
+th,td{{text-align:right;padding:4px 8px;border-bottom:1px solid #e0e0e0;white-space:nowrap;font-size:12px}}
+th{{background:#f5f5f5;color:#555;font-weight:600;cursor:pointer;user-select:none;position:sticky;top:0;z-index:5}}
 th:hover{{color:#1a1a1a}}
 th.sorted-asc::after{{content:" ▲"}}
 th.sorted-desc::after{{content:" ▼"}}
-.path-table-wrap{{max-height:400px;overflow-y:auto;border:1px solid #d0d0d0;border-radius:6px}}
-tr:hover{{background:#f5f8ff}}
-tr.selected{{background:#e8f0fe}}
-.slack-neg{{color:#f85149}}
-.slack-pos{{color:#3fb950}}
-.arc-wrap{{background:#fafafa;border:1px solid #d0d0d0;border-radius:6px;margin:8px 0;padding:12px;display:none}}
-.arc-bar{{height:20px;display:inline-block;vertical-align:middle;border-radius:2px;position:relative;cursor:pointer}}
-.arc-bar.cell{{background:#58a6ff}}
-.arc-bar.net{{background:#d2a8ff}}
-.arc-bar.critical{{background:#f85149}}
-.arc-waterfall{{margin:8px 0;overflow-x:auto}}
-.arc-table td{{font-size:12px}}
-.arc-table .rise{{color:#3fb950}}
-.arc-table .fall{{color:#f85149}}
-.clk-table td{{font-size:12px}}
-.cell-chart{{display:flex;gap:2px;align-items:flex-end;height:60px;margin-top:8px}}
-.cell-bar{{background:#58a6ff;min-width:4px;border-radius:2px 2px 0 0;cursor:pointer;position:relative}}
-.cell-bar:hover{{opacity:0.8}}
-#status-bar{{background:#f5f5f5;border-top:1px solid #d0d0d0;padding:6px 20px;font-size:11px;color:#555;position:fixed;bottom:0;left:0;right:0}}
+td:last-child,th:last-child{{text-align:left}}
+td:nth-last-child(2),th:nth-last-child(2){{text-align:left}}
+.path-table-wrap{{overflow-y:auto;border:1px solid #d0d0d0;min-height:80px;height:300px}}
+.sash{{height:5px;cursor:row-resize;background:#e0e0e0;border:1px solid #ccc;border-width:1px 0}}
+.sash:hover{{background:#c0c0c0}}
+tr:hover{{background:#dbe9f9}}
+tr.selected{{background:#c0d8f0}}
+.slack-neg{{color:#c00}}
+.slack-pos{{color:#060}}
+.detail-wrap{{border:1px solid #d0d0d0;margin:8px 0;display:none}}
+.detail-tabs{{display:flex;border-bottom:1px solid #d0d0d0}}
+.detail-tab{{padding:4px 12px;font-size:12px;cursor:pointer;background:#f5f5f5;border-right:1px solid #d0d0d0}}
+.detail-tab.active{{background:#fff;font-weight:600}}
+.detail-table-wrap{{max-height:300px;overflow-y:auto}}
+.detail-table td,.detail-table th{{font-size:12px;padding:2px 8px}}
+.rise{{color:#060}}
+.fall{{color:#c00}}
+#status-bar{{background:#f5f5f5;border-top:1px solid #d0d0d0;padding:4px 16px;font-size:11px;color:#555;position:fixed;bottom:0;left:0;right:0}}
 </style>
 </head>
 <body>
 <div class="hdr">
-  <h1>{design}</h1>
+  <h1>Timing Report — {design}</h1>
   <span class="badge {wns_class}">{wns_label}</span>
-  <span class="metric">WNS <b>{setup_wns} ns</b></span>
-  <span class="metric">TNS <b>{setup_tns} ns</b></span>
-  <span class="metric">Hold WNS <b>{hold_wns} ns</b></span>
+  <span class="metric">WNS <b>{setup_wns_ps} ps</b></span>
+  <span class="metric">TNS <b>{setup_tns_ps} ps</b></span>
   <span class="metric">Endpoints <b>{endpoint_count}</b></span>
   <span class="metric" style="margin-left:auto">{platform}</span>
 </div>
 <div class="panels">
-  <div class="panel">
-    <h2>Endpoint Slack Histogram</h2>
-    <div class="controls">
-      <button id="btn-setup" class="active" onclick="setMode('setup')">Setup</button>
-      <button id="btn-hold" onclick="setMode('hold')">Hold</button>
-    </div>
-    <div id="histogram-wrap">
-      <canvas id="hist-canvas" height="32"></canvas>
-      <div class="tooltip" id="hist-tooltip"></div>
-    </div>
+
+<!-- Charts panel -->
+<div class="panel">
+  <div class="toolbar">
+    <select id="slack-type"><option>Setup Slack</option><option>Hold Slack</option></select>
+    <span class="spacer"></span>
+    <select id="group-filter" onchange="filterPaths()"><option value="">No Path Group</option></select>
+    <select id="clock-filter" onchange="filterPaths()"><option value="">All Clocks</option></select>
   </div>
-  <div class="panel">
-    <h2>Clock Domains</h2>
-    <table class="clk-table"><thead><tr><th>Clock</th><th>Period (ns)</th><th>Waveform</th><th>Sources</th></tr></thead>
-    <tbody id="clk-body"></tbody></table>
+  <div id="histogram-wrap">
+    <canvas id="hist-canvas" height="160"></canvas>
+    <div class="tooltip" id="hist-tooltip"></div>
   </div>
-  <div class="panel">
-    <h2>Timing Paths</h2>
-    <div class="controls">
-      <select id="group-filter" onchange="filterPaths()"><option value="">All Groups</option></select>
+</div>
+
+<!-- Timing Report panel -->
+<div class="panel">
+  <div class="toolbar">
+    <b>Timing Report</b>
+    <span class="spacer"></span>
+  </div>
+  <div class="path-table-wrap" id="path-table-wrap">
+    <table id="path-table">
+      <thead><tr>
+        <th data-col="end_clk">Capture Clock</th>
+        <th data-col="required">Required</th>
+        <th data-col="arrival">Arrival</th>
+        <th data-col="slack">Slack ▾</th>
+        <th data-col="skew">Skew</th>
+        <th data-col="logic_delay">Logic Delay</th>
+        <th data-col="logic_depth">Logic Depth</th>
+        <th data-col="fanout">Fanout</th>
+        <th data-col="start" style="text-align:left">Start</th>
+        <th data-col="end" style="text-align:left">End</th>
+      </tr></thead>
+      <tbody id="path-body"></tbody>
+    </table>
+  </div>
+
+  <div class="sash" id="sash"></div>
+
+  <!-- Path detail -->
+  <div class="detail-wrap" id="arc-detail">
+    <div class="detail-tabs">
+      <div class="detail-tab active">Data Path Details</div>
+      <div class="detail-tab">Capture Path Details</div>
     </div>
-    <div class="path-table-wrap" id="path-table-wrap">
-      <table id="path-table">
+    <div class="detail-table-wrap">
+      <table class="detail-table" id="arc-table">
         <thead><tr>
-          <th data-col="slack">Slack</th>
-          <th data-col="start">Start</th>
-          <th data-col="end">End</th>
-          <th data-col="end_clk">Clock</th>
-          <th data-col="arrival">Arrival</th>
-          <th data-col="required">Required</th>
-          <th data-col="path_delay">Path Delay</th>
-          <th data-col="logic_depth">Depth</th>
-          <th data-col="fanout">Fanout</th>
+          <th style="text-align:left">Pin</th>
+          <th>Fanout</th>
+          <th>↕</th>
+          <th>Time</th>
+          <th>Delay</th>
+          <th>Slew</th>
+          <th>Load</th>
         </tr></thead>
-        <tbody id="path-body"></tbody>
-      </table>
-    </div>
-    <div class="arc-wrap" id="arc-detail">
-      <h2 style="margin-bottom:8px">Path Detail</h2>
-      <div class="arc-waterfall" id="arc-waterfall"></div>
-      <table class="arc-table" id="arc-table">
-        <thead><tr><th>Pin</th><th>Edge</th><th>Delay</th><th>Slew</th><th>Load</th><th>Fanout</th><th>Cell</th></tr></thead>
         <tbody id="arc-body"></tbody>
       </table>
     </div>
   </div>
-  <div class="panel">
-    <h2>Cell Type Breakdown</h2>
-    <div class="cell-chart" id="cell-chart"></div>
-    <table id="cell-table" style="margin-top:8px">
-      <thead><tr><th>Cell</th><th>Count</th><th>Total Delay (ns)</th><th>Avg Slew (ns)</th></tr></thead>
-      <tbody id="cell-body"></tbody>
-    </table>
-  </div>
+</div>
 </div>
 <div id="status-bar">Loaded</div>
 
 <script>
 const D = {json_data};
+const PS = 1e12; // seconds to picoseconds
 
-// ─── Histogram ─────────────────────────────────────────────────
-let histMode = 'setup';
-function setMode(m) {{
-  histMode = m;
-  document.getElementById('btn-setup').classList.toggle('active', m==='setup');
-  document.getElementById('btn-hold').classList.toggle('active', m==='hold');
-  drawHistogram();
-}}
-
+// ─── Nice bucket algorithm (matches chartsWidget.cpp) ─────────
 function snapInterval(exact) {{
+  if (exact <= 0) return 1;
   const exp = Math.floor(Math.log10(exact));
   const mag = Math.pow(10, exp);
   const res = exact / mag;
@@ -312,71 +311,116 @@ function drawHistogram() {{
   const W = rect.width, H = rect.height;
   ctx.clearRect(0, 0, W, H);
 
-  const slacks = D.endpoints.map(e => e.slack);
+  // Convert to ps and filter by clock/group
+  const clkF = document.getElementById('clock-filter').value;
+  const grpF = document.getElementById('group-filter').value;
+  let eps = D.endpoints;
+  // Build set of filtered endpoint names from paths
+  if (clkF || grpF) {{
+    const names = new Set(D.paths.filter(p =>
+      (!clkF || p.end_clk === clkF) && (!grpF || p.group === grpF)
+    ).map(p => p.end));
+    eps = eps.filter(e => names.has(e.name));
+  }}
+
+  const slacks = eps.map(e => e.slack * PS);
   if (slacks.length === 0) return;
 
-  const lo = Math.min(0, Math.min(...slacks));
-  const hi = Math.max(0, Math.max(...slacks));
-  if (lo === hi) return;
-
-  const interval = snapInterval((hi - lo) / 20);
-  const binMin = Math.floor(lo / interval) * interval;
-  const binMax = Math.ceil(hi / interval) * interval;
-  const nBins = Math.round((binMax - binMin) / interval);
-
-  histBins = [];
-  for (let i = 0; i < nBins; i++) {{
-    histBins.push({{lo: binMin + i * interval, hi: binMin + (i+1) * interval, count: 0, endpoints: []}});
-  }}
-  for (const e of D.endpoints) {{
-    const idx = Math.min(Math.floor((e.slack - binMin) / interval), nBins - 1);
-    if (idx >= 0 && idx < nBins) {{
+  const dataMin = Math.min(...slacks);
+  const dataMax = Math.max(...slacks);
+  if (dataMin === dataMax) {{
+    // All same value — show single bar
+    histBins = [{{lo: dataMin - 1, hi: dataMin + 1, count: slacks.length, endpoints: eps.map(e=>e.name)}}];
+  }} else {{
+    // kDefaultNumberOfBuckets = 10 (matches chartsWidget.cpp)
+    const interval = snapInterval((dataMax - dataMin) / 10);
+    const binMin = Math.floor(dataMin / interval) * interval;
+    const binMax = Math.ceil(dataMax / interval) * interval;
+    const nBins = Math.max(1, Math.round((binMax - binMin) / interval));
+    histBins = [];
+    for (let i = 0; i < nBins; i++)
+      histBins.push({{lo: binMin+i*interval, hi: binMin+(i+1)*interval, count: 0, endpoints: []}});
+    for (let j = 0; j < eps.length; j++) {{
+      const s = eps[j].slack * PS;
+      const idx = Math.min(Math.max(0, Math.floor((s - binMin) / interval)), nBins - 1);
       histBins[idx].count++;
-      histBins[idx].endpoints.push(e.name);
+      histBins[idx].endpoints.push(eps[j].name);
     }}
   }}
 
   const maxCount = Math.max(...histBins.map(b => b.count), 1);
-  const pad = {{l: 50, r: 10, t: 10, b: 30}};
+  const nBins = histBins.length;
+  const pad = {{l: 55, r: 20, t: 25, b: 45}};
   const plotW = W - pad.l - pad.r;
   const plotH = H - pad.t - pad.b;
   const barW = plotW / nBins;
 
-  // Bars
+  // Y-axis nice ticks
+  const yInterval = snapInterval(maxCount / 4);
+  const yMax = Math.ceil(maxCount / yInterval) * yInterval;
+
+  // Bars (red=negative, green=positive)
   for (let i = 0; i < nBins; i++) {{
     const b = histBins[i];
-    const bh = (b.count / maxCount) * plotH;
+    if (b.count === 0) continue;
+    const bh = (b.count / yMax) * plotH;
     const x = pad.l + i * barW;
     const y = pad.t + plotH - bh;
     const mid = (b.lo + b.hi) / 2;
-    ctx.fillStyle = mid < 0 ? '#f08080' : '#90ee90';
-    ctx.fillRect(x + 1, y, barW - 2, bh);
-  }}
-
-  // Zero line
-  const zeroX = pad.l + ((0 - binMin) / (binMax - binMin)) * plotW;
-  if (zeroX > pad.l && zeroX < W - pad.r) {{
-    ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = '#999';
+    ctx.fillStyle = mid < 0 ? 'rgba(240,128,128,0.8)' : 'rgba(144,238,144,0.8)';
+    ctx.strokeStyle = mid < 0 ? '#d88' : '#8c8';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(zeroX, pad.t); ctx.lineTo(zeroX, pad.t + plotH); ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.fillRect(x + 1, y, barW - 2, bh);
+    ctx.strokeRect(x + 1, y, barW - 2, bh);
   }}
 
-  // Axes
-  ctx.fillStyle = '#666';
-  ctx.font = '10px system-ui';
+  // Title
+  ctx.fillStyle = '#333';
+  ctx.font = '12px system-ui';
   ctx.textAlign = 'center';
-  for (let i = 0; i <= nBins; i += Math.max(1, Math.floor(nBins / 8))) {{
-    const val = binMin + i * interval;
-    ctx.fillText(val.toFixed(2), pad.l + i * barW, H - 6);
+  ctx.fillText('Endpoint Slack', W / 2, 16);
+
+  // X-axis labels + ticks
+  ctx.fillStyle = '#333';
+  ctx.font = '11px system-ui';
+  ctx.textAlign = 'center';
+  const xLabelEvery = Math.max(1, Math.ceil(nBins / 15));
+  for (let i = 0; i <= nBins; i += xLabelEvery) {{
+    const val = histBins[0].lo + i * (histBins[0].hi - histBins[0].lo);
+    const x = pad.l + i * barW;
+    ctx.fillText(Math.round(val).toString(), x, pad.t + plotH + 15);
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(x, pad.t + plotH); ctx.lineTo(x, pad.t + plotH + 4); ctx.stroke();
   }}
+
+  // X-axis title with clock info
+  ctx.fillStyle = '#555';
+  ctx.font = '11px system-ui';
+  const clkLabel = D.clocks.length > 0
+    ? 'Clocks: ' + D.clocks.map(c => c.name + ' ' + c.period).join(', ')
+    : '';
+  ctx.fillText('Slack [ps]' + (clkLabel ? ', ' + clkLabel : ''), W / 2, pad.t + plotH + 35);
+
+  // Y-axis labels
+  ctx.fillStyle = '#333';
+  ctx.font = '11px system-ui';
   ctx.textAlign = 'right';
-  for (let i = 0; i <= 4; i++) {{
-    const val = Math.round(maxCount * i / 4);
-    const y = pad.t + plotH - (i / 4) * plotH;
-    ctx.fillText(val.toString(), pad.l - 4, y + 4);
+  for (let v = 0; v <= yMax; v += yInterval) {{
+    const y = pad.t + plotH - (v / yMax) * plotH;
+    ctx.fillText(v.toString(), pad.l - 6, y + 4);
+    ctx.strokeStyle = '#eee'; ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + plotW, y); ctx.stroke();
   }}
+
+  // Y-axis title (rotated)
+  ctx.save();
+  ctx.translate(12, pad.t + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#555';
+  ctx.font = '11px system-ui';
+  ctx.fillText('Number of Endpoints', 0, 0);
+  ctx.restore();
 }}
 
 // Histogram hover/click
@@ -385,7 +429,7 @@ const histTooltip = document.getElementById('hist-tooltip');
 histCanvas.addEventListener('mousemove', function(e) {{
   const rect = histCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  const pad = {{l: 50, r: 10}};
+  const pad = {{l: 55, r: 20}};
   const plotW = rect.width - pad.l - pad.r;
   const idx = Math.floor((x - pad.l) / (plotW / histBins.length));
   if (idx >= 0 && idx < histBins.length) {{
@@ -393,32 +437,22 @@ histCanvas.addEventListener('mousemove', function(e) {{
     histTooltip.style.display = 'block';
     histTooltip.style.left = (e.clientX - rect.left + 10) + 'px';
     histTooltip.style.top = (e.clientY - rect.top - 30) + 'px';
-    histTooltip.innerHTML = `${{b.count}} endpoints<br>${{b.lo.toFixed(3)}} to ${{b.hi.toFixed(3)}} ns`;
-  }} else {{
-    histTooltip.style.display = 'none';
-  }}
+    histTooltip.innerHTML = `${{b.count}} endpoints<br>${{b.lo.toFixed(1)}} to ${{b.hi.toFixed(1)}} ps`;
+  }} else histTooltip.style.display = 'none';
 }});
 histCanvas.addEventListener('mouseleave', () => histTooltip.style.display = 'none');
 histCanvas.addEventListener('click', function(e) {{
   const rect = histCanvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
-  const pad = {{l: 50, r: 10}};
+  const pad = {{l: 55, r: 20}};
   const plotW = rect.width - pad.l - pad.r;
   const idx = Math.floor((x - pad.l) / (plotW / histBins.length));
   if (idx >= 0 && idx < histBins.length) {{
     const b = histBins[idx];
-    slackFilter = [b.lo, b.hi];
+    slackFilter = [b.lo / PS, b.hi / PS]; // back to seconds
     filterPaths();
   }}
 }});
-
-// ─── Clock table ────────────────────────────────────────────────
-function renderClocks() {{
-  const body = document.getElementById('clk-body');
-  body.innerHTML = D.clocks.map(c =>
-    `<tr><td>${{c.name}}</td><td>${{c.period}}</td><td>${{c.waveform.join(', ')}}</td><td>${{c.sources.join(', ')}}</td></tr>`
-  ).join('');
-}}
 
 // ─── Path table ─────────────────────────────────────────────────
 let sortCol = 'slack', sortAsc = true;
@@ -427,12 +461,15 @@ let filteredPaths = D.paths;
 
 function filterPaths() {{
   const group = document.getElementById('group-filter').value;
+  const clock = document.getElementById('clock-filter').value;
   filteredPaths = D.paths.filter(p => {{
     if (group && p.group !== group) return false;
+    if (clock && p.end_clk !== clock) return false;
     if (slackFilter && (p.slack < slackFilter[0] || p.slack >= slackFilter[1])) return false;
     return true;
   }});
   sortPaths();
+  drawHistogram();
 }}
 
 function sortPaths() {{
@@ -444,22 +481,24 @@ function sortPaths() {{
   renderPaths();
 }}
 
+function ps(v) {{ return (v * PS).toFixed(3); }}
+
 function renderPaths() {{
   const body = document.getElementById('path-body');
-  // Virtualised: show up to 500 rows
   const shown = filteredPaths.slice(0, 500);
   body.innerHTML = shown.map((p, i) => {{
     const cls = p.slack < 0 ? 'slack-neg' : 'slack-pos';
     return `<tr onclick="showArcDetail(${{i}})" data-idx="${{i}}">
-      <td class="${{cls}}">${{p.slack.toFixed(4)}}</td>
-      <td title="${{p.start}}">${{p.start.slice(-35)}}</td>
-      <td title="${{p.end}}">${{p.end.slice(-35)}}</td>
-      <td>${{p.end_clk}}</td>
-      <td>${{p.arrival.toFixed(4)}}</td>
-      <td>${{p.required.toFixed(4)}}</td>
-      <td>${{p.path_delay.toFixed(4)}}</td>
+      <td style="text-align:left">${{p.end_clk}}</td>
+      <td>${{ps(p.required)}}</td>
+      <td>${{ps(p.arrival)}}</td>
+      <td class="${{cls}}">${{ps(p.slack)}}</td>
+      <td>${{ps(p.skew)}}</td>
+      <td>${{ps(p.arrival)}}</td>
       <td>${{p.logic_depth}}</td>
       <td>${{p.fanout}}</td>
+      <td style="text-align:left" title="${{p.start}}">${{p.start}}</td>
+      <td style="text-align:left" title="${{p.end}}">${{p.end}}</td>
     </tr>`;
   }}).join('');
   document.getElementById('status-bar').textContent =
@@ -472,94 +511,85 @@ document.querySelectorAll('#path-table th').forEach(th => {{
     const col = th.dataset.col;
     if (sortCol === col) sortAsc = !sortAsc;
     else {{ sortCol = col; sortAsc = true; }}
-    document.querySelectorAll('#path-table th').forEach(t => t.className = '');
+    document.querySelectorAll('#path-table th').forEach(t => {{
+      t.className = '';
+      t.textContent = t.textContent.replace(/ [▾▴]/g, '');
+    }});
     th.className = sortAsc ? 'sorted-asc' : 'sorted-desc';
     sortPaths();
   }});
 }});
 
-// ─── Arc detail ──────────────────────────────────────────────────
+// ─── Path detail ─────────────────────────────────────────────────
 function showArcDetail(idx) {{
   const p = filteredPaths[idx];
   const wrap = document.getElementById('arc-detail');
   wrap.style.display = 'block';
 
-  // Waterfall bar
-  const totalDelay = p.arcs.reduce((s, a) => s + Math.abs(a.delay), 0) || 1;
-  const wf = document.getElementById('arc-waterfall');
-  wf.innerHTML = p.arcs.map(a => {{
-    const w = Math.max(2, (Math.abs(a.delay) / totalDelay) * 100);
-    const cls = a.net ? 'net' : (a.delay > totalDelay * 0.15 ? 'critical' : 'cell');
-    return `<span class="arc-bar ${{cls}}" style="width:${{w}}%"
-      title="${{a.from}} → ${{a.to}}\n${{a.cell}} delay=${{a.delay.toFixed(4)}} slew=${{a.slew.toFixed(4)}}"></span>`;
-  }}).join('');
-
-  // Arc table
   const body = document.getElementById('arc-body');
+  let cumTime = 0;
   body.innerHTML = p.arcs.map(a => {{
+    cumTime += a.delay;
     const edge = a.rising ? '<span class="rise">↑</span>' : '<span class="fall">↓</span>';
+    const pin = a.to + (a.cell && !a.net ? ' (' + a.cell + ')' : '');
     return `<tr>
-      <td title="${{a.to}}">${{a.to.slice(-40)}}</td>
+      <td style="text-align:left" title="${{a.to}}">${{pin}}</td>
+      <td>${{a.fanout || ''}}</td>
       <td>${{edge}}</td>
-      <td>${{a.delay.toFixed(4)}}</td>
-      <td>${{a.slew.toFixed(4)}}</td>
-      <td>${{a.load.toFixed(4)}}</td>
-      <td>${{a.fanout}}</td>
-      <td>${{a.cell}}</td>
+      <td>${{(cumTime * PS).toFixed(3)}}</td>
+      <td>${{(a.delay * PS).toFixed(3)}}</td>
+      <td>${{(a.slew * PS).toFixed(3)}}</td>
+      <td>${{a.load > 0 ? (a.load * 1e15).toFixed(3) : ''}}</td>
     </tr>`;
   }}).join('');
 
-  // Highlight selected row
   document.querySelectorAll('#path-body tr').forEach(r => r.classList.remove('selected'));
   document.querySelector(`#path-body tr[data-idx="${{idx}}"]`)?.classList.add('selected');
 }}
 
-// ─── Cell breakdown ──────────────────────────────────────────────
-function renderCellBreakdown() {{
-  const cells = {{}};
-  for (const p of D.paths) {{
-    for (const a of p.arcs) {{
-      if (a.net) continue;
-      if (!cells[a.cell]) cells[a.cell] = {{count: 0, delay: 0, slews: []}};
-      cells[a.cell].count++;
-      cells[a.cell].delay += Math.abs(a.delay);
-      cells[a.cell].slews.push(a.slew);
-    }}
-  }}
-  const sorted = Object.entries(cells).sort((a, b) => b[1].delay - a[1].delay).slice(0, 20);
-  if (sorted.length === 0) return;
-
-  const maxDelay = sorted[0][1].delay || 1;
-  const chart = document.getElementById('cell-chart');
-  chart.innerHTML = sorted.map(([name, v]) => {{
-    const h = Math.max(4, (v.delay / maxDelay) * 60);
-    return `<div class="cell-bar" style="height:${{h}}px;flex:1" title="${{name}}: ${{v.delay.toFixed(3)}} ns (${{v.count}})"></div>`;
-  }}).join('');
-
-  const body = document.getElementById('cell-body');
-  body.innerHTML = sorted.map(([name, v]) => {{
-    const avgSlew = v.slews.reduce((s, x) => s + x, 0) / v.slews.length;
-    return `<tr><td>${{name}}</td><td>${{v.count}}</td><td>${{v.delay.toFixed(4)}}</td><td>${{avgSlew.toFixed(4)}}</td></tr>`;
-  }}).join('');
-}}
-
-// ─── Group filter ────────────────────────────────────────────────
-function initGroupFilter() {{
+// ─── Filters init ────────────────────────────────────────────────
+function initFilters() {{
   const groups = [...new Set(D.paths.map(p => p.group))].filter(Boolean);
-  const sel = document.getElementById('group-filter');
+  const gsel = document.getElementById('group-filter');
   groups.forEach(g => {{
     const opt = document.createElement('option');
     opt.value = g; opt.textContent = g;
-    sel.appendChild(opt);
+    gsel.appendChild(opt);
+  }});
+  const clocks = [...new Set(D.paths.map(p => p.end_clk))].filter(Boolean);
+  const csel = document.getElementById('clock-filter');
+  clocks.forEach(c => {{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    csel.appendChild(opt);
   }});
 }}
 
+// ─── Sash drag ───────────────────────────────────────────────────
+(function() {{
+  const sash = document.getElementById('sash');
+  const table = document.getElementById('path-table-wrap');
+  let startY, startH;
+  sash.addEventListener('mousedown', function(e) {{
+    startY = e.clientY;
+    startH = table.offsetHeight;
+    function onMove(e2) {{
+      table.style.height = Math.max(80, startH + e2.clientY - startY) + 'px';
+    }}
+    function onUp() {{
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }}
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    e.preventDefault();
+  }});
+}})();
+
 // ─── Init ────────────────────────────────────────────────────────
-renderClocks();
-initGroupFilter();
+initFilters();
 filterPaths();
 drawHistogram();
-renderCellBreakdown();
 window.addEventListener('resize', drawHistogram);
 </script>
 </body>
@@ -573,9 +603,8 @@ def generate_html(data: dict, path: str):
     html = TIMING_HTML_TEMPLATE.format(
         design=data["design"],
         platform=data["platform"],
-        setup_wns=f"{wns:.4f}",
-        setup_tns=f"{data['setup_tns']:.4f}",
-        hold_wns=f"{data['hold_wns']:.4f}",
+        setup_wns_ps=f"{wns * 1e12:.3f}",
+        setup_tns_ps=f"{data['setup_tns'] * 1e12:.3f}",
         endpoint_count=data["endpoint_count"],
         wns_class="pass" if wns >= 0 else "fail",
         wns_label="PASS" if wns >= 0 else "FAIL",
