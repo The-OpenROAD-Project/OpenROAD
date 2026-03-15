@@ -3,6 +3,7 @@
 
 %include <std_string.i>
 %include <std_vector.i>
+%include <std_pair.i>
 %include <stdint.i>
 
 %{
@@ -52,9 +53,16 @@ get_db_block();
 %template(Corners) std::vector<sta::Scene*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
 %template(Masters) std::vector<odb::dbMaster*>;
+%template(FloatVec) std::vector<float>;
+%template(StringVec) std::vector<std::string>;
+%template(EndpointSlackPair) std::pair<std::string, float>;
+%template(EndpointSlackMap) std::vector<std::pair<std::string, float>>;
 %include "ord/Tech.h"
 %include "ord/Design.h"
 %include "ord/Timing.h"
+%template(ClockInfoVec) std::vector<ord::Timing::ClockInfo>;
+%template(TimingArcInfoVec) std::vector<ord::Timing::TimingArcInfo>;
+%template(TimingPathInfoVec) std::vector<ord::Timing::TimingPathInfo>;
 
 #ifdef BAZEL
 %include "src/gpl/src/replace-py.i"
