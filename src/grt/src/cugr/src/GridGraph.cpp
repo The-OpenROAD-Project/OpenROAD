@@ -19,6 +19,7 @@
 #include "Design.h"
 #include "GRNet.h"
 #include "GRTree.h"
+#include "GeoTypes.h"
 #include "geo.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -906,6 +907,19 @@ void GridGraph::write(const std::string& heatmap_file) const
   std::ofstream fout(heatmap_file);
   fout << ss.str();
   fout.close();
+}
+
+int GridGraph::findPointIndex(const std::vector<GPoint3D>& path,
+                              int x,
+                              int y,
+                              int layer) const
+{
+  for (size_t i = 0; i < path.size(); ++i) {
+    if (path[i].x == x && path[i].y == y && path[i].z == layer) {
+      return static_cast<int>(i);
+    }
+  }
+  return -1;
 }
 
 }  // namespace grt
