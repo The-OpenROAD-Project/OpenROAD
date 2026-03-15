@@ -4,6 +4,7 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "timing_report.py",
         "whittle.py",
         "whittle_cleanup.tcl",
         "whittle_cut.tcl",
