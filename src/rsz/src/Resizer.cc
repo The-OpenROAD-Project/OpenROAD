@@ -42,6 +42,7 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
+#include "ViolatorCollector.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -4392,6 +4393,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool match_cell_footprint,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
+                          const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down,
@@ -4417,6 +4419,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
+                                    phases,
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_size_down,
@@ -5524,9 +5527,12 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     const std::string& sequence)
 {
   std::vector<rsz::MoveType> result;
-  std::stringstream ss(sequence);
+  // Replace commas with spaces to support both separators
+  std::string normalized(sequence);
+  std::ranges::replace(normalized, ',', ' ');
+  std::stringstream ss(normalized);
   std::string item;
-  while (std::getline(ss, item, ',')) {
+  while (ss >> item) {
     result.push_back(parseMove(item));
   }
   return result;
