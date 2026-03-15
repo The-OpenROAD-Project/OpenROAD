@@ -72,15 +72,18 @@ class PdnGen
   void setCoreDomain(odb::dbNet* power,
                      odb::dbNet* switched_power,
                      odb::dbNet* ground,
-                     const std::vector<odb::dbNet*>& secondary);
+                     const std::vector<odb::dbNet*>& secondary_power,
+                     const std::vector<odb::dbNet*>& secondary_ground);
   void makeRegionVoltageDomain(const std::string& name,
                                odb::dbNet* power,
                                odb::dbNet* switched_power,
                                odb::dbNet* ground,
-                               const std::vector<odb::dbNet*>& secondary_nets,
+                               const std::vector<odb::dbNet*>& secondary_power,
+                               const std::vector<odb::dbNet*>& secondary_ground,
                                odb::dbRegion* region);
 
   // Grids
+  void run(bool trim, bool add_pins, const std::string& report_file);
   void buildGrids(bool trim);
   std::vector<Grid*> findGrid(const std::string& name) const;
   void makeCoreGrid(VoltageDomain* domain,
