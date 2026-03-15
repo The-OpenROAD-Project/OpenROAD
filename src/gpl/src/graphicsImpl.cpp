@@ -27,6 +27,22 @@
 
 namespace gpl {
 
+std::optional<size_t> GraphicsImpl::getSelectedNbIndex() const
+{
+  if (nb_selected_index_ != kInvalidIndex) {
+    if (nb_selected_index_ < nbVec_.size()) {
+      return nb_selected_index_;
+    }
+    return std::nullopt;
+  }
+
+  // Fall back to index 0 if available
+  if (nbVec_.empty()) {
+    return std::nullopt;
+  }
+  return 0;
+}
+
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
@@ -120,14 +136,14 @@ void GraphicsImpl::debugForNesterovPlace(
         break;
       }
     }
-  }
 
-  for (const auto& nb : nbVec_) {
-    for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
-      GCellHandle cell_handle = nb->getGCells()[idx];
-      if (cell_handle->contains(inst)) {
-        nb_selected_index_ = &nb - nbVec_.data();
-        break;
+    for (const auto& nb : nbVec_) {
+      for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
+        GCellHandle cell_handle = nb->getGCells()[idx];
+        if (cell_handle->contains(inst)) {
+          nb_selected_index_ = &nb - nbVec_.data();
+          break;
+        }
       }
     }
   }
@@ -396,13 +412,11 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     const GCell* gcell = nbc_->getGCellByIndex(selected_);
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
-    size_t nb_index = 0;
-    if (nb_selected_index_ != kInvalidIndex) {
-      nb_index = nb_selected_index_;
-    } else {
-      logger_->warn(
-          utl::GPL, 317, "Selected instance not found in any NesterovBase");
+    auto opt_nb_index = getSelectedNbIndex();
+    if (!opt_nb_index) {
+      return;
     }
+    size_t nb_index = *opt_nb_index;
     FloatPoint densityGrad = nbVec_[nb_index]->getDensityGradient(gcell);
     FloatPoint wlGrad
         = nbc_->getWireLengthGradientWA(gcell, wlCoeffX, wlCoeffY);
@@ -527,13 +541,11 @@ void GraphicsImpl::reportSelected()
         = nbc_->getWireLengthGradientWA(gcell, wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    size_t nb_index = 0;
-    if (nb_selected_index_ != kInvalidIndex) {
-      nb_index = nb_selected_index_;
-    } else {
-      logger_->warn(
-          utl::GPL, 318, "Selected instance not found in any NesterovBase");
+    auto opt_nb_index = getSelectedNbIndex();
+    if (!opt_nb_index) {
+      return;
     }
+    size_t nb_index = *opt_nb_index;
     FloatPoint densityGrad = nbVec_[nb_index]->getDensityGradient(gcell);
     float densityPenalty = nbVec_[nb_index]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
