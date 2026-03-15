@@ -14,3 +14,30 @@ jobs:
 
       - name: Verify lock file is up to date
         run: bazelisk mod deps --lockfile_mode=error
+
+      - name: Verify all test/orfs test targets have orfs tag
+        run: |
+          MISSING=$(bazelisk query 'kind("test", //test/orfs/...) except attr(tags, "orfs", //test/orfs/...)' 2>/dev/null)
+          if [ -n "$MISSING" ]; then
+            echo "The following test targets under test/orfs/ are missing the 'orfs' tag:"
+            echo "$MISSING"
+            echo "All test targets must have tags = [\"manual\", \"orfs\"]"
+            exit 1
+          fi
+
+      - name: Verify all test/orfs non-test targets have manual tag only
+        run: |
+          NON_TEST_WITH_ORFS=$(bazelisk query 'attr(tags, "orfs", //test/orfs/...) except kind("test", //test/orfs/...)' 2>/dev/null)
+          if [ -n "$NON_TEST_WITH_ORFS" ]; then
+            echo "The following non-test targets under test/orfs/ should not have the 'orfs' tag:"
+            echo "$NON_TEST_WITH_ORFS"
+            echo "Non-test targets must have tags = [\"manual\"] only"
+            exit 1
+          fi
+          MISSING_MANUAL=$(bazelisk query 'kind(".*", //test/orfs/...) except attr(tags, "manual", //test/orfs/...)' 2>/dev/null)
+          if [ -n "$MISSING_MANUAL" ]; then
+            echo "The following targets under test/orfs/ are missing the 'manual' tag:"
+            echo "$MISSING_MANUAL"
+            echo "All targets under test/orfs/ must have tags = [\"manual\"]"
+            exit 1
+          fi

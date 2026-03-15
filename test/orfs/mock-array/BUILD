@@ -28,6 +28,7 @@ filegroup(
     data = [
         ":util.tcl",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 
@@ -36,6 +37,7 @@ filegroup(
     srcs = [
         "constraints.sdc",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 
@@ -47,6 +49,7 @@ filegroup(
     data = [
         ":util.tcl",
     ],
+    tags = ["manual"],
     visibility = [":__subpackages__"],
 )
 
@@ -85,7 +88,10 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
 
 test_suite(
     name = "eqy_tests",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
     tests = ["Element_eqy_{variant}".format(variant = name) for name in CONFIGS] +
             [
                 "MockArray_eqy_{name}_{variant}".format(

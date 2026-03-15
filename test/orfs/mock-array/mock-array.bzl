@@ -111,7 +111,7 @@ def element(name, config):
         name = "Element_eqy_{variant}".format(variant = name),
         flow = "Element_{variant}_base".format(variant = name),
         verilog_files = [":{name}_verilog".format(name = name)],
-        tags = ["manual"],
+        tags = ["manual", "orfs"],
         module_top = "Element",
     )
 
@@ -297,7 +297,7 @@ def mock_array(name, config):
             } if variant == "4x4_flat" else {}),
             tags = ["manual"],
             test_kwargs = {
-                "tags": ["orfs"],
+                "tags": ["manual", "orfs"],
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
@@ -307,7 +307,7 @@ def mock_array(name, config):
             flow = "MockArray_{variant}".format(variant = variant),
             verilog_files = [":{name}_verilog".format(name = name)],
             other_verilog_files = [":Element_eqy_{name}_final_verilog".format(name = name)],
-            tags = ["manual"],
+            tags = ["manual", "orfs"],
             module_top = "MockArray",
         )
 
@@ -351,6 +351,7 @@ def mock_array(name, config):
                             ),
                         ],
                         output_group = POWER_STAGE_STEM[stage] + ".v",
+                        tags = ["manual"],
                     )
 
         for stage in POWER_STAGES:
@@ -535,6 +536,7 @@ def mock_array(name, config):
                             stage = stage,
                         ),
                     ],
+                    tags = ["manual", "orfs"],
                 )
 
         for power_test in ELEMENT_POWER_TESTS:
@@ -594,4 +596,5 @@ def mock_array(name, config):
                             stage = stage,
                         ),
                     ],
+                    tags = ["manual", "orfs"],
                 )

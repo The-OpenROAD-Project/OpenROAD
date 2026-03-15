@@ -25,7 +25,10 @@ orfs_flow(
     },
     tags = ["manual"],
     test_kwargs = {
-        "tags": ["orfs"],
+        "tags": [
+            "manual",
+            "orfs",
+        ],
     },
     verilog_files = ["gcd.v"],
 )
@@ -34,7 +37,10 @@ eqy_flow_test(
     name = "gcd_eqy",
     flow = "gcd",
     module_top = "gcd",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
     verilog_files = ["gcd.v"],
 )
 
@@ -61,5 +67,8 @@ sh_test(
         "//etc:whittle_cleanup.tcl",
         "//etc:whittle_cut.tcl",
     ],
-    tags = ["orfs"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
 )

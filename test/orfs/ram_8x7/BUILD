@@ -29,7 +29,10 @@ orfs_flow(
     },
     tags = ["manual"],
     test_kwargs = {
-        "tags": ["orfs"],
+        "tags": [
+            "manual",
+            "orfs",
+        ],
     },
     verilog_files = ["ram_8x7.sv"],
 )
@@ -69,6 +72,7 @@ filegroup(
     srcs = [
         "ram_8x7.sv",
     ],
+    tags = ["manual"],
 )
 
 [filegroup(
@@ -76,6 +80,7 @@ filegroup(
     srcs = [
         ":ram_8x7_{stage}_verilog".format(stage = stage),
     ],
+    tags = ["manual"],
 ) for stage in STAGES[2:]]
 
 [eqy_test(
@@ -88,14 +93,20 @@ filegroup(
         ":ram_8x7_{stage}_files".format(stage = STAGES[i]),
     ] + ([] if STAGES[i] == "source" else ["//test/orfs/asap7:asap7_files"]),
     module_top = "ram_8x7",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
 ) for i in range(len(STAGES) - 1)]
 
 [sim_test(
     name = "ram_8x7_{stage}_sim_test".format(stage = stage),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
     verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
 ) for stage in STAGES[1:]]
 
@@ -108,7 +119,10 @@ OTHER = [
     name = "ram_8x7_{other}_sim_test".format(other = other[:-2]),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
     verilog = [other],
 ) for other in OTHER]
 
@@ -124,5 +138,8 @@ eqy_test(
         "//test/orfs/asap7:asap7_files",
     ],
     module_top = "ram_8x7",
-    tags = ["manual"],
+    tags = [
+        "manual",
+        "orfs",
+    ],
 )
