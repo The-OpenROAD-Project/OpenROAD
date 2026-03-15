@@ -36,6 +36,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "gif.h"
+#include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "helpWidget.h"
@@ -1520,6 +1521,19 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   power_density_heat_map_
       = std::make_unique<PowerDensityDataSource>(sta, logger);
   power_density_heat_map_->registerHeatMap();
+}
+
+std::string Gui::loadExternalHeatMap(const std::string& file_path)
+{
+  const std::string short_name
+      = "External_" + std::to_string(external_heat_maps_.size() + 1);
+  auto source = std::make_unique<ExternalHeatMapDataSource>(logger_, short_name);
+  Renderer::Settings settings;
+  settings["File"] = file_path;
+  source->setSettings(settings);
+  source->registerHeatMap();
+  external_heat_maps_.push_back(std::move(source));
+  return short_name;
 }
 
 void Gui::selectHelp(const std::string& item)

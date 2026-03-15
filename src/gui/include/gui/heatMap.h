@@ -78,8 +78,8 @@ class HeatMapDataSource
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
 
-  const std::string& getName() const { return name_; }
-  const std::string& getShortName() const { return short_name_; }
+  virtual const std::string& getName() const { return name_; }
+  virtual const std::string& getShortName() const { return short_name_; }
 
   utl::Logger* getLogger() const { return logger_; }
 
@@ -205,9 +205,11 @@ class HeatMapDataSource
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
 
- private:
+ protected:
   const std::string name_;
   const std::string short_name_;
+
+ private:
   const std::string settings_group_;
   bool destroy_map_;
   bool use_dbu_;
@@ -353,6 +355,35 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   std::string scene_;
 
   sta::Scene* getScene() const;
+};
+
+// Data source that loads heatmap data from a CSV file in dumpToFile format.
+// Set the "File" setting to the path, then show the heat map. If the file's
+// first line is not the CSV header, it is used as the display name.
+class ExternalHeatMapDataSource : public HeatMapDataSource
+{
+ public:
+  // unique_short_name: stable id for lookup (e.g. "External_1"); shown in
+  // display control until file is loaded, then getName() returns file's first
+  // line.
+  ExternalHeatMapDataSource(utl::Logger* logger,
+                            const std::string& unique_short_name);
+  const std::string& getName() const override;
+  Renderer::Settings getSettings() const override;
+  void setSettings(const Renderer::Settings& settings) override;
+
+ protected:
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
+
+ private:
+  std::string file_path_;
+  std::string display_name_;  // from first line of file when set
 };
 
 }  // namespace gui

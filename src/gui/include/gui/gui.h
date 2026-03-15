@@ -39,6 +39,7 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
+class ExternalHeatMapDataSource;
 class PinDensityDataSource;
 class PlacementDensityDataSource;
 class PowerDensityDataSource;
@@ -962,6 +963,8 @@ class Gui
   Renderer::Setting getHeatMapSetting(const std::string& name,
                                       const std::string& option);
   void dumpHeatMap(const std::string& name, const std::string& file);
+  // Add an external heat map from a CSV file; returns short name for lookup.
+  std::string loadExternalHeatMap(const std::string& file_path);
 
   void setMainWindowTitle(const std::string& title);
   std::string getMainWindowTitle();
@@ -1068,6 +1071,7 @@ class Gui
 
   std::set<Renderer*> renderers_;
 
+  std::vector<std::unique_ptr<ExternalHeatMapDataSource>> external_heat_maps_;
   std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
   std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
   std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;

@@ -247,4 +247,36 @@ sta::Scene* PowerDensityDataSource::getScene() const
   return nullptr;
 }
 
+//////////
+
+ExternalHeatMapDataSource::ExternalHeatMapDataSource(
+    utl::Logger* /* logger */, const std::string& unique_short_name)
+    : HeatMapDataSource(nullptr, "", unique_short_name, "")
+{
+}
+
+Renderer::Settings ExternalHeatMapDataSource::getSettings() const
+{
+  return HeatMapDataSource::getSettings();
+}
+
+void ExternalHeatMapDataSource::setSettings(const Renderer::Settings& settings)
+{
+  HeatMapDataSource::setSettings(settings);
+}
+
+bool ExternalHeatMapDataSource::populateMap()
+{
+  return false;
+}
+
+void ExternalHeatMapDataSource::combineMapData(bool /* base_has_value */,
+                                                double& /* base */,
+                                                const double /* new_data */,
+                                                const double /* data_area */,
+                                                const double /* intersection_area */,
+                                                const double /* rect_area */)
+{
+}
+
 }  // namespace gui

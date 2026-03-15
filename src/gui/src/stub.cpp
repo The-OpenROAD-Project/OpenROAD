@@ -31,6 +31,11 @@ StringToDBU Descriptor::Property::convert_string
     = [](const std::string& value, bool*) { return 0; };
 
 // empty heat map class
+class ExternalHeatMapDataSource
+{
+};
+
+// empty heat map class
 class PinDensityDataSource
 {
 };
@@ -226,6 +231,11 @@ void Gui::gifAddFrame(std::optional<int> key,
                       double dbu_per_pixel,
                       std::optional<int> delay)
 {
+}
+
+std::string Gui::loadExternalHeatMap(const std::string& /* file_path */)
+{
+  return "";
 }
 
 void Gui::deleteLabel(const std::string& name)
