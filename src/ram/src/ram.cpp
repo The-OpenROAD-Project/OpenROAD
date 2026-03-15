@@ -650,10 +650,9 @@ void RamGen::generate(const int mask_size,
     block_ = odb::dbBlock::create(chip, ram_name.c_str());
   }
 
-  // 9 columns for 8 bits per word plus
-  // cell for WE AND gate/inverter
-  // extra column is for decoder cells
-  int col_cell_count = slices_per_word * 9;
+  // One column per bit plus one select/control column per slice,
+  // plus one extra decoder column.
+  int col_cell_count = slices_per_word * (mask_size + 1);
   ram_grid_.setNumLayouts(col_cell_count + 1);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
@@ -721,8 +720,8 @@ void RamGen::generate(const int mask_size,
 
   // start of input/output net creation
   q_outputs_.resize(read_ports);
-  vector<dbNet*> D_nets(mask_size);
-  for (int bit = 0; bit < mask_size; ++bit) {
+  vector<dbNet*> D_nets(word_size);
+  for (int bit = 0; bit < word_size; ++bit) {
     data_inputs_.push_back(
         makeBTerm(fmt::format("D[{}]", bit), dbIoType::INPUT));
     D_nets[bit] = makeNet(fmt::format("D_nets[{}]", bit), "net");
@@ -753,7 +752,7 @@ void RamGen::generate(const int mask_size,
 
   for (int slice = 0; slice < slices_per_word; ++slice) {
     for (int bit = 0; bit < mask_size; ++bit) {
-      int bit_idx = bit + slice * 8;
+      int bit_idx = bit + slice * mask_size;
       auto buffer_grid_cell = std::make_unique<Cell>();
       makeInst(
           buffer_grid_cell.get(),
@@ -764,6 +763,7 @@ void RamGen::generate(const int mask_size,
       ram_grid_.addCell(std::move(buffer_grid_cell), bit_idx + slice);
     }
   }
+
   auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
   // check for AND gate, specific case for 2 words
   if (num_inputs > 1) {
@@ -863,8 +863,11 @@ void RamGen::generate(const int mask_size,
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));
   block_->setCoreArea(block_->computeCoreArea());
 
-  writeBehavioralVerilog(
-      behavioral_verilog_filename_, slices_per_word, num_words, read_ports);
+  writeBehavioralVerilog(behavioral_verilog_filename_,
+                         slices_per_word,
+                         mask_size,
+                         num_words,
+                         read_ports);
 }
 
 void RamGen::setBehavioralVerilogFilename(const std::string& filename)
@@ -874,6 +877,7 @@ void RamGen::setBehavioralVerilogFilename(const std::string& filename)
 
 void RamGen::writeBehavioralVerilog(const std::string& filename,
                                     const int slices_per_word,
+                                    const int mask_size,
                                     const int num_words,
                                     const int read_ports)
 {
@@ -881,7 +885,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
     return;
   }
 
-  const int word_size_bit = slices_per_word * 8;
+  const int word_size_bit = slices_per_word * mask_size;
   const int address_width
       = (num_words <= 1) ? 1 : std::ceil(std::log2(num_words));
 
@@ -953,7 +957,7 @@ void RamGen::writeBehavioralVerilog(const std::string& filename,
   always @(posedge clk) begin
     for (i = 0; i < {}; i = i + 1) begin
       if (we[i]) begin
-        mem[addr_rw][i*8 +:8] <= D[i*8 +:8];
+        mem[addr_rw][i*{} +:{}] <= D[i*{} +:{}];
       end
     end
   end
@@ -971,6 +975,10 @@ endmodule
                                          word_size_bit - 1,
                                          num_words - 1,
                                          slices_per_word,
+                                         mask_size,
+                                         mask_size,
+                                         mask_size,
+                                         mask_size,
                                          read_port_logic);
 
   std::ofstream vf(filename);
