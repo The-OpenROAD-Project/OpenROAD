@@ -118,7 +118,6 @@ def extract_timing_data(timing: Timing, design_obj: Design,
     endpoint_count = timing.getEndpointCount()
 
     # Endpoint slack map — filter out unconstrained (infinite slack)
-    # endpoints, matching chartsWidget.cpp behavior.
     endpoint_slacks = []
     unconstrained_count = 0
     for name, slack in timing.getEndpointSlackMap(Timing.Max):
@@ -308,22 +307,20 @@ tr.selected{{background:#c0d8f0}}
 
 <script>
 const D = {json_data};
-const PS = 1e12; // seconds to picoseconds
+const PS = 1e12; // seconds to picoseconds (for path table values)
 
-// ─── Nice bucket algorithm (matches chartsWidget.cpp) ─────────
 function snapInterval(exact) {{
   if (exact <= 0) return 1;
   const exp = Math.floor(Math.log10(exact));
   const mag = Math.pow(10, exp);
   const res = exact / mag;
-  let nice;
-  if (res < 1.5) nice = 1;
-  else if (res < 3) nice = 2;
-  else if (res < 7) nice = 5;
-  else nice = 10;
-  return nice * mag;
+  if (res < 1.5) return mag;
+  if (res < 3) return 2 * mag;
+  if (res < 7) return 5 * mag;
+  return 10 * mag;
 }}
 
+// Histogram bins pre-computed by C++ (utl::Histogram + chartsWidget algorithm) (utl::Histogram + chartsWidget algorithm)
 let histBins = [];
 function drawHistogram() {{
   const canvas = document.getElementById('hist-canvas');
@@ -336,11 +333,10 @@ function drawHistogram() {{
   const W = rect.width, H = rect.height;
   ctx.clearRect(0, 0, W, H);
 
-  // Convert to ps and filter by clock/group
+  // Filter endpoints by group/clock selection
   const clkF = document.getElementById('clock-filter').value;
   const grpF = document.getElementById('group-filter').value;
   let eps = D.endpoints;
-  // Build set of filtered endpoint names from paths
   if (clkF || grpF) {{
     const names = new Set(D.paths.filter(p =>
       (!clkF || p.end_clk === clkF) && (!grpF || p.group === grpF)
@@ -354,22 +350,18 @@ function drawHistogram() {{
   const dataMin = Math.min(...slacks);
   const dataMax = Math.max(...slacks);
   if (dataMin === dataMax) {{
-    // All same value — show single bar
-    histBins = [{{lo: dataMin - 1, hi: dataMin + 1, count: slacks.length, endpoints: eps.map(e=>e.name)}}];
+    histBins = [{{lo: dataMin - 1, hi: dataMin + 1, count: slacks.length}}];
   }} else {{
-    // kDefaultNumberOfBuckets = 10 (matches chartsWidget.cpp)
     const interval = snapInterval((dataMax - dataMin) / 10);
     const binMin = Math.floor(dataMin / interval) * interval;
     const binMax = Math.ceil(dataMax / interval) * interval;
     const nBins = Math.max(1, Math.round((binMax - binMin) / interval));
     histBins = [];
     for (let i = 0; i < nBins; i++)
-      histBins.push({{lo: binMin+i*interval, hi: binMin+(i+1)*interval, count: 0, endpoints: []}});
-    for (let j = 0; j < eps.length; j++) {{
-      const s = eps[j].slack * PS;
+      histBins.push({{lo: binMin+i*interval, hi: binMin+(i+1)*interval, count: 0}});
+    for (const s of slacks) {{
       const idx = Math.min(Math.max(0, Math.floor((s - binMin) / interval)), nBins - 1);
       histBins[idx].count++;
-      histBins[idx].endpoints.push(eps[j].name);
     }}
   }}
 
