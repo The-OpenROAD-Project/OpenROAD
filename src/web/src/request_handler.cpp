@@ -1,0 +1,1080 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+#include "request_handler.h"
+
+#include <any>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "clock_tree_report.h"
+#include "color.h"
+#include "gui/descriptor_registry.h"
+#include "gui/gui.h"
+#include "hierarchy_report.h"
+#include "json_builder.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+#include "tile_generator.h"
+#include "timing_report.h"
+#include "utl/Logger.h"
+
+namespace web {
+
+//------------------------------------------------------------------------------
+// ShapeCollector — a gui::Painter that collects rectangles from
+// descriptor->highlight() calls for use in tile rendering.
+//------------------------------------------------------------------------------
+
+class ShapeCollector : public gui::Painter
+{
+ public:
+  ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
+
+  std::vector<odb::Rect> rects;
+
+  void drawRect(const odb::Rect& rect, int, int) override
+  {
+    rects.push_back(rect);
+  }
+  void drawPolygon(const odb::Polygon& polygon) override
+  {
+    rects.push_back(polygon.getEnclosingRect());
+  }
+  void drawOctagon(const odb::Oct& oct) override
+  {
+    rects.push_back(oct.getEnclosingRect());
+  }
+
+  // No-ops
+  Color getPenColor() override { return {}; }
+  void setPen(odb::dbTechLayer*, bool) override {}
+  void setPen(const Color&, bool, int) override {}
+  void setPenWidth(int) override {}
+  void setBrush(odb::dbTechLayer*, int) override {}
+  void setBrush(const Color&, const Brush&) override {}
+  void setFont(const Font&) override {}
+  void saveState() override {}
+  void restoreState() override {}
+  void drawLine(const odb::Point&, const odb::Point&) override {}
+  void drawCircle(int, int, int) override {}
+  void drawX(int, int, int) override {}
+  void drawPolygon(const std::vector<odb::Point>&) override {}
+  void drawString(int, int, Anchor, const std::string&, bool) override {}
+  odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
+  {
+    return {};
+  }
+  void drawRuler(int, int, int, int, bool, const std::string&) override {}
+};
+
+//------------------------------------------------------------------------------
+// JSON utilities
+//------------------------------------------------------------------------------
+
+std::string extract_string(const std::string& json, const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return {};
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return {};
+  }
+  auto quote_start = json.find('"', pos + 1);
+  if (quote_start == std::string::npos) {
+    return {};
+  }
+  // Find closing quote, skipping escaped quotes
+  std::string result;
+  for (size_t i = quote_start + 1; i < json.size(); i++) {
+    if (json[i] == '\\' && i + 1 < json.size()) {
+      switch (json[i + 1]) {
+        case '"':
+          result += '"';
+          break;
+        case '\\':
+          result += '\\';
+          break;
+        case 'n':
+          result += '\n';
+          break;
+        case 'r':
+          result += '\r';
+          break;
+        case 't':
+          result += '\t';
+          break;
+        default:
+          result += json[i + 1];
+          break;
+      }
+      i++;  // skip the escaped char
+    } else if (json[i] == '"') {
+      break;  // closing quote
+    } else {
+      result += json[i];
+    }
+  }
+  return result;
+}
+
+int extract_int(const std::string& json, const std::string& key)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return 0;
+  }
+  // Skip whitespace after colon
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  try {
+    return std::stoi(json.substr(pos));
+  } catch (...) {
+    return 0;
+  }
+}
+
+int extract_int_or(const std::string& json,
+                   const std::string& key,
+                   const int default_val)
+{
+  const std::string needle = "\"" + key + "\"";
+  if (json.find(needle) == std::string::npos) {
+    return default_val;
+  }
+  return extract_int(json, key);
+}
+
+float extract_float_or(const std::string& json,
+                       const std::string& key,
+                       float default_val)
+{
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return default_val;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return default_val;
+  }
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  try {
+    return std::stof(json.substr(pos));
+  } catch (...) {
+    return default_val;
+  }
+}
+
+// Store a Selected in the clickables vector and return its index.
+static int storeSelectable(std::vector<gui::Selected>& selectables,
+                           const gui::Selected& sel)
+{
+  int id = static_cast<int>(selectables.size());
+  selectables.push_back(sel);
+  return id;
+}
+
+// Emit a bbox as a JSON array field: "key": [xMin, yMin, xMax, yMax]
+static void writeBBox(JsonBuilder& builder, const char* key, const odb::Rect& r)
+{
+  builder.beginArray(key);
+  builder.value(r.xMin());
+  builder.value(r.yMin());
+  builder.value(r.xMax());
+  builder.value(r.yMax());
+  builder.endArray();
+}
+
+static void serializeAnyValue(JsonBuilder& builder,
+                              const char* field_name,
+                              const std::any& value,
+                              std::vector<gui::Selected>& selectables,
+                              bool short_name = false)
+{
+  if (auto* sel = std::any_cast<gui::Selected>(&value)) {
+    if (*sel) {
+      std::string name = short_name ? sel->getShortName() : sel->getName();
+      int id = storeSelectable(selectables, *sel);
+      builder.field(field_name, name);
+      std::string id_key = std::string(field_name) + "_select_id";
+      builder.field(id_key, id);
+      return;
+    }
+  }
+  std::string str = gui::Descriptor::Property::toString(value);
+  builder.field(field_name, str);
+}
+
+static void serializeProperty(JsonBuilder& builder,
+                              const gui::Descriptor::Property& prop,
+                              std::vector<gui::Selected>& selectables)
+{
+  builder.beginObject();
+  builder.field("name", prop.name);
+
+  if (auto* plist = std::any_cast<gui::Descriptor::PropertyList>(&prop.value)) {
+    builder.beginArray("children");
+    for (const auto& [key, val] : *plist) {
+      builder.beginObject();
+      serializeAnyValue(builder, "name", key, selectables, /*short_name=*/true);
+      serializeAnyValue(builder, "value", val, selectables);
+      builder.endObject();
+    }
+    builder.endArray();
+  } else if (auto* sel_set = std::any_cast<gui::SelectionSet>(&prop.value)) {
+    builder.beginArray("children");
+    for (const auto& sel : *sel_set) {
+      builder.beginObject();
+      int id = storeSelectable(selectables, sel);
+      builder.field("name", sel.getName());
+      builder.field("name_select_id", id);
+      builder.endObject();
+    }
+    builder.endArray();
+  } else if (auto* sel = std::any_cast<gui::Selected>(&prop.value)) {
+    if (*sel) {
+      int id = storeSelectable(selectables, *sel);
+      builder.field("value", sel->getName());
+      builder.field("value_select_id", id);
+    }
+  } else {
+    std::string val_str = prop.toString();
+    builder.field("value", val_str);
+  }
+
+  builder.endObject();
+}
+
+// Serialize a TimingNode to JSON.
+static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
+{
+  builder.beginObject();
+  builder.field("pin", n.pin_name);
+  builder.field("fanout", n.fanout);
+  builder.field("rise", n.is_rising);
+  builder.field("clk", n.is_clock);
+  builder.field("time", n.time);
+  builder.field("delay", n.delay);
+  builder.field("slew", n.slew);
+  builder.field("load", n.load);
+  builder.endObject();
+}
+
+//------------------------------------------------------------------------------
+// dispatch_request — handles BOUNDS, TECH, TILE
+//------------------------------------------------------------------------------
+
+WebSocketResponse dispatch_request(
+    const WebSocketRequest& req,
+    const TileGenerator& gen,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::map<uint32_t, Color>* module_colors,
+    const std::set<uint32_t>* focus_net_ids)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+
+  switch (req.type) {
+    case WebSocketRequest::BOUNDS: {
+      resp.type = 0;
+      const odb::Rect bounds = gen.getBounds();
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.beginArray("bounds");
+      builder.beginArray();
+      builder.value(bounds.yMin());
+      builder.value(bounds.xMin());
+      builder.endArray();
+      builder.beginArray();
+      builder.value(bounds.yMax());
+      builder.value(bounds.xMax());
+      builder.endArray();
+      builder.endArray();
+      builder.endObject();
+      const std::string& json = builder.str();
+      resp.payload.assign(json.begin(), json.end());
+      break;
+    }
+    case WebSocketRequest::TECH: {
+      resp.type = 0;
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.beginArray("layers");
+      for (const auto& name : gen.getLayers()) {
+        builder.value(name);
+      }
+      builder.endArray();
+      builder.beginArray("sites");
+      for (const auto& name : gen.getSites()) {
+        builder.value(name);
+      }
+      builder.endArray();
+      builder.field("has_liberty", gen.hasSta());
+      builder.endObject();
+      const std::string& json = builder.str();
+      resp.payload.assign(json.begin(), json.end());
+      break;
+    }
+    case WebSocketRequest::TILE: {
+      resp.type = 1;
+      resp.payload = gen.generateTile(req.layer,
+                                      req.z,
+                                      req.x,
+                                      req.y,
+                                      req.vis,
+                                      highlight_rects,
+                                      colored_rects,
+                                      flight_lines,
+                                      module_colors,
+                                      focus_net_ids);
+      break;
+    }
+    default: {
+      resp.type = 2;
+      const std::string err = "Unknown request type";
+      resp.payload.assign(err.begin(), err.end());
+      break;
+    }
+  }
+
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// SelectHandler
+//------------------------------------------------------------------------------
+
+SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
+                             std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)), tcl_eval_(std::move(tcl_eval))
+{
+}
+
+WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
+                                              SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    auto results
+        = gen_->selectAt(req.select_x, req.select_y, req.select_zoom, req.vis);
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+    // Collect highlight shapes from the first selected instance
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.highlight_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      if (!results.empty()) {
+        auto* registry = gui::DescriptorRegistry::instance();
+        gui::Selected sel = registry->makeSelected(std::any(results[0].inst));
+        if (sel) {
+          ShapeCollector collector;
+          sel.highlight(collector);
+          state.highlight_rects = std::move(collector.rects);
+        }
+      }
+    }
+
+    // Build JSON response with selection and properties
+    resp.type = 0;
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("selected");
+    for (const auto& r : results) {
+      builder.beginObject();
+      builder.field("name", r.name);
+      builder.field("master", r.master);
+      writeBBox(builder, "bbox", r.bbox);
+      builder.endObject();
+    }
+    builder.endArray();
+
+    // Add properties for the first selected instance
+    std::vector<gui::Selected> new_selectables;
+    if (!results.empty()) {
+      const auto& r0 = results[0];
+      writeBBox(builder, "bbox", r0.bbox);
+
+      auto* registry = gui::DescriptorRegistry::instance();
+      gui::Selected sel = registry->makeSelected(std::any(r0.inst));
+      if (sel) {
+        auto props = sel.getProperties();
+        builder.beginArray("properties");
+        for (const auto& prop : props) {
+          serializeProperty(builder, prop, new_selectables);
+        }
+        builder.endArray();
+      }
+    }
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
+                                               SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    gui::Selected sel;
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      if (req.select_id >= 0
+          && req.select_id < static_cast<int>(state.selectables.size())) {
+        sel = state.selectables[req.select_id];
+      }
+    }
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+    // Collect highlight shapes from the inspected object
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.highlight_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      if (sel) {
+        ShapeCollector collector;
+        sel.highlight(collector);
+        state.highlight_rects = std::move(collector.rects);
+      }
+    }
+
+    resp.type = 0;
+    JsonBuilder builder;
+    builder.beginObject();
+    if (sel) {
+      auto props = sel.getProperties();
+      std::vector<gui::Selected> new_selectables;
+      builder.field("name", sel.getName());
+      builder.field("type", sel.getTypeName());
+      builder.beginArray("properties");
+      for (const auto& prop : props) {
+        serializeProperty(builder, prop, new_selectables);
+      }
+      builder.endArray();
+      odb::Rect bbox;
+      if (sel.getBBox(bbox)) {
+        writeBBox(builder, "bbox", bbox);
+      }
+      {
+        std::lock_guard<std::mutex> lock(state.selectables_mutex);
+        state.selectables = std::move(new_selectables);
+      }
+    } else {
+      builder.field("error", "invalid select_id");
+    }
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
+                                             SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  try {
+    int count = 0;
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+
+      if (req.select_id >= 0) {
+        gui::Selected sel;
+        {
+          std::lock_guard<std::mutex> slock(state.selectables_mutex);
+          if (req.select_id < static_cast<int>(state.selectables.size())) {
+            sel = state.selectables[req.select_id];
+          }
+        }
+        if (sel) {
+          ShapeCollector collector;
+          sel.highlight(collector);
+          if (!collector.rects.empty()) {
+            state.hover_rects = std::move(collector.rects);
+          } else {
+            odb::Rect bbox;
+            if (sel.getBBox(bbox)) {
+              state.hover_rects.push_back(bbox);
+            }
+          }
+          count = static_cast<int>(state.hover_rects.size());
+        }
+      }
+      // select_id < 0 just clears hover_rects (mouseleave)
+    }
+
+    resp.type = 0;
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("ok", 1);
+    builder.field("count", count);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
+                                                    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    if (req.focus_action == "clear") {
+      state.focus_net_ids.clear();
+    } else {
+      odb::dbBlock* block = gen_->getBlock();
+      odb::dbNet* net
+          = block ? block->findNet(req.focus_net_name.c_str()) : nullptr;
+      if (net) {
+        if (req.focus_action == "add") {
+          state.focus_net_ids.insert(net->getId());
+        } else if (req.focus_action == "remove") {
+          state.focus_net_ids.erase(net->getId());
+        }
+      }
+    }
+    const int count = static_cast<int>(state.focus_net_ids.size());
+    const std::string json
+        = R"({"ok":1,"count":)" + std::to_string(count) + "}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// TclHandler
+//------------------------------------------------------------------------------
+
+TclHandler::TclHandler(std::shared_ptr<TclEvaluator> tcl_eval)
+    : tcl_eval_(std::move(tcl_eval))
+{
+}
+
+WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    auto result = tcl_eval_->eval(req.tcl_cmd);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("output", result.output);
+    builder.field("result", result.result);
+    builder.field("is_error", result.is_error);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// TimingHandler
+//------------------------------------------------------------------------------
+
+TimingHandler::TimingHandler(std::shared_ptr<TileGenerator> gen,
+                             std::shared_ptr<TimingReport> timing_report,
+                             std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)),
+      timing_report_(std::move(timing_report)),
+      tcl_eval_(std::move(tcl_eval))
+{
+}
+
+WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto paths = timing_report_->getReport(req.timing_is_setup,
+                                           req.timing_max_paths,
+                                           req.timing_slack_min,
+                                           req.timing_slack_max);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("paths");
+    for (const auto& p : paths) {
+      builder.beginObject();
+      builder.field("start_clk", p.start_clk);
+      builder.field("end_clk", p.end_clk);
+      builder.field("required", p.required);
+      builder.field("arrival", p.arrival);
+      builder.field("slack", p.slack);
+      builder.field("skew", p.skew);
+      builder.field("path_delay", p.path_delay);
+      builder.field("logic_depth", p.logic_depth);
+      builder.field("fanout", p.fanout);
+      builder.field("start_pin", p.start_pin);
+      builder.field("end_pin", p.end_pin);
+      builder.beginArray("data_nodes");
+      for (const auto& n : p.data_nodes) {
+        serializeTimingNode(builder, n);
+      }
+      builder.endArray();
+      builder.beginArray("capture_nodes");
+      for (const auto& n : p.capture_nodes) {
+        serializeTimingNode(builder, n);
+      }
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleTimingHighlight(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::vector<ColoredRect> new_rects;
+    std::vector<FlightLine> new_lines;
+
+    if (req.timing_path_index >= 0) {
+      std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+      auto paths = timing_report_->getReport(req.timing_highlight_setup);
+      if (req.timing_path_index < static_cast<int>(paths.size())) {
+        odb::dbBlock* block = gen_->getBlock();
+        collectTimingPathShapes(
+            block, paths[req.timing_path_index], new_rects, new_lines);
+
+        if (!req.timing_pin_name.empty()) {
+          static const Color kStageColor{.r = 255, .g = 255, .b = 0, .a = 180};
+          auto [iterm, bterm] = resolvePin(block, req.timing_pin_name);
+
+          odb::dbNet* net = nullptr;
+          if (iterm) {
+            net = iterm->getNet();
+          } else if (bterm) {
+            net = bterm->getNet();
+          }
+
+          if (net) {
+            collectNetShapes(net,
+                             iterm,
+                             bterm,
+                             nullptr,
+                             nullptr,
+                             kStageColor,
+                             new_rects,
+                             new_lines);
+          }
+        }
+      }
+    }
+
+    debugPrint(tcl_eval_->logger,
+               utl::WEB,
+               "timing",
+               1,
+               "TIMING_HIGHLIGHT: {} rects, {} lines, pin_name='{}'",
+               new_rects.size(),
+               new_lines.size(),
+               req.timing_pin_name);
+
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.timing_rects = std::move(new_rects);
+      state.timing_lines = std::move(new_lines);
+      state.highlight_rects.clear();
+    }
+
+    const std::string json = "{\"ok\": true}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleSlackHistogram(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto histogram = timing_report_->getSlackHistogram(
+        req.histogram_is_setup, req.histogram_path_group, req.histogram_clock);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("bins");
+    for (const auto& bin : histogram.bins) {
+      builder.beginObject();
+      builder.field("lower", bin.lower);
+      builder.field("upper", bin.upper);
+      builder.field("count", bin.count);
+      builder.field("negative", bin.is_negative);
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.field("unconstrained_count", histogram.unconstrained_count);
+    builder.field("total_endpoints", histogram.total_endpoints);
+    builder.field("time_unit", histogram.time_unit);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto filters = timing_report_->getChartFilters();
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("path_groups");
+    for (const auto& name : filters.path_groups) {
+      builder.value(name);
+    }
+    builder.endArray();
+    builder.beginArray("clocks");
+    for (const auto& name : filters.clocks) {
+      builder.value(name);
+    }
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// ClockTreeHandler
+//------------------------------------------------------------------------------
+
+ClockTreeHandler::ClockTreeHandler(
+    std::shared_ptr<TileGenerator> gen,
+    std::shared_ptr<ClockTreeReport> clock_report,
+    std::shared_ptr<TclEvaluator> tcl_eval)
+    : gen_(std::move(gen)),
+      clock_report_(std::move(clock_report)),
+      tcl_eval_(std::move(tcl_eval))
+{
+}
+
+WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
+    auto clocks = clock_report_->getReport();
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("clocks");
+    for (const auto& clk : clocks) {
+      builder.beginObject();
+      builder.field("name", clk.clock_name);
+      builder.field("min_arrival", clk.min_arrival);
+      builder.field("max_arrival", clk.max_arrival);
+      builder.field("time_unit", clk.time_unit);
+      builder.beginArray("nodes");
+      for (const auto& n : clk.nodes) {
+        builder.beginObject();
+        builder.field("id", n.id);
+        builder.field("parent_id", n.parent_id);
+        builder.field("name", n.name);
+        builder.field("pin_name", n.pin_name);
+        builder.field("type", ClockTreeNode::typeToString(n.type));
+        builder.field("arrival", n.arrival);
+        builder.field("delay", n.delay);
+        builder.field("fanout", n.fanout);
+        builder.field("level", n.level);
+        builder.field("dbu_x", n.dbu_x);
+        builder.field("dbu_y", n.dbu_y);
+        builder.endObject();
+      }
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    state.highlight_rects.clear();
+    state.timing_rects.clear();
+    state.timing_lines.clear();
+
+    if (!req.clock_tree_inst_name.empty()) {
+      odb::dbBlock* block = gen_->getBlock();
+      if (block) {
+        odb::dbInst* inst = block->findInst(req.clock_tree_inst_name.c_str());
+        if (inst) {
+          state.highlight_rects.push_back(inst->getBBox()->getBox());
+        }
+      }
+    }
+
+    const std::string json = "{\"ok\": true}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// TileHandler
+//------------------------------------------------------------------------------
+
+TileHandler::TileHandler(std::shared_ptr<TileGenerator> gen)
+    : gen_(std::move(gen))
+{
+}
+
+WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
+                                          SessionState& state)
+{
+  // Snapshot current highlight state
+  std::vector<odb::Rect> rects;
+  std::vector<ColoredRect> colored;
+  std::vector<FlightLine> lines;
+  {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    rects = state.highlight_rects;
+    rects.insert(
+        rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+    colored = state.timing_rects;
+    lines = state.timing_lines;
+  }
+
+  // Snapshot module colors for _modules layer
+  std::map<uint32_t, Color> mod_colors;
+  {
+    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
+    mod_colors = state.module_colors;
+  }
+  const std::map<uint32_t, Color>* mod_ptr
+      = mod_colors.empty() ? nullptr : &mod_colors;
+
+  // Snapshot focus nets
+  std::set<uint32_t> focus_nets;
+  {
+    std::lock_guard<std::mutex> lock(state.focus_nets_mutex);
+    focus_nets = state.focus_net_ids;
+  }
+  const std::set<uint32_t>* focus_ptr
+      = focus_nets.empty() ? nullptr : &focus_nets;
+
+  return dispatch_request(
+      req, *gen_, rects, colored, lines, mod_ptr, focus_ptr);
+}
+
+WebSocketResponse TileHandler::handleModuleHierarchy(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    HierarchyReport report(block, gen_->getSta());
+    auto result = report.getReport();
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("nodes");
+    for (const auto& n : result.nodes) {
+      builder.beginObject();
+      builder.field("id", n.id);
+      builder.field("parent_id", n.parent_id);
+      builder.field("inst_name", n.inst_name);
+      builder.field("module_name", n.module_name);
+      builder.field("insts", n.insts);
+      builder.field("macros", n.macros);
+      builder.field("modules", n.modules);
+      builder.field("area", n.area);
+      builder.field("local_insts", n.local_insts);
+      builder.field("local_macros", n.local_macros);
+      builder.field("local_modules", n.local_modules);
+      if (n.node_kind != HierarchyNodeKind::MODULE) {
+        builder.field("node_kind", static_cast<int>(n.node_kind));
+      }
+      if (n.node_kind == HierarchyNodeKind::MODULE) {
+        builder.field("odb_id", static_cast<int>(n.odb_id));
+      }
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse TileHandler::handleSetModuleColors(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  // Parse compact format: "id:r,g,b,a;id:r,g,b,a;..."
+  std::map<uint32_t, Color> colors;
+  const std::string data = extract_string(req.vis.raw_json_, "colors");
+  if (!data.empty()) {
+    size_t pos = 0;
+    while (pos < data.size()) {
+      size_t colon = data.find(':', pos);
+      if (colon == std::string::npos) {
+        break;
+      }
+      const uint32_t mod_id
+          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+      pos = colon + 1;
+
+      auto next_num = [&]() -> int {
+        size_t end = data.find_first_of(",;", pos);
+        if (end == std::string::npos) {
+          end = data.size();
+        }
+        const int val = std::stoi(data.substr(pos, end - pos));
+        pos = end + 1;
+        return val;
+      };
+
+      const uint8_t r = static_cast<uint8_t>(next_num());
+      const uint8_t g = static_cast<uint8_t>(next_num());
+      const uint8_t b = static_cast<uint8_t>(next_num());
+      const uint8_t a = static_cast<uint8_t>(next_num());
+      colors[mod_id] = Color{.r = r, .g = g, .b = b, .a = a};
+    }
+  }
+
+  const int count = static_cast<int>(colors.size());
+  {
+    std::lock_guard<std::mutex> lock(state.module_colors_mutex);
+    state.module_colors = std::move(colors);
+  }
+
+  const std::string ok = R"({"ok":1,"count":)" + std::to_string(count) + "}";
+  resp.payload.assign(ok.begin(), ok.end());
+  return resp;
+}
+
+}  // namespace web

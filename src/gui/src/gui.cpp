@@ -19,6 +19,8 @@
 #include <typeindex>
 #include <utility>
 #include <variant>
+
+#include "gui/descriptor_registry.h"
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QRegularExpression>
 #else
@@ -58,6 +60,89 @@ extern int cmd_argc;
 extern char** cmd_argv;
 
 namespace gui {
+
+// Default Options implementation for Painters without a real Options
+// (e.g. the web viewer's ShapeCollector).  Returns sensible defaults:
+// everything visible, no exclusive modes.
+class DefaultOptions : public Options
+{
+ public:
+  QColor background() override { return Qt::black; }
+  QColor color(const odb::dbTechLayer*) override { return Qt::white; }
+  Qt::BrushStyle pattern(const odb::dbTechLayer*) override
+  {
+    return Qt::SolidPattern;
+  }
+  QColor placementBlockageColor() override { return Qt::darkGray; }
+  Qt::BrushStyle placementBlockagePattern() override
+  {
+    return Qt::SolidPattern;
+  }
+  QColor regionColor() override { return Qt::darkGray; }
+  Qt::BrushStyle regionPattern() override { return Qt::SolidPattern; }
+  QColor instanceNameColor() override { return Qt::white; }
+  QFont instanceNameFont() override { return {}; }
+  QColor itermLabelColor() override { return Qt::white; }
+  QFont itermLabelFont() override { return {}; }
+  QColor siteColor(odb::dbSite*) override { return Qt::darkGray; }
+  bool isVisible(const odb::dbTechLayer*) override { return true; }
+  bool isSelectable(const odb::dbTechLayer*) override { return true; }
+  bool isNetVisible(odb::dbNet*) override { return true; }
+  bool isNetSelectable(odb::dbNet*) override { return true; }
+  bool isInstanceVisible(odb::dbInst*) override { return true; }
+  bool isInstanceSelectable(odb::dbInst*) override { return true; }
+  bool areInstanceNamesVisible() override { return true; }
+  bool areInstancePinsVisible() override { return true; }
+  bool areInstancePinsSelectable() override { return true; }
+  bool areInstancePinNamesVisible() override { return true; }
+  bool areInstanceBlockagesVisible() override { return true; }
+  bool areBlockagesVisible() override { return true; }
+  bool areBlockagesSelectable() override { return true; }
+  bool areObstructionsVisible() override { return true; }
+  bool areObstructionsSelectable() override { return true; }
+  bool areSitesVisible() override { return false; }
+  bool areSitesSelectable() override { return false; }
+  bool isSiteSelectable(odb::dbSite*) override { return false; }
+  bool isSiteVisible(odb::dbSite*) override { return false; }
+  bool arePrefTracksVisible() override { return false; }
+  bool areNonPrefTracksVisible() override { return false; }
+  bool areIOPinsVisible() const override { return true; }
+  bool areIOPinsSelectable() const override { return true; }
+  bool areIOPinNamesVisible() const override { return true; }
+  QFont ioPinMarkersFont() const override { return {}; }
+  bool areRoutingSegmentsVisible() const override { return true; }
+  bool areRoutingViasVisible() const override { return true; }
+  bool areSpecialRoutingSegmentsVisible() const override { return true; }
+  bool areSpecialRoutingViasVisible() const override { return true; }
+  bool areFillsVisible() const override { return true; }
+  QColor rulerColor() override { return Qt::cyan; }
+  QFont rulerFont() override { return {}; }
+  bool areRulersVisible() override { return true; }
+  bool areRulersSelectable() override { return true; }
+  QFont labelFont() override { return {}; }
+  bool areLabelsVisible() override { return true; }
+  bool areLabelsSelectable() override { return true; }
+  bool isDetailedVisibility() override { return false; }
+  bool areSelectedVisible() override { return true; }
+  bool isScaleBarVisible() const override { return false; }
+  bool areAccessPointsVisible() const override { return false; }
+  bool areRegionsVisible() const override { return true; }
+  bool areRegionsSelectable() const override { return true; }
+  bool isManufacturingGridVisible() const override { return false; }
+  bool isModuleView() const override { return false; }
+  bool isGCellGridVisible() const override { return false; }
+  bool isFlywireHighlightOnly() const override { return false; }
+  bool areFocusedNetsGuidesVisible() const override { return false; }
+};
+
+Options* Painter::getOptions()
+{
+  if (!options_) {
+    static DefaultOptions defaults;
+    return &defaults;
+  }
+  return options_;
+}
 
 static QApplication* application = nullptr;
 static void message_handler(QtMsgType type,
@@ -125,11 +210,6 @@ static odb::dbBlock* getBlock(odb::dbDatabase* db)
 
 // This provides the link for Gui::redraw to the widget
 static gui::MainWindow* main_window = nullptr;
-
-// Used by toString to convert dbu to microns (and back), will be set in
-// main_window
-DBUToString Descriptor::Property::convert_dbu;
-StringToDBU Descriptor::Property::convert_string;
 
 // Heatmap / Spectrum colors
 // https://ai.googleblog.com/2019/08/turbo-improved-rainbow-colormap-for.html
@@ -274,20 +354,7 @@ void Gui::pause(int timeout)
 
 Selected Gui::makeSelected(const std::any& object)
 {
-  if (!object.has_value()) {
-    return Selected();
-  }
-
-  auto it = descriptors_.find(object.type());
-  if (it != descriptors_.end()) {
-    return it->second->makeSelected(object);
-  }
-  char* type_name
-      = abi::__cxa_demangle(object.type().name(), nullptr, nullptr, nullptr);
-  logger_->warn(
-      utl::GUI, 33, "No descriptor is registered for type {}.", type_name);
-  free(type_name);
-  return Selected();  // FIXME: null descriptor
+  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
@@ -504,10 +571,14 @@ int Gui::select(const std::string& type,
       QRegExp::WildcardUnix);
 #endif
   const bool is_simple = isSimpleStringPattern(name_filter);
-  for (auto& [object_type, descriptor] : descriptors_) {
-    if (descriptor->getTypeName() != type) {
-      continue;
+  bool found = false;
+  int result = 0;
+  auto* registry = DescriptorRegistry::instance();
+  registry->forEachDescriptor([&](const Descriptor* descriptor) {
+    if (found || descriptor->getTypeName() != type) {
+      return;
     }
+    found = true;
     SelectionSet selected_set;
     descriptor->visitAllObjects([&](const Selected& sel) {
       if (!name_filter.empty()) {
@@ -551,11 +622,13 @@ int Gui::select(const std::string& type,
       main_window->addHighlighted(selected_set, highlight_group);
     }
 
-    // already found the descriptor, so return to exit loop
-    return selected_set.size();
-  }
+    result = selected_set.size();
+  });
 
-  logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+  if (!found) {
+    logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
+  }
+  return result;
 }
 
 bool Gui::filterSelectionProperties(const Descriptor::Properties& properties,
@@ -1373,23 +1446,17 @@ void Gui::fit()
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
-  descriptors_[type] = std::unique_ptr<const Descriptor>(descriptor);
+  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
 }
 
 const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 {
-  auto find_descriptor = descriptors_.find(type);
-  if (find_descriptor == descriptors_.end()) {
-    logger_->error(
-        utl::GUI, 53, "Unable to find descriptor for: {}", type.name());
-  }
-
-  return find_descriptor->second.get();
+  return DescriptorRegistry::instance()->getDescriptor(type);
 }
 
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
-  descriptors_.erase(type);
+  DescriptorRegistry::instance()->unregisterDescriptor(type);
 }
 
 const Selected& Gui::getInspectorSelection()
@@ -1510,6 +1577,10 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
   db_ = db;
   setLogger(logger);
 
+  auto* registry = DescriptorRegistry::instance();
+  registry->setLogger(logger);
+  registry->initDescriptors(db, sta);
+
   pin_density_heat_map_ = std::make_unique<PinDensityDataSource>(logger);
   pin_density_heat_map_->registerHeatMap();
 
@@ -1545,26 +1616,6 @@ void Gui::selectChart(const std::string& name)
 void Gui::updateTimingReport()
 {
   main_window->getTimingWidget()->populatePaths();
-}
-
-// See class header for documentation.
-std::size_t Gui::TypeInfoHasher::operator()(const std::type_index& x) const
-{
-#ifdef __GLIBCXX__
-  return std::hash<std::type_index>{}(x);
-#else
-  return std::hash<std::string_view>{}(std::string_view(x.name()));
-#endif
-}
-// See class header for documentation.
-bool Gui::TypeInfoComparator::operator()(const std::type_index& a,
-                                         const std::type_index& b) const
-{
-#ifdef __GLIBCXX__
-  return a == b;
-#else
-  return strcmp(a.name(), b.name()) == 0;
-#endif
 }
 
 int Gui::gifStart(const std::string& filename)
@@ -1905,89 +1956,6 @@ int startGui(int& argc,
   }
 
   return exit_code;
-}
-
-void Selected::highlight(Painter& painter,
-                         const Painter::Color& pen,
-                         int pen_width,
-                         const Painter::Color& brush,
-                         const Painter::Brush& brush_style) const
-{
-  painter.setPen(pen, true, pen_width);
-  painter.setBrush(brush, brush_style);
-
-  descriptor_->highlight(object_, painter);
-}
-
-Descriptor::Properties Selected::getProperties() const
-{
-  Descriptor::Properties props = descriptor_->getProperties(object_);
-  props.insert(props.begin(), {"Name", getName()});
-  props.insert(props.begin(), {"Type", getTypeName()});
-  odb::Rect bbox;
-  if (getBBox(bbox)) {
-    props.push_back({"BBox", bbox});
-    // convenience; the user may want to know the dimensions
-    props.push_back(
-        {"BBox Width, Height",
-         std::string("(") + Descriptor::Property::convert_dbu(bbox.dx(), false)
-             + ", " + Descriptor::Property::convert_dbu(bbox.dy(), false)
-             + ")"});
-  }
-
-  return props;
-}
-
-Descriptor::Actions Selected::getActions() const
-{
-  auto actions = descriptor_->getActions(object_);
-
-  odb::Rect bbox;
-  if (getBBox(bbox)) {
-    actions.push_back({"Zoom to", [this, bbox]() -> Selected {
-                         auto gui = Gui::get();
-                         gui->zoomTo(bbox);
-                         return *this;
-                       }});
-  }
-
-  return actions;
-}
-
-std::string Descriptor::Property::toString(const std::any& value)
-{
-  if (auto v = std::any_cast<Selected>(&value)) {
-    if (*v) {
-      return v->getName();
-    }
-  } else if (auto v = std::any_cast<const char*>(&value)) {
-    return *v;
-  } else if (auto v = std::any_cast<const std::string>(&value)) {
-    return *v;
-  } else if (auto v = std::any_cast<int>(&value)) {
-    return std::to_string(*v);
-  } else if (auto v = std::any_cast<unsigned int>(&value)) {
-    return std::to_string(*v);
-  } else if (auto v = std::any_cast<double>(&value)) {
-    return QString::number(*v).toStdString();
-  } else if (auto v = std::any_cast<float>(&value)) {
-    return QString::number(*v).toStdString();
-  } else if (auto v = std::any_cast<bool>(&value)) {
-    return *v ? "True" : "False";
-  } else if (auto v = std::any_cast<odb::Rect>(&value)) {
-    std::string text = "(";
-    text += convert_dbu(v->xMin(), false) + ", ";
-    text += convert_dbu(v->yMin(), false) + "), (";
-    text += convert_dbu(v->xMax(), false) + ", ";
-    text += convert_dbu(v->yMax(), false) + ")";
-    return text;
-  } else if (auto v = std::any_cast<odb::Point>(&value)) {
-    std::string text = fmt::format(
-        "({},{})", convert_dbu(v->x(), false), convert_dbu(v->y(), false));
-    return text;
-  }
-
-  return "<unknown>";
 }
 
 // Tcl files encoded into strings.
