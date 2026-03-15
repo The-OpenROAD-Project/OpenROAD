@@ -11,6 +11,8 @@ package(
     features = ["layering_check"],
 )
 
+exports_files(["README.md"])
+
 cc_library(
     name = "ppl",
     srcs = [

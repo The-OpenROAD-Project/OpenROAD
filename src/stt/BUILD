@@ -11,6 +11,8 @@ package(
     features = ["layering_check"],
 )
 
+exports_files(["README.md"])
+
 genrule(
     name = "post9",
     srcs = [

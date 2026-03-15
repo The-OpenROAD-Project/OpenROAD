@@ -15,6 +15,10 @@
 
 #include "ord/Version.hh"
 #include "tcl.h"
+#ifdef BAZEL_CURRENT_REPOSITORY
+#include "rules_cc/cc/runfiles/runfiles.h"
+using rules_cc::cc::runfiles::Runfiles;
+#endif
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -716,6 +720,21 @@ std::string OpenRoad::getDocsPath() const
     // remove build
     return path.parent_path().parent_path() / "docs";
   }
+
+  // Check for Bazel runfiles layout using the runfiles library
+#ifdef BAZEL_CURRENT_REPOSITORY
+  {
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(
+        Runfiles::Create(exe, BAZEL_CURRENT_REPOSITORY, &error));
+    if (runfiles) {
+      const std::string docs = runfiles->Rlocation("openroad/docs");
+      if (!docs.empty() && std::filesystem::exists(docs)) {
+        return docs;
+      }
+    }
+  }
+#endif
 
   // remove bin
   return path.parent_path() / "share" / "openroad" / "man";
