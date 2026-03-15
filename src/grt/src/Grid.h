@@ -40,6 +40,7 @@ class Grid
   int getYMax() const { return die_area_.yMax(); }
 
   int getTileSize() const { return tile_size_; }
+  void setTileSize(int tile_size) { tile_size_ = tile_size; }
 
   int getXGrids() const { return x_grids_; }
   int getYGrids() const { return y_grids_; }
