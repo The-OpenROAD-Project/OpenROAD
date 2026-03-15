@@ -18,6 +18,7 @@
 
 namespace odb {
 class dbBlock;
+class dbChip;
 class Rect;
 }  // namespace odb
 
@@ -73,7 +74,7 @@ class HeatMapDataSource
 
   void registerHeatMap();
 
-  virtual void setBlock(odb::dbBlock* block) { block_ = block; }
+  virtual void setChip(odb::dbChip* chip) { chip_ = chip; }
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
 
   HeatMapRenderer* getRenderer() { return renderer_.get(); }
@@ -139,7 +140,11 @@ class HeatMapDataSource
   virtual double getGridSizeMaximumValue() const { return 100.0; }
   // The default implementation uses the block's bounds
   virtual odb::Rect getBounds() const;
-  odb::dbBlock* getBlock() const { return block_; }
+  odb::dbChip* getChip() const { return chip_; }
+  odb::dbBlock* getBlock() const
+  {
+    return chip_ != nullptr ? chip_->getBlock() : nullptr;
+  }
 
   // map controls
   void update() { destroyMap(); }
@@ -216,7 +221,7 @@ class HeatMapDataSource
   bool colors_correct_;
   bool issue_redraw_;
 
-  odb::dbBlock* block_;
+  odb::dbChip* chip_;
   utl::Logger* logger_;
   double grid_x_size_;
   double grid_y_size_;
