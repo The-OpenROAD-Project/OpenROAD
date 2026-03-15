@@ -9,12 +9,13 @@ swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
          SCRIPTS   src/Utl.tcl
+                   scripts/manual_place.tcl
          SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          utl_py
-           NAMESPACE     utl
+           NAMESPACE      utl
            LANGUAGE      python
            I_FILE        src/Logger-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/include/utl
@@ -100,8 +101,7 @@ messages(
 
 ############################################################
 # Unit testing
-############################################################\
+############################################################
 if(ENABLE_TESTS)
   add_subdirectory(test)
 endif()
-
