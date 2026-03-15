@@ -16,6 +16,11 @@ class PlacementDensityDataSource : public HeatMapDataSource,
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
 
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
+
   void onShow() override;
   void onHide() override;
 

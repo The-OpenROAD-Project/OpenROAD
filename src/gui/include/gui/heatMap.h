@@ -71,6 +71,21 @@ class HeatMapDataSource
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource();
 
+  bool useSelectedOnly() const { return use_selected_only_; }
+  void setUseSelectedOnly(bool value)
+  {
+    if (use_selected_only_ != value) {
+      use_selected_only_ = value;
+      destroyMap();
+      redraw();
+    }
+  }
+
+  // Returns the label for the "use selected only" checkbox in the setup dialog.
+  // An empty string means this heatmap does not support selection filtering
+  // and the checkbox will not be shown.
+  virtual std::string getSelectionFilterLabel() const { return ""; }
+
   void registerHeatMap();
 
   virtual void setBlock(odb::dbBlock* block) { block_ = block; }
@@ -184,8 +199,7 @@ class HeatMapDataSource
                               double new_data,
                               double data_area,
                               double intersection_area,
-                              double rect_area)
-      = 0;
+                              double rect_area) = 0;
   virtual void correctMapScale(Map& map) {}
   void updateMapColors();
   void assignMapColors();
@@ -204,6 +218,10 @@ class HeatMapDataSource
   }
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
+
+  // Returns the set of selected dbInst* objects when use_selected_only_ is
+  // enabled, or an empty set (meaning no filtering) when it is disabled.
+  std::set<odb::dbInst*> getSelectedInsts() const;
 
  private:
   const std::string name_;
@@ -229,6 +247,7 @@ class HeatMapDataSource
   bool reverse_log_;
   bool show_numbers_;
   bool show_legend_;
+  bool use_selected_only_;
 
   Map map_;
   std::vector<int> map_x_grid_;
@@ -333,6 +352,11 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   PowerDensityDataSource(sta::dbSta* sta, utl::Logger* logger);
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
+
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
 
  protected:
   bool populateMap() override;
