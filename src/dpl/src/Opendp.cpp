@@ -364,6 +364,9 @@ void Opendp::setInitialGridCells()
   std::unordered_set<Node*> conflicted;
   const DbuX site_width = grid_->getSiteWidth();
 
+  const bool old_disallow_one_site_gaps = disallow_one_site_gaps_;
+  disallow_one_site_gaps_ = false;
+
   // Check which cells are missaligned with rows
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
@@ -371,13 +374,16 @@ void Opendp::setInitialGridCells()
       const GridY y = grid_->gridSnapDownY(node.get());
       if (node->getLeft() != gridToDbu(x, site_width)
           || node->getBottom() != grid_->gridYToDbu(y)
-          || !canBePlaced(node.get(), x, y)) {
+          || !canBePlaced(node.get(), x, y)
+          || grid_->getSiteOrientation(x, y, node->getSite())
+                 != node->getOrient()) {
         conflicted.insert(node.get());
       }
     }
   }
+  disallow_one_site_gaps_ = old_disallow_one_site_gaps;
 
-  // Check which cells are overlapping with other cells
+  // Check which cells are overlapping with other cells (footprints and padding)
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
       if (conflicted.contains(node.get())) {
@@ -403,28 +409,65 @@ void Opendp::setInitialGridCells()
     }
   }
 
+  // Clear non-fixed footprints from the grid
   for (GridY y{0}; y < grid_->getRowCount(); y++) {
     for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
       Pixel& pixel = grid_->pixel(y, x);
       if (pixel.cell != nullptr && !pixel.cell->isFixed()) {
         pixel.cell = nullptr;
+        pixel.util = 0.0;
+      }
+    }
+  }
+
+  if (drc_engine_) {
+    for (auto& node : network_->getNodes()) {
+      if (node->getType() == Node::CELL && !node->isFixed()
+          && node->isPlaced()) {
+        if (conflicted.contains(node.get())) {
+          continue;
+        }
+
+        if (!drc_engine_->checkDRC(node.get(),
+                                   grid_->gridX(node.get()),
+                                   grid_->gridSnapDownY(node.get()),
+                                   node->getOrient())) {
+          conflicted.insert(node.get());
+        } else {
+          grid_->visitCellPixels(*node, false, [&](Pixel* pixel, bool padded) {
+            pixel->cell = node.get();
+            pixel->util = 1.0;
+          });
+          grid_->paintCellPadding(node.get());
+        }
+      }
+    }
+  }
+
+  // synchronized with the conflicted set.
+  for (GridY y{0}; y < grid_->getRowCount(); y++) {
+    for (GridX x{0}; x < grid_->getRowSiteCount(); x++) {
+      Pixel& pixel = grid_->pixel(y, x);
+      if (pixel.cell != nullptr && !pixel.cell->isFixed()) {
+        pixel.cell = nullptr;
+        pixel.util = 0.0;
+      }
+      if (pixel.padding_reserved_by != nullptr
+          && !pixel.padding_reserved_by->isFixed()) {
+        pixel.padding_reserved_by = nullptr;
       }
     }
   }
 
   for (auto& node : network_->getNodes()) {
     if (node->getType() == Node::CELL && !node->isFixed() && node->isPlaced()) {
-      if (conflicted.find(node.get()) == conflicted.end()) {
-        // This cell is perfectly legal and has no conflicts.
-        grid_->visitCellPixels(
-            *node, false, [&](Pixel* pixel, [[maybe_unused]] bool padded) {
-              pixel->cell = node.get();
-              pixel->util = 1.0;
-            });
+      if (!conflicted.contains(node.get())) {
+        grid_->visitCellPixels(*node, false, [&](Pixel* pixel, bool padded) {
+          pixel->cell = node.get();
+          pixel->util = 1.0;
+        });
         grid_->paintCellPadding(node.get());
       } else {
-        // This cell is either illegal or was part of an overlap conflict.
-        // Unplace it.
         unplaceCell(node.get());
       }
     }
