@@ -64,6 +64,9 @@ build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
 build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
 
+# Opt-in config to surface warnings from the vendored ABC library.
+build:abc_warnings --//bazel/build_settings:abc_enable_warnings=true
+
 ##### Platform-specific configs (auto-selected) #############
 # --enable_platform_specific_config makes bazel automatically apply
 # build:macos on macOS, build:linux on Linux, etc.
