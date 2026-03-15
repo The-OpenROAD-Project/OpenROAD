@@ -16,6 +16,7 @@ add_library(rmp_lib
     Restructure.cpp
     annealing_strategy.cpp
     delay_optimization_strategy.cpp
+    extended_technology_mapping.cpp
     genetic_strategy.cpp
     gia.cpp
     slack_tuning_strategy.cpp
@@ -57,6 +58,7 @@ target_link_libraries(rmp_lib
   PUBLIC
     odb
     dbSta_lib
+    mockturtle
     OpenSTA
     rsz_lib
     utl_lib
