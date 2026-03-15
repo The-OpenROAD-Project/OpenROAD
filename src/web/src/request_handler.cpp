@@ -665,6 +665,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
   resp.id = req.id;
   try {
     int count = 0;
+    std::vector<odb::Rect> hover_rects;
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
       state.hover_rects.clear();
@@ -689,6 +690,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
             }
           }
           count = static_cast<int>(state.hover_rects.size());
+          hover_rects = state.hover_rects;
         }
       }
       // select_id < 0 just clears hover_rects (mouseleave)
@@ -699,6 +701,16 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     builder.beginObject();
     builder.field("ok", 1);
     builder.field("count", count);
+    builder.beginArray("rects");
+    for (const auto& rect : hover_rects) {
+      builder.beginArray();
+      builder.value(rect.xMin());
+      builder.value(rect.yMin());
+      builder.value(rect.xMax());
+      builder.value(rect.yMax());
+      builder.endArray();
+    }
+    builder.endArray();
     builder.endObject();
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());

@@ -47,6 +47,8 @@ const app = {
     inspectorEl: null,
     tclOutputEl: null,
     highlightRect: null,
+    hoverHighlightLayer: null,
+    hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
@@ -253,6 +255,9 @@ function createLayoutViewer(container) {
         fadeAnimation: false,
         attributionControl: false,
     });
+    const hoverPane = app.map.createPane(app.hoverHighlightPane);
+    hoverPane.style.zIndex = '650';
+    hoverPane.style.pointerEvents = 'none';
 
     new ResizeObserver(() => {
         app.map.invalidateSize({ animate: false });
@@ -556,11 +561,6 @@ app.websocketManager.readyPromise.then(async () => {
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
-                        L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(
-                                `<strong>${inst.name}</strong><br>${inst.master}<br><small style="color:#888">(${dbu_x}, ${dbu_y})</small>`)
-                            .openOn(app.map);
                         updateInspector(data);
                         focusComponent('Inspector');
                         // Highlight selected instance bbox
@@ -569,11 +569,6 @@ app.websocketManager.readyPromise.then(async () => {
                                           inst.bbox[2], inst.bbox[3]);
                         }
                     } else {
-                        L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(
-                                `<em>No instance at (${dbu_x}, ${dbu_y})</em>`)
-                            .openOn(app.map);
                         updateInspector(null);
                         if (app.highlightRect) {
                             app.map.removeLayer(app.highlightRect);

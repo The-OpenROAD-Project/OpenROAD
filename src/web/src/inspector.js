@@ -34,6 +34,7 @@ const CLEAR_FOCUS_SVG =
 export function createInspectorPanel(app, redrawAllLayers) {
     let lastInspectData = null;
     let pendingInspectId = null;
+    const kMinHoverBoxPixels = 10;
 
     function showLoading() {
         if (!app.inspectorEl) return;
@@ -74,11 +75,78 @@ export function createInspectorPanel(app, redrawAllLayers) {
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
+    function clearClientHoverHighlight() {
+        if (app.hoverHighlightLayer) {
+            app.map.removeLayer(app.hoverHighlightLayer);
+            app.hoverHighlightLayer = null;
+        }
+    }
+
     function clearHoverHighlight() {
-        // Send select_id=-1 to clear server-side hover rects, then redraw.
+        clearClientHoverHighlight();
         app.websocketManager.request({ type: 'hover', select_id: -1 })
-            .then(() => redrawAllLayers())
+            .then(() => {})
             .catch(() => {});
+    }
+
+    function boundsWithMinimumScreenSize(x1, y1, x2, y2) {
+        const baseBounds = L.latLngBounds(
+            dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY)
+        );
+        if (!app.map) {
+            return baseBounds;
+        }
+
+        const southWest = baseBounds.getSouthWest();
+        const northEast = baseBounds.getNorthEast();
+        const swPoint = app.map.latLngToContainerPoint(southWest);
+        const nePoint = app.map.latLngToContainerPoint(northEast);
+
+        const minX = Math.min(swPoint.x, nePoint.x);
+        const maxX = Math.max(swPoint.x, nePoint.x);
+        const minY = Math.min(swPoint.y, nePoint.y);
+        const maxY = Math.max(swPoint.y, nePoint.y);
+
+        let expandedMinX = minX;
+        let expandedMaxX = maxX;
+        let expandedMinY = minY;
+        let expandedMaxY = maxY;
+
+        if ((maxX - minX) < kMinHoverBoxPixels) {
+            const pad = (kMinHoverBoxPixels - (maxX - minX)) / 2;
+            expandedMinX -= pad;
+            expandedMaxX += pad;
+        }
+        if ((maxY - minY) < kMinHoverBoxPixels) {
+            const pad = (kMinHoverBoxPixels - (maxY - minY)) / 2;
+            expandedMinY -= pad;
+            expandedMaxY += pad;
+        }
+
+        const topLeft = app.map.containerPointToLatLng(L.point(expandedMinX, expandedMinY));
+        const bottomRight = app.map.containerPointToLatLng(L.point(expandedMaxX, expandedMaxY));
+        return L.latLngBounds(topLeft, bottomRight);
+    }
+
+    function renderHoverRects(rects) {
+        clearClientHoverHighlight();
+        if (!app.map || !app.designScale || !rects || rects.length === 0) {
+            return;
+        }
+
+        app.hoverHighlightLayer = L.layerGroup(
+            rects.map(([x1, y1, x2, y2]) => L.rectangle(boundsWithMinimumScreenSize(x1, y1, x2, y2), {
+                color: '#ffe85c',
+                weight: 3,
+                fill: true,
+                fillColor: '#fff27a',
+                fillOpacity: 0.14,
+                opacity: 1,
+                interactive: false,
+                className: 'hover-highlight',
+                pane: app.hoverHighlightPane,
+            }))
+        ).addTo(app.map);
     }
 
     function makeClickable(el, selectId) {
@@ -88,14 +156,16 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
-            // Hover highlights are rendered server-side in tiles to avoid
-            // creating thousands of SVG overlays for large objects.
             app.websocketManager.request({ type: 'hover', select_id: selectId })
-                .then(() => redrawAllLayers())
+                .then(data => {
+                    renderHoverRects(data.rects || []);
+                    redrawAllLayers();
+                })
                 .catch(() => {});
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
+            redrawAllLayers();
         });
     }
 
@@ -122,8 +192,8 @@ export function createInspectorPanel(app, redrawAllLayers) {
                 }
                 updateInspector(data);
 
-                // Show popup and highlight on the map
                 app.map.closePopup();
+                clearClientHoverHighlight();
                 if (app.highlightRect) {
                     app.map.removeLayer(app.highlightRect);
                     app.highlightRect = null;
@@ -135,15 +205,6 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     if (data.type !== 'Inst') {
                         highlightBBox(x1, y1, x2, y2);
                     }
-                    // Show a popup at the center of the bbox
-                    const center = dbuToLatLng((x1 + x2) / 2, (y1 + y2) / 2,
-                                               app.designScale, app.designMaxDXDY);
-                    L.popup()
-                        .setLatLng(center)
-                        .setContent(
-                            `<strong>${data.name}</strong><br>` +
-                            `<small style="color:#888">${data.type}</small>`)
-                        .openOn(app.map);
                 }
                 // Redraw tiles to update instance highlight
                 redrawAllLayers();
@@ -221,8 +282,12 @@ export function createInspectorPanel(app, redrawAllLayers) {
         row.appendChild(nameEl);
         row.appendChild(valEl);
 
-        // Make name/value clickable if they have a select_id
-        if (prop.name_select_id !== undefined) {
+        // For single-target rows like SelectionSet entries, make the whole row
+        // interactive so hover is easy to hit.
+        if (prop.name_select_id !== undefined && prop.value_select_id === undefined) {
+            makeClickable(row, prop.name_select_id);
+            nameEl.classList.add('inspector-link');
+        } else if (prop.name_select_id !== undefined) {
             makeClickable(nameEl, prop.name_select_id);
         }
         if (prop.value_select_id !== undefined) {
