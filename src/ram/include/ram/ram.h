@@ -90,6 +90,7 @@ class RamGen
   void setBehavioralVerilogFilename(const std::string& filename);
   void writeBehavioralVerilog(const std::string& filename,
                               int slices_per_word,
+                              int mask_size,
                               int word_count,
                               int read_ports);
 
