@@ -3,6 +3,7 @@
 
 #include "verilogWriter.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -39,7 +40,7 @@ void VerilogWriter::writeChiplet(const std::string& filename, odb::dbChip* chip)
     for (uint32_t i = 0; i < num_bumps; i++) {
       std::vector<dbChipInst*> path;
       dbChipBumpInst* bump_inst = net->getBumpInst(i, path);
-      if (bump_inst == nullptr || path.empty()) {
+      if (bump_inst == nullptr || path.size() != 1) {
         continue;
       }
       // Only handle direct children (path length 1) — "single bump
@@ -57,21 +58,47 @@ void VerilogWriter::writeChiplet(const std::string& filename, odb::dbChip* chip)
     }
   }
 
+  // Sort each instance's port connections alphabetically by port name.
+  for (std::pair<dbChipInst* const,
+                 std::vector<std::pair<std::string, std::string>>>& entry :
+       inst_connections) {
+    std::ranges::sort(entry.second);
+  }
+
   // Write module header.
   fmt::print(verilog_file, "module {} ();\n", chip->getName());
 
-  // Write wire declarations for each net.
+  // Collect and sort net names alphabetically for deterministic wire order.
+  std::vector<std::string> net_names;
   for (dbChipNet* net : chip->getChipNets()) {
-    fmt::print(verilog_file, "  wire {};\n", net->getName());
+    net_names.push_back(net->getName());
+  }
+  std::ranges::sort(net_names);
+
+  // Write wire declarations in sorted order.
+  for (const std::string& name : net_names) {
+    fmt::print(verilog_file, "  wire {};\n", name);
   }
 
-  // Write instance declarations.
+  // Collect and sort instances alphabetically by instance name.
+  std::vector<dbChipInst*> chip_insts;
   for (dbChipInst* chip_inst : chip->getChipInsts()) {
+    chip_insts.push_back(chip_inst);
+  }
+  std::ranges::sort(chip_insts, [](dbChipInst* a, dbChipInst* b) {
+    return a->getName() < b->getName();
+  });
+
+  // Write instance declarations in sorted order.
+  for (dbChipInst* chip_inst : chip_insts) {
     fmt::print(verilog_file,
                "  {} {} (\n",
                chip_inst->getMasterChip()->getName(),
                chip_inst->getName());
-    const auto it = inst_connections.find(chip_inst);
+    const std::map<
+        dbChipInst*,
+        std::vector<std::pair<std::string, std::string>>>::const_iterator it
+        = inst_connections.find(chip_inst);
     if (it != inst_connections.end()) {
       const std::vector<std::pair<std::string, std::string>>& conns
           = it->second;

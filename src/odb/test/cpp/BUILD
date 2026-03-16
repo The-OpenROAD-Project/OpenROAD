@@ -218,6 +218,7 @@ cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",
+        "Test3DBloxVerilogWriter.cpp",
     ],
     data = [
         "//src/odb/test:regression_resources",

@@ -1,12 +1,12 @@
 module TopDesign ();
-  wire data;
   wire clk;
-  SoC soc_inst_duplicate (
-    .data(data),
-    .clk(clk)
-  );
+  wire data;
   SoC soc_inst (
-    .data(data),
-    .clk(clk)
+    .clk(clk),
+    .data(data)
+  );
+  SoC soc_inst_duplicate (
+    .clk(clk),
+    .data(data)
   );
 endmodule
