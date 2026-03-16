@@ -341,7 +341,8 @@ TEST_F(TileGeneratorTest, SemiTransparentOverlayUsesStraightAlpha)
   makeTileGen();
 
   const odb::Rect rect(0, 0, 100000, 100000);
-  auto png = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0, {}, {rect}, {});
+  auto png
+      = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0, {}, {rect}, {});
 
   unsigned w = 0;
   unsigned h = 0;
