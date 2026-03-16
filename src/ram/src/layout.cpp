@@ -97,7 +97,7 @@ void Layout::layoutInit()
   for (int i = 0; i < cells_.size(); ++i) {
     if (cells_[i]) {
       // set orientation first before initializing
-      // need something to flip entire track if horizontal
+      // need something to flip entire row if horizontal
       if (i % 2 == 1) {
         cells_[i]->setOrient(odb::dbOrientType::MX);
       }
@@ -145,10 +145,10 @@ Grid::Grid(odb::Orientation2D orientation) : orientation_(orientation)
 {
 }
 
-Grid::Grid(odb::Orientation2D orientation, int tracks)
+Grid::Grid(odb::Orientation2D orientation, int num_layouts)
     : orientation_(orientation)
 {
-  for (int i = 0; i < tracks; ++i) {
+  for (int i = 0; i < num_layouts; ++i) {
     layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
   }
 }
@@ -165,13 +165,10 @@ void Grid::addLayout(std::unique_ptr<Layout> layout)
 
 bool Grid::insertLayout(std::unique_ptr<Layout> layout, int idx)
 {
-  if (idx == layouts_.size()) {
-    layouts_.push_back(std::move(layout));
-  } else if (idx < layouts_.size()) {
-    layouts_.insert(layouts_.begin() + idx, std::move(layout));
-  } else if (idx > layouts_.size()) {
+  if (idx > static_cast<int>(layouts_.size())) {
     return false;
   }
+  layouts_.insert(layouts_.begin() + idx, std::move(layout));
   return true;
 }
 
@@ -233,10 +230,8 @@ int Grid::numLayouts() const
 
 void Grid::setNumLayouts(int num_layouts)
 {
-  if (num_layouts > layouts_.size()) {
-    for (int size = layouts_.size(); size < num_layouts; ++size) {
-      layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
-    }
+  for (int size = layouts_.size(); size < num_layouts; ++size) {
+    layouts_.push_back(std::make_unique<Layout>(orientation_.turn_90()));
   }
 }
 

@@ -217,12 +217,12 @@ void RamGen::makeWord(const int slices_per_word,
 
     vector<dbNet*> slice_inputs(data_input.begin() + start_idx,
                                 data_input.begin() + start_idx + mask_size);
-    vector<vector<dbBTerm*>> slice_outputs(read_ports,
-                                           vector<dbBTerm*>(mask_size));
+    std::vector<std::vector<odb::dbBTerm*>> slice_outputs;
+    slice_outputs.reserve(read_ports);
     for (int port = 0; port < read_ports; ++port) {
-      std::copy_n(data_output[port].begin() + start_idx,
-                  mask_size,
-                  slice_outputs[port].begin());
+      const auto& port_outputs = data_output[port];
+      slice_outputs.emplace_back(port_outputs.begin() + start_idx,
+                                 port_outputs.begin() + start_idx + mask_size);
     }
 
     makeSlice(slice,

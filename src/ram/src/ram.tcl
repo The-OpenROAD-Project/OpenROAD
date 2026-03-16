@@ -29,7 +29,7 @@ proc generate_ram_netlist { args } {
   }
 
   if { $word_size % $mask_size != 0 } {
-    utl::error RAM 26 "The -word_size argument must be divisible by the -mask_size argument."
+    utl::error RAM 26 "The -word_size ($word_size) must be divisible by -mask_size ($mask_size)."
   }
 
   if { [info exists keys(-num_words)] } {
@@ -111,7 +111,7 @@ proc generate_ram { args } {
 
   set ram_netlist_args [list \
     -mask_size $keys(-mask_size) \
-    -word_size $keys(-mask_size) \
+    -word_size $keys(-word_size) \
     -num_words $keys(-num_words)]
 
   if { [info exists keys(-read_ports)] } {
