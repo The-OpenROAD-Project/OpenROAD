@@ -87,7 +87,9 @@ void Design::readNetlist()
 
     LayerRange layer_range
         = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
-    if (clock_nets_.find(db_net) != clock_nets_.end()) {
+    if (clock_nets_.find(db_net) != clock_nets_.end()
+        && block_->getMinLayerForClock() > 0
+        && block_->getMaxLayerForClock() > 0) {
       layer_range.min_layer = block_->getMinLayerForClock() - 1;
       layer_range.max_layer = block_->getMaxLayerForClock() - 1;
     }
