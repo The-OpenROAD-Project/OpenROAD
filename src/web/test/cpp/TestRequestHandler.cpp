@@ -72,8 +72,10 @@ class LazyMetadataHeatMap : public gui::HeatMapDataSource
 {
  public:
   explicit LazyMetadataHeatMap(utl::Logger* logger, int* populate_calls)
-      : gui::HeatMapDataSource(
-            logger, "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta"),
+      : gui::HeatMapDataSource(logger,
+                               "Lazy Metadata Heat Map",
+                               "LazyMeta",
+                               "LazyMeta"),
         populate_calls_(populate_calls)
   {
   }
@@ -85,14 +87,7 @@ class LazyMetadataHeatMap : public gui::HeatMapDataSource
     return false;
   }
 
-  void combineMapData(bool,
-                      double&,
-                      double,
-                      double,
-                      double,
-                      double) override
-  {
-  }
+  void combineMapData(bool, double&, double, double, double, double) override {}
 
  private:
   int* populate_calls_;
@@ -312,8 +307,10 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
   meta_req.id = 5;
   meta_req.type = WebSocketRequest::HEATMAPS;
 
-  const std::string json1 = payloadStr(handler_->handleHeatMaps(meta_req, state1));
-  const std::string json2 = payloadStr(handler_->handleHeatMaps(meta_req, state2));
+  const std::string json1
+      = payloadStr(handler_->handleHeatMaps(meta_req, state1));
+  const std::string json2
+      = payloadStr(handler_->handleHeatMaps(meta_req, state2));
 
   EXPECT_NE(json1, json2);
 }
@@ -345,10 +342,7 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
   populate_calls = 0;
 
   gui::registerHeatMapSource(
-      "Lazy Metadata Heat Map",
-      "LazyMeta",
-      "LazyMeta",
-      [this]() {
+      "Lazy Metadata Heat Map", "LazyMeta", "LazyMeta", [this]() {
         return std::make_shared<LazyMetadataHeatMap>(getLogger(),
                                                      &populate_calls);
       });
@@ -386,7 +380,8 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
     fake_current_ = {"current", "FakeCurrent", odb::Rect(0, 0, 100, 100)};
-    fake_previous_ = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
+    fake_previous_
+        = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
