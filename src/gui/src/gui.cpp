@@ -1791,6 +1791,8 @@ int startGui(int& argc,
 
   main_window->setDatabase(open_road->getDb());
 
+  HeatMapDataSource::registerPendingHeatMaps();
+
   bool init_openroad = interp != nullptr;
   if (!init_openroad) {
     interp = open_road->tclInterp();

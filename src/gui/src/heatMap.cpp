@@ -36,6 +36,12 @@
 
 namespace gui {
 
+namespace {
+// Heat maps created before the GUI is enabled are stored here and
+// registered as soon as the GUI becomes active.
+std::vector<HeatMapDataSource*> pending_heatmaps;
+}
+
 HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
                                      const std::string& name,
                                      const std::string& short_name,
@@ -76,6 +82,8 @@ HeatMapDataSource::~HeatMapDataSource()
 {
   if (registered_with_gui_ && Gui::enabled()) {
     Gui::get()->unregisterHeatMap(this);
+  } else if (!registered_with_gui_) {
+    removePendingHeatMap(this);
   }
 }
 
@@ -83,11 +91,34 @@ void HeatMapDataSource::registerHeatMap()
 {
   if (!Gui::enabled()) {
     registered_with_gui_ = false;
+    pending_heatmaps.push_back(this);
     return;
   }
 
   registered_with_gui_ = true;
   Gui::get()->registerHeatMap(this);
+}
+
+void HeatMapDataSource::registerPendingHeatMaps()
+{
+  if (!Gui::enabled()) {
+    return;
+  }
+
+  auto pending = std::move(pending_heatmaps);
+  pending_heatmaps.clear();
+
+  for (auto* heatmap : pending) {
+    if (heatmap != nullptr) {
+      heatmap->registerHeatMap();
+    }
+  }
+}
+
+void HeatMapDataSource::removePendingHeatMap(HeatMapDataSource* heatmap)
+{
+  auto it = std::remove(pending_heatmaps.begin(), pending_heatmaps.end(), heatmap);
+  pending_heatmaps.erase(it, pending_heatmaps.end());
 }
 
 void HeatMapDataSource::dumpToFile(const std::string& file)

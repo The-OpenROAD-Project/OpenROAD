@@ -505,15 +505,17 @@ void MainWindow::showEvent(QShowEvent* event)
 
 MainWindow::~MainWindow()
 {
-  auto* gui = Gui::get();
-  // unregister descriptors with GUI dependencies
-  gui->unregisterDescriptor<Ruler*>();
-  gui->unregisterDescriptor<Label*>();
-  gui->unregisterDescriptor<odb::dbNet*>();
-  gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
-  gui->unregisterDescriptor<BufferTree>();
-  gui->unregisterDescriptor<odb::dbITerm*>();
-  gui->unregisterDescriptor<odb::dbMTerm*>();
+  if (Gui::enabled()) {
+    auto* gui = Gui::get();
+    // unregister descriptors with GUI dependencies
+    gui->unregisterDescriptor<Ruler*>();
+    gui->unregisterDescriptor<Label*>();
+    gui->unregisterDescriptor<odb::dbNet*>();
+    gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
+    gui->unregisterDescriptor<BufferTree>();
+    gui->unregisterDescriptor<odb::dbITerm*>();
+    gui->unregisterDescriptor<odb::dbMTerm*>();
+  }
 
   if (cli_progress_ != nullptr) {
     logger_->swapProgress(cli_progress_.release());
@@ -561,8 +563,10 @@ void MainWindow::setBlock(odb::dbBlock* block)
   if (block != nullptr) {
     save_->setEnabled(true);
   }
-  for (auto* heat_map : Gui::get()->getHeatMaps()) {
-    heat_map->setBlock(block);
+  if (Gui::enabled()) {
+    for (auto* heat_map : Gui::get()->getHeatMaps()) {
+      heat_map->setBlock(block);
+    }
   }
   hierarchy_widget_->setBlock(block);
 }
