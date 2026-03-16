@@ -26,10 +26,7 @@ gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
                                                    odb::dbDatabase* db)
 {
   return gui::registerHeatMapSource(
-      "Estimated Congestion (RUDY)",
-      "RUDY",
-      "RUDY",
-      [logger, grouter, db]() {
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger, grouter, db]() {
         return std::make_shared<RUDYDataSource>(logger, grouter, db);
       });
 }

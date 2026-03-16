@@ -34,7 +34,6 @@
 #include "Pin.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
-#include "gui/heatMap.h"
 #include "boost/icl/interval.hpp"
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
@@ -42,6 +41,7 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -109,8 +109,9 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
 }
 
-void GlobalRouter::initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
-                           gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
+void GlobalRouter::initGui(
+    gui::HeatMapSourceHandle routing_congestion_data_source,
+    gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
 {
   heatmap_ = std::move(routing_congestion_data_source);
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);

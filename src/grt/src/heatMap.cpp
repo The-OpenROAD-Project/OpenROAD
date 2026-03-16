@@ -20,10 +20,7 @@ gui::HeatMapSourceHandle registerRoutingCongestionHeatMapSource(
     odb::dbDatabase* db)
 {
   return gui::registerHeatMapSource(
-      "Routing Congestion",
-      "Routing",
-      "RoutingCongestion",
-      [logger, db]() {
+      "Routing Congestion", "Routing", "RoutingCongestion", [logger, db]() {
         return std::make_shared<RoutingCongestionDataSource>(logger, db);
       });
 }
