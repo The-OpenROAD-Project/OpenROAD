@@ -3,7 +3,6 @@
 
 #include "ram/ram.h"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <fstream>
