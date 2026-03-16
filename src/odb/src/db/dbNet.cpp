@@ -2792,26 +2792,38 @@ void dbNet::checkSanityNameCollision() const
     }
   }
 
-  // Cross-check from the ModNet side: if the matching ModNet's related
-  // flat net is this net or nullptr (unresolvable), they're the same signal.
-  // Only flag when it positively resolves to a DIFFERENT flat net.
+  // Cross-check from the ModNet side. Suppress when the matching
+  // hierarchical object positively resolves back to THIS flat net.
+  // When unresolvable (nullptr), suppress only if the ModNet has some
+  // connections -- likely a legitimate but unresolvable hierarchical
+  // pairing. A totally disconnected (orphan) ModNet IS a collision.
+  auto has_connections = [](dbModNet* mn) {
+    return !mn->getITerms().empty() || !mn->getBTerms().empty()
+           || !mn->getModITerms().empty() || !mn->getModBTerms().empty();
+  };
+
   dbModNet* matching_modnet = module->getModNet(base_name);
   if (matching_modnet) {
     dbNet* other = matching_modnet->findRelatedNet();
-    if (other == nullptr || other == this) {
+    if (other == this) {
+      return;
+    }
+    if (other == nullptr && has_connections(matching_modnet)) {
       return;
     }
   } else {
-    // Only ModBTerm matches — check its ModNet
+    // Only ModBTerm matches -- check its ModNet
     dbModBTerm* matching_modbterm = module->findModBTerm(base_name);
     if (matching_modbterm) {
       dbModNet* bt_modnet = matching_modbterm->getModNet();
-      if (bt_modnet == nullptr) {
-        return;
-      }
-      dbNet* other = bt_modnet->findRelatedNet();
-      if (other == nullptr || other == this) {
-        return;
+      if (bt_modnet != nullptr) {
+        dbNet* other = bt_modnet->findRelatedNet();
+        if (other == this) {
+          return;
+        }
+        if (other == nullptr && has_connections(bt_modnet)) {
+          return;
+        }
       }
     }
   }
