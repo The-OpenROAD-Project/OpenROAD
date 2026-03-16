@@ -473,7 +473,8 @@ void WebSocketSession::on_read(beast::error_code ec)
       break;
     case WebSocketRequest::HEATMAPS:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->tile_handler_.handleHeatMaps(req, self->state_));
+        self->queue_response(
+            self->tile_handler_.handleHeatMaps(req, self->state_));
       });
       break;
     case WebSocketRequest::SET_ACTIVE_HEATMAP:
@@ -484,7 +485,8 @@ void WebSocketSession::on_read(beast::error_code ec)
       break;
     case WebSocketRequest::SET_HEATMAP:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->tile_handler_.handleSetHeatMap(req, self->state_));
+        self->queue_response(
+            self->tile_handler_.handleSetHeatMap(req, self->state_));
       });
       break;
     case WebSocketRequest::HEATMAP_TILE:

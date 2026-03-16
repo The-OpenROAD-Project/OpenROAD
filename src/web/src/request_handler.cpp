@@ -350,8 +350,9 @@ static void writeColorArray(JsonBuilder& builder,
   builder.endArray();
 }
 
-static void serializeHeatMapOption(JsonBuilder& builder,
-                                   const gui::HeatMapDataSource::MapSetting& option)
+static void serializeHeatMapOption(
+    JsonBuilder& builder,
+    const gui::HeatMapDataSource::MapSetting& option)
 {
   builder.beginObject();
   if (std::holds_alternative<gui::HeatMapDataSource::MapSettingBoolean>(
@@ -400,14 +401,16 @@ static void serializeHeatMap(JsonBuilder& builder,
   builder.field("supports_numbers", true);
   builder.field("units", source.getValueUnits());
   builder.field("display_range_increment", source.getDisplayRangeIncrement());
-  builder.field("display_min", source.convertPercentToValue(source.getDisplayRangeMin()));
-  builder.field("display_max", source.convertPercentToValue(source.getDisplayRangeMax()));
-  builder.field("display_min_limit",
-                source.convertPercentToValue(
-                    source.getDisplayRangeMinimumValue()));
-  builder.field("display_max_limit",
-                source.convertPercentToValue(
-                    source.getDisplayRangeMaximumValue()));
+  builder.field("display_min",
+                source.convertPercentToValue(source.getDisplayRangeMin()));
+  builder.field("display_max",
+                source.convertPercentToValue(source.getDisplayRangeMax()));
+  builder.field(
+      "display_min_limit",
+      source.convertPercentToValue(source.getDisplayRangeMinimumValue()));
+  builder.field(
+      "display_max_limit",
+      source.convertPercentToValue(source.getDisplayRangeMaximumValue()));
   builder.field("draw_below_min", source.getDrawBelowRangeMin());
   builder.field("draw_above_max", source.getDrawAboveRangeMax());
   builder.field("log_scale", source.getLogScale());
@@ -434,9 +437,9 @@ static void serializeHeatMap(JsonBuilder& builder,
     for (const auto& [color_index, color_value] : source.getLegendValues()) {
       builder.beginObject();
       builder.field("value", source.formatValue(color_value, true));
-      const gui::Painter::Color color = generator.getColor(
-          100.0 * color_index / std::max(1, color_count),
-          source.getColorAlpha());
+      const gui::Painter::Color color
+          = generator.getColor(100.0 * color_index / std::max(1, color_count),
+                               source.getColorAlpha());
       writeColorArray(builder, "color", color);
       builder.endObject();
     }
@@ -553,7 +556,7 @@ SelectHandler::SelectHandler(std::shared_ptr<TileGenerator> gen,
 }
 
 WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
-                                             SessionState& state)
+                                              SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -1318,8 +1321,9 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   return resp;
 }
 
-WebSocketResponse TileHandler::handleSetActiveHeatMap(const WebSocketRequest& req,
-                                                      SessionState& state)
+WebSocketResponse TileHandler::handleSetActiveHeatMap(
+    const WebSocketRequest& req,
+    SessionState& state)
 {
   WebSocketResponse resp;
   resp.id = req.id;
