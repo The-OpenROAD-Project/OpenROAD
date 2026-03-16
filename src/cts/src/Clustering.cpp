@@ -59,7 +59,6 @@ Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
     : Clustering(sinks, logger)
 {
   branching_point_ = {xBranch, yBranch};
-  srand(56);
 }
 
 Clustering::~Clustering() = default;

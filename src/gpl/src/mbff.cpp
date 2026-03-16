@@ -1318,7 +1318,7 @@ void MBFF::GetSlots(const Point& tray,
 
 Flop MBFF::GetNewFlop(const std::vector<Flop>& prob_dist, const float tot_dist)
 {
-  const float rand_num = (float) (std::rand() % 101);
+  const float rand_num = (float) (rng_() % 101);
   float cum_sum = 0;
   Flop new_flop;
   for (size_t i = 0; i < prob_dist.size(); i++) {
@@ -1339,7 +1339,7 @@ void MBFF::GetStartTrays(std::vector<Flop> flops,
   const int num_flops = flops.size();
 
   /* pick a random flop */
-  const int rand_idx = std::rand() % (num_flops);
+  const int rand_idx = rng_() % (num_flops);
   Tray tray_zero;
   tray_zero.pt = flops[rand_idx].pt;
 
@@ -1847,7 +1847,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
   std::vector<std::vector<int>> rand_nums(multistart_ + 7);
   for (int i = 0; i < multistart_ + 7; i++) {
     for (int j = 0; j < 20; j++) {
-      rand_nums[i].push_back(std::rand());
+      rand_nums[i].push_back(rng_());
     }
   }
 
@@ -2233,7 +2233,7 @@ void MBFF::SetTrayNames()
 
 void MBFF::Run(const int mx_sz, const float alpha, const float beta)
 {
-  std::srand(1);
+  rng_.seed(1);
   omp_set_num_threads(num_threads_);
 
   ReadFFs();

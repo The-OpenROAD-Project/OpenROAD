@@ -5,6 +5,7 @@
 
 #include <map>
 #include <memory>
+#include <random>
 #include <string>
 #include <utility>
 #include <vector>
@@ -245,6 +246,7 @@ class MBFF
   int multistart_;
   int num_paths_;
   float multiplier_;
+  std::mt19937 rng_{1};  // deterministic seed, replaces global srand/rand
 
   // single-bit FF vars
   std::vector<Flop> flops_;

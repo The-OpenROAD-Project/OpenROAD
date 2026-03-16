@@ -1897,8 +1897,6 @@ NesterovBase::NesterovBase(
              "---- Initialize Nesterov Region: {}",
              pb_->getGroup() ? pb_->getGroup()->getName() : "Top-level");
 
-  // Set a fixed seed
-  srand(42);
   // area update from pb
   stdInstsArea_ = pb_->stdInstsArea();
   macroInstsArea_ = pb_->macroInstsArea();
@@ -1911,9 +1909,10 @@ NesterovBase::NesterovBase(
   nb_gcells_.reserve(pb_->getInsts().size() + fillerStor_.size());
 
   // add place instances
+  std::mt19937 rng(42);  // deterministic seed, replaces global srand/rand
   for (auto& pb_inst : pb_->placeInsts()) {
-    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    int x_offset = rng() % (2 * dbu_per_micron) - dbu_per_micron;
+    int y_offset = rng() % (2 * dbu_per_micron) - dbu_per_micron;
 
     GCell* gCell = nbc_->pbToNb(pb_inst);
     if (pb_inst != gCell->insts()[0]) {
