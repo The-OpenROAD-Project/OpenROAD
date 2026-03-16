@@ -184,6 +184,8 @@ class dbExtControl;
 // Custom iterators
 class dbModuleBusPortModBTermItr;
 
+class UnfoldedModel;
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// A box is the element used to represent layout shapes.
@@ -1545,6 +1547,12 @@ class dbBTerm : public dbObject
   /// Get the block of this block-terminal.
   ///
   dbBlock* getBlock() const;
+
+  ///
+  /// Get the chip bump associated with this block-terminal.
+  /// Returns nullptr if no chip bump is associated.
+  ///
+  dbChipBump* getChipBump() const;
 
   ///
   /// Get the hierarchical parent iterm of this bterm.
@@ -7550,6 +7558,9 @@ class dbDatabase : public dbObject
   ///
   dbChip* getChip();
 
+  void constructUnfoldedModel();
+
+  const UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////

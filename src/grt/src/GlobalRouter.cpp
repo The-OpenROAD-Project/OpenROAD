@@ -1347,9 +1347,9 @@ void GlobalRouter::findFastRoutePins(Net* net,
     int pinX = ((pin_position.x() - grid_->getXMin()) / grid_->getTileSize());
     int pinY = ((pin_position.y() - grid_->getYMin()) / grid_->getTileSize());
 
-    if (!(pinX < 0 || pinX >= grid_->getXGrids() || pinY < -1
-          || pinY >= grid_->getYGrids() || conn_layer > grid_->getNumLayers()
-          || conn_layer <= 0)) {
+    if (pinX >= 0 && pinX < grid_->getXGrids() && pinY >= -1
+        && pinY < grid_->getYGrids() && conn_layer <= grid_->getNumLayers()
+        && conn_layer > 0) {
       bool duplicated = false;
       for (RoutePt& pin_pos : pins_on_grid) {
         if (pinX == pin_pos.x() && pinY == pin_pos.y()
@@ -5853,6 +5853,13 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
   db_net_map_[net]->setDirtyNet(true);
   db_net_map_[net]->saveLastPinPositions();
   dirty_nets_.insert(net);
+}
+
+void GlobalRouter::updateCUGRNet(odb::dbNet* net)
+{
+  if (use_cugr_) {
+    cugr_->updateNet(net);
+  }
 }
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)

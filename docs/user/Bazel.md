@@ -374,7 +374,7 @@ Now run make directly with the work folder, but be sure to use the `do-` targets
 
     make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/test/orfs/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
 
-## Whittling down .odb files with deltaDebug.py
+## Whittling down .odb files
 
 Global place can take hours to run and to debug an error, the test case has to be whittled down to minutes, or it is probably intractable.
 
@@ -395,9 +395,12 @@ Run up to the failing stage and stop with ctrl-c on the step that you want to ru
 
     make --file=$FLOW_HOME/Makefile do-place
 
-Now run deltaDebug.py:
+Now run the whittler with stock `python3` — no extra packages needed beyond
+the standard library. You are responsible for having `openroad` on your
+`PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
+an ORFS checkout):
 
-    $OPENROAD_EXE -python ~/OpenROAD-flow-scripts/tools/OpenROAD/etc/deltaDebug.py --error_string GPL-0305 --base_db_path test/orfs/gcd/results/asap7/gcd/base/3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
+    python3 etc/whittle.py --error_string GPL-0305 --base_db_path 3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 

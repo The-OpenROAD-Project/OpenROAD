@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+
 cc_library(
     name = "openmp",
     hdrs = [
@@ -109,53 +112,38 @@ cc_library(
     ],
 )
 
-genrule(
+expand_template(
     name = "omp_header",
-    srcs = [
-        "runtime/src/include/omp.h.var",
-    ],
-    outs = ["runtime/src/include/omp.h"],
-    cmd = (
-        "sed " +
-        "-e 's/@LIBOMP_VERSION_MAJOR@/5/g' " +
-        "-e 's/@LIBOMP_VERSION_MINOR@/0/g' " +
-        "-e 's/@LIBOMP_VERSION_BUILD@/0/g' " +
-        "-e 's/@LIBOMP_BUILD_DATE@/20200907/g' " +
-        "$(location runtime/src/include/omp.h.var) " +
-        "> $@"
-    ),
+    template = "runtime/src/include/omp.h.var",
+    out = "runtime/src/include/omp.h",
+    substitutions = {
+        "@LIBOMP_VERSION_MAJOR@": "5",
+        "@LIBOMP_VERSION_MINOR@": "0",
+        "@LIBOMP_VERSION_BUILD@": "0",
+        "@LIBOMP_BUILD_DATE@": "20200907",
+    },
 )
 
-genrule(
+copy_file(
     name = "omp_tools_header",
-    srcs = [
-        "runtime/src/include/omp-tools.h.var",
-    ],
-    outs = ["runtime/src/include/omp-tools.h"],
-    cmd = (
-        "cat " +
-        "$(location runtime/src/include/omp-tools.h.var) " +
-        "> $@"
-    ),
+    src = "runtime/src/include/omp-tools.h.var",
+    out = "runtime/src/include/omp-tools.h",
 )
 
-genrule(
+copy_file(
     name = "default_i18n",
-    srcs = ["@openroad//bazel/openmp:kmp_i18n_default.inc"],
-    outs = ["runtime/src/kmp_i18n_default.inc"],
-    cmd = "cat $(location @openroad//bazel/openmp:kmp_i18n_default.inc) > $@",
+    src = "@openroad//bazel/openmp:kmp_i18n_default.inc",
+    out = "runtime/src/kmp_i18n_default.inc",
 )
 
-genrule(
+copy_file(
     name = "id_i18n",
-    srcs = ["@openroad//bazel/openmp:kmp_i18n_id.inc"],
-    outs = ["runtime/src/kmp_i18n_id.inc"],
-    cmd = "cat $(location @openroad//bazel/openmp:kmp_i18n_id.inc) > $@",
+    src = "@openroad//bazel/openmp:kmp_i18n_id.inc",
+    out = "runtime/src/kmp_i18n_id.inc",
 )
 
-genrule(
+copy_file(
     name = "kmp_config",
-    srcs = ["@openroad//bazel/openmp:kmp_config.h"],
-    outs = ["runtime/src/kmp_config.h"],
-    cmd = "cat $(location @openroad//bazel/openmp:kmp_config.h) > $@",
+    src = "@openroad//bazel/openmp:kmp_config.h",
+    out = "runtime/src/kmp_config.h",
 )

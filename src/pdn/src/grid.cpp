@@ -240,9 +240,9 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
         std::vector<int> grid = techlayer.getGrid();
         std::erase_if(grid, [&obs, is_horizontal](int pos) {
           if (is_horizontal) {
-            return !(obs.yMin() <= pos && pos <= obs.yMax());
+            return obs.yMin() > pos || pos > obs.yMax();
           }
-          return !(obs.xMin() <= pos && pos <= obs.xMax());
+          return obs.xMin() > pos || pos > obs.xMax();
         });
         // add by tracks
         const int min_width = techlayer.getMinWidth();

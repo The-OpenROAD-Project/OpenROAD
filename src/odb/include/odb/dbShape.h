@@ -178,6 +178,11 @@ class dbShape
   bool isVia() const;
 
   ///
+  /// Returns true if this object is a segment
+  ///
+  bool isSegment() const;
+
+  ///
   /// Returns true if this object is a via box
   ///
   bool isViaBox() const;
@@ -543,6 +548,10 @@ inline int dbShape::yMax() const
 inline bool dbShape::isVia() const
 {
   return (type_ == VIA) || (type_ == TECH_VIA);
+}
+inline bool dbShape::isSegment() const
+{
+  return type_ == SEGMENT;
 }
 inline bool dbShape::isViaBox() const
 {
