@@ -44,10 +44,12 @@
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "staGuiInterface.h"
 
@@ -366,6 +368,44 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         return Qt::AlignRight;
       case kRiseFall:
         return Qt::AlignCenter;
+    }
+  } else if (role == Qt::ToolTipRole) {
+    if (col_index == kPin && index.row() != kClockSummaryRow) {
+      const auto* node = getNodeAt(index);
+      odb::dbInst* inst = node->getInstance();
+      if (inst != nullptr) {
+        // Show clock insertion latency tooltip on any pin of a macro
+        // whose liberty model defines max/min_clock_tree_path. This
+        // represents the delay through the macro's internal clock tree
+        // to its sequential elements — it can exceed the data path
+        // delay through the macro, which is normal.
+        auto* db_network = sta_->getDbNetwork();
+        for (odb::dbITerm* iterm : inst->getITerms()) {
+          const sta::Pin* iterm_pin = db_network->dbToSta(iterm);
+          if (iterm_pin == nullptr) {
+            continue;
+          }
+          sta::LibertyPort* lib_port = db_network->libertyPort(iterm_pin);
+          if (lib_port == nullptr || !lib_port->isClock()) {
+            continue;
+          }
+          const auto time_units = sta_->units()->timeUnit();
+          const sta::MinMax* min_max
+              = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
+          float clk_tree_delay
+              = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
+          if (clk_tree_delay != 0.0f) {
+            const char* path_type
+                = is_capture_ ? "min_clock_tree_path" : "max_clock_tree_path";
+            return QString(
+                       "Macro %1 liberty %2 (internal clock tree "
+                       "delay to sequential elements): %3")
+                .arg(inst->getMaster()->getName().c_str())
+                .arg(path_type)
+                .arg(convertDelay(clk_tree_delay, time_units));
+          }
+        }
+      }
     }
   } else if (role == Qt::DisplayRole) {
     const auto time_units = sta_->units()->timeUnit();

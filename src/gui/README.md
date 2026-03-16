@@ -969,6 +969,22 @@ Clear the selected timing path in the Timing Report widget:
 gui::clear_timing_path
 ```
 
+## GUI Features
+
+#### Clock Insertion Latency in Timing Reports
+
+In the Data Path Details and Capture Path Details views, pins whose
+Liberty cell defines `max_clock_tree_path` / `min_clock_tree_path`
+timing groups display the internal clock latency inline:
+
+![Clock insertion annotation in Data Path Details](../../docs/images/timing_report_clk_insertion.png)
+
+To view this, run the MockArray example and look at reg2reg paths:
+
+```
+bazelisk run --//:platform=gui //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
+```
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

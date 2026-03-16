@@ -49,6 +49,7 @@ class CheckerFixture : public tst::Fixture
   void check()
   {
     db_->setTopChip(top_chip_);
+    db_->constructUnfoldedModel();
     ThreeDBlox three_dblox(&logger_, db_.get());
     three_dblox.check();
   }

@@ -75,6 +75,7 @@ class CheckerLogicalConnFixture : public CheckerFixture
   void check()
   {
     utl::Logger logger;
+    db_->constructUnfoldedModel();
     ThreeDBlox three_dblox(&logger, db_.get());
     three_dblox.check();
   }

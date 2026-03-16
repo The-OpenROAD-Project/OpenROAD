@@ -31,13 +31,13 @@ stage 1: pattern routing
 stage 2: pattern routing with possible detours
 297 / 348 nets have overflow.
 stage 3: maze routing on sparsified routing graph
-290 / 348 nets have overflow.
+292 / 348 nets have overflow.
 routing statistics
-wire length (metric):  44057
-total via count:       2631
-total wire overflow:   268
-min resource: -3.755555662843917
-bottleneck:   (3, 20, 27)
-[INFO GRT-0018] Total wirelength: 23047 um
+wire length (metric):  44271
+total via count:       2641
+total wire overflow:   271
+min resource: -3.7638890080981797
+bottleneck:   (3, 16, 26)
+[INFO GRT-0018] Total wirelength: 23184 um
 [INFO GRT-0014] Routed nets: 348
 No differences found.

@@ -86,6 +86,7 @@ add_library(db
     dbGroupGroundNetItr.cpp
     dbGDSLib.cpp
     dbSwapMasterSanityChecker.cpp
+    unfoldedModel.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp

@@ -52,6 +52,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -2477,7 +2478,7 @@ void MBFF::ReadPaths()
   sta_->searchPreamble();
   sta_->ensureLevelized();
   sta::Search* search = sta_->search();
-  sta::StdStringSeq empty_group_names;
+  sta::StringSeq empty_group_names;
   sta::PathEndSeq path_ends = search->findPathEnds(e_from,
                                                    e_thrus,
                                                    e_to,

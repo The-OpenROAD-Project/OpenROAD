@@ -285,6 +285,7 @@ class _dbNameCache;
 class _dbTech;
 class _dbLib;
 class _dbGDSLib;
+class UnfoldedModel;
 // User Code End Classes
 
 class _dbDatabase : public _dbObject
@@ -338,6 +339,8 @@ class _dbDatabase : public _dbObject
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
+  UnfoldedModel* unfolded_model_;  // non-persistent object
+
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);

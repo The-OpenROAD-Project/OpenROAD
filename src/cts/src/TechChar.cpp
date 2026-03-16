@@ -32,7 +32,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
-#include "sta/StringSeq.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -1091,7 +1090,7 @@ void TechChar::createStaInstance()
   for (auto scene : openSta_->scenes()) {
     scene_names.push_back(scene->name().c_str());
   }
-  openStaChar_->makeScenes(&scene_names);
+  openStaChar_->makeScenes(scene_names);
 
   // Gets the corner and other analysis attributes from the new instance.
   charCorner_ = openStaChar_->cmdScene();
