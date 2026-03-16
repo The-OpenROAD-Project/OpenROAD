@@ -404,7 +404,8 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
                                 const odb::Polygon& poly,
                                 const odb::Rect& dbu_tile,
                                 const double scale,
-                                const Color& color) const
+                                const Color& color,
+                                const bool blend) const
 {
   const auto& points = poly.getPoints();
   const int n = static_cast<int>(points.size());
@@ -452,7 +453,11 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
           kTileSizeInPixel, static_cast<int>(std::ceil(x_intercepts[k + 1])));
       const int draw_y = 255 - iy;
       for (int ix = ix_min; ix < ix_max; ++ix) {
-        setPixel(image, ix, draw_y, color);
+        if (blend) {
+          blendPixel(image, ix, draw_y, color);
+        } else {
+          setPixel(image, ix, draw_y, color);
+        }
       }
     }
   }
@@ -574,6 +579,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     int y,
     const TileVisibility& vis,
     const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
@@ -1053,8 +1059,9 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
     }  // end if (!modules_layer)
 
-    if (!highlight_rects.empty()) {
-      drawHighlight(image_buffer, highlight_rects, dbu_tile, scale);
+    if (!highlight_rects.empty() || !highlight_polys.empty()) {
+      drawHighlight(
+          image_buffer, highlight_rects, highlight_polys, dbu_tile, scale);
     }
     if (!colored_rects.empty()) {
       drawColoredHighlight(image_buffer, colored_rects, layer, dbu_tile, scale);
@@ -1292,6 +1299,7 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
 
 void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
                                   const std::vector<odb::Rect>& rects,
+                                  const std::vector<odb::Polygon>& polys,
                                   const odb::Rect& dbu_tile,
                                   const double scale) const
 {
@@ -1335,6 +1343,33 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
         setPixel(image, ix, 255 - ty, border);
       }
+    }
+  }
+
+  // Polygon highlights (octilinear shapes)
+  for (const odb::Polygon& poly : polys) {
+    const odb::Rect bbox = poly.getEnclosingRect();
+    if (!dbu_tile.overlaps(bbox)) {
+      continue;
+    }
+
+    // Semi-transparent yellow fill
+    fillPolygon(image, poly, dbu_tile, scale, fill, /*blend=*/true);
+
+    // Solid yellow border — draw each edge
+    const auto& points = poly.getPoints();
+    const int n = static_cast<int>(points.size());
+    for (int i = 0; i < n - 1; ++i) {
+      const int px0
+          = static_cast<int>((points[i].x() - dbu_tile.xMin()) * scale);
+      const int py0
+          = 255 - static_cast<int>((points[i].y() - dbu_tile.yMin()) * scale);
+      const int px1
+          = static_cast<int>((points[i + 1].x() - dbu_tile.xMin()) * scale);
+      const int py1
+          = 255
+            - static_cast<int>((points[i + 1].y() - dbu_tile.yMin()) * scale);
+      drawLine(image, px0, py0, px1, py1, border);
     }
   }
 }

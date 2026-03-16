@@ -153,6 +153,7 @@ class TileGenerator
       int y,
       const TileVisibility& vis = {},
       const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
@@ -184,6 +185,7 @@ class TileGenerator
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
+                     const std::vector<odb::Polygon>& polys,
                      const odb::Rect& dbu_tile,
                      double scale) const;
 
@@ -206,7 +208,8 @@ class TileGenerator
                    const odb::Polygon& poly,
                    const odb::Rect& dbu_tile,
                    double scale,
-                   const Color& color) const;
+                   const Color& color,
+                   bool blend = false) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,

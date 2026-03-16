@@ -42,6 +42,7 @@ class ShapeCollector : public gui::Painter
   ShapeCollector() : Painter(nullptr, odb::Rect(), 1.0) {}
 
   std::vector<odb::Rect> rects;
+  std::vector<odb::Polygon> polys;
 
   void drawRect(const odb::Rect& rect, int, int) override
   {
@@ -49,12 +50,9 @@ class ShapeCollector : public gui::Painter
   }
   void drawPolygon(const odb::Polygon& polygon) override
   {
-    rects.push_back(polygon.getEnclosingRect());
+    polys.push_back(polygon);
   }
-  void drawOctagon(const odb::Oct& oct) override
-  {
-    rects.push_back(oct.getEnclosingRect());
-  }
+  void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
 
   // No-ops
   Color getPenColor() override { return {}; }
@@ -270,15 +268,18 @@ static void serializeProperty(JsonBuilder& builder,
 }
 
 static void collectHighlightShapes(const gui::Selected& sel,
-                                   std::vector<odb::Rect>& rects)
+                                   std::vector<odb::Rect>& rects,
+                                   std::vector<odb::Polygon>& polys)
 {
   rects.clear();
+  polys.clear();
   if (!sel) {
     return;
   }
   ShapeCollector collector;
   sel.highlight(collector);
   rects = std::move(collector.rects);
+  polys = std::move(collector.polys);
 }
 
 static void writeInspectPayload(JsonBuilder& builder,
@@ -471,6 +472,7 @@ WebSocketResponse dispatch_request(
     const WebSocketRequest& req,
     const TileGenerator& gen,
     const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
@@ -528,6 +530,7 @@ WebSocketResponse dispatch_request(
                                       req.y,
                                       req.vis,
                                       highlight_rects,
+                                      highlight_polys,
                                       colored_rects,
                                       flight_lines,
                                       module_colors,
@@ -603,7 +606,8 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(inspected_sel, state.highlight_rects);
+      collectHighlightShapes(
+          inspected_sel, state.highlight_rects, state.highlight_polys);
       state.current_inspected = inspected_sel;
       state.navigation_history.clear();
     }
@@ -644,7 +648,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
       state.hover_rects.clear();
       state.timing_rects.clear();
       state.timing_lines.clear();
-      collectHighlightShapes(sel, state.highlight_rects);
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
       if (sel) {
         if (state.current_inspected && state.current_inspected != sel) {
           state.navigation_history.push_back(state.current_inspected);
@@ -698,7 +702,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
         sel = state.current_inspected;
       }
 
-      collectHighlightShapes(sel, state.highlight_rects);
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
       can_navigate_back = !state.navigation_history.empty();
     }
 
@@ -974,6 +978,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
       state.timing_rects = std::move(new_rects);
       state.timing_lines = std::move(new_lines);
       state.highlight_rects.clear();
+      state.highlight_polys.clear();
     }
 
     const std::string json = "{\"ok\": true}";
@@ -1125,6 +1130,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
   try {
     std::lock_guard<std::mutex> lock(state.selection_mutex);
     state.highlight_rects.clear();
+    state.highlight_polys.clear();
     state.timing_rects.clear();
     state.timing_lines.clear();
 
@@ -1173,6 +1179,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
 {
   // Snapshot current highlight state
   std::vector<odb::Rect> rects;
+  std::vector<odb::Polygon> polys;
   std::vector<ColoredRect> colored;
   std::vector<FlightLine> lines;
   {
@@ -1180,6 +1187,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     rects = state.highlight_rects;
     rects.insert(
         rects.end(), state.hover_rects.begin(), state.hover_rects.end());
+    polys = state.highlight_polys;
     colored = state.timing_rects;
     lines = state.timing_lines;
   }
@@ -1203,7 +1211,7 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
       = focus_nets.empty() ? nullptr : &focus_nets;
 
   return dispatch_request(
-      req, *gen_, rects, colored, lines, mod_ptr, focus_ptr);
+      req, *gen_, rects, polys, colored, lines, mod_ptr, focus_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(

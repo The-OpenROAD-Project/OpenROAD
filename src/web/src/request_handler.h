@@ -150,6 +150,7 @@ struct SessionState
 {
   std::mutex selection_mutex;
   std::vector<odb::Rect> highlight_rects;
+  std::vector<odb::Polygon> highlight_polys;
   std::vector<odb::Rect> hover_rects;
   std::vector<ColoredRect> timing_rects;
   std::vector<FlightLine> timing_lines;
@@ -186,6 +187,7 @@ WebSocketResponse dispatch_request(
     const WebSocketRequest& req,
     const TileGenerator& gen,
     const std::vector<odb::Rect>& highlight_rects = {},
+    const std::vector<odb::Polygon>& highlight_polys = {},
     const std::vector<ColoredRect>& colored_rects = {},
     const std::vector<FlightLine>& flight_lines = {},
     const std::map<uint32_t, Color>* module_colors = nullptr,

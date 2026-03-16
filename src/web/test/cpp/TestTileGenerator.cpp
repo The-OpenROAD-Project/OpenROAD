@@ -275,7 +275,7 @@ TEST_F(TileGeneratorTest, FocusNetEmptySetSameAsNull)
   // Empty focus_net_ids should behave the same as nullptr (all nets visible).
   std::set<uint32_t> empty_set;
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &empty_set);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &empty_set);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -294,7 +294,7 @@ TEST_F(TileGeneratorTest, FocusNetNonMatchingIdProducesValidTile)
   // filtered).
   std::set<uint32_t> focus_ids{99999};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -313,7 +313,7 @@ TEST_F(TileGeneratorTest, FocusNetWithRealNetId)
   // the tile should be generated without errors.
   std::set<uint32_t> focus_ids{net->getId()};
   auto png = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, &focus_ids);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, &focus_ids);
   ASSERT_FALSE(png.empty());
 
   unsigned w = 0, h = 0;
@@ -330,7 +330,7 @@ TEST_F(TileGeneratorTest, FocusNetNullPtrAllowsAllNets)
   // nullptr means no focus filtering — should match default behavior.
   auto png_default = tile_gen_->generateTile("metal1", 0, 0, 0);
   auto png_null = tile_gen_->generateTile(
-      "metal1", 0, 0, 0, {}, {}, {}, {}, nullptr, nullptr);
+      "metal1", 0, 0, 0, {}, {}, {}, {}, {}, nullptr, nullptr);
   EXPECT_EQ(png_default, png_null);
 }
 
@@ -341,7 +341,7 @@ TEST_F(TileGeneratorTest, SemiTransparentOverlayUsesStraightAlpha)
   makeTileGen();
 
   const odb::Rect rect(0, 0, 100000, 100000);
-  auto png = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0, {}, {rect});
+  auto png = tile_gen_->generateTile("nonexistent_layer", 0, 0, 0, {}, {rect}, {});
 
   unsigned w = 0;
   unsigned h = 0;
