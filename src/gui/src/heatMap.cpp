@@ -63,7 +63,8 @@ class HeatMapRenderer : public Renderer
         const Painter::Anchor text_anchor = Painter::Anchor::kCenter;
         const double text_rect_margin = 0.8;
 
-        const std::string text = datasource_.formatValue(map_point.value, false);
+        const std::string text
+            = datasource_.formatValue(map_point.value, false);
         const odb::Rect text_bound
             = painter.stringBoundaries(x, y, text_anchor, text);
         if (text_bound.dx() < text_rect_margin * map_point.rect.dx()
@@ -141,8 +142,8 @@ void showHeatMapSetupDialog(HeatMapDataSource* source)
   }
 
   auto& setups = activeSetups();
-  if (auto found = setups.find(source); found != setups.end()
-      && found->second != nullptr) {
+  if (auto found = setups.find(source);
+      found != setups.end() && found->second != nullptr) {
     found->second->raise();
     return;
   }
@@ -154,9 +155,8 @@ void showHeatMapSetupDialog(HeatMapDataSource* source)
   setups[source] = setup;
 
   QObject::connect(setup, &QDialog::finished, setup, &QObject::deleteLater);
-  QObject::connect(setup, &QObject::destroyed, [source]() {
-    activeSetups().erase(source);
-  });
+  QObject::connect(
+      setup, &QObject::destroyed, [source]() { activeSetups().erase(source); });
   setup->show();
 }
 

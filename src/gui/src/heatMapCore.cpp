@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2026, The OpenROAD Authors
 
-#include "gui/heatMap.h"
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -23,6 +21,7 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"
 #include "odb/db.h"
@@ -480,18 +479,18 @@ std::vector<HeatMapDataSource::MapColor> HeatMapDataSource::getVisibleMap(
                              : 0.0;
 
   const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
-  const int x_scale = min_dbu <= 0.0
-                          ? 1
-                          : std::max(1,
-                                     static_cast<int>(std::ceil(
-                                         min_dbu
-                                         / (getGridXSize() * dbu_per_micron))));
-  const int y_scale = min_dbu <= 0.0
-                          ? 1
-                          : std::max(1,
-                                     static_cast<int>(std::ceil(
-                                         min_dbu
-                                         / (getGridYSize() * dbu_per_micron))));
+  const int x_scale
+      = min_dbu <= 0.0
+            ? 1
+            : std::max(1,
+                       static_cast<int>(std::ceil(
+                           min_dbu / (getGridXSize() * dbu_per_micron))));
+  const int y_scale
+      = min_dbu <= 0.0
+            ? 1
+            : std::max(1,
+                       static_cast<int>(std::ceil(
+                           min_dbu / (getGridYSize() * dbu_per_micron))));
 
   const HeatMapDataSource::MapView map_view = getMapView(bounds);
   const int x_size = map_view.shape()[0];
@@ -1256,24 +1255,16 @@ HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name)
 
 void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger)
 {
+  registerHeatMapSource("Pin Density", "Pin", "PinDensity", [logger]() {
+    return std::make_shared<PinDensityDataSource>(logger);
+  });
   registerHeatMapSource(
-      "Pin Density",
-      "Pin",
-      "PinDensity",
-      [logger]() { return std::make_shared<PinDensityDataSource>(logger); });
-  registerHeatMapSource(
-      "Placement Density",
-      "Placement",
-      "PlacementDensity",
-      [logger]() {
+      "Placement Density", "Placement", "PlacementDensity", [logger]() {
         return std::make_shared<PlacementDensityDataSource>(logger);
       });
   if (sta != nullptr) {
     registerHeatMapSource(
-        "Power Density",
-        "Power",
-        "PowerDensity",
-        [sta, logger]() {
+        "Power Density", "Power", "PowerDensity", [sta, logger]() {
           return std::make_shared<PowerDensityDataSource>(sta, logger);
         });
   }

@@ -167,8 +167,7 @@ class HeatMapDataSource
   void redraw();
   void setRedrawCallback(std::function<void()> callback);
   void setSetupCallback(std::function<void()> callback);
-  void setUnregisterCallback(
-      std::function<void(HeatMapDataSource*)> callback);
+  void setUnregisterCallback(std::function<void(HeatMapDataSource*)> callback);
 
  protected:
   void addBooleanSetting(const std::string& name,

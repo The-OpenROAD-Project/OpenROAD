@@ -225,8 +225,7 @@ Gui* Gui::get()
   return singleton;
 }
 
-Gui::Gui()
-    : continue_after_close_(false), logger_(nullptr), db_(nullptr)
+Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 {
   resetConversions();
 }
@@ -956,9 +955,8 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
   }
   heat_maps_.insert(heatmap);
   auto renderer = makeHeatMapRenderer(*heatmap);
-  heatmap->setRedrawCallback([renderer_ptr = renderer.get()]() {
-    renderer_ptr->redraw();
-  });
+  heatmap->setRedrawCallback(
+      [renderer_ptr = renderer.get()]() { renderer_ptr->redraw(); });
   heatmap->setSetupCallback([heatmap]() { showHeatMapSetupDialog(heatmap); });
   heatmap->setUnregisterCallback(
       [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
