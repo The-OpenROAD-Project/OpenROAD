@@ -1,5 +1,6 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
@@ -139,3 +140,30 @@ orfs_run(
         "Element_4x4",
     ]
 ]
+
+# DRC Destroyer — arcade game for routing visualization
+# This is just a fun feature and has no practical value.
+
+py_binary(
+    name = "game",
+    srcs = ["game.py"],
+    data = ["drc_destroyer.js"],
+    tags = ["manual"],
+    deps = [
+        "//src/odb:odb_py",
+    ],
+)
+
+py_test(
+    name = "test_game",
+    srcs = ["test_game.py"],
+    data = [
+        "drc_destroyer.js",
+        "game.py",
+    ],
+    imports = ["."],
+    tags = [
+        "manual",
+        "orfs",
+    ],
+)
