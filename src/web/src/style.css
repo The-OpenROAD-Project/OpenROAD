@@ -1,3 +1,12 @@
+/* Rubber-band zoom overlay (right-click drag) */
+.rubber-band {
+    position: fixed;
+    border: 1px solid white;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    z-index: 10000;
+}
+
 /* Full viewport GL container */
 html, body {
     height: 100%;

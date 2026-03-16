@@ -353,6 +353,7 @@ function createHelpWidget(container) {
         '<tr><td><kbd>f</kbd></td><td>Fit design to viewport</td></tr>' +
         '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
+        '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
         '</table>';
     container.element.appendChild(el);
 }
@@ -581,6 +582,67 @@ app.websocketManager.readyPromise.then(async () => {
                     console.error('Select failed:', err);
                 });
         });
+
+        // ─── Right-click rubber-band zoom ──────────────────────────────
+        {
+            const container = app.map.getContainer();
+            let rbStart = null;   // {x, y} in client coords
+            let rbDiv = null;     // overlay element
+
+            container.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            container.addEventListener('mousedown', (e) => {
+                if (e.button !== 2) return;
+                rbStart = { x: e.clientX, y: e.clientY };
+                app.map.dragging.disable();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!rbStart) return;
+                const dx = e.clientX - rbStart.x;
+                const dy = e.clientY - rbStart.y;
+                if (!rbDiv && Math.abs(dx) >= 4 && Math.abs(dy) >= 4) {
+                    rbDiv = document.createElement('div');
+                    rbDiv.className = 'rubber-band';
+                    document.body.appendChild(rbDiv);
+                }
+                if (rbDiv) {
+                    const left = Math.min(rbStart.x, e.clientX);
+                    const top = Math.min(rbStart.y, e.clientY);
+                    rbDiv.style.left = left + 'px';
+                    rbDiv.style.top = top + 'px';
+                    rbDiv.style.width = Math.abs(dx) + 'px';
+                    rbDiv.style.height = Math.abs(dy) + 'px';
+                }
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (!rbStart) return;
+                const wasShowing = !!rbDiv;
+                if (rbDiv) {
+                    rbDiv.remove();
+                    rbDiv = null;
+                }
+                const start = rbStart;
+                rbStart = null;
+                app.map.dragging.enable();
+
+                if (!wasShowing) return;
+
+                // Convert the two screen corners to lat/lng and zoom
+                const rect = container.getBoundingClientRect();
+                const p1 = app.map.containerPointToLatLng([
+                    start.x - rect.left, start.y - rect.top]);
+                const p2 = app.map.containerPointToLatLng([
+                    e.clientX - rect.left, e.clientY - rect.top]);
+                app.map.fitBounds([
+                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+                ]);
+            });
+        }
 
         populateDisplayControls(app, visibility, WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
