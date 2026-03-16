@@ -204,8 +204,8 @@ class PadDirectConnectionStraps : public Straps
 
   bool refineShape(Shape* shape,
                    const odb::Rect& pin_shape,
-                   Shape::ShapeTreeMap& all_shapes,
-                   Shape::ObstructionTreeMap& all_obstructions);
+                   const Shape::ShapeTreeMap& all_shapes,
+                   const Shape::ObstructionTreeMap& all_obstructions);
   bool isTargetShape(const Shape* shape) const;
 };
 

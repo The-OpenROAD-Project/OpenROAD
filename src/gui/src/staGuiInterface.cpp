@@ -37,6 +37,7 @@
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VisitPathEnds.hh"
 #include "utl/Logger.h"
 
@@ -1016,7 +1017,7 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
 // when running "report_checks".
 void STAGuiInterface::updatePathGroups()
 {
-  sta::StdStringSeq empty_group_names;
+  sta::StringSeq empty_group_names;
   for (sta::Mode* mode : sta_->modes()) {
     mode->makePathGroups(1,                 /* group count */
                          1,                 /* endpoint count*/
@@ -1177,7 +1178,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
                                  scene_->sdc());
   }
 
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   if (!path_group_name.empty()) {
     group_names = {path_group_name};
   }

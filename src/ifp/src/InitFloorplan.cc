@@ -36,8 +36,6 @@ using std::round;
 using std::set;
 using std::string;
 
-using sta::StringVector;
-
 using utl::IFP;
 using utl::Logger;
 

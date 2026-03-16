@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
@@ -89,7 +92,36 @@ cc_test(
 )
 
 cc_test(
+    name = "TestScanArchitect",
+    srcs = ["cpp/TestScanArchitect.cpp"],
+    features = ["-layering_check"],  # TODO: includes private headers
+    deps = [
+        "//src/dft",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "dft_scan_architect_heuristic_unittest",
+    srcs = [
+        "cpp/ScanCellMock.cpp",
+        "cpp/ScanCellMock.hh",
+        "cpp/TestScanArchitectHeuristic.cpp",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
+    deps = [
+        "//src/dft",
+        "//src/dft/src/utils",
+        "//src/odb",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestScanArchitectHeuristic",
     srcs = [
         "cpp/ScanCellMock.cpp",
         "cpp/ScanCellMock.hh",
