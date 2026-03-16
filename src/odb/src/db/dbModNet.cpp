@@ -614,7 +614,6 @@ void dbModNet::checkSanityNameCollision() const
                       getHierarchicalName(),
                       module->getName(),
                       net->getConstName());
-        return;
       }
     }
   }
