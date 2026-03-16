@@ -600,10 +600,17 @@ void dbModNet::checkSanityNameCollision() const
         }
       }
       if (!associated) {
-        // Cross-check: if this ModNet's findRelatedNet returns
-        // the same flat net or nullptr, they're the same signal.
+        // Suppress when this ModNet positively resolves to the same
+        // flat net. When unresolvable (nullptr), suppress only if this
+        // ModNet has connections -- likely a legitimate but unresolvable
+        // hierarchical pairing. A disconnected orphan IS a collision.
         dbNet* my_related = findRelatedNet();
-        if (my_related == nullptr || my_related == net) {
+        if (my_related == net) {
+          continue;
+        }
+        if (my_related == nullptr
+            && (!getITerms().empty() || !getBTerms().empty()
+                || !getModITerms().empty() || !getModBTerms().empty())) {
           continue;
         }
         utl::Logger* logger = getImpl()->getLogger();
