@@ -12,6 +12,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -43,88 +44,88 @@ const unsigned char* getBitmapGlyph(const char ch)
   // used.
   switch (ch) {
     case '0': {
-      static constexpr unsigned char glyph[] = {
-          0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
       return glyph;
     }
     case '1': {
-      static constexpr unsigned char glyph[] = {
-          0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
       return glyph;
     }
     case '2': {
-      static constexpr unsigned char glyph[] = {
-          0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
+      static constexpr unsigned char glyph[]
+          = {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
       return glyph;
     }
     case '3': {
-      static constexpr unsigned char glyph[] = {
-          0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
       return glyph;
     }
     case '4': {
-      static constexpr unsigned char glyph[] = {
-          0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
+      static constexpr unsigned char glyph[]
+          = {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
       return glyph;
     }
     case '5': {
-      static constexpr unsigned char glyph[] = {
-          0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
       return glyph;
     }
     case '6': {
-      static constexpr unsigned char glyph[] = {
-          0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
       return glyph;
     }
     case '7': {
-      static constexpr unsigned char glyph[] = {
-          0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
+      static constexpr unsigned char glyph[]
+          = {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
       return glyph;
     }
     case '8': {
-      static constexpr unsigned char glyph[] = {
-          0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
+      static constexpr unsigned char glyph[]
+          = {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
       return glyph;
     }
     case '9': {
-      static constexpr unsigned char glyph[] = {
-          0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
+      static constexpr unsigned char glyph[]
+          = {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
       return glyph;
     }
     case '.': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
       return glyph;
     }
     case '-': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
       return glyph;
     }
     case '/': {
-      static constexpr unsigned char glyph[] = {
-          0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
+      static constexpr unsigned char glyph[]
+          = {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
       return glyph;
     }
     case '=': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
       return glyph;
     }
     case 'x': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11};
       return glyph;
     }
     case 'y': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04};
       return glyph;
     }
     case 'z': {
-      static constexpr unsigned char glyph[] = {
-          0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F};
+      static constexpr unsigned char glyph[]
+          = {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F};
       return glyph;
     }
     default:
@@ -399,6 +400,64 @@ void TileGenerator::setPixel(std::vector<unsigned char>& image,
   image[index + 3] = c.a;
 }
 
+void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
+                                const odb::Polygon& poly,
+                                const odb::Rect& dbu_tile,
+                                const double scale,
+                                const Color& color) const
+{
+  const auto& points = poly.getPoints();
+  const int n = static_cast<int>(points.size());
+  if (n < 3) {
+    return;
+  }
+
+  // Convert polygon points to pixel coordinates (floating point for precision).
+  std::vector<double> px(n), py(n);
+  for (int i = 0; i < n; ++i) {
+    px[i] = (points[i].x() - dbu_tile.xMin()) * scale;
+    py[i] = (points[i].y() - dbu_tile.yMin()) * scale;
+  }
+
+  // Compute pixel bounding box, clamped to tile.
+  const double min_py = std::ranges::min(py);
+  const double max_py = std::ranges::max(py);
+  const int iy_min = std::max(0, static_cast<int>(min_py));
+  const int iy_max
+      = std::min(kTileSizeInPixel, static_cast<int>(std::ceil(max_py)));
+
+  // Scanline fill: for each row, find edge intersections and fill between
+  // pairs.
+  std::vector<double> x_intercepts;
+  for (int iy = iy_min; iy < iy_max; ++iy) {
+    const double scanline = iy + 0.5;  // test at pixel center
+    x_intercepts.clear();
+
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+      // Skip degenerate (horizontal) edges and only process edges that
+      // straddle the scanline.
+      if ((py[i] <= scanline) == (py[j] <= scanline)) {
+        continue;
+      }
+      const double x
+          = px[i] + (scanline - py[i]) / (py[j] - py[i]) * (px[j] - px[i]);
+      x_intercepts.push_back(x);
+    }
+
+    std::ranges::sort(x_intercepts);
+
+    for (size_t k = 0; k + 1 < x_intercepts.size(); k += 2) {
+      const int ix_min = std::max(0, static_cast<int>(x_intercepts[k]));
+      const int ix_max = std::min(
+          kTileSizeInPixel, static_cast<int>(std::ceil(x_intercepts[k + 1])));
+      const int draw_y = 255 - iy;
+      for (int ix = ix_min; ix < ix_max; ++ix) {
+        setPixel(image, ix, draw_y, color);
+      }
+    }
+  }
+}
+
 odb::Rect TileGenerator::getBounds() const
 {
   odb::Rect bounds;
@@ -662,7 +721,15 @@ std::vector<unsigned char> TileGenerator::generateTile(
         } else {
           // Layer-specific: obstructions and pins
           if (vis.blockages) {
-            for (odb::dbBox* obs : master->getObstructions()) {
+            for (odb::dbPolygon* poly_obs : master->getPolygonObstructions()) {
+              if (tech_layer && poly_obs->getTechLayer() != tech_layer) {
+                continue;
+              }
+              odb::Polygon poly = poly_obs->getPolygon();
+              inst->getTransform().apply(poly);
+              fillPolygon(image_buffer, poly, dbu_tile, scale, obs_color);
+            }
+            for (odb::dbBox* obs : master->getObstructions(false)) {
               if (tech_layer && obs->getTechLayer() != tech_layer) {
                 continue;
               }
@@ -686,7 +753,15 @@ std::vector<unsigned char> TileGenerator::generateTile(
           if (vis.pins) {
             for (odb::dbMTerm* mterm : master->getMTerms()) {
               for (odb::dbMPin* mpin : mterm->getMPins()) {
-                for (odb::dbBox* geom : mpin->getGeometry()) {
+                for (odb::dbPolygon* poly_geom : mpin->getPolygonGeometry()) {
+                  if (tech_layer && poly_geom->getTechLayer() != tech_layer) {
+                    continue;
+                  }
+                  odb::Polygon poly = poly_geom->getPolygon();
+                  inst->getTransform().apply(poly);
+                  fillPolygon(image_buffer, poly, dbu_tile, scale, color);
+                }
+                for (odb::dbBox* geom : mpin->getGeometry(false)) {
                   if (tech_layer && geom->getTechLayer() != tech_layer) {
                     continue;
                   }
@@ -763,15 +838,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
           if (!box.overlaps(dbu_tile)) {
             continue;
           }
-          const odb::Rect overlap = box.intersect(dbu_tile);
-          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, ix, draw_y, color);
-            }
-          }
+          const odb::Polygon& poly = std::get<1>(shape);
+          fillPolygon(image_buffer, poly, dbu_tile, scale, color);
         }
       }
 
@@ -1041,7 +1109,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   const double scale = kTileSizeInPixel / tile_dbu_size;
   constexpr double text_rect_margin = 0.8;
   constexpr int text_scale = 2;
-  const Color text_color{255, 255, 255, 255};
+  const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
     if (!map_point.rect.overlaps(dbu_tile)) {
@@ -1049,10 +1117,10 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     }
     const odb::Rect overlap = map_point.rect.intersect(dbu_tile);
     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-    const Color color{static_cast<uint8_t>(map_point.color.r),
-                      static_cast<uint8_t>(map_point.color.g),
-                      static_cast<uint8_t>(map_point.color.b),
-                      static_cast<uint8_t>(map_point.color.a)};
+    const Color color{.r = static_cast<uint8_t>(map_point.color.r),
+                      .g = static_cast<uint8_t>(map_point.color.g),
+                      .b = static_cast<uint8_t>(map_point.color.b),
+                      .a = static_cast<uint8_t>(map_point.color.a)};
 
     for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {

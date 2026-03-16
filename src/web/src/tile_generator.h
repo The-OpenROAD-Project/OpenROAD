@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -156,11 +157,10 @@ class TileGenerator
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
       const std::set<uint32_t>* focus_net_ids = nullptr) const;
-  std::vector<unsigned char> generateHeatMapTile(
-      gui::HeatMapDataSource& source,
-      int z,
-      int x,
-      int y) const;
+  std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
+                                                 int z,
+                                                 int x,
+                                                 int y) const;
 
  private:
   void setPixel(std::vector<unsigned char>& image,
@@ -201,6 +201,12 @@ class TileGenerator
   static odb::Rect toPixels(double scale,
                             const odb::Rect& rect,
                             const odb::Rect& dbu_tile);
+
+  void fillPolygon(std::vector<unsigned char>& image,
+                   const odb::Polygon& poly,
+                   const odb::Rect& dbu_tile,
+                   double scale,
+                   const Color& color) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
