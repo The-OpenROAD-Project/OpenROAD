@@ -40,10 +40,7 @@ PDNSim::PDNSim(utl::Logger* logger,
   opendp_ = opendp;
   logger_ = logger;
   heatmap_source_ = gui::registerHeatMapSource(
-      "IR Drop",
-      "IRDrop",
-      "IRDrop",
-      [this, sta, logger]() {
+      "IR Drop", "IRDrop", "IRDrop", [this, sta, logger]() {
         return std::make_shared<IRDropDataSource>(this, sta, logger);
       });
 }

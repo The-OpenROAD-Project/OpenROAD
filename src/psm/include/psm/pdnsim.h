@@ -34,7 +34,7 @@ class Opendp;
 namespace gui {
 class HeatMapSourceRegistration;
 using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
-}
+}  // namespace gui
 
 namespace psm {
 class IRDropDataSource;
