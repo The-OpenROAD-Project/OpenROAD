@@ -68,6 +68,7 @@ class RamGen
 
   void generate(int bytes_per_word,
                 int word_count,
+                int mux_col_ratio,
                 int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
@@ -120,14 +121,28 @@ class RamGen
                                     std::vector<odb::dbNet*>& data_output);
   void makeCellByte(
       Grid& ram_grid,
-      int byte_number,
+      int byte_idx,
+      int col_group,
+      int bytes_per_word_total,
       const std::string& prefix,
       int read_ports,
       odb::dbNet* clock,
       odb::dbNet* write_enable,
       const std::vector<odb::dbNet*>& selects,
+      odb::dbNet* col_select,
       const std::array<odb::dbNet*, 8>& data_input,
-      const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
+      const std::vector<std::array<odb::dbNet*, 8>>& data_output);
+
+  // Builds the AOI-gate column mux for one logical byte.
+  // For mux_col_ratio=2: AOI22 + INV per bit.
+  // For mux_col_ratio=4: AOI22 + AOI22 + AND2 + INV per bit.
+  // Returns a Cell to be placed in the sel-cell track buffer row.
+  std::unique_ptr<Cell> makeColMux(
+      const std::string& prefix,
+      int mux_col_ratio,
+      const std::vector<std::array<odb::dbNet*, 8>>& col_q_nets,
+      const std::vector<odb::dbNet*>& col_sel_nets,
+      const std::array<odb::dbNet*, 8>& q_out_nets);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
@@ -156,9 +171,14 @@ class RamGen
   odb::dbMaster* tristate_cell_{nullptr};
   odb::dbMaster* inv_cell_{nullptr};
   odb::dbMaster* and2_cell_{nullptr};
+  odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  // Port names for the AOI22 cell, discovered at findMasters() time.
+  std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
+      aoi22_out_;
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;

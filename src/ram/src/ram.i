@@ -31,6 +31,7 @@ namespace ram {
 void
 generate_ram_netlist_cmd(int bytes_per_word,
                          int word_count,
+                         int mux_col_ratio,
                          const char* storage_cell_name,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
@@ -86,7 +87,7 @@ generate_ram_netlist_cmd(int bytes_per_word,
     }
   }
 
-  ram_gen->generate(bytes_per_word, word_count, read_ports,
+  ram_gen->generate(bytes_per_word, word_count, mux_col_ratio, read_ports,
                     storage_cell, tristate_cell, inv_cell, tapcell,
                     max_tap_dist);
 }
