@@ -23,12 +23,14 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
   slack_ = 0;
   is_critical_ = false;
 
-  int pin_index = 0;
   for (CUGRPin& pin : base_net.getPins()) {
     const std::vector<BoxOnLayer> pin_shapes = pin.getPinShapes();
     std::unordered_set<uint64_t> included;
     for (const auto& pin_shape : pin_shapes) {
       const BoxT cells = grid_graph->rangeSearchCells(pin_shape);
+      if (!cells.isValid()) {
+        continue;
+      }
       for (int x = cells.lx(); x <= cells.hx(); x++) {
         for (int y = cells.ly(); y <= cells.hy(); y++) {
           const GRPoint point(pin_shape.getLayerIdx(), x, y);
@@ -43,11 +45,10 @@ GRNet::GRNet(const CUGRNet& base_net, const GridGraph* grid_graph)
     }
 
     if (pin.isPort()) {
-      pin_index_to_bterm_[pin_index] = pin.getBTerm();
+      pin_index_to_bterm_[pin.getIndex()] = pin.getBTerm();
     } else {
-      pin_index_to_iterm_[pin_index] = pin.getITerm();
+      pin_index_to_iterm_[pin.getIndex()] = pin.getITerm();
     }
-    pin_index++;
   }
 
   for (const auto& access_points : pin_access_points_) {
@@ -88,7 +89,6 @@ void GRNet::addITermAccessPoint(odb::dbITerm* iterm, const AccessPoint& ap)
 
 bool GRNet::isLocal() const
 {
-  bool is_local = true;
   PointT first_ap;
 
   if (!iterm_to_ap_.empty()) {
@@ -100,20 +100,18 @@ bool GRNet::isLocal() const
   }
 
   for (const auto& [_, ap] : iterm_to_ap_) {
-    const PointT& ap_pos = ap.point;
-    if (ap_pos != first_ap) {
-      is_local = false;
+    if (ap.point != first_ap) {
+      return false;
     }
   }
 
   for (const auto& [_, ap] : bterm_to_ap_) {
-    const PointT& ap_pos = ap.point;
-    if (ap_pos != first_ap) {
-      is_local = false;
+    if (ap.point != first_ap) {
+      return false;
     }
   }
 
-  return is_local;
+  return true;
 }
 
 }  // namespace grt

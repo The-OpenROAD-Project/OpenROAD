@@ -433,15 +433,15 @@ bool GridGraph::findODBAccessPoints(
       const std::vector<odb::dbAccessPoint*>& bpin_pas
           = bpin->getAccessPoints();
       access_points.insert(
-          access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+          access_points.end(), bpin_pas.begin(), bpin_pas.end());
     }
     std::vector<AccessPoint> aps_on_grid
         = translateAccessPointsToGrid(access_points, odb::Point(0, 0));
+    access_points.clear();
     if (!aps_on_grid.empty()) {
       AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
       selected_access_points.emplace(selected_ap);
       net->addBTermAccessPoint(bterm, selected_ap);
-      access_points.clear();
       has_aps = true;
     }
   }
@@ -464,8 +464,8 @@ bool GridGraph::findODBAccessPoints(
     iterm->getInst()->getLocation(x, y);
     std::vector<AccessPoint> aps_on_grid
         = translateAccessPointsToGrid(access_points, odb::Point(x, y));
-    AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
     if (!aps_on_grid.empty()) {
+      AccessPoint selected_ap = selectAccessPoint(aps_on_grid);
       selected_access_points.emplace(selected_ap);
       net->addITermAccessPoint(iterm, selected_ap);
       access_points.clear();
@@ -674,7 +674,7 @@ int GridGraph::checkOverflow(const std::shared_ptr<GRTreeNode>& tree) const
   }
   int num = 0;
   GRTreeNode::preorder(tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-    for (auto& child : node->getChildren()) {
+    for (const auto& child : node->getChildren()) {
       // Only check wires
       if (node->getLayerIdx() == child->getLayerIdx()) {
         num += checkOverflow(
@@ -691,7 +691,7 @@ std::string GridGraph::getPythonString(
   std::vector<std::tuple<PointT, PointT, bool>> edges;
   GRTreeNode::preorder(
       routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
-        for (auto& child : node->getChildren()) {
+        for (const auto& child : node->getChildren()) {
           if (node->getLayerIdx() == child->getLayerIdx()) {
             const int direction = getLayerDirection(node->getLayerIdx());
             const int r = (*node)[1 - direction];
