@@ -392,8 +392,9 @@ void Opendp::place()
 
     bool diamond_move = diamondMove(cell);
     bool rip_up_move = false;
+    
     if (!diamond_move) {
-      rip_up_move = ripUpAndReplace(cell);
+      // rip_up_move = ripUpAndReplace(cell);      
       if (!rip_up_move) {
         failed_rip_up++;
       }

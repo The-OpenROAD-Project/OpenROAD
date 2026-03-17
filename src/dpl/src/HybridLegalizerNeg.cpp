@@ -43,6 +43,12 @@
 #include <vector>
 
 #include "HybridLegalizer.h"
+#include "PlacementDRC.h"
+#include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/network.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -95,8 +101,19 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 1 converged at iteration {}.",
                  iter);
+      if(debug_observer_) {
+        setDplPositions();
+        logger_->report("Pause after convergence at phase 1.");
+        debug_observer_->redrawAndPause();
+      }
       return;
     }
+  }
+
+  if(debug_observer_) {
+    setDplPositions();
+    logger_->report("Pause before negotiation phase 2.");
+    debug_observer_->redrawAndPause();
   }
 
   // Phase 2 – isolation point active: skip already-legal cells.
@@ -117,6 +134,11 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 2 converged at iteration {}.",
                  iter);
+      if(debug_observer_) {
+        setDplPositions();
+        logger_->report("Pause after convergence at phase 2.");
+        debug_observer_->redrawAndPause();
+      }
       return;
     }
   }
@@ -129,6 +151,11 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
              1,
              "Negotiation did not fully converge. Remaining violations: {}.",
              numViolations());
+  if(debug_observer_) {
+    setDplPositions();
+    logger_->report("Pause after non-convergence at negotiation phases 1 and 2.");
+    debug_observer_->redrawAndPause();
+  }
 }
 
 // ===========================================================================
@@ -141,6 +168,12 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
 {
   sortByNegotiationOrder(activeCells);
 
+  // for(auto cell : activeCells){
+  //   logger_->report("Negotiation iter {}, cell {}, legal {}",
+  //                   iter,
+  //                   cell,
+  //                   isCellLegal(cell));
+  // }
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -150,23 +183,29 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       continue;
     }
     ripUp(idx);
-    const auto [bx, by] = findBestLocation(idx);
+    const auto [bx, by] = findBestLocation(idx, iter);
     place(idx, bx, by);
   }
 
-  // Count remaining overflows.
+  // Count remaining overflows (grid overuse) AND DRC violations.
+  // Both must reach zero for the negotiation to converge.
   int totalOverflow = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
     }
     const HLCell& cell = cells_[idx];
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
-      for (int dx = 0; dx < cell.width; ++dx) {
-        if (gridExists(cell.x + dx, cell.y + dy)) {
-          totalOverflow += gridAt(cell.x + dx, cell.y + dy).overuse();
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (gridExists(gx, cell.y + dy)) {
+          totalOverflow += gridAt(gx, cell.y + dy).overuse();
         }
       }
+    }
+    if (!isCellLegal(idx)) {
+      ++totalOverflow;
     }
   }
 
@@ -184,6 +223,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
 
 void HybridLegalizer::ripUp(int cellIdx)
 {
+  eraseCellFromDplGrid(cellIdx);
   addUsage(cellIdx, -1);
 }
 
@@ -192,19 +232,35 @@ void HybridLegalizer::place(int cellIdx, int x, int y)
   cells_[cellIdx].x = x;
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
+  syncCellToDplGrid(cellIdx);
+  if (debug_observer_ && cells_[cellIdx].inst != nullptr) {
+    debug_observer_->placeInstance(cells_[cellIdx].inst);
+  }
 }
 
 // ===========================================================================
 // findBestLocation – enumerate candidates within the search window
 // ===========================================================================
 
-std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const
+std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
+                                                      int iter) const
 {
   const HLCell& cell = cells_[cellIdx];
 
   auto bestCost = static_cast<double>(kInfCost);
   int bestX = cell.x;
   int bestY = cell.y;
+
+  // Look up the DPL Node once for DRC checks (may be null if no
+  // Opendp integration is available).
+  Node* node = (opendp_ && opendp_->drc_engine_ && network_)
+                   ? network_->getNode(cell.inst)
+                   : nullptr;
+
+  // DRC penalty escalates with iteration count: early iterations are
+  // lenient (cells can tolerate DRC violations to resolve overlaps first),
+  // later iterations strongly penalise DRC violations to force resolution.
+  const double kDrcPenalty = 1e3 * (1.0 + iter);
 
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
@@ -217,7 +273,16 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const
     if (!respectsFence(cellIdx, tx, ty)) {
       return;
     }
-    const double cost = negotiationCost(cellIdx, tx, ty);
+    double cost = negotiationCost(cellIdx, tx, ty);
+    // Add a DRC penalty so clean positions are strongly preferred,
+    // but a DRC-violating position can still be chosen if nothing
+    // better is available (avoids infinite non-convergence).
+    if (node != nullptr) {
+      if (!opendp_->drc_engine_->checkDRC(
+              node, GridX{tx}, GridY{ty}, node->getOrient())) {
+        cost += kDrcPenalty;
+      }
+    }
     if (cost < bestCost) {
       bestCost = cost;
       bestX = tx;
@@ -225,15 +290,26 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx) const
     }
   };
 
-  // Current row – wide window.
+  // Search around the initial (GP) position.
   for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
     tryLocation(cell.initX + dx, cell.y);
   }
-
-  // Adjacent rows – narrow window.
   for (int dx = -adjWindow_; dx <= adjWindow_; ++dx) {
     tryLocation(cell.initX + dx, cell.y - cell.height);
     tryLocation(cell.initX + dx, cell.y + cell.height);
+  }
+
+  // Also search around the current position — critical when the cell has
+  // already been displaced far from initX and needs to explore its local
+  // neighbourhood to resolve DRC violations (e.g. one-site gaps).
+  if (cell.x != cell.initX || cell.y != cell.initY) {
+    for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
+      tryLocation(cell.x + dx, cell.y);
+    }
+    for (int dx = -adjWindow_; dx <= adjWindow_; ++dx) {
+      tryLocation(cell.x + dx, cell.y - cell.height);
+      tryLocation(cell.x + dx, cell.y + cell.height);
+    }
   }
 
   // Also try snapping to the original position.
@@ -253,9 +329,10 @@ double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
   const HLCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
 
+  const int xBegin = std::max(0, x - cell.padLeft);
+  const int xEnd = std::min(gridW_, x + cell.width + cell.padRight);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int dx = 0; dx < cell.width; ++dx) {
-      const int gx = x + dx;
+    for (int gx = xBegin; gx < xEnd; ++gx) {
       const int gy = y + dy;
       if (!gridExists(gx, gy)) {
         cost += kInfCost;
@@ -327,10 +404,12 @@ void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
   auto cellOveruse = [this](int idx) {
     const HLCell& cell = cells_[idx];
     int ov = 0;
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
-      for (int dx = 0; dx < cell.width; ++dx) {
-        if (gridExists(cell.x + dx, cell.y + dy)) {
-          ov += gridAt(cell.x + dx, cell.y + dy).overuse();
+      for (int gx = xBegin; gx < xEnd; ++gx) {
+        if (gridExists(gx, cell.y + dy)) {
+          ov += gridAt(gx, cell.y + dy).overuse();
         }
       }
     }
@@ -388,10 +467,12 @@ void HybridLegalizer::greedyImprove(int passes)
         if (!respectsFence(idx, tx, ty)) {
           return;
         }
-        // Only accept if no new overlap is introduced.
+        // Only accept if no new overlap or padding violation is introduced.
+        const int txBegin = std::max(0, tx - cell.padLeft);
+        const int txEnd = std::min(gridW_, tx + cell.width + cell.padRight);
         for (int dy = 0; dy < cell.height; ++dy) {
-          for (int dx = 0; dx < cell.width; ++dx) {
-            if (gridAt(tx + dx, ty + dy).overuse() > 0) {
+          for (int gx = txBegin; gx < txEnd; ++gx) {
+            if (gridAt(gx, ty + dy).overuse() > 0) {
               return;
             }
           }

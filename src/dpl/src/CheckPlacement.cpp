@@ -133,7 +133,7 @@ void Opendp::checkPlacement(const bool verbose,
           + region_placement_failures.size() + edge_spacing_failures.size()
           + blocked_layers_failures.size()
       > 0) {
-    logger_->error(DPL, 33, "detailed placement checks failed.");
+    logger_->error(DPL, 33, "detailed placement checks failed during check placement.");
   }
 }
 
@@ -326,7 +326,7 @@ bool Opendp::checkInRows(const Node& cell) const
   const auto grid_rect = grid_->gridCovering(&cell);
   debugPrint(logger_,
              DPL,
-             "hybrid",
+             "old_hybrid",
              1,
              "Checking cell {} with site {} and "
              "height {} in rows. Y start {} y end {}",

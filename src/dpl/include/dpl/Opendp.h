@@ -108,8 +108,9 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool disable_hybrid_legalizer = false);
-  int hybridLegalize();
+                         bool disable_hybrid_legalizer = false,
+                         bool hybrid_only = false);
+  int hybridLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -194,6 +195,7 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   friend class CellPlaceOrderLess;
+  friend class HybridLegalizer;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);

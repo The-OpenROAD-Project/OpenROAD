@@ -6,12 +6,13 @@ sta::define_cmd_args "detailed_placement" { \
                            [-disallow_one_site_gaps] \
                            [-incremental] \
                            [-report_file_name file_name] \
-                           [-disable_hybrid_legalization]}
+                           [-disable_hybrid_legalization] \
+                           [-hybrid_only]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} \
-    flags {-disallow_one_site_gaps -incremental -disable_hybrid_legalization}
+    flags {-disallow_one_site_gaps -incremental -disable_hybrid_legalization -hybrid_only}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -51,7 +52,8 @@ proc detailed_placement { args } {
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
-      [info exists flags(-disable_hybrid_legalization)]
+      [info exists flags(-disable_hybrid_legalization)] \
+      [info exists flags(-hybrid_only)]
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -399,10 +401,10 @@ proc get_row_site { } {
 }
 }
 
-sta::define_cmd_args "hybrid_legalize" {}
+sta::define_cmd_args "hybrid_legalize" {[-abacus]}
 
 proc hybrid_legalize { args } {
-  sta::parse_key_args "hybrid_legalize" args keys {} flags {}
+  sta::parse_key_args "hybrid_legalize" args keys {} flags {-abacus}
   sta::check_argc_eq0 "hybrid_legalize" $args
-  return [dpl::hybrid_legalize_cmd]
+  return [dpl::hybrid_legalize_cmd [info exists flags(-abacus)]]
 }

@@ -28,11 +28,13 @@ detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
                        bool incremental,
-                       bool disable_hybrid_legalizer){
+                       bool disable_hybrid_legalizer,
+                       bool hybrid_only){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->detailedPlacement(max_displacment_x, max_displacment_y,
                             std::string(report_file_name),
-                            incremental, disable_hybrid_legalizer);
+                            incremental, disable_hybrid_legalizer,
+                            hybrid_only);
 }
 
 void
@@ -171,10 +173,10 @@ void set_extra_dpl_cmd(bool enable)
   opendp->setExtraDplEnabled(enable);
 }
 
-int hybrid_legalize_cmd()
+int hybrid_legalize_cmd(bool run_abacus)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->hybridLegalize();
+  return opendp->hybridLegalize(run_abacus);
 }
 
 } // namespace

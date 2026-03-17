@@ -55,14 +55,20 @@
 
 namespace dpl {
 
+class DplObserver;
+class Opendp;
+class Padding;
+class Node;
+class Network;
+
 // ---------------------------------------------------------------------------
 // Constants  (defaults match the NBLG paper)
 // ---------------------------------------------------------------------------
 inline constexpr int kInfCost = std::numeric_limits<int>::max() / 2;
-inline constexpr int kHorizWindow = 9;     // search width, current row (sites)
-inline constexpr int kAdjWindow = 3;       // search width, adjacent rows
-inline constexpr int kMaxIterNeg = 600;    // negotiation phase-1 limit
-inline constexpr int kMaxIterNeg2 = 3000;  // negotiation phase-2 limit
+inline constexpr int kHorizWindow = 20;     // search width, current row (sites)
+inline constexpr int kAdjWindow = 5;       // search width, adjacent rows
+inline constexpr int kMaxIterNeg = 100000;    // negotiation phase-1 limit
+inline constexpr int kMaxIterNeg2 = 100000;  // negotiation phase-2 limit
 inline constexpr int kIsolationPt = 1;     // isolation-point parameter I
 inline constexpr double kMfDefault = 1.5;  // max-disp penalty multiplier
 inline constexpr int kThDefault = 30;      // max-disp threshold (sites)
@@ -115,8 +121,10 @@ struct HLCell
   int initY{0};   // position after global placement (rows)
   int x{0};       // current legalised position (sites)
   int y{0};       // current legalised position (rows)
-  int width{0};   // footprint width  (sites)
-  int height{0};  // footprint height (row units: 1–4)
+  int width{0};    // footprint width  (sites)
+  int height{0};   // footprint height (row units: 1–4)
+  int padLeft{0};  // left padding (sites)
+  int padRight{0}; // right padding (sites)
 
   bool fixed{false};
   HLPowerRailType railType{HLPowerRailType::kVss};
@@ -160,7 +168,12 @@ struct AbacusCluster
 class HybridLegalizer
 {
  public:
-  HybridLegalizer(odb::dbDatabase* db, utl::Logger* logger);
+  HybridLegalizer(Opendp* opendp,
+                  odb::dbDatabase* db,
+                  utl::Logger* logger,
+                  const Padding* padding = nullptr,
+                  DplObserver* debug_observer = nullptr,
+                  Network* network = nullptr);
   ~HybridLegalizer() = default;
 
   HybridLegalizer(const HybridLegalizer&) = delete;
@@ -173,7 +186,11 @@ class HybridLegalizer
   // at the start of each call (cells_, grid_, fences_, rowRail_ are cleared).
   void legalize();
 
+  // Pass positions back to the DPL original structure.
+  void setDplPositions();
+
   // Tuning knobs (all have paper-default values)
+  void setRunAbacus(bool run) { run_abacus_ = run; }
   void setMf(double mf) { mf_ = mf; }
   void setTh(int th) { th_ = th; }
   void setMaxIterNeg(int n) { maxIterNeg_ = n; }
@@ -192,6 +209,7 @@ class HybridLegalizer
   void buildGrid();
   void initFenceRegions();
   [[nodiscard]] HLPowerRailType inferRailType(int rowIdx) const;
+  void flushToDb();  // Write current cell positions to ODB (for GUI updates)
 
   // Abacus pass
   [[nodiscard]] std::vector<int> runAbacus();
@@ -207,7 +225,8 @@ class HybridLegalizer
                       bool updateHistory);
   void ripUp(int cellIdx);
   void place(int cellIdx, int x, int y);
-  [[nodiscard]] std::pair<int, int> findBestLocation(int cellIdx) const;
+  [[nodiscard]] std::pair<int, int> findBestLocation(int cellIdx,
+                                                      int iter = 0) const;
   [[nodiscard]] double negotiationCost(int cellIdx, int x, int y) const;
   [[nodiscard]] double targetCost(int cellIdx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
@@ -226,6 +245,13 @@ class HybridLegalizer
                                                 int x,
                                                 int y) const;
 
+  // DPL Grid synchronisation helpers – keep the Opendp pixel grid in sync
+  // with HybridLegalizer cell positions so that PlacementDRC neighbour
+  // lookups (edge spacing, padding, one-site gaps) see correct data.
+  void syncCellToDplGrid(int cellIdx);
+  void eraseCellFromDplGrid(int cellIdx);
+  void syncAllCellsToDplGrid();
+
   // HLGrid helpers
   HLGrid& gridAt(int x, int y) { return grid_[y * gridW_ + x]; }
   [[nodiscard]] const HLGrid& gridAt(int x, int y) const
@@ -238,9 +264,23 @@ class HybridLegalizer
   }
   void addUsage(int cellIdx, int delta);
 
+  // Effective padded footprint helpers (inclusive of padding zones).
+  [[nodiscard]] int effXBegin(const HLCell& cell) const
+  {
+    return std::max(0, cell.x - cell.padLeft);
+  }
+  [[nodiscard]] int effXEnd(const HLCell& cell) const
+  {
+    return std::min(gridW_, cell.x + cell.width + cell.padRight);
+  }
+
   // Data
+  Opendp* opendp_{nullptr};
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
+  const Padding* padding_{nullptr};
+  DplObserver* debug_observer_{nullptr};
+  Network* network_{nullptr};
 
   int siteWidth_{0};
   int rowHeight_{0};
@@ -262,6 +302,7 @@ class HybridLegalizer
   int horizWindow_{kHorizWindow};
   int adjWindow_{kAdjWindow};
   int numThreads_{1};
+  bool run_abacus_{false};
 };
 
 }  // namespace dpl

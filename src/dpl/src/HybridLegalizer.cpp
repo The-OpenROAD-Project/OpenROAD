@@ -40,9 +40,17 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "PlacementDRC.h"
+#include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
+#include "infrastructure/Grid.h"
+#include "infrastructure/Objects.h"
+#include "infrastructure/Padding.h"
+#include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
@@ -84,8 +92,13 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 // Constructor
 // ===========================================================================
 
-HybridLegalizer::HybridLegalizer(odb::dbDatabase* db, utl::Logger* logger)
-    : db_(db), logger_(logger)
+HybridLegalizer::HybridLegalizer(Opendp* opendp,
+                                 odb::dbDatabase* db,
+                                 utl::Logger* logger,
+                                 const Padding* padding,
+                                 DplObserver* debug_observer,
+                                 Network* network)
+    : opendp_(opendp), db_(db), logger_(logger), padding_(padding), debug_observer_(debug_observer), network_(network)
 {
 }
 
@@ -104,6 +117,16 @@ void HybridLegalizer::legalize()
   if (!initFromDb()) {
     return;
   }
+
+  if (debug_observer_) {
+    debug_observer_->startPlacement(db_->getChip()->getBlock());
+  }
+  if (debug_observer_) {
+    setDplPositions();
+    logger_->report("Pause before Abacus pass.");
+    debug_observer_->redrawAndPause();
+  }
+
   buildGrid();
   initFenceRegions();
 
@@ -117,16 +140,47 @@ void HybridLegalizer::legalize()
              gridH_);
 
   // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
-  debugPrint(
-      logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
-  std::vector<int> illegal = runAbacus();
+  std::vector<int> illegal;
+  run_abacus_ = false;
+  if (run_abacus_) 
+  {
+    debugPrint(
+        logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
+    illegal = runAbacus();
 
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "HybridLegalizer: Abacus done, {} cells still illegal.",
-             illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "HybridLegalizer: Abacus done, {} cells still illegal.",
+               illegal.size());
+  } else {
+    debugPrint(
+        logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: skipping Abacus pass.");
+    // Populate usage from initial coordinates
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (!cells_[i].fixed) {
+        addUsage(i, 1);
+      }
+    }
+    // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
+    // lookups see the correct placement state.
+    syncAllCellsToDplGrid();
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (!cells_[i].fixed) {
+        cells_[i].legal = isCellLegal(i);
+        if (!cells_[i].legal) {
+          illegal.push_back(i);
+        }
+      }
+    }
+  }
+
+  if (debug_observer_) {
+    setDplPositions();
+    logger_->report("Pause after Abacus pass.");
+    debug_observer_->redrawAndPause();
+  }
 
   // --- Phase 2: Negotiation (fixes remaining violations) -------------------
   if (!illegal.empty()) {
@@ -139,12 +193,18 @@ void HybridLegalizer::legalize()
     runNegotiation(illegal);
   }
 
+  if (debug_observer_) {
+    setDplPositions();
+    logger_->report("Pause after negotiation pass.");
+    debug_observer_->redrawAndPause();
+  }
+
   // --- Phase 3: Post-optimisation ------------------------------------------
   debugPrint(
       logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
-  greedyImprove(5);
-  cellSwap();
-  greedyImprove(1);
+  // greedyImprove(5);
+  // cellSwap();
+  // greedyImprove(1);
 
   debugPrint(logger_,
              utl::DPL,
@@ -164,6 +224,54 @@ void HybridLegalizer::legalize()
     const int dbY = dieYlo_ + cell.y * rowHeight_;
     cell.inst->setLocation(dbX, dbY);
     cell.inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+}
+
+// ===========================================================================
+// flushToDb – write current cell positions to ODB so the GUI reflects them
+// ===========================================================================
+
+void HybridLegalizer::flushToDb()
+{
+  for (const auto& cell : cells_) {
+    if (cell.fixed || cell.inst == nullptr) {
+      continue;
+    }
+    const int dbX = dieXlo_ + cell.x * siteWidth_;
+    const int dbY = dieYlo_ + cell.y * rowHeight_;
+    cell.inst->setLocation(dbX, dbY);
+  }
+}
+
+// ===========================================================================
+// setDplPositions – pass the positions to the DPL original structure (Node)
+// ===========================================================================
+
+void HybridLegalizer::setDplPositions()
+{
+  if (!network_) {
+    return;
+  }
+  std::unordered_map<odb::dbInst*, Node*> inst_to_node;
+  inst_to_node.reserve(network_->getNodes().size());
+  for (const auto& node_ptr : network_->getNodes()) {
+    if (node_ptr->getDbInst()) {
+      inst_to_node[node_ptr->getDbInst()] = node_ptr.get();
+    }
+  }
+
+  for (const auto& cell : cells_) {
+    if (cell.fixed || cell.inst == nullptr) {
+      continue;
+    }
+    auto it = inst_to_node.find(cell.inst);
+    if (it != inst_to_node.end()) {
+      const int coreX = cell.x * siteWidth_;
+      const int coreY = cell.y * rowHeight_;
+      it->second->setLeft(DbuX(coreX));
+      it->second->setBottom(DbuY(coreY));
+      it->second->setPlaced(true);
+    }
   }
 }
 
@@ -242,6 +350,11 @@ bool HybridLegalizer::initFromDb()
     cell.railType = inferRailType(cell.initY);
     cell.flippable = (cell.height % 2 == 1);
 
+    if (padding_ != nullptr) {
+      cell.padLeft = padding_->padLeft(inst).v;
+      cell.padRight = padding_->padRight(inst).v;
+    }
+
     cells_.push_back(cell);
   }
 
@@ -263,17 +376,23 @@ void HybridLegalizer::buildGrid()
   grid_.assign(static_cast<size_t>(gridW_) * gridH_, HLGrid{});
 
   // Mark blockages and record fixed-cell usage in one pass.
+  // The padded range of fixed cells is also blocked so movable cells
+  // cannot violate padding constraints relative to fixed instances.
   for (const HLCell& cell : cells_) {
     if (!cell.fixed) {
       continue;
     }
+    const int xBegin = effXBegin(cell);
+    const int xEnd = effXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
-      for (int dx = 0; dx < cell.width; ++dx) {
-        const int gx = cell.x + dx;
+      for (int gx = xBegin; gx < xEnd; ++gx) {
         const int gy = cell.y + dy;
         if (gridExists(gx, gy)) {
           gridAt(gx, gy).capacity = 0;
-          gridAt(gx, gy).usage = 1;
+          // Physical footprint carries usage=1; padding slots do not.
+          if (gx >= cell.x && gx < cell.x + cell.width) {
+            gridAt(gx, gy).usage = 1;
+          }
         }
       }
     }
@@ -330,14 +449,92 @@ void HybridLegalizer::initFenceRegions()
 void HybridLegalizer::addUsage(int cellIdx, int delta)
 {
   const HLCell& cell = cells_[cellIdx];
+  const int xBegin = effXBegin(cell);
+  const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int dx = 0; dx < cell.width; ++dx) {
-      const int gx = cell.x + dx;
+    for (int gx = xBegin; gx < xEnd; ++gx) {
       const int gy = cell.y + dy;
       if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
       }
     }
+  }
+}
+
+// ===========================================================================
+// DPL Grid synchronisation
+// ===========================================================================
+
+void HybridLegalizer::syncCellToDplGrid(int cellIdx)
+{
+  if (!opendp_ || !opendp_->grid_ || !network_) {
+    return;
+  }
+  const HLCell& hlcell = cells_[cellIdx];
+  if (hlcell.inst == nullptr) {
+    return;
+  }
+  Node* node = network_->getNode(hlcell.inst);
+  if (node == nullptr) {
+    return;
+  }
+  // Update the Node's position to match the HLCell so Grid operations
+  // (which read Node left/bottom) see the current placement.
+  node->setLeft(DbuX(hlcell.x * siteWidth_));
+  node->setBottom(DbuY(hlcell.y * rowHeight_));
+  opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
+}
+
+void HybridLegalizer::eraseCellFromDplGrid(int cellIdx)
+{
+  if (!opendp_ || !opendp_->grid_ || !network_) {
+    return;
+  }
+  const HLCell& hlcell = cells_[cellIdx];
+  if (hlcell.inst == nullptr) {
+    return;
+  }
+  Node* node = network_->getNode(hlcell.inst);
+  if (node == nullptr) {
+    return;
+  }
+  // Ensure the Node's position matches the current HLCell position so
+  // erasePixel clears the correct pixels (it reads gridCoveringPadded).
+  node->setLeft(DbuX(hlcell.x * siteWidth_));
+  node->setBottom(DbuY(hlcell.y * rowHeight_));
+  opendp_->grid_->erasePixel(node);
+}
+
+void HybridLegalizer::syncAllCellsToDplGrid()
+{
+  if (!opendp_ || !opendp_->grid_ || !network_) {
+    return;
+  }
+  // Clear all movable cells from the DPL Grid first, then repaint at
+  // their current positions.  Fixed cells were already painted during
+  // Opendp::setFixedGridCells() and should not be touched.
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (cells_[i].fixed || cells_[i].inst == nullptr) {
+      continue;
+    }
+    Node* node = network_->getNode(cells_[i].inst);
+    if (node == nullptr) {
+      continue;
+    }
+    // Update Node position then erase whatever was previously painted.
+    node->setLeft(DbuX(cells_[i].x * siteWidth_));
+    node->setBottom(DbuY(cells_[i].y * rowHeight_));
+    opendp_->grid_->erasePixel(node);
+  }
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (cells_[i].fixed || cells_[i].inst == nullptr) {
+      continue;
+    }
+    Node* node = network_->getNode(cells_[i].inst);
+    if (node == nullptr) {
+      continue;
+    }
+    opendp_->grid_->paintPixel(node, GridX{cells_[i].x}, GridY{cells_[i].y});
   }
 }
 
@@ -453,6 +650,9 @@ std::vector<int> HybridLegalizer::runAbacus()
     addUsage(i, 1);
   }
 
+  // Sync to DPL Grid before DRC checks.
+  syncAllCellsToDplGrid();
+
   // Collect still-illegal cells.
   std::vector<int> illegal;
   for (int i : order) {
@@ -479,14 +679,16 @@ void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
 
     AbacusCluster nc;
     nc.cellIndices.push_back(idx);
-    nc.optX = static_cast<double>(cell.initX);
+    const int effWidth = cell.width + cell.padLeft + cell.padRight;
+    // Target the padded-left position so that cell.initX lands correctly.
+    nc.optX = static_cast<double>(cell.initX - cell.padLeft);
     nc.totalWeight = 1.0;
     nc.totalQ = nc.optX;
-    nc.totalWidth = cell.width;
+    nc.totalWidth = effWidth;
 
-    // Clamp to die boundary.
+    // Clamp to die boundary (padded width).
     nc.optX = std::max(
-        0.0, std::min(nc.optX, static_cast<double>(gridW_ - cell.width)));
+        0.0, std::min(nc.optX, static_cast<double>(gridW_ - effWidth)));
     clusters.push_back(std::move(nc));
     collapseClusters(clusters, rowIdx);
   }
@@ -540,13 +742,20 @@ void HybridLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
 void HybridLegalizer::assignClusterPositions(const AbacusCluster& cluster,
                                              int rowIdx)
 {
-  int curX = static_cast<int>(std::round(cluster.optX));
-  curX = std::max(0, std::min(curX, gridW_ - cluster.totalWidth));
+  // cluster.optX is the padded-left edge of the cluster.
+  int paddedX = static_cast<int>(std::round(cluster.optX));
+  paddedX = std::max(0, std::min(paddedX, gridW_ - cluster.totalWidth));
 
   for (int idx : cluster.cellIndices) {
-    cells_[idx].x = curX;
+    const int effWidth
+        = cells_[idx].width + cells_[idx].padLeft + cells_[idx].padRight;
+    // Physical left edge = padded-left edge + padLeft of this cell.
+    cells_[idx].x = paddedX + cells_[idx].padLeft;
     cells_[idx].y = rowIdx;
-    curX += cells_[idx].width;
+    paddedX += effWidth;
+    if (debug_observer_ && cells_[idx].inst != nullptr) {
+      debug_observer_->placeInstance(cells_[idx].inst);
+    }
   }
 }
 
@@ -562,9 +771,23 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
   if (!respectsFence(cellIdx, cell.x, cell.y)) {
     return false;
   }
+
+  // Check placement DRCs (edge spacing, blocked layers, padding,
+  // one-site gaps) against neighbours on the DPL Grid.
+  if (opendp_ && opendp_->drc_engine_ && network_) {
+    Node* node = network_->getNode(cell.inst);
+    if (node != nullptr
+        && !opendp_->drc_engine_->checkDRC(
+            node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
+      return false;
+    }
+  }
+
+  const int xBegin = effXBegin(cell);
+  const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int dx = 0; dx < cell.width; ++dx) {
-      if (gridAt(cell.x + dx, cell.y + dy).overuse() > 0) {
+    for (int gx = xBegin; gx < xEnd; ++gx) {
+      if (gridAt(gx, cell.y + dy).overuse() > 0) {
         return false;
       }
     }
