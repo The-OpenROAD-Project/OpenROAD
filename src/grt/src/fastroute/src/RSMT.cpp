@@ -2,6 +2,7 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <map>
@@ -161,11 +162,11 @@ void FastRouteCore::fluteNormal(const int netID,
     // Sort the 3 pin coordinates to find the bounding box extents (min/max)
     // and the middle value, which becomes the Steiner point position.
     std::array<int, 3> xs_arr = {x[0], x[1], x[2]};
-    std::sort(xs_arr.begin(), xs_arr.end());
+    std::ranges::sort(xs_arr);
     const auto [x_min, x_mid, x_max] = xs_arr;
 
     std::array<int, 3> ys_arr = {y[0], y[1], y[2]};
-    std::sort(ys_arr.begin(), ys_arr.end());
+    std::ranges::sort(ys_arr);
     const auto [y_min, y_mid, y_max] = ys_arr;
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);
@@ -293,11 +294,11 @@ void FastRouteCore::fluteCongest(const int netID,
     // Sort the 3 pin coordinates to find the bounding box extents (min/max)
     // and the middle value, which becomes the Steiner point position.
     std::array<int, 3> xs_arr = {x[0], x[1], x[2]};
-    std::sort(xs_arr.begin(), xs_arr.end());
+    std::ranges::sort(xs_arr);
     const auto [x_min, x_mid, x_max] = xs_arr;
 
     std::array<int, 3> ys_arr = {y[0], y[1], y[2]};
-    std::sort(ys_arr.begin(), ys_arr.end());
+    std::ranges::sort(ys_arr);
     const auto [y_min, y_mid, y_max] = ys_arr;
 
     t.length = abs(x_max - x_min) + abs(y_max - y_min);

@@ -612,7 +612,7 @@ void FastRouteCore::newrouteZ(const int netID, const int threshold)
             graph2d_.updateEstUsageV(x2, {y2, bestZ}, net, edgeCost);
             graph2d_.updateEstUsageV(x1, {bestZ, y1}, net, edgeCost);
           }
-          graph2d_.updateEstUsageH({x1, x2}, bestZ, net, edgeCost);
+          graph2d_.updateEstUsageH({.lo = x1, .hi = x2}, bestZ, net, edgeCost);
         }
         treeedge->route.HVH = HVH;
         treeedge->route.Zpoint = bestZ;
@@ -694,7 +694,7 @@ void FastRouteCore::spiralRoute(const int netID, const int edgeID)
   };
 
   if (x1 == x2) {  // V-routing
-    graph2d_.updateEstUsageV(x1, {ymin, ymax}, net, edgeCost);
+    graph2d_.updateEstUsageV(x1, {.lo = ymin, .hi = ymax}, net, edgeCost);
     treeedge->route.xFirst = false;
     markVertical(n1, n1a);
     markVertical(n2, n2a);
@@ -1029,7 +1029,7 @@ void FastRouteCore::routeMonotonic(const int netID,
   auto walkH = [&](int16_t from_x, int16_t to_x, int16_t y) {
     const int step = (to_x >= from_x) ? 1 : -1;
     for (int16_t i = from_x; i != to_x; i += step) {
-      grids[cnt++] = {i, y};
+      grids[cnt++] = {.x = i, .y = y};
       graph2d_.updateUsageH(step > 0 ? i : i - 1, y, net, edgeCost);
     }
   };
@@ -1042,7 +1042,7 @@ void FastRouteCore::routeMonotonic(const int netID,
   auto walkV = [&](int16_t x, int16_t from_y, int16_t to_y) {
     const int step = (to_y >= from_y) ? 1 : -1;
     for (int16_t i = from_y; i != to_y; i += step) {
-      grids[cnt++] = {x, i};
+      grids[cnt++] = {.x = x, .y = i};
       graph2d_.updateUsageV(x, step > 0 ? i : i - 1, net, edgeCost);
     }
   };
