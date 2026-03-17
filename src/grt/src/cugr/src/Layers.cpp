@@ -97,7 +97,7 @@ IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
   const double pitch = pitch_;
   IntervalT track_range(std::ceil((lo - first_track_loc_) / pitch),
                         std::floor((hi - first_track_loc_) / pitch));
-  if (!track_range.IsValid()) {
+  if (!track_range.isValid()) {
     return track_range;
   }
   if (!include_bound) {
