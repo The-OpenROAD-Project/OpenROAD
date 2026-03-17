@@ -147,7 +147,8 @@ void PatternRoute::constructSteinerTree()
           construct_tree(current, cur_index, next_index);
         }
         // Set fixed layer interval
-        const AccessPoint current_pt{{current->x(), current->y()}, {}};
+        const AccessPoint current_pt{.point = {current->x(), current->y()},
+                                     .layers = {}};
         if (auto it = selected_access_points.find(current_pt);
             it != selected_access_points.end()) {
           current->setFixedLayers(it->layers);
