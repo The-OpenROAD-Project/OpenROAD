@@ -440,7 +440,7 @@ dbMaster* RamGen::findMaster(
   return best;
 }
 
-void RamGen::findMasters()
+void RamGen::findMasters(int mux_col_ratio)
 {
   if (!inv_cell_) {
     inv_cell_ = findMaster(
@@ -505,7 +505,7 @@ void RamGen::findMasters()
         "buffer");
   }
 
-  if (!aoi22_cell_) {
+  if (mux_col_ratio > 1 && !aoi22_cell_) {
     // AOI22: Y = NOT((A AND B) OR (C AND D))
     // FuncExpr tree: not_ → or_ → [ and_(port, port), and_(port, port) ]
     aoi22_cell_ = findMaster(
@@ -766,7 +766,7 @@ void RamGen::generate(const int bytes_per_word,
   aoi22_cell_ = nullptr;
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
-  findMasters();
+  findMasters(mux_col_ratio);
 
   auto chip = db_->getChip();
   if (!chip) {

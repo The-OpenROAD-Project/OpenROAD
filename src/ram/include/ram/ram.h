@@ -97,7 +97,7 @@ class RamGen
                               int read_ports);
 
  private:
-  void findMasters();
+  void findMasters(int mux_col_ratio);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
