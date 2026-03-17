@@ -28,6 +28,14 @@ void SparseGraph::init(const GridGraphView<CostT>& wire_cost_view,
   for (const auto& selected_point : selected_access_points) {
     pseudo_pins_.push_back(selected_point);
   }
+  // Sort for deterministic vertex index assignment across hash set orderings.
+  std::ranges::stable_sort(pseudo_pins_,
+                           [](const AccessPoint& a, const AccessPoint& b) {
+                             if (a.point.x() != b.point.x()) {
+                               return a.point.x() < b.point.x();
+                             }
+                             return a.point.y() < b.point.y();
+                           });
 
   // 1. Collect additional routing grid lines
   std::vector<int> pxs;
@@ -160,10 +168,14 @@ void MazeRoute::run()
   std::vector<CostT> min_costs(graph_.getNumVertices(),
                                std::numeric_limits<CostT>::max());
 
-  // lambda to compare solutions
+  // lambda to compare solutions; vertex index is a tiebreaker to ensure
+  // deterministic heap ordering across different STL implementations.
   auto compare_solution = [&](const std::shared_ptr<Solution>& lhs,
                               const std::shared_ptr<Solution>& rhs) {
-    return lhs->cost > rhs->cost;
+    if (lhs->cost != rhs->cost) {
+      return lhs->cost > rhs->cost;
+    }
+    return lhs->vertex > rhs->vertex;
   };
 
   std::priority_queue<std::shared_ptr<Solution>,

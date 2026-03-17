@@ -31,6 +31,6 @@ Total via count:       203
 Total wire overflow:   0
 Min resource:          2
 Bottleneck:            (5, 0, 0)
-[INFO GRT-0018] Total wirelength: 1656 um
+[INFO GRT-0018] Total wirelength: 1641 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

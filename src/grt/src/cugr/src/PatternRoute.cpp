@@ -89,11 +89,22 @@ void PatternRoute::constructSteinerTree()
     return;
   }
 
+  // Sort access points by (x, y) before passing to FLUTE for deterministic
+  // output when equal-coordinate points exist across different STL builds.
+  std::vector<std::pair<int, int>> sorted_points;
+  sorted_points.reserve(selected_access_points.size());
+  for (auto& access_point : selected_access_points) {
+    sorted_points.emplace_back(access_point.point.x(), access_point.point.y());
+  }
+  std::ranges::stable_sort(sorted_points);
+
   std::vector<int> xs;
   std::vector<int> ys;
-  for (auto& access_point : selected_access_points) {
-    xs.push_back(access_point.point.x());
-    ys.push_back(access_point.point.y());
+  xs.reserve(sorted_points.size());
+  ys.reserve(sorted_points.size());
+  for (auto& [x, y] : sorted_points) {
+    xs.push_back(x);
+    ys.push_back(y);
   }
 
   stt::Tree flute_tree = stt_builder_->flute(xs, ys, flute_accuracy_);
