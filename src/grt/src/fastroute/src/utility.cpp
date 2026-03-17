@@ -1505,14 +1505,14 @@ void FastRouteCore::StNetOrder()
           const int min_y = std::min(grids[i].y, grids[i + 1].y);
           const int cap = getEdgeCapacity(
               nets_[netID], grids[i].x, min_y, EdgeDirection::Vertical);
-          tree_order_cong_[j].xmin
-              += std::max(0, graph2d_.getUsageV(grids[i].x, min_y) - cap);
+          const auto usageV = graph2d_.getUsageV(grids[i].x, min_y);
+          tree_order_cong_[j].xmin += std::max(0, usageV - cap);
         } else {  // a horizontal edge
           const int min_x = std::min(grids[i].x, grids[i + 1].x);
           const int cap = getEdgeCapacity(
               nets_[netID], min_x, grids[i].y, EdgeDirection::Horizontal);
-          tree_order_cong_[j].xmin
-              += std::max(0, graph2d_.getUsageH(min_x, grids[i].y) - cap);
+          const auto usageH = graph2d_.getUsageH(min_x, grids[i].y);
+          tree_order_cong_[j].xmin += std::max(0, usageH - cap);
         }
       }
     }
