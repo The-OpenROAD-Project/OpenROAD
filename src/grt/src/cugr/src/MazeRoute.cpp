@@ -237,7 +237,7 @@ void MazeRoute::run()
   }
 
   if (num_detached != 0) {
-    logger_->error(utl::GRT, 275, "failed to connect all pins.");
+    logger_->error(utl::GRT, 275, "Failed to connect all pins.");
   }
 }
 
@@ -344,7 +344,7 @@ std::shared_ptr<SteinerTreeNode> MazeRoute::getSteinerTree() const
       tree, [&](const std::shared_ptr<SteinerTreeNode>& node) {
         for (const auto& child : node->getChildren()) {
           if (node->x() == child->x() && node->y() == child->y()) {
-            logger_->error(utl::GRT, 276, "duplicate tree nodes encountered.");
+            logger_->error(utl::GRT, 276, "Duplicated tree nodes encountered.");
           }
         }
       });

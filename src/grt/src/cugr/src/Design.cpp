@@ -54,15 +54,10 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("design statistics");
-  logger_->report("lib DBU:             {}", lib_dbu_);
-  logger_->report("die region (in DBU): {}", die_region_);
-  logger_->report("num of nets :        {}", nets_.size());
-  logger_->report("num of special nets: {}", num_special_nets);
-  logger_->report("gcell grid:          {} x {} x {}",
-                  gridlines_[0].size() - 1,
-                  gridlines_[1].size() - 1,
-                  getNumLayers());
+  logger_->report("Design statistics");
+  logger_->report("Nets:                {}", nets_.size());
+  logger_->report("Special nets:        {}", num_special_nets);
+  logger_->report("Routing layers:      {}", getNumLayers());
 }
 
 void Design::readLayers()
