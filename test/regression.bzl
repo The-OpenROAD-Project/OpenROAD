@@ -5,7 +5,8 @@
 files using resources in //test:regression_resources.
 
 Also provides doc_check_test for lightweight Python-only
-documentation tests that do not require the OpenROAD binary."""
+documentation tests that do not require the OpenROAD binary,
+and messages_txt for generating messages.txt from source files."""
 
 def _regression_test_impl(ctx):
     # Declare the test script output
@@ -215,8 +216,39 @@ def doc_check_test(name, **kwargs):
         ] + data,
         bazel_test_sh = "//test:bazel_test.sh",
         regression_test = "//test:regression_test.sh",
-        tags = tags,
+        tags = tags + ["doc_check"],
         **kwargs
+    )
+
+def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
+    """Generate messages.txt from source files using find_messages.py.
+
+    Replaces per-module genrule boilerplate with a single macro call.
+
+    Args:
+        name: Target name (default: "messages_txt").
+        src_patterns: Glob patterns for source files. Defaults to all
+            common C++/Tcl extensions. Override for modules with
+            non-standard layouts (e.g., recursive globs for odb).
+        visibility: Bazel visibility.
+    """
+    if src_patterns == None:
+        src_patterns = [
+            "src/*.cc",
+            "src/*.cpp",
+            "src/*.h",
+            "src/*.hh",
+            "src/*.tcl",
+        ]
+
+    native.genrule(
+        name = name,
+        srcs = native.glob(src_patterns, allow_empty = True),
+        outs = ["messages.txt"],
+        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+        toolchains = ["@rules_python//python:current_py_toolchain"],
+        tools = ["//etc:find_messages.py"],
+        visibility = visibility,
     )
 
 def regression_test(
