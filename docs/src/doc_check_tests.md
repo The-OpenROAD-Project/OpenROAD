@@ -41,11 +41,14 @@ Each module has two documentation tests:
 The tests use the `doc_check_test` Bazel macro defined in
 `test/regression.bzl`. This is a lightweight variant of
 `regression_test` that does not depend on `//:openroad`, so no C++
-compilation is triggered.
+compilation is triggered. All doc check tests are automatically tagged
+with `doc_check`, which the `//:doc_test` test suite uses for
+discovery.
 
-Each module's `messages.txt` is generated on-demand by a Bazel
-`genrule` that runs `etc/find_messages.py` over the module's source
-files.
+Each module's `messages.txt` is generated on-demand by the
+`messages_txt` macro (also in `test/regression.bzl`) that runs
+`etc/find_messages.py` over the module's source files using the Bazel
+Python toolchain.
 
 ## Relationship to Jenkins
 
@@ -61,6 +64,11 @@ removed:
 
 When adding documentation tests for a new module:
 
-1. Add `exports_files` and `messages_txt` genrule to `src/{module}/BUILD`
+1. Add `filegroup(name = "doc_files")` and `messages_txt()` macro call
+   to `src/{module}/BUILD` (load `messages_txt` from
+   `//test:regression.bzl`)
 2. Add `doc_check_test` entries to `src/{module}/test/BUILD`
-3. Add the test targets to the `doc_test` suite in `BUILD.bazel`
+
+The `doc_check` tag is automatically added by the macro, so the
+`//:doc_test` test suite picks up new tests without any changes to
+the root `BUILD.bazel`.
