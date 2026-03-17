@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "dbCore.h"
+#include "dbHashTable.h"
 #include "odb/dbId.h"
 #include "odb/geom.h"
 // User Code Begin Includes
@@ -83,6 +84,7 @@ class _dbChip : public _dbObject
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
   dbId<_dbChip> next_entry_;
   dbTable<_dbChipPath>* chip_path_tbl_;
+  dbHashTable<_dbChipPath> chip_path_hash_;
 
   // User Code Begin Fields
   std::list<dbChipCallBackObj*> callbacks_;

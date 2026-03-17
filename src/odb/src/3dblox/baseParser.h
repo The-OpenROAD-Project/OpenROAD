@@ -28,6 +28,8 @@ class BaseParser
   // YAML helper methods
   template <typename T>
   void extractValue(const YAML::Node& node, const std::string& key, T& value);
+  template <typename T>
+  void extractValue(const YAML::Node& node, T& value);
   void parseCoordinate(Coordinate& coord, const YAML::Node& coord_node);
   void parseCoordinates(std::vector<Coordinate>& coords,
                         const YAML::Node& coords_node);

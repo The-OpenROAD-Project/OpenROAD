@@ -5,29 +5,33 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "dbCore.h"
+#include "odb/dbId.h"
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
+class _dbChipRegionInst;
 
 class _dbChipPath : public _dbObject
 {
  public:
   _dbChipPath(_dbDatabase*);
 
+  ~_dbChipPath();
+
   bool operator==(const _dbChipPath& rhs) const;
   bool operator!=(const _dbChipPath& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbChipPath& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  std::string name_;
-  std::vector<std::pair<std::string, bool>> entries_;
+  char* name_;
+  std::vector<std::pair<dbId<_dbChipRegionInst>, bool>> entries_;
+  dbId<_dbChipPath> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipPath& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbChipPath& obj);

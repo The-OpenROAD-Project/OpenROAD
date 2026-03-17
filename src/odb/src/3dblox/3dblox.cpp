@@ -189,9 +189,12 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
   }
   calculateSize(chip);
   for (const auto& [_, assertion] : data.path_assertions) {
-    auto* chip_path = dbChipPath::create(chip, assertion.name);
+    dbChipPath* chip_path = dbChipPath::create(chip, assertion.name.c_str());
     for (const auto& entry : assertion.entries) {
-      chip_path->addEntry(entry.region, entry.negated);
+      // Resolve the dotted path string to a live DB object
+      std::vector<dbChipInst*> path_insts;
+      dbChipRegionInst* region_inst = resolvePath(entry.region, path_insts);
+      chip_path->addEntry(region_inst, entry.negated);
     }
   }
 }

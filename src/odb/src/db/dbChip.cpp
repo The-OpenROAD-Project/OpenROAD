@@ -41,6 +41,9 @@
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;
+// User Code Begin Static
+template class dbHashTable<_dbChipPath>;
+// User Code End Static
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
@@ -123,6 +126,9 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   if (*chip_path_tbl_ != *rhs.chip_path_tbl_) {
     return false;
   }
+  if (chip_path_hash_ != rhs.chip_path_hash_) {
+    return false;
+  }
 
   // User Code Begin ==
   if (*block_tbl_ != *rhs.block_tbl_) {
@@ -138,11 +144,13 @@ bool _dbChip::operator==(const _dbChip& rhs) const
 
 bool _dbChip::operator<(const _dbChip& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (top_ >= rhs.top_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 _dbChip::_dbChip(_dbDatabase* db)
@@ -171,6 +179,7 @@ _dbChip::_dbChip(_dbDatabase* db)
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbMarkerCategoryObj);
   chip_path_tbl_ = new dbTable<_dbChipPath>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbChipPathObj);
+  chip_path_hash_.setTable(chip_path_tbl_);
   // User Code Begin Constructor
   block_tbl_ = new dbTable<_dbBlock>(
       db, this, (GetObjTbl_t) &_dbChip::getObjectTable, dbBlockObj);
@@ -252,15 +261,19 @@ dbIStream& operator>>(dbIStream& stream, _dbChip& obj)
   if (obj.getDatabase()->isSchema(kSchemaChipMarkerCategories)) {
     stream >> *obj.marker_categories_tbl_;
   }
-  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
-    stream >> *obj.chip_path_tbl_;
-  }
   // User Code Begin >>
   stream >> *obj.block_tbl_;
   stream >> *obj.prop_tbl_;
   stream >> *obj.name_cache_;
   if (obj.getDatabase()->isSchema(kSchemaChipHashTable)) {
     stream >> obj.next_entry_;
+  }
+  // Read chip path table and rebuild hash from its contents
+  if (obj.getDatabase()->isSchema(kSchemaChipPath)) {
+    stream >> *obj.chip_path_tbl_;
+    for (dbChipPath* path : ((dbChip*) &obj)->getChipPaths()) {
+      obj.chip_path_hash_.insert((_dbChipPath*) path);
+    }
   }
   auto chip = (dbChip*) &obj;
   for (const auto& chip_region : chip->getChipRegions()) {
@@ -300,12 +313,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbChip& obj)
   stream << obj.tech_;
   stream << *obj.chip_region_tbl_;
   stream << *obj.marker_categories_tbl_;
-  stream << *obj.chip_path_tbl_;
   // User Code Begin <<
   stream << *obj.block_tbl_;
   stream << NamedTable("prop_tbl", obj.prop_tbl_);
   stream << *obj.name_cache_;
   stream << obj.next_entry_;
+  stream << *obj.chip_path_tbl_;
   // User Code End <<
   return stream;
 }
@@ -582,6 +595,12 @@ dbSet<dbChipPath> dbChip::getChipPaths() const
 {
   _dbChip* obj = (_dbChip*) this;
   return dbSet<dbChipPath>(obj, obj->chip_path_tbl_);
+}
+
+dbChipPath* dbChip::findChipPath(const char* name) const
+{
+  _dbChip* obj = (_dbChip*) this;
+  return (dbChipPath*) obj->chip_path_hash_.find(name);
 }
 
 // User Code Begin dbChipPublicMethods

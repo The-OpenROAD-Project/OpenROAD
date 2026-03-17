@@ -240,21 +240,16 @@ void DbxParser::parsePaths(std::map<std::string, PathAssertion>& paths,
                            const YAML::Node& paths_node)
 {
   paths.clear();
-
+  const std::string prefix = "Path";
   for (const auto& path_pair : paths_node) {
     PathAssertion path;
-    try {
-      path.name = path_pair.first.as<std::string>();
-    } catch (const YAML::Exception& e) {
-      logError("DBX Error parsing path assertion name: "
-               + std::string(e.what()));
-      continue;
-    }
+    extractValue(path_pair.first, path.name);
 
     // Validate name format: must be "PathN" where N is a positive integer.
-    if (path.name.size() <= 4 || path.name.substr(0, 4) != "Path"
-        || path.name.find_first_not_of("0123456789", 4) != std::string::npos
-        || path.name[4] == '0') {
+    if (path.name.size() <= prefix.size() || !path.name.starts_with(prefix)
+        || path.name.find_first_not_of("0123456789", prefix.size())
+               != std::string::npos
+        || path.name[prefix.size()] == '0') {
       logError("DBX Path assertion name '" + path.name
                + "' must follow the format 'PathN' (e.g. Path1, Path2)");
       continue;
@@ -273,15 +268,10 @@ void DbxParser::parsePath(PathAssertion& path, const YAML::Node& path_node)
     return;
   }
 
+  const std::string prefix = "NOT ";
   for (const auto& entry_node : path_node) {
     std::string raw;
-    try {
-      raw = entry_node.as<std::string>();
-    } catch (const YAML::Exception& e) {
-      logError("DBX Error parsing path assertion entry in '" + path.name
-               + "': " + std::string(e.what()));
-      continue;
-    }
+    extractValue(entry_node, raw);
 
     raw = trim(raw);
     if (raw.empty()) {
@@ -289,9 +279,9 @@ void DbxParser::parsePath(PathAssertion& path, const YAML::Node& path_node)
     }
 
     PathAssertionEntry entry;
-    if (raw.substr(0, 4) == "NOT ") {
+    if (raw.substr(0, prefix.size()) == prefix) {
       entry.negated = true;
-      raw = trim(raw.substr(4));
+      raw = trim(raw.substr(prefix.size()));
     }
 
     if (raw.find(".regions.") == std::string::npos) {

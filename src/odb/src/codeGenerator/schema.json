@@ -511,7 +511,8 @@
       "type":"1_n",
       "tbl_name":"chip_path_tbl_",
       "schema":"kSchemaChipPath",
-      "flags": []
+      "hash": true,
+      "flags": ["no-serial"]
     }
   ]
 }

@@ -4,21 +4,26 @@
     "fields": [
         {
             "name": "name_",
-            "type": "std::string",
+            "type": "char *",
+            "default": "nullptr",
             "flags": [
                 "no-set"
             ]
         },
         {
             "name": "entries_",
-            "type": "std::vector<std::pair<std::string, bool>>",
+            "type": "std::vector<std::pair<dbId<_dbChipRegionInst>, bool>>",
             "flags": [
                 "private",
                 "no-cmp"
             ]
         }
     ],
+    "h_includes": [
+        "odb/dbId.h"
+    ],
     "cpp_includes": [
-        "dbChip.h"
+        "dbChip.h",
+        "dbChipRegionInst.h"
     ]
 }

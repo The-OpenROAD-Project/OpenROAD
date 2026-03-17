@@ -7268,6 +7268,8 @@ class dbChip : public dbObject
 
   dbSet<dbChipPath> getChipPaths() const;
 
+  dbChipPath* findChipPath(const char* name) const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7447,16 +7449,22 @@ class dbChipNet : public dbObject
 class dbChipPath : public dbObject
 {
  public:
-  std::string getName() const;
+  const char* getName() const;
 
   // User Code Begin dbChipPath
+  struct Entry
+  {
+    dbChipRegionInst* region;
+    bool negated;
+  };
+
   dbChip* getChip() const;
 
-  const std::vector<std::pair<std::string, bool>>& getEntries() const;
+  std::vector<Entry> getEntries() const;
 
-  void addEntry(const std::string& region, bool negated);
+  void addEntry(dbChipRegionInst* region, bool negated);
 
-  static dbChipPath* create(dbChip* chip, const std::string& name);
+  static dbChipPath* create(dbChip* chip, const char* name);
 
   static void destroy(dbChipPath* path);
   // User Code End dbChipPath

@@ -1,6 +1,7 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "helper.h"
@@ -464,23 +465,35 @@ TEST_F(PathAssertionFixture, test_path_assertions_from_file)
 
   // Path1: 3 entries, one negated
   ASSERT_EQ(paths_by_name.count("Path1"), 1u);
-  const auto& e1 = paths_by_name["Path1"]->getEntries();
+  const std::vector<dbChipPath::Entry> e1
+      = paths_by_name["Path1"]->getEntries();
   ASSERT_EQ(e1.size(), 3u);
-  EXPECT_EQ(e1[0].first, "soc_inst.regions.front_reg");
-  EXPECT_FALSE(e1[0].second);
-  EXPECT_EQ(e1[1].first, "soc_inst_duplicate.regions.back_reg");
-  EXPECT_TRUE(e1[1].second);
-  EXPECT_EQ(e1[2].first, "soc_inst_duplicate.regions.front_reg");
-  EXPECT_FALSE(e1[2].second);
+  ASSERT_NE(e1[0].region, nullptr);
+  EXPECT_EQ(e1[0].region->getChipInst()->getName(), "soc_inst");
+  EXPECT_EQ(e1[0].region->getChipRegion()->getName(), "front_reg");
+  EXPECT_FALSE(e1[0].negated);
+  ASSERT_NE(e1[1].region, nullptr);
+  EXPECT_EQ(e1[1].region->getChipInst()->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e1[1].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_TRUE(e1[1].negated);
+  ASSERT_NE(e1[2].region, nullptr);
+  EXPECT_EQ(e1[2].region->getChipInst()->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e1[2].region->getChipRegion()->getName(), "front_reg");
+  EXPECT_FALSE(e1[2].negated);
 
   // Path2: 2 entries, none negated
   ASSERT_EQ(paths_by_name.count("Path2"), 1u);
-  const auto& e2 = paths_by_name["Path2"]->getEntries();
+  const std::vector<dbChipPath::Entry> e2
+      = paths_by_name["Path2"]->getEntries();
   ASSERT_EQ(e2.size(), 2u);
-  EXPECT_EQ(e2[0].first, "soc_inst.regions.back_reg");
-  EXPECT_FALSE(e2[0].second);
-  EXPECT_EQ(e2[1].first, "soc_inst_duplicate.regions.back_reg");
-  EXPECT_FALSE(e2[1].second);
+  ASSERT_NE(e2[0].region, nullptr);
+  EXPECT_EQ(e2[0].region->getChipInst()->getName(), "soc_inst");
+  EXPECT_EQ(e2[0].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_FALSE(e2[0].negated);
+  ASSERT_NE(e2[1].region, nullptr);
+  EXPECT_EQ(e2[1].region->getChipInst()->getName(), "soc_inst_duplicate");
+  EXPECT_EQ(e2[1].region->getChipRegion()->getName(), "back_reg");
+  EXPECT_FALSE(e2[1].negated);
 }
 
 TEST_F(PathAssertionFixture, test_path_assertions_no_path_block)
