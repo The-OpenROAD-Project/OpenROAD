@@ -287,7 +287,8 @@ void CUGR::write(const std::string& guide_file)
     }
     ss << ")\n";
   }
-  logger_->report("Total area of pin access patches: {}.", area_of_pin_patches_);
+  logger_->report("Total area of pin access patches: {}.",
+                  area_of_pin_patches_);
   logger_->report("Total area of wire segment patches: {}.",
                   area_of_wire_patches_);
   std::ofstream fout(guide_file);
