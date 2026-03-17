@@ -506,47 +506,90 @@ void RamGen::findMasters(int mux_col_ratio)
   }
 
   if (mux_col_ratio > 1 && !aoi22_cell_) {
-    // AOI22: Y = NOT((A AND B) OR (C AND D))
-    // FuncExpr tree: not_ → or_ → [ and_(port, port), and_(port, port) ]
+    // AOI22: Y = NOT((A1 AND A2) OR (B1 AND B2))
+    // Libraries may express this in two forms:
+    //   Compact: not_(or_(and_(port,port), and_(port,port)))
+    //   SOP expanded (e.g. sky130hd): or_(or_(or_(and_(not_(port),not_(port)),
+    //     and_(not_(port),not_(port))), and_(not_(port),not_(port))),
+    //     and_(not_(port),not_(port)))
+    auto isNotPort = [](const sta::FuncExpr* e) {
+      return e && e->op() == sta::FuncExpr::Op::not_ && e->left()
+             && e->left()->op() == sta::FuncExpr::Op::port;
+    };
+    auto isAndOfNots = [&isNotPort](const sta::FuncExpr* e) {
+      return e && e->op() == sta::FuncExpr::Op::and_
+             && isNotPort(e->left()) && isNotPort(e->right());
+    };
     aoi22_cell_ = findMaster(
-        [](sta::LibertyPort* port) {
+        [&isNotPort, &isAndOfNots](sta::LibertyPort* port) {
           if (!port->direction()->isOutput()) {
             return false;
           }
           auto f = port->function();
-          if (!f || f->op() != sta::FuncExpr::Op::not_) {
-            return false;
+          if (!f) return false;
+          // Compact form
+          if (f->op() == sta::FuncExpr::Op::not_) {
+            auto inner = f->left();
+            if (!inner || inner->op() != sta::FuncExpr::Op::or_) return false;
+            auto L = inner->left();
+            auto R = inner->right();
+            return L && L->op() == sta::FuncExpr::Op::and_
+                   && L->left()
+                   && L->left()->op() == sta::FuncExpr::Op::port
+                   && L->right()
+                   && L->right()->op() == sta::FuncExpr::Op::port
+                   && R && R->op() == sta::FuncExpr::Op::and_
+                   && R->left()
+                   && R->left()->op() == sta::FuncExpr::Op::port
+                   && R->right()
+                   && R->right()->op() == sta::FuncExpr::Op::port;
           }
-          auto inner = f->left();
-          if (!inner || inner->op() != sta::FuncExpr::Op::or_) {
-            return false;
+          // SOP expanded form
+          if (f->op() == sta::FuncExpr::Op::or_) {
+            auto l1 = f->left();
+            auto t4 = f->right();
+            if (!isAndOfNots(t4) || !l1
+                || l1->op() != sta::FuncExpr::Op::or_)
+              return false;
+            auto l2 = l1->left();
+            auto t3 = l1->right();
+            if (!isAndOfNots(t3) || !l2
+                || l2->op() != sta::FuncExpr::Op::or_)
+              return false;
+            return isAndOfNots(l2->left()) && isAndOfNots(l2->right());
           }
-          auto L = inner->left();
-          auto R = inner->right();
-          return L && L->op() == sta::FuncExpr::Op::and_
-                 && L->left() && L->left()->op() == sta::FuncExpr::Op::port
-                 && L->right() && L->right()->op() == sta::FuncExpr::Op::port
-                 && R && R->op() == sta::FuncExpr::Op::and_
-                 && R->left() && R->left()->op() == sta::FuncExpr::Op::port
-                 && R->right() && R->right()->op() == sta::FuncExpr::Op::port;
+          return false;
         },
         "aoi22");
 
-    // Extract the actual port names from the liberty function tree so we can
-    // wire up the cell generically regardless of naming convention.
+    // Extract port names from the liberty function tree.
     auto cell = network_->libertyCell(network_->dbToSta(aoi22_cell_));
     auto port_iter = cell->portIterator();
     while (port_iter->hasNext()) {
       auto p = static_cast<sta::ConcretePort*>(port_iter->next());
       if (p->direction()->isAnyOutput()) {
         auto f = p->libertyPort()->function();
-        auto or_expr = f->left();
-        auto and_a = or_expr->left();
-        auto and_b = or_expr->right();
-        aoi22_in_a1_ = and_a->left()->port()->name();
-        aoi22_in_a2_ = and_a->right()->port()->name();
-        aoi22_in_b1_ = and_b->left()->port()->name();
-        aoi22_in_b2_ = and_b->right()->port()->name();
+        if (f->op() == sta::FuncExpr::Op::not_) {
+          // Compact form: not_(or_(and_(A1,A2), and_(B1,B2)))
+          auto or_expr = f->left();
+          auto and_a = or_expr->left();
+          auto and_b = or_expr->right();
+          aoi22_in_a1_ = and_a->left()->port()->name();
+          aoi22_in_a2_ = and_a->right()->port()->name();
+          aoi22_in_b1_ = and_b->left()->port()->name();
+          aoi22_in_b2_ = and_b->right()->port()->name();
+        } else {
+          // SOP form: or_(or_(or_(and_(not_(A1),not_(B1)),
+          //   and_(not_(A1),not_(B2))), and_(not_(A2),not_(B1))),
+          //   and_(not_(A2),not_(B2)))
+          auto t1 = f->left()->left()->left();
+          auto t2 = f->left()->left()->right();
+          auto t3 = f->left()->right();
+          aoi22_in_a1_ = t1->left()->left()->port()->name();
+          aoi22_in_a2_ = t3->left()->left()->port()->name();
+          aoi22_in_b1_ = t1->right()->left()->port()->name();
+          aoi22_in_b2_ = t2->right()->left()->port()->name();
+        }
         aoi22_out_ = p->name();
         break;
       }
