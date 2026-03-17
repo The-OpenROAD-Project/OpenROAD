@@ -1,6 +1,7 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_flow")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
+load("//test/orfs:verify_tags.bzl", "verify_orfs_tags")
 
 package(features = ["layering_check"])
 
@@ -72,3 +73,5 @@ sh_test(
         "orfs",
     ],
 )
+
+verify_orfs_tags()

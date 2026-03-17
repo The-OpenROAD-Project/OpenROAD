@@ -1,5 +1,6 @@
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("//test/orfs:verify_tags.bzl", "verify_orfs_tags")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":sim.bzl", "sim_test")
 
@@ -143,3 +144,5 @@ eqy_test(
         "orfs",
     ],
 )
+
+verify_orfs_tags()

@@ -1,3 +1,5 @@
+load("//test/orfs:verify_tags.bzl", "verify_orfs_tags")
+
 filegroup(
     name = "asap7_files",
     srcs = [
@@ -10,3 +12,5 @@ filegroup(
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
+
+verify_orfs_tags()

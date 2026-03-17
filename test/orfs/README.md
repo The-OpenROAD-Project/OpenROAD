@@ -101,13 +101,24 @@ This is more verbose, but eliminates any concerns about what the `make` script m
 
 All targets under `test/orfs/` must have `tags = ["manual"]` so that `bazelisk build //...` builds only OpenROAD binaries and never ORFS test artifacts. The `manual` tag excludes targets from Bazel wildcard patterns like `//...`.
 
-Test targets (from `orfs_flow` `test_kwargs`, `sh_test`, etc.) should use `tags = ["manual", "orfs"]`. The `orfs` tag is used in CI to select these tests for execution. The `.bazelrc` line `build --build_tag_filters=-orfs` provides an additional layer of protection.
+Test targets (from `orfs_flow` `test_kwargs`, `sh_test`, etc.) must use `tags = ["manual", "orfs"]`. Non-test targets must use `tags = ["manual"]` only (no `orfs` tag).
 
-To find targets missing `tags = ["manual"]`, run:
+The `.bazelrc` lines provide additional protection:
 
-    bazelisk query 'kind(".*", //test/orfs/...) except attr(tags, "manual", //test/orfs/...)'
+    build --build_tag_filters=-orfs
+    test --test_tag_filters=-orfs
 
-This should return no results. If it does, add `tags = ["manual"]` to the offending targets.
+### Enforcement
+
+The tagging policy is enforced at BUILD file loading time by `verify_orfs_tags()` from `//test/orfs:verify_tags.bzl`. Each BUILD file under `test/orfs/` calls this macro at the end of the file. Any `bazelisk` command that loads these packages (build, test, query, etc.) will fail immediately if the policy is violated.
+
+To add a new BUILD file under `test/orfs/`, add the following at the top and bottom:
+
+    load("//test/orfs:verify_tags.bzl", "verify_orfs_tags")
+    ...
+    verify_orfs_tags()
+
+### Verifying manually
 
 To verify that building does nothing under `test/orfs/`:
 
