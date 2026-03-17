@@ -139,7 +139,7 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
     }
   }
   const int num_nets = gr_nets_.size();
-  logger_->report("{} out of {} nets have overflow.", net_indices.size(), num_nets);
+  logger_->report("Nets with overflow: {}.", net_indices.size(), num_nets);
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
@@ -356,23 +356,12 @@ NetRouteMap CUGR::getRoutes()
 
 void CUGR::sortNetIndices(std::vector<int>& net_indices) const
 {
-  std::vector<int> half_parameters(gr_nets_.size());
-  for (int net_index : net_indices) {
-    auto& net = gr_nets_[net_index];
-    half_parameters[net_index] = net->getBoundingBox().hp();
-  }
-
-  std::vector<float> net_slacks(gr_nets_.size());
-  for (int net_index : net_indices) {
-    net_slacks[net_index] = gr_nets_[net_index]->getSlack();
-  }
-
-  auto compare_slack_and_hpwl = [&](int lhs, int rhs) {
-    return std::tie(net_slacks[lhs], half_parameters[lhs])
-           < std::tie(net_slacks[rhs], half_parameters[rhs]);
-  };
-
-  std::ranges::stable_sort(net_indices, compare_slack_and_hpwl);
+  std::ranges::stable_sort(net_indices, [&](int lhs, int rhs) {
+    return std::make_tuple(gr_nets_[lhs]->getSlack(),
+                           gr_nets_[lhs]->getBoundingBox().hp())
+           < std::make_tuple(gr_nets_[rhs]->getSlack(),
+                             gr_nets_[rhs]->getBoundingBox().hp());
+  });
 }
 
 void CUGR::getGuides(const GRNet* net,

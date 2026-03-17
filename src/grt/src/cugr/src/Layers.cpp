@@ -37,7 +37,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   tech_layer->getV55SpacingTable(spacing_table);
   tech_layer->getV55SpacingWidthsAndLengths(widths, lengths);
 
-  for (int table_idx = 0; table_idx < spacing_table.size(); table_idx++) {
+  if (!spacing_table.empty()) {
     const int num_length = lengths.size();
     if (num_length > 0) {
       parallel_length_.resize(num_length);
