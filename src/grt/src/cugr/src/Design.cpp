@@ -39,8 +39,8 @@ Design::Design(odb::dbDatabase* db,
 void Design::read()
 {
   lib_dbu_ = block_->getDbUnitsPerMicron();
-  const odb::Rect dieBound = block_->getDieArea();
-  die_region_ = getBoxFromRect(dieBound);
+  const odb::Rect die_bound = block_->getDieArea();
+  die_region_ = getBoxFromRect(die_bound);
 
   readLayers();
 
@@ -54,15 +54,10 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("design statistics");
-  logger_->report("lib DBU:             {}", lib_dbu_);
-  logger_->report("die region (in DBU): {}", die_region_);
-  logger_->report("num of nets :        {}", nets_.size());
-  logger_->report("num of special nets: {}", num_special_nets);
-  logger_->report("gcell grid:          {} x {} x {}",
-                  gridlines_[0].size() - 1,
-                  gridlines_[1].size() - 1,
-                  getNumLayers());
+  logger_->report("Design statistics");
+  logger_->report("Nets:                {}", nets_.size());
+  logger_->report("Special nets:        {}", num_special_nets);
+  logger_->report("Routing layers:      {}", getNumLayers());
 }
 
 void Design::readLayers()
@@ -139,9 +134,9 @@ std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
         odb::Rect rect = box->getBox();
         xform.apply(rect);
 
-        int layerIndex = tech_layer->getRoutingLevel() - 1;
+        int layer_index = tech_layer->getRoutingLevel() - 1;
         pin_shapes.emplace_back(
-            layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+            layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
       }
     }
 
@@ -196,12 +191,12 @@ void Design::readInstanceObstructions()
             continue;
           }
 
-          int layerIndex = tech_layer->getRoutingLevel() - 1;
+          int layer_index = tech_layer->getRoutingLevel() - 1;
           odb::Rect rect = box->getBox();
           xform.apply(rect);
 
           BoxOnLayer box_on_layer(
-              layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+              layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
           obstacles_.push_back(box_on_layer);
         }
       }
@@ -216,14 +211,14 @@ void Design::readInstanceObstructions()
         continue;
       }
 
-      int layerIndex = tech_layer->getRoutingLevel() - 1;
+      int layer_index = tech_layer->getRoutingLevel() - 1;
       odb::Rect rect = box->getBox();
       xform.apply(rect);
 
       odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
       odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
       odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-      obstacles_.emplace_back(layerIndex,
+      obstacles_.emplace_back(layer_index,
                               obstruction_rect.xMin(),
                               obstruction_rect.yMin(),
                               obstruction_rect.xMax(),
@@ -295,11 +290,11 @@ void Design::readDesignObstructions()
       continue;
     }
 
-    int layerIndex = tech_layer->getRoutingLevel() - 1;
+    int layer_index = tech_layer->getRoutingLevel() - 1;
     odb::Rect rect = box->getBox();
 
     BoxOnLayer box_on_layer(
-        layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+        layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
     obstacles_.push_back(box_on_layer);
   }
 }
@@ -328,9 +323,9 @@ void Design::setUnitCosts()
   unit_length_short_costs_.resize(layers_.size());
   const CostT unit_area_short_cost
       = constants_.weight_short_area / (m2_pitch * m2_pitch);
-  for (int layerIndex = 0; layerIndex < layers_.size(); layerIndex++) {
-    unit_length_short_costs_[layerIndex]
-        = unit_area_short_cost * layers_[layerIndex].getWidth();
+  for (int layer_index = 0; layer_index < layers_.size(); layer_index++) {
+    unit_length_short_costs_[layer_index]
+        = unit_area_short_cost * layers_[layer_index].getWidth();
   }
 }
 
