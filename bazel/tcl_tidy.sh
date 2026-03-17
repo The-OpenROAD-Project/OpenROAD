@@ -4,6 +4,6 @@
 #
 # Auto-format all TCL files in-place.
 set -euo pipefail
-TOOL="$(readlink -f "$1")"
+TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
-exec "$TOOL" --in-place .
+git ls-files '*.tcl' -z | xargs -0 "$TOOL" --in-place
