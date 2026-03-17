@@ -118,7 +118,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const std::string& report_file_name,
                                bool incremental,
                                const bool disable_hybrid_legalizer,
-                               const bool hybrid_only)
+                               const bool hybrid_only,
+                               const bool run_abacus)
 {
   incremental_ = incremental;
   importDb();
@@ -193,6 +194,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
     HybridLegalizer hybrid(
         this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
+    hybrid.setRunAbacus(run_abacus);
     hybrid.legalize();
     hybrid.setDplPositions();
 
@@ -217,6 +219,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
         HybridLegalizer hybrid(
             this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
+        hybrid.setRunAbacus(run_abacus);
         hybrid.legalize();
         hybrid.setDplPositions();
         

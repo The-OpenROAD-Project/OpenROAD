@@ -141,7 +141,6 @@ void HybridLegalizer::legalize()
 
   // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
-  run_abacus_ = false;
   if (run_abacus_) 
   {
     debugPrint(
@@ -224,6 +223,17 @@ void HybridLegalizer::legalize()
     const int dbY = dieYlo_ + cell.y * rowHeight_;
     cell.inst->setLocation(dbX, dbY);
     cell.inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    // Set orientation from the row so cells are properly flipped.
+    if (opendp_ && opendp_->grid_) {
+      odb::dbSite* site = cell.inst->getMaster()->getSite();
+      if (site != nullptr) {
+        auto orient = opendp_->grid_->getSiteOrientation(
+            GridX{cell.x}, GridY{cell.y}, site);
+        if (orient.has_value()) {
+          cell.inst->setOrient(orient.value());
+        }
+      }
+    }
   }
 }
 
@@ -271,6 +281,16 @@ void HybridLegalizer::setDplPositions()
       it->second->setLeft(DbuX(coreX));
       it->second->setBottom(DbuY(coreY));
       it->second->setPlaced(true);
+
+      // Update orientation to match the row.
+      odb::dbSite* site = cell.inst->getMaster()->getSite();
+      if (site != nullptr) {
+        auto orient = opendp_->grid_->getSiteOrientation(
+            GridX{cell.x}, GridY{cell.y}, site);
+        if (orient.has_value()) {
+          it->second->setOrient(orient.value());
+        }
+      }
     }
   }
 }
@@ -348,7 +368,20 @@ bool HybridLegalizer::initFromDb()
             std::round(static_cast<double>(master->getHeight()) / rowHeight_)));
 
     cell.railType = inferRailType(cell.initY);
-    cell.flippable = (cell.height % 2 == 1);
+    // If the instance is currently flipped relative to the row's standard orientation,
+    // its internal rail design is opposite of the row's bottom rail.
+    if (opendp_ && opendp_->grid_) {
+      auto siteOrient = opendp_->grid_->getSiteOrientation(GridX{cell.initX}, GridY{cell.initY}, master->getSite());
+      if (siteOrient.has_value() && inst->getOrient() != siteOrient.value()) {
+        cell.railType = (cell.railType == HLPowerRailType::kVss) ? HLPowerRailType::kVdd : HLPowerRailType::kVss;
+      }
+    }
+
+    cell.flippable = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
+    if (cell.height % 2 == 1) {
+      // For 1-row cells, we usually assume they are flippable in most PDKs.
+      cell.flippable = true;
+    }
 
     if (padding_ != nullptr) {
       cell.padLeft = padding_->padLeft(inst).v;
@@ -482,6 +515,17 @@ void HybridLegalizer::syncCellToDplGrid(int cellIdx)
   // (which read Node left/bottom) see the current placement.
   node->setLeft(DbuX(hlcell.x * siteWidth_));
   node->setBottom(DbuY(hlcell.y * rowHeight_));
+
+  // Update orientation to match the row.
+  odb::dbSite* site = hlcell.inst->getMaster()->getSite();
+  if (site != nullptr) {
+    auto orient = opendp_->grid_->getSiteOrientation(
+        GridX{hlcell.x}, GridY{hlcell.y}, site);
+    if (orient.has_value()) {
+      node->setOrient(orient.value());
+    }
+  }
+
   opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
 }
 
@@ -533,6 +577,15 @@ void HybridLegalizer::syncAllCellsToDplGrid()
     Node* node = network_->getNode(cells_[i].inst);
     if (node == nullptr) {
       continue;
+    }
+    // Set orientation to match the row, same as syncCellToDplGrid.
+    odb::dbSite* site = cells_[i].inst->getMaster()->getSite();
+    if (site != nullptr) {
+      auto orient = opendp_->grid_->getSiteOrientation(
+          GridX{cells_[i].x}, GridY{cells_[i].y}, site);
+      if (orient.has_value()) {
+        node->setOrient(orient.value());
+      }
     }
     opendp_->grid_->paintPixel(node, GridX{cells_[i].x}, GridY{cells_[i].y});
   }

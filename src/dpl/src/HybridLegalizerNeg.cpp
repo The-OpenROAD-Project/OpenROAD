@@ -189,7 +189,11 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
 
   // Count remaining overflows (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
+  // Also detect any non-active cells that have become DRC-illegal
+  // (e.g. a move created a one-site gap with a neighbor outside the
+  // active set) and pull them in so the negotiation can fix them.
   int totalOverflow = 0;
+  std::unordered_set<int> activeSet(activeCells.begin(), activeCells.end());
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -205,6 +209,19 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       }
     }
     if (!isCellLegal(idx)) {
+      ++totalOverflow;
+    }
+  }
+  // Scan all movable cells for newly-created DRC violations outside the
+  // current active set.  This handles cases where a move in the active
+  // set created a one-site gap (or other DRC issue) with a bystander.
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (cells_[i].fixed || activeSet.contains(i)) {
+      continue;
+    }
+    if (!isCellLegal(i)) {
+      activeCells.push_back(i);
+      activeSet.insert(i);
       ++totalOverflow;
     }
   }
@@ -278,8 +295,15 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      if (!opendp_->drc_engine_->checkDRC(
-              node, GridX{tx}, GridY{ty}, node->getOrient())) {
+      odb::dbOrientType targetOrient = node->getOrient();
+      odb::dbSite* site = cell.inst->getMaster()->getSite();
+      if (site != nullptr) {
+        auto orient = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
+        if (orient.has_value()) {
+          targetOrient = orient.value();
+        }
+      }
+      if (!opendp_->drc_engine_->checkDRC(node, GridX{tx}, GridY{ty}, targetOrient)) {
         cost += kDrcPenalty;
       }
     }

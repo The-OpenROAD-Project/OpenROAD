@@ -109,7 +109,8 @@ class Opendp
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
                          bool disable_hybrid_legalizer = false,
-                         bool hybrid_only = false);
+                         bool hybrid_only = false,
+                         bool run_abacus = false);
   int hybridLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;
 
