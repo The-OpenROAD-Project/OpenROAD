@@ -134,9 +134,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/rcx:README.md",
+            "//src/rcx:doc_files",
             "//src/rcx:messages_txt",
-        ] + (["//src/rcx:src/OpenRCX.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

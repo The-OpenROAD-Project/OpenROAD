@@ -65,9 +65,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/fin:README.md",
+            "//src/fin:doc_files",
             "//src/fin:messages_txt",
-        ] + (["//src/fin:src/finale.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

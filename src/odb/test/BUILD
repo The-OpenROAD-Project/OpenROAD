@@ -399,9 +399,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/odb:README.md",
+            "//src/odb:doc_files",
             "//src/odb:messages_txt",
-        ] + (["//src/odb:src/swig/tcl/odb.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

@@ -73,9 +73,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/ant:README.md",
+            "//src/ant:doc_files",
             "//src/ant:messages_txt",
-        ] + (["//src/ant:src/AntennaChecker.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

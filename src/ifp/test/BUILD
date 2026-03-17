@@ -141,9 +141,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/ifp:README.md",
+            "//src/ifp:doc_files",
             "//src/ifp:messages_txt",
-        ] + (["//src/ifp:src/InitFloorplan.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

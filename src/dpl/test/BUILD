@@ -300,9 +300,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/dpl:README.md",
+            "//src/dpl:doc_files",
             "//src/dpl:messages_txt",
-        ] + (["//src/dpl:src/Opendp.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

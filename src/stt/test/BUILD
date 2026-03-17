@@ -39,9 +39,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/stt:README.md",
+            "//src/stt:doc_files",
             "//src/stt:messages_txt",
-        ] + (["//src/stt:src/SteinerTreeBuilder.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

@@ -175,9 +175,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/gpl:README.md",
+            "//src/gpl:doc_files",
             "//src/gpl:messages_txt",
-        ] + (["//src/gpl:src/replace.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

@@ -246,9 +246,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/cts:README.md",
+            "//src/cts:doc_files",
             "//src/cts:messages_txt",
-        ] + (["//src/cts:src/TritonCTS.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

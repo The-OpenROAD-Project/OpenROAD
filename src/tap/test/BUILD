@@ -168,9 +168,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/tap:README.md",
+            "//src/tap:doc_files",
             "//src/tap:messages_txt",
-        ] + (["//src/tap:src/tapcell.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

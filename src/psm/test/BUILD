@@ -176,9 +176,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/psm:README.md",
+            "//src/psm:doc_files",
             "//src/psm:messages_txt",
-        ] + (["//src/psm:src/pdnsim.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

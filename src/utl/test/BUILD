@@ -30,13 +30,7 @@ PASSFAIL_TESTS = [
     # "cpp_tests",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "utl_man_tcl_check",
-    "utl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -148,9 +142,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/utl:README.md",
+            "//src/utl:doc_files",
             "//src/utl:messages_txt",
-        ] + (["//src/utl:src/Utl.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

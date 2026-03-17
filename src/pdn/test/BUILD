@@ -303,9 +303,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/pdn:README.md",
+            "//src/pdn:doc_files",
             "//src/pdn:messages_txt",
-        ] + (["//src/pdn:src/pdn.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

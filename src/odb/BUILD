@@ -7,6 +7,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -217,28 +218,22 @@ python_wrap_cc(
     ],
 )
 
-exports_files(
-    [
+filegroup(
+    name = "doc_files",
+    srcs = [
         "README.md",
         "src/swig/tcl/odb.tcl",
     ],
     visibility = ["//src/odb/test:__pkg__"],
 )
 
-genrule(
-    name = "messages_txt",
-    srcs = glob(
-        [
-            "src/**/*.cc",
-            "src/**/*.cpp",
-            "src/**/*.h",
-            "src/**/*.hh",
-            "src/**/*.tcl",
-        ],
-        allow_empty = True,
-    ),
-    outs = ["messages.txt"],
-    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
-    tools = ["//etc:find_messages.py"],
+messages_txt(
+    src_patterns = [
+        "src/**/*.cc",
+        "src/**/*.cpp",
+        "src/**/*.h",
+        "src/**/*.hh",
+        "src/**/*.tcl",
+    ],
     visibility = ["//src/odb/test:__pkg__"],
 )

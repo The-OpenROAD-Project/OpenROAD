@@ -90,9 +90,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/par:README.md",
+            "//src/par:doc_files",
             "//src/par:messages_txt",
-        ] + (["//src/par:src/partitionmgr.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

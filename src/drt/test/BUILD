@@ -34,13 +34,6 @@ PASSFAIL_TESTS = [
     # "gc_test",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "drt_man_tcl_check",
-    "drt_readme_msgs_check",
-]
-
-
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "down_access_term",
@@ -54,7 +47,7 @@ MANUAL_FOR_BAZEL_TESTS = [
     "top_level_term2",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -159,9 +152,9 @@ cc_test(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/drt:README.md",
+            "//src/drt:doc_files",
             "//src/drt:messages_txt",
-        ] + (["//src/drt:src/TritonRoute.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

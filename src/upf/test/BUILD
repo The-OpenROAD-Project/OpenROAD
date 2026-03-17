@@ -60,9 +60,9 @@ filegroup(
     doc_check_test(
         name = test_name,
         data = [
-            "//src/upf:README.md",
+            "//src/upf:doc_files",
             "//src/upf:messages_txt",
-        ] + (["//src/upf:src/upf.tcl"] if "man_tcl" in test_name else []),
+        ],
         visibility = ["//visibility:public"],
     )
     for test_name in [

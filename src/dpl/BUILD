@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -181,23 +182,15 @@ python_wrap_cc(
     ],
 )
 
-exports_files(
-    [
+filegroup(
+    name = "doc_files",
+    srcs = [
         "README.md",
         "src/Opendp.tcl",
     ],
     visibility = ["//src/dpl/test:__pkg__"],
 )
 
-genrule(
-    name = "messages_txt",
-    srcs = glob([
-        "src/*.cpp",
-        "src/*.h",
-        "src/*.tcl",
-    ]),
-    outs = ["messages.txt"],
-    cmd = "python3 $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
-    tools = ["//etc:find_messages.py"],
+messages_txt(
     visibility = ["//src/dpl/test:__pkg__"],
 )
