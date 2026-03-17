@@ -520,7 +520,11 @@ AccessPointSet GridGraph::selectAccessPoints(GRNet* net) const
         }
       }
       if (best_access_dist.first == 0) {
-        logger_->warn(utl::GRT, 274, "pin is hard to access.");
+        logger_->warn(utl::GRT,
+                      274,
+                      "Pin {} of net {} is hard to access.",
+                      pin_idx,
+                      net->getName());
       }
 
       if (best_index == -1) {
@@ -896,7 +900,7 @@ void GridGraph::updateWireCostView(
 
 void GridGraph::write(const std::string& heatmap_file) const
 {
-  logger_->report("writing heatmap to file...");
+  logger_->report("Writing congestion heatmap to file {}.", heatmap_file);
   std::stringstream ss;
 
   ss << num_layers_ << " " << x_size_ << " " << y_size_ << '\n';

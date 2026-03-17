@@ -139,12 +139,12 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
     }
   }
   const int num_nets = gr_nets_.size();
-  logger_->report("{} / {} nets have overflow.", net_indices.size(), num_nets);
+  logger_->report("{} out of {} nets have overflow.", net_indices.size(), num_nets);
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
 {
-  logger_->report("stage 1: pattern routing");
+  logger_->report("Stage 1: Pattern routing.");
 
   if (critical_nets_percentage_ != 0) {
     setInitialNetSlacks();
@@ -174,7 +174,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("stage 2: pattern routing with possible detours");
+  logger_->report("Stage 2: Pattern routing with detours.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -208,7 +208,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   if (net_indices.empty()) {
     return;
   }
-  logger_->report("stage 3: maze routing on sparsified routing graph");
+  logger_->report("Stage 3: Maze routing on sparsified graph.");
 
   if (critical_nets_percentage_ != 0) {
     calculatePartialSlack();
@@ -287,8 +287,8 @@ void CUGR::write(const std::string& guide_file)
     }
     ss << ")\n";
   }
-  logger_->report("total area of pin access patches: {}", area_of_pin_patches_);
-  logger_->report("total area of wire segment patches: {}",
+  logger_->report("Total area of pin access patches: {}.", area_of_pin_patches_);
+  logger_->report("Total area of wire segment patches: {}.",
                   area_of_wire_patches_);
   std::ofstream fout(guide_file);
   fout << ss.str();
@@ -497,7 +497,7 @@ void CUGR::getGuides(const GRNet* net,
 
 void CUGR::printStatistics() const
 {
-  logger_->report("routing statistics");
+  logger_->report("Routing statistics");
 
   // wire length and via count
   uint64_t wire_length = 0;
@@ -557,13 +557,12 @@ void CUGR::printStatistics() const
     }
   }
 
-  logger_->report("wire length (metric):  {}",
+  logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
-  logger_->report("total via count:       {}", via_count);
-  logger_->report("total wire overflow:   {}", (int) overflow);
-
-  logger_->report("min resource: {}", min_resource);
-  logger_->report("bottleneck:   {}", bottleneck);
+  logger_->report("Total via count:       {}", via_count);
+  logger_->report("Total wire overflow:   {}", (int) overflow);
+  logger_->report("Min resource:          {}", min_resource);
+  logger_->report("Bottleneck:            {}", bottleneck);
 }
 
 void CUGR::updateDbCongestion()
