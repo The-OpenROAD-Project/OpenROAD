@@ -138,8 +138,7 @@ void CUGR::updateOverflowNets(std::vector<int>& net_indices)
       net_indices.push_back(net->getIndex());
     }
   }
-  const int num_nets = gr_nets_.size();
-  logger_->report("Nets with overflow: {}.", net_indices.size(), num_nets);
+  logger_->report("Nets with overflow: {}.", net_indices.size());
 }
 
 void CUGR::patternRoute(std::vector<int>& net_indices)
