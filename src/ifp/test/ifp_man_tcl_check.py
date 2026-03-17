@@ -17,7 +17,7 @@ help_dict, proc_dict, readme_dict = {}, {}, {}
 exclude = ["sta"]
 include = ["./src/odb/src/db/odb.tcl"]
 
-for path in glob.glob("./src/*/src/*tcl") + include:
+for path in sorted(glob.glob("./src/*/src/*tcl")) + include:
     # exclude all dirs other than the current dir.
     if module not in path:
         continue
