@@ -58,17 +58,17 @@ Nets:                411
 Special nets:        2
 Routing layers:      6
 Stage 1: Pattern routing.
-Nets with overflow: 105.
+Nets with overflow: 108.
 Stage 2: Pattern routing with detours.
-Nets with overflow: 63.
+Nets with overflow: 62.
 Stage 3: Maze routing on sparsified graph.
-Nets with overflow: 19.
+Nets with overflow: 20.
 Routing statistics
-Wire length:           62545
-Total via count:       3294
+Wire length:           62020
+Total via count:       3295
 Total wire overflow:   0
-Min resource:          -0.9861111111111116
-Bottleneck:            (3, 20, 27)
-[INFO GRT-0018] Total wirelength: 31291 um
+Min resource:          -0.5555555555555571
+Bottleneck:            (3, 13, 14)
+[INFO GRT-0018] Total wirelength: 31082 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.
