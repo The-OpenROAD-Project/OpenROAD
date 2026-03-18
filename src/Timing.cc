@@ -434,7 +434,7 @@ int Timing::getEndpointCount()
   return sta->endpoints().size();
 }
 
-std::vector<EndpointSlack> Timing::getEndpointSlackMap(MinMax minmax)
+std::vector<EndpointSlack> Timing::getEndpointSlacks(MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   cmdLinkedNetwork();

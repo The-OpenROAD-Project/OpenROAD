@@ -142,7 +142,7 @@ class Timing
   int getEndpointCount();
 
   // ── Endpoint slack map (histogram data source) ──────────────
-  std::vector<EndpointSlack> getEndpointSlackMap(MinMax minmax = Max);
+  std::vector<EndpointSlack> getEndpointSlacks(MinMax minmax = Max);
 
   // ── Clock domain info ───────────────────────────────────────
   std::vector<ClockInfo> getClockInfo();

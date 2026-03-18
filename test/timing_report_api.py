@@ -44,7 +44,7 @@ count = timing.getEndpointCount()
 assert count > 0
 
 # ── Endpoint slacks: worst must equal WNS ───────────────────
-slack_map = swig_list(timing.getEndpointSlackMap(Timing.Max))
+slack_map = swig_list(timing.getEndpointSlacks(Timing.Max))
 assert len(slack_map) == count
 worst_ep_slack = min(e.slack for e in slack_map)
 assert approx(worst_ep_slack, wns), (
