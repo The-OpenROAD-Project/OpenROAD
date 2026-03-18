@@ -19,6 +19,7 @@ function makeApp() {
     const requests = [];
     return {
         focusNets: new Set(),
+        routeGuideNets: new Set(),
         inspectorEl: document.createElement('div'),
         hoverRects: [],
         highlightRect: null,
@@ -72,26 +73,27 @@ describe('Inspector focus nets', () => {
         it('shows focus button for Net type', () => {
             panel.updateInspector(netData('clk'));
             const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
-            // Should have zoom + focus buttons
-            assert.ok(btns.length >= 2, `expected >=2 buttons, got ${btns.length}`);
-            assert.equal(btns[1].title, 'Focus net');
+            // Should have back + zoom + focus buttons
+            assert.ok(btns.length >= 3, `expected >=3 buttons, got ${btns.length}`);
+            const focusBtn = Array.from(btns).find(b => b.title === 'Focus net');
+            assert.ok(focusBtn, 'focus button should be present');
         });
 
         it('does not show focus button for non-Net type', () => {
             panel.updateInspector(instData('buf1'));
             const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
-            // Should only have zoom button, no focus button
-            assert.equal(btns.length, 1);
-            assert.equal(btns[0].title, 'Zoom to');
+            // Should have back + zoom buttons, no focus button
+            assert.equal(btns.length, 2);
+            const focusBtn = Array.from(btns).find(b => b.title === 'Focus net');
+            assert.equal(focusBtn, undefined, 'focus button should not be present');
         });
 
         it('shows de-focus button when net is already focused', () => {
             app.focusNets.add('clk');
             panel.updateInspector(netData('clk'));
             const btns = app.inspectorEl.querySelectorAll('.inspector-btn');
-            // zoom + de-focus + clear
-            assert.ok(btns.length >= 2);
-            assert.equal(btns[1].title, 'De-focus net');
+            const defocusBtn = Array.from(btns).find(b => b.title === 'De-focus net');
+            assert.ok(defocusBtn, 'de-focus button should be present');
         });
 
         it('shows clear button when any nets are focused', () => {
@@ -113,7 +115,8 @@ describe('Inspector focus nets', () => {
     describe('toggleFocusNet via button click', () => {
         it('adds net to focusNets on focus click', async () => {
             panel.updateInspector(netData('clk'));
-            const focusBtn = app.inspectorEl.querySelectorAll('.inspector-btn')[1];
+            const focusBtn = Array.from(app.inspectorEl.querySelectorAll('.inspector-btn'))
+                .find(b => b.title === 'Focus net');
             focusBtn.click();
             // Let promises settle
             await new Promise(r => setTimeout(r, 10));
@@ -129,8 +132,9 @@ describe('Inspector focus nets', () => {
         it('removes net from focusNets on de-focus click', async () => {
             app.focusNets.add('clk');
             panel.updateInspector(netData('clk'));
-            const defocusBtn = app.inspectorEl.querySelectorAll('.inspector-btn')[1];
-            assert.equal(defocusBtn.title, 'De-focus net');
+            const defocusBtn = Array.from(app.inspectorEl.querySelectorAll('.inspector-btn'))
+                .find(b => b.title === 'De-focus net');
+            assert.ok(defocusBtn, 'de-focus button should be present');
             defocusBtn.click();
             await new Promise(r => setTimeout(r, 10));
 

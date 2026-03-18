@@ -78,6 +78,7 @@ struct WebSocketRequest
     MODULE_HIERARCHY,
     SET_MODULE_COLORS,
     SET_FOCUS_NETS,
+    SET_ROUTE_GUIDES,
     HEATMAPS,
     SET_ACTIVE_HEATMAP,
     SET_HEATMAP,
@@ -126,6 +127,10 @@ struct WebSocketRequest
   std::string focus_action;  // "add", "remove", "clear"
   std::string focus_net_name;
 
+  // SET_ROUTE_GUIDES fields
+  std::string route_guide_action;  // "add", "remove", "clear"
+  std::string route_guide_net_name;
+
   // Heat map fields
   std::string heatmap_name;
   std::string heatmap_option;
@@ -167,6 +172,9 @@ struct SessionState
   std::mutex focus_nets_mutex;
   std::set<uint32_t> focus_net_ids;  // dbNet ODB IDs
 
+  std::mutex route_guides_mutex;
+  std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
+
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
   std::string active_heatmap;
@@ -191,7 +199,8 @@ WebSocketResponse dispatch_request(
     const std::vector<ColoredRect>& colored_rects = {},
     const std::vector<FlightLine>& flight_lines = {},
     const std::map<uint32_t, Color>* module_colors = nullptr,
-    const std::set<uint32_t>* focus_net_ids = nullptr);
+    const std::set<uint32_t>* focus_net_ids = nullptr,
+    const std::set<uint32_t>* route_guide_net_ids = nullptr);
 
 // Handles SELECT, INSPECT, and HOVER requests.
 class SelectHandler
@@ -210,6 +219,8 @@ class SelectHandler
                                 SessionState& state);
   WebSocketResponse handleSetFocusNets(const WebSocketRequest& req,
                                        SessionState& state);
+  WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
+                                         SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

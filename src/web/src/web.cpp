@@ -111,6 +111,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.type = WebSocketRequest::SET_FOCUS_NETS;
     req.focus_action = extract_string(msg, "action");
     req.focus_net_name = extract_string(msg, "net_name");
+  } else if (type_str == "set_route_guides") {
+    req.type = WebSocketRequest::SET_ROUTE_GUIDES;
+    req.route_guide_action = extract_string(msg, "action");
+    req.route_guide_net_name = extract_string(msg, "net_name");
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -469,6 +473,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSetFocusNets(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::SET_ROUTE_GUIDES:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleSetRouteGuides(req, self->state_));
       });
       break;
     case WebSocketRequest::HEATMAPS:

@@ -52,6 +52,7 @@ const app = {
     modulesLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
+    routeGuideNets: new Set(),
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,

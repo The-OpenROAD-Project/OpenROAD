@@ -157,7 +157,8 @@ class TileGenerator
       const std::vector<ColoredRect>& colored_rects = {},
       const std::vector<FlightLine>& flight_lines = {},
       const std::map<uint32_t, Color>* module_colors = nullptr,
-      const std::set<uint32_t>* focus_net_ids = nullptr) const;
+      const std::set<uint32_t>* focus_net_ids = nullptr,
+      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
   std::vector<unsigned char> generateHeatMapTile(gui::HeatMapDataSource& source,
                                                  int z,
                                                  int x,
@@ -197,6 +198,13 @@ class TileGenerator
 
   void drawFlightLines(std::vector<unsigned char>& image,
                        const std::vector<FlightLine>& lines,
+                       const odb::Rect& dbu_tile,
+                       double scale) const;
+
+  void drawRouteGuides(std::vector<unsigned char>& image,
+                       const std::set<uint32_t>& net_ids,
+                       const std::string& layer,
+                       const Color& color,
                        const odb::Rect& dbu_tile,
                        double scale) const;
 

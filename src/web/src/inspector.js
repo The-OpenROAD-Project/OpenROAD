@@ -31,6 +31,19 @@ const DEFOCUS_SVG =
     '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.8 11.8 0 0 0 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>' +
     '</svg>';
 
+// Show route guides: Material "alt_route"
+const ROUTE_GUIDE_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M9.78 11.16l-1.42 1.42a7.282 7.282 0 0 1-1.79-2.94l1.94-.49c.32.89.77 1.5 1.27 2.01zM11 6L7 2 3 6h3.02c.02.81.08 1.54.19 2.17l1.94-.49C8.08 7.2 8.03 6.63 8.02 6H11zm2 0h3c-.01.22-.03.47-.07.73l1.94.49c.09-.42.15-.87.17-1.22H21l-4-4-4 4zm1.56 8.42a7.282 7.282 0 0 1-1.79 2.94l1.42 1.42c.78-.87 1.4-1.85 1.79-2.88l-1.42-1.48zM19.98 18h-2.95a8.42 8.42 0 0 0 .34-1.54l-1.94-.49c-.11.63-.29 1.24-.54 1.82-.25.55-.56 1.05-.91 1.5L12.56 17.9c.46-.38.84-.82 1.15-1.29.15-.22.28-.46.39-.71H11v2h2.02c-.01.63-.07 1.23-.21 1.77l1.94.49C14.93 19.42 15.01 18.72 15.02 18H19l-4-4 .98.98z"/>' +
+    '</svg>';
+
+// Hide route guides: Material "alt_route" with strikethrough
+const HIDE_ROUTE_GUIDE_SVG =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
+    '<path d="M9.78 11.16l-1.42 1.42a7.282 7.282 0 0 1-1.79-2.94l1.94-.49c.32.89.77 1.5 1.27 2.01zM11 6L7 2 3 6h3.02c.02.81.08 1.54.19 2.17l1.94-.49C8.08 7.2 8.03 6.63 8.02 6H11zm2 0h3c-.01.22-.03.47-.07.73l1.94.49c.09-.42.15-.87.17-1.22H21l-4-4-4 4zm1.56 8.42a7.282 7.282 0 0 1-1.79 2.94l1.42 1.42c.78-.87 1.4-1.85 1.79-2.88l-1.42-1.48zM19.98 18h-2.95a8.42 8.42 0 0 0 .34-1.54l-1.94-.49c-.11.63-.29 1.24-.54 1.82-.25.55-.56 1.05-.91 1.5L12.56 17.9c.46-.38.84-.82 1.15-1.29.15-.22.28-.46.39-.71H11v2h2.02c-.01.63-.07 1.23-.21 1.77l1.94.49C14.93 19.42 15.01 18.72 15.02 18H19l-4-4 .98.98z" opacity="0.5"/>' +
+    '<line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2"/>' +
+    '</svg>';
+
 // Clear focus: X (Material "close")
 const CLEAR_FOCUS_SVG =
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">' +
@@ -76,6 +89,21 @@ export function createInspectorPanel(app, redrawAllLayers) {
             });
         } catch (err) {
             console.error('set_focus_nets clear failed:', err);
+        }
+        redrawAllLayers();
+        if (lastInspectData) updateInspector(lastInspectData);
+    }
+
+    async function toggleRouteGuides(name) {
+        const action = app.routeGuideNets.has(name) ? 'remove' : 'add';
+        if (action === 'add') app.routeGuideNets.add(name);
+        else app.routeGuideNets.delete(name);
+        try {
+            await app.websocketManager.request({
+                type: 'set_route_guides', action, net_name: name,
+            });
+        } catch (err) {
+            console.error('set_route_guides failed:', err);
         }
         redrawAllLayers();
         if (lastInspectData) updateInspector(lastInspectData);
@@ -394,6 +422,17 @@ export function createInspectorPanel(app, redrawAllLayers) {
                 focusBtn.innerHTML = isFocused ? DEFOCUS_SVG : FOCUS_SVG;
                 focusBtn.addEventListener('click', () => toggleFocusNet(data.name));
                 toolbar.appendChild(focusBtn);
+            }
+
+            // Show/Hide route guides button for Net objects with guides
+            if (data.type === 'Net' && data.name && data.has_guides) {
+                const isShowing = app.routeGuideNets.has(data.name);
+                const guideBtn = document.createElement('button');
+                guideBtn.className = 'inspector-btn';
+                guideBtn.title = isShowing ? 'Hide route guides' : 'Show route guides';
+                guideBtn.innerHTML = isShowing ? HIDE_ROUTE_GUIDE_SVG : ROUTE_GUIDE_SVG;
+                guideBtn.addEventListener('click', () => toggleRouteGuides(data.name));
+                toolbar.appendChild(guideBtn);
             }
 
             // Clear all focus nets button

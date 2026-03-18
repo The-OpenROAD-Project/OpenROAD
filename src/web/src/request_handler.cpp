@@ -306,6 +306,13 @@ static void writeInspectPayload(JsonBuilder& builder,
   if (sel.getBBox(bbox)) {
     writeBBox(builder, "bbox", bbox);
   }
+
+  if (sel.isNet()) {
+    auto* net = std::any_cast<odb::dbNet*>(sel.getObject());
+    if (net && !net->getGuides().empty()) {
+      builder.field("has_guides", 1);
+    }
+  }
 }
 
 // Serialize a TimingNode to JSON.
@@ -476,7 +483,8 @@ WebSocketResponse dispatch_request(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
-    const std::set<uint32_t>* focus_net_ids)
+    const std::set<uint32_t>* focus_net_ids,
+    const std::set<uint32_t>* route_guide_net_ids)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -534,7 +542,8 @@ WebSocketResponse dispatch_request(
                                       colored_rects,
                                       flight_lines,
                                       module_colors,
-                                      focus_net_ids);
+                                      focus_net_ids,
+                                      route_guide_net_ids);
       break;
     }
     default: {
@@ -813,6 +822,41 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
       }
     }
     const int count = static_cast<int>(state.focus_net_ids.size());
+    const std::string json
+        = R"({"ok":1,"count":)" + std::to_string(count) + "}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSetRouteGuides(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    std::lock_guard<std::mutex> lock(state.route_guides_mutex);
+    if (req.route_guide_action == "clear") {
+      state.route_guide_net_ids.clear();
+    } else {
+      odb::dbBlock* block = gen_->getBlock();
+      odb::dbNet* net
+          = block ? block->findNet(req.route_guide_net_name.c_str()) : nullptr;
+      if (net) {
+        if (req.route_guide_action == "add") {
+          state.route_guide_net_ids.insert(net->getId());
+        } else if (req.route_guide_action == "remove") {
+          state.route_guide_net_ids.erase(net->getId());
+        }
+      }
+    }
+    const int count = static_cast<int>(state.route_guide_net_ids.size());
     const std::string json
         = R"({"ok":1,"count":)" + std::to_string(count) + "}";
     resp.payload.assign(json.begin(), json.end());
@@ -1210,8 +1254,24 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
   const std::set<uint32_t>* focus_ptr
       = focus_nets.empty() ? nullptr : &focus_nets;
 
-  return dispatch_request(
-      req, *gen_, rects, polys, colored, lines, mod_ptr, focus_ptr);
+  // Snapshot route guide nets
+  std::set<uint32_t> route_guides;
+  {
+    std::lock_guard<std::mutex> lock(state.route_guides_mutex);
+    route_guides = state.route_guide_net_ids;
+  }
+  const std::set<uint32_t>* route_guide_ptr
+      = route_guides.empty() ? nullptr : &route_guides;
+
+  return dispatch_request(req,
+                          *gen_,
+                          rects,
+                          polys,
+                          colored,
+                          lines,
+                          mod_ptr,
+                          focus_ptr,
+                          route_guide_ptr);
 }
 
 WebSocketResponse TileHandler::handleModuleHierarchy(

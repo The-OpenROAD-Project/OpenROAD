@@ -583,7 +583,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::vector<ColoredRect>& colored_rects,
     const std::vector<FlightLine>& flight_lines,
     const std::map<uint32_t, Color>* module_colors,
-    const std::set<uint32_t>* focus_net_ids) const
+    const std::set<uint32_t>* focus_net_ids,
+    const std::set<uint32_t>* route_guide_net_ids) const
 {
   static_assert(sizeof(Color) == 4);
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
@@ -1069,6 +1070,10 @@ std::vector<unsigned char> TileGenerator::generateTile(
     if (!flight_lines.empty()) {
       drawFlightLines(image_buffer, flight_lines, dbu_tile, scale);
     }
+    if (route_guide_net_ids && !route_guide_net_ids->empty() && tech_layer) {
+      drawRouteGuides(
+          image_buffer, *route_guide_net_ids, layer, color, dbu_tile, scale);
+    }
   }
 
   if (vis.debug) {
@@ -1472,6 +1477,74 @@ void TileGenerator::drawFlightLines(std::vector<unsigned char>& image,
     Color c = fl.color;
     c.a = 220;
     drawLine(image, px0, py0, px1, py1, c);
+  }
+}
+
+void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
+                                    const std::set<uint32_t>& net_ids,
+                                    const std::string& layer,
+                                    const Color& layer_color,
+                                    const odb::Rect& dbu_tile,
+                                    const double scale) const
+{
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  if (!block) {
+    return;
+  }
+
+  const Color fill{
+      .r = layer_color.r, .g = layer_color.g, .b = layer_color.b, .a = 50};
+  const Color border{
+      .r = layer_color.r, .g = layer_color.g, .b = layer_color.b, .a = 180};
+
+  for (const uint32_t net_id : net_ids) {
+    odb::dbNet* net = odb::dbNet::getNet(block, net_id);
+    if (!net) {
+      continue;
+    }
+    for (odb::dbGuide* guide : net->getGuides()) {
+      if (guide->getLayer()->getName() != layer) {
+        continue;
+      }
+      const odb::Rect box = guide->getBox();
+      if (!dbu_tile.overlaps(box)) {
+        continue;
+      }
+      const odb::Rect overlap = box.intersect(dbu_tile);
+      const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+
+      // Semi-transparent fill
+      for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+        for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+          blendPixel(image, ix, 255 - iy, fill);
+        }
+      }
+
+      // Border (only where guide edge is within this tile)
+      const odb::Rect full_draw = toPixels(scale, box, dbu_tile);
+      if (full_draw.xMin() >= 0 && full_draw.xMin() < kTileSizeInPixel) {
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          blendPixel(image, full_draw.xMin(), 255 - iy, border);
+        }
+      }
+      if (full_draw.xMax() > 0 && full_draw.xMax() <= kTileSizeInPixel) {
+        const int rx = full_draw.xMax() - 1;
+        for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+          blendPixel(image, rx, 255 - iy, border);
+        }
+      }
+      if (full_draw.yMin() >= 0 && full_draw.yMin() < kTileSizeInPixel) {
+        for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+          blendPixel(image, ix, 255 - full_draw.yMin(), border);
+        }
+      }
+      if (full_draw.yMax() > 0 && full_draw.yMax() <= kTileSizeInPixel) {
+        const int ty = full_draw.yMax() - 1;
+        for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+          blendPixel(image, ix, 255 - ty, border);
+        }
+      }
+    }
   }
 }
 
