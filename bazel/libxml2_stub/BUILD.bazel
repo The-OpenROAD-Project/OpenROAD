@@ -1,0 +1,5 @@
+# Maintenance copies only — the actual stub is compiled inline in MODULE.bazel patch_cmds.
+exports_files([
+    "libxml2_stub.c",
+    "libxml2_stub.ver",
+])

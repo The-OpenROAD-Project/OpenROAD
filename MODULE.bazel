@@ -98,8 +98,15 @@ llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     llvm_version = "20.1.8",
 )
+
+# Stub libxml2.so.2 — ld.lld links libxml2 but only uses it for Windows
+# manifest merging.  This stub (abort-on-call) in lib/ satisfies
+# ld.lld's RUNPATH=$ORIGIN/../lib, eliminating the system libxml2
+# dependency.  Canonical source: bazel/libxml2_stub/
+llvm.toolchain_root(
+    label = "@llvm_prebuilt//:BUILD.bazel",
+)
 use_repo(llvm, "llvm_toolchain")
-# use_repo(llvm, "llvm_toolchain_llvm") # if you depend on specific tools in scripts
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains(
@@ -182,6 +189,62 @@ maven.install(
 use_repo(maven, "maven")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Pre-built LLVM with libxml2 stub — see bazel/libxml2_stub/README.md
+http_archive(
+    name = "llvm_prebuilt",
+    build_file = "@toolchains_llvm//toolchain:BUILD.llvm_repo",
+    patch_cmds = [
+        # See bazel/libxml2_stub/ for canonical source and documentation.
+        """\
+cat > _stub.c << 'STUB'
+#include <stdlib.h>
+void *xmlFree = 0;
+void *xmlAddChild(void *p, void *c)                           { abort(); }
+void *xmlCopyNamespace(void *n)                                { abort(); }
+void  xmlDocDumpFormatMemoryEnc(void *d,void *b,void *s,
+                                const char *e, int f)          { abort(); }
+void *xmlDocGetRootElement(void *d)                            { abort(); }
+void *xmlDocSetRootElement(void *d, void *r)                   { abort(); }
+void  xmlFreeDoc(void *d)                                      { abort(); }
+void  xmlFreeNode(void *n)                                     { abort(); }
+void  xmlFreeNs(void *n)                                       { abort(); }
+void *xmlNewDoc(const void *v)                                 { abort(); }
+void *xmlNewNs(void *n, const void *h, const void *p)         { abort(); }
+void *xmlNewProp(void *n, const void *a, const void *v)       { abort(); }
+void *xmlReadMemory(const char *b, int sz, const char *u,
+                    const char *e, int o)                      { abort(); }
+void  xmlSetGenericErrorFunc(void *c, void *h)                 { abort(); }
+void *xmlStrdup(const void *s)                                 { abort(); }
+void  xmlUnlinkNode(void *n)                                   { abort(); }
+STUB
+
+cat > _stub.ver << 'VER'
+LIBXML2_2.4.30 {
+    global: xmlAddChild; xmlCopyNamespace; xmlDocDumpFormatMemoryEnc;
+            xmlDocGetRootElement; xmlDocSetRootElement; xmlFree;
+            xmlFreeDoc; xmlFreeNode; xmlFreeNs; xmlNewDoc; xmlNewNs;
+            xmlNewProp; xmlSetGenericErrorFunc; xmlStrdup; xmlUnlinkNode;
+    local: *;
+};
+LIBXML2_2.6.0 {
+    global: xmlReadMemory;
+} LIBXML2_2.4.30;
+VER
+
+cc -shared -o lib/libxml2.so.2 \
+    -Wl,--version-script=_stub.ver \
+    -Wl,-soname,libxml2.so.2 \
+    _stub.c \
+&& rm _stub.c _stub.ver
+""",
+    ],
+    sha256 = "1ead36b3dfcb774b57be530df42bec70ab2d239fbce9889447c7a29a4ddc1ae6",
+    strip_prefix = "LLVM-20.1.8-Linux-X64",
+    urls = [
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-X64.tar.xz",
+    ],
+)
 
 http_archive(
     name = "tclreadline",
