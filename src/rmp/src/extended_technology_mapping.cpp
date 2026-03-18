@@ -466,33 +466,29 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
   });
 
   // Connect mapped POs to the existing cut boundary nets
-  std::vector<odb::dbNet*> boundary_po_dbnets;
-  boundary_po_dbnets.reserve(cut.primary_outputs().size());
+  std::unordered_map<std::string, odb::dbNet*> boundary_po_dbnets;
   for (sta::Net* sta_net : cut.primary_outputs()) {
     odb::dbNet* db_net = db_network->staToDb(sta_net);
+    std::string net_name = db_network->name(sta_net);
     if (!db_net) {
       logger->error(utl::RMP,
                     83,
                     "cut primary output net {} has no dbNet",
-                    db_network->name(sta_net));
+                    net_name);
     }
-    boundary_po_dbnets.push_back(db_net);
+    boundary_po_dbnets.emplace(net_name, db_net);
   }
 
   // Connect each mapped PO driver to corresponding boundary net by merging.
   topo_ntk.foreach_po([&](const BlockNtk::signal& f, uint32_t po_index) {
-    if (po_index >= boundary_po_dbnets.size()) {
-      logger->error(
-          utl::RMP,
-          84,
-          "Mapped network has more POs ({}) than cut.primary_outputs ({})",
-          po_index + 1,
-          boundary_po_dbnets.size());
+    std::string po_name = topo_ntk.get_output_name(po_index);
+    auto it = boundary_po_dbnets.find(po_name);
+    if (it == boundary_po_dbnets.end()) {
+      logger->error(utl::RMP, 84, "Missing boundary net for PO {}", po_name);
     }
-
+    odb::dbNet* boundary_net = it->second;;
     odb::dbNet* driver_net
         = getDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
-    odb::dbNet* boundary_net = boundary_po_dbnets[po_index];
     if (driver_net && boundary_net && driver_net != boundary_net) {
       driver_net->mergeNet(boundary_net);
     }
