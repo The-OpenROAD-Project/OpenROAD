@@ -67,6 +67,18 @@ int UnfoldedRegion::getSurfaceZ() const
   return cuboid.zCenter();
 }
 
+UnfoldedRegion* UnfoldedChip::findUnfoldedRegion(dbChipRegionInst* inst)
+{
+  auto it = region_map.find(inst);
+  return it != region_map.end() ? it->second : nullptr;
+}
+
+UnfoldedBump* UnfoldedChip::findUnfoldedBump(dbChipBumpInst* bump_inst)
+{
+  auto it = bump_inst_map.find(bump_inst);
+  return it != bump_inst_map.end() ? it->second : nullptr;
+}
+
 UnfoldedModel::UnfoldedModel(utl::Logger* logger, dbChip* chip)
     : logger_(logger)
 {
@@ -125,10 +137,9 @@ void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
     chip.region_map[region.region_inst] = &region;
     for (auto& bump : region.bumps) {
       bump.parent_region = &region;
-      bump_inst_map_[{bump.bump_inst, chip.chip_inst_path}] = &bump;
+      chip.bump_inst_map[bump.bump_inst] = &bump;
     }
   }
-  chip_path_map_[chip.chip_inst_path] = &chip;
 }
 
 void UnfoldedModel::unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst)
@@ -186,21 +197,16 @@ void UnfoldedModel::unfoldBumps(UnfoldedRegion& uf_region,
   }
 }
 
+UnfoldedChip* UnfoldedModel::findUnfoldedChip(const std::string& path)
+{
+  auto it = chip_map_.find(path);
+  return it != chip_map_.end() ? it->second : nullptr;
+}
+
 UnfoldedChip* UnfoldedModel::findUnfoldedChip(
     const std::vector<dbChipInst*>& path)
 {
-  auto it = chip_path_map_.find(path);
-  return it != chip_path_map_.end() ? it->second : nullptr;
-}
-
-UnfoldedRegion* UnfoldedModel::findUnfoldedRegion(UnfoldedChip* chip,
-                                                  dbChipRegionInst* inst)
-{
-  if (!chip || !inst) {
-    return nullptr;
-  }
-  auto it = chip->region_map.find(inst);
-  return it != chip->region_map.end() ? it->second : nullptr;
+  return findUnfoldedChip(getFullPathName(path));
 }
 
 void UnfoldedModel::unfoldConnections(
@@ -208,24 +214,33 @@ void UnfoldedModel::unfoldConnections(
     const std::vector<dbChipInst*>& parent_path)
 {
   for (auto* conn : chip->getChipConns()) {
-    UnfoldedRegion* top = findUnfoldedRegion(
-        findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath())),
-        conn->getTopRegion());
-    UnfoldedRegion* bot = findUnfoldedRegion(
-        findUnfoldedChip(concatPath(parent_path, conn->getBottomRegionPath())),
-        conn->getBottomRegion());
-
-    if (top || bot) {
-      UnfoldedConnection uf_conn{
-          .connection = conn, .top_region = top, .bottom_region = bot};
-      if (top != nullptr && top->isInternalExt()) {
-        top->isUsed = true;
-      }
-      if (bot != nullptr && bot->isInternalExt()) {
-        bot->isUsed = true;
-      }
-      unfolded_connections_.push_back(uf_conn);
+    UnfoldedChip* top_chip
+        = findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath()));
+    if (!top_chip) {
+      continue;
     }
+    UnfoldedChip* bot_chip = findUnfoldedChip(
+        concatPath(parent_path, conn->getBottomRegionPath()));
+    if (!bot_chip) {
+      continue;
+    }
+    UnfoldedRegion* top = top_chip->findUnfoldedRegion(conn->getTopRegion());
+    if (!top) {
+      continue;
+    }
+    UnfoldedRegion* bot = bot_chip->findUnfoldedRegion(conn->getBottomRegion());
+    if (!bot) {
+      continue;
+    }
+    UnfoldedConnection uf_conn{
+        .connection = conn, .top_region = top, .bottom_region = bot};
+    if (top->isInternalExt()) {
+      top->isUsed = true;
+    }
+    if (bot->isInternalExt()) {
+      bot->isUsed = true;
+    }
+    unfolded_connections_.push_back(uf_conn);
   }
 }
 
@@ -238,11 +253,12 @@ void UnfoldedModel::unfoldNets(dbChip* chip,
     for (uint32_t i = 0; i < net->getNumBumpInsts(); i++) {
       std::vector<dbChipInst*> rel_path;
       dbChipBumpInst* b_inst = net->getBumpInst(i, rel_path);
-
-      auto it
-          = bump_inst_map_.find({b_inst, concatPath(parent_path, rel_path)});
-      if (it != bump_inst_map_.end()) {
-        uf_net.connected_bumps.push_back(it->second);
+      UnfoldedChip* chip = findUnfoldedChip(concatPath(parent_path, rel_path));
+      if (chip) {
+        UnfoldedBump* bump = chip->findUnfoldedBump(b_inst);
+        if (bump) {
+          uf_net.connected_bumps.push_back(bump);
+        }
       }
     }
     unfolded_nets_.push_back(std::move(uf_net));
