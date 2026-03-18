@@ -696,7 +696,7 @@ void DefOut::Impl::writeInst(dbInst* inst)
       int right = defdist(box->xMax());
       int top = defdist(box->yMax());
 
-      *_out << " + HALO " << left << " " << bottom << " " << right << " "
+      *_out << " + HALO " << (box->isSoft() ? "SOFT " : "") << left << " " << bottom << " " << right << " "
             << top;
     }
   }
