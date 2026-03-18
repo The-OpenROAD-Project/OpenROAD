@@ -30,10 +30,7 @@ orfs_flow(
     },
     tags = ["manual"],
     test_kwargs = {
-        "tags": [
-            "manual",
-            "orfs",
-        ],
+        "tags": ["orfs"],
     },
     verilog_files = ["ram_8x7.sv"],
 )
@@ -94,10 +91,7 @@ filegroup(
         ":ram_8x7_{stage}_files".format(stage = STAGES[i]),
     ] + ([] if STAGES[i] == "source" else ["//test/orfs/asap7:asap7_files"]),
     module_top = "ram_8x7",
-    tags = [
-        "manual",
-        "orfs",
-    ],
+    tags = ["orfs"],
 ) for i in range(len(STAGES) - 1)]
 
 [sim_test(
@@ -139,10 +133,7 @@ eqy_test(
         "//test/orfs/asap7:asap7_files",
     ],
     module_top = "ram_8x7",
-    tags = [
-        "manual",
-        "orfs",
-    ],
+    tags = ["orfs"],
 )
 
 verify_orfs_tags()
