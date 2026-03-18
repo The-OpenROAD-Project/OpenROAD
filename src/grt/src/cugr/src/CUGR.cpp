@@ -626,7 +626,7 @@ void CUGR::addDirtyNet(odb::dbNet* net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->commitTree(gr_net->getRoutingTree(), /*rip_up=*/true);
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
     }
     nets_to_route_.push_back(gr_net->getIndex());
   } else {
