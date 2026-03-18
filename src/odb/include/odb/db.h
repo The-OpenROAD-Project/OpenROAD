@@ -7564,7 +7564,7 @@ class dbDatabase : public dbObject
 
   void constructUnfoldedModel();
 
-  const UnfoldedModel* getUnfoldedModel() const;
+  UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
