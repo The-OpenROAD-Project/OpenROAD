@@ -360,7 +360,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
   }
 
   // Test to delete one sink on cluster
-  for (unsigned j = 1; j < groupSize; ++j) {
+  /*for (unsigned j = 1; j < groupSize; ++j) {
     int cluster_count = 0;
     int solved_cluster = 0;
     unsigned cluster_num = solutions[j].size();
@@ -411,7 +411,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
       }
     }
     printf("Solution %d has %d clusters with single sink, %d clusters move to nearby cluster\n", j, cluster_count, solved_cluster);
-  }
+  }*/
   unsigned bestSolution = 0;
   bool bestSolutionFound = false;
 
