@@ -2,10 +2,12 @@
 set -e
 
 # Install binary and runfiles from bazel build
+# Usage: bazel run :install -- [DEST_DIR]
+# Default: installs to ./bazel-install in the workspace root
 
 TARFILE=$(cd $BUILD_WORKSPACE_DIRECTORY; bazelisk info bazel-bin)/openroad.tar
 
-DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/../install/OpenROAD/bin}
+DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/bazel-install}
 
 mkdir -p "$DEST_DIR"
 cp -f "$TARFILE" "$DEST_DIR"
