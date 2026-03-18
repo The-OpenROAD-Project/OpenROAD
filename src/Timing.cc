@@ -581,15 +581,16 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
             pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
       }
 
-      // Determine cell name and whether this is a net arc
-      bool is_net = false;
-      std::string cell_name;
+      // Determine cell name, net arcs, logic depth, and build arc info
       if (i > 0) {
         const auto* prev_ref = expand.path(i - 1);
         sta::Vertex* prev_vertex = prev_ref->vertex(sta);
         const sta::Pin* prev_pin = prev_vertex->pin();
         sta::Instance* inst = network->instance(pin);
         sta::Instance* prev_inst = network->instance(prev_pin);
+
+        bool is_net = false;
+        std::string cell_name;
         if (inst != prev_inst || inst == nullptr) {
           is_net = true;
           cell_name = "net";
@@ -609,13 +610,9 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
             logic_delay_total += pin_delay;
           }
         }
-      }
 
-      if (i > 0) {
         TimingArcInfo arc;
-        const auto* prev_ref = expand.path(i - 1);
-        sta::Vertex* prev_vertex = prev_ref->vertex(sta);
-        arc.from_pin = network->pathName(prev_vertex->pin());
+        arc.from_pin = network->pathName(prev_pin);
         arc.to_pin = network->pathName(pin);
         arc.cell_name = cell_name;
         arc.delay = pin_delay;
