@@ -314,4 +314,22 @@ NETS 24 ;
 - out[8] ( PIN out[8] ) ( _d8_ Q ) ;
 END NETS
 
+SCANCHAINS 2 ;
+- chain1
+  + PARTITION part1
+  + START _d0_ D
+  + STOP _d1_ Q
+  + FLOATING
+  _d2_ ( IN D ) ( OUT Q )
+;
+- chain2
+  + PARTITION part2
+  + START PIN inp0
+  + STOP PIN out[0]
+  + ORDERED
+  _d3_ ( IN D ) ( OUT Q )
+  _d4_ ( IN D ) ( OUT Q )
+;
+END SCANCHAINS
+
 END DESIGN
