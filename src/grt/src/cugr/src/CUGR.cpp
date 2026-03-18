@@ -248,9 +248,17 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
 void CUGR::route()
 {
   std::vector<int> net_indices;
-  net_indices.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    net_indices.push_back(net->getIndex());
+  if (!nets_to_route_.empty()) {
+    std::ranges::sort(nets_to_route_);
+    auto [first, last] = std::ranges::unique(nets_to_route_);
+    nets_to_route_.erase(first, last);
+    net_indices = nets_to_route_;
+    nets_to_route_.clear();
+  } else {
+    net_indices.reserve(gr_nets_.size());
+    for (const auto& net : gr_nets_) {
+      net_indices.push_back(net->getIndex());
+    }
   }
 
   patternRoute(net_indices);
@@ -616,7 +624,11 @@ void CUGR::addDirtyNet(odb::dbNet* net)
 {
   auto it = db_net_map_.find(net);
   if (it != db_net_map_.end()) {
-    nets_to_route_.push_back(it->second->getIndex());
+    GRNet* gr_net = it->second;
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->commitTree(gr_net->getRoutingTree(), /*rip_up=*/true);
+    }
+    nets_to_route_.push_back(gr_net->getIndex());
   } else {
     logger_->warn(
         GRT, 600, "Net {} not found in CUGR net map.", net->getConstName());
@@ -657,38 +669,26 @@ void CUGR::routeIncremental()
     return;
   }
 
-  std::ranges::sort(nets_to_route_);
-  auto [first, last] = std::ranges::unique(nets_to_route_);
-  nets_to_route_.erase(first, last);
+  std::vector<int> initial_nets = nets_to_route_;
+  std::ranges::sort(initial_nets);
+  auto [first, last] = std::ranges::unique(initial_nets);
+  initial_nets.erase(first, last);
 
-  std::vector<int> nets_to_reroute = nets_to_route_;
-  rerouteNets(nets_to_reroute);
+  route();
 
-  // Check for secondary overflow caused by rerouting
   std::vector<int> overflow_nets;
   updateOverflowNets(overflow_nets);
   std::vector<int> secondary_nets;
   std::ranges::set_difference(
-      overflow_nets, nets_to_route_, std::back_inserter(secondary_nets));
+      overflow_nets, initial_nets, std::back_inserter(secondary_nets));
   if (!secondary_nets.empty()) {
-    rerouteNets(secondary_nets);
+    for (int idx : secondary_nets) {
+      addDirtyNet(gr_nets_[idx]->getDbNet());
+    }
+    route();
   }
-
-  nets_to_route_.clear();
 
   printStatistics();
-}
-
-void CUGR::rerouteNets(std::vector<int>& net_indices)
-{
-  for (const int idx : net_indices) {
-    if (gr_nets_[idx]->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
-    }
-  }
-  patternRoute(net_indices);
-  patternRouteWithDetours(net_indices);
-  mazeRoute(net_indices);
 }
 
 }  // namespace grt
