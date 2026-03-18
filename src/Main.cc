@@ -191,42 +191,44 @@ static int logCommandCallback(ClientData client_data,
 {
   (void) interp;
   (void) command_info;
-  // Tcl levels are 1-based: 1 is top-level, 2+ are nested (e.g. sourced body).
-  if (level != 1 || command == nullptr) {
+  (void) level;
+  if (command == nullptr || objc <= 0 || objv == nullptr) {
+    return TCL_OK;
+  }
+
+  // Skip internal implementation commands that aren't user-visible
+  const char* cmd_name = Tcl_GetString(objv[0]);
+  if (cmd_name == nullptr) {
+    return TCL_OK;
+  }
+  const std::string name(cmd_name);
+  if (name == "sta::include_file" || name == "::sta::include_file") {
     return TCL_OK;
   }
 
   auto* logger = static_cast<utl::Logger*>(client_data);
   if (logger != nullptr && log_filename != nullptr) {
-    logger->redirectFileAppendBegin(log_filename);
-    
     // Reconstruct command with expanded variables from objv[]
-    if (objc > 0 && objv != nullptr) {
-      std::string expanded_cmd;
-      for (int i = 0; i < objc; i++) {
-        if (i > 0) {
-          expanded_cmd += " ";
-        }
-        const char* arg = Tcl_GetString(objv[i]);
-        // Quote arguments that contain spaces or special characters
-        if (arg != nullptr && (strchr(arg, ' ') != nullptr || 
-                               strchr(arg, '\t') != nullptr ||
-                               strchr(arg, '\n') != nullptr ||
-                               strchr(arg, '{') != nullptr ||
-                               strchr(arg, '}') != nullptr)) {
-          expanded_cmd += "{";
-          expanded_cmd += arg;
-          expanded_cmd += "}";
-        } else if (arg != nullptr) {
-          expanded_cmd += arg;
-        }
+    std::string expanded_cmd;
+    for (int i = 0; i < objc; i++) {
+      if (i > 0) {
+        expanded_cmd += " ";
       }
-      logger->report("cmd: {}", expanded_cmd);
-    } else {
-      // Fallback to original command string if objv is not available
-      logger->report("cmd: {}", command);
+      const char* arg = Tcl_GetString(objv[i]);
+      if (arg == nullptr) {
+        continue;
+      }
+      if (strchr(arg, ' ') != nullptr || strchr(arg, '\t') != nullptr
+          || strchr(arg, '\n') != nullptr) {
+        expanded_cmd += "{";
+        expanded_cmd += arg;
+        expanded_cmd += "}";
+      } else {
+        expanded_cmd += arg;
+      }
     }
-    
+    logger->redirectFileAppendBegin(log_filename);
+    logger->report("cmd: {}", expanded_cmd);
     logger->redirectFileEnd();
   }
 
