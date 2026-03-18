@@ -101,12 +101,12 @@ class CUGR
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks();
-  void updateOverflowNets(std::vector<int>& netIndices);
-  void patternRoute(std::vector<int>& netIndices);
-  void patternRouteWithDetours(std::vector<int>& netIndices);
-  void mazeRoute(std::vector<int>& netIndices);
+  void updateOverflowNets(std::vector<int>& net_indices);
+  void patternRoute(std::vector<int>& net_indices);
+  void patternRouteWithDetours(std::vector<int>& net_indices);
+  void mazeRoute(std::vector<int>& net_indices);
   void rerouteNets(std::vector<int>& net_indices);
-  void sortNetIndices(std::vector<int>& netIndices) const;
+  void sortNetIndices(std::vector<int>& net_indices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;

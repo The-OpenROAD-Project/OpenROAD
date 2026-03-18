@@ -14,3 +14,9 @@ report_timing_histogram -setup
 
 puts "Hold"
 report_timing_histogram -hold
+
+puts "Bin size mode - Setup with bin_size 0.1"
+report_timing_histogram -bin_size 0.1 -setup
+
+puts "Bin size mode - Hold with bin_size 0.05"
+report_timing_histogram -bin_size 0.05 -hold

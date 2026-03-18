@@ -38,6 +38,7 @@ template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (point_ != rhs.point_) {
     return false;
   }
@@ -58,6 +59,7 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const

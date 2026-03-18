@@ -26,6 +26,7 @@ template class dbTable<_dbBusPort>;
 
 bool _dbBusPort::operator==(const _dbBusPort& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_ != rhs.flags_) {
     return false;
   }
@@ -49,6 +50,7 @@ bool _dbBusPort::operator==(const _dbBusPort& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbBusPort::operator<(const _dbBusPort& rhs) const

@@ -23,6 +23,7 @@ template class dbTable<_dbGDSBox>;
 
 bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -34,6 +35,7 @@ bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const

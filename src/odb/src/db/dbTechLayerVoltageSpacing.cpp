@@ -19,6 +19,7 @@ template class dbTable<_dbTechLayerVoltageSpacing>;
 bool _dbTechLayerVoltageSpacing::operator==(
     const _dbTechLayerVoltageSpacing& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.tocut_above != rhs.flags_.tocut_above) {
     return false;
   }
@@ -33,6 +34,7 @@ bool _dbTechLayerVoltageSpacing::operator==(
 
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerVoltageSpacing::operator<(

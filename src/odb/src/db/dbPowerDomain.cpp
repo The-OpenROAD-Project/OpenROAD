@@ -30,6 +30,7 @@ template class dbTable<_dbPowerDomain>;
 
 bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -53,6 +54,7 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const

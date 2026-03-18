@@ -123,14 +123,6 @@ filegroup(
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "critical_nets_percentage_cugr",
-    "cugr_adjustment1",
-    "cugr_adjustment2",
-    "cugr_adjustment3",
-    "gcd_cugr",
-    "incremental_update_net",
-    "pin_access1_cugr",
-    "pin_access2_cugr",
 ]
 
 [regression_test(

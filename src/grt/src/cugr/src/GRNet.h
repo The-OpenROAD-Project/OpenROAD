@@ -18,7 +18,7 @@ namespace grt {
 class GRNet
 {
  public:
-  GRNet(const CUGRNet& baseNet, const GridGraph* gridGraph);
+  GRNet(const CUGRNet& base_net, const GridGraph* grid_graph);
 
   int getIndex() const { return index_; }
   odb::dbNet* getDbNet() const { return db_net_; }

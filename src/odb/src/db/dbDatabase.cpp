@@ -79,6 +79,7 @@ static std::atomic<uint32_t> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (master_id_ != rhs.master_id_) {
     return false;
   }
@@ -136,6 +137,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDatabase::operator<(const _dbDatabase& rhs) const

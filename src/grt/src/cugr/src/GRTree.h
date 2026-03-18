@@ -13,7 +13,7 @@ namespace grt {
 class GRPoint : public PointT
 {
  public:
-  GRPoint(int l, int _x, int _y) : PointT(_x, _y), layer_idx_(l) {}
+  GRPoint(int l, int x, int y) : PointT(x, y), layer_idx_(l) {}
 
   int getLayerIdx() const { return layer_idx_; }
 
@@ -30,7 +30,7 @@ class GRPoint : public PointT
 class GRTreeNode : public GRPoint
 {
  public:
-  GRTreeNode(int l, int _x, int _y) : GRPoint(l, _x, _y) {}
+  GRTreeNode(int l, int x, int y) : GRPoint(l, x, y) {}
   GRTreeNode(const GRPoint& point) : GRPoint(point) {}
 
   const std::vector<std::shared_ptr<GRTreeNode>>& getChildren() const

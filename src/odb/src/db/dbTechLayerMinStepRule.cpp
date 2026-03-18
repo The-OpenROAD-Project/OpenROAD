@@ -18,6 +18,7 @@ template class dbTable<_dbTechLayerMinStepRule>;
 bool _dbTechLayerMinStepRule::operator==(
     const _dbTechLayerMinStepRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.max_edges_valid != rhs.flags_.max_edges_valid) {
     return false;
   }
@@ -68,6 +69,7 @@ bool _dbTechLayerMinStepRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerMinStepRule::operator<(

@@ -12,17 +12,17 @@ class BoxOnLayer : public BoxT
 {
  public:
   template <typename... Args>
-  BoxOnLayer(int layerIndex = -1, Args... params)
-      : BoxT(params...), layer_idx_(layerIndex)
+  BoxOnLayer(int layer_index = -1, Args... params)
+      : BoxT(params...), layer_idx_(layer_index)
   {
   }
 
   // inherit setters from BoxT in batch
   template <typename... Args>
-  void Set(int layerIndex = -1, Args... params)
+  void set(int layer_index = -1, Args... params)
   {
-    layer_idx_ = layerIndex;
-    BoxT::Set(params...);
+    layer_idx_ = layer_index;
+    BoxT::set(params...);
   }
 
   bool isConnected(const BoxOnLayer& rhs) const;

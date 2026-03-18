@@ -207,10 +207,7 @@ cc_test(
         "TestDbWire.cc",
         "TestPolygonalFloorplan.cc",
     ],
-    args = [
-        # Exclude failing TestDbNet tests (ModNet functionality not fully working)
-        "--gtest_filter=-TestDbNet.FindRelatedModNetsComplex:TestDbNet.FindRelatedModNetsNone:TestDbNet.FindRelatedModNetsClearsSet:TestDbNet.RenameWithModNetInHighestHier:TestDbNet.RenameWithModNetNoHier",
-    ],
+    args = [],
     data = [
         "//src/odb/test:regression_resources",
         "//src/odb/test/data/sky130hd:lef-test-data",

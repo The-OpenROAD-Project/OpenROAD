@@ -23,6 +23,7 @@ template class dbTable<_dbGDSBoundary>;
 
 bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBoundary::operator<(const _dbGDSBoundary& rhs) const

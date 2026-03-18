@@ -18,6 +18,7 @@ template class dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>;
 bool _dbTechLayerTwoWiresForbiddenSpcRule::operator==(
     const _dbTechLayerTwoWiresForbiddenSpcRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.min_exact_span_length != rhs.flags_.min_exact_span_length) {
     return false;
   }
@@ -41,6 +42,7 @@ bool _dbTechLayerTwoWiresForbiddenSpcRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerTwoWiresForbiddenSpcRule::operator<(

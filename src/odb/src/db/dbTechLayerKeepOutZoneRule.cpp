@@ -19,6 +19,7 @@ template class dbTable<_dbTechLayerKeepOutZoneRule>;
 bool _dbTechLayerKeepOutZoneRule::operator==(
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.same_mask != rhs.flags_.same_mask) {
     return false;
   }
@@ -66,6 +67,7 @@ bool _dbTechLayerKeepOutZoneRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerKeepOutZoneRule::operator<(

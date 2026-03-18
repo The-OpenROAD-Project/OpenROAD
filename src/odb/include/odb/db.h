@@ -1308,23 +1308,21 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
-  /// Make a unique net/instance name
+  /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
   /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
   /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
   /// unique suffix.
+  /// If corresponding_flat_net is nullptr, any findNet() hit is a collision.
+  /// If corresponding_flat_net is non-null, only internal flat nets excluding
+  /// the corresponding one are collisions (lenient mode for ModNet creation).
   ///
-  std::string makeNewNetName(dbModInst* parent = nullptr,
+  std::string makeNewNetName(const dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
-                             = dbNameUniquifyType::ALWAYS);
-
-  std::string makeNewModNetName(dbModule* parent,
-                                const char* base_name = "net",
-                                const dbNameUniquifyType& uniquify
-                                = dbNameUniquifyType::ALWAYS,
-                                dbNet* corresponding_flat_net = nullptr);
+                             = dbNameUniquifyType::ALWAYS,
+                             dbNet* corresponding_flat_net = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -2568,7 +2566,7 @@ class dbNet : public dbObject
   /// connected to a module output port that is unconnected in its parent
   /// module (isInternalTo == true).
   ///
-  bool isInternalTo(dbModule* module) const;
+  bool isInternalTo(const dbModule* module) const;
 
   ///
   /// Check issues such as multiple drivers, no driver, or dangling net
@@ -2587,6 +2585,12 @@ class dbNet : public dbObject
   /// are consistent
   //
   void checkSanityModNetConsistency() const;
+
+  ///
+  /// Check if this flat net's base name collides with a ModNet or ModBTerm
+  /// in its parent module scope without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
 
   ///
   /// Dump dbNet connectivity for debugging
@@ -8612,6 +8616,12 @@ class dbModNet : public dbObject
   // and returns the first dbNet it finds.
   dbNet* findRelatedNet() const;
   void checkSanity() const;
+
+  ///
+  /// Check if any flat net in this module scope has a base name matching
+  /// this ModNet's name without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
 
   ///
   /// Merge the terminals of the in_modnet with this modnet

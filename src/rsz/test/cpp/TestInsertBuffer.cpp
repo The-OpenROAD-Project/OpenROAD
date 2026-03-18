@@ -2919,8 +2919,16 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case28)
   ASSERT_NE(internal_net_after, nullptr);
   EXPECT_EQ(internal_net, internal_net_after);
 
-  // Verify that a new port "_019__0" is created in H1 to avoid collision
-  dbModBTerm* punched_port = mod_h1->findModBTerm("_019__0");
+  // Verify that a new port is created in H1 to avoid collision with "_019_".
+  // The exact suffix depends on the global uniquify counter.
+  dbModBTerm* punched_port = nullptr;
+  for (dbModBTerm* bterm : mod_h1->getModBTerms()) {
+    std::string bname = bterm->getName();
+    if (bname.substr(0, 5) == "_019_" && bname != "_019_") {
+      punched_port = bterm;
+      break;
+    }
+  }
   ASSERT_NE(punched_port, nullptr);
   EXPECT_EQ(punched_port->getIoType(), dbIoType::INPUT);
 
@@ -3264,6 +3272,98 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case33)
       << "Buffer output net must be named after the BTerm (port_b), "
          "not a generic name. Without the fix, this would be 'net1' "
          "and write_verilog would emit 'assign port_b = net1;'";
+
+  // Write verilog and compare
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Bug reproduction: makeNewNetName only checks flat net uniqueness, not
+// ModNet or ModBTerm names. In a hierarchical design, a submodule port
+// named "net" creates a ModBTerm/ModNet "net" in the module. The
+// corresponding flat net has a different hierarchical name (from the
+// parent's connection). insertBufferBeforeLoads with IF_NEEDED uniquify
+// creates flat net "sub0/net" whose base name "net" collides with the
+// existing ModBTerm/ModNet "net", producing invalid emitted Verilog.
+//
+// Root cause from sky130hd/microwatt CTS LEC failure:
+//   SplitLoadMove calls insertBufferBeforeLoads with nullptr net base name
+//   and IF_NEEDED uniquify. createNewFlatNet defaults to "net" base name.
+//   makeNewNetName(parent, "net", IF_NEEDED) only checks findNet(), missing
+//   the existing ModNet/ModBTerm "net" in the target module.
+TEST_F(TestInsertBuffer, BeforeLoads_Case34)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // Verify initial state: module SUB has ModBTerm "net" (output port)
+  dbModule* sub_mod = block_->findModule("SUB");
+  ASSERT_NE(sub_mod, nullptr);
+  EXPECT_NE(sub_mod->findModBTerm("net"), nullptr)
+      << "SUB should have ModBTerm 'net' (output port)";
+  EXPECT_NE(sub_mod->getModNet("net"), nullptr)
+      << "SUB should have ModNet 'net' (port connection)";
+
+  // The flat net for the "net" port comes from the parent's connection,
+  // so there is no flat net named "sub0/net". This naturally occurs in
+  // hierarchical designs where the flat net name is determined by the
+  // parent module's wire name, not the child module's port name.
+  EXPECT_EQ(block_->findNet("sub0/net"), nullptr)
+      << "No flat net named 'sub0/net' should exist; the port's flat net "
+         "has the parent's wire name";
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Find the flat net that drives the "net" port in SUB
+  dbITerm* drv_z = block_->findITerm("sub0/drv/Z");
+  ASSERT_NE(drv_z, nullptr);
+  dbNet* orig_net = drv_z->getNet();
+  ASSERT_NE(orig_net, nullptr);
+
+  // Insert buffer before load2 (reproduces SplitLoadMove code path:
+  // new_buf_base_name="split", new_net_base_name=nullptr, IF_NEEDED)
+  dbITerm* load2_a = block_->findITerm("sub0/load2/A");
+  ASSERT_NE(load2_a, nullptr);
+
+  std::set<dbObject*> load_pins;
+  load_pins.insert(load2_a);
+
+  dbInst* new_buf
+      = orig_net->insertBufferBeforeLoads(load_pins,
+                                          buf_x4_master,
+                                          nullptr,
+                                          "split",
+                                          nullptr,
+                                          dbNameUniquifyType::IF_NEEDED,
+                                          false);
+  ASSERT_NE(new_buf, nullptr);
+
+  // Post sanity check - detects flat net / ModNet name collision
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Key assertion: the buffer output net must NOT have base name "net"
+  // because the module already has a ModBTerm/ModNet "net".
+  // Without the fix, makeNewNetName only checks flat nets, creating
+  // a flat net "sub0/net" that collides with the existing ModBTerm "net"
+  // → duplicate "wire net;" in emitted Verilog.
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+  EXPECT_STRNE(block_->getBaseName(buf_out_net->getConstName()), "net")
+      << "New flat net base name must not collide with existing ModBTerm "
+         "'net'. Without the fix, makeNewNetName misses ModNet/ModBTerm "
+         "checks, causing duplicate wire declarations in emitted Verilog.";
 
   // Write verilog and compare
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");

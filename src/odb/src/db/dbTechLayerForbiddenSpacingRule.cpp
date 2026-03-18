@@ -17,6 +17,7 @@ template class dbTable<_dbTechLayerForbiddenSpacingRule>;
 bool _dbTechLayerForbiddenSpacingRule::operator==(
     const _dbTechLayerForbiddenSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (width_ != rhs.width_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbTechLayerForbiddenSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerForbiddenSpacingRule::operator<(

@@ -25,6 +25,7 @@ template class dbTable<_dbChipNet>;
 
 bool _dbChipNet::operator==(const _dbChipNet& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -36,6 +37,7 @@ bool _dbChipNet::operator==(const _dbChipNet& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipNet::operator<(const _dbChipNet& rhs) const

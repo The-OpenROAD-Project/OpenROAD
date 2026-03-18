@@ -43,6 +43,7 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -69,6 +70,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModInst::operator<(const _dbModInst& rhs) const

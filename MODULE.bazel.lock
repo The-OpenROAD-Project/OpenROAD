@@ -700,8 +700,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "We8lHiP0MwXcNMkjeB/9G1WfFWL4xDQs48mA+auBrqE=",
-        "usagesDigest": "QYMEZjCifa480IHH2FVQK/IEHH8+A6DshYGhikqmHjs=",
+        "bzlTransitiveDigest": "xRx9tYeqNSaibENLRqhj2OVDOepLbExZ6x8BUTsoYv4=",
+        "usagesDigest": "fhbe2ryQbHLzZf9sQcTijajGb5BD0Z54stOcWqQL1ao=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -719,8 +719,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-554-g62c47396f",
-              "sha256": "6a624867afd1d39bc1cc6884c2d9cef7cfb899f92d4bf0e9233a831ab82c5436",
+              "image": "docker.io/openroad/orfs:26Q1-636-gb9f42fead",
+              "sha256": "6d3eaf1b44a4810ee3de7bb7c0f3aa1c5d71489a16fe011b38e8d59294c6e3d9",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -772,7 +772,7 @@
     },
     "@@cel-spec+//:extensions.bzl%non_module_dependencies": {
       "general": {
-        "bzlTransitiveDigest": "PT6+Uy8TgurYAERw0FIrYBDAB8x5HjhpoV1NXJ9lbp0=",
+        "bzlTransitiveDigest": "49v9UE4eBOMtW8ATb+3VHdFaCc//dFbCS+ZQW0HIKNE=",
         "usagesDigest": "HFQJtQrL9nKaFZEjgwaHVMHALMW+cafu696xy7J4ueM=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -969,7 +969,7 @@
     },
     "@@envoy_api+//bazel:repositories.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "mqYu5dQ2knXNYnSqGFj9Vx0gNoDc12svfpDQYMc3qg0=",
+        "bzlTransitiveDigest": "VzLskQI4CUM3XVC+wpI1FIlKua2ToSOGRJ8G+0HfaV8=",
         "usagesDigest": "cxAa0VVo9d210JBUBw6wpuGp8jg+ltqw3tzH0tPtIEg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1191,7 +1191,7 @@
     },
     "@@grpc+//bazel:grpc_deps.bzl%grpc_repo_deps_ext": {
       "general": {
-        "bzlTransitiveDigest": "sgfDfEkdzoiYhF2DmGpqHwCt6htKWQDA8C5hZa3NSn8=",
+        "bzlTransitiveDigest": "TrTljHN+DRg2ZL3sIGKU45NUczfL+LbfBzGoJWimWec=",
         "usagesDigest": "JRy5mn8l60PheiZTvsAmif/CiZhfYCkdmx6ULADtUrg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1225,7 +1225,7 @@
     },
     "@@pybind11_bazel+//:internal_configure.bzl%internal_configure_extension": {
       "general": {
-        "bzlTransitiveDigest": "I/JSPbvU3ci1dZBzttgrPohOrk0UAvdB4vdjkHo2Lb4=",
+        "bzlTransitiveDigest": "doxdX2drQaP4mqY6tnLSIGABgYuXR5Hpp6Wpfyb23Rg=",
         "usagesDigest": "tVQNvLoXMWAbiK39am3yovKGpwINdftfn7RpDyN+JZc=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1344,7 +1344,7 @@
     },
     "@@rules_apple+//apple:extensions.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "UsflLeiazyu2v5pvibcvOeIdDV95S25rT96h4XU1nhY=",
+        "bzlTransitiveDigest": "4xtddSlWIQdtVNVuvOI62fJfQVETHZCVWFvYYwQHMR4=",
         "usagesDigest": "M3VqFpeTCo4qmrNKGZw0dxBHvTYDrfV3cscGzlSAhQ4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1436,7 +1436,7 @@
     },
     "@@rules_kotlin+//src/main/starlark/core/repositories:bzlmod_setup.bzl%rules_kotlin_extensions": {
       "general": {
-        "bzlTransitiveDigest": "rL/34P1aFDq2GqVC2zCFgQ8nTuOC6ziogocpvG50Qz8=",
+        "bzlTransitiveDigest": "nvW/NrBXlAmiQw99EMGKkLaD2KbNp2mQDlxdfpr+0Ls=",
         "usagesDigest": "QI2z8ZUR+mqtbwsf2fLqYdJAkPOHdOV+tF2yVAUgRzw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1532,7 +1532,7 @@
     },
     "@@rules_python+//python/extensions:config.bzl%config": {
       "general": {
-        "bzlTransitiveDigest": "uo49IDITNsksO4x76pZ7eYlLKomkU77mK8VTrbCHXZM=",
+        "bzlTransitiveDigest": "TRGIl0CDmorwyNiblOYyhWuyKzi/kWFHT2uIofq7o9Y=",
         "usagesDigest": "lDbpRfhoWmZCHSaNxwZv/8fF2y0wu2th0G0f/uqX7VM=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1767,7 +1767,7 @@
     },
     "@@rules_python+//python/uv:uv.bzl%uv": {
       "general": {
-        "bzlTransitiveDigest": "zyNsrbgVKwpA0B3zI84imAfuC424VSzYNPgjr/HJy5M=",
+        "bzlTransitiveDigest": "ijW9KS7qsIY+yBVvJ+Nr1mzwQox09j13DnE3iIwaeTM=",
         "usagesDigest": "c4BCoL7WnccEomzDYulDuOys9pd6N93KaNI4mTVbqi0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1808,7 +1808,7 @@
     },
     "@@rules_swift+//swift:extensions.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "WQxCEBSXJEaQYe860JXZvAQug2B6+/VbBtRIDMF0pOc=",
+        "bzlTransitiveDigest": "6axDCXf6fQoPav8hojnUBxGA0FAMqLvtpC1cRsisCdw=",
         "usagesDigest": "mhACFnrdMv9Wi0Mt67bxocJqviRkDSV+Ee5Mqdj5akA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -1967,7 +1967,7 @@
     },
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
-        "bzlTransitiveDigest": "i54NfnK6i34XT5yyh16sxeFE2U1s0aiixBtMQYMdAMo=",
+        "bzlTransitiveDigest": "SFT0LhY0ioB2PsbncmTCGyGh8M0OtAJ2fCq0fHtf7ps=",
         "usagesDigest": "gn25Ya6Nd2hLxoG8Ksgb9RPzvoiElyTJFM/4We+5U2g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},

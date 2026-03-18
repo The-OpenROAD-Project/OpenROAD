@@ -18,6 +18,7 @@ template class dbTable<_dbCellEdgeSpacing>;
 
 bool _dbCellEdgeSpacing::operator==(const _dbCellEdgeSpacing& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.except_abutted != rhs.flags_.except_abutted) {
     return false;
   }
@@ -45,6 +46,7 @@ bool _dbCellEdgeSpacing::operator==(const _dbCellEdgeSpacing& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbCellEdgeSpacing::operator<(const _dbCellEdgeSpacing& rhs) const

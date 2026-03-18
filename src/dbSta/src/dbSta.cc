@@ -61,6 +61,7 @@
 #include "tcl.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
+#include "utl/validation.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -708,11 +709,20 @@ void dbSta::reportCellUsage(odb::dbModule* module,
   }
 }
 
-void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
+// bin_size: fixed bin width in user time units (e.g., ns).
+//           If 0.0, num_bins is used to determine bin width automatically.
+void dbSta::reportTimingHistogram(int num_bins,
+                                  const MinMax* min_max,
+                                  float bin_size) const
 {
-  utl::Histogram<float> histogram(logger_);
+  utl::Validator validator(logger_, utl::STA);
+  validator.check_non_negative("bin_size", bin_size, 71);
+  if (bin_size == 0.0) {
+    validator.check_positive("num_bins", num_bins, 70);
+  }
 
   sta::Unit* time_unit = sta_->units()->timeUnit();
+  utl::Histogram<float> histogram(logger_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
     float slack = sta_->slack(vertex, min_max);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
@@ -720,7 +730,26 @@ void dbSta::reportTimingHistogram(int num_bins, const MinMax* min_max) const
     }
   }
 
-  histogram.generateBins(num_bins);
+  if (!histogram.hasData()) {
+    logger_->warn(utl::STA, 72, "No constrained paths found.");
+    return;
+  }
+
+  if (bin_size > 0.0) {
+    const float min_slack = histogram.getMinValue();
+    const float max_slack = histogram.getMaxValue();
+    const float hist_min = std::floor(min_slack / bin_size) * bin_size;
+    const float hist_max = std::ceil(max_slack / bin_size) * bin_size;
+    int actual_num_bins
+        = static_cast<int>(std::ceil((hist_max - hist_min) / bin_size));
+    if (actual_num_bins <= 0) {
+      actual_num_bins = 1;
+    }
+    histogram.generateBins(actual_num_bins, hist_min, bin_size);
+  } else {
+    histogram.generateBins(num_bins);
+  }
+
   histogram.report(/*precision=*/3);
 }
 

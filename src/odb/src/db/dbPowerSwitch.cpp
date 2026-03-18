@@ -30,6 +30,7 @@ template class dbTable<_dbPowerSwitch>;
 
 bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -47,6 +48,7 @@ bool _dbPowerSwitch::operator==(const _dbPowerSwitch& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbPowerSwitch::operator<(const _dbPowerSwitch& rhs) const

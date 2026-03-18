@@ -88,6 +88,11 @@ void ClusteringEngine::setHalos(
   macro_to_halo_ = macro_to_halo;
 }
 
+void ClusteringEngine::setUseDefHalo(bool use_def_halo)
+{
+  use_def_halo_ = use_def_halo;
+}
+
 // Check if macro placement is both needed and feasible.
 // Also report some design data relevant for the user and
 // initialize the tree with data from the design.
@@ -2079,7 +2084,7 @@ void ClusteringEngine::createHardMacros()
 
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
+      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
         halo = HardMacro::Halo(inst->getHalo());
       }
 

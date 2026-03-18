@@ -174,7 +174,7 @@ class PatternRoute
   void calculateRoutingCosts(std::shared_ptr<PatternRoutingNode>& node);
   std::shared_ptr<GRTreeNode> getRoutingTree(
       std::shared_ptr<PatternRoutingNode>& node,
-      int parentLayerIndex = -1);
+      int parent_layer_index = -1);
 
   GRNet* net_;
   const GridGraph* grid_graph_;

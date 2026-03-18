@@ -1,4 +1,5 @@
 import argparse
+import io
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
@@ -19,7 +20,7 @@ default_args = argparse.Namespace(
 
 # ---------------------------------------------------------------------------
 # Mock helpers – simulate the in-memory element lists that the real TCL
-# scripts would operate on.  This mirrors the approach in test_deltaDebug.py.
+# scripts would operate on.
 # ---------------------------------------------------------------------------
 
 
@@ -112,7 +113,7 @@ class TestWhittle(TestCase):
         self.mock_prepare_new_step.side_effect = lambda self_: None
 
     # ------------------------------------------------------------------
-    # Test cases (ported from test_deltaDebug.py)
+    # Test cases
     # ------------------------------------------------------------------
 
     def test_pruned_to_one(self):
@@ -195,6 +196,35 @@ class TestWhittle(TestCase):
         self.whittler.debug()
         self.assertEqual(set(self.whittler._insts), error_insts)
         self.assertEqual(len(self.whittler._nets), 0)
+
+    def test_progress_output(self):
+        error_insts = [5]
+        error_nets = [7]
+
+        def check_error(insts, nets):
+            return any(x in error_insts for x in insts) and any(
+                x in error_nets for x in nets
+            )
+
+        self._setup_run(10, 10, check_error)
+
+        captured = io.StringIO()
+        with patch("sys.stdout", captured):
+            self.whittler.debug()
+
+        output = captured.getvalue()
+        self.assertIn("[whittle]", output)
+        self.assertIn("Phase: Insts", output)
+        self.assertIn("Phase: Nets", output)
+        self.assertIn("Elapsed:", output)
+        self.assertIn("Whittling Done!", output)
+
+    def test_format_duration(self):
+        self.assertEqual(whittle.Whittler.format_duration(30), "30s")
+        self.assertEqual(whittle.Whittler.format_duration(90), "1m")
+        self.assertEqual(whittle.Whittler.format_duration(120), "2m")
+        self.assertEqual(whittle.Whittler.format_duration(3661), "1h 01m")
+        self.assertEqual(whittle.Whittler.format_duration(7200), "2h 00m")
 
 
 class TestWhittleTclInterface(TestCase):
