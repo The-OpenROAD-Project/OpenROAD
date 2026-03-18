@@ -7,7 +7,7 @@
 // intentional and required.
 // NOLINTBEGIN(misc-use-internal-linkage)
 
-#include <stdlib.h>
+#include <stdlib.h>  // NOLINT(modernize-deprecated-headers) — this is C, not C++
 
 void* xmlFree = NULL;
 
