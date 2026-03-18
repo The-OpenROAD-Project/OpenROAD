@@ -108,7 +108,8 @@ set_debug_cmd(float min_displacement,
               int jump_moves,
               bool iterative_placement,
               bool deep_iterative_placement,
-              bool paint_pixels)
+              bool paint_pixels,
+              bool paint_hybrid_pixels)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setJumpMoves(jump_moves);
@@ -116,7 +117,7 @@ set_debug_cmd(float min_displacement,
   opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, debug_instance, paint_pixels);
+          opendp, debug_instance, paint_pixels, paint_hybrid_pixels);
       opendp->setDebug(graphics);
   }
 }

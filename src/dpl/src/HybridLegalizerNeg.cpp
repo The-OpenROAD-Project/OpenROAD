@@ -103,6 +103,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  iter);
       if(debug_observer_) {
         setDplPositions();
+        pushHybridPixels();
         logger_->report("Pause after convergence at phase 1.");
         debug_observer_->redrawAndPause();
       }
@@ -112,6 +113,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   if(debug_observer_) {
     setDplPositions();
+    pushHybridPixels();
     logger_->report("Pause before negotiation phase 2.");
     debug_observer_->redrawAndPause();
   }
@@ -136,6 +138,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  iter);
       if(debug_observer_) {
         setDplPositions();
+        pushHybridPixels();
         logger_->report("Pause after convergence at phase 2.");
         debug_observer_->redrawAndPause();
       }
@@ -153,6 +156,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
              numViolations());
   if(debug_observer_) {
     setDplPositions();
+    pushHybridPixels();
     logger_->report("Pause after non-convergence at negotiation phases 1 and 2.");
     debug_observer_->redrawAndPause();
   }

@@ -306,7 +306,7 @@ namespace eval dpl {
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
     keys {-instance -min_displacement -jump_moves} \
-    flags {-iterative -deep_iterative -paint_pixels} ;# checker off
+    flags {-iterative -deep_iterative -paint_pixels -paint_hybrid_pixels} ;# checker off
 
 
   if { [info exists keys(-min_displacement)] } {
@@ -334,7 +334,7 @@ proc detailed_placement_debug { args } {
 
   dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves \
     [info exists flags(-iterative)] [info exists flags(-deep_iterative)] \
-    [info exists flags(-paint_pixels)]
+    [info exists flags(-paint_pixels)] [info exists flags(-paint_hybrid_pixels)]
 }
 
 proc get_masters_arg { arg_name arg } {

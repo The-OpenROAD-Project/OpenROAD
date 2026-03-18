@@ -21,7 +21,8 @@ class Graphics : public gui::Renderer, public DplObserver
  public:
   Graphics(Opendp* dp,
            const odb::dbInst* debug_instance,
-           bool paint_pixels = true);
+           bool paint_pixels = true,
+           bool paint_hybrid_pixels = false);
   ~Graphics() override = default;
   void startPlacement(odb::dbBlock* block) override;
   void placeInstance(odb::dbInst* instance) override;
@@ -31,6 +32,16 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridX xh,
                  GridY yh) override;
   void redrawAndPause() override;
+
+  // HybridLegalizer grid visualisation
+  void setHybridPixels(const std::vector<HybridPixelState>& pixels,
+                       int grid_w,
+                       int grid_h,
+                       int die_xlo,
+                       int die_ylo,
+                       int site_width,
+                       int row_height) override;
+  void clearHybridPixels() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
@@ -42,7 +53,17 @@ class Graphics : public gui::Renderer, public DplObserver
   const odb::dbInst* debug_instance_;
   odb::dbBlock* block_ = nullptr;
   bool paint_pixels_;
+  bool paint_hybrid_pixels_;
   std::vector<odb::Rect> searched_;
+
+  // HybridLegalizer grid snapshot for rendering
+  std::vector<HybridPixelState> hybrid_pixels_;
+  int hybrid_grid_w_{0};
+  int hybrid_grid_h_{0};
+  int hybrid_die_xlo_{0};
+  int hybrid_die_ylo_{0};
+  int hybrid_site_width_{0};
+  int hybrid_row_height_{0};
 };
 
 }  // namespace dpl

@@ -20,8 +20,12 @@ namespace dpl {
 
 Graphics::Graphics(Opendp* dp,
                    const odb::dbInst* debug_instance,
-                   bool paint_pixels)
-    : dp_(dp), debug_instance_(debug_instance), paint_pixels_(paint_pixels)
+                   bool paint_pixels,
+                   bool paint_hybrid_pixels)
+    : dp_(dp),
+      debug_instance_(debug_instance),
+      paint_pixels_(paint_pixels),
+      paint_hybrid_pixels_(paint_hybrid_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -176,6 +180,70 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  if (paint_hybrid_pixels_ && !hybrid_pixels_.empty()) {
+    const int sw = hybrid_site_width_;
+    const int rh = hybrid_row_height_;
+    for (int gy = 0; gy < hybrid_grid_h_; ++gy) {
+      for (int gx = 0; gx < hybrid_grid_w_; ++gx) {
+        const auto state = hybrid_pixels_[gy * hybrid_grid_w_ + gx];
+        gui::Painter::Color c;
+        switch (state) {
+          case HybridPixelState::kNoRow:
+            c = gui::Painter::kDarkGray;
+            c.a = 60;
+            break;
+          case HybridPixelState::kFree:
+            c = gui::Painter::kGreen;
+            c.a = 40;
+            break;
+          case HybridPixelState::kOccupied:
+            c = gui::Painter::kWhite;
+            c.a = 100;
+            break;
+          case HybridPixelState::kOveruse:
+            c = gui::Painter::kRed;
+            c.a = 150;
+            break;
+          case HybridPixelState::kBlocked:
+            c = gui::Painter::kYellow;
+            c.a = 80;
+            break;
+        }
+        painter.setPen(c);
+        painter.setBrush(c);
+        odb::Rect rect(hybrid_die_xlo_ + gx * sw,
+                       hybrid_die_ylo_ + gy * rh,
+                       hybrid_die_xlo_ + (gx + 1) * sw,
+                       hybrid_die_ylo_ + (gy + 1) * rh);
+        painter.drawRect(rect);
+      }
+    }
+  }
+}
+
+void Graphics::setHybridPixels(const std::vector<HybridPixelState>& pixels,
+                               int grid_w,
+                               int grid_h,
+                               int die_xlo,
+                               int die_ylo,
+                               int site_width,
+                               int row_height)
+{
+  hybrid_pixels_ = pixels;
+  hybrid_grid_w_ = grid_w;
+  hybrid_grid_h_ = grid_h;
+  hybrid_die_xlo_ = die_xlo;
+  hybrid_die_ylo_ = die_ylo;
+  hybrid_site_width_ = site_width;
+  hybrid_row_height_ = row_height;
+}
+
+void Graphics::clearHybridPixels()
+{
+  hybrid_pixels_.clear();
+  hybrid_grid_w_ = 0;
+  hybrid_grid_h_ = 0;
 }
 
 /* static */

@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include "dpl/Opendp.h"
 #include "odb/db.h"
 
@@ -10,6 +13,16 @@ namespace dpl {
 
 class Opendp;
 class Node;
+
+// Pixel state values passed from HybridLegalizer to the observer.
+enum class HybridPixelState : int8_t
+{
+  kNoRow = 0,    // no row exists here (capacity == 0, not a blockage)
+  kFree = 1,     // valid site, unused
+  kOccupied = 2, // valid site, usage == capacity
+  kOveruse = 3,  // valid site, usage > capacity
+  kBlocked = 4   // blockage (fixed cell / capacity forced to 0)
+};
 
 class DplObserver
 {
@@ -25,6 +38,18 @@ class DplObserver
                          GridY yh)
       = 0;
   virtual void redrawAndPause() = 0;
+
+  // Hybrid-legalizer grid visualisation support (default no-ops).
+  virtual void setHybridPixels(const std::vector<HybridPixelState>& pixels,
+                               int grid_w,
+                               int grid_h,
+                               int die_xlo,
+                               int die_ylo,
+                               int site_width,
+                               int row_height)
+  {
+  }
+  virtual void clearHybridPixels() {}
 };
 
 }  // namespace dpl
