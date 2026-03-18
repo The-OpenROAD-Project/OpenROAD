@@ -46,7 +46,6 @@ void TreeBuilder::mergeBlockages()
                                 inst_box.yMin() - transformed_halo.yMin(),
                                 inst_box.xMax() + transformed_halo.xMax(),
                                 inst_box.yMax() + transformed_halo.yMax());
-                            
 
       macros_max_dx = std::max(macros_max_dx, static_cast<uint32_t>(box.dx()));
       macros_max_dy = std::max(macros_max_dy, static_cast<uint32_t>(box.dy()));

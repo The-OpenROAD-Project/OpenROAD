@@ -220,7 +220,11 @@ void definComponent::placement(int status, int x, int y, int orient)
   _cur_inst->setPlacementStatus(placement_status);
 }
 
-void definComponent::halo(int left, int bottom, int right, int top, bool is_soft)
+void definComponent::halo(int left,
+                          int bottom,
+                          int right,
+                          int top,
+                          bool is_soft)
 {
   if (_cur_inst == nullptr) {
     return;

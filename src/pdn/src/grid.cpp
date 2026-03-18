@@ -1411,10 +1411,8 @@ InstanceGrid::InstanceGrid(
     odb::Rect halo_box = inst->getTransformedHalo();
 
     // copy halo from db
-    addHalo({halo_box.xMin(),
-             halo_box.yMin(),
-             halo_box.xMax(),
-             halo_box.yMax()});
+    addHalo(
+        {halo_box.xMin(), halo_box.yMin(), halo_box.xMax(), halo_box.yMax()});
   }
 }
 
