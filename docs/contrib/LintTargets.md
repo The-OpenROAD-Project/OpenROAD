@@ -47,10 +47,6 @@ TCL linting and formatting are controlled by `tclint.toml` at the repository
 root. See the [tclint documentation](https://tclint.readthedocs.io/) for
 available options.
 
-Current settings:
-- **Excluded**: `src/sta/`
-- **Ignored rules**: `unbraced-expr`
-- **Style**: 2-space indent, 100-char line length, spaces in braces
 
 ## Adding new linters
 
