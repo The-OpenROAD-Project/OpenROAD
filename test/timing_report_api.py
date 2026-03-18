@@ -47,17 +47,17 @@ assert count > 0
 slack_map = swig_list(timing.getEndpointSlacks(Timing.Max))
 assert len(slack_map) == count
 worst_ep_slack = min(e.slack for e in slack_map)
-assert approx(worst_ep_slack, wns), (
-    f"worst endpoint slack {worst_ep_slack} != WNS {wns}"
-)
+assert approx(
+    worst_ep_slack, wns
+), f"worst endpoint slack {worst_ep_slack} != WNS {wns}"
 
 # Endpoints are register data pins — master must be sequential
 for entry in slack_map:
     if entry.iterm:
         master = entry.iterm.getInst().getMaster()
-        assert design.isSequential(master), (
-            f"endpoint master {master.getName()} not sequential"
-        )
+        assert design.isSequential(
+            master
+        ), f"endpoint master {master.getName()} not sequential"
 
 # ── Clock info: sources must connect to the design ──────────
 clocks = swig_list(timing.getClockInfo())
@@ -67,12 +67,8 @@ for clk in clocks:
     assert len(clk.waveform) >= 2, "waveform needs rise+fall edges"
     for src in swig_list(clk.source_bterms):
         net = src.getNet()
-        assert net is not None, (
-            f"clock source {src.getName()} is unconnected"
-        )
-        assert net.getITermCount() > 0, (
-            f"clock net {net.getName()} has no sinks"
-        )
+        assert net is not None, f"clock source {src.getName()} is unconnected"
+        assert net.getITermCount() > 0, f"clock net {net.getName()} has no sinks"
 
 # ── Timing paths: structural invariants ─────────────────────
 # Called AFTER summary/endpoint/clock APIs — this call order is
@@ -93,8 +89,7 @@ for pi, path in enumerate(paths):
     # Arc delays must sum to arrival time
     delay_sum = sum(a.delay for a in arcs)
     assert approx(delay_sum, path.arrival), (
-        f"path[{pi}]: delay sum {delay_sum} != "
-        f"arrival {path.arrival}"
+        f"path[{pi}]: delay sum {delay_sum} != " f"arrival {path.arrival}"
     )
 
     # logic_depth counts unique instances, must be <= cell arcs
@@ -102,25 +97,25 @@ for pi, path in enumerate(paths):
     assert path.logic_depth <= len(cell_arcs)
 
     # Start/endpoint must match first/last arc pins
-    assert pin_name(path.start_iterm, path.start_bterm) == \
-        pin_name(arcs[0].from_iterm, arcs[0].from_bterm)
-    assert pin_name(path.end_iterm, path.end_bterm) == \
-        pin_name(arcs[-1].to_iterm, arcs[-1].to_bterm)
+    assert pin_name(path.start_iterm, path.start_bterm) == pin_name(
+        arcs[0].from_iterm, arcs[0].from_bterm
+    )
+    assert pin_name(path.end_iterm, path.end_bterm) == pin_name(
+        arcs[-1].to_iterm, arcs[-1].to_bterm
+    )
 
     for a in arcs:
         if a.master is None:
             # Net arc: pins on different instances (or port)
             if a.from_iterm and a.to_iterm:
                 assert (
-                    a.from_iterm.getInst().getName()
-                    != a.to_iterm.getInst().getName()
+                    a.from_iterm.getInst().getName() != a.to_iterm.getInst().getName()
                 ), "net arc endpoints on same instance"
         else:
             # Cell arc: pins on same instance, master consistent
             if a.from_iterm and a.to_iterm:
                 assert (
-                    a.from_iterm.getInst().getName()
-                    == a.to_iterm.getInst().getName()
+                    a.from_iterm.getInst().getName() == a.to_iterm.getInst().getName()
                 ), "cell arc pins on different instances"
                 assert a.master.getName() == (
                     a.to_iterm.getInst().getMaster().getName()
@@ -133,9 +128,7 @@ net_arcs = [a for a in arcs if a.master is None]
 
 # Cell-type classification (GUI timing display use case)
 buf_count = sum(1 for a in cell_arcs if design.isBuffer(a.master))
-inv_count = sum(
-    1 for a in cell_arcs if design.isInverter(a.master)
-)
+inv_count = sum(1 for a in cell_arcs if design.isInverter(a.master))
 assert buf_count + inv_count <= len(cell_arcs)
 
 # Net fanout: arc fanout <= net iterm count (resizer use case)
