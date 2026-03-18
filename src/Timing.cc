@@ -610,8 +610,7 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         odb::dbModITerm* mod_iterm;
         db_network->staToDb(
             prev_pin, arc.from_iterm, arc.from_bterm, mod_iterm);
-        db_network->staToDb(
-            pin, arc.to_iterm, arc.to_bterm, mod_iterm);
+        db_network->staToDb(pin, arc.to_iterm, arc.to_bterm, mod_iterm);
         if (same_inst && arc.to_iterm) {
           arc.master = arc.to_iterm->getInst()->getMaster();
         }
