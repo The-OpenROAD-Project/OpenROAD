@@ -50,12 +50,11 @@ def _odb_install_equality():
 
     module = sys.modules[__name__]
     for cls in vars(module).values():
-        # Only patch dbObject-derived classes; value-type and iterator classes
-        # (dbShape, dbInstShapeItr, ...) do not inherit from dbObject.
+        # Only patch concrete dbObject-derived classes; dbObject itself is
+        # excluded as it cannot be instantiated directly.
         if (isinstance(cls, type)
-                and cls.__name__.startswith('db')
-                and hasattr(cls, 'getId')
-                and hasattr(cls, 'getObjectType')):
+                and cls is not module.dbObject
+                and issubclass(cls, module.dbObject)):
             cls.__eq__ = _eq
             cls.__ne__ = _ne
             cls.__hash__ = _hash
