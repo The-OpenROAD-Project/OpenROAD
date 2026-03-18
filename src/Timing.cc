@@ -517,6 +517,10 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
 
   std::vector<TimingPathInfo> result;
   auto* graph = sta->graph();
+  const sta::Sdc* sdc = sta->cmdScene()->sdc();
+  sta::Mode* mode = sta->cmdScene()->mode();
+  sta::GraphDelayCalc* gdc = sta->graphDelayCalc();
+  sta::dbNetwork* db_network = sta->getDbNetwork();
 
   for (auto& path_end : path_ends) {
     TimingPathInfo path_info;
@@ -559,7 +563,6 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
 
       // Compute fanout
       int node_fanout = 0;
-      const sta::Sdc* sdc = sta->cmdScene()->sdc();
       sta::VertexOutEdgeIterator iter(vertex, graph);
       while (iter.hasNext()) {
         sta::Edge* edge = iter.next();
@@ -579,7 +582,6 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
       float cap = 0.0f;
       const bool is_driver = network->isDriver(pin);
       if (is_driver && i > 0) {
-        sta::GraphDelayCalc* gdc = sta->graphDelayCalc();
         cap = gdc->loadCap(
             pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
       }
@@ -595,7 +597,7 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         const bool same_inst = (inst == prev_inst && inst != nullptr);
 
         // Track logic depth (non-clock, non-net arcs)
-        bool pin_is_clock = sta->isClock(pin, sta->cmdScene()->mode());
+        bool pin_is_clock = sta->isClock(pin, mode);
         if (same_inst && !pin_is_clock) {
           if (logic_insts.find(inst) == logic_insts.end()) {
             logic_insts.insert(inst);
@@ -605,14 +607,13 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         }
 
         TimingArcInfo arc;
-        auto [from_it, from_bt] = staToDBPin(prev_pin);
-        arc.from_iterm = from_it;
-        arc.from_bterm = from_bt;
-        auto [to_it, to_bt] = staToDBPin(pin);
-        arc.to_iterm = to_it;
-        arc.to_bterm = to_bt;
-        if (same_inst && to_it) {
-          arc.master = to_it->getInst()->getMaster();
+        odb::dbModITerm* mod_iterm;
+        db_network->staToDb(
+            prev_pin, arc.from_iterm, arc.from_bterm, mod_iterm);
+        db_network->staToDb(
+            pin, arc.to_iterm, arc.to_bterm, mod_iterm);
+        if (same_inst && arc.to_iterm) {
+          arc.master = arc.to_iterm->getInst()->getMaster();
         }
         arc.delay = pin_delay;
         arc.slew = slw;
@@ -626,13 +627,15 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
     }
 
     // Get startpoint/endpoint objects
-    auto [start_it, start_bt]
-        = staToDBPin(expand.path(0)->vertex(sta)->pin());
-    path_info.start_iterm = start_it;
-    path_info.start_bterm = start_bt;
-    auto [end_it, end_bt] = staToDBPin(path_end->vertex(sta)->pin());
-    path_info.end_iterm = end_it;
-    path_info.end_bterm = end_bt;
+    odb::dbModITerm* mod_iterm;
+    db_network->staToDb(expand.path(0)->vertex(sta)->pin(),
+                        path_info.start_iterm,
+                        path_info.start_bterm,
+                        mod_iterm);
+    db_network->staToDb(path_end->vertex(sta)->pin(),
+                        path_info.end_iterm,
+                        path_info.end_bterm,
+                        mod_iterm);
 
     path_info.logic_delay = logic_delay_total;
     path_info.logic_depth = logic_depth_count;
