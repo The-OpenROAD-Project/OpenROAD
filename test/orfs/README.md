@@ -99,14 +99,25 @@ This is more verbose, but eliminates any concerns about what the `make` script m
 
 ## Tagging policy for `test/orfs/` BUILD files
 
-All targets under `test/orfs/` must have `tags = ["manual"]` so that `bazelisk build //...` builds only OpenROAD binaries and never ORFS test artifacts. The `manual` tag excludes targets from Bazel wildcard patterns like `//...`.
+Targets under `test/orfs/` use two different tagging strategies:
 
-Test targets (from `orfs_flow` `test_kwargs`, `sh_test`, etc.) must use `tags = ["manual", "orfs"]`. Non-test targets must use `tags = ["manual"]` only (no `orfs` tag).
+- **Test targets** (`sh_test`, `eqy_test`, `test_suite`, `orfs_flow` `test_kwargs`, etc.): `tags = ["orfs"]`
+- **Non-test targets** (filegroups, `orfs_run`, `orfs_flow` build targets, etc.): `tags = ["manual"]`
 
-The `.bazelrc` lines provide additional protection:
+The `manual` tag on non-test targets prevents `bazelisk build //...` from building ORFS artifacts.
 
+The `orfs` tag on test targets works with `.bazelrc` tag filters to control when tests run:
+
+    # .bazelrc defaults (local development):
     build --build_tag_filters=-orfs
     test --test_tag_filters=-orfs
+
+    # CI override (--config=ci):
+    test:ci --test_tag_filters=
+
+This means:
+- **Locally**: `bazelisk test //...` skips test/orfs tests
+- **CI**: `bazelisk test --config=ci //...` runs all tests including test/orfs
 
 ### Enforcement
 
@@ -124,9 +135,9 @@ To verify that building does nothing under `test/orfs/`:
 
     bazelisk build //test/orfs/...
 
-This should report `0 processes` and build nothing. To verify tests can still be run explicitly:
+This should report `0 processes` and build nothing. To verify tests are found when the filter is cleared:
 
-    bazelisk test //test/orfs/gcd:gcd_test
+    bazelisk test --test_tag_filters= //test/orfs/...
 
 ## eqy tests
 
