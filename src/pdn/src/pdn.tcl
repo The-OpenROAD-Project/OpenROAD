@@ -691,10 +691,10 @@ proc add_sroute_connect { args } {
   set cut_pitch_x [lindex $keys(-cut_pitch) 0]
   set cut_pitch_y [lindex $keys(-cut_pitch) 1]
 
-  set net ""
-  if { [info exists keys(-net)] } {
-    set net $keys(-net)
+  if { ![info exists keys(-net)] } {
+    utl::error PDN 1197 "The -net argument is required."
   }
+  set net $keys(-net)
 
   set outerNet ""
   if { [info exists keys(-outerNet)] } {
