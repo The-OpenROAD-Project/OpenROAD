@@ -1,0 +1,24 @@
+{
+    "name": "dbChipPath",
+    "type": "dbObject",
+    "fields": [
+        {
+            "name": "name_",
+            "type": "std::string",
+            "flags": [
+                "no-set"
+            ]
+        },
+        {
+            "name": "entries_",
+            "type": "std::vector<std::pair<std::string, bool>>",
+            "flags": [
+                "private",
+                "no-cmp"
+            ]
+        }
+    ],
+    "cpp_includes": [
+        "dbChip.h"
+    ]
+}

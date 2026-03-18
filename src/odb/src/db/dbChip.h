@@ -28,6 +28,7 @@ class dbChipCallBackObj;
 class _dbProperty;
 class _dbChipRegion;
 class _dbMarkerCategory;
+class _dbChipPath;
 class _dbBlock;
 class _dbChipInst;
 class _dbChipConn;
@@ -81,6 +82,7 @@ class _dbChip : public _dbObject
   dbTable<_dbChipRegion>* chip_region_tbl_;
   dbTable<_dbMarkerCategory>* marker_categories_tbl_;
   dbId<_dbChip> next_entry_;
+  dbTable<_dbChipPath>* chip_path_tbl_;
 
   // User Code Begin Fields
   std::list<dbChipCallBackObj*> callbacks_;
