@@ -76,7 +76,7 @@ class Grid
  public:
   Grid(odb::Orientation2D orientation);
 
-  Grid(odb::Orientation2D orientation, int tracks);
+  Grid(odb::Orientation2D orientation, int num_layouts);
 
   Grid(odb::Orientation2D orientation, odb::Point origin);
 
@@ -84,7 +84,7 @@ class Grid
 
   bool insertLayout(std::unique_ptr<Layout> layout, int index);
 
-  void addCell(std::unique_ptr<Cell> cell, int track);
+  void addCell(std::unique_ptr<Cell> cell, int idx);
 
   void gridInit();
 
@@ -97,6 +97,8 @@ class Grid
   int getWidth() const;
 
   int numLayouts() const;
+
+  void setNumLayouts(int num_layouts);
 
   int getLayoutWidth(int index) const;
 
