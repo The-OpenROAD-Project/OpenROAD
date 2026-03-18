@@ -112,13 +112,17 @@ build:ci --remote_upload_local_results=true
 build:ci --disk_cache=
 # Tell the 'ci' config to include 'opt'
 build:ci --config=opt
+# CI runs all tests including test/orfs; locally they are skipped
+# by the default test --test_tag_filters=-orfs below.
+test:ci --test_tag_filters=
 
 # Setup remote cache
 build --remote_cache=https://bazel.precisioninno.com
 build --remote_cache_compression=true
 build --remote_upload_local_results=false
 
-# Without this, bazelisk build/test ... builds/runs the bazel-orfs tests
+# Locally, exclude test/orfs targets from wildcard builds and tests.
+# CI overrides test_tag_filters above via test:ci --test_tag_filters=
 build --build_tag_filters=-orfs
 test --test_tag_filters=-orfs
 
