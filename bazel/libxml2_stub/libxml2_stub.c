@@ -3,6 +3,10 @@
 // symbols are never called on Linux.  Providing a stub here means developers
 // no longer need the system libxml2-dev package installed.
 
+// Every symbol here is an exported .so entry point — external linkage is
+// intentional and required.
+// NOLINTBEGIN(misc-use-internal-linkage)
+
 #include <stdlib.h>
 
 void* xmlFree = NULL;
@@ -67,3 +71,5 @@ void xmlUnlinkNode(void* n)
 {
   abort();
 }
+
+// NOLINTEND(misc-use-internal-linkage)
