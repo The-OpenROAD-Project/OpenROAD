@@ -50,6 +50,7 @@
 #include <utility>
 #include <vector>
 
+#include "infrastructure/Grid.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -60,6 +61,9 @@ class Opendp;
 class Padding;
 class Node;
 class Network;
+class Group;
+class Master;
+class Edge;
 
 // ---------------------------------------------------------------------------
 // Constants  (defaults match the NBLG paper)
@@ -138,17 +142,7 @@ struct HLCell
   }
 };
 
-// ---------------------------------------------------------------------------
-// HLGrid – one placement site
-// ---------------------------------------------------------------------------
-struct HLGrid
-{
-  int usage{0};
-  int capacity{1};  // 0 = blockage
-  double histCost{0.0};
-
-  [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
-};
+// Removed HLGrid struct - using dpl::Pixel instead.
 
 // ---------------------------------------------------------------------------
 // AbacusCluster – transient state during the Abacus row sweep
@@ -253,11 +247,11 @@ class HybridLegalizer
   void eraseCellFromDplGrid(int cellIdx);
   void syncAllCellsToDplGrid();
 
-  // HLGrid helpers
-  HLGrid& gridAt(int x, int y) { return grid_[y * gridW_ + x]; }
-  [[nodiscard]] const HLGrid& gridAt(int x, int y) const
+  // Pixel helpers – use the main DPL grid.
+  Pixel& gridAt(int x, int y) { return opendp_->grid_->pixel(GridY{y}, GridX{x}); }
+  [[nodiscard]] const Pixel& gridAt(int x, int y) const
   {
-    return grid_[y * gridW_ + x];
+    return opendp_->grid_->pixel(GridY{y}, GridX{x});
   }
   [[nodiscard]] bool gridExists(int x, int y) const
   {
@@ -293,7 +287,6 @@ class HybridLegalizer
   int gridH_{0};
 
   std::vector<HLCell> cells_;
-  std::vector<HLGrid> grid_;
   std::vector<FenceRegion> fences_;
   std::vector<HLPowerRailType> rowRail_;
   std::vector<bool> rowHasSites_;  // true when at least one DB row exists at y

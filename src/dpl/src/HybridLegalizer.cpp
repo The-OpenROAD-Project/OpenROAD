@@ -261,23 +261,24 @@ void HybridLegalizer::flushToDb()
 
 void HybridLegalizer::pushHybridPixels()
 {
-  if (!debug_observer_ || grid_.empty()) {
+  if (!debug_observer_) {
     return;
   }
-  const int n = gridW_ * gridH_;
-  std::vector<HybridPixelState> pixels(n);
-  for (int i = 0; i < n; ++i) {
-    const HLGrid& g = grid_[i];
-    if (g.capacity == 0) {
-      // Distinguish true blockages (fixed cells with usage) from absent rows.
-      pixels[i] = (g.usage > 0) ? HybridPixelState::kBlocked
-                                 : HybridPixelState::kNoRow;
-    } else if (g.overuse() > 0) {
-      pixels[i] = HybridPixelState::kOveruse;
-    } else if (g.usage > 0) {
-      pixels[i] = HybridPixelState::kOccupied;
-    } else {
-      pixels[i] = HybridPixelState::kFree;
+  std::vector<HybridPixelState> pixels(gridW_ * gridH_);
+  for (int gy = 0; gy < gridH_; ++gy) {
+    for (int gx = 0; gx < gridW_; ++gx) {
+      const Pixel& g = gridAt(gx, gy);
+      const int idx = gy * gridW_ + gx;
+      if (g.capacity == 0) {
+        pixels[idx] = (g.usage > 0) ? HybridPixelState::kBlocked
+                                    : HybridPixelState::kNoRow;
+      } else if (g.overuse() > 0) {
+        pixels[idx] = HybridPixelState::kOveruse;
+      } else if (g.usage > 0) {
+        pixels[idx] = HybridPixelState::kOccupied;
+      } else {
+        pixels[idx] = HybridPixelState::kFree;
+      }
     }
   }
   debug_observer_->setHybridPixels(
@@ -438,23 +439,15 @@ HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const
 
 void HybridLegalizer::buildGrid()
 {
-  const Grid* dplGrid = opendp_->grid_.get();
+  Grid* dplGrid = opendp_->grid_.get();
 
-  // Initialize all grid cells with capacity=0 (no row).
-  HLGrid empty;
-  empty.capacity = 0;
-  grid_.assign(static_cast<size_t>(gridW_) * gridH_, empty);
-
-  // Copy site validity from the DPL Grid, which already accounts for
-  // actual database rows, hard blockages (macro halos), and region
-  // boundaries (via markHopeless, markBlocked, setFixedGridCells, etc.).
-  // Only sites where Pixel::is_valid is true get capacity=1.
+  // Reset all pixels to default negotiation state.
   for (int gy = 0; gy < gridH_; ++gy) {
     for (int gx = 0; gx < gridW_; ++gx) {
-      const Pixel* pixel = dplGrid->gridPixel(GridX{gx}, GridY{gy});
-      if (pixel && pixel->is_valid) {
-        gridAt(gx, gy).capacity = 1;
-      }
+      Pixel& pixel = dplGrid->pixel(GridY{gy}, GridX{gx});
+      pixel.capacity = pixel.is_valid ? 1 : 0;
+      pixel.usage = 0;
+      pixel.hist_cost = 1.0;
     }
   }
 
@@ -703,20 +696,57 @@ std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
                                                  int y) const
 {
   const HLCell& cell = cells_[cellIdx];
-  x = std::max(0, std::min(x, gridW_ - cell.width));
+  int bestX = std::max(0, std::min(x, gridW_ - cell.width));
+  int bestY = y;
+  double bestDistSq = 1e18;
 
-  int bestRow = y;
-  int bestDist = std::numeric_limits<int>::max();
   for (int r = 0; r + cell.height <= gridH_; ++r) {
-    if (isValidRow(r, cell)) {
-      const int d = std::abs(r - y);
-      if (d < bestDist) {
-        bestDist = d;
-        bestRow = r;
+    if (!isValidRow(r, cell)) {
+      continue;
+    }
+
+    // Find nearest valid X region in this row.
+    // Scan around target X first.
+    int localBestX = -1;
+    int localBestDx = 1e9;
+
+    for (int tx = 0; tx + cell.width <= gridW_; ++tx) {
+      bool ok = true;
+      for (int dy = 0; dy < cell.height; ++dy) {
+        for (int dx = 0; dx < cell.width; ++dx) {
+          if (gridAt(tx + dx, r + dy).capacity == 0) {
+            ok = false;
+            break;
+          }
+        }
+        if (!ok) {
+          break;
+        }
+      }
+
+      if (ok) {
+        const int dx = std::abs(tx - x);
+        if (dx < localBestDx) {
+          localBestDx = dx;
+          localBestX = tx;
+        }
+      }
+    }
+
+    if (localBestX != -1) {
+      // Row cost weight (dy * rowHeight_ vs dx * siteWidth_)
+      const double dy = static_cast<double>(r - y);
+      const double dx = static_cast<double>(localBestDx);
+      const double distSq = dx * dx + dy * dy;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        bestX = localBestX;
+        bestY = r;
       }
     }
   }
-  return {x, bestRow};
+
+  return {bestX, bestY};
 }
 
 // ===========================================================================
@@ -908,7 +938,7 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
   const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int gx = xBegin; gx < xEnd; ++gx) {
-      if (gridAt(gx, cell.y + dy).overuse() > 0) {
+      if (gridAt(gx, cell.y + dy).capacity == 0 || gridAt(gx, cell.y + dy).overuse() > 0) {
         return false;
       }
     }

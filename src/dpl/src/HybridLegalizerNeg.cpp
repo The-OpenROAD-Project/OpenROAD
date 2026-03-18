@@ -319,24 +319,20 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   };
 
   // Search around the initial (GP) position.
-  for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
-    tryLocation(cell.initX + dx, cell.y);
-  }
-  for (int dx = -adjWindow_; dx <= adjWindow_; ++dx) {
-    tryLocation(cell.initX + dx, cell.y - cell.height);
-    tryLocation(cell.initX + dx, cell.y + cell.height);
+  for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
+    for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
+      tryLocation(cell.initX + dx, cell.initY + dy);
+    }
   }
 
   // Also search around the current position — critical when the cell has
   // already been displaced far from initX and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
   if (cell.x != cell.initX || cell.y != cell.initY) {
-    for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
-      tryLocation(cell.x + dx, cell.y);
-    }
-    for (int dx = -adjWindow_; dx <= adjWindow_; ++dx) {
-      tryLocation(cell.x + dx, cell.y - cell.height);
-      tryLocation(cell.x + dx, cell.y + cell.height);
+    for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
+      for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
+        tryLocation(cell.x + dx, cell.y + dy);
+      }
     }
   }
 
@@ -366,7 +362,7 @@ double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
         cost += kInfCost;
         continue;
       }
-      const HLGrid& g = gridAt(gx, gy);
+      const Pixel& g = gridAt(gx, gy);
       if (g.capacity == 0) {
         cost += kInfCost;  // blockage
         continue;
@@ -376,7 +372,7 @@ double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
       const auto usageWithCell = static_cast<double>(g.usage + 1);
       const auto cap = static_cast<double>(g.capacity);
       const double penalty = usageWithCell / cap;
-      cost += g.histCost * penalty;
+      cost += g.hist_cost * penalty;
     }
   }
   return cost;
@@ -412,10 +408,13 @@ double HybridLegalizer::adaptivePf(int iter) const
 
 void HybridLegalizer::updateHistoryCosts()
 {
-  for (auto& g : grid_) {
-    const int ov = g.overuse();
-    if (ov > 0) {
-      g.histCost += kHfDefault * ov;
+  for (int gy = 0; gy < gridH_; ++gy) {
+    for (int gx = 0; gx < gridW_; ++gx) {
+      Pixel& g = gridAt(gx, gy);
+      const int ov = g.overuse();
+      if (ov > 0) {
+        g.hist_cost += kHfDefault * ov;
+      }
     }
   }
 }
