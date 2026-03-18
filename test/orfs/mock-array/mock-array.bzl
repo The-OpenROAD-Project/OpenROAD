@@ -297,7 +297,7 @@ def mock_array(name, config):
             } if variant == "4x4_flat" else {}),
             tags = ["manual"],
             test_kwargs = {
-                "tags": ["manual", "orfs"],
+                "tags": ["orfs"],
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],

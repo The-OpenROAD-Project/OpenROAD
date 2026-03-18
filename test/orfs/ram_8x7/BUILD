@@ -98,10 +98,7 @@ filegroup(
     name = "ram_8x7_{stage}_sim_test".format(stage = stage),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    tags = [
-        "manual",
-        "orfs",
-    ],
+    tags = ["orfs"],
     verilog = [":ram_8x7_{stage}.v".format(stage = stage) if stage != "source" else ":ram_8x7.sv"],
 ) for stage in STAGES[1:]]
 
@@ -114,10 +111,7 @@ OTHER = [
     name = "ram_8x7_{other}_sim_test".format(other = other[:-2]),
     cc_srcs = ["ram_8x7_sim.cpp"],
     module_top = "ram_8x7",
-    tags = [
-        "manual",
-        "orfs",
-    ],
+    tags = ["orfs"],
     verilog = [other],
 ) for other in OTHER]
 
