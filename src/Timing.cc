@@ -7,6 +7,7 @@
 #include <array>
 #include <cstring>
 #include <set>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -20,14 +21,22 @@
 #include "sta/Clock.hh"
 #include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
+#include "sta/Path.hh"
+#include "sta/PathEnd.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PathGroup.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Scene.hh"
+#include "sta/Sdc.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Search.hh"
+#include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingRole.hh"
 #include "utl/Logger.h"
@@ -404,4 +413,232 @@ std::vector<odb::dbMaster*> Timing::equivCells(odb::dbMaster* master)
   }
   return master_seq;
 }
+float Timing::getWorstSlack(MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  return sta->worstSlack(getMinMax(minmax));
+}
+
+float Timing::getTotalNegativeSlack(MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  return sta->totalNegativeSlack(getMinMax(minmax));
+}
+
+int Timing::getEndpointCount()
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  return sta->endpoints().size();
+}
+
+std::vector<std::pair<std::string, float>> Timing::getEndpointSlackMap(
+    MinMax minmax)
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  std::vector<std::pair<std::string, float>> result;
+  for (sta::Vertex* vertex : sta->endpoints()) {
+    const sta::Pin* pin = vertex->pin();
+    float slack = sta->slack(
+        pin, sta::RiseFallBoth::riseFall(), sta->scenes(), getMinMax(minmax));
+    const char* pin_name = network->pathName(pin);
+    result.emplace_back(pin_name, slack);
+  }
+  return result;
+}
+
+std::vector<ClockInfo> Timing::getClockInfo()
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  std::vector<ClockInfo> result;
+  for (const sta::Clock* clk : sta->cmdMode()->sdc()->clocks()) {
+    ClockInfo info;
+    info.name = clk->name();
+    info.period = clk->period();
+    if (clk->waveform()) {
+      info.waveform = *clk->waveform();
+    }
+    for (const sta::Pin* pin : clk->pins()) {
+      info.sources.emplace_back(network->pathName(pin));
+    }
+    result.push_back(std::move(info));
+  }
+  return result;
+}
+
+std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
+                                                   int max_paths,
+                                                   float slack_threshold)
+{
+  sta::dbSta* sta = getSta();
+  cmdLinkedNetwork();
+  sta::dbNetwork* network = sta->getDbNetwork();
+
+  const bool is_setup = (minmax == Max);
+  sta::SceneSeq scenes = sta->scenes();
+  sta::StringSeq group_names;
+
+  sta::Search* search = sta->search();
+  sta::PathEndSeq path_ends = search->findPathEnds(
+      nullptr,  // from
+      nullptr,  // thrus
+      nullptr,  // to
+      false,    // unconstrained
+      scenes,
+      is_setup ? sta::MinMaxAll::max() : sta::MinMaxAll::min(),
+      max_paths,        // group_count
+      1,                // endpoint_count (one per endpoint)
+      true,             // unique_pins
+      true,             // unique_edges
+      -sta::INF,        // slack_min
+      slack_threshold,  // slack_max
+      true,             // sort_by_slack
+      group_names,
+      is_setup,   // setup
+      !is_setup,  // hold
+      false,      // recovery
+      false,      // removal
+      false,      // clk_gating_setup
+      false);     // clk_gating_hold
+
+  std::vector<TimingPathInfo> result;
+  auto* graph = sta->graph();
+
+  for (auto& path_end : path_ends) {
+    TimingPathInfo path_info;
+    sta::Path* path = path_end->path();
+
+    path_info.slack = path_end->slack(sta);
+    path_info.arrival = path_end->dataArrivalTime(sta);
+    path_info.required = path_end->requiredTime(sta);
+    path_info.skew = path_end->clkSkew(sta);
+
+    auto* path_delay = path_end->pathDelay();
+    path_info.path_delay = path_delay ? path_delay->delay() : 0.0f;
+
+    auto* start_clk_edge = path_end->sourceClkEdge(sta);
+    path_info.start_clock
+        = start_clk_edge ? start_clk_edge->clock()->name() : "";
+
+    auto* end_clk = path_end->targetClk(sta);
+    path_info.end_clock = end_clk ? end_clk->name() : "";
+
+    auto* path_group = path_end->pathGroup();
+    path_info.path_group = path_group ? path_group->name() : "";
+
+    // Expand path to get arc detail
+    sta::PathExpanded expand(path, sta);
+    float arrival_prev = 0.0f;
+    float logic_delay_total = 0.0f;
+    int logic_depth_count = 0;
+    int max_fanout = 0;
+    std::unordered_set<sta::Instance*> logic_insts;
+
+    for (size_t i = 0; i < expand.size(); i++) {
+      const auto* ref = expand.path(i);
+      sta::Vertex* vertex = ref->vertex(sta);
+      const sta::Pin* pin = vertex->pin();
+      const bool is_rising = ref->transition(sta) == sta::RiseFall::rise();
+      const float arr = sta::delayAsFloat(ref->arrival());
+      const float slw = sta::delayAsFloat(ref->slew(sta));
+      const float pin_delay = arr - arrival_prev;
+
+      // Compute fanout
+      int node_fanout = 0;
+      const sta::Sdc* sdc = sta->cmdScene()->sdc();
+      sta::VertexOutEdgeIterator iter(vertex, graph);
+      while (iter.hasNext()) {
+        sta::Edge* edge = iter.next();
+        if (edge->isWire()) {
+          const sta::Pin* to_pin = edge->to(graph)->pin();
+          if (network->isTopLevelPort(to_pin)) {
+            sta::Port* port = network->port(to_pin);
+            node_fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
+          } else {
+            node_fanout++;
+          }
+        }
+      }
+      max_fanout = std::max(node_fanout, max_fanout);
+
+      // Compute load capacitance
+      float cap = 0.0f;
+      const bool is_driver = network->isDriver(pin);
+      if (is_driver && i > 0) {
+        sta::GraphDelayCalc* gdc = sta->graphDelayCalc();
+        cap = gdc->loadCap(
+            pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
+      }
+
+      // Determine cell name and whether this is a net arc
+      bool is_net = false;
+      std::string cell_name;
+      if (i > 0) {
+        const auto* prev_ref = expand.path(i - 1);
+        sta::Vertex* prev_vertex = prev_ref->vertex(sta);
+        const sta::Pin* prev_pin = prev_vertex->pin();
+        sta::Instance* inst = network->instance(pin);
+        sta::Instance* prev_inst = network->instance(prev_pin);
+        if (inst != prev_inst || inst == nullptr) {
+          is_net = true;
+          cell_name = "net";
+        } else {
+          sta::Cell* cell = network->cell(inst);
+          if (cell) {
+            cell_name = network->name(cell);
+          }
+        }
+
+        // Track logic depth (non-clock, non-net arcs)
+        bool pin_is_clock = sta->isClock(pin, sta->cmdScene()->mode());
+        if (!is_net && !pin_is_clock && inst) {
+          if (logic_insts.find(inst) == logic_insts.end()) {
+            logic_insts.insert(inst);
+            logic_depth_count++;
+            logic_delay_total += pin_delay;
+          }
+        }
+      }
+
+      if (i > 0) {
+        TimingArcInfo arc;
+        const auto* prev_ref = expand.path(i - 1);
+        sta::Vertex* prev_vertex = prev_ref->vertex(sta);
+        arc.from_pin = network->pathName(prev_vertex->pin());
+        arc.to_pin = network->pathName(pin);
+        arc.cell_name = cell_name;
+        arc.delay = pin_delay;
+        arc.slew = slw;
+        arc.load = cap;
+        arc.fanout = node_fanout;
+        arc.is_rising = is_rising;
+        arc.is_net = is_net;
+        path_info.arcs.push_back(std::move(arc));
+      }
+
+      arrival_prev = arr;
+    }
+
+    // Get startpoint/endpoint names
+    sta::Vertex* start_vertex = expand.path(0)->vertex(sta);
+    path_info.startpoint = network->pathName(start_vertex->pin());
+    path_info.endpoint = network->pathName(path_end->vertex(sta)->pin());
+
+    path_info.logic_delay = logic_delay_total;
+    path_info.logic_depth = logic_depth_count;
+    path_info.fanout = max_fanout;
+
+    result.push_back(std::move(path_info));
+  }
+  return result;
+}
+
 }  // namespace ord
