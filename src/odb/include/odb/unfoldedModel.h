@@ -110,7 +110,7 @@ class UnfoldedModel
   UnfoldedChip* buildUnfoldedChip(dbChipInst* chip_inst,
                                   std::vector<dbChipInst*>& path,
                                   const dbTransform& parent_xform);
-  void registerUnfoldedChip(UnfoldedChip& uf_chip);
+  void registerUnfoldedChip(UnfoldedChip* uf_chip);
   void unfoldRegions(UnfoldedChip& uf_chip, dbChipInst* inst);
   void unfoldBumps(UnfoldedRegion& uf_region, const dbTransform& transform);
   void unfoldConnections(dbChip* chip,

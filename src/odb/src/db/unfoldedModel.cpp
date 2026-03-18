@@ -124,20 +124,21 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
 
   unfolded_chips_.push_back(std::move(uf_chip));
   UnfoldedChip* created_chip = &unfolded_chips_.back();
-  registerUnfoldedChip(*created_chip);
+  registerUnfoldedChip(created_chip);
 
   path.pop_back();
   return created_chip;
 }
 
-void UnfoldedModel::registerUnfoldedChip(UnfoldedChip& chip)
+void UnfoldedModel::registerUnfoldedChip(UnfoldedChip* chip)
 {
-  for (auto& region : chip.regions) {
-    region.parent_chip = &chip;
-    chip.region_map[region.region_inst] = &region;
+  chip_map_[chip->name] = chip;
+  for (auto& region : chip->regions) {
+    region.parent_chip = chip;
+    chip->region_map[region.region_inst] = &region;
     for (auto& bump : region.bumps) {
       bump.parent_region = &region;
-      chip.bump_inst_map[bump.bump_inst] = &bump;
+      chip->bump_inst_map[bump.bump_inst] = &bump;
     }
   }
 }
