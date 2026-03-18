@@ -11,7 +11,6 @@
 #include "cut/abc_library_factory.h"
 #include "db_sta/dbNetwork.hh"
 #include "kitty/dynamic_truth_table.hpp"
-#include "mockturtle/algorithms/cleanup.hpp"
 #include "mockturtle/algorithms/decomposition.hpp"
 #include "mockturtle/io/genlib_reader.hpp"
 #include "mockturtle/networks/aig.hpp"
@@ -204,9 +203,7 @@ LogicCut::BuildMappedMockturtleNetwork(
     ntk.create_po(s, network->name(net));
   }
 
-  auto cleaned = mockturtle::cleanup_dangling(ntk, true, false);
-
-  return cleaned;
+  return ntk;
 }
 
 }  // namespace cut
