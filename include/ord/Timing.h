@@ -61,13 +61,12 @@ struct TimingArcInfo
   odb::dbBTerm* from_bterm = nullptr;
   odb::dbITerm* to_iterm = nullptr;
   odb::dbBTerm* to_bterm = nullptr;
-  odb::dbMaster* master = nullptr;
+  odb::dbMaster* master = nullptr;  // nullptr for net arcs
   float delay = 0.0f;
   float slew = 0.0f;
   float load = 0.0f;
   int fanout = 0;
   bool is_rising = false;
-  bool is_net = false;
 };
 
 struct TimingPathInfo

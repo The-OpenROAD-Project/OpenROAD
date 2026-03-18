@@ -592,11 +592,11 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         sta::Instance* inst = network->instance(pin);
         sta::Instance* prev_inst = network->instance(prev_pin);
 
-        bool is_net = (inst != prev_inst || inst == nullptr);
+        const bool same_inst = (inst == prev_inst && inst != nullptr);
 
         // Track logic depth (non-clock, non-net arcs)
         bool pin_is_clock = sta->isClock(pin, sta->cmdScene()->mode());
-        if (!is_net && !pin_is_clock && inst) {
+        if (same_inst && !pin_is_clock) {
           if (logic_insts.find(inst) == logic_insts.end()) {
             logic_insts.insert(inst);
             logic_depth_count++;
@@ -611,7 +611,7 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         auto [to_it, to_bt] = staToDBPin(pin);
         arc.to_iterm = to_it;
         arc.to_bterm = to_bt;
-        if (!is_net && to_it) {
+        if (same_inst && to_it) {
           arc.master = to_it->getInst()->getMaster();
         }
         arc.delay = pin_delay;
@@ -619,7 +619,6 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         arc.load = cap;
         arc.fanout = node_fanout;
         arc.is_rising = is_rising;
-        arc.is_net = is_net;
         path_info.arcs.push_back(arc);
       }
 
