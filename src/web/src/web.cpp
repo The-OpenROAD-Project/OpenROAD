@@ -120,6 +120,7 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.select_x = extract_int(msg, "dbu_x");
     req.select_y = extract_int(msg, "dbu_y");
     req.select_zoom = extract_int_or(msg, "zoom", 0);
+    req.visible_layers = extract_string_array(msg, "visible_layers");
     req.vis.parseFromJson(msg);
   } else if (type_str == "heatmaps") {
     req.type = WebSocketRequest::HEATMAPS;

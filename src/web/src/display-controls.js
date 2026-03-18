@@ -67,6 +67,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             layer.addTo(app.map);
             app.allLayers.push(layer);
             leafletLayers.push(layer);
+            app.visibleLayers.add(name);
 
             const id = `layer_${index}`;
             layerIds.push(id);
@@ -84,8 +85,10 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             if (node.data && node.data.layer) {
                 if (node.checked) {
                     node.data.layer.addTo(app.map);
+                    app.visibleLayers.add(node.data.name);
                 } else {
                     app.map.removeLayer(node.data.layer);
+                    app.visibleLayers.delete(node.data.name);
                 }
             }
         });

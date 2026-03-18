@@ -97,6 +97,7 @@ struct WebSocketRequest
   int select_x = 0;
   int select_y = 0;
   int select_zoom = 0;
+  std::set<std::string> visible_layers;
 
   // INSPECT / HOVER fields
   int select_id = -1;
@@ -189,6 +190,8 @@ int extract_int_or(const std::string& json,
 float extract_float_or(const std::string& json,
                        const std::string& key,
                        float default_val);
+std::set<std::string> extract_string_array(const std::string& json,
+                                           const std::string& key);
 
 // Dispatch BOUNDS/LAYERS/TILE/INFO requests (used by HTTP and WebSocket).
 WebSocketResponse dispatch_request(

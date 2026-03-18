@@ -53,6 +53,7 @@ const app = {
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
+    visibleLayers: new Set(),
     heatMapData: null,
     activeHeatMap: '',
     heatMapLayer: null,
@@ -557,7 +558,7 @@ app.websocketManager.readyPromise.then(async () => {
             for (const [k, v] of Object.entries(visibility)) {
                 vf[k] = v ? 1 : 0;
             }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), ...vf })
+            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), visible_layers: [...app.visibleLayers], ...vf })
                 .then(data => {
                     console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();

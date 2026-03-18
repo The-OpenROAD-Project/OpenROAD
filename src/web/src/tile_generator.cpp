@@ -502,10 +502,12 @@ std::vector<std::string> TileGenerator::getSites() const
   return sites;
 }
 
-std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
-                                                     const int dbu_y,
-                                                     const int zoom,
-                                                     const TileVisibility& vis)
+std::vector<SelectionResult> TileGenerator::selectAt(
+    const int dbu_x,
+    const int dbu_y,
+    const int zoom,
+    const TileVisibility& vis,
+    const std::set<std::string>& visible_layers)
 {
   std::vector<SelectionResult> results;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -524,46 +526,92 @@ std::vector<SelectionResult> TileGenerator::selectAt(const int dbu_x,
              dbu_y,
              zoom,
              margin);
-  int rtree_count = 0;
-  for (odb::dbInst* inst : search_->searchInsts(block,
-                                                dbu_x - margin,
-                                                dbu_y - margin,
-                                                dbu_x + margin,
-                                                dbu_y + margin)) {
-    ++rtree_count;
+
+  const int x_lo = dbu_x - margin;
+  const int y_lo = dbu_y - margin;
+  const int x_hi = dbu_x + margin;
+  const int y_hi = dbu_y + margin;
+  const odb::Point click_pt(dbu_x, dbu_y);
+
+  // Search instances
+  for (odb::dbInst* inst :
+       search_->searchInsts(block, x_lo, y_lo, x_hi, y_hi)) {
     const odb::Rect bbox = inst->getBBox()->getBox();
-    const bool hits = bbox.intersects(odb::Point(dbu_x, dbu_y));
-    const bool visible = vis.isInstVisible(inst, sta_);
-    debugPrint(logger_,
-               utl::WEB,
-               "select",
-               2,
-               "  candidate {} master={} bbox=({},{},{},{}) "
-               "intersects={} visible={}",
-               inst->getName(),
-               inst->getMaster()->getName(),
-               bbox.xMin(),
-               bbox.yMin(),
-               bbox.xMax(),
-               bbox.yMax(),
-               hits,
-               visible);
-    if (hits && visible) {
-      results.push_back(
-          {inst, inst->getName(), inst->getMaster()->getName(), bbox});
+    if (bbox.intersects(click_pt) && vis.isInstVisible(inst, sta_)) {
+      results.push_back({inst, inst->getName(), "Inst", bbox});
     }
   }
+  // Sort instances by area descending so larger instances (macros) come first
+  std::ranges::sort(results, [](const auto& a, const auto& b) {
+    return a.bbox.area() > b.bbox.area();
+  });
+
+  // Search nets via routing shapes on each layer
+  std::set<odb::dbNet*> seen_nets;
+  odb::dbTech* tech = db_->getTech();
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    if (layer->getRoutingLevel() <= 0
+        && layer->getType() != odb::dbTechLayerType::CUT) {
+      continue;
+    }
+    if (!visible_layers.empty() && !visible_layers.contains(layer->getName())) {
+      continue;
+    }
+
+    // Regular routing shapes (wires, vias, bterms)
+    if (vis.routing) {
+      for (const auto& shape :
+           search_->searchBoxShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
+        odb::dbNet* net = std::get<2>(shape);
+        if (seen_nets.contains(net)) {
+          continue;
+        }
+        const odb::Rect& box = std::get<0>(shape);
+        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          seen_nets.insert(net);
+          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
+        }
+      }
+    }
+
+    // Special net shapes (power/ground straps)
+    if (vis.special_nets) {
+      for (const auto& shape :
+           search_->searchSNetViaShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
+        odb::dbNet* net = std::get<1>(shape);
+        if (seen_nets.contains(net)) {
+          continue;
+        }
+        const odb::Rect box = std::get<0>(shape)->getBox();
+        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          seen_nets.insert(net);
+          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
+        }
+      }
+
+      for (const auto& shape :
+           search_->searchSNetShapes(block, layer, x_lo, y_lo, x_hi, y_hi)) {
+        odb::dbNet* net = std::get<2>(shape);
+        if (seen_nets.contains(net)) {
+          continue;
+        }
+        const odb::Rect box = std::get<0>(shape)->getBox();
+        if (box.intersects(click_pt) && vis.isNetVisible(net)) {
+          seen_nets.insert(net);
+          results.push_back({net, net->getName(), "Net", net->getTermBBox()});
+        }
+      }
+    }
+  }
+
   debugPrint(logger_,
              utl::WEB,
              "select",
              1,
-             "  rtree_results={} selected={}",
-             rtree_count,
-             results.size());
-  // Sort by area descending so larger instances (macros) come first
-  std::ranges::sort(results, [](const auto& a, const auto& b) {
-    return a.bbox.area() > b.bbox.area();
-  });
+             "  selected={} (insts={}, nets={})",
+             results.size(),
+             results.size() - seen_nets.size(),
+             seen_nets.size());
   return results;
 }
 

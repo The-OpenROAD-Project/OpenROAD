@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <any>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -48,9 +49,9 @@ struct FlightLine
 
 struct SelectionResult
 {
-  odb::dbInst* inst;
+  std::any object;  // dbInst*, dbNet*, etc.
   std::string name;
-  std::string master;
+  std::string type_name;  // "Inst", "Net", etc.
   odb::Rect bbox;
 };
 
@@ -139,10 +140,12 @@ class TileGenerator
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
 
-  std::vector<SelectionResult> selectAt(int dbu_x,
-                                        int dbu_y,
-                                        int zoom = 0,
-                                        const TileVisibility& vis = {});
+  std::vector<SelectionResult> selectAt(
+      int dbu_x,
+      int dbu_y,
+      int zoom = 0,
+      const TileVisibility& vis = {},
+      const std::set<std::string>& visible_layers = {});
 
   odb::dbBlock* getBlock() const;
 

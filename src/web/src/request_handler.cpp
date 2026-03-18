@@ -129,6 +129,39 @@ std::string extract_string(const std::string& json, const std::string& key)
   return result;
 }
 
+std::set<std::string> extract_string_array(const std::string& json,
+                                           const std::string& key)
+{
+  std::set<std::string> result;
+  const std::string needle = "\"" + key + "\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return result;
+  }
+  pos = json.find('[', pos + needle.size());
+  if (pos == std::string::npos) {
+    return result;
+  }
+  auto end = json.find(']', pos);
+  if (end == std::string::npos) {
+    return result;
+  }
+  // Extract each quoted string between [ and ]
+  for (auto i = pos; i < end;) {
+    auto qs = json.find('"', i);
+    if (qs == std::string::npos || qs >= end) {
+      break;
+    }
+    auto qe = json.find('"', qs + 1);
+    if (qe == std::string::npos || qe >= end) {
+      break;
+    }
+    result.insert(json.substr(qs + 1, qe - qs - 1));
+    i = qe + 1;
+  }
+  return result;
+}
+
 int extract_int(const std::string& json, const std::string& key)
 {
   const std::string needle = "\"" + key + "\"";
@@ -573,8 +606,11 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   try {
-    auto results
-        = gen_->selectAt(req.select_x, req.select_y, req.select_zoom, req.vis);
+    auto results = gen_->selectAt(req.select_x,
+                                  req.select_y,
+                                  req.select_zoom,
+                                  req.vis,
+                                  req.visible_layers);
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
@@ -588,19 +624,36 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     for (const auto& r : results) {
       builder.beginObject();
       builder.field("name", r.name);
-      builder.field("master", r.master);
+      builder.field("type", r.type_name);
       writeBBox(builder, "bbox", r.bbox);
       builder.endObject();
     }
     builder.endArray();
 
-    // Add properties for the first selected instance
+    // Pick which result to inspect, cycling through overlapping objects.
+    // If the currently inspected object is in the results, select the next one.
     std::vector<gui::Selected> new_selectables;
     auto* registry = gui::DescriptorRegistry::instance();
     gui::Selected inspected_sel;
     if (!results.empty()) {
-      const auto& r0 = results[0];
-      inspected_sel = registry->makeSelected(std::any(r0.inst));
+      int pick = 0;
+      if (results.size() > 1) {
+        gui::Selected current;
+        {
+          std::lock_guard<std::mutex> lock(state.selection_mutex);
+          current = state.current_inspected;
+        }
+        if (current) {
+          for (int i = 0; i < static_cast<int>(results.size()); ++i) {
+            gui::Selected candidate = registry->makeSelected(results[i].object);
+            if (candidate == current) {
+              pick = (i + 1) % static_cast<int>(results.size());
+              break;
+            }
+          }
+        }
+      }
+      inspected_sel = registry->makeSelected(results[pick].object);
       writeInspectPayload(
           builder, inspected_sel, new_selectables, /*can_navigate_back=*/false);
     } else {
