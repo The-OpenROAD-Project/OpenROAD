@@ -194,8 +194,10 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "llvm_prebuilt",
     build_file = "@toolchains_llvm//toolchain:BUILD.llvm_repo",
+    # Compilation must be inlined here because patch_cmds runs inside the
+    # downloaded archive and cannot reference workspace files.  The canonical
+    # source and documentation live in bazel/libxml2_stub/.
     patch_cmds = [
-        # See bazel/libxml2_stub/ for canonical source and documentation.
         """\
 cat > _stub.c << 'STUB'
 #include <stdlib.h>
