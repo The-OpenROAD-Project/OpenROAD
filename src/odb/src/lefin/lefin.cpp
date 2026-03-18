@@ -1120,7 +1120,8 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
   }
 
   if (layer->hasArea()) {
-    l->setArea(layer->area());
+    l->setArea(static_cast<int64_t>(dbdist(layer->area()))
+               * dbdist(layer->area()));
   }
 
   if (layer->hasThickness()) {

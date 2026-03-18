@@ -9345,8 +9345,8 @@ class dbTechLayer : public dbObject
   ///  reasonable default exists.
   ///
   bool hasArea() const;
-  double getArea() const;
-  void setArea(double area);
+  int64_t getArea() const;
+  void setArea(int64_t area);
 
   ///
   ///  Get/set MAXWIDTH parameter.  This interface is used when a
