@@ -33,6 +33,8 @@
 #include "gui/gui.h"
 #include "heatMapSetup.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
+#include "odb/unfoldedModel.h"
 #include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
@@ -40,59 +42,47 @@ namespace gui {
 
 namespace {
 
-struct ParsedHeatMapRow
+static std::string trim(const std::string& s)
 {
-  double x0 = 0;
-  double y0 = 0;
-  double x1 = 0;
-  double y1 = 0;
-  double value = 0;
-};
-
-// Header line written by dumpToFile starts with "x0,y0,x1,y1".
-static bool looksLikeHeader(const std::string& line)
-{
-  const std::string prefix = "x0,y0,x1,y1";
-  return line.size() >= prefix.size()
-         && line.compare(0, prefix.size(), prefix) == 0;
+  const auto start = s.find_first_not_of(" \t\r\n");
+  const auto end = s.find_last_not_of(" \t\r\n");
+  if (start == std::string::npos || end == std::string::npos) {
+    return "";
+  }
+  return s.substr(start, end - start + 1);
 }
 
-struct ParsedHeatMapFile
-{
-  std::optional<std::string> name;  // first line if it was not the header
-  std::vector<ParsedHeatMapRow> rows;
-};
+}  // namespace
 
-// Parses CSV: optional first line = display name (if not the header line);
-// then header "x0,y0,x1,y1,value (units)"; then one line per cell.
-ParsedHeatMapFile parseHeatMapCsv(const std::string& path, utl::Logger* logger)
+// Parses CSV: first line = chiplet_path, heatmap_unique_name (2 columns);
+// second line = header "x0,y0,x1,y1,value (units)"; then one line per cell.
+ExternalHeatMapDataSource::ParsedData ExternalHeatMapDataSource::parse(
+    const std::string& file_path,
+    utl::Logger* logger)
 {
-  ParsedHeatMapFile out;
-  std::ifstream in(path);
+  ParsedData out;
+  out.file_path = file_path;
+  std::ifstream in(file_path);
   if (!in.is_open()) {
-    logger->error(utl::GUI, 1173, "Unable to open {}", path);
+    logger->error(utl::GUI, 1173, "Unable to open {}", file_path);
     return out;
   }
   std::string line;
   if (!std::getline(in, line)) {
     return out;  // empty file
   }
-  if (!looksLikeHeader(line)) {
-    // First line is the display name; next line is the header.
-    std::string name = line;
-    // Trim trailing/leading whitespace for display.
-    const auto start = name.find_first_not_of(" \t\r\n");
-    const auto end = name.find_last_not_of(" \t\r\n");
-    if (start != std::string::npos && end != std::string::npos) {
-      name = name.substr(start, end - start + 1);
+  // First line: chiplet name, heatmap unique name (2 columns).
+  {
+    std::string col0, col1;
+    std::stringstream ss(line);
+    if (std::getline(ss, col0, ',') && std::getline(ss, col1, ',')) {
+      out.chiplet_name = trim(col0);
+      out.name = trim(col1);
     }
-    if (!name.empty()) {
-      out.name = std::move(name);
-    }
-    if (!std::getline(in, line)) {
-      return out;
-    }
-    // line is the header; discard
+  }
+  // Second line is the data header (x0,y0,x1,y1,value ...); discard.
+  if (!std::getline(in, line)) {
+    return out;
   }
   while (std::getline(in, line)) {
     if (line.empty()) {
@@ -114,8 +104,6 @@ ParsedHeatMapFile parseHeatMapCsv(const std::string& path, utl::Logger* logger)
   }
   return out;
 }
-
-}  // namespace
 
 HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
                                      const std::string& name,
@@ -1270,23 +1258,21 @@ sta::Scene* PowerDensityDataSource::getScene() const
 }
 
 ExternalHeatMapDataSource::ExternalHeatMapDataSource(
-    utl::Logger* logger, const std::string& unique_short_name)
+    utl::Logger* logger,
+    ParsedData data,
+    const std::string& unique_short_name)
     : HeatMapDataSource(logger,
-                        "External (from file)",
+                        data.name,
                         unique_short_name,
-                        "ExternalHeatMap")
+                        "ExternalHeatMap"),
+      parsed_data_(std::move(data))
 {
-}
-
-const std::string& ExternalHeatMapDataSource::getName() const
-{
-  return display_name_.empty() ? name_ : display_name_;
 }
 
 Renderer::Settings ExternalHeatMapDataSource::getSettings() const
 {
   auto settings = HeatMapDataSource::getSettings();
-  settings["File"] = file_path_;
+  settings["File"] = parsed_data_.file_path;
   return settings;
 }
 
@@ -1295,42 +1281,41 @@ void ExternalHeatMapDataSource::setSettings(const Renderer::Settings& settings)
   HeatMapDataSource::setSettings(settings);
   std::string new_path;
   Renderer::setSetting<std::string>(settings, "File", new_path);
-  if (new_path != file_path_) {
-    file_path_ = std::move(new_path);
-    display_name_.clear();
+  if (new_path != parsed_data_.file_path) {
+    parsed_data_ = parse(new_path, getLogger());
     destroyMap();
   }
 }
 
 bool ExternalHeatMapDataSource::populateMap()
 {
-  if (getBlock() == nullptr) {
+  if (getChip() == nullptr || parsed_data_.rows.empty()) {
     return false;
   }
-  if (file_path_.empty()) {
-    return false;
+  odb::dbTransform transform;
+  if (unfolded_chip_) {
+    transform = unfolded_chip_->transform;
   }
-
-  const ParsedHeatMapFile parsed = parseHeatMapCsv(file_path_, getLogger());
-  if (parsed.rows.empty()) {
-    return false;
-  }
-
-  if (parsed.name.has_value()) {
-    display_name_ = *parsed.name;
-  }
-
-  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
-  for (const auto& row : parsed.rows) {
+  const double dbu_per_micron = getChip()->getDb()->getDbuPerMicron();
+  for (const auto& row : parsed_data_.rows) {
     const int x0 = static_cast<int>(std::round(row.x0 * dbu_per_micron));
     const int y0 = static_cast<int>(std::round(row.y0 * dbu_per_micron));
     const int x1 = static_cast<int>(std::round(row.x1 * dbu_per_micron));
     const int y1 = static_cast<int>(std::round(row.y1 * dbu_per_micron));
-    const odb::Rect rect(
+    odb::Rect rect(
         std::min(x0, x1), std::min(y0, y1), std::max(x0, x1), std::max(y0, y1));
+    transform.apply(rect);
     addToMap(rect, row.value);
   }
   return true;
+}
+
+odb::Rect ExternalHeatMapDataSource::getBounds() const
+{
+  if (unfolded_chip_) {
+    return unfolded_chip_->cuboid.getEnclosingRect();
+  }
+  return HeatMapDataSource::getBounds();
 }
 
 void ExternalHeatMapDataSource::combineMapData(

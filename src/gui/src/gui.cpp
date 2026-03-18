@@ -47,6 +47,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
+#include "odb/unfoldedModel.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
 #include "scriptWidget.h"
@@ -1525,12 +1526,18 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 
 std::string Gui::loadExternalHeatMap(const std::string& file_path)
 {
+  if (!db_->getUnfoldedModel()) {
+    return "";
+  }
   const std::string short_name
       = "External_" + std::to_string(external_heat_maps_.size() + 1);
-  auto source = std::make_unique<ExternalHeatMapDataSource>(logger_, short_name);
-  Renderer::Settings settings;
-  settings["File"] = file_path;
-  source->setSettings(settings);
+  auto parsed_data = ExternalHeatMapDataSource::parse(file_path, logger_);
+  auto unfolded_chip
+      = db_->getUnfoldedModel()->findUnfoldedChip(parsed_data.chiplet_name);
+  auto source = std::make_unique<ExternalHeatMapDataSource>(
+      logger_, parsed_data, short_name);
+  source->setChip(db_->getChip());
+  source->setUnfoldedChip(unfolded_chip);
   source->registerHeatMap();
   external_heat_maps_.push_back(std::move(source));
   return short_name;

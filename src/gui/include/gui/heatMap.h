@@ -20,6 +20,7 @@ namespace odb {
 class dbBlock;
 class dbChip;
 class Rect;
+class UnfoldedChip;
 }  // namespace odb
 
 namespace sta {
@@ -362,18 +363,33 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
   sta::Scene* getScene() const;
 };
 
-// Data source that loads heatmap data from a CSV file in dumpToFile format.
-// Set the "File" setting to the path, then show the heat map. If the file's
-// first line is not the CSV header, it is used as the display name.
+// Data source that loads heatmap data from a CSV file.
 class ExternalHeatMapDataSource : public HeatMapDataSource
 {
  public:
-  // unique_short_name: stable id for lookup (e.g. "External_1"); shown in
-  // display control until file is loaded, then getName() returns file's first
-  // line.
+  struct ParsedData
+  {
+    std::string file_path;
+    std::string name;          // display name (empty if not in file)
+    std::string chiplet_name;  // for 3D designs (empty if not in file)
+    struct Row
+    {
+      double x0, y0, x1, y1, value;
+    };
+    std::vector<Row> rows;
+  };
+
+  static ParsedData parse(const std::string& file_path, utl::Logger* logger);
+
   ExternalHeatMapDataSource(utl::Logger* logger,
+                            ParsedData data,
                             const std::string& unique_short_name);
-  const std::string& getName() const override;
+
+  void setUnfoldedChip(odb::UnfoldedChip* unfolded_chip)
+  {
+    unfolded_chip_ = unfolded_chip;
+  }
+
   Renderer::Settings getSettings() const override;
   void setSettings(const Renderer::Settings& settings) override;
 
@@ -385,10 +401,11 @@ class ExternalHeatMapDataSource : public HeatMapDataSource
                       double data_area,
                       double intersection_area,
                       double rect_area) override;
+  odb::Rect getBounds() const override;
 
  private:
-  std::string file_path_;
-  std::string display_name_;  // from first line of file when set
+  ParsedData parsed_data_;
+  odb::UnfoldedChip* unfolded_chip_ = nullptr;
 };
 
 }  // namespace gui

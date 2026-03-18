@@ -249,8 +249,17 @@ sta::Scene* PowerDensityDataSource::getScene() const
 
 //////////
 
+ExternalHeatMapDataSource::ParsedData ExternalHeatMapDataSource::parse(
+    const std::string& /* file_path */,
+    utl::Logger* /* logger */)
+{
+  return {};
+}
+
 ExternalHeatMapDataSource::ExternalHeatMapDataSource(
-    utl::Logger* /* logger */, const std::string& unique_short_name)
+    utl::Logger* /* logger */,
+    ParsedData /* data */,
+    const std::string& unique_short_name)
     : HeatMapDataSource(nullptr, "", unique_short_name, "")
 {
 }
@@ -268,6 +277,11 @@ void ExternalHeatMapDataSource::setSettings(const Renderer::Settings& settings)
 bool ExternalHeatMapDataSource::populateMap()
 {
   return false;
+}
+
+odb::Rect ExternalHeatMapDataSource::getBounds() const
+{
+  return HeatMapDataSource::getBounds();
 }
 
 void ExternalHeatMapDataSource::combineMapData(bool /* base_has_value */,
