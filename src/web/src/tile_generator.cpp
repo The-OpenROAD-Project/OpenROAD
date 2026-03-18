@@ -1327,8 +1327,8 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
         setPixel(image, full_draw.xMin(), 255 - iy, border);
       }
     }
-    const int rx = std::min(full_draw.xMax() - 1, kTileSizeInPixel - 1);
-    if (rx >= 0 && full_draw.xMax() > 0) {
+    if (full_draw.xMax() > 0 && full_draw.xMax() <= kTileSizeInPixel) {
+      const int rx = full_draw.xMax() - 1;
       for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
         setPixel(image, rx, 255 - iy, border);
       }
@@ -1338,8 +1338,8 @@ void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
         setPixel(image, ix, 255 - full_draw.yMin(), border);
       }
     }
-    const int ty = std::min(full_draw.yMax() - 1, kTileSizeInPixel - 1);
-    if (ty >= 0 && full_draw.yMax() > 0) {
+    if (full_draw.yMax() > 0 && full_draw.yMax() <= kTileSizeInPixel) {
+      const int ty = full_draw.yMax() - 1;
       for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
         setPixel(image, ix, 255 - ty, border);
       }
