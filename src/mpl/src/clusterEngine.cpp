@@ -2080,15 +2080,15 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = tree_->default_halo;
-
       if (macro_to_halo_.contains(inst)) {
-        halo = macro_to_halo_.at(inst);
-      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
-        halo = HardMacro::Halo(inst->getHalo());
+        auto halo = macro_to_halo_.at(inst);
+        inst->setHalo(halo.left, halo.bottom, halo.right, halo.top, true);
+      } else if (!use_def_halo_ || inst->getHalo() == nullptr) {
+        auto halo = tree_->default_halo;
+        inst->setHalo(halo.left, halo.bottom, halo.right, halo.top, true);
       }
 
-      auto macro = std::make_unique<HardMacro>(inst, halo);
+      auto macro = std::make_unique<HardMacro>(inst, HardMacro::Halo(inst->getHalo()));
 
       if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
         logger_->error(
