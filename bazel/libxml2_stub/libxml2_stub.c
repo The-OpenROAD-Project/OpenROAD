@@ -9,7 +9,7 @@
 
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers) — this is C, not C++
 
-void* xmlFree = NULL;
+void* xmlFree = NULL;  // NOLINT(modernize-use-nullptr) — this is C, not C++
 
 void* xmlAddChild(void* p, void* c)
 {
