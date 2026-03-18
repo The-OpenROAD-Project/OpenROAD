@@ -31,6 +31,7 @@ COMPULSORY_TESTS = [
     "emap_gcd_asap7",
     "emap_ibex_sky130hd",
     "emap_sub_aes_asap7",
+    "emap_summation_asap7",
     "gcd_annealing1",
     "gcd_annealing2",
     "gcd_asap7",
@@ -112,6 +113,8 @@ filegroup(
         "sky130/sky130hd.tlef",
         "sky130/sky130hd_std_cell.lef",
         "sky130/sky130hd.rc",
+        "summation_asap7.sdc",
+        "summation_asap7.v",
     ],
 )
 

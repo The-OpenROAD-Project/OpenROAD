@@ -1,6 +1,8 @@
+# Reproduces driver not found error
+
 source "helpers.tcl"
 
-set test_name emap_aes_asap7
+set test_name emap_summation_asap7
 
 define_corners fast slow
 set lib_files_slow {\
@@ -27,10 +29,9 @@ foreach lib_file $lib_files_fast {
 
 read_lef ./asap7/asap7_tech_1x_201209.lef
 read_lef ./asap7/asap7sc7p5t_28_R_1x_220121a.lef
-
-read_verilog ./aes_asap7.v
-link_design aes
-read_sdc ./aes_asap7.sdc
+read_verilog ./summation_asap7.v
+link_design summation
+read_sdc ./summation_asap7.sdc
 
 source asap7/setRC.tcl
 
@@ -51,6 +52,8 @@ resynth_emap -scene fast \
 
 suppress_message RSZ 75
 repair_timing
+
+write_verilog ./emap_out.v
 
 report_cell_usage
 report_timing_histogram

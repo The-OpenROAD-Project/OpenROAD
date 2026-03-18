@@ -12,9 +12,10 @@ or_integration_tests(
     blif_writer_sequential
     const_cell_removal
     emap_aes_asap7
-    emap_sub_aes_asap7
     emap_gcd_asap7
     emap_ibex_sky130hd
+    emap_sub_aes_asap7
+    emap_summation_asap7
     gcd_restructure
     aes_asap7
     gcd_asap7
