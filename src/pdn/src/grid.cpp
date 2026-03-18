@@ -1408,15 +1408,13 @@ InstanceGrid::InstanceGrid(
 {
   auto* halo = inst->getHalo();
   if (halo != nullptr) {
-    odb::Rect halo_box = halo->getBox();
-
-    odb::Rect inst_box = inst->getBBox()->getBox();
+    odb::Rect halo_box = inst->getTransformedHalo();
 
     // copy halo from db
-    addHalo({halo_box.xMin() - inst_box.xMin(),
-             halo_box.yMin() - inst_box.yMin(),
-             inst_box.xMin() - halo_box.xMax(),
-             inst_box.yMin() - halo_box.yMax()});
+    addHalo({halo_box.xMin(),
+             halo_box.yMin(),
+             halo_box.xMax(),
+             halo_box.yMax()});
   }
 }
 
