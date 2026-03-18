@@ -1,6 +1,7 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_flow")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
+load("//test/orfs:timing.bzl", "orfs_timing_stages")
 
 package(features = ["layering_check"])
 
@@ -28,6 +29,21 @@ orfs_flow(
         "tags": ["orfs"],
     },
     verilog_files = ["gcd.v"],
+)
+
+# buildifier: disable=duplicated-name
+orfs_timing_stages(
+    name = "gcd",
+    stages = [
+        "synth",
+        "floorplan",
+        "place",
+        "cts",
+        "grt",
+        "route",
+    ],
+    timing_script = "//etc:timing_report",
+    variant = None,
 )
 
 eqy_flow_test(
