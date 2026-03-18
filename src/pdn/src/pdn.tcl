@@ -694,7 +694,7 @@ proc add_sroute_connect { args } {
   if { ![info exists keys(-net)] } {
     utl::error PDN 1197 "The -net argument is required."
   }
-  set net $keys(-net)
+  set net $keys(-net) ;# always set after validation
 
   set outerNet ""
   if { [info exists keys(-outerNet)] } {
