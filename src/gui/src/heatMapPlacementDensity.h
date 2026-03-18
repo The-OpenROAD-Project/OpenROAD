@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 

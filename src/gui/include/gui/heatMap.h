@@ -7,6 +7,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -15,6 +16,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbBlock;
