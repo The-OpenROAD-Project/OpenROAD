@@ -7,7 +7,7 @@ proc read_upf { args } {
     keys {-file} flags {}
 
   if { ![info exists keys(-file)] } {
-    utl::error UPF 78 "The -file argument is required."
+    utl::error UPF 78 "The -file argument is required for the read_upf command."
   }
   source $keys(-file)
 }
