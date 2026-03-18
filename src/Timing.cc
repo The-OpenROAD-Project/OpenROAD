@@ -434,20 +434,18 @@ int Timing::getEndpointCount()
   return sta->endpoints().size();
 }
 
-std::vector<std::pair<std::string, float>> Timing::getEndpointSlackMap(
-    MinMax minmax)
+std::vector<EndpointSlack> Timing::getEndpointSlackMap(MinMax minmax)
 {
   sta::dbSta* sta = getSta();
   cmdLinkedNetwork();
-  sta::dbNetwork* network = sta->getDbNetwork();
 
-  std::vector<std::pair<std::string, float>> result;
+  std::vector<EndpointSlack> result;
   for (sta::Vertex* vertex : sta->endpoints()) {
     const sta::Pin* pin = vertex->pin();
     float slack = sta->slack(
         pin, sta::RiseFallBoth::riseFall(), sta->scenes(), getMinMax(minmax));
-    const char* pin_name = network->pathName(pin);
-    result.emplace_back(pin_name, slack);
+    auto [iterm, bterm] = staToDBPin(pin);
+    result.push_back({iterm, bterm, slack});
   }
   return result;
 }
@@ -456,7 +454,6 @@ std::vector<ClockInfo> Timing::getClockInfo()
 {
   sta::dbSta* sta = getSta();
   cmdLinkedNetwork();
-  sta::dbNetwork* network = sta->getDbNetwork();
 
   std::vector<ClockInfo> result;
   for (const sta::Clock* clk : sta->cmdMode()->sdc()->clocks()) {
@@ -467,7 +464,13 @@ std::vector<ClockInfo> Timing::getClockInfo()
       info.waveform = *clk->waveform();
     }
     for (const sta::Pin* pin : clk->pins()) {
-      info.sources.emplace_back(network->pathName(pin));
+      auto [iterm, bterm] = staToDBPin(pin);
+      if (iterm) {
+        info.source_iterms.push_back(iterm);
+      }
+      if (bterm) {
+        info.source_bterms.push_back(bterm);
+      }
     }
     result.push_back(std::move(info));
   }
@@ -581,7 +584,7 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
             pin, ref->transition(sta), ref->scene(sta), ref->minMax(sta));
       }
 
-      // Determine cell name, net arcs, logic depth, and build arc info
+      // Determine master, net arcs, logic depth, and build arc info
       if (i > 0) {
         const auto* prev_ref = expand.path(i - 1);
         sta::Vertex* prev_vertex = prev_ref->vertex(sta);
@@ -589,17 +592,7 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         sta::Instance* inst = network->instance(pin);
         sta::Instance* prev_inst = network->instance(prev_pin);
 
-        bool is_net = false;
-        std::string cell_name;
-        if (inst != prev_inst || inst == nullptr) {
-          is_net = true;
-          cell_name = "net";
-        } else {
-          sta::Cell* cell = network->cell(inst);
-          if (cell) {
-            cell_name = network->name(cell);
-          }
-        }
+        bool is_net = (inst != prev_inst || inst == nullptr);
 
         // Track logic depth (non-clock, non-net arcs)
         bool pin_is_clock = sta->isClock(pin, sta->cmdScene()->mode());
@@ -612,25 +605,35 @@ std::vector<TimingPathInfo> Timing::getTimingPaths(MinMax minmax,
         }
 
         TimingArcInfo arc;
-        arc.from_pin = network->pathName(prev_pin);
-        arc.to_pin = network->pathName(pin);
-        arc.cell_name = cell_name;
+        auto [from_it, from_bt] = staToDBPin(prev_pin);
+        arc.from_iterm = from_it;
+        arc.from_bterm = from_bt;
+        auto [to_it, to_bt] = staToDBPin(pin);
+        arc.to_iterm = to_it;
+        arc.to_bterm = to_bt;
+        if (!is_net && to_it) {
+          arc.master = to_it->getInst()->getMaster();
+        }
         arc.delay = pin_delay;
         arc.slew = slw;
         arc.load = cap;
         arc.fanout = node_fanout;
         arc.is_rising = is_rising;
         arc.is_net = is_net;
-        path_info.arcs.push_back(std::move(arc));
+        path_info.arcs.push_back(arc);
       }
 
       arrival_prev = arr;
     }
 
-    // Get startpoint/endpoint names
-    sta::Vertex* start_vertex = expand.path(0)->vertex(sta);
-    path_info.startpoint = network->pathName(start_vertex->pin());
-    path_info.endpoint = network->pathName(path_end->vertex(sta)->pin());
+    // Get startpoint/endpoint objects
+    auto [start_it, start_bt]
+        = staToDBPin(expand.path(0)->vertex(sta)->pin());
+    path_info.start_iterm = start_it;
+    path_info.start_bterm = start_bt;
+    auto [end_it, end_bt] = staToDBPin(path_end->vertex(sta)->pin());
+    path_info.end_iterm = end_it;
+    path_info.end_bterm = end_bt;
 
     path_info.logic_delay = logic_delay_total;
     path_info.logic_depth = logic_depth_count;

@@ -55,8 +55,9 @@ get_db_block();
 %template(Masters) std::vector<odb::dbMaster*>;
 %template(FloatVec) std::vector<float>;
 %template(StringVec) std::vector<std::string>;
-%template(EndpointSlackPair) std::pair<std::string, float>;
-%template(EndpointSlackMap) std::vector<std::pair<std::string, float>>;
+%template(ITermVec) std::vector<odb::dbITerm*>;
+%template(BTermVec) std::vector<odb::dbBTerm*>;
+%template(EndpointSlackVec) std::vector<ord::EndpointSlack>;
 %include "ord/Tech.h"
 %include "ord/Design.h"
 

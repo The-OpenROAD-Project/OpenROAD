@@ -39,39 +39,51 @@ class Design;
 class OpenRoad;
 
 // ── Timing report structs (top-level for SWIG compatibility) ──
+struct EndpointSlack
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  float slack = 0.0f;
+};
+
 struct ClockInfo
 {
   std::string name;
-  float period;
+  float period = 0.0f;
   std::vector<float> waveform;
-  std::vector<std::string> sources;
+  std::vector<odb::dbITerm*> source_iterms;
+  std::vector<odb::dbBTerm*> source_bterms;
 };
 
 struct TimingArcInfo
 {
-  std::string from_pin;
-  std::string to_pin;
-  std::string cell_name;
-  float delay;
-  float slew;
-  float load;
-  int fanout;
-  bool is_rising;
-  bool is_net;
+  odb::dbITerm* from_iterm = nullptr;
+  odb::dbBTerm* from_bterm = nullptr;
+  odb::dbITerm* to_iterm = nullptr;
+  odb::dbBTerm* to_bterm = nullptr;
+  odb::dbMaster* master = nullptr;
+  float delay = 0.0f;
+  float slew = 0.0f;
+  float load = 0.0f;
+  int fanout = 0;
+  bool is_rising = false;
+  bool is_net = false;
 };
 
 struct TimingPathInfo
 {
-  float slack;
-  float path_delay;
-  float arrival;
-  float required;
-  float skew;
-  float logic_delay;
-  int logic_depth;
-  int fanout;
-  std::string startpoint;
-  std::string endpoint;
+  float slack = 0.0f;
+  float path_delay = 0.0f;
+  float arrival = 0.0f;
+  float required = 0.0f;
+  float skew = 0.0f;
+  float logic_delay = 0.0f;
+  int logic_depth = 0;
+  int fanout = 0;
+  odb::dbITerm* start_iterm = nullptr;
+  odb::dbBTerm* start_bterm = nullptr;
+  odb::dbITerm* end_iterm = nullptr;
+  odb::dbBTerm* end_bterm = nullptr;
   std::string start_clock;
   std::string end_clock;
   std::string path_group;
@@ -131,8 +143,7 @@ class Timing
   int getEndpointCount();
 
   // ── Endpoint slack map (histogram data source) ──────────────
-  std::vector<std::pair<std::string, float>> getEndpointSlackMap(MinMax minmax
-                                                                 = Max);
+  std::vector<EndpointSlack> getEndpointSlackMap(MinMax minmax = Max);
 
   // ── Clock domain info ───────────────────────────────────────
   std::vector<ClockInfo> getClockInfo();
