@@ -405,3 +405,31 @@ an ORFS checkout):
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
     tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue
+
+### Monitoring progress
+
+whittle.py prints `[whittle]` status lines showing the current phase,
+element counts, .odb file size, and elapsed time.  After a step runs for
+more than 5 minutes, whittle.py also shows the last 10 lines of the
+step's log output so you can tell what the step is doing.
+
+If the .odb size is not shrinking after 20+ steps, try different
+parameters (`--persistence 1` for a coarser first pass, or a higher
+`--multiplier`).  If each step takes more than 10 minutes, check that
+`--error_string` is specific enough (avoid generic strings like "ERROR").
+
+### Using Claude with whittle.py
+
+Point Claude at a GitHub issue that has an attached tarball artifact
+(from `make *_issue`).  Claude can download the artifact, reproduce the
+bug with the latest OpenROAD, run whittle.py, and upload a smaller
+test case.
+
+| Scenario | Recommended flags |
+| --- | --- |
+| Global placement bugs | `--error_string GPL-XXXX --persistence 3 --multiplier 2` |
+| Fast initial reduction | `--persistence 1` first, then increase |
+| Large designs (>100K insts) | Start with `--timeout 600` |
+
+See the `/triage-issue` Claude skill in `.claude/skills/triage-issue/`
+for the full step-by-step workflow.
