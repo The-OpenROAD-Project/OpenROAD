@@ -219,12 +219,13 @@ void PdnGen::trimShapes()
             = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
-        odb::Rect new_rect = shape->getMinimumRect();
+        const odb::Rect min_rect = shape->getMinimumRect();
         auto& layer = tech_layers[shape->getLayer()];
         if (layer == nullptr) {
           layer = std::make_unique<TechLayer>(shape->getLayer());
         }
-        new_rect = layer->adjustToMinArea(new_rect, shape->getLayerDirection());
+        odb::Rect new_rect
+            = layer->adjustToMinArea(min_rect, shape->getLayerDirection());
         if (!shape->getRect().contains(new_rect)) {
           // shape sticks out of the original rect, need to move it so that it
           // is contained
@@ -255,7 +256,7 @@ void PdnGen::trimShapes()
         // check if vias and shape form a stack without any other connections
         bool effectively_vias_stack = true;
         for (const auto& via : shape->getVias()) {
-          if (via->getArea() != new_rect) {
+          if (via->getArea() != min_rect) {
             effectively_vias_stack = false;
             break;
           }
