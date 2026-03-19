@@ -96,8 +96,8 @@ filegroup(
 
 py_test(
     name = "par_man_tcl_check_test",
-    main = "par_man_tcl_check.py",
     srcs = ["par_man_tcl_check.py"],
     data = ["//src/par:doc_files"],
+    main = "par_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

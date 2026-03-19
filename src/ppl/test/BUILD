@@ -194,8 +194,8 @@ filegroup(
 
 py_test(
     name = "ppl_man_tcl_check_test",
-    main = "ppl_man_tcl_check.py",
     srcs = ["ppl_man_tcl_check.py"],
     data = ["//src/ppl:doc_files"],
+    main = "ppl_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

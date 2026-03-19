@@ -77,8 +77,8 @@ filegroup(
 
 py_test(
     name = "ant_man_tcl_check_test",
-    main = "ant_man_tcl_check.py",
     srcs = ["ant_man_tcl_check.py"],
     data = ["//src/ant:doc_files"],
+    main = "ant_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

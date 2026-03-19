@@ -147,8 +147,8 @@ cc_test(
 
 py_test(
     name = "utl_man_tcl_check_test",
-    main = "utl_man_tcl_check.py",
     srcs = ["utl_man_tcl_check.py"],
     data = ["//src/utl:doc_files"],
+    main = "utl_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

@@ -146,8 +146,8 @@ filegroup(
 
 py_test(
     name = "ifp_man_tcl_check_test",
-    main = "ifp_man_tcl_check.py",
     srcs = ["ifp_man_tcl_check.py"],
     data = ["//src/ifp:doc_files"],
+    main = "ifp_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

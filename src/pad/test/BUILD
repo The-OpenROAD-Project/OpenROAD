@@ -227,8 +227,8 @@ filegroup(
 
 py_test(
     name = "pad_man_tcl_check_test",
-    main = "pad_man_tcl_check.py",
     srcs = ["pad_man_tcl_check.py"],
     data = ["//src/pad:doc_files"],
+    main = "pad_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

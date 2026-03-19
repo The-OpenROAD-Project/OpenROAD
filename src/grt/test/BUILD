@@ -134,8 +134,8 @@ MANUAL_FOR_BAZEL_TESTS = [
 
 py_test(
     name = "grt_man_tcl_check_test",
-    main = "grt_man_tcl_check.py",
     srcs = ["grt_man_tcl_check.py"],
     data = ["//src/grt:doc_files"],
+    main = "grt_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

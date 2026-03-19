@@ -250,8 +250,8 @@ cc_test(
 
 py_test(
     name = "cts_man_tcl_check_test",
-    main = "cts_man_tcl_check.py",
     srcs = ["cts_man_tcl_check.py"],
     data = ["//src/cts:doc_files"],
+    main = "cts_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

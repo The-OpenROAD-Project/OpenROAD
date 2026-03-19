@@ -135,8 +135,8 @@ cc_test(
 
 py_test(
     name = "rcx_man_tcl_check_test",
-    main = "rcx_man_tcl_check.py",
     srcs = ["rcx_man_tcl_check.py"],
     data = ["//src/rcx:doc_files"],
+    main = "rcx_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

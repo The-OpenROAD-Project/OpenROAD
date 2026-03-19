@@ -65,8 +65,8 @@ filegroup(
 
 py_test(
     name = "upf_man_tcl_check_test",
-    main = "upf_man_tcl_check.py",
     srcs = ["upf_man_tcl_check.py"],
     data = ["//src/upf:doc_files"],
+    main = "upf_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

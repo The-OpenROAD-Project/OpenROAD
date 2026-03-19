@@ -141,8 +141,8 @@ cc_test(
 
 py_test(
     name = "dft_man_tcl_check_test",
-    main = "dft_man_tcl_check.py",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
+    main = "dft_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )

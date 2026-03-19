@@ -158,8 +158,8 @@ cc_test(
 
 py_test(
     name = "drt_man_tcl_check_test",
-    main = "drt_man_tcl_check.py",
     srcs = ["drt_man_tcl_check.py"],
     data = ["//src/drt:doc_files"],
+    main = "drt_man_tcl_check.py",
     deps = ["//docs/src/scripts:man_tcl_check"],
 )
