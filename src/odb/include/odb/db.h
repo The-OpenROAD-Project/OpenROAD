@@ -4563,21 +4563,22 @@ class dbRSeg : public dbObject
   bool updatedCap();
 
   ///
-  /// Get the capacitance of this RC segment for this process corner. Returns
-  /// value in FF.
+  /// Get the ground capacitance of this RC segment for this process corner.
+  /// Returns value in FF.
   ///
-  double getCapacitance(int corner = 0);
+  double getGroundCapacitance(int corner = 0);
 
   ///
-  /// Get the capacitance of this RC segment for this process corner,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get the total capacitance (ground + coupling) of this RC segment for this
+  /// process corner. Returns value in FF.
   ///
-  double getSourceCapacitance(int corner = 0);
+  double getTotalCapacitance(int corner = 0);
 
   ///
-  /// Get the first capnode capacitance of this RC segment
-  /// for this process corner, if foreign,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get ground capacitance + coupling capacitance scaled by Miller effect
+  /// multiplier of this RC segment for this process corner. This function
+  /// should only be needed when a custom Miller effect multiplier is required.
+  /// Returns value in FF.
   ///
   double getCapacitance(int corner, double miller_mult);
 
