@@ -2,9 +2,22 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
+
+# Verifies that downstream consumers only see the intended public API
+# and that dev_dependencies are not leaked. Runs bazelisk inside the
+# standalone test/downstream/ workspace.
+sh_test(
+    name = "downstream_visibility_test",
+    srcs = ["downstream/visibility_test.sh"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
 
 exports_files(
     [
