@@ -42,6 +42,7 @@ cc_library(
         "include/utl/CallBackHandler.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
+        "include/utl/format_as.h",
         "include/utl/Progress.h",
         "include/utl/ScopedTemporaryFile.h",
         "include/utl/SuppressStdout.h",
