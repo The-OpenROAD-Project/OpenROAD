@@ -16,6 +16,7 @@ COMPULSORY_TESTS = [
     "boundary_macros_tapcell",
     "cut_rows",
     "cut_rows_halo",
+    "cut_rows_min_step",
     "cut_rows_min_width",
     "cut_rows_with_endcaps",
     "disallow_one_site_gaps",
