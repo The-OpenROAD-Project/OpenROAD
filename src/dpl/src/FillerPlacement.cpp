@@ -192,7 +192,7 @@ void Opendp::placeRowFillers(GridY row,
     }
 
     GridX gap = k - j;
-    const DbuY row_height{static_cast<int>(site->getHeight())};
+    const DbuY row_height{site->getHeight()};
     dbMasterSeq& fillers
         = gapFillers(implant, gap, row_height, filler_masters_by_implant);
     if (fillers.empty()) {
