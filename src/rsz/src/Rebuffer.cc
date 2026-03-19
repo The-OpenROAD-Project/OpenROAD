@@ -306,7 +306,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
              index,
              option->bufferCount(),
              option->area(),
-             delayAsString(slack.toSeconds(), this, 3),
+             delayAsString(slack.toSeconds(), 3, this),
              units_->capacitanceUnit()->asString(option->cap()));
   return slack;
 }
@@ -1385,7 +1385,7 @@ void Rebuffer::insertBufferOptions(
           501,
           "buffering pin {} failed: area recovery cannot reproduce solution",
           network_->name(pin_),
-          delayAsString(slack_threshold.toSeconds(), this, 3));
+          delayAsString(slack_threshold.toSeconds(), 3, this));
     }
   }
 
@@ -2057,7 +2057,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                iter,
                network_->name(drvr_pin),
                fanout_limit_,
-               delayAsString(drvr_pin_max_slew_, this, 3));
+               delayAsString(drvr_pin_max_slew_, 3, this));
 
     BnetPtr original_tree = importBufferTree(drvr_pin, corner_);
     if (!original_tree) {
@@ -2147,11 +2147,11 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
       sta::Delay relaxation
           = std::max<float>(0.0f,
                             ((slackAtDriverPin(timing_tree).toSeconds())
-                             - std::min(original_tree_slack_error, 0.0f)))
+                             - std::min(float(original_tree_slack_error), 0.0f)))
                 / 4.0f
-            + (std::max(drvr_gate_delay, 0.0f)
-               + criticalPathDelay(logger_, timing_tree).toSeconds())
-                  * relaxation_factor_;
+        + (std::max(float(drvr_gate_delay), 0.0f)
+           + criticalPathDelay(logger_, timing_tree).toSeconds())
+        * relaxation_factor_;
       target_slack
           = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
     }
@@ -2326,7 +2326,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Delay drvr_gate_delay;
     std::tie(drvr_gate_delay, std::ignore, std::ignore) = drvrPinTiming(bnet);
-    sta::Delay relaxation = (std::max(drvr_gate_delay, 0.0f)
+    sta::Delay relaxation = (std::max(float(drvr_gate_delay), 0.0f)
                              + criticalPathDelay(logger_, bnet).toSeconds())
                             * relaxation_factor_;
 

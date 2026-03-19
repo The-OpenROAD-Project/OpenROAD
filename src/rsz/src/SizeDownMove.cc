@@ -13,7 +13,6 @@
 #include "BaseMove.hh"
 #include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
-#include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -97,8 +96,8 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
                2,
                " fanout {} slack: {} drvr slack: {}",
                network_->pathName(fanout_slack.first->pin()),
-               delayAsString(fanout_slack.second, sta_, 3),
-               delayAsString(drvr_slack, sta_, 3))
+               delayAsString(fanout_slack.second, 3, sta_),
+               delayAsString(drvr_slack, 3, sta_))
   }
 
   bool accept_move = false;
@@ -136,7 +135,7 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
                  network_->pathName(load_pin),
                  load_cell->name(),
                  new_cell->name(),
-                 delayAsString(fanout_slack.second, sta_, 3));
+                 delayAsString(fanout_slack.second, 3, sta_));
       debugPrint(logger_,
                  RSZ,
                  "repair_setup",
@@ -146,7 +145,7 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
                  network_->pathName(load_pin),
                  load_cell->name(),
                  new_cell->name(),
-                 delayAsString(fanout_slack.second, sta_, 3));
+                 delayAsString(fanout_slack.second, 3, sta_));
 
       addMove(load_inst);
       accept_move = true;
@@ -160,7 +159,7 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
                  network_->pathName(load_pin),
                  load_cell->name(),
                  new_cell ? new_cell->name() : "none",
-                 delayAsString(fanout_slack.second, sta_, 3));
+                 delayAsString(fanout_slack.second, 3, sta_));
     }
   }
 
@@ -278,10 +277,10 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
                network_->pathName(load_pin),
                network_->pathName(output_pin),
                load_cell->name(),
-               delayAsString(load_delay, sta_, 3),
+               delayAsString(load_delay, 3, sta_),
                output_load_cap,
-               delayAsString(output_slew, sta_, 3),
-               delayAsString(slack_margin, sta_, 3));
+               delayAsString(output_slew, 3, sta_),
+               delayAsString(slack_margin, 3, sta_));
   }
 
   best_cell = load_cell;
@@ -363,11 +362,11 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
           "size_down",
           4,
           " Sequential element: using worst output slack: {} (pin slack: {})",
-          delayAsString(actual_slack_margin, sta_, 3),
-          delayAsString(slack_margin, sta_, 3));
+          delayAsString(actual_slack_margin, 3, sta_),
+          delayAsString(slack_margin, 3, sta_));
     } else {
       // For combinational gates, consider worst slack of all input pins
-      sta::Slack worst_input_slack = getWorstInputSlack(load_inst);
+      float worst_input_slack = getWorstInputSlack(load_inst);
       actual_slack_margin = std::min(slack_margin, worst_input_slack);
       debugPrint(logger_,
                  RSZ,
@@ -375,9 +374,9 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
                  4,
                  " Combinational gate: using worst input slack: {} (pin slack: "
                  "{}, worst input: {})",
-                 delayAsString(actual_slack_margin, sta_, 3),
-                 delayAsString(slack_margin, sta_, 3),
-                 delayAsString(worst_input_slack, sta_, 3));
+                 delayAsString(actual_slack_margin, 3, sta_),
+                 delayAsString(slack_margin, 3, sta_),
+                 delayAsString(worst_input_slack, 3, sta_));
     }
 
     float drvr_res = drvr_port->driveResistance();
@@ -423,12 +422,12 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
                network_->pathName(load_pin),
                network_->pathName(output_pins[0]),
                swappable->name(),
-               delayAsString(drvr_delta_delay, sta_, 3),
-               delayAsString(first_new_load_delay, sta_, 3),
-               delayAsString(output_delays[0], sta_, 3),
-               delayAsString(actual_slack_margin, sta_, 3),
-               delayAsString(worst_delay_change, sta_, 3),
-               delayAsString(actual_slack_margin, sta_, 3));
+               delayAsString(drvr_delta_delay, 3, sta_),
+               delayAsString(first_new_load_delay, 3, sta_),
+               delayAsString(output_delays[0], 3, sta_),
+               delayAsString(actual_slack_margin, 3, sta_),
+               delayAsString(worst_delay_change, 3, sta_),
+               delayAsString(actual_slack_margin, 3, sta_));
 
     // First case is positive slack and delay change doesn't get worse than
     // that slack. Second case is negative slack and delay is improved, but
@@ -446,12 +445,12 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
                  network_->pathName(load_pin),
                  network_->pathName(output_pins[0]),
                  swappable->name(),
-                 delayAsString(drvr_delta_delay, sta_, 3),
-                 delayAsString(first_new_load_delay, sta_, 3),
-                 delayAsString(output_delays[0], sta_, 3),
-                 delayAsString(actual_slack_margin, sta_, 3),
-                 delayAsString(worst_delay_change, sta_, 3),
-                 delayAsString(actual_slack_margin, sta_, 3));
+                 delayAsString(drvr_delta_delay, 3, sta_),
+                 delayAsString(first_new_load_delay, 3, sta_),
+                 delayAsString(output_delays[0], 3, sta_),
+                 delayAsString(actual_slack_margin, 3, sta_),
+                 delayAsString(worst_delay_change, 3, sta_),
+                 delayAsString(actual_slack_margin, 3, sta_));
       continue;
     }
 

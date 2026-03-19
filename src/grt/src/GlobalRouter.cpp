@@ -1371,10 +1371,7 @@ void GlobalRouter::findFastRoutePins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net->getDbNet(), sta::MinMax::max());
 }
 
 void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)

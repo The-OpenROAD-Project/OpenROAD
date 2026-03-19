@@ -266,8 +266,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                1,
                "{} slack = {} worst_slack = {}",
                end->name(network_),
-               delayAsString(end_slack, sta_, digits),
-               delayAsString(worst_slack, sta_, digits));
+               delayAsString(end_slack, digits, sta_),
+               delayAsString(worst_slack, digits, sta_));
     end_index++;
     debugPrint(logger_,
                RSZ,
@@ -314,8 +314,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                    "repair_setup",
                    2,
                    "Restoring best slack end slack {} worst slack {}",
-                   delayAsString(prev_end_slack, sta_, digits),
-                   delayAsString(prev_worst_slack, sta_, digits));
+                   delayAsString(prev_end_slack, digits, sta_),
+                   delayAsString(prev_worst_slack, digits, sta_));
         resizer_->journalRestore();
         journal_open = false;
         break;
@@ -332,8 +332,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                      "repair_setup",
                      2,
                      "Restoring best slack end slack {} worst slack {}",
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
         } else {
           resizer_->journalEnd();
@@ -342,7 +342,7 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
         // clang-format off
         debugPrint(logger_, RSZ, "repair_setup", 1, "bailing out at {}/{} "
                    "end_slack {} is larger than setup_slack_margin {}",
-                   end_index, max_end_count, end_slack, setup_slack_margin);
+                   end_index, max_end_count, float(end_slack), float(setup_slack_margin));
         // clang-format on
         break;
       }
@@ -362,8 +362,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                      "repair_setup",
                      2,
                      "Restoring best slack end slack {} worst slack {}",
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
         } else {
           resizer_->journalEnd();
@@ -391,8 +391,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                  2,
                  "pass {} slack = {} worst_slack = {} {}",
                  pass,
-                 delayAsString(end_slack, sta_, digits),
-                 delayAsString(worst_slack, sta_, digits),
+                 delayAsString(end_slack, digits, sta_),
+                 delayAsString(worst_slack, digits, sta_),
                  better ? "save" : "");
       if (better) {
         if (end_slack > setup_slack_margin) {
@@ -426,8 +426,8 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
                      "repair_setup",
                      2,
                      "Restoring best end slack {} worst slack {}",
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
           journal_open = false;
           // clang-format off
@@ -694,8 +694,8 @@ bool RepairSetup::repairPath(sta::Path* path,
                    3,
                    "{} load_delay = {} intrinsic_delay = {}",
                    path_vertex->name(network_),
-                   delayAsString(load_delay, sta_, 3),
-                   delayAsString(corner_arc->intrinsicDelay(), sta_, 3));
+                   delayAsString(load_delay, 3, sta_),
+                   delayAsString(corner_arc->intrinsicDelay(), 3, sta_));
       }
     }
 
@@ -721,7 +721,7 @@ bool RepairSetup::repairPath(sta::Path* path,
                "repair_setup",
                3,
                "Path slack: {}, repairs: {}, load_delays: {}",
-               delayAsString(path_slack, sta_, 3),
+               delayAsString(path_slack, 3, sta_),
                repairs_per_pass,
                load_delays.size());
     for (const auto& [drvr_index, ignored] : load_delays) {
@@ -837,8 +837,8 @@ void RepairSetup::printProgress(const int iteration,
         resizer_->clone_move_->numMoves(),
         resizer_->swap_pins_move_->numMoves(),
         area_growth_percent,
-        delayAsString(wns, sta_, 3),
-        delayAsString(tns, sta_, 1),
+        delayAsString(wns, 3, sta_),
+        delayAsString(tns, 1, sta_),
         max(0, num_viols),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
 
@@ -1022,7 +1022,7 @@ void RepairSetup::repairSetupLastGasp(const OptoParams& params,
         debugPrint(logger_, RSZ, "repair_setup", 1, "sizing move accepted for "
                    "endpoint {} pass {} because WNS improved to {:0.3f} and "
                    "TNS improved to {:0.3f}",
-                   end_index, pass, curr_worst_slack, curr_tns);
+                   end_index, pass, float(curr_worst_slack), curr_tns);
         // clang-format on
         prev_worst_slack = curr_worst_slack;
         prev_tns = curr_tns;
@@ -1194,7 +1194,7 @@ void RepairSetup::traverseFaninCone(
                        1,
                        "swapVTCritCells: found crit inst {}: slack {}",
                        network_->name(inst),
-                       inst_slack);
+                       float(inst_slack));
           }
         }
       }

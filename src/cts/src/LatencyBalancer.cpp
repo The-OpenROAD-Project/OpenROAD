@@ -71,6 +71,8 @@ void LatencyBalancer::initSta()
   timingGraph_ = openSta_->graph();
 }
 
+// This SHOULD return float. It would need to call LumpedCapDelayCalc::gateDelay
+// instead of accessing the models directly to get POCV parameters.
 sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
 {
   odb::dbMaster* bufferMaster
@@ -98,15 +100,15 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
             && out_rf == sta::RiseFall::rise()) {
           double in_cap = input->capacitance(in_rf, sta::MinMax::max());
           double load_cap = in_cap + extra_out_cap;
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_))
+            max_rise_delay = arc_delay;
         }
       }
     }

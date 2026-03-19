@@ -55,7 +55,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Sta.hh"
 #include "sta/StaMain.hh"
-#include "sta/StringUtil.hh"
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "tcl.h"
@@ -114,40 +113,40 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void warn(int id, const char* fmt, ...) override
+  void warn(int id, const char* fmt, ...)
       __attribute__((format(printf, 3, 4)));
   void fileWarn(int id,
                 const char* filename,
                 int line,
                 const char* fmt,
-                ...) override __attribute__((format(printf, 5, 6)));
+                ...) __attribute__((format(printf, 5, 6)));
   void vfileWarn(int id,
                  const char* filename,
                  int line,
                  const char* fmt,
-                 va_list args) override;
+                 va_list args);
 
-  void error(int id, const char* fmt, ...) override
+  void error(int id, const char* fmt, ...)
       __attribute__((format(printf, 3, 4)));
   void fileError(int id,
                  const char* filename,
                  int line,
                  const char* fmt,
-                 ...) override __attribute__((format(printf, 5, 6)));
+                 ...) __attribute__((format(printf, 5, 6)));
   void vfileError(int id,
                   const char* filename,
                   int line,
                   const char* fmt,
-                  va_list args) override;
+                  va_list args);
 
-  void critical(int id, const char* fmt, ...) override
+  void critical(int id, const char* fmt, ...)
       __attribute__((format(printf, 3, 4)));
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
-  void redirectFileBegin(const char* filename) override;
+  void redirectFileBegin(std::string filename) override;
   // Redirect append output to filename until redirectFileEnd is called.
-  void redirectFileAppendBegin(const char* filename) override;
+  void redirectFileAppendBegin(std::string filename) override;
   void redirectFileEnd() override;
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin() override;
@@ -157,6 +156,7 @@ class dbStaReport : public sta::ReportTcl
   void printLine(const char* line, size_t length) override;
 
   Logger* logger_ = nullptr;
+  std::string redirect_string_result_;
 };
 
 class dbStaCbk : public odb::dbBlockCallBackObj
@@ -336,7 +336,7 @@ void dbSta::postReadDb(odb::dbDatabase* db)
   }
 }
 
-Slack dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
+float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return slack(net, min_max);
@@ -724,7 +724,7 @@ void dbSta::reportTimingHistogram(int num_bins,
   sta::Unit* time_unit = sta_->units()->timeUnit();
   utl::Histogram<float> histogram(logger_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
-    float slack = sta_->slack(vertex, min_max);
+    float slack = sta::delayAsFloat(sta_->slack(vertex, min_max), min_max, sta_);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       histogram.addData(time_unit->staToUser(slack));
     }
@@ -1113,13 +1113,13 @@ void dbStaReport::critical(int id, const char* fmt, ...)
   va_end(args);
 }
 
-void dbStaReport::redirectFileBegin(const char* filename)
+void dbStaReport::redirectFileBegin(std::string filename)
 {
   flush();
   logger_->redirectFileBegin(filename);
 }
 
-void dbStaReport::redirectFileAppendBegin(const char* filename)
+void dbStaReport::redirectFileAppendBegin(std::string filename)
 {
   flush();
   logger_->redirectFileAppendBegin(filename);
@@ -1140,8 +1140,8 @@ void dbStaReport::redirectStringBegin()
 const char* dbStaReport::redirectStringEnd()
 {
   flush();
-  const std::string string = logger_->redirectStringEnd();
-  return stringPrintTmp("%s", string.c_str());
+  redirect_string_result_ = logger_->redirectStringEnd();
+  return redirect_string_result_.c_str();
 }
 
 ////////////////////////////////////////////////////////////////

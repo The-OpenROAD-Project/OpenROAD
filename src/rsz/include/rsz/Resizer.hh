@@ -523,9 +523,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   // Compute slew RC factor based on library slew thresholds
   float getSlewRCFactor() const;
 
-  sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
-                                  float load,
-                                  const sta::Scene* corner);
+  float findDriverSlewForLoad(sta::Pin* drvr_pin,
+                              float load,
+                              const sta::Scene* corner);
   bool computeNewDelaysSlews(
       sta::Pin* driver_pin,
       sta::Instance* buffer,
@@ -608,7 +608,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findBufferTargetSlews(sta::LibertyCell* buffer,
                              const sta::Pvt* pvt,
                              // Return values.
-                             sta::Slew slews[],
+                             float slews[],
                              int counts[]);
   bool hasMultipleOutputs(const sta::Instance* inst);
 

@@ -132,7 +132,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
                  4,
                  " fanin {} slack_margin = {}",
                  network_->pathName(fanout_vertex->pin()),
-                 delayAsString(slack_margin, sta_, 3));
+                 delayAsString(slack_margin, 3, sta_));
       fanout_slacks.emplace_back(fanout_vertex, slack_margin);
     }
   }

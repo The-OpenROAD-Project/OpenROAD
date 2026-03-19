@@ -19,7 +19,7 @@
 #include "ord/Tech.h"
 #include "rsz/Resizer.hh"
 #include "sta/Clock.hh"
-#include "sta/DelayFloat.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
@@ -159,10 +159,15 @@ float Timing::getPinArrivalTime(sta::Clock* clk,
                                 const sta::RiseFall* rf)
 {
   sta::dbSta* sta = getSta();
+  (void)clk;
+  (void)clk_rf;
+#if 0
+  // This api no longer exists.
   if (clk) {
     return sta::delayAsFloat(sta->arrival(
         vertex, rf, clk->edge(clk_rf), sta->scenes(), sta::MinMax::max()));
   }
+#endif
   return sta::delayAsFloat(sta->arrival(
       vertex, rf->asRiseFallBoth(), sta->scenes(), sta::MinMax::max()));
 }
