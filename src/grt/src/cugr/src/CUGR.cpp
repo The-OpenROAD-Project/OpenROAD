@@ -489,7 +489,7 @@ void CUGR::printStatistics() const
 
   // wire length and via count
   uint64_t wire_length = 0;
-  uint64_t total_hpwl = 0; // Added for detour metric
+  uint64_t total_hpwl = 0;  // Added for detour metric
   int via_count = 0;
   std::vector<std::vector<std::vector<int>>> wire_usage;
   wire_usage.assign(grid_graph_->getNumLayers(),
@@ -549,7 +549,8 @@ void CUGR::printStatistics() const
     }
   }
 
-  double detour_ratio = total_hpwl > 0 ? (double) wire_length / total_hpwl : 1.0;
+  double detour_ratio
+      = total_hpwl > 0 ? (double) wire_length / total_hpwl : 1.0;
 
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
@@ -674,8 +675,10 @@ void CUGR::removeRouteUsage(odb::dbNet* db_net)
       grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
     }
   } else {
-    logger_->warn(
-        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+    logger_->warn(GRT,
+                  601,
+                  "Net {} not found in CUGR for rip-up.",
+                  db_net->getConstName());
   }
 }
 
@@ -747,4 +750,3 @@ void CUGR::endIncremental()
 }
 
 }  // namespace grt
-
