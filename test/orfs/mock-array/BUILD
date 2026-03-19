@@ -90,9 +90,9 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
 test_suite(
     name = "eqy_tests",
     tags = ["orfs"],
-    tests = ["Element_eqy_{variant}".format(variant = name) for name in CONFIGS] +
+    tests = ["Element_eqy_{variant}_tests".format(variant = name) for name in CONFIGS] +
             [
-                "MockArray_eqy_{name}_{variant}".format(
+                "MockArray_eqy_{name}_{variant}_tests".format(
                     name = name,
                     variant = variant,
                 )
