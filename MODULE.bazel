@@ -105,6 +105,7 @@ llvm.toolchain(
 # dependency.  Canonical source: bazel/libxml2_stub/
 llvm.toolchain_root(
     label = "@llvm_prebuilt//:BUILD.bazel",
+    targets = ["linux-x86_64"],
 )
 use_repo(llvm, "llvm_toolchain")
 
