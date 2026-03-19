@@ -14,16 +14,16 @@ bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_flex", version = "0.3.1")
 bazel_dep(name = "rules_python", version = "1.8.5")
-bazel_dep(name = "rules_pkg", version = "1.2.0")
+bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
 bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 
-bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
-bazel_dep(name = "verilator", version = "5.036.bcr.3")
+bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 
 BOOST_VERSION = "1.89.0.bcr.2"
 
@@ -104,7 +104,11 @@ use_repo(llvm, "llvm_toolchain")
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains(
     "@llvm_toolchain//:all",
+)
+
+register_toolchains(
     "@rules_verilator//verilator:verilator_toolchain",
+    dev_dependency = True,
 )
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
