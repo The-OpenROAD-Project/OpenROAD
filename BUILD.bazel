@@ -337,7 +337,7 @@ py_library(
     data = [":_openroadpy.so"],
     # This allows imports relative to the workspace root.
     imports = ["."],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//src/gpl:gpl_py",
         "//src/odb:odb_py",
@@ -387,7 +387,7 @@ filegroup(
     srcs = [
         "src/Exception.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -395,7 +395,7 @@ filegroup(
     srcs = [
         "src/Exception-py.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -410,6 +410,6 @@ filegroup(
     srcs = [
         "src/options.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
