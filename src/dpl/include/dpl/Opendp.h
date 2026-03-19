@@ -20,7 +20,9 @@
 #include "boost/geometry/geometries/point_xy.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
-#include "utl/Logger.h"
+namespace utl {
+class Logger;
+}
 // NOLINTNEXTLINE
 #include "boost/geometry/strategies/strategies.hpp"  // Required implictly by rtree
 #include "odb/db.h"
