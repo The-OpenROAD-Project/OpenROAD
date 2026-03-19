@@ -1,4 +1,5 @@
 import os
+import sys
 import glob
 import re
 from extract_utils import extract_tcl_code, extract_help, extract_proc
@@ -75,3 +76,4 @@ for path in help_dict:
         print("Command counts match.")
     else:
         print("Command counts do not match.")
+        sys.exit(1)
