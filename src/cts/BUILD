@@ -139,3 +139,9 @@ python_wrap_cc(
         "include",
     ],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/*.tcl"]),
+    visibility = ["//src/cts/test:__pkg__"],
+)

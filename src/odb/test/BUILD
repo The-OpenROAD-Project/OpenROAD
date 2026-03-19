@@ -232,7 +232,6 @@ PASSFAIL_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "odb_man_tcl_check",
     "odb_readme_msgs_check",
 ]
 
@@ -401,3 +400,10 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "odb_man_tcl_check",
+    srcs = ["odb_man_tcl_check.py"],
+    data = ["//src/odb:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
+)

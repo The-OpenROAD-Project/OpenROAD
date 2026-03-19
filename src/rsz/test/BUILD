@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
@@ -440,4 +442,11 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "rsz_man_tcl_check",
+    srcs = ["rsz_man_tcl_check.py"],
+    data = ["//src/rsz:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
 )

@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
@@ -13,7 +15,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "par_man_tcl_check",
     "par_readme_msgs_check",
 ]
 
@@ -92,3 +93,10 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "par_man_tcl_check",
+    srcs = ["par_man_tcl_check.py"],
+    data = ["//src/par:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
+)

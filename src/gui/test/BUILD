@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "regression_test")
@@ -35,3 +37,10 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "gui_man_tcl_check",
+    srcs = ["gui_man_tcl_check.py"],
+    data = ["//src/gui:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
+)

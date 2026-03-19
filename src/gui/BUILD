@@ -142,3 +142,9 @@ tcl_encode(
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/*.tcl"]),
+    visibility = ["//src/gui/test:__pkg__"],
+)

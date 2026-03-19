@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -30,7 +32,6 @@ PASSFAIL_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "generate_rules",
-    "rcx_man_tcl_check",
     "rcx_readme_msgs_check",
 ]
 
@@ -130,4 +131,11 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "rcx_man_tcl_check",
+    srcs = ["rcx_man_tcl_check.py"],
+    data = ["//src/rcx:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
 )

@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -13,7 +14,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "ant_man_tcl_check",
     "ant_readme_msgs_check",
 ]
 
@@ -74,3 +74,10 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "ant_man_tcl_check",
+    srcs = ["ant_man_tcl_check.py"],
+    data = ["//src/ant:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
+)

@@ -163,3 +163,9 @@ python_wrap_cc(
     ],
     visibility = ["//:__subpackages__"],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/*.tcl"]),
+    visibility = ["//src/gpl/test:__pkg__"],
+)

@@ -109,3 +109,9 @@ tcl_wrap_cc(
         "//src/odb:swig",
     ],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/*.tcl"]),
+    visibility = ["//src/mpl/test:__pkg__"],
+)

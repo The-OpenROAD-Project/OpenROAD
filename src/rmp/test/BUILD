@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
 
@@ -36,7 +38,6 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
-    "rmp_man_tcl_check",
     "rmp_readme_msgs_check",
 ]
 
@@ -196,4 +197,11 @@ cc_test(
         "@googletest//:gtest_main",
         "@tcl_lang//:tcl",
     ],
+)
+
+py_test(
+    name = "rmp_man_tcl_check",
+    srcs = ["rmp_man_tcl_check.py"],
+    data = ["//src/rmp:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
 )

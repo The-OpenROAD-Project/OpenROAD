@@ -216,3 +216,9 @@ python_wrap_cc(
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/swig/tcl/*.tcl"]),
+    visibility = ["//src/odb/test:__pkg__"],
+)

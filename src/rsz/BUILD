@@ -143,3 +143,9 @@ tcl_wrap_cc(
         "src",
     ],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = ["README.md"] + glob(["src/*.tcl"]),
+    visibility = ["//src/rsz/test:__pkg__"],
+)

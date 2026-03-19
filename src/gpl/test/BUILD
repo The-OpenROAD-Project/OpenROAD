@@ -170,3 +170,10 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+py_test(
+    name = "gpl_man_tcl_check",
+    srcs = ["gpl_man_tcl_check.py"],
+    data = ["//src/gpl:doc_files"],
+    deps = ["//docs/src/scripts:man_tcl_check"],
+)
