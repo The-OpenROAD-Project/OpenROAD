@@ -94,6 +94,7 @@ class CUGR
   }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
+  void removeRouteUsage(odb::dbNet* net); // <-- ADDED FOR SWIG API
   void startIncremental();
   void endIncremental();
 

@@ -163,6 +163,11 @@ update_cugr_net(odb::dbNet* net)
 {
   getGlobalRouter()->updateCUGRNet(net);
 }
+void
+remove_route_usage(odb::dbNet* net)
+{
+  getGlobalRouter()->removeRouteUsage(net);
+}
 
 void start_incremental()
 {

@@ -5862,6 +5862,13 @@ void GlobalRouter::updateCUGRNet(odb::dbNet* net)
   }
 }
 
+void GlobalRouter::removeRouteUsage(odb::dbNet* net)
+{
+  if (use_cugr_ && cugr_) {
+    cugr_->removeRouteUsage(net);
+  }
+}
+
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
   callback_handler_->triggerOnPinAccessUpdateRequired();

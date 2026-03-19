@@ -656,6 +656,20 @@ void CUGR::updateNet(odb::dbNet* db_net)
   updated_nets_.insert(db_net);
 }
 
+void CUGR::removeRouteUsage(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    GRNet* gr_net = it->second;
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    }
+  } else {
+    logger_->warn(
+        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+  }
+}
+
 void CUGR::startIncremental()
 {
   incremental_mode_ = true;
