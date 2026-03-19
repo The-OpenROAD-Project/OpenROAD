@@ -9,7 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "utl/Logger.h"
+namespace utl {
+class Logger;
+}
 
 namespace ord {
 class OpenRoad;
