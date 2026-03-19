@@ -10,6 +10,7 @@
 
 #include "node.h"
 #include "odb/db.h"
+#include "utl/Logger.h"
 
 namespace psm {
 
