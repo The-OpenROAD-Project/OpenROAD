@@ -363,7 +363,10 @@ bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 TileGenerator::TileGenerator(odb::dbDatabase* db,
                              sta::dbSta* sta,
                              utl::Logger* logger)
-    : db_(db), sta_(sta), logger_(logger), search_(std::make_unique<Search>())
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      search_(std::make_unique<Search>(logger))
 {
   odb::dbChip* chip = db_->getChip();
   if (!chip) {
@@ -373,6 +376,19 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
 }
 
 TileGenerator::~TileGenerator() = default;
+
+void TileGenerator::eagerInit()
+{
+  odb::dbBlock* block = getBlock();
+  if (block) {
+    search_->eagerInit(block);
+  }
+}
+
+bool TileGenerator::shapesReady() const
+{
+  return search_->shapesReady();
+}
 
 /* static */
 odb::Rect TileGenerator::toPixels(const double scale,
@@ -842,7 +858,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
 
       // Draw routing shapes (wires, vias, bterms) on top of instances
-      if (!instances_only && tech_layer && vis.routing) {
+      if (!instances_only && tech_layer && vis.routing && shapesReady()) {
         for (const auto& shape : search_->searchBoxShapes(block,
                                                           tech_layer,
                                                           dbu_x_min,
@@ -874,7 +890,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
 
       // Draw special net shapes (power/ground straps) on top of instances
-      if (!instances_only && tech_layer && vis.special_nets) {
+      if (!instances_only && tech_layer && vis.special_nets && shapesReady()) {
         for (const auto& shape : search_->searchSNetShapes(block,
                                                            tech_layer,
                                                            dbu_x_min,
@@ -899,7 +915,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
 
       // Draw special net vias — decompose into individual cut boxes
-      if (!instances_only && tech_layer && vis.special_nets) {
+      if (!instances_only && tech_layer && vis.special_nets && shapesReady()) {
         for (const auto& shape : search_->searchSNetViaShapes(block,
                                                               tech_layer,
                                                               dbu_x_min,

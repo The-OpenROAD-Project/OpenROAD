@@ -517,6 +517,14 @@ app.focusComponent = focusComponent;
 const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
 app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
+// Handle server-push notifications (e.g. search indices ready)
+app.websocketManager.onPush = (msg) => {
+    if (msg.type === 'refresh') {
+        document.getElementById('loading-overlay').style.display = 'none';
+        redrawAllLayers();
+    }
+};
+
 app.websocketManager.readyPromise.then(async () => {
     try {
         const [techData, boundsData, heatMapData] = await Promise.all([
@@ -649,6 +657,7 @@ app.websocketManager.readyPromise.then(async () => {
         populateDisplayControls(app, visibility, WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
         updateHeatMaps(heatMapData);
+        document.getElementById('loading-overlay').style.display = 'flex';
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }

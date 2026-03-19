@@ -289,6 +289,10 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   std::deque<std::vector<unsigned char>> write_queue_;
   bool writing_ = false;
 
+  // Background search index initialization
+  std::shared_ptr<TileGenerator> generator_;
+  std::thread init_thread_;
+
  public:
   WebSocketSession(tcp::socket&& socket,
                    std::shared_ptr<TileGenerator> generator,
@@ -324,13 +328,17 @@ WebSocketSession::WebSocketSession(
       timing_handler_(generator, std::move(timing_report), tcl_eval),
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
-      strand_(net::make_strand(websocket_.get_executor()))
+      strand_(net::make_strand(websocket_.get_executor())),
+      generator_(generator)
 {
   tile_handler_.initializeHeatMaps(state_);
 }
 
 WebSocketSession::~WebSocketSession()
 {
+  if (init_thread_.joinable()) {
+    init_thread_.join();
+  }
   std::lock_guard<std::mutex> lock(state_.heatmap_mutex);
   if (!state_.active_heatmap.empty()) {
     auto active = state_.heatmaps.find(state_.active_heatmap);
@@ -348,6 +356,19 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
       websocket::stream_base::decorator([](websocket::response_type& res) {
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
+
+  // Build search indices in the background; tiles render without shapes
+  // until ready, then a "refresh" push notification triggers a redraw.
+  init_thread_ = std::thread([self = shared_from_this()]() {
+    self->generator_->eagerInit();
+    // Send server-push refresh notification (id=0)
+    WebSocketResponse resp;
+    resp.id = 0;
+    resp.type = 0;  // JSON
+    const std::string json = R"({"type":"refresh"})";
+    resp.payload.assign(json.begin(), json.end());
+    self->queue_response(resp);
+  });
 
   websocket_.async_accept(req,
                           [self = shared_from_this()](beast::error_code ec) {

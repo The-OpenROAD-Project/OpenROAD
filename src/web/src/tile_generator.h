@@ -132,6 +132,9 @@ class TileGenerator
   TileGenerator(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
   ~TileGenerator();
 
+  void eagerInit();
+  bool shapesReady() const;
+
   bool hasSta() const { return sta_ != nullptr; }
   sta::dbSta* getSta() const { return sta_; }
 

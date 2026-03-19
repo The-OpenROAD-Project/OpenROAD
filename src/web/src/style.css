@@ -79,6 +79,33 @@ html, body {
     display: none;
 }
 
+/* Loading overlay */
+#loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#loading-overlay .loading-overlay-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ccc;
+    font: 16px monospace;
+}
+#loading-overlay .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #555;
+    border-top-color: #ccc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Stub panel placeholder */
 .stub-panel {
     display: flex;

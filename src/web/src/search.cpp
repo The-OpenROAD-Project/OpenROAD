@@ -4,7 +4,10 @@
 #include "search.h"
 
 #include <atomic>
+#include <chrono>
+#include <latch>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
@@ -12,8 +15,13 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace web {
+
+Search::Search(utl::Logger* logger) : logger_(logger)
+{
+}
 
 Search::~Search()
 {
@@ -232,6 +240,32 @@ void Search::clearRows()
   announceModified(top_block_data_.rows_init);
 }
 
+void Search::eagerInit(odb::dbBlock* block)
+{
+  const auto t0 = std::chrono::steady_clock::now();
+
+  std::latch done(6);
+  auto run = [&](auto fn) {
+    boost::asio::post(pool_, [&done, fn] {
+      fn();
+      done.count_down();
+    });
+  };
+  run([&] { updateShapes(block); });
+  run([&] { updateInsts(block); });
+  run([&] { updateFills(block); });
+  run([&] { updateBlockages(block); });
+  run([&] { updateObstructions(block); });
+  run([&] { updateRows(block); });
+  done.wait();
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  debugPrint(
+      logger_, utl::WEB, "timing", 1, "Search init took {}ms (parallel)", ms);
+}
+
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
   return block->getChip() == top_chip_ ? top_block_data_
@@ -246,28 +280,19 @@ void Search::updateShapes(odb::dbBlock* block)
     return;  // already done by another thread
   }
 
+  const auto t0 = std::chrono::steady_clock::now();
+
   data.box_shapes.clear();
   data.snet_via_shapes.clear();
   data.snet_shapes.clear();
 
+  // Single pass over all nets to collect both special and routing shapes.
   LayerMap<std::vector<SNetValue<odb::dbNet*>>> snet_shapes;
   LayerMap<std::vector<SNetDBoxValue<odb::dbNet*>>> snet_net_via_shapes;
+  LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>> net_shapes;
+
   for (odb::dbNet* net : block->getNets()) {
     addSNet(net, snet_shapes, snet_net_via_shapes);
-  }
-  for (const auto& [layer, layer_shapes] : snet_shapes) {
-    data.snet_shapes[layer] = RtreeSNetShapes<odb::dbNet*>(layer_shapes.begin(),
-                                                           layer_shapes.end());
-  }
-  snet_shapes.clear();
-  for (const auto& [layer, layer_shapes] : snet_net_via_shapes) {
-    data.snet_via_shapes[layer] = RtreeSNetDBoxShapes<odb::dbNet*>(
-        layer_shapes.begin(), layer_shapes.end());
-  }
-  snet_net_via_shapes.clear();
-
-  LayerMap<std::vector<RouteBoxValue<odb::dbNet*>>> net_shapes;
-  for (odb::dbNet* net : block->getNets()) {
     addNet(net, net_shapes);
   }
 
@@ -287,12 +312,76 @@ void Search::updateShapes(odb::dbBlock* block)
       }
     }
   }
-  for (const auto& [layer, layer_shapes] : net_shapes) {
-    data.box_shapes[layer] = RtreeRoutingShapes<odb::dbNet*>(
-        layer_shapes.begin(), layer_shapes.end());
+
+  const auto t_collect = std::chrono::steady_clock::now();
+  debugPrint(
+      logger_,
+      utl::WEB,
+      "timing",
+      1,
+      "updateShapes collect took {}ms",
+      std::chrono::duration_cast<std::chrono::milliseconds>(t_collect - t0)
+          .count());
+
+  // Pre-populate map keys so pool tasks only write to existing entries.
+  for (const auto& [layer, _] : snet_shapes) {
+    data.snet_shapes[layer];
+  }
+  for (const auto& [layer, _] : snet_net_via_shapes) {
+    data.snet_via_shapes[layer];
+  }
+  for (const auto& [layer, _] : net_shapes) {
+    data.box_shapes[layer];
   }
 
+  // Build R-trees in parallel — one pool task per layer per map.
+  const auto num_tasks
+      = snet_shapes.size() + snet_net_via_shapes.size() + net_shapes.size();
+  std::latch rtree_done(num_tasks);
+
+  for (auto& [layer, layer_shapes] : snet_shapes) {
+    boost::asio::post(pool_, [&data, layer, &layer_shapes, &rtree_done] {
+      data.snet_shapes[layer] = RtreeSNetShapes<odb::dbNet*>(
+          layer_shapes.begin(), layer_shapes.end());
+      rtree_done.count_down();
+    });
+  }
+  for (auto& [layer, layer_shapes] : snet_net_via_shapes) {
+    boost::asio::post(pool_, [&data, layer, &layer_shapes, &rtree_done] {
+      data.snet_via_shapes[layer] = RtreeSNetDBoxShapes<odb::dbNet*>(
+          layer_shapes.begin(), layer_shapes.end());
+      rtree_done.count_down();
+    });
+  }
+  for (auto& [layer, layer_shapes] : net_shapes) {
+    boost::asio::post(pool_, [&data, layer, &layer_shapes, &rtree_done] {
+      data.box_shapes[layer] = RtreeRoutingShapes<odb::dbNet*>(
+          layer_shapes.begin(), layer_shapes.end());
+      rtree_done.count_down();
+    });
+  }
+  rtree_done.wait();
+
+  const auto t_rtree = std::chrono::steady_clock::now();
+
   data.shapes_init = true;
+
+  const auto rtree_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            t_rtree - t_collect)
+                            .count();
+  debugPrint(logger_,
+             utl::WEB,
+             "timing",
+             1,
+             "updateShapes rtree took {}ms ({} tasks)",
+             rtree_ms,
+             num_tasks);
+
+  const auto total_ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t_rtree - t0)
+            .count();
+  debugPrint(
+      logger_, utl::WEB, "timing", 1, "updateShapes took {}ms", total_ms);
 }
 
 void Search::updateFills(odb::dbBlock* block)
@@ -303,17 +392,36 @@ void Search::updateFills(odb::dbBlock* block)
     return;  // already done by another thread
   }
 
+  const auto t0 = std::chrono::steady_clock::now();
+
   data.fills.clear();
 
   LayerMap<std::vector<odb::dbFill*>> fills;
   for (odb::dbFill* fill : block->getFills()) {
     fills[fill->getTechLayer()].push_back(fill);
   }
-  for (const auto& [layer, layer_fill] : fills) {
-    data.fills[layer] = RtreeFill(layer_fill.begin(), layer_fill.end());
+
+  // Pre-populate map keys, then build R-trees in parallel.
+  for (const auto& [layer, _] : fills) {
+    data.fills[layer];
   }
+  std::latch done(fills.size());
+  for (auto& [layer, layer_fill] : fills) {
+    boost::asio::post(pool_, [&data, layer, &layer_fill, &done] {
+      data.fills[layer] = RtreeFill(layer_fill.begin(), layer_fill.end());
+      done.count_down();
+    });
+  }
+  done.wait();
 
   data.fills_init = true;
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  if (ms > 10) {
+    logger_->info(utl::WEB, 12, "Search::updateFills took {}ms", ms);
+  }
 }
 
 void Search::updateInsts(odb::dbBlock* block)
@@ -323,6 +431,8 @@ void Search::updateInsts(odb::dbBlock* block)
   if (data.insts_init) {
     return;  // already done by another thread
   }
+
+  const auto t0 = std::chrono::steady_clock::now();
 
   data.insts.clear();
 
@@ -335,6 +445,11 @@ void Search::updateInsts(odb::dbBlock* block)
   data.insts = RtreeDBox<odb::dbInst*>(insts.begin(), insts.end());
 
   data.insts_init = true;
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  logger_->info(utl::WEB, 13, "Search::updateInsts took {}ms", ms);
 }
 
 void Search::updateBlockages(odb::dbBlock* block)
@@ -344,6 +459,8 @@ void Search::updateBlockages(odb::dbBlock* block)
   if (data.blockages_init) {
     return;  // already done by another thread
   }
+
+  const auto t0 = std::chrono::steady_clock::now();
 
   data.blockages.clear();
 
@@ -358,6 +475,13 @@ void Search::updateBlockages(odb::dbBlock* block)
       = RtreeDBox<odb::dbBlockage*>(blockages.begin(), blockages.end());
 
   data.blockages_init = true;
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  if (ms > 10) {
+    logger_->info(utl::WEB, 14, "Search::updateBlockages took {}ms", ms);
+  }
 }
 
 void Search::updateObstructions(odb::dbBlock* block)
@@ -367,6 +491,8 @@ void Search::updateObstructions(odb::dbBlock* block)
   if (data.obstructions_init) {
     return;  // already done by another thread
   }
+
+  const auto t0 = std::chrono::steady_clock::now();
 
   data.obstructions.clear();
 
@@ -378,12 +504,28 @@ void Search::updateObstructions(odb::dbBlock* block)
     odb::dbBox* bbox = obs->getBBox();
     obstructions[bbox->getTechLayer()].push_back(obs);
   }
-  for (const auto& [layer, layer_obs] : obstructions) {
-    data.obstructions[layer]
-        = RtreeDBox<odb::dbObstruction*>(layer_obs.begin(), layer_obs.end());
+  // Pre-populate map keys, then build R-trees in parallel.
+  for (const auto& [layer, _] : obstructions) {
+    data.obstructions[layer];
   }
+  std::latch done(obstructions.size());
+  for (auto& [layer, layer_obs] : obstructions) {
+    boost::asio::post(pool_, [&data, layer, &layer_obs, &done] {
+      data.obstructions[layer]
+          = RtreeDBox<odb::dbObstruction*>(layer_obs.begin(), layer_obs.end());
+      done.count_down();
+    });
+  }
+  done.wait();
 
   data.obstructions_init = true;
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  if (ms > 10) {
+    logger_->info(utl::WEB, 15, "Search::updateObstructions took {}ms", ms);
+  }
 }
 
 void Search::updateRows(odb::dbBlock* block)
@@ -394,6 +536,8 @@ void Search::updateRows(odb::dbBlock* block)
     return;  // already done by another thread
   }
 
+  const auto t0 = std::chrono::steady_clock::now();
+
   data.rows.clear();
 
   std::vector<RectValue<odb::dbRow*>> rows;
@@ -403,6 +547,13 @@ void Search::updateRows(odb::dbBlock* block)
   data.rows = RtreeRect<odb::dbRow*>(rows.begin(), rows.end());
 
   data.rows_init = true;
+
+  const auto t1 = std::chrono::steady_clock::now();
+  const auto ms
+      = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+  if (ms > 10) {
+    logger_->info(utl::WEB, 16, "Search::updateRows took {}ms", ms);
+  }
 }
 
 void Search::addVia(

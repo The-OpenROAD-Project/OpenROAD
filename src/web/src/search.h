@@ -4,11 +4,19 @@
 #pragma once
 
 #include <atomic>
+#include <latch>
 #include <map>
 #include <mutex>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#include "boost/asio/post.hpp"
+#include "boost/asio/thread_pool.hpp"
+
+namespace utl {
+class Logger;
+}
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"
@@ -128,7 +136,14 @@ class Search : public odb::dbBlockCallBackObj
   using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
   using RowRange = Range<RtreeRect<odb::dbRow*>>;
 
+  explicit Search(utl::Logger* logger);
   ~Search() override;
+
+  // Pre-build all R-tree indices in parallel.
+  void eagerInit(odb::dbBlock* block);
+
+  // Returns true once shape R-trees are built.
+  bool shapesReady() const { return top_block_data_.shapes_init.load(); }
 
   // Build the structure for the given chip.
   void setTopChip(odb::dbChip* chip);
@@ -273,7 +288,9 @@ class Search : public odb::dbBlockCallBackObj
   void announceModified(std::atomic_bool& flag);
   BlockData& getData(odb::dbBlock* block);
 
+  utl::Logger* logger_;
   odb::dbChip* top_chip_{nullptr};
+  boost::asio::thread_pool pool_{std::thread::hardware_concurrency()};
 
   struct BlockData
   {
