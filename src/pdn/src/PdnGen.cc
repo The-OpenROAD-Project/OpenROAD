@@ -227,11 +227,9 @@ void PdnGen::trimShapes()
         if (!shape->getRect().contains(new_rect)) {
           // shape sticks out of the original rect, need to move it so that it
           // is contained
-          const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
-          const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
-          const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
-          const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
-          if (deltax0 != 0 && deltax1 != 0) {
+          if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
+            const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
             // adjust x
             if (std::abs(deltax0) < std::abs(deltax1)) {
               new_rect.moveDelta(deltax0, 0);
@@ -239,6 +237,8 @@ void PdnGen::trimShapes()
               new_rect.moveDelta(deltax1, 0);
             }
           } else {
+            const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
+            const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
             // adjust y
             if (std::abs(deltay0) < std::abs(deltay1)) {
               new_rect.moveDelta(0, deltay0);
