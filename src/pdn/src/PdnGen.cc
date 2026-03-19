@@ -197,6 +197,8 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
 
+  std::map<odb::dbTechLayer*, std::unique_ptr<TechLayer>> tech_layers;
+
   for (auto* grid : grids) {
     if (grid->type() == Grid::Existing) {
       // fixed shapes, so nothing to do
@@ -215,7 +217,35 @@ void PdnGen::trimShapes()
             = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
-        const odb::Rect new_rect = shape->getMinimumRect();
+        odb::Rect new_rect = shape->getMinimumRect();
+        auto& layer = tech_layers[shape->getLayer()];
+        if (layer == nullptr) {
+          layer = std::make_unique<TechLayer>(shape->getLayer());
+        }
+        new_rect = layer->adjustToMinArea(new_rect, shape->getLayerDirection());
+        if (!shape->getRect().contains(new_rect)) {
+          // shape sticks out of the original rect, need to move it so that it
+          // is contained
+          const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
+          const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
+          const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
+          const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
+          if (deltax0 != 0 && deltax1 != 0) {
+            // adjust x
+            if (std::abs(deltax0) < std::abs(deltax1)) {
+              new_rect.moveDelta(deltax0, 0);
+            } else {
+              new_rect.moveDelta(deltax1, 0);
+            }
+          } else {
+            // adjust y
+            if (std::abs(deltay0) < std::abs(deltay1)) {
+              new_rect.moveDelta(0, deltay0);
+            } else {
+              new_rect.moveDelta(0, deltay1);
+            }
+          }
+        }
         if (new_rect == shape->getRect()) {  // no change to shape
           continue;
         }
