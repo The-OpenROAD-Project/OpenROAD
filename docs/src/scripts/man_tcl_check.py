@@ -45,7 +45,9 @@ def count_commands(module_dir):
             readme_count = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
-    if module == "pad":
-        readme_count -= 1
+    PAD_MODULE_NAME = "pad"
+    PAD_HIDDEN_CMD_COUNT_ADJUSTMENT = 1
+    if module == PAD_MODULE_NAME:
+        readme_count -= PAD_HIDDEN_CMD_COUNT_ADJUSTMENT
 
     return help_count, proc_count, readme_count
