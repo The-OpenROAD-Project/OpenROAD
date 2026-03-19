@@ -26,8 +26,8 @@
 //src/cts:ui:
 - //src/cts:cts
 - //src/cts:private_hdrs
-- //src/utl:utl
 - //src/rsz:rsz
+- //src/utl:utl
 - //src/dbSta:dbSta
 - //src/est:est
 - //src/gui:gui
@@ -72,8 +72,8 @@
 - //src/dbSta:IpChecker
 - //src/dbSta:dbNetwork
 - //src/dbSta:dbSta
-- //src/utl:utl
 - //src/sta:opensta_lib
+- //src/utl:utl
 - //src/odb:odb
 //src/dft/src/architect:architect:
 - //src/dft/src/cells:cells
@@ -166,6 +166,9 @@
 //src/dst:dst:
 - //src/odb:odb
 - //src/utl:utl
+//src/dst:ui\n//src/odb:ui\n//src/upf:ui:
+- //src/odb:odb
+- //src/utl:utl
 //src/est:est:
 - //src/dbSta:SpefWriter
 - //src/dbSta:dbNetwork
@@ -185,8 +188,8 @@
 - //src/dbSta:dbSta
 - //src/est:est
 - //src/est:private_hdrs
-- //src/stt:stt
 - //src/utl:utl
+- //src/stt:stt
 - //src/grt:grt
 - //src/gui:gui
 - //src/odb:odb
@@ -196,6 +199,10 @@
 - //src/utl:utl
 //src/exa:ui:
 - //src/exa:exa
+- //src/gui:gui
+- //src/odb:odb
+- //src/utl:utl
+//src/fin:fin\n//src/pad:pad:
 - //src/gui:gui
 - //src/odb:odb
 - //src/utl:utl
@@ -253,8 +260,8 @@
 - //src/grt:fastroute
 - //src/grt:groute
 - //src/grt:grt
-- //src/utl:utl
 - //src/stt:stt
+- //src/utl:utl
 - //src/gui:gui
 - //src/odb:odb
 - //src/sta:opensta_lib
@@ -263,10 +270,10 @@
 //src/gui:gui_qt:
 - //src/dbSta:dbNetwork
 - //src/dbSta:dbSta
-- //src/odb:odb
-- //src/gui:qt_resources
 - //src/sta:opensta_lib
+- //src/gui:qt_resources
 - //src/utl:utl
+- //src/odb:odb
 //src/gui:gui_qt_headless:
 - //src/dbSta:dbNetwork
 - //src/dbSta:dbSta
@@ -321,13 +328,6 @@
 - //src/odb/src/lef:lef
 - //src/odb/src/lef:lefzlib
 - //src/sta:opensta_lib
-- //src/utl:utl
-//src/odb:ui\n//src/upf:ui\n//src/dst:ui:
-- //src/odb:odb
-- //src/utl:utl
-//src/pad:pad\n//src/fin:fin:
-- //src/gui:gui
-- //src/odb:odb
 - //src/utl:utl
 //src/par:par:
 - //src/dbSta:dbNetwork
@@ -453,7 +453,7 @@
 - //src/stt:stt
 - //src/tst:tst
 - //src/utl:utl
-//src/tst:nangate45_fixture\n//src/tst:sky130_fixture:
+//src/tst:sky130_fixture\n//src/tst:nangate45_fixture:
 - //src/tst:tst
 //src/tst:tst:
 - //src/dbSta:dbNetwork

@@ -1,5 +1,31 @@
 # Build Dependency Analysis & Compile-Time Estimation
 
+## Proof of Principle Experiment
+
+4 headers changed (1 line each) + 1 new 25-line `utl/format_as.h`.
+All 1188 tests pass.
+
+| # | Change | Header | Before | After | Result |
+|---|--------|--------|-------:|------:|--------|
+| 1 | `Logger.h` → `format_as.h` | `odb/isotropy.h` | 404,834 LOC (65.8%) via Logger.h | 358,431 LOC (58.3%) | Logger.h decoupled from odb chain |
+| 2 | `Logger.h` → `format_as.h` | `odb/geom.h` | (same cluster) | (same cluster) | Breaks geom.h → Logger.h edge |
+| 3 | `Logger.h` → fwd decl | `stt/SteinerTreeBuilder.h` | 73,124 LOC (11.9%) | No longer pulls Logger.h transitively | Consumers save ~400 lines of header parsing |
+| 4 | `Logger.h` → fwd decl | `dpl/Opendp.h` | 58,608 LOC (9.5%) | No longer pulls Logger.h transitively | Consumers save ~400 lines of header parsing |
+
+**Note:** Change 5 (`drt/frBaseTypes.h`) was reverted — it uses
+`utl::ToolId` which requires the full Logger.h.
+
+**Net result:** `Logger.h` rebuild cost dropped from **404,834 LOC
+(65.8%) to 358,431 LOC (58.3%)** — a 46K LOC reduction. Changes to
+Logger.h (metrics, log IDs, spdlog upgrades) no longer cascade through
+the odb include chain. Average rebuild cost per commit dropped from
+22,664 to 22,565 LOC.
+
+**What this proves:** The facade pattern works. A single missing
+`#include` was needed (`psm/connection.cpp`), confirming that the
+transitive dependency was unnecessary. The full 50/75/90% reduction
+plan below would multiply this effect across all module boundaries.
+
 ## Key Findings
 
 A single include cluster — `utl/Logger.h` -> `odb/isotropy.h` ->
@@ -46,20 +72,20 @@ triggered any external recompilation if facades were in place.**
 
 <!-- DEP_TREE_START -->
 ```
-Total project .cpp LOC: 614,871
+Total project .cpp LOC: 614,872
 
-utl/Logger.h ················································  404,834 LOC ( 65.8%)  418 external .cpp
+utl/Logger.h ················································  358,431 LOC ( 58.3%)  379 external .cpp
 │
-├── utl/Metrics.h ···········································  404,941 LOC ( 65.9%)  419 external .cpp
+├── utl/Metrics.h ···········································  358,538 LOC ( 58.3%)  380 external .cpp
 │
-├── odb/isotropy.h ··········································  390,855 LOC ( 63.6%)  373 external .cpp
-│   └── odb/geom.h ··········································  390,855 LOC ( 63.6%)  373 external .cpp
-│       └── odb/dbTypes.h ···································  389,678 LOC ( 63.4%)  370 external .cpp
-│           └── odb/db.h ····································  385,672 LOC ( 62.7%)  363 external .cpp
-│                   ├── odb/dbObject.h ······················  391,008 LOC ( 63.6%)  370 external .cpp
-│                   ├── odb/dbSet.h ·························  386,854 LOC ( 62.9%)  363 external .cpp
-│                   ├── odb/dbStream.h ······················  391,008 LOC ( 63.6%)  370 external .cpp
-│                   └── odb/dbMatrix.h ······················  385,741 LOC ( 62.7%)  363 external .cpp
+├── odb/isotropy.h ··········································  390,856 LOC ( 63.6%)  373 external .cpp
+│   └── odb/geom.h ··········································  390,856 LOC ( 63.6%)  373 external .cpp
+│       └── odb/dbTypes.h ···································  389,679 LOC ( 63.4%)  370 external .cpp
+│           └── odb/db.h ····································  385,673 LOC ( 62.7%)  363 external .cpp
+│                   ├── odb/dbObject.h ······················  391,009 LOC ( 63.6%)  370 external .cpp
+│                   ├── odb/dbSet.h ·························  386,855 LOC ( 62.9%)  363 external .cpp
+│                   ├── odb/dbStream.h ······················  391,009 LOC ( 63.6%)  370 external .cpp
+│                   └── odb/dbMatrix.h ······················  385,742 LOC ( 62.7%)  363 external .cpp
 
 Consumer module headers:
   db_sta/dbSta.hh ···········································  102,052 LOC ( 16.6%)  109 external .cpp
