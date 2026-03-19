@@ -16,12 +16,18 @@ design.evalTclString("estimate_parasitics -placement")
 
 design.evalTclString("report_worst_slack")
 
+# rsz_aux.set_dont_use() requires resolved sta::LibertyCell* objects.
+# Liberty cell lookup is not yet available from the Python STA API;
+# use evalTclString until sta is wrapped (see rmp_aux.py for the same pattern).
 design.evalTclString("set_dont_use {AOI211_X1 OAI211_X1}")
 
 rsz_aux.buffer_ports(design)
 
 rsz_aux.repair_design(design)
 
+# rsz_aux.repair_tie_fanout() requires a resolved sta::LibertyPort* object.
+# Liberty port lookup is not yet available from the Python STA API;
+# use evalTclString until sta is wrapped (see rmp_aux.py for the same pattern).
 design.evalTclString("repair_tie_fanout LOGIC0_X1/Z")
 design.evalTclString("repair_tie_fanout LOGIC1_X1/Z")
 

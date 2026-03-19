@@ -29,6 +29,7 @@
 %ignore rsz::Resizer::findFloatingPins;
 %ignore rsz::Resizer::findOverdrivenNets;
 
+%ignore rsz::Resizer::parseMove;
 %ignore rsz::Resizer::parseMoveSequence;
 
 %ignore rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool,
@@ -43,6 +44,8 @@
 
 %ignore rsz::Resizer::lib_data_;
 
+// removeBuffers(InstanceSeq) requires sta::InstanceSeq which has no Python
+// typemap; %extend below exposes the "remove all" case via an empty sequence.
 %ignore rsz::Resizer::removeBuffers;
 
 %apply float& OUTPUT { sta::Delay& delay, sta::Slew& slew };

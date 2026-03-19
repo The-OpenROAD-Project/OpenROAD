@@ -5,6 +5,10 @@ import utl
 
 
 def set_dont_use(design, lib_cells):
+    # lib_cells must be a list of sta::LibertyCell* objects obtained from the
+    # STA network (e.g. via find_liberty_cell()).  String cell names with glob
+    # patterns are not supported here; use evalTclString("set_dont_use {...}")
+    # until the STA Python API exposes liberty-cell lookup (see rmp_aux.py).
     resizer = design.getResizer()
     for cell in lib_cells:
         resizer.setDontUse(cell, True)
@@ -144,6 +148,14 @@ def repair_timing(
     match_cell_footprint=False,
     verbose=False,
 ):
+    if not setup and not hold and recover_power is None:
+        utl.warn(
+            utl.RSZ,
+            1033,
+            "repair_timing: neither setup nor hold selected; nothing to repair.",
+        )
+        return
+
     resizer = design.getResizer()
     _set_max_utilization(resizer, max_utilization)
 
