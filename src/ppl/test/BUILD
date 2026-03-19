@@ -132,6 +132,7 @@ COMPULSORY_TESTS = [
 
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
+    "pin_die_edge_access1",
     "ppl_man_tcl_check",
     "ppl_readme_msgs_check",
 ]
@@ -164,6 +165,7 @@ filegroup(
             "multi_track_pattern1": ["multi_track_pattern2.lef"],
             "multi_track_pattern2": ["multi_track_pattern1.lef"],
             "pin_length_error": ["on_grid.def"],
+            "pin_die_edge_access1": glob(["asap7/**"]),
             "write_pin_placement6": ["write_pin_placement5.def"],
         }.get(
             test_name,
