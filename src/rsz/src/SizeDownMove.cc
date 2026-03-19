@@ -330,7 +330,6 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
       sta::LibertyPort* output_port
           = swappable->findLibertyPort(output_port_names[i]);
 
-      // FIXME: Only applies to current corner
       if (checkMaxCapViolation(output_pins[i], output_port, output_caps[i])) {
         skip_cell = true;
         break;
@@ -339,8 +338,7 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
       if (checkMaxSlewViolation(output_pins[i],
                                 output_port,
                                 output_slew_factors[i],
-                                output_caps[i],
-                                scene)) {
+                                output_caps[i])) {
         skip_cell = true;
         break;
       }
