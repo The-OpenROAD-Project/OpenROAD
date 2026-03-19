@@ -39,7 +39,7 @@
 #include <iostream>
 #include <map>
 
-#include <fmt/format.h>
+#include <spdlog/fmt/fmt.h>
 
 namespace mockturtle
 {

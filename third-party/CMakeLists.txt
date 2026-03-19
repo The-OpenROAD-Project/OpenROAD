@@ -60,12 +60,12 @@ endif()
 add_library(mockturtle INTERFACE)
 
 find_package(absl REQUIRED)
-find_package(fmt REQUIRED)
+find_package(spdlog REQUIRED)
 
 target_link_libraries(mockturtle
   INTERFACE
     absl::random_random
-    fmt
+    spdlog::spdlog
 )
 
 target_include_directories(mockturtle
