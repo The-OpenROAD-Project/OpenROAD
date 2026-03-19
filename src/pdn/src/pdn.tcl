@@ -670,6 +670,19 @@ proc add_sroute_connect { args } {
       -metalspaces -ongrid -insts} \
     flags {}
 
+  if { ![info exists keys(-layers)] } {
+    utl::error PDN 1193 "The -layers argument is required."
+  }
+  if { [llength $keys(-layers)] != 2 } {
+    utl::error PDN 1195 "The -layers argument must be a list of 2 layers."
+  }
+  if { ![info exists keys(-cut_pitch)] } {
+    utl::error PDN 1194 "The -cut_pitch argument is required."
+  }
+  if { [llength $keys(-cut_pitch)] != 2 } {
+    utl::error PDN 1196 "The -cut_pitch argument must be a list of 2 pitch values."
+  }
+
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
   set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
 
@@ -678,10 +691,10 @@ proc add_sroute_connect { args } {
   set cut_pitch_x [lindex $keys(-cut_pitch) 0]
   set cut_pitch_y [lindex $keys(-cut_pitch) 1]
 
-  set net ""
-  if { [info exists keys(-net)] } {
-    set net $keys(-net)
+  if { ![info exists keys(-net)] } {
+    utl::error PDN 1197 "The -net argument is required."
   }
+  set net $keys(-net) ;# always set after validation
 
   set outerNet ""
   if { [info exists keys(-outerNet)] } {

@@ -19,6 +19,7 @@ template class dbTable<_dbTechLayerCutEnclosureRule>;
 bool _dbTechLayerCutEnclosureRule::operator==(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.type != rhs.flags_.type) {
     return false;
   }
@@ -147,6 +148,7 @@ bool _dbTechLayerCutEnclosureRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutEnclosureRule::operator<(

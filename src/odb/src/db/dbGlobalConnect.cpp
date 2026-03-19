@@ -30,6 +30,7 @@ template class dbTable<_dbGlobalConnect>;
 
 bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (region_ != rhs.region_) {
     return false;
   }
@@ -44,6 +45,7 @@ bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
