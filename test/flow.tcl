@@ -138,7 +138,7 @@ if { $repair_timing_use_grt_parasitics } {
   estimate_parasitics -placement
 }
 
-repair_timing -max_buffer_percent 50 -max_utilization 80
+repair_timing -skip_gate_cloning -max_buffer_percent 50 -max_utilization 80
 
 # Post timing repair.
 report_worst_slack -min -digits 3
