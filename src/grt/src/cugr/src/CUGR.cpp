@@ -656,6 +656,20 @@ void CUGR::updateNet(odb::dbNet* db_net)
   updated_nets_.insert(db_net);
 }
 
+void CUGR::removeRouteUsage(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    GRNet* gr_net = it->second;
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    }
+  } else {
+    logger_->warn(
+        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+  }
+}
+
 void CUGR::startIncremental()
 {
   incremental_mode_ = true;
@@ -664,11 +678,25 @@ void CUGR::startIncremental()
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
+  // 1. Rip up all dirty nets to free up congestion
   for (const int idx : net_indices) {
     if (gr_nets_[idx]->getRoutingTree()) {
       grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
     }
   }
+
+  // 2. Query STA for fresh slacks if timing is available
+  if (sta_ != nullptr) {
+    for (const int idx : net_indices) {
+      odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
+      float slack = getNetSlack(db_net);
+      gr_nets_[idx]->setSlack(slack);
+    }
+    // 3. Sort: Most negative slack (critical) nets go FIRST
+    sortNetIndices(net_indices);
+  }
+
+  // 4. Run the routing stages in prioritized order
   patternRoute(net_indices);
   patternRouteWithDetours(net_indices);
   mazeRoute(net_indices);
