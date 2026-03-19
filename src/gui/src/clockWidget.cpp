@@ -1338,12 +1338,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
               0.0, sta::RiseFall::rise(), sta::MinMax::max());
           const float fall = lib_port->clkTreeDelay(
               0.0, sta::RiseFall::fall(), sta::MinMax::max());
-          ins_delay
-              = (rise != 0 && fall != 0)
-                    ? (rise + fall) / 2.0
-                    : (rise != 0
-                           ? rise
-                           : fall);  // NOLINT(readability-avoid-nested-conditional-operator)
+          ins_delay = (rise + fall);
+          if (rise != 0 && fall != 0) {
+            ins_delay /= 2.0;
+          }
         }
       }
 
