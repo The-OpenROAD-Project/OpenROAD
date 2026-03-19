@@ -489,6 +489,7 @@ void CUGR::printStatistics() const
 
   // wire length and via count
   uint64_t wire_length = 0;
+  uint64_t total_hpwl = 0; // Added for detour metric
   int via_count = 0;
   std::vector<std::vector<std::vector<int>>> wire_usage;
   wire_usage.assign(grid_graph_->getNumLayers(),
@@ -496,6 +497,9 @@ void CUGR::printStatistics() const
                         grid_graph_->getSize(0),
                         std::vector<int>(grid_graph_->getSize(1), 0)));
   for (const auto& net : gr_nets_) {
+    // Calculate Ideal Length (HPWL) for the net
+    total_hpwl += net->getBoundingBox().hp();
+
     GRTreeNode::preorder(
         net->getRoutingTree(), [&](const std::shared_ptr<GRTreeNode>& node) {
           for (const auto& child : node->getChildren()) {
@@ -545,8 +549,13 @@ void CUGR::printStatistics() const
     }
   }
 
+  double detour_ratio = total_hpwl > 0 ? (double) wire_length / total_hpwl : 1.0;
+
   logger_->report("Wire length:           {}",
                   wire_length / grid_graph_->getM2Pitch());
+  logger_->report("Total HPWL:            {}",
+                  total_hpwl / grid_graph_->getM2Pitch());
+  logger_->report("Average Detour Ratio:  {:.2f}", detour_ratio);
   logger_->report("Total via count:       {}", via_count);
   logger_->report("Total wire overflow:   {}", (int) overflow);
   logger_->report("Min resource:          {}", min_resource);
@@ -656,6 +665,20 @@ void CUGR::updateNet(odb::dbNet* db_net)
   updated_nets_.insert(db_net);
 }
 
+void CUGR::removeRouteUsage(odb::dbNet* db_net)
+{
+  auto it = db_net_map_.find(db_net);
+  if (it != db_net_map_.end()) {
+    GRNet* gr_net = it->second;
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    }
+  } else {
+    logger_->warn(
+        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+  }
+}
+
 void CUGR::startIncremental()
 {
   incremental_mode_ = true;
@@ -664,11 +687,25 @@ void CUGR::startIncremental()
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
+  // 1. Rip up all dirty nets to free up congestion
   for (const int idx : net_indices) {
     if (gr_nets_[idx]->getRoutingTree()) {
       grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
     }
   }
+
+  // 2. Query STA for fresh slacks if timing is available
+  if (sta_ != nullptr) {
+    for (const int idx : net_indices) {
+      odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
+      float slack = getNetSlack(db_net);
+      gr_nets_[idx]->setSlack(slack);
+    }
+    // 3. Sort: Most negative slack (critical) nets go FIRST
+    sortNetIndices(net_indices);
+  }
+
+  // 4. Run the routing stages in prioritized order
   patternRoute(net_indices);
   patternRouteWithDetours(net_indices);
   mazeRoute(net_indices);
@@ -710,3 +747,4 @@ void CUGR::endIncremental()
 }
 
 }  // namespace grt
+
