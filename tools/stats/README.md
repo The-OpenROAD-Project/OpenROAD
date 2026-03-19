@@ -21,10 +21,17 @@ Logger.h (metrics, log IDs, spdlog upgrades) no longer cascade through
 the odb include chain. Average rebuild cost per commit dropped from
 22,664 to 22,565 LOC.
 
-**What this proves:** The facade pattern works. A single missing
-`#include` was needed (`psm/connection.cpp`), confirming that the
-transitive dependency was unnecessary. The full 50/75/90% reduction
-plan below would multiply this effect across all module boundaries.
+**What this proves:** The facade pattern works with minimal churn.
+4 one-line changes + 1 new 25-line header = 11.5% reduction in
+Logger.h's rebuild blast radius. Only 1 missing `#include` was found
+(`psm/connection.cpp`), confirming that the transitive dependency was
+almost entirely unnecessary.
+
+**Conclusion:** These 4 changes are safe to land as-is. They
+demonstrate that the technique scales: the full 50/75/90% reduction
+plan below applies the same pattern to `db.h` (create `db_fwd.h`),
+`dbSta.hh` (create `dbSta_fwd.hh`), and other high-impact headers.
+Each step is independently testable and reversible.
 
 ## Key Findings
 
