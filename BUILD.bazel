@@ -215,7 +215,7 @@ cc_library(
     includes = [
         "include",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
@@ -339,7 +339,7 @@ py_library(
     data = [":_openroadpy.so"],
     # This allows imports relative to the workspace root.
     imports = ["."],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//src/gpl:gpl_py",
         "//src/odb:odb_py",
