@@ -333,7 +333,7 @@ cc_binary(
 # This packages the SWIG-generated Python wrapper (odb.py) and the
 # compiled C++ extension (_odb.so) together.
 py_library(
-    name = "ord_py",
+    name = "openroad_py",
     srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
     # The data attribute makes the .so file available at runtime.
     data = [":_openroadpy.so"],
