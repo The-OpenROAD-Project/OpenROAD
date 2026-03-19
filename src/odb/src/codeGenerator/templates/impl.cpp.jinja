@@ -18,6 +18,7 @@ namespace odb {
     
   bool _{{klass.name}}::operator==(const _{{klass.name}}& rhs) const
   {
+    // NOLINTBEGIN(readability-simplify-boolean-expr)
     {% for eq in klass.equal_fields %}
     if ({{eq.left}} != {{eq.right}}) {
       return false;
@@ -27,6 +28,7 @@ namespace odb {
     //User Code Begin ==
     //User Code End ==
     return true;
+    // NOLINTEND(readability-simplify-boolean-expr)
   }
 
   bool _{{klass.name}}::operator<(const _{{klass.name}}& rhs) const

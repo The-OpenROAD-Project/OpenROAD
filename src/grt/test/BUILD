@@ -32,6 +32,7 @@ TESTS = [
     "gcd_cugr",
     "gcd_flute",
     "increase_capacity1",
+    "incremental_update_net",
     "infinite_cap",
     "inst_pin_out_of_die",
     "invalid_pin_placement",
@@ -122,13 +123,6 @@ filegroup(
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "critical_nets_percentage_cugr",
-    "cugr_adjustment1",
-    "cugr_adjustment2",
-    "cugr_adjustment3",
-    "gcd_cugr",
-    "pin_access1_cugr",
-    "pin_access2_cugr",
 ]
 
 [regression_test(
