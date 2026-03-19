@@ -2144,18 +2144,20 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
   dbChip* chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();
-    for (dbLib* lib : db_->getLibs()) {
-      makeLibrary(lib);
-    }
-
-    for (dbModule* module : block_->getModules()) {
-      // top_module is not a hierarchical module in this context.
-      if (module != block_->getTopModule()) {
-        registerHierModule(dbToSta(module));
+    if (block_) {
+      for (dbLib* lib : db_->getLibs()) {
+        makeLibrary(lib);
       }
-    }
 
-    readDbNetlistAfter();
+      for (dbModule* module : block_->getModules()) {
+        // top_module is not a hierarchical module in this context.
+        if (module != block_->getTopModule()) {
+          registerHierModule(dbToSta(module));
+        }
+      }
+
+      readDbNetlistAfter();
+    }
   }
 
   for (dbNetworkObserver* observer : observers_) {
