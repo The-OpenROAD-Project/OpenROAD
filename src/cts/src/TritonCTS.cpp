@@ -2203,7 +2203,9 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
       if (rise != 0 || fall != 0) {
         // use average of max rise and max fall
         // TODO: do we need to look at min insertion delays?
-        double delayPerSec = (rise + fall) / 2.0;
+        double delayPerSec = (rise != 0 && fall != 0)
+                                 ? (rise + fall) / 2.0
+                                 : (rise != 0 ? rise : fall);
         // convert delay to length because HTree uses lengths
         sta::Scene* corner = openSta_->cmdScene();
         double capPerMicron

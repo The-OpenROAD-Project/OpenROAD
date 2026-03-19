@@ -199,7 +199,9 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                     0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
                 if (rise != 0 || fall != 0) {
-                  insDelay = (rise + fall) / 2.0;
+                  insDelay = (rise != 0 && fall != 0)
+                                 ? (rise + fall) / 2.0
+                                 : (rise != 0 ? rise : fall);
                 }
               }
             }
@@ -341,7 +343,8 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                   0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
               if (rise != 0 || fall != 0) {
-                insDelay = (rise + fall) / 2.0;
+                insDelay = (rise != 0 && fall != 0) ? (rise + fall) / 2.0
+                                                    : (rise != 0 ? rise : fall);
               }
             }
           }

@@ -1336,13 +1336,10 @@ ClockNodeGraphicsViewItem* ClockTreeView::addLeafToScene(
         if (lib_port) {
           const float rise = lib_port->clkTreeDelay(
               0.0, sta::RiseFall::rise(), sta::MinMax::max());
-          // When the GUI builds its representation of the clock tree (via
-          // staGuiInterface::ClockTree::addPath), it explicitly filters the STA
-          // paths to only trace the rising edge of the clock because that's
-          // what it wants to visualize. So skip fall here
-          if (rise != 0) {
-            ins_delay = rise;
-          }
+          const float fall = lib_port->clkTreeDelay(
+              0.0, sta::RiseFall::fall(), sta::MinMax::max());
+          (rise != 0 && fall != 0) ? (rise + fall) / 2.0
+                                   : (rise != 0 ? rise : fall);
         }
       }
 
