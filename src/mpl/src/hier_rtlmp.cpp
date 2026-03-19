@@ -247,6 +247,7 @@ void HierRTLMP::run()
   correctAllMacrosOrientation();
 
   commitMacroPlacementToDb();
+
   writeMacroPlacement(macro_placement_file_);
 
   clear();
@@ -2352,13 +2353,20 @@ void HierRTLMP::commitMacroPlacementToDb()
 {
   Snapper snapper(logger_);
 
-  for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+  for (auto& [inst, macro] : tree_->maps.inst_to_hard) {
     if (!inst || inst->isFixed()) {
       continue;
     }
 
     snapper.setMacro(inst);
     snapper.snapMacro();
+
+    if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
+      macro->setRealLocation(inst->getLocation());
+      odb::Rect box = macro->getBBox();
+      odb::dbBlockage* blockage = odb::dbBlockage::create(block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+      blockage->setSoft();
+    }
 
     inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
