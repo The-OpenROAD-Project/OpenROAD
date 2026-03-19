@@ -9,8 +9,9 @@ class ManTclCheck(unittest.TestCase):
         test_dir = os.path.dirname(os.path.abspath(__file__))
         module_dir = os.path.dirname(test_dir)
         h, p, r = count_commands(module_dir)
-        self.assertEqual(h, p, f"help count ({h}) != proc count ({p})")
-        self.assertEqual(p, r, f"proc count ({p}) != readme count ({r})")
+        self.assertEqual(h, 3, f"help count ({h}) != expected (3)")
+        self.assertEqual(p, 3, f"proc count ({p}) != expected (3)")
+        self.assertEqual(r, 4, f"readme count ({r}) != expected (4)")
 
 
 if __name__ == "__main__":
