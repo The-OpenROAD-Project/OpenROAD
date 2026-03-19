@@ -37,10 +37,12 @@ def count_commands(module_dir):
             proc_count += len(extract_proc(content))
 
     readme_path = os.path.join(module_dir, "README.md")
-    with open(readme_path, encoding="utf-8") as f:
-        # for gui, filter out gui:: for separate processing
-        results = [x for x in extract_tcl_code(f.read()) if "gui::" not in x]
-        readme_count = len(results)
+    readme_count = 0
+    if os.path.exists(readme_path):
+        with open(readme_path, encoding="utf-8") as f:
+            # for gui, filter out gui:: for separate processing
+            results = [x for x in extract_tcl_code(f.read()) if "gui::" not in x]
+            readme_count = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
     if module == "pad":
