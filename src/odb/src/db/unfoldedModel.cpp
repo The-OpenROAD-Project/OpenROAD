@@ -217,31 +217,28 @@ void UnfoldedModel::unfoldConnections(
   for (auto* conn : chip->getChipConns()) {
     UnfoldedChip* top_chip
         = findUnfoldedChip(concatPath(parent_path, conn->getTopRegionPath()));
-    if (!top_chip) {
-      continue;
+    UnfoldedRegion* top_region(nullptr);
+    if (top_chip) {
+      top_region = top_chip->findUnfoldedRegion(conn->getTopRegion());
     }
     UnfoldedChip* bot_chip = findUnfoldedChip(
         concatPath(parent_path, conn->getBottomRegionPath()));
-    if (!bot_chip) {
-      continue;
+    UnfoldedRegion* bot_region(nullptr);
+    if (bot_chip) {
+      bot_region = bot_chip->findUnfoldedRegion(conn->getBottomRegion());
     }
-    UnfoldedRegion* top = top_chip->findUnfoldedRegion(conn->getTopRegion());
-    if (!top) {
-      continue;
+    if (top_region || bot_region) {
+      UnfoldedConnection uf_conn{.connection = conn,
+                                 .top_region = top_region,
+                                 .bottom_region = bot_region};
+      if (top_region && top_region->isInternalExt()) {
+        top_region->isUsed = true;
+      }
+      if (bot_region && bot_region->isInternalExt()) {
+        bot_region->isUsed = true;
+      }
+      unfolded_connections_.push_back(uf_conn);
     }
-    UnfoldedRegion* bot = bot_chip->findUnfoldedRegion(conn->getBottomRegion());
-    if (!bot) {
-      continue;
-    }
-    UnfoldedConnection uf_conn{
-        .connection = conn, .top_region = top, .bottom_region = bot};
-    if (top->isInternalExt()) {
-      top->isUsed = true;
-    }
-    if (bot->isInternalExt()) {
-      bot->isUsed = true;
-    }
-    unfolded_connections_.push_back(uf_conn);
   }
 }
 
