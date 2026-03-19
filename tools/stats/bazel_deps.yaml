@@ -1,0 +1,474 @@
+//src/ant:ant:
+- //src/odb:odb
+- //src/utl:utl
+//src/ant:ui:
+- //src/ant:ant
+- //src/odb:odb
+- //src/utl:utl
+//src/cgt:cgt:
+- //src/utl:utl
+- //src/cut:cut
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+//src/cts:cts:
+- //src/cts:private_hdrs
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/est:est
+- //src/odb:odb
+- //src/rsz:rsz
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/cts:private_hdrs:
+- //src/sta:opensta_lib
+//src/cts:ui:
+- //src/cts:cts
+- //src/cts:private_hdrs
+- //src/utl:utl
+- //src/rsz:rsz
+- //src/dbSta:dbSta
+- //src/est:est
+- //src/gui:gui
+- //src/odb:odb
+//src/cut:cut:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/rsz:rsz
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:IpChecker:
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:SpefWriter:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:dbNetwork:
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:dbReadVerilog:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:dbSdcNetwork:
+- //src/sta:opensta_lib
+//src/dbSta:dbSta:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSdcNetwork
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dbSta:ui:
+- //src/dbSta:IpChecker
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/utl:utl
+- //src/sta:opensta_lib
+- //src/odb:odb
+//src/dft/src/architect:architect:
+- //src/dft/src/cells:cells
+- //src/dft/src/clock_domain:clock_domain
+- //src/dft/src/config:config
+- //src/dft/src/utils:utils
+- //src/odb:odb
+- //src/utl:utl
+//src/dft/src/cells:cells:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dft/src/clock_domain:clock_domain
+- //src/dft/src/config:config
+- //src/dft/src/utils:utils
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dft/src/clock_domain:clock_domain:
+- //src/dft/src/config:config
+- //src/utl:utl
+//src/dft/src/config:config:
+- //src/dft/src/utils:utils
+- //src/utl:utl
+//src/dft/src/replace:replace:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dft/src/utils:utils
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dft/src/stitch:stitch:
+- //src/dft/src/architect:architect
+- //src/dft/src/cells:cells
+- //src/dft/src/config:config
+- //src/dft/src/utils:utils
+- //src/odb:odb
+- //src/utl:utl
+//src/dft/src/utils:utils:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/dft:dft:
+- //src/dbSta:dbSta
+- //src/dft/src/architect:architect
+- //src/dft/src/cells:cells
+- //src/dft/src/clock_domain:clock_domain
+- //src/dft/src/config:config
+- //src/dft/src/replace:replace
+- //src/dft/src/stitch:stitch
+- //src/dft/src/utils:utils
+- //src/odb:odb
+- //src/utl:utl
+//src/dft:ui:
+- //src/dbSta:dbSta
+- //src/dft:dft
+- //src/odb:odb
+- //src/utl:utl
+- //src/dft/src/architect:architect
+- //src/dft/src/cells:cells
+- //src/dft/src/clock_domain:clock_domain
+- //src/dft/src/config:config
+- //src/dft/src/replace:replace
+- //src/dft/src/stitch:stitch
+//src/dpl:dpl:
+- //src/odb:odb
+- //src/utl:utl
+//src/dpl:ui:
+- //src/dpl:dpl
+- //src/gui:gui
+- //src/odb:odb
+- //src/utl:utl
+//src/drt:db_hdrs: []
+//src/drt:drt:
+- //src/drt:db_hdrs
+- //src/dst:dst
+- //src/odb:odb
+- //src/stt:stt
+- //src/utl:utl
+//src/drt:ui:
+- //src/drt:db_hdrs
+- //src/drt:drt
+- //src/odb:odb
+- //src/utl:utl
+- //src/dst:dst
+- //src/gui:gui
+//src/dst/test:test_helpers:
+- //src/dst:dst
+//src/dst:dst:
+- //src/odb:odb
+- //src/utl:utl
+//src/est:est:
+- //src/dbSta:SpefWriter
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/est:private_hdrs
+- //src/grt:groute
+- //src/grt:grt
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/est:private_hdrs:
+- //src/grt:groute
+- //src/sta:opensta_lib
+//src/est:ui:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/est:est
+- //src/est:private_hdrs
+- //src/stt:stt
+- //src/utl:utl
+- //src/grt:grt
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+//src/exa:exa:
+- //src/odb:odb
+- //src/utl:utl
+//src/exa:ui:
+- //src/exa:exa
+- //src/gui:gui
+- //src/odb:odb
+- //src/utl:utl
+//src/gpl:gpl:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/sta:opensta_lib
+- //src/utl:utl
+- //src/grt:grt
+- //src/gui:gui
+- //src/odb:odb
+- //src/rsz:rsz
+//src/grt:abstract-fastroute:
+- //src/stt:stt
+//src/grt:cugr:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/grt:groute
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/grt:fastroute:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/grt:abstract-fastroute
+- //src/grt:groute
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/grt:groute: []
+//src/grt:grt:
+- //src/ant:ant
+- //src/dbSta:SpefWriter
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/grt:abstract-fastroute
+- //src/grt:cugr
+- //src/grt:fastroute
+- //src/grt:groute
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/grt:ui:
+- //src/ant:ant
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/grt:abstract-fastroute
+- //src/grt:cugr
+- //src/grt:fastroute
+- //src/grt:groute
+- //src/grt:grt
+- //src/utl:utl
+- //src/stt:stt
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+//src/gui:gui:
+- //src/odb:odb
+//src/gui:gui_qt:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/gui:qt_resources
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/gui:gui_qt_headless:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/utl:utl
+- //src/gui:qt_resources
+- //src/sta:opensta_lib
+- //src/gui:uic_lib
+- //src/odb:odb
+//src/gui:qt_resources: []
+//src/gui:uic_lib: []
+//src/ifp:ifp:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/upf:upf
+- //src/utl:utl
+//src/ifp:ui:
+- //src/dbSta:dbSta
+- //src/gui:gui
+- //src/utl:utl
+- //src/odb:odb
+- //src/sta:opensta_lib
+//src/mpl:mpl:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/par:par
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/mpl:ui:
+- //src/gui:gui
+- //src/mpl:mpl
+- //src/odb:odb
+- //src/utl:utl
+//src/odb/src/def:def:
+- //src/odb/src/def:def_bison_lib
+//src/odb/src/def:def_bison_lib: []
+//src/odb/src/def:defzlib:
+- //src/odb/src/def:def
+- //src/odb/src/def:def_bison_lib
+//src/odb/src/lef:lef: []
+//src/odb/src/lef:lefzlib:
+- //src/odb/src/lef:lef
+//src/odb/test/cpp/helper:helper:
+- //src/odb:odb
+- //src/tst:tst
+- //src/utl:utl
+//src/odb:odb:
+- //src/odb/src/def:def
+- //src/odb/src/def:defzlib
+- //src/odb/src/lef:lef
+- //src/odb/src/lef:lefzlib
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/odb:ui\n//src/upf:ui\n//src/dst:ui:
+- //src/odb:odb
+- //src/utl:utl
+//src/pad:pad\n//src/fin:fin:
+- //src/gui:gui
+- //src/odb:odb
+- //src/utl:utl
+//src/par:par:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbReadVerilog
+- //src/dbSta:dbSta
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/par:ui:
+- //src/dbSta:dbSta
+- //src/gui:gui
+- //src/odb:odb
+- //src/par:par
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/pdn:pdn:
+- //src/gui:gui
+- //src/odb:odb
+- //src/utl:utl
+//src/ppl:munkres: []
+//src/ppl:ppl:
+- //src/dbSta:dbSta
+- //src/gui:gui
+- //src/odb:odb
+- //src/ppl:munkres
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/psm:psm:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/est:est
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/ram:ram:
+- //src/dbSta:dbNetwork
+- //src/dpl:dpl
+- //src/drt:drt
+- //src/grt:grt
+- //src/odb:odb
+- //src/pdn:pdn
+- //src/ppl:ppl
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/rcx:rcx:
+- //src/odb:odb
+- //src/utl:utl
+//src/rcx:ui:
+- //src/odb:odb
+- //src/rcx:rcx
+- //src/utl:utl
+//src/rmp:rmp:
+- //src/cut:cut
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/rsz:rsz
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/rmp:ui:
+- //src/cut:cut
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/rmp:rmp
+- //src/sta:opensta_lib
+- //src/utl:utl
+- //src/rsz:rsz
+//src/rsz:rsz:
+- //src/dbSta:SpefWriter
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/est:est
+- //src/grt:groute
+- //src/grt:grt
+- //src/gui:gui
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/utl:utl
+//src/rsz:ui:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/est:est
+- //src/grt:grt
+- //src/gui:gui
+- //src/odb:odb
+- //src/rsz:rsz
+- //src/stt:stt
+- //src/utl:utl
+- //src/sta:opensta_lib
+//src/sta:opensta_lib: []
+//src/stt:stt:
+- //src/odb:odb
+- //src/utl:utl
+//src/stt:ui:
+- //src/gui:gui
+- //src/odb:odb
+- //src/stt:stt
+- //src/utl:utl
+//src/tap:tap:
+- //src/odb:odb
+- //src/utl:utl
+//src/tap:ui:
+- //src/odb:odb
+- //src/tap:tap
+- //src/utl:utl
+//src/tst:integrated_fixture:
+- //src/ant:ant
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbReadVerilog
+- //src/dbSta:dbSta
+- //src/dpl:dpl
+- //src/est:est
+- //src/grt:grt
+- //src/odb:odb
+- //src/rsz:rsz
+- //src/sta:opensta_lib
+- //src/stt:stt
+- //src/tst:tst
+- //src/utl:utl
+//src/tst:nangate45_fixture\n//src/tst:sky130_fixture:
+- //src/tst:tst
+//src/tst:tst:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/upf:upf:
+- //src/dbSta:dbNetwork
+- //src/dbSta:dbSta
+- //src/odb:odb
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/utl:ui:
+- //src/sta:opensta_lib
+- //src/utl:utl
+//src/utl:utl:
+- //src/sta:opensta_lib
