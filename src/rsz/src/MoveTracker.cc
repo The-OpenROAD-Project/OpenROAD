@@ -14,6 +14,8 @@
 #include <tuple>
 #include <utility>
 
+#include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
@@ -45,7 +47,10 @@ using std::tuple;
 using std::vector;
 using utl::RSZ;
 
-MoveTracker::MoveTracker(utl::Logger* logger, sta::Sta* sta)
+MoveTracker::MoveTracker(utl::Logger* logger,
+                         sta::Sta* sta,
+                         sta::dbNetwork* db_network,
+                         odb::dbBlock* block)
     : logger_(logger),
       sta_(sta),
       current_endpoint_(nullptr),
@@ -54,8 +59,42 @@ MoveTracker::MoveTracker(utl::Logger* logger, sta::Sta* sta)
       total_no_attempt_count_(0),
       total_attempt_count_(0),
       total_reject_count_(0),
-      total_commit_count_(0)
+      total_commit_count_(0),
+      db_network_(db_network)
 {
+  if (block) {
+    addOwner(block);
+  }
+}
+
+void MoveTracker::inDbITermDestroy(odb::dbITerm* iterm)
+{
+  const sta::Pin* pin = db_network_->dbToSta(iterm);
+  auto it = initial_pin_slack_.find(pin);
+  if (it != initial_pin_slack_.end()) {
+    backup_pin_slack_.insert(*it);
+    initial_pin_slack_.erase(it);
+  }
+  auto it2 = initial_endpoint_slack_.find(pin);
+  if (it2 != initial_endpoint_slack_.end()) {
+    backup_endpoint_slack_.insert(*it2);
+    initial_endpoint_slack_.erase(it2);
+  }
+}
+
+void MoveTracker::inDbITermCreate(odb::dbITerm* iterm)
+{
+  const sta::Pin* pin = db_network_->dbToSta(iterm);
+  auto it = backup_pin_slack_.find(pin);
+  if (it != backup_pin_slack_.end()) {
+    initial_pin_slack_.insert(*it);
+    backup_pin_slack_.erase(it);
+  }
+  auto it2 = backup_endpoint_slack_.find(pin);
+  if (it2 != backup_endpoint_slack_.end()) {
+    initial_endpoint_slack_.insert(*it2);
+    backup_endpoint_slack_.erase(it2);
+  }
 }
 
 void MoveTracker::setCurrentEndpoint(const sta::Pin* endpoint_pin)
@@ -1504,8 +1543,7 @@ void MoveTracker::captureInitialSlackDistribution()
 
         // Only capture pins with negative slack (violating paths)
         if (slack_ns < 0.0) {
-          initial_pin_slack_[sta_->network()->pathName(pin)]
-              = slack_ns;  // Store in nanoseconds
+          initial_pin_slack_[pin] = slack_ns;  // Store in nanoseconds
           violating_pins++;
         }
       }
@@ -1541,8 +1579,7 @@ void MoveTracker::captureInitialSlackDistribution()
 
     // Only capture endpoints with negative slack (violating endpoints)
     if (slack_ns < 0.0) {
-      initial_endpoint_slack_[sta_->network()->pathName(pin)]
-          = slack_ns;  // Store in nanoseconds
+      initial_endpoint_slack_[pin] = slack_ns;  // Store in nanoseconds
       violating_endpoints++;
     }
   }
@@ -1575,16 +1612,9 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   float min_slack_ns = std::numeric_limits<float>::max();
   float max_slack_ns = std::numeric_limits<float>::lowest();
 
-  for (const auto& [pin_name, initial_slack_ns] : initial_pin_slack_) {
+  for (const auto& [pin, initial_slack_ns] : initial_pin_slack_) {
     min_slack_ns = std::min(initial_slack_ns, min_slack_ns);
     max_slack_ns = std::max(initial_slack_ns, max_slack_ns);
-
-    // Look up pin by name - may return nullptr if the pin was deleted during
-    // optimization
-    const sta::Pin* pin = sta_->network()->findPin(pin_name.c_str());
-    if (!pin) {
-      continue;
-    }
 
     // Get current (post-optimization) slack using slack (setup timing)
     sta::Slack post_slack = sta_->slack(pin,
@@ -1628,7 +1658,7 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   vector<int> post_counts(bin_edges.size() + 1, 0);
 
   // Second pass: count distribution in bins (all values in nanoseconds)
-  for (const auto& [pin_name, initial_slack_ns] : initial_pin_slack_) {
+  for (const auto& [pin, initial_slack_ns] : initial_pin_slack_) {
     // Find which bin this slack falls into
     int bin = 0;
     for (size_t i = 0; i < bin_edges.size(); i++) {
@@ -1639,13 +1669,6 @@ void MoveTracker::printSlackDistribution(const std::string& title)
       }
     }
     pre_counts[bin]++;
-
-    // Look up pin by name - may return nullptr if the pin was deleted during
-    // optimization
-    const sta::Pin* pin = sta_->network()->findPin(pin_name.c_str());
-    if (!pin) {
-      continue;
-    }
 
     // Get current (post-optimization) slack using slack
     sta::Slack post_slack = sta_->slack(pin,
@@ -1772,13 +1795,16 @@ void MoveTracker::printSlackDistribution(const std::string& title)
   debugPrint(logger_, RSZ, "move_tracker", 1, "");
 
   // Display scale key with integral value
+  int num_pins_destroyed = backup_pin_slack_.size();
   string scale_label = (gates_per_hash == 1) ? "gate" : "gates";
   debugPrint(logger_,
              RSZ,
              "move_tracker",
              1,
-             "Summary: {} driver pins tracked, max bin count: {} (# = {} {})",
+             "Summary: {} driver pins tracked ({} destroyed), "
+             "max bin count: {} (# = {} {})",
              total_pre,
+             num_pins_destroyed,
              max_count,
              gates_per_hash,
              scale_label);
@@ -1793,7 +1819,7 @@ void MoveTracker::printSlackDistribution(const std::string& title)
     vector<int> endpoint_pre_counts(bin_edges.size() + 1, 0);
     vector<int> endpoint_post_counts(bin_edges.size() + 1, 0);
 
-    for (const auto& [endpoint_pin_name, initial_slack_ns] :
+    for (const auto& [endpoint_pin, initial_slack_ns] :
          initial_endpoint_slack_) {
       // Find which bin this slack falls into
       int bin = 0;
@@ -1806,12 +1832,8 @@ void MoveTracker::printSlackDistribution(const std::string& title)
       }
       endpoint_pre_counts[bin]++;
 
-      // Look up endpoint pin by name - may be nullptr if deleted
-      const sta::Pin* endpoint_pin
-          = sta_->network()->findPin(endpoint_pin_name.c_str());
       // Get current (post-optimization) slack
-      sta::Vertex* vertex
-          = endpoint_pin ? sta_->graph()->pinLoadVertex(endpoint_pin) : nullptr;
+      sta::Vertex* vertex = sta_->graph()->pinLoadVertex(endpoint_pin);
       if (vertex) {
         sta::Slack post_slack = sta_->slack(vertex, sta::MinMax::max());
         float post_slack_ns
@@ -1915,14 +1937,17 @@ void MoveTracker::printSlackDistribution(const std::string& title)
     debugPrint(logger_, RSZ, "move_tracker", 1, "");
 
     // Display scale key with integral value
+    int num_endpoints_destroyed = backup_endpoint_slack_.size();
     string endpoint_scale_label
         = (endpoints_per_hash == 1) ? "endpoint" : "endpoints";
     debugPrint(logger_,
                RSZ,
                "move_tracker",
                1,
-               "Summary: {} endpoints tracked, max bin count: {} (# = {} {})",
+               "Summary: {} endpoints tracked ({} destroyed), "
+               "max bin count: {} (# = {} {})",
                total_endpoint_pre,
+               num_endpoints_destroyed,
                endpoint_max_count,
                endpoints_per_hash,
                endpoint_scale_label);

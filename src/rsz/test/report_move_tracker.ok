@@ -25,7 +25,7 @@
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] Pre-Optimization Gate Slack Distribution:
 [DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
-[DEBUG RSZ-move_tracker] < -0.300           |      6 | ######
+[DEBUG RSZ-move_tracker] < -0.300           |      2 | ##
 [DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
 [DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
 [DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
@@ -49,7 +49,7 @@
 [DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
 [DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
 [DEBUG RSZ-move_tracker] 
-[DEBUG RSZ-move_tracker] Summary: 6 driver pins tracked, max bin count: 6 (# = 1 gate)
+[DEBUG RSZ-move_tracker] Summary: 2 driver pins tracked (4 destroyed), max bin count: 2 (# = 1 gate)
 [DEBUG RSZ-move_tracker] 
 [DEBUG RSZ-move_tracker] === Endpoint Slack Distribution ===
 [DEBUG RSZ-move_tracker] 
@@ -79,7 +79,7 @@
 [DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
 [DEBUG RSZ-move_tracker] >= 0.000           |      4 | ####
 [DEBUG RSZ-move_tracker] 
-[DEBUG RSZ-move_tracker] Summary: 4 endpoints tracked, max bin count: 4 (# = 1 endpoint)
+[DEBUG RSZ-move_tracker] Summary: 4 endpoints tracked (0 destroyed), max bin count: 4 (# = 1 endpoint)
 [DEBUG RSZ-move_tracker] Most Critical Endpoints After Optimization:
 [DEBUG RSZ-move_tracker] No violating endpoints after optimization (all meet timing!)
 [DEBUG RSZ-move_tracker] 

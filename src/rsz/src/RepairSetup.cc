@@ -78,7 +78,8 @@ void RepairSetup::init()
 
   // Only create MoveTracker if debug level is enabled
   if (logger_->debugCheck(RSZ, "move_tracker", 1)) {
-    move_tracker_ = std::make_unique<MoveTracker>(logger_, sta_);
+    move_tracker_ = std::make_unique<MoveTracker>(
+        logger_, sta_, db_network_, resizer_->block_);
   }
 }
 
@@ -540,6 +541,12 @@ bool RepairSetup::repairSetup(const float setup_slack_margin,
   }
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 25, "max utilization reached.");
+  }
+
+  // Destruct MoveTracker as there's no need to track odb events outside of
+  // repair setup
+  if (move_tracker_) {
+    move_tracker_.reset();
   }
 
   return repaired;

@@ -10,6 +10,14 @@
 #include <utility>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
+#include "odb/dbBlockCallBackObj.h"
+
+namespace odb {
+class dbBlock;
+class dbITerm;
+}  // namespace odb
+
 namespace sta {
 class Pin;
 class Sta;
@@ -88,10 +96,17 @@ struct MoveStateData
 // Class to track optimization moves (attempts, commits, rejections) for pins.
 // Provides statistics and summaries of which pins were attempted for
 // optimization, which moves succeeded, and which failed.
-class MoveTracker
+class MoveTracker : public odb::dbBlockCallBackObj
 {
  public:
-  MoveTracker(utl::Logger* logger, sta::Sta* sta);
+  MoveTracker(utl::Logger* logger,
+              sta::Sta* sta,
+              sta::dbNetwork* db_network,
+              odb::dbBlock* block);
+  ~MoveTracker() override = default;
+
+  void inDbITermDestroy(odb::dbITerm* iterm) override;
+  void inDbITermCreate(odb::dbITerm* iterm) override;
 
   // Set the current endpoint being optimized
   void setCurrentEndpoint(const sta::Pin* endpoint_pin);
@@ -222,13 +237,16 @@ class MoveTracker
   // Map pin to detailed information (endpoint, gate type, delays)
   std::map<const sta::Pin*, PinInfo> pin_info_;
 
+  sta::dbNetwork* db_network_;
+
   // Initial slack distribution (captured at start of optimization).
-  // Keyed by pin path name (string) to avoid dangling pointers: instances
-  // (e.g. buffers) may be destroyed during optimization (UnbufferMove), which
-  // frees the underlying dbITerm.  Looking up by name at reporting time lets
-  // us detect deleted pins via findPin() returning nullptr and skip them.
-  std::map<std::string, float> initial_pin_slack_;
-  std::map<std::string, float> initial_endpoint_slack_;
+  // Entries are moved to backup maps in inDbITermDestroy() and restored in
+  // inDbITermCreate() when ODB recycles the same pointer on undo. Committed
+  // deletes leave entries in the backup where they are harmlessly ignored.
+  std::map<const sta::Pin*, float> initial_pin_slack_;
+  std::map<const sta::Pin*, float> initial_endpoint_slack_;
+  std::map<const sta::Pin*, float> backup_pin_slack_;
+  std::map<const sta::Pin*, float> backup_endpoint_slack_;
 };
 
 }  // namespace rsz
