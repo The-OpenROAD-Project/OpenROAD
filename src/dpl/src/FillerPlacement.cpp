@@ -198,15 +198,17 @@ void Opendp::placeRowFillers(GridY row,
     if (fillers.empty()) {
       DbuX x{core_.xMin() + gridToDbu(j, site_width)};
       DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
-      logger_->error(
-          DPL,
-          2,
-          "could not fill gap of size {} at {},{} dbu between {} and {}",
-          gap,
-          x,
-          y,
-          gridInstName(row, j - 1),
-          gridInstName(row, k + 1));
+      logger_->error(DPL,
+                     2,
+                     "Could not fill gap of {} sites ({}x{} dbu) "
+                     "at ({}, {}) dbu between {} and {}",
+                     gap,
+                     gridToDbu(gap, site_width),
+                     row_height,
+                     x,
+                     y,
+                     gridInstName(row, j - 1),
+                     gridInstName(row, k + 1));
     } else {
       k = j;
       debugPrint(
