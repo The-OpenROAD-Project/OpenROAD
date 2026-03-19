@@ -90,11 +90,19 @@ git_override(
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-## Lock the compiler version and avoid any local compiler
+## Lock the compiler version and avoid any local compiler.
+## The bazel_dep stays non-dev because llvm_prebuilt's build_file
+## references @toolchains_llvm//toolchain:BUILD.llvm_repo.
+## The extension and toolchain registration are dev_dependency because
+## toolchains_llvm enforces root-module-only extension usage.
+## Downstream consumers must configure their own C++ toolchain.
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
-# Configure and register the toolchain.
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm = use_extension(
+    "@toolchains_llvm//toolchain/extensions:llvm.bzl",
+    "llvm",
+    dev_dependency = True,
+)
 llvm.toolchain(
     llvm_version = "20.1.8",
 )
@@ -104,6 +112,7 @@ use_repo(llvm, "llvm_toolchain")
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
 register_toolchains(
     "@llvm_toolchain//:all",
+    dev_dependency = True,
 )
 
 register_toolchains(
