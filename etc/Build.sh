@@ -34,28 +34,28 @@ OPTIONS:
                                                  -cmake= and double quotes if
                                                  <key> has multiple <values>
                                                  e.g.: -cmake='-DFLAGS="-a -b"'
-  -compiler=COMPILER_NAME                        Compiler name: gcc or clang
+  -compiler=COMPILER_NAME                         Compiler name: gcc or clang
                                                  Default: gcc
   -no-warnings
                                                 Compiler warnings are
                                                 considered errors, i.e.,
                                                 use -Werror flag during build.
-  -dir=PATH                                     Path to store build files.
+  -dir=PATH                                      Path to store build files.
                                                  Default: ./build
-  -coverage                                     Enable cmake coverage options
-  -clean                                        Remove build dir before compile
-  -no-gui                                       Disable GUI support
-  -no-tests                                     Disable GTest
-  -ninja                                        Use Ninja build system
-  -cpp20                                        Use C++20 standard
-  -build-man                                    Build Man Pages (optional)
-  -threads=NUM_THREADS                          Number of threads to use during
+  -coverage                                      Enable cmake coverage options
+  -clean                                         Remove build dir before compile
+  -no-gui                                        Disable GUI support
+  -no-tests                                      Disable GTest
+  -ninja                                         Use Ninja build system
+  -cpp20                                         Use C++20 standard
+  -build-man                                     Build Man Pages (optional)
+  -threads=NUM_THREADS                           Number of threads to use during
                                                  compile. Default: \`nproc\` on linux
                                                  or \`sysctl -n hw.logicalcpu\` on macOS
-  -keep-log                                     Keep a compile log in build dir
-  -help                                         Shows this message
-  -gpu                                          Enable GPU to accelerate the process
-  -deps-prefixes-file=FILE                      File with CMake packages roots,
+  -keep-log                                      Keep a compile log in build dir
+  -help                                          Shows this message
+  -gpu                                           Enable GPU to accelerate the process
+  -deps-prefixes-file=FILE                       File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
@@ -209,7 +209,8 @@ fi
 # ==============================================================================
 # PYTHON VIRTUAL ENVIRONMENT CHECK
 # ==============================================================================
-if [[ -t 1 ]]; then
+# Check for tput to avoid stderr noise if it's missing
+if [[ -t 1 ]] && command -v tput >/dev/null 2>&1; then
     GREEN=$(tput setaf 2)
     YELLOW=$(tput setaf 3)
     NC=$(tput sgr0)
