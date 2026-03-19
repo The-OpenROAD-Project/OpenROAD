@@ -873,7 +873,7 @@ void RenderThread::drawBlockages(QPainter* painter,
     }
     odb::Rect halobox = inst->getTransformedHalo();
     Rect instbox = inst->getBBox()->getBox();
-    
+
     instbox.set_xlo(instbox.xMin() - halobox.xMin());
     instbox.set_ylo(instbox.yMin() - halobox.yMin());
     instbox.set_xhi(instbox.xMax() + halobox.xMax());
