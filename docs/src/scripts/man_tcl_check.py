@@ -28,8 +28,9 @@ def count_commands(module_dir):
     for tcl_file in tcl_files:
         # pad has 3 Tcls; skip ICeWall and PdnGen
         basename = os.path.basename(tcl_file)
-        if "ICeWall" in basename or "PdnGen" in basename:
-            continue
+        ICEWALL_MODULE = "ICeWall"
+        PDNGEN_MODULE = "PdnGen"
+        if ICEWALL_MODULE in basename or PDNGEN_MODULE in basename:
 
         with open(tcl_file, encoding="utf-8") as f:
             content = f.read()
