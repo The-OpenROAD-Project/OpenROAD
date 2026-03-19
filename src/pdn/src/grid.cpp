@@ -1407,7 +1407,7 @@ InstanceGrid::InstanceGrid(
     : Grid(domain, name, start_with_power, generate_obstructions), inst_(inst)
 {
   auto* halo = inst->getHalo();
-  if (halo != nullptr) {
+  if (halo != nullptr && !halo->isSoft()) {
     odb::Rect halo_box = inst->getTransformedHalo();
 
     // copy halo from db
