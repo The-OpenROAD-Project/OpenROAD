@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "odb/isotropy.h"
-#include "utl/Logger.h"
+#include "utl/format_as.h"
 
 namespace odb {
 

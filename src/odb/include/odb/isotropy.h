@@ -17,7 +17,7 @@
 
 #include <ostream>
 
-#include "utl/Logger.h"
+#include "utl/format_as.h"
 
 namespace odb {
 
