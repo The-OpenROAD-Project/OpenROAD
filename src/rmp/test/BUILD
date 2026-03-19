@@ -200,7 +200,8 @@ cc_test(
 )
 
 py_test(
-    name = "rmp_man_tcl_check",
+    name = "rmp_man_tcl_check_test",
+    main = "rmp_man_tcl_check.py",
     srcs = ["rmp_man_tcl_check.py"],
     data = ["//src/rmp:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

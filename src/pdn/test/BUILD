@@ -306,7 +306,8 @@ filegroup(
 ]
 
 py_test(
-    name = "pdn_man_tcl_check",
+    name = "pdn_man_tcl_check_test",
+    main = "pdn_man_tcl_check.py",
     srcs = ["pdn_man_tcl_check.py"],
     data = ["//src/pdn:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

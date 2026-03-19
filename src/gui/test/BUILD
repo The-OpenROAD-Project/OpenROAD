@@ -39,7 +39,8 @@ filegroup(
 ]
 
 py_test(
-    name = "gui_man_tcl_check",
+    name = "gui_man_tcl_check_test",
+    main = "gui_man_tcl_check.py",
     srcs = ["gui_man_tcl_check.py"],
     data = ["//src/gui:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

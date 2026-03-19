@@ -64,7 +64,8 @@ filegroup(
 ]
 
 py_test(
-    name = "fin_man_tcl_check",
+    name = "fin_man_tcl_check_test",
+    main = "fin_man_tcl_check.py",
     srcs = ["fin_man_tcl_check.py"],
     data = ["//src/fin:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

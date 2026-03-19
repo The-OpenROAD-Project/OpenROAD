@@ -180,7 +180,8 @@ filegroup(
 ]
 
 py_test(
-    name = "psm_man_tcl_check",
+    name = "psm_man_tcl_check_test",
+    main = "psm_man_tcl_check.py",
     srcs = ["psm_man_tcl_check.py"],
     data = ["//src/psm:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

@@ -402,7 +402,8 @@ filegroup(
 ]
 
 py_test(
-    name = "odb_man_tcl_check",
+    name = "odb_man_tcl_check_test",
+    main = "odb_man_tcl_check.py",
     srcs = ["odb_man_tcl_check.py"],
     data = ["//src/odb:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

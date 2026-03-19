@@ -172,7 +172,8 @@ filegroup(
 ]
 
 py_test(
-    name = "tap_man_tcl_check",
+    name = "tap_man_tcl_check_test",
+    main = "tap_man_tcl_check.py",
     srcs = ["tap_man_tcl_check.py"],
     data = ["//src/tap:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],

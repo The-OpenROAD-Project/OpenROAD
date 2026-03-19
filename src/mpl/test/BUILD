@@ -284,7 +284,8 @@ cc_test(
 )
 
 py_test(
-    name = "mpl_man_tcl_check",
+    name = "mpl_man_tcl_check_test",
+    main = "mpl_man_tcl_check.py",
     srcs = ["mpl_man_tcl_check.py"],
     data = ["//src/mpl:doc_files"],
     deps = ["//docs/src/scripts:man_tcl_check"],
