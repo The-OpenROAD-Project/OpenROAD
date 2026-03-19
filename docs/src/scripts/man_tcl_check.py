@@ -1,78 +1,49 @@
-import os
 import glob
-import re
-from extract_utils import extract_tcl_code, extract_help, extract_proc
+import os
 
-# Test objective: Make sure similar output in all three: help, proc, and readme
-path = os.getcwd()
-module_dir = os.path.dirname(path)
-module = os.path.basename(module_dir)
+from extract_utils import extract_help, extract_proc, extract_tcl_code
 
-or_home = os.path.dirname(os.path.dirname(os.path.dirname(path)))
-os.chdir(or_home)
 
-help_dict, proc_dict, readme_dict = {}, {}, {}
+def count_commands(module_dir):
+    """Count help, proc, and readme commands for a module.
 
-# Directories to exclude (according to md_roff_compat)
-exclude = ["sta"]
-include = ["./src/odb/src/db/odb.tcl"]
+    Args:
+        module_dir: Absolute path to the module directory (e.g., .../src/cts).
 
-for path in glob.glob("./src/*/src/*tcl") + include:
-    # exclude all dirs other than the current dir.
-    if module not in path:
-        continue
+    Returns:
+        Tuple of (help_count, proc_count, readme_count).
+    """
+    module = os.path.basename(module_dir)
 
-    # exclude these dirs which are not compiled in man (do not have readmes).
-    tool_dir = os.path.dirname(os.path.dirname(path))
-    if module not in tool_dir:
-        continue
-    if "odb" in tool_dir:
-        tool_dir = "./src/odb"
-    if not os.path.exists(os.path.join(tool_dir, "README.md")):
-        continue
-    if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
-        continue
+    tcl_files = sorted(glob.glob(os.path.join(module_dir, "src", "*.tcl")))
 
-    with open(path, encoding="utf-8") as f:
-        # Help patterns
-        content = f.read()
-        matches = extract_help(content)
-        help_dict[tool_dir] = len(matches)
+    # odb special: tcl is in src/swig/tcl/, not src/
+    if module == "odb":
+        odb_tcl = os.path.join(module_dir, "src", "swig", "tcl", "odb.tcl")
+        if os.path.exists(odb_tcl):
+            tcl_files.append(odb_tcl)
 
-        # Proc patterns
-        matches = extract_proc(content)
-        proc_dict[tool_dir] = len(matches)
+    help_count = 0
+    proc_count = 0
+    for tcl_file in tcl_files:
+        # pad has 3 Tcls; skip ICeWall and PdnGen
+        basename = os.path.basename(tcl_file)
+        if "ICeWall" in basename or "PdnGen" in basename:
+            continue
 
-for path in glob.glob("./src/*/README.md"):
-    # exclude all dirs other than the current dir.
-    if module not in path:
-        continue
+        with open(tcl_file, encoding="utf-8") as f:
+            content = f.read()
+            help_count += len(extract_help(content))
+            proc_count += len(extract_proc(content))
 
-    if re.search(f".*{'|'.join(e for e in exclude)}.*", path):
-        continue
-    tool_dir = os.path.dirname(path)
-
-    # for gui, filter out the gui:: for separate processing
-    with open(path, encoding="utf-8") as f:
+    readme_path = os.path.join(module_dir, "README.md")
+    with open(readme_path, encoding="utf-8") as f:
+        # for gui, filter out gui:: for separate processing
         results = [x for x in extract_tcl_code(f.read()) if "gui::" not in x]
-    readme_dict[tool_dir] = len(results)
+        readme_count = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
-    if "pad" in tool_dir:
-        readme_dict[tool_dir] -= 1
+    if module == "pad":
+        readme_count -= 1
 
-print(
-    "Tool Dir".ljust(20), "Help count".ljust(15), "Proc count".ljust(15), "Readme count"
-)
-
-for tool_dir in help_dict:
-    h, p, r = (
-        help_dict[tool_dir],
-        proc_dict.get(tool_dir, 0),
-        readme_dict.get(tool_dir, 0),
-    )
-    print(tool_dir.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
-    if h == p == r:
-        print("Command counts match.")
-    else:
-        print("Command counts do not match.")
+    return help_count, proc_count, readme_count
