@@ -30,18 +30,18 @@ usage: $0 [OPTIONS]
 
 OPTIONS:
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
-                                                  Note: use single quote after
-                                                  -cmake= and double quotes if
-                                                  <key> has multiple <values>
-                                                  e.g.: -cmake='-DFLAGS="-a -b"'
-  -compiler=COMPILER_NAME                       Compiler name: gcc or clang
-                                                  Default: gcc
+                                                 Note: use single quote after
+                                                 -cmake= and double quotes if
+                                                 <key> has multiple <values>
+                                                 e.g.: -cmake='-DFLAGS="-a -b"'
+  -compiler=COMPILER_NAME                        Compiler name: gcc or clang
+                                                 Default: gcc
   -no-warnings
                                                 Compiler warnings are
                                                 considered errors, i.e.,
                                                 use -Werror flag during build.
   -dir=PATH                                     Path to store build files.
-                                                  Default: ./build
+                                                 Default: ./build
   -coverage                                     Enable cmake coverage options
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
@@ -50,16 +50,16 @@ OPTIONS:
   -cpp20                                        Use C++20 standard
   -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
-                                                  compile. Default: \`nproc\` on linux
-                                                  or \`sysctl -n hw.logicalcpu\` on macOS
+                                                 compile. Default: \`nproc\` on linux
+                                                 or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
   -deps-prefixes-file=FILE                      File with CMake packages roots,
-                                                  its content extends -cmake argument.
-                                                  By default, "openroad_deps_prefixes.txt"
-                                                  file from OpenROAD's "etc" directory
-                                                  or from system "/etc".
+                                                 its content extends -cmake argument.
+                                                 By default, "openroad_deps_prefixes.txt"
+                                                 file from OpenROAD's "etc" directory
+                                                 or from system "/etc".
 
 EOF
     exit "${1:-1}"
@@ -200,6 +200,31 @@ fi
 
 mkdir -p "${buildDir}"
 __logging
+
+# ==============================================================================
+# OPENROAD ASCII SPLASH SCREEN
+# ==============================================================================
+if [[ -t 1 ]]; then
+    CYAN=$(tput setaf 6)
+    NC=$(tput sgr0)
+else
+    CYAN=''
+    NC=''
+fi
+
+cat << EOF
+${CYAN}
+  ____                  ____   ___    _    ____  
+ / __ \_ __  ___ _ __ |  _ \ / _ \  / \  |  _ \ 
+| |  | | '_ \ / _ \ '_ \| |_) | | | |/ _ \ | | | |
+| |__| | |_) |  __/ | | |  _ <| |_| / ___ \| |_| |
+ \____/| .__/ \___|_| |_|_| \_\___/_/   \_\____/ 
+       |_|                                        
+${NC}
+Welcome to the OpenROAD Build System!
+=========================================================
+EOF
+# ==============================================================================
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
