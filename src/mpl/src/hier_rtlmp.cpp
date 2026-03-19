@@ -2364,7 +2364,8 @@ void HierRTLMP::commitMacroPlacementToDb()
     if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
       macro->setRealLocation(inst->getLocation());
       odb::Rect box = macro->getBBox();
-      odb::dbBlockage* blockage = odb::dbBlockage::create(block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+      odb::dbBlockage* blockage = odb::dbBlockage::create(
+          block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
       blockage->setSoft();
     }
 
