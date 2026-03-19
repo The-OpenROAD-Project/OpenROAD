@@ -7530,7 +7530,9 @@ class dbDatabase : public dbObject
   /// Find a specific lib.
   /// Returns nullptr if no lib was found.
   ///
-  dbLib* findLib(const char* name);
+ #include <string_view> // Add this at the top with other includes
+// ...
+  dbLib* findLib(std::string_view name);
 
   ///
   /// Return the techs contained in the database. A database can contain

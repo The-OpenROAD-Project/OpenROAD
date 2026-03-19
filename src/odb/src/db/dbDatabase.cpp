@@ -33,6 +33,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <string>
+#include <string_view> // Added for C++17 string_view support
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
@@ -546,10 +547,11 @@ dbSet<dbChip> dbDatabase::getChips() const
   return dbSet<dbChip>(obj, obj->chip_tbl_);
 }
 
-dbChip* dbDatabase::findChip(const char* name) const
+// Refactored to std::string_view for zero-allocation lookup
+dbChip* dbDatabase::findChip(std::string_view name) const
 {
   _dbDatabase* obj = (_dbDatabase*) this;
-  return (dbChip*) obj->chip_hash_.find(name);
+  return (dbChip*) obj->chip_hash_.find(name.data());
 }
 
 dbSet<dbProperty> dbDatabase::getProperties() const
@@ -602,10 +604,11 @@ dbSet<dbLib> dbDatabase::getLibs()
   return dbSet<dbLib>(db, db->lib_tbl_);
 }
 
-dbLib* dbDatabase::findLib(const char* name)
+// Refactored to std::string_view
+dbLib* dbDatabase::findLib(std::string_view name)
 {
   for (dbLib* lib : getLibs()) {
-    if (strcmp(lib->getConstName(), name) == 0) {
+    if (lib->getName() == name) {
       return lib;
     }
   }
@@ -619,7 +622,8 @@ dbSet<dbTech> dbDatabase::getTechs()
   return dbSet<dbTech>(db, db->tech_tbl_);
 }
 
-dbTech* dbDatabase::findTech(const char* name)
+// Refactored to std::string_view
+dbTech* dbDatabase::findTech(std::string_view name)
 {
   for (auto tech : getTechs()) {
     auto tech_impl = (_dbTech*) tech;
@@ -631,10 +635,11 @@ dbTech* dbDatabase::findTech(const char* name)
   return nullptr;
 }
 
-dbMaster* dbDatabase::findMaster(const char* name)
+// Refactored to std::string_view
+dbMaster* dbDatabase::findMaster(std::string_view name)
 {
   for (dbLib* lib : getLibs()) {
-    dbMaster* master = lib->findMaster(name);
+    dbMaster* master = lib->findMaster(name.data());
     if (master) {
       return master;
     }
@@ -722,6 +727,7 @@ dbTech* dbDatabase::getTech()
   auto impl = (_dbDatabase*) this;
   impl->logger_->error(
       utl::ODB, 432, "getTech() is obsolete in a multi-tech db");
+  return nullptr;
 }
 
 void dbDatabase::setHierarchy(bool value)
