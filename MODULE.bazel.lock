@@ -1968,7 +1968,7 @@
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "SFT0LhY0ioB2PsbncmTCGyGh8M0OtAJ2fCq0fHtf7ps=",
-        "usagesDigest": "fZCQhPgcmka9aFP4B3gLqec5pBbOtkMkatF0yACrxbA=",
+        "usagesDigest": "63F9DDjXGiFHB/0gnwO13tC/Km+OjXtOKNH+Q6DwQj4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2002,7 +2002,8 @@
               "target_settings": {},
               "unfiltered_compile_flags": {},
               "toolchain_roots": {
-                "": "'@@+_repo_rules+llvm_prebuilt//'"
+                "linux-x86_64": "'@@+_repo_rules+llvm_prebuilt//'",
+                "darwin-aarch64": "'@@+_repo_rules+llvm_prebuilt_macos//'"
               },
               "sysroot": {}
             }
@@ -2013,6 +2014,11 @@
             "",
             "llvm_prebuilt",
             "+_repo_rules+llvm_prebuilt"
+          ],
+          [
+            "",
+            "llvm_prebuilt_macos",
+            "+_repo_rules+llvm_prebuilt_macos"
           ],
           [
             "toolchains_llvm+",

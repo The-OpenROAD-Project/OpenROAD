@@ -107,6 +107,10 @@ llvm.toolchain_root(
     label = "@llvm_prebuilt//:BUILD.bazel",
     targets = ["linux-x86_64"],
 )
+llvm.toolchain_root(
+    label = "@llvm_prebuilt_macos//:BUILD.bazel",
+    targets = ["darwin-aarch64"],
+)
 use_repo(llvm, "llvm_toolchain")
 
 # FYI: Comment out on NixOS where you'd like to use the local clang toolchain.
@@ -235,19 +239,28 @@ LIBXML2_2.6.0 {
 } LIBXML2_2.4.30;
 VER
 
-if [ "$(uname)" = "Linux" ]; then
-  cc -shared -o lib/libxml2.so.2 \
-      -Wl,--version-script=_stub.ver \
-      -Wl,-soname,libxml2.so.2 \
-      _stub.c
-fi
-rm -f _stub.c _stub.ver
+cc -shared -o lib/libxml2.so.2 \
+    -Wl,--version-script=_stub.ver \
+    -Wl,-soname,libxml2.so.2 \
+    _stub.c \
+&& rm _stub.c _stub.ver
 """,
     ],
     sha256 = "1ead36b3dfcb774b57be530df42bec70ab2d239fbce9889447c7a29a4ddc1ae6",
     strip_prefix = "LLVM-20.1.8-Linux-X64",
     urls = [
         "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-Linux-X64.tar.xz",
+    ],
+)
+
+# Vanilla LLVM for macOS — no libxml2 stub needed (macOS doesn't use ld.lld)
+http_archive(
+    name = "llvm_prebuilt_macos",
+    build_file = "@toolchains_llvm//toolchain:BUILD.llvm_repo",
+    sha256 = "a9a22f450d35f1f73cd61ab6a17c6f27d8f6051d56197395c1eb397f0c9bbec4",
+    strip_prefix = "LLVM-20.1.8-macOS-ARM64",
+    urls = [
+        "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-macOS-ARM64.tar.xz",
     ],
 )
 
