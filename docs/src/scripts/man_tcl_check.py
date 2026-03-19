@@ -28,9 +28,8 @@ def count_commands(module_dir):
     for tcl_file in tcl_files:
         # pad has 3 Tcls; skip ICeWall and PdnGen
         basename = os.path.basename(tcl_file)
-        ICEWALL_MODULE = "ICeWall"
-        PDNGEN_MODULE = "PdnGen"
-        if ICEWALL_MODULE in basename or PDNGEN_MODULE in basename:
+        if "ICeWall" in basename or "PdnGen" in basename:
+            continue
 
         with open(tcl_file, encoding="utf-8") as f:
             content = f.read()
@@ -46,9 +45,7 @@ def count_commands(module_dir):
             readme_count = len(results)
 
     # for pad, remove `make_fake_io_site` because it is a hidden cmd arg
-    PAD_MODULE_NAME = "pad"
-    PAD_HIDDEN_CMD_COUNT_ADJUSTMENT = 1
-    if module == PAD_MODULE_NAME:
-        readme_count -= PAD_HIDDEN_CMD_COUNT_ADJUSTMENT
+    if module == "pad":
+        readme_count -= 1
 
     return help_count, proc_count, readme_count
