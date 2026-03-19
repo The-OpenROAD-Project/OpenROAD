@@ -111,7 +111,19 @@ static void cutRow(dbBlock* block,
     const int blockage_x1 = blockage.second;
     start_origin_x
         = makeSiteLoc(blockage_x1, site_width, false, start_origin_x);
+
+    // Ensure step from original row boundary is >= endcap width
+    // to avoid overlapping corner cells at the step.
+    if (min_row_width > 0) {
+      const int left_step = start_origin_x - row_bb.xMin();
+      if (left_step > 0 && left_step < min_row_width / 2) {
+        start_origin_x = makeSiteLoc(
+            row_bb.xMin() + min_row_width / 2, site_width, false,
+            row_bb.xMin());
+      }
+    }
   }
+
   // Make last row
   buildRow(block,
            row_name + "_" + std::to_string(row_sub_idx),
