@@ -21,6 +21,7 @@ template class dbTable<_dbMetalWidthViaMap>;
 
 bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (via_cut_class_ != rhs.via_cut_class_) {
     return false;
   }
@@ -47,6 +48,7 @@ bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const

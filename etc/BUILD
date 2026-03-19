@@ -23,22 +23,8 @@ py_binary(
 test_suite(
     name = "all_tests",
     tests = [
-        ":test_delta_debug",
         ":test_whittle",
     ],
-)
-
-py_library(
-    name = "delta_debug_lib",
-    srcs = ["deltaDebug.py"],
-    imports = ["."],
-)
-
-py_test(
-    name = "test_delta_debug",
-    srcs = ["test_deltaDebug.py"],
-    main = "test_deltaDebug.py",
-    deps = [":delta_debug_lib"],
 )
 
 py_test(

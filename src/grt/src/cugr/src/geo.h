@@ -23,7 +23,7 @@ class PointT
   PointT() = default;
   PointT(int x, int y) : x_(x), y_(y) {}
 
-  bool IsValid() { return *this != PointT(); }
+  bool isValid() { return *this != PointT(); }
 
   int x() const { return x_; }
   int y() const { return y_; }
@@ -77,9 +77,9 @@ class PointT
 class IntervalT
 {
  public:
-  IntervalT() { Set(); }
-  IntervalT(int val) { Set(val); }
-  IntervalT(int lo, int hi) { Set(lo, hi); }
+  IntervalT() { set(); }
+  IntervalT(int val) { set(val); }
+  IntervalT(int lo, int hi) { set(lo, hi); }
 
   int low() const { return low_; }
   int high() const { return high_; }
@@ -88,83 +88,83 @@ class IntervalT
   void addToLow(const int increment) { low_ += increment; }
   void addToHigh(const int increment) { high_ += increment; }
 
-  void Set()
+  void set()
   {
     low_ = std::numeric_limits<int>::max();
     high_ = std::numeric_limits<int>::min();
   }
-  void Set(int val)
+  void set(int val)
   {
     low_ = val;
     high_ = val;
   }
-  void Set(int lo, int hi)
+  void set(int lo, int hi)
   {
     low_ = lo;
     high_ = hi;
   }
-  void SetLow(int val) { low_ = val; }
-  void SetHigh(int val) { high_ = val; }
+  void setLow(int val) { low_ = val; }
+  void setHigh(int val) { high_ = val; }
 
   // Getters
   int center() const { return (high_ + low_) / 2; }
   int range() const { return high_ - low_; }
 
   // Update
-  // Update() is always safe, FastUpdate() assumes existing values
-  void Update(int newVal)
+  // update() is always safe, fastUpdate() assumes existing values
+  void update(int new_val)
   {
-    low_ = std::min(newVal, low_);
-    high_ = std::max(newVal, high_);
+    low_ = std::min(new_val, low_);
+    high_ = std::max(new_val, high_);
   }
-  void FastUpdate(int newVal)
+  void fastUpdate(int new_val)
   {
-    if (newVal < low_) {
-      low_ = newVal;
-    } else if (newVal > high_) {
-      high_ = newVal;
+    if (new_val < low_) {
+      low_ = new_val;
+    } else if (new_val > high_) {
+      high_ = new_val;
     }
   }
 
   // Two types of intervals: 1. normal, 2. degenerated (i.e., point)
   // is valid interval (i.e., valid closed interval)
-  bool IsValid() const { return low_ <= high_; }
+  bool isValid() const { return low_ <= high_; }
   // is strictly valid interval (excluding degenerated ones, i.e., valid open
   // interval)
-  bool IsStrictValid() const { return low_ < high_; }
+  bool isStrictValid() const { return low_ < high_; }
 
   // Geometric Query/Update
   // interval/range of union (not union of intervals)
-  IntervalT UnionWith(const IntervalT& rhs) const
+  IntervalT unionWith(const IntervalT& rhs) const
   {
-    if (!IsValid()) {
+    if (!isValid()) {
       return rhs;
     }
 
-    if (!rhs.IsValid()) {
+    if (!rhs.isValid()) {
       return *this;
     }
 
     return IntervalT(std::min(low_, rhs.low_), std::max(high_, rhs.high_));
   }
   // may return an invalid interval (as empty intersection)
-  IntervalT IntersectWith(const IntervalT& rhs) const
+  IntervalT intersectWith(const IntervalT& rhs) const
   {
     return IntervalT(std::max(low_, rhs.low_), std::min(high_, rhs.high_));
   }
-  bool HasIntersectWith(const IntervalT& rhs) const
+  bool hasIntersectWith(const IntervalT& rhs) const
   {
-    return IntersectWith(rhs).IsValid();
+    return intersectWith(rhs).isValid();
   }
-  bool HasStrictIntersectWith(const IntervalT& rhs) const
+  bool hasStrictIntersectWith(const IntervalT& rhs) const
   {
-    return IntersectWith(rhs).IsStrictValid();
+    return intersectWith(rhs).isStrictValid();
   }
   // contain a val
-  bool Contain(int val) const { return val >= low_ && val <= high_; }
-  bool StrictlyContain(int val) const { return val > low_ && val < high_; }
+  bool contain(int val) const { return val >= low_ && val <= high_; }
+  bool strictlyContain(int val) const { return val > low_ && val < high_; }
   // get nearest point(s) to val (assume valid intervals)
-  int GetNearestPointTo(int val) const
+  int getNearestPointTo(int val) const
   {
     if (val <= low_) {
       return low_;
@@ -176,7 +176,7 @@ class IntervalT
 
     return val;
   }
-  IntervalT GetNearestPointsTo(IntervalT val) const
+  IntervalT getNearestPointsTo(IntervalT val) const
   {
     if (val.high_ <= low_) {
       return {low_};
@@ -186,10 +186,10 @@ class IntervalT
       return {high_};
     }
 
-    return IntersectWith(val);
+    return intersectWith(val);
   }
 
-  void ShiftBy(const int& rhs)
+  void shiftBy(const int& rhs)
   {
     low_ += rhs;
     high_ += rhs;
@@ -198,7 +198,7 @@ class IntervalT
   // Operators
   bool operator==(const IntervalT& rhs) const
   {
-    return (!IsValid() && !rhs.IsValid())
+    return (!isValid() && !rhs.isValid())
            || (low_ == rhs.low_ && high_ == rhs.high_);
   }
   bool operator!=(const IntervalT& rhs) const { return !(*this == rhs); }
@@ -218,56 +218,56 @@ class IntervalT
 class BoxT
 {
  public:
-  BoxT() { Set(); }
-  BoxT(int xVal, int yVal) { Set(xVal, yVal); }
-  BoxT(const PointT& pt) { Set(pt); }
-  BoxT(int lx, int ly, int hx, int hy) { Set(lx, ly, hx, hy); }
-  BoxT(const IntervalT& xRange, const IntervalT& yRange)
+  BoxT() { set(); }
+  BoxT(int x_val, int y_val) { set(x_val, y_val); }
+  BoxT(const PointT& pt) { set(pt); }
+  BoxT(int lx, int ly, int hx, int hy) { set(lx, ly, hx, hy); }
+  BoxT(const IntervalT& x_range, const IntervalT& y_range)
   {
-    Set(xRange, yRange);
+    set(x_range, y_range);
   }
-  BoxT(const PointT& low, const PointT& high) { Set(low, high); }
-  BoxT(const BoxT& box) { Set(box); }
+  BoxT(const PointT& low, const PointT& high) { set(low, high); }
+  BoxT(const BoxT& box) { set(box); }
 
   IntervalT& operator[](int i)
   {
     assert(i == 0 || i == 1);
     return (i == 0) ? x_ : y_;
   }
-  void Set()
+  void set()
   {
-    x_.Set();
-    y_.Set();
+    x_.set();
+    y_.set();
   }
-  void Set(int xVal, int yVal)
+  void set(int x_val, int y_val)
   {
-    x_.Set(xVal);
-    y_.Set(yVal);
+    x_.set(x_val);
+    y_.set(y_val);
   }
-  void Set(const PointT& pt) { Set(pt.x(), pt.y()); }
-  void Set(int lx, int ly, int hx, int hy)
+  void set(const PointT& pt) { set(pt.x(), pt.y()); }
+  void set(int lx, int ly, int hx, int hy)
   {
-    x_.Set(lx, hx);
-    y_.Set(ly, hy);
+    x_.set(lx, hx);
+    y_.set(ly, hy);
   }
-  void Set(const IntervalT& xRange, const IntervalT& yRange)
+  void set(const IntervalT& x_range, const IntervalT& y_range)
   {
-    x_ = xRange;
-    y_ = yRange;
+    x_ = x_range;
+    y_ = y_range;
   }
-  void Set(const PointT& low, const PointT& high)
+  void set(const PointT& low, const PointT& high)
   {
-    Set(low.x(), low.y(), high.x(), high.y());
+    set(low.x(), low.y(), high.x(), high.y());
   }
-  void Set(const BoxT& box) { Set(box.x(), box.y()); }
+  void set(const BoxT& box) { set(box.x(), box.y()); }
 
   // Two types of boxes: normal & degenerated (line or point)
   // is valid box
-  bool IsValid() const { return x_.IsValid() && y_.IsValid(); }
+  bool isValid() const { return x_.isValid() && y_.isValid(); }
   // is strictly valid box (excluding degenerated ones)
-  bool IsStrictValid() const
+  bool isStrictValid() const
   {
-    return x_.IsStrictValid() && y_.IsStrictValid();
+    return x_.isStrictValid() && y_.isStrictValid();
   }  // tighter
 
   // Getters
@@ -289,58 +289,58 @@ class BoxT
     return (i == 0) ? x_ : y_;
   }
 
-  // Update() is always safe, FastUpdate() assumes existing values
-  void Update(int xVal, int yVal)
+  // update() is always safe, fastUpdate() assumes existing values
+  void update(int x_val, int y_val)
   {
-    x_.Update(xVal);
-    y_.Update(yVal);
+    x_.update(x_val);
+    y_.update(y_val);
   }
-  void FastUpdate(int xVal, int yVal)
+  void fastUpdate(int x_val, int y_val)
   {
-    x_.FastUpdate(xVal);
-    y_.FastUpdate(yVal);
+    x_.fastUpdate(x_val);
+    y_.fastUpdate(y_val);
   }
-  void Update(const PointT& pt) { Update(pt.x(), pt.y()); }
-  void FastUpdate(const PointT& pt) { FastUpdate(pt.x(), pt.y()); }
+  void update(const PointT& pt) { update(pt.x(), pt.y()); }
+  void fastUpdate(const PointT& pt) { fastUpdate(pt.x(), pt.y()); }
 
   // Geometric Query/Update
-  BoxT UnionWith(const BoxT& rhs) const
+  BoxT unionWith(const BoxT& rhs) const
   {
-    return {x_.UnionWith(rhs.x_), y_.UnionWith(rhs.y_)};
+    return {x_.unionWith(rhs.x_), y_.unionWith(rhs.y_)};
   }
-  BoxT IntersectWith(const BoxT& rhs) const
+  BoxT intersectWith(const BoxT& rhs) const
   {
-    return {x_.IntersectWith(rhs.x_), y_.IntersectWith(rhs.y_)};
+    return {x_.intersectWith(rhs.x_), y_.intersectWith(rhs.y_)};
   }
-  bool HasIntersectWith(const BoxT& rhs) const
+  bool hasIntersectWith(const BoxT& rhs) const
   {
-    return IntersectWith(rhs).IsValid();
+    return intersectWith(rhs).isValid();
   }
-  bool HasStrictIntersectWith(const BoxT& rhs) const
+  bool hasStrictIntersectWith(const BoxT& rhs) const
   {
-    return IntersectWith(rhs).IsStrictValid();
+    return intersectWith(rhs).isStrictValid();
   }  // tighter
-  bool Contain(const PointT& pt) const
+  bool contain(const PointT& pt) const
   {
-    return x_.Contain(pt.x()) && y_.Contain(pt.y());
+    return x_.contain(pt.x()) && y_.contain(pt.y());
   }
-  bool StrictlyContain(const PointT& pt) const
+  bool strictlyContain(const PointT& pt) const
   {
-    return x_.StrictlyContain(pt.x()) && y_.StrictlyContain(pt.y());
+    return x_.strictlyContain(pt.x()) && y_.strictlyContain(pt.y());
   }
-  PointT GetNearestPointTo(const PointT& pt)
+  PointT getNearestPointTo(const PointT& pt)
   {
-    return {x_.GetNearestPointTo(pt.x()), y_.GetNearestPointTo(pt.y())};
+    return {x_.getNearestPointTo(pt.x()), y_.getNearestPointTo(pt.y())};
   }
-  BoxT GetNearestPointsTo(const BoxT& val) const
+  BoxT getNearestPointsTo(const BoxT& val) const
   {
-    return {x_.GetNearestPointsTo(val.x_), y_.GetNearestPointsTo(val.y_)};
+    return {x_.getNearestPointsTo(val.x_), y_.getNearestPointsTo(val.y_)};
   }
 
-  void ShiftBy(const PointT& rhs)
+  void shiftBy(const PointT& rhs)
   {
-    x_.ShiftBy(rhs.x());
-    y_.ShiftBy(rhs.y());
+    x_.shiftBy(rhs.x());
+    y_.shiftBy(rhs.y());
   }
 
   bool operator==(const BoxT& rhs) const

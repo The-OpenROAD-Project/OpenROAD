@@ -12,6 +12,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -2220,8 +2221,7 @@ dbNet* dbNet::create(dbBlock* block,
                      const dbNameUniquifyType& uniquify,
                      dbModule* parent_module)
 {
-  std::string net_name = block->makeNewNetName(
-      parent_module ? parent_module->getModInst() : nullptr, name, uniquify);
+  std::string net_name = block->makeNewNetName(parent_module, name, uniquify);
   return create(block, net_name.c_str());
 }
 
@@ -2453,6 +2453,9 @@ void dbNet::checkSanity() const
 
   // Check the consistency with the related dbModNet
   checkSanityModNetConsistency();
+
+  // Check name collision with ModNet/ModBTerm
+  checkSanityNameCollision();
 }
 
 dbModInst* dbNet::findMainParentModInst() const
@@ -2628,7 +2631,7 @@ void dbNet::renameWithModNetInHighestHier()
   }
 }
 
-bool dbNet::isInternalTo(dbModule* module) const
+bool dbNet::isInternalTo(const dbModule* module) const
 {
   // If it's connected to any top-level ports (BTerms), it's not internal.
   if (!getBTerms().empty()) {
@@ -2758,6 +2761,81 @@ void dbNet::checkSanityModNetConsistency() const
   if (issued_warning) {
     dump(true);
   }
+}
+
+void dbNet::checkSanityNameCollision() const
+{
+  dbBlock* block = getBlock();
+  if (!block->getDb()->hasHierarchy()) {
+    return;
+  }
+
+  dbModule* module = findMainParentModule();
+  const char* base_name = block->getBaseName(getConstName());
+
+  // Check if base name collides with a ModNet or ModBTerm in this module
+  bool collides = module->getModNet(base_name) != nullptr
+                  || module->findModBTerm(base_name) != nullptr;
+  if (!collides) {
+    return;
+  }
+
+  // Check if this flat net is associated with the colliding ModNet
+  // by traversing the hierarchy. If any related ModNet has the same
+  // name in the same module, it's the same logical signal.
+  std::set<dbModNet*> related_modnets;
+  findRelatedModNets(related_modnets);
+  for (dbModNet* mn : related_modnets) {
+    if (mn->getParent() == module
+        && std::string_view{mn->getConstName()} == base_name) {
+      return;
+    }
+  }
+
+  // Cross-check from the ModNet side. Suppress when the matching
+  // hierarchical object positively resolves back to THIS flat net.
+  // When unresolvable (nullptr), suppress only if the ModNet has some
+  // connections -- likely a legitimate but unresolvable hierarchical
+  // pairing. A totally disconnected (orphan) ModNet IS a collision.
+  auto has_connections = [](dbModNet* mn) {
+    return !mn->getITerms().empty() || !mn->getBTerms().empty()
+           || !mn->getModITerms().empty() || !mn->getModBTerms().empty();
+  };
+
+  dbModNet* matching_modnet = module->getModNet(base_name);
+  if (matching_modnet) {
+    dbNet* other = matching_modnet->findRelatedNet();
+    if (other == this) {
+      return;
+    }
+    if (other == nullptr && has_connections(matching_modnet)) {
+      return;
+    }
+  } else {
+    // Only ModBTerm matches -- check its ModNet
+    dbModBTerm* matching_modbterm = module->findModBTerm(base_name);
+    if (matching_modbterm) {
+      dbModNet* bt_modnet = matching_modbterm->getModNet();
+      if (bt_modnet != nullptr) {
+        dbNet* other = bt_modnet->findRelatedNet();
+        if (other == this) {
+          return;
+        }
+        if (other == nullptr && has_connections(bt_modnet)) {
+          return;
+        }
+      }
+    }
+  }
+
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->error(utl::ODB,
+                493,
+                "SanityCheck: Flat net '{}' (base '{}') has a name collision "
+                "with ModNet/ModBTerm in module '{}'.",
+                getConstName(),
+                base_name,
+                module->getName());
 }
 
 void dbNet::dumpConnectivity(int level) const
