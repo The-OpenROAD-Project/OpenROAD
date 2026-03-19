@@ -6,7 +6,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # //:openroad is the public CLI binary — should be visible.
 genrule(
     name = "openroad_visible",
-    srcs = ["@openroad//:openroad"],
+    srcs = ["@openroad"],
     outs = ["openroad_visible.txt"],
     cmd = "echo ok > $@",
 )
