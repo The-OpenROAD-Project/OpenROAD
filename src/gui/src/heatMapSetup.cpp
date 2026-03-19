@@ -12,6 +12,7 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <string>
 #include <variant>
 
 #include "gui/heatMap.h"
