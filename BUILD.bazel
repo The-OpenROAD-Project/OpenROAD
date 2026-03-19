@@ -434,47 +434,8 @@ pkg_tar(
 
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
-#   bazelisk test //:doc_test    # all documentation checks
-#   bazelisk test //:dup_id_test # duplicate message ID check
-
-DOC_TEST_MODULES = [
-    "ant",
-    "cts",
-    "dft",
-    "dpl",
-    "drt",
-    "fin",
-    "gpl",
-    "grt",
-    "gui",
-    "ifp",
-    "mpl",
-    "odb",
-    "pad",
-    "par",
-    "pdn",
-    "ppl",
-    "psm",
-    "rcx",
-    "rmp",
-    "rsz",
-    "stt",
-    "tap",
-    "upf",
-    "utl",
-]
-
-test_suite(
-    name = "doc_test",
-    tests = [
-        "//src/{}/test:{}_{}-py_test".format(module, module, check)
-        for module in DOC_TEST_MODULES
-        for check in [
-            "man_tcl_check",
-            "readme_msgs_check",
-        ]
-    ],
-)
+#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test //:dup_id_test                         # duplicate message ID check
 
 sh_test(
     name = "dup_id_test",
