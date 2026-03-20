@@ -48,8 +48,7 @@ Typical flow:
 
 Examples:
 
-    bazelisk test --jobs=4 //src/<tool>/...
-    bazelisk test //src/...
+    bazelisk test //src/<tool>/...
 
 When broad integration confidence is needed:
 
@@ -77,6 +76,10 @@ Example validation steps:
 
     bazelisk query 'kind(test, //src/<tool>/...)'
     bazelisk test //src/<tool>/test:<new_test_target>
+
+The test target name is typically the test file name without its path prefix.
+For Tcl tests it gets a `_tcl` suffix (e.g. `my_test.tcl` → `my_test_tcl`),
+and for Python tests a `_py` suffix. Use the query above to list exact names.
 
 ## 3) Change shared build logic in `.bzl`
 
@@ -229,7 +232,7 @@ Use and adapt this in your PR description:
     Validation:
     - bazelisk test //src/<tool>/test:<specific_target>
     - bazelisk test //src/<tool>/...
-    - bazelisk test --jobs=4 //src/...
+    - bazelisk test //src/...
 
     Notes:
     - <any known limitations or follow-up work>
