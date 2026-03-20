@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <numeric>
+#include <ranges>
 #include <string>
 #include <utility>
 #include <vector>
@@ -129,7 +130,8 @@ static void cutRow(dbBlock* block,
 
     // Right-side: pull the last valid segment left if its right edge
     // creates a step too small for an endcap corner cell.
-    auto rseg = std::find_if(segments.rbegin(), segments.rend(), isValid);
+    auto rseg
+        = std::ranges::find_if(std::ranges::reverse_view(segments), isValid);
     if (rseg != segments.rend()) {
       const int actual_end
           = rseg->first
