@@ -114,10 +114,11 @@ static void cutRow(dbBlock* block,
 
     // Ensure step from original row boundary is >= endcap width
     // to avoid overlapping corner cells at the step.
-    if (min_row_width > 0) {
+    const int min_step_for_endcap = min_row_width / 2;
+    if (min_step_for_endcap > 0) {
       const int left_step = start_origin_x - row_bb.xMin();
-      if (left_step > 0 && left_step < min_row_width / 2) {
-        start_origin_x = makeSiteLoc(row_bb.xMin() + min_row_width / 2,
+      if (left_step > 0 && left_step < min_step_for_endcap) {
+        start_origin_x = makeSiteLoc(row_bb.xMin() + min_step_for_endcap,
                                      site_width,
                                      false,
                                      row_bb.xMin());
