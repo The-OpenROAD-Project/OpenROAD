@@ -261,7 +261,8 @@ void PdnGen::trimShapes()
             break;
           }
         }
-        if (!effectively_vias_stack && !new_rect.isInverted()) {
+        if (!effectively_vias_stack && !new_rect.isInverted()
+            && shape->getRect().contains(new_rect)) {
           new_shape = shape->copy();
           new_shape->setRect(new_rect);
         }
