@@ -727,7 +727,7 @@ sta::Delay ClockTree::getMinimumDriverDelay(bool visibility = false) const
     if (parent_ != nullptr) {
       for (const auto& [driver, arrival] : drivers_) {
         const auto& [parent_sink, time] = parent_->getPairedSink(driver);
-        minimum = std::min(minimum, arrival - time);
+        minimum = std::min(minimum, sta::Delay(arrival - time));
       }
     }
   }
@@ -960,7 +960,8 @@ void PathGroupSlackEndVisitor::visit(sta::PathEnd* path_end)
         return;
       }
     }
-    worst_slack_ = std::min(worst_slack_, path_end->slack(sta_));
+    worst_slack_
+        = std::min(worst_slack_, sta::delayAsFloat(path_end->slack(sta_)));
     if (!has_slack_) {
       has_slack_ = true;
     }
