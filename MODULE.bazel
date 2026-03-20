@@ -25,6 +25,7 @@ single_version_override(
     patch_strip = 1,
     patches = ["//:rules-chisel-dev-dep.patch"],
 )
+
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
