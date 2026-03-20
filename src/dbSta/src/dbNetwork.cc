@@ -2017,7 +2017,7 @@ void dbNetwork::visitConnectedPins(const Net* net,
 }
 
 // Caution:
-// - Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
+//- Network::highestConnectedNet(Net *net) retrieves the highest hierarchical
 // net connected to the given net.
 // - But `dbNetwork::highestConnectedNet(Net* net)` retrieves the corresponding
 // flat net for the given net.
@@ -5206,11 +5206,12 @@ Net* dbNetwork::highestNetAbove(Net* net) const
 
   if (modnet) {
     // Return the flat net associated with this mod net.
-    // Parasitic externality checks in ConcreteParasiticNetwork::ensureParasiticNode
-    // compare against net_ which is always a flat net (set via makeParasiticNetwork).
-    // Returning the highest mod net causes all pin nodes on hierarchically-connected
-    // nets to compare unequal to net_ and be incorrectly marked as external,
-    // making node_count_ = 0 and crashing PRIMA in measureThresholds.
+    // Parasitic externality checks in
+    // ConcreteParasiticNetwork::ensureParasiticNode compare against net_ which
+    // is always a flat net (set via makeParasiticNetwork). Returning the
+    // highest mod net causes all pin nodes on hierarchically-connected nets to
+    // compare unequal to net_ and be incorrectly marked as external, making
+    // node_count_ = 0 and crashing PRIMA in measureThresholds.
     if (dbNet* related_dbnet = modnet->findRelatedNet()) {
       return dbToSta(related_dbnet);
     }
