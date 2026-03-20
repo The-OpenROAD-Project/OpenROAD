@@ -9,7 +9,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
-} ;#checker off
+}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -172,7 +172,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-power_control_network (STAR|DAISY)] \
                                         [-connect_to_pads] \
                                         [-connect_to_pad_layers layers]
-} ;#checker off
+}
 
 proc define_pdn_grid { args } {
   set is_macro 0
@@ -398,7 +398,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]\
                                      [-allow_out_of_die]
-                                     } ;#checker off
+                                     }
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \

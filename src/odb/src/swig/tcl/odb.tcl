@@ -67,7 +67,7 @@ proc create_child_physical_clusters { args } {
   }
 }
 
-sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing} ;# checker off
+sta::define_cmd_args "set_ndr_layer_rule" {tech ndr layerName input isSpacing}
 
 proc set_ndr_layer_rule { tech ndr layerName input isSpacing } {
   set layer [$tech findLayer $layerName]
@@ -102,7 +102,7 @@ proc set_ndr_layer_rule { tech ndr layerName input isSpacing } {
   }
 }
 
-sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing} ;#checker off
+sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing}
 
 proc set_ndr_rules { tech ndr values isSpacing } {
   if { [llength $values] == 1 } {
@@ -250,7 +250,7 @@ proc create_voltage_domain { args } {
   $group setType VOLTAGE_DOMAIN
 }
 
-sta::define_cmd_args "delete_physical_cluster" {cluster_name} ;# checker off
+sta::define_cmd_args "delete_physical_cluster" {cluster_name}
 
 proc delete_physical_cluster { args } {
   sta::check_argc_eq1 "delete_physical_cluster" $args
@@ -500,7 +500,7 @@ proc report_voltage_domains { args } {
   }
 }
 
-sta::define_cmd_args "report_group" {group} ;# checker off
+sta::define_cmd_args "report_group" {group}
 proc report_group { group } {
   utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \
   \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
