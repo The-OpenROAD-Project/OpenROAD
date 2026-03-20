@@ -665,8 +665,10 @@ void CUGR::removeRouteUsage(odb::dbNet* db_net)
       grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
     }
   } else {
-    logger_->warn(
-        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+    logger_->warn(GRT,
+                  601,
+                  "Net {} not found in CUGR for rip-up.",
+                  db_net->getConstName());
   }
 }
 
@@ -678,21 +680,22 @@ void CUGR::startIncremental()
 
 void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
-  // 1. Rip up all dirty nets to free up congestion
+  // Combined loop for rip-up and slack querying for performance optimization
   for (const int idx : net_indices) {
-    if (gr_nets_[idx]->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
+    GRNet* gr_net = gr_nets_[idx].get();
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    }
+
+    if (sta_ != nullptr) {
+      odb::dbNet* db_net = gr_net->getDbNet();
+      float slack = getNetSlack(db_net);
+      gr_net->setSlack(slack);
     }
   }
 
-  // 2. Query STA for fresh slacks if timing is available
+  // 3. Sort: Most negative slack (critical) nets go FIRST
   if (sta_ != nullptr) {
-    for (const int idx : net_indices) {
-      odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
-      float slack = getNetSlack(db_net);
-      gr_nets_[idx]->setSlack(slack);
-    }
-    // 3. Sort: Most negative slack (critical) nets go FIRST
     sortNetIndices(net_indices);
   }
 

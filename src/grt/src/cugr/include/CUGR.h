@@ -60,7 +60,7 @@ struct Constants
 
   double pin_patch_threshold = 20.0;
   int pin_patch_padding = 1;
-  double wire_patch_threshold = 2.0;
+  double weight_wire_patch = 2.0;
   double wire_patch_inflation_rate = 1.2;
 
   bool write_heatmap = false;
@@ -94,6 +94,7 @@ class CUGR
   }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
+  void removeRouteUsage(odb::dbNet* net);  // <--- ADDED THIS DECLARATION
   void startIncremental();
   void endIncremental();
 
