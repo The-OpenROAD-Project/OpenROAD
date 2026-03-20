@@ -27,7 +27,7 @@ This will start a grafana endpoint ready to collect from the OpenROAD applicatio
 like to track. By default it's looking for an http server running on port 8080 on your localhost.
 
 To start the metrics endpoint in OpenROAD, run:
-```
+```tcl
 utl::startPrometheusEndpoint 8080
 ```
 

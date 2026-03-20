@@ -20,7 +20,7 @@ The `define_pin_shape_pattern` command defines a pin placement grid on the
 specified layer. This grid has positions inside the die area, not only at
 the edges of the die boundary.
 
-```
+```tcl
 define_pin_shape_pattern 
     [-layer layer]
     [-x_step x_step]
@@ -63,7 +63,7 @@ It is possible to use the `-region`, `-group` and `-order` arguments together
 per `set_io_pin_constraint` call, but the `-mirrored_pins` argument should be
 called alone.
 
-```
+```tcl
 set_io_pin_constraint 
     [-direction direction]
     [-pin_names names]
@@ -103,7 +103,7 @@ cannot be placed.
 It is possible to use the `-region` argument multiple times in a single call
 of `exclude_io_pin_region`.
 
-```
+```tcl
 exclude_io_pin_region 
     -region edge:interval
 ```
@@ -120,7 +120,7 @@ The `clear_io_pin_constraints` command clears all the previously-defined
 constraints and pin shape patterns created with `set_io_pin_constraint` or
 `define_pin_shape_pattern`.
 
-```
+```tcl
 clear_io_pin_constraints
 ```
 

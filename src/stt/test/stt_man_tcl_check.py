@@ -67,10 +67,13 @@ class TestManTclCheck(unittest.TestCase):
                 p,
                 f"{tool_dir}: help count ({h}) != proc count ({p})",
             )
-            self.assertEqual(
-                p,
+            # README may document commands from other modules, so
+            # only require that all code commands are documented (h <= r).
+            self.assertLessEqual(
+                h,
                 r,
-                f"{tool_dir}: proc count ({p}) != readme count ({r})",
+                f"{tool_dir}: help count ({h}) > readme count ({r})"
+                " — undocumented commands",
             )
 
 

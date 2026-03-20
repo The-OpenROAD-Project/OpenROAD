@@ -58,8 +58,8 @@ global_route
 This command sets the minimum and maximum routing layers for signal and clock nets.
 Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
-```
-set_routing_layers
+```tcl
+set_routing_layers 
     [-signal min-max]
     [-clock min-max]
 ```
@@ -91,8 +91,8 @@ set_macro_extension extension
 
 This command sets the pin offset distance.
 
-```
-set_pin_offset offset
+```tcl
+set_pin_offset offset 
 ```
 
 #### Options
@@ -235,15 +235,17 @@ repair_antennas
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
 
 
-### Plot Global Route Segments
+### Plot Global Routing Guides
 
-The `draw_route_segments` command plots the route segments for a set of nets.
-To erase the route segments from the GUI, pass an empty list to this command:
-`draw_route_segments {}`.
+The `draw_route_guides` command plots the route guides for a set of nets.
+It also plots the route segments for a set of nets when using the -show_segments flag.
+To erase the route guides from the GUI, pass an empty list to this command:
+`draw_route_guides {}`.
 
 ```tcl
-draw_route_segments
+draw_route_guides 
     net_names
+    [-show_segments]
     [-show_pin_locations]
 ```
 

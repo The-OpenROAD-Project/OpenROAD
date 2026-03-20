@@ -116,8 +116,8 @@ create_child_physical_clusters
 
 Description TBC.
 
-```
-set_ndr_layer_rule
+```tcl
+set_ndr_layer_rule  
     tech
     ndr
     layerName
@@ -138,7 +138,7 @@ set_ndr_layer_rule
 
 Description TBC.
 
-```
+```tcl
 set_ndr_rules
     tech
     ndr
@@ -395,7 +395,7 @@ Functional equivalence is not required.
 New module is not allowed to have multiple levels of hierarchy for now.
 Newly instantiated module is uniquified.
 
-```
+```tcl
 replace_design instance_name module_name
 ```
 

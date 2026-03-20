@@ -6,6 +6,7 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 py_library(
     name = "extract_utils",
     srcs = ["extract_utils.py"],
+    imports = ["."],
     visibility = ["//visibility:public"],
 )
 
