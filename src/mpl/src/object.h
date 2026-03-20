@@ -73,11 +73,17 @@ using BundledNetList = std::vector<BundledNet>;
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
 
-enum ClusterType
+enum class ClusterType
 {
-  StdCellCluster,
-  HardMacroCluster,
-  MixedCluster
+  StdCell,
+  Macro,
+  Mixed,
+  ConstrainedIOs,
+  UnconstrainedIOs,
+  IOBundle,
+  PAD,
+  MacroArray,
+  InterconnectedMacrosArray
 };
 
 // Metrics class for logical modules and clusters
@@ -145,9 +151,9 @@ class Cluster
                                     int width,
                                     int height,
                                     bool is_cluster_of_unconstrained_io_pins);
-  bool isIOPadCluster() const { return is_io_pad_cluster_; }
+  bool isIOPadCluster() const { return type_ == ClusterType::PAD; }
   void setAsIOPadCluster(const odb::Point& pos, int width, int height);
-  bool isIOBundle() const { return is_io_bundle_; }
+  bool isIOBundle() const { return type_ == ClusterType::IOBundle; }
   void setAsIOBundle(const odb::Point& pos, int width, int height);
 
   bool isFixedMacro() const { return is_fixed_macro_; }
@@ -155,8 +161,8 @@ class Cluster
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
-  void setAsMacroArray() { is_macro_array_ = true; }
-  bool isMacroArray() const { return is_macro_array_; }
+  void setAsMacroArray() { type_ = ClusterType::MacroArray; }
+  bool isMacroArray() const { return type_ == ClusterType::MacroArray; }
   bool isEmpty() const;
   bool correspondsToLogicalModule() const;
 
@@ -213,7 +219,7 @@ class Cluster
   int id_{-1};
   std::string name_;
 
-  ClusterType type_{MixedCluster};
+  ClusterType type_{ClusterType::Mixed};
   Metrics metrics_;
 
   std::vector<odb::dbModule*> db_modules_;
@@ -221,12 +227,6 @@ class Cluster
   std::vector<odb::dbInst*> leaf_macros_;
   std::vector<HardMacro*> hard_macros_;
 
-  bool is_cluster_of_unplaced_io_pins_{false};
-  bool is_cluster_of_unconstrained_io_pins_{false};
-  bool is_io_pad_cluster_{false};
-  bool is_io_bundle_{false};
-  bool is_array_of_interconnected_macros_{false};
-  bool is_macro_array_{false};
   bool is_fixed_macro_{false};
 
   std::unique_ptr<SoftMacro> soft_macro_;

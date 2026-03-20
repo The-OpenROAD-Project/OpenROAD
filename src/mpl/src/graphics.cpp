@@ -178,14 +178,14 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
 
   for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
-      case HardMacroCluster: {
+      case ClusterType::Macro: {
         std::vector<mpl::HardMacro*> hard_macros = child->getHardMacros();
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
         }
         break;
       }
-      case StdCellCluster: {
+      case ClusterType::StdCell: {
         if (child->isLeaf()) {
           soft.push_back(*child->getSoftMacro());
         } else {
@@ -193,10 +193,12 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         }
         break;
       }
-      case MixedCluster: {
+      case ClusterType::Mixed: {
         fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
       }
+      default:
+        break;
     }
   }
 }
@@ -682,9 +684,9 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
     return;
   }
 
-  if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
+  if (soft_macro.getCluster()->getClusterType() == ClusterType::StdCell) {
     painter.setBrush(gui::Painter::kDarkBlue);
-  } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
+  } else if (soft_macro.getCluster()->getClusterType() == ClusterType::Macro) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
   } else {
