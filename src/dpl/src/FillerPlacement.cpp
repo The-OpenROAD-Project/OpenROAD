@@ -192,9 +192,8 @@ void Opendp::placeRowFillers(GridY row,
     }
 
     GridX gap = k - j;
-    const DbuY row_height{site->getHeight()};
     dbMasterSeq& fillers
-        = gapFillers(implant, gap, row_height, filler_masters_by_implant);
+        = gapFillers(implant, gap, site, filler_masters_by_implant);
     if (fillers.empty()) {
       DbuX x{core_.xMin() + gridToDbu(j, site_width)};
       DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
@@ -204,7 +203,7 @@ void Opendp::placeRowFillers(GridY row,
                      "at ({:.2f}, {:.2f}) um between {} and {}",
                      gap,
                      block_->dbuToMicrons(gridToDbu(gap, site_width).v),
-                     block_->dbuToMicrons(row_height.v),
+                     block_->dbuToMicrons(site->getHeight()),
                      block_->dbuToMicrons(x.v),
                      block_->dbuToMicrons(y.v),
                      gridInstName(row, j - 1),
@@ -255,7 +254,7 @@ const char* Opendp::gridInstName(GridY row, GridX col)
 dbMasterSeq& Opendp::gapFillers(
     odb::dbTechLayer* implant,
     GridX gap,
-    DbuY row_height,
+    odb::dbSite* site,
     const MasterByImplant& filler_masters_by_implant)
 {
   auto iter = filler_masters_by_implant.find(implant);
@@ -264,7 +263,7 @@ dbMasterSeq& Opendp::gapFillers(
   }
   const dbMasterSeq& filler_masters = iter->second;
 
-  GapFillers& gap_fillers = gap_fillers_[implant][row_height];
+  GapFillers& gap_fillers = gap_fillers_[implant][site];
   if (gap_fillers.size() < gap + 1) {
     gap_fillers.resize(gap.v + 1);
   }
@@ -275,7 +274,8 @@ dbMasterSeq& Opendp::gapFillers(
     const DbuX site_width = grid_->getSiteWidth();
     bool have_filler1 = smallest_filler->getWidth() == site_width;
     for (dbMaster* filler_master : filler_masters) {
-      if (DbuY{static_cast<int>(filler_master->getHeight())} != row_height) {
+      if (filler_master->getSite() != site
+          || filler_master->getHeight() != site->getHeight()) {
         continue;
       }
       int filler_width = filler_master->getWidth() / site_width.v;
