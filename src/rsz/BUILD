@@ -167,14 +167,16 @@ python_wrap_cc(
 
 cc_binary(
     name = "_rsz_py.so",
-    srcs = [":swig-py"],
+    srcs = [
+        ":swig-py",
+    ],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src"],
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
-        "//src/rsz",
         "//src/odb",
+        "//src/rsz",
         "//src/utl",
         "@boost.stacktrace",
         "@rules_python//python/cc:current_py_cc_headers",
