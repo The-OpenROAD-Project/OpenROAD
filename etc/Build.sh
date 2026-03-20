@@ -30,18 +30,18 @@ usage: $0 [OPTIONS]
 
 OPTIONS:
   -cmake='-<key>=<value> [-<key>=<value> ...]'  User defined cmake options
-                                                  Note: use single quote after
-                                                  -cmake= and double quotes if
-                                                  <key> has multiple <values>
-                                                  e.g.: -cmake='-DFLAGS="-a -b"'
-  -compiler=COMPILER_NAME                       Compiler name: gcc or clang
-                                                  Default: gcc
+                                                 Note: use single quote after
+                                                 -cmake= and double quotes if
+                                                 <key> has multiple <values>
+                                                 e.g.: -cmake='-DFLAGS="-a -b"'
+  -compiler=COMPILER_NAME                        Compiler name: gcc or clang
+                                                 Default: gcc
   -no-warnings
                                                 Compiler warnings are
                                                 considered errors, i.e.,
                                                 use -Werror flag during build.
   -dir=PATH                                     Path to store build files.
-                                                  Default: ./build
+                                                 Default: ./build
   -coverage                                     Enable cmake coverage options
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
@@ -50,16 +50,16 @@ OPTIONS:
   -cpp20                                        Use C++20 standard
   -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
-                                                  compile. Default: \`nproc\` on linux
-                                                  or \`sysctl -n hw.logicalcpu\` on macOS
+                                                 compile. Default: \`nproc\` on linux
+                                                 or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
   -deps-prefixes-file=FILE                      File with CMake packages roots,
-                                                  its content extends -cmake argument.
-                                                  By default, "openroad_deps_prefixes.txt"
-                                                  file from OpenROAD's "etc" directory
-                                                  or from system "/etc".
+                                                 its content extends -cmake argument.
+                                                 By default, "openroad_deps_prefixes.txt"
+                                                 file from OpenROAD's "etc" directory
+                                                 or from system "/etc".
 
 EOF
     exit "${1:-1}"
@@ -205,6 +205,57 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
+
+# ==============================================================================
+# PRE-COMPILATION SYSTEM CHECKS
+# ==============================================================================
+if [[ -t 1 ]]; then
+    RED=$(tput setaf 1)
+    GREEN=$(tput setaf 2)
+    YELLOW=$(tput setaf 3)
+    NC=$(tput sgr0) # No Color
+else
+    RED=''
+    GREEN=''
+    YELLOW=''
+    NC=''
+fi
+
+echo -e "${YELLOW}Running pre-compilation system checks...${NC}"
+
+check_command() {
+    if ! command -v "$1" &> /dev/null; then
+        echo -e "${RED}[ERROR] Required dependency '$1' is missing!${NC}"
+        echo "Please install it using 'sudo ./etc/DependencyInstaller.sh' before building."
+        exit 1
+    else
+        echo -e "${GREEN}[OK] Found $1${NC}"
+    fi
+}
+
+# Essential build tools required for OpenROAD
+check_command "cmake"
+check_command "bison"
+check_command "flex"
+check_command "swig"
+
+# Compiler check based on user selection
+if [[ "${compiler:-gcc}" == "gcc" ]]; then
+    check_command "gcc"
+    check_command "g++"
+elif [[ "${compiler}" == "clang" ]]; then
+    check_command "clang"
+    check_command "clang++"
+elif [[ "${compiler}" == "clang-16" ]]; then
+    check_command "clang-16"
+    check_command "clang++-16"
+else
+    # Handle unknown compilers gracefully - suggested by gemini-bot
+    echo -e "${YELLOW}[WARNING] Unsupported compiler '${compiler}' specified. Skipping compiler pre-compilation check.${NC}"
+fi
+
+echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
+# ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
 if [[ "$isNinja" == "yes" ]]; then
