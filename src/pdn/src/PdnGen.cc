@@ -232,21 +232,13 @@ void PdnGen::trimShapes()
           if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
             const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
             const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
-            // adjust x
-            if (std::abs(deltax0) < std::abs(deltax1)) {
-              new_rect.moveDelta(deltax0, 0);
-            } else {
-              new_rect.moveDelta(deltax1, 0);
-            }
+            new_rect.moveDelta(
+                std::abs(deltax0) < std::abs(deltax1) ? deltax0 : deltax1, 0);
           } else {
             const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
             const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
-            // adjust y
-            if (std::abs(deltay0) < std::abs(deltay1)) {
-              new_rect.moveDelta(0, deltay0);
-            } else {
-              new_rect.moveDelta(0, deltay1);
-            }
+            new_rect.moveDelta(
+                0, std::abs(deltay0) < std::abs(deltay1) ? deltay0 : deltay1);
           }
         }
         if (new_rect == shape->getRect()) {  // no change to shape
