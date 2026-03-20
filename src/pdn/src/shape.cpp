@@ -245,7 +245,8 @@ bool Shape::cut(const ObstructionTree& obstructions,
        it++) {
     const auto& other_shape = *it;
 
-    if (other_shape->net_ != nullptr && net_ == other_shape->net_) {
+    if (other_shape->net_ != nullptr && net_ == other_shape->net_
+        && other_shape->shapeType() != ShapeType::SHAPE) {
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {

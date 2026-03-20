@@ -19,6 +19,7 @@ bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
 bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
+bazel_dep(name = "rules_chisel", version = "0.2.0", dev_dependency = True)
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
@@ -142,7 +143,7 @@ bazel_dep(name = "bazel-orfs", dev_dependency = True)
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "0ceb33936eba2cedc3b8d356b31f041465f526ce",
+    commit = "0818f4b9c854c3c34b1500b41840a5d4f2b6717d",
     remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
 )
 
@@ -151,15 +152,19 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dep
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-636-gb9f42fead",
+    image = "docker.io/openroad/orfs:26Q1-669-gbdeb18939",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "6d3eaf1b44a4810ee3de7bb7c0f3aa1c5d71489a16fe011b38e8d59294c6e3d9",
+    sha256 = "812c5c543252460a9458010cdff4f851d6441e592c74d6254b15889e7ad95c6a",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.17"
+
+CHISEL_VERSION = "7.2.0"
+
+FIRTOOL_RESOLVER_VERSION = "2.0.1"
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
@@ -180,6 +185,14 @@ scala_deps.settings(
     fetch_sources = True,
 )
 scala_deps.scala()
+
+chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel")
+chisel.toolchain(
+    chisel_version = CHISEL_VERSION,
+    firtool_resolver_version = FIRTOOL_RESOLVER_VERSION,
+    scala_version = SCALA_VERSION,
+)
+use_repo(chisel, "chisel_maven")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven", dev_dependency = True)
 maven.install(
