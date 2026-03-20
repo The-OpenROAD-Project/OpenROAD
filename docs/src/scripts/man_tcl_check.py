@@ -72,7 +72,7 @@ for tool_dir in help_dict:
         readme_dict.get(tool_dir, 0),
     )
     print(tool_dir.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
-    if h == p == r:
-        print("Command counts match.")
-    else:
-        print("Command counts do not match.")
+    assert h == p == r, (
+        f"Command counts do not match for {tool_dir}: "
+        f"help={h}, proc={p}, readme={r}"
+    )

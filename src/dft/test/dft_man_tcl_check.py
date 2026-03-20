@@ -71,7 +71,6 @@ print(
 for path in help_dict:
     h, p, r = help_dict[path], proc_dict[path], readme_dict[path]
     print(path.ljust(20), str(h).ljust(15), str(p).ljust(15), str(r))
-    if h == p == r:
-        print("Command counts match.")
-    else:
-        print("Command counts do not match.")
+    assert h == p == r, (
+        f"Command counts do not match for {path}: " f"help={h}, proc={p}, readme={r}"
+    )
