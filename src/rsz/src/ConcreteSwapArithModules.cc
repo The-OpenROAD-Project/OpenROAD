@@ -310,7 +310,7 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
   bool swapped = swapped_count > 0;
   if (swapped) {
     // Invalidate vertex level ordering
-    resizer_->level_drvr_vertices_valid_ = false;
+    resizer_->invalidateVertexOrdering();
   }
   return swapped;
 }

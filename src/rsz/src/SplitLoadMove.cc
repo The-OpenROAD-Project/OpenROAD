@@ -209,7 +209,7 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     estimate_parasitics_->parasiticsInvalid(out_net);
 
     // Invalidate vertex level ordering
-    resizer_->level_drvr_vertices_valid_ = false;
+    resizer_->invalidateVertexOrdering();
     return true;
   }
 

@@ -203,7 +203,7 @@ bool UnbufferMove::doMove(const Path* drvr_path,
       bool removed = removeBuffer(drvr);
       if (removed) {
         // Invalidate vertex level ordering
-        resizer_->level_drvr_vertices_valid_ = false;
+        resizer_->invalidateVertexOrdering();
       }
       return removed;
     }
