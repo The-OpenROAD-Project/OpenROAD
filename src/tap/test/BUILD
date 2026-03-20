@@ -149,14 +149,14 @@ filegroup(
         ) + {
             "allow_one_site_gaps": ["disallow_one_site_gaps.def"],
             "boundary_macros": [],
-            "disallow_one_site_gaps2": [
-                "disallow_one_site_gaps.def",
-                "disallow_one_site_gaps.defok",
-            ],
             "cut_rows_min_step_bottom_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_bottom_right": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_left": ["cut_rows_min_step.def"],
             "cut_rows_min_step_top_right": ["cut_rows_min_step.def"],
+            "disallow_one_site_gaps2": [
+                "disallow_one_site_gaps.def",
+                "disallow_one_site_gaps.defok",
+            ],
             "gcd_sky130_separate": ["gcd_sky130.defok"],
             "multiple_calls": ["gcd_ripup.def"],
             "overlap_cover": ["sky130hs_data/cover.lef"],
