@@ -633,7 +633,6 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     // Pick which result to inspect, cycling through overlapping objects.
     // If the currently inspected object is in the results, select the next one.
     std::vector<gui::Selected> new_selectables;
-    auto* registry = gui::DescriptorRegistry::instance();
     gui::Selected inspected_sel;
     if (!results.empty()) {
       int pick = 0;
@@ -644,6 +643,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
           current = state.current_inspected;
         }
         if (current) {
+          auto* registry = gui::DescriptorRegistry::instance();
           for (int i = 0; i < static_cast<int>(results.size()); ++i) {
             gui::Selected candidate = registry->makeSelected(results[i].object);
             if (candidate == current) {
@@ -653,7 +653,8 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
           }
         }
       }
-      inspected_sel = registry->makeSelected(results[pick].object);
+      inspected_sel
+          = gui::DescriptorRegistry::instance()->makeSelected(results[pick].object);
       writeInspectPayload(
           builder, inspected_sel, new_selectables, /*can_navigate_back=*/false);
     } else {
@@ -912,6 +913,353 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
     const int count = static_cast<int>(state.route_guide_net_ids.size());
     const std::string json
         = R"({"ok":1,"count":)" + std::to_string(count) + "}";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  // Limits to prevent fanout explosions (e.g. clock net at depth > 0).
+  static constexpr int kMaxConeInsts = 150;
+  static constexpr int kMaxNetFanout = 30;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* target_inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!target_inst) {
+      throw std::runtime_error("Instance not found: " + req.schematic_inst_name);
+    }
+
+    std::set<odb::dbInst*> visited_insts;
+    std::set<odb::dbNet*> visited_nets;
+    std::vector<odb::dbInst*> current_level = {target_inst};
+
+    visited_insts.insert(target_inst);
+
+    bool cone_full = false;
+    for (int d = 0; d < req.schematic_depth && !cone_full; ++d) {
+      std::vector<odb::dbInst*> next_level;
+      for (odb::dbInst* inst : current_level) {
+        for (odb::dbITerm* iterm : inst->getITerms()) {
+          odb::dbNet* net = iterm->getNet();
+          if (!net || visited_nets.find(net) != visited_nets.end()) {
+            continue;
+          }
+          // Skip high-fanout nets (clock, reset, power-like) to avoid explosion
+          if (static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+            continue;
+          }
+          visited_nets.insert(net);
+          for (odb::dbITerm* connected_iterm : net->getITerms()) {
+            odb::dbInst* connected_inst = connected_iterm->getInst();
+            if (visited_insts.find(connected_inst) == visited_insts.end()) {
+              visited_insts.insert(connected_inst);
+              next_level.push_back(connected_inst);
+              if (static_cast<int>(visited_insts.size()) >= kMaxConeInsts) {
+                cone_full = true;
+                break;
+              }
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        if (cone_full) {
+          break;
+        }
+      }
+      current_level = next_level;
+    }
+
+    // Yosys-compatible JSON for NetlistsVG
+    // { "modules": { "top": { "ports": { ... }, "cells": { ... } } } }
+
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;  // Start from 2 (0 = const-0, 1 = const-1 in Yosys)
+    for (odb::dbNet* net : visited_nets) {
+      net_to_id[net] = next_net_id++;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    // Module-level attributes (required by Yosys JSON schema)
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    // Top-level ports (dbBTerm) connected to our visited nets
+    builder.beginObject("ports");
+    for (odb::dbNet* net : visited_nets) {
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        builder.beginObject(bterm->getName());
+        std::string dir = "inout";
+        if (bterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field("direction", dir);
+        builder.beginArray("bits");
+        builder.value(net_to_id[net]);
+        builder.endArray();
+        builder.endObject();
+      }
+    }
+    builder.endObject();
+
+    // Cells (instances)
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : visited_insts) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      // Use master cell name as type; fall back to "$unknown" for safety
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      // Required Yosys JSON fields (netlistsvg guards these with || {}, but
+      // providing them avoids any version-specific surprises)
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet() || visited_nets.find(iterm->getNet()) == visited_nets.end()) continue;
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net || visited_nets.find(net) == visited_nets.end()) continue;
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+      
+      builder.endObject();
+    }
+    builder.endObject();
+
+    // Net names for better labeling
+    builder.beginObject("netnames");
+    for (odb::dbNet* net : visited_nets) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject(); // top
+    builder.endObject(); // modules
+    builder.endObject(); // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicFull(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;
+    for (odb::dbNet* net : block->getNets()) {
+      net_to_id[net] = next_net_id++;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    builder.beginObject("ports");
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      odb::dbNet* net = bterm->getNet();
+      if (!net) {
+        continue;
+      }
+      builder.beginObject(bterm->getName());
+      std::string dir = "inout";
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        dir = "input";
+      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        dir = "output";
+      }
+      builder.field("direction", dir);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : block->getInsts()) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet()) {
+          continue;
+        }
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net) {
+          continue;
+        }
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("netnames");
+    for (odb::dbNet* net : block->getNets()) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicInspect(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!inst) {
+      throw std::runtime_error("Instance not found: " + req.schematic_inst_name);
+    }
+
+    gui::Selected sel
+        = gui::DescriptorRegistry::instance()->makeSelected(inst);
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      state.current_inspected = sel;
+      state.navigation_history.clear();
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(builder, sel, new_selectables, /*can_navigate_back=*/false);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    builder.endObject();
+
+    const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;

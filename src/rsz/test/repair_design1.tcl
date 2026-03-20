@@ -13,6 +13,10 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
+
 repair_design
 
 report_check_types -max_slew -max_cap -max_fanout
+
+set_debug_level WEB tile 1
+web_server -dir /workspace/localrepos/orfs_gui_schematics/tools/OpenROAD/src/web/src

@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2019-2026, The OpenROAD Authors
+
+# Path baked in at CMake configure time (configure_file substitution).
+# [info script] is empty when scripts are eval'd from memory by swig_lib,
+# so we cannot use it to locate the web assets at runtime.
+namespace eval web {
+  variable script_dir "@CMAKE_CURRENT_SOURCE_DIR@/src"
+}
+
+sta::define_cmd_args "web_server" { [-host host] [-port port] [-dir dir] }
+
+proc web_server { args } {
+  sta::parse_key_args "web_server" args \
+    keys {-host -port -dir} flags {}
+
+  sta::check_argc_eq0 "web_server" $args
+
+  set host "127.0.0.1"
+  if { [info exists keys(-host)] } {
+    set host $keys(-host)
+  }
+
+  set port 8080
+  if { [info exists keys(-port)] } {
+    set port $keys(-port)
+  }
+
+  # Default to the directory containing web assets (index.html, *.js, etc.).
+  set doc_root $web::script_dir
+  if { [info exists keys(-dir)] } {
+    set doc_root $keys(-dir)
+  }
+
+  web::web_server_cmd $host $port $doc_root
+}

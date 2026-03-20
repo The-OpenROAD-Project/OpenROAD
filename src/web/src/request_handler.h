@@ -83,6 +83,9 @@ struct WebSocketRequest
     SET_ACTIVE_HEATMAP,
     SET_HEATMAP,
     HEATMAP_TILE,
+    SCHEMATIC_CONE,
+    SCHEMATIC_FULL,
+    SCHEMATIC_INSPECT,
     UNKNOWN
   };
 
@@ -104,6 +107,10 @@ struct WebSocketRequest
 
   // TCL_EVAL fields
   std::string tcl_cmd;
+
+  // SCHEMATIC_CONE fields
+  std::string schematic_inst_name;
+  int schematic_depth = 0;
 
   // TIMING_REPORT fields
   bool timing_is_setup = true;
@@ -224,6 +231,10 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
+  WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
+  WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
+                                          SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;

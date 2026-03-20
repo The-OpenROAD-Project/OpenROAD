@@ -2,10 +2,17 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 include("openroad")
+
+# Bake the source directory path into web.tcl at configure time.
+# [info script] is empty when scripts are eval'd from an encoded C++ string
+# (as swig_lib does), so configure_file is the only reliable way to embed
+# the asset path.
+configure_file(src/web.tcl.in ${CMAKE_CURRENT_BINARY_DIR}/web.tcl @ONLY)
+
 swig_lib(NAME         web
          NAMESPACE    web
          I_FILE       src/web.i
-         SCRIPTS      src/web.tcl
+         SCRIPTS      ${CMAKE_CURRENT_BINARY_DIR}/web.tcl
          SWIG_INCLUDES ${ODB_HOME}/src/swig/common
                        ${ODB_HOME}/src/swig/tcl
                        ${ODB_HOME}/include

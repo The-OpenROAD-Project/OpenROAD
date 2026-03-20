@@ -11,6 +11,7 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
+import { SchematicWidget } from './schematic-widget.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -324,6 +325,7 @@ const inspector = createInspectorPanel(app, redrawAllLayers);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
+app.updateInspector = updateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -391,11 +393,21 @@ const defaultLayoutConfig = {
                 width: 55,
                 content: [
                     {
-                        type: 'component',
-                        componentType: 'LayoutViewer',
-                        title: 'Layout',
+                        type: 'stack',
                         height: 70,
-                        isClosable: false,
+                        content: [
+                            {
+                                type: 'component',
+                                componentType: 'LayoutViewer',
+                                title: 'Layout',
+                                isClosable: false,
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'SchematicWidget',
+                                title: 'Schematic',
+                            },
+                        ],
                     },
                     {
                         type: 'component',
@@ -462,12 +474,24 @@ app.goldenLayout.registerComponentFactoryFunction('Browser', createBrowser);
 app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWidget);
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
+function createSchematicWidget(container) {
+    new SchematicWidget(container, app);
+}
+
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
+app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 2;
+const LAYOUT_VERSION = 5;
+
+// ─── WebSocket Init ─────────────────────────────────────────────────────────
+// Must be created before loadLayout so that components (e.g. SchematicWidget)
+// constructed during layout initialisation can access app.websocketManager.
+
+const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -511,11 +535,7 @@ function focusComponent(componentType) {
 }
 
 app.focusComponent = focusComponent;
-
-// ─── WebSocket Init ─────────────────────────────────────────────────────────
-
-const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+app.redrawAllLayers = redrawAllLayers;
 
 app.websocketManager.readyPromise.then(async () => {
     try {
@@ -564,6 +584,9 @@ app.websocketManager.readyPromise.then(async () => {
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
+                        if (inst.type === 'Inst') {
+                            app.selectedInstanceName = inst.name;
+                        }
                         updateInspector(data);
                         focusComponent('Inspector');
                         // Highlight selected instance bbox
