@@ -183,9 +183,9 @@ placement_cluster
 
 The `global_placement_debug` command initiates a debug mode, enabling real-time visualization of the algorithm's progress on the layout. Use the command prior to executing the `global_placement` command, for example on ORFS `flow/scripts/global_place.tcl` script.
 
-```tcl
+```
 global_placement_debug
-    [-pause] 
+    [-pause]
     [-update]
     [-inst]
     [-draw_bins]

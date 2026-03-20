@@ -414,7 +414,7 @@ rdl_route
 
 If some of of the terminals in the design do not need to be RDL routed, this can be done by assigning `RDL_ROUTE 0` to a terminal.
 
-```tcl
+```
 # Assumes iterm is the pin to be not be routed
 set prop [odb::dbBoolProperty_create $iterm RDL_ROUTE 0]
 

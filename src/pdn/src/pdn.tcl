@@ -858,7 +858,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network -connect_to_pad_layers} \
-    flags {-connect_to_pads} ;# checker off
+    flags {-connect_to_pads}
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"
