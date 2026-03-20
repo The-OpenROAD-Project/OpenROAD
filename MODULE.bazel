@@ -20,6 +20,11 @@ bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 # Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
 bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
 bazel_dep(name = "rules_chisel", version = "0.2.0", dev_dependency = True)
+single_version_override(
+    module_name = "rules_chisel",
+    patch_strip = 1,
+    patches = ["//:rules-chisel-dev-dep.patch"],
+)
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)

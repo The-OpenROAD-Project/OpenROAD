@@ -1407,8 +1407,8 @@
     },
     "@@rules_chisel+//chisel:extensions.bzl%chisel": {
       "general": {
-        "bzlTransitiveDigest": "aCXBew5jYa9d5TkWJLI5A8nWpTdanPY+PbldpTQLXr8=",
-        "usagesDigest": "cyt2rWGIn4nNGvnFMJCaFYLV5TJb2XL/KUof4xYvBYY=",
+        "bzlTransitiveDigest": "A7uOFdGbVcGzkOn7U8qyeWCQnH/S5qxSCqfwta8gWis=",
+        "usagesDigest": "S0yFvSQ6GZqge6FTlmFQ8RuTMIUcSiYOCzpTaQy0jK8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1458,10 +1458,10 @@
           }
         },
         "moduleExtensionMetadata": {
-          "explicitRootModuleDirectDeps": [
+          "explicitRootModuleDirectDeps": [],
+          "explicitRootModuleDirectDevDeps": [
             "chisel_maven"
           ],
-          "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",
           "reproducible": false
         },

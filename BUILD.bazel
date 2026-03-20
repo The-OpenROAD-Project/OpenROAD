@@ -422,6 +422,7 @@ filegroup(
 
 # --- TCL linting (tclint) -------------------------------------------------
 
+# buildifier: disable=native-sh-test
 sh_test(
     name = "lint_tcl_test",
     srcs = ["//bazel:tcl_lint_test.sh"],
@@ -435,6 +436,7 @@ sh_test(
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
 
+# buildifier: disable=native-sh-test
 sh_test(
     name = "fmt_tcl_test",
     srcs = ["//bazel:tcl_fmt_test.sh"],
@@ -448,6 +450,7 @@ sh_test(
 
 # --- TCL auto-format (tclfmt --in-place) ----------------------------------
 
+# buildifier: disable=native-sh-binary
 sh_binary(
     name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
