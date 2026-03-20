@@ -226,7 +226,7 @@ void PdnGen::trimShapes()
         }
         odb::Rect new_rect
             = layer->adjustToMinArea(min_rect, shape->getLayerDirection());
-        if (!shape->getRect().contains(new_rect)) {
+        if (!min_rect.isInverted() && !shape->getRect().contains(new_rect)) {
           // shape sticks out of the original rect, need to move it so that it
           // is contained
           if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
@@ -261,7 +261,7 @@ void PdnGen::trimShapes()
             break;
           }
         }
-        if (!effectively_vias_stack) {
+        if (!effectively_vias_stack && !new_rect.isInverted()) {
           new_shape = shape->copy();
           new_shape->setRect(new_rect);
         }
