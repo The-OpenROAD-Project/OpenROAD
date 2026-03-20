@@ -670,6 +670,7 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
   importMockturtleMappedNetwork(sta, mapped_ntk, libs, cut, logger);
 
   db->triggerPostReadDb();
+  resizer->invalidateLevelDrvrVertices();
 }
 
 }  // namespace rmp
