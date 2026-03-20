@@ -51,6 +51,23 @@ static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
   return false;
 }
 
+namespace {
+bool usesRowSites(const Node* node)
+{
+  return node->getSite() != nullptr;
+}
+
+void syncOrientToRowSite(Grid* grid, Node* node, GridX grid_x, GridY grid_y)
+{
+  auto* site = node->getSite();
+  if (site == nullptr) {
+    return;
+  }
+  if (const auto orientation = grid->getSiteOrientation(grid_x, grid_y, site)) {
+    node->adjustCurrOrient(*orientation);
+  }
+}
+}  // namespace
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
                          Grid* grid,
@@ -1059,7 +1076,7 @@ void DetailedMgr::collectSingleHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed() || !usesRowSites(nd)) {
       continue;
     }
     if (arch_->isMultiHeightCell(nd)) {
@@ -1097,7 +1114,8 @@ void DetailedMgr::collectMultiHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isFixed() || arch_->isSingleHeightCell(nd)) {
+    if (nd->isTerminal() || nd->isFixed() || !usesRowSites(nd)
+        || arch_->isSingleHeightCell(nd)) {
       continue;
     }
 
@@ -1134,7 +1152,10 @@ void DetailedMgr::collectFixedCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isFixed()) {
+    // Instances without a row site cannot participate in row-based detailed
+    // placement. Treat them as fixed obstacles so legalization still honors
+    // their occupied area.
+    if (nd->isFixed() || (!nd->isTerminal() && !usesRowSites(nd))) {
       fixedCells_.push_back(nd);
     }
   }
@@ -1468,14 +1489,15 @@ int DetailedMgr::checkRegionAssignment()
 int DetailedMgr::checkSiteAlignment()
 {
   // Ensure that the left edge of each cell is aligned with a site.  We only
-  // consider cells that are within segments.
+  // consider cells that are within segments.  Instances without row sites are
+  // handled as fixed obstacles and are excluded from this row-based check.
   int err_n = 0;
 
   const DbuY singleRowHeight = getSingleRowHeight();
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed() || !usesRowSites(nd)) {
       continue;
     }
 
@@ -1525,13 +1547,13 @@ int DetailedMgr::checkSiteAlignment()
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkRowAlignment()
 {
-  // Ensure that the bottom of each cell is aligned with a row.
+  // Ensure that the bottom of each row-based cell is aligned with a row.
   int err_n = 0;
 
   for (int i = 0; i < network_->getNumNodes(); i++) {
     const Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed() || !usesRowSites(nd)) {
       continue;
     }
 
@@ -3047,11 +3069,7 @@ void DetailedMgr::paintInGrid(Node* node)
 {
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
-  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
-
-  const auto orientation
-      = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);
-  node->adjustCurrOrient(orientation);
+  syncOrientToRowSite(grid_, node, grid_x, grid_y);
 }
 }  // namespace dpl

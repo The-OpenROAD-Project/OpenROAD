@@ -83,6 +83,7 @@ COMPULSORY_TESTS = [
     "gcd_no_one_site_gaps-opt",
     "ibex-opt",
     "multi_height1-opt",
+    "no_site_block-opt",
     "edge_spacing-opt",
     "regions1-opt",
     "regions2-opt",
@@ -232,6 +233,9 @@ filegroup(
             ],
             "multi_height1-opt": [
                 "Nangate45/fake_macros.lef",
+            ],
+            "no_site_block-opt": [
+                "no_site_block.lef",
             ],
             "multi_height_one_site_gap_disallow": [
                 "Nangate45/fake_macros.lef",

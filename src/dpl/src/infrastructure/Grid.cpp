@@ -531,7 +531,7 @@ GridY Grid::gridHeight(odb::dbMaster* master) const
     return GridY{max(1, divCeil(bbox.dy(), row_height.v))};
   }
   auto site = master->getSite();
-  if (!site->hasRowPattern()) {
+  if (site == nullptr || !site->hasRowPattern()) {
     return GridY{1};
   }
 
@@ -548,7 +548,7 @@ GridY Grid::gridHeight(const Node* cell) const
     return GridY{1};
   }
   auto site = cell->getDbInst()->getMaster()->getSite();
-  if (!site->hasRowPattern()) {
+  if (site == nullptr || !site->hasRowPattern()) {
     return GridY{1};
   }
 

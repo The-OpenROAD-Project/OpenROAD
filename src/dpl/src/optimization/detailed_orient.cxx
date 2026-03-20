@@ -26,6 +26,13 @@ using utl::DPL;
 
 namespace dpl {
 
+namespace {
+bool usesRowSites(const Node* node)
+{
+  return node->getSite() != nullptr;
+}
+}  // namespace
+
 DetailedOrient::DetailedOrient(Architecture* arch, Network* network)
     : arch_(arch),
       network_(network),
@@ -119,35 +126,37 @@ int DetailedOrient::orientCells(int& changed)
   int errors = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* ndi = network_->getNode(i);
-    if (!(ndi->isTerminal() || ndi->isFixed())) {
-      // Figure out the lowest row for the cell.  Not that single
-      // height cells are only in one row.
-      int bottom = arch_->getNumRows();
-      for (int s = 0; s < mgrPtr_->getNumReverseCellToSegs(ndi->getId()); s++) {
-        DetailedSeg* segPtr = mgrPtr_->getReverseCellToSegs(ndi->getId())[s];
-        bottom = std::min(bottom, segPtr->getRowId());
-      }
-      if (bottom < arch_->getNumRows()) {
-        unsigned origOrient = ndi->getOrient();
-        if (arch_->isSingleHeightCell(ndi)) {
-          if (!orientSingleHeightCellForRow(ndi, bottom)) {
-            ++errors;
-          }
-        } else if (arch_->isMultiHeightCell(ndi)) {
-          if (!orientMultiHeightCellForRow(ndi, bottom)) {
-            ++errors;
-          }
-        } else {
-          // ? Whoops.
+    if (ndi->isTerminal() || ndi->isFixed() || !usesRowSites(ndi)) {
+      continue;
+    }
+
+    // Figure out the lowest row for the cell.  Not that single
+    // height cells are only in one row.
+    int bottom = arch_->getNumRows();
+    for (int s = 0; s < mgrPtr_->getNumReverseCellToSegs(ndi->getId()); s++) {
+      DetailedSeg* segPtr = mgrPtr_->getReverseCellToSegs(ndi->getId())[s];
+      bottom = std::min(bottom, segPtr->getRowId());
+    }
+    if (bottom < arch_->getNumRows()) {
+      unsigned origOrient = ndi->getOrient();
+      if (arch_->isSingleHeightCell(ndi)) {
+        if (!orientSingleHeightCellForRow(ndi, bottom)) {
           ++errors;
         }
-        if (origOrient != ndi->getOrient()) {
-          ++changed;
+      } else if (arch_->isMultiHeightCell(ndi)) {
+        if (!orientMultiHeightCellForRow(ndi, bottom)) {
+          ++errors;
         }
       } else {
-        // Cell not in a row?  Whoops.
+        // ? Whoops.
         ++errors;
       }
+      if (origOrient != ndi->getOrient()) {
+        ++changed;
+      }
+    } else {
+      // Cell not in a row?  Whoops.
+      ++errors;
     }
   }
   return errors;

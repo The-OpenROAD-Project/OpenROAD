@@ -81,6 +81,7 @@ or_integration_tests(
     gcd_no_one_site_sanity
     ibex-opt
     multi_height1-opt
+    no_site_block-opt
     edge_spacing-opt
     regions1-opt
     regions2-opt
@@ -100,4 +101,3 @@ gtest_discover_tests(dpl_test
 )
 
 add_dependencies(build_and_test dpl_test)
-
