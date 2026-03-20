@@ -77,9 +77,14 @@ Example validation steps:
     bazelisk query 'kind(test, //src/<tool>/...)'
     bazelisk test //src/<tool>/test:<new_test_target>
 
-The test target name is typically the test file name without its path prefix.
-For Tcl tests it gets a `_tcl` suffix (e.g. `my_test.tcl` → `my_test_tcl`),
-and for Python tests a `_py` suffix. Use the query above to list exact names.
+The test target name is derived from the test file name with a suffix added
+based on type: Tcl tests get `_tcl` and Python tests get `_py`. For example,
+`src/grt/test/fastroute.tcl` becomes target `fastroute_tcl`, so you would run:
+
+    bazelisk test //src/grt/test:fastroute_tcl
+
+Use the `bazelisk query` command above to list all test targets and find the
+exact name for any test in the subtree.
 
 ## 3) Change shared build logic in `.bzl`
 
