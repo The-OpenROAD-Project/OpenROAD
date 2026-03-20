@@ -665,8 +665,10 @@ void CUGR::removeRouteUsage(odb::dbNet* db_net)
       grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
     }
   } else {
-    logger_->warn(
-        GRT, 601, "Net {} not found in CUGR for rip-up.", db_net->getConstName());
+    logger_->warn(GRT,
+                  601,
+                  "Net {} not found in CUGR for rip-up.",
+                  db_net->getConstName());
   }
 }
 
