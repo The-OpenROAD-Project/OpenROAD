@@ -395,17 +395,19 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/odb:doc_files",
-            "//src/odb:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "odb_man_tcl_check",
-        "odb_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "odb_man_tcl_check",
+    srcs = ["odb_man_tcl_check.py"],
+    data = ["//src/odb:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "odb_readme_msgs_check",
+    data = [
+        "//src/odb:doc_files",
+        "//src/odb:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

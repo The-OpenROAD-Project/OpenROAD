@@ -171,17 +171,19 @@ cc_test(
     ],
 )
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/gpl:doc_files",
-            "//src/gpl:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "gpl_man_tcl_check",
-        "gpl_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "gpl_man_tcl_check",
+    srcs = ["gpl_man_tcl_check.py"],
+    data = ["//src/gpl:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "gpl_readme_msgs_check",
+    data = [
+        "//src/gpl:doc_files",
+        "//src/gpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

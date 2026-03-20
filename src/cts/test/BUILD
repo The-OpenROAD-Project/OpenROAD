@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
@@ -242,17 +243,19 @@ cc_test(
     ],
 )
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/cts:doc_files",
-            "//src/cts:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "cts_man_tcl_check",
-        "cts_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "cts_man_tcl_check",
+    srcs = ["cts_man_tcl_check.py"],
+    data = ["//src/cts:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "cts_readme_msgs_check",
+    data = [
+        "//src/cts:doc_files",
+        "//src/cts:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

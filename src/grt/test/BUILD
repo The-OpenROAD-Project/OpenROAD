@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -131,17 +132,19 @@ MANUAL_FOR_BAZEL_TESTS = [
     tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
 ) for test_name in TESTS]
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/grt:doc_files",
-            "//src/grt:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "grt_man_tcl_check",
-        "grt_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "grt_man_tcl_check",
+    srcs = ["grt_man_tcl_check.py"],
+    data = ["//src/grt:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "grt_readme_msgs_check",
+    data = [
+        "//src/grt:doc_files",
+        "//src/grt:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

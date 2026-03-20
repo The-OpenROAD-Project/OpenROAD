@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -69,17 +70,19 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/ant:doc_files",
-            "//src/ant:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "ant_man_tcl_check",
-        "ant_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "ant_man_tcl_check",
+    srcs = ["ant_man_tcl_check.py"],
+    data = ["//src/ant:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "ant_readme_msgs_check",
+    data = [
+        "//src/ant:doc_files",
+        "//src/ant:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

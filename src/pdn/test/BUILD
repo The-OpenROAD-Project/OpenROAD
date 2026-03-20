@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -299,17 +300,19 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/pdn:doc_files",
-            "//src/pdn:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "pdn_man_tcl_check",
-        "pdn_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "pdn_man_tcl_check",
+    srcs = ["pdn_man_tcl_check.py"],
+    data = ["//src/pdn:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "pdn_readme_msgs_check",
+    data = [
+        "//src/pdn:doc_files",
+        "//src/pdn:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

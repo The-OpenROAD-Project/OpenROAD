@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 load("//test:regression.bzl", "doc_check_test", "regression_test")
@@ -86,17 +87,19 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/par:doc_files",
-            "//src/par:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "par_man_tcl_check",
-        "par_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "par_man_tcl_check",
+    srcs = ["par_man_tcl_check.py"],
+    data = ["//src/par:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "par_readme_msgs_check",
+    data = [
+        "//src/par:doc_files",
+        "//src/par:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

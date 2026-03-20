@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -138,17 +139,19 @@ cc_test(
     ],
 )
 
-[
-    doc_check_test(
-        name = test_name,
-        data = [
-            "//src/utl:doc_files",
-            "//src/utl:messages_txt",
-        ],
-        visibility = ["//visibility:public"],
-    )
-    for test_name in [
-        "utl_man_tcl_check",
-        "utl_readme_msgs_check",
-    ]
-]
+py_test(
+    name = "utl_man_tcl_check",
+    srcs = ["utl_man_tcl_check.py"],
+    data = ["//src/utl:doc_files"],
+    deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
+)
+
+doc_check_test(
+    name = "utl_readme_msgs_check",
+    data = [
+        "//src/utl:doc_files",
+        "//src/utl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
