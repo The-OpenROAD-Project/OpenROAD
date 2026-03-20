@@ -668,8 +668,8 @@ Here are some common operations on the `Resizer` object:
 
 ```python
 resizer.setMaxUtilization(0.8)
-resizer.bufferInputs(buffer_cell, False)
-resizer.bufferOutputs(buffer_cell, False)
+resizer.bufferInputs(None, False)
+resizer.bufferOutputs(None, False)
 resizer.repairDesign(0.0, 0.0, 0.0, 0.0, False, False)
 resizer.repairClkNets(0.0)
 resizer.repairClkInverters()

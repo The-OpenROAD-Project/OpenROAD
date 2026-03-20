@@ -378,6 +378,7 @@ python_wrap_cc(
         "//src/ppl:swig-py",
         "//src/psm:swig-py",
         "//src/rcx:swig-py",
+        "//src/rsz:swig-py",
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",
