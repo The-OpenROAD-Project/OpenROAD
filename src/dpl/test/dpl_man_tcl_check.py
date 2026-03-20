@@ -38,8 +38,12 @@ class TestManTclCheck(unittest.TestCase):
 
             with open(path) as f:
                 content = f.read()
-                help_dict[tool_dir] = len(extract_help(content))
-                proc_dict[tool_dir] = len(extract_proc(content))
+                help_dict[tool_dir] = help_dict.get(tool_dir, 0) + len(
+                    extract_help(content)
+                )
+                proc_dict[tool_dir] = proc_dict.get(tool_dir, 0) + len(
+                    extract_proc(content)
+                )
 
         for path in glob.glob("./src/*/README.md"):
             if module not in path:
