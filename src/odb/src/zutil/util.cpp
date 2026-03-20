@@ -117,9 +117,10 @@ static void cutRow(dbBlock* block,
     if (min_row_width > 0) {
       const int left_step = start_origin_x - row_bb.xMin();
       if (left_step > 0 && left_step < min_row_width / 2) {
-        start_origin_x = makeSiteLoc(
-            row_bb.xMin() + min_row_width / 2, site_width, false,
-            row_bb.xMin());
+        start_origin_x = makeSiteLoc(row_bb.xMin() + min_row_width / 2,
+                                     site_width,
+                                     false,
+                                     row_bb.xMin());
       }
     }
   }
