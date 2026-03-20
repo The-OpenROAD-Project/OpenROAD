@@ -447,8 +447,8 @@ py_test(
     name = "rsz_man_tcl_check",
     srcs = ["rsz_man_tcl_check.py"],
     data = ["//src/rsz:doc_files"],
-    deps = ["//docs/src/scripts:extract_utils"],
     tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
 )
 
 doc_check_test(

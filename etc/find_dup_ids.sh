@@ -6,12 +6,8 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Find find_messages.py: check alongside script first, then Bazel runfiles.
-if [ -f "${SCRIPT_DIR}/find_messages.py" ]; then
-    FIND_MESSAGES="${SCRIPT_DIR}/find_messages.py"
-elif [ -n "${RUNFILES_DIR:-}" ] && [ -f "${RUNFILES_DIR}/_main/etc/find_messages.py" ]; then
-    FIND_MESSAGES="${RUNFILES_DIR}/_main/etc/find_messages.py"
-else
+FIND_MESSAGES="${SCRIPT_DIR}/find_messages.py"
+if [ ! -f "${FIND_MESSAGES}" ]; then
     echo "ERROR: Cannot find find_messages.py" >&2
     exit 1
 fi

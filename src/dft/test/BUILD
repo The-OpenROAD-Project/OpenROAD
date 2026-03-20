@@ -137,8 +137,8 @@ py_test(
     name = "dft_man_tcl_check",
     srcs = ["dft_man_tcl_check.py"],
     data = ["//src/dft:doc_files"],
-    deps = ["//docs/src/scripts:extract_utils"],
     tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
 )
 
 doc_check_test(

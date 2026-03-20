@@ -153,8 +153,8 @@ py_test(
     name = "drt_man_tcl_check",
     srcs = ["drt_man_tcl_check.py"],
     data = ["//src/drt:doc_files"],
-    deps = ["//docs/src/scripts:extract_utils"],
     tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
 )
 
 doc_check_test(
