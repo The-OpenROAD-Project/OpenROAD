@@ -138,10 +138,8 @@ static void cutRow(dbBlock* block,
             + (rseg->second - rseg->first) / site_width * site_width;
       const int right_step = row_bb.xMax() - actual_end;
       if (right_step > 0 && right_step < min_step_for_endcap) {
-        rseg->second = makeSiteLoc(row_bb.xMax() - min_step_for_endcap,
-                                   site_width,
-                                   true,
-                                   rseg->first);
+        rseg->second = makeSiteLoc(
+            row_bb.xMax() - min_step_for_endcap, site_width, true, rseg->first);
       }
     }
   }
