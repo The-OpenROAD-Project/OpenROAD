@@ -3,7 +3,10 @@
 # correctly when consumed as a dependency from a downstream project.
 set -e -u -o pipefail
 
-cd "$(dirname "$0")"
+cd "$(dirname "$(readlink -f "$0")")"
+
+# Bazel test environments may not set HOME; bazelisk needs it.
+export HOME="${HOME:-$(getent passwd "$(id -u)" | cut -d: -f6)}"
 
 PASS=0
 FAIL=0
