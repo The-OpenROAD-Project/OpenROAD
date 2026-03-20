@@ -91,51 +91,74 @@ static void cutRow(dbBlock* block,
 
   std::ranges::sort(row_blockage_xs);
 
+  // Compute segment boundaries between blockages.
+  std::vector<std::pair<int, int>> segments;
   int start_origin_x = row_bb.xMin();
-  int start_origin_y = row_bb.yMin();
-  int row_sub_idx = 1;
-  for (std::pair<int, int> blockage : row_blockage_xs) {
-    const int blockage_x0 = blockage.first;
-    const int new_row_end_x
-        = makeSiteLoc(blockage_x0, site_width, true, start_origin_x);
-    buildRow(block,
-             row_name + "_" + std::to_string(row_sub_idx),
-             row_site,
-             start_origin_x,
-             new_row_end_x,
-             start_origin_y,
-             orient,
-             direction,
-             curr_min_row_width);
-    row_sub_idx++;
-    const int blockage_x1 = blockage.second;
+  for (const auto& blockage : row_blockage_xs) {
+    const int seg_end
+        = makeSiteLoc(blockage.first, site_width, true, start_origin_x);
+    segments.emplace_back(start_origin_x, seg_end);
     start_origin_x
-        = makeSiteLoc(blockage_x1, site_width, false, start_origin_x);
+        = makeSiteLoc(blockage.second, site_width, false, start_origin_x);
+  }
+  // Last segment: from after the last blockage to the row's right edge
+  segments.emplace_back(start_origin_x, row_bb.xMax());
 
-    // Ensure step from original row boundary is >= endcap width
-    // to avoid overlapping corner cells at the step.
-    const int min_step_for_endcap = min_row_width / 2;
-    if (min_step_for_endcap > 0) {
-      const int left_step = start_origin_x - row_bb.xMin();
+  // Fix steps between cut and uncut rows that are too small for endcap
+  // corner cells.
+  const int min_step_for_endcap = min_row_width / 2;
+  if (min_step_for_endcap > 0) {
+    /// @brief Returns true if a segment is wide enough to be created.
+    auto isValid = [&](const std::pair<int, int>& seg) {
+      const int width = (seg.second - seg.first) / site_width * site_width;
+      return width >= curr_min_row_width;
+    };
+
+    // Left-side: push the first valid segment right if its left edge
+    // creates a step too small for an endcap corner cell.
+    auto seg = std::ranges::find_if(segments, isValid);
+    if (seg != segments.end()) {
+      const int left_step = seg->first - row_bb.xMin();
       if (left_step > 0 && left_step < min_step_for_endcap) {
-        start_origin_x = makeSiteLoc(row_bb.xMin() + min_step_for_endcap,
-                                     site_width,
-                                     false,
-                                     row_bb.xMin());
+        seg->first = makeSiteLoc(row_bb.xMin() + min_step_for_endcap,
+                                 site_width,
+                                 false,
+                                 row_bb.xMin());
+      }
+    }
+
+    // Right-side: pull the last valid segment left if its right edge
+    // creates a step too small for an endcap corner cell.
+    auto rseg = std::find_if(segments.rbegin(), segments.rend(), isValid);
+    if (rseg != segments.rend()) {
+      const int actual_end
+          = rseg->first
+            + (rseg->second - rseg->first) / site_width * site_width;
+      const int right_step = row_bb.xMax() - actual_end;
+      if (right_step > 0 && right_step < min_step_for_endcap) {
+        rseg->second = makeSiteLoc(row_bb.xMax() - min_step_for_endcap,
+                                   site_width,
+                                   true,
+                                   rseg->first);
       }
     }
   }
 
-  // Make last row
-  buildRow(block,
-           row_name + "_" + std::to_string(row_sub_idx),
-           row_site,
-           start_origin_x,
-           row_bb.xMax(),
-           start_origin_y,
-           orient,
-           direction,
-           curr_min_row_width);
+  // Create rows from the computed (and possibly adjusted) segments
+  int row_sub_idx = 1;
+  for (const auto& [seg_start, seg_end] : segments) {
+    buildRow(block,
+             row_name + "_" + std::to_string(row_sub_idx),
+             row_site,
+             seg_start,
+             seg_end,
+             row_bb.yMin(),
+             orient,
+             direction,
+             curr_min_row_width);
+    row_sub_idx++;
+  }
+
   // Remove current row
   dbRow::destroy(row);
 }
