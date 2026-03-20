@@ -3472,6 +3472,8 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
   if (!has_other_fanout) {
     sta_->deleteInstance(const_cast<sta::Instance*>(tie_inst));
+    // Invalidate vertex level ordering
+    level_drvr_vertices_valid_ = false;
   }
 }
 
@@ -4380,6 +4382,9 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       sta_->deleteInstance(inv);
     }
   }
+
+  // Invalidate vertex level ordering
+  level_drvr_vertices_valid_ = false;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4727,6 +4732,9 @@ void Resizer::journalRestore()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
+
+  // Invalidate vertex level ordering
+  level_drvr_vertices_valid_ = false;
 
   debugPrint(logger_,
              RSZ,
@@ -5434,6 +5442,10 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   }
 
+  if (remove_inst_count > 0 || remove_net_count > 0) {
+    // Invalidate vertex level ordering
+    level_drvr_vertices_valid_ = false;
+  }
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
