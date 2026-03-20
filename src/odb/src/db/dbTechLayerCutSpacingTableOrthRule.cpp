@@ -22,7 +22,10 @@ template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator<(

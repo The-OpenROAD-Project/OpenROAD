@@ -443,3 +443,63 @@ sh_test(
     data = ["//etc:find_messages.py"],
     tags = ["local"],
 )
+
+# ---------------------------------------------------------------------------
+# Lint & tidy targets
+#
+# bazelisk test //:lint_test   — run all linters (currently: tclint + tclfmt)
+# bazelisk run  //:fix_lint    — auto-fix what can be fixed  (currently: tclfmt)
+# ---------------------------------------------------------------------------
+
+# --- TCL linting (tclint) -------------------------------------------------
+
+sh_test(
+    name = "lint_tcl_test",
+    srcs = ["//bazel:tcl_lint_test.sh"],
+    args = ["$(rootpath //bazel:tclint)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclint",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL formatting check (tclfmt --check) --------------------------------
+
+sh_test(
+    name = "fmt_tcl_test",
+    srcs = ["//bazel:tcl_fmt_test.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL auto-format (tclfmt --in-place) ----------------------------------
+
+sh_binary(
+    name = "tidy_tcl",
+    srcs = ["//bazel:tcl_tidy.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+)
+
+# --- Umbrella targets ------------------------------------------------------
+
+test_suite(
+    name = "lint_test",
+    tests = [
+        ":fmt_tcl_test",
+        ":lint_tcl_test",
+    ],
+)
+
+alias(
+    name = "fix_lint",
+    actual = ":tidy_tcl",
+)

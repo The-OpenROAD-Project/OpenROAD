@@ -22,6 +22,7 @@ template class dbTable<_dbTechLayerEolExtensionRule>;
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.parallel_only != rhs.flags_.parallel_only) {
     return false;
   }
@@ -30,6 +31,7 @@ bool _dbTechLayerEolExtensionRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerEolExtensionRule::operator<(

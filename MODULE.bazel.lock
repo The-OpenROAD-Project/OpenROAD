@@ -498,6 +498,8 @@
     "https://bcr.bazel.build/modules/rules_cc/0.2.4/MODULE.bazel": "1ff1223dfd24f3ecf8f028446d4a27608aa43c3f41e346d22838a4223980b8cc",
     "https://bcr.bazel.build/modules/rules_cc/0.2.8/MODULE.bazel": "f1df20f0bf22c28192a794f29b501ee2018fa37a3862a1a2132ae2940a23a642",
     "https://bcr.bazel.build/modules/rules_cc/0.2.9/MODULE.bazel": "34263f1dca62ea664265438cef714d7db124c03e1ed55ebb4f1dc860164308d1",
+    "https://bcr.bazel.build/modules/rules_chisel/0.2.0/MODULE.bazel": "25e67caac0df9d467c1867b46b5c2c45afd7a7ab05a8e7abb87cc1c758c37528",
+    "https://bcr.bazel.build/modules/rules_chisel/0.2.0/source.json": "e70a157e17ff14c1410a97ee1365e9abe00a7dd787830a237e1b612bcbc9a0f2",
     "https://bcr.bazel.build/modules/rules_flex/0.3.1/MODULE.bazel": "5aea738f59e47769d219f972fc8426c53693c262895787efafa71fe9795bd7e3",
     "https://bcr.bazel.build/modules/rules_flex/0.4/MODULE.bazel": "543edf994d2c044f3d723374e50eaa739ed7ee9d82b8185adb8413bce269dcf3",
     "https://bcr.bazel.build/modules/rules_flex/0.4/source.json": "98bc56c2139b6ed6387dbabd06f625e82500bed8ba1689a5f4f3c9e8c3289f82",
@@ -700,8 +702,8 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "xRx9tYeqNSaibENLRqhj2OVDOepLbExZ6x8BUTsoYv4=",
-        "usagesDigest": "QYMEZjCifa480IHH2FVQK/IEHH8+A6DshYGhikqmHjs=",
+        "bzlTransitiveDigest": "QYKsLwaOfoRUMu1KyupRbCxEnHtHuIAr4YE3u1WzHko=",
+        "usagesDigest": "ynfBx6Q6NeumBZvRJfZV9NdfwdlUBoKAJiC5/tayX/0=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -719,8 +721,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-554-g62c47396f",
-              "sha256": "6a624867afd1d39bc1cc6884c2d9cef7cfb899f92d4bf0e9233a831ab82c5436",
+              "image": "docker.io/openroad/orfs:26Q1-669-gbdeb18939",
+              "sha256": "812c5c543252460a9458010cdff4f851d6441e592c74d6254b15889e7ad95c6a",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -737,6 +739,7 @@
           "config": {
             "repoRuleId": "@@bazel-orfs+//:config.bzl%global_config",
             "attributes": {
+              "klayout": "@@bazel-orfs++orfs_repositories+docker_orfs//:klayout",
               "makefile": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile",
               "pdk": "@@bazel-orfs++orfs_repositories+docker_orfs//:asap7",
               "makefile_yosys": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile_yosys",
@@ -1400,6 +1403,185 @@
           "reproducible": false
         },
         "recordedRepoMappingEntries": []
+      }
+    },
+    "@@rules_chisel+//chisel:extensions.bzl%chisel": {
+      "general": {
+        "bzlTransitiveDigest": "aCXBew5jYa9d5TkWJLI5A8nWpTdanPY+PbldpTQLXr8=",
+        "usagesDigest": "cyt2rWGIn4nNGvnFMJCaFYLV5TJb2XL/KUof4xYvBYY=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "chisel_maven_internal": {
+            "repoRuleId": "@@rules_jvm_external+//private/rules:coursier.bzl%coursier_fetch",
+            "attributes": {
+              "pinned_repo_name": "",
+              "repositories": [
+                "{ \"repo_url\": \"https://repo1.maven.org/maven2\" }",
+                "{ \"repo_url\": \"https://s01.oss.sonatype.org/content/repositories/releases\" }"
+              ],
+              "artifacts": [
+                "{ \"group\": \"org.chipsalliance\", \"artifact\": \"chisel_2.13\", \"version\": \"7.2.0\" }",
+                "{ \"group\": \"org.chipsalliance\", \"artifact\": \"chisel-plugin_2.13.17\", \"version\": \"7.2.0\" }",
+                "{ \"group\": \"org.chipsalliance\", \"artifact\": \"firtool-resolver_2.13\", \"version\": \"2.0.1\" }",
+                "{ \"group\": \"org.scalatest\", \"artifact\": \"scalatest_2.13\", \"version\": \"3.2.19\" }"
+              ],
+              "boms": [],
+              "fail_on_missing_checksum": true,
+              "fetch_sources": true,
+              "fetch_javadoc": false,
+              "excluded_artifacts": [],
+              "generate_compat_repositories": false,
+              "version_conflict_policy": "default",
+              "override_targets": {},
+              "strict_visibility": false,
+              "strict_visibility_value": [
+                "@@//visibility:private"
+              ],
+              "resolve_timeout": 600,
+              "use_credentials_from_home_netrc_file": false,
+              "use_starlark_android_rules": false,
+              "aar_import_bzl_label": "@build_bazel_rules_android//android:rules.bzl",
+              "duplicate_version_warning": "warn",
+              "ignore_empty_files": false,
+              "additional_coursier_options": []
+            }
+          },
+          "chisel_maven": {
+            "repoRuleId": "@@rules_chisel+//chisel:extensions.bzl%_chisel_alias_repo",
+            "attributes": {
+              "deps_repo_name": "chisel_maven_internal",
+              "pin_repo_name": "chisel_maven_internal",
+              "scala_version": "2.13.17"
+            }
+          }
+        },
+        "moduleExtensionMetadata": {
+          "explicitRootModuleDirectDeps": [
+            "chisel_maven"
+          ],
+          "explicitRootModuleDirectDevDeps": [],
+          "useAllRepos": "NO",
+          "reproducible": false
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "bazel_features+",
+            "bazel_features_globals",
+            "bazel_features++version_extension+bazel_features_globals"
+          ],
+          [
+            "bazel_features+",
+            "bazel_features_version",
+            "bazel_features++version_extension+bazel_features_version"
+          ],
+          [
+            "protobuf+",
+            "proto_bazel_features",
+            "bazel_features+"
+          ],
+          [
+            "protobuf+",
+            "rules_java",
+            "rules_java+"
+          ],
+          [
+            "rules_cc+",
+            "bazel_skylib",
+            "bazel_skylib+"
+          ],
+          [
+            "rules_cc+",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_cc+",
+            "cc_compatibility_proxy",
+            "rules_cc++compatibility_proxy+cc_compatibility_proxy"
+          ],
+          [
+            "rules_cc+",
+            "platforms",
+            "platforms"
+          ],
+          [
+            "rules_cc+",
+            "rules_cc",
+            "rules_cc+"
+          ],
+          [
+            "rules_cc++compatibility_proxy+cc_compatibility_proxy",
+            "rules_cc",
+            "rules_cc+"
+          ],
+          [
+            "rules_chisel+",
+            "rules_jvm_external",
+            "rules_jvm_external+"
+          ],
+          [
+            "rules_java+",
+            "bazel_features",
+            "bazel_features+"
+          ],
+          [
+            "rules_java+",
+            "bazel_skylib",
+            "bazel_skylib+"
+          ],
+          [
+            "rules_java+",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_java+",
+            "com_google_protobuf",
+            "protobuf+"
+          ],
+          [
+            "rules_java+",
+            "compatibility_proxy",
+            "rules_java++compatibility_proxy+compatibility_proxy"
+          ],
+          [
+            "rules_java+",
+            "rules_cc",
+            "rules_cc+"
+          ],
+          [
+            "rules_java++compatibility_proxy+compatibility_proxy",
+            "rules_java",
+            "rules_java+"
+          ],
+          [
+            "rules_jvm_external+",
+            "bazel_features",
+            "bazel_features+"
+          ],
+          [
+            "rules_jvm_external+",
+            "bazel_tools",
+            "bazel_tools"
+          ],
+          [
+            "rules_jvm_external+",
+            "rules_java",
+            "rules_java+"
+          ],
+          [
+            "rules_jvm_external+",
+            "rules_license",
+            "rules_license+"
+          ],
+          [
+            "rules_license+",
+            "rules_license",
+            "rules_license+"
+          ]
+        ]
       }
     },
     "@@rules_flex+//flex/internal:default_toolchain_ext.bzl%default_toolchain_ext": {
