@@ -186,7 +186,7 @@ scala_deps.settings(
 )
 scala_deps.scala()
 
-chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel")
+chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel", dev_dependency = True)
 chisel.toolchain(
     chisel_version = CHISEL_VERSION,
     firtool_resolver_version = FIRTOOL_RESOLVER_VERSION,
