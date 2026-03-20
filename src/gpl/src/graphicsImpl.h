@@ -176,10 +176,10 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
-  gui::Chart* main_chart_{nullptr};
-  gui::Chart* density_chart_{nullptr};
-  gui::Chart* stepLength_chart_{nullptr};
-  gui::Chart* routing_chart_{nullptr};
+  static gui::Chart* main_chart_;
+  static gui::Chart* density_chart_;
+  static gui::Chart* stepLength_chart_;
+  static gui::Chart* routing_chart_;
   bool debug_on_{false};
 
   void initCharts();

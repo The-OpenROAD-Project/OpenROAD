@@ -27,6 +27,11 @@
 
 namespace gpl {
 
+gui::Chart* GraphicsImpl::main_chart_ = nullptr;
+gui::Chart* GraphicsImpl::density_chart_ = nullptr;
+gui::Chart* GraphicsImpl::stepLength_chart_ = nullptr;
+gui::Chart* GraphicsImpl::routing_chart_ = nullptr;
+
 GraphicsImpl::GraphicsImpl(utl::Logger* logger)
     : HeatMapDataSource(logger, "gpl", "gpl"), logger_(logger), mode_(Mbff)
 {
@@ -147,27 +152,39 @@ void GraphicsImpl::initDebugHeatmap()
 
 void GraphicsImpl::initCharts()
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   gui::Gui* gui = gui::Gui::get();
-  main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
-  main_chart_->setXAxisFormat("%d");
-  main_chart_->setYAxisFormats({"%.2e", "%.2f"});
-  main_chart_->setYAxisMin({std::nullopt, 0});
 
-  density_chart_ = gui->addChart(
-      "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
-  density_chart_->setXAxisFormat("%d");
-  density_chart_->setYAxisFormats({"%.2e", "%.2f"});
-  density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
+  if (main_chart_ == nullptr) {
+    main_chart_ = gui->addChart("GPL", "Iteration", {"HPWL (μm)", "Overflow"});
+    main_chart_->setXAxisFormat("%d");
+    main_chart_->setYAxisFormats({"%.2e", "%.2f"});
+    main_chart_->setYAxisMin({std::nullopt, 0});
+  }
 
-  stepLength_chart_ = gui->addChart(
-      "GPL StepLength",
-      "Iteration",
-      {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
-  stepLength_chart_->setXAxisFormat("%d");
-  stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f", "%.2f"});
-  stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0});
+  if (density_chart_ == nullptr) {
+    density_chart_ = gui->addChart(
+        "GPL Density Penalty", "Iteration", {"DensityPenalty", "phiCoef"});
+    density_chart_->setXAxisFormat("%d");
+    density_chart_->setYAxisFormats({"%.2e", "%.2f"});
+    if (nbc_) {
+      density_chart_->setYAxisMin({0.0, nbc_->getNbVars().minPhiCoef});
+    }
+  }
 
-  if (np_->getNpVars().routability_driven_mode) {
+  if (stepLength_chart_ == nullptr) {
+    stepLength_chart_ = gui->addChart(
+        "GPL StepLength",
+        "Iteration",
+        {"StepLength", "CoordiDistance", "GradDistance", "Std area"});
+    stepLength_chart_->setXAxisFormat("%d");
+    stepLength_chart_->setYAxisFormats({"%.2e", "%.2f", "%.2f", "%.2f"});
+    stepLength_chart_->setYAxisMin({0.0, 0.0, 0.0, 0.0});
+  }
+
+  if (routing_chart_ == nullptr && np_->getNpVars().routability_driven_mode) {
     routing_chart_ = gui->addChart(
         "GPL Routing",
         "Iteration",
@@ -561,9 +578,12 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     return;
   }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-  main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
+  if (main_chart_ != nullptr) {
+    main_chart_->addPoint(iter,
+                          {block->dbuToMicrons(nbc_->getHpwl()), overflow});
+  }
 
-  if (density_chart_) {
+  if (density_chart_ != nullptr) {
     std::vector<double> values;
     if (!nbVec_.empty() && nbVec_[0]) {
       values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
@@ -575,7 +595,7 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     density_chart_->addPoint(iter, values);
   }
 
-  if (stepLength_chart_) {
+  if (stepLength_chart_ != nullptr) {
     std::vector<double> values;
     if (!nbVec_.empty() && nbVec_[0]) {
       values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
@@ -593,7 +613,7 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     stepLength_chart_->addPoint(iter, values);
   }
 
-  if (routing_chart_) {
+  if (routing_chart_ != nullptr) {
     std::vector<double> values;
     if (!nbVec_.empty() && nbVec_[0]) {
       values.push_back(static_cast<double>(rb_->getRudyAverage()));
