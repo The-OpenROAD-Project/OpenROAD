@@ -200,13 +200,13 @@ void Opendp::placeRowFillers(GridY row,
       DbuY y{core_.yMin() + grid_->gridYToDbu(row)};
       logger_->error(DPL,
                      2,
-                     "Could not fill gap of {} sites ({}x{} dbu) "
-                     "at ({}, {}) dbu between {} and {}",
+                     "Could not fill gap of {} sites ({:.2f}x{:.2f} um) "
+                     "at ({:.2f}, {:.2f}) um between {} and {}",
                      gap,
-                     gridToDbu(gap, site_width),
-                     row_height,
-                     x,
-                     y,
+                     block_->dbuToMicrons(gridToDbu(gap, site_width).v),
+                     block_->dbuToMicrons(row_height.v),
+                     block_->dbuToMicrons(x.v),
+                     block_->dbuToMicrons(y.v),
                      gridInstName(row, j - 1),
                      gridInstName(row, k + 1));
     } else {
