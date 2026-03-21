@@ -5,7 +5,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <latch>
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -18,6 +18,32 @@
 #include "utl/Logger.h"
 
 namespace web {
+
+// CountdownLatch replacement for compilers that lack <latch> (e.g. GCC 10).
+class CountdownLatch
+{
+ public:
+  explicit CountdownLatch(int count) : count_(count) {}
+
+  void count_down()
+  {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (--count_ <= 0) {
+      cv_.notify_all();
+    }
+  }
+
+  void wait()
+  {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_.wait(lock, [this] { return count_ <= 0; });
+  }
+
+ private:
+  std::mutex mu_;
+  std::condition_variable cv_;
+  int count_;
+};
 
 Search::Search(utl::Logger* logger) : logger_(logger)
 {
@@ -247,7 +273,7 @@ void Search::eagerInit(odb::dbBlock* block)
 {
   const auto t0 = std::chrono::steady_clock::now();
 
-  std::latch done(6);
+  CountdownLatch done(6);
   auto run = [&](auto fn) {
     boost::asio::post(pool_, [&done, fn] {
       fn();
@@ -340,7 +366,7 @@ void Search::updateShapes(odb::dbBlock* block)
   // Build R-trees in parallel — one pool task per layer per map.
   const auto num_tasks
       = snet_shapes.size() + snet_net_via_shapes.size() + net_shapes.size();
-  std::latch rtree_done(num_tasks);
+  CountdownLatch rtree_done(num_tasks);
 
   for (auto& [layer, layer_shapes] : snet_shapes) {
     boost::asio::post(pool_, [&data, layer, &layer_shapes, &rtree_done] {
@@ -408,7 +434,7 @@ void Search::updateFills(odb::dbBlock* block)
   for (const auto& [layer, _] : fills) {
     data.fills[layer];
   }
-  std::latch done(fills.size());
+  CountdownLatch done(fills.size());
   for (auto& [layer, layer_fill] : fills) {
     boost::asio::post(pool_, [&data, layer, &layer_fill, &done] {
       data.fills[layer] = RtreeFill(layer_fill.begin(), layer_fill.end());
@@ -511,7 +537,7 @@ void Search::updateObstructions(odb::dbBlock* block)
   for (const auto& [layer, _] : obstructions) {
     data.obstructions[layer];
   }
-  std::latch done(obstructions.size());
+  CountdownLatch done(obstructions.size());
   for (auto& [layer, layer_obs] : obstructions) {
     boost::asio::post(pool_, [&data, layer, &layer_obs, &done] {
       data.obstructions[layer]
