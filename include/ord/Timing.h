@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "sta/Clock.hh"
@@ -35,6 +37,58 @@ namespace ord {
 
 class Design;
 class OpenRoad;
+
+// ── Timing report structs (top-level for SWIG compatibility) ──
+struct EndpointSlack
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+  float slack = 0.0f;
+};
+
+struct ClockInfo
+{
+  std::string name;
+  float period = 0.0f;
+  std::vector<float> waveform;
+  std::vector<odb::dbITerm*> source_iterms;
+  std::vector<odb::dbBTerm*> source_bterms;
+};
+
+struct TimingArcInfo
+{
+  odb::dbITerm* from_iterm = nullptr;
+  odb::dbBTerm* from_bterm = nullptr;
+  odb::dbITerm* to_iterm = nullptr;
+  odb::dbBTerm* to_bterm = nullptr;
+  odb::dbMaster* master = nullptr;  // nullptr for net arcs
+  float delay = 0.0f;
+  float slew = 0.0f;
+  float load = 0.0f;
+  int fanout = 0;
+  bool is_rising = false;
+};
+
+struct TimingPathInfo
+{
+  float slack = 0.0f;
+  float path_delay = 0.0f;
+  float arrival = 0.0f;
+  float required = 0.0f;
+  float skew = 0.0f;
+  float logic_delay = 0.0f;
+  int logic_depth = 0;
+  int fanout = 0;
+  odb::dbITerm* start_iterm = nullptr;
+  odb::dbBTerm* start_bterm = nullptr;
+  odb::dbITerm* end_iterm = nullptr;
+  odb::dbBTerm* end_bterm = nullptr;
+  std::string start_clock;
+  std::string end_clock;
+  std::string path_group;
+  std::vector<TimingArcInfo> arcs;
+};
+
 class Timing
 {
  public:
@@ -81,6 +135,22 @@ class Timing
 
   void makeEquivCells();
   std::vector<odb::dbMaster*> equivCells(odb::dbMaster* master);
+
+  // ── Summary metrics ─────────────────────────────────────────
+  float getWorstSlack(MinMax minmax = Max);
+  float getTotalNegativeSlack(MinMax minmax = Max);
+  int getEndpointCount();
+
+  // ── Endpoint slack map (histogram data source) ──────────────
+  std::vector<EndpointSlack> getEndpointSlacks(MinMax minmax = Max);
+
+  // ── Clock domain info ───────────────────────────────────────
+  std::vector<ClockInfo> getClockInfo();
+
+  // ── Timing paths with arc detail ────────────────────────────
+  std::vector<TimingPathInfo> getTimingPaths(MinMax minmax = Max,
+                                             int max_paths = 100,
+                                             float slack_threshold = 1e30);
 
  private:
   sta::dbSta* getSta();

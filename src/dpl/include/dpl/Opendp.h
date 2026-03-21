@@ -182,6 +182,8 @@ class Opendp
 
   // gap -> sequence of masters to fill the gap
   using GapFillers = std::vector<dbMasterSeq>;
+  // row height -> GapFillers, by implant layer
+  using GapFillersByHeight = std::map<DbuY, GapFillers>;
 
   using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
 
@@ -317,6 +319,7 @@ class Opendp
   void setGridCells();
   dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
+                          DbuY row_height,
                           const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(GridY row,
                        const std::string& prefix,
@@ -368,8 +371,8 @@ class Opendp
   RtreeBox regions_rtree_;
 
   // Filler placement.
-  // gap (in sites) -> seq of masters by implant
-  std::map<odb::dbTechLayer*, GapFillers> gap_fillers_;
+  // gap (in sites) -> seq of masters by implant and row height
+  std::map<odb::dbTechLayer*, GapFillersByHeight> gap_fillers_;
   std::map<odb::dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
 

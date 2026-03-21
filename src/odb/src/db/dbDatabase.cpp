@@ -340,6 +340,10 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
   }
+  if (db->getChips().size() > 1) {
+    // Construct unfolded model only if there are multiple chips
+    db->constructUnfoldedModel();
+  }
   // User Code End >>
   return stream;
 }
@@ -700,7 +704,7 @@ void dbDatabase::constructUnfoldedModel()
   db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
 }
 
-const UnfoldedModel* dbDatabase::getUnfoldedModel() const
+UnfoldedModel* dbDatabase::getUnfoldedModel() const
 {
   _dbDatabase* db = (_dbDatabase*) this;
   return db->unfolded_model_;

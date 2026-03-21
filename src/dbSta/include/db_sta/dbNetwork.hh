@@ -166,7 +166,7 @@ class dbNetwork : public ConcreteNetwork
   ObjectId id(const Cell* cell) const override;
 
   // generic connect pin -> net, supports all pin/net types
-  void connectPin(Pin* pin, Net* net) override;
+  void connectPin(Pin* pin, Net* net);
   // generic connect pin -> flat_net, hier_net.
   void connectPin(Pin* pin, Net* flat_net, Net* hier_net);
   // hierarchical support functions

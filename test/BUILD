@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -131,6 +132,15 @@ BIG_TESTS = [
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
+
+py_test(
+    name = "timing_report_api_test",
+    size = "medium",
+    srcs = ["timing_report_api.py"],
+    data = [":regression_resources"],
+    main = "timing_report_api.py",
+    deps = ["//python/openroad:openroadpy"],
+)
 
 # These tests take a long time, make them easy to explicitly invoke
 test_suite(

@@ -114,8 +114,9 @@ class GridGraph
   // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
 
-  // Methods for updating demands
-  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
+  // Methods for updating demands - Public API
+  void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
+  void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -169,10 +170,11 @@ class GridGraph
                     PointT lower,
                     CapacityT demand = 1.0) const;
 
-  // Methods for updating demands
+  // Methods for updating demands - Internal Implementation
   void commit(int layer_index, PointT lower, CapacityT demand);
   void commitWire(int layer_index, PointT lower, bool rip_up = false);
   void commitVia(int layer_index, PointT loc, bool rip_up = false);
+  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

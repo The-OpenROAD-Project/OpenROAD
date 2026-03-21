@@ -225,3 +225,19 @@ endif()
 # Add a configuration for ReleaseWithAsserts
 set(CMAKE_CXX_FLAGS_RELEASEWITHASSERTS "${CMAKE_CXX_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS_RELEASEWITHASSERTS "${CMAKE_C_FLAGS_RELEASE} -UNDEBUG" CACHE STRING "" FORCE)
+
+# ==============================================================================
+# OPENROAD BUILD CONFIGURATION SUMMARY
+# ==============================================================================
+message(STATUS "")
+message(STATUS "=========================================================")
+message(STATUS " OpenROAD Configuration Summary ")
+message(STATUS "=========================================================")
+message(STATUS " C++ Standard   : ${CMAKE_CXX_STANDARD}")
+message(STATUS " Build Type     : ${CMAKE_BUILD_TYPE}")
+message(STATUS " GUI Support    : ${BUILD_GUI}")
+message(STATUS " Python Bindings: ${BUILD_PYTHON}")
+message(STATUS " Tests Enabled  : ${ENABLE_TESTS}")
+message(STATUS "=========================================================")
+message(STATUS " Configuration complete. You can now run 'make' or 'ninja'.")
+message(STATUS "")

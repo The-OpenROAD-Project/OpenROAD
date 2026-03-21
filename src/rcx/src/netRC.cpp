@@ -727,7 +727,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;

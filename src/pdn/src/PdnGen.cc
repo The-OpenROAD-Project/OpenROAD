@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -21,6 +22,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
@@ -197,6 +199,8 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
 
+  std::map<odb::dbTechLayer*, std::unique_ptr<TechLayer>> tech_layers;
+
   for (auto* grid : grids) {
     if (grid->type() == Grid::Existing) {
       // fixed shapes, so nothing to do
@@ -215,7 +219,28 @@ void PdnGen::trimShapes()
             = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
-        const odb::Rect new_rect = shape->getMinimumRect();
+        const odb::Rect min_rect = shape->getMinimumRect();
+        auto& layer = tech_layers[shape->getLayer()];
+        if (layer == nullptr) {
+          layer = std::make_unique<TechLayer>(shape->getLayer());
+        }
+        odb::Rect new_rect
+            = layer->adjustToMinArea(min_rect, shape->getLayerDirection());
+        if (!min_rect.isInverted() && !shape->getRect().contains(new_rect)) {
+          // shape sticks out of the original rect, need to move it so that it
+          // is contained
+          if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
+            const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
+            new_rect.moveDelta(
+                std::abs(deltax0) < std::abs(deltax1) ? deltax0 : deltax1, 0);
+          } else {
+            const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
+            const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
+            new_rect.moveDelta(
+                0, std::abs(deltay0) < std::abs(deltay1) ? deltay0 : deltay1);
+          }
+        }
         if (new_rect == shape->getRect()) {  // no change to shape
           continue;
         }
@@ -223,12 +248,13 @@ void PdnGen::trimShapes()
         // check if vias and shape form a stack without any other connections
         bool effectively_vias_stack = true;
         for (const auto& via : shape->getVias()) {
-          if (via->getArea() != new_rect) {
+          if (via->getArea() != min_rect) {
             effectively_vias_stack = false;
             break;
           }
         }
-        if (!effectively_vias_stack) {
+        if (!effectively_vias_stack && !new_rect.isInverted()
+            && shape->getRect().contains(new_rect)) {
           new_shape = shape->copy();
           new_shape->setRect(new_rect);
         }

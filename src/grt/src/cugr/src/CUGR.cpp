@@ -162,7 +162,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
     pattern_route.constructSteinerTree();
     pattern_route.constructRoutingDAG();
     pattern_route.run();
-    grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree());
+    grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree());
   }
 
   updateOverflowNets(net_indices);
@@ -188,7 +188,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     if (net->getNumPins() < 2) {
       continue;
     }
-    grid_graph_->commitTree(net->getRoutingTree(), /*ripup*/ true);
+    grid_graph_->removeTreeUsage(net->getRoutingTree());
     PatternRoute pattern_route(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
     pattern_route.constructSteinerTree();
@@ -196,7 +196,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
     // KEY DIFFERENCE compared to stage 1 (patternRoute)
     pattern_route.constructDetours(congestion_view);
     pattern_route.run();
-    grid_graph_->commitTree(net->getRoutingTree());
+    grid_graph_->addTreeUsage(net->getRoutingTree());
   }
 
   updateOverflowNets(net_indices);
@@ -214,8 +214,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   }
 
   for (const int net_index : net_indices) {
-    grid_graph_->commitTree(gr_nets_[net_index]->getRoutingTree(),
-                            /*ripup*/ true);
+    grid_graph_->removeTreeUsage(gr_nets_[net_index]->getRoutingTree());
   }
   GridGraphView<CostT> wire_cost_view;
   grid_graph_->extractWireCostView(wire_cost_view);
@@ -238,7 +237,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     pattern_route.constructRoutingDAG();
     pattern_route.run();
 
-    grid_graph_->commitTree(net->getRoutingTree());
+    grid_graph_->addTreeUsage(net->getRoutingTree());
     grid_graph_->updateWireCostView(wire_cost_view, net->getRoutingTree());
     grid.step();
   }
@@ -630,7 +629,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
   if (it != db_net_map_.end()) {
     GRNet* gr_net = it->second;
     if (gr_net->getRoutingTree()) {
-      grid_graph_->commitTree(gr_net->getRoutingTree(), /*rip_up=*/true);
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
     }
     design_->updateNet(db_net);
     const int idx = gr_net->getIndex();
@@ -667,7 +666,7 @@ void CUGR::rerouteNets(std::vector<int>& net_indices)
 {
   for (const int idx : net_indices) {
     if (gr_nets_[idx]->getRoutingTree()) {
-      grid_graph_->commitTree(gr_nets_[idx]->getRoutingTree(), /*rip_up=*/true);
+      grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
     }
   }
   patternRoute(net_indices);

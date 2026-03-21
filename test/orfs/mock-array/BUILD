@@ -1,5 +1,5 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
-load("@bazel-orfs//toolchains/scala:chisel.bzl", "chisel_binary")
+load("@rules_chisel//chisel:defs.bzl", "chisel_binary")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 

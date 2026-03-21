@@ -150,4 +150,45 @@ TEST_F(OdbMultiPatternedTest, WireColorIsClearedOnNewPath)
   EXPECT_EQ(decoder.getColor().value(), /*mask_color=*/2);
 }
 
+// For a wire with two segments connected by a kColinear junction
+// with extensions, check if the shape of the second segment is
+// correctly computed.
+TEST_F(OdbMultiPatternedTest, GetSegmentWithColinearExtension)
+{
+  dbTech* tech = lib_->getTech();
+  dbTechLayer* metal1 = tech->findLayer("met1");
+  ASSERT_NE(metal1, nullptr);
+
+  dbNet* net = dbNet::create(block_, "net");
+  dbWire* wire = dbWire::create(net);
+  dbWireEncoder encoder;
+  encoder.begin(wire);
+
+  // Create segment A.
+  const int junction_x = 50000;
+  const int junction_y = 10000;
+  encoder.newPath(metal1, dbWireType::ROUTED);
+  encoder.addPoint(0, junction_y);
+  const int junction_id = encoder.addPoint(junction_x, junction_y);
+
+  // Create segment B.
+  const int extension = 800;
+  encoder.newPathExt(junction_id, extension);  // Inserts kColinear junction.
+  const int segment_b_length = 500;
+  const int segment_b_shape_id
+      = encoder.addPoint(junction_x + segment_b_length, junction_y);
+  encoder.end();
+
+  dbShape shape;
+  wire->getSegment(segment_b_shape_id, shape);
+
+  const int half_width = metal1->getWidth() / 2;
+  const odb::Rect expected(junction_x - extension,
+                           junction_y - half_width,
+                           junction_x + segment_b_length + half_width,
+                           junction_y + half_width);
+
+  EXPECT_EQ(shape.getBox(), expected);
+}
+
 }  // namespace odb

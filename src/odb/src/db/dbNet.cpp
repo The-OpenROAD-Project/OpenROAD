@@ -1963,7 +1963,7 @@ double dbNet::getTotalCapacitance(uint32_t corner, bool cc)
     }
   } else {
     for (dbRSeg* rc : getRSegs()) {
-      cap1 = rc->getCapacitance(corner);
+      cap1 = rc->getGroundCapacitance(corner);
       cap += cap1;
     }
   }
