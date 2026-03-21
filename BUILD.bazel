@@ -482,12 +482,49 @@ sh_binary(
 test_suite(
     name = "lint_test",
     tests = [
+        ":fmt_bzl_test",
         ":fmt_tcl_test",
+        ":lint_bzl_test",
         ":lint_tcl_test",
     ],
 )
 
-alias(
+sh_binary(
     name = "fix_lint",
-    actual = ":tidy_tcl",
+    srcs = ["//bazel:fix_lint.sh"],
+    data = [
+        ":tidy_bzl",
+        ":tidy_tcl",
+    ],
+)
+
+sh_test(
+    name = "fmt_bzl_test",
+    size = "small",
+    srcs = ["//bazel:bzl_fmt_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = ["@buildifier_prebuilt//:buildifier"] + glob(
+        ["**/*.bzl"],
+        allow_empty = True,
+    ),
+    tags = ["local"],
+)
+
+sh_test(
+    name = "lint_bzl_test",
+    size = "small",
+    srcs = ["//bazel:bzl_lint_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = ["@buildifier_prebuilt//:buildifier"] + glob(
+        ["**/*.bzl"],
+        allow_empty = True,
+    ),
+    tags = ["local"],
+)
+
+sh_binary(
+    name = "tidy_bzl",
+    srcs = ["//bazel:bzl_tidy.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = ["@buildifier_prebuilt//:buildifier"],
 )
