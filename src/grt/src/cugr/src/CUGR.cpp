@@ -229,7 +229,8 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
     if (tree == nullptr) {
-      logger_->error(GRT, 610, "Failed to generate Steiner tree for net {}.", net->getName());
+      logger_->warn(GRT, 610, "Failed to generate Steiner tree for net {}. Skipping net.", net->getName());
+      continue;
     }
 
     PatternRoute pattern_route(
