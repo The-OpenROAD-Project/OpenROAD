@@ -1473,7 +1473,7 @@
     },
     "@@rules_chisel+//chisel:extensions.bzl%chisel": {
       "general": {
-        "bzlTransitiveDigest": "aCXBew5jYa9d5TkWJLI5A8nWpTdanPY+PbldpTQLXr8=",
+        "bzlTransitiveDigest": "8YiJLOvTGeBWOqC6gILmYNgsck3pSfcT1RyCktl4Jzs=",
         "usagesDigest": "cyt2rWGIn4nNGvnFMJCaFYLV5TJb2XL/KUof4xYvBYY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
