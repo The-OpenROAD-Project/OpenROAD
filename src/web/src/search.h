@@ -4,9 +4,9 @@
 #pragma once
 
 #include <atomic>
-#include <latch>
 #include <map>
 #include <mutex>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>

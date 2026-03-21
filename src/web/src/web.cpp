@@ -23,6 +23,7 @@
 #include <iterator>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <regex>
 #include <string>
 #include <thread>

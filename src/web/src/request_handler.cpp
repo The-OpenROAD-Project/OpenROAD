@@ -15,7 +15,9 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "clock_tree_report.h"
@@ -1596,13 +1598,12 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
     }
 
     // Sort: directories first, then alphabetical within each group.
-    std::sort(
-        entries.begin(), entries.end(), [](const Entry& a, const Entry& b) {
-          if (a.is_dir != b.is_dir) {
-            return a.is_dir > b.is_dir;
-          }
-          return a.name < b.name;
-        });
+    std::ranges::sort(entries, [](const Entry& a, const Entry& b) {
+      if (a.is_dir != b.is_dir) {
+        return a.is_dir > b.is_dir;
+      }
+      return a.name < b.name;
+    });
 
     JsonBuilder builder;
     builder.beginObject();
