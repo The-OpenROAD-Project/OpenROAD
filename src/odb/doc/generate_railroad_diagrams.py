@@ -48,11 +48,7 @@ DIAGRAM_BG = "#FFFCF0"
 def fix_svg_background(svg_path: Path) -> None:
     """Inject a solid background colour into an SVG file."""
     content = svg_path.read_text(encoding="utf-8")
-    style_block = (
-        "<style>\n"
-        f"  :root {{ --diagram-bg: {DIAGRAM_BG}; }}\n"
-        "</style>"
-    )
+    style_block = "<style>\n" f"  :root {{ --diagram-bg: {DIAGRAM_BG}; }}\n" "</style>"
     content = re.sub(r"(<svg[^>]*>)", r"\1" + style_block, content, count=1)
     content = re.sub(
         r"(<svg\b)([^>]*>)",
@@ -126,7 +122,8 @@ def generate(name: str) -> None:
         subprocess.run(
             [
                 "java",
-                "-cp", classpath,
+                "-cp",
+                classpath,
                 "de.bottlecaps.railroad.Railroad",
                 "-noembedded",
                 f"-out:{zip_file}",
