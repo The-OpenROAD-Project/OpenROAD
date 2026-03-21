@@ -168,7 +168,7 @@ std::vector<TimingPathSummary> TimingReport::getReport(bool is_setup,
 
   sta::Search* search = sta_->search();
   sta::SceneSeq scenes = sta_->scenes();
-  sta::StdStringSeq group_names;
+  sta::StringSeq group_names;
   sta::PathEndSeq path_ends = search->findPathEnds(
       /*from*/ nullptr,
       /*thrus*/ nullptr,
@@ -338,7 +338,7 @@ class PathGroupSlackVisitor : public sta::PathEndVisitor
 // Ensure path groups exist so findPathGroup works.
 static void ensurePathGroups(sta::dbSta* sta, bool is_setup)
 {
-  sta::StdStringSeq empty_names;
+  sta::StringSeq empty_names;
   for (sta::Mode* mode : sta->modes()) {
     mode->makePathGroups(1,
                          1,
