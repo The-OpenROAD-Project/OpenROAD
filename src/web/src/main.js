@@ -11,6 +11,7 @@ import { ChartsWidget } from './charts-widget.js';
 import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
+import { createMenuBar } from './menu-bar.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -491,7 +492,8 @@ app.goldenLayout.on('stateChanged', () => {
 
 // Handle window resize
 window.addEventListener('resize', () => {
-    app.goldenLayout.setSize(window.innerWidth, window.innerHeight);
+    const menuBarHeight = document.getElementById('menu-bar').offsetHeight;
+    app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
 });
 
 // Focus a Golden Layout component tab by its componentType name.
@@ -511,6 +513,10 @@ function focusComponent(componentType) {
 }
 
 app.focusComponent = focusComponent;
+
+// ─── Menu Bar ────────────────────────────────────────────────────────────────
+
+createMenuBar(app);
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 
@@ -545,20 +551,25 @@ app.websocketManager.readyPromise.then(async () => {
 
         const designWidth = maxX - minX;
         const designHeight = maxY - minY;
-        const tileSize = 256;
 
-        const scale = tileSize / Math.max(designWidth, designHeight);
-        app.designScale = scale;
-        app.designMaxDXDY = Math.max(designWidth, designHeight);
+        // No design loaded — skip map setup, let user open a DB via menu.
+        const hasDesign = designWidth > 0 && designHeight > 0;
+        if (hasDesign) {
+            const tileSize = 256;
+            const scale = tileSize / Math.max(designWidth, designHeight);
+            app.designScale = scale;
+            app.designMaxDXDY = Math.max(designWidth, designHeight);
 
-        app.fitBounds = [
-            [-minY * scale, minX * scale],
-            [-maxY * scale, maxX * scale]
-        ];
-        app.map.fitBounds(app.fitBounds);
+            app.fitBounds = [
+                [-minY * scale, minX * scale],
+                [-maxY * scale, maxX * scale]
+            ];
+            app.map.fitBounds(app.fitBounds);
+        }
 
         // Click-to-select: convert click position to DBU and query server
         app.map.on('click', (e) => {
+            if (!app.designScale) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
                 e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
 
@@ -657,7 +668,13 @@ app.websocketManager.readyPromise.then(async () => {
         populateDisplayControls(app, visibility, WebSocketTileLayer,
                                 techData, redrawAllLayers, HeatMapTileLayer);
         updateHeatMaps(heatMapData);
-        document.getElementById('loading-overlay').style.display = 'flex';
+
+        // Only show the loading overlay if a design is loaded but shapes
+        // aren't ready yet.  On browser reload (without server restart),
+        // shapes are already built so we skip the overlay.
+        if (hasDesign && !boundsData.shapes_ready) {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
     } catch (err) {
         console.error('Failed to load initial data from server:', err);
     }
@@ -666,7 +683,14 @@ app.websocketManager.readyPromise.then(async () => {
 // ─── Keyboard Shortcuts ─────────────────────────────────────────────────────
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'f' && app.fitBounds) {
+    // Ignore shortcuts when typing in an input field
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
+    } else if (e.key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
+        app.map.zoomIn();
+    } else if (e.key === 'Z' && e.shiftKey && !e.ctrlKey && app.map) {
+        app.map.zoomOut();
     }
 });

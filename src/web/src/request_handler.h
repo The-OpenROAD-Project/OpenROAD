@@ -83,6 +83,7 @@ struct WebSocketRequest
     SET_ACTIVE_HEATMAP,
     SET_HEATMAP,
     HEATMAP_TILE,
+    LIST_DIR,
     UNKNOWN
   };
 
@@ -131,6 +132,9 @@ struct WebSocketRequest
   // SET_ROUTE_GUIDES fields
   std::string route_guide_action;  // "add", "remove", "clear"
   std::string route_guide_net_name;
+
+  // LIST_DIR fields
+  std::string dir_path;
 
   // Heat map fields
   std::string heatmap_name;
@@ -304,5 +308,8 @@ class TileHandler
  private:
   std::shared_ptr<TileGenerator> gen_;
 };
+
+// Handles LIST_DIR requests (server-side file browsing).
+WebSocketResponse handleListDir(const WebSocketRequest& req);
 
 }  // namespace web

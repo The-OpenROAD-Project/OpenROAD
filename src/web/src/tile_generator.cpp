@@ -369,16 +369,19 @@ TileGenerator::TileGenerator(odb::dbDatabase* db,
       search_(std::make_unique<Search>(logger))
 {
   odb::dbChip* chip = db_->getChip();
-  if (!chip) {
-    logger_->error(utl::WEB, 99, "No chip to serve");
+  if (chip) {
+    search_->setTopChip(chip);
   }
-  search_->setTopChip(chip);
 }
 
 TileGenerator::~TileGenerator() = default;
 
 void TileGenerator::eagerInit()
 {
+  odb::dbChip* chip = db_->getChip();
+  if (chip) {
+    search_->setTopChip(chip);
+  }
   odb::dbBlock* block = getBlock();
   if (block) {
     search_->eagerInit(block);
@@ -482,7 +485,7 @@ void TileGenerator::fillPolygon(std::vector<unsigned char>& image,
 odb::Rect TileGenerator::getBounds() const
 {
   odb::Rect bounds;
-  if (odb::dbBlock* block = db_->getChip()->getBlock()) {
+  if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
   }
   return bounds;
@@ -492,6 +495,9 @@ std::vector<std::string> TileGenerator::getLayers() const
 {
   std::vector<std::string> layers;
   odb::dbTech* tech = db_->getTech();
+  if (!tech) {
+    return layers;
+  }
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     if (layer->getRoutingLevel() > 0
         || layer->getType() == odb::dbTechLayerType::CUT) {
@@ -505,7 +511,7 @@ std::vector<std::string> TileGenerator::getSites() const
 {
   std::set<std::string> seen;
   std::vector<std::string> sites;
-  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbBlock* block = getBlock();
   if (!block) {
     return sites;
   }
@@ -526,7 +532,10 @@ std::vector<SelectionResult> TileGenerator::selectAt(
     const std::set<std::string>& visible_layers)
 {
   std::vector<SelectionResult> results;
-  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return results;
+  }
   // Compute a search margin of 2 pixels at the current zoom level.
   // This accounts for coordinate conversion rounding between the client's
   // Leaflet CRS.Simple coordinates and the server's DBU space.
@@ -633,7 +642,8 @@ std::vector<SelectionResult> TileGenerator::selectAt(
 
 odb::dbBlock* TileGenerator::getBlock() const
 {
-  return db_->getChip()->getBlock();
+  odb::dbChip* chip = db_->getChip();
+  return chip ? chip->getBlock() : nullptr;
 }
 
 std::vector<unsigned char> TileGenerator::generateTile(
@@ -653,6 +663,13 @@ std::vector<unsigned char> TileGenerator::generateTile(
   static_assert(sizeof(Color) == 4);
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image_buffer(buffer_size, 0);
+
+  // No design loaded — return blank tile.
+  if (!getBlock()) {
+    std::vector<unsigned char> png_data;
+    lodepng::encode(png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
+    return png_data;
+  }
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
   static const Color palette[] = {
@@ -697,7 +714,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
     const double scale = kTileSizeInPixel / tile_dbu_size;
 
-    odb::dbBlock* block = db_->getChip()->getBlock();
+    odb::dbBlock* block = getBlock();
 
     // Special "_modules" layer: draw filled module-colored rectangles
     const bool modules_layer
@@ -1551,7 +1568,7 @@ void TileGenerator::drawRouteGuides(std::vector<unsigned char>& image,
                                     const odb::Rect& dbu_tile,
                                     const double scale) const
 {
-  odb::dbBlock* block = db_->getChip()->getBlock();
+  odb::dbBlock* block = getBlock();
   if (!block) {
     return;
   }

@@ -166,6 +166,9 @@ void Search::inDbWirePostModify(odb::dbWire* wire)
 
 void Search::setTopChip(odb::dbChip* chip)
 {
+  if (!chip) {
+    return;
+  }
   odb::dbBlock* block = chip->getBlock();
   if (top_chip_ != chip) {
     clear();

@@ -138,6 +138,9 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
+  } else if (type_str == "list_dir") {
+    req.type = WebSocketRequest::LIST_DIR;
+    req.dir_path = extract_string(msg, "path");
   } else {
     req.type = WebSocketRequest::UNKNOWN;
   }
@@ -331,7 +334,9 @@ WebSocketSession::WebSocketSession(
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(generator)
 {
-  tile_handler_.initializeHeatMaps(state_);
+  if (generator_->getBlock()) {
+    tile_handler_.initializeHeatMaps(state_);
+  }
 }
 
 WebSocketSession::~WebSocketSession()
@@ -361,6 +366,12 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
   // until ready, then a "refresh" push notification triggers a redraw.
   init_thread_ = std::thread([self = shared_from_this()]() {
     self->generator_->eagerInit();
+    // Only send refresh if there's actually a design to render.
+    // Without this guard, eagerInit returns instantly when no block is
+    // loaded and the push races with async_accept (Beast soft_mutex crash).
+    if (!self->generator_->getBlock()) {
+      return;
+    }
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
     resp.id = 0;
@@ -387,6 +398,7 @@ void WebSocketSession::on_accept(beast::error_code ec)
                ec.message());
     return;
   }
+
   do_read();
 }
 
@@ -526,6 +538,10 @@ void WebSocketSession::on_read(beast::error_code ec)
         self->queue_response(
             self->tile_handler_.handleHeatMapTile(req, self->state_));
       });
+      break;
+    case WebSocketRequest::LIST_DIR:
+      net::post(websocket_.get_executor(),
+                [self, req]() { self->queue_response(handleListDir(req)); });
       break;
     default:
       net::post(websocket_.get_executor(), [self, req]() {

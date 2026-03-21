@@ -3,10 +3,12 @@
 
 #include "request_handler.h"
 
+#include <algorithm>
 #include <any>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -538,6 +540,7 @@ WebSocketResponse dispatch_request(
       builder.value(bounds.xMax());
       builder.endArray();
       builder.endArray();
+      builder.field("shapes_ready", gen.shapesReady());
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -1547,6 +1550,82 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
   } catch (const std::exception& e) {
     resp.type = 2;
     std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse handleListDir(const WebSocketRequest& req)
+{
+  namespace fs = std::filesystem;
+
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    fs::path dir_path
+        = req.dir_path.empty() ? fs::current_path() : fs::path(req.dir_path);
+    dir_path = fs::canonical(dir_path);
+
+    struct Entry
+    {
+      std::string name;
+      bool is_dir;
+      std::uintmax_t size;
+    };
+    std::vector<Entry> entries;
+
+    for (const auto& entry : fs::directory_iterator(
+             dir_path, fs::directory_options::skip_permission_denied)) {
+      const auto& name = entry.path().filename().string();
+      // Skip hidden files/directories.
+      if (!name.empty() && name[0] == '.') {
+        continue;
+      }
+      bool is_dir = entry.is_directory();
+      std::uintmax_t size = 0;
+      if (!is_dir) {
+        std::error_code ec;
+        size = entry.file_size(ec);
+        if (ec) {
+          size = 0;
+        }
+      }
+      entries.push_back({name, is_dir, size});
+    }
+
+    // Sort: directories first, then alphabetical within each group.
+    std::sort(
+        entries.begin(), entries.end(), [](const Entry& a, const Entry& b) {
+          if (a.is_dir != b.is_dir) {
+            return a.is_dir > b.is_dir;
+          }
+          return a.name < b.name;
+        });
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("path", dir_path.string());
+    builder.field("parent", dir_path.parent_path().string());
+    builder.beginArray("entries");
+    for (const auto& entry : entries) {
+      builder.beginObject();
+      builder.field("name", entry.name);
+      builder.field("is_dir", entry.is_dir);
+      if (!entry.is_dir) {
+        builder.field("size", static_cast<int>(entry.size));
+      }
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("list_dir error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
