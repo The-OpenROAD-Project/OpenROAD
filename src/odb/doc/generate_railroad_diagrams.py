@@ -7,9 +7,10 @@ Requires the ebnf-convert.war and rr.war tools vendored in src/odb/doc/tools/.
 Requires Java 11 or later on PATH.
 
 Usage:
-    python3 src/odb/doc/generate_railroad_diagrams.py lef   # LEF only
-    python3 src/odb/doc/generate_railroad_diagrams.py def   # DEF only
-    python3 src/odb/doc/generate_railroad_diagrams.py all   # both
+    python3 src/odb/doc/generate_railroad_diagrams.py         # both (default)
+    python3 src/odb/doc/generate_railroad_diagrams.py lef     # LEF only
+    python3 src/odb/doc/generate_railroad_diagrams.py def     # DEF only
+    python3 src/odb/doc/generate_railroad_diagrams.py all     # both (explicit)
 """
 
 import argparse
@@ -157,15 +158,19 @@ def generate(name: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("target", nargs="?")
-    args, _ = parser.parse_known_args()
-
-    if args.target not in {"lef", "def", "all"}:
-        print("Usage: generate_railroad_diagrams.py <lef|def|all>", file=sys.stderr)
-        sys.exit(1)
-
-    names = list(GRAMMARS.keys()) if args.target == "all" else [args.target]
+    parser = argparse.ArgumentParser(
+        description="Generate SVG railroad diagrams from LEF/DEF Bison grammars."
+    )
+    parser.add_argument(
+        "targets",
+        nargs="*",
+        choices=[*GRAMMARS.keys(), "all"],
+        metavar="target",
+        help="Grammar(s) to process: lef, def, or all (default: all)",
+    )
+    args = parser.parse_args()
+    targets = args.targets if args.targets else ["all"]
+    names = list(GRAMMARS.keys()) if "all" in targets else targets
 
     ensure_tools()
     for name in names:
