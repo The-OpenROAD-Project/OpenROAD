@@ -855,20 +855,6 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 // db functions
 
-void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
-{
-  // Seed with all existing instance positions to prevent clones from
-  // landing on a pre-existing cell and causing mapLocationToSink_
-  // key collision in HTreeBuilder.
-  std::set<odb::Point> occupiedPositions;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    int x, y;
-    inst->getLocation(x, y);
-    occupiedPositions.emplace(x, y);
-  }
-  cloneClockGaters(clkNet, occupiedPositions);
-}
-
 void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
                                  std::set<odb::Point>& occupiedPositions)
 {
@@ -1243,13 +1229,23 @@ void TritonCTS::populateTritonCTS()
       allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
+  // Seed with all existing instance positions to prevent clones from
+  // landing on a pre-existing cell and causing mapLocationToSink_
+  // key collision in HTreeBuilder.
+  std::set<odb::Point> occupiedPositions;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    int x, y;
+    inst->getLocation(x, y);
+    occupiedPositions.emplace(x, y);
+  }
+
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
     std::set<odb::dbNet*> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
-        cloneClockGaters(net);
+        cloneClockGaters(net, occupiedPositions);
         if (clkName.empty()) {
           logger_->info(CTS, 95, "Net \"{}\" found.", net->getName());
         } else {

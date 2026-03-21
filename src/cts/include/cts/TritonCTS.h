@@ -120,7 +120,6 @@ class TritonCTS
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
-  void cloneClockGaters(odb::dbNet* clkNet);
   void cloneClockGaters(odb::dbNet* clkNet,
                         std::set<odb::Point>& occupiedPositions);
   void findLongEdges(
