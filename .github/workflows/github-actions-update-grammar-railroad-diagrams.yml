@@ -24,6 +24,25 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Cache railroad diagram tools
+        uses: actions/cache@v4
+        id: cache-tools
+        with:
+          path: src/odb/doc/tools
+          key: railroad-tools-ebnf-v0.73-rr-2.6
+
+      - name: Build ebnf-convert and fetch rr.war
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch v0.73 \
+            https://github.com/GuntherRademacher/ebnf-convert.git /tmp/ebnf-convert
+          cd /tmp/ebnf-convert && ./gradlew war
+          mkdir -p $GITHUB_WORKSPACE/src/odb/doc/tools
+          cp build/libs/ebnf-convert.war \
+            $GITHUB_WORKSPACE/src/odb/doc/tools/ebnf-convert.war
+          curl -fsSL -o $GITHUB_WORKSPACE/src/odb/doc/tools/rr.war \
+            https://repo1.maven.org/maven2/de/bottlecaps/rr/rr-lib/2.6/rr-lib-2.6.jar
+
       - name: Regenerate railroad diagram SVGs
         run: python3 src/odb/doc/generate_railroad_diagrams.py
 
