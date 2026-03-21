@@ -5,7 +5,10 @@ load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 package(features = ["layering_check"])
 
 exports_files(
-    ["install.sh"],
+    [
+        "install.sh",
+        "install_test.sh",
+    ],
     visibility = ["//visibility:public"],
 )
 
