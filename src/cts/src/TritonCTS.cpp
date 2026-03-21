@@ -1199,9 +1199,6 @@ void TritonCTS::resolveLocationCollision(
   // Shift by site width to stay on legal sites (fall back to 1 DBU
   // if no rows are defined in test designs).
   int shift = 1;
-  if (!block_->getRows().empty()) {
-    shift = block_->getRows().begin()->getSite()->getWidth();
-  }
   while (occupiedPositions.contains(cloneLoc)) {
     cloneLoc.setX(cloneLoc.getX() + shift);
   }
