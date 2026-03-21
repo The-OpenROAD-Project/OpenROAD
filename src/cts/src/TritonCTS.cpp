@@ -857,6 +857,21 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
 {
+  // Seed with all existing instance positions to prevent clones from
+  // landing on a pre-existing cell and causing mapLocationToSink_
+  // key collision in HTreeBuilder.
+  std::set<odb::Point> occupiedPositions;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    int x, y;
+    inst->getLocation(x, y);
+    occupiedPositions.emplace(x, y);
+  }
+  cloneClockGaters(clkNet, occupiedPositions);
+}
+
+void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
+                                 std::set<odb::Point>& occupiedPositions)
+{
   odb::dbITerm* driver = clkNet->getFirstOutput();
   std::vector<int> xs;
   std::vector<int> ys;
@@ -888,7 +903,7 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
       if (libertyCell->isInverter() || libertyCell->isBuffer()) {
         continue;
       }
-      cloneClockGaters(outputNet);
+      cloneClockGaters(outputNet, occupiedPositions);
     }
   }
   if (!driver) {
@@ -906,13 +921,14 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
   point2pin[{drvrX, drvrY}].push_back(driver);
   stt::Tree ftree
       = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
-  findLongEdges(ftree, {drvrX, drvrY}, point2pin);
+  findLongEdges(ftree, {drvrX, drvrY}, point2pin, occupiedPositions);
 }
 
 void TritonCTS::findLongEdges(
     stt::Tree& clkSteiner,
     odb::Point driverPt,
-    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
+    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin,
+    std::set<odb::Point>& occupiedPositions)
 {
   const int threshold = options_->getMaxWl();
   debugPrint(
@@ -1031,7 +1047,7 @@ void TritonCTS::findLongEdges(
              validClusters);
 
   // Insert original ICG to its closest cluster, create clones to drive the
-  // other clusters
+  // other clusters.
   int nClones = 0;
   // hierarchy fix, make the clone net in the right scope
   sta::Pin* driver = nullptr;
@@ -1162,12 +1178,35 @@ void TritonCTS::findLongEdges(
       }
     }
 
-    // Move ICG (clone or original) to the center of its sinks
+    // Place ICG at the center of its sinks, then legalize.
     clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
     clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    resolveLocationCollision(clone, occupiedPositions);
   }
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
+}
+
+void TritonCTS::resolveLocationCollision(
+    odb::dbInst* clone,
+    std::set<odb::Point>& occupiedPositions)
+{
+  // Ensure position is unique among both other clones and pre-existing
+  // instances to prevent mapLocationToSink_ key collision.
+  int cloneX, cloneY;
+  clone->getLocation(cloneX, cloneY);
+  odb::Point cloneLoc(cloneX, cloneY);
+  // Shift by site width to stay on legal sites (fall back to 1 DBU
+  // if no rows are defined in test designs).
+  int shift = 1;
+  if (!block_->getRows().empty()) {
+    shift = block_->getRows().begin()->getSite()->getWidth();
+  }
+  while (occupiedPositions.contains(cloneLoc)) {
+    cloneLoc.setX(cloneLoc.getX() + shift);
+  }
+  occupiedPositions.insert(cloneLoc);
+  clone->setLocation(cloneLoc.getX(), cloneLoc.getY());
 }
 
 void TritonCTS::populateTritonCTS()
