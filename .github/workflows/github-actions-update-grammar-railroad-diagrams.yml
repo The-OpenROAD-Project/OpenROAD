@@ -5,8 +5,7 @@ on:
     branches:
       - master
     paths:
-      - "src/odb/src/lef/lef/lef.y"
-      - "src/odb/src/def/def/def.y"
+      - "**/*.y"
 
 jobs:
   regenerate:

@@ -12,6 +12,7 @@ Usage:
     python3 src/odb/doc/generate_railroad_diagrams.py all   # both
 """
 
+import argparse
 import os
 import re
 import shutil
@@ -156,12 +157,15 @@ def generate(name: str) -> None:
 
 
 def main() -> None:
-    targets = sys.argv[1:]
-    if not targets or targets[0] not in {"lef", "def", "all"}:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("target", nargs="?")
+    args, _ = parser.parse_known_args()
+
+    if args.target not in {"lef", "def", "all"}:
         print("Usage: generate_railroad_diagrams.py <lef|def|all>", file=sys.stderr)
         sys.exit(1)
 
-    names = list(GRAMMARS.keys()) if targets[0] == "all" else [targets[0]]
+    names = list(GRAMMARS.keys()) if args.target == "all" else [args.target]
 
     ensure_tools()
     for name in names:
