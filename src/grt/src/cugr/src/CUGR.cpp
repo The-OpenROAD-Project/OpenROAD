@@ -249,9 +249,6 @@ void CUGR::route()
 {
   std::vector<int> net_indices;
   if (!nets_to_route_.empty()) {
-    std::ranges::sort(nets_to_route_);
-    auto [first, last] = std::ranges::unique(nets_to_route_);
-    nets_to_route_.erase(first, last);
     net_indices = nets_to_route_;
     nets_to_route_.clear();
   } else {
