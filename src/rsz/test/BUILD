@@ -1,8 +1,8 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_python//python:defs.bzl", "py_test")
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
