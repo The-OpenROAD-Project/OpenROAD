@@ -1,0 +1,5 @@
+exports_files([
+    "bzl_fmt_test.sh",
+    "bzl_lint_test.sh",
+    "bzl_tidy.sh",
+])

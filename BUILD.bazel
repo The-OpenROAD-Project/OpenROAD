@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -429,4 +430,41 @@ pkg_tar(
     ],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+)
+
+sh_test(
+    name = "fmt_bzl_test",
+    size = "small",
+    srcs = ["//bazel:bzl_fmt_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "@buildifier_prebuilt//:buildifier",
+    ] + glob(
+        ["**/*.bzl"],
+        allow_empty = True,
+    ),
+)
+
+sh_test(
+    name = "lint_bzl_test",
+    size = "small",
+    srcs = ["//bazel:bzl_lint_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "BUILD.bazel",
+        "MODULE.bazel",
+        "@buildifier_prebuilt//:buildifier",
+    ] + glob(
+        ["**/*.bzl"],
+        allow_empty = True,
+    ),
+)
+
+sh_binary(
+    name = "tidy_bzl",
+    srcs = ["//bazel:bzl_tidy.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = ["@buildifier_prebuilt//:buildifier"],
 )

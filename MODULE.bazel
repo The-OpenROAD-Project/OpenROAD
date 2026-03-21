@@ -219,3 +219,5 @@ single_version_override(
     patches = ["//bazel:boost_context_disable_parse_headers.patch"],
     version = BOOST_VERSION,
 )
+
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1", dev_dependency = True)
