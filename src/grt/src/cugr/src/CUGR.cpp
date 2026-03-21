@@ -229,7 +229,10 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
     if (tree == nullptr) {
-      logger_->warn(GRT, 610, "Failed to generate Steiner tree for net {}. Skipping net.", net->getName());
+      logger_->warn(GRT,
+                    610,
+                    "Failed to generate Steiner tree for net {}. Skipping net.",
+                    net->getName());
       continue;
     }
 
@@ -417,7 +420,10 @@ void CUGR::getGuides(const GRNet* net,
 
   // 1. Pin access patches
   if (constants_.min_routing_layer + 1 >= grid_graph_->getNumLayers()) {
-    logger_->error(GRT, 611, "Min routing layer {} exceeds available layers.", constants_.min_routing_layer);
+    logger_->error(GRT,
+                   611,
+                   "Min routing layer {} exceeds available layers.",
+                   constants_.min_routing_layer);
   }
   for (auto& gpts : net->getPinAccessPoints()) {
     for (auto& gpt : gpts) {
