@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -431,4 +432,64 @@ pkg_tar(
     ],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+)
+
+# ---------------------------------------------------------------------------
+# Lint & tidy targets
+#
+# bazelisk test //:lint_test   — run all linters (currently: tclint + tclfmt)
+# bazelisk run  //:fix_lint    — auto-fix what can be fixed  (currently: tclfmt)
+# ---------------------------------------------------------------------------
+
+# --- TCL linting (tclint) -------------------------------------------------
+
+sh_test(
+    name = "lint_tcl_test",
+    srcs = ["//bazel:tcl_lint_test.sh"],
+    args = ["$(rootpath //bazel:tclint)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclint",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL formatting check (tclfmt --check) --------------------------------
+
+sh_test(
+    name = "fmt_tcl_test",
+    srcs = ["//bazel:tcl_fmt_test.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL auto-format (tclfmt --in-place) ----------------------------------
+
+sh_binary(
+    name = "tidy_tcl",
+    srcs = ["//bazel:tcl_tidy.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+)
+
+# --- Umbrella targets ------------------------------------------------------
+
+test_suite(
+    name = "lint_test",
+    tests = [
+        ":fmt_tcl_test",
+        ":lint_tcl_test",
+    ],
+)
+
+alias(
+    name = "fix_lint",
+    actual = ":tidy_tcl",
 )

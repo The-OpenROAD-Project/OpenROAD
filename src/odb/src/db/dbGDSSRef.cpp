@@ -23,6 +23,7 @@ template class dbTable<_dbGDSSRef>;
 
 bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (origin_ != rhs.origin_) {
     return false;
   }
@@ -31,6 +32,7 @@ bool _dbGDSSRef::operator==(const _dbGDSSRef& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSSRef::operator<(const _dbGDSSRef& rhs) const

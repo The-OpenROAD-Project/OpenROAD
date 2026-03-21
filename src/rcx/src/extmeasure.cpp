@@ -1851,17 +1851,16 @@ double extMain::updateTotalCap(dbRSeg* rseg, double cap, uint32_t modelIndex)
 
   int extDbIndex, sci, scDbIndex;
   extDbIndex = getProcessCornerDbIndex(modelIndex);
-  double tot = rseg->getCapacitance(extDbIndex);
+  double tot = rseg->getGroundCapacitance(extDbIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, extDbIndex);
-  // return rseg->getCapacitance(extDbIndex);
   getScaledCornerDbIndex(modelIndex, sci, scDbIndex);
   if (sci == -1) {
     return tot;
   }
   getScaledGndC(sci, cap);
-  double tots = rseg->getCapacitance(scDbIndex);
+  double tots = rseg->getGroundCapacitance(scDbIndex);
   tots += cap;
   rseg->setCapacitance(tots, scDbIndex);
   return tot;
