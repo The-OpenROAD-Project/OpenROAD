@@ -1,7 +1,6 @@
 #include "CUGR.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -229,7 +228,9 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     maze_route.constructSparsifiedGraph(wire_cost_view, grid);
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
-    assert(tree != nullptr);
+    if (tree == nullptr) {
+      logger_->error(GRT, 610, "Failed to generate Steiner tree for net {}.", net->getName());
+    }
 
     PatternRoute pattern_route(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
@@ -414,7 +415,9 @@ void CUGR::getGuides(const GRNet* net,
   };
 
   // 1. Pin access patches
-  assert(constants_.min_routing_layer + 1 < grid_graph_->getNumLayers());
+  if (constants_.min_routing_layer + 1 >= grid_graph_->getNumLayers()) {
+    logger_->error(GRT, 611, "Min routing layer {} exceeds available layers.", constants_.min_routing_layer);
+  }
   for (auto& gpts : net->getPinAccessPoints()) {
     for (auto& gpt : gpts) {
       if (gpt.getLayerIdx() < constants_.min_routing_layer) {
