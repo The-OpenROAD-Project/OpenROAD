@@ -4,11 +4,20 @@
 #
 # Check for duplicate logger message IDs across all source files.
 set -e
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-FIND_MESSAGES="${SCRIPT_DIR}/find_messages.py"
+# --- Resolve runfiles (Bazel-idiomatic) ---
+# Bazel sets RUNFILES_DIR or we derive it from $0.
+if [[ -z "${RUNFILES_DIR:-}" ]]; then
+    if [[ -d "$0.runfiles" ]]; then
+        RUNFILES_DIR="$0.runfiles"
+    else
+        RUNFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+    fi
+fi
+
+FIND_MESSAGES="${RUNFILES_DIR}/_main/etc/find_messages.py"
 if [ ! -f "${FIND_MESSAGES}" ]; then
-    echo "ERROR: Cannot find find_messages.py" >&2
+    echo "ERROR: Cannot find find_messages.py at ${FIND_MESSAGES}" >&2
     exit 1
 fi
 
