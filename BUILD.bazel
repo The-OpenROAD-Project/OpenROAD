@@ -497,16 +497,12 @@ sh_binary(
         ":tidy_tcl",
     ],
 )
-
 sh_test(
     name = "fmt_bzl_test",
     size = "small",
     srcs = ["//bazel:bzl_fmt_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
-    data = ["@buildifier_prebuilt//:buildifier"] + glob(
-        ["**/*.bzl"],
-        allow_empty = True,
-    ),
+    data = ["@buildifier_prebuilt//:buildifier"],
     tags = ["local"],
 )
 
@@ -515,10 +511,7 @@ sh_test(
     size = "small",
     srcs = ["//bazel:bzl_lint_test.sh"],
     args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
-    data = ["@buildifier_prebuilt//:buildifier"] + glob(
-        ["**/*.bzl"],
-        allow_empty = True,
-    ),
+    data = ["@buildifier_prebuilt//:buildifier"],
     tags = ["local"],
 )
 
