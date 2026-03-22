@@ -40,7 +40,7 @@ target_include_directories(web
     include
   PRIVATE
     src
-    ${TCL_LIBRARY}
+    ${TCL_INCLUDE_PATH}
     ${OPENSTA_HOME}/include
     ${DBSTA_HOME}/include
     ${OPENROAD_HOME}/third-party
