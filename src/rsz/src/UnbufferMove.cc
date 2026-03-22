@@ -464,20 +464,18 @@ bool UnbufferMove::bufferRemovalCreatesFeedthrough(
       || ip_modnet->getParent() != op_modnet->getParent()) {
     return false;
   }
-  bool ip_has_input_port = false;
-  for (odb::dbModBTerm* bt : ip_modnet->getModBTerms()) {
-    if (bt->getIoType() == odb::dbIoType::INPUT) {
-      ip_has_input_port = true;
-      break;
-    }
-  }
-  bool op_has_output_port = false;
-  for (odb::dbModBTerm* bt : op_modnet->getModBTerms()) {
-    if (bt->getIoType() == odb::dbIoType::OUTPUT) {
-      op_has_output_port = true;
-      break;
-    }
-  }
+  odb::dbSet<odb::dbModBTerm> ip_bterms = ip_modnet->getModBTerms();
+  const bool ip_has_input_port = std::any_of(
+      ip_bterms.begin(), ip_bterms.end(), [](odb::dbModBTerm* bt) {
+        return bt->getIoType() == odb::dbIoType::INPUT;
+      });
+
+  odb::dbSet<odb::dbModBTerm> op_bterms = op_modnet->getModBTerms();
+  const bool op_has_output_port = std::any_of(
+      op_bterms.begin(), op_bterms.end(), [](odb::dbModBTerm* bt) {
+        return bt->getIoType() == odb::dbIoType::OUTPUT;
+      });
+
   return ip_has_input_port && op_has_output_port;
 }
 
