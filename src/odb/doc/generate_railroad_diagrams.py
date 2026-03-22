@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, The OpenROAD Authors
+# Copyright (c) 2026, The OpenROAD Authors
 """Generate SVG railroad diagrams from the LEF and DEF Bison grammar files.
 
 Requires the ebnf-convert.war and rr.war tools vendored in src/odb/doc/tools/.
@@ -22,6 +22,7 @@ import sys
 import tempfile
 import zipfile
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent.parent.parent  # doc/ -> odb/ -> src/ -> repo root
@@ -49,21 +50,74 @@ DIAGRAM_BG = "#FFFCF0"
 
 def fix_svg_background(svg_path: Path) -> None:
     """Inject a solid background colour into an SVG file."""
-    content = svg_path.read_text(encoding="utf-8")
-    style_block = "<style>\n" f"  :root {{ --diagram-bg: {DIAGRAM_BG}; }}\n" "</style>"
-    content = re.sub(r"(<svg[^>]*>)", r"\1" + style_block, content, count=1)
-    content = re.sub(
-        r"(<svg\b)([^>]*>)",
-        rf'\1 style="background: var(--diagram-bg, {DIAGRAM_BG})"\2',
-        content,
-        count=1,
-    )
-    svg_path.write_text(content, encoding="utf-8")
+
+    def local_name(tag: str) -> str:
+        if "}" in tag:
+            return tag.split("}", 1)[1]
+        return tag
+
+    # Register existing namespace prefixes before serializing so ElementTree
+    # keeps author-provided prefixes (for example, xlink) instead of ns0.
+    for _, (prefix, uri) in ET.iterparse(svg_path, events=("start-ns",)):
+        ET.register_namespace(prefix or "", uri)
+
+    tree = ET.parse(svg_path)
+    root = tree.getroot()
+
+    bg_style = f"background: var(--diagram-bg, {DIAGRAM_BG});"
+    existing_root_style = root.attrib.get("style", "").strip()
+    if "background:" not in existing_root_style:
+        root.attrib["style"] = (
+            f"{existing_root_style} {bg_style}".strip() if existing_root_style else bg_style
+        )
+
+    style_node = None
+    for child in list(root):
+        if local_name(child.tag) == "style":
+            style_node = child
+            break
+
+    css_var = f":root {{ --diagram-bg: {DIAGRAM_BG}; }}"
+    if style_node is None:
+        ns = ""
+        if root.tag.startswith("{"):
+            ns = root.tag.split("}", 1)[0] + "}"
+        style_node = ET.Element(f"{ns}style")
+        style_node.text = "\n  " + css_var + "\n"
+        root.insert(0, style_node)
+    else:
+        existing_css = style_node.text or ""
+        if "--diagram-bg" not in existing_css:
+            style_node.text = (
+                f"{existing_css.rstrip()}\n  {css_var}\n" if existing_css.strip() else f"\n  {css_var}\n"
+            )
+
+    tree.write(svg_path, encoding="utf-8", xml_declaration=True)
 
 
 def ensure_tools() -> None:
     """Check that the required WAR files exist in the tools directory."""
     missing = []
+    java_path = shutil.which("java")
+
+    if java_path is None:
+        missing.append("  java              (install Java 11 or later and add it to PATH)")
+    else:
+        version_result = subprocess.run(
+            [java_path, "-version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
+        if version_result.returncode != 0:
+            missing.append("  java              (found in PATH but failed to execute)")
+        else:
+            match = re.search(r'"(\d+)(?:\.\d+)?', version_result.stdout)
+            major = int(match.group(1)) if match else None
+            if major is None or major < 11:
+                missing.append("  java              (requires Java 11 or later)")
+
     if not EBNF_WAR.exists():
         missing.append(
             "  ebnf-convert.war  (build from: https://github.com/GuntherRademacher/ebnf-convert)"
