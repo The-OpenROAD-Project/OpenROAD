@@ -11,6 +11,10 @@ exports_files(
         "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
         "tcl_tidy.sh",
+        "bzl_fmt_test.sh",
+        "bzl_lint_test.sh",
+        "bzl_tidy.sh",
+        "fix_lint.sh",
     ],
     visibility = ["//visibility:public"],
 )
