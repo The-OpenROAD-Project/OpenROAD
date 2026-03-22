@@ -368,13 +368,19 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   odb::dbModNet* ip_modnet = db_network_->hierNet(in_pin);
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-  bool in_net_has_port = db_network_->hasPort(in_net);
-  bool out_net_has_port = db_network_->hasPort(out_net);
-  if (!in_net_has_port && out_net_has_port) {
-    survivor = out_net;
-    removed = in_net;
-    survivor_modnet = op_modnet;
-    removed_modnet = ip_modnet;
+
+  // When the buffer removal creates a feedthrough (input port directly
+  // wired to output port), the input ModNet must survive so that
+  // VerilogWriter sees port_name != net_name and emits the assign.
+  if (!bufferRemovalCreatesFeedthrough(ip_modnet, op_modnet)) {
+    bool in_net_has_port = db_network_->hasPort(in_net);
+    bool out_net_has_port = db_network_->hasPort(out_net);
+    if (!in_net_has_port && out_net_has_port) {
+      survivor = out_net;
+      removed = in_net;
+      survivor_modnet = op_modnet;
+      removed_modnet = ip_modnet;
+    }
   }
 
   // Disconnect the buffer and handle the nets
@@ -446,6 +452,33 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   }
 
   return true;
+}
+
+// Check if removing a buffer creates a feedthrough: input port directly
+// wired to output port within the same module.
+bool UnbufferMove::bufferRemovalCreatesFeedthrough(
+    odb::dbModNet* ip_modnet,
+    odb::dbModNet* op_modnet) const
+{
+  if (!ip_modnet || !op_modnet
+      || ip_modnet->getParent() != op_modnet->getParent()) {
+    return false;
+  }
+  bool ip_has_input_port = false;
+  for (odb::dbModBTerm* bt : ip_modnet->getModBTerms()) {
+    if (bt->getIoType() == odb::dbIoType::INPUT) {
+      ip_has_input_port = true;
+      break;
+    }
+  }
+  bool op_has_output_port = false;
+  for (odb::dbModBTerm* bt : op_modnet->getModBTerms()) {
+    if (bt->getIoType() == odb::dbIoType::OUTPUT) {
+      op_has_output_port = true;
+      break;
+    }
+  }
+  return ip_has_input_port && op_has_output_port;
 }
 
 }  // namespace rsz
