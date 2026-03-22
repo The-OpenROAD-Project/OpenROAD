@@ -68,7 +68,9 @@ def fix_svg_background(svg_path: Path) -> None:
     existing_root_style = root.attrib.get("style", "").strip()
     if "background:" not in existing_root_style:
         root.attrib["style"] = (
-            f"{existing_root_style} {bg_style}".strip() if existing_root_style else bg_style
+            f"{existing_root_style} {bg_style}".strip()
+            if existing_root_style
+            else bg_style
         )
 
     style_node = None
@@ -89,7 +91,9 @@ def fix_svg_background(svg_path: Path) -> None:
         existing_css = style_node.text or ""
         if "--diagram-bg" not in existing_css:
             style_node.text = (
-                f"{existing_css.rstrip()}\n  {css_var}\n" if existing_css.strip() else f"\n  {css_var}\n"
+                f"{existing_css.rstrip()}\n  {css_var}\n"
+                if existing_css.strip()
+                else f"\n  {css_var}\n"
             )
 
     tree.write(svg_path, encoding="utf-8", xml_declaration=True)
@@ -101,7 +105,9 @@ def ensure_tools() -> None:
     java_path = shutil.which("java")
 
     if java_path is None:
-        missing.append("  java              (install Java 11 or later and add it to PATH)")
+        missing.append(
+            "  java              (install Java 11 or later and add it to PATH)"
+        )
     else:
         version_result = subprocess.run(
             [java_path, "-version"],
