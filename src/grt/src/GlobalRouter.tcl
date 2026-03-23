@@ -658,7 +658,7 @@ proc report_net_global_routing_detour { args } {
 
   set block [ord::get_db_block]
   if { $block == "NULL" } {
-    utl::error GRT 242 "Missing dbBlock."
+    utl::error GRT 296 "Missing dbBlock."
   }
 
   if { [info exists keys(-nets)] } {
@@ -673,6 +673,6 @@ proc report_net_global_routing_detour { args } {
       }
     }
   } else {
-    utl::error GRT 243 "-nets is required."
+    utl::error GRT 297 "-nets is required."
   }
 }
