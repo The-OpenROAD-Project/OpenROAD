@@ -7,12 +7,73 @@ load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
-# Verifies that downstream consumers only see the intended public API
-# and that dev_dependencies are not leaked. Runs bazelisk inside the
-# standalone test/downstream/ workspace.
+# Downstream consumer tests: each verifies one aspect of the public API
+# surface and dev_dependency isolation from the test/downstream/ workspace.
+
 sh_test(
-    name = "downstream_visibility_test",
-    srcs = ["downstream/visibility_test.sh"],
+    name = "downstream_openroad_visible_test",
+    srcs = ["downstream/expect_build.sh"],
+    args = [":openroad_visible"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_openroad_py_visible_test",
+    srcs = ["downstream/expect_build.sh"],
+    args = [":openroad_py_test"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_openroad_lib_restricted_test",
+    srcs = ["downstream/expect_build_fail.sh"],
+    args = [":openroad_lib_consumer"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_openroadpy_so_restricted_test",
+    srcs = ["downstream/expect_build_fail.sh"],
+    args = [":openroadpy_so_consumer"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_rules_shell_not_dep_test",
+    srcs = ["downstream/expect_query_fail.sh"],
+    args = ["@rules_shell//:all"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_rules_pkg_not_dep_test",
+    srcs = ["downstream/expect_query_fail.sh"],
+    args = ["@rules_pkg//:all"],
+    tags = [
+        "local",
+        "no-sandbox",
+    ],
+)
+
+sh_test(
+    name = "downstream_rules_verilator_not_dep_test",
+    srcs = ["downstream/expect_query_fail.sh"],
+    args = ["@rules_verilator//:all"],
     tags = [
         "local",
         "no-sandbox",
