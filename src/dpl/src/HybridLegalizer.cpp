@@ -391,6 +391,10 @@ bool HybridLegalizer::initFromDb()
     // Use DPL grid coordinate mapping instead of die-area arithmetic.
     cell.initX = dplGrid->gridX(DbuX{dbX - dieXlo_}).v;
     cell.initY = dplGrid->gridSnapDownY(DbuY{dbY - dieYlo_}).v;
+    // Clamp to valid grid range – gridSnapDownY can return gridH_ because
+    // row_index_to_y_dbu_ has row_count+1 entries.
+    cell.initX = std::max(0, std::min(cell.initX, gridW_ - 1));
+    cell.initY = std::max(0, std::min(cell.initY, gridH_ - 1));
     cell.x = cell.initX;
     cell.y = cell.initY;
 
