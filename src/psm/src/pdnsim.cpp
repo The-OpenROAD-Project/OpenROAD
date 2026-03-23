@@ -39,8 +39,10 @@ PDNSim::PDNSim(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   opendp_ = opendp;
   logger_ = logger;
-  heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
-  heatmap_->registerHeatMap();
+  heatmap_source_ = gui::registerHeatMapSource(
+      "IR Drop", "IRDrop", "IRDrop", [this, sta, logger]() {
+        return std::make_shared<IRDropDataSource>(this, sta, logger);
+      });
 }
 
 PDNSim::~PDNSim() = default;
@@ -88,6 +90,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
     return;
   }
 
+  last_net_ = net;
   last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
   if (!use_prev_solution || !solver->hasSolution(corner)) {
@@ -97,9 +100,9 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   }
   solver->report(corner);
 
-  heatmap_->setNet(net);
-  heatmap_->setCorner(corner);
-  heatmap_->update();
+  if (heatmap_source_) {
+    heatmap_source_->invalidateInstances();
+  }
 
   if (enable_em) {
     solver->reportEM(corner);

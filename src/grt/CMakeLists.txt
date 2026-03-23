@@ -39,6 +39,7 @@ target_link_libraries(grt_lib
     ant_lib
     dpl_lib
     dbSta_lib
+    gui_heatmap_core
     stt_lib
     rsz_lib
     OpenSTA
@@ -94,6 +95,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dpl_lib
       dbSta
       gui
+      gui_heatmap_core
       stt
       OpenSTA
       Boost::boost

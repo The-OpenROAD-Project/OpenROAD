@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -125,6 +126,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
+    "//src/web",
+    "//src/web:ui",
     "@abc",
     ":ord",
 ] + select(
@@ -429,4 +432,79 @@ pkg_tar(
     ],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+)
+
+# ---------------------------------------------------------------------------
+# Lint & tidy targets
+#
+# bazelisk test //:lint_test   — run all lint checks
+# bazelisk run  //:fix_lint    — auto-fix then lint
+# ---------------------------------------------------------------------------
+
+# --- TCL linting (tclint) -------------------------------------------------
+
+sh_test(
+    name = "lint_tcl_test",
+    srcs = ["//bazel:tcl_lint_test.sh"],
+    args = ["$(rootpath //bazel:tclint)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclint",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL formatting check (tclfmt --check) --------------------------------
+
+sh_test(
+    name = "fmt_tcl_test",
+    srcs = ["//bazel:tcl_fmt_test.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL auto-format only (tclfmt --in-place) -----------------------------
+
+sh_binary(
+    name = "tidy_tcl",
+    srcs = ["//bazel:tcl_tidy.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+)
+
+# --- Umbrella targets ------------------------------------------------------
+
+test_suite(
+    name = "lint_test",
+    tests = [
+        ":fmt_tcl_test",
+        ":lint_tcl_test",
+    ],
+)
+
+# Linting is done here (not just formatting) because not all lint violations
+# are auto-fixable — fix_lint fixes what it can, then reports the rest.
+sh_binary(
+    name = "fix_lint",
+    srcs = ["//bazel:fix_lint.sh"],
+    args = [
+        "$(rootpath //bazel:tcl_tidy.sh)",
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath //bazel:tcl_lint_test.sh)",
+        "$(rootpath //bazel:tclint)",
+    ],
+    data = [
+        "tclint.toml",
+        "//bazel:tcl_lint_test.sh",
+        "//bazel:tcl_tidy.sh",
+        "//bazel:tclfmt",
+        "//bazel:tclint",
+    ],
 )
