@@ -95,10 +95,7 @@ void VerilogWriter::writeChiplet(const std::string& filename, odb::dbChip* chip)
                "  {} {} (\n",
                chip_inst->getMasterChip()->getName(),
                chip_inst->getName());
-    const std::map<
-        dbChipInst*,
-        std::vector<std::pair<std::string, std::string>>>::const_iterator it
-        = inst_connections.find(chip_inst);
+    auto it = inst_connections.find(chip_inst);
     if (it != inst_connections.end()) {
       const std::vector<std::pair<std::string, std::string>>& conns
           = it->second;

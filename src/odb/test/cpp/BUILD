@@ -257,7 +257,6 @@ cc_test(
     name = "Test3DBloxParser",
     srcs = [
         "Test3DBloxParser.cpp",
-        "Test3DBloxVerilogWriter.cpp",
     ],
     data = [
         "//src/odb/test:regression_resources",
@@ -286,6 +285,25 @@ cc_test(
     ],
     deps = [
         "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "Test3DBloxVerilogWriter",
+    srcs = [
+        "Test3DBloxVerilogWriter.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
