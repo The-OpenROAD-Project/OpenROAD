@@ -314,6 +314,7 @@ add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
 add_subdirectory(est)
+add_subdirectory(web)
 
 ################################################################
 
@@ -384,6 +385,7 @@ target_link_libraries(openroad
   mpl
   par
   est
+  web
   absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
@@ -463,6 +465,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     pdn_py
     dft_py
     par_py
+    web_py
   )
 
 else()

@@ -549,6 +549,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                            const BufferedNetPtr& tree,
                            const sta::Scene* corner,
                            std::map<const sta::Pin*, float>& load_pin_slew);
+  // Any cell insertion or deletion should invalidate vertex ordering
+  void invalidateVertexOrdering() { level_drvr_vertices_valid_ = false; }
 
  protected:
   void init();
