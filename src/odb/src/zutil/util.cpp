@@ -140,15 +140,13 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
                            ->getTransformedHalo();
   }
 
+  const bool use_inst_halo = halo != nullptr && !halo->isSoft();
+
   // Check if Y has overlap first since rows are long and skinny
   const int blockage_lly
-      = blockage->yMin()
-        - (halo != nullptr && !halo->isSoft() ? transformed_halo.yMin()
-                                              : halo_y);
+      = blockage->yMin() - (use_inst_halo ? transformed_halo.yMin() : halo_y);
   const int blockage_ury
-      = blockage->yMax()
-        + (halo != nullptr && !halo->isSoft() ? transformed_halo.yMax()
-                                              : halo_y);
+      = blockage->yMax() + (use_inst_halo ? transformed_halo.yMax() : halo_y);
   const int row_lly = rowBB.yMin();
   const int row_ury = rowBB.yMax();
 
@@ -157,13 +155,9 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
   }
 
   const int blockage_llx
-      = blockage->xMin()
-        - (halo != nullptr && !halo->isSoft() ? transformed_halo.xMin()
-                                              : halo_x);
+      = blockage->xMin() - (use_inst_halo ? transformed_halo.xMin() : halo_x);
   const int blockage_urx
-      = blockage->xMax()
-        + (halo != nullptr && !halo->isSoft() ? transformed_halo.xMax()
-                                              : halo_x);
+      = blockage->xMax() + (use_inst_halo ? transformed_halo.xMax() : halo_x);
   const int row_llx = rowBB.xMin();
   const int row_urx = rowBB.xMax();
 
