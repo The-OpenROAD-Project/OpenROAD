@@ -2,6 +2,7 @@
 // Copyright (c) 2021-2026, The OpenROAD Authors
 
 #include <algorithm>
+#include <any>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
@@ -170,6 +171,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
+      use_selected_only_(false),
       color_generator_(SpectrumGenerator(100.0))
 {
   clearMap();
@@ -379,6 +381,7 @@ Renderer::Settings HeatMapDataSource::getSettings() const
                               {"ReverseLog", reverse_log_},
                               {"ShowNumbers", show_numbers_},
                               {"ShowLegend", show_legend_},
+                              {"UseSelectedOnly", use_selected_only_},
                               {"ShowMin", draw_below_min_display_range_},
                               {"ShowMax", draw_above_max_display_range_}};
 
@@ -406,6 +409,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   Renderer::setSetting<bool>(settings, "ReverseLog", reverse_log_);
   Renderer::setSetting<bool>(settings, "ShowNumbers", show_numbers_);
   Renderer::setSetting<bool>(settings, "ShowLegend", show_legend_);
+  Renderer::setSetting<bool>(settings, "UseSelectedOnly", use_selected_only_);
   Renderer::setSetting<bool>(
       settings, "ShowMin", draw_below_min_display_range_);
   Renderer::setSetting<bool>(
@@ -428,6 +432,22 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   setDisplayRange(display_range_min_, display_range_max_);
   setGridSizes(grid_x_size_, grid_y_size_);
   setColorAlpha(color_alpha_);
+}
+
+std::set<odb::dbInst*> HeatMapDataSource::getSelectedInsts() const
+{
+  std::set<odb::dbInst*> selected_insts;
+#ifdef ENABLE_QT
+  if (!useSelectedOnly() || !gui::Gui::enabled()) {
+    return selected_insts;
+  }
+  for (const gui::Selected& item : gui::Gui::get()->selection()) {
+    if (item.isInst()) {
+      selected_insts.insert(std::any_cast<odb::dbInst*>(item.getObject()));
+    }
+  }
+#endif
+  return selected_insts;
 }
 
 HeatMapDataSource::MapView HeatMapDataSource::getMapView(
@@ -1124,10 +1144,17 @@ bool PowerDensityDataSource::populateMap()
     return false;
   }
 
+  // Collect selected instances if filter is enabled
+  const std::set<odb::dbInst*> selected_insts = getSelectedInsts();
+  const bool filter = !selected_insts.empty();
+
   const bool include_all
       = include_internal_ && include_leakage_ && include_switching_;
   for (auto* inst : getBlock()->getInsts()) {
     if (!inst->getPlacementStatus().isPlaced()) {
+      continue;
+    }
+    if (filter && selected_insts.find(inst) == selected_insts.end()) {
       continue;
     }
 
