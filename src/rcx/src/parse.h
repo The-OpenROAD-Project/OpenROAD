@@ -51,7 +51,6 @@ class Parser
   bool isSeparator(char a);
 
   char* _line;
-  char* _tmpLine;
   char* _wordSeparators;
   char** _wordArray;
 

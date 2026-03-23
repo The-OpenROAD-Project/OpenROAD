@@ -3,14 +3,14 @@
 [INFO ODB-0130]     Created 4 pins.
 [INFO ODB-0131]     Created 13 components and 59 component-terminals.
 [INFO ODB-0133]     Created 16 nets and 30 connections.
-worst slack min -0.24
-worst slack max 1.31
+worst slack min -0.26
+worst slack max 1.27
 [INFO RSZ-0046] Found 3 endpoints with hold violations.
 Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | Endpoint
 --------------------------------------------------------------------------------------
-        0 |       0 |       0 |            0 |    +0.0% |  -0.241 |  -0.373 | r2/D
-    final |       0 |       8 |            0 |   +29.3% |   0.005 |   0.000 | r3/D
+        0 |       0 |       0 |            0 |    +0.0% |  -0.260 |  -0.421 | r2/D
+    final |       0 |       8 |            0 |   +29.3% |   0.002 |   0.000 | r3/D
 --------------------------------------------------------------------------------------
 [INFO RSZ-0032] Inserted 8 hold buffers.
 worst slack min 0.00
-worst slack max 1.31
+worst slack max 1.27

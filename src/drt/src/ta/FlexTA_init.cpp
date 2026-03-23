@@ -88,10 +88,8 @@ void FlexTAWorker::initTracks()
       continue;
     }
     for (auto& tp : getDesign()->getTopBlock()->getTrackPatterns(lNum)) {
-      if ((getDir() == dbTechLayerDir::HORIZONTAL
-           && tp->isHorizontal() == false)
-          || (getDir() == dbTechLayerDir::VERTICAL
-              && tp->isHorizontal() == true)) {
+      if ((getDir() == dbTechLayerDir::HORIZONTAL && !tp->isHorizontal())
+          || (getDir() == dbTechLayerDir::VERTICAL && tp->isHorizontal())) {
         bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
         frCoord lowCoord = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());

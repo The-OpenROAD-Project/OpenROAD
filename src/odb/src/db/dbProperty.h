@@ -11,6 +11,9 @@
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;

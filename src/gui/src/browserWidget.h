@@ -55,7 +55,6 @@ class BrowserWidget : public QDockWidget,
 
   // dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
   void inDbInstSwapMasterAfter(odb::dbInst*) override;
 

@@ -318,6 +318,9 @@ proc evaluate_hypergraph_solution { args } {
     utl::error PAR 0925 "Missing mandatory argument -hypergraph_file."
   }
   set hypergraph_file $keys(-hypergraph_file)
+  if { ![info exists keys(-solution_file)] } {
+    utl::error PAR 0926 "Missing mandatory argument -solution_file."
+  }
   set solution_file $keys(-solution_file)
   set num_parts 2
   set base_balance { 1.0 }

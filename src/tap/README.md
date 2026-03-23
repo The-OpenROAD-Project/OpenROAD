@@ -100,7 +100,7 @@ cut_rows
 ### Only adding boundary/endcap cells
 
 Place endcaps into the design, the naming for the arguments to `place_endcaps` is based on the 
-LEF58 `CLASS` specification foe endcaps.
+LEF58 `CLASS` specification for endcaps.
 
 ```tcl
 place_endcaps
@@ -210,4 +210,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

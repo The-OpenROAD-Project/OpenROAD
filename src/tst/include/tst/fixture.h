@@ -13,7 +13,6 @@
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "sta/Corner.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "tcl.h"
@@ -69,9 +68,9 @@ class Fixture : public ::testing::Test
   // In bazel this uses the runfiles mechanism to locate the file
   std::string getFilePath(const std::string& file_path) const;
 
-  // if corner == nullptr, then a corner named "default" is used
+  // if scene == nullptr, then a scene named "default" is used
   sta::LibertyLibrary* readLiberty(const std::string& filename,
-                                   sta::Corner* corner = nullptr,
+                                   sta::Scene* scene = nullptr,
                                    const sta::MinMaxAll* min_max
                                    = sta::MinMaxAll::all(),
                                    bool infer_latches = false);

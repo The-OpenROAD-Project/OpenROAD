@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2022-2025, The OpenROAD Authors
+# Copyright (c) 2022-2026, The OpenROAD Authors
+
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
@@ -27,6 +30,8 @@ COMPULSORY_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "aes_genetic",
+    "gcd_genetic",
 ]
 
 # Disabled in CMakeLists.txt
@@ -158,6 +163,37 @@ cc_test(
         "@abc",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+cc_test(
+    name = "RmpGTests",
+    srcs = [
+        "cpp/TestAbc.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "aes_nangate45.v",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/odb",
+        "//src/rmp",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/utl",
+        "@abc",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@tcl_lang//:tcl",
     ],
 )

@@ -224,10 +224,10 @@ proc diff_spef { args } {
   if { [info exists keys(-file)] } {
     set filename [file nativename $keys(-file)]
   }
-  set res [info exists flags(-over)]
-  set cap [info exists flags(-over)]
-  set cc_cap [info exists flags(-over)]
-  set conn [info exists flags(-over)]
+  set res [info exists flags(-r_res)]
+  set cap [info exists flags(-r_cap)]
+  set cc_cap [info exists flags(-r_cc_cap)]
+  set conn [info exists flags(-r_conn)]
 
   set spef_corner -1
   if { [info exists keys(-spef_corner)] } {

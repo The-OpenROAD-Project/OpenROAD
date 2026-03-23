@@ -14,8 +14,6 @@
 #include "est/EstimateParasitics.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
@@ -23,6 +21,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
@@ -94,13 +93,13 @@ class RepairDesign : sta::dbStaState
                             int max_fanout);
   void performEarlySizingRound(int& repaired_net_count);
 
-  void checkDriverArcSlew(const sta::Corner* corner,
+  void checkDriverArcSlew(const sta::Scene* corner,
                           const sta::Instance* inst,
                           const sta::TimingArc* arc,
                           float load_cap,
                           float limit,
                           float& violation);
-  bool repairDriverSlew(const sta::Corner* corner, const sta::Pin* drvr_pin);
+  bool repairDriverSlew(const sta::Scene* corner, const sta::Pin* drvr_pin);
 
   void repairDriver(sta::Vertex* drvr,
                     bool check_slew,
@@ -108,7 +107,7 @@ class RepairDesign : sta::dbStaState
                     bool check_fanout,
                     int max_length,  // dbu
                     bool resize_drvr,
-                    sta::Corner* corner_w_load_slew_viol,
+                    sta::Scene* corner_w_load_slew_viol,
                     int& repaired_net_count,
                     int& slew_violations,
                     int& cap_violations,
@@ -123,9 +122,9 @@ class RepairDesign : sta::dbStaState
                  bool check_fanout,
                  int max_length,  // dbu
                  bool resize_drvr,
-                 sta::Corner* corner_w_load_slew_viol,  // if not null, signals
-                                                        // a violation hidden by
-                                                        // an annotation
+                 sta::Scene* corner_w_load_slew_viol,  // if not null, signals
+                                                       // a violation hidden by
+                                                       // an annotation
                  int& repaired_net_count,
                  int& slew_violations,
                  int& cap_violations,
@@ -134,21 +133,21 @@ class RepairDesign : sta::dbStaState
   bool needRepairCap(const sta::Pin* drvr_pin,
                      int& cap_violations,
                      float& max_cap,
-                     const sta::Corner*& corner);
+                     const sta::Scene*& corner);
   bool needRepairWire(int max_length, int wire_length, int& length_violations);
   void checkSlew(const sta::Pin* drvr_pin,
                  // Return values.
                  sta::Slew& slew,
                  float& limit,
                  float& slack,
-                 const sta::Corner*& corner);
+                 const sta::Scene*& corner);
   float bufferInputMaxSlew(sta::LibertyCell* buffer,
-                           const sta::Corner* corner) const;
+                           const sta::Scene* corner) const;
   void repairNet(const BufferedNetPtr& bnet,
                  const sta::Pin* drvr_pin,
                  float max_cap,
                  int max_length,  // dbu
-                 const sta::Corner* corner);
+                 const sta::Scene* corner);
   void repairNet(const BufferedNetPtr& bnet,
                  int level,
                  // Return values.
@@ -178,11 +177,12 @@ class RepairDesign : sta::dbStaState
   float maxSlewMargined(float max_slew);
   double findSlewLoadCap(sta::LibertyPort* drvr_port,
                          double slew,
-                         const sta::Corner* corner);
+                         const sta::Scene* corner);
   double gateSlewDiff(sta::LibertyPort* drvr_port,
                       double load_cap,
                       double slew,
-                      const sta::DcalcAnalysisPt* dcalc_ap);
+                      const sta::Scene* corner,
+                      const sta::MinMax* min_max);
   LoadRegion findLoadRegions(const sta::Net* net,
                              const sta::Pin* drvr_pin,
                              int max_fanout);
@@ -261,7 +261,7 @@ class RepairDesign : sta::dbStaState
   int max_length_ = 0;
   double slew_margin_ = 0;
   double cap_margin_ = 0;
-  const sta::Corner* corner_ = nullptr;
+  const sta::Scene* corner_ = nullptr;
 
   int resize_count_ = 0;
   int inserted_buffer_count_ = 0;

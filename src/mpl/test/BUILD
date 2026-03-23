@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
@@ -19,6 +22,8 @@ COMPULSORY_TESTS = [
     "fixed_macros2",
     "guides1",
     "guides2",
+    "halos1",
+    "halos2",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -119,6 +124,14 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
+                ],
+                "halos1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos2": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
                     "testcases/io_constraints1.def",
@@ -237,6 +250,23 @@ filegroup(
 
 cc_test(
     name = "mpl_snapper_unittest",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSnapper.cpp",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
+    deps = [
+        "//src/mpl",
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestSnapper",
     srcs = [
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",

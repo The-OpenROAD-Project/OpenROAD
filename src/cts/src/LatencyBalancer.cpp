@@ -28,9 +28,9 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
@@ -66,7 +66,9 @@ int LatencyBalancer::run()
 void LatencyBalancer::initSta()
 {
   openSta_->ensureGraph();
-  openSta_->ensureClkNetwork();
+  for (auto mode : openSta_->modes()) {
+    openSta_->ensureClkNetwork(mode);
+  }
   openSta_->updateTiming(false);
   timingGraph_ = openSta_->graph();
 }
@@ -87,11 +89,13 @@ void LatencyBalancer::computeBuffersDelay(std::vector<int>& buffersDelay,
   debugPrint(logger_, CTS, "insertion delay", 3, "]");
 }
 
-double LatencyBalancer::computeWireLumpedDelay(std::string load, double wl, double& wireCap)
+double LatencyBalancer::computeWireLumpedDelay(const std::string& load, double wl, double& wireCap)
 {
   wireCap = wl * capPerDBU_;
+  double testwireCap = db_->getChip()->getBlock()->micronsToDbu(14.85)*capPerDBU_;
   double totalCap = wireCap;
   double wireRes = wl * resPerDBU_;
+  double testWireRes = db_->getChip()->getBlock()->micronsToDbu(14.85) * resPerDBU_;
 
 
   if(load != "") {
@@ -102,7 +106,11 @@ double LatencyBalancer::computeWireLumpedDelay(std::string load, double wl, doub
     sta::LibertyPort *input, *output;
     libertyLoadCell->bufferPorts(input, output);
     totalCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
+    testwireCap += input->capacitance(sta::RiseFall::rise(), sta::MinMax::max());
   }
+
+
+
 
   return wireRes * totalCap * std::pow(10, 14);
 }
@@ -244,7 +252,7 @@ float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
       continue;
     }
 
-    if (path->dcalcAnalysisPt(openSta_)->delayMinMax() != sta::MinMax::max()) {
+    if (path->minMax(openSta_) != sta::MinMax::max()) {
       continue;
       // only populate with max delay
     }
@@ -419,12 +427,69 @@ std::vector<std::string> LatencyBalancer::computeNumberOfDelayBuffers(
     loadPinsBbox.merge({sinkX, sinkY});
   }
 
-  double offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (nBufs + 1);
-  double offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (nBufs + 1);
+  double offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
+  double offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
   std::vector<int> adjustedBuffersDelay;
 
   double extraOutCap;
   double wireDly = computeWireLumpedDelay(options_->getRootBuffer(), std::abs(offsetX) + std::abs(offsetY), extraOutCap);
+  debugPrint(
+      logger_, CTS, "insertion delay", 4, "Estimated wire delay: {}", wireDly);
+  computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
+
+  // Compute best buffer combination with more accurate values
+  dp.assign(target + 1, 0);
+  dp_elements.assign(target + 1, -1);
+  for (int w = 0; w <= target; w++) {
+    for (int i = 0; i < adjustedBuffersDelay.size(); i++) {
+      const int bufDelay = adjustedBuffersDelay[i] + wireDly;
+      int bestPrevWeight;
+      int prevBuf;
+      if (bufDelay > w) {
+        bestPrevWeight = 0;
+        prevBuf = -1;
+      } else {
+        bestPrevWeight = dp[w - bufDelay];
+        prevBuf = dp_elements[w - bufDelay];
+      }
+
+      int updatedDelay;
+      if (prevBuf == -1) {
+        updatedDelay
+            = techChar_->computeBufferDelay(dlyBuffers[i], sinks, extraOutCap)
+              * std::pow(10, 14) + wireDly;
+      } else {
+        updatedDelay = techChar_->computeBufferDelay(
+                           dlyBuffers[i], dlyBuffers[prevBuf], extraOutCap)
+                       * std::pow(10, 14) + wireDly;
+      }
+
+      if (std::abs(dp[w] - w) >= std::abs(bestPrevWeight + updatedDelay - w)) {
+        dp_elements[w] = i;
+        dp[w] = bestPrevWeight + updatedDelay;
+      }
+    }
+  }
+
+
+  w = target;
+  nBufs = 0;
+  while (w > 0 && dp_elements[w] != -1) {
+    nBufs++;
+    w -= adjustedBuffersDelay[dp_elements[w]];
+  }
+
+  offsetX = (double) (loadPinsBbox.xCenter() - srcX) / (double) (nBufs + 1);
+  offsetY = (double) (loadPinsBbox.yCenter() - srcY) / (double) (nBufs + 1);
+  adjustedBuffersDelay.clear();
+
+  extraOutCap = 0;
+  debugPrint(
+      logger_, CTS, "insertion delay", 4, "second best = {}", dp[target]);
+  debugPrint(logger_, CTS, "insertion delay", 4, "second n bufs = {}", nBufs);
+  wireDly = computeWireLumpedDelay(options_->getRootBuffer(), std::abs(offsetX) + std::abs(offsetY), extraOutCap);
+  debugPrint(
+      logger_, CTS, "insertion delay", 4, "Estimated wire delay: {}", wireDly);
   computeBuffersDelay(adjustedBuffersDelay, extraOutCap);
 
   // Compute best buffer combination with more accurate values

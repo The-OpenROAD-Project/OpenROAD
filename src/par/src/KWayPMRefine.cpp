@@ -162,7 +162,7 @@ void KWayPMRefine::CalculateMaximumMatch(
   for (auto& ele : scores) {
     const int block_id_a = ele.first.first;
     const int block_id_b = ele.first.second;
-    if (match_flag[block_id_a] == false && match_flag[block_id_b] == false) {
+    if (!match_flag[block_id_a] && !match_flag[block_id_b]) {
       maximum_matches.emplace_back(block_id_a, block_id_b);
       match_flag[block_id_a] = true;
       match_flag[block_id_b] = true;

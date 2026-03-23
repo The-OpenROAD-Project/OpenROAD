@@ -31,7 +31,9 @@ void ZeroSlackStrategy::OptimizeDesign(sta::dbSta* sta,
   sta->ensureGraph();
   sta->ensureLevelized();
   sta->searchPreamble();
-  sta->ensureClkNetwork();
+  for (auto mode : sta->modes()) {
+    sta->ensureClkNetwork(mode);
+  }
 
   sta::dbNetwork* network = sta->getDbNetwork();
 

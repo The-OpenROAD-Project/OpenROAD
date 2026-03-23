@@ -823,7 +823,7 @@ void Gui::saveImage(const std::string& filename,
 
 void Gui::saveClockTreeImage(const std::string& clock_name,
                              const std::string& filename,
-                             const std::string& corner,
+                             const std::string& scene,
                              int width_px,
                              int height_px)
 {
@@ -839,7 +839,7 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
     height = height_px;
   }
   main_window->getClockViewer()->saveImage(
-      clock_name, filename, corner, width, height);
+      clock_name, filename, scene, width, height);
 }
 
 void Gui::saveHistogramImage(const std::string& filename,

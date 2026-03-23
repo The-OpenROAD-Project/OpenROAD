@@ -34,6 +34,9 @@
 #include "odb/geom.h"
 // User Code Begin Includes
 #include <list>
+
+#include "odb/dbStream.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChip>;

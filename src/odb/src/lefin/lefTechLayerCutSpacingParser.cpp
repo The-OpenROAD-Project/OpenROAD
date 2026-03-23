@@ -328,7 +328,7 @@ bool parse(
     odb::lefinReader* lefinReader,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::const_iterator, space_type> LAYER_CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> layer_cut_class_rule
       = (lit("CUTCLASS")
          >> _string[boost::bind(&setCutClass, _1, parser, layer)] >> -(
              lit("SHORTEDGEONLY")[boost::bind(
@@ -376,7 +376,7 @@ bool parse(
                  parser,
                  &odb::dbTechLayerCutSpacingRule::setWrongDirection,
                  true)]));
-  qi::rule<std::string::const_iterator, space_type> LAYER
+  qi::rule<std::string::const_iterator, space_type> layer_rule
       = (lit("LAYER") >> _string[boost::bind(
              &addLayerSubRule, _1, parser, layer, boost::ref(incomplete_props))]
          >> -(
@@ -386,9 +386,9 @@ bool parse(
                                       true)]
              | lit("ORTHOGONALSPACING") >> double_[boost::bind(
                    &setOrthogonalSpacing, _1, parser, lefinReader)]
-             | LAYER_CUTCLASS));
+             | layer_cut_class_rule));
 
-  qi::rule<std::string::const_iterator, space_type> ADJACENTCUTS
+  qi::rule<std::string::const_iterator, space_type> adjacent_cuts_rule
       = (lit("ADJACENTCUTS") >> (string("1") | string("2") | string("3"))
          >> -(lit("EXACTALIGNED") >> int_)
          >> -(lit("TWOCUTS") >> int_ >> -lit("SAMECUT")[boost::bind(
@@ -406,12 +406,13 @@ bool parse(
          >> -string("SAMEMASK"))[boost::bind(
           &addAdjacentCutsSubRule, _1, parser, layer, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> PARALLELOVERLAP
+  qi::rule<std::string::const_iterator, space_type> parallel_overlap_rule
       = (lit("PARALLELOVERLAP")
          >> -(string("EXCEPTSAMENET") | string("EXCEPTSAMEMETAL")
               | string("EXCEPTSAMEVIA") | string("EXCEPTSAMEMETALOVERLAP")))
           [boost::bind(&addParallelOverlapSubRule, _1, parser)];
-  qi::rule<std::string::const_iterator, space_type> PARALLELWITHIN_CUTCLASS
+  qi::rule<std::string::const_iterator, space_type>
+      parallel_within_cut_class_rule
       = (lit("CUTCLASS")
          >> _string[boost::bind(&setCutClass, _1, parser, layer)]
          >> -(lit("LONGEDGEONLY")[boost::bind(
@@ -424,23 +425,23 @@ bool parse(
                  >> double_ >> lit("WITHIN") >> double_)[boost::bind(
                   &setParWithinEnclosure, _1, parser, lefinReader)]));
 
-  qi::rule<std::string::const_iterator, space_type> PARALLELWITHIN
+  qi::rule<std::string::const_iterator, space_type> parallel_within_rule
       = ((lit("PARALLELWITHIN") >> double_
           >> -string("EXCEPTSAMENET"))[boost::bind(
              &addParallelWithinSubRule, _1, parser, lefinReader)]
-         >> -PARALLELWITHIN_CUTCLASS);
+         >> -parallel_within_cut_class_rule);
 
-  qi::rule<std::string::const_iterator, space_type> SAMEMETALSHAREDEDGE
+  qi::rule<std::string::const_iterator, space_type> same_metal_shared_edge_rule
       = (lit("SAMEMETALSHAREDEDGE") >> double_ >> -string("ABOVE")
          >> -(lit("CUTCLASS") >> _string) >> -string("EXCEPTTWOEDGES")
          >> -(lit("EXCEPTSAMEVIA") >> int_))[boost::bind(
           &addSameMetalSharedEdgeSubRule, _1, parser, layer, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> AREA
+  qi::rule<std::string::const_iterator, space_type> area_rule
       = (lit("AREA")
          >> double_)[boost::bind(&addAreaSubRule, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> LEF58_SPACING = (+(
+  qi::rule<std::string::const_iterator, space_type> lef58_spacing_rule = (+(
       lit("SPACING")
       >> double_[boost::bind(&setCutSpacing, _1, parser, layer, lefinReader)]
       >> -(lit("MAXXY")[boost::bind(&addMaxXYSubRule, parser)]
@@ -449,12 +450,13 @@ bool parse(
                  >> -(lit("SAMENET")[boost::bind(&setSameNet, parser)]
                       | lit("SAMEMETAL")[boost::bind(&setSameMetal, parser)]
                       | lit("SAMEVIA")[boost::bind(&setSameVia, parser)])
-                 >> -(LAYER | ADJACENTCUTS | PARALLELOVERLAP | PARALLELWITHIN
-                      | SAMEMETALSHAREDEDGE | AREA))
+                 >> -(layer_rule | adjacent_cuts_rule | parallel_overlap_rule
+                      | parallel_within_rule | same_metal_shared_edge_rule
+                      | area_rule))
       >> lit(";")));
 
-  bool valid
-      = qi::phrase_parse(first, last, LEF58_SPACING, space) && first == last;
+  bool valid = qi::phrase_parse(first, last, lef58_spacing_rule, space)
+               && first == last;
 
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()

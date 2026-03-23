@@ -26,13 +26,13 @@ proc configure_cts_characterization { args } {
   if { [info exists keys(-slew_steps)] } {
     set steps $keys(-slew_steps)
     sta::check_cardinal "-slew_steps" $steps
-    cts::set_slew_steps $slew
+    cts::set_slew_steps $steps
   }
 
   if { [info exists keys(-cap_steps)] } {
     set steps $keys(-cap_steps)
     sta::check_cardinal "-cap_steps" $steps
-    cts::set_cap_steps $cap
+    cts::set_cap_steps $steps
   }
 }
 

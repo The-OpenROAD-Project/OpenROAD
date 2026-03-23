@@ -10,6 +10,7 @@ add_library(dbSta_lib
   dbEditHierarchy.cc
   dbReadVerilog.cc
   SpefWriter.cc
+  IpChecker.cc
 )
 
 target_include_directories(dbSta_lib

@@ -14,6 +14,7 @@
 #include "dbChipBumpInst.h"
 #include "dbChipBumpInstItr.h"
 #include "dbChipInst.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 // User Code End Includes

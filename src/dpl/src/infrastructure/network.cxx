@@ -142,6 +142,10 @@ void Network::addEdge(odb::dbNet* net)
     connect(ptr, edge);
   }
   for (auto bterm : net->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      // skip unplaced terminals
+      continue;
+    }
     Pin* ptr = addPin(bterm);
     connect(ptr, getNode(bterm));
     connect(ptr, edge);

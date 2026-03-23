@@ -36,6 +36,7 @@ COMPULSORY_TESTS = [
     "fillers9",
     "fillers9_verbose",
     "fillers10",
+    "fillers11",
     "fragmented_row01",
     "fragmented_row02",
     "fragmented_row03",
@@ -158,6 +159,10 @@ filegroup(
                 "simple01.def",
             ],
             "fillers10": [
+                "simple09.def",
+                "Nangate45/fakeram45_64x7.lef",
+            ],
+            "fillers11": [
                 "simple09.def",
                 "Nangate45/fakeram45_64x7.lef",
             ],

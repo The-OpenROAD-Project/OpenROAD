@@ -25,11 +25,11 @@
 #include <iterator>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "utl/prometheus/collectable.h"
 #include "utl/prometheus/family.h"
 
@@ -73,7 +73,7 @@ class PrometheusRegistry : public Collectable
   using Families = std::vector<FamilyPtr>;
 
   const InsertBehavior insert_behavior;
-  mutable std::mutex mutex;
+  mutable absl::Mutex mutex;
   Families families;
 
   /// \brief name Create a new registry.
@@ -92,7 +92,7 @@ class PrometheusRegistry : public Collectable
   /// \return Zero or more metrics and their samples.
   MetricFamilies Collect() const override
   {
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     MetricFamilies results;
 
@@ -111,7 +111,7 @@ class PrometheusRegistry : public Collectable
                     const std::string& help,
                     const Family::Labels& labels)
   {
-    std::lock_guard<std::mutex> lock{mutex};
+    absl::MutexLock lock{&mutex};
 
     bool found_one_but_not_merge = false;
     for (const FamilyPtr& family_ptr : families) {

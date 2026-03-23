@@ -240,9 +240,9 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
         std::vector<int> grid = techlayer.getGrid();
         std::erase_if(grid, [&obs, is_horizontal](int pos) {
           if (is_horizontal) {
-            return !(obs.yMin() <= pos && pos <= obs.yMax());
+            return obs.yMin() > pos || pos > obs.yMax();
           }
-          return !(obs.xMin() <= pos && pos <= obs.xMax());
+          return obs.xMin() > pos || pos > obs.xMax();
         });
         // add by tracks
         const int min_width = techlayer.getMinWidth();
@@ -821,14 +821,6 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
     }
   }
 
-  auto obs_filter = [this](const ShapePtr& other) -> bool {
-    if (other->shapeType() != Shape::GRID_OBS) {
-      return true;
-    }
-    const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
-    return !shape->belongsTo(this);
-  };
-
   Shape::ObstructionTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
@@ -851,9 +843,22 @@ void Grid::makeVias(const Shape::ShapeTreeMap& global_shapes,
   // remove vias with obstructions in their stack
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
-      auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getArea())
-                            && bgi::satisfies(obs_filter))
+      const auto& search_obs = search_obstructions[layer];
+      if (search_obs.qbegin(
+              bgi::intersects(via->getArea())
+              && bgi::satisfies([this, layer](const ShapePtr& other) -> bool {
+                   if (other->shapeType() != Shape::GRID_OBS) {
+                     return true;
+                   }
+                   // only consider obstructions on routing layers as blocking
+                   // for grid obstructions
+                   if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+                     return false;
+                   }
+                   const GridObsShape* shape
+                       = static_cast<GridObsShape*>(other.get());
+                   return !shape->belongsTo(this);
+                 }))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(failedViaReason::OBSTRUCTED);

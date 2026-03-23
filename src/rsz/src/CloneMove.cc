@@ -152,8 +152,7 @@ bool CloneMove::doMove(const Path* drvr_path,
   while (edge_iter.hasNext()) {
     Edge* edge = edge_iter.next();
     Vertex* fanout_vertex = edge->to(graph_);
-    const Slack fanout_slack
-        = sta_->vertexSlack(fanout_vertex, rf, resizer_->max_);
+    const Slack fanout_slack = sta_->slack(fanout_vertex, rf, resizer_->max_);
     const Slack slack_margin = fanout_slack - drvr_slack;
     debugPrint(logger_,
                RSZ,

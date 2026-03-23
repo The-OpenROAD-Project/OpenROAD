@@ -129,7 +129,7 @@ Command for setting a halo for specific macros. If unset, the macro will use the
 ```tcl
 set_macro_halo
     -macro_name macro_name
-    -halo {width height}
+    -halo {left bottom right top | width height}
 ```
 
 #### Options
@@ -137,7 +137,7 @@ set_macro_halo
 | Switch Name | Description |
 | ----- | ----- |
 | `-macro_name` | The name of a macro of the design. |
-| `-halo` | The width and height of the halo, in microns. |
+| `-halo` | The left, bottom, right and top halo or the width (sets both left and right) and height (sets both bottom and top), in microns. Consider the macro orientation as R0 when setting the halo. |
 
 ## Example scripts
 

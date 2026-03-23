@@ -18,6 +18,9 @@
 #include "dbTable.h"
 #include "dbVector.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "odb/dbSet.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbBusPort>;
 
@@ -243,10 +246,7 @@ int dbBusPort::getSize() const
 bool dbBusPort::getUpdown() const
 {
   _dbBusPort* obj = (_dbBusPort*) this;
-  if (obj->to_ >= obj->from_) {
-    return true;
-  }
-  return false;
+  return obj->to_ >= obj->from_;
 }
 
 dbBusPort* dbBusPort::create(dbModule* parentModule,

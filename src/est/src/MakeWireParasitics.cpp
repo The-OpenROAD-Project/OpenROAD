@@ -18,7 +18,6 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Corner.hh"
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "sta/ParasiticsClass.hh"
@@ -28,6 +27,11 @@
 #include "utl/Logger.h"
 
 namespace est {
+
+using sta::Net;
+using sta::Parasitic;
+using sta::Parasitics;
+using sta::Scene;
 
 using utl::EST;
 
@@ -48,7 +52,6 @@ MakeWireParasitics::MakeWireParasitics(
       logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
-      parasitics_(sta_->parasitics()),
       arc_delay_calc_(sta_->arcDelayCalc()),
       min_max_(sta::MinMax::max()),
       resistor_id_(1)
@@ -74,30 +77,28 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net,
     }
   }
 
-  sta::Net* sta_net = network_->dbToSta(net);
+  Net* sta_net = network_->dbToSta(net);
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(net);
 
-  for (sta::Corner* corner : *sta_->corners()) {
+  for (Scene* corner : sta_->scenes()) {
     NodeRoutePtMap node_map;
+    Parasitics* parasitics = corner->parasitics(min_max_);
+    Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
 
-    sta::ParasiticAnalysisPt* analysis_point
-        = corner->findParasiticAnalysisPt(min_max_);
-    sta::Parasitic* parasitic
-        = parasitics_->makeParasiticNetwork(sta_net, false, analysis_point);
     makeRouteParasitics(
-        net, route, sta_net, corner, analysis_point, parasitic, node_map);
+        parasitics, net, route, sta_net, corner, parasitic, node_map);
     makeParasiticsToPins(
-        net, pin_grid_locs, node_map, corner, analysis_point, parasitic);
+        parasitics, net, pin_grid_locs, node_map, corner, parasitic);
 
     if (spef_writer) {
-      spef_writer->writeNet(corner, sta_net, parasitic);
+      spef_writer->writeNet(corner, sta_net, parasitic, parasitics);
     }
 
     arc_delay_calc_->reduceParasitic(
         parasitic, sta_net, corner, sta::MinMaxAll::all());
+    parasitics->deleteParasiticNetwork(sta_net);
   }
-  parasitics_->deleteParasiticNetworks(sta_net);
 }
 
 void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
@@ -121,31 +122,30 @@ void MakeWireParasitics::estimateParasitics(odb::dbNet* net, grt::GRoute& route)
   std::vector<grt::PinGridLocation> pin_grid_locs
       = global_router_->getPinGridPositions(net);
 
-  for (sta::Corner* corner : *sta_->corners()) {
+  for (Scene* corner : sta_->scenes()) {
     NodeRoutePtMap node_map;
 
-    sta::ParasiticAnalysisPt* analysis_point
-        = corner->findParasiticAnalysisPt(min_max_);
-    sta::Parasitic* parasitic
-        = parasitics_->makeParasiticNetwork(sta_net, false, analysis_point);
+    Parasitics* parasitics = corner->parasitics(min_max_);
+    Parasitic* parasitic = parasitics->makeParasiticNetwork(sta_net, false);
+
     makeRouteParasitics(
-        net, route, sta_net, corner, analysis_point, parasitic, node_map);
+        parasitics, net, route, sta_net, corner, parasitic, node_map);
     makePartialParasiticsToPins(
-        pin_grid_locs, node_map, corner, analysis_point, parasitic, net);
+        parasitics, pin_grid_locs, node_map, corner, parasitic, net);
+
     arc_delay_calc_->reduceParasitic(
         parasitic, sta_net, corner, sta::MinMaxAll::all());
+    parasitics->deleteParasiticNetwork(sta_net);
   }
-
-  parasitics_->deleteParasiticNetworks(sta_net);
 }
 
 void MakeWireParasitics::clearParasitics()
 {
-  // Remove any existing parasitics.
   sta_->deleteParasitics();
-
-  // Make separate parasitics for each corner.
-  sta_->setParasiticAnalysisPts(true);
+  for (Scene* scene : sta_->scenes()) {
+    Parasitics* parasitics = sta_->makeConcreteParasitics(scene->name(), "");
+    scene->setParasitics(parasitics, sta::MinMaxAll::minMax());
+  }
 }
 
 sta::Pin* MakeWireParasitics::staPin(odb::dbBTerm* bterm) const
@@ -158,14 +158,13 @@ sta::Pin* MakeWireParasitics::staPin(odb::dbITerm* iterm) const
   return network_->dbToSta(iterm);
 }
 
-void MakeWireParasitics::makeRouteParasitics(
-    odb::dbNet* net,
-    grt::GRoute& route,
-    sta::Net* sta_net,
-    sta::Corner* corner,
-    sta::ParasiticAnalysisPt* analysis_point,
-    sta::Parasitic* parasitic,
-    NodeRoutePtMap& node_map)
+void MakeWireParasitics::makeRouteParasitics(sta::Parasitics* parasitics,
+                                             odb::dbNet* net,
+                                             grt::GRoute& route,
+                                             sta::Net* sta_net,
+                                             sta::Scene* corner,
+                                             sta::Parasitic* parasitic,
+                                             NodeRoutePtMap& node_map)
 {
   const int min_routing_layer = global_router_->getMinRoutingLayer();
 
@@ -180,6 +179,7 @@ void MakeWireParasitics::makeRouteParasitics(
                                                        segment.init_y,
                                                        init_layer,
                                                        node_map,
+                                                       parasitics,
                                                        parasitic,
                                                        sta_net)
                                  : nullptr;
@@ -191,6 +191,7 @@ void MakeWireParasitics::makeRouteParasitics(
                                                        segment.final_y,
                                                        final_layer,
                                                        node_map,
+                                                       parasitics,
                                                        parasitic,
                                                        sta_net)
                                  : nullptr;
@@ -212,8 +213,8 @@ void MakeWireParasitics::makeRouteParasitics(
                  "est_rc",
                  1,
                  "{} -> {} via {}-{} r={}",
-                 parasitics_->name(n1),
-                 parasitics_->name(n2),
+                 parasitics->name(n1),
+                 parasitics->name(n2),
                  segment.init_layer,
                  segment.final_layer,
                  units->resistanceUnit()->asString(res));
@@ -224,8 +225,8 @@ void MakeWireParasitics::makeRouteParasitics(
                  "est_rc",
                  1,
                  "{} -> {} {:.2f}u layer={} r={} c={}",
-                 parasitics_->name(n1),
-                 parasitics_->name(n2),
+                 parasitics->name(n1),
+                 parasitics->name(n2),
                  dbuToMeters(wire_length_dbu) * 1e+6,
                  segment.init_layer,
                  units->resistanceUnit()->asString(res),
@@ -236,40 +237,38 @@ void MakeWireParasitics::makeRouteParasitics(
                     "Non wire or via route found on net {}.",
                     net->getConstName());
     }
-    parasitics_->incrCap(n1, cap / 2.0);
-    parasitics_->makeResistor(parasitic, resistor_id_++, res, n1, n2);
-    parasitics_->incrCap(n2, cap / 2.0);
+    parasitics->incrCap(n1, cap / 2.0);
+    parasitics->makeResistor(parasitic, resistor_id_++, res, n1, n2);
+    parasitics->incrCap(n2, cap / 2.0);
   }
 }
 
 void MakeWireParasitics::makeParasiticsToPins(
+    sta::Parasitics* parasitics,
     odb::dbNet* net,
     std::vector<grt::PinGridLocation>& pin_grid_locs,
     NodeRoutePtMap& node_map,
-    sta::Corner* corner,
-    sta::ParasiticAnalysisPt* analysis_point,
+    sta::Scene* corner,
     sta::Parasitic* parasitic)
 {
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
-    makeParasiticsToPin(
-        net, pin_loc, node_map, corner, analysis_point, parasitic);
+    makeParasiticsToPin(parasitics, net, pin_loc, node_map, corner, parasitic);
   }
 }
 
 // Make parasitics for the wire from the pin to the grid location of the pin.
-void MakeWireParasitics::makeParasiticsToPin(
-    odb::dbNet* net,
-    grt::PinGridLocation& pin_loc,
-    NodeRoutePtMap& node_map,
-    sta::Corner* corner,
-    sta::ParasiticAnalysisPt* analysis_point,
-    sta::Parasitic* parasitic)
+void MakeWireParasitics::makeParasiticsToPin(sta::Parasitics* parasitics,
+                                             odb::dbNet* net,
+                                             grt::PinGridLocation& pin_loc,
+                                             NodeRoutePtMap& node_map,
+                                             sta::Scene* corner,
+                                             sta::Parasitic* parasitic)
 {
   sta::Pin* sta_pin = pin_loc.bterm != nullptr ? staPin(pin_loc.bterm)
                                                : staPin(pin_loc.iterm);
 
   sta::ParasiticNode* pin_node
-      = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
+      = parasitics->ensureParasiticNode(parasitic, sta_pin, network_);
 
   odb::Point pt = pin_loc.pt;
   odb::Point grid_pt = pin_loc.grid_pt;
@@ -308,8 +307,8 @@ void MakeWireParasitics::makeParasiticsToPin(
         "est_rc",
         1,
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
-        parasitics_->name(grid_node),
-        parasitics_->name(pin_node),
+        parasitics->name(grid_node),
+        parasitics->name(pin_node),
         block_->dbuToMicrons(pt.getX()),
         block_->dbuToMicrons(pt.getY()),
         block_->dbuToMicrons(wire_length_dbu),
@@ -333,10 +332,10 @@ void MakeWireParasitics::makeParasiticsToPin(
     // We could added the via resistor before the segment pi-model
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
-    parasitics_->incrCap(pin_node, cap / 2.0);
-    parasitics_->makeResistor(
+    parasitics->incrCap(pin_node, cap / 2.0);
+    parasitics->makeResistor(
         parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
-    parasitics_->incrCap(grid_node, cap / 2.0);
+    parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST,
                   26,
@@ -347,25 +346,25 @@ void MakeWireParasitics::makeParasiticsToPin(
 }
 
 void MakeWireParasitics::makePartialParasiticsToPins(
+    sta::Parasitics* parasitics,
     std::vector<grt::PinGridLocation>& pin_grid_locs,
     NodeRoutePtMap& node_map,
-    sta::Corner* corner,
-    sta::ParasiticAnalysisPt* analysis_point,
+    sta::Scene* corner,
     sta::Parasitic* parasitic,
     odb::dbNet* net)
 {
   for (grt::PinGridLocation& pin_loc : pin_grid_locs) {
     makePartialParasiticsToPin(
-        pin_loc, node_map, corner, analysis_point, parasitic, net);
+        parasitics, pin_loc, node_map, corner, parasitic, net);
   }
 }
 
 // Make parasitics for the wire from the pin to the grid location of the pin.
 void MakeWireParasitics::makePartialParasiticsToPin(
+    sta::Parasitics* parasitics,
     grt::PinGridLocation& pin_loc,
     NodeRoutePtMap& node_map,
-    sta::Corner* corner,
-    sta::ParasiticAnalysisPt* analysis_point,
+    sta::Scene* corner,
     sta::Parasitic* parasitic,
     odb::dbNet* net)
 {
@@ -373,7 +372,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
                                                : staPin(pin_loc.iterm);
 
   sta::ParasiticNode* pin_node
-      = parasitics_->ensureParasiticNode(parasitic, sta_pin, network_);
+      = parasitics->ensureParasiticNode(parasitic, sta_pin, network_);
 
   odb::Point pt = pin_loc.pt;
   odb::Point grid_pt = pin_loc.grid_pt;
@@ -415,8 +414,8 @@ void MakeWireParasitics::makePartialParasiticsToPin(
         "est_rc",
         1,
         "{} -> {} ({:.2f}, {:.2f}) {:.2f}u layer={} r={} via_res={} c={}",
-        parasitics_->name(grid_node),
-        parasitics_->name(pin_node),
+        parasitics->name(grid_node),
+        parasitics->name(pin_node),
         block_->dbuToMicrons(pt.getX()),
         block_->dbuToMicrons(pt.getY()),
         block_->dbuToMicrons(wire_length_dbu),
@@ -440,10 +439,10 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     // We could added the via resistor before the segment pi-model
     // but that would require an extra node and the accuracy of all
     // this is not that high.  Instead we just lump them together.
-    parasitics_->incrCap(pin_node, cap / 2.0);
-    parasitics_->makeResistor(
+    parasitics->incrCap(pin_node, cap / 2.0);
+    parasitics->makeResistor(
         parasitic, resistor_id_++, res + via_res, pin_node, grid_node);
-    parasitics_->incrCap(grid_node, cap / 2.0);
+    parasitics->incrCap(grid_node, cap / 2.0);
   } else {
     logger_->warn(EST, 350, "Missing route to pin {}.", pin_name);
   }
@@ -451,7 +450,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
 
 void MakeWireParasitics::layerRC(int wire_length_dbu,
                                  int layer_id,
-                                 sta::Corner* corner,
+                                 sta::Scene* corner,
                                  // Return values.
                                  float& res,
                                  float& cap) const
@@ -480,7 +479,7 @@ void MakeWireParasitics::layerRC(int wire_length_dbu,
 
 void MakeWireParasitics::layerRC(int wire_length_dbu,
                                  int layer_id,
-                                 sta::Corner* corner,
+                                 sta::Scene* corner,
                                  odb::dbNet* net,
                                  // Return values.
                                  float& res,
@@ -526,13 +525,14 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
     int y,
     int layer,
     NodeRoutePtMap& node_map,
+    sta::Parasitics* parasitics,
     sta::Parasitic* parasitic,
     sta::Net* net) const
 {
   grt::RoutePt pin_loc(x, y, layer);
   sta::ParasiticNode* node = node_map[pin_loc];
   if (node == nullptr) {
-    node = parasitics_->ensureParasiticNode(
+    node = parasitics->ensureParasiticNode(
         parasitic, net, node_map.size(), network_);
     node_map[pin_loc] = node;
   }
@@ -543,13 +543,13 @@ float MakeWireParasitics::getNetSlack(odb::dbNet* net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
-  float slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  float slack = sta_->slack(sta_net, sta::MinMax::max());
   return slack;
 }
 ////////////////////////////////////////////////////////////////
 
 float MakeWireParasitics::getCutLayerRes(odb::dbTechLayer* cut_layer,
-                                         sta::Corner* corner,
+                                         sta::Scene* corner,
                                          int num_cuts) const
 {
   double res = 0.0;

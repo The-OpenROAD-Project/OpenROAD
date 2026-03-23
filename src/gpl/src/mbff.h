@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "odb/db.h"
-#include "sta/Corner.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
 
 namespace utl {
@@ -27,6 +27,7 @@ class dbSta;
 class FuncExpr;
 class LibertyCell;
 class LibertyPort;
+class Scene;
 }  // namespace sta
 
 namespace gpl {
@@ -89,7 +90,8 @@ class MBFF
     std::string to_string() const;
     bool operator<(const Mask& rhs) const;
   };
-  using DataToOutputsMap = std::map<const sta::LibertyPort*, FlopOutputs>;
+  using DataToOutputsMap
+      = std::map<const sta::LibertyPort*, FlopOutputs, sta::LibertyPortLess>;
   DataToOutputsMap GetPinMapping(odb::dbInst* tray);
 
   // MBFF functions
@@ -235,7 +237,7 @@ class MBFF
   odb::dbBlock* block_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
-  sta::Corner* corner_;
+  sta::Scene* corner_;
   std::unique_ptr<AbstractGraphics> graphics_;
   utl::Logger* log_;
   rsz::Resizer* resizer_;

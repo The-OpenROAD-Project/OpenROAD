@@ -47,7 +47,7 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
-  updateRenderer();
+  updateRenderer(true);
 }
 
 void PdnGen::resetShapes()
@@ -55,7 +55,7 @@ void PdnGen::resetShapes()
   for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
-  updateRenderer();
+  updateRenderer(true);
 }
 
 void PdnGen::buildGrids(bool trim)
@@ -102,6 +102,9 @@ void PdnGen::buildGrids(bool trim)
     block_obs[layer] = Shape::ObstructionTree(shapes.begin(), shapes.end());
   }
   block_obs_vec.clear();
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->setInitialObstructions(block_obs);
+  }
 
   Shape::ShapeTreeMap all_shapes;
   for (const auto& [layer, shapes] : all_shapes_vec) {
@@ -145,7 +148,7 @@ void PdnGen::buildGrids(bool trim)
     failed = true;
   }
 
-  updateRenderer();
+  updateRenderer(false);
 
   if (failed) {
     logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
@@ -694,9 +697,12 @@ void PdnGen::rendererRedraw()
   }
 }
 
-void PdnGen::updateRenderer() const
+void PdnGen::updateRenderer(bool reset) const
 {
   if (debug_renderer_ != nullptr) {
+    if (reset) {
+      debug_renderer_->setInitialObstructions({});
+    }
     debug_renderer_->update();
   }
 }

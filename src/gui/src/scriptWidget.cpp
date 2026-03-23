@@ -18,10 +18,10 @@
 #include <cerrno>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <stdexcept>
 #include <string>
 
+#include "absl/synchronization/mutex.h"
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
@@ -126,21 +126,20 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 // the logging, so, for reports, we use a buffer.
 void ScriptWidget::flushReportBufferToOutput()
 {
-  std::unique_lock guard(reporting_, std::try_to_lock);
-  if (!guard.owns_lock()) {
+  if (!reporting_.TryLock()) {
     // failed to aquire lock
     // return and this will be called at some point later
     QTimer::singleShot(
         kReportDisplayInterval, this, &ScriptWidget::flushReportBufferToOutput);
     return;
   }
-  if (report_buffer_.isEmpty()) {
-    return;
-  }
 
-  // this comes from a ->report
-  addTextToOutput(report_buffer_, buffer_msg_);
-  report_buffer_.clear();
+  if (!report_buffer_.isEmpty()) {
+    // this comes from a ->report
+    addTextToOutput(report_buffer_, buffer_msg_);
+    report_buffer_.clear();
+  }
+  reporting_.Unlock();
 }
 
 ScriptWidget::~ScriptWidget()
@@ -233,7 +232,7 @@ void ScriptWidget::startReportTimer()
 
 void ScriptWidget::addMsgToReportBuffer(const QString& text)
 {
-  std::lock_guard guard(reporting_);
+  absl::MutexLock guard(&reporting_);
   report_buffer_ += text;
 }
 
@@ -404,9 +403,11 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // Convert the msg into a formatted string
     spdlog::memory_buf_t formatted;
 
-    mutex_.lock();  // formatter checks and caches some information
-    this->formatter_->format(msg, formatted);
-    mutex_.unlock();
+    {
+      // formatter checks and caches some information
+      absl::MutexLock guard(&mutex_);
+      this->formatter_->format(msg, formatted);
+    }
     const QString formatted_msg = QString::fromStdString(
         std::string(formatted.data(), formatted.size()));
 
@@ -447,12 +448,12 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
 
  private:
   ScriptWidget* widget_;
-  std::mutex mutex_;
+  absl::Mutex mutex_;
 };
 
 void ScriptWidget::setLogger(utl::Logger* logger)
 {
-  // use spdlog::details::null_mutex instead of std::mutex, Qt will handle the
+  // use spdlog::details::null_mutex instead of absl::Mutex, Qt will handle the
   // thread transfers to the output viewer null_mutex prevents deadlock (by not
   // locking) when the logging causes a redraw, which then causes another
   // logging event.

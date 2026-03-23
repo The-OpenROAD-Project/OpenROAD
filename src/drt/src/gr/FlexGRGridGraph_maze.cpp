@@ -149,7 +149,7 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir(currX, currY, currZ);
     root.emplace_back(currX, currY, currZ);
@@ -252,12 +252,9 @@ bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid& currGrid,
   frMIdx gridZ = currGrid.z();
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
-  if (!hg || isSrc(gridX, gridY, gridZ)
-      || getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN
-      || currGrid.getLastDir() == dir) {
-    return false;
-  }
-  return true;
+  return hg && !isSrc(gridX, gridY, gridZ)
+         && getPrevAstarNodeDir(gridX, gridY, gridZ) == frDirEnum::UNKNOWN
+         && currGrid.getLastDir() != dir;
 }
 
 void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
@@ -351,7 +348,7 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
   }
 
   // currently no congeston on via direction
-  bool congCost = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
+  bool congCost = dir != frDirEnum::U && dir != frDirEnum::D;
 
   bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
   bool overflowCost = false;

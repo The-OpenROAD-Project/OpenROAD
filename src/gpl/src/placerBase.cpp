@@ -617,7 +617,7 @@ void Net::updateBox(bool skipIoMode)
     uy_ = std::max(box->yMax(), uy_);
   }
 
-  if (skipIoMode == false) {
+  if (!skipIoMode) {
     for (dbBTerm* bTerm : net_->getBTerms()) {
       for (dbBPin* bPin : bTerm->getBPins()) {
         Rect bbox = bPin->getBBox();
@@ -946,7 +946,7 @@ void PlacerBaseCommon::init()
         pinStor_.push_back(temp_pin);
       }
 
-      if (pbVars_.skipIoMode == false) {
+      if (!pbVars_.skipIoMode) {
         for (dbBTerm* bTerm : db_net->getBTerms()) {
           Pin temp_pin(bTerm, log_);
           temp_pin.setNet(temp_net_ptr);
@@ -991,7 +991,7 @@ void PlacerBaseCommon::init()
     for (dbITerm* iTerm : pb_net.getDbNet()->getITerms()) {
       pb_net.addPin(dbToPb(iTerm));
     }
-    if (pbVars_.skipIoMode == false) {
+    if (!pbVars_.skipIoMode) {
       for (dbBTerm* bTerm : pb_net.getDbNet()->getBTerms()) {
         pb_net.addPin(dbToPb(bTerm));
       }
@@ -1070,6 +1070,7 @@ PlacerBase::PlacerBase() = default;
 PlacerBase::PlacerBase(odb::dbDatabase* db,
                        std::shared_ptr<PlacerBaseCommon> pbCommon,
                        utl::Logger* log,
+                       bool check_density,
                        odb::dbGroup* group)
     : PlacerBase()
 {
@@ -1081,7 +1082,7 @@ PlacerBase::PlacerBase(odb::dbDatabase* db,
              32,
              "---- Initialize Region: {}",
              (group_ == nullptr) ? "Top-level" : group_->getName());
-  init();
+  init(check_density);
 }
 
 PlacerBase::~PlacerBase()
@@ -1089,7 +1090,7 @@ PlacerBase::~PlacerBase()
   reset();
 }
 
-void PlacerBase::init()
+void PlacerBase::init(bool check_density)
 {
   die_ = pbCommon_->getDie();
   if (group_ != nullptr) {
@@ -1181,7 +1182,7 @@ void PlacerBase::init()
     pb_insts_.push_back(&inst);
   }
 
-  printInfo();
+  printInfo(check_density);
 }
 
 // Use dummy instance to fill unusable sites.  Sites are unusable
@@ -1375,7 +1376,7 @@ void PlacerBase::reset()
   nonPlaceInsts_.clear();
 }
 
-void PlacerBase::printInfo() const
+void PlacerBase::printInfo(bool check_density) const
 {
   dbBlock* block = db_->getChip()->getBlock();
   log_->info(GPL,
@@ -1457,7 +1458,7 @@ void PlacerBase::printInfo() const
              "Large instances area:",
              block->dbuAreaToMicrons(macroInstsArea_));
 
-  if (util >= 100.1) {
+  if (check_density && util >= 100.1) {
     log_->error(GPL, 301, "Utilization {:.3f} % exceeds 100%.", util);
   }
 }
@@ -1500,7 +1501,7 @@ static bool isCoreAreaOverlap(Die& die, Instance& inst)
       rectLy = std::max(die.coreLy(), inst.ly()),
       rectUx = std::min(die.coreUx(), inst.ux()),
       rectUy = std::min(die.coreUy(), inst.uy());
-  return !(rectLx >= rectUx || rectLy >= rectUy);
+  return rectLx < rectUx && rectLy < rectUy;
 }
 
 static int64_t getOverlapWithCoreArea(Die& die, Instance& inst)

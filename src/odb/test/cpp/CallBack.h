@@ -23,14 +23,13 @@ class CallBack : public dbBlockCallBackObj
   void inDbInstCreate(dbInst* inst) override
   {
     if (!_pause) {
-      events.push_back("Create inst " + inst->getName());
-    }
-  }
-  void inDbInstCreate(dbInst* inst, dbRegion* region) override
-  {
-    if (!_pause) {
-      events.push_back("Create inst " + inst->getName() + " in region "
-                       + region->getName());
+      dbRegion* region = inst->getRegion();
+      if (region) {
+        events.push_back("Create inst " + inst->getName() + " in region "
+                         + region->getName());
+      } else {
+        events.push_back("Create inst " + inst->getName());
+      }
     }
   }
   void inDbInstDestroy(dbInst* inst) override

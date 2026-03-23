@@ -17,7 +17,10 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <vector>
+
 #include "dbCommon.h"
+#include "odb/dbTypes.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbIsolation>;

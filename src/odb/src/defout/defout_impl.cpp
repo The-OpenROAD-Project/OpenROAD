@@ -2046,6 +2046,7 @@ void DefOut::Impl::writePropValue(dbProperty* prop)
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
       double v = p->getValue();
       *_out << fmt::format("{:g} ", v);
+      break;
     }
 
     default:

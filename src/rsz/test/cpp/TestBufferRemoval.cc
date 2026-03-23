@@ -5,7 +5,6 @@
 
 #include <filesystem>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include "ant/AntennaChecker.hh"
@@ -21,16 +20,15 @@
 #include "odb/geom.h"
 #include "odb/lefin.h"
 #include "rsz/Resizer.hh"
-#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "tst/fixture.h"
 #include "tst/nangate45_fixture.h"
 #include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
@@ -107,12 +105,6 @@ class BufRemTest : public tst::Nangate45Fixture
     makeInst("BUF_X8", "b4", {400, 400}, "n3", "out1");
     makeInst("BUF_X8", "b5", {500, 500}, "n1", "out2");
 
-    // initialize STA
-    sta::Corner* corner = sta_->cmdCorner();
-    sta::PathAPIndex pathAPIndex
-        = corner->findPathAnalysisPt(sta::MinMax::max())->index();
-    sta::Corners* corners = sta_->search()->corners();
-    pathAnalysisPt_ = corners->findPathAnalysisPt(pathAPIndex);
     sta::Graph* graph = sta_->ensureGraph();
     sta::Pin* outStaPin = db_network_->dbToSta(outPort);
     outVertex_ = graph->pinLoadVertex(outStaPin);
@@ -128,14 +120,15 @@ class BufRemTest : public tst::Nangate45Fixture
 
   sta::LibertyLibrary* library_{nullptr};
   sta::dbNetwork* db_network_{nullptr};
-  sta::PathAnalysisPt* pathAnalysisPt_{nullptr};
   sta::Vertex* outVertex_{nullptr};
 };
 
 TEST_F(BufRemTest, SlackImproves)
 {
-  const float origArrival
-      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  const float origArrival = sta_->arrival(outVertex_,
+                                          sta::RiseFallBoth::riseFall(),
+                                          sta_->scenes(),
+                                          sta::MinMax::max());
 
   // Remove buffers 'b2' and 'b3' from the buffer chain
   resizer_.initBlock();
@@ -157,15 +150,19 @@ TEST_F(BufRemTest, SlackImproves)
     insts->emplace_back(sta_inst2);
 
     resizer_.removeBuffers(*insts);
-    const float newArrival = sta_->vertexArrival(
-        outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+    const float newArrival = sta_->arrival(outVertex_,
+                                           sta::RiseFallBoth::riseFall(),
+                                           sta_->scenes(),
+                                           sta::MinMax::max());
 
     EXPECT_LT(newArrival, origArrival);
     resizer_.journalRestoreTest();
   }
 
-  const float restoredArrival
-      = sta_->vertexArrival(outVertex_, sta::RiseFall::rise(), pathAnalysisPt_);
+  const float restoredArrival = sta_->arrival(outVertex_,
+                                              sta::RiseFallBoth::riseFall(),
+                                              sta_->scenes(),
+                                              sta::MinMax::max());
 
   EXPECT_EQ(restoredArrival, origArrival);
 }

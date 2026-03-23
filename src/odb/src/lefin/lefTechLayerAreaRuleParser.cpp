@@ -104,7 +104,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
 {
   odb::dbTechLayerAreaRule* rule = odb::dbTechLayerAreaRule::create(layer);
 
-  qi::rule<std::string::const_iterator, space_type> EXCEPT_EDGE_LENGTH
+  qi::rule<std::string::const_iterator, space_type> except_edge_length
       = ((lit("EXCEPTEDGELENGTH") >> double_ >> double_)[boost::bind(
              &lefTechLayerAreaRuleParser::setExceptEdgeLengths, this, _1, rule)]
          | lit("EXCEPTEDGELENGTH") >> double_[boost::bind(
@@ -114,15 +114,15 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                rule,
                &dbTechLayerAreaRule::setExceptEdgeLength)]);
 
-  qi::rule<std::string::const_iterator, space_type> EXCEPT_MIN_SIZE
+  qi::rule<std::string::const_iterator, space_type> except_min_size
       = (lit("EXCEPTMINSIZE") >> double_ >> double_)[boost::bind(
           &lefTechLayerAreaRuleParser::setExceptMinSize, this, _1, rule)];
 
-  qi::rule<std::string::const_iterator, space_type> EXCEPT_STEP
+  qi::rule<std::string::const_iterator, space_type> except_step
       = (lit("EXCEPTSTEP") >> double_ >> double_)[boost::bind(
           &lefTechLayerAreaRuleParser::setExceptStep, this, _1, rule)];
 
-  qi::rule<std::string::const_iterator, space_type> LAYER
+  qi::rule<std::string::const_iterator, space_type> layer_rule
       = ((lit("LAYER")
           >> _string[boost::bind(&lefTechLayerAreaRuleParser::setTrimLayer,
                                  this,
@@ -133,7 +133,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
          >> lit("OVERLAP")
          >> int_[boost::bind(&odb::dbTechLayerAreaRule::setOverlap, rule, _1)]);
 
-  qi::rule<std::string::const_iterator, space_type> AREA
+  qi::rule<std::string::const_iterator, space_type> area_rule
       = (lit("AREA") >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
                                             this,
                                             _1,
@@ -148,7 +148,7 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                   _1,
                   rule,
                   &odb::dbTechLayerAreaRule::setExceptMinWidth)])
-         >> -EXCEPT_EDGE_LENGTH >> -EXCEPT_MIN_SIZE >> -EXCEPT_STEP
+         >> -except_edge_length >> -except_min_size >> -except_step
          >> -(lit("RECTWIDTH")
               >> double_[boost::bind(&lefTechLayerAreaRuleParser::setInt,
                                      this,
@@ -157,10 +157,10 @@ bool lefTechLayerAreaRuleParser::parseSubRule(
                                      &odb::dbTechLayerAreaRule::setRectWidth)])
          >> -(lit("EXCEPTRECTANGLE")[boost::bind(
              &dbTechLayerAreaRule::setExceptRectangle, rule, true)])
-         >> -LAYER >> lit(";"));
+         >> -layer_rule >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
-  bool valid = qi::phrase_parse(first, last, AREA, space) && first == last;
+  bool valid = qi::phrase_parse(first, last, area_rule, space) && first == last;
   if (!valid) {
     if (!incomplete_props.empty() && incomplete_props.back().first == rule) {
       incomplete_props.pop_back();

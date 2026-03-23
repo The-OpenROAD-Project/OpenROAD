@@ -6,7 +6,6 @@
 #include "detailed_global_legacy.h"
 
 #include <algorithm>
-#include <boost/token_functions.hpp>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -14,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "boost/token_functions.hpp"
 #include "boost/tokenizer.hpp"
 #include "detailed_manager.h"
 #include "dpl/Opendp.h"
@@ -278,7 +278,7 @@ bool DetailedGlobalSwap::calculateEdgeBB(Edge* ed, Node* nd, odb::Rect& bbox)
     ++count;
   }
 
-  return (count == 0) ? false : true;
+  return count != 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

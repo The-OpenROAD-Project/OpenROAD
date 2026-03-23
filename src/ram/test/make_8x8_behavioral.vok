@@ -1,0 +1,32 @@
+module RAM8x8 (
+  clk,
+  D,
+  Q,
+  addr_rw,
+  we
+);
+  input clk;
+  input [7:0] D;
+  output reg [7:0] Q;
+  input [2:0] addr_rw;
+  input [0:0] we;
+
+  // memory array declaration
+  reg [7:0] mem[0:7];
+
+  // write logic
+  integer i;
+  always @(posedge clk) begin
+    for (i = 0; i < 1; i = i + 1) begin
+      if (we[i]) begin
+        mem[addr_rw][i*8 +:8] <= D[i*8 +:8];
+      end
+    end
+  end
+
+  // read logic
+  always @(*) begin
+    Q = mem[addr_rw];
+  end
+
+endmodule

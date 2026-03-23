@@ -14,6 +14,10 @@
 #include "dbTable.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBoundary>;
 

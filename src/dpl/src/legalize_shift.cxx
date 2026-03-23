@@ -433,7 +433,7 @@ void ShiftLegalizer::merge(Clump* r)
 
   int dist = 0;
   Clump* l = nullptr;
-  while (violated(r, l, dist) == true) {
+  while (violated(r, l, dist)) {
     // Merge clump r into clump l which, in turn, could result in more merges.
 
     // Move blocks from r to l and update offsets, etc.

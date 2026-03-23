@@ -59,7 +59,10 @@ user.bazelrc
 # Limit ignore to these files, so we see and clean out other cruft that pollutes grep
 /bazel-*
 
+tmp/
+
 projectview.bazelproject
 .bsp/
 .bazelbsp/
 /buildifier
+tmp/

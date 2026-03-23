@@ -9,24 +9,24 @@
 ########## IR report #################
 Net              : VDD
 Corner           : min
-Total power      : 2.22e-04 W
+Total power      : 2.18e-04 W
 Supply voltage   : 1.10e+00 V
-Worstcase voltage: 8.93e-01 V
-Average voltage  : 9.07e-01 V
-Average IR drop  : 1.93e-01 V
-Worstcase IR drop: 2.07e-01 V
-Percentage drop  : 18.81 %
+Worstcase voltage: 8.96e-01 V
+Average voltage  : 9.10e-01 V
+Average IR drop  : 1.90e-01 V
+Worstcase IR drop: 2.04e-01 V
+Percentage drop  : 18.53 %
 ######################################
 [INFO PSM-0040] All shapes on net VDD are connected.
 [INFO PSM-0015] Reading location of sources from: Vsrc_gcd_vdd.loc.
 ########## IR report #################
 Net              : VDD
 Corner           : max
-Total power      : 1.02e-04 W
+Total power      : 1.00e-04 W
 Supply voltage   : 1.10e+00 V
-Worstcase voltage: 9.10e-01 V
-Average voltage  : 9.22e-01 V
-Average IR drop  : 1.78e-01 V
-Worstcase IR drop: 1.90e-01 V
-Percentage drop  : 17.31 %
+Worstcase voltage: 9.13e-01 V
+Average voltage  : 9.25e-01 V
+Average IR drop  : 1.75e-01 V
+Worstcase IR drop: 1.87e-01 V
+Percentage drop  : 17.00 %
 ######################################

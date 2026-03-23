@@ -968,6 +968,10 @@ void ICeWall::placeFiller(
           break;
         }
       }
+
+      if (sites <= 0) {
+        break;
+      }
     }
 
     if (sites > 0) {

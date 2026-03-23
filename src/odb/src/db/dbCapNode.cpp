@@ -398,28 +398,28 @@ void dbCapNode::addCapacitance(double cap, int corner)
 bool dbCapNode::isSelect()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.select > 0 ? true : false;
+  return seg->flags_.select > 0;
 }
 bool dbCapNode::isForeign()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.foreign > 0 ? true : false;
+  return seg->flags_.foreign > 0;
 }
 bool dbCapNode::isInternal()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.internal > 0 ? true : false;
+  return seg->flags_.internal > 0;
 }
 bool dbCapNode::isTreeNode()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
   uint32_t flags = seg->flags_.branch + seg->flags_.iterm + seg->flags_.bterm;
-  return flags > 0 ? true : false;
+  return flags > 0;
 }
 bool dbCapNode::isBranch()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.branch > 0 ? true : false;
+  return seg->flags_.branch > 0;
 }
 bool dbCapNode::isDangling()
 {
@@ -452,18 +452,12 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
   if (seg->flags_.iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->node_num_);
     iotype = iterm->getIoType();
-    if (iterm->getIoType() == dbIoType::OUTPUT) {
-      return true;
-    }
-    return false;
+    return iterm->getIoType() == dbIoType::OUTPUT;
   }
   if (seg->flags_.bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->node_num_);
     iotype = bterm->getIoType();
-    if (bterm->getIoType() == dbIoType::INPUT) {
-      return true;
-    }
-    return false;
+    return bterm->getIoType() == dbIoType::INPUT;
   }
   return false;
 }
@@ -473,34 +467,28 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   if (seg->flags_.iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->node_num_);
-    if (iterm->getIoType() == dbIoType::INOUT) {
-      return true;
-    }
-    return false;
+    return iterm->getIoType() == dbIoType::INOUT;
   }
   if (seg->flags_.bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->node_num_);
-    if (bterm->getIoType() == dbIoType::INOUT) {
-      return true;
-    }
-    return false;
+    return bterm->getIoType() == dbIoType::INOUT;
   }
   return false;
 }
 bool dbCapNode::isITerm()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.iterm > 0 ? true : false;
+  return seg->flags_.iterm > 0;
 }
 bool dbCapNode::isName()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.name > 0 ? true : false;
+  return seg->flags_.name > 0;
 }
 bool dbCapNode::isBTerm()
 {
   _dbCapNode* seg = (_dbCapNode*) this;
-  return seg->flags_.bterm > 0 ? true : false;
+  return seg->flags_.bterm > 0;
 }
 
 void dbCapNode::resetBTermFlag()
@@ -806,13 +794,13 @@ uint32_t dbCapNode::getShapeId()
     if (!iterm->getNet() || !iterm->getNet()->getWire()) {
       return 0;
     }
-    return iterm->getNet()->getWire()->getTermJid(iterm->getId());
+    return iterm->getNet()->getWire()->getTermShapeJunctionId(iterm->getId());
   }
   dbBTerm* bterm = dbBTerm::getBTerm(block, seg->node_num_);
   if (!bterm->getNet() || !bterm->getNet()->getWire()) {
     return 0;
   }
-  return bterm->getNet()->getWire()->getTermJid(-bterm->getId());
+  return bterm->getNet()->getWire()->getTermShapeJunctionId(-bterm->getId());
 }
 
 void dbCapNode::setSortIndex(uint32_t idx)

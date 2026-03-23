@@ -824,9 +824,9 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
       }
 
-      while (pop_heap2_3D_[ind1]
-             == false)  // stop until the grid position been popped out from
-                        // both src_heap_3D and dest_heap_3D
+      while (
+          !pop_heap2_3D_[ind1])  // stop until the grid position been popped out
+                                 // from both src_heap_3D and dest_heap_3D
       {
         // relax all the adjacent grids within the enlarged region for
         // source subtree

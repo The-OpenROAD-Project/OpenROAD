@@ -10,7 +10,7 @@ proc read_libraries { } {
   read_lef $tech_lef
   read_lef $std_cell_lef
   foreach file $extra_lef { read_lef $file }
-  set corners [sta::corners]
+  set corners [sta::scenes]
   if { [llength $corners] > 1 } {
     foreach corner $corners {
       set corner_name [$corner name]

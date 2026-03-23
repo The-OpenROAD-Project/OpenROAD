@@ -5,7 +5,7 @@ constraints-driven partitioner. `par` can be used
 to partition a hypergraph or a gate-level netlist.
 
 ## Highlights
-- Start of the art multiple-constraints driven partitioning “multi-tool”
+- State of the art multiple-constraints driven partitioning “multi-tool”
 - Optimizes cost function based on user requirement
 - Permissive open-source license
 - Solves multi-way partitioning with following features:

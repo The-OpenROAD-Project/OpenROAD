@@ -7,7 +7,6 @@
 #include <cstdio>
 #include <filesystem>
 #include <memory>
-#include <mutex>
 #include <sstream>
 #include <string>
 
@@ -18,11 +17,9 @@
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/lefin.h"
-#include "sta/Corner.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "tst/fixture.h"

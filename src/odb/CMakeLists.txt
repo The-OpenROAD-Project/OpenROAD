@@ -27,6 +27,7 @@ endif()
 add_library(odb INTERFACE)
 target_link_libraries(odb
   INTERFACE
+    absl::synchronization
     db
     cdl
     3dblox

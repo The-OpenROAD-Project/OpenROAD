@@ -245,11 +245,7 @@ bool extMain::isIncluded(Rect& r, uint32_t dir, const int* ll, const int* ur)
   int rLL[2] = {r.xMin(), r.yMin()};
   int rUR[2] = {r.xMax(), r.yMax()};
 
-  if ((rUR[dir] < ll[dir]) || (rLL[dir] > ur[dir])) {
-    return false;
-  }
-
-  return true;
+  return (rUR[dir] >= ll[dir]) && (rLL[dir] <= ur[dir]);
 }
 
 void extMain::GetDBcoords2(Rect& r)
@@ -281,7 +277,7 @@ uint32_t extMain::initSearchForNets(int* X1,
     maxRect = extRect;
   } else {
     maxRect = _block->getDieArea();
-    if (!((maxRect.dx() > 0) && (maxRect.dy() > 0))) {
+    if ((maxRect.dx() <= 0) || (maxRect.dy() <= 0)) {
       logger_->error(
           RCX, 81, "Die Area for the block has 0 size, or is undefined!");
     }

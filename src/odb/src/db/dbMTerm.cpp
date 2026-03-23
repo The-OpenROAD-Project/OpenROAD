@@ -251,7 +251,7 @@ void dbMTerm::setMark(uint32_t v)
 bool dbMTerm::isSetMark()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->flags_.mark > 0 ? true : false;
+  return mterm->flags_.mark > 0;
 }
 
 dbMaster* dbMTerm::getMaster()

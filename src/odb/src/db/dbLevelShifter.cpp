@@ -17,6 +17,9 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <utility>
+#include <vector>
+
 #include "dbCommon.h"
 // User Code End Includes
 namespace odb {

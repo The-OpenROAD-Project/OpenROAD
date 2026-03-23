@@ -210,14 +210,14 @@ proc save_animated_gif { args } {
 sta::define_cmd_args "save_clocktree_image" {
   [-width width] \
   [-height height] \
-  [-corner corner] \
+  [-scene scene] \
   -clock clock \
   path
 }
 
 proc save_clocktree_image { args } {
   sta::parse_key_args "save_clocktree_image" args \
-    keys {-clock -width -height -corner} flags {}
+    keys {-clock -width -height -scene -corner} flags {}
 
   sta::check_argc_eq1 "save_clocktree_image" $args
   set path [lindex $args 0]
@@ -230,10 +230,7 @@ proc save_clocktree_image { args } {
   if { [info exists keys(-height)] } {
     set height $keys(-height)
   }
-  set corner ""
-  if { [info exists keys(-corner)] } {
-    set corner $keys(-corner)
-  }
+  set scene [sta::parse_scene keys]
 
   if { [info exists keys(-clock)] } {
     set clock $keys(-clock)
@@ -241,7 +238,7 @@ proc save_clocktree_image { args } {
     utl::error GUI 88 "-clock is required"
   }
 
-  gui::save_clocktree_image $path $clock $corner $width $height
+  gui::save_clocktree_image $path $clock $scene $width $height
 }
 
 sta::define_cmd_args "save_histogram_image" {

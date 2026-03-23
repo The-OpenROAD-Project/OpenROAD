@@ -9,11 +9,12 @@
 #include <csignal>
 #include <ctime>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <queue>
 #include <string>
 #include <vector>
+
+#include "absl/synchronization/mutex.h"
 
 namespace utl {
 
@@ -85,7 +86,7 @@ class Progress
   ProgressHalt signal_halt_;
   ProgressHalt* prev_signal_halt_ = nullptr;
 
-  std::mutex reporters_lock_;
+  absl::Mutex reporters_lock_;
   std::vector<std::weak_ptr<ProgressReporter>> reporters_;
 
   static bool batch_mode_;

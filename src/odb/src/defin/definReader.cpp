@@ -49,6 +49,7 @@
 #include "definRow.h"
 #include "definSNet.h"
 #include "definTracks.h"
+#include "definTypes.h"
 #include "definVia.h"
 #include "defrReader.hpp"
 #include "defzlib.hpp"

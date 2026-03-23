@@ -64,8 +64,8 @@ Corner: ss
 ----------------------------
 Net r1q
  Pin capacitance: 0.92-0.92
- Wire capacitance: 8.84-8.84
- Total capacitance: 9.76-9.76
+ Wire capacitance: 9.76-9.76
+ Total capacitance: 10.68-10.68
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2
@@ -78,8 +78,8 @@ Load pins
 
 Net r1q
  Pin capacitance: 0.83-0.89
- Wire capacitance: 13.75-13.81
- Total capacitance: 14.58-14.71
+ Wire capacitance: 14.64
+ Total capacitance: 15.47-15.54
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2

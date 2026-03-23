@@ -32,6 +32,7 @@
 #include "dbModNet.h"
 #include "dbModuleModInstItr.h"
 #include "dbModuleModInstModITermItr.h"
+#include "dbSwapMasterSanityChecker.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -627,8 +628,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
     // If the flat net has external connection (external instance or BTerm),
     // it should be inserted into modbterm_name_flat_net_map.
-    bool has_external_connection = (flat_net->getBTerms().empty() == false);
-    if (has_external_connection == false) {
+    bool has_external_connection = (!flat_net->getBTerms().empty());
+    if (!has_external_connection) {
       for (dbITerm* iterm : flat_net->getITerms()) {
         if (!old_module->containsDbInst(iterm->getInst())) {
           has_external_connection = true;
@@ -773,6 +774,11 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
       std::ofstream outfile(filename);
       child_block->debugPrintContent(outfile);
     }
+  }
+
+  if (logger->debugCheck(utl::ODB, "replace_design_check_sanity", 1)) {
+    dbSwapMasterSanityChecker checker(new_mod_inst, new_module, logger);
+    checker.run();
   }
 
   return new_mod_inst;

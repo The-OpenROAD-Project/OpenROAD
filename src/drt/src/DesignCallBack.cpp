@@ -24,12 +24,6 @@ void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst)
   parser.setInst(db_inst);
 }
 
-void DesignCallBack::inDbInstCreate(odb::dbInst* db_inst,
-                                    odb::dbRegion* db_region)
-{
-  inDbInstCreate(db_inst);
-}
-
 void DesignCallBack::inDbPreMoveInst(odb::dbInst* db_inst)
 {
   auto design = router_->getDesign();

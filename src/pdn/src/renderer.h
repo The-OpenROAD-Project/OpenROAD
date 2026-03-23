@@ -32,6 +32,12 @@ class PDNRenderer : public gui::Renderer
 
   const char* getDisplayControlGroupName() override { return "Power Grid"; }
 
+  void setInitialObstructions(
+      const Shape::ObstructionTreeMap& initial_obstructions)
+  {
+    initial_obstructions_ = initial_obstructions;
+  }
+
   void pause();
 
  private:

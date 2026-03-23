@@ -15,6 +15,7 @@
 #include "dbBlock.h"
 #include "dbChipRegion.h"
 #include "dbNet.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipBump>;
@@ -137,6 +138,9 @@ void dbChipBump::setBTerm(dbBTerm* bterm)
 {
   _dbChipBump* obj = (_dbChipBump*) this;
   obj->bterm_ = bterm->getId();
+  _dbBTerm* _bterm = (_dbBTerm*) bterm;
+  _bterm->chip_region_ = obj->chip_region_;
+  _bterm->chip_bump_ = obj->getOID();
 }
 
 dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)

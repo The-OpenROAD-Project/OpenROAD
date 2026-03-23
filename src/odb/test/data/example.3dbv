@@ -30,11 +30,6 @@ ChipletDef:
         bmap: example.bmap
         pmap: Collateral/SoC/design/SoC_r1.pmap
         layer: metal1
-        coords:
-          - [0, 0]
-          - [955, 0]
-          - [955, 1082]
-          - [0, 1082]
     external:
       APR_tech_file: [NG45_PATH/*_tech.lef]
       liberty_file: [NG45_PATH/fake_macros.lib]

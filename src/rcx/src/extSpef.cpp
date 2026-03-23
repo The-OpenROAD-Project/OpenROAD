@@ -357,7 +357,7 @@ void extSpef::writeITerm(const uint32_t node)
     int jid = 0;
     dbWire* wire = _d_net->getWire();
     if (wire) {
-      jid = wire->getTermJid(iterm->getId());
+      jid = wire->getTermShapeJunctionId(iterm->getId());
     }
     Point pt;
     if (_termJxy && jid) {
@@ -492,7 +492,7 @@ void extSpef::writePort(const uint32_t node)
   int jid = 0;
   dbWire* wire = _d_net->getWire();
   if (wire) {
-    jid = wire->getTermJid(-bterm->getId());
+    jid = wire->getTermShapeJunctionId(-bterm->getId());
   }
   Point pt;
   if (_termJxy && jid) {
@@ -857,7 +857,7 @@ class compareCC
             = strcmp(odb::dbBTerm::getBTerm(block, id1)->getName().c_str(),
                      odb::dbBTerm::getBTerm(block, id2)->getName().c_str());
         if (rc != 0) {
-          return (rc < 0 ? true : false);
+          return (rc < 0);
         }
       }
       if (cp1->isBTerm() && !cp2->isBTerm()) {
@@ -868,7 +868,7 @@ class compareCC
       }
       if (cp1->isITerm() && cp2->isITerm()) {
         if (id1 != id2) {
-          return (id1 < id2 ? true : false);
+          return (id1 < id2);
         }
       }
       if (cp1->isITerm() && !cp2->isITerm()) {
@@ -880,10 +880,10 @@ class compareCC
       const uint32_t net1 = cp1->getNet()->getId();
       const uint32_t net2 = cp2->getNet()->getId();
       if (net1 != net2) {
-        return (net1 < net2 ? true : false);
+        return (net1 < net2);
       }
       if (id1 != id2) {
-        return (id1 < id2 ? true : false);
+        return (id1 < id2);
       }
     }
     {
@@ -897,7 +897,7 @@ class compareCC
             = strcmp(odb::dbBTerm::getBTerm(block, id1)->getName().c_str(),
                      odb::dbBTerm::getBTerm(block, id2)->getName().c_str());
         if (rc != 0) {
-          return (rc < 0 ? true : false);
+          return (rc < 0);
         }
       }
       if (cp1->isBTerm() && !cp2->isBTerm()) {
@@ -908,7 +908,7 @@ class compareCC
       }
       if (cp1->isITerm() && cp2->isITerm()) {
         if (id1 != id2) {
-          return (id1 < id2 ? true : false);
+          return (id1 < id2);
         }
       }
       if (cp1->isITerm() && !cp2->isITerm()) {
@@ -920,9 +920,9 @@ class compareCC
       const uint32_t net1 = cp1->getNet()->getId();
       const uint32_t net2 = cp2->getNet()->getId();
       if (net1 != net2) {
-        return (net1 < net2 ? true : false);
+        return (net1 < net2);
       }
-      return (id1 < id2 ? true : false);
+      return (id1 < id2);
     }
   }
 };

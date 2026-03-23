@@ -18,16 +18,23 @@ def _tcl_encode_sta_impl(ctx):
     args.add(ctx.attr.char_array_name)
     args.add_all(ctx.files.srcs)
 
+    # Get the Tcl library files (init.tcl...) from tcl_core
+    tcl_libfiles = ctx.attr._tcl_library_files[DefaultInfo]
+
+    # All tcl_core files live under library/, so split any file's path on
+    # "/library/" to obtain the library directory for TCL_LIBRARY.
+    tcl_lib_dir = ctx.files._tcl_library_files[0].path.split("/library/", 1)[0] + "/library"
+
     ctx.actions.run(
         outputs = [output_file],
-        inputs = ctx.files.srcs,
+        inputs = depset(
+            direct = ctx.files.srcs + [ctx.file._encode_script],
+            transitive = [tcl_libfiles.files],
+        ),
         arguments = [args],
-        tools = [ctx.executable._tclsh, ctx.file._encode_script],
+        tools = [ctx.executable._tclsh],
         executable = ctx.executable._tclsh,
-        env = {
-            # FIXME why is this needed?
-            "TCL_LIBRARY": ctx.executable._tclsh.path + ".runfiles/tk_tcl/library",
-        },
+        env = {"TCL_LIBRARY": tcl_lib_dir},
     )
     return [DefaultInfo(files = depset([output_file]))]
 
@@ -50,8 +57,12 @@ tcl_encode_sta = rule(
             default = "//src/sta:etc/TclEncode.tcl",
             allow_single_file = True,
         ),
+        "_tcl_library_files": attr.label(
+            default = "@tcl_lang//:tcl_core",
+            allow_files = True,
+        ),
         "_tclsh": attr.label(
-            default = "@tk_tcl//:tclsh",
+            default = "@tcl_lang//:tclsh",
             executable = True,
             cfg = "exec",
         ),

@@ -89,6 +89,12 @@ class RamGen
   void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting(int thread_count);
 
+  void setBehavioralVerilogFilename(const std::string& filename);
+  void writeBehavioralVerilog(const std::string& filename,
+                              int bytes_per_word,
+                              int word_count,
+                              int read_ports);
+
  private:
   void findMasters();
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
@@ -157,6 +163,7 @@ class RamGen
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
+  std::string behavioral_verilog_filename_;
 };
 
 }  // namespace ram

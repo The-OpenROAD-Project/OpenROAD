@@ -15,6 +15,8 @@
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbChip.h"
+#include "dbChipBump.h"
+#include "dbChipRegion.h"
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -74,7 +76,9 @@ _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
       ground_pin_(b.ground_pin_),
       supply_pin_(b.supply_pin_),
       sta_vertex_id_(0),
-      constraint_region_(b.constraint_region_)
+      constraint_region_(b.constraint_region_),
+      chip_region_(b.chip_region_),
+      chip_bump_(b.chip_bump_)
 {
   if (b.name_) {
     name_ = safe_strdup(b.name_);
@@ -159,6 +163,14 @@ bool _dbBTerm::operator==(const _dbBTerm& rhs) const
     return false;
   }
 
+  if (chip_region_ != rhs.chip_region_) {
+    return false;
+  }
+
+  if (chip_bump_ != rhs.chip_bump_) {
+    return false;
+  }
+
   return true;
 }
 
@@ -183,6 +195,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBTerm& bterm)
   stream << bterm.constraint_region_;
   stream << bterm.mirrored_bterm_;
   stream << bterm.is_mirrored_;
+  stream << bterm.chip_region_;
+  stream << bterm.chip_bump_;
 
   return stream;
 }
@@ -217,6 +231,10 @@ dbIStream& operator>>(dbIStream& stream, _dbBTerm& bterm)
   }
   if (bterm.getDatabase()->isSchema(kSchemaBtermIsMirrored)) {
     stream >> bterm.is_mirrored_;
+  }
+  if (bterm.getDatabase()->isSchema(kSchemaBtermChipBump)) {
+    stream >> bterm.chip_region_;
+    stream >> bterm.chip_bump_;
   }
 
   return stream;
@@ -329,12 +347,12 @@ void dbBTerm::setSpefMark(uint32_t v)
 bool dbBTerm::isSetSpefMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.spef > 0 ? true : false;
+  return bterm->flags_.spef > 0;
 }
 bool dbBTerm::isSpecial() const
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.special > 0 ? true : false;
+  return bterm->flags_.special > 0;
 }
 void dbBTerm::setSpecial()
 {
@@ -349,7 +367,7 @@ void dbBTerm::setMark(uint32_t v)
 bool dbBTerm::isSetMark()
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
-  return bterm->flags_.mark > 0 ? true : false;
+  return bterm->flags_.mark > 0;
 }
 void dbBTerm::setExtId(uint32_t v)
 {
@@ -506,6 +524,18 @@ dbITerm* dbBTerm::getITerm()
 dbBlock* dbBTerm::getBlock() const
 {
   return (dbBlock*) getImpl()->getOwner();
+}
+
+dbChipBump* dbBTerm::getChipBump() const
+{
+  const _dbBTerm* obj = (const _dbBTerm*) this;
+  if (obj->chip_bump_ == 0) {
+    return nullptr;
+  }
+  _dbBlock* block = (_dbBlock*) getImpl()->getOwner();
+  _dbChip* chip = (_dbChip*) block->getOwner();
+  _dbChipRegion* region = chip->chip_region_tbl_->getPtr(obj->chip_region_);
+  return (dbChipBump*) region->chip_bump_tbl_->getPtr(obj->chip_bump_);
 }
 
 Rect dbBTerm::getBBox()
@@ -674,6 +704,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
     inst_impl->iterms_.push_back(iterm->getOID());
     iterm->flags_.mterm_idx = mterm->order_id_;
     iterm->inst_ = inst_impl->getOID();
+    iterm->mterm_ = mterm;
 
     bterm->parent_block_ = parent_block->getOID();
     bterm->parent_iterm_ = inst_impl->iterms_[mterm->order_id_];

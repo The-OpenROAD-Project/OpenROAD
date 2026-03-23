@@ -17,8 +17,11 @@
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipRegionInst.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipInst>;

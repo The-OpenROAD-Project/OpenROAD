@@ -317,7 +317,7 @@ class frLayer
   {
     spacingInfluence_ = in;
   }
-  bool hasEolSpacing() const { return (eols_.empty() ? false : true); }
+  bool hasEolSpacing() const { return !eols_.empty(); }
   void addEolSpacing(frSpacingEndOfLineConstraint* in) { eols_.push_back(in); }
   const std::vector<frSpacingEndOfLineConstraint*>& getEolSpacing() const
   {
