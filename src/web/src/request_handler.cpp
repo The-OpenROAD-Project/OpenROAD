@@ -1036,7 +1036,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       current_level = next_level;
     }
 
-    // Yosys-compatible JSON for NetlistsVG
+    // Yosys-compatible JSON for NetlistSVG
     // { "modules": { "top": { "ports": { ... }, "cells": { ... } } } }
 
     std::map<odb::dbNet*, int> net_to_id;
