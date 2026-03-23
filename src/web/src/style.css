@@ -19,7 +19,222 @@ html, body {
 
 #gl-container {
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh - 24px);
+}
+
+/* Menu bar */
+#menu-bar {
+    display: flex;
+    align-items: center;
+    height: 24px;
+    background: #2d2d2d;
+    border-bottom: 1px solid #1a1a1a;
+    font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #ccc;
+    user-select: none;
+    z-index: 10001;
+}
+#menu-bar .menu-label {
+    padding: 0 10px;
+    height: 24px;
+    line-height: 24px;
+    cursor: default;
+    position: relative;
+}
+#menu-bar .menu-label:hover,
+#menu-bar .menu-label.open {
+    background: #3c3c3c;
+}
+#menu-bar .menu-dropdown {
+    display: none;
+    position: absolute;
+    top: 24px;
+    left: 0;
+    min-width: 200px;
+    background: #2d2d2d;
+    border: 1px solid #1a1a1a;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 10002;
+    padding: 4px 0;
+}
+#menu-bar .menu-label.open .menu-dropdown {
+    display: block;
+}
+#menu-bar .menu-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 20px;
+    cursor: default;
+    white-space: nowrap;
+}
+#menu-bar .menu-item:hover {
+    background: #094771;
+    color: #fff;
+}
+#menu-bar .menu-item.disabled {
+    color: #666;
+    pointer-events: none;
+}
+#menu-bar .menu-item .shortcut {
+    color: #888;
+    margin-left: 24px;
+}
+#menu-bar .menu-item:hover .shortcut {
+    color: #aaa;
+}
+#menu-bar .menu-separator {
+    height: 1px;
+    background: #444;
+    margin: 4px 8px;
+}
+
+/* Modal dialog (Open/Save DB) */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10003;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-dialog {
+    background: #2d2d2d;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 16px 20px;
+    min-width: 400px;
+    color: #ccc;
+    font: 13px monospace;
+}
+.modal-dialog h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+.modal-dialog input[type="text"] {
+    width: 100%;
+    padding: 6px 8px;
+    background: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 3px;
+    color: #ccc;
+    font: 13px monospace;
+    box-sizing: border-box;
+}
+.modal-dialog input[type="text"]:focus {
+    outline: none;
+    border-color: #094771;
+}
+.modal-dialog .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+.modal-dialog button {
+    padding: 5px 14px;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #3c3c3c;
+    color: #ccc;
+    font: 13px sans-serif;
+    cursor: pointer;
+}
+.modal-dialog button:hover {
+    background: #4c4c4c;
+}
+.modal-dialog button.primary {
+    background: #094771;
+    border-color: #094771;
+    color: #fff;
+}
+.modal-dialog button.primary:hover {
+    background: #0b5a8f;
+}
+.modal-dialog .modal-error {
+    color: #f88;
+    margin-top: 8px;
+    font-size: 12px;
+}
+.modal-dialog button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* File browser dialog */
+.file-browser-dialog {
+    min-width: 520px;
+    max-width: 640px;
+}
+.fb-breadcrumb {
+    background: #1e1e1e;
+    padding: 4px 8px;
+    border: 1px solid #555;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+.fb-crumb {
+    cursor: pointer;
+    color: #6cb0f6;
+}
+.fb-crumb:hover {
+    text-decoration: underline;
+}
+.fb-crumb-sep {
+    color: #777;
+}
+.fb-file-list {
+    background: #1e1e1e;
+    border: 1px solid #555;
+    border-radius: 3px;
+    max-height: 320px;
+    min-height: 160px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+.fb-entry {
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    cursor: pointer;
+    gap: 6px;
+}
+.fb-entry:hover {
+    background: #2a2d2e;
+}
+.fb-entry.fb-selected {
+    background: #094771;
+}
+.fb-icon {
+    flex-shrink: 0;
+    width: 16px;
+    text-align: center;
+    font-size: 13px;
+}
+.fb-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fb-size {
+    flex-shrink: 0;
+    color: #888;
+    font-size: 11px;
+    margin-left: 8px;
+}
+.fb-empty, .fb-loading {
+    padding: 16px;
+    text-align: center;
+    color: #888;
+    font-style: italic;
+}
+.fb-path-input {
+    margin-top: 0;
 }
 
 /* GL dark theme overrides */
@@ -78,6 +293,33 @@ html, body {
     pointer-events: none;
     display: none;
 }
+
+/* Loading overlay */
+#loading-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#loading-overlay .loading-overlay-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ccc;
+    font: 16px monospace;
+}
+#loading-overlay .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #555;
+    border-top-color: #ccc;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Stub panel placeholder */
 .stub-panel {

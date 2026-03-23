@@ -13,6 +13,7 @@ export class WebSocketManager {
         this.readyPromise = null;
         this.readyResolve = null;
         this.onStatusChange = onStatusChange || (() => {});
+        this.onPush = null; // callback for server-push notifications
         this.connect();
     }
 
@@ -54,6 +55,16 @@ export class WebSocketManager {
         const view = new DataView(data);
         const id = view.getUint32(0);   // big-endian
         const type = view.getUint8(4);  // 0=JSON, 1=PNG, 2=error
+
+        // id=0 is a server-push notification (not a response to a request)
+        if (id === 0 && type === 0) {
+            const payload = data.slice(8);
+            const msg = JSON.parse(new TextDecoder().decode(payload));
+            if (this.onPush) {
+                this.onPush(msg);
+            }
+            return;
+        }
 
         const handler = this.pending.get(id);
         if (!handler) {
