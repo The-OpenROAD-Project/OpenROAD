@@ -5969,8 +5969,6 @@ std::size_t GSegmentHash::operator()(const GSegment& seg) const
        seg.final_layer});
 }
 
-}  // namespace grt
-
 void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
 {
   int net_id;
@@ -6012,3 +6010,4 @@ void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
       (final_wl_val - stt) / dbu,
       stt > 0 ? 100.0 * (final_wl_val - stt) / stt : 0.0);
 }
+}  // namespace grt
