@@ -7,6 +7,7 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "fix_lint.sh",
         "install.sh",
         "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
