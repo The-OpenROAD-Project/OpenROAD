@@ -357,14 +357,18 @@ CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
         = loc[direction] < getSize(direction) - 1
               ? getEdgeLength(direction, loc[direction])
               : 0;
-    const CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                             / (lower_edge_length + higher_edge_length)
-                             * constants_.via_multiplier;
-    if (lower_edge_length > 0) {
-      cost += getWireCost(l, lower_loc, demand);
-    }
-    if (higher_edge_length > 0) {
-      cost += getWireCost(l, loc, demand);
+
+    // Prevent division by zero
+    if (lower_edge_length > 0 || higher_edge_length > 0) {
+      const CapacityT demand = (CapacityT) layer_min_lengths_[l]
+                               / (lower_edge_length + higher_edge_length)
+                               * constants_.via_multiplier;
+      if (lower_edge_length > 0) {
+        cost += getWireCost(l, lower_loc, demand);
+      }
+      if (higher_edge_length > 0) {
+        cost += getWireCost(l, loc, demand);
+      }
     }
   }
   return cost;
@@ -590,14 +594,18 @@ void GridGraph::commitVia(const int layer_index,
         = loc[direction] < getSize(direction) - 1
               ? getEdgeLength(direction, loc[direction])
               : 0;
-    const CapacityT demand = (CapacityT) layer_min_lengths_[l]
-                             / (lower_edge_length + higher_edge_length)
-                             * constants_.via_multiplier;
-    if (lower_edge_length > 0) {
-      commit(l, lower_loc, (rip_up ? -demand : demand));
-    }
-    if (higher_edge_length > 0) {
-      commit(l, loc, (rip_up ? -demand : demand));
+
+    // Prevent division by zero
+    if (lower_edge_length > 0 || higher_edge_length > 0) {
+      const CapacityT demand = (CapacityT) layer_min_lengths_[l]
+                               / (lower_edge_length + higher_edge_length)
+                               * constants_.via_multiplier;
+      if (lower_edge_length > 0) {
+        commit(l, lower_loc, (rip_up ? -demand : demand));
+      }
+      if (higher_edge_length > 0) {
+        commit(l, loc, (rip_up ? -demand : demand));
+      }
     }
   }
   if (rip_up) {
@@ -918,6 +926,20 @@ void GridGraph::write(const std::string& heatmap_file) const
   std::ofstream fout(heatmap_file);
   fout << ss.str();
   fout.close();
+}
+
+void GridGraph::addTreeUsage(const std::shared_ptr<GRTreeNode>& tree)
+{
+  if (tree) {
+    commitTree(tree, false);
+  }
+}
+
+void GridGraph::removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree)
+{
+  if (tree) {
+    commitTree(tree, true);
+  }
 }
 
 }  // namespace grt
