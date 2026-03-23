@@ -4,8 +4,11 @@
 #pragma once
 
 #include <atomic>
+#include <limits>
 #include <map>
 #include <mutex>
+#include <set>
+#include <string>
 #include <thread>
 #include <tuple>
 #include <utility>
@@ -26,6 +29,8 @@ class Logger;
 #include "odb/geom_boost.h"
 
 namespace web {
+
+struct TileVisibility;
 
 namespace bgi = boost::geometry::index;
 
@@ -221,6 +226,28 @@ class Search : public odb::dbBlockCallBackObj
                       int x_hi,
                       int y_hi,
                       int min_height = 0);
+
+  using Edge = std::pair<odb::Point, odb::Point>;
+
+  struct SnapResult
+  {
+    Edge edge;
+    int distance = std::numeric_limits<int>::max();
+    bool found = false;
+  };
+
+  // Find the nearest rectangular edge to a point within search_radius.
+  // When horizontal is true, checks top/bottom edges; when vertical is true,
+  // checks left/right edges.  After finding the closest edge, applies point
+  // snap if the cursor is within point_snap_threshold of an endpoint/midpoint.
+  SnapResult searchNearestEdge(odb::dbBlock* block,
+                               odb::Point pt,
+                               int search_radius,
+                               int point_snap_threshold,
+                               bool horizontal,
+                               bool vertical,
+                               const TileVisibility& vis,
+                               const std::set<std::string>& visible_layers);
 
   void clearShapes();
   void clearFills();

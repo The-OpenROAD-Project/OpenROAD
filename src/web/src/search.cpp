@@ -3,11 +3,17 @@
 
 #include "search.h"
 
+#include <array>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
+#include <cstdint>
+#include <limits>
 #include <mutex>
+#include <set>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
@@ -15,6 +21,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "tile_generator.h"
 #include "utl/Logger.h"
 
 namespace web {
@@ -996,6 +1003,246 @@ Search::RowRange Search::searchRows(odb::dbBlock* block,
   }
 
   return RowRange(data.rows.qbegin(bgi::intersects(query)), data.rows.qend());
+}
+
+// ─── Snap (nearest edge search) ─────────────────────────────────────────────
+
+namespace {
+
+using Edge = std::pair<odb::Point, odb::Point>;
+
+int edgeToPointDistance(const odb::Point& pt, const Edge& edge)
+{
+  using BPoint = boost::geometry::model::d2::point_xy<int>;
+  using BLine = boost::geometry::model::linestring<BPoint>;
+
+  const BPoint bpt(pt.x(), pt.y());
+  BLine bline;
+  bline.push_back(BPoint(edge.first.x(), edge.first.y()));
+  bline.push_back(BPoint(edge.second.x(), edge.second.y()));
+
+  return static_cast<int>(boost::geometry::distance(bpt, bline));
+}
+
+// Prefer shorter edges when distances are equal.
+bool isShorterEdge(const Edge& lhs, const Edge& rhs)
+{
+  const int64_t lhs_len = static_cast<int64_t>(lhs.first.x() - lhs.second.x())
+                              * (lhs.first.x() - lhs.second.x())
+                          + static_cast<int64_t>(lhs.first.y() - lhs.second.y())
+                                * (lhs.first.y() - lhs.second.y());
+  const int64_t rhs_len = static_cast<int64_t>(rhs.first.x() - rhs.second.x())
+                              * (rhs.first.x() - rhs.second.x())
+                          + static_cast<int64_t>(rhs.first.y() - rhs.second.y())
+                                * (rhs.first.y() - rhs.second.y());
+  return lhs_len < rhs_len;
+}
+
+}  // namespace
+
+Search::SnapResult Search::searchNearestEdge(
+    odb::dbBlock* block,
+    odb::Point pt,
+    int search_radius,
+    int point_snap_threshold,
+    bool horizontal,
+    bool vertical,
+    const TileVisibility& vis,
+    const std::set<std::string>& visible_layers)
+{
+  if (!block) {
+    return {};
+  }
+
+  Edge closest_edge;
+  int edge_distance = std::numeric_limits<int>::max();
+
+  auto check_rect = [&](const odb::Rect& rect) {
+    const odb::Point ll(rect.xMin(), rect.yMin());
+    const odb::Point lr(rect.xMax(), rect.yMin());
+    const odb::Point ul(rect.xMin(), rect.yMax());
+    const odb::Point ur(rect.xMax(), rect.yMax());
+
+    auto try_edge = [&](const Edge& e) {
+      const int dist = edgeToPointDistance(pt, e);
+      if (dist < edge_distance
+          || (dist == edge_distance && isShorterEdge(e, closest_edge))) {
+        edge_distance = dist;
+        closest_edge = e;
+      }
+    };
+
+    if (horizontal) {
+      try_edge({ul, ur});  // top
+      try_edge({ll, lr});  // bottom
+    }
+    if (vertical) {
+      try_edge({ll, ul});  // left
+      try_edge({lr, ur});  // right
+    }
+  };
+
+  // Build directional search box.
+  odb::Rect search_box;
+  if (horizontal && !vertical) {
+    search_box = odb::Rect(
+        pt.x(), pt.y() - search_radius, pt.x(), pt.y() + search_radius);
+  } else if (vertical && !horizontal) {
+    search_box = odb::Rect(
+        pt.x() - search_radius, pt.y(), pt.x() + search_radius, pt.y());
+  } else {
+    search_box = odb::Rect(pt.x() - search_radius,
+                           pt.y() - search_radius,
+                           pt.x() + search_radius,
+                           pt.y() + search_radius);
+  }
+
+  // Die area.
+  check_rect(block->getDieArea());
+
+  // Instances.
+  for (auto* inst : searchInsts(block,
+                                search_box.xMin(),
+                                search_box.yMin(),
+                                search_box.xMax(),
+                                search_box.yMax())) {
+    if (vis.isInstVisible(inst, nullptr)) {
+      check_rect(inst->getBBox()->getBox());
+    }
+  }
+
+  // Layer-based shapes.
+  odb::dbTech* tech = block->getTech();
+  if (tech) {
+    for (auto* layer : tech->getLayers()) {
+      if (!visible_layers.contains(layer->getName())) {
+        continue;
+      }
+
+      // Routing shapes (wires, vias, bterms).
+      if (vis.routing || vis.pins) {
+        for (const auto& [box, type, net] :
+             searchBoxShapes(block,
+                             layer,
+                             search_box.xMin(),
+                             search_box.yMin(),
+                             search_box.xMax(),
+                             search_box.yMax())) {
+          if (!vis.routing && type == WIRE) {
+            continue;
+          }
+          if (!vis.routing && type == VIA) {
+            continue;
+          }
+          if (!vis.pins && type == BTERM) {
+            continue;
+          }
+          if (vis.isNetVisible(net)) {
+            check_rect(box);
+          }
+        }
+      }
+
+      // Special net shapes.
+      if (vis.special_nets) {
+        for (const auto& [sbox, poly, net] :
+             searchSNetShapes(block,
+                              layer,
+                              search_box.xMin(),
+                              search_box.yMin(),
+                              search_box.xMax(),
+                              search_box.yMax())) {
+          if (vis.isNetVisible(net)) {
+            check_rect(sbox->getBox());
+          }
+        }
+
+        // Special net vias.
+        for (const auto& [sbox, net] : searchSNetViaShapes(block,
+                                                           layer,
+                                                           search_box.xMin(),
+                                                           search_box.yMin(),
+                                                           search_box.xMax(),
+                                                           search_box.yMax())) {
+          if (vis.isNetVisible(net)) {
+            check_rect(sbox->getBox());
+          }
+        }
+      }
+
+      // Fills.
+      for (auto* fill : searchFills(block,
+                                    layer,
+                                    search_box.xMin(),
+                                    search_box.yMin(),
+                                    search_box.xMax(),
+                                    search_box.yMax())) {
+        odb::Rect fill_rect;
+        fill->getRect(fill_rect);
+        check_rect(fill_rect);
+      }
+
+      // Obstructions.
+      if (vis.routing_obstructions) {
+        for (auto* obs : searchObstructions(block,
+                                            layer,
+                                            search_box.xMin(),
+                                            search_box.yMin(),
+                                            search_box.xMax(),
+                                            search_box.yMax())) {
+          check_rect(obs->getBBox()->getBox());
+        }
+      }
+    }
+  }
+
+  // Blockages.
+  if (vis.placement_blockages) {
+    for (auto* blk : searchBlockages(block,
+                                     search_box.xMin(),
+                                     search_box.yMin(),
+                                     search_box.xMax(),
+                                     search_box.yMax())) {
+      check_rect(blk->getBBox()->getBox());
+    }
+  }
+
+  // Rows.
+  if (vis.rows) {
+    for (const auto& [row_rect, row] : searchRows(block,
+                                                  search_box.xMin(),
+                                                  search_box.yMin(),
+                                                  search_box.xMax(),
+                                                  search_box.yMax())) {
+      check_rect(row_rect);
+    }
+  }
+
+  if (edge_distance == std::numeric_limits<int>::max()) {
+    return {};
+  }
+
+  // Point snap: if cursor is close to an endpoint or midpoint, snap to it.
+  const std::array<odb::Point, 3> snap_points
+      = {closest_edge.first,
+         odb::Point((closest_edge.first.x() + closest_edge.second.x()) / 2,
+                    (closest_edge.first.y() + closest_edge.second.y()) / 2),
+         closest_edge.second};
+
+  for (const auto& snap_pt : snap_points) {
+    if (std::abs(snap_pt.x() - pt.x()) < point_snap_threshold
+        && std::abs(snap_pt.y() - pt.y()) < point_snap_threshold) {
+      closest_edge.first = snap_pt;
+      closest_edge.second = snap_pt;
+      break;
+    }
+  }
+
+  SnapResult result;
+  result.edge = closest_edge;
+  result.distance = edge_distance;
+  result.found = true;
+  return result;
 }
 
 }  // namespace web

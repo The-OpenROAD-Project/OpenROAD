@@ -359,7 +359,7 @@ void flattenNode(const TreeNode* tree,
     ClockTreeNode node;
     node.id = static_cast<int>(data.nodes.size());
     node.parent_id = parent_id;
-    node.name = inst_name;
+    node.name = std::move(inst_name);
     node.pin_name = getPinName(pin, network);
     node.type = classifyDriver(pin, network);
     node.fanout = static_cast<int>(tree->fanout.size() + tree->leaves.size());
@@ -384,7 +384,7 @@ void flattenNode(const TreeNode* tree,
     }
 
     int this_id = node.id;
-    data.nodes.push_back(node);
+    data.nodes.push_back(std::move(node));
 
     // Recurse into children
     for (const auto& child : tree->fanout) {
@@ -403,7 +403,7 @@ void flattenNode(const TreeNode* tree,
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);
-      data.nodes.push_back(leaf);
+      data.nodes.push_back(std::move(leaf));
     }
   }
 }
