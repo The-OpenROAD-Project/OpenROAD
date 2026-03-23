@@ -1142,7 +1142,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 
       builder.beginObject("port_directions");
       for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet() || !net_to_id.count(iterm->getNet())) {
+        if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
           continue;
         }
         std::string dir = "inout";
