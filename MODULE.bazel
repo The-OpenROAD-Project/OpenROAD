@@ -149,17 +149,21 @@ use_repo(npm, "npm")
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
+BAZEL_ORFS_COMMIT = "272cc079f25521d19fe25f80e176e29adb40d920"
+
+BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
+
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "272cc079f25521d19fe25f80e176e29adb40d920",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
 )
 
 git_override(
     module_name = "bazel-orfs-verilog",
-    commit = "272cc079f25521d19fe25f80e176e29adb40d920",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "verilog",
 )
 
