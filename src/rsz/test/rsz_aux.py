@@ -4,58 +4,6 @@
 import utl
 
 
-def set_dont_use(design, lib_cells):
-    # lib_cells must be a list of sta::LibertyCell* objects obtained from the
-    # STA network (e.g. via find_liberty_cell()).  String cell names with glob
-    # patterns are not supported here; use evalTclString("set_dont_use {...}")
-    # until the STA Python API exposes liberty-cell lookup (see rmp_aux.py).
-    resizer = design.getResizer()
-    for cell in lib_cells:
-        resizer.setDontUse(cell, True)
-
-
-def unset_dont_use(design, lib_cells):
-    resizer = design.getResizer()
-    for cell in lib_cells:
-        resizer.setDontUse(cell, False)
-
-
-def reset_dont_use(design):
-    design.getResizer().resetDontUse()
-
-
-def set_dont_touch_instance(design, instances):
-    resizer = design.getResizer()
-    for inst in instances:
-        resizer.setDontTouch(inst, True)
-
-
-def unset_dont_touch_instance(design, instances):
-    resizer = design.getResizer()
-    for inst in instances:
-        resizer.setDontTouch(inst, False)
-
-
-def set_dont_touch_net(design, nets):
-    resizer = design.getResizer()
-    for net in nets:
-        resizer.setDontTouch(net, True)
-
-
-def unset_dont_touch_net(design, nets):
-    resizer = design.getResizer()
-    for net in nets:
-        resizer.setDontTouch(net, False)
-
-
-def report_dont_use(design):
-    design.getResizer().reportDontUse()
-
-
-def report_dont_touch(design):
-    design.getResizer().reportDontTouch()
-
-
 def buffer_ports(
     design,
     *,
@@ -71,14 +19,6 @@ def buffer_ports(
         resizer.bufferInputs(buffer_cell, verbose)
     if outputs:
         resizer.bufferOutputs(buffer_cell, verbose)
-
-
-def remove_buffers(design):
-    design.getResizer().removeBuffers()
-
-
-def balance_row_usage(design):
-    design.getResizer().balanceRowUsage()
 
 
 def repair_design(
@@ -108,10 +48,6 @@ def repair_design(
 def repair_clock_nets(design, *, max_wire_length=None):
     max_length_m = _parse_max_wire_length(max_wire_length)
     design.getResizer().repairClkNets(max_length_m)
-
-
-def repair_clock_inverters(design):
-    design.getResizer().repairClkInverters()
 
 
 def repair_tie_fanout(design, lib_port, *, separation=0, verbose=False):
@@ -225,23 +161,12 @@ def report_floating_nets(design):
         utl.warn(utl.RSZ, 1041, f"found {floating_pin_count} floating pins.")
 
 
-def report_overdriven_nets(design, *, include_parallel_driven=False):
-    resizer = design.getResizer()
-    overdriven_net_count = resizer.findOverdrivenNetsCount(include_parallel_driven)
-    if overdriven_net_count > 0:
-        utl.warn(utl.RSZ, 1042, f"found {overdriven_net_count} overdriven nets.")
-
-
 def report_long_wires(design, count, *, digits=2):
     if not isinstance(count, int) or count < 0:
         utl.error(
             utl.RSZ, 1052, "report_long_wires count must be a non-negative integer."
         )
     design.getResizer().reportLongWires(count, digits)
-
-
-def eliminate_dead_logic(design):
-    design.getResizer().eliminateDeadLogic(True)
 
 
 def _set_max_utilization(resizer, max_utilization):
