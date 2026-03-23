@@ -113,34 +113,22 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void warn(int id, const char* fmt, ...)
-      __attribute__((format(printf, 3, 4)));
-  void fileWarn(int id,
-                const char* filename,
-                int line,
-                const char* fmt,
-                ...) __attribute__((format(printf, 5, 6)));
-  void vfileWarn(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 va_list args);
-
-  void error(int id, const char* fmt, ...)
-      __attribute__((format(printf, 3, 4)));
-  void fileError(int id,
-                 const char* filename,
-                 int line,
-                 const char* fmt,
-                 ...) __attribute__((format(printf, 5, 6)));
-  void vfileError(int id,
-                  const char* filename,
-                  int line,
-                  const char* fmt,
-                  va_list args);
-
-  void critical(int id, const char* fmt, ...)
-      __attribute__((format(printf, 3, 4)));
+  void reportMsg(const std::string& formatted_msg) override;
+  void warnMsg(int id, const std::string& formatted_msg) override;
+  void fileWarnMsg(int id,
+                   std::string_view filename,
+                   int line,
+                   const std::string& formatted_msg) override;
+  void errorMsg(int id, const std::string& formatted_msg) override;
+  void fileErrorMsg(int id,
+                    std::string_view filename,
+                    int line,
+                    const std::string& formatted_msg) override;
+  void criticalMsg(int id, const std::string& formatted_msg) override;
+  void fileCriticalMsg(int id,
+                       std::string_view filename,
+                       int line,
+                       const std::string& formatted_msg) override;
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
@@ -1024,93 +1012,48 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   return length;
 }
 
-void dbStaReport::warn(int id, const char* fmt, ...)
+void dbStaReport::reportMsg(const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->report("{}", formatted_msg);
 }
 
-void dbStaReport::fileWarn(int id,
-                           const char* filename,
-                           int line,
-                           const char* fmt,
-                           ...)
+void dbStaReport::warnMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->warn(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::vfileWarn(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            va_list args)
+void dbStaReport::fileWarnMsg(int id,
+                              std::string_view filename,
+                              int line,
+                              const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->warn(STA, id, "{}", buffer_);
+  logger_->warn(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::error(int id, const char* fmt, ...)
+void dbStaReport::errorMsg(int id, const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, buffer_);
-  va_end(args);
+  logger_->error(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileError(int id,
-                            const char* filename,
-                            int line,
-                            const char* fmt,
-                            ...)
+void dbStaReport::fileErrorMsg(int id,
+                               std::string_view filename,
+                               int line,
+                               const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->error(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::vfileError(int id,
-                             const char* filename,
-                             int line,
-                             const char* fmt,
-                             va_list args)
+void dbStaReport::criticalMsg(int id, const std::string& formatted_msg)
 {
-  printToBuffer("%s line %d, ", filename, line);
-  printToBufferAppend(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->error(STA, id, "{}", buffer_);
+  logger_->critical(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::critical(int id, const char* fmt, ...)
+void dbStaReport::fileCriticalMsg(int id,
+                                  std::string_view filename,
+                                  int line,
+                                  const std::string& formatted_msg)
 {
-  va_list args;
-  va_start(args, fmt);
-  std::unique_lock<std::mutex> lock(buffer_lock_);
-  printToBuffer(fmt, args);
-  // Don't give std::format a chance to interpret the message.
-  logger_->critical(STA, id, "{}", buffer_);
-  va_end(args);
+  logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
 void dbStaReport::redirectFileBegin(std::string filename)
