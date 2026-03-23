@@ -2,82 +2,95 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@rules_python//python:defs.bzl", "py_test")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
-# Downstream consumer tests: each verifies one aspect of the public API
-# surface and dev_dependency isolation from the test/downstream/ workspace.
+# --- Downstream API surface tests ---
+# Verify visibility labels and dev_dependency markers by inspecting
+# BUILD.bazel and MODULE.bazel directly. Instant, no downstream workspace.
 
-sh_test(
-    name = "downstream_openroad_visible_test",
-    srcs = ["downstream/expect_build.sh"],
-    args = [":openroad_visible"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "openroad_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_binary",
+        "--target=openroad",
+        "--expect=public",
     ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
 )
 
-sh_test(
-    name = "downstream_openroad_py_visible_test",
-    srcs = ["downstream/expect_build.sh"],
-    args = [":openroad_py_test"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "openroad_py_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=py_library",
+        "--target=openroad_py",
+        "--expect=public",
     ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
 )
 
-sh_test(
-    name = "downstream_openroad_lib_restricted_test",
-    srcs = ["downstream/expect_build_fail.sh"],
-    args = [":openroad_lib_consumer"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "openroad_lib_restricted_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_library",
+        "--target=openroad_lib",
+        "--expect=not_public",
     ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
 )
 
-sh_test(
-    name = "downstream_openroadpy_so_restricted_test",
-    srcs = ["downstream/expect_build_fail.sh"],
-    args = [":openroadpy_so_consumer"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "rules_shell_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_shell",
     ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
 )
 
-sh_test(
-    name = "downstream_rules_shell_not_dep_test",
-    srcs = ["downstream/expect_query_fail.sh"],
-    args = ["@rules_shell//:all"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "rules_pkg_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_pkg",
     ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
 )
 
-sh_test(
-    name = "downstream_rules_pkg_not_dep_test",
-    srcs = ["downstream/expect_query_fail.sh"],
-    args = ["@rules_pkg//:all"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "rules_verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_verilator",
     ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
 )
 
-sh_test(
-    name = "downstream_rules_verilator_not_dep_test",
-    srcs = ["downstream/expect_query_fail.sh"],
-    args = ["@rules_verilator//:all"],
-    tags = [
-        "local",
-        "no-sandbox",
+py_test(
+    name = "verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=verilator",
     ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
 )
 
 exports_files(

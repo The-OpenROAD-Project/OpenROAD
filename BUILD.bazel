@@ -36,7 +36,9 @@ config_setting(
 )
 
 exports_files([
+    "BUILD.bazel",
     "LICENSE",
+    "MODULE.bazel",
     "src/Design.i",
     "src/Exception.i",
     "src/options.i",
