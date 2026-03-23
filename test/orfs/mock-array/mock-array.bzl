@@ -2,73 +2,110 @@
 Generates mock-array test cases
 """
 
-load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
-load("@bazel-orfs-verilog//:generate.bzl", "fir_library")
-load("@bazel-orfs-verilog//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
+load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run", "orfs_synth")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
-FIRTOOL_OPTIONS = [
-    "-disable-all-randomization",
-    "-strip-debug-info",
-    "-enable-layers=Verification",
-    "-enable-layers=Verification.Assert",
-    "-enable-layers=Verification.Assume",
-    "-enable-layers=Verification.Cover",
-]
-
-def verilog(name, rows, cols):
-    """Generate mock array verilog
+def verilog(name, **_kwargs):
+    """Provide mock array verilog sources
 
     Args:
         name: Name of the verilog target
-        rows: Number of rows in the array
-        cols: Number of columns in the array
+        **_kwargs: Unused, kept for call-site compatibility
     """
 
-    fir_library(
-        name = "generate_{name}_fir".format(name = name),
-        data = [
+    # RTL only (for slang synthesis - multiplier is blackboxed)
+    native.filegroup(
+        name = "{name}_rtl".format(name = name),
+        srcs = [
+            "MockArray.sv",
         ],
-        generator = "//test/orfs/mock-array:generate_verilog",
-        opts = [
-            "--width=" + str(cols),
-            "--height=" + str(rows),
-            "--dataWidth=64",
-            "--",
-            # Imagine Chisel arguments here
-            "--",
-        ] + FIRTOOL_OPTIONS,
         tags = ["manual"],
     )
 
-    verilog_directory(
-        name = "generate_{name}_split".format(name = name),
-        srcs = [":generate_{name}_fir".format(name = name)],
-        opts = FIRTOOL_OPTIONS,
-        tags = ["manual"],
-    )
-
-    verilog_single_file_library(
-        name = "{name}_array.sv".format(name = name),
-        srcs = [":generate_{name}_split".format(name = name)],
-        tags = ["manual"],
-        visibility = ["//visibility:public"],
-    )
-
+    # Full sources including gate-level multiplier (for simulation and eqy)
     native.filegroup(
         name = "{name}_verilog".format(name = name),
         srcs = [
             "src/main/resources/multiplier.v",
-            ":{name}_array.sv".format(name = name),
+            "MockArray.sv",
         ],
         tags = ["manual"],
     )
 
 def element(name, config):
+    # Hierarchical synthesis:
+    #  1. Synthesize Element RTL with slang (multiplier blackboxed)
+    #  2. Synthesize multiplier.v with native Yosys (Amaranth-generated
+    #     Verilog triggers a yosys-slang assertion with --keep-hierarchy)
+    #  3. Cat the two netlists together
+    #
+    # This also serves as a test for hierarchical synthesis in OpenROAD.
+    orfs_synth(
+        name = "Element_{name}_slang_synth".format(name = name),
+        arguments = {
+            "SYNTH_BLACKBOXES": "multiplier",
+            "SYNTH_HDL_FRONTEND": "slang",
+            "SYNTH_SLANG_ARGS": "--ignore-unknown-modules --empty-blackboxes",
+        },
+        module_top = "Element",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "{name}_slang".format(name = name),
+        verilog_files = [":{name}_rtl".format(name = name)],
+    )
+
+    native.filegroup(
+        name = "Element_{name}_slang_netlist".format(name = name),
+        srcs = [":Element_{name}_slang_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
+        tags = ["manual"],
+    )
+
+    # Synthesize multiplier.v with native Yosys frontend (not slang).
+    # multiplier.v is Amaranth-generated gate-level Verilog with behavioral
+    # constructs (reg = value) that OpenROAD's reader cannot parse directly.
+    orfs_synth(
+        name = "multiplier_{name}_synth".format(name = name),
+        arguments = {
+            "SYNTH_HDL_FRONTEND": "",
+        },
+        module_top = "multiplier",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "{name}".format(name = name),
+        verilog_files = [":multiplier_v"],
+    )
+
+    native.filegroup(
+        name = "multiplier_{name}_netlist".format(name = name),
+        srcs = [":multiplier_{name}_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
+        tags = ["manual"],
+    )
+
+    # Combine the slang-synthesized Element netlist with the
+    # Yosys-processed multiplier netlist.
+    native.genrule(
+        name = "Element_{name}_combined_netlist".format(name = name),
+        srcs = [
+            ":Element_{name}_slang_netlist".format(name = name),
+            ":multiplier_{name}_netlist".format(name = name),
+        ],
+        outs = ["Element_{name}_combined_netlist.v".format(name = name)],
+        cmd = "cat $(SRCS) > $@",
+        tags = ["manual"],
+    )
+
     orfs_flow(
         name = "Element",
         arguments = {
@@ -94,14 +131,11 @@ def element(name, config):
             "PLACE_DENSITY": "0.82",
             "PLACE_PINS_ARGS": "-annealing",
             "PWR_NETS_VOLTAGES": "",
-            # Keep only one module, enough for testing, faster builds. There's
-            # some width in multiply reduction going on here to speed up
-            # builds, so we want to keep this exact module.
-            "SYNTH_KEEP_MODULES": "Multiplier",
         },
         sources = {
             "IO_CONSTRAINTS": [":mock-array-element-io"],
             "SDC_FILE": [":mock-array-constraints"],
+            "SYNTH_NETLIST_FILES": [":Element_{name}_combined_netlist".format(name = name)],
         },
         tags = ["manual"],
         verilog_files = [":{name}_verilog".format(name = name)],
@@ -250,6 +284,44 @@ def mock_array(name, config):
         "flat",
     ]}
 
+    # Hierarchical synthesis for MockArray: synthesize RTL with slang
+    # (multiplier blackboxed), then join with multiplier gate-level netlist.
+    orfs_synth(
+        name = "MockArray_{name}_slang_synth".format(name = name),
+        arguments = {
+            "SYNTH_BLACKBOXES": "multiplier Element",
+            "SYNTH_HDL_FRONTEND": "slang",
+            "SYNTH_SLANG_ARGS": "--ignore-unknown-modules --empty-blackboxes",
+        },
+        module_top = "MockArray",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "netlist",
+        verilog_files = [":{name}_rtl".format(name = name)],
+    )
+
+    native.filegroup(
+        name = "MockArray_{name}_slang_netlist".format(name = name),
+        srcs = [":MockArray_{name}_slang_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
+        tags = ["manual"],
+    )
+
+    native.genrule(
+        name = "MockArray_{name}_combined_netlist".format(name = name),
+        srcs = [
+            ":MockArray_{name}_slang_netlist".format(name = name),
+            ":Element_{name}_slang_netlist".format(name = name),
+            ":multiplier_{name}_netlist".format(name = name),
+        ],
+        outs = ["MockArray_{name}_combined_netlist.v".format(name = name)],
+        cmd = "cat $(SRCS) > $@",
+        tags = ["manual"],
+    )
+
     for v, variant in variants.items():
         orfs_flow(
             name = "MockArray",
@@ -291,6 +363,7 @@ def mock_array(name, config):
                 "IO_CONSTRAINTS": [":mock-array-io"],
                 "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
                 "SDC_FILE": [":mock-array-constraints"],
+                "SYNTH_NETLIST_FILES": [":MockArray_{name}_combined_netlist".format(name = name)],
             } | ({
                 "IO_CONSTRAINTS": [":write_pin_placement"],
                 "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
@@ -407,18 +480,8 @@ def mock_array(name, config):
                 ],
                 # Best way to refer to static names in Verilator generated code?
                 copts = [
-                    "-DARRAY_COLS=\"{}\"".format(
-                        ",".join([
-                            "&top->io_ins_down_{col}, &top->io_ins_up_{col}".format(col = col)
-                            for col in range(config["cols"])
-                        ]),
-                    ),
-                    "-DARRAY_ROWS=\"{}\"".format(
-                        ",".join([
-                            "&top->io_ins_left_{row}, &top->io_ins_right_{row}".format(row = row)
-                            for row in range(config["rows"])
-                        ]),
-                    ),
+                    "-DARRAY_COLS={}".format(config["cols"]),
+                    "-DARRAY_ROWS={}".format(config["rows"]),
                 ],
                 cxxopts = [
                     "-std=c++23",

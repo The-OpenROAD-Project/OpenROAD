@@ -49,10 +49,10 @@ log_cmd read_sdc $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).sdc
 log_cmd read_spef $::env(RESULTS_DIR)/$::env(POWER_STAGE_STEM).spef > log.txt
 check_log_for_warning log.txt
 
-puts "read_spef for ces_*_* macros"
-for { set x 0 } { $x < $::env(ARRAY_COLS) } { incr x } {
-  for { set y 0 } { $y < $::env(ARRAY_ROWS) } { incr y } {
-    log_cmd read_spef -path ces_${x}_${y} \
+puts "read_spef for Element macros"
+for { set r 0 } { $r < $::env(ARRAY_ROWS) } { incr r } {
+  for { set c 0 } { $c < $::env(ARRAY_COLS) } { incr c } {
+    log_cmd read_spef -path "ces\[${r}\].ces\[${c}\].ces" \
       $::env(RESULTS_DIR)/../../Element/${name}_base/$::env(POWER_STAGE_STEM).spef > log.txt
     check_log_for_warning log.txt
   }
