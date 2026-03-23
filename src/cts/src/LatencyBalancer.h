@@ -77,7 +77,7 @@ class LatencyBalancer
   void findLeafBuilders(TreeBuilder* builder);
   void computeBuffersDelay(std::vector<int>& buffersDelay,
                            double extra_out_cap);
-  double computeWireLumpedDelay(std::string load, double wl, double& wireCap);
+  double computeWireLumpedDelay(const std::string& load, double wl, double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
