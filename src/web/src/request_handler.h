@@ -248,7 +248,7 @@ class SelectHandler
   WebSocketResponse handleSchematicCone(const WebSocketRequest& req);
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
-                                          SessionState& state);
+                                           SessionState& state);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
