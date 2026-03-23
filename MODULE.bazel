@@ -87,9 +87,9 @@ bazel_dep(name = "readline", version = "8.2.bcr.3")
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 
-# JavaScript unit tests
-bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
-bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
+# JavaScript / web UI (src/web uses @npm for bundled assets)
+bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -151,14 +151,12 @@ use_repo(pip, "openroad-pip")
 node = use_extension(
     "@rules_nodejs//nodejs:extensions.bzl",
     "node",
-    dev_dependency = True,
 )
 node.toolchain(node_version = "22.14.0")
 
 npm = use_extension(
     "@aspect_rules_js//npm:extensions.bzl",
     "npm",
-    dev_dependency = True,
     isolate = True,
 )
 npm.npm_translate_lock(
