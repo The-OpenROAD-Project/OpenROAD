@@ -18,7 +18,7 @@ def _regression_test_impl(ctx):
     ctx.actions.write(
         output = test_script,
         content = """
-#!/bin/bash
+#!/usr/bin/env bash
 set -ex
 export TEST_NAME_BAZEL={TEST_NAME_BAZEL}
 export TEST_FILE={TEST_FILE}
