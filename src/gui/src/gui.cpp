@@ -1118,16 +1118,24 @@ std::string Gui::getMainWindowTitle()
 
 Renderer::~Renderer()
 {
-  gui::Gui::get()->unregisterRenderer(this);
+  if (Gui::enabled()) {
+    gui::Gui::get()->unregisterRenderer(this);
+  }
 }
 
 void Renderer::redraw()
 {
-  Gui::get()->redraw();
+  if (Gui::enabled()) {
+    Gui::get()->redraw();
+  }
 }
 
 bool Renderer::checkDisplayControl(const std::string& name)
 {
+  if (!Gui::enabled()) {
+    return false;
+  }
+
   const std::string& group_name = getDisplayControlGroupName();
 
   if (group_name.empty()) {
@@ -1138,6 +1146,10 @@ bool Renderer::checkDisplayControl(const std::string& name)
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
 {
+  if (!Gui::enabled()) {
+    return;
+  }
+
   const std::string& group_name = getDisplayControlGroupName();
 
   if (group_name.empty()) {
@@ -1747,10 +1759,6 @@ int startGui(int& argc,
     }
   }
 #endif
-  auto gui = gui::Gui::get();
-  // ensure continue after close is false
-  gui->clearContinueAfterClose();
-
   SafeApplication app(argc, argv);
   application = &app;
 
@@ -1763,10 +1771,14 @@ int startGui(int& argc,
 
   // create new MainWindow
   main_window = new gui::MainWindow(load_settings);
+  auto gui = gui::Gui::get();
+  // ensure continue after close is false
+  gui->clearContinueAfterClose();
   if (minimize) {
     main_window->showMinimized();
   }
   main_window->setTitle(gui->getMainWindowTitle());
+  main_window->bindGui(gui);
 
   open_road->getDb()->addObserver(main_window);
   if (!interactive) {
@@ -1778,6 +1790,8 @@ int startGui(int& argc,
   gui->setLogger(open_road->getLogger());
 
   main_window->setDatabase(open_road->getDb());
+
+  HeatMapDataSource::registerPendingHeatMaps();
 
   bool init_openroad = interp != nullptr;
   if (!init_openroad) {

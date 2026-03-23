@@ -15,7 +15,9 @@ namespace grt {
 GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
     : groute_(groute), tech_(tech)
 {
-  gui::Gui::get()->registerRenderer(this);
+  if (gui::Gui::enabled()) {
+    gui::Gui::get()->registerRenderer(this);
+  }
 }
 
 void GrouteRenderer::highlightRoute(odb::dbNet* net, bool show_pin_locations)

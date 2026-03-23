@@ -176,7 +176,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
     QVariant data = item->data(user_data_item_idx_);
     if (data.isValid()) {
       dbTechLayer* layer = data.value<dbTechLayer*>();
-      if (layer != nullptr) {
+      if (layer != nullptr && Gui::enabled()) {
         auto selected = Gui::get()->makeSelected(layer);
         if (selected) {
           auto props = selected.getProperties();
@@ -566,9 +566,9 @@ DisplayControls::DisplayControls(QWidget* parent)
 
   custom_controls_start_ = root->rowCount();
 
-  // register renderers
-  if (gui::Gui::get() != nullptr) {
-    for (auto renderer : gui::Gui::get()->renderers()) {
+  // register renderers once GUI is active
+  if (Gui::enabled()) {
+    for (auto renderer : Gui::get()->renderers()) {
       registerRenderer(renderer);
     }
   }
@@ -827,8 +827,10 @@ void DisplayControls::writeSettings(QSettings* settings)
 
   // custom renderers
   settings->beginGroup("custom");
-  for (auto renderer : Gui::get()->renderers()) {
-    saveRendererState(renderer);
+  if (Gui::enabled()) {
+    for (auto renderer : Gui::get()->renderers()) {
+      saveRendererState(renderer);
+    }
   }
   for (const auto& [group, renderer_settings] : custom_controls_settings_) {
     const QString group_name = QString::fromStdString(group);
@@ -1039,6 +1041,10 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     auto* name_item = model_->itemFromIndex(name_index);
     QVariant user_data = name_item->data(kUserDataItemIdx);
     if (!user_data.isValid()) {
+      continue;
+    }
+
+    if (!Gui::enabled()) {
       continue;
     }
 

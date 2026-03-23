@@ -67,6 +67,11 @@ class HeatMapDataSource
   using MapView = Map::array_view<2>::type;
   using MapSetting = std::variant<MapSettingBoolean, MapSettingMultiChoice>;
 
+  // Register any heatmaps created before the GUI became active.
+  static void registerPendingHeatMaps();
+  // Remove a heatmap from the pending list (used by destructor).
+  static void removePendingHeatMap(HeatMapDataSource* heatmap);
+
   HeatMapDataSource(utl::Logger* logger,
                     const std::string& name,
                     const std::string& short_name,
@@ -236,6 +241,7 @@ class HeatMapDataSource
   bool populated_;
   bool colors_correct_;
   bool issue_redraw_;
+  bool registered_with_gui_;
 
   odb::dbBlock* block_;
   utl::Logger* logger_;

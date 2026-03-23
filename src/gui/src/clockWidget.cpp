@@ -79,6 +79,10 @@ void ClockTreeRenderer::drawObjects(Painter& painter)
     return;
   }
 
+  if (!Gui::enabled()) {
+    return;
+  }
+
   auto* descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
   if (descriptor == nullptr) {
     return;
@@ -1137,6 +1141,10 @@ void ClockTreeView::updateRendererState() const
       break;
   }
 
+  if (!Gui::enabled()) {
+    return;
+  }
+
   auto* gui = Gui::get();
   if (enable) {
     gui->registerRenderer(renderer_.get());
@@ -1650,6 +1658,10 @@ void ClockWidget::populate(sta::Scene* scene)
 
 void ClockWidget::hideEvent(QHideEvent* event)
 {
+  if (!Gui::enabled()) {
+    return;
+  }
+
   auto* gui = Gui::get();
   for (const auto& view : views_) {
     gui->unregisterRenderer(view->getRenderer());

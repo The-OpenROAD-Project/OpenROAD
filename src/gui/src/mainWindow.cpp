@@ -92,7 +92,7 @@ MainWindow::MainWindow(bool load_settings, QWidget* parent)
           highlighted_,
           rulers_,
           labels_,
-          Gui::get(),
+          nullptr,
           [this]() -> bool { return show_dbu_->isChecked(); },
           [this]() -> bool { return show_poly_decomp_view_->isChecked(); },
           [this]() -> bool { return default_ruler_style_->isChecked(); },
@@ -505,19 +505,26 @@ void MainWindow::showEvent(QShowEvent* event)
 
 MainWindow::~MainWindow()
 {
-  auto* gui = Gui::get();
-  // unregister descriptors with GUI dependencies
-  gui->unregisterDescriptor<Ruler*>();
-  gui->unregisterDescriptor<Label*>();
-  gui->unregisterDescriptor<odb::dbNet*>();
-  gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
-  gui->unregisterDescriptor<BufferTree>();
-  gui->unregisterDescriptor<odb::dbITerm*>();
-  gui->unregisterDescriptor<odb::dbMTerm*>();
+  if (Gui::enabled()) {
+    auto* gui = Gui::get();
+    // unregister descriptors with GUI dependencies
+    gui->unregisterDescriptor<Ruler*>();
+    gui->unregisterDescriptor<Label*>();
+    gui->unregisterDescriptor<odb::dbNet*>();
+    gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
+    gui->unregisterDescriptor<BufferTree>();
+    gui->unregisterDescriptor<odb::dbITerm*>();
+    gui->unregisterDescriptor<odb::dbMTerm*>();
+  }
 
   if (cli_progress_ != nullptr) {
     logger_->swapProgress(cli_progress_.release());
   }
+}
+
+void MainWindow::bindGui(gui::Gui* gui)
+{
+  viewers_->setGui(gui);
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -556,8 +563,10 @@ void MainWindow::setBlock(odb::dbBlock* block)
   if (block != nullptr) {
     save_->setEnabled(true);
   }
-  for (auto* heat_map : Gui::get()->getHeatMaps()) {
-    heat_map->setBlock(block);
+  if (Gui::enabled()) {
+    for (auto* heat_map : Gui::get()->getHeatMaps()) {
+      heat_map->setBlock(block);
+    }
   }
   hierarchy_widget_->setBlock(block);
 }
