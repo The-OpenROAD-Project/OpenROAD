@@ -488,14 +488,12 @@ void WebSocketSession::on_read(beast::error_code ec)
       break;
     case WebSocketRequest::SCHEMATIC_CONE:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSchematicCone(req));
+        self->queue_response(self->select_handler_.handleSchematicCone(req));
       });
       break;
     case WebSocketRequest::SCHEMATIC_FULL:
       net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSchematicFull(req));
+        self->queue_response(self->select_handler_.handleSchematicFull(req));
       });
       break;
     case WebSocketRequest::SCHEMATIC_INSPECT:
@@ -930,12 +928,14 @@ Listener::Listener(net::io_context& ioc,
 
   acceptor_.set_option(net::socket_base::reuse_address(true), ec);
   if (ec) {
-    logger_->error(utl::WEB, 11, "Failed to set reuse_address option: {}", ec.message());
+    logger_->error(
+        utl::WEB, 11, "Failed to set reuse_address option: {}", ec.message());
   }
 
   acceptor_.bind(endpoint, ec);
   if (ec) {
-    logger_->error(utl::WEB, 17, "Failed to bind to endpoint: {}", ec.message());
+    logger_->error(
+        utl::WEB, 17, "Failed to bind to endpoint: {}", ec.message());
   }
 
   acceptor_.listen(net::socket_base::max_listen_connections, ec);
@@ -988,7 +988,9 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve(const std::string& host, int port, const std::string& doc_root)
+void WebServer::serve(const std::string& host,
+                      int port,
+                      const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
@@ -1005,7 +1007,7 @@ void WebServer::serve(const std::string& host, int port, const std::string& doc_
     if (!doc_root.empty()) {
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
-    
+
     std::string url = "http://" + host + ":" + std::to_string(port);
     logger_->info(utl::WEB,
                   1,
@@ -1021,7 +1023,7 @@ void WebServer::serve(const std::string& host, int port, const std::string& doc_
     std::string cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
 #endif
     int ret = std::system(cmd.c_str());
-    (void)ret;
+    (void) ret;
 
     net::io_context ioc{num_threads};
 
