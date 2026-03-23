@@ -527,7 +527,23 @@ window.addEventListener('resize', () => {
     app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
 });
 
-// Focus a Golden Layout component tab by its componentType name.
+// componentType → display title (must match defaultLayoutConfig).
+const componentTitles = {
+    LayoutViewer: 'Layout',
+    DisplayControls: 'Display Controls',
+    TclConsole: 'Tcl Console',
+    Inspector: 'Inspector',
+    Browser: 'Hierarchy',
+    TimingWidget: 'Timing',
+    DRCWidget: 'DRC',
+    ClockWidget: 'Clock Tree',
+    ChartsWidget: 'Charts',
+    SchematicWidget: 'Schematic',
+    HelpWidget: 'Help',
+    SelectHighlight: 'Select Highlight',
+};
+
+// Focus a Golden Layout component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
     function find(item) {
         if (item.isComponent && item.componentType === componentType) return item;
@@ -540,7 +556,12 @@ function focusComponent(componentType) {
         return null;
     }
     const item = find(app.goldenLayout.rootItem);
-    if (item) item.focus();
+    if (item) {
+        item.focus();
+    } else {
+        const title = componentTitles[componentType] || componentType;
+        app.goldenLayout.addComponent(componentType, undefined, title);
+    }
 }
 
 app.focusComponent = focusComponent;
