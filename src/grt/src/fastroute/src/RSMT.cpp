@@ -663,6 +663,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     if (genTree) {
       copyStTree(netID, rsmt);
     }
+     stt_wirelengths_[netID] = computeNetSttWirelength(netID);
 
     if (net->getNumPins() != rsmt.deg) {
       d = rsmt.deg;
@@ -713,10 +714,6 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
              wl1,
              totalNumSeg,
              numShift);
-
-  for (const int netID : net_ids_) {
-    stt_wirelengths_[netID] = computeNetSttWirelength(netID);
-  }
 }
 
 }

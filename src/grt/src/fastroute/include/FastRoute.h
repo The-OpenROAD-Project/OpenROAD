@@ -280,6 +280,9 @@ class FastRouteCore
   int computeNetSttWirelength(int netID);
   int computeNetFinalWirelength(int netID);
   const std::unordered_map<int, int>& getSttWirelengths() { return stt_wirelengths_; }
+  const std::unordered_map<int, int>& getRstBeforeWirelengths() { return rst_before_wirelengths_; }
+  const std::unordered_map<int, int>& getRstAfterWirelengths() { return rst_after_wirelengths_; }
+  const std::unordered_map<int, int>& getFinalWirelengths() { return final_wirelengths_; }
   int computeTotalWirelength();
 
  private:
@@ -725,7 +728,11 @@ class FastRouteCore
       horizontal_blocked_intervals_;
 
   std::vector<int> net_ids_;
-  std::unordered_map<int, int> stt_wirelengths_;  // netID -> STT wirelength
+std::unordered_map<int, int> stt_wirelengths_;  // netID -> STT wirelength (Stage 1: Flute/PD)
+std::unordered_map<int, int> rst_before_wirelengths_;  // netID -> RST WL before congestion (Stage 2)
+std::unordered_map<int, int> rst_after_wirelengths_;   // netID -> RST WL after congestion (Stage 3)
+std::unordered_map<int, int> final_wirelengths_;       // netID -> WL after layer assignment (Stage 4)
+
 
   // Maze 3D variables
   multi_array<Direction, 3> directions_3D_;
