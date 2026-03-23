@@ -971,7 +971,8 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
   return resp;
 }
 
-WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req)
+WebSocketResponse SelectHandler::handleSchematicCone(
+    const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -989,7 +990,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req
 
     odb::dbInst* target_inst = block->findInst(req.schematic_inst_name.c_str());
     if (!target_inst) {
-      throw std::runtime_error("Instance not found: " + req.schematic_inst_name);
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
     }
 
     std::set<odb::dbInst*> visited_insts;
@@ -1091,7 +1093,10 @@ WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req
 
       builder.beginObject("port_directions");
       for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet() || visited_nets.find(iterm->getNet()) == visited_nets.end()) continue;
+        if (!iterm->getNet()
+            || visited_nets.find(iterm->getNet()) == visited_nets.end()) {
+          continue;
+        }
         std::string dir = "inout";
         if (iterm->getIoType() == odb::dbIoType::INPUT) {
           dir = "input";
@@ -1105,13 +1110,15 @@ WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req
       builder.beginObject("connections");
       for (odb::dbITerm* iterm : inst->getITerms()) {
         odb::dbNet* net = iterm->getNet();
-        if (!net || visited_nets.find(net) == visited_nets.end()) continue;
+        if (!net || visited_nets.find(net) == visited_nets.end()) {
+          continue;
+        }
         builder.beginArray(iterm->getMTerm()->getName());
         builder.value(net_to_id[net]);
         builder.endArray();
       }
       builder.endObject();
-      
+
       builder.endObject();
     }
     builder.endObject();
@@ -1130,9 +1137,9 @@ WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req
     }
     builder.endObject();
 
-    builder.endObject(); // top
-    builder.endObject(); // modules
-    builder.endObject(); // root
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
 
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
@@ -1144,7 +1151,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(const WebSocketRequest& req
   return resp;
 }
 
-WebSocketResponse SelectHandler::handleSchematicFull(const WebSocketRequest& req)
+WebSocketResponse SelectHandler::handleSchematicFull(
+    const WebSocketRequest& req)
 {
   WebSocketResponse resp;
   resp.id = req.id;
@@ -1278,11 +1286,11 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
 
     odb::dbInst* inst = block->findInst(req.schematic_inst_name.c_str());
     if (!inst) {
-      throw std::runtime_error("Instance not found: " + req.schematic_inst_name);
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
     }
 
-    gui::Selected sel
-        = gui::DescriptorRegistry::instance()->makeSelected(inst);
+    gui::Selected sel = gui::DescriptorRegistry::instance()->makeSelected(inst);
 
     // STA's highlight() and getProperties() are not thread-safe;
     // serialize with other STA callers (timing, clock tree, tcl eval).
@@ -1301,7 +1309,8 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     JsonBuilder builder;
     builder.beginObject();
     std::vector<gui::Selected> new_selectables;
-    writeInspectPayload(builder, sel, new_selectables, /*can_navigate_back=*/false);
+    writeInspectPayload(
+        builder, sel, new_selectables, /*can_navigate_back=*/false);
     {
       std::lock_guard<std::mutex> lock(state.selectables_mutex);
       state.selectables = std::move(new_selectables);
