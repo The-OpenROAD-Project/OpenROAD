@@ -397,8 +397,7 @@ void FastRouteCore::fluteCongest(const int netID,
 
     for (int i = 0; i < d - 1; i++) {
       int usageH = 0;
-      for (int k = ys[0]; k <= ys[d - 1]; k++)
-      {
+      for (int k = ys[0]; k <= ys[d - 1]; k++) {
         for (int j = xs[i]; j < xs[i + 1]; j++) {
           usageH += graph2d_.getEstUsageRedH(j, k);
         }
@@ -663,7 +662,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     if (genTree) {
       copyStTree(netID, rsmt);
     }
-     stt_wirelengths_[netID] = computeNetSttWirelength(netID);
+    stt_wirelengths_[netID] = computeNetSttWirelength(netID);
 
     if (net->getNumPins() != rsmt.deg) {
       d = rsmt.deg;
@@ -697,10 +696,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     totalNumSeg += seglist_[netID].size();
 
     if (reRoute) {
-      newrouteL(
-          netID,
-          RouteType::NoRoute,
-          true);
+      newrouteL(netID, RouteType::NoRoute, true);
     }
   }
 
@@ -716,4 +712,4 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
              numShift);
 }
 
-}
+}  // namespace grt

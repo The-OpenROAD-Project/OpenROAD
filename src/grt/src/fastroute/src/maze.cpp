@@ -2216,7 +2216,6 @@ void FastRouteCore::SaveLastRouteLen()
   }
 }
 
-
 int FastRouteCore::computeTotalWirelength()
 {
   int total = 0;
