@@ -297,9 +297,10 @@ class FastRouteCore
   }
   int computeTotalWirelength();
 
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
+
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);
   void clearNets();
   double dbuToMicrons(int dbu);
