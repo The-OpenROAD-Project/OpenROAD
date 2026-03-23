@@ -85,9 +85,8 @@ void GraphicsImpl::debugForNesterovPlace(
     return;
   }
 
-  initCharts();
-
   if (debug_on_) {
+    initCharts();
     addDisplayControl(kDrawInstances, true);
     gui::Gui::get()->registerRenderer(this);
 
