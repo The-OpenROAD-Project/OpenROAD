@@ -665,7 +665,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   auto is_inf = [](double value) -> bool {
     // mirrored from:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/20925bb00965c1199c45aca0318c2baeb4042c5a/liberty/Units.cc#L153
-    return abs(value) >= 0.1 * sta::INF;
+    // ^ and apparently, that is broken, as abs() only does int. Use std::abs()
+    return std::abs(value) >= 0.1 * sta::INF;
   };
 
   bool has_sdc_constraint = false;
