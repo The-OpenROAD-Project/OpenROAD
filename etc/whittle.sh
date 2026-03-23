@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Wrapper for whittle.py that sets OPENROAD_EXE from Bazel runfiles.
 # Usage: bazelisk run //:whittle -- <whittle.py args>
 set -euo pipefail

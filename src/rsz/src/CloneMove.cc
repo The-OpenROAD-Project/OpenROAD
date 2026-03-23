@@ -318,6 +318,10 @@ bool CloneMove::doMove(const Path* drvr_path,
       }
     }
   }
+
+  // Invalidate vertex level ordering
+  resizer_->invalidateVertexOrdering();
+
   return true;
 }
 

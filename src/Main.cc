@@ -64,6 +64,7 @@ using std::string;
   X(gpl)                                 \
   X(dpl)                                 \
   X(exa)                                 \
+  X(web)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \

@@ -208,6 +208,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
     Net* out_net = network_->net(buffer_out_pin);
     estimate_parasitics_->parasiticsInvalid(out_net);
 
+    // Invalidate vertex level ordering
+    resizer_->invalidateVertexOrdering();
     return true;
   }
 

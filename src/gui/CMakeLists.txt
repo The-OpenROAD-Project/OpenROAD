@@ -12,6 +12,50 @@ find_package(OpenGL REQUIRED)
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# Lightweight library containing only DescriptorRegistry, Property::toString,
+# and Selected methods.  Has no Qt, no dbDescriptors, no ord dependency.
+# Used by the web module so its test doesn't pull in the full GUI.
+add_library(gui_descriptors
+  src/descriptor_registry.cpp
+)
+target_link_libraries(gui_descriptors
+  PUBLIC
+    odb
+  PRIVATE
+    utl_lib
+)
+target_include_directories(gui_descriptors
+  PUBLIC
+    include
+  PRIVATE
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
+)
+
+add_library(gui_heatmap_core
+  src/heatMapCore.cpp
+  src/heatMapPinDensity.cpp
+  src/heatMapPlacementDensity.cpp
+)
+target_link_libraries(gui_heatmap_core
+  PUBLIC
+    odb
+  PRIVATE
+    absl::synchronization
+    dbSta_lib
+    utl_lib
+    Boost::boost
+    OpenSTA
+)
+target_include_directories(gui_heatmap_core
+  PUBLIC
+    include
+  PRIVATE
+    src
+    ${OPENSTA_HOME}/include
+    ${DBSTA_HOME}/include
+)
+
 if (Qt5_FOUND AND BUILD_GUI)
   message(STATUS "GUI is enabled")
   set(CMAKE_AUTOMOC ON)
@@ -47,6 +91,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/findDialog.cpp
     src/gotoDialog.cpp
     src/inspector.cpp
+    src/init_descriptors.cpp
     src/dbDescriptors.cpp
     src/staDescriptors.cpp
     src/highlightGroupDialog.cpp
@@ -60,8 +105,6 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/label.cpp
     src/heatMap.cpp
     src/heatMapSetup.cpp
-    src/heatMapPinDensity.cpp
-    src/heatMapPlacementDensity.cpp
     src/browserWidget.cpp
     src/globalConnectDialog.cpp
     src/insertBufferDialog.cpp
@@ -76,6 +119,8 @@ if (Qt5_FOUND AND BUILD_GUI)
     resources/resource.qrc
   )
 
+  target_compile_definitions(gui PRIVATE ENABLE_QT)
+
   target_link_libraries(gui
     PUBLIC
       odb
@@ -85,6 +130,9 @@ if (Qt5_FOUND AND BUILD_GUI)
       Qt5::Widgets
       Qt5::Charts
       OpenGL::GL
+      gui_descriptors
+      gui_heatmap_core
+      dbSta
       utl_lib
       Boost::boost
       OpenSTA
@@ -110,11 +158,19 @@ else()
   endif()
   add_library(gui
     src/stub.cpp
-    src/stub_heatMap.cpp
+    src/init_descriptors.cpp
+    src/dbDescriptors.cpp
+    src/staDescriptors.cpp
   )
   target_link_libraries(gui
     PUBLIC
       odb
+    PRIVATE
+      gui_descriptors
+      gui_heatmap_core
+      dbSta
+      utl_lib
+      OpenSTA
   )
   target_include_directories(gui
     PRIVATE

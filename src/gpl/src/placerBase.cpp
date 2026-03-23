@@ -1324,6 +1324,38 @@ void PlacerBase::initInstsForUnusableSites()
       }
     }
 
+    if (inst->isMacro() && inst->dbInst()->getHalo() != nullptr) {
+      Rect halo = inst->dbInst()->getTransformedHalo();
+      Rect box = inst->dbInst()->getBBox()->getBox();
+
+      std::pair<int, int> pairX = getMinMaxIdx(box.xMin() - halo.xMin(),
+                                               box.xMax() + halo.xMax(),
+                                               die_.coreLx(),
+                                               siteSizeX_,
+                                               0,
+                                               siteCountX);
+      std::pair<int, int> pairY = getMinMaxIdx(box.yMin() - halo.yMin(),
+                                               box.yMax() + halo.yMax(),
+                                               die_.coreLy(),
+                                               siteSizeY_,
+                                               0,
+                                               siteCountY);
+
+      for (int i = pairX.first; i < pairX.second; i++) {
+        for (int j = pairY.first; j < pairY.second; j++) {
+          siteGrid[(j * siteCountX) + i] = Blocked;
+          debugPrint(log_,
+                     GPL,
+                     "dummies",
+                     1,
+                     "Blocking site at ({}, {}) due to fixed macro {} halo.",
+                     i,
+                     j,
+                     db_inst->getName());
+        }
+      }
+    }
+
     std::pair<int, int> pairX = getMinMaxIdx(
         inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(

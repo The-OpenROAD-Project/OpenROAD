@@ -906,7 +906,7 @@ Rect dbInst::getTransformedHalo()
   return halo;
 }
 
-void dbInst::setHalo(int left, int bottom, int right, int top)
+void dbInst::setHalo(int left, int bottom, int right, int top, bool is_soft)
 {
   dbBox* halo = getHalo();
 
@@ -914,7 +914,8 @@ void dbInst::setHalo(int left, int bottom, int right, int top)
     dbBox::destroy(halo);
   }
 
-  dbBox::create(this, left, bottom, right, top);
+  halo = dbBox::create(this, left, bottom, right, top);
+  halo->setSoft(is_soft);
 }
 
 void dbInst::getConnectivity(std::vector<dbInst*>& result,

@@ -47,7 +47,7 @@ struct _dbBoxFlagsWithoutMask
 struct _dbBoxFlags
 {
   dbBoxOwner::Value owner_type : 4;
-  uint32_t visited : 1;
+  uint32_t soft : 1;
   uint32_t octilinear : 1;
   uint32_t is_tech_via : 1;
   uint32_t is_block_via : 1;

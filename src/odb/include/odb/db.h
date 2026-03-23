@@ -271,10 +271,10 @@ class dbBox : public dbObject
   uint32_t getDY() const;
 
   ///
-  /// Set temporary flag visited
+  /// Set the halo as soft
   ///
-  void setVisited(bool value);
-  bool isVisited() const;
+  void setSoft(bool value);
+  bool isSoft() const;
 
   ///
   /// Get the owner of this box
@@ -3119,7 +3119,7 @@ class dbInst : public dbObject
   ///
   /// Sets the halo to this instance.
   ///
-  void setHalo(int left, int bottom, int right, int top);
+  void setHalo(int left, int bottom, int right, int top, bool is_soft);
 
   ///
   /// Get the weight assigned to this instance.

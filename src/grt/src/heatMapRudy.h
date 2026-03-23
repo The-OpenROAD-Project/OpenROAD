@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "AbstractRoutingCongestionDataSource.h"
 #include "grt/GlobalRouter.h"
 #include "grt/Rudy.h"
 #include "gui/heatMap.h"
@@ -17,16 +16,12 @@ class dbDatabase;
 namespace grt {
 
 class RUDYDataSource : public gui::GlobalRoutingDataSource,
-                       public AbstractRoutingCongestionDataSource,
                        public odb::dbBlockCallBackObj
 {
  public:
   RUDYDataSource(utl::Logger* logger,
                  grt::GlobalRouter* grouter,
                  odb::dbDatabase* db);
-
-  void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
-  void update() override { gui::HeatMapDataSource::update(); }
 
   void onShow() override;
   void onHide() override;
@@ -59,5 +54,9 @@ class RUDYDataSource : public gui::GlobalRoutingDataSource,
   grt::Rudy* rudy_;
   bool selection_only_;
 };
+
+gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+                                                   grt::GlobalRouter* grouter,
+                                                   odb::dbDatabase* db);
 
 }  // namespace grt
