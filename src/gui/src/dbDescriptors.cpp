@@ -238,6 +238,7 @@ static void addTimingActions(T obj,
                      }});
 }
 
+#ifdef ENABLE_QT
 // get list of tech layers as EditorOption list
 static void addLayersToOptions(odb::dbTech* tech,
                                std::vector<Descriptor::EditorOption>& options)
@@ -247,7 +248,6 @@ static void addLayersToOptions(odb::dbTech* tech,
   }
 }
 
-#ifdef ENABLE_QT
 // request user input to select tech layer, returns nullptr or current if none
 // was selected
 static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
