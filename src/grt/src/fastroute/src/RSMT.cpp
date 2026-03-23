@@ -662,8 +662,15 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
     if (genTree) {
       copyStTree(netID, rsmt);
     }
-    stt_wirelengths_[netID] = computeNetSttWirelength(netID);
-
+    stt_wirelengths_[netID] = 0;
+    for (int j = 0; j < rsmt.branchCount(); j++) {
+      const int x1 = rsmt.branch[j].x;
+      const int y1 = rsmt.branch[j].y;
+      const int n = rsmt.branch[j].n;
+      const int x2 = rsmt.branch[n].x;
+      const int y2 = rsmt.branch[n].y;
+      stt_wirelengths_[netID] += abs(x1 - x2) + abs(y1 - y2);
+    }
     if (net->getNumPins() != rsmt.deg) {
       d = rsmt.deg;
     }
