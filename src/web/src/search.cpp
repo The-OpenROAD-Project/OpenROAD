@@ -8,8 +8,12 @@
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
+#include <cstdint>
+#include <limits>
 #include <mutex>
+#include <set>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"

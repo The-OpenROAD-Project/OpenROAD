@@ -6,7 +6,6 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "json_builder.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tile_generator.h"

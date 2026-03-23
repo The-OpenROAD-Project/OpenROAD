@@ -338,7 +338,7 @@ WebSocketSession::WebSocketSession(
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
-      tcl_handler_(std::move(tcl_eval)),
+      tcl_handler_(tcl_eval),
       timing_handler_(generator, std::move(timing_report), tcl_eval),
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
