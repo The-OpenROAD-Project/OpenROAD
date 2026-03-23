@@ -563,6 +563,9 @@ WebSocketResponse dispatch_request(
       }
       builder.endArray();
       builder.field("has_liberty", gen.hasSta());
+      if (gen.getBlock()) {
+        builder.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+      }
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -926,6 +929,48 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
   return resp;
 }
 
+WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    auto snap = gen_->snapAt(req.snap_x,
+                             req.snap_y,
+                             req.snap_radius,
+                             req.snap_point_threshold,
+                             req.snap_horizontal,
+                             req.snap_vertical,
+                             req.vis,
+                             req.visible_layers);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("found", snap.found);
+    if (snap.found) {
+      const bool is_point = snap.edge.first == snap.edge.second;
+      builder.field("is_point", is_point);
+      builder.beginArray("edge");
+      builder.beginArray();
+      builder.value(snap.edge.first.x());
+      builder.value(snap.edge.first.y());
+      builder.endArray();
+      builder.beginArray();
+      builder.value(snap.edge.second.x());
+      builder.value(snap.edge.second.y());
+      builder.endArray();
+      builder.endArray();
+    }
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("snap error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 //------------------------------------------------------------------------------
 // TclHandler
 //------------------------------------------------------------------------------
@@ -1065,15 +1110,6 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
         }
       }
     }
-
-    debugPrint(tcl_eval_->logger,
-               utl::WEB,
-               "timing",
-               1,
-               "TIMING_HIGHLIGHT: {} rects, {} lines, pin_name='{}'",
-               new_rects.size(),
-               new_lines.size(),
-               req.timing_pin_name);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);
