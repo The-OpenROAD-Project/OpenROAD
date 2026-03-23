@@ -151,7 +151,6 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index]->getNumPins() < 2) {
-      continue;
     }
     PatternRoute pattern_route(gr_nets_[net_index].get(),
                                grid_graph_.get(),
@@ -185,7 +184,6 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
-      continue;
     }
     grid_graph_->removeTreeUsage(net->getRoutingTree());
     PatternRoute pattern_route(
@@ -222,18 +220,16 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
-      continue;
     }
     MazeRoute maze_route(net, grid_graph_.get(), logger_);
     maze_route.constructSparsifiedGraph(wire_cost_view, grid);
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
     if (tree == nullptr) {
-      logger_->warn(GRT,
-                    610,
-                    "Failed to generate Steiner tree for net {}. Skipping net.",
-                    net->getName());
-      continue;
+      logger_->error(GRT,
+                     610,
+                     "Failed to generate Steiner tree for net {}.",
+                     net->getName());
     }
 
     PatternRoute pattern_route(
@@ -304,7 +300,6 @@ NetRouteMap CUGR::getRoutes()
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
     if (net->getNumPins() < 2 || net->isLocal()) {
-      continue;
     }
     odb::dbNet* db_net = net->getDbNet();
     GRoute& route = routes[db_net];
@@ -313,7 +308,6 @@ NetRouteMap CUGR::getRoutes()
 
     auto& routing_tree = net->getRoutingTree();
     if (!routing_tree) {
-      continue;
     }
     GRTreeNode::preorder(
         routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
@@ -585,7 +579,6 @@ void CUGR::updateDbCongestion()
   for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
     odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
     if (db_layer == nullptr) {
-      continue;
     }
 
     for (int y = 0; y < y_size; y++) {
