@@ -2361,7 +2361,7 @@ void HierRTLMP::commitMacroPlacementToDb()
           block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
       blockage->setSoft();
     }
-    
+
     if (inst->isFixed()) {
       continue;
     }
