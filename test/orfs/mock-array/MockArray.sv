@@ -50,6 +50,7 @@ module ElementInner #(
   parameter int COLS       = 8
 )(
   input  logic                  clock,
+  input  logic                  reset,
   input  logic [DATA_WIDTH-1:0] io_ins_left,
   input  logic [DATA_WIDTH-1:0] io_ins_up,
   input  logic [DATA_WIDTH-1:0] io_ins_right,
@@ -77,19 +78,19 @@ module ElementInner #(
 
   Multiplier mult_left(
     .a(down_r[31:0]),  .b(left_r[31:0]),
-    .o(mult_left_o),   .rst(1'b0), .clk(clock)
+    .o(mult_left_o),   .rst(reset), .clk(clock)
   );
   Multiplier mult_up(
     .a(right_r[31:0]), .b(down_r[31:0]),
-    .o(mult_up_o),     .rst(1'b0), .clk(clock)
+    .o(mult_up_o),     .rst(reset), .clk(clock)
   );
   Multiplier mult_right(
     .a(up_r[31:0]),    .b(right_r[31:0]),
-    .o(mult_right_o),  .rst(1'b0), .clk(clock)
+    .o(mult_right_o),  .rst(reset), .clk(clock)
   );
   Multiplier mult_down(
     .a(left_r[31:0]),  .b(up_r[31:0]),
-    .o(mult_down_o),   .rst(1'b0), .clk(clock)
+    .o(mult_down_o),   .rst(reset), .clk(clock)
   );
 
   // Stage 3: register multiplier outputs (zero-extended to DATA_WIDTH)
@@ -133,6 +134,7 @@ endmodule
 `endif
 module Element(
   input  logic        clock,
+  input  logic        reset,
   input  logic [63:0] io_ins_left,
   input  logic [63:0] io_ins_up,
   input  logic [63:0] io_ins_right,
@@ -180,13 +182,14 @@ module MockArray #(
 
   // Instantiate Element grid (ces_ naming for compatibility with
   // IO constraints and power scripts)
-  for (genvar r = 0; r < HEIGHT; r++) begin : ces
-    for (genvar c = 0; c < WIDTH; c++) begin : ces
+  for (genvar r = 0; r < HEIGHT; r++) begin : gen_row
+    for (genvar c = 0; c < WIDTH; c++) begin : gen_col
       // Element parameters (DATA_WIDTH, COLS) are set via
       // VERILOG_TOP_PARAMS at synthesis time - do not override here
       // as OpenROAD cannot read parameterized instantiations.
       Element ces(
         .clock       (clock),
+        .reset       (reset),
         .io_ins_left (e_ins_left  [r][c]),
         .io_ins_up   (e_ins_up    [r][c]),
         .io_ins_right(e_ins_right [r][c]),

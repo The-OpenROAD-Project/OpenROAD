@@ -125,7 +125,9 @@ def compare_modules(sv_ports, chisel_ports, module_name):
     sv_names = set(sv_ports.keys())
     ch_names = set(chisel_ports.keys())
 
-    only_sv = sv_names - ch_names
+    # The SV version adds a reset port that the Chisel version omits
+    # (Chisel's implicit reset is not exposed as an explicit port).
+    only_sv = sv_names - ch_names - {"reset"}
     only_ch = ch_names - sv_names
     if only_sv:
         errors.append(f"{module_name}: ports only in SV: {sorted(only_sv)}")
