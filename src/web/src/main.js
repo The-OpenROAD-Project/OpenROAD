@@ -527,7 +527,7 @@ createMenuBar(app);
 
 // ─── WebSocket Init ─────────────────────────────────────────────────────────
 
-const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
+const websocketUrl = `ws://${window.location.hostname || 'localhost'}:${window.location.port}/ws`;
 app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Handle server-push notifications (e.g. search indices ready)

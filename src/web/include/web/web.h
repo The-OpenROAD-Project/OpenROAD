@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -31,7 +32,7 @@ class WebServer
             Tcl_Interp* interp);
   ~WebServer();
 
-  void serve(const std::string& doc_root = "");
+  void serve(uint16_t port = 8080, const std::string& doc_root = "");
 
  private:
   odb::dbDatabase* db_ = nullptr;

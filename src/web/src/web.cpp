@@ -957,7 +957,7 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve(const std::string& doc_root)
+void WebServer::serve(uint16_t port, const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
@@ -968,7 +968,6 @@ void WebServer::serve(const std::string& doc_root)
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
-    uint16_t const port = 8080;
     int const num_threads = 32;
 
     if (!doc_root.empty()) {
