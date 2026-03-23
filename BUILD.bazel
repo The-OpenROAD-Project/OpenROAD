@@ -475,6 +475,7 @@ test_suite(
 
 # Linting is done here (not just formatting) because not all lint violations
 # are auto-fixable — fix_lint fixes what it can, then reports the rest.
+# buildifier: disable=native-sh-binary
 sh_binary(
     name = "fix_lint",
     srcs = ["//bazel:fix_lint.sh"],

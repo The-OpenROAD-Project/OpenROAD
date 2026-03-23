@@ -1473,8 +1473,8 @@
     },
     "@@rules_chisel+//chisel:extensions.bzl%chisel": {
       "general": {
-        "bzlTransitiveDigest": "8YiJLOvTGeBWOqC6gILmYNgsck3pSfcT1RyCktl4Jzs=",
-        "usagesDigest": "cfA5X1unYAh82J9/FGpCwiJ9sa002Y9CcUGt12fGIDw=",
+        "bzlTransitiveDigest": "+blXF/PncCsQI125MAJu2KliBdUnXm79a2ColXabdk0=",
+        "usagesDigest": "DGt57fukJ5xzo6u+WB4sIyT7lNznTva+pyfekI7/lxg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1524,10 +1524,10 @@
           }
         },
         "moduleExtensionMetadata": {
-          "explicitRootModuleDirectDeps": [
+          "explicitRootModuleDirectDeps": [],
+          "explicitRootModuleDirectDevDeps": [
             "chisel_maven"
           ],
-          "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",
           "reproducible": false
         },
@@ -2350,7 +2350,7 @@
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "SFT0LhY0ioB2PsbncmTCGyGh8M0OtAJ2fCq0fHtf7ps=",
-        "usagesDigest": "gn25Ya6Nd2hLxoG8Ksgb9RPzvoiElyTJFM/4We+5U2g=",
+        "usagesDigest": "ZuaBuvEE8efZLVQ2tR8Vbv3podpYbZjO703SKYIAb4g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
