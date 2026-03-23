@@ -217,7 +217,7 @@ Let's say that `bazelisk test test/orfs/gcd:eqy_synth_test` fails, first create 
 After compiling sv-bugpoint, we create a check.sh script:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 cp $1 test/orfs/gcd/
 (bazelisk test test/orfs/gcd:eqy_synth_test --test_timeout=30 --test_output=streamed || error=$?) | tee /dev/tty | grep "Failed to prove equivalence of partition gcd.req_rdy"

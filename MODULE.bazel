@@ -79,6 +79,10 @@ bazel_dep(name = "readline", version = "8.2.bcr.3")
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 
+# JavaScript unit tests
+bazel_dep(name = "aspect_rules_js", version = "3.0.2", dev_dependency = True)
+bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
+
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
 # of this project generate stubs .ifso for things like X11 that will
@@ -123,13 +127,44 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
+node = use_extension(
+    "@rules_nodejs//nodejs:extensions.bzl",
+    "node",
+    dev_dependency = True,
+)
+node.toolchain(node_version = "22.14.0")
+
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    dev_dependency = True,
+    isolate = True,
+)
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//src/web:pnpm-lock.yaml",
+)
+use_repo(npm, "npm")
+
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
+bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
+
+BAZEL_ORFS_COMMIT = "272cc079f25521d19fe25f80e176e29adb40d920"
+
+BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 git_override(
     module_name = "bazel-orfs",
-    commit = "0818f4b9c854c3c34b1500b41840a5d4f2b6717d",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+)
+
+git_override(
+    module_name = "bazel-orfs-verilog",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+    strip_prefix = "verilog",
 )
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
@@ -137,10 +172,10 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dep
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-669-gbdeb18939",
+    image = "docker.io/openroad/orfs:26Q1-683-g51ad1231a",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "812c5c543252460a9458010cdff4f851d6441e592c74d6254b15889e7ad95c6a",
+    sha256 = "ae493b78a89f3c22bc0b61d956cb61b8a612f8030eb37330a189d02281fd6658",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
