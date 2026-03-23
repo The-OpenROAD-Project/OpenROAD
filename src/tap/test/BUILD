@@ -29,6 +29,7 @@ COMPULSORY_TESTS = [
     "endcap_autoselection_error3",
     "endcap_autoselection_error4",
     "endcap_corners",
+    "endcap_separate_edges",
     "gcd_asap7",
     "gcd_fakeram",
     "gcd_nangate45",
