@@ -13,6 +13,7 @@ import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
+import { SchematicWidget } from './schematic-widget.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -329,6 +330,7 @@ const inspector = createInspectorPanel(app, redrawAllLayers);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
+app.updateInspector = updateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -373,6 +375,10 @@ function createSelectHighlight(container) {
         'Selection and highlight browser.');
 }
 
+function createSchematicWidget(container) {
+    new SchematicWidget(container, app);
+}
+
 function createStubPanel(container, title, description) {
     const el = document.createElement('div');
     el.className = 'stub-panel';
@@ -399,11 +405,21 @@ const defaultLayoutConfig = {
                 width: 55,
                 content: [
                     {
-                        type: 'component',
-                        componentType: 'LayoutViewer',
-                        title: 'Layout',
+                        type: 'stack',
                         height: 70,
-                        isClosable: false,
+                        content: [
+                            {
+                                type: 'component',
+                                componentType: 'LayoutViewer',
+                                title: 'Layout',
+                                isClosable: false,
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'SchematicWidget',
+                                title: 'Schematic',
+                            },
+                        ],
                     },
                     {
                         type: 'component',
@@ -471,11 +487,19 @@ app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWi
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
+app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 2;
+const LAYOUT_VERSION = 3;
+
+// ─── WebSocket Init ─────────────────────────────────────────────────────────
+// Must be created before loadLayout so that components (e.g. SchematicWidget)
+// constructed during layout initialisation can access app.websocketManager.
+
+const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -524,11 +548,6 @@ app.focusComponent = focusComponent;
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
 createMenuBar(app);
-
-// ─── WebSocket Init ─────────────────────────────────────────────────────────
-
-const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
@@ -591,6 +610,12 @@ app.websocketManager.readyPromise.then(async () => {
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
+                        if (inst.type === 'Inst') {
+                            app.selectedInstanceName = inst.name;
+                            if (app.schematicWidget) {
+                                app.schematicWidget.refresh();
+                            }
+                        }
                         updateInspector(data);
                         focusComponent('Inspector');
                         // Highlight selected instance bbox

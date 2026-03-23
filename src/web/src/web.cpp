@@ -14,6 +14,7 @@
 #include <boost/beast/websocket.hpp>
 #include <csignal>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <exception>
@@ -116,6 +117,16 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.type = WebSocketRequest::SET_ROUTE_GUIDES;
     req.route_guide_action = extract_string(msg, "action");
     req.route_guide_net_name = extract_string(msg, "net_name");
+  } else if (type_str == "schematic_cone") {
+    req.type = WebSocketRequest::SCHEMATIC_CONE;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
+    req.schematic_fanin_depth = extract_int_or(msg, "fanin_depth", 1);
+    req.schematic_fanout_depth = extract_int_or(msg, "fanout_depth", 1);
+  } else if (type_str == "schematic_full") {
+    req.type = WebSocketRequest::SCHEMATIC_FULL;
+  } else if (type_str == "schematic_inspect") {
+    req.type = WebSocketRequest::SCHEMATIC_INSPECT;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -475,6 +486,22 @@ void WebSocketSession::on_read(beast::error_code ec)
                   self->queue_response(
                       self->select_handler_.handleHover(req, self->state_));
                 });
+      break;
+    case WebSocketRequest::SCHEMATIC_CONE:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicCone(req));
+      });
+      break;
+    case WebSocketRequest::SCHEMATIC_FULL:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicFull(req));
+      });
+      break;
+    case WebSocketRequest::SCHEMATIC_INSPECT:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(
+            self->select_handler_.handleSchematicInspect(req, self->state_));
+      });
       break;
     case WebSocketRequest::TCL_EVAL:
       net::post(websocket_.get_executor(),
@@ -897,22 +924,24 @@ Listener::Listener(net::io_context& ioc,
 
   acceptor_.open(endpoint.protocol(), ec);
   if (ec) {
-    return;
+    logger_->error(utl::WEB, 10, "Failed to open acceptor: {}", ec.message());
   }
 
   acceptor_.set_option(net::socket_base::reuse_address(true), ec);
   if (ec) {
-    return;
+    logger_->error(
+        utl::WEB, 11, "Failed to set reuse_address option: {}", ec.message());
   }
 
   acceptor_.bind(endpoint, ec);
   if (ec) {
-    return;
+    logger_->error(
+        utl::WEB, 17, "Failed to bind to endpoint: {}", ec.message());
   }
 
   acceptor_.listen(net::socket_base::max_listen_connections, ec);
   if (ec) {
-    return;
+    logger_->error(utl::WEB, 18, "Failed to listen: {}", ec.message());
   }
 }
 
@@ -929,6 +958,9 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
 {
   if (ec) {
     debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
+    if (ec == net::error::operation_aborted || !acceptor_.is_open()) {
+      return;
+    }
   } else {
     // Route through DetectSession to handle both HTTP and WebSocket
     std::make_shared<DetectSession>(std::move(socket),
@@ -957,7 +989,9 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve(const std::string& doc_root)
+void WebServer::serve(const std::string& host,
+                      int port,
+                      const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
@@ -967,23 +1001,35 @@ void WebServer::serve(const std::string& doc_root)
     // Create Tcl evaluator with logger sink for output capture
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
-    auto const address = net::ip::make_address("127.0.0.1");
-    uint16_t const port = 8080;
+    auto const address = net::ip::make_address(host);
+    uint16_t const u_port = port;
     int const num_threads = 32;
 
     if (!doc_root.empty()) {
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
+
+    std::string url = "http://" + host + ":" + std::to_string(port);
     logger_->info(utl::WEB,
                   1,
-                  "Server starting on http://:{} with {} threads...",
-                  port,
+                  "Server starting on {} with {} threads...",
+                  url,
                   num_threads);
+
+#if defined(__APPLE__)
+    std::string cmd = "open " + url + " > /dev/null 2>&1";
+#elif defined(_WIN32)
+    std::string cmd = "start " + url + " > nul 2>&1";
+#else
+    std::string cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
+#endif
+    int ret = std::system(cmd.c_str());
+    (void) ret;
 
     net::io_context ioc{num_threads};
 
     std::make_shared<Listener>(ioc,
-                               tcp::endpoint{address, port},
+                               tcp::endpoint{address, u_port},
                                generator_,
                                tcl_eval,
                                timing_report,
