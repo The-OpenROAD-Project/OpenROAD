@@ -2361,6 +2361,14 @@ void HierRTLMP::commitMacroPlacementToDb()
     snapper.setMacro(inst);
     snapper.snapMacro();
 
+    if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
+      hard_macro->setRealLocation(inst->getLocation());
+      odb::Rect box = hard_macro->getBBox();
+      odb::dbBlockage* blockage = odb::dbBlockage::create(
+          block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+      blockage->setSoft();
+    }
+
     inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
