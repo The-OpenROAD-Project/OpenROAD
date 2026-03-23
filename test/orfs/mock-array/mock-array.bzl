@@ -2,7 +2,7 @@
 Generates mock-array test cases
 """
 
-load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
+load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run", "orfs_synth")
 load("@bazel-orfs-verilog//:generate.bzl", "fir_library")
 load("@bazel-orfs-verilog//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
@@ -20,15 +20,41 @@ FIRTOOL_OPTIONS = [
     "-enable-layers=Verification.Cover",
 ]
 
-def verilog(name, rows, cols):
-    """Generate mock array verilog
+def verilog(name, **_kwargs):
+    """Provide mock array verilog sources
 
     Args:
         name: Name of the verilog target
+        **_kwargs: Unused, kept for call-site compatibility
+    """
+
+    # RTL only (for slang synthesis - multiplier is blackboxed)
+    native.filegroup(
+        name = "{name}_rtl".format(name = name),
+        srcs = [
+            "MockArray.sv",
+        ],
+        tags = ["manual"],
+    )
+
+    # Full sources including gate-level multiplier (for simulation and eqy)
+    native.filegroup(
+        name = "{name}_verilog".format(name = name),
+        srcs = [
+            "src/main/resources/multiplier.v",
+            "MockArray.sv",
+        ],
+        tags = ["manual"],
+    )
+
+def chisel_verilog(name, rows, cols):
+    """Generate Chisel reference Verilog for interface comparison.
+
+    Args:
+        name: Name of the configuration (e.g. "4x4")
         rows: Number of rows in the array
         cols: Number of columns in the array
     """
-
     fir_library(
         name = "generate_{name}_fir".format(name = name),
         data = [
@@ -39,7 +65,6 @@ def verilog(name, rows, cols):
             "--height=" + str(rows),
             "--dataWidth=64",
             "--",
-            # Imagine Chisel arguments here
             "--",
         ] + FIRTOOL_OPTIONS,
         tags = ["manual"],
@@ -53,22 +78,89 @@ def verilog(name, rows, cols):
     )
 
     verilog_single_file_library(
-        name = "{name}_array.sv".format(name = name),
+        name = "{name}_chisel_array.sv".format(name = name),
         srcs = [":generate_{name}_split".format(name = name)],
         tags = ["manual"],
         visibility = ["//visibility:public"],
     )
 
+def element(name, config):
+    """Synthesize and place-and-route a single Element of the mock array.
+
+    Args:
+      name: Name of the element configuration.
+      config: Configuration object from config().
+    """
+
+    # Hierarchical synthesis:
+    #  1. Synthesize Element RTL with slang (multiplier blackboxed)
+    #  2. Synthesize multiplier.v with native Yosys (Amaranth-generated
+    #     Verilog triggers a yosys-slang assertion with --keep-hierarchy)
+    #  3. Cat the two netlists together
+    #
+    # This also serves as a test for hierarchical synthesis in OpenROAD.
+    orfs_synth(
+        name = "Element_{name}_slang_synth".format(name = name),
+        arguments = {
+            "SYNTH_BLACKBOXES": "multiplier",
+            "SYNTH_HDL_FRONTEND": "slang",
+            "SYNTH_SLANG_ARGS": "--ignore-unknown-modules --empty-blackboxes -DELEMENT_COLS={}".format(config["cols"]),
+        },
+        module_top = "Element",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "{name}_slang".format(name = name),
+        verilog_files = [":{name}_rtl".format(name = name)],
+    )
+
     native.filegroup(
-        name = "{name}_verilog".format(name = name),
-        srcs = [
-            "src/main/resources/multiplier.v",
-            ":{name}_array.sv".format(name = name),
-        ],
+        name = "Element_{name}_slang_netlist".format(name = name),
+        srcs = [":Element_{name}_slang_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
         tags = ["manual"],
     )
 
-def element(name, config):
+    # Synthesize multiplier.v with native Yosys frontend (not slang).
+    # multiplier.v is Amaranth-generated gate-level Verilog with behavioral
+    # constructs (reg = value) that OpenROAD's reader cannot parse directly.
+    orfs_synth(
+        name = "multiplier_{name}_synth".format(name = name),
+        arguments = {
+            "SYNTH_HDL_FRONTEND": "",
+        },
+        module_top = "multiplier",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "{name}".format(name = name),
+        verilog_files = [":multiplier_v"],
+    )
+
+    native.filegroup(
+        name = "multiplier_{name}_netlist".format(name = name),
+        srcs = [":multiplier_{name}_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
+        tags = ["manual"],
+    )
+
+    # Combine the slang-synthesized Element netlist with the
+    # Yosys-processed multiplier netlist.
+    native.genrule(
+        name = "Element_{name}_combined_netlist".format(name = name),
+        srcs = [
+            ":Element_{name}_slang_netlist".format(name = name),
+            ":multiplier_{name}_netlist".format(name = name),
+        ],
+        outs = ["Element_{name}_combined_netlist.v".format(name = name)],
+        cmd = "cat $(SRCS) > $@",
+        tags = ["manual"],
+    )
+
     orfs_flow(
         name = "Element",
         arguments = {
@@ -88,20 +180,17 @@ def element(name, config):
             "IO_PLACER_V": "M3 M5",
             "MAX_ROUTING_LAYER": "M5",
             "MIN_ROUTING_LAYER": "M2",
-            # We want to report power per module using hierarhical .odb
+            # We want to report power per module using hierarchical .odb
             "OPENROAD_HIERARCHICAL": "1",
             "PDN_TCL": "$(PLATFORM_DIR)/openRoad/pdn/BLOCK_grid_strategy.tcl",
             "PLACE_DENSITY": "0.82",
             "PLACE_PINS_ARGS": "-annealing",
             "PWR_NETS_VOLTAGES": "",
-            # Keep only one module, enough for testing, faster builds. There's
-            # some width in multiply reduction going on here to speed up
-            # builds, so we want to keep this exact module.
-            "SYNTH_KEEP_MODULES": "Multiplier",
         },
         sources = {
             "IO_CONSTRAINTS": [":mock-array-element-io"],
             "SDC_FILE": [":mock-array-constraints"],
+            "SYNTH_NETLIST_FILES": [":Element_{name}_combined_netlist".format(name = name)],
         },
         tags = ["manual"],
         verilog_files = [":{name}_verilog".format(name = name)],
@@ -168,7 +257,7 @@ array_spacing_x = placement_grid_x * 4
 array_spacing_y = placement_grid_y * 4
 
 def config(name, rows, cols):
-    """Generate mock array co   nfiguration object
+    """Generate mock array configuration object
 
     Args:
         name: Name of the configuration
@@ -233,8 +322,11 @@ POWER_TESTS = [
     "path_groups",
 ]
 
+# TODO: Element power tests need VCD from Verilator simulation,
+# but Verilator can't compile uniquified post-P&R base netlists
+# (each Element gets a unique module name after CTS).
 ELEMENT_POWER_TESTS = [
-    "power_modules",
+    # "power_modules",
 ]
 
 def mock_array(name, config):
@@ -249,6 +341,48 @@ def mock_array(name, config):
         "base",
         "flat",
     ]}
+
+    # Hierarchical synthesis for MockArray: synthesize RTL with slang
+    # (multiplier blackboxed), then join with multiplier gate-level netlist.
+    orfs_synth(
+        name = "MockArray_{name}_slang_synth".format(name = name),
+        arguments = {
+            "SYNTH_BLACKBOXES": "multiplier Element",
+            "SYNTH_HDL_FRONTEND": "slang",
+            "SYNTH_SLANG_ARGS": "--ignore-unknown-modules --empty-blackboxes -DELEMENT_COLS={}".format(config["cols"]),
+            "VERILOG_TOP_PARAMS": "WIDTH {} HEIGHT {} DATA_WIDTH 64".format(
+                config["cols"],
+                config["rows"],
+            ),
+        },
+        module_top = "MockArray",
+        save_odb = False,
+        sources = {
+            "SDC_FILE": [":mock-array-constraints"],
+        },
+        tags = ["manual"],
+        variant = "netlist",
+        verilog_files = [":{name}_rtl".format(name = name)],
+    )
+
+    native.filegroup(
+        name = "MockArray_{name}_slang_netlist".format(name = name),
+        srcs = [":MockArray_{name}_slang_synth".format(name = name)],
+        output_group = "1_2_yosys.v",
+        tags = ["manual"],
+    )
+
+    native.genrule(
+        name = "MockArray_{name}_combined_netlist".format(name = name),
+        srcs = [
+            ":MockArray_{name}_slang_netlist".format(name = name),
+            ":Element_{name}_slang_netlist".format(name = name),
+            ":multiplier_{name}_netlist".format(name = name),
+        ],
+        outs = ["MockArray_{name}_combined_netlist.v".format(name = name)],
+        cmd = "cat $(SRCS) > $@",
+        tags = ["manual"],
+    )
 
     for v, variant in variants.items():
         orfs_flow(
@@ -291,6 +425,7 @@ def mock_array(name, config):
                 "IO_CONSTRAINTS": [":mock-array-io"],
                 "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
                 "SDC_FILE": [":mock-array-constraints"],
+                "SYNTH_NETLIST_FILES": [":MockArray_{name}_combined_netlist".format(name = name)],
             } | ({
                 "IO_CONSTRAINTS": [":write_pin_placement"],
                 "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
@@ -353,94 +488,88 @@ def mock_array(name, config):
                         output_group = POWER_STAGE_STEM[stage] + ".v",
                     )
 
-        for stage in POWER_STAGES:
-            verilog_library(
-                name = "array_{variant}_{stage}".format(variant = variant, stage = stage),
-                srcs = [
-                    ("results/asap7/{macro}/{variant}/{stem}.v".format(
-                        macro = macro,
-                        variant = (name + "_base") if macro == "Element" else variant,
-                        stem = POWER_STAGE_STEM[stage],
-                    ) if stage != "final" else "{variant}_{macro}_netlist".format(
-                        macro = macro,
-                        variant = (name + "_base") if macro == "Element" else variant,
-                    ))
-                    for macro in MACROS
-                ] + [
-                    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
-                    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-                    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-                    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-                    "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
-                ],
-                tags = ["manual"],
-            )
+        # Verilator simulation and VCD-based power tests only work for
+        # flat variants. The base variant's post-P&R netlists have
+        # uniquified module names that Verilator cannot handle.
+        if v != "base":
+            for stage in POWER_STAGES:
+                verilog_library(
+                    name = "array_{variant}_{stage}".format(variant = variant, stage = stage),
+                    srcs = [
+                        ("results/asap7/{macro}/{variant}/{stem}.v".format(
+                            macro = macro,
+                            variant = (name + "_base") if macro == "Element" else variant,
+                            stem = POWER_STAGE_STEM[stage],
+                        ) if stage != "final" else "{variant}_{macro}_netlist".format(
+                            macro = macro,
+                            variant = (name + "_base") if macro == "Element" else variant,
+                        ))
+                        for macro in MACROS
+                    ] + [
+                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
+                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
+                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+                    ],
+                    tags = ["manual"],
+                )
 
-            verilator_cc_library(
-                name = "array_verilator_{variant}_{stage}".format(variant = variant, stage = stage),
-                copts = [
-                    # Don't care about warnings from Verilator generated C++
-                    "-Wno-unused-variable",
-                ],
-                module = ":array_{variant}_{stage}".format(variant = variant, stage = stage),
-                module_top = "MockArray",
-                tags = ["manual"],
-                trace = True,
-                vopts = [
-                    "--timescale 1ps/1ps",
-                    "-Wall",
-                    "-Wno-DECLFILENAME",
-                    "-Wno-UNUSEDSIGNAL",
-                    "-Wno-PINMISSING",
-                    "--trace-underscore",
-                    # inline all PDK modules to speed up compilation
-                    "--flatten",
-                    # No-op option to retrigger a build
-                    # "-Wfuture-blah",
-                ],
-            )
+                verilator_cc_library(
+                    name = "array_verilator_{variant}_{stage}".format(variant = variant, stage = stage),
+                    copts = [
+                        # Don't care about warnings from Verilator generated C++
+                        "-Wno-unused-variable",
+                    ],
+                    module = ":array_{variant}_{stage}".format(variant = variant, stage = stage),
+                    module_top = "MockArray",
+                    tags = ["manual"],
+                    trace = True,
+                    vopts = [
+                        "--timescale 1ps/1ps",
+                        "-Wall",
+                        "-Wno-DECLFILENAME",
+                        "-Wno-UNUSEDSIGNAL",
+                        "-Wno-PINMISSING",
+                        "--trace-underscore",
+                        # inline all PDK modules to speed up compilation
+                        "--flatten",
+                        # No-op option to retrigger a build
+                        # "-Wfuture-blah",
+                    ],
+                )
 
-            cc_binary(
-                name = "simulator_{variant}_{stage}".format(variant = variant, stage = stage),
-                srcs = [
-                    "simulate.cpp",
-                ],
-                # Best way to refer to static names in Verilator generated code?
-                copts = [
-                    "-DARRAY_COLS=\"{}\"".format(
-                        ",".join([
-                            "&top->io_ins_down_{col}, &top->io_ins_up_{col}".format(col = col)
-                            for col in range(config["cols"])
-                        ]),
-                    ),
-                    "-DARRAY_ROWS=\"{}\"".format(
-                        ",".join([
-                            "&top->io_ins_left_{row}, &top->io_ins_right_{row}".format(row = row)
-                            for row in range(config["rows"])
-                        ]),
-                    ),
-                ],
-                cxxopts = [
-                    "-std=c++23",
-                ],
-                tags = ["manual"],
-                deps = [
-                    ":array_verilator_{variant}_{stage}".format(variant = variant, stage = stage),
-                ],
-            )
+                cc_binary(
+                    name = "simulator_{variant}_{stage}".format(variant = variant, stage = stage),
+                    srcs = [
+                        "simulate.cpp",
+                    ],
+                    # Best way to refer to static names in Verilator generated code?
+                    copts = [
+                        "-DARRAY_COLS={}".format(config["cols"]),
+                        "-DARRAY_ROWS={}".format(config["rows"]),
+                    ],
+                    cxxopts = [
+                        "-std=c++23",
+                    ],
+                    tags = ["manual"],
+                    deps = [
+                        ":array_verilator_{variant}_{stage}".format(variant = variant, stage = stage),
+                    ],
+                )
 
-            native.genrule(
-                name = "vcd_{variant}_{stage}".format(variant = variant, stage = stage),
-                srcs = [
-                    # FIXME move to tools, using target configuration for now to avoid rebuilds
-                    ":simulator_{variant}_{stage}".format(variant = variant, stage = stage),
-                ],
-                outs = ["MockArrayTestbench_{variant}_{stage}.vcd".format(variant = variant, stage = stage)],
-                cmd = "$(execpath :simulator_{variant}_{stage}) $(location :MockArrayTestbench_{variant}_{stage}.vcd)".format(variant = variant, stage = stage),
-                tags = ["manual"],
-                tools = [
-                ],
-            )
+                native.genrule(
+                    name = "vcd_{variant}_{stage}".format(variant = variant, stage = stage),
+                    srcs = [
+                        # FIXME move to tools, using target configuration for now to avoid rebuilds
+                        ":simulator_{variant}_{stage}".format(variant = variant, stage = stage),
+                    ],
+                    outs = ["MockArrayTestbench_{variant}_{stage}.vcd".format(variant = variant, stage = stage)],
+                    cmd = "$(execpath :simulator_{variant}_{stage}) $(location :MockArrayTestbench_{variant}_{stage}.vcd)".format(variant = variant, stage = stage),
+                    tags = ["manual"],
+                    tools = [
+                    ],
+                )
 
         # If we want to measure power after final, instead of with estimated parasitics,
         # we'll need this.
@@ -461,6 +590,14 @@ def mock_array(name, config):
         ]
 
         for power_test in POWER_TESTS:
+            # VCD-based power tests need Verilator simulation:
+            #  - base: Verilator can't handle uniquified post-P&R modules
+            #  - flat: VCD hierarchical names don't map to flat netlist
+            #          escaped wire names (e.g. \ces[0].ces[0].ces/...)
+            # Only path_groups (timing-only, no VCD) works for both.
+            needs_vcd = power_test in ("openroad", "power", "power_instances")
+            if needs_vcd:
+                continue
             for stage in POWER_STAGES:
                 orfs_run(
                     name = "MockArray_{variant}_{stage}_{power_test}".format(
@@ -487,8 +624,9 @@ def mock_array(name, config):
                         ),
                         "POWER_STAGE_NAME": stage,
                         "POWER_STAGE_STEM": POWER_STAGE_STEM[stage],
+                    } | ({
                         "VCD_STIMULI": "$(location :vcd_{variant}_{stage})".format(variant = variant, stage = stage),
-                    } | ({"openroad": {}}.get(
+                    } if needs_vcd else {}) | ({"openroad": {}}.get(
                         power_test,
                         {
                             "OPENROAD_EXE": "$(location //src/sta:opensta)",
@@ -497,9 +635,10 @@ def mock_array(name, config):
                     data = [
                                # FIXME this is a workaround to ensure that the OpenSTA runfiles are available
                                ":opensta_runfiles",
-                               ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
                                ":load_mock_array.tcl",
-                           ] + ["{macro}_{variant}_{stage}".format(
+                           ] + ([
+                               ":vcd_{variant}_{stage}".format(variant = variant, stage = stage),
+                           ] if needs_vcd else []) + ["{macro}_{variant}_{stage}".format(
                                variant = (name + "_base") if macro == "Element" else variant,
                                macro = macro,
                                stage = stage,

@@ -1,7 +1,8 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@rules_chisel//chisel:defs.bzl", "chisel_binary")
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
-load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
+load(":mock-array.bzl", "chisel_verilog", "config", "element", "mock_array", "verilog")
 
 package(
     features = ["-layering_check"],  # TODO: enable
@@ -18,6 +19,13 @@ chisel_binary(
     deps = [
         "@maven//:com_github_scopt_scopt_2_13",
     ],
+)
+
+# Amaranth-generated multiplier gate-level Verilog (needs native Yosys frontend)
+filegroup(
+    name = "multiplier_v",
+    srcs = ["src/main/resources/multiplier.v"],
+    tags = ["manual"],
 )
 
 filegroup(
@@ -71,6 +79,29 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     name = name,
     cols = config["cols"],
     rows = config["rows"],
+) for name, config in CONFIGS.items()]
+
+[chisel_verilog(
+    name = name,
+    cols = config["cols"],
+    rows = config["rows"],
+) for name, config in CONFIGS.items()]
+
+[py_test(
+    name = "compare_interfaces_{name}".format(name = name),
+    srcs = ["compare_interfaces.py"],
+    args = [
+        "$(location :MockArray.sv)",
+        "$(location :{name}_chisel_array.sv)".format(name = name),
+        str(config["rows"]),
+        str(config["cols"]),
+    ],
+    data = [
+        ":MockArray.sv",
+        ":{name}_chisel_array.sv".format(name = name),
+    ],
+    main = "compare_interfaces.py",
+    tags = ["manual"],
 ) for name, config in CONFIGS.items()]
 
 [element(
