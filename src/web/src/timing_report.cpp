@@ -131,7 +131,7 @@ void TimingReport::expandPath(sta::Path* path,
       total_fanout += node_fanout;
     }
 
-    nodes.push_back(TimingNode{.pin_name = pin_name,
+    nodes.push_back(TimingNode{.pin_name = std::move(pin_name),
                                .fanout = node_fanout,
                                .is_rising = is_rising,
                                .is_clock = pin_is_clock,

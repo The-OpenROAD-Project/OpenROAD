@@ -19,7 +19,10 @@ export function createMenuBar(app) {
             { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
         ]},
         { label: 'Tools', items: [
-            { label: 'Ruler', shortcut: 'K', disabled: true },
+            { label: 'Ruler', shortcut: 'K',
+              action: () => { if (app.rulerManager) app.rulerManager.toggleRulerMode(); } },
+            { label: 'Clear Rulers', shortcut: 'Shift+K',
+              action: () => { if (app.rulerManager) app.rulerManager.clearAllRulers(); } },
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },

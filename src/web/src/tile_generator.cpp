@@ -524,6 +524,35 @@ std::vector<std::string> TileGenerator::getSites() const
   return sites;
 }
 
+TileGenerator::SnapResult TileGenerator::snapAt(
+    const int dbu_x,
+    const int dbu_y,
+    const int search_radius,
+    const int point_snap_threshold,
+    const bool horizontal,
+    const bool vertical,
+    const TileVisibility& vis,
+    const std::set<std::string>& visible_layers) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return {};
+  }
+  auto sr = search_->searchNearestEdge(block,
+                                       odb::Point(dbu_x, dbu_y),
+                                       search_radius,
+                                       point_snap_threshold,
+                                       horizontal,
+                                       vertical,
+                                       vis,
+                                       visible_layers);
+  SnapResult result;
+  result.edge = sr.edge;
+  result.distance = sr.distance;
+  result.found = sr.found;
+  return result;
+}
+
 std::vector<SelectionResult> TileGenerator::selectAt(
     const int dbu_x,
     const int dbu_y,

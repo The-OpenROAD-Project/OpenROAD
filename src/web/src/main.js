@@ -12,6 +12,7 @@ import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
+import { RulerManager } from './ruler.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ const app = {
     heatMapLayer: null,
     heatMapLegendEl: null,
     renderHeatMapControls: null,
+    rulerManager: null,
 };
 
 const visibility = {
@@ -265,6 +267,8 @@ function createLayoutViewer(container) {
     new ResizeObserver(() => {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
+
+    app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
 
 function createDisplayControls(container) {
@@ -357,6 +361,9 @@ function createHelpWidget(container) {
         '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
         '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
+        '<tr><td><kbd>k</kbd></td><td>Toggle ruler mode</td></tr>' +
+        '<tr><td><kbd>Shift+K</kbd></td><td>Clear all rulers</td></tr>' +
+        '<tr><td><kbd>Escape</kbd></td><td>Cancel ruler (when building)</td></tr>' +
         '</table>';
     container.element.appendChild(el);
 }
@@ -570,6 +577,7 @@ app.websocketManager.readyPromise.then(async () => {
         // Click-to-select: convert click position to DBU and query server
         app.map.on('click', (e) => {
             if (!app.designScale) return;
+            if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
                 e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
 
@@ -684,13 +692,21 @@ app.websocketManager.readyPromise.then(async () => {
 
 document.addEventListener('keydown', (e) => {
     // Ignore shortcuts when typing in an input field
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
-    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
+    const key = e.key.toLowerCase();
+    if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
+        app.rulerManager.cancelRulerBuild();
+    } else if (key === 'k' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.rulerManager) app.rulerManager.toggleRulerMode();
+    } else if (key === 'k' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.rulerManager) app.rulerManager.clearAllRulers();
+    } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
-    } else if (e.key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
+    } else if (key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
         app.map.zoomIn();
-    } else if (e.key === 'Z' && e.shiftKey && !e.ctrlKey && app.map) {
+    } else if (key === 'z' && e.shiftKey && !e.ctrlKey && app.map) {
         app.map.zoomOut();
     }
-});
+}, true);

@@ -84,6 +84,7 @@ struct WebSocketRequest
     SET_HEATMAP,
     HEATMAP_TILE,
     LIST_DIR,
+    SNAP,
     UNKNOWN
   };
 
@@ -135,6 +136,14 @@ struct WebSocketRequest
 
   // LIST_DIR fields
   std::string dir_path;
+
+  // SNAP fields
+  int snap_x = 0;
+  int snap_y = 0;
+  int snap_radius = 0;
+  int snap_point_threshold = 10;
+  bool snap_horizontal = true;
+  bool snap_vertical = true;
 
   // Heat map fields
   std::string heatmap_name;
@@ -228,6 +237,7 @@ class SelectHandler
                                        SessionState& state);
   WebSocketResponse handleSetRouteGuides(const WebSocketRequest& req,
                                          SessionState& state);
+  WebSocketResponse handleSnap(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
