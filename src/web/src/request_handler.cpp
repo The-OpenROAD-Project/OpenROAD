@@ -994,55 +994,104 @@ WebSocketResponse SelectHandler::handleSchematicCone(
                                + req.schematic_inst_name);
     }
 
-    std::set<odb::dbInst*> visited_insts;
-    std::set<odb::dbNet*> visited_nets;
-    std::vector<odb::dbInst*> current_level = {target_inst};
-
-    visited_insts.insert(target_inst);
-
+    std::set<odb::dbInst*> all_insts;
+    all_insts.insert(target_inst);
     bool cone_full = false;
-    for (int d = 0; d < req.schematic_depth && !cone_full; ++d) {
-      std::vector<odb::dbInst*> next_level;
-      for (odb::dbInst* inst : current_level) {
-        for (odb::dbITerm* iterm : inst->getITerms()) {
-          odb::dbNet* net = iterm->getNet();
-          if (!net || visited_nets.find(net) != visited_nets.end()) {
-            continue;
-          }
-          // Skip high-fanout nets (clock, reset, power-like) to avoid explosion
-          if (static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
-            continue;
-          }
-          visited_nets.insert(net);
-          for (odb::dbITerm* connected_iterm : net->getITerms()) {
-            odb::dbInst* connected_inst = connected_iterm->getInst();
-            if (visited_insts.find(connected_inst) == visited_insts.end()) {
-              visited_insts.insert(connected_inst);
-              next_level.push_back(connected_inst);
-              if (static_cast<int>(visited_insts.size()) >= kMaxConeInsts) {
-                cone_full = true;
-                break;
+
+    // Fanin BFS: follow input pins upstream to their driving instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanin_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::INPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* drv : net->getITerms()) {
+              if (drv->getIoType() != odb::dbIoType::OUTPUT) {
+                continue;
               }
+              odb::dbInst* drv_inst = drv->getInst();
+              if (all_insts.insert(drv_inst).second) {
+                next_level.push_back(drv_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
             }
           }
           if (cone_full) {
             break;
           }
         }
-        if (cone_full) {
-          break;
-        }
+        level = next_level;
       }
-      current_level = next_level;
     }
 
-    // Yosys-compatible JSON for NetlistSVG
-    // { "modules": { "top": { "ports": { ... }, "cells": { ... } } } }
+    // Fanout BFS: follow output pins downstream to their load instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanout_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* load : net->getITerms()) {
+              if (load->getIoType() != odb::dbIoType::INPUT) {
+                continue;
+              }
+              odb::dbInst* load_inst = load->getInst();
+              if (all_insts.insert(load_inst).second) {
+                next_level.push_back(load_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        level = next_level;
+      }
+    }
 
+    // Collect all nets that touch any visited instance.
     std::map<odb::dbNet*, int> net_to_id;
-    int next_net_id = 2;  // Start from 2 (0 = const-0, 1 = const-1 in Yosys)
-    for (odb::dbNet* net : visited_nets) {
-      net_to_id[net] = next_net_id++;
+    int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+    for (odb::dbInst* inst : all_insts) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (net && !net_to_id.contains(net)) {
+          net_to_id[net] = next_net_id++;
+        }
+      }
     }
 
     JsonBuilder builder;
@@ -1054,9 +1103,9 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     builder.beginObject("attributes");
     builder.endObject();
 
-    // Top-level ports (dbBTerm) connected to our visited nets
+    // Top-level ports (dbBTerm) connected to any visited net
     builder.beginObject("ports");
-    for (odb::dbNet* net : visited_nets) {
+    for (const auto& [net, _id] : net_to_id) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         builder.beginObject(bterm->getName());
         std::string dir = "inout";
@@ -1076,7 +1125,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 
     // Cells (instances)
     builder.beginObject("cells");
-    for (odb::dbInst* inst : visited_insts) {
+    for (odb::dbInst* inst : all_insts) {
       builder.beginObject(inst->getName());
       builder.field("hide_name", 0);
       // Use master cell name as type; fall back to "$unknown" for safety
@@ -1093,8 +1142,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 
       builder.beginObject("port_directions");
       for (odb::dbITerm* iterm : inst->getITerms()) {
-        if (!iterm->getNet()
-            || visited_nets.find(iterm->getNet()) == visited_nets.end()) {
+        if (!iterm->getNet() || !net_to_id.count(iterm->getNet())) {
           continue;
         }
         std::string dir = "inout";
@@ -1110,7 +1158,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
       builder.beginObject("connections");
       for (odb::dbITerm* iterm : inst->getITerms()) {
         odb::dbNet* net = iterm->getNet();
-        if (!net || visited_nets.find(net) == visited_nets.end()) {
+        if (!net || !net_to_id.contains(net)) {
           continue;
         }
         builder.beginArray(iterm->getMTerm()->getName());
@@ -1125,11 +1173,11 @@ WebSocketResponse SelectHandler::handleSchematicCone(
 
     // Net names for better labeling
     builder.beginObject("netnames");
-    for (odb::dbNet* net : visited_nets) {
+    for (const auto& [net, net_id] : net_to_id) {
       builder.beginObject(net->getName());
       builder.field("hide_name", 0);
       builder.beginArray("bits");
-      builder.value(net_to_id[net]);
+      builder.value(net_id);
       builder.endArray();
       builder.beginObject("attributes");
       builder.endObject();

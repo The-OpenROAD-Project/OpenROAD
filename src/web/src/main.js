@@ -612,6 +612,9 @@ app.websocketManager.readyPromise.then(async () => {
                         const inst = data.selected[0];
                         if (inst.type === 'Inst') {
                             app.selectedInstanceName = inst.name;
+                            if (app.schematicWidget) {
+                                app.schematicWidget.refresh();
+                            }
                         }
                         updateInspector(data);
                         focusComponent('Inspector');

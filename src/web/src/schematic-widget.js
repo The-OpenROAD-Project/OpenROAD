@@ -19,13 +19,17 @@ export class SchematicWidget {
             'padding:4px 8px; background:#f5f5f5; border-bottom:1px solid #ddd;' +
             'flex-shrink:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
         this.controls.innerHTML =
+            '<label style="font-size:12px;">Fanin</label>' +
+            '<input id="schematic-fanin-depth"  type="number" value="1" min="0" max="10" style="width:40px;">' +
+            '<label style="font-size:12px;">Fanout</label>' +
+            '<input id="schematic-fanout-depth" type="number" value="1" min="0" max="10" style="width:40px;">' +
             '<button id="schematic-refresh">Refresh</button>' +
             '<button id="schematic-fit">Fit</button>' +
             '<button id="schematic-zoom-in"  title="Zoom in">+</button>'  +
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
             '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
             '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
-            '<span id="schematic-status" style="color:#888; flex:1;">Loading schematic…</span>';
+            '<span id="schematic-status" style="color:#888; flex:1;">Select an instance in the layout to view its schematic.</span>';
         this.element.appendChild(this.controls);
 
         // ── SVG viewport (overflow hidden; pan/zoom via CSS transform) ──────
@@ -65,6 +69,7 @@ export class SchematicWidget {
         this._svgIdToInstName = new Map();
 
         this._setupPanZoom();
+        this._netlistsvgReady = false;
         this.initNetlistSVG();
     }
 
@@ -254,6 +259,7 @@ export class SchematicWidget {
     fitView() {
         if (!this._svgEl) return;
         const cRect = this.svgContainer.getBoundingClientRect();
+        if (cRect.width === 0 || cRect.height === 0) return; // panel not visible yet
         // Prefer viewBox dimensions; fall back to rendered size
         const vb = this._svgEl.viewBox && this._svgEl.viewBox.baseVal;
         const svgW = (vb && vb.width)  || this._svgEl.clientWidth  || 1;
@@ -284,9 +290,8 @@ export class SchematicWidget {
                 skin = await resp.text();
             }
             this.skin = skin;
-
+            this._netlistsvgReady = true;
             console.log('NetlistSVG ready.');
-            this.refresh();
         } catch (err) {
             console.error('NetlistSVG init failed:', err);
             this.setStatus(`Init error: ${err.message}`);
@@ -296,7 +301,13 @@ export class SchematicWidget {
     // ── Refresh ──────────────────────────────────────────────────────────────
 
     refresh() {
-        if (!this.netlistsvg || !this.skin) {
+        const instName = this.appState.selectedInstanceName;
+        if (!instName) {
+            this.setStatus('Select an instance in the layout to view its schematic.');
+            return;
+        }
+
+        if (!this._netlistsvgReady) {
             this.setStatus('NetlistSVG not ready yet — try again in a moment.');
             return;
         }
@@ -307,16 +318,20 @@ export class SchematicWidget {
             return;
         }
 
-        this.setStatus('Loading schematic…');
+        this.setStatus(`Loading schematic for ${instName}…`);
 
-        // readyPromise resolves immediately if already connected, or waits
-        // until the WebSocket handshake completes.
+        const faninRaw    = parseInt(this.controls.querySelector('#schematic-fanin-depth').value,  10);
+        const fanoutRaw   = parseInt(this.controls.querySelector('#schematic-fanout-depth').value, 10);
+        const faninDepth  = isNaN(faninRaw)  ? 1 : faninRaw;
+        const fanoutDepth = isNaN(fanoutRaw) ? 1 : fanoutRaw;
+
         wm.readyPromise.then(() => {
-            wm.request({ type: 'schematic_full' })
+            wm.request({ type: 'schematic_cone', inst_name: instName,
+                         fanin_depth: faninDepth, fanout_depth: fanoutDepth })
                 .then(data => {
                     const cells = data.modules && data.modules.top && data.modules.top.cells;
                     if (!cells || Object.keys(cells).length === 0) {
-                        this.setStatus('No cells found in design.');
+                        this.setStatus('No cells found for selected instance.');
                         return;
                     }
                     this.renderNetlist(data);
@@ -387,12 +402,13 @@ export class SchematicWidget {
                 this._svgEl.style.display = 'block';
             }
 
-            // Reset to identity and auto-fit
+            // Reset to identity, then fit once the browser has fully painted
+            // the SVG. Two rAFs are used: the first lets the DOM update, the
+            // second lets the layout engine commit real dimensions.
             this._scale = 1;
             this._panX = 0;
             this._panY = 0;
-            // Defer fitView one frame so the SVG has been painted and has real dimensions
-            requestAnimationFrame(() => this.fitView());
+            requestAnimationFrame(() => requestAnimationFrame(() => this.fitView()));
 
             const cellCount = Object.keys(yosysJson.modules.top.cells).length;
             this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);

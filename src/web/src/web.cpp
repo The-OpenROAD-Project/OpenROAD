@@ -120,7 +120,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "schematic_cone") {
     req.type = WebSocketRequest::SCHEMATIC_CONE;
     req.schematic_inst_name = extract_string(msg, "inst_name");
-    req.schematic_depth = extract_int_or(msg, "depth", 1);
+    req.schematic_fanin_depth = extract_int_or(msg, "fanin_depth", 1);
+    req.schematic_fanout_depth = extract_int_or(msg, "fanout_depth", 1);
   } else if (type_str == "schematic_full") {
     req.type = WebSocketRequest::SCHEMATIC_FULL;
   } else if (type_str == "schematic_inspect") {

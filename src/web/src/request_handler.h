@@ -110,9 +110,10 @@ struct WebSocketRequest
   // TCL_EVAL fields
   std::string tcl_cmd;
 
-  // SCHEMATIC_CONE fields
+  // SCHEMATIC_CONE / SCHEMATIC_INSPECT fields
   std::string schematic_inst_name;
-  int schematic_depth = 0;
+  int schematic_fanin_depth = 1;
+  int schematic_fanout_depth = 1;
 
   // TIMING_REPORT fields
   bool timing_is_setup = true;
