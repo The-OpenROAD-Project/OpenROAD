@@ -2,9 +2,9 @@
 Generates mock-array test cases
 """
 
-load("@bazel-orfs//:generate.bzl", "fir_library")
 load("@bazel-orfs//:openroad.bzl", "orfs_flow", "orfs_run")
-load("@bazel-orfs//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
+load("@bazel-orfs-verilog//:generate.bzl", "fir_library")
+load("@bazel-orfs-verilog//:verilog.bzl", "verilog_directory", "verilog_single_file_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")

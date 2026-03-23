@@ -395,7 +395,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   }
   unbuffer_move_->commitMoves();
   estimate_parasitics_->updateParasitics();
-  level_drvr_vertices_valid_ = false;
+  invalidateVertexOrdering();
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
@@ -1045,7 +1045,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -1188,7 +1188,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -2576,7 +2576,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     db_cbk_->addOwner(block_);
     journalRestore();
     db_cbk_->removeOwner();
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3289,7 +3289,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
   if (tie_count > 0) {
     logger_->info(
         RSZ, 42, "Inserted {} tie {} instances.", tie_count, tie_cell->name());
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3473,6 +3473,8 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
   if (!has_other_fanout) {
     sta_->deleteInstance(const_cast<sta::Instance*>(tie_inst));
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
   }
 }
 
@@ -4381,6 +4383,9 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       sta_->deleteInstance(inv);
     }
   }
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4730,6 +4735,9 @@ void Resizer::journalRestore()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 
   debugPrint(logger_,
              RSZ,
@@ -5437,6 +5445,10 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   }
 
+  if (remove_inst_count > 0 || remove_net_count > 0) {
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
+  }
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
