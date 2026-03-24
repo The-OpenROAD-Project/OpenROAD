@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -95,76 +96,81 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next_str = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
-    auto next_int = [&]() -> int { return std::stoi(next_str()); };
-    auto next_dbl = [&]() -> double { return std::stod(next_str()); };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next_str = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
+      auto next_int = [&]() -> int { return std::stoi(next_str()); };
+      auto next_dbl = [&]() -> double { return std::stod(next_str()); };
 
-    if (arg == "--read_db") {
-      opts.read_db = next_str();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next_str());
-    } else if (arg == "--read_def") {
-      opts.read_def = next_str();
-    } else if (arg == "--write_db") {
-      opts.write_db = next_str();
-    } else if (arg == "--write_def") {
-      opts.write_def = next_str();
-    } else if (arg == "-output_drc") {
-      opts.output_drc = next_str();
-    } else if (arg == "-output_maze") {
-      opts.output_maze = next_str();
-    } else if (arg == "-output_cmap") {
-      opts.output_cmap = next_str();
-    } else if (arg == "-output_guide_coverage") {
-      opts.output_guide_coverage = next_str();
-    } else if (arg == "-db_process_node") {
-      opts.db_process_node = next_str();
-    } else if (arg == "-droute_end_iter") {
-      opts.droute_end_iter = next_int();
-    } else if (arg == "-via_in_pin_bottom_layer") {
-      opts.via_in_pin_bottom_layer = next_str();
-    } else if (arg == "-via_in_pin_top_layer") {
-      opts.via_in_pin_top_layer = next_str();
-    } else if (arg == "-via_access_layer") {
-      opts.via_access_layer = next_str();
-    } else if (arg == "-bottom_routing_layer") {
-      opts.bottom_routing_layer = next_str();
-    } else if (arg == "-top_routing_layer") {
-      opts.top_routing_layer = next_str();
-    } else if (arg == "-or_seed") {
-      opts.or_seed = next_int();
-    } else if (arg == "-or_k") {
-      opts.or_k = next_dbl();
-    } else if (arg == "-verbose") {
-      opts.verbose = next_int();
-    } else if (arg == "-disable_via_gen") {
-      opts.enable_via_gen = false;
-    } else if (arg == "-clean_patches") {
-      opts.clean_patches = true;
-    } else if (arg == "-no_pin_access") {
-      opts.no_pin_access = true;
-    } else if (arg == "-min_access_points") {
-      opts.min_access_points = next_int();
-    } else if (arg == "-repair_pdn_vias") {
-      opts.repair_pdn_vias = next_str();
-    } else if (arg == "-threads") {
-      opts.num_threads = next_int();
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
+      if (arg == "--read_db") {
+        opts.read_db = next_str();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next_str());
+      } else if (arg == "--read_def") {
+        opts.read_def = next_str();
+      } else if (arg == "--write_db") {
+        opts.write_db = next_str();
+      } else if (arg == "--write_def") {
+        opts.write_def = next_str();
+      } else if (arg == "-output_drc") {
+        opts.output_drc = next_str();
+      } else if (arg == "-output_maze") {
+        opts.output_maze = next_str();
+      } else if (arg == "-output_cmap") {
+        opts.output_cmap = next_str();
+      } else if (arg == "-output_guide_coverage") {
+        opts.output_guide_coverage = next_str();
+      } else if (arg == "-db_process_node") {
+        opts.db_process_node = next_str();
+      } else if (arg == "-droute_end_iter") {
+        opts.droute_end_iter = next_int();
+      } else if (arg == "-via_in_pin_bottom_layer") {
+        opts.via_in_pin_bottom_layer = next_str();
+      } else if (arg == "-via_in_pin_top_layer") {
+        opts.via_in_pin_top_layer = next_str();
+      } else if (arg == "-via_access_layer") {
+        opts.via_access_layer = next_str();
+      } else if (arg == "-bottom_routing_layer") {
+        opts.bottom_routing_layer = next_str();
+      } else if (arg == "-top_routing_layer") {
+        opts.top_routing_layer = next_str();
+      } else if (arg == "-or_seed") {
+        opts.or_seed = next_int();
+      } else if (arg == "-or_k") {
+        opts.or_k = next_dbl();
+      } else if (arg == "-verbose") {
+        opts.verbose = next_int();
+      } else if (arg == "-disable_via_gen") {
+        opts.enable_via_gen = false;
+      } else if (arg == "-clean_patches") {
+        opts.clean_patches = true;
+      } else if (arg == "-no_pin_access") {
+        opts.no_pin_access = true;
+      } else if (arg == "-min_access_points") {
+        opts.min_access_points = next_int();
+      } else if (arg == "-repair_pdn_vias") {
+        opts.repair_pdn_vias = next_str();
+      } else if (arg == "-threads") {
+        opts.num_threads = next_int();
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
+      } else {
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
+      }
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   bool has_db = !opts.read_db.empty();

@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -57,52 +58,56 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
 
-    if (arg == "--read_db") {
-      opts.read_db = next();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next());
-    } else if (arg == "--read_def") {
-      opts.read_def = next();
-    } else if (arg == "--write_db") {
-      opts.write_db = next();
-    } else if (arg == "--write_def") {
-      opts.write_def = next();
-    } else if (arg == "-max_displacement") {
-      opts.max_displacement_x = std::stoi(next());
-      // Check if next arg is also a number (X Y form)
-      if (i + 1 < argc) {
-        try {
-          int y = std::stoi(argv[i + 1]);
-          opts.max_displacement_y = y;
-          i++;
-        } catch (const std::exception&) {
+      if (arg == "--read_db") {
+        opts.read_db = next();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next());
+      } else if (arg == "--read_def") {
+        opts.read_def = next();
+      } else if (arg == "--write_db") {
+        opts.write_db = next();
+      } else if (arg == "--write_def") {
+        opts.write_def = next();
+      } else if (arg == "-max_displacement") {
+        opts.max_displacement_x = std::stoi(next());
+        // Check if next arg is also a number (X Y form)
+        if (i + 1 < argc && argv[i + 1][0] != '-') {
+          try {
+            opts.max_displacement_y = std::stoi(argv[i + 1]);
+            i++;
+          } catch (const std::invalid_argument&) {
+            opts.max_displacement_y = opts.max_displacement_x;
+          }
+        } else {
           opts.max_displacement_y = opts.max_displacement_x;
         }
+      } else if (arg == "-report_file_name") {
+        opts.report_file = next();
+      } else if (arg == "-incremental") {
+        opts.incremental = true;
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
       } else {
-        opts.max_displacement_y = opts.max_displacement_x;
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
       }
-    } else if (arg == "-report_file_name") {
-      opts.report_file = next();
-    } else if (arg == "-incremental") {
-      opts.incremental = true;
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   // Validate

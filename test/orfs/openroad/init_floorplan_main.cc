@@ -17,6 +17,7 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -68,46 +69,51 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
 
-    if (arg == "--read_db") {
-      opts.read_db = next();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next());
-    } else if (arg == "--read_def") {
-      opts.read_def = next();
-    } else if (arg == "--write_db") {
-      opts.write_db = next();
-    } else if (arg == "--write_def") {
-      opts.write_def = next();
-    } else if (arg == "-utilization") {
-      opts.utilization = std::stod(next());
-    } else if (arg == "-aspect_ratio") {
-      opts.aspect_ratio = std::stod(next());
-    } else if (arg == "-core_space") {
-      opts.core_space = std::stoi(next());
-    } else if (arg == "-die_area") {
-      opts.die_area = next();
-    } else if (arg == "-core_area") {
-      opts.core_area = next();
-    } else if (arg == "-site") {
-      opts.site = next();
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
+      if (arg == "--read_db") {
+        opts.read_db = next();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next());
+      } else if (arg == "--read_def") {
+        opts.read_def = next();
+      } else if (arg == "--write_db") {
+        opts.write_db = next();
+      } else if (arg == "--write_def") {
+        opts.write_def = next();
+      } else if (arg == "-utilization") {
+        opts.utilization = std::stod(next());
+      } else if (arg == "-aspect_ratio") {
+        opts.aspect_ratio = std::stod(next());
+      } else if (arg == "-core_space") {
+        opts.core_space = std::stoi(next());
+      } else if (arg == "-die_area") {
+        opts.die_area = next();
+      } else if (arg == "-core_area") {
+        opts.core_area = next();
+      } else if (arg == "-site") {
+        opts.site = next();
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
+      } else {
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
+      }
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   bool has_db = !opts.read_db.empty();
@@ -123,7 +129,10 @@ odb::Rect parse_rect(const std::string& s, odb::dbBlock* block)
 {
   std::istringstream iss(s);
   double lx, ly, ux, uy;
-  iss >> lx >> ly >> ux >> uy;
+  if (!(iss >> lx >> ly >> ux >> uy)) {
+    std::cerr << "Error: invalid rect format: " << s << "\n";
+    std::exit(1);
+  }
   int dbu = block->getDbUnitsPerMicron();
   return odb::Rect(static_cast<int>(lx * dbu),
                    static_cast<int>(ly * dbu),

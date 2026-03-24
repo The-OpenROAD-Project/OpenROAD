@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -69,46 +70,51 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next_str = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next_str = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
 
-    if (arg == "--read_db") {
-      opts.read_db = next_str();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next_str());
-    } else if (arg == "--read_def") {
-      opts.read_def = next_str();
-    } else if (arg == "--write_db") {
-      opts.write_db = next_str();
-    } else if (arg == "--write_def") {
-      opts.write_def = next_str();
-    } else if (arg == "-max_wire_length") {
-      opts.max_wire_length = std::stod(next_str());
-    } else if (arg == "-slew_margin") {
-      opts.slew_margin = std::stod(next_str());
-    } else if (arg == "-cap_margin") {
-      opts.cap_margin = std::stod(next_str());
-    } else if (arg == "-buffer_gain") {
-      opts.buffer_gain = std::stod(next_str());
-    } else if (arg == "-match_cell_footprint") {
-      opts.match_cell_footprint = true;
-    } else if (arg == "-verbose") {
-      opts.verbose = true;
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
+      if (arg == "--read_db") {
+        opts.read_db = next_str();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next_str());
+      } else if (arg == "--read_def") {
+        opts.read_def = next_str();
+      } else if (arg == "--write_db") {
+        opts.write_db = next_str();
+      } else if (arg == "--write_def") {
+        opts.write_def = next_str();
+      } else if (arg == "-max_wire_length") {
+        opts.max_wire_length = std::stod(next_str());
+      } else if (arg == "-slew_margin") {
+        opts.slew_margin = std::stod(next_str());
+      } else if (arg == "-cap_margin") {
+        opts.cap_margin = std::stod(next_str());
+      } else if (arg == "-buffer_gain") {
+        opts.buffer_gain = std::stod(next_str());
+      } else if (arg == "-match_cell_footprint") {
+        opts.match_cell_footprint = true;
+      } else if (arg == "-verbose") {
+        opts.verbose = true;
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
+      } else {
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
+      }
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   bool has_db = !opts.read_db.empty();

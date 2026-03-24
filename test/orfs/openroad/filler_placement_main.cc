@@ -8,11 +8,11 @@
 //   filler_placement --read_lef tech.lef --read_def placed.def \
 //     --write_def filled.def -masters "FILL*" [-prefix FILLER_] [-verbose]
 
-#include <fnmatch.h>
-
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -24,6 +24,41 @@
 #include "utl/Logger.h"
 
 namespace {
+
+// Convert a shell glob pattern (*, ?) to std::regex.
+// Portable replacement for POSIX fnmatch().
+std::regex glob_to_regex(const std::string& pattern)
+{
+  std::string re;
+  for (char c : pattern) {
+    switch (c) {
+      case '*':
+        re += ".*";
+        break;
+      case '?':
+        re += '.';
+        break;
+      case '.':
+      case '+':
+      case '(':
+      case ')':
+      case '{':
+      case '}':
+      case '[':
+      case ']':
+      case '^':
+      case '$':
+      case '|':
+      case '\\':
+        re += '\\';
+        re += c;
+        break;
+      default:
+        re += c;
+    }
+  }
+  return std::regex(re);
+}
 
 struct Options
 {
@@ -60,40 +95,45 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
 
-    if (arg == "--read_db") {
-      opts.read_db = next();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next());
-    } else if (arg == "--read_def") {
-      opts.read_def = next();
-    } else if (arg == "--write_db") {
-      opts.write_db = next();
-    } else if (arg == "--write_def") {
-      opts.write_def = next();
-    } else if (arg == "-masters") {
-      opts.master_patterns.push_back(next());
-    } else if (arg == "-prefix") {
-      opts.prefix = next();
-    } else if (arg == "-verbose") {
-      opts.verbose = true;
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
+      if (arg == "--read_db") {
+        opts.read_db = next();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next());
+      } else if (arg == "--read_def") {
+        opts.read_def = next();
+      } else if (arg == "--write_db") {
+        opts.write_db = next();
+      } else if (arg == "--write_def") {
+        opts.write_def = next();
+      } else if (arg == "-masters") {
+        opts.master_patterns.push_back(next());
+      } else if (arg == "-prefix") {
+        opts.prefix = next();
+      } else if (arg == "-verbose") {
+        opts.verbose = true;
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
+      } else {
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
+      }
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   bool has_db = !opts.read_db.empty();
@@ -162,12 +202,17 @@ int main(int argc, char* argv[])
   }
 
   // Collect filler masters matching the patterns
+  std::vector<std::regex> patterns;
+  for (const auto& p : opts.master_patterns) {
+    patterns.push_back(glob_to_regex(p));
+  }
+
   dpl::dbMasterSeq filler_masters;
   for (auto* lib : db->getLibs()) {
     for (auto* master : lib->getMasters()) {
       std::string name = master->getName();
-      for (const auto& pattern : opts.master_patterns) {
-        if (fnmatch(pattern.c_str(), name.c_str(), 0) == 0) {
+      for (const auto& re : patterns) {
+        if (std::regex_match(name, re)) {
           filler_masters.push_back(master);
           break;
         }

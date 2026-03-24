@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -79,54 +80,59 @@ void usage(const char* prog)
 
 bool parse_args(int argc, char* argv[], Options& opts)
 {
-  for (int i = 1; i < argc; i++) {
-    std::string arg = argv[i];
-    auto next_str = [&]() -> std::string {
-      if (i + 1 >= argc) {
-        std::cerr << "Error: " << arg << " requires an argument\n";
-        std::exit(1);
-      }
-      return argv[++i];
-    };
+  try {
+    for (int i = 1; i < argc; i++) {
+      std::string arg = argv[i];
+      auto next_str = [&]() -> std::string {
+        if (i + 1 >= argc) {
+          throw std::invalid_argument(std::string(arg)
+                                      + " requires an argument");
+        }
+        return argv[++i];
+      };
 
-    if (arg == "--read_db") {
-      opts.read_db = next_str();
-    } else if (arg == "--read_lef") {
-      opts.read_lef.push_back(next_str());
-    } else if (arg == "--read_def") {
-      opts.read_def = next_str();
-    } else if (arg == "--write_db") {
-      opts.write_db = next_str();
-    } else if (arg == "--write_def") {
-      opts.write_def = next_str();
-    } else if (arg == "-density") {
-      opts.density = std::stof(next_str());
-    } else if (arg == "-bin_grid_count") {
-      opts.bin_grid_count = std::stoi(next_str());
-    } else if (arg == "-overflow") {
-      opts.overflow = std::stof(next_str());
-    } else if (arg == "-pad_left") {
-      opts.pad_left = std::stoi(next_str());
-    } else if (arg == "-pad_right") {
-      opts.pad_right = std::stoi(next_str());
-    } else if (arg == "-skip_io") {
-      opts.skip_io = true;
-    } else if (arg == "-timing_driven") {
-      opts.timing_driven = true;
-    } else if (arg == "-routability_driven") {
-      opts.routability_driven = true;
-    } else if (arg == "-incremental") {
-      opts.incremental = true;
-    } else if (arg == "-threads") {
-      opts.threads = std::stoi(next_str());
-    } else if (arg == "-help" || arg == "--help" || arg == "-h") {
-      usage(argv[0]);
-      std::exit(0);
-    } else {
-      std::cerr << "Error: unknown argument: " << arg << "\n";
-      usage(argv[0]);
-      return false;
+      if (arg == "--read_db") {
+        opts.read_db = next_str();
+      } else if (arg == "--read_lef") {
+        opts.read_lef.push_back(next_str());
+      } else if (arg == "--read_def") {
+        opts.read_def = next_str();
+      } else if (arg == "--write_db") {
+        opts.write_db = next_str();
+      } else if (arg == "--write_def") {
+        opts.write_def = next_str();
+      } else if (arg == "-density") {
+        opts.density = std::stof(next_str());
+      } else if (arg == "-bin_grid_count") {
+        opts.bin_grid_count = std::stoi(next_str());
+      } else if (arg == "-overflow") {
+        opts.overflow = std::stof(next_str());
+      } else if (arg == "-pad_left") {
+        opts.pad_left = std::stoi(next_str());
+      } else if (arg == "-pad_right") {
+        opts.pad_right = std::stoi(next_str());
+      } else if (arg == "-skip_io") {
+        opts.skip_io = true;
+      } else if (arg == "-timing_driven") {
+        opts.timing_driven = true;
+      } else if (arg == "-routability_driven") {
+        opts.routability_driven = true;
+      } else if (arg == "-incremental") {
+        opts.incremental = true;
+      } else if (arg == "-threads") {
+        opts.threads = std::stoi(next_str());
+      } else if (arg == "-help" || arg == "--help" || arg == "-h") {
+        usage(argv[0]);
+        std::exit(0);
+      } else {
+        std::cerr << "Error: unknown argument: " << arg << "\n";
+        usage(argv[0]);
+        return false;
+      }
     }
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "Error: " << e.what() << '\n';
+    return false;
   }
 
   bool has_db = !opts.read_db.empty();

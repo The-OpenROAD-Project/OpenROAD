@@ -95,8 +95,7 @@ def parse_io_args(args):
         if args[i] in IO_FLAGS_WITH_VALUE:
             flag = args[i]
             if i + 1 >= len(args):
-                print(f"Error: {flag} requires a value", file=sys.stderr)
-                sys.exit(1)
+                raise ValueError(f"{flag} requires a value")
             value = resolve_path(args[i + 1])
             io.setdefault(flag, []).append(value)
             i += 2
