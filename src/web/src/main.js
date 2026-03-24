@@ -14,6 +14,7 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ function updateStatus() {
     } else {
         statusDiv.textContent = `pending: ${n}`;
         statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? '#f88' : '#ff0';
+        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
     }
 }
 
@@ -246,7 +247,7 @@ function createLayoutViewer(container) {
     mapDiv.className = 'layout-viewer';
     mapDiv.style.width = '100%';
     mapDiv.style.height = '100%';
-    mapDiv.style.backgroundColor = '#111';
+    mapDiv.style.backgroundColor = 'var(--bg-map)';
     container.element.appendChild(mapDiv);
 
     const heatMapLegend = document.createElement('div');
@@ -346,11 +347,11 @@ function createDRCWidget(container) {
 }
 
 function createClockWidget(container) {
-    new ClockTreeWidget(container, app, redrawAllLayers);
+    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers);
 }
 
 function createChartsWidget(container) {
-    new ChartsWidget(container, app, redrawAllLayers);
+    app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
 }
 
 function createHelpWidget(container) {
@@ -527,7 +528,23 @@ window.addEventListener('resize', () => {
     app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
 });
 
-// Focus a Golden Layout component tab by its componentType name.
+// componentType → display title (must match defaultLayoutConfig).
+const componentTitles = {
+    LayoutViewer: 'Layout',
+    DisplayControls: 'Display Controls',
+    TclConsole: 'Tcl Console',
+    Inspector: 'Inspector',
+    Browser: 'Hierarchy',
+    TimingWidget: 'Timing',
+    DRCWidget: 'DRC',
+    ClockWidget: 'Clock Tree',
+    ChartsWidget: 'Charts',
+    SchematicWidget: 'Schematic',
+    HelpWidget: 'Help',
+    SelectHighlight: 'Select Highlight',
+};
+
+// Focus a Golden Layout component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
     function find(item) {
         if (item.isComponent && item.componentType === componentType) return item;
@@ -540,10 +557,24 @@ function focusComponent(componentType) {
         return null;
     }
     const item = find(app.goldenLayout.rootItem);
-    if (item) item.focus();
+    if (item) {
+        item.focus();
+    } else {
+        const title = componentTitles[componentType] || componentType;
+        app.goldenLayout.addComponent(componentType, undefined, title);
+    }
 }
 
 app.focusComponent = focusComponent;
+
+app.toggleTheme = function() {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('theme', next);
+    // Re-render canvas-based widgets that read theme colors.
+    if (app.chartsWidget) app.chartsWidget.render();
+    if (app.clockTreeWidget) app.clockTreeWidget.render();
+};
 
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
@@ -733,5 +764,7 @@ document.addEventListener('keydown', (e) => {
         app.map.zoomIn();
     } else if (key === 'z' && e.shiftKey && !e.ctrlKey && app.map) {
         app.map.zoomOut();
+    } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        app.toggleTheme();
     }
 }, true);

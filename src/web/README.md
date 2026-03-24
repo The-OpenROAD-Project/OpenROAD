@@ -19,6 +19,7 @@ viewer in the default browser.
 
 ```tcl
 web_server
+    [-port port]
     -dir dir
 ```
 
@@ -26,6 +27,7 @@ web_server
 
 | Switch Name | Description |
 | ----- | ----- |
+| `-port` | TCP port to listen on. Default: `8080`. |
 | `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
 
 ## Features

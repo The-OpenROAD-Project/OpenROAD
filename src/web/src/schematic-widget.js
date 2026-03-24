@@ -11,12 +11,12 @@ export class SchematicWidget {
 
         this.element = document.createElement('div');
         this.element.className = 'schematic-widget';
-        this.element.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; background:#fff; color:#333; overflow:hidden;';
+        this.element.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; background:var(--bg-panel); color:var(--fg-primary); overflow:hidden;';
 
         // ── Controls bar ────────────────────────────────────────────────────
         this.controls = document.createElement('div');
         this.controls.style.cssText =
-            'padding:4px 8px; background:#f5f5f5; border-bottom:1px solid #ddd;' +
+            'padding:4px 8px; background:var(--bg-header); border-bottom:1px solid var(--border);' +
             'flex-shrink:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
         this.controls.innerHTML =
             '<label style="font-size:12px;">Fanin</label>' +
@@ -29,13 +29,13 @@ export class SchematicWidget {
             '<button id="schematic-zoom-out" title="Zoom out">−</button>' +
             '<button id="schematic-select" title="Select mode" style="min-width:64px">Select</button>' +
             '<button id="schematic-zoom-to" title="Zoom to selected cell" disabled>Zoom To</button>' +
-            '<span id="schematic-status" style="color:#888; flex:1;">Select an instance in the layout to view its schematic.</span>';
+            '<span id="schematic-status" style="color:var(--fg-muted); flex:1;">Select an instance in the layout to view its schematic.</span>';
         this.element.appendChild(this.controls);
 
         // ── SVG viewport (overflow hidden; pan/zoom via CSS transform) ──────
         this.svgContainer = document.createElement('div');
         this.svgContainer.style.cssText =
-            'flex:1; overflow:hidden; position:relative; cursor:grab; background:#fff;';
+            'flex:1; overflow:hidden; position:relative; cursor:grab; background:var(--bg-main);';
         this.element.appendChild(this.svgContainer);
 
         this.container.element.appendChild(this.element);
@@ -136,8 +136,8 @@ export class SchematicWidget {
         this._selectMode = !this._selectMode;
         const btn = this.controls.querySelector('#schematic-select');
         if (this._selectMode) {
-            btn.style.background = '#4a90d9';
-            btn.style.color = '#fff';
+            btn.style.background = 'var(--accent)';
+            btn.style.color = 'var(--fg-white)';
             this.svgContainer.style.cursor = 'default';
         } else {
             btn.style.background = '';
