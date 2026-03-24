@@ -32,11 +32,18 @@ def extract_description(text):
 
 
 def extract_tcl_code(text):
+    # Find all ```tcl blocks along with their position to check for skip markers.
     pattern = r"```tcl\s+(.*?)```"
-    tcl_code_matches = re.findall(pattern, text, flags=re.DOTALL)
-    # remove the last tcl match
-    tcl_code_matches = [x for x in tcl_code_matches if "./test/gcd.tcl" not in x]
-    return tcl_code_matches
+    results = []
+    for m in re.finditer(pattern, text, flags=re.DOTALL):
+        # Check the text immediately before this block for a skip marker.
+        preceding = text[: m.start()]
+        if "<!-- checker: skip -->" in preceding.split("\n")[-3:]:
+            continue
+        block = m.group(1)
+        if "./test/gcd.tcl" not in block:
+            results.append(block)
+    return results
 
 
 def extract_arguments(text):
