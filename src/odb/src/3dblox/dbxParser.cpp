@@ -265,7 +265,6 @@ void DbxParser::parsePath(PathAssertion& path, const YAML::Node& path_node)
 {
   if (!path_node.IsSequence()) {
     logError("DBX Path assertion '" + path.name + "' must be a YAML sequence");
-    return;
   }
 
   const std::string prefix = "NOT ";
@@ -287,7 +286,6 @@ void DbxParser::parsePath(PathAssertion& path, const YAML::Node& path_node)
     if (raw.find(".regions.") == std::string::npos) {
       logError("DBX Path assertion entry '" + raw + "' in '" + path.name
                + "' must contain '.regions.' (e.g. HBM_1.regions.r1)");
-      continue;
     }
 
     entry.region = raw;

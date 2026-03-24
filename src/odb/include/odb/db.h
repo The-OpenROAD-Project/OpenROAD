@@ -7455,7 +7455,8 @@ class dbChipPath : public dbObject
   struct Entry
   {
     dbChipRegionInst* region;
-    bool negated;
+    bool negated;  // do not touch this region, i.e., the path must be connected
+                   // without crossing this region
   };
 
   dbChip* getChip() const;
