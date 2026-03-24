@@ -218,6 +218,27 @@ cc_binary(
     ],
 )
 
+py_test(
+    name = "integration_test",
+    srcs = ["integration_test.py"],
+    data = [
+        ":check_antennas",
+        ":detailed_placement",
+        ":detailed_route",
+        ":global_route",
+        ":optimize_mirroring",
+        "//:openroad",
+        "//test/orfs/gcd:gcd_grt",
+        "//test/orfs/gcd:gcd_place",
+        "//test/orfs/gcd:gcd_route",
+    ],
+    tags = [
+        "manual",
+        "orfs",
+    ],
+    timeout = "long",
+)
+
 sh_binary(
     name = "openroad-detailed-placement",
     srcs = ["openroad-detailed-placement.sh"],
