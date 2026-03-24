@@ -117,8 +117,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool disable_hybrid_legalizer,
-                               const bool hybrid_only,
+                               const bool use_diamond,
                                const bool run_abacus)
 {
   incremental_ = incremental;
@@ -135,22 +134,6 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
   }
-
-  if (max_displacement_x == 0 || max_displacement_y == 0) {
-    // defaults
-    max_displacement_x_ = 500;
-    max_displacement_y_ = 100;
-  } else {
-    max_displacement_x_ = max_displacement_x;
-    max_displacement_y_ = max_displacement_y;
-  }
-
-  logger_->info(
-      DPL,
-      5,
-      "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
-      max_displacement_x_,
-      max_displacement_y_);
 
   {
     const int64_t core_area
@@ -180,17 +163,46 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
 
-  if (hybrid_only) {
-    // Run only the hybrid Abacus+Negotiation legalizer, skipping the
-    // standard detailed placement engine entirely.
+  initGrid();
+  setFixedGridCells();
+
+  if (use_diamond) {
+    if (max_displacement_x == 0 || max_displacement_y == 0) {
+      max_displacement_x_ = 500;
+      max_displacement_y_ = 100;
+    } else {
+      max_displacement_x_ = max_displacement_x;
+      max_displacement_y_ = max_displacement_y;
+    }
+
+    logger_->info(
+        DPL,
+        5,
+        "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
+        max_displacement_x_,
+        max_displacement_y_);
+
+    diamondDPL();
+
+    if (!placement_failures_.empty()) {
+      logger_->info(DPL,
+                    34,
+                    "Detailed placement failed on the following {} instances:",
+                    placement_failures_.size());
+      for (auto cell : placement_failures_) {
+        logger_->info(DPL, 35, " {}", cell->name());
+      }
+
+      saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
+      if (!report_file_name.empty()) {
+        writeJsonReport(report_file_name);
+      }
+      logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
+    }
+  } else {
     logger_->info(DPL,
                   1102,
-                  "Running HybridLegalizer only (skipping standard placer).");
-
-    // Initialize the DPL Grid so that PlacementDRC can look up neighbours
-    // and blocked-layer information during isCellLegal().
-    initGrid();
-    setFixedGridCells();
+                  "Running HybridLegalizer (default mode).");
 
     HybridLegalizer hybrid(
         this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
@@ -199,65 +211,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     hybrid.setDplPositions();
 
     if (hybrid.numViolations() > 0) {
-      logger_->warn(DPL, 777, "HybridLegalizer stand-alone failed inside DPL."
-        "\nDid not fully converge. Violations remain: {}", hybrid.numViolations());
-    }
-  } else {
-    detailedPlacement();
-
-    if (!placement_failures_.empty()){
-      if (!disable_hybrid_legalizer) {
-        // Standard engine left some cells illegal.  Give the hybrid
-        // Abacus+Negotiation legalizer a chance to recover before treating
-        // the run as a hard failure.  HybridLegalizer re-reads current OpenDB
-        // locations so it composes correctly with the preceding standard pass.
-        logger_->info(DPL,
-                      1100,
-                      "Standard placer failed on {} instance(s); "
-                      "retrying with HybridLegalizer.",
-                      placement_failures_.size());
-
-        HybridLegalizer hybrid(
-            this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
-        hybrid.setRunAbacus(run_abacus);
-        hybrid.legalize();
-        hybrid.setDplPositions();
-        
-        // Warn if negotiation did not fully converge (non-convergence is not
-        // reported inside HybridLegalizerNeg.cpp to keep that file free of
-        // registered DPL message IDs; we surface it here instead).
-        if (hybrid.numViolations() > 0) {
-          logger_->warn(DPL,
-                        1101,
-                        "HybridLegalizer negotiation did not fully converge; "
-                        "{} violation(s) remain.",
-                        hybrid.numViolations());
-        }
-
-        // Use the hybrid legalizer's own violation count as the ground truth.
-        // If it resolved everything, suppress the failure list entirely.
-        // If violations remain the original placement_failures_ list is still
-        // the best description of what is wrong, so keep it unchanged.
-        if (hybrid.numViolations() == 0) {
-          placement_failures_.clear();
-        }
-      }
-
-      if (!placement_failures_.empty()) {
-        logger_->info(DPL,
-                      34,
-                      "Detailed placement failed on the following {} instances:",
-                      placement_failures_.size());
-        for (auto cell : placement_failures_) {
-          logger_->info(DPL, 35, " {}", cell->name());
-        }
-
-        saveFailures({}, {}, {}, {}, {}, {}, {}, placement_failures_, {}, {});
-        if (!report_file_name.empty()) {
-          writeJsonReport(report_file_name);
-        }
-        logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
-      }
+      logger_->warn(DPL, 777, "HybridLegalizer did not fully converge. "
+        "Violations remain: {}", hybrid.numViolations());
     }
   }
 

@@ -58,17 +58,14 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().y());
 }
 
-void Opendp::detailedPlacement()
+void Opendp::diamondDPL()
 {
   if (debug_observer_) {
     debug_observer_->startPlacement(block_);
   }
 
   placement_failures_.clear();
-  initGrid();
-  // Paint fixed cells.
-  setFixedGridCells();
-  // Paint initially place2d cells (respecting already legalized ones).
+  // Paint initially placed cells (respecting already legalized ones).
   if (incremental_) {
     logger_->report("setInitialGridCells()");
     setInitialGridCells();

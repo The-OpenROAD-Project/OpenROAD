@@ -108,8 +108,7 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool disable_hybrid_legalizer = false,
-                         bool hybrid_only = false,
+                         bool use_diamond = false,
                          bool run_abacus = false);
   int hybridLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;
@@ -219,7 +218,7 @@ class Opendp
   void initPlacementDRC();
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
-  void detailedPlacement();
+  void diamondDPL();
   DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
   int distToRect(const Node* cell, const odb::Rect& rect) const;
   static bool checkOverlap(const odb::Rect& cell, const odb::Rect& box);
@@ -399,7 +398,6 @@ class Opendp
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
   bool incremental_ = false;
-  bool use_hybrid_legalizer_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

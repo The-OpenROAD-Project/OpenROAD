@@ -41,6 +41,7 @@ void Opendp::importDb()
   grid_->setCore(core_);
   have_fillers_ = false;
   disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
+  // disallow_one_site_gaps_ = false;
   debugPrint(logger_,
              utl::DPL,
              "one_site_gap",
