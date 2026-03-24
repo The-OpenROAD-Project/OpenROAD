@@ -228,9 +228,6 @@ py_test(
         ":global_route",
         ":optimize_mirroring",
         "//:openroad",
-        "//test/orfs/gcd:gcd_grt",
-        "//test/orfs/gcd:gcd_place",
-        "//test/orfs/gcd:gcd_route",
     ],
     tags = [
         "manual",

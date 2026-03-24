@@ -93,14 +93,15 @@ class TestBitForBitEquivalence(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmpdir = tempfile.mkdtemp(prefix="openroad_integration_")
-        # Find stage ODBs
-        cls.gcd_place_odb = find_runfile(
+        # Stage ODBs can be provided via env vars (from prior bazelisk build)
+        # or found in runfiles (if listed as data deps).
+        cls.gcd_place_odb = os.environ.get("GCD_PLACE_ODB") or find_runfile(
             "test/orfs/gcd/results/asap7/gcd/base/3_place.odb"
         )
-        cls.gcd_grt_odb = find_runfile(
+        cls.gcd_grt_odb = os.environ.get("GCD_GRT_ODB") or find_runfile(
             "test/orfs/gcd/results/asap7/gcd/base/5_1_grt.odb"
         )
-        cls.gcd_route_odb = find_runfile(
+        cls.gcd_route_odb = os.environ.get("GCD_ROUTE_ODB") or find_runfile(
             "test/orfs/gcd/results/asap7/gcd/base/5_route.odb"
         )
 
