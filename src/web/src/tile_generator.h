@@ -150,6 +150,22 @@ class TileGenerator
       const TileVisibility& vis = {},
       const std::set<std::string>& visible_layers = {});
 
+  struct SnapResult
+  {
+    std::pair<odb::Point, odb::Point> edge;
+    int distance = 0;
+    bool found = false;
+  };
+
+  SnapResult snapAt(int dbu_x,
+                    int dbu_y,
+                    int search_radius,
+                    int point_snap_threshold,
+                    bool horizontal,
+                    bool vertical,
+                    const TileVisibility& vis,
+                    const std::set<std::string>& visible_layers) const;
+
   odb::dbBlock* getBlock() const;
 
   std::vector<unsigned char> generateTile(

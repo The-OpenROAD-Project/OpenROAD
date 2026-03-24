@@ -19,14 +19,16 @@ viewer in the default browser.
 
 ```tcl
 web_server
-    [-dir dir]
+    [-port port]
+    -dir dir
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `[-dir]` | Path to a custom document root directory for serving static files. When omitted, the built-in HTML/JS/CSS assets are used. |
+| `-port` | TCP port to listen on. Default: `8080`. |
+| `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
 
 ## Features
 
@@ -67,11 +69,8 @@ The module has two parts:
 ## Example scripts
 
 ```tcl
-# Start the web viewer with default settings
-web_server
-
-# Start with a custom document root (for development)
-web_server -dir /path/to/custom/html
+# Start the web viewer, pointing at the web assets directory
+web_server -dir /path/to/OpenROAD/src/web/src
 ```
 
 ## Regression tests

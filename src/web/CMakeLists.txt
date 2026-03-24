@@ -2,10 +2,11 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 include("openroad")
+
 swig_lib(NAME         web
          NAMESPACE    web
          I_FILE       src/web.i
-         SCRIPTS      src/web.tcl
+         SCRIPTS      ${CMAKE_CURRENT_SOURCE_DIR}/src/web.tcl
          SWIG_INCLUDES ${ODB_HOME}/src/swig/common
                        ${ODB_HOME}/src/swig/tcl
                        ${ODB_HOME}/include

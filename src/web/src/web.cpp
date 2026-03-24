@@ -5,15 +5,9 @@
 
 #include <netinet/in.h>
 
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/signal_set.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/websocket.hpp>
 #include <csignal>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <exception>
@@ -30,6 +24,13 @@
 #include <utility>
 #include <vector>
 
+#include "boost/asio/io_context.hpp"
+#include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/signal_set.hpp"
+#include "boost/asio/strand.hpp"
+#include "boost/beast/core.hpp"
+#include "boost/beast/http.hpp"
+#include "boost/beast/websocket.hpp"
 #include "clock_tree_report.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
@@ -116,11 +117,31 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.type = WebSocketRequest::SET_ROUTE_GUIDES;
     req.route_guide_action = extract_string(msg, "action");
     req.route_guide_net_name = extract_string(msg, "net_name");
+  } else if (type_str == "schematic_cone") {
+    req.type = WebSocketRequest::SCHEMATIC_CONE;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
+    req.schematic_fanin_depth = extract_int_or(msg, "fanin_depth", 1);
+    req.schematic_fanout_depth = extract_int_or(msg, "fanout_depth", 1);
+  } else if (type_str == "schematic_full") {
+    req.type = WebSocketRequest::SCHEMATIC_FULL;
+  } else if (type_str == "schematic_inspect") {
+    req.type = WebSocketRequest::SCHEMATIC_INSPECT;
+    req.schematic_inst_name = extract_string(msg, "inst_name");
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
     req.select_y = extract_int(msg, "dbu_y");
     req.select_zoom = extract_int_or(msg, "zoom", 0);
+    req.visible_layers = extract_string_array(msg, "visible_layers");
+    req.vis.parseFromJson(msg);
+  } else if (type_str == "snap") {
+    req.type = WebSocketRequest::SNAP;
+    req.snap_x = extract_int(msg, "dbu_x");
+    req.snap_y = extract_int(msg, "dbu_y");
+    req.snap_radius = extract_int(msg, "radius");
+    req.snap_point_threshold = extract_int_or(msg, "point_threshold", 10);
+    req.snap_horizontal = extract_int_or(msg, "horizontal", 1) != 0;
+    req.snap_vertical = extract_int_or(msg, "vertical", 1) != 0;
     req.visible_layers = extract_string_array(msg, "visible_layers");
     req.vis.parseFromJson(msg);
   } else if (type_str == "heatmaps") {
@@ -240,7 +261,7 @@ static http::response<http::string_body> handle_request(
     res.set(http::field::cache_control, "public, max-age=604800");
   } else if (req.method() == http::verb::get && !doc_root.empty()) {
     // Serve static files from doc_root
-    std::string file_path = target_path;
+    std::string file_path = std::move(target_path);
     if (file_path == "/") {
       file_path = "/index.html";
     }
@@ -333,7 +354,7 @@ WebSocketSession::WebSocketSession(
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor())),
-      generator_(generator)
+      generator_(std::move(generator))
 {
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
@@ -428,126 +449,181 @@ void WebSocketSession::on_read(beast::error_code ec)
   const std::string msg = beast::buffers_to_string(buffer_.data());
   buffer_.consume(buffer_.size());
 
-  const WebSocketRequest req = parse_web_socket_request(msg);
+  WebSocketRequest req = parse_web_socket_request(msg);
   auto self = shared_from_this();
 
   switch (req.type) {
     case WebSocketRequest::SELECT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSelect(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleSelect(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::SNAP:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleSnap(req));
+                });
       break;
     case WebSocketRequest::INSPECT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleInspect(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleInspect(req, self->state_));
+                });
       break;
     case WebSocketRequest::INSPECT_BACK:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleInspectBack(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleInspectBack(
+                      req, self->state_));
+                });
       break;
     case WebSocketRequest::HOVER:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->select_handler_.handleHover(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::SCHEMATIC_CONE:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicCone(req));
+      });
+      break;
+    case WebSocketRequest::SCHEMATIC_FULL:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleSchematicFull(req));
+      });
+      break;
+    case WebSocketRequest::SCHEMATIC_INSPECT:
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
-            self->select_handler_.handleHover(req, self->state_));
+            self->select_handler_.handleSchematicInspect(req, self->state_));
       });
       break;
     case WebSocketRequest::TCL_EVAL:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->tcl_handler_.handleTclEval(req));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->tcl_handler_.handleTclEval(req));
+                });
       break;
     case WebSocketRequest::TIMING_REPORT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->timing_handler_.handleTimingReport(req));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->timing_handler_.handleTimingReport(req));
+          });
       break;
     case WebSocketRequest::TIMING_HIGHLIGHT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->timing_handler_.handleTimingHighlight(req, self->state_));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->timing_handler_.handleTimingHighlight(req, self->state_));
+          });
       break;
     case WebSocketRequest::CLOCK_TREE:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->clock_tree_handler_.handleClockTree(req));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->clock_tree_handler_.handleClockTree(req));
+                });
       break;
     case WebSocketRequest::CLOCK_TREE_HIGHLIGHT:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->clock_tree_handler_.handleClockTreeHighlight(
-            req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->clock_tree_handler_.handleClockTreeHighlight(
+                          req, self->state_));
+                });
       break;
     case WebSocketRequest::SLACK_HISTOGRAM:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->timing_handler_.handleSlackHistogram(req));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->timing_handler_.handleSlackHistogram(req));
+                });
       break;
     case WebSocketRequest::CHART_FILTERS:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->timing_handler_.handleChartFilters(req));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->timing_handler_.handleChartFilters(req));
+          });
       break;
     case WebSocketRequest::MODULE_HIERARCHY:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->tile_handler_.handleModuleHierarchy(req));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleModuleHierarchy(req));
+                });
       break;
     case WebSocketRequest::SET_MODULE_COLORS:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleSetModuleColors(req, self->state_));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->tile_handler_.handleSetModuleColors(req, self->state_));
+          });
       break;
     case WebSocketRequest::SET_FOCUS_NETS:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSetFocusNets(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->select_handler_.handleSetFocusNets(
+                      req, self->state_));
+                });
       break;
     case WebSocketRequest::SET_ROUTE_GUIDES:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->select_handler_.handleSetRouteGuides(req, self->state_));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->select_handler_.handleSetRouteGuides(req, self->state_));
+          });
       break;
     case WebSocketRequest::HEATMAPS:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleHeatMaps(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleHeatMaps(req, self->state_));
+                });
       break;
     case WebSocketRequest::SET_ACTIVE_HEATMAP:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleSetActiveHeatMap(req, self->state_));
-      });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(
+                self->tile_handler_.handleSetActiveHeatMap(req, self->state_));
+          });
       break;
     case WebSocketRequest::SET_HEATMAP:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleSetHeatMap(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleSetHeatMap(req, self->state_));
+                });
       break;
     case WebSocketRequest::HEATMAP_TILE:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(
-            self->tile_handler_.handleHeatMapTile(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleHeatMapTile(req, self->state_));
+                });
       break;
     case WebSocketRequest::LIST_DIR:
       net::post(websocket_.get_executor(),
-                [self, req]() { self->queue_response(handleListDir(req)); });
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(handleListDir(req));
+                });
       break;
     default:
-      net::post(websocket_.get_executor(), [self, req]() {
-        self->queue_response(self->tile_handler_.handleTile(req, self->state_));
-      });
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->tile_handler_.handleTile(req, self->state_));
+                });
       break;
   }
 
@@ -848,22 +924,24 @@ Listener::Listener(net::io_context& ioc,
 
   acceptor_.open(endpoint.protocol(), ec);
   if (ec) {
-    return;
+    logger_->error(utl::WEB, 10, "Failed to open acceptor: {}", ec.message());
   }
 
   acceptor_.set_option(net::socket_base::reuse_address(true), ec);
   if (ec) {
-    return;
+    logger_->error(
+        utl::WEB, 11, "Failed to set reuse_address option: {}", ec.message());
   }
 
   acceptor_.bind(endpoint, ec);
   if (ec) {
-    return;
+    logger_->error(
+        utl::WEB, 17, "Failed to bind to endpoint: {}", ec.message());
   }
 
   acceptor_.listen(net::socket_base::max_listen_connections, ec);
   if (ec) {
-    return;
+    logger_->error(utl::WEB, 18, "Failed to listen: {}", ec.message());
   }
 }
 
@@ -880,6 +958,9 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
 {
   if (ec) {
     debugPrint(logger_, utl::WEB, "http", 1, "accept error: {}", ec.message());
+    if (ec == net::error::operation_aborted || !acceptor_.is_open()) {
+      return;
+    }
   } else {
     // Route through DetectSession to handle both HTTP and WebSocket
     std::make_shared<DetectSession>(std::move(socket),
@@ -908,7 +989,7 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve(const std::string& doc_root)
+void WebServer::serve(int port, const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
@@ -919,22 +1000,34 @@ void WebServer::serve(const std::string& doc_root)
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
-    uint16_t const port = 8080;
+    uint16_t const u_port = port;
     int const num_threads = 32;
 
     if (!doc_root.empty()) {
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
+
+    const std::string url = "http://localhost:" + std::to_string(port);
     logger_->info(utl::WEB,
                   1,
-                  "Server starting on http://:{} with {} threads...",
-                  port,
+                  "Server starting on {} with {} threads...",
+                  url,
                   num_threads);
+
+#if defined(__APPLE__)
+    std::string cmd = "open " + url + " > /dev/null 2>&1";
+#elif defined(_WIN32)
+    std::string cmd = "start " + url + " > nul 2>&1";
+#else
+    std::string cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
+#endif
+    int ret = std::system(cmd.c_str());
+    (void) ret;
 
     net::io_context ioc{num_threads};
 
     std::make_shared<Listener>(ioc,
-                               tcp::endpoint{address, port},
+                               tcp::endpoint{address, u_port},
                                generator_,
                                tcl_eval,
                                timing_report,

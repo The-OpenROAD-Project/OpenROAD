@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -5,7 +6,7 @@
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -30,8 +31,6 @@ PASSFAIL_TESTS = [
 # Disabled in CMakeLists.txt
 MANUAL_TESTS = [
     "generate_rules",
-    "rcx_man_tcl_check",
-    "rcx_readme_msgs_check",
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -130,4 +129,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "rcx_man_tcl_check",
+    srcs = ["rcx_man_tcl_check.py"],
+    data = ["//src/rcx:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "rcx_readme_msgs_check",
+    data = [
+        "//src/rcx:doc_files",
+        "//src/rcx:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

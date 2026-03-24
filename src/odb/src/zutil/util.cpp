@@ -77,9 +77,11 @@ static void cutRow(dbBlock* block,
       odb::dbInst* inst
           = static_cast<odb::dbInst*>(row_blockage_bbox->getBoxOwner());
       odb::dbBox* halo = inst->getHalo();
-      if (halo != nullptr) {
-        row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo->xMin(),
-                                     row_blockage_bbox->xMax() + halo->xMax());
+      if (halo != nullptr && !halo->isSoft()) {
+        Rect halo_rect = inst->getTransformedHalo();
+        row_blockage_xs.emplace_back(
+            row_blockage_bbox->xMin() - halo_rect.xMin(),
+            row_blockage_bbox->xMax() + halo_rect.xMax());
       } else {
         row_blockage_xs.emplace_back(row_blockage_bbox->xMin() - halo_x,
                                      row_blockage_bbox->xMax() + halo_x);
@@ -167,15 +169,20 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
   const Rect rowBB = row->getBBox();
 
   odb::dbBox* halo = nullptr;
+  odb::Rect transformed_halo;
   if (blockage->getOwnerType() == odb::dbBoxOwner::INST) {
     halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())->getHalo();
+    transformed_halo = static_cast<odb::dbInst*>(blockage->getBoxOwner())
+                           ->getTransformedHalo();
   }
+
+  const bool use_inst_halo = halo != nullptr && !halo->isSoft();
 
   // Check if Y has overlap first since rows are long and skinny
   const int blockage_lly
-      = blockage->yMin() - (halo != nullptr ? halo->yMin() : halo_y);
+      = blockage->yMin() - (use_inst_halo ? transformed_halo.yMin() : halo_y);
   const int blockage_ury
-      = blockage->yMax() + (halo != nullptr ? halo->yMax() : halo_y);
+      = blockage->yMax() + (use_inst_halo ? transformed_halo.yMax() : halo_y);
   const int row_lly = rowBB.yMin();
   const int row_ury = rowBB.yMax();
 
@@ -184,9 +191,9 @@ static bool overlaps(dbBox* blockage, dbRow* row, int halo_x, int halo_y)
   }
 
   const int blockage_llx
-      = blockage->xMin() - (halo != nullptr ? halo->xMin() : halo_x);
+      = blockage->xMin() - (use_inst_halo ? transformed_halo.xMin() : halo_x);
   const int blockage_urx
-      = blockage->xMax() + (halo != nullptr ? halo->xMax() : halo_x);
+      = blockage->xMax() + (use_inst_halo ? transformed_halo.xMax() : halo_x);
   const int row_llx = rowBB.xMin();
   const int row_urx = rowBB.xMax();
 

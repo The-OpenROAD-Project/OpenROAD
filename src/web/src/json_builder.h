@@ -239,7 +239,7 @@ class JsonBuilder
   {
     maybeComma();
     buf_ += '"';
-    buf_ += key;
+    buf_ += json_escape(key);
     buf_ += "\": ";
   }
 
