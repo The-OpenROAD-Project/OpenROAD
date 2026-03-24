@@ -1017,13 +1017,11 @@ std::vector<unsigned char> TileGenerator::generateTile(
               continue;
             }
             odb::dbSBox* sbox = std::get<0>(shape);
-            std::vector<odb::dbBox*> via_boxes;
+            odb::dbSet<odb::dbBox> via_boxes;
             if (auto tech_via = sbox->getTechVia()) {
-              via_boxes.assign(tech_via->getBoxes().begin(),
-                               tech_via->getBoxes().end());
+              via_boxes = tech_via->getBoxes();
             } else if (auto block_via = sbox->getBlockVia()) {
-              via_boxes.assign(block_via->getBoxes().begin(),
-                               block_via->getBoxes().end());
+              via_boxes = block_via->getBoxes();
             }
             const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
                                     (sbox->yMin() + sbox->yMax()) / 2);
