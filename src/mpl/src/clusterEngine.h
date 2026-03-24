@@ -253,7 +253,6 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
   std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
-  bool use_def_halo_{false};
 };
 
 }  // namespace mpl
