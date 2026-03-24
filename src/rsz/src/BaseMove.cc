@@ -836,11 +836,11 @@ bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
 {
   // Check capacitance limit across all corners (not just one).
   float cap1, max_cap1, cap_slack1;
-  const sta::Scene* corner1;
+  const sta::Scene* scene1;
   const sta::RiseFall* tr1;
   sta_->checkCapacitance(
       output_pin, sta_->scenes(), resizer_->max_,
-      cap1, max_cap1, cap_slack1, tr1, corner1);
+      cap1, max_cap1, cap_slack1, tr1, scene1);
 
   debugPrint(logger_,
              RSZ,
@@ -851,7 +851,7 @@ bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
              max_cap1,
              output_cap);
 
-  if (max_cap1 > 0.0 && corner1 && output_cap > max_cap1) {
+  if (max_cap1 > 0.0 && scene1 && output_cap > max_cap1) {
     debugPrint(logger_,
                RSZ,
                "opt_moves",
@@ -875,12 +875,12 @@ bool BaseMove::checkMaxSlewViolation(const sta::Pin* output_pin,
   float output_res = output_port->driveResistance();
   float output_slew = output_slew_factor * output_res * output_cap;
 
-  // Check slew limit across all corners (not just one).
-  for (const sta::Scene* corner : sta_->scenes()) {
+  // Check slew limit across all scenes (not just one).
+  for (const sta::Scene* scene : sta_->scenes()) {
     float max_slew;
     bool slew_limit_exists;
     sta_->findSlewLimit(
-        output_port, corner, resizer_->max_, max_slew, slew_limit_exists);
+        output_port, scene, resizer_->max_, max_slew, slew_limit_exists);
 
     if (slew_limit_exists && output_slew > max_slew) {
       debugPrint(logger_,
