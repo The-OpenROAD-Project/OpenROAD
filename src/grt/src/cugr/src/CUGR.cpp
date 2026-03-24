@@ -312,6 +312,7 @@ NetRouteMap CUGR::getRoutes()
 
     auto& routing_tree = net->getRoutingTree();
     if (!routing_tree) {
+      continue;
     }
     GRTreeNode::preorder(
         routing_tree, [&](const std::shared_ptr<GRTreeNode>& node) {
@@ -583,6 +584,7 @@ void CUGR::updateDbCongestion()
   for (int layer = 0; layer < grid_graph_->getNumLayers(); layer++) {
     odb::dbTechLayer* db_layer = db_tech->findRoutingLayer(layer + 1);
     if (db_layer == nullptr) {
+      continue;
     }
 
     for (int y = 0; y < y_size; y++) {
