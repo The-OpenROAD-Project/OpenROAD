@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <ostream>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
