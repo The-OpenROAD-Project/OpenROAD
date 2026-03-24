@@ -94,9 +94,16 @@ git_override(
     commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
+```
 
-# OpenROAD's toolchains_llvm extension is dev_dependency,
-# so the root module must configure the C++ toolchain.
+### Suggested: pin the C++ toolchain for reproducibility
+
+OpenROAD uses `toolchains_llvm` internally to lock the compiler version
+and ensure reproducible builds across developers and CI. Downstream
+consumers can use any C++20-capable compiler, but pinning the same
+toolchain is recommended to avoid compiler-specific issues:
+
+```starlark
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
