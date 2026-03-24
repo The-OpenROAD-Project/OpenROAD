@@ -3,11 +3,12 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -22,37 +23,22 @@ class dbOStream;
 //
 struct _dbTechViaLayerRuleFlags
 {
-  uint _direction : 2;
-  uint _has_enclosure : 1;
-  uint _has_width : 1;
-  uint _has_overhang : 1;
-  uint _has_metal_overhang : 1;
-  uint _has_resistance : 1;
-  uint _has_spacing : 1;
-  uint _has_rect : 1;
-  uint _spare_bits : 23;
+  uint32_t direction : 2;
+  uint32_t has_enclosure : 1;
+  uint32_t has_width : 1;
+  uint32_t has_overhang : 1;
+  uint32_t has_metal_overhang : 1;
+  uint32_t has_resistance : 1;
+  uint32_t has_spacing : 1;
+  uint32_t has_rect : 1;
+  uint32_t spare_bits : 23;
 };
 
 class _dbTechViaLayerRule : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  _dbTechViaLayerRuleFlags _flags;
-  int _overhang1;
-  int _overhang2;
-  int _min_width;
-  int _max_width;
-  int _overhang;
-  int _metal_overhang;
-  int _spacing_x;
-  int _spacing_y;
-  double _resistance;
-  Rect _rect;
-  dbId<_dbTechLayer> _layer;
-
   _dbTechViaLayerRule(_dbDatabase*, const _dbTechViaLayerRule& v);
   _dbTechViaLayerRule(_dbDatabase*);
-  ~_dbTechViaLayerRule();
 
   bool operator==(const _dbTechViaLayerRule& rhs) const;
   bool operator!=(const _dbTechViaLayerRule& rhs) const
@@ -60,6 +46,20 @@ class _dbTechViaLayerRule : public _dbObject
     return !operator==(rhs);
   }
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  _dbTechViaLayerRuleFlags flags_;
+  int overhang1_;
+  int overhang2_;
+  int min_width_;
+  int max_width_;
+  int overhang_;
+  int metal_overhang_;
+  int spacing_x_;
+  int spacing_y_;
+  double resistance_;
+  Rect rect_;
+  dbId<_dbTechLayer> layer_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbTechViaLayerRule& v);

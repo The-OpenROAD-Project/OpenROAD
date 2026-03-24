@@ -6,6 +6,7 @@ or_integration_tests(
   TESTS
     array
     array_ins_delay
+    array_max_wl
     array_no_blockages
     array_repair_clock_nets
     check_buffers
@@ -19,6 +20,7 @@ or_integration_tests(
     check_max_fanout2
     check_max_fanout3
     check_wire_rc_cts
+    clock_buffer_footprint
     dummy_load
     find_clock
     find_clock_pad
@@ -39,13 +41,11 @@ or_integration_tests(
     simple_test_clustered
     simple_test_clustered_max_cap
     simple_test_hier
+    sink_clustering_collision
     skip_nets
     twice
 )
 
-# Skipped
-#cts_man_tcl_check
-#cts_readme_msgs_check
 add_executable(cts_unittest cts_unittest.cc)
 target_include_directories(cts_unittest
   PUBLIC

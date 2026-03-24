@@ -170,20 +170,20 @@ class fr2DLookupTbl
   // debug
   void printTbl() const
   {
-    std::cout << "rowName: " << rowName_ << std::endl;
+    std::cout << "rowName: " << rowName_ << '\n';
     for (auto& m : rows_) {
       std::cout << m << " ";
     }
-    std::cout << "\n colName: " << colName_ << std::endl;
+    std::cout << "\n colName: " << colName_ << '\n';
     for (auto& m : cols_) {
       std::cout << m << " ";
     }
-    std::cout << "\n vals: " << std::endl;
+    std::cout << "\n vals: \n";
     for (auto& m : vals_) {
       for (auto& n : m) {
         std::cout << n << " ";
       }
-      std::cout << std::endl;
+      std::cout << '\n';
     }
   }
 

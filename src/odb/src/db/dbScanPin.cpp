@@ -7,12 +7,13 @@
 #include <variant>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <type_traits>
 namespace {
 template <class>
 inline constexpr bool always_false_v = false;
@@ -23,12 +24,15 @@ template class dbTable<_dbScanPin>;
 
 bool _dbScanPin::operator==(const _dbScanPin& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+
   // User Code Begin ==
   if (pin_ != rhs.pin_) {
     return false;
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanPin::operator<(const _dbScanPin& rhs) const
@@ -84,10 +88,10 @@ std::variant<dbBTerm*, dbITerm*> dbScanPin::getPin() const
         using T = std::decay_t<decltype(pin)>;
         if constexpr (std::is_same_v<T, dbId<_dbBTerm>>) {
           return std::variant<dbBTerm*, dbITerm*>(
-              (dbBTerm*) block->_bterm_tbl->getPtr(pin));
+              (dbBTerm*) block->bterm_tbl_->getPtr(pin));
         } else if constexpr (std::is_same_v<T, dbId<_dbITerm>>) {
           return std::variant<dbBTerm*, dbITerm*>(
-              (dbITerm*) block->_iterm_tbl->getPtr(pin));
+              (dbITerm*) block->iterm_tbl_->getPtr(pin));
         } else {
           static_assert(always_false_v<T>, "non-exhaustive visitor!");
         }

@@ -12,9 +12,6 @@ or_integration_tests(
     sub_modules_sky130
 )
 
-# Skipped
-#dft_man_tcl_check
-#dft_readme_msgs_check
 
 find_package(Boost CONFIG)
 add_subdirectory(cpp)

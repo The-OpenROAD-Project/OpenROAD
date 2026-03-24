@@ -27,9 +27,10 @@ cc_library(
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.json",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -91,6 +92,26 @@ cc_library(
 )
 
 cc_library(
+    name = "IpChecker",
+    srcs = [
+        "src/IpChecker.cc",
+    ],
+    hdrs = [
+        "include/db_sta/IpChecker.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "dbNetwork",
     srcs = [
         "src/dbEditHierarchy.cc",
@@ -113,6 +134,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "include/db_sta/IpChecker.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
@@ -129,6 +151,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":IpChecker",
         ":dbNetwork",
         ":dbSta",
         "//:ord",
@@ -137,12 +160,14 @@ cc_library(
         "//src/utl",
         "@boost.json",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
 tcl_encode(
     name = "tcl",
+    # Encode sta:tcl_scripts before dbSta.tcl, as dbSta.tcl will
+    # override sta_error and sta_warn.
     srcs = ["//src/sta:tcl_scripts"] + [
         "src/dbReadVerilog.tcl",
         "src/dbSta.tcl",

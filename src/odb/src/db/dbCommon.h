@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <string.h>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
 #include <cstdlib>
 #include <cstring>
@@ -15,9 +15,9 @@ template <typename T>
 inline unsigned int flagsToUInt(T* obj)
 {
   // Safe type punning
-  static_assert(sizeof(obj->_flags) == 4, "flags size != 4");
+  static_assert(sizeof(obj->flags_) == 4, "flags size != 4");
   unsigned int i;
-  std::memcpy(&i, &obj->_flags, sizeof(obj->_flags));
+  std::memcpy(&i, &obj->flags_, sizeof(obj->flags_));
   return i;
 }
 

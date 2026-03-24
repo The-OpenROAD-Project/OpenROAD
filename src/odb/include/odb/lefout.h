@@ -16,7 +16,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -38,20 +37,39 @@ class dbProperty;
 
 class lefout
 {
-  bool _use_master_ids;
-  bool _use_alias;
-  bool _write_marked_masters;
-  double _dist_factor;
-  double _area_factor;
-  utl::Logger* logger_;
-  int bloat_factor_;
-  bool bloat_occupied_layers_;
+ public:
+  double lefdist(int value) { return value * dist_factor_; }
+  double lefarea(int value) { return value * area_factor_; }
+
+  lefout(utl::Logger* logger, std::ostream& out) : _out(out)
+  {
+    write_marked_masters_ = use_alias_ = use_master_ids_ = false;
+    dist_factor_ = 0.001;
+    area_factor_ = 0.000001;
+    logger_ = logger;
+    bloat_factor_ = 10;
+    bloat_occupied_layers_ = false;
+  }
+
+  void setWriteMarkedMasters(bool value) { write_marked_masters_ = value; }
+  void setUseLayerAlias(bool value) { use_alias_ = value; }
+  void setUseMasterIds(bool value) { use_master_ids_ = value; }
+  void setBloatFactor(int value) { bloat_factor_ = value; }
+  void setBloatOccupiedLayers(bool value) { bloat_occupied_layers_ = value; }
+
+  void writeTech(dbTech* tech);
+  void writeLib(dbLib* lib);
+  void writeTechAndLib(dbLib* lib);
+  void writeAbstractLef(dbBlock* db_block);
+
+  std::ostream& out() { return _out; }
+
+ private:
+  using ObstructionMap
+      = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
   void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
-
-  using ObstructionMap
-      = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
@@ -105,34 +123,14 @@ class lefout
                          ObstructionMap& obstructions) const;
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
- public:
-  double lefdist(int value) { return value * _dist_factor; }
-  double lefarea(int value) { return value * _area_factor; }
-
-  lefout(utl::Logger* logger, std::ostream& out) : _out(out)
-  {
-    _write_marked_masters = _use_alias = _use_master_ids = false;
-    _dist_factor = 0.001;
-    _area_factor = 0.000001;
-    logger_ = logger;
-    bloat_factor_ = 10;
-    bloat_occupied_layers_ = false;
-  }
-
-  void setWriteMarkedMasters(bool value) { _write_marked_masters = value; }
-  void setUseLayerAlias(bool value) { _use_alias = value; }
-  void setUseMasterIds(bool value) { _use_master_ids = value; }
-  void setBloatFactor(int value) { bloat_factor_ = value; }
-  void setBloatOccupiedLayers(bool value) { bloat_occupied_layers_ = value; }
-
-  void writeTech(dbTech* tech);
-  void writeLib(dbLib* lib);
-  void writeTechAndLib(dbLib* lib);
-  void writeAbstractLef(dbBlock* db_block);
-
-  std::ostream& out() { return _out; }
-
- protected:
   std::ostream& _out;
+  bool use_master_ids_;
+  bool use_alias_;
+  bool write_marked_masters_;
+  double dist_factor_;
+  double area_factor_;
+  utl::Logger* logger_;
+  int bloat_factor_;
+  bool bloat_occupied_layers_;
 };
 }  // namespace odb

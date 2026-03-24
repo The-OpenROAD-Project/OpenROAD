@@ -13,6 +13,7 @@
 #include "boost/asio.hpp"
 #include "boost/beast.hpp"
 #include "utl/Logger.h"
+#include "utl/prometheus/text_serializer.h"
 
 namespace {
 
@@ -67,8 +68,9 @@ PrometheusMetricsServer::~PrometheusMetricsServer()
       boost::asio::ip::tcp::socket socket(io_context);
       boost::asio::ip::tcp::endpoint endpoint(
           boost::asio::ip::make_address("127.0.0.1"), port_);
-      socket.connect(endpoint);         // This will unblock the accept().
-    } catch (const std::exception& e) { /*Do nothing, we're dying*/
+      socket.connect(endpoint);          // This will unblock the accept().
+    } catch (const std::exception& e) {  // NOLINT(bugprone-empty-catch)
+                                         /*Do nothing, we're dying*/
     }
   }
   worker_thread_.join();

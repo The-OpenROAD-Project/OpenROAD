@@ -3,16 +3,19 @@
 
 #pragma once
 
+#include <cstdint>
 #include <list>
 #include <map>
 #include <ostream>
+#include <set>
 #include <string>
+#include <unordered_map>
 
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbObject.h"
 #include "odb/defout.h"
-#include "odb/odb.h"
+
 namespace utl {
 class Logger;
 }
@@ -56,7 +59,10 @@ class DefOut::Impl
 
   int defdist(int value) { return (int) (((double) value) * _dist_factor); }
 
-  int defdist(uint value) { return (uint) (((double) value) * _dist_factor); }
+  int defdist(uint32_t value)
+  {
+    return (uint32_t) (((double) value) * _dist_factor);
+  }
 
   void writePropertyDefinitions(dbBlock* block);
   void writeRows(dbBlock* block);
@@ -80,7 +86,9 @@ class DefOut::Impl
   void writeFills(dbBlock* block);
   void writeNets(dbBlock* block);
   void writeNet(dbNet* net);
-  void writeSNet(dbNet* net);
+  void writeSNet(
+      dbNet* net,
+      const std::unordered_map<std::string, std::set<dbNet*>>& snet_term_map);
   void writeWire(dbWire* wire);
   void writeSWire(dbSWire* wire);
   void writeSpecialPath(dbSBox* box);

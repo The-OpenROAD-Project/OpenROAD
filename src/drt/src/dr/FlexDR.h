@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <triton_route/TritonRoute.h>
-
 #include <cstdint>
 #include <deque>
 #include <list>
@@ -18,20 +16,27 @@
 
 #include "boost/polygon/polygon.hpp"
 #include "boost/serialization/export.hpp"
+#include "db/drObj/drAccessPattern.h"
+#include "db/drObj/drFig.h"
 #include "db/drObj/drMarker.h"
 #include "db/drObj/drNet.h"
+#include "db/infra/frBox.h"
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
 #include "dr/FlexWavefront.h"
+#include "drt/TritonRoute.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -70,6 +75,7 @@ struct FlexDRViaData
   friend class boost::serialization::access;
 };
 
+class FlexDRFlow;
 class FlexDR
 {
  public:
@@ -93,13 +99,6 @@ class FlexDR
     int last_reported_perc{0};
     frTime time;
   };
-  struct IterationsControl
-  {
-    bool skip_till_changed{false};
-    SearchRepairArgs last_args;
-    bool fixing_max_spacing{false};
-  };
-
   // constructors
   FlexDR(TritonRoute* router,
          frDesign* designIn,
@@ -146,7 +145,7 @@ class FlexDR
   void fixMaxSpacing();
 
  private:
-  IterationsControl control_;
+  std::unique_ptr<FlexDRFlow> flow_state_machine_;
   TritonRoute* router_;
   frDesign* design_;
   utl::Logger* logger_;
@@ -206,8 +205,50 @@ class FlexDR
   odb::Rect getDRVBBox(const odb::Rect& drv_rect) const;
   void stubbornTilesFlow(const SearchRepairArgs& args,
                          IterationProgress& iter_prog);
+  void guideTilesFlow(const SearchRepairArgs& args,
+                      IterationProgress& iter_prog);
   void optimizationFlow(const SearchRepairArgs& args,
                         IterationProgress& iter_prog);
+};
+
+class FlexDRFlow
+{
+ public:
+  enum class State
+  {
+    OPTIMIZATION,
+    STUBBORN,
+    GUIDES,
+    SKIP
+  };
+
+  struct FlowContext
+  {
+    int num_violations{0};
+    FlexDR::SearchRepairArgs args;
+  };
+
+  FlexDRFlow() = default;
+
+  State determineNextFlow(const FlowContext& context);
+
+  State getCurrentState() const;
+
+  std::string getFlowName() const;
+
+  void setLastIterationEffective(bool value);
+
+  void setFixingMaxSpacing(bool value);
+
+ private:
+  bool isArgsChanged(const FlowContext& context) const;
+
+  State current_state_{State::OPTIMIZATION};
+  bool last_iteration_effective_{true};
+  bool fixing_max_spacing_{false};
+  FlexDR::SearchRepairArgs last_args_;
+
+  static constexpr int STUBBORN_FLOW_VIOLATION_THRESHOLD = 100;
 };
 
 class FlexDRWorker;

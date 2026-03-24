@@ -4,6 +4,13 @@ import utl
 import re
 from openroad import Design
 
+if os.environ.get("BAZEL_TEST") == "1":
+    from openroad import PlaceOptions
+else:
+    import gpl
+
+    PlaceOptions = gpl.PlaceOptions
+
 
 def get_runfiles_path_to(path):
     # If we're not in bazel mode assume Ctest deals
@@ -106,6 +113,7 @@ def make_design(tech):
     logger.suppressMessage(utl.ORD, 30)
 
     # suppress grt message with the suggested adjustment
+    logger.suppressMessage(utl.GRT, 303)
     logger.suppressMessage(utl.GRT, 704)
 
     return design

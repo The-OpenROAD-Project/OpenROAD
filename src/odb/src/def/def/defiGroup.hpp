@@ -52,11 +52,8 @@ class defiGroup
   void clear();
 
   void setup(const char* name);
-  void addProperty(const char* name, const char* value, const char type);
-  void addNumProperty(const char* name,
-                      const double d,
-                      const char* value,
-                      const char type);
+  void addProperty(const char* name, const char* value, char type);
+  void addNumProperty(const char* name, double d, const char* value, char type);
   void addRegionRect(int xl, int yl, int xh, int yh);
   void setRegionName(const char* name);
   void setMaxX(int x);

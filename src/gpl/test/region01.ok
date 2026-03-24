@@ -1,0 +1,222 @@
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd__nom.tlef, created 13 layers, 25 vias
+[WARNING ODB-0220] WARNING (LEFPARS-2008): NOWIREEXTENSIONATPIN statement is obsolete in version 5.6 or later.
+The NOWIREEXTENSIONATPIN statement will be ignored. See file sky130hd/sky130_fd_sc_hd.lef at line 2.
+
+[INFO ODB-0227] LEF file: sky130hd/sky130_fd_sc_hd.lef, created 437 library cells
+[INFO IFP-0107] Defining die area using utilization: 5.00% and aspect ratio: 1.
+[WARNING UPF-0024] Isolation spm_inst_0_isolation defined, but no cells defined.
+[WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
+[INFO IFP-0001] Added 137 rows of 811 site unithd.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO IFP-0101] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO IFP-0102] Core area:                       139017.078 um^2
+[INFO IFP-0103] Total instances area:              6974.189 um^2
+[INFO IFP-0104] Effective utilization:                0.050
+[INFO IFP-0105] Number of instances:                    630
+[INFO PDN-0101] Using VDD_0 as power net for Core domain.
+[INFO PDN-0102] Using GND as ground net for Core domain.
+[INFO PDN-0001] Inserting grid: spm_inst_0_grid
+[INFO PDN-0001] Inserting grid: spm_inst_1_grid
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 1364
+[INFO PPL-0002] Number of I/O             37
+[INFO PPL-0003] Number of I/O w/sink      36
+[INFO PPL-0004] Number of I/O w/o sink    1
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 7235.17 um.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 1000
+[INFO GPL-0003] SiteSize: (  0.460  2.720 ) um
+[INFO GPL-0004] CoreBBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO GPL-0036] Movable instances area:       6974.189 um^2
+[INFO GPL-0037] Total instances area:         6974.189 um^2
+[INFO GPL-0035] Pin density area adjust:       477.053 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:               103
+[INFO GPL-0007] Movable instances:                   0
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                   103
+[INFO GPL-0010] Number of nets:                    666
+[INFO GPL-0011] Number of pins:                   2059
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                139017.078 um^2
+[INFO GPL-0017] Fixed instances area:        68045.261 um^2
+[INFO GPL-0018] Movable instances area:          0.000 um^2
+[INFO GPL-0019] Utilization:                     0.000 %
+[INFO GPL-0020] Standard cells area:             0.000 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0032] ---- Initialize Region: spm_inst_0_domain
+[INFO GPL-0006] Number of instances:               315
+[INFO GPL-0007] Movable instances:                 315
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    666
+[INFO GPL-0011] Number of pins:                   2059
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0014] Region name: spm_inst_0_domain.
+[INFO GPL-0015] Region area:                 23100.000 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:       3725.621 um^2
+[INFO GPL-0019] Utilization:                    16.128 %
+[INFO GPL-0020] Standard cells area:          3725.621 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0032] ---- Initialize Region: spm_inst_1_domain
+[INFO GPL-0006] Number of instances:               315
+[INFO GPL-0007] Movable instances:                 315
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                    666
+[INFO GPL-0011] Number of pins:                   2059
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 377.475 377.475 ) um
+[INFO GPL-0013] Core BBox: (  2.300  2.720 ) ( 375.360 375.360 ) um
+[INFO GPL-0016] Core area:                  139017.078 um^2
+[INFO GPL-0014] Region name: spm_inst_1_domain.
+[INFO GPL-0015] Region area:                 23100.000 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:       3725.621 um^2
+[INFO GPL-0019] Utilization:                    16.128 %
+[INFO GPL-0020] Standard cells area:          3725.621 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[WARNING GPL-0123] No placeable instances in the top-level region. Removing it.
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 0	Region center = 630
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 12377325
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000009 HPWL: 9412947
+[INFO GPL-0033] ---- Initialize Nesterov Region: spm_inst_0_domain
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:     11.827 um^2
+[INFO GPL-0025] Ideal bin area:                 16.896 um^2
+[INFO GPL-0026] Ideal bin count:                  1367
+[INFO GPL-0027] Total bin area:              23100.000 um^2
+[INFO GPL-0028] Bin count (X, Y):          32 ,     32
+[INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
+[INFO GPL-0030] Number of bins:                   1024
+[INFO GPL-0033] ---- Initialize Nesterov Region: spm_inst_1_domain
+[INFO GPL-0023] Placement target density:       0.7000
+[INFO GPL-0024] Movable insts average area:     11.827 um^2
+[INFO GPL-0025] Ideal bin area:                 16.896 um^2
+[INFO GPL-0026] Ideal bin count:                  1367
+[INFO GPL-0027] Total bin area:              23100.000 um^2
+[INFO GPL-0028] Bin count (X, Y):          32 ,     32
+[INFO GPL-0029] Bin size (W * H):       6.562 *  3.438 um
+[INFO GPL-0030] Number of bins:                   1024
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
+        0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.76e-15 |  (spm_inst_0_domain)
+        0 |   0.9827 |  5.922227e+03 |   +0.00% |  2.36e-15 |  (spm_inst_1_domain)
+       10 |   0.9825 |  5.884226e+03 |   -0.64% |  4.49e-15 |  (spm_inst_0_domain)
+       10 |   0.9820 |  5.884226e+03 |   -0.64% |  3.84e-15 |  (spm_inst_1_domain)
+       20 |   0.9825 |  5.881184e+03 |   -0.05% |  7.31e-15 |  (spm_inst_0_domain)
+       20 |   0.9821 |  5.881184e+03 |   -0.05% |  6.25e-15 |  (spm_inst_1_domain)
+       30 |   0.9825 |  5.881139e+03 |   -0.00% |  1.19e-14 |  (spm_inst_0_domain)
+       30 |   0.9821 |  5.881139e+03 |   -0.00% |  1.02e-14 |  (spm_inst_1_domain)
+       40 |   0.9825 |  5.881055e+03 |   -0.00% |  1.94e-14 |  (spm_inst_0_domain)
+       40 |   0.9821 |  5.881055e+03 |   -0.00% |  1.66e-14 |  (spm_inst_1_domain)
+       50 |   0.9825 |  5.881132e+03 |   +0.00% |  3.16e-14 |  (spm_inst_0_domain)
+       50 |   0.9821 |  5.881132e+03 |   +0.00% |  2.70e-14 |  (spm_inst_1_domain)
+       60 |   0.9825 |  5.881776e+03 |   +0.01% |  5.15e-14 |  (spm_inst_0_domain)
+       60 |   0.9821 |  5.881776e+03 |   +0.01% |  4.40e-14 |  (spm_inst_1_domain)
+       70 |   0.9825 |  5.883319e+03 |   +0.03% |  8.38e-14 |  (spm_inst_0_domain)
+       70 |   0.9821 |  5.883319e+03 |   +0.03% |  7.17e-14 |  (spm_inst_1_domain)
+       80 |   0.9824 |  5.886857e+03 |   +0.06% |  1.37e-13 |  (spm_inst_0_domain)
+       80 |   0.9822 |  5.886857e+03 |   +0.06% |  1.17e-13 |  (spm_inst_1_domain)
+       90 |   0.9824 |  5.894641e+03 |   +0.13% |  2.22e-13 |  (spm_inst_0_domain)
+       90 |   0.9823 |  5.894641e+03 |   +0.13% |  1.90e-13 |  (spm_inst_1_domain)
+      100 |   0.9823 |  5.909537e+03 |   +0.25% |  3.62e-13 |  (spm_inst_0_domain)
+      100 |   0.9823 |  5.909537e+03 |   +0.25% |  3.10e-13 |  (spm_inst_1_domain)
+      110 |   0.9822 |  5.940643e+03 |   +0.53% |  5.90e-13 |  (spm_inst_0_domain)
+      110 |   0.9825 |  5.940643e+03 |   +0.53% |  5.05e-13 |  (spm_inst_1_domain)
+      120 |   0.9820 |  6.000125e+03 |   +1.00% |  9.62e-13 |  (spm_inst_0_domain)
+      120 |   0.9827 |  6.000125e+03 |   +1.00% |  8.22e-13 |  (spm_inst_1_domain)
+      130 |   0.9818 |  6.087369e+03 |   +1.45% |  1.57e-12 |  (spm_inst_0_domain)
+      130 |   0.9798 |  6.087369e+03 |   +1.45% |  1.34e-12 |  (spm_inst_1_domain)
+      140 |   0.9731 |  6.204553e+03 |   +1.93% |  2.55e-12 |  (spm_inst_0_domain)
+      140 |   0.9742 |  6.204553e+03 |   +1.93% |  2.18e-12 |  (spm_inst_1_domain)
+      150 |   0.9724 |  6.367104e+03 |   +2.62% |  4.16e-12 |  (spm_inst_0_domain)
+      150 |   0.9742 |  6.367104e+03 |   +2.62% |  3.55e-12 |  (spm_inst_1_domain)
+      160 |   0.9563 |  6.568583e+03 |   +3.16% |  6.77e-12 |  (spm_inst_0_domain)
+      160 |   0.9654 |  6.568583e+03 |   +3.16% |  5.79e-12 |  (spm_inst_1_domain)
+      170 |   0.9486 |  6.769498e+03 |   +3.06% |  1.10e-11 |  (spm_inst_0_domain)
+      170 |   0.9529 |  6.769498e+03 |   +3.06% |  9.43e-12 |  (spm_inst_1_domain)
+      180 |   0.9345 |  7.036030e+03 |   +3.94% |  1.80e-11 |  (spm_inst_0_domain)
+      180 |   0.9361 |  7.036030e+03 |   +3.94% |  1.54e-11 |  (spm_inst_1_domain)
+      190 |   0.9131 |  7.368468e+03 |   +4.72% |  2.93e-11 |  (spm_inst_0_domain)
+      190 |   0.9233 |  7.368468e+03 |   +4.72% |  2.50e-11 |  (spm_inst_1_domain)
+      200 |   0.8893 |  7.848384e+03 |   +6.51% |  4.76e-11 |  (spm_inst_0_domain)
+      200 |   0.9076 |  7.848384e+03 |   +6.51% |  4.08e-11 |  (spm_inst_1_domain)
+      210 |   0.8625 |  8.441874e+03 |   +7.56% |  7.76e-11 |  (spm_inst_0_domain)
+      210 |   0.8937 |  8.441874e+03 |   +7.56% |  6.64e-11 |  (spm_inst_1_domain)
+      220 |   0.8240 |  8.980570e+03 |   +6.38% |  1.26e-10 |  (spm_inst_0_domain)
+      220 |   0.8674 |  8.980570e+03 |   +6.38% |  1.08e-10 |  (spm_inst_1_domain)
+      230 |   0.7868 |  9.581507e+03 |   +6.69% |  2.06e-10 |  (spm_inst_0_domain)
+      230 |   0.8315 |  9.581507e+03 |   +6.69% |  1.76e-10 |  (spm_inst_1_domain)
+      240 |   0.7456 |  1.017918e+04 |   +6.24% |  3.35e-10 |  (spm_inst_0_domain)
+      240 |   0.7959 |  1.017918e+04 |   +6.24% |  2.87e-10 |  (spm_inst_1_domain)
+      250 |   0.6975 |  1.070621e+04 |   +5.18% |  5.46e-10 |  (spm_inst_0_domain)
+      250 |   0.7527 |  1.070621e+04 |   +5.18% |  4.67e-10 |  (spm_inst_1_domain)
+      260 |   0.6456 |  1.120021e+04 |   +4.61% |  8.90e-10 |  (spm_inst_0_domain)
+      260 |   0.6998 |  1.120021e+04 |   +4.61% |  7.61e-10 |  (spm_inst_1_domain)
+      270 |   0.5855 |  1.168094e+04 |   +4.29% |  1.45e-09 |  (spm_inst_0_domain)
+      270 |   0.6450 |  1.168094e+04 |   +4.29% |  1.24e-09 |  (spm_inst_1_domain)
+      280 |   0.5328 |  1.202020e+04 |   +2.90% |  2.36e-09 |  (spm_inst_0_domain)
+      280 |   0.5709 |  1.202020e+04 |   +2.90% |  2.02e-09 |  (spm_inst_1_domain)
+      290 |   0.4623 |  1.247727e+04 |   +3.80% |  3.84e-09 |  (spm_inst_0_domain)
+      290 |   0.5213 |  1.247727e+04 |   +3.80% |  3.29e-09 |  (spm_inst_1_domain)
+      300 |   0.4170 |  1.281975e+04 |   +2.74% |  6.26e-09 |  (spm_inst_0_domain)
+      300 |   0.4877 |  1.281975e+04 |   +2.74% |  5.36e-09 |  (spm_inst_1_domain)
+      310 |   0.3756 |  1.321775e+04 |   +3.10% |  1.02e-08 |  (spm_inst_0_domain)
+      310 |   0.4221 |  1.321775e+04 |   +3.10% |  8.72e-09 |  (spm_inst_1_domain)
+      320 |   0.3353 |  1.347512e+04 |   +1.95% |  1.63e-08 |  (spm_inst_0_domain)
+      320 |   0.3628 |  1.347512e+04 |   +1.95% |  1.42e-08 |  (spm_inst_1_domain)
+      330 |   0.3149 |  1.356931e+04 |   +0.70% |  2.40e-08 |  (spm_inst_0_domain)
+      330 |   0.3140 |  1.356931e+04 |   +0.70% |  2.18e-08 |  (spm_inst_1_domain)
+      340 |   0.2746 |  1.364214e+04 |   +0.54% |  3.53e-08 |  (spm_inst_0_domain)
+      340 |   0.3131 |  1.364214e+04 |   +0.54% |  3.21e-08 |  (spm_inst_1_domain)
+      350 |   0.2590 |  1.361574e+04 |   -0.19% |  5.21e-08 |  (spm_inst_0_domain)
+      350 |   0.2887 |  1.361574e+04 |   -0.19% |  4.73e-08 |  (spm_inst_1_domain)
+      360 |   0.2465 |  1.340681e+04 |   -1.53% |  7.67e-08 |  (spm_inst_0_domain)
+      360 |   0.2556 |  1.340681e+04 |   -1.53% |  6.97e-08 |  (spm_inst_1_domain)
+      370 |   0.2182 |  1.344709e+04 |   +0.30% |  1.13e-07 |  (spm_inst_0_domain)
+      370 |   0.2206 |  1.344709e+04 |   +0.30% |  1.03e-07 |  (spm_inst_1_domain)
+      380 |   0.1933 |  1.343676e+04 |   -0.08% |  1.66e-07 |  (spm_inst_0_domain)
+      380 |   0.1935 |  1.343676e+04 |   -0.08% |  1.51e-07 |  (spm_inst_1_domain)
+      390 |   0.1822 |  1.349270e+04 |   +0.42% |  2.45e-07 |  (spm_inst_0_domain)
+      390 |   0.1820 |  1.349270e+04 |   +0.42% |  2.23e-07 |  (spm_inst_1_domain)
+      400 |   0.1496 |  1.353300e+04 |   +0.30% |  3.61e-07 |  (spm_inst_0_domain)
+      400 |   0.1561 |  1.353300e+04 |   +0.30% |  3.28e-07 |  (spm_inst_1_domain)
+      410 |   0.1242 |  1.362208e+04 |   +0.66% |  5.32e-07 |  (spm_inst_0_domain)
+      410 |   0.1417 |  1.362208e+04 |   +0.66% |  4.83e-07 |  (spm_inst_1_domain)
+      420 |   0.1082 |  1.376491e+04 |   +1.05% |  7.84e-07 |  (spm_inst_0_domain)
+      420 |   0.1112 |  1.376491e+04 |   +1.05% |  7.12e-07 |  (spm_inst_1_domain)
+      425 |   0.0986 |  1.382551e+04 |          |  9.89e-07 | spm_inst_0_domain
+---------------------------------------------------------------
+[INFO GPL-1016] Region 'spm_inst_0_domain' placement finished at iteration 425
+[INFO GPL-1002] Placed Cell Area             3725.6211
+[INFO GPL-1003] Available Free Area         23100.0000
+[INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.1792
+[INFO GPL-1008]     - For 80% usage of free space: 0.2016
+[INFO GPL-1009]     - For 50% usage of free space: 0.3226
+      425 |   0.0988 |  1.382551e+04 |          |  8.98e-07 | spm_inst_1_domain
+---------------------------------------------------------------
+[INFO GPL-1016] Region 'spm_inst_1_domain' placement finished at iteration 425
+[INFO GPL-1002] Placed Cell Area             3725.6211
+[INFO GPL-1003] Available Free Area         23100.0000
+[INFO GPL-1004] Minimum Feasible Density        0.1700 (cell_area / free_area)
+[INFO GPL-1006]   Suggested Target Densities:
+[INFO GPL-1007]     - For 90% usage of free space: 0.1792
+[INFO GPL-1008]     - For 80% usage of free space: 0.2016
+[INFO GPL-1009]     - For 50% usage of free space: 0.3226
+[INFO GPL-1014] Final placement area: 7451.24 (+0.00%)
+No differences found.

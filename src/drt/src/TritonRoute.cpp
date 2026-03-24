@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include "triton_route/TritonRoute.h"
+#include "drt/TritonRoute.h"
 
 #include <algorithm>
 #include <fstream>
@@ -9,7 +9,6 @@
 #include <iterator>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -19,23 +18,29 @@
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
 #include "PACallBack.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
+#include "distributed/RoutingJobDescription.h"
 #include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
+#include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "global.h"
 #include "gr/FlexGR.h"
@@ -45,6 +50,7 @@
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -59,7 +65,6 @@
 using odb::dbTechLayerType;
 
 namespace drt {
-
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
@@ -572,13 +577,14 @@ void TritonRoute::initDesign()
       || db_->getChip()->getBlock() == nullptr) {
     logger_->error(utl::DRT, 151, "Database, chip or block not initialized.");
   }
+  const bool design_exists = getDesign()->getTopBlock() != nullptr;
   io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  if (getDesign()->getTopBlock() != nullptr) {
+  if (design_exists) {
     parser.updateDesign();
-    return;
+  } else {
+    parser.readTechAndLibs(db_);
+    parser.readDesign(db_);
   }
-  parser.readTechAndLibs(db_);
-  parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
   if (!router_cfg_->VIAINPIN_BOTTOMLAYER_NAME.empty()) {
@@ -628,9 +634,11 @@ void TritonRoute::initDesign()
                     router_cfg_->REPAIR_PDN_LAYER_NAME);
     }
   }
-  parser.postProcess();
-  db_callback_->addOwner(db_->getChip()->getBlock());
-  initGraphics();
+  if (!design_exists) {
+    parser.postProcess();
+    db_callback_->addOwner(db_->getChip()->getBlock());
+    initGraphics();
+  }
 }
 
 void TritonRoute::initGraphics()
@@ -693,19 +701,19 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size,
-                     offset,
-                     mazeEndIter,
-                     workerDRCCost,
-                     workerMarkerCost,
-                     workerFixedShapeCost,
-                     workerMarkerDecay,
-                     getMode(ripupMode),
-                     followGuide});
+  FlexDR::SearchRepairArgs args = {.size = size,
+                                   .offset = offset,
+                                   .mazeEndIter = mazeEndIter,
+                                   .workerDRCCost = workerDRCCost,
+                                   .workerMarkerCost = workerMarkerCost,
+                                   .workerFixedShapeCost = workerFixedShapeCost,
+                                   .workerMarkerDecay = workerMarkerDecay,
+                                   .ripupMode = getMode(ripupMode),
+                                   .followGuide = followGuide};
+  dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
-
 void TritonRoute::endFR()
 {
   if (router_cfg_->SINGLE_STEP_DR) {
@@ -1106,17 +1114,36 @@ void TritonRoute::pinAccess(const std::vector<odb::dbInst*>& target_insts)
   writer.updateDb(db_, router_cfg_.get(), true);
 }
 
-void TritonRoute::deleteInstancePAData(frInst* inst)
+void TritonRoute::deleteInstancePAData(frInst* inst, bool delete_inst)
 {
   if (pa_) {
-    pa_->deleteInst(inst);
+    pa_->removeFromInstsSet(inst);
+    if (delete_inst) {
+      pa_->deleteInst(inst);
+    }
   }
 }
 
 void TritonRoute::addInstancePAData(frInst* inst)
 {
   if (pa_) {
-    pa_->addInst(inst);
+    pa_->addDirtyInst(inst);
+  }
+}
+
+void TritonRoute::addAvoidViaDefPA(const frViaDef* via_def)
+{
+  if (pa_) {
+    pa_->addAvoidViaDef(via_def);
+  }
+}
+void TritonRoute::updateDirtyPAData()
+{
+  if (pa_) {
+    design_->getTopBlock()->removeDeletedObjects();
+    pa_->updateDirtyInsts();
+    io::Writer writer(getDesign(), logger_);
+    writer.updateDb(getDb(), getRouterConfiguration(), true);
   }
 }
 
@@ -1264,7 +1291,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  design_->getTech()->setUnidirectionalLayer(dbLayer);
+  router_cfg_->unidirectional_layers_.insert(dbLayer);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)
@@ -1306,7 +1333,7 @@ void TritonRoute::setParams(const ParamStruct& params)
 void TritonRoute::addWorkerResults(
     const std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   workers_results_.insert(
       workers_results_.end(), results.begin(), results.end());
   results_sz_ = workers_results_.size();
@@ -1315,7 +1342,7 @@ void TritonRoute::addWorkerResults(
 bool TritonRoute::getWorkerResults(
     std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   if (workers_results_.empty()) {
     return false;
   }

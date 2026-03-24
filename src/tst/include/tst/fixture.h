@@ -4,13 +4,16 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <string>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "tcl.h"
 #include "utl/Logger.h"
@@ -35,7 +38,7 @@ struct InstOptions
   odb::dbSourceType type{odb::dbSourceType::NONE};
   odb::Point location;
   odb::dbPlacementStatus status{odb::dbPlacementStatus::NONE};
-  std::vector<ITermInfo> iterms{};
+  std::vector<ITermInfo> iterms;
 };
 
 struct BTermOptions
@@ -49,7 +52,7 @@ struct BTermOptions
 
   odb::dbIoType io_type{odb::dbIoType::INPUT};
   odb::dbSigType sig_type{odb::dbSigType::SIGNAL};
-  std::vector<BPinInfo> bpins{};
+  std::vector<BPinInfo> bpins;
 };
 
 class Fixture : public ::testing::Test
@@ -60,13 +63,14 @@ class Fixture : public ::testing::Test
 
   odb::dbDatabase* getDb() const { return db_.get(); }
   sta::dbSta* getSta() const { return sta_.get(); }
+  utl::Logger* getLogger() { return &logger_; }
 
   // In bazel this uses the runfiles mechanism to locate the file
   std::string getFilePath(const std::string& file_path) const;
 
-  // if corner == nullptr, then a corner named "default" is used
+  // if scene == nullptr, then a scene named "default" is used
   sta::LibertyLibrary* readLiberty(const std::string& filename,
-                                   sta::Corner* corner = nullptr,
+                                   sta::Scene* scene = nullptr,
                                    const sta::MinMaxAll* min_max
                                    = sta::MinMaxAll::all(),
                                    bool infer_latches = false);

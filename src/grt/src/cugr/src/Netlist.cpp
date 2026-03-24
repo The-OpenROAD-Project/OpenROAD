@@ -41,8 +41,9 @@ std::string CUGRPin::getName() const
 
 CUGRNet::CUGRNet(const int index,
                  odb::dbNet* db_net,
-                 const std::vector<CUGRPin>& pins)
-    : index_(index), db_net_(db_net), pins_(pins)
+                 const std::vector<CUGRPin>& pins,
+                 LayerRange layer_range)
+    : index_(index), db_net_(db_net), pins_(pins), layer_range_(layer_range)
 {
 }
 

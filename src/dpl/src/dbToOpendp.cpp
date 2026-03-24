@@ -41,6 +41,12 @@ void Opendp::importDb()
   grid_->setCore(core_);
   have_fillers_ = false;
   disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
+  debugPrint(logger_,
+             utl::DPL,
+             "one_site_gap",
+             1,
+             "one_site_gaps disallowed: {}",
+             disallow_one_site_gaps_ ? "true" : "false");
   importClear();
   grid_->examineRows(block_);
   initPlacementDRC();
@@ -52,7 +58,6 @@ void Opendp::importDb()
 void Opendp::importClear()
 {
   deleteGrid();
-  have_multi_row_cells_ = false;
   network_->clear();
   arch_->clear();
 }
@@ -112,9 +117,8 @@ void Opendp::createNetwork()
   using odb::dbInst;
   auto block_insts = block->getInsts();
   std::vector<dbInst*> insts(block_insts.begin(), block_insts.end());
-  std::stable_sort(insts.begin(), insts.end(), [](dbInst* a, dbInst* b) {
-    return a->getName() < b->getName();
-  });
+  std::ranges::stable_sort(
+      insts, [](dbInst* a, dbInst* b) { return a->getName() < b->getName(); });
 
   for (dbInst* inst : insts) {
     // Skip instances which are not placeable.
@@ -123,10 +127,6 @@ void Opendp::createNetwork()
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
-    if (inst->getMaster()->isCore()
-        && network_->getMaster(inst->getMaster())->isMultiRow()) {
-      have_multi_row_cells_ = true;
-    }
     if (isFiller(inst)) {
       have_fillers_ = true;
     }
@@ -135,6 +135,11 @@ void Opendp::createNetwork()
     // Skip supply nets.
     odb::dbNet* net = bterm->getNet();
     if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
+      // skip unplaced terminals
       continue;
     }
     if (bterm->getBBox().isInverted()) {
@@ -299,11 +304,9 @@ void Opendp::setUpPlacementGroups()
       for (auto db_inst : db_group->getInsts()) {
         Node* nd = network_->getNode(db_inst);
         if (nd != nullptr) {
-          if (true) {
-            nd->setGroupId(rptr->getId());
-            nd->setGroup(rptr);
-            rptr->addCell(nd);
-          }
+          nd->setGroupId(rptr->getId());
+          nd->setGroup(rptr);
+          rptr->addCell(nd);
         }
       }
     }

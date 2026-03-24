@@ -88,6 +88,16 @@ class DetailedMgr
     x = maxDispX_;
     y = maxDispY_;
   }
+  void setGlobalSwapParams(const GlobalSwapParams& params)
+  {
+    global_swap_params_ = params;
+  }
+  const GlobalSwapParams& getGlobalSwapParams() const
+  {
+    return global_swap_params_;
+  }
+  void setExtraDplEnabled(bool enabled) { extra_dpl_enabled_ = enabled; }
+  bool isExtraDplEnabled() const { return extra_dpl_enabled_; }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
   bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
@@ -207,6 +217,8 @@ class DetailedMgr
 
   void shuffle(std::vector<Node*>& nodes);
   int getRandom(int limit) const { return (*rng_)() % limit; }
+  Placer_RNG getRngState() const { return *rng_; }
+  void setRngState(const Placer_RNG& state) { *rng_ = state; }
 
   void getSpaceAroundCell(int seg,
                           int ix,
@@ -244,6 +256,7 @@ class DetailedMgr
   void setMoveLimit(unsigned int newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   // Journal operations
+  Journal& getJournal() { return journal_; }
   const Journal& getJournal() const { return journal_; }
   void eraseFromGrid(Node* node);
   void paintInGrid(Node* node);
@@ -298,6 +311,7 @@ class DetailedMgr
   bool trySwap1(Node* ndi, DbuX xi, DbuY yi, int si, DbuX xj, DbuY yj, int sj);
 
   // Helper routines for making moves and swaps.
+  bool checkSiteOrientation(Node* node, DbuX x, DbuY y);
   bool shift(std::vector<Node*>& cells,
              std::vector<DbuX>& targetLeft,
              std::vector<DbuX>& posLeft,
@@ -341,6 +355,8 @@ class DetailedMgr
 
   // Generic place for utilization.
   double targetUt_{1.0};
+  GlobalSwapParams global_swap_params_;
+  bool extra_dpl_enabled_ = false;
 
   // Target displacement limits.
   int maxDispX_;

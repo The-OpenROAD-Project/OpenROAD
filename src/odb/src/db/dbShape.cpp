@@ -16,20 +16,20 @@ namespace odb {
 
 bool dbShape::operator<(const dbShape& rhs)
 {
-  if (_type < rhs._type) {
+  if (type_ < rhs.type_) {
     return true;
   }
 
-  if (_type > rhs._type) {
+  if (type_ > rhs.type_) {
     return false;
   }
 
-  switch (_type) {
+  switch (type_) {
     case VIA: {
-      _dbVia* lhs_via = (_dbVia*) _via;
-      _dbVia* rhs_via = (_dbVia*) rhs._via;
+      _dbVia* lhs_via = (_dbVia*) via_;
+      _dbVia* rhs_via = (_dbVia*) rhs.via_;
 
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -43,10 +43,10 @@ bool dbShape::operator<(const dbShape& rhs)
     }
 
     case TECH_VIA: {
-      _dbTechVia* lhs_via = (_dbTechVia*) _via;
-      _dbTechVia* rhs_via = (_dbTechVia*) rhs._via;
+      _dbTechVia* lhs_via = (_dbTechVia*) via_;
+      _dbTechVia* rhs_via = (_dbTechVia*) rhs.via_;
 
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -59,10 +59,10 @@ bool dbShape::operator<(const dbShape& rhs)
     }
 
     case SEGMENT: {
-      _dbTechLayer* lhs_lay = (_dbTechLayer*) _layer;
-      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs._layer;
+      _dbTechLayer* lhs_lay = (_dbTechLayer*) layer_;
+      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs.layer_;
 
-      int r = strcmp(lhs_lay->_name, rhs_lay->_name);
+      int r = strcmp(lhs_lay->name_, rhs_lay->name_);
 
       if (r < 0) {
         return true;
@@ -75,10 +75,10 @@ bool dbShape::operator<(const dbShape& rhs)
     }
 
     case TECH_VIA_BOX: {
-      _dbTechVia* lhs_via = (_dbTechVia*) _via;
-      _dbTechVia* rhs_via = (_dbTechVia*) rhs._via;
+      _dbTechVia* lhs_via = (_dbTechVia*) via_;
+      _dbTechVia* rhs_via = (_dbTechVia*) rhs.via_;
 
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -88,10 +88,10 @@ bool dbShape::operator<(const dbShape& rhs)
         return false;
       }
 
-      _dbTechLayer* lhs_lay = (_dbTechLayer*) _layer;
-      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs._layer;
+      _dbTechLayer* lhs_lay = (_dbTechLayer*) layer_;
+      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs.layer_;
 
-      r = strcmp(lhs_lay->_name, rhs_lay->_name);
+      r = strcmp(lhs_lay->name_, rhs_lay->name_);
 
       if (r < 0) {
         return true;
@@ -104,10 +104,10 @@ bool dbShape::operator<(const dbShape& rhs)
     }
 
     case VIA_BOX: {
-      _dbVia* lhs_via = (_dbVia*) _via;
-      _dbVia* rhs_via = (_dbVia*) rhs._via;
+      _dbVia* lhs_via = (_dbVia*) via_;
+      _dbVia* rhs_via = (_dbVia*) rhs.via_;
 
-      int r = strcmp(lhs_via->_name, rhs_via->_name);
+      int r = strcmp(lhs_via->name_, rhs_via->name_);
 
       if (r < 0) {
         return true;
@@ -117,10 +117,10 @@ bool dbShape::operator<(const dbShape& rhs)
         return false;
       }
 
-      _dbTechLayer* lhs_lay = (_dbTechLayer*) _layer;
-      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs._layer;
+      _dbTechLayer* lhs_lay = (_dbTechLayer*) layer_;
+      _dbTechLayer* rhs_lay = (_dbTechLayer*) rhs.layer_;
 
-      r = strcmp(lhs_lay->_name, rhs_lay->_name);
+      r = strcmp(lhs_lay->name_, rhs_lay->name_);
 
       if (r < 0) {
         return true;
@@ -133,19 +133,19 @@ bool dbShape::operator<(const dbShape& rhs)
     }
   }
 
-  return _rect < rhs._rect;
+  return rect_ < rhs.rect_;
 }
 
 void dbShape::getViaXY(int& x, int& y) const
 {
-  switch (_type) {
+  switch (type_) {
     case VIA: {
       dbVia* v = getVia();
       dbBox* b = v->getBBox();
       int xmin = b->xMin();
       int ymin = b->yMin();
-      x = _rect.xMin() - xmin;
-      y = _rect.yMin() - ymin;
+      x = rect_.xMin() - xmin;
+      y = rect_.yMin() - ymin;
       break;
     }
 
@@ -154,8 +154,8 @@ void dbShape::getViaXY(int& x, int& y) const
       dbBox* b = v->getBBox();
       int xmin = b->xMin();
       int ymin = b->yMin();
-      x = _rect.xMin() - xmin;
-      y = _rect.yMin() - ymin;
+      x = rect_.xMin() - xmin;
+      y = rect_.yMin() - ymin;
       break;
     }
     default:

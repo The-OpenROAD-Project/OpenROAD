@@ -121,7 +121,7 @@ std::vector<int> MultilevelPartitioner::Partition(
   // The best_solution will be refined.
   // The initial value of best solution will be used to guide the coarsening
   // process and use as the initial solution
-  if (v_cycle_flag_ == true) {
+  if (v_cycle_flag_) {
     VcycleRefinement(
         hgraph, upper_block_balance, lower_block_balance, best_solution);
   }
@@ -149,7 +149,7 @@ std::vector<int> MultilevelPartitioner::SingleLevelPartition(
   CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial partitioning
-  HGraphPtr coarsest_hgraph = hierarchy.back();
+  const HGraphPtr& coarsest_hgraph = hierarchy.back();
 
   // pick top num_best_initial_solutions_ solutions from
   // num_initial_random_solutions_ solutions
@@ -235,7 +235,7 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
   CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial refinement
-  HGraphPtr coarsest_hgraph = hierarchy.back();
+  const HGraphPtr& coarsest_hgraph = hierarchy.back();
   Matrix<int> top_solutions(1);
   coarsest_hgraph->CopyCommunity(top_solutions[0]);
   int best_solution_id = 0;  // only one solution
@@ -375,7 +375,7 @@ void MultilevelPartitioner::InitialPartition(
     int ilp_solution_id = 0;
     float ilp_solution_cost = std::numeric_limits<float>::max();
     for (auto id = 0; id < initial_solutions_cost.size(); id++) {
-      if (initial_solutions_flag[id] == true
+      if (initial_solutions_flag[id]
           && initial_solutions_cost[id] < ilp_solution_cost) {
         ilp_solution_id = id;
         ilp_solution_cost = initial_solutions_cost[id];
@@ -407,14 +407,14 @@ void MultilevelPartitioner::InitialPartition(
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
     return initial_solutions_cost[x] < initial_solutions_cost[y];
   };
-  std::sort(solution_ids.begin(), solution_ids.end(), lambda_sort_criteria);
+  std::ranges::sort(solution_ids, lambda_sort_criteria);
   // pick the top num_best_initial_solutions_ solutions
   // while satisfying the balance constraint
   int num_chosen_best_init_solution = 0;
   float best_initial_cost = 0.0;
   std::vector<bool> visited_solution_flag(solution_ids.size(), false);
   for (auto id : solution_ids) {
-    if (initial_solutions_flag[id] == true) {
+    if (initial_solutions_flag[id]) {
       top_initial_solutions[num_chosen_best_init_solution]
           = initial_solutions[id];
       visited_solution_flag[id] = true;
@@ -430,7 +430,7 @@ void MultilevelPartitioner::InitialPartition(
 
   if (num_chosen_best_init_solution < num_best_initial_solutions_) {
     for (auto id : solution_ids) {
-      if (visited_solution_flag[id] == false) {
+      if (!visited_solution_flag[id]) {
         top_initial_solutions[num_chosen_best_init_solution]
             = initial_solutions[id];
         visited_solution_flag[id] = true;
@@ -575,7 +575,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
   std::vector<bool> hyperedge_mask(hgraph->GetNumHyperedges(), false);
   for (const auto& solution : top_solutions) {
     for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
-      if (hyperedge_mask[e] == true) {
+      if (hyperedge_mask[e]) {
         continue;  // This hyperedge has been cut
       }
 
@@ -595,11 +595,11 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
   auto lambda_detect_connected_components = [&](int v, int cluster_id) -> void {
     std::queue<int> wavefront;
     wavefront.push(v);
-    while (wavefront.empty() == false) {
+    while (!wavefront.empty()) {
       const int u = wavefront.front();
       wavefront.pop();
       for (const int e : hgraph->Edges(u)) {
-        if (hyperedge_mask[e] == true) {
+        if (hyperedge_mask[e]) {
           continue;  // this hyperedge has been cut
         }
         for (const int v_nbr : hgraph->Vertices(e)) {

@@ -17,13 +17,6 @@
 
 #include "detailed_mis.h"
 
-#include <lemon/cost_scaling.h>
-#include <lemon/cycle_canceling.h>
-#include <lemon/list_graph.h>
-#include <lemon/network_simplex.h>
-#include <lemon/preflow.h>
-#include <lemon/smart_graph.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -43,9 +36,17 @@
 #include "infrastructure/architecture.h"
 #include "infrastructure/detailed_segment.h"
 #include "infrastructure/network.h"
+#include "lemon/core.h"
+#include "lemon/cost_scaling.h"
+#include "lemon/cycle_canceling.h"
+#include "lemon/list_graph.h"
+#include "lemon/network_simplex.h"
+#include "lemon/preflow.h"
+#include "lemon/smart_graph.h"
 #include "odb/geom.h"
 #include "util/color.h"
 #include "util/journal.h"
+#include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPL;
@@ -211,7 +212,7 @@ void DetailedMis::place()
   populateGrid();
 
   timesUsed_.resize(network_->getNumNodes());
-  std::fill(timesUsed_.begin(), timesUsed_.end(), 0);
+  std::ranges::fill(timesUsed_, 0);
 
   // Select candidates and solve matching problem.  Note that we need to do
   // something to make this more efficient, otherwise we will solve way too
@@ -264,10 +265,10 @@ void DetailedMis::collectMovableCells()
 void DetailedMis::colorCells()
 {
   colors_.resize(network_->getNumNodes());
-  std::fill(colors_.begin(), colors_.end(), -1);
+  std::ranges::fill(colors_, -1);
 
   movable_.resize(network_->getNumNodes());
-  std::fill(movable_.begin(), movable_.end(), false);
+  movable_.assign(movable_.size(), false);
   for (const Node* ndi : candidates_) {
     movable_[ndi->getId()] = true;
   }
@@ -372,9 +373,9 @@ void DetailedMis::populateGrid()
 {
   // Inserts movable cells into the grid.
 
-  for (size_t i = 0; i < grid_.size(); i++) {
-    for (size_t j = 0; j < grid_[i].size(); j++) {
-      grid_[i][j]->clear();
+  for (auto& row : grid_) {
+    for (auto& bucket : row) {
+      bucket->clear();
     }
   }
 

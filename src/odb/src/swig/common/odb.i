@@ -19,6 +19,7 @@
 #include "odb/dbMap.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
+#include "odb/isotropy.h"
 #include "odb/geom.h"
 #include "odb/wOrder.h"
 #include "odb/util.h"
@@ -31,9 +32,12 @@ using namespace odb;
 %include <std_string.i>
 %include <std_vector.i>
 %include <std_pair.i>
+%include <std_map.i>
 
 %typemap(in) (uint) = (int);
 %typemap(out) (uint) = (int);
+%typemap(in) (uint32_t) = (int);
+%typemap(out) (uint32_t) = (int);
 %typemap(out) (uint64) = (long);
 %typemap(out) (int64_t) = (long);
 %apply int* OUTPUT {int* x, int* y, int& ext};
@@ -61,9 +65,22 @@ using namespace odb;
 %include "dbtypes.i"
 %include "dbtypes_common.i"
 
+%include "odb/isotropy.h"
 %include "odb/geom.h"
 %include "polygon.i"
+// Include before db.h so SWIG exposes getId()/getObjectType() on derived
+// Python classes.  getImpl() is internal (not exported by the library);
+// getType(const char*, Logger*) requires utl::Logger which is not in scope.
+%ignore odb::dbObject::getImpl;
+%ignore odb::dbObject::getType(const char*, utl::Logger*);
+%include "odb/dbObject.h"
 %include "odb/db.h"
+
+// Prevent compiler problems when including dbShape.h.
+%ignore odb::dbShapeItrCallback;
+%ignore odb::dbWireShapeItr;
+
+%include "odb/dbShape.h"
 
 %include "dbhelpers.i"  
 
@@ -87,3 +104,10 @@ void set_bterm_top_layer_grid(odb::dbBlock* block,
                               int width,
                               int height,
                               int keepout);
+
+// Python-only: add __eq__, __ne__, __hash__ to all odb db* classes so that
+// two handles obtained via different paths but wrapping the same C++ pointer
+// compare equal.  Placed last so every class is defined before the patch runs.
+#ifdef SWIGPYTHON
+%include "dboperators.i"
+#endif

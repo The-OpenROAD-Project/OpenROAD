@@ -12,6 +12,7 @@
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -21,7 +22,7 @@ using utl::MPL;
 // Class SACoreHardMacro
 // constructors
 SACoreHardMacro::SACoreHardMacro(PhysicalHierarchy* tree,
-                                 const Rect& outline,
+                                 const odb::Rect& outline,
                                  const std::vector<HardMacro>& macros,
                                  const SACoreWeights& core_weights,
                                  // probability of each action
@@ -200,11 +201,17 @@ void SACoreHardMacro::initialize()
   graphics_ = nullptr;
 
   for (int i = 0; i < num_perturb_per_step_; i++) {
+    saveState();
     perturb();
+    if (!invalid_states_allowed_ && !isValid()) {
+      restoreState();
+      continue;
+    }
+
     // store current penalties
     width_list.push_back(width_);
     height_list.push_back(height_);
-    area_penalty_list.push_back(width_ * height_);
+    area_penalty_list.push_back(getAreaPenalty());
     outline_penalty_list.push_back(outline_penalty_);
     wirelength_list.push_back(wirelength_);
     guidance_penalty_list.push_back(guidance_penalty_);

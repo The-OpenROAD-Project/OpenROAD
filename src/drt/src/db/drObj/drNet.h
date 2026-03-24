@@ -17,6 +17,7 @@
 #include "db/drObj/drPin.h"
 #include "db/drObj/drShape.h"
 #include "db/drObj/drVia.h"
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
 #include "frBaseTypes.h"
@@ -178,10 +179,9 @@ class drNet : public drBlockObject
   {
     std::vector<Point3D> locs;
     locs.reserve(ext_figs_updates_.size());
-    std::transform(ext_figs_updates_.begin(),
-                   ext_figs_updates_.end(),
-                   std::back_inserter(locs),
-                   [](const auto& pair) { return pair.first; });
+    std::ranges::transform(ext_figs_updates_,
+                           std::back_inserter(locs),
+                           [](const auto& pair) { return pair.first; });
     return locs;
   }
   bool isExtFigUpdateVia(const Point3D& loc) const

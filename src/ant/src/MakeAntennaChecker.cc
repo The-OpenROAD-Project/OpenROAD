@@ -3,6 +3,7 @@
 
 #include "ant/MakeAntennaChecker.hh"
 
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

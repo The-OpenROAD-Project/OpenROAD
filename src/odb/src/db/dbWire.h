@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,36 +18,34 @@ class _dbNet;
 
 struct _dbWireFlags
 {
-  uint _is_global : 1;
-  uint _spare_bits : 31;
+  uint32_t is_global : 1;
+  uint32_t spare_bits : 31;
 };
 
 class _dbWire : public _dbObject
 {
  public:
-  _dbWireFlags _flags;
-  dbVector<int> _data;
-  dbVector<unsigned char> _opcodes;
-  dbId<_dbNet> _net;
-
   _dbWire(_dbDatabase*)
   {
-    _flags._is_global = 0;
-    _flags._spare_bits = 0;
+    flags_.is_global = 0;
+    flags_.spare_bits = 0;
   }
 
   _dbWire(_dbDatabase*, const _dbWire& w)
-      : _flags(w._flags), _data(w._data), _opcodes(w._opcodes), _net(w._net)
+      : flags_(w.flags_), data_(w.data_), opcodes_(w.opcodes_), net_(w.net_)
   {
   }
 
-  ~_dbWire() {}
-
-  uint length() { return _opcodes.size(); }
+  uint32_t length() { return opcodes_.size(); }
 
   bool operator==(const _dbWire& rhs) const;
   bool operator!=(const _dbWire& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
+
+  _dbWireFlags flags_;
+  dbVector<int> data_;
+  dbVector<unsigned char> opcodes_;
+  dbId<_dbNet> net_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbWire& wire);

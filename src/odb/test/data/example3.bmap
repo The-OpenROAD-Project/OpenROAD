@@ -1,0 +1,3 @@
+# bumpInstName bumpCellType x y portName netName
+bump1 BUMP 100.0 200.0 - SIG1
+bump2 BUMP 150.0 200.0 - SIG1

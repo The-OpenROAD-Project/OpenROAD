@@ -64,6 +64,8 @@ set_voltage_domain
     [-region region_name]
     [-secondary_power secondary_power_net]
     [-switched_power switched_power_net]
+    [-connect_to_pad_layers layers]
+    [-connect_to_pads]
 ```
 
 #### Options
@@ -76,6 +78,8 @@ set_voltage_domain
 | `[-region]` | Specifies a region of the design occupied by this voltage domain. |
 | `[-secondary_power]` | Specifies the name of the secondary power net for this voltage domain. |
 | `[-switched_power]` | Specifies the name of the switched power net for switched power domains. |
+| `[-connect_to_pad_layers]` | Restrict the pad pins layers to this list. |
+| `[-connect_to_pads]` | The core side of the pad pins will be connected to the grid. |
 
 ### Define Power Grids
 
@@ -139,7 +143,7 @@ define_pdn_grid
 | `[-default]` | For a macro, specifies this is a default grid that can be overwritten. |
 | `[-existing]` | Flag to enable defining for existing routing solution. |
 | `[-grid_over_pg_pins]`, `[-grid_over_boundary]` | Place the power grid over the power ground pins of the macro. (Default True), or Place the power grid over the entire macro. |
-| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
+| `[-halo]` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define hard halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
 | `[-instances]` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
 | `[-macro]` | Defines the type of grid being added as a macro. |
 | `[-name]` | Defines a name to use when referring to this grid definition. |
@@ -211,6 +215,7 @@ add_pdn_stripe
     [-spacing spacing_value]
     [-starts_with POWER|GROUND]
     [-width width_value]
+    [-allow_out_of_core]
 ```
 
 #### Options
@@ -230,6 +235,7 @@ add_pdn_stripe
 | `[-spacing]` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |
 | `[-starts_with]` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). This cannot be used with -followpins (Flip sites when initializing floorplan to change followpin power/ground order). |
 | `[-width]` | Value for the width of stripe. |
+| `-allow_out_of_core` | Allow stripes to continue beyond the core area. |
 
 ### Add Sroute Connect
 

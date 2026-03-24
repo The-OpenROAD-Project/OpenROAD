@@ -41,14 +41,16 @@
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 using utl::PAR;
@@ -264,7 +266,7 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   std::ofstream solution_file_output;
   solution_file_output.open(solution_file);
   for (auto part_id : solution_) {
-    solution_file_output << part_id << std::endl;
+    solution_file_output << part_id << '\n';
   }
   solution_file_output.close();
 }
@@ -311,13 +313,13 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   hyperedge_dimensions_
       = 1;  // for design partitioning, hyperedge weight is the connectivity
   timing_aware_flag_ = timing_aware_flag_arg;
-  if (timing_aware_flag_ == false) {
+  if (!timing_aware_flag_) {
     top_n_ = 0;  // timing driven flow is disabled
   } else {
     top_n_ = top_n_arg;  // extract the top_n critical timing paths
   }
   placement_flag_ = placement_flag_arg;
-  if (placement_flag_ == false) {
+  if (!placement_flag_) {
     placement_dimensions_ = 0;  // no placement information
   } else {
     placement_dimensions_ = 2;  // 2D canvas
@@ -327,7 +329,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                 fence_ly_arg * dbu,
                 fence_ux_arg * dbu,
                 fence_uy_arg * dbu);
-  if (fence_flag_ == false || fence_.IsValid() == false) {
+  if (!fence_flag_ || !fence_.IsValid()) {
     fence_.Reset();
   }
   // local parameters
@@ -348,7 +350,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("\tGlobal net threshold = {}", global_net_threshold_);
   logger_->report("\tTop {} critical timing paths are extracted.", top_n_);
   logger_->report("\tFence aware flag = {}", fence_flag_);
-  if (fence_flag_ == true) {
+  if (fence_flag_) {
     logger_->report(
         "\tfence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
         fence_.lx / dbu,
@@ -407,7 +409,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   // each line :  instance_name  partition_id
   if (!solution_file.empty()) {
     std::string solution_file_name = solution_file;
-    if (fence_flag_ == true) {
+    if (fence_flag_) {
       // if the fence_flag_ is set to true, we need to update the solution file
       // to reflect the fence
       std::stringstream str_ss;
@@ -426,16 +428,14 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     for (auto term : block_->getBTerms()) {
       if (auto property = odb::dbIntProperty::find(term, "partition_id")) {
         file_output << term->getName() << "  ";
-        file_output << property->getValue() << "  ";
-        file_output << std::endl;
+        file_output << property->getValue() << "  \n";
       }
     }
 
     for (auto inst : block_->getInsts()) {
       if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
         file_output << inst->getName() << "  ";
-        file_output << property->getValue() << "  ";
-        file_output << std::endl;
+        file_output << property->getValue() << "  \n";
       }
     }
     file_output.close();
@@ -522,7 +522,7 @@ void TritonPart::EvaluateHypergraphSolution(
                "no base balance is specified. Use default value.");
     base_balance_.clear();
     base_balance_.resize(num_parts_);
-    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+    std::ranges::fill(base_balance_, 1.0 / num_parts_);
   }
 
   if (static_cast<int>(scale_factor_.size()) != num_parts_) {
@@ -533,7 +533,7 @@ void TritonPart::EvaluateHypergraphSolution(
                "no scale factor is specified. Use default value.");
     scale_factor_.clear();
     scale_factor_.resize(num_parts_);
-    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+    std::ranges::fill(scale_factor_, 1.0);
   }
 
   // adjust the size of vertices based on scale factor
@@ -550,7 +550,7 @@ void TritonPart::EvaluateHypergraphSolution(
                "no hyperedge weighting is specified. Use default value of 1.");
     e_wt_factors_.clear();
     e_wt_factors_.resize(hyperedge_dimensions_);
-    std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
+    std::ranges::fill(e_wt_factors_, 1.0);
   }
   debugPrint(logger_,
              PAR,
@@ -567,7 +567,7 @@ void TritonPart::EvaluateHypergraphSolution(
                "No vertex weighting is specified. Use default value of 1.");
     v_wt_factors_.clear();
     v_wt_factors_.resize(vertex_dimensions_);
-    std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
+    std::ranges::fill(v_wt_factors_, 1.0);
   }
   debugPrint(logger_,
              PAR,
@@ -588,8 +588,7 @@ void TritonPart::EvaluateHypergraphSolution(
           "No placement weighting is specified. Use default value of 1.");
       placement_wt_factors_.clear();
       placement_wt_factors_.resize(placement_dimensions_);
-      std::fill(
-          placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
+      std::ranges::fill(placement_wt_factors_, 1.0f);
     }
   }
   debugPrint(logger_,
@@ -680,13 +679,13 @@ void TritonPart::EvaluatePartDesignSolution(
   hyperedge_dimensions_
       = 1;  // for design partitioning, hyperedge weight is the connectivity
   timing_aware_flag_ = timing_aware_flag_arg;
-  if (timing_aware_flag_ == false) {
+  if (!timing_aware_flag_) {
     top_n_ = 0;  // timing driven flow is disabled
   } else {
     top_n_ = top_n_arg;  // extract the top_n critical timing paths
   }
   placement_flag_ = false;  // We do not need this parameter here
-  if (placement_flag_ == false) {
+  if (!placement_flag_) {
     placement_dimensions_ = 0;  // no placement information
   } else {
     placement_dimensions_ = 2;  // 2D canvas
@@ -696,7 +695,7 @@ void TritonPart::EvaluatePartDesignSolution(
                 fence_ly_arg * dbu,
                 fence_ux_arg * dbu,
                 fence_uy_arg * dbu);
-  if (fence_flag_ == false || fence_.IsValid() == false) {
+  if (!fence_flag_ || !fence_.IsValid()) {
     fence_.Reset();
   }
   // local parameters
@@ -719,7 +718,7 @@ void TritonPart::EvaluatePartDesignSolution(
   logger_->report("\tGlobal net threshold = {}", global_net_threshold_);
   logger_->report("\tTop {} critical timing paths are extracted.", top_n_);
   logger_->report("\tFence aware flag = {}", fence_flag_);
-  if (fence_flag_ == true) {
+  if (fence_flag_) {
     logger_->report(
         "\tfence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
         fence_.lx / dbu,
@@ -755,7 +754,7 @@ void TritonPart::EvaluatePartDesignSolution(
                "no base balance is specified. Use default value.");
     base_balance_.clear();
     base_balance_.resize(num_parts_);
-    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+    std::ranges::fill(base_balance_, 1.0 / num_parts_);
   }
 
   if (static_cast<int>(scale_factor_.size()) != num_parts_) {
@@ -766,7 +765,7 @@ void TritonPart::EvaluatePartDesignSolution(
                "no scale factor is specified. Use default value.");
     scale_factor_.clear();
     scale_factor_.resize(num_parts_);
-    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+    std::ranges::fill(scale_factor_, 1.0);
   }
 
   // adjust the size of vertices based on scale factor
@@ -783,7 +782,7 @@ void TritonPart::EvaluatePartDesignSolution(
                "No hyperedge weighting is specified. Use default value of 1.");
     e_wt_factors_.clear();
     e_wt_factors_.resize(hyperedge_dimensions_);
-    std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
+    std::ranges::fill(e_wt_factors_, 1.0);
   }
   debugPrint(logger_,
              PAR,
@@ -800,7 +799,7 @@ void TritonPart::EvaluatePartDesignSolution(
                "No vertex weighting is specified. Use default value of 1.");
     v_wt_factors_.clear();
     v_wt_factors_.resize(vertex_dimensions_);
-    std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
+    std::ranges::fill(v_wt_factors_, 1.0);
   }
   debugPrint(logger_,
              PAR,
@@ -821,8 +820,7 @@ void TritonPart::EvaluatePartDesignSolution(
           "No placement weighting is specified. Use default value of 1.");
       placement_wt_factors_.clear();
       placement_wt_factors_.resize(placement_dimensions_);
-      std::fill(
-          placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
+      std::ranges::fill(placement_wt_factors_, 1.0f);
     }
   }
   debugPrint(logger_,
@@ -858,19 +856,19 @@ void TritonPart::EvaluatePartDesignSolution(
 
   evaluator->InitializeTiming(original_hypergraph_);
 
-  if (hypergraph_file.empty() == false) {
+  if (!hypergraph_file.empty()) {
     logger_->info(PAR, 12, "Writing hypergraph.");
     evaluator->WriteWeightedHypergraph(original_hypergraph_, hypergraph_file);
   }
 
   // This is for hMETIS. hMETIS only accept integer weight
-  if (hypergraph_int_weight_file.empty() == false) {
+  if (!hypergraph_int_weight_file.empty()) {
     logger_->info(PAR, 13, "Writing integer weight hypergraph.");
     evaluator->WriteIntWeightHypergraph(original_hypergraph_,
                                         hypergraph_int_weight_file);
   }
 
-  if (solution_file.empty() == false) {
+  if (!solution_file.empty()) {
     int part_id = -1;
     std::ifstream solution_file_input(solution_file);
     if (!solution_file_input.is_open()) {
@@ -889,7 +887,7 @@ void TritonPart::EvaluatePartDesignSolution(
                                          true);
 
     // generate the timing report
-    if (timing_aware_flag_ == true) {
+    if (timing_aware_flag_) {
       logger_->report("Display Timing Path Cuts Statistics");
       PathStats path_stats
           = evaluator->GetTimingCuts(original_hypergraph_, solution_);
@@ -1005,7 +1003,7 @@ void TritonPart::ReadHypergraph(const std::string& hypergraph_file,
   // Read hyperedge information
   for (int i = 0; i < num_hyperedges_; i++) {
     std::getline(hypergraph_file_input, cur_line);
-    if (hyperedge_weight_flag == true) {
+    if (hyperedge_weight_flag) {
       std::istringstream cur_line_buf(cur_line);
       std::vector<float> hvec{std::istream_iterator<float>(cur_line_buf),
                               std::istream_iterator<float>()};
@@ -1036,7 +1034,7 @@ void TritonPart::ReadHypergraph(const std::string& hypergraph_file,
 
   // Read weight for vertices
   for (int i = 0; i < num_vertices_; i++) {
-    if (vertex_weight_flag == true) {
+    if (vertex_weight_flag) {
       std::getline(hypergraph_file_input, cur_line);
       std::istringstream cur_line_buf(cur_line);
       std::vector<float> vwts{std::istream_iterator<float>(cur_line_buf),
@@ -1218,7 +1216,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   // traverse all the instances
   int vertex_id = 0;
   // check if the fence constraint is specified
-  if (fence_flag_ == true) {
+  if (fence_flag_) {
     // check IO ports
     for (auto term : block_->getBTerms()) {
       // -1 means that the instance is not used by the partitioner
@@ -1232,7 +1230,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         vertex_weights_.emplace_back(vwts);
         vertex_types_.emplace_back(kPort);
         odb::dbIntProperty::find(term, "vertex_id")->setValue(vertex_id++);
-        if (placement_flag_ == true) {
+        if (placement_flag_) {
           std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0f,
                                  (box.yMin() + box.yMax()) / 2.0f};
           placement_attr_.emplace_back(loc);
@@ -1266,7 +1264,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         } else {
           vertex_types_.emplace_back(kCombStdCell);
         }
-        if (placement_flag_ == true) {
+        if (placement_flag_) {
           std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0f,
                                  (box->yMin() + box->yMax()) / 2.0f};
           placement_attr_.emplace_back(loc);
@@ -1280,7 +1278,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
       vertex_types_.emplace_back(kPort);
       std::vector<float> vwts(vertex_dimensions_, 0.0);
       vertex_weights_.push_back(vwts);
-      if (placement_flag_ == true) {
+      if (placement_flag_) {
         odb::Rect box = term->getBBox();
         std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0f,
                                (box.yMin() + box.yMax()) / 2.0f};
@@ -1311,7 +1309,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
         vertex_types_.emplace_back(kCombStdCell);
       }
       odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
-      if (placement_flag_ == true) {
+      if (placement_flag_) {
         odb::dbBox* box = inst->getBBox();
         std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0f,
                                (box->yMin() + box->yMax()) / 2.0f};
@@ -1323,14 +1321,14 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   num_vertices_ = vertex_id;
 
   // read fixed instance file
-  if (fixed_file.empty() == false) {
+  if (!fixed_file.empty()) {
     std::ifstream file_input(fixed_file);
     if (!file_input.is_open()) {
       logger_->warn(
           PAR, 21, "Cannot open the fixed instance file : {}", fixed_file);
     } else {
       fixed_attr_.resize(num_vertices_);
-      std::fill(fixed_attr_.begin(), fixed_attr_.end(), -1);
+      std::ranges::fill(fixed_attr_, -1);
       std::string cur_line;
       while (std::getline(file_input, cur_line)) {
         std::stringstream ss(cur_line);
@@ -1350,14 +1348,14 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   }
 
   // read community attribute file
-  if (community_file.empty() == false) {
+  if (!community_file.empty()) {
     std::ifstream file_input(community_file);
     if (!file_input.is_open()) {
       logger_->warn(
           PAR, 22, "Cannot open the community file : {}", community_file);
     } else {
       community_attr_.resize(num_vertices_);
-      std::fill(community_attr_.begin(), community_attr_.end(), -1);
+      std::ranges::fill(community_attr_, -1);
       std::string cur_line;
       while (std::getline(file_input, cur_line)) {
         std::stringstream ss(cur_line);
@@ -1377,7 +1375,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   }
 
   // read the group file
-  if (group_file.empty() == false) {
+  if (!group_file.empty()) {
     std::ifstream file_input(group_file);
     if (!file_input.is_open()) {
       logger_->warn(PAR, 23, "Cannot open the group file : {}", group_file);
@@ -1470,7 +1468,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
   num_hyperedges_ = static_cast<int>(hyperedges_.size());
 
   // add timing features
-  if (timing_aware_flag_ == true) {
+  if (timing_aware_flag_) {
     logger_->info(PAR, 37, "Extracting timing paths.");
     BuildTimingPaths();  // create timing paths
   }
@@ -1518,7 +1516,7 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
 // TODO:  how to handle multi-clock design
 void TritonPart::BuildTimingPaths()
 {
-  if (timing_aware_flag_ == false || top_n_ <= 0) {
+  if (!timing_aware_flag_ || top_n_ <= 0) {
     logger_->warn(PAR, 24, "Timing driven partitioning is disabled");
     return;
   }
@@ -1540,7 +1538,7 @@ void TritonPart::BuildTimingPaths()
   //              ExceptionThruSeq *thrus,
   //              ExceptionTo *to,
   //              bool unconstrained,
-  //              const Corner *corner,
+  //              const Scene *corner,
   //              const MinMaxAll *min_max,
   //              int group_count,
   //              int endpoint_count,
@@ -1557,6 +1555,7 @@ void TritonPart::BuildTimingPaths()
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
+  sta::StringSeq group_names_empty;
   sta::PathEndSeq path_ends = sta_->search()->findPathEnds(  // from, thrus, to,
                                                              // unconstrained
       e_from,   // return paths from a list of clocks/instances/ports/register
@@ -1565,17 +1564,18 @@ void TritonPart::BuildTimingPaths()
       e_to,     // return paths to a list of clocks/instances/ports or pins
       include_unconstrained,  // return unconstrained paths
       // corner, min_max,
-      sta_->cmdCorner(),  // return paths for a process corner
+      sta_->cmdMode()->scenes(),  // return paths for a process corner
       get_max ? sta::MinMaxAll::max()
               : sta::MinMaxAll::min(),  // return max/min paths checks
       // group_count, endpoint_count, unique_pins
       group_count,     // number of paths in total
       endpoint_count,  // number of paths for each endpoint
-      true,
+      true,            // unique pins
+      true,            // unique edges
       -sta::INF,
-      sta::INF,  // slack_min, slack_max,
-      true,      // sort_by_slack
-      nullptr,   // group_names
+      sta::INF,           // slack_min, slack_max,
+      true,               // sort_by_slack
+      group_names_empty,  // group_names
       // setup, hold, recovery, removal,
       get_max,
       !get_max,
@@ -1610,15 +1610,14 @@ void TritonPart::BuildTimingPaths()
       if (net == nullptr) {
         continue;  // check if the net exists
       }
-      if (network_->isTopLevelPort(pin) == true) {
+      if (network_->isTopLevelPort(pin)) {
         auto bterm = block_->findBTerm(network_->pathName(pin));
         const int vertex_id
             = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
         if (vertex_id == -1) {
           continue;
         }
-        if (timing_path.path.empty() == true
-            || timing_path.path.back() != vertex_id) {
+        if (timing_path.path.empty() || timing_path.path.back() != vertex_id) {
           timing_path.path.push_back(vertex_id);
         }
       } else {
@@ -1629,8 +1628,7 @@ void TritonPart::BuildTimingPaths()
         if (vertex_id == -1) {
           continue;
         }
-        if (timing_path.path.empty() == true
-            || timing_path.path.back() != vertex_id) {
+        if (timing_path.path.empty() || timing_path.path.back() != vertex_id) {
           timing_path.path.push_back(vertex_id);
         }
       }
@@ -1659,7 +1657,7 @@ void TritonPart::BuildTimingPaths()
   extra_delay_ = extra_delay_ / maximum_clock_period_;
   debugPrint(
       logger_, PAR, "netlist", 1, "normalized extra delay : {}", extra_delay_);
-  if (guardband_flag_ == false) {
+  if (!guardband_flag_) {
     for (auto& timing_path : timing_paths_) {
       timing_path.slack = timing_path.slack / maximum_clock_period_;
     }
@@ -1678,9 +1676,7 @@ void TritonPart::BuildTimingPaths()
   // resize the hyperedge_slacks_
   hyperedge_slacks_.clear();
   hyperedge_slacks_.resize(num_hyperedges_);
-  std::fill(hyperedge_slacks_.begin(),
-            hyperedge_slacks_.end(),
-            maximum_clock_period_);
+  std::ranges::fill(hyperedge_slacks_, maximum_clock_period_);
   debugPrint(logger_,
              PAR,
              "netlist",
@@ -1695,13 +1691,13 @@ void TritonPart::BuildTimingPaths()
       continue;  // this net is not used
     }
     sta::Net* net = network_->dbToSta(db_net);
-    const float slack = sta_->netSlack(net, sta::MinMax::max());
+    const float slack = sta_->slack(net, sta::MinMax::max());
     // set the slack of unconstrained net to max_clock_period_
     if (slack > maximum_clock_period_) {
       num_unconstrained_hyperedges++;
       hyperedge_slacks_[hyperedge_id] = 1.0;
     } else {
-      if (guardband_flag_ == false) {
+      if (!guardband_flag_) {
         hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_;
       } else {
         hyperedge_slacks_[hyperedge_id]
@@ -1744,7 +1740,7 @@ void TritonPart::MultiLevelPartition()
                "no base balance is specified. Use default value.");
     base_balance_.clear();
     base_balance_.resize(num_parts_);
-    std::fill(base_balance_.begin(), base_balance_.end(), 1.0 / num_parts_);
+    std::ranges::fill(base_balance_, 1.0 / num_parts_);
   }
 
   if (static_cast<int>(scale_factor_.size()) != num_parts_) {
@@ -1755,7 +1751,7 @@ void TritonPart::MultiLevelPartition()
                "no scale factor is specified. Use default value.");
     scale_factor_.clear();
     scale_factor_.resize(num_parts_);
-    std::fill(scale_factor_.begin(), scale_factor_.end(), 1.0);
+    std::ranges::fill(scale_factor_, 1.0);
   }
 
   // rescale the base balance based on scale_factor
@@ -1772,7 +1768,7 @@ void TritonPart::MultiLevelPartition()
                "No hyperedge weighting is specified. Use default value of 1.");
     e_wt_factors_.clear();
     e_wt_factors_.resize(hyperedge_dimensions_);
-    std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
+    std::ranges::fill(e_wt_factors_, 1.0);
   }
 
   if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
@@ -1783,7 +1779,7 @@ void TritonPart::MultiLevelPartition()
                "No vertex weighting is specified. Use default value of 1.");
     v_wt_factors_.clear();
     v_wt_factors_.resize(vertex_dimensions_);
-    std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
+    std::ranges::fill(v_wt_factors_, 1.0);
   }
 
   if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
@@ -1798,8 +1794,7 @@ void TritonPart::MultiLevelPartition()
           "No placement weighting is specified. Use default value of 1.");
       placement_wt_factors_.clear();
       placement_wt_factors_.resize(placement_dimensions_);
-      std::fill(
-          placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
+      std::ranges::fill(placement_wt_factors_, 1.0f);
     }
   }
 
@@ -1957,7 +1952,7 @@ void TritonPart::MultiLevelPartition()
                                                 tritonpart_evaluator,
                                                 logger_);
 
-  if (timing_aware_flag_ == true) {
+  if (timing_aware_flag_) {
     // Initialize the timing on original_hypergraph_
     tritonpart_evaluator->InitializeTiming(original_hypergraph_);
   }
@@ -1986,7 +1981,7 @@ void TritonPart::MultiLevelPartition()
   // solution to solution_
   solution_.clear();
   solution_.resize(original_hypergraph_->GetNumVertices());
-  std::fill(solution_.begin(), solution_.end(), -1);
+  std::ranges::fill(solution_, -1);
   for (int cluster_id = 0; cluster_id < hypergraph_->GetNumVertices();
        cluster_id++) {
     const int part_id = solution[cluster_id];
@@ -2012,7 +2007,7 @@ void TritonPart::MultiLevelPartition()
                                                   true);
 
   // generate the timing report
-  if (timing_aware_flag_ == true) {
+  if (timing_aware_flag_) {
     logger_->report("Display Timing Path Cuts Statistics");
     PathStats path_stats
         = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);

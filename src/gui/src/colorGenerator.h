@@ -14,7 +14,6 @@ class ColorGenerator
 {
  public:
   ColorGenerator();
-  ~ColorGenerator() {}
 
   int getColorCount() const { return kColors.size(); }
   QColor getQColor();

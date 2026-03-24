@@ -60,11 +60,8 @@ class lefiNonDefault
   void addDiagWidth(double num);  // 5.6
   void end();
   void clear();
-  void addProp(const char* name, const char* value, const char type);
-  void addNumProp(const char* name,
-                  const double d,
-                  const char* value,
-                  const char type);
+  void addProp(const char* name, const char* value, char type);
+  void addNumProp(const char* name, double d, const char* value, char type);
   void setHardspacing();                           // 5.6
   void addUseVia(const char* name);                // 5.6
   void addUseViaRule(const char* name);            // 5.6

@@ -32,8 +32,8 @@ module td1 (a1,
  AND2_X4 U5 (.A1(a3),
     .A2(n1),
     .ZN(net1));
- BUF_X8 wire1 (.A(net2),
-    .Z(y1));
  BUF_X4 rebuffer1 (.A(net1),
     .Z(net2));
+ BUF_X8 wire1 (.A(net2),
+    .Z(y1));
 endmodule

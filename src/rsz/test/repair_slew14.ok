@@ -14,7 +14,7 @@ u2/A                                    1.50    1.82   -0.32 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         3
-    final |   +156.2% |       0 |       2 |             1 |         0
+    final |   +118.8% |       0 |       2 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0036] Found 1 capacitance violations.
@@ -23,5 +23,5 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-u1/Y                                    1.49    0.47    1.03 (MET)
+u1/Y                                    1.49    0.54    0.95 (MET)
 

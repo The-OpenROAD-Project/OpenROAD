@@ -26,6 +26,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class GNet;
 class Die;
+struct PlaceOptions;
 
 // for GGrid
 class Tile
@@ -120,30 +121,25 @@ class TileGrid
   int numRoutingLayers_ = 0;
 };
 
-class RouteBaseVars
+struct RouteBaseVars
 {
- public:
-  bool useRudy;
-  float targetRC;
-  float inflationRatioCoef;
-  float maxInflationRatio;
-  float maxDensity;
-  float ignoreEdgeRatio;
-  float minInflationRatio;
+  RouteBaseVars(const PlaceOptions& options);
+
+  const bool useRudy;
+  const float targetRC;
+  const float inflationRatioCoef;
+  const float maxInflationRatio;
+  const float maxDensity;
+  const float ignoreEdgeRatio;
+  const float minInflationRatio;
 
   // targetRC metric coefficients.
-  float rcK1, rcK2, rcK3, rcK4;
-
-  int maxInflationIter;
-
-  RouteBaseVars();
-  void reset();
+  const float rcK1, rcK2, rcK3, rcK4;
 };
 
 class RouteBase
 {
  public:
-  RouteBase();
   RouteBase(RouteBaseVars rbVars,
             odb::dbDatabase* db,
             grt::GlobalRouter* grouter,
@@ -160,17 +156,24 @@ class RouteBase
   void loadGrt();
   float getGrtRC() const;
 
-  void updateRudyRoute();
-  void getRudyResult();
-  float getRudyRC(bool verbose = true) const;
+  void calculateRudyTiles();
+  void updateRudyAverage(bool verbose = true);
+
+  float getRudyAverage() const { return final_average_rc_; }
+  int getOverflowedTilesCount() const { return overflowed_tiles_count_; }
+  int getTotalTilesCount() const { return tg_->tiles().size(); }
+  double getTotalRudyOverflow() const { return total_route_overflow_; }
+
+  bool isMinRc() const { return is_min_rc_; }
 
   // first: is Routability Need
   // second: reverting procedure need in NesterovPlace
   //         (e.g. calling NesterovPlace's init())
   std::pair<bool, bool> routability(int routability_driven_revert_count);
 
-  int64_t inflatedAreaDelta() const;
-  int numCall() const;
+  std::vector<int64_t> inflatedAreaDelta() const;
+  int64_t getTotalInflation() const;
+  int getRevertCount() const;
 
  private:
   RouteBaseVars rbVars_;
@@ -183,24 +186,31 @@ class RouteBase
 
   std::unique_ptr<TileGrid> tg_;
 
-  int64_t inflatedAreaDelta_ = 0;
+  std::vector<int64_t> inflatedAreaDelta_;
+  std::vector<int64_t> minRcInflatedAreaDelta_;
+  std::vector<int64_t> accumulatedInflatedAreaDelta_;
 
-  int numCall_ = 0;
+  int revert_count_ = 0;
+  float final_average_rc_ = 0.0;
+  int overflowed_tiles_count_ = 0;
+  double total_route_overflow_ = 0.0;
+  bool is_min_rc_ = false;
 
   // if solutions are not improved at all,
   // needs to revert back to have the minimized RC values.
   // minRcInflationSize_ will store
   // GCell's width and height
   float minRc_ = 1e30;
-  float minRcTargetDensity_ = 0;
+  std::vector<float> minRcTargetDensity_;
   int min_RC_violated_cnt_ = 0;
   int max_routability_no_improvement_ = 3;
   int max_routability_revert_ = 50;
 
   void init();
   void resetRoutabilityResources();
+  void revertToMinCongestion();
 
-  // update numCall_
+  // update revert_count_
   void increaseCounter();
 
   // routability funcs

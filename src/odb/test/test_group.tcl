@@ -79,7 +79,21 @@ proc test_destroy { } {
   tearDown $db
 }
 
+proc test_region_w_groups_destroy { } {
+  lassign [createSimpleDB] db lib
+  set block [create1LevelBlock $db $lib [$db getChip]]
+
+  # create region
+  set foo_region [odb::dbRegion_create $block foo_region]
+  # and a group
+  set foo_group [odb::dbGroup_create $foo_region foo_group]
+  # destroy region while it has group
+  odb::dbRegion_destroy $foo_region
+  tearDown $db
+}
+
 test_default
 test_destroy
+test_region_w_groups_destroy
 puts "pass"
 exit 0

@@ -4,6 +4,7 @@
 // Generator Code Begin Cpp
 #include "dbChipConn.h"
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -11,15 +12,19 @@
 #include "dbChipInst.h"
 #include "dbChipRegion.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "utl/Logger.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbChipConn>;
 
 bool _dbChipConn::operator==(const _dbChipConn& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -40,6 +45,7 @@ bool _dbChipConn::operator==(const _dbChipConn& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipConn::operator<(const _dbChipConn& rhs) const
@@ -163,7 +169,7 @@ std::vector<dbChipInst*> dbChipConn::getBottomRegionPath() const
   return bottom_region_path;
 }
 
-std::vector<dbId<_dbChipInst>> extractChipInstsPath(
+static std::vector<dbId<_dbChipInst>> extractChipInstsPath(
     dbChip* parent_chip,
     const std::vector<dbChipInst*>& chip_insts)
 {
@@ -258,7 +264,7 @@ void dbChipConn::destroy(dbChipConn* chipConn)
   if (chip->conns_ == obj->getOID()) {
     chip->conns_ = obj->chip_conn_next_;
   } else {
-    uint id = chip->conns_;
+    uint32_t id = chip->conns_;
     while (id != 0) {
       _dbChipConn* _chipconn = _db->chip_conn_tbl_->getPtr(id);
       if (_chipconn->chip_conn_next_ == obj->getOID()) {

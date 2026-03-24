@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -18,6 +19,8 @@ filegroup(
     srcs = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fakeram45_64x7.lef",
+        "Nangate45/fakeram45_64x7.lib",
     ],
     visibility = ["//visibility:public"],
 )
@@ -28,6 +31,20 @@ filegroup(
         "sky130hd/sky130_fd_sc_hd_merged.lef",
         "sky130hd/sky130hd.tlef",
         "sky130hd/sky130hd_std_cell.lef",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "ihp-sg13g2_data",
+    srcs = [
+        "ihp-sg13g2/IOLib.lef",
+        "ihp-sg13g2/IOLib_dummy.lib",
+        "ihp-sg13g2/setRC.tcl",
+        "ihp-sg13g2/sg13g2_stdcell.lef",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p20V_25C.lib",
+        "ihp-sg13g2/sg13g2_stdcell_typ_1p50V_25C.lib",
+        "ihp-sg13g2/sg13g2_tech.lef",
     ],
     visibility = ["//visibility:public"],
 )
@@ -51,6 +68,7 @@ PASSFAIL_TESTS = [
 COMPULSORY_TESTS = [
     "error1",
     "get_core_die_areas",
+    "ord_tclsh_completion",
     "place_inst",
     "upf_test",
     "upf_aes",
@@ -93,6 +111,8 @@ BIG_TESTS = [
     "gcd_sky130hd_fast_slow",
     "gcd_sky130hd",
     "gcd_sky130hs",
+    "gcd_asap7",
+    "aes_asap7",
     "ibex_sky130hd",
     "ibex_sky130hs",
     "jpeg_sky130hd",
@@ -112,6 +132,15 @@ BIG_TESTS = [
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
+
+py_test(
+    name = "timing_report_api_test",
+    size = "medium",
+    srcs = ["timing_report_api.py"],
+    data = [":regression_resources"],
+    main = "timing_report_api.py",
+    deps = ["//python/openroad:openroadpy"],
+)
 
 # These tests take a long time, make them easy to explicitly invoke
 test_suite(

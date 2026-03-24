@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-#include "odb/array1.h"
+#include <cstdint>
+
+#include "rcx/array1.h"
 #include "rcx/dbUtil.h"
 #include "rcx/extMeasureRC.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSegment.h"
 #include "utl/Logger.h"
 
-using odb::Ath__array1D;
-
 namespace rcx {
-
-using utl::RCX;
 
 int extMeasureRC::GetDx1Dx2(Wire* w1, Wire* w2, int& dx2)
 {
@@ -61,20 +59,16 @@ bool extMeasureRC::OverlapOnly(int xy1, int len1, int xy2, int len2)
 bool extMeasureRC::Enclosed(int x1, int x2, int y1, int y2)
 {
   // segmet (x1,x2) vs. (y1,y2)
-  if (x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2) {
-    return true;
-  }
-
-  return false;
+  return x1 >= y1 && x1 <= y2 && x2 >= y1 && x2 <= y2;
 }
-uint extMeasureRC::FindSegments(bool lookUp,
-                                uint dir,
-                                int maxDist,
-                                Wire* w1,
-                                int xy1,
-                                int len1,
-                                Wire* w2_next,
-                                Ath__array1D<extSegment*>* segTable)
+uint32_t extMeasureRC::FindSegments(bool lookUp,
+                                    uint32_t dir,
+                                    int maxDist,
+                                    Wire* w1,
+                                    int xy1,
+                                    int len1,
+                                    Wire* w2_next,
+                                    Array1D<extSegment*>* segTable)
 {
   if (w2_next == nullptr) {
     return 0;
@@ -114,7 +108,7 @@ uint extMeasureRC::FindSegments(bool lookUp,
     FindSegments(lookUp, dir, maxDist, w1, xy1, len1, next_up_down, segTable);
     return 0;
   }
-  uint cnt = 0;
+  uint32_t cnt = 0;
   int xy2 = w2->getXY() + w2->getLen();
   int dx2;
   int dx1 = GetDx1Dx2(xy1, len1, w2, dx2);

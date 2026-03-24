@@ -4,15 +4,15 @@
   "fields": [
     {
       "type": "bit",
-      "name": "parallel_overlap_"
+      "name": "parallel_overlap"
     },
     {
       "type": "bit",
-      "name": "long_array_"
+      "name": "long_array"
     },
     {
       "type": "bit",
-      "name": "via_width_valid_"
+      "name": "via_width_valid"
     },
     {
       "type": "int",
@@ -26,7 +26,7 @@
     },
     {
       "type": "bit",
-      "name": "within_valid_"
+      "name": "within_valid"
     },
     {
       "type": "int",

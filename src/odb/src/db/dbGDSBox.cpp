@@ -9,27 +9,33 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBox>;
 
 bool _dbGDSBox::operator==(const _dbGDSBox& rhs) const
 {
-  if (_layer != rhs._layer) {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+  if (layer_ != rhs.layer_) {
     return false;
   }
-  if (_datatype != rhs._datatype) {
+  if (datatype_ != rhs.datatype_) {
     return false;
   }
-  if (_bounds != rhs._bounds) {
+  if (bounds_ != rhs.bounds_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
@@ -39,25 +45,25 @@ bool _dbGDSBox::operator<(const _dbGDSBox& rhs) const
 
 _dbGDSBox::_dbGDSBox(_dbDatabase* db)
 {
-  _layer = 0;
-  _datatype = 0;
+  layer_ = 0;
+  datatype_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBox& obj)
 {
-  stream >> obj._layer;
-  stream >> obj._datatype;
-  stream >> obj._bounds;
-  stream >> obj._propattr;
+  stream >> obj.layer_;
+  stream >> obj.datatype_;
+  stream >> obj.bounds_;
+  stream >> obj.propattr_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBox& obj)
 {
-  stream << obj._layer;
-  stream << obj._datatype;
-  stream << obj._bounds;
-  stream << obj._propattr;
+  stream << obj.layer_;
+  stream << obj.datatype_;
+  stream << obj.bounds_;
+  stream << obj.propattr_;
   return stream;
 }
 
@@ -67,9 +73,9 @@ void _dbGDSBox::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["propattr"].add(_propattr);
-  for (auto& [i, s] : _propattr) {
-    info.children_["propattr"].add(s);
+  info.children["propattr"].add(propattr_);
+  for (auto& [i, s] : propattr_) {
+    info.children["propattr"].add(s);
   }
   // User Code End collectMemInfo
 }
@@ -84,46 +90,46 @@ void dbGDSBox::setLayer(int16_t layer)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
-  obj->_layer = layer;
+  obj->layer_ = layer;
 }
 
 int16_t dbGDSBox::getLayer() const
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
-  return obj->_layer;
+  return obj->layer_;
 }
 
 void dbGDSBox::setDatatype(int16_t datatype)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
-  obj->_datatype = datatype;
+  obj->datatype_ = datatype;
 }
 
 int16_t dbGDSBox::getDatatype() const
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
-  return obj->_datatype;
+  return obj->datatype_;
 }
 
 void dbGDSBox::setBounds(Rect bounds)
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
 
-  obj->_bounds = bounds;
+  obj->bounds_ = bounds;
 }
 
 Rect dbGDSBox::getBounds() const
 {
   _dbGDSBox* obj = (_dbGDSBox*) this;
-  return obj->_bounds;
+  return obj->bounds_;
 }
 
 // User Code Begin dbGDSBoxPublicMethods
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSBox::getPropattr()
 {
   auto* obj = (_dbGDSBox*) this;
-  return obj->_propattr;
+  return obj->propattr_;
 }
 
 dbGDSBox* dbGDSBox::create(dbGDSStructure* structure)

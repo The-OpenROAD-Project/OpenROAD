@@ -38,4 +38,4 @@
 [INFO CTS-0100]  Leaf buffers 22
 [INFO CTS-0101]  Average sink wire length 118.11 um
 [INFO CTS-0102]  Path depth 3 - 3
-[INFO CTS-0207]  Leaf load cells 6
+[INFO CTS-0207]  Dummy loads inserted 6

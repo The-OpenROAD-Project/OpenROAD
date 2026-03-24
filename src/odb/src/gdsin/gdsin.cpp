@@ -26,76 +26,76 @@ namespace odb ::gds {
 
 using utl::ODB;
 
-GDSReader::GDSReader(utl::Logger* logger) : _logger(logger)
+GDSReader::GDSReader(utl::Logger* logger) : logger_(logger)
 {
 }
 
 dbGDSLib* GDSReader::read_gds(const std::string& filename, dbDatabase* db)
 {
-  _db = db;
-  _file.open(filename, std::ios::binary);
-  if (!_file) {
-    _logger->error(ODB, 450, "Could not open file {}", filename);
+  db_ = db;
+  file_.open(filename, std::ios::binary);
+  if (!file_) {
+    logger_->error(ODB, 450, "Could not open file {}", filename);
   }
   readRecord();
   checkRType(RecordType::HEADER);
 
   processLib();
-  if (_file.is_open()) {
-    _file.close();
+  if (file_.is_open()) {
+    file_.close();
   }
-  _db = nullptr;
+  db_ = nullptr;
 
-  return _lib;
+  return lib_;
 }
 
 void GDSReader::checkRType(RecordType expect)
 {
-  if (_r.type != expect) {
-    _logger->error(ODB,
+  if (r_.type != expect) {
+    logger_->error(ODB,
                    451,
                    "Corrupted GDS, Expected: {} Got: {}",
                    recordNames[static_cast<int>(expect)],
-                   recordNames[static_cast<int>(_r.type)]);
+                   recordNames[static_cast<int>(r_.type)]);
   }
 }
 
 void GDSReader::checkRData(DataType eType, size_t eSize)
 {
-  if (_r.dataType != eType) {
-    _logger->error(ODB,
+  if (r_.dataType != eType) {
+    logger_->error(ODB,
                    452,
                    "Corrupted GDS, Expected data type: {} Got: {}",
                    std::to_string((int) eType),
-                   std::to_string((int) _r.dataType));
+                   std::to_string((int) r_.dataType));
   }
 }
 
 double GDSReader::readReal8()
 {
   uint64_t value;
-  _file.read(reinterpret_cast<char*>(&value), 8);
+  file_.read(reinterpret_cast<char*>(&value), 8);
   return real8_to_double(htobe64(value));
 }
 
 int32_t GDSReader::readInt32()
 {
   int32_t value;
-  _file.read(reinterpret_cast<char*>(&value), 4);
+  file_.read(reinterpret_cast<char*>(&value), 4);
   return htobe32(value);
 }
 
 int16_t GDSReader::readInt16()
 {
   int16_t value;
-  _file.read(reinterpret_cast<char*>(&value), 2);
+  file_.read(reinterpret_cast<char*>(&value), 2);
   return htobe16(value);
 }
 
 int8_t GDSReader::readInt8()
 {
   int8_t value;
-  _file.read(reinterpret_cast<char*>(&value), 1);
+  file_.read(reinterpret_cast<char*>(&value), 1);
   return value;
 }
 
@@ -104,42 +104,42 @@ bool GDSReader::readRecord()
   const uint16_t recordLength = readInt16();
   const uint8_t recordType = readInt8();
   const DataType dataType = toDataType(readInt8());
-  _r.type = toRecordType(recordType);
-  _r.dataType = dataType;
+  r_.type = toRecordType(recordType);
+  r_.dataType = dataType;
   if ((recordLength - 4) % dataTypeSize[(int) dataType] != 0) {
     throw std::runtime_error(
         "Corrupted GDS, Data size is not a multiple of data type size!");
   }
-  _r.length = recordLength;
+  r_.length = recordLength;
   const int length = recordLength - 4;
   if (dataType == DataType::kInt2) {
-    _r.data16.clear();
+    r_.data16.clear();
     for (int i = 0; i < length; i += 2) {
-      _r.data16.push_back(readInt16());
+      r_.data16.push_back(readInt16());
     }
   } else if (dataType == DataType::kInt4) {
-    _r.data32.clear();
+    r_.data32.clear();
     for (int i = 0; i < length; i += 4) {
-      _r.data32.push_back(readInt32());
+      r_.data32.push_back(readInt32());
     }
   } else if (dataType == DataType::kReal8) {
-    _r.data64.clear();
+    r_.data64.clear();
     for (int i = 0; i < length; i += 8) {
-      _r.data64.push_back(readReal8());
+      r_.data64.push_back(readReal8());
     }
   } else if (dataType == DataType::kAsciiString
              || dataType == DataType::kBitArray) {
-    _r.data8.clear();
+    r_.data8.clear();
     for (int i = 0; i < length; i++) {
-      _r.data8.push_back(readInt8());
+      r_.data8.push_back(readInt8());
     }
-    if (dataType == DataType::kAsciiString && !_r.data8.empty()
-        && _r.data8.back() == 0) {
-      _r.data8.pop_back();  // Discard null terminator
+    if (dataType == DataType::kAsciiString && !r_.data8.empty()
+        && r_.data8.back() == 0) {
+      r_.data8.pop_back();  // Discard null terminator
     }
   }
 
-  return static_cast<bool>(_file);
+  return static_cast<bool>(file_);
 }
 
 bool GDSReader::processLib()
@@ -147,34 +147,34 @@ bool GDSReader::processLib()
   readRecord();
   checkRType(RecordType::BGNLIB);
 
-  _lib = dbGDSLib::create(_db, "TEST");  // FIXME
+  lib_ = dbGDSLib::create(db_, "TEST");  // FIXME
 
-  if (_r.length != 28) {
+  if (r_.length != 28) {
     throw std::runtime_error(
         "Corrupted GDS, BGNLIB record length is not 28 bytes");
   }
 
   readRecord();
   checkRType(RecordType::LIBNAME);
-  _lib->setLibname(_r.data8);
+  lib_->setLibname(r_.data8);
 
   readRecord();
   checkRType(RecordType::UNITS);
 
-  _lib->setUnits(_r.data64[0], _r.data64[1]);
+  lib_->setUnits(r_.data64[0], r_.data64[1]);
 
   while (readRecord()) {
-    if (_r.type == RecordType::ENDLIB) {
+    if (r_.type == RecordType::ENDLIB) {
       return true;
     }
-    if (_r.type == RecordType::BGNSTR) {
+    if (r_.type == RecordType::BGNSTR) {
       if (!processStruct()) {
         break;
       }
     }
   }
 
-  _lib = nullptr;
+  lib_ = nullptr;
   return false;
 }
 
@@ -183,20 +183,20 @@ bool GDSReader::processStruct()
   readRecord();
   checkRType(RecordType::STRNAME);
 
-  const std::string name(_r.data8.begin(), _r.data8.end());
+  const std::string name(r_.data8.begin(), r_.data8.end());
 
-  dbGDSStructure* structure = _lib->findGDSStructure(name.c_str());
+  dbGDSStructure* structure = lib_->findGDSStructure(name.c_str());
   if (structure) {
-    if (_defined.find(structure) != _defined.end()) {
+    if (defined_.find(structure) != defined_.end()) {
       throw std::runtime_error("Corrupted GDS, Duplicate structure name");
     }
   } else {
-    structure = dbGDSStructure::create(_lib, name.c_str());
+    structure = dbGDSStructure::create(lib_, name.c_str());
   }
-  _defined.insert(structure);
+  defined_.insert(structure);
 
   while (readRecord()) {
-    if (_r.type == RecordType::ENDSTR) {
+    if (r_.type == RecordType::ENDSTR) {
       return true;
     }
     if (!processElement(structure)) {
@@ -210,13 +210,13 @@ bool GDSReader::processStruct()
 std::vector<Point> GDSReader::processXY()
 {
   checkRType(RecordType::XY);
-  if (_r.data32.size() % 2 != 0) {
+  if (r_.data32.size() % 2 != 0) {
     throw std::runtime_error(
         "Corrupted GDS, XY data size is not a multiple of 2");
   }
   std::vector<Point> xy;
-  for (int i = 0; i < _r.data32.size(); i += 2) {
-    xy.emplace_back(_r.data32[i], _r.data32[i + 1]);
+  for (int i = 0; i < r_.data32.size(); i += 2) {
+    xy.emplace_back(r_.data32[i], r_.data32[i + 1]);
   }
   return xy;
 }
@@ -225,16 +225,16 @@ template <typename T>
 void GDSReader::processPropAttr(T* elem)
 {
   while (readRecord()) {
-    if (_r.type == RecordType::ENDEL) {
+    if (r_.type == RecordType::ENDEL) {
       return;
     }
 
     checkRType(RecordType::PROPATTR);
-    const int16_t attr = _r.data16[0];
+    const int16_t attr = r_.data16[0];
 
     readRecord();
     checkRType(RecordType::PROPVALUE);
-    const std::string value = _r.data8;
+    const std::string value = r_.data8;
 
     if (elem) {
       elem->getPropattr().emplace_back(attr, value);
@@ -244,7 +244,7 @@ void GDSReader::processPropAttr(T* elem)
 
 bool GDSReader::processElement(dbGDSStructure* structure)
 {
-  switch (_r.type) {
+  switch (r_.type) {
     case RecordType::BOUNDARY: {
       auto el = processBoundary(structure);
       processPropAttr(el);
@@ -299,21 +299,21 @@ dbGDSPath* GDSReader::processPath(dbGDSStructure* structure)
   readRecord();
   checkRType(RecordType::LAYER);
 
-  path->setLayer(_r.data16[0]);
+  path->setLayer(r_.data16[0]);
 
   readRecord();
   checkRType(RecordType::DATATYPE);
 
-  path->setDatatype(_r.data16[0]);
+  path->setDatatype(r_.data16[0]);
 
   readRecord();
-  if (_r.type == RecordType::PATHTYPE) {
-    path->setPathType(_r.data16[0]);
+  if (r_.type == RecordType::PATHTYPE) {
+    path->setPathType(r_.data16[0]);
     readRecord();
   }
 
-  if (_r.type == RecordType::WIDTH) {
-    path->setWidth(_r.data32[0]);
+  if (r_.type == RecordType::WIDTH) {
+    path->setWidth(r_.data32[0]);
     readRecord();
   }
 
@@ -328,11 +328,11 @@ dbGDSBoundary* GDSReader::processBoundary(dbGDSStructure* structure)
 
   readRecord();
   checkRType(RecordType::LAYER);
-  bdy->setLayer(_r.data16[0]);
+  bdy->setLayer(r_.data16[0]);
 
   readRecord();
   checkRType(RecordType::DATATYPE);
-  bdy->setDatatype(_r.data16[0]);
+  bdy->setDatatype(r_.data16[0]);
 
   readRecord();
   bdy->setXy(processXY());
@@ -345,18 +345,18 @@ dbGDSSRef* GDSReader::processSRef(dbGDSStructure* structure)
   readRecord();
   checkRType(RecordType::SNAME);
 
-  const std::string name(_r.data8.begin(), _r.data8.end());
+  const std::string name(r_.data8.begin(), r_.data8.end());
 
-  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  dbGDSStructure* referenced = lib_->findGDSStructure(name.c_str());
   if (!referenced) {
     // Empty structure just to reference not yet defined.
-    referenced = dbGDSStructure::create(_lib, name.c_str());
+    referenced = dbGDSStructure::create(lib_, name.c_str());
   }
 
   auto* sref = dbGDSSRef::create(structure, referenced);
 
   readRecord();
-  if (_r.type == RecordType::STRANS) {
+  if (r_.type == RecordType::STRANS) {
     sref->setTransform(processSTrans());
   }
 
@@ -370,24 +370,24 @@ dbGDSARef* GDSReader::processARef(dbGDSStructure* structure)
   readRecord();
   checkRType(RecordType::SNAME);
 
-  const std::string name(_r.data8.begin(), _r.data8.end());
+  const std::string name(r_.data8.begin(), r_.data8.end());
 
-  dbGDSStructure* referenced = _lib->findGDSStructure(name.c_str());
+  dbGDSStructure* referenced = lib_->findGDSStructure(name.c_str());
   if (!referenced) {
     // Empty structure just to reference not yet defined.
-    referenced = dbGDSStructure::create(_lib, name.c_str());
+    referenced = dbGDSStructure::create(lib_, name.c_str());
   }
 
   auto* aref = dbGDSARef::create(structure, referenced);
 
   readRecord();
-  if (_r.type == RecordType::STRANS) {
+  if (r_.type == RecordType::STRANS) {
     aref->setTransform(processSTrans());
   }
 
-  if (_r.type == RecordType::COLROW) {
-    aref->setNumColumns(_r.data16[0]);
-    aref->setNumRows(_r.data16[1]);
+  if (r_.type == RecordType::COLROW) {
+    aref->setNumColumns(r_.data16[0]);
+    aref->setNumRows(r_.data16[1]);
     readRecord();
   }
 
@@ -405,28 +405,28 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
 
   readRecord();
   checkRType(RecordType::LAYER);
-  text->setLayer(_r.data16[0]);
+  text->setLayer(r_.data16[0]);
 
   readRecord();
   checkRType(RecordType::TEXTTYPE);
-  text->setDatatype(_r.data16[0]);
+  text->setDatatype(r_.data16[0]);
 
   readRecord();
-  if (_r.type == RecordType::PRESENTATION) {
+  if (r_.type == RecordType::PRESENTATION) {
     text->setPresentation(processTextPres());
     readRecord();
   }
 
-  if (_r.type == RecordType::PATHTYPE) {
+  if (r_.type == RecordType::PATHTYPE) {
     readRecord();  // Ignore PATHTYPE
   }
 
-  if (_r.type == RecordType::WIDTH) {
+  if (r_.type == RecordType::WIDTH) {
     // ignored
     readRecord();
   }
 
-  if (_r.type == RecordType::STRANS) {
+  if (r_.type == RecordType::STRANS) {
     text->setTransform(processSTrans());
   }
 
@@ -434,7 +434,7 @@ dbGDSText* GDSReader::processText(dbGDSStructure* structure)
 
   readRecord();
   checkRType(RecordType::STRING);
-  text->setText(std::string(_r.data8.begin(), _r.data8.end()));
+  text->setText(std::string(r_.data8.begin(), r_.data8.end()));
 
   return text;
 }
@@ -445,11 +445,11 @@ dbGDSBox* GDSReader::processBox(dbGDSStructure* structure)
 
   readRecord();
   checkRType(RecordType::LAYER);
-  box->setLayer(_r.data16[0]);
+  box->setLayer(r_.data16[0]);
 
   readRecord();
   checkRType(RecordType::BOXTYPE);
-  box->setDatatype(_r.data16[0]);
+  box->setDatatype(r_.data16[0]);
 
   readRecord();
   std::vector<Point> points = processXY();
@@ -479,19 +479,19 @@ dbGDSSTrans GDSReader::processSTrans()
 {
   checkRType(RecordType::STRANS);
 
-  const bool flipX = _r.data8[0] & 0x80;
+  const bool flipX = r_.data8[0] & 0x80;
   // absolute magnification and angle are obsolete and ignored
 
   readRecord();
 
   double mag = 1.0;
-  if (_r.type == RecordType::MAG) {
-    mag = _r.data64[0];
+  if (r_.type == RecordType::MAG) {
+    mag = r_.data64[0];
     readRecord();
   }
   double angle = 0.0;
-  if (_r.type == RecordType::ANGLE) {
-    angle = _r.data64[0];
+  if (r_.type == RecordType::ANGLE) {
+    angle = r_.data64[0];
     readRecord();
   }
 
@@ -501,8 +501,8 @@ dbGDSSTrans GDSReader::processSTrans()
 dbGDSTextPres GDSReader::processTextPres()
 {
   checkRType(RecordType::PRESENTATION);
-  const uint8_t hpres = _r.data8[1] & 0x3;
-  const uint8_t vpres = (_r.data8[1] & 0xC) >> 2;
+  const uint8_t hpres = r_.data8[1] & 0x3;
+  const uint8_t vpres = (r_.data8[1] & 0xC) >> 2;
 
   return dbGDSTextPres((dbGDSTextPres::VPres) vpres,
                        (dbGDSTextPres::HPres) hpres);

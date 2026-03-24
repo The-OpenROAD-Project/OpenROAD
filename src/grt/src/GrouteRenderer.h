@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "AbstractGrouteRenderer.h"
+#include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -18,9 +19,7 @@ class GrouteRenderer : public gui::Renderer, public AbstractGrouteRenderer
  public:
   GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
 
-  void highlightRoute(odb::dbNet* net,
-                      bool show_segments,
-                      bool show_pin_locations) override;
+  void highlightRoute(odb::dbNet* net, bool show_pin_locations) override;
 
   void clearRoute() override;
 

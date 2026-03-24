@@ -1,37 +1,5 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2024, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and#or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright (c) 2024-2026, The OpenROAD Authors
 
 # This code contains the necessary regex parsing functions for manpage compilation.
 
@@ -131,20 +99,32 @@ def extract_tables(text):
 
 
 def extract_help(text):
-    # Logic now captures everything between { to earliest "proc"
-    help_pattern = re.compile(
-        r"""
-                sta::define_cmd_args\s+
-                "(.*?)"\s*
-                (.*?)proc\s
-                """,
-        re.VERBOSE | re.DOTALL,
-    )
-
-    matches = re.findall(help_pattern, text)
-
-    # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if ";#checkeroff" not in tup[1].replace(" ", "")]
+    # Match each sta::define_cmd_args block independently by tracking
+    # brace depth, instead of spanning to the next "proc" keyword which
+    # breaks when sta::proc_redirect is used between commands.
+    matches = []
+    for m in re.finditer(r'sta::define_cmd_args\s+"([^"]+)"\s*', text):
+        name = m.group(1)
+        after = text[m.end() :]
+        # Walk through the args block tracking brace depth.
+        depth = 0
+        end = 0
+        for j, ch in enumerate(after):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j
+                    break
+        rest_of_line = after[end + 1 :].split("\n")[0]
+        args_block = after[: end + 1] + rest_of_line
+        if ";#checkeroff" in args_block.replace(" ", ""):
+            continue
+        # Only count commands that have a matching proc or proc_redirect.
+        proc_pat = rf"(?:proc|sta::proc_redirect)\s+{re.escape(name)}\s"
+        if re.search(proc_pat, text):
+            matches.append((name, args_block))
     return matches
 
 

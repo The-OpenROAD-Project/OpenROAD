@@ -5,25 +5,36 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstddef>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
+#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
 #include "sta/Transition.hh"
-#include "sta/Vector.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -39,33 +50,8 @@ using odb::Point;
 
 using utl::RSZ;
 
-using sta::ArcDcalcResult;
-using sta::ArcDelay;
-using sta::Cell;
-using sta::DcalcAnalysisPt;
-using sta::Edge;
-using sta::fuzzyGreater;
-using sta::GraphDelayCalc;
-using sta::INF;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::InstanceSet;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::LoadPinIndexMap;
-using sta::Net;
-using sta::NetConnectedPinIterator;
-using sta::Pin;
-using sta::RiseFall;
-using sta::Slack;
-using sta::Slew;
-using sta::TimingArc;
-using sta::TimingArcSet;
-using sta::Vertex;
-using sta::VertexOutEdgeIterator;
-
-using InputSlews = std::array<Slew, RiseFall::index_count>;
-using TgtSlews = std::array<Slew, RiseFall::index_count>;
+using InputSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
+using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
 BaseMove::BaseMove(Resizer* resizer)
 {
@@ -77,14 +63,13 @@ BaseMove::BaseMove(Resizer* resizer)
   db_network_ = resizer_->db_network_;
   dbStaState::init(resizer_->sta_);
   sta_ = resizer_->sta_;
-  dbu_ = resizer_->dbu_;
   opendp_ = resizer_->opendp_;
 
   accepted_count_ = 0;
   rejected_count_ = 0;
-  all_inst_set_ = InstanceSet(db_network_);
+  all_inst_set_ = sta::InstanceSet(db_network_);
   pending_count_ = 0;
-  pending_inst_set_ = InstanceSet(db_network_);
+  pending_inst_set_ = sta::InstanceSet(db_network_);
 }
 
 void BaseMove::commitMoves()
@@ -110,12 +95,12 @@ void BaseMove::undoMoves()
   pending_inst_set_.clear();
 }
 
-int BaseMove::hasMoves(Instance* inst) const
+int BaseMove::hasMoves(sta::Instance* inst) const
 {
   return all_inst_set_.count(inst);
 }
 
-int BaseMove::hasPendingMoves(Instance* inst) const
+int BaseMove::hasPendingMoves(sta::Instance* inst) const
 {
   return pending_inst_set_.count(inst);
 }
@@ -140,7 +125,7 @@ int BaseMove::numMoves() const
   return accepted_count_ + pending_count_;
 }
 
-void BaseMove::addMove(Instance* inst, int count)
+void BaseMove::addMove(sta::Instance* inst, int count)
 {
   // Add it as a candidate move, not accepted yet
   // This count is for the cloned gates where we only count the clone
@@ -155,7 +140,7 @@ void BaseMove::addMove(Instance* inst, int count)
   pending_inst_set_.insert(inst);
 }
 
-double BaseMove::area(Cell* cell)
+double BaseMove::area(sta::Cell* cell)
 {
   return area(db_network_->staToDb(cell));
 }
@@ -165,136 +150,24 @@ double BaseMove::area(dbMaster* master)
   if (!master->isCoreAutoPlaceable()) {
     return 0;
   }
-  return dbuToMeters(master->getWidth()) * dbuToMeters(master->getHeight());
-}
-
-double BaseMove::dbuToMeters(int dist) const
-{
-  return dist / (dbu_ * 1e+6);
-}
-
-// Rise/fall delays across all timing arcs into drvr_port.
-// Uses target slew for input slew.
-void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                          const float load_cap,
-                          const DcalcAnalysisPt* dcalc_ap,
-                          // Return values.
-                          ArcDelay delays[RiseFall::index_count],
-                          Slew slews[RiseFall::index_count])
-{
-  for (int rf_index : RiseFall::rangeIndex()) {
-    delays[rf_index] = -INF;
-    slews[rf_index] = -INF;
-  }
-  LibertyCell* cell = drvr_port->libertyCell();
-  for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        // use annotated slews if available
-        LibertyPort* port = arc->from();
-        float in_slew = 0.0;
-        auto it = input_slew_map_.find(port);
-        if (it != input_slew_map_.end()) {
-          const InputSlews& slew = it->second;
-          in_slew = slew[in_rf->index()];
-        } else {
-          in_slew = tgt_slews_[in_rf->index()];
-        }
-        LoadPinIndexMap load_pin_index_map(network_);
-        ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slew,
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         dcalc_ap);
-
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
-        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
-        slews[out_rf_index] = max(slews[out_rf_index], drvr_slew);
-      }
-    }
-  }
-}
-
-// Rise/fall delays across all timing arcs into drvr_port.
-// Takes input slews and load cap
-void BaseMove::gateDelays(const LibertyPort* drvr_port,
-                          const float load_cap,
-                          const Slew in_slews[RiseFall::index_count],
-                          const DcalcAnalysisPt* dcalc_ap,
-                          // Return values.
-                          ArcDelay delays[RiseFall::index_count],
-                          Slew out_slews[RiseFall::index_count])
-{
-  for (int rf_index : RiseFall::rangeIndex()) {
-    delays[rf_index] = -INF;
-    out_slews[rf_index] = -INF;
-  }
-  LibertyCell* cell = drvr_port->libertyCell();
-  for (TimingArcSet* arc_set : cell->timingArcSets()) {
-    if (arc_set->to() == drvr_port && !arc_set->role()->isTimingCheck()) {
-      for (TimingArc* arc : arc_set->arcs()) {
-        const RiseFall* in_rf = arc->fromEdge()->asRiseFall();
-        int out_rf_index = arc->toEdge()->asRiseFall()->index();
-        LoadPinIndexMap load_pin_index_map(network_);
-        ArcDcalcResult dcalc_result
-            = arc_delay_calc_->gateDelay(nullptr,
-                                         arc,
-                                         in_slews[in_rf->index()],
-                                         load_cap,
-                                         nullptr,
-                                         load_pin_index_map,
-                                         dcalc_ap);
-
-        const ArcDelay& gate_delay = dcalc_result.gateDelay();
-        const Slew& drvr_slew = dcalc_result.drvrSlew();
-        delays[out_rf_index] = max(delays[out_rf_index], gate_delay);
-        out_slews[out_rf_index] = max(out_slews[out_rf_index], drvr_slew);
-      }
-    }
-  }
-}
-
-ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                             const RiseFall* rf,
-                             const float load_cap,
-                             const DcalcAnalysisPt* dcalc_ap)
-{
-  ArcDelay delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
-  return delays[rf->index()];
-}
-
-ArcDelay BaseMove::gateDelay(const LibertyPort* drvr_port,
-                             const float load_cap,
-                             const DcalcAnalysisPt* dcalc_ap)
-{
-  ArcDelay delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  gateDelays(drvr_port, load_cap, dcalc_ap, delays, slews);
-  return max(delays[RiseFall::riseIndex()], delays[RiseFall::fallIndex()]);
+  return resizer_->dbuToMeters(master->getWidth())
+         * resizer_->dbuToMeters(master->getHeight());
 }
 
 bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
-                          const LibertyCell* cell,
-                          const LibertyPort* port_a,
-                          const LibertyPort* port_b)
+                          const sta::LibertyCell* cell,
+                          const sta::LibertyPort* port_a,
+                          const sta::LibertyPort* port_b)
 {
   if (port_a->libertyCell() != cell || port_b->libertyCell() != cell) {
     return false;
   }
 
   sta::LibertyCellPortIterator port_iter(cell);
-  sta::UnorderedMap<const LibertyPort*, std::vector<bool>> port_stimulus;
+  std::unordered_map<const sta::LibertyPort*, std::vector<bool>> port_stimulus;
   size_t input_port_count = 0;
   while (port_iter.hasNext()) {
-    LibertyPort* port = port_iter.next();
+    sta::LibertyPort* port = port_iter.next();
     if (port->direction()->isInput()) {
       ++input_port_count;
       port_stimulus[port] = {};
@@ -339,29 +212,30 @@ bool BaseMove::isPortEqiv(sta::FuncExpr* expr,
 
 bool BaseMove::simulateExpr(
     sta::FuncExpr* expr,
-    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus,
+    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
+        port_stimulus,
     size_t table_index)
 {
-  using Operator = sta::FuncExpr::Operator;
-  const Operator curr_op = expr->op();
+  using Op = sta::FuncExpr::Op;
+  const Op curr_op = expr->op();
 
   switch (curr_op) {
-    case Operator::op_not:
+    case Op::not_:
       return !simulateExpr(expr->left(), port_stimulus, table_index);
-    case Operator::op_and:
+    case Op::and_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              && simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_or:
+    case Op::or_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              || simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_xor:
+    case Op::xor_:
       return simulateExpr(expr->left(), port_stimulus, table_index)
              ^ simulateExpr(expr->right(), port_stimulus, table_index);
-    case Operator::op_one:
+    case Op::one:
       return true;
-    case Operator::op_zero:
+    case Op::zero:
       return false;
-    case Operator::op_port:
+    case Op::port:
       return port_stimulus[expr->port()][table_index];
   }
 
@@ -371,7 +245,8 @@ bool BaseMove::simulateExpr(
 
 std::vector<bool> BaseMove::simulateExpr(
     sta::FuncExpr* expr,
-    sta::UnorderedMap<const LibertyPort*, std::vector<bool>>& port_stimulus)
+    std::unordered_map<const sta::LibertyPort*, std::vector<bool>>&
+        port_stimulus)
 {
   size_t table_length = 0x1 << port_stimulus.size();
   std::vector<bool> result;
@@ -384,12 +259,12 @@ std::vector<bool> BaseMove::simulateExpr(
 }
 
 ////////////////////////////////////////////////////////////////
-Instance* BaseMove::makeBuffer(LibertyCell* cell,
-                               const char* name,
-                               Instance* parent,
-                               const Point& loc)
+sta::Instance* BaseMove::makeBuffer(sta::LibertyCell* cell,
+                                    const char* name,
+                                    sta::Instance* parent,
+                                    const Point& loc)
 {
-  Instance* inst = resizer_->makeInstance(cell, name, parent, loc);
+  sta::Instance* inst = resizer_->makeInstance(cell, name, parent, loc);
   return inst;
 }
 
@@ -403,11 +278,11 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 // Acceptance criteria are as follows:
 // For direct fanout paths (fanout paths of drvr_pin), accept buffer removal
 // if slack improves (may still be violating)
-// For side fanout paths (fanout paths of side_out_pin*), accept buffer removal
-// if slack doesn't become violating (no new violations)
+// For side fanout paths (fanout paths of side_out_pin*), accept buffer
+// removal if slack doesn't become violating (no new violations)
 //
 //               input_net                             output_net
-//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>
+//  prev_drv_pin ------>  (drvr_input_pin   drvr_pin)  ------>  FO inst pin
 //               |
 //               ------>  (side_input_pin1  side_out_pin1) ----->
 //               |
@@ -415,69 +290,110 @@ Instance* BaseMove::makeBuffer(LibertyCell* cell,
 //
 bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 {
-  if (params.corner == nullptr) {
+  const sta::Scene* scene = params.corner;
+  if (scene == nullptr) {
     // can't do any estimation without a corner
     return false;
   }
 
-  // Prep for delay calc
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  const DcalcAnalysisPt* dcalc_ap
-      = params.corner->findDcalcAnalysisPt(resizer_->max_);
-  LibertyPort* prev_drvr_port = network_->libertyPort(params.prev_driver_pin);
-  if (prev_drvr_port == nullptr) {
+  sta::GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+
+  sta::ArcDelay old_delay[sta::RiseFall::index_count];
+  sta::ArcDelay new_delay[sta::RiseFall::index_count];
+  sta::Slew old_drvr_slew[sta::RiseFall::index_count];
+  sta::Slew new_drvr_slew[sta::RiseFall::index_count];
+  float old_cap, new_cap;
+  if (!resizer_->computeNewDelaysSlews(params.prev_driver_pin,
+                                       params.driver,
+                                       params.corner,
+                                       old_delay,
+                                       new_delay,
+                                       old_drvr_slew,
+                                       new_drvr_slew,
+                                       old_cap,
+                                       new_cap)) {
     return false;
   }
-  LibertyPort *buffer_input_port, *buffer_output_port;
-  params.driver_cell->bufferPorts(buffer_input_port, buffer_output_port);
-  const RiseFall* prev_driver_rf = params.prev_driver_path->transition(sta_);
 
-  // Compute delay degradation at prev driver due to increased load cap
-  resizer_->annotateInputSlews(network_->instance(params.prev_driver_pin),
-                               dcalc_ap);
-  ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
-  Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
-  float old_cap = dcalc->loadCap(params.prev_driver_pin, dcalc_ap);
-  resizer_->gateDelays(prev_drvr_port, old_cap, dcalc_ap, old_delay, old_slew);
-  float new_cap = old_cap + dcalc->loadCap(params.driver_pin, dcalc_ap)
-                  - resizer_->portCapacitance(buffer_input_port, params.corner);
-  resizer_->gateDelays(prev_drvr_port, new_cap, dcalc_ap, new_delay, new_slew);
+  // Check for max cap violation
+  if (!checkMaxCapOK(params.prev_driver_pin, new_cap - old_cap)) {
+    debugPrint(logger_,
+               RSZ,
+               "remove_buffer",
+               1,
+               "buffer {} is not removed "
+               "because of max cap violation",
+               db_network_->name(params.driver));
+    return false;
+  }
+
+  const sta::RiseFall* prev_driver_rf
+      = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
-  float delay_imp
-      = resizer_->bufferDelay(params.driver_cell,
-                              params.driver_path->transition(sta_),
-                              dcalc->loadCap(params.driver_pin, dcalc_ap),
-                              dcalc_ap);
-  resizer_->resetInputSlews();
+  float delay_imp = resizer_->bufferDelay(
+      params.driver_cell,
+      params.driver_path->transition(sta_),
+      dcalc->loadCap(params.driver_pin, scene, sta::MinMax::max()),
+      scene,
+      sta::MinMax::max());
 
   // Check if degraded delay & slew can be absorbed by driver pin fanouts
-  Net* output_net = network_->net(params.driver_pin);
-  auto pin_iter = std::unique_ptr<NetConnectedPinIterator>(
-      network_->connectedPinIterator(output_net));
-  while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (pin == params.driver_pin) {
-      continue;
+  // Model slew degradation across wire from prev_drv_pin to the FO inst pin
+  // based on Elmore delay that considers layers and vias for accurate
+  // wire cap/res computation.
+  // prev_driver_pin --->  (driver_input_pin   driver_pin) --->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              old_driver_slew                         old_load_slew
+  //
+  // prev_driver_pin ----------------------------------------->  pin
+  //                 ^                                        ^
+  //                 |                                        |
+  //              new_driver_slew                         new_load_slew
+  //
+  std::map<const sta::Pin*, float> load_pin_slew;
+  if (!resizer_->estimateSlewsAfterBufferRemoval(
+          params.prev_driver_pin,
+          params.driver,
+          new_drvr_slew[prev_driver_rf->index()],
+          params.corner,
+          load_pin_slew)) {
+    return false;
+  }
+
+  sta::SceneSeq scenes1({const_cast<sta::Scene*>(scene)});
+  for (const auto& [load_pin, estimated_new_load_slew] : load_pin_slew) {
+    sta::Vertex* load_vertex = graph_->pinLoadVertex(load_pin);
+    assert(load_vertex != nullptr);
+    sta::Slew old_load_slew[sta::RiseFall::index_count];
+    for (auto rf : sta::RiseFall::range()) {
+      old_load_slew[rf->index()] = sta_->slew(
+          load_vertex, rf->asRiseFallBoth(), scenes1, sta::MinMax::max());
     }
-    float old_slack = sta_->pinSlack(pin, resizer_->max_);
-    float new_slack = old_slack - delay_degrad + delay_imp;
-    if (fuzzyGreater(old_slack, new_slack)) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because new output pin slack {} is worse than old slack {}",
-                 db_network_->name(params.driver), db_network_->name(pin),
-                 new_slack, old_slack);
-      // clang-format on
-      return false;
+    sta::Slew new_load_slew[sta::RiseFall::index_count];
+    for (auto rf : sta::RiseFall::range()) {
+      new_load_slew[rf->index()] = estimated_new_load_slew;
     }
 
-    // Check if output pin of direct fanout instance can absorb delay and slew
+    debugPrint(
+        logger_,
+        RSZ,
+        "remove_buffer",
+        1,
+        "estimated in slew at fanout pin {} is {}, prev drvr out slew={}",
+        db_network_->name(load_pin),
+        estimated_new_load_slew,
+        new_drvr_slew[prev_driver_rf->index()]);
+
+    // Check if output pin of direct fanout instance can absorb delay and
+    // slew
     // degradation
-    if (!estimateInputSlewImpact(network_->instance(pin),
-                                 dcalc_ap,
-                                 old_slew,
-                                 new_slew,
+    if (!estimateInputSlewImpact(network_->instance(load_pin),
+                                 scene,
+                                 sta::MinMax::max(),
+                                 old_load_slew,
+                                 new_load_slew,
                                  delay_degrad - delay_imp,
                                  params,
                                  /* accept if slack improves */ true)) {
@@ -487,35 +403,44 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
   // Check side fanout paths.  Side fanout paths get no delay benefit from
   // buffer removal.
-  Net* input_net = network_->net(params.prev_driver_pin);
-  pin_iter = std::unique_ptr<NetConnectedPinIterator>(
+  sta::Net* input_net = network_->net(params.prev_driver_pin);
+  auto pin_iter = std::unique_ptr<sta::NetConnectedPinIterator>(
       network_->connectedPinIterator(input_net));
   while (pin_iter->hasNext()) {
-    const Pin* side_input_pin = pin_iter->next();
-    if (side_input_pin == params.prev_driver_pin
+    const sta::Pin* side_input_pin = pin_iter->next();
+    if (network_->isHierarchical(side_input_pin)
+        || side_input_pin == params.prev_driver_pin
         || side_input_pin == params.driver_input_pin) {
       continue;
     }
-    float old_slack = sta_->pinSlack(side_input_pin, resizer_->max_);
+    float old_slack
+        = sta_->slack(graph_->pinLoadVertex(side_input_pin), resizer_->max_);
     float new_slack = old_slack - delay_degrad - params.setup_slack_margin;
     if (new_slack < 0) {
-      // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
-                 "because side input pin {} will have a violating slack of {}:"
-                 " old slack={}, slack margin={}, delay_degrad={}",
-                 db_network_->name(params.driver),
-                 db_network_->name(side_input_pin), new_slack, old_slack,
-                 params.setup_slack_margin, delay_degrad);
-      // clang-format on
-      return false;
+      float slack_degrad = old_slack - new_slack;
+      const float kSlackDegradRatioLimit = 0.1;
+      if (old_slack >= 0
+          || (old_slack < 0
+              && slack_degrad > kSlackDegradRatioLimit * abs(old_slack))) {
+        // clang-format off
+        debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
+                   "because side input pin {} will have a violating slack of {}:"
+                   " old slack={}, slack margin={}, delay_degrad={}",
+                   db_network_->name(params.driver),
+                   db_network_->name(side_input_pin), new_slack, old_slack,
+                   params.setup_slack_margin, delay_degrad);
+        // clang-format on
+        return false;
+      }
     }
 
     // Consider secondary degradation at side out pin from degraded input
     // slew.
     if (!estimateInputSlewImpact(network_->instance(side_input_pin),
-                                 dcalc_ap,
-                                 old_slew,
-                                 new_slew,
+                                 scene,
+                                 sta::MinMax::max(),
+                                 old_drvr_slew,
+                                 new_drvr_slew,
                                  delay_degrad,
                                  params,
                                  /* accept only if no new viol */ false)) {
@@ -533,52 +458,57 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 
 // Estimate impact from degraded input slew for this instance.
 // Include all output pins for multi-outut gate (MOG) cells.
-bool BaseMove::estimateInputSlewImpact(Instance* instance,
-                                       const DcalcAnalysisPt* dcalc_ap,
-                                       Slew old_in_slew[RiseFall::index_count],
-                                       Slew new_in_slew[RiseFall::index_count],
-                                       // delay adjustment from prev stage
-                                       float delay_adjust,
-                                       SlackEstimatorParams params,
-                                       bool accept_if_slack_improves)
+bool BaseMove::estimateInputSlewImpact(
+    sta::Instance* instance,
+    const sta::Scene* scene,
+    const sta::MinMax* min_max,
+    sta::Slew old_in_slew[sta::RiseFall::index_count],
+    sta::Slew new_in_slew[sta::RiseFall::index_count],
+    // delay adjustment from prev stage
+    float delay_adjust,
+    SlackEstimatorParams params,
+    bool accept_if_slack_improves)
 {
-  GraphDelayCalc* dcalc = sta_->graphDelayCalc();
-  auto pin_iter
-      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(instance));
+  sta::GraphDelayCalc* dcalc = sta_->graphDelayCalc();
+  auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
+      network_->pinIterator(instance));
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
+    const sta::Pin* pin = pin_iter->next();
     if (!network_->direction(pin)->isOutput()) {
       continue;
     }
-    LibertyPort* port = network_->libertyPort(pin);
+    sta::LibertyPort* port = network_->libertyPort(pin);
     if (port == nullptr) {
       // reject the transform if we can't estimate
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} has no liberty port",
                  db_network_->name(params.driver), db_network_->name(pin));
       // clang-format on
       return false;
     }
-    float load_cap = dcalc->loadCap(pin, dcalc_ap);
-    ArcDelay old_delay[RiseFall::index_count], new_delay[RiseFall::index_count];
-    Slew old_slew[RiseFall::index_count], new_slew[RiseFall::index_count];
+    float load_cap = dcalc->loadCap(pin, scene, min_max);
+    sta::ArcDelay old_delay[sta::RiseFall::index_count],
+        new_delay[sta::RiseFall::index_count];
+    sta::Slew old_slew[sta::RiseFall::index_count],
+        new_slew[sta::RiseFall::index_count];
     resizer_->gateDelays(
-        port, load_cap, old_in_slew, dcalc_ap, old_delay, old_slew);
+        port, load_cap, old_in_slew, scene, min_max, old_delay, old_slew);
     resizer_->gateDelays(
-        port, load_cap, new_in_slew, dcalc_ap, new_delay, new_slew);
-    float delay_diff = max(
-        new_delay[RiseFall::riseIndex()] - old_delay[RiseFall::riseIndex()],
-        new_delay[RiseFall::fallIndex()] - old_delay[RiseFall::fallIndex()]);
+        port, load_cap, new_in_slew, scene, min_max, new_delay, new_slew);
+    float delay_diff = max(new_delay[sta::RiseFall::riseIndex()]
+                               - old_delay[sta::RiseFall::riseIndex()],
+                           new_delay[sta::RiseFall::fallIndex()]
+                               - old_delay[sta::RiseFall::fallIndex()]);
 
-    float old_slack
-        = sta_->pinSlack(pin, resizer_->max_) - params.setup_slack_margin;
+    float old_slack = sta_->slack(graph_->pinDrvrVertex(pin), resizer_->max_)
+                      - params.setup_slack_margin;
     float new_slack
         = old_slack - delay_diff - delay_adjust - params.setup_slack_margin;
-    if ((accept_if_slack_improves && fuzzyGreater(old_slack, new_slack))
+    if ((accept_if_slack_improves && sta::fuzzyGreater(old_slack, new_slack))
         || (!accept_if_slack_improves && new_slack < 0)) {
       // clang-format off
-      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed"
+      debugPrint(logger_, RSZ, "remove_buffer", 1, "buffer {} is not removed "
                  "because pin {} will have a violating or worse slack of {}",
                  db_network_->name(params.driver), db_network_->name(pin),
                  new_slack);
@@ -590,14 +520,16 @@ bool BaseMove::estimateInputSlewImpact(Instance* instance,
   return true;
 }
 
-void BaseMove::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
+void BaseMove::getBufferPins(sta::Instance* buffer,
+                             sta::Pin*& ip,
+                             sta::Pin*& op)
 {
   ip = nullptr;
   op = nullptr;
-  auto pin_iter
-      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(buffer));
+  auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
+      network_->pinIterator(buffer));
   while (pin_iter->hasNext()) {
-    Pin* pin = pin_iter->next();
+    sta::Pin* pin = pin_iter->next();
     sta::PortDirection* dir = network_->direction(pin);
     if (dir->isAnyOutput()) {
       op = pin;
@@ -608,12 +540,12 @@ void BaseMove::getBufferPins(Instance* buffer, Pin*& ip, Pin*& op)
   }
 }
 
-int BaseMove::fanout(Vertex* vertex)
+int BaseMove::fanout(sta::Vertex* vertex)
 {
   int fanout = 0;
-  VertexOutEdgeIterator edge_iter(vertex, graph_);
+  sta::VertexOutEdgeIterator edge_iter(vertex, graph_);
   while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
+    sta::Edge* edge = edge_iter.next();
     // Disregard output->output timing arcs
     if (edge->isWire()) {
       fanout++;
@@ -622,48 +554,58 @@ int BaseMove::fanout(Vertex* vertex)
   return fanout;
 }
 
-LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
-                                  LibertyPort* drvr_port,
-                                  const float load_cap,
-                                  const float prev_drive,
-                                  const DcalcAnalysisPt* dcalc_ap)
+sta::LibertyCell* BaseMove::upsizeCell(sta::LibertyPort* in_port,
+                                       sta::LibertyPort* drvr_port,
+                                       const float load_cap,
+                                       const float prev_drive,
+                                       const sta::Scene* scene,
+                                       const sta::MinMax* min_max)
 {
-  const int lib_ap = dcalc_ap->libertyIndex();
-  LibertyCell* cell = drvr_port->libertyCell();
-  LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
+  const int lib_ap = scene->libertyIndex(min_max);
+  sta::LibertyCell* cell = drvr_port->libertyCell();
+  sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
     const char* in_port_name = in_port->name();
     const char* drvr_port_name = drvr_port->name();
     sort(swappable_cells,
-         [=](const LibertyCell* cell1, const LibertyCell* cell2) {
-           LibertyPort* port1
-               = cell1->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
-           LibertyPort* port2
-               = cell2->findLibertyPort(drvr_port_name)->cornerPort(lib_ap);
+         [=, this](const sta::LibertyCell* cell1,
+                   const sta::LibertyCell* cell2) {
+           const sta::LibertyPort* port1
+               = static_cast<const sta::LibertyPort*>(
+                     cell1->findLibertyPort(drvr_port_name))
+                     ->scenePort(lib_ap);
+           const sta::LibertyPort* port2
+               = static_cast<const sta::LibertyPort*>(
+                     cell2->findLibertyPort(drvr_port_name))
+                     ->scenePort(lib_ap);
            const float drive1 = port1->driveResistance();
            const float drive2 = port2->driveResistance();
-           const ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+           const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+           const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
            const float capacitance1 = port1->capacitance();
            const float capacitance2 = port2->capacitance();
            return std::tie(drive2, intrinsic1, capacitance1)
                   < std::tie(drive1, intrinsic2, capacitance2);
          });
-    const float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
-    const float delay
-        = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
-          + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+    const float drive = static_cast<const sta::LibertyPort*>(drvr_port)
+                            ->scenePort(lib_ap)
+                            ->driveResistance();
+    const float delay = resizer_->gateDelay(drvr_port, load_cap, scene, min_max)
+                        + prev_drive
+                              * static_cast<const sta::LibertyPort*>(in_port)
+                                    ->scenePort(lib_ap)
+                                    ->capacitance();
 
-    for (LibertyCell* swappable : swappable_cells) {
-      LibertyCell* swappable_corner = swappable->cornerCell(lib_ap);
-      LibertyPort* swappable_drvr
+    for (sta::LibertyCell* swappable : swappable_cells) {
+      sta::LibertyCell* swappable_corner = swappable->sceneCell(lib_ap);
+      sta::LibertyPort* swappable_drvr
           = swappable_corner->findLibertyPort(drvr_port_name);
-      LibertyPort* swappable_input
+      sta::LibertyPort* swappable_input
           = swappable_corner->findLibertyPort(in_port_name);
       const float swappable_drive = swappable_drvr->driveResistance();
       // Include delay of previous driver into swappable gate.
       const float swappable_delay
-          = resizer_->gateDelay(swappable_drvr, load_cap, dcalc_ap)
+          = resizer_->gateDelay(swappable_drvr, load_cap, scene, min_max)
             + prev_drive * swappable_input->capacitance();
       if (swappable_drive < drive && swappable_delay < delay) {
         return swappable;
@@ -674,46 +616,341 @@ LibertyCell* BaseMove::upsizeCell(LibertyPort* in_port,
 };
 
 // Replace LEF with LEF so ports stay aligned in instance.
-bool BaseMove::replaceCell(Instance* inst, const LibertyCell* replacement)
+bool BaseMove::replaceCell(sta::Instance* inst,
+                           const sta::LibertyCell* replacement)
 {
   const char* replacement_name = replacement->name();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
-  if (replacement_master) {
-    dbInst* dinst = db_network_->staToDb(inst);
-    dbMaster* master = dinst->getMaster();
-    resizer_->designAreaIncr(-area(master));
-    Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
-    sta_->replaceCell(inst, replacement_cell1);
-    resizer_->designAreaIncr(area(replacement_master));
-
-    // Legalize the position of the instance in case it leaves the die
-    if (estimate_parasitics_->getParasiticsSrc()
-            == est::ParasiticsSrc::global_routing
-        || estimate_parasitics_->getParasiticsSrc()
-               == est::ParasiticsSrc::detailed_routing) {
-      opendp_->legalCellPos(db_network_->staToDb(inst));
-    }
-
-    return true;
+  if (!replacement_master) {
+    return false;
   }
-  return false;
+
+  // Check if replacement would cause max_cap violations on input nets
+  if (!checkMaxCapViolation(inst, replacement)) {
+    return false;
+  }
+
+  odb::dbInst* dinst = db_network_->staToDb(inst);
+  dbMaster* master = dinst->getMaster();
+  resizer_->designAreaIncr(-area(master));
+  sta::Cell* replacement_cell1 = db_network_->dbToSta(replacement_master);
+  sta_->replaceCell(inst, replacement_cell1);
+  resizer_->designAreaIncr(area(replacement_master));
+
+  // Legalize the position of the instance in case it leaves the die
+  if (estimate_parasitics_->getParasiticsSrc()
+          == est::ParasiticsSrc::global_routing
+      || estimate_parasitics_->getParasiticsSrc()
+             == est::ParasiticsSrc::detailed_routing) {
+    opendp_->legalCellPos(db_network_->staToDb(inst));
+  }
+
+  return true;
 }
 
-vector<const Pin*> BaseMove::getFanouts(const Instance* inst)
+// Check if replacing inst with replacement cell would cause max_cap violation
+// on any of the fanin nets.
+bool BaseMove::checkMaxCapViolation(sta::Instance* inst,
+                                    const sta::LibertyCell* replacement)
 {
-  vector<const Pin*> fanouts;
+  sta::LibertyCell* current_cell = network_->libertyCell(inst);
+  if (!current_cell) {
+    return true;  // Nothing to check, just allow it
+  }
 
-  auto pin_iter
-      = std::unique_ptr<InstancePinIterator>(network_->pinIterator(inst));
+  // Iterate through all input pins of the instance
+  sta::InstancePinIterator* pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
-    const Pin* pin = pin_iter->next();
-    if (network_->direction(pin)->isOutput()) {
-      fanouts.push_back(pin);
+    sta::Pin* pin = pin_iter->next();
+
+    // Only check input pins
+    if (!network_->direction(pin)->isAnyInput()) {
+      continue;
+    }
+    sta::PinSet* drivers = network_->drivers(pin);
+    if (drivers) {
+      // Calculate capacitance delta (new - old)
+      float old_cap = getInputPinCapacitance(pin, current_cell);
+      float new_cap = getInputPinCapacitance(pin, replacement);
+      float cap_delta = new_cap - old_cap;
+      if (cap_delta <= 0.0) {
+        continue;
+      }
+      for (const sta::Pin* drvr_pin : *drivers) {
+        if (!checkMaxCapOK(drvr_pin, cap_delta)) {
+          delete pin_iter;
+          return false;
+        }
+      }
+    }
+  }
+
+  delete pin_iter;
+  return true;
+}
+
+// Get input capacitance for a specific port in a liberty cell
+float BaseMove::getInputPinCapacitance(sta::Pin* pin,
+                                       const sta::LibertyCell* cell)
+{
+  sta::LibertyPort* port = network_->libertyPort(pin);
+  if (!port) {
+    return 0.0;
+  }
+
+  // Find corresponding port in the new cell
+  sta::LibertyPort* cell_port = cell->findLibertyPort(port->name());
+  if (!cell_port) {
+    return 0.0;
+  }
+
+  // Get worst capacitance
+  float cap = 0.0;
+  for (auto rf : sta::RiseFall::range()) {
+    float port_cap = cell_port->capacitance(rf, resizer_->max_);
+    cap = max(cap, port_cap);
+  }
+
+  return cap;
+}
+
+// Check for possible max cap violation with new cap_delta
+// If max cap is already violating, accept a solution only if
+// it does not worsen the violation
+bool BaseMove::checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta)
+{
+  float cap, max_cap, cap_slack;
+  const sta::Scene* corner;
+  const sta::RiseFall* tr;
+  sta_->checkCapacitance(drvr_pin,
+                         sta_->scenes(),
+                         resizer_->max_,
+                         // return values
+                         cap,
+                         max_cap,
+                         cap_slack,
+                         tr,
+                         corner);
+
+  if (max_cap > 0.0 && corner) {
+    float new_cap = cap + cap_delta;
+    // If it is already violating, accept only if violation is no worse
+    if (cap_slack < 0.0) {
+      return new_cap <= cap;
+    }
+    return new_cap <= max_cap;
+  }
+  return true;
+}
+
+sta::Slack BaseMove::getWorstInputSlack(sta::Instance* inst)
+{
+  sta::Slack worst_slack = sta::INF;
+  auto pin_iter
+      = std::unique_ptr<sta::InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const sta::Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isInput()) {
+      sta::Vertex* vertex = graph_->pinDrvrVertex(pin);
+      if (vertex) {
+        worst_slack
+            = std::min(worst_slack, sta_->slack(vertex, resizer_->max_));
+      }
+    }
+  }
+  return worst_slack;
+}
+
+sta::Slack BaseMove::getWorstOutputSlack(sta::Instance* inst)
+{
+  sta::Slack worst_slack = sta::INF;
+
+  // Iterate through all pins of the instance to find output pins
+  auto pin_iter
+      = std::unique_ptr<sta::InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const sta::Pin* inst_pin = pin_iter->next();
+    if (network_->direction(inst_pin)->isOutput()) {
+      sta::Vertex* vertex = graph_->pinLoadVertex(inst_pin);
+      if (vertex) {
+        worst_slack
+            = std::min(worst_slack, sta_->slack(vertex, resizer_->max_));
+      }
+    }
+  }
+  return worst_slack;
+}
+
+sta::ArcDelay BaseMove::getWorstIntrinsicDelay(
+    const sta::LibertyPort* input_port)
+{
+  const sta::LibertyCell* cell = input_port->libertyCell();
+  vector<const sta::LibertyPort*> output_ports = getOutputPorts(cell);
+
+  // Just return the worst of all the outputs, if there's more than one
+  sta::ArcDelay worst_intrinsic_delay = -sta::INF;
+  for (const sta::LibertyPort* output_port : output_ports) {
+    if (output_port->direction()->isOutput()) {
+      worst_intrinsic_delay
+          = max(worst_intrinsic_delay, output_port->intrinsicDelay(nullptr));
+    }
+  }
+  return worst_intrinsic_delay;
+}
+
+vector<const sta::LibertyPort*> BaseMove::getOutputPorts(
+    const sta::LibertyCell* cell)
+{
+  vector<const sta::LibertyPort*> fanouts;
+
+  sta::LibertyCellPortIterator port_iter(cell);
+  while (port_iter.hasNext()) {
+    const sta::LibertyPort* port = port_iter.next();
+    if (!port->isPwrGnd() && port->direction()->isOutput()) {
+      fanouts.push_back(port);
     }
   }
 
   return fanouts;
 }
 
+vector<const sta::Pin*> BaseMove::getOutputPins(const sta::Instance* inst)
+{
+  vector<const sta::Pin*> outputs;
+
+  auto pin_iter
+      = std::unique_ptr<sta::InstancePinIterator>(network_->pinIterator(inst));
+  while (pin_iter->hasNext()) {
+    const sta::Pin* pin = pin_iter->next();
+    if (network_->direction(pin)->isOutput()) {
+      outputs.push_back(pin);
+    }
+  }
+
+  return outputs;
+}
+
+bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
+                                    sta::LibertyPort* output_port,
+                                    float output_cap)
+{
+  float max_cap;
+  bool cap_limit_exists;
+  // FIXME: Can we update to consider multiple corners?
+  output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
+
+  debugPrint(logger_,
+             RSZ,
+             "opt_moves",
+             3,
+             " fanout pin {} cap {} output_cap {} ",
+             output_port->name(),
+             max_cap,
+             output_cap);
+
+  if (cap_limit_exists && max_cap > 0.0 && output_cap > max_cap) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               2,
+               "  skip based on max cap {} gate={} cap={} max_cap={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_cap,
+               max_cap);
+    return true;
+  }
+
+  return false;
+}
+
+bool BaseMove::checkMaxSlewViolation(const sta::Pin* output_pin,
+                                     sta::LibertyPort* output_port,
+                                     float output_slew_factor,
+                                     float output_cap,
+                                     const sta::Scene* scene)
+{
+  float output_res = output_port->driveResistance();
+  float output_slew = output_slew_factor * output_res * output_cap;
+  float max_slew;
+  bool slew_limit_exists;
+
+  sta_->findSlewLimit(
+      output_port, scene, resizer_->max_, max_slew, slew_limit_exists);
+
+  if (output_slew > max_slew) {
+    debugPrint(logger_,
+               RSZ,
+               "opt_moves",
+               2,
+               "  skip based on max slew {} gate={} slew={} max_slew={}",
+               network_->pathName(output_pin),
+               output_port->libertyCell()->name(),
+               output_slew,
+               max_slew);
+    return true;
+  }
+
+  return false;
+}
+
+float BaseMove::computeElmoreSlewFactor(const sta::Pin* output_pin,
+                                        sta::LibertyPort* output_port,
+                                        float output_load_cap)
+{
+  float elmore_slew_factor = 0.0;
+
+  // Get the vertex for the output pin
+  sta::Vertex* output_vertex = graph_->pinDrvrVertex(output_pin);
+
+  // Get the output slew
+  const sta::Slew output_slew = sta_->slew(output_vertex,
+                                           sta::RiseFallBoth::riseFall(),
+                                           sta_->scenes(),
+                                           resizer_->max_);
+
+  // Get the output resistance
+  float output_res = output_port->driveResistance();
+
+  // Can have gates without fanout (e.g. QN of flop) which have no load
+  if (output_res > 0.0 && output_load_cap > 0.0) {
+    elmore_slew_factor = output_slew / (output_res * output_load_cap);
+  }
+
+  return elmore_slew_factor;
+}
+
+////////////////////////////////////////////////////////////////
+
+sta::LibertyCellSeq BaseMove::getSwappableCells(sta::LibertyCell* base)
+{
+  if (base->isBuffer()) {
+    if (!resizer_->buffer_fast_sizes_.contains(base)) {
+      return sta::LibertyCellSeq();
+    }
+
+    sta::LibertyCellSeq buffer_sizes;
+    buffer_sizes.reserve(resizer_->buffer_fast_sizes_.size());
+    for (sta::LibertyCell* buffer : resizer_->buffer_fast_sizes_) {
+      buffer_sizes.push_back(buffer);
+    }
+    // Sort output to ensure deterministic order
+    std::ranges::sort(
+        buffer_sizes,
+        [](sta::LibertyCell const* c1, sta::LibertyCell const* c2) {
+          auto area1 = c1->area();
+          auto area2 = c2->area();
+          if (area1 != area2) {
+            return area1 < area2;
+          }
+          return c1->id() < c2->id();
+        });
+    return buffer_sizes;
+  }
+  return resizer_->getSwappableCells(base);
+}
+
+////////////////////////////////////////////////////////////////
+// namespace rsz
 }  // namespace rsz

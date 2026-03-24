@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -17,46 +18,46 @@ class _dbTechLayerCutClassRule;
 
 struct dbTechLayerCutSpacingRuleFlags
 {
-  bool center_to_center_ : 1;
-  bool same_net_ : 1;
-  bool same_metal_ : 1;
-  bool same_via_ : 1;
-  uint cut_spacing_type_ : 3;
-  bool stack_ : 1;
-  bool orthogonal_spacing_valid_ : 1;
-  bool above_width_enclosure_valid_ : 1;
-  bool short_edge_only_ : 1;
-  bool concave_corner_width_ : 1;
-  bool concave_corner_parallel_ : 1;
-  bool concave_corner_edge_length_ : 1;
-  bool concave_corner_ : 1;
-  bool extension_valid_ : 1;
-  bool non_eol_convex_corner_ : 1;
-  bool eol_width_valid_ : 1;
-  bool min_length_valid_ : 1;
-  bool above_width_valid_ : 1;
-  bool mask_overlap_ : 1;
-  bool wrong_direction_ : 1;
-  uint adjacent_cuts_ : 2;
-  bool exact_aligned_ : 1;
-  bool cut_class_to_all_ : 1;
-  bool no_prl_ : 1;
-  bool same_mask_ : 1;
-  bool except_same_pgnet_ : 1;
-  bool side_parallel_overlap_ : 1;
-  bool except_same_net_ : 1;
-  bool except_same_metal_ : 1;
-  bool except_same_metal_overlap_ : 1;
-  bool except_same_via_ : 1;
-  bool above_ : 1;
-  bool except_two_edges_ : 1;
-  bool two_cuts_valid_ : 1;
-  bool same_cut_ : 1;
-  bool long_edge_only_ : 1;
-  bool prl_valid_ : 1;
-  bool below_ : 1;
-  bool par_within_enclosure_valid_ : 1;
-  uint spare_bits_ : 22;
+  bool center_to_center : 1;
+  bool same_net : 1;
+  bool same_metal : 1;
+  bool same_via : 1;
+  uint32_t cut_spacing_type : 3;
+  bool stack : 1;
+  bool orthogonal_spacing_valid : 1;
+  bool above_width_enclosure_valid : 1;
+  bool short_edge_only : 1;
+  bool concave_corner_width : 1;
+  bool concave_corner_parallel : 1;
+  bool concave_corner_edge_length : 1;
+  bool concave_corner : 1;
+  bool extension_valid : 1;
+  bool non_eol_convex_corner : 1;
+  bool eol_width_valid : 1;
+  bool min_length_valid : 1;
+  bool above_width_valid : 1;
+  bool mask_overlap : 1;
+  bool wrong_direction : 1;
+  uint32_t adjacent_cuts : 2;
+  bool exact_aligned : 1;
+  bool cut_class_to_all : 1;
+  bool no_prl : 1;
+  bool same_mask : 1;
+  bool except_same_pgnet : 1;
+  bool side_parallel_overlap : 1;
+  bool except_same_net : 1;
+  bool except_same_metal : 1;
+  bool except_same_metal_overlap : 1;
+  bool except_same_via : 1;
+  bool above : 1;
+  bool except_two_edges : 1;
+  bool two_cuts_valid : 1;
+  bool same_cut : 1;
+  bool long_edge_only : 1;
+  bool prl_valid : 1;
+  bool below : 1;
+  bool par_within_enclosure_valid : 1;
+  uint32_t spare_bits : 22;
 };
 
 class _dbTechLayerCutSpacingRule : public _dbObject
@@ -89,15 +90,15 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   int extension_;
   int eol_width_;
   // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
-  uint num_cuts_;
+  uint32_t num_cuts_;
   // WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin
   int within_;
   // WITHIN cutWithin cutWithin2
   int second_within_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
-  uint two_cuts_;
-  uint prl_;
-  uint par_length_;
+  uint32_t two_cuts_;
+  uint32_t prl_;
+  uint32_t par_length_;
   int cut_area_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj);

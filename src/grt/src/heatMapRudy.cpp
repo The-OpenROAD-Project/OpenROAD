@@ -4,15 +4,32 @@
 #include "heatMapRudy.h"
 
 #include <algorithm>
+#include <any>
 #include <cmath>
+#include <memory>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
+#include "grt/GlobalRouter.h"
+#include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "utl/Logger.h"
 
 namespace grt {
+
+gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+                                                   grt::GlobalRouter* grouter,
+                                                   odb::dbDatabase* db)
+{
+  return gui::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger, grouter, db]() {
+        return std::make_shared<RUDYDataSource>(logger, grouter, db);
+      });
+}
 
 RUDYDataSource::RUDYDataSource(utl::Logger* logger,
                                grt::GlobalRouter* grouter,
@@ -20,11 +37,19 @@ RUDYDataSource::RUDYDataSource(utl::Logger* logger,
     : GlobalRoutingDataSource(logger,
                               "Estimated Congestion (RUDY)",
                               "RUDY",
-                              "RUDY")
+                              "RUDY"),
+      selection_only_(false)
 {
   grouter_ = grouter;
   db_ = db;
   rudy_ = nullptr;
+  selection_only_ = false;
+
+  addBooleanSetting(
+      "Selection",
+      "Only consider nets in selection",
+      [this]() { return selection_only_; },
+      [this](bool value) { selection_only_ = value; });
 }
 
 void RUDYDataSource::combineMapData(bool base_has_value,
@@ -108,7 +133,17 @@ bool RUDYDataSource::populateMap()
     return false;
   }
 
-  rudy_->calculateRudy();
+  if (selection_only_ && gui::Gui::enabled()) {
+    std::set<odb::dbNet*> selection;
+    for (const gui::Selected& item : gui::Gui::get()->selection()) {
+      if (item.isNet()) {
+        selection.insert(std::any_cast<odb::dbNet*>(item.getObject()));
+      }
+    }
+    rudy_->calculateRudy(&selection);
+  } else {
+    rudy_->calculateRudy();
+  }
 
   for (int x = 0; x < x_grid_size; ++x) {
     for (int y = 0; y < y_grid_size; ++y) {
@@ -136,11 +171,6 @@ void RUDYDataSource::onHide()
 }
 
 void RUDYDataSource::inDbInstCreate(odb::dbInst*)
-{
-  destroyMap();
-}
-
-void RUDYDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
   destroyMap();
 }

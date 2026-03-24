@@ -22,8 +22,7 @@
 #include "spdlog/fmt/ostr.h"
 #include "utl/scope.h"
 
-using namespace boost::polygon::operators;
-using namespace odb;
+namespace odb {
 
 int lefout::determineBloat(dbTechLayer* layer) const
 {
@@ -55,6 +54,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
   boost::polygon::polygon_90_set_data<int> poly;
   poly = boost::polygon::rectangle_data<int>{
       rect.xMax(), rect.yMax(), rect.xMin(), rect.yMin()};
+  using boost::polygon::operators::operator+=;
   obstructions[layer] += poly.bloat(bloat, bloat, bloat, bloat);
 }
 
@@ -88,18 +88,17 @@ void lefout::writeBoxes(dbBlock* block,
         via_name = block->getName() + "_" + box->getBlockVia()->getName();
       }
 
-      int x, y;
-      box->getViaXY(x, y);
+      const Point pt = box->getViaXY();
       fmt::print(_out,
                  "{}VIA {:.11g} {:.11g} {} ;\n",
                  indent,
-                 lefdist(x),
-                 lefdist(y),
+                 lefdist(pt.getX()),
+                 lefdist(pt.getY()),
                  via_name.c_str());
       cur_layer = nullptr;
     } else {
       std::string layer_name;
-      if (_use_alias && layer->hasAlias()) {
+      if (use_alias_ && layer->hasAlias()) {
         layer_name = layer->getAlias();
       } else {
         layer_name = layer->getName();
@@ -130,7 +129,7 @@ void lefout::writeBoxes(dbBlock* block,
     dbTechLayer* layer = box->getTechLayer();
 
     std::string layer_name;
-    if (_use_alias && layer->hasAlias()) {
+    if (use_alias_ && layer->hasAlias()) {
       layer_name = layer->getAlias();
     } else {
       layer_name = layer->getName();
@@ -808,7 +807,7 @@ void lefout::writeLayerRule(dbTechLayerRule* rule)
 {
   dbTechLayer* layer = rule->getLayer();
   std::string name;
-  if (_use_alias && layer->hasAlias()) {
+  if (use_alias_ && layer->hasAlias()) {
     name = layer->getAlias();
   } else {
     name = layer->getName();
@@ -852,7 +851,7 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
   std::string name = rule->getName();
   fmt::print(_out, "\nVIARULE {}\n", name.c_str());
 
-  uint idx;
+  uint32_t idx;
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
@@ -895,7 +894,7 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     fmt::print(_out, "\nVIARULE {} GENERATE \n", name.c_str());
   }
 
-  uint idx;
+  uint32_t idx;
 
   for (idx = 0; idx < rule->getViaLayerRuleCount(); ++idx) {
     dbTechViaLayerRule* layrule = rule->getViaLayerRule(idx);
@@ -973,14 +972,14 @@ void lefout::writeSameNetRule(dbTechSameNetRule* rule)
   dbTechLayer* l2 = rule->getLayer2();
 
   std::string n1;
-  if (_use_alias && l1->hasAlias()) {
+  if (use_alias_ && l1->hasAlias()) {
     n1 = l1->getAlias();
   } else {
     n1 = l1->getName();
   }
 
   std::string n2;
-  if (_use_alias && l2->hasAlias()) {
+  if (use_alias_ && l2->hasAlias()) {
     n2 = l2->getAlias();
   } else {
     n2 = l2->getName();
@@ -1004,7 +1003,7 @@ void lefout::writeSameNetRule(dbTechSameNetRule* rule)
 void lefout::writeLayer(dbTechLayer* layer)
 {
   std::string name;
-  if (_use_alias && layer->hasAlias()) {
+  if (use_alias_ && layer->hasAlias()) {
     name = layer->getAlias();
   } else {
     name = layer->getName();
@@ -1035,7 +1034,7 @@ void lefout::writeLayer(dbTechLayer* layer)
     fmt::print(_out, "    AREA {:.11g} ;\n", layer->getArea());
   }
 
-  uint thickness;
+  uint32_t thickness;
   if (layer->getThickness(thickness)) {
     fmt::print(_out, "    THICKNESS {:.11g} ;\n", lefdist(thickness));
   }
@@ -1215,7 +1214,7 @@ void lefout::writeLibBody(dbLib* lib)
   for (master_itr = masters.begin(); master_itr != masters.end();
        ++master_itr) {
     dbMaster* master = *master_itr;
-    if (_write_marked_masters && !master->isMarked()) {
+    if (write_marked_masters_ && !master->isMarked()) {
       continue;
     }
     writeMaster(master);
@@ -1262,7 +1261,7 @@ void lefout::writeMaster(dbMaster* master)
 {
   std::string name = master->getName();
 
-  if (_use_master_ids) {
+  if (use_master_ids_) {
     fmt::print(_out,
                "\nMACRO M{}\n",
                static_cast<std::uint32_t>(master->getMasterId()));
@@ -1283,7 +1282,7 @@ void lefout::writeMaster(dbMaster* master)
 
   if (master->getEEQ()) {
     std::string eeq = master->getEEQ()->getName();
-    if (_use_master_ids) {
+    if (use_master_ids_) {
       fmt::print(_out,
                  "    EEQ M{} ;\n",
                  static_cast<std::uint32_t>(master->getEEQ()->getMasterId()));
@@ -1294,7 +1293,7 @@ void lefout::writeMaster(dbMaster* master)
 
   if (master->getLEQ()) {
     std::string leq = master->getLEQ()->getName();
-    if (_use_master_ids) {
+    if (use_master_ids_) {
       fmt::print(_out,
                  "    LEQ M{} ;\n",
                  static_cast<std::uint32_t>(master->getLEQ()->getMasterId()));
@@ -1362,7 +1361,7 @@ void lefout::writeMaster(dbMaster* master)
     master->transform(t);
   }
 
-  if (_use_master_ids) {
+  if (use_master_ids_) {
     fmt::print(
         _out, "END M{}\n", static_cast<std::uint32_t>(master->getMasterId()));
   } else {
@@ -1547,8 +1546,8 @@ void lefout::writePropertyDefinitions(dbLib* lib)
 
 void lefout::writeTech(dbTech* tech)
 {
-  _dist_factor = 1.0 / tech->getDbUnitsPerMicron();
-  _area_factor = _dist_factor * _dist_factor;
+  dist_factor_ = 1.0 / tech->getDbUnitsPerMicron();
+  area_factor_ = dist_factor_ * dist_factor_;
   writeTechBody(tech);
 
   fmt::print(_out, "END LIBRARY\n");
@@ -1556,8 +1555,8 @@ void lefout::writeTech(dbTech* tech)
 
 void lefout::writeLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
-  _area_factor = _dist_factor * _dist_factor;
+  dist_factor_ = 1.0 / lib->getDbUnitsPerMicron();
+  area_factor_ = dist_factor_ * dist_factor_;
   writeHeader(lib);
   writeLibBody(lib);
   fmt::print(_out, "END LIBRARY\n");
@@ -1565,8 +1564,8 @@ void lefout::writeLib(dbLib* lib)
 
 void lefout::writeTechAndLib(dbLib* lib)
 {
-  _dist_factor = 1.0 / lib->getDbUnitsPerMicron();
-  _area_factor = _dist_factor * _dist_factor;
+  dist_factor_ = 1.0 / lib->getDbUnitsPerMicron();
+  area_factor_ = dist_factor_ * dist_factor_;
   dbTech* tech = lib->getTech();
   writeHeader(lib);
   writeTechBody(tech);
@@ -1576,11 +1575,13 @@ void lefout::writeTechAndLib(dbLib* lib)
 
 void lefout::writeAbstractLef(dbBlock* db_block)
 {
-  utl::SetAndRestore set_dist(_dist_factor,
+  utl::SetAndRestore set_dist(dist_factor_,
                               1.0 / db_block->getDbUnitsPerMicron());
-  utl::SetAndRestore set_area(_area_factor, _dist_factor * _dist_factor);
+  utl::SetAndRestore set_area(area_factor_, dist_factor_ * dist_factor_);
 
   writeHeader(db_block);
   writeBlock(db_block);
   fmt::print(_out, "END LIBRARY\n");
 }
+
+}  // namespace odb

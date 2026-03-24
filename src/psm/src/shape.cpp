@@ -15,6 +15,8 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "connection.h"
+#include "ir_network.h"
 #include "node.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -31,10 +33,9 @@ odb::dbTechLayer* Shape::getLayer() const
   return layer_;
 }
 
-std::vector<std::unique_ptr<Connection>> Shape::connectNodes(
-    const IRNetwork::NodeTree& layer_nodes)
+Connections Shape::connectNodes(const IRNetwork::NodeTree& layer_nodes)
 {
-  std::vector<std::unique_ptr<Connection>> shape_connections;
+  Connections shape_connections;
 
   Node::NodeSet used;
 

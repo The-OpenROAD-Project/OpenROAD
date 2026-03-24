@@ -5,7 +5,6 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -17,48 +16,75 @@ class dbIStream;
 //
 class dbTransform
 {
-  friend class _dbBlock;
-  dbOrientType::Value _orient = dbOrientType::R0;
-  Point _offset;
-
  public:
-  // T = <R0, (0,0)>
+  // T = <R0, (0,0,0), false>
   dbTransform() = default;
 
-  //  T = <R0, offset>
-  dbTransform(const Point offset) : _offset(offset) {}
+  //  T = <R0, (offset,0), false>
+  dbTransform(const Point offset) : offset_(offset, 0) {}
 
-  //  T = <orient, (0,0)>
-  dbTransform(const dbOrientType orient) : _orient(orient) {}
+  //  T = <R0, offset, false>
+  dbTransform(const Point3D& offset) : offset_(offset) {}
 
-  //  T = <orient, offset>
+  //  T = <orient, (0,0,0), false>
+  dbTransform(const dbOrientType orient) : orient_(orient) {}
+
+  //  T = <orient, (0,0,0), orient.mirror_z_>
+  dbTransform(const dbOrientType3D& orient)
+      : orient_(orient.getOrientType2D()), mirror_z_(orient.isMirrorZ())
+  {
+  }
+
+  //  T = <orient, (offset,0), false>
   dbTransform(const dbOrientType orient, const Point& offset)
-      : _orient(orient), _offset(offset)
+      : orient_(orient), offset_(offset, 0)
+  {
+  }
+
+  dbTransform(const dbOrientType3D orient, const Point3D& offset)
+      : orient_(orient.getOrientType2D()),
+        offset_(offset),
+        mirror_z_(orient.isMirrorZ())
   {
   }
 
   bool operator==(const dbTransform& t) const
   {
-    return (_orient == t._orient) && (_offset == t._offset);
+    return (orient_ == t.orient_) && (offset_ == t.offset_)
+           && (mirror_z_ == t.mirror_z_);
   }
 
   bool operator!=(const dbTransform& t) const { return !operator==(t); }
 
-  void setOrient(const dbOrientType orient) { _orient = orient; }
+  void setOrient(const dbOrientType orient) { orient_ = orient; }
 
-  void setOffset(const Point offset) { _offset = offset; }
+  void setOrient(const dbOrientType3D& orient)
+  {
+    orient_ = orient.getOrientType2D();
+    mirror_z_ = orient.isMirrorZ();
+  }
+
+  void setOffset(const Point offset) { offset_ = Point3D(offset, 0); }
+
+  void setOffset(const Point3D& offset) { offset_ = offset; }
 
   void setTransform(const dbOrientType orient, const Point& offset)
   {
-    _orient = orient;
-    _offset = offset;
+    orient_ = orient;
+    offset_ = Point3D(offset, 0);
   }
 
   // Apply transform to this point
   void apply(Point& p) const;
 
+  // Apply transform to this point3D
+  void apply(Point3D& p) const;
+
   // Apply transform to this Rect
   void apply(Rect& r) const;
+
+  // Apply transform to this Cuboid
+  void apply(Cuboid& c) const;
 
   // Apply transform to this polygon
   void apply(Polygon& p) const;
@@ -75,11 +101,19 @@ class dbTransform
   // Compute inverse transform
   void invert();
 
-  dbOrientType getOrient() const { return _orient; }
-  Point getOffset() const { return _offset; }
+  dbOrientType getOrient() const { return orient_; }
+  Point getOffset() const { return Point(offset_.x(), offset_.y()); }
+  Point3D getOffset3D() const { return offset_; }
+  bool isMirrorZ() const { return mirror_z_; }
 
   friend dbOStream& operator<<(dbOStream& stream, const dbTransform& t);
   friend dbIStream& operator>>(dbIStream& stream, dbTransform& t);
+
+ private:
+  friend class _dbBlock;
+  dbOrientType::Value orient_ = dbOrientType::R0;
+  Point3D offset_;
+  bool mirror_z_ = false;
 };
 
 dbOStream& operator<<(dbOStream& stream, const dbTransform& t);

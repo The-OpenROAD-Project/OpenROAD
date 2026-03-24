@@ -9,11 +9,12 @@
 #include <vector>
 
 #include "db/grObj/grBlockObject.h"
+#include "db/grObj/grFig.h"
 #include "db/grObj/grNode.h"
 #include "db/grObj/grPin.h"
 #include "db/grObj/grShape.h"
-#include "db/grObj/grVia.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frNode.h"
 #include "frBaseTypes.h"
 #include "odb/geom.h"
 

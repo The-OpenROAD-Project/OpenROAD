@@ -12,23 +12,23 @@
     },
     {
       "type": "bit",
-      "name": "same_mask_"
+      "name": "same_mask"
     },
     {
       "type": "bit",
-      "name": "same_metal_"
+      "name": "same_metal"
     },
     {
       "type": "bit",
-      "name": "diff_metal_"
+      "name": "diff_metal"
     },
     {
       "type": "bit",
-      "name": "except_aligned_side_"
+      "name": "except_aligned_side"
     },
     {
       "type": "bit",
-      "name": "except_aligned_end_"
+      "name": "except_aligned_end"
     },
     {
       "type": "int",

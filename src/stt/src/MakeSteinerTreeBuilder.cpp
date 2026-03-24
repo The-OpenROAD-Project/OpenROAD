@@ -4,6 +4,7 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

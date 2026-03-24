@@ -7,24 +7,21 @@
 #include <utility>
 #include <vector>
 
-namespace utl {
-class Logger;
-}  // namespace utl
+#include "utl/Logger.h"
 
 namespace cts::CKMeans {
-
-using utl::Logger;
 
 struct Sink;
 
 class Clustering
 {
  public:
-  Clustering(const std::vector<std::pair<float, float>>& sinks, Logger* logger);
+  Clustering(const std::vector<std::pair<float, float>>& sinks,
+             utl::Logger* logger);
   Clustering(const std::vector<std::pair<float, float>>& sinks,
              float xBranch,
              float yBranch,
-             Logger* logger);
+             utl::Logger* logger);
   ~Clustering();
 
   void iterKmeans(unsigned iter,
@@ -56,7 +53,7 @@ class Clustering
   static float calcDist(const std::pair<float, float>& loc1,
                         const std::pair<float, float>& loc2);
 
-  Logger* logger_;
+  utl::Logger* logger_;
   std::vector<Sink> sinks_;
   std::vector<std::vector<Sink*>> clusters_;
 

@@ -29,13 +29,13 @@
 #include <endian.h>
 #endif
 
-#include <odb/db.h>
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
+
+#include "odb/db.h"
 
 namespace odb {
 

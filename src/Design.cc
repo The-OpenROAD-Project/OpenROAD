@@ -3,15 +3,16 @@
 
 #include "ord/Design.h"
 
-#include <tcl.h>
-
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <istream>
-#include <mutex>
 #include <ostream>
 #include <string>
 
+#include "absl/base/attributes.h"
+#include "absl/base/const_init.h"
+#include "absl/synchronization/mutex.h"
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -20,11 +21,14 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
+#include "sta/Sta.hh"
+#include "tcl.h"
+#include "tclDecls.h"
 #include "utl/Logger.h"
 
 namespace ord {
 
-std::mutex Design::interp_mutex;
+ABSL_CONST_INIT absl::Mutex Design::interp_mutex(absl::kConstInit);
 
 Design::Design(Tech* tech) : tech_(tech)
 {
@@ -131,11 +135,12 @@ ant::AntennaChecker* Design::getAntennaChecker()
 
 std::string Design::evalTclString(const std::string& cmd)
 {
-  const std::lock_guard<std::mutex> lock(interp_mutex);
+  const absl::MutexLock lock(&interp_mutex);
   auto openroad = getOpenRoad();
   ord::OpenRoad::setOpenRoad(openroad, /* reinit_ok */ true);
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   sta::Sta::setSta(openroad->getSta());
+  Tcl_SetAssocData(tcl_interp, "design", nullptr, this);
   Tcl_Eval(tcl_interp, cmd.c_str());
   return std::string(Tcl_GetStringResult(tcl_interp));
 }
@@ -202,10 +207,7 @@ bool Design::isInClock(odb::dbInst* inst)
 bool Design::isInClock(odb::dbITerm* iterm)
 {
   auto* net = iterm->getNet();
-  if (net != nullptr && net->getSigType() == odb::dbSigType::CLOCK) {
-    return true;
-  }
-  return false;
+  return net != nullptr && net->getSigType() == odb::dbSigType::CLOCK;
 }
 
 std::string Design::getITermName(odb::dbITerm* pin)
@@ -225,7 +227,7 @@ std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
     for (odb::dbSWire* swire : net->getSWires()) {
       for (odb::dbSBox* wire : swire->getWires()) {
         if (wire != nullptr && !(wire->isVia())) {
-          route_length += wire->getLength();
+          route_length += std::max(wire->getDX(), wire->getDY());
         }
       }
     }

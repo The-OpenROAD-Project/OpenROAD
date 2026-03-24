@@ -3,12 +3,12 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 288 components and 1728 component-terminals.
 [INFO ODB-0133]     Created 1 nets and 288 connections.
-[DEBUG CTS-buffering] CLKBUF_X1 found by 'CLKBUF' pattern match
-[DEBUG CTS-buffering] CLKBUF_X2 found by 'CLKBUF' pattern match
-[DEBUG CTS-buffering] CLKBUF_X3 found by 'CLKBUF' pattern match
-[DEBUG CTS-buffering] CLKBUF_X1 has been inferred as clock buffer
-[DEBUG CTS-buffering] CLKBUF_X2 has been inferred as clock buffer
-[DEBUG CTS-buffering] CLKBUF_X3 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X1 found by 'CLKBUF' pattern match
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X2 found by 'CLKBUF' pattern match
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X3 found by 'CLKBUF' pattern match
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X1 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X2 has been inferred as clock buffer
+[DEBUG RSZ-inferClockBufferList] CLKBUF_X3 has been inferred as clock buffer
 [DEBUG CTS-buffering] CLKBUF_X1 has cap limit:6.0729997e-16 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X2 has cap limit:1.2145999e-15 vs. total cap:0, derate:0.01
 [DEBUG CTS-buffering] CLKBUF_X3 has cap limit:1.81885e-15 vs. total cap:0, derate:0.01
@@ -60,5 +60,5 @@
 [INFO CTS-0100]  Leaf buffers 29
 [INFO CTS-0101]  Average sink wire length 129.19 um
 [INFO CTS-0102]  Path depth 2 - 3
-[INFO CTS-0207]  Leaf load cells 4
+[INFO CTS-0207]  Dummy loads inserted 4
 Found 0 unconnected buffers.

@@ -1,10 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -14,17 +17,18 @@ package(
 cc_library(
     name = "gpl",
     srcs = [
+        "src/AbstractGraphics.cpp",
         "src/MakeReplace.cpp",
         "src/fft.cpp",
         "src/fft.h",
         "src/fftsg.cpp",
         "src/fftsg2d.cpp",
-        "src/graphics.cpp",
-        "src/graphics.h",
+        "src/graphicsImpl.cpp",
+        "src/graphicsImpl.h",
+        "src/graphicsNone.cpp",
         "src/initialPlace.cpp",
         "src/initialPlace.h",
         "src/mbff.cpp",
-        "src/mbff.h",
         "src/nesterovBase.cpp",
         "src/nesterovBase.h",
         "src/nesterovPlace.cpp",
@@ -45,6 +49,9 @@ cc_library(
     hdrs = [
         "include/gpl/MakeReplace.h",
         "include/gpl/Replace.h",
+        "src/AbstractGraphics.h",
+        "src/graphicsNone.h",
+        "src/mbff.h",
     ],
     copts = [
         "-fopenmp",
@@ -69,14 +76,48 @@ cc_library(
         "@boost.random",
         "@boost.stacktrace",
         "@boost.tokenizer",
+        "@boost.unordered",
         "@boost.utility",
-        "@com_github_quantamhd_lemon//:lemon",
+        "@coin-or-lemon//:lemon",
         "@eigen",
         "@openmp",
         "@or-tools//ortools/linear_solver",
         "@or-tools//ortools/sat:cp_model",
-        "@tk_tcl//:tcl",
+        "@or-tools//ortools/util:sorted_interval_list",
+        "@tcl_lang//:tcl",
     ],
+)
+
+# This target compiles the SWIG C++ wrapper into a shared library (.so)
+# that Python can load dynamically.
+cc_binary(
+    name = "_gpl.so",
+    srcs = [
+        ":swig-py",
+    ],
+    defines = [PYTHON_STABLE_API_DEFINE],
+    includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
+    linkshared = True,
+    deps = [
+        "//src/gpl",
+        "//src/odb",
+        "//src/utl",
+        "@boost.stacktrace",
+        "@rules_python//python/cc:current_py_cc_headers",
+    ],
+)
+
+# This packages the SWIG-generated Python wrapper (gpl.py) and the
+# compiled C++ extension (_gpl.so) together.
+py_library(
+    name = "gpl_py",
+    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
+    # The data attribute makes the .so file available at runtime.
+    data = [":_gpl.so"],
+    # This allows imports relative to the workspace root.
+    imports = ["."],
+    visibility = ["//visibility:public"],
 )
 
 tcl_encode(
@@ -86,6 +127,7 @@ tcl_encode(
     ],
     char_array_name = "gpl_tcl_inits",
     namespace = "gpl",
+    visibility = ["//visibility:public"],
 )
 
 tcl_wrap_cc(
@@ -93,6 +135,7 @@ tcl_wrap_cc(
     srcs = [
         "src/replace.i",
         "//:error_swig",
+        "//:options_swig",
     ],
     module = "gpl",
     namespace_prefix = "gpl",
@@ -100,6 +143,7 @@ tcl_wrap_cc(
     swig_includes = [
         "src/gpl/src",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "//src/odb:swig",
     ],
@@ -119,4 +163,17 @@ python_wrap_cc(
         "src",
     ],
     visibility = ["//:__subpackages__"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/replace.tcl",
+    ],
+    visibility = ["//src/gpl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/gpl/test:__pkg__"],
 )

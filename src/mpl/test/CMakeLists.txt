@@ -27,11 +27,14 @@ or_integration_tests(
     centralization1
     clocked_macro
     keep_clustering_data
-    fixed_macros
+    fixed_macros1
+    fixed_macros2
+    fixed_covers
+    macros_without_pins1
+    unfixed_cells_dont_fit_in_core
+    halos1
+    halos2
 )
 
-# Skipped
-#mpl_man_tcl_check
-#mpl_readme_msgs_check
 
 add_subdirectory(cpp)

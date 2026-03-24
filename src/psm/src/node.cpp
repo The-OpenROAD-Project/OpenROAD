@@ -60,7 +60,7 @@ std::string Node::describe(const std::string& prefix) const
 
 double Node::getDBUs() const
 {
-  return layer_->getTech()->getLefUnits();
+  return layer_->getTech()->getDbUnitsPerMicron();
 }
 
 void Node::print(utl::Logger* logger, const std::string& prefix) const
@@ -72,7 +72,7 @@ std::string Node::getName() const
 {
   std::string type = getTypeName();
 
-  type.erase(remove(type.begin(), type.end(), ' '), type.end());
+  std::erase(type, ' ');
 
   return fmt::format(
       "{}_{}_{}_{}", type, layer_->getName(), pt_.getX(), pt_.getY());
@@ -131,16 +131,29 @@ std::string ITermNode::describe(const std::string& prefix) const
 
 ////////////////////
 
-BPinNode::BPinNode(odb::dbBPin* pin,
-                   const odb::Rect& shape,
-                   odb::dbTechLayer* layer)
-    : TerminalNode(shape, layer), pin_(pin)
+BPinNode::BPinNode(odb::dbBPin* pin, odb::dbBox* box, odb::dbTechLayer* layer)
+    : TerminalNode(box->getBox(), layer), pin_(pin), box_(box)
 {
 }
 
 int BPinNode::getTypeCompareInfo() const
 {
   return pin_->getId();
+}
+
+bool BPinNode::shouldConnect() const
+{
+  if (auto prop = odb::dbBoolProperty::find(pin_, kDisconnectProperty)) {
+    if (prop != nullptr && prop->getValue()) {
+      return false;
+    }
+  }
+  if (auto prop = odb::dbBoolProperty::find(box_, kDisconnectProperty)) {
+    if (prop != nullptr && prop->getValue()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace psm

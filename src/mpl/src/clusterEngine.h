@@ -3,18 +3,21 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <queue>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
 #include "mpl-util.h"
 #include "object.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace par {
 class PartitionMgr;
@@ -35,44 +38,6 @@ using InstToHardMap = std::map<odb::dbInst*, std::unique_ptr<HardMacro>>;
 using ModuleToMetricsMap = std::map<odb::dbModule*, std::unique_ptr<Metrics>>;
 using PathInsts = std::vector<std::set<odb::dbInst*>>;
 
-struct DataFlowHypergraph
-{
-  std::vector<std::vector<int>> vertices;
-  std::vector<std::vector<int>> backward_vertices;
-  std::vector<std::vector<int>> hyperedges;
-};
-
-// For data flow computation.
-struct VerticesMaps
-{
-  std::map<int, odb::dbBTerm*> id_to_bterm;
-  std::map<int, odb::dbInst*> id_to_std_cell;
-  std::map<int, odb::dbITerm*> id_to_macro_pin;
-
-  // Each index represents a vertex in which
-  // the flow is interrupted.
-  std::vector<bool> stoppers;
-};
-
-struct DataFlow
-{
-  bool is_empty{false};
-
-  // Macro Pins --> Registers
-  // Registers --> Macro Pins
-  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_regs;
-
-  // IO --> Register
-  // Register --> IO
-  // IO --> Macro Pin
-  // Macro Pin --> IO
-  std::vector<std::pair<odb::dbBTerm*, PathInsts>> io_and_regs;
-
-  // Macro Pin --> Macros
-  // Macros --> Macro Pin
-  std::vector<std::pair<odb::dbITerm*, PathInsts>> macro_pins_and_macros;
-};
-
 struct PhysicalHierarchyMaps
 {
   std::map<int, Cluster*> id_to_cluster;
@@ -92,17 +57,16 @@ struct PhysicalHierarchy
   BoundaryRegionList available_regions_for_unconstrained_pins;
   ClusterToBoundaryRegionMap io_cluster_to_constraint;
 
-  float halo_width{0.0f};
-  float halo_height{0.0f};
-  float macro_with_halo_area{0.0f};
+  HardMacro::Halo default_halo;
+  int64_t macro_with_halo_area{0};
 
   // The constraint set by the user.
-  Rect global_fence;
+  odb::Rect global_fence;
 
   // The actual area used by MPL - computed using the dimensions
   // of the core versus the global fence set by the user.
-  Rect floorplan_shape;
-  Rect die_area;
+  odb::Rect floorplan_shape;
+  odb::Rect die_area;
 
   bool has_io_clusters{true};
   bool has_only_macros{false};
@@ -117,14 +81,8 @@ struct PhysicalHierarchy
 
   int max_level{0};
   int large_net_threshold{0};  // used to ignore global nets
-  int min_net_count_for_connection{0};
   float cluster_size_ratio{0.0f};
   float cluster_size_tolerance{0.0f};
-
-  // Virtual connection weight between each macro cluster
-  // and its corresponding standard-cell cluster to bias
-  // the macro placer to place them together.
-  const float virtual_weight = 10.0f;
 
   const int io_bundles_per_edge = 5;
 };
@@ -139,7 +97,6 @@ class ClusteringEngine
 {
  public:
   ClusteringEngine(odb::dbBlock* block,
-                   sta::dbNetwork* network,
                    utl::Logger* logger,
                    par::PartitionMgr* triton_part,
                    MplObserver* graphics);
@@ -147,6 +104,8 @@ class ClusteringEngine
   void run();
 
   void setTree(PhysicalHierarchy* tree);
+  void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
+  void setUseDefHalo(bool use_def_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -156,6 +115,8 @@ class ClusteringEngine
                                   int cluster_id,
                                   bool include_macro);
 
+  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
+                                                  const odb::Rect& core) const;
   void createTempMacroClusters(const std::vector<HardMacro*>& hard_macros,
                                std::vector<HardMacro>& sa_macros,
                                UniqueClusterVector& macro_clusters,
@@ -165,20 +126,26 @@ class ClusteringEngine
 
   int getNumberOfIOs(Cluster* target) const;
 
-  static bool isIgnoredInst(odb::dbInst* inst);
+  bool isIgnoredInst(odb::dbInst* inst);
 
  private:
   using UniqueClusterQueue = std::queue<std::unique_ptr<Cluster>>;
 
+  struct Net
+  {
+    int driver_id{-1};
+    std::vector<int> loads_ids;
+  };
+
   void init();
   Metrics* computeModuleMetrics(odb::dbModule* module);
-  std::string generateMacroAndCoreDimensionsTable(const HardMacro* hard_macro,
-                                                  const odb::Rect& core) const;
   std::vector<odb::dbInst*> getUnfixedMacros();
+  void addIgnorableMacro(odb::dbInst* inst);
   void setDieArea();
   void setFloorplanShape();
-  void searchForFixedInstsInsideFloorplanShape();
-  float computeMacroWithHaloArea(
+  void createHardMacros();
+  bool movableCellsFitInMacroPlacementArea() const;
+  int64_t computeMacroWithHaloArea(
       const std::vector<odb::dbInst*>& unfixed_macros);
   std::vector<odb::dbInst*> getIOPads() const;
   void reportDesignData();
@@ -212,6 +179,16 @@ class ClusteringEngine
   bool partitionerSolutionIsFullyUnbalanced(const std::vector<int>& solution,
                                             int num_other_cluster_vertices);
   void mergeChildrenBelowThresholds(std::vector<Cluster*>& small_children);
+  bool mergeHonorsMaxThresholds(const Cluster* a, const Cluster* b) const;
+  bool sameConnectionSignature(Cluster* a, Cluster* b) const;
+  bool strongConnection(Cluster* a,
+                        Cluster* b,
+                        const float* connection_weight = nullptr) const;
+  Cluster* findSingleWellFormedConnectedCluster(
+      Cluster* target_cluster,
+      const std::vector<int>& small_clusters_id_list) const;
+  std::vector<int> findNeighbors(Cluster* target_cluster,
+                                 Cluster* ignored_cluster) const;
   bool attemptMerge(Cluster* receiver, Cluster* incomer);
   void fetchMixedLeaves(Cluster* parent,
                         std::vector<std::vector<Cluster*>>& mixed_leaves);
@@ -240,43 +217,16 @@ class ClusteringEngine
 
   void clearConnections();
   void buildNetListConnections();
-  void buildDataFlowConnections();
+  Net buildNet(odb::dbNet* db_net) const;
+  void connectClusters(const Net& net);
   void connect(Cluster* a, Cluster* b, float connection_weight) const;
 
-  // Methods for data flow
-  void createDataFlow();
-  bool stdCellsHaveLiberty();
-  VerticesMaps computeVertices();
-  void computeIOVertices(VerticesMaps& vertices_maps);
-  void computePadVertices(VerticesMaps& vertices_maps);
-  void computeStdCellVertices(VerticesMaps& vertices_maps);
-  void computeMacroPinVertices(VerticesMaps& vertices_maps);
-  DataFlowHypergraph computeHypergraph(int num_of_vertices);
-  void dataFlowDFSIOPin(int parent,
-                        int idx,
-                        const VerticesMaps& vertices_maps,
-                        const DataFlowHypergraph& hypergraph,
-                        std::vector<std::set<odb::dbInst*>>& insts,
-                        std::vector<bool>& visited,
-                        bool backward_search);
-  void dataFlowDFSMacroPin(int parent,
-                           int idx,
-                           const VerticesMaps& vertices_maps,
-                           const DataFlowHypergraph& hypergraph,
-                           std::vector<std::set<odb::dbInst*>>& std_cells,
-                           std::vector<std::set<odb::dbInst*>>& macros,
-                           std::vector<bool>& visited,
-                           bool backward_search);
-  std::set<int> computeSinks(const std::set<odb::dbInst*>& insts);
-  float computeConnWeight(int hops);
-
   void printPhysicalHierarchyTree(Cluster* parent, int level);
-  float computeMicronArea(odb::dbInst* inst);
+  int64_t computeArea(odb::dbInst* inst);
 
   bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
-  sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
   MplObserver* graphics_;
@@ -295,17 +245,15 @@ class ClusteringEngine
   int min_macro_{0};
   int max_std_cell_{0};
   int min_std_cell_{0};
-  const float size_tolerance_ = 0.1;
 
-  // Variables for data flow
-  DataFlow data_connections_;
-
-  // The register distance between two macros for
-  // them to be considered connected when creating data flow.
-  const int max_num_of_hops_ = 5;
+  const float minimum_connection_ratio_{0.08};
 
   int first_io_bundle_id_{-1};
   IOBundleSpans io_bundle_spans_;
+
+  std::unordered_set<odb::dbInst*> ignorable_macros_;
+  std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
+  bool use_def_halo_{false};
 };
 
 }  // namespace mpl

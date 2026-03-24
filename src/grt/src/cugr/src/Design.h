@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "CUGR.h"
@@ -9,10 +11,17 @@
 #include "geo.h"
 
 namespace odb {
-class dbDatabase;
 class dbBlock;
+class dbDatabase;
+class dbITerm;
+class dbNet;
 class dbTech;
 }  // namespace odb
+
+namespace sta {
+class dbNetwork;
+class dbSta;
+}  // namespace sta
 
 namespace utl {
 class Logger;
@@ -29,7 +38,8 @@ class Design
          utl::Logger* logger,
          const Constants& constants,
          int min_routing_layer,
-         int max_routing_layer);
+         int max_routing_layer,
+         const std::set<odb::dbNet*>& clock_nets);
   int getLibDBU() const { return lib_dbu_; }
 
   CostT getUnitLengthWireCost() const { return unit_length_wire_cost_; }
@@ -60,10 +70,13 @@ class Design
 
   BoxT getDieRegion() const { return die_region_; }
 
+  void updateNet(odb::dbNet* db_net);
+
  private:
   void read();
   void readLayers();
   void readNetlist();
+  std::vector<CUGRPin> makeNetPins(odb::dbNet* db_net);
   void readInstanceObstructions();
   int readSpecialNetObstructions();
   void readDesignObstructions();
@@ -78,6 +91,7 @@ class Design
   BoxT die_region_;
   std::vector<MetalLayer> layers_;
   std::vector<CUGRNet> nets_;
+  std::unordered_map<odb::dbNet*, int> db_net_to_id_;
   std::vector<BoxOnLayer> obstacles_;
 
   odb::dbBlock* block_;
@@ -96,6 +110,7 @@ class Design
   const Constants constants_;
   const int min_routing_layer_;
   const int max_routing_layer_;
+  std::set<odb::dbNet*> clock_nets_;
 };
 
 }  // namespace grt

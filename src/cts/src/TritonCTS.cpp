@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cctype>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
@@ -17,6 +18,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <ranges>
 #include <set>
 #include <sstream>
 #include <string>
@@ -32,6 +34,7 @@
 #include "TreeBuilder.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/EstimateParasitics.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -43,13 +46,13 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
-#include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
+#include "sta/Mode.hh"
+#include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/Sdc.hh"
-#include "sta/Vector.hh"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace cts {
@@ -139,6 +142,15 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
   int fanout = std::numeric_limits<int>::max();
   float tempFanout;
   bool existMaxFanout;
+
+  // Check if top instance has fanout limit
+  sta::Cell* top_cell = network_->cell(network_->topInstance());
+  openSta_->cmdMode()->sdc()->fanoutLimit(
+      top_cell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  if (existMaxFanout) {
+    fanout = std::min(fanout, (int) tempFanout);
+  }
+
   odb::dbMaster* bufferMaster = db_->findMaster(bufferName.c_str());
   sta::Cell* bufferCell = network_->dbToSta(bufferMaster);
   sta::Port* buffer_port = nullptr;
@@ -155,17 +167,17 @@ int TritonCTS::getBufferFanoutLimit(const std::string& bufferName)
     }
   }
   if (buffer_port == nullptr) {
-    return 0;
+    return (existMaxFanout) ? fanout : 0;
   }
 
-  openSta_->sdc()->fanoutLimit(
-      buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
+  auto sdc = openSta_->cmdMode()->sdc();
+
+  sdc->fanoutLimit(buffer_port, sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   }
 
-  openSta_->sdc()->fanoutLimit(
-      bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
+  sdc->fanoutLimit(bufferCell, sta::MinMax::max(), tempFanout, existMaxFanout);
   if (existMaxFanout) {
     fanout = std::min(fanout, (int) tempFanout);
   }
@@ -202,7 +214,10 @@ void TritonCTS::setupCharacterization()
     }
   }
 
-  openSta_->checkFanoutLimitPreamble();
+  block_ = db_->getChip()->getBlock();
+  options_->setDbUnits(block_->getDbUnitsPerMicron());
+
+  openSta_->checkFanoutPreamble();
   // Finalize root/sink buffers
   std::string rootBuffer = selectRootBuffer(rootBuffers_);
   options_->setRootBuffer(rootBuffer);
@@ -223,14 +238,13 @@ void TritonCTS::setupCharacterization()
     }
   }
 
+  double maxWlMicrons
+      = resizer_->findMaxWireLength(/* don't issue error */ false) * 1e+6;
+  options_->setMaxWl(block_->micronsToDbu(maxWlMicrons));
+
   // A new characteriztion is always created.
-  techChar_ = std::make_unique<TechChar>(options_,
-                                         db_,
-                                         openSta_,
-                                         resizer_,
-                                         estimate_parasitics_,
-                                         network_,
-                                         logger_);
+  techChar_ = std::make_unique<TechChar>(
+      options_, db_, openSta_, estimate_parasitics_, network_, logger_);
   techChar_->create();
 
   // Also resets metrics everytime the setup is done
@@ -246,7 +260,7 @@ void TritonCTS::checkCharacterization()
   techChar_->forEachWireSegment([&](unsigned idx, const WireSegment& wireSeg) {
     for (int buf = 0; buf < wireSeg.getNumBuffers(); ++buf) {
       const std::string& master = wireSeg.getBufferMaster(buf);
-      if (visitedMasters.count(master) == 0) {
+      if (!visitedMasters.contains(master)) {
         if (masterExists(master)) {
           visitedMasters.insert(master);
         } else {
@@ -293,8 +307,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   if (driverNet->isSpecial()) {
     logger_->info(
         CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
-  } else if (std::find(skipNets.begin(), skipNets.end(), driverNet)
-             != skipNets.end()) {
+  } else if (std::ranges::find(skipNets, driverNet) != skipNets.end()) {
     logger_->warn(CTS,
                   44,
                   "Skipping net {}, specified by the user...",
@@ -311,6 +324,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
+  auto sdc = openSta_->cmdMode()->sdc();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
       if (!isSink(iterm)) {
@@ -318,8 +332,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
           if (visitedClockNets_.find(outputNet) == visitedClockNets_.end()
-              && !openSta_->sdc()->isLeafPinClock(
-                  network_->dbToSta(outputPin))) {
+              && !sdc->isLeafPinClock(network_->dbToSta(outputPin))) {
             if (clockBuilder == nullptr
                 && net2builder_[clkInputNet] != nullptr) {
               initOneClockTree(outputNet,
@@ -466,9 +479,7 @@ void TritonCTS::countSinksPostDbWrite(
         double currSinkWl
             = (dist + currWireLength) / double(options_->getDbUnits());
         sinkWireLength += currSinkWl;
-        if (depth > maxDepth) {
-          maxDepth = depth;
-        }
+        maxDepth = std::max(depth, maxDepth);
         if ((minDepth > 0 && depth < minDepth) || (minDepth == 0)) {
           minDepth = depth;
         }
@@ -494,7 +505,8 @@ void TritonCTS::writeDataToDb()
       writeClockNDRsToDb(builder.get());
     }
     if (options_->dummyLoadEnabled()) {
-      writeDummyLoadsToDb(builder->getClock(), clkDummies);
+      int nDummies = writeDummyLoadsToDb(builder->getClock(), clkDummies);
+      builder->setNDummies(nDummies);
     }
   }
 
@@ -538,7 +550,8 @@ void TritonCTS::writeDataToDb()
       }
       logger_->info(CTS, 102, " Path depth {} - {}", minDepth, maxDepth);
       if (options_->dummyLoadEnabled()) {
-        logger_->info(CTS, 207, " Leaf load cells {}", dummyLoadIndex_);
+        logger_->info(
+            CTS, 207, " Dummy loads inserted {}", builder->getNDummies());
       }
     }
   }
@@ -655,10 +668,13 @@ void TritonCTS::setBufferList(const char* buffers)
   std::vector<std::string> bufferList(begin, end);
   // If the vector is empty, then the buffers are inferred
   if (bufferList.empty()) {
-    inferBufferList(bufferList);
+    const char* lib_name
+        = options_->isCtsLibrarySet() ? options_->getCtsLibrary() : nullptr;
+    resizer_->inferClockBufferList(lib_name, bufferList);
+    options_->setBufferListInferred(true);
   } else {
     // Iterate the user-defined buffer list
-    sta::Vector<sta::LibertyCell*> selected_buffers;
+    std::vector<sta::LibertyCell*> selected_buffers;
     for (const std::string& buffer : bufferList) {
       odb::dbMaster* buffer_master = db_->findMaster(buffer.c_str());
       if (buffer_master == nullptr) {
@@ -677,183 +693,6 @@ void TritonCTS::setBufferList(const char* buffers)
     resizer_->setClockBuffersList(selected_buffers);
   }
   options_->setBufferList(bufferList);
-}
-
-void TritonCTS::inferBufferList(std::vector<std::string>& buffers)
-{
-  sta::Vector<sta::LibertyCell*> selected_buffers;
-
-  // first, look for buffers with "is_clock_cell: true" cell attribute
-  sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-  while (lib_iter->hasNext()) {
-    sta::LibertyLibrary* lib = lib_iter->next();
-    if (options_->isCtsLibrarySet()
-        && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-      continue;
-    }
-    for (sta::LibertyCell* buffer : *lib->buffers()) {
-      if (buffer->isClockCell() && isClockCellCandidate(buffer)) {
-        // "is_clock_cell: true"
-        selected_buffers.emplace_back(buffer);
-        debugPrint(logger_,
-                   CTS,
-                   "buffering",
-                   1,
-                   "{} has clock cell attribute",
-                   buffer->name());
-      }
-    }
-  }
-  delete lib_iter;
-
-  // second, look for buffers with an input port that has
-  // LEF USE as "CLOCK"
-  if (selected_buffers.empty()) {
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer : *lib->buffers()) {
-        odb::dbMaster* master = db_->findMaster(buffer->name());
-        for (odb::dbMTerm* mterm : master->getMTerms()) {
-          if (mterm->getIoType() == odb::dbIoType::INPUT
-              && mterm->getSigType() == odb::dbSigType::CLOCK
-              && isClockCellCandidate(buffer)) {
-            // input port with LEF USE as "CLOCK"
-            selected_buffers.emplace_back(buffer);
-            debugPrint(logger_,
-                       CTS,
-                       "buffering",
-                       1,
-                       "{} has input port {} with LEF USE as CLOCK",
-                       buffer->name(),
-                       mterm->getName());
-          }
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // third, look for all buffers with name CLKBUF or clkbuf
-  if (selected_buffers.empty()) {
-    sta::PatternMatch patternClkBuf(".*CLKBUF.*",
-                                    /* is_regexp */ true,
-                                    /* nocase */ true,
-                                    /* Tcl_interp* */ nullptr);
-    sta::LibertyLibraryIterator* lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer :
-           lib->findLibertyCellsMatching(&patternClkBuf)) {
-        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_,
-                     CTS,
-                     "buffering",
-                     1,
-                     "{} found by 'CLKBUF' pattern match",
-                     buffer->name());
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // fourth, look for all buffers with name BUF or buf
-  if (selected_buffers.empty()) {
-    sta::PatternMatch patternBuf(".*BUF.*",
-                                 /* is_regexp */ true,
-                                 /* nocase */ true,
-                                 /* Tcl_interp* */ nullptr);
-    lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer :
-           lib->findLibertyCellsMatching(&patternBuf)) {
-        if (buffer->isBuffer() && isClockCellCandidate(buffer)) {
-          debugPrint(logger_,
-                     CTS,
-                     "buffering",
-                     1,
-                     "{} found by 'BUF' pattern match",
-                     buffer->name());
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-  }
-
-  // abandon attributes & name patterns, just look for all buffers
-  if (selected_buffers.empty()) {
-    debugPrint(logger_,
-               CTS,
-               "buffering",
-               1,
-               "No buffers with clock atributes or name patterns found, using "
-               "all buffers");
-    lib_iter = network_->libertyLibraryIterator();
-    while (lib_iter->hasNext()) {
-      sta::LibertyLibrary* lib = lib_iter->next();
-      if (options_->isCtsLibrarySet()
-          && strcmp(lib->name(), options_->getCtsLibrary()) != 0) {
-        continue;
-      }
-      for (sta::LibertyCell* buffer : *lib->buffers()) {
-        if (isClockCellCandidate(buffer)) {
-          selected_buffers.emplace_back(buffer);
-        }
-      }
-    }
-    delete lib_iter;
-
-    if (selected_buffers.empty()) {
-      logger_->error(
-          CTS,
-          110,
-          "No clock buffer candidates could be found from any libraries.");
-    }
-  }
-
-  resizer_->setClockBuffersList(selected_buffers);
-
-  for (sta::LibertyCell* buffer : selected_buffers) {
-    buffers.emplace_back(buffer->name());
-    debugPrint(logger_,
-               CTS,
-               "buffering",
-               1,
-               "{} has been inferred as clock buffer",
-               buffer->name());
-  }
-
-  options_->setBufferListInferred(true);
-}
-
-std::string toLowerCase(std::string str)
-{
-  std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) {
-    return std::tolower(c);
-  });
-  return str;
-}
-
-bool TritonCTS::isClockCellCandidate(sta::LibertyCell* cell)
-{
-  return (!cell->dontUse() && !resizer_->dontUse(cell) && !cell->alwaysOn()
-          && !cell->isIsolationCell() && !cell->isLevelShifter());
 }
 
 std::string TritonCTS::getRootBufferToString()
@@ -906,7 +745,7 @@ std::string TritonCTS::selectRootBuffer(std::vector<std::string>& buffers)
   float sinkWireLength
       = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
         / block->getDbUnitsPerMicron();
-  sta::Corner* corner = openSta_->cmdCorner();
+  sta::Scene* corner = openSta_->cmdScene();
   float rootWireCap = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6
                       * sinkWireLength / 2.0;
   std::string rootBuf = selectBestMaxCapBuffer(buffers, rootWireCap);
@@ -949,7 +788,7 @@ std::string TritonCTS::selectSinkBuffer(std::vector<std::string>& buffers)
   float sinkWireLength
       = static_cast<float>(std::max(coreArea.dx(), coreArea.dy()))
         / block->getDbUnitsPerMicron();
-  sta::Corner* corner = openSta_->cmdCorner();
+  sta::Scene* corner = openSta_->cmdScene();
   float sinkWireCap = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6
                       * sinkWireLength;
 
@@ -1016,11 +855,323 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 // db functions
 
+void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
+{
+  odb::dbITerm* driver = clkNet->getFirstOutput();
+  std::vector<int> xs;
+  std::vector<int> ys;
+  std::map<odb::Point, std::vector<odb::dbITerm*>> point2pin;
+  odb::dbSet<odb::dbITerm> iterms = clkNet->getITerms();
+  for (odb::dbITerm* iterm : iterms) {
+    if (iterm != driver && iterm->isInputSignal()) {
+      int TestX, TestY;
+      iterm->getAvgXY(&TestX, &TestY);
+      xs.push_back(TestX);
+      ys.push_back(TestY);
+      point2pin[{TestX, TestY}].push_back(iterm);
+      if (isSink(iterm)) {
+        continue;
+      }
+      odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
+      if (!outputPin || !outputPin->getNet()) {
+        continue;
+      }
+      odb::dbInst* icg = iterm->getInst();
+      odb::dbNet* outputNet = outputPin->getNet();
+      sta::Cell* masterCell = network_->dbToSta(icg->getMaster());
+      sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
+
+      if (!libertyCell) {
+        continue;
+      }
+      // Clock tree buffers or inverters
+      if (libertyCell->isInverter() || libertyCell->isBuffer()) {
+        continue;
+      }
+      cloneClockGaters(outputNet);
+    }
+  }
+  if (!driver) {
+    return;
+  }
+
+  // xs is empty if the fanout is a bterm
+  if (isSink(driver) || driver->getInst()->isFixed()
+      || driver->getInst()->isPad() || xs.empty()) {
+    return;
+  }
+
+  int drvrX, drvrY;
+  driver->getAvgXY(&drvrX, &drvrY);
+  point2pin[{drvrX, drvrY}].push_back(driver);
+  stt::Tree ftree
+      = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
+  findLongEdges(ftree, {drvrX, drvrY}, point2pin);
+}
+
+void TritonCTS::findLongEdges(
+    stt::Tree& clkSteiner,
+    odb::Point driverPt,
+    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
+{
+  const int threshold = options_->getMaxWl();
+  debugPrint(
+      logger_, CTS, "clock gate cloning", 1, "Threshold = {}", threshold);
+
+  std::map<int, int> iterm2cluster;
+  std::vector<std::vector<int>> clusters;
+  odb::dbNet* icgNet = point2pin[driverPt][0]->getNet();
+  odb::dbITerm* icgTerm = icgNet->getFirstOutput();
+  std::string icgName = icgTerm->getInst()->getName();
+
+  for (int b = 0; b < clkSteiner.branchCount(); b++) {
+    const stt::Branch branch = clkSteiner.branch[b];
+    const stt::Branch* neighbor = &clkSteiner.branch[branch.n];
+    odb::Point branchPt = {branch.x, branch.y};
+
+    odb::Point neighborPt = {neighbor->x, neighbor->y};
+    int64_t dist = odb::Point::manhattanDistance(branchPt, neighborPt);
+    const int clusterFrom
+        = iterm2cluster.find(b) == iterm2cluster.end() ? -1 : iterm2cluster[b];
+    const int clusterTo = iterm2cluster.find(branch.n) == iterm2cluster.end()
+                              ? -1
+                              : iterm2cluster[branch.n];
+
+    if (b == branch.n) {
+      continue;
+    }
+
+    if (dist >= threshold) {
+      if (clusterFrom == -1) {
+        int newClusterID = clusters.size();
+        iterm2cluster[b] = newClusterID;
+        clusters.push_back({b});
+      }
+      if (clusterTo == -1) {
+        int newClusterID = clusters.size();
+        iterm2cluster[branch.n] = newClusterID;
+        clusters.push_back({branch.n});
+      }
+      continue;
+    }
+
+    if (clusterFrom != -1 && clusterTo != -1) {
+      int mantainedCLuster
+          = (clusters[clusterFrom].size() >= clusters[clusterTo].size())
+                ? clusterFrom
+                : clusterTo;
+      int removedCLuster
+          = (clusters[clusterFrom].size() < clusters[clusterTo].size())
+                ? clusterFrom
+                : clusterTo;
+
+      clusters[mantainedCLuster].insert(clusters[mantainedCLuster].end(),
+                                        clusters[removedCLuster].begin(),
+                                        clusters[removedCLuster].end());
+      for (int point : clusters[removedCLuster]) {
+        iterm2cluster[point] = mantainedCLuster;
+      }
+      clusters[removedCLuster].clear();
+
+    } else if (clusterFrom != -1) {
+      iterm2cluster[branch.n] = clusterFrom;
+      clusters[clusterFrom].push_back(branch.n);
+    } else if (clusterTo != -1) {
+      iterm2cluster[b] = clusterTo;
+      clusters[clusterTo].push_back(b);
+    } else {
+      int newClusterID = clusters.size();
+      iterm2cluster[b] = newClusterID;
+      iterm2cluster[branch.n] = newClusterID;
+      clusters.push_back({b, branch.n});
+    }
+  }
+
+  // Find closest cluster to original ICG
+  int driverClusterID = -1;
+  int64_t minDist2Driver = std::numeric_limits<int64_t>::max();
+  int validClusters = 0;
+  for (int n = 0; n < clusters.size(); n++) {
+    const std::vector<int>& cluster = clusters[n];
+    if (cluster.empty()) {
+      continue;
+    }
+    bool validCluster = false;
+    odb::Rect sinksBbox = odb::Rect();
+    sinksBbox.mergeInit();
+    for (int branch : cluster) {
+      odb::Point branchPt
+          = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
+      for (auto sink : point2pin[branchPt]) {
+        if (!sink->isInputSignal()) {
+          continue;
+        }
+        validCluster = true;
+        int sinkX, sinkY;
+        sink->getAvgXY(&sinkX, &sinkY);
+        sinksBbox.merge({sinkX, sinkY});
+      }
+    }
+    if (validCluster) {
+      validClusters += 1;
+      int64_t dist2Driver
+          = odb::Point::manhattanDistance(sinksBbox.center(), driverPt);
+      if (dist2Driver < minDist2Driver) {
+        driverClusterID = n;
+        minDist2Driver = dist2Driver;
+      }
+    }
+  }
+
+  debugPrint(logger_,
+             CTS,
+             "clock gate cloning",
+             1,
+             "Found {} clusters",
+             validClusters);
+
+  // Insert original ICG to its closest cluster, create clones to drive the
+  // other clusters
+  int nClones = 0;
+  // hierarchy fix, make the clone net in the right scope
+  sta::Pin* driver = nullptr;
+  odb::dbModule* module
+      = network_->getNetDriverParentModule(network_->dbToSta(icgNet), driver);
+  if (module == nullptr) {
+    // if none put in top level
+    module = block_->getTopModule();
+  }
+  sta::Instance* scope
+      = (module == nullptr || (module == block_->getTopModule()))
+            ? network_->topInstance()
+            : (sta::Instance*) (module->getModInst());
+
+  for (int n = 0; n < clusters.size(); n++) {
+    const std::vector<int>& cluster = clusters[n];
+    if (cluster.empty()) {
+      continue;
+    }
+    odb::dbInst* clone = nullptr;
+    odb::dbNet* cloneNet = nullptr;
+    bool disconectNets = true;
+    odb::Rect sinksBbox = odb::Rect();
+    sinksBbox.mergeInit();
+    if (driverClusterID == n) {
+      cloneNet = icgNet;
+      clone = icgTerm->getInst();
+      disconectNets = false;
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 1,
+                 "Original cell {}",
+                 clone->getName());
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 2,
+                 " Original net {}",
+                 cloneNet->getName());
+    } else {
+      // Create the ICG clone
+      // Create a new input net
+      std::string newNetName
+          = "clonenet_" + std::to_string(++nClones) + "_" + icgNet->getName();
+
+      cloneNet = network_->staToDb(network_->makeNet(
+          newNetName.c_str(), scope, odb::dbNameUniquifyType::IF_NEEDED));
+
+      cloneNet->setSigType(odb::dbSigType::CLOCK);
+
+      staClockNets_.insert(cloneNet);
+
+      // Create a new clone instance
+      std::string newBufName
+          = "clone_" + std::to_string(nClones) + "_" + icgName;
+      odb::dbMaster* master = icgTerm->getInst()->getMaster();
+
+      // fix: make buffer in same hierarchical module as driver
+      clone = odb::dbInst::create(
+          block_, master, newBufName.c_str(), false, module);
+
+      clone->setSourceType(odb::dbSourceType::TIMING);
+
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 1,
+                 "Creating clone {} from {}",
+                 newBufName,
+                 icgName);
+      debugPrint(logger_,
+                 CTS,
+                 "clock gate cloning",
+                 2,
+                 " New clone net {}",
+                 cloneNet->getName());
+
+      // Connect clone pins to same input nets as parent and new output net
+      for (odb::dbITerm* iterm : clone->getITerms()) {
+        if (iterm->isInputSignal()) {
+          odb::dbITerm* parentITerm = icgTerm->getInst()->findITerm(
+              iterm->getMTerm()->getName().c_str());
+          odb::dbNet* parentNet = parentITerm->getNet();
+          odb::dbModNet* parentModNet
+              = network_->hierNet(network_->dbToSta(parentITerm));
+          if (parentNet) {
+            iterm->connect(parentNet);
+            if (parentModNet) {
+              iterm->connect(parentModNet);
+            }
+          }
+        } else if (iterm->isOutputSignal()) {
+          iterm->connect(cloneNet);
+        }
+      }
+    }
+
+    // Compute cluster center
+    for (int branch : cluster) {
+      odb::Point branchPt
+          = {clkSteiner.branch[branch].x, clkSteiner.branch[branch].y};
+      for (auto sink : point2pin[branchPt]) {
+        if (!sink->isInputSignal()) {
+          continue;
+        }
+        debugPrint(logger_,
+                   CTS,
+                   "clock gate cloning",
+                   2,
+                   "  Connects sink {}",
+                   sink->getName());
+        int sinkX, sinkY;
+        sink->getAvgXY(&sinkX, &sinkY);
+        sinksBbox.merge({sinkX, sinkY});
+        if (disconectNets) {
+          // Connect sinks to new clone instance
+          sink->disconnect();
+          sink->connect(cloneNet);
+          sta::Pin* sinkPin = network_->dbToSta(sink);
+          sta::Instance* sinkParentInst
+              = network_->getOwningInstanceParent(sinkPin);
+          if (sinkParentInst != scope) {
+            network_->hierarchicalConnect(
+                clone->getFirstOutput(), sink, cloneNet->getName().c_str());
+          }
+        }
+      }
+    }
+
+    // Move ICG (clone or original) to the center of its sinks
+    clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
+    clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+  }
+  debugPrint(
+      logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
+}
+
 void TritonCTS::populateTritonCTS()
 {
-  block_ = db_->getChip()->getBlock();
-  options_->setDbUnits(block_->getDbUnitsPerMicron());
-
   clearNumClocks();
 
   // Use dbSta to find all clock nets in the design.
@@ -1030,18 +1181,19 @@ void TritonCTS::populateTritonCTS()
   // the set.
   std::vector<odb::dbNet*> inputClkNets = options_->getClockNetsObjs();
 
+  std::set<odb::dbNet*> allClkNets;
   if (!inputClkNets.empty()) {
     std::set<odb::dbNet*> clockNets;
     for (odb::dbNet* net : inputClkNets) {
       // Since a set is unique, only the nets not found by dbSta are added.
       clockNets.insert(net);
     }
+    allClkNets.insert(clockNets.begin(), clockNets.end());
     clockNetsInfo.emplace_back(clockNets, "");
   } else {
-    std::set<odb::dbNet*> allClkNets;
     staClockNets_ = openSta_->findClkNets();
-    sta::Sdc* sdc = openSta_->sdc();
-    for (auto clk : *sdc->clocks()) {
+    sta::Sdc* sdc = openSta_->cmdMode()->sdc();
+    for (auto clk : sdc->clocks()) {
       std::string clkName = clk->name();
       std::set<odb::dbNet*> clkNets;
       findClockRoots(clk, clkNets);
@@ -1055,13 +1207,13 @@ void TritonCTS::populateTritonCTS()
       allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
-
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
     std::set<odb::dbNet*> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
+        cloneClockGaters(net);
         if (clkName.empty()) {
           logger_->info(CTS, 95, "Net \"{}\" found.", net->getName());
         } else {
@@ -1423,7 +1575,7 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 
 void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
 {
-  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+  if (pin_driver == nullptr || !network_->hasHierarchy()) {
     return;
   }
 
@@ -1471,7 +1623,7 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
   topClockInstInputPin->connect(topClockNet);
   topClockNet->setSigType(odb::dbSigType::CLOCK);
 
-  std::map<int, odb::uint> fanoutcount;
+  std::map<int, int> fanoutcount;
 
   // create subNets
   numClkNets_ = 0;
@@ -1568,12 +1720,8 @@ void TritonCTS::writeClockNetsToDb(TreeBuilder* builder,
       if (inst->isClockBuffer()) {
         std::pair<int, int> resultsForBranch
             = branchBufferCount(inst, 1, clockNet);
-        if (resultsForBranch.first < minPath) {
-          minPath = resultsForBranch.first;
-        }
-        if (resultsForBranch.second > maxPath) {
-          maxPath = resultsForBranch.second;
-        }
+        minPath = std::min(resultsForBranch.first, minPath);
+        maxPath = std::max(resultsForBranch.second, maxPath);
       }
     } else {
       rootSubNet->removeSinks(removedSinks);
@@ -1636,8 +1784,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   }
 
   // Check if the main clock net (level 0) is in the level list
-  if (std::find(targetLevels.begin(), targetLevels.end(), 0)
-      != targetLevels.end()) {
+  if (std::ranges::find(targetLevels, 0) != targetLevels.end()) {
     odb::dbNet* clk_net = clockNet.getNetObj();
     clk_net->setNonDefaultRule(clockNDR);
     ndrAppliedNets++;
@@ -1650,8 +1797,7 @@ int TritonCTS::applyNDRToClockLevels(Clock& clockNet,
   // Check clock sub nets list and apply NDR if level matches
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     int level = subNet.getTreeLevel();
-    if (std::find(targetLevels.begin(), targetLevels.end(), level)
-        != targetLevels.end()) {
+    if (std::ranges::find(targetLevels, level) != targetLevels.end()) {
       odb::dbNet* net = subNet.getNetObj();
       if (!subNet.isLeafLevel()) {
         net->setNonDefaultRule(clockNDR);
@@ -1719,8 +1865,8 @@ int TritonCTS::getNetSpacing(odb::dbTechLayer* layer,
   } else if (!layer->getV54SpacingRules().empty()) {
     for (auto rule : layer->getV54SpacingRules()) {
       if (rule->hasRange()) {
-        uint rmin;
-        uint rmax;
+        uint32_t rmin;
+        uint32_t rmax;
         rule->getRange(rmin, rmax);
         if (width1 < rmin || width2 > rmax) {
           continue;
@@ -1844,21 +1990,13 @@ std::pair<int, int> TritonCTS::branchBufferCount(ClockInst* inst,
           = clockNet.findClockByName(sinkITerms->getInst()->getName());
       if (clockInst == nullptr) {
         int newResult = bufCounter + 1;
-        if (newResult > maxPath) {
-          maxPath = newResult;
-        }
-        if (newResult < minPath) {
-          minPath = newResult;
-        }
+        maxPath = std::max(newResult, maxPath);
+        minPath = std::min(newResult, minPath);
       } else {
         std::pair<int, int> newResults
             = branchBufferCount(clockInst, bufCounter + 1, clockNet);
-        if (newResults.first < minPath) {
-          minPath = newResults.first;
-        }
-        if (newResults.second > maxPath) {
-          maxPath = newResults.second;
-        }
+        minPath = std::min(newResults.first, minPath);
+        maxPath = std::max(newResults.second, maxPath);
       }
     }
   }
@@ -1970,7 +2108,7 @@ void TritonCTS::findClockRoots(sta::Clock* clk,
     odb::dbModITerm* moditerm;
     network_->staToDb(pin, instTerm, port, moditerm);
     odb::dbNet* net = instTerm ? instTerm->getNet() : port->getNet();
-    if (std::find(skipNets.begin(), skipNets.end(), net) != skipNets.end()) {
+    if (std::ranges::find(skipNets, net) != skipNets.end()) {
       logger_->warn(CTS,
                     42,
                     "Skipping root net {}, specified by the user...",
@@ -2067,7 +2205,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
         // TODO: do we need to look at min insertion delays?
         double delayPerSec = (rise + fall) / 2.0;
         // convert delay to length because HTree uses lengths
-        sta::Corner* corner = openSta_->cmdCorner();
+        sta::Scene* corner = openSta_->cmdScene();
         double capPerMicron
             = estimate_parasitics_->wireSignalCapacitance(corner) * 1e-6;
         double resPerMicron
@@ -2096,7 +2234,7 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
   return insDelayPerMicron;
 }
 
-float getInputCap(const sta::LibertyCell* cell)
+static float getInputCap(const sta::LibertyCell* cell)
 {
   sta::LibertyPort *in, *out;
   cell->bufferPorts(in, out);
@@ -2106,7 +2244,7 @@ float getInputCap(const sta::LibertyCell* cell)
   return 0.0;
 }
 
-sta::LibertyCell* findBestDummyCell(
+static sta::LibertyCell* findBestDummyCell(
     const std::vector<sta::LibertyCell*>& dummyCandidates,
     float deltaCap)
 {
@@ -2122,20 +2260,21 @@ sta::LibertyCell* findBestDummyCell(
   return bestCell;
 }
 
-void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
-                                    std::unordered_set<odb::dbInst*>& dummies)
+int TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
+                                   std::unordered_set<odb::dbInst*>& dummies)
 {
   // Traverse clock tree and compute ideal output caps for clock
   // buffers in the same level
   if (!computeIdealOutputCaps(clockNet)) {
     // No cap adjustment is needed
-    return;
+    return 0;
   }
 
   // Find suitable candidate cells for dummy loads
   std::vector<sta::LibertyCell*> dummyCandidates;
   findCandidateDummyCells(dummyCandidates);
 
+  int nDummies = 0;
   clockNet.forEachSubNet([&](ClockSubNet& subNet) {
     subNet.forEachSink([&](ClockInst* inst) {
       if (inst->isClockBuffer()
@@ -2145,6 +2284,7 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
             = insertDummyCell(clockNet, inst, dummyCandidates);
         if (dummyInst != nullptr) {
           dummies.insert(dummyInst);
+          nDummies++;
         }
       }
     });
@@ -2153,6 +2293,7 @@ void TritonCTS::writeDummyLoadsToDb(Clock& clockNet,
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     printClockNetwork(clockNet);
   }
+  return nDummies;
 }
 
 // Return true if any clock buffers need cap adjustment; false otherwise
@@ -2232,7 +2373,7 @@ void TritonCTS::findCandidateDummyCells(
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     for (sta::LibertyCell* inv : *lib->inverters()) {
-      if (inv->isClockCell() && isClockCellCandidate(inv)) {
+      if (inv->isClockCell() && resizer_->isClockCellCandidate(inv)) {
         inverters.emplace_back(inv);
         dummyCandidates.emplace_back(inv);
       }
@@ -2251,7 +2392,7 @@ void TritonCTS::findCandidateDummyCells(
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv :
            lib->findLibertyCellsMatching(&patternClkInv)) {
-        if (inv->isInverter() && isClockCellCandidate(inv)) {
+        if (inv->isInverter() && resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }
@@ -2270,7 +2411,7 @@ void TritonCTS::findCandidateDummyCells(
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv : lib->findLibertyCellsMatching(&patternInv)) {
-        if (inv->isInverter() && isClockCellCandidate(inv)) {
+        if (inv->isInverter() && resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }
@@ -2285,7 +2426,7 @@ void TritonCTS::findCandidateDummyCells(
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       for (sta::LibertyCell* inv : *lib->inverters()) {
-        if (isClockCellCandidate(inv)) {
+        if (resizer_->isClockCellCandidate(inv)) {
           inverters.emplace_back(inv);
           dummyCandidates.emplace_back(inv);
         }
@@ -2295,11 +2436,11 @@ void TritonCTS::findCandidateDummyCells(
   }
 
   // Sort cells in ascending order of input cap
-  std::sort(dummyCandidates.begin(),
-            dummyCandidates.end(),
-            [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-              return (getInputCap(cell1) < getInputCap(cell2));
-            });
+  std::ranges::sort(
+      dummyCandidates,
+      [](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
+        return (getInputCap(cell1) < getInputCap(cell2));
+      });
 
   if (logger_->debugCheck(utl::CTS, "dummy load", 1)) {
     for (const sta::LibertyCell* libCell : dummyCandidates) {
@@ -2396,10 +2537,13 @@ void TritonCTS::printClockNetwork(const Clock& clockNet) const
 
 void TritonCTS::setAllClocksPropagated()
 {
-  sta::Sdc* sdc = openSta_->sdc();
-  for (sta::Clock* clk : *sdc->clocks()) {
-    openSta_->setPropagatedClock(clk);
+  for (sta::Mode* mode : openSta_->modes()) {
+    sta::Sdc* sdc = mode->sdc();
+    for (sta::Clock* clk : sdc->clocks()) {
+      openSta_->setPropagatedClock(clk, mode);
+    }
   }
+
   estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::placement);
 }
 
@@ -2425,16 +2569,15 @@ void TritonCTS::balanceMacroRegisterLatencies()
   // trees first
   int totalDelayBuff = 0;
 
-  sta::Corner* corner = openSta_->cmdCorner();
+  sta::Scene* corner = openSta_->cmdScene();
   // convert from per meter to per dbu
   double capPerDBU = estimate_parasitics_->wireClkCapacitance(corner) * 1e-6
                      / block_->getDbUnitsPerMicron();
 
-  for (auto iter = builders_.rbegin(); iter != builders_.rend(); ++iter) {
-    TreeBuilder* builder = iter->get();
+  for (auto& builder : std::ranges::reverse_view(builders_)) {
     if (builder->getParent() == nullptr && !builder->getChildren().empty()) {
       est::IncrementalParasiticsGuard parasitics_guard(estimate_parasitics_);
-      LatencyBalancer balancer = LatencyBalancer(builder,
+      LatencyBalancer balancer = LatencyBalancer(builder.get(),
                                                  options_,
                                                  logger_,
                                                  db_,

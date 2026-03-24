@@ -1,31 +1,7 @@
-/* Author: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2026, The OpenROAD Authors
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -33,6 +9,8 @@
 #include <vector>
 
 #include "db/obj/frMarker.h"
+#include "db/obj/frNode.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
 #include "frBaseTypes.h"
@@ -1260,8 +1238,8 @@ TEST_P(CutSpcTblFixture, cut_spc_tbl)
   auto dbRule = odb::dbTechLayerCutSpacingTableDefRule::create(layer);
   dbRule->setDefault(100);
   dbRule->setVertical(true);
-  std::map<std::string, uint> row_map;
-  std::map<std::string, uint> col_map;
+  std::map<std::string, uint32_t> row_map;
+  std::map<std::string, uint32_t> col_map;
   std::vector<std::vector<std::pair<int, int>>> table;
   row_map["Vx/SIDE"] = 1;
   row_map["Vx/END"] = 0;
@@ -1275,8 +1253,7 @@ TEST_P(CutSpcTblFixture, cut_spc_tbl)
     table.push_back({{301, 301}, {301, 300}});
   }
 
-  dbRule->setSpacingTable(
-      std::move(table), std::move(row_map), std::move(col_map));
+  dbRule->setSpacingTable(table, row_map, col_map);
   makeLef58CutSpcTbl(3, dbRule);
   frNet* n1 = makeNet("n1");
 

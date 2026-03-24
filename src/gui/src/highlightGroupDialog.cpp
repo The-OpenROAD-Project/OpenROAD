@@ -35,6 +35,7 @@ HighlightGroupDialog::HighlightGroupDialog(QWidget* parent) : QDialog(parent)
   setButtonBackground(grp16RadioButton, Painter::kHighlightColors[15]);
 }
 
+// NOLINTNEXTLINE(readability-non-const-parameter)
 void HighlightGroupDialog::setButtonBackground(QRadioButton* button,
                                                Painter::Color color)
 {

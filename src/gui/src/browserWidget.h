@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <QCheckBox>
 #include <QColor>
 #include <QDockWidget>
 #include <QMenu>
@@ -54,7 +55,6 @@ class BrowserWidget : public QDockWidget,
 
   // dbBlockCallBackObj
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
   void inDbInstSwapMasterAfter(odb::dbInst*) override;
 
@@ -95,11 +95,11 @@ class BrowserWidget : public QDockWidget,
   void itemExpanded(const QModelIndex& index);
   void updateModuleColorIcon(odb::dbModule* module, const QColor& color);
   void enableModuleView();
+  void markModelModified();
 
  private:
   void updateModel();
   void clearModel();
-  void markModelModified();
 
   void makeMenu();
 
@@ -112,6 +112,7 @@ class BrowserWidget : public QDockWidget,
   DbInstDescriptor* inst_descriptor_;
   DisplayControls* display_controls_;
   QPushButton* display_controls_warning_;
+  QCheckBox* include_physical_cells_;
 
   const std::map<odb::dbModule*, LayoutViewer::ModuleSettings>& modulesettings_;
 

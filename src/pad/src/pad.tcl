@@ -234,11 +234,12 @@ proc place_pad { args } {
 }
 
 sta::define_cmd_args "place_pads" {-row row_name \
+                                   [-mode mode] \
                                    pads}
 
 proc place_pads { args } {
   sta::parse_key_args "place_pads" args \
-    keys {-row} \
+    keys {-row -mode} \
     flags {}
 
   if { $args == {} } {
@@ -249,6 +250,11 @@ proc place_pads { args } {
     set args [lindex $args 0]
   }
 
+  set mode "default"
+  if { [info exists keys(-mode)] } {
+    set mode $keys(-mode)
+  }
+
   set insts []
   foreach inst $args {
     lappend insts [pad::find_instance $inst]
@@ -257,7 +263,8 @@ proc place_pads { args } {
   pad::assert_required place_pads -row
   pad::place_pads \
     $insts \
-    [pad::get_row $keys(-row)]
+    [pad::get_row $keys(-row)] \
+    $mode
 }
 
 sta::define_cmd_args "place_io_fill" {-row row_name \
@@ -403,10 +410,7 @@ proc rdl_route { args } {
   }
 
   sta::parse_port_net_args $args sta_ports sta_nets
-  set nets []
-  foreach net $sta_nets {
-    lappend [sta::sta_to_db_net $net]
-  }
+  set nets [lmap net $sta_nets { sta::sta_to_db_net $net }]
   foreach port $sta_ports {
     set bterm [sta::sta_to_db_port $port]
     set net [$bterm getNet]

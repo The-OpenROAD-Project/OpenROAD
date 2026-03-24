@@ -8,14 +8,14 @@
       "flags":["cmpgt", "no-set"]
     },
     {
-      "name": "loc_",
+      "name": "origin_",
       "type": "Point3D",
-      "flags":["cmpgt", "set-const-ref"]
+      "flags":["cmpgt", "private"]
     },
     {
       "name": "orient_",
       "type": "dbOrientType3D",
-      "flags": []
+      "flags": ["no-set"]
     },
     {
       "name": "master_chip_",
@@ -38,7 +38,7 @@
       "name":"chip_region_insts_",
       "type":"dbId<_dbChipRegionInst>",
       "flags":["private"],
-      "schema":"db_schema_chip_region"
+      "schema":"kSchemaChipRegion"
     },
     {
       "name":"region_insts_map_",

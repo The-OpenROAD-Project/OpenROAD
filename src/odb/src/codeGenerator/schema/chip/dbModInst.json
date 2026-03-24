@@ -2,46 +2,46 @@
     "name":"dbModInst",
     "fields":[
 	{
-	    "name":"_name",
+	    "name":"name_",
 	    "type":"char *",
 	    "flags":["no-set"]
 	},
 	{
-	    "name":"_next_entry",
+	    "name":"next_entry_",
 	    "type":"dbId<_dbModInst>",
 	    "flags":["no-set","no-get"]
 	},
 	{
-	    "name":"_parent",
+	    "name":"parent_",
 	    "type":"dbId<_dbModule>",
 	    "flags":["no-set"],
 	    "parent":"dbBlock"    },
 	{
-	    "name":"_module_next",
+	    "name":"module_next_",
 	    "type":"dbId<_dbModInst>",
 	    "flags":["no-get","no-set"],
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_master",
+	    "name":"master_",
 	    "type":"dbId<_dbModule>",
 	    "flags":["no-set"],
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_group_next",
+	    "name":"group_next_",
 	    "type":"dbId<_dbModInst>",
 	    "flags":["no-get","no-set"],
 	    "parent":"dbBlock"
 	},
 	{
-	    "name":"_group",
+	    "name":"group_",
 	    "type":"dbId<_dbGroup>",
 	    "flags":["no-set"],
 	    "parent":"dbBlock"
 	},
 	{
-      	    "name":"_moditerms",
+      	    "name":"moditerms_",
 	    "type":"dbId<_dbModITerm >",
 	    "flags":["no-get","no-set","no-serial"],	
 	    "parent":"dbBlock"

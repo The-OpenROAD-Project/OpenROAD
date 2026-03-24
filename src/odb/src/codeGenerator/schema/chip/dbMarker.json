@@ -13,15 +13,15 @@
       "flags":["no-set", "no-get"]
     },
     {
-      "name":"visited_",
+      "name":"visited",
       "type":"bit"
     },
     {
-      "name":"visible_",
+      "name":"visible",
       "type":"bit"
     },
     {
-      "name":"waived_",
+      "name":"waived",
       "type":"bit"
     },
     {

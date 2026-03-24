@@ -25,29 +25,35 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <mutex>
+#include <ranges>
 #include <set>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 
-Q_DECLARE_METATYPE(sta::Corner*);
+Q_DECLARE_METATYPE(sta::Scene*);
 
 namespace gui {
 
@@ -261,11 +267,10 @@ void TimingPathsModel::sort(int col_index, Qt::SortOrder sort_order)
   beginResetModel();
 
   if (sort_order == Qt::AscendingOrder) {
-    std::stable_sort(
-        timing_paths_.begin(), timing_paths_.end(), std::move(sort_func));
+    std::ranges::stable_sort(timing_paths_, std::move(sort_func));
   } else {
-    std::stable_sort(
-        timing_paths_.rbegin(), timing_paths_.rend(), std::move(sort_func));
+    std::ranges::stable_sort(std::ranges::reverse_view(timing_paths_),
+                             std::move(sort_func));
   }
 
   endResetModel();
@@ -364,14 +369,50 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case kRiseFall:
         return Qt::AlignCenter;
     }
+  } else if (role == Qt::ToolTipRole) {
+    if (col_index == kPin && index.row() != kClockSummaryRow) {
+      const auto* node = getNodeAt(index);
+      odb::dbInst* inst = node->getInstance();
+      if (inst != nullptr) {
+        // Show clock insertion latency tooltip on any pin of a macro
+        // whose liberty model defines max/min_clock_tree_path. This
+        // represents the delay through the macro's internal clock tree
+        // to its sequential elements — it can exceed the data path
+        // delay through the macro, which is normal.
+        auto* db_network = sta_->getDbNetwork();
+        for (odb::dbITerm* iterm : inst->getITerms()) {
+          const sta::Pin* iterm_pin = db_network->dbToSta(iterm);
+          if (iterm_pin == nullptr) {
+            continue;
+          }
+          sta::LibertyPort* lib_port = db_network->libertyPort(iterm_pin);
+          if (lib_port == nullptr || !lib_port->isClock()) {
+            continue;
+          }
+          const auto time_units = sta_->units()->timeUnit();
+          const sta::MinMax* min_max
+              = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
+          float clk_tree_delay
+              = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
+          if (clk_tree_delay != 0.0f) {
+            const char* path_type
+                = is_capture_ ? "min_clock_tree_path" : "max_clock_tree_path";
+            return QString(
+                       "Macro %1 liberty %2 (internal clock tree "
+                       "delay to sequential elements): %3")
+                .arg(inst->getMaster()->getName().c_str())
+                .arg(path_type)
+                .arg(convertDelay(clk_tree_delay, time_units));
+          }
+        }
+      }
+    }
   } else if (role == Qt::DisplayRole) {
     const auto time_units = sta_->units()->timeUnit();
 
     if (index.row() == kClockSummaryRow) {
       int start_idx = getClockEndIndex();
-      if (start_idx < 0) {
-        start_idx = 0;
-      }
+      start_idx = std::max(start_idx, 0);
       const auto& node = nodes_->at(start_idx);
 
       switch (col_index) {
@@ -487,12 +528,13 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
   addDisplayControl(kDataPathLabel, true);
   addDisplayControl(kLaunchClockLabel, true);
   addDisplayControl(kCaptureClockLabel, true);
+  addDisplayControl(kLegendLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   {
-    std::lock_guard guard(rendering_);
+    absl::MutexLock guard(&rendering_);
     path_ = path;
     highlight_stage_.clear();
   }
@@ -501,7 +543,7 @@ void TimingPathRenderer::highlight(TimingPath* path)
 
 void TimingPathRenderer::clearHighlightNodes()
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   highlight_stage_.clear();
 }
 
@@ -526,7 +568,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
-      std::lock_guard guard(rendering_);
+      absl::MutexLock guard(&rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -544,8 +586,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                        bool draw_clock,
                                        bool draw_signal)
 {
-  for (auto node_itr = nodes->rbegin(); node_itr != nodes->rend(); node_itr++) {
-    const auto& node = *node_itr;
+  for (auto& node : std::ranges::reverse_view(*nodes)) {
     if (node->isClock() && !draw_clock) {
       continue;
     }
@@ -582,7 +623,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
     return;
   }
@@ -610,6 +651,16 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
+
+  if (checkDisplayControl(kLegendLabel)) {
+    DiscreteLegend legend;
+    legend.addLegendKey(kCaptureClockColor, "Capture");
+    legend.addLegendKey(kClockColor, "Launch");
+    legend.addLegendKey(kSignalColor, "Signal");
+    legend.addLegendKey(kPathInstColor, "Inst");
+    legend.addLegendKey(kTermColor, "Term");
+    legend.draw(painter);
+  }
 }
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter,
@@ -705,7 +756,7 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   const int path_count = 1000;
 
   STAGuiInterface stagui(sta_);
-  stagui.setCorner(sta_->cmdCorner());
+  stagui.setScene(sta_->cmdScene());
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
@@ -792,7 +843,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
         odb::dbInst* inst = pin->getPinAsITerm()->getInst();
 
         if (inst != nullptr) {
-          if (instances.count(inst) == 0) {
+          if (!instances.contains(inst)) {
             instances[inst] = pin.get();
           } else {
             auto& worst_pin = instances[inst];
@@ -884,9 +935,9 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
       const int color_index = color_count * scale;
       const double slack = max_timing_ - timing_range * scale;
       const std::string text = units->asString(slack) + text_units;
-      legend.push_back({color_index, text});
+      legend.emplace_back(color_index, text);
     }
-    std::reverse(legend.begin(), legend.end());
+    std::ranges::reverse(legend);
     color_generator_.drawLegend(painter, legend);
   }
 }
@@ -1010,7 +1061,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
     return;
   }
 
-  if (std::find(pins_.begin(), pins_.end(), pin) != pins_.end()) {
+  if (std::ranges::find(pins_, pin) != pins_.end()) {
     return;
   }
 
@@ -1019,7 +1070,7 @@ void PinSetWidget::addPin(const sta::Pin* pin)
 
 void PinSetWidget::removePin(const sta::Pin* pin)
 {
-  pins_.erase(std::find(pins_.begin(), pins_.end(), pin));
+  pins_.erase(std::ranges::find(pins_, pin));
 }
 
 void PinSetWidget::removeSelectedPins()
@@ -1127,7 +1178,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       sta_(std::make_unique<STAGuiInterface>()),
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
-      corner_box_(new QComboBox(this)),
+      scene_box_(new QComboBox(this)),
       clock_box_(new DropdownCheckboxes(QString("Select Clocks"),
                                         QString("All Clocks"),
                                         this)),
@@ -1145,7 +1196,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
-  layout_->addRow("Corner:", corner_box_);
+  layout_->addRow("Scene:", scene_box_);
   layout_->addRow("Clock filter:", clock_box_);
 
   setupPinRow("From:", from_);
@@ -1170,14 +1221,14 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
                                 == Qt::Checked);
   });
 
-  connect(corner_box_,
+  connect(scene_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
           [this](int index) {
-            if (index < 0 || index >= corner_box_->count()) {
+            if (index < 0 || index >= scene_box_->count()) {
               return;
             }
-            auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
-            sta_->setCorner(corner);
+            auto* scene = scene_box_->itemData(index).value<sta::Scene*>();
+            sta_->setScene(scene);
           });
 
   connect(expand_clk_,
@@ -1245,26 +1296,26 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->getCorner();
-  corner_box_->clear();
+  auto* current_scene = sta_->getScene();
+  scene_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->getSTA()->corners()->corners()) {
-    if (corner == current_corner) {
-      selection = corner_box_->count();
+  for (auto* scene : sta_->getSTA()->scenes()) {
+    if (scene == current_scene) {
+      selection = scene_box_->count();
     }
-    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+    scene_box_->addItem(scene->name().c_str(), QVariant::fromValue(scene));
   }
 
-  if (corner_box_->count() > 1) {
+  if (scene_box_->count() > 1) {
     selection += 1;
-    corner_box_->insertItem(
-        0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
-    if (current_corner == nullptr) {
+    scene_box_->insertItem(
+        0, "All", QVariant::fromValue(static_cast<sta::Scene*>(nullptr)));
+    if (current_scene == nullptr) {
       selection = 0;
     }
   }
 
-  corner_box_->setCurrentIndex(selection);
+  scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
     QString clk_name = clk->name();
@@ -1311,7 +1362,7 @@ void TimingControlsDialog::setThruPin(
 
   auto new_pins = pins;
   if (pins.empty()) {
-    new_pins.push_back({});  // add one row
+    new_pins.emplace_back();  // add one row
   }
 
   for (const auto& pin_set : new_pins) {
@@ -1342,7 +1393,7 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   if (row->isAddMode()) {
     addThruRow({});
   } else {
-    auto find_row = std::find(thru_.begin(), thru_.end(), row);
+    auto find_row = std::ranges::find(thru_, row);
     const int row_index = std::distance(thru_.begin(), find_row);
 
     layout_->removeRow(kThruStartRow + row_index);

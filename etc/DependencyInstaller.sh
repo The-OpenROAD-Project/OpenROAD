@@ -53,25 +53,25 @@ PCRE_VERSION="10.42"
 PCRE_CHECKSUM="37d2f77cfd411a3ddf1c64e1d72e43f7"
 SWIG_VERSION="4.3.0"
 SWIG_CHECKSUM="9f74c7f402aa28d9f75e67d1990ee6fb"
-BOOST_VERSION_BIG="1.86"
+BOOST_VERSION_BIG="1.89"
 BOOST_VERSION_SMALL="${BOOST_VERSION_BIG}.0"
-BOOST_CHECKSUM="ac857d73bb754b718a039830b07b9624"
+BOOST_CHECKSUM="187b577ce9f485314fcf17bcba2fb542"
 EIGEN_VERSION="3.4"
 CUDD_VERSION="3.0.0"
 LEMON_VERSION="1.3.1"
 SPDLOG_VERSION="1.15.0"
 GTEST_VERSION="1.17.0"
 GTEST_CHECKSUM="3471f5011afc37b6555f6619c14169cf"
-ABSL_VERSION="20240722.0"
-ABSL_CHECKSUM="740fb8f35ebdf82740c294bde408b9c0"
+ABSL_VERSION="20260107.0"
+ABSL_CHECKSUM="2a7add2ee848dd4591f41b0f6339d624"
 BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
 FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
 NINJA_VERSION="1.10.2"
 NINJA_CHECKSUM="817e12e06e2463aeb5cb4e1d19ced606"
-OR_TOOLS_VERSION_BIG="9.11"
-OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.4210"
+OR_TOOLS_VERSION_BIG="9.14"
+OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
 # ... configuration variables will be added here ...
 
@@ -487,6 +487,17 @@ _install_boost() {
     else
         INSTALL_SUMMARY+=("Boost: system=${boost_installed_version}, required=${required_version}, path=${boost_prefix}, status=skipped")
     fi
+
+    local boost_cmake_dir=""
+    if [[ -d "${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib/cmake/Boost-${BOOST_VERSION_SMALL}"
+    elif [[ -d "${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}" ]]; then
+        boost_cmake_dir="${boost_prefix}/lib64/cmake/Boost-${BOOST_VERSION_SMALL}"
+    fi
+
+    if [[ -n "${boost_cmake_dir}" ]]; then
+        CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_DIR=$(realpath "${boost_cmake_dir}") "
+    fi
     CMAKE_PACKAGE_ROOT_ARGS+=" -D Boost_ROOT=$(realpath "${boost_prefix}") "
 }
 
@@ -818,7 +829,6 @@ _install_common_dev() {
     _install_lemon
     _install_spdlog
     _install_gtest
-    _install_abseil
 
     if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
         _install_equivalence_deps
@@ -868,8 +878,8 @@ _install_ubuntu_packages() {
     _execute "Updating package lists..." apt-get -y update
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential ccache clang \
-        debhelper devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev \
-        libgomp1 libomp-dev libpcre2-dev libpcre3-dev libreadline-dev pandoc \
+        debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
+        libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
         pkg-config python3-dev python3-click qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -908,7 +918,7 @@ _install_rhel_packages() {
     _execute "Installing EPEL release..." yum -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${rhel_version}.noarch.rpm"
     _execute "Installing base packages..." yum -y install \
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
-        libffi-devel libtool llvm llvm-devel llvm-libs make pcre-devel \
+        bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
         python3-devel python3-pip python3-click qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline tcl-devel tcl-tclreadline \
@@ -941,14 +951,14 @@ _install_rhel_packages() {
 # openSUSE
 # ------------------------------------------------------------------------------
 _install_opensuse_packages() {
-    log "Install ubuntu base packages using zypper (-base or -all)"
+    log "Install openSUSE base packages using zypper (-base or -all)"
     _execute "Refreshing repositories..." zypper refresh
     _execute "Updating packages..." zypper -n update
     _execute "Installing development pattern..." zypper -n install -t pattern devel_basis
     _execute "Installing base packages..." zypper -n install \
-        binutils clang gcc gcc11-c++ git groff gzip lcov libffi-devel \
+        binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
-        libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc pcre-devel \
+        libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
         pcre2-devel pkg-config python3-devel python3-pip python3-click qimgv readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
@@ -975,8 +985,9 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
-    _execute "Installing Python click..." pip3 install click
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk zlib swig yaml-cpp
+    _execute "Installing pipx..." brew install pipx
+    _execute "Installing Python click..." pipx install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }
@@ -995,8 +1006,8 @@ _install_debian_packages() {
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
         automake autotools-dev binutils bison build-essential clang debhelper \
-        devscripts flex g++ gcc git groff lcov libffi-dev libfl-dev libgomp1 \
-        libomp-dev libpcre2-dev libpcre3-dev libreadline-dev "libtcl${tcl_ver}" \
+        devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
+        libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
         pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
@@ -1065,6 +1076,7 @@ Options:
   -save-deps-prefixes=FILE    Save OpenROAD build arguments to FILE.
   -constant-build-dir         Use a constant build directory instead of a random one.
   -threads=<N>                Limit the number of compiling threads.
+  -yosys-ver=<VERSION>        Specify a custom Yosys version. Used for ORFS.
   -verbose                    Show all output from build commands.
   -h, -help                   Show this help message.
 
@@ -1118,6 +1130,7 @@ main() {
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
             -save-deps-prefixes=*) SAVE_DEPS_PREFIXES="$(realpath "${1#*=}")" ;;
             -threads=*) NUM_THREADS="${1#*=}" ;;
+            -yosys-ver=*) YOSYS_VERSION="${1#*=}" ;;
             *)
                 echo "Unknown option: ${1}" >&2
                 _help
@@ -1183,6 +1196,7 @@ main() {
                     ubuntu_version_normalized="20.04"
                 fi
                 _install_or_tools "ubuntu" "${ubuntu_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Red Hat Enterprise Linux" | "Rocky Linux" | "AlmaLinux")
@@ -1228,6 +1242,7 @@ main() {
                     fi
                 fi
                 _install_or_tools "${or_tools_distro}" "${or_tools_version}" "${or_tools_arch}" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         "Darwin")
@@ -1246,6 +1261,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "opensuse" "leap" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             cat <<EOF
 To enable GCC-11 you need to run:
@@ -1265,6 +1281,7 @@ EOF
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
                 _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                _install_abseil
             fi
             ;;
         *)

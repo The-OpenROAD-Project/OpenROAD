@@ -5,38 +5,38 @@
   "hash" : "0x0",
   "fields": [
     {
-      "name": "_magic1",
-      "type": "uint",
+      "name": "magic1_",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_magic2", 
-      "type": "uint",
+      "name": "magic2_", 
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_schema_major",
-      "type": "uint",
+      "name": "schema_major_",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_schema_minor",
-      "type": "uint",
+      "name": "schema_minor_",
+      "type": "uint32_t",
       "flags": ["private", "no-cmp", "no-serial"]
     },
     {
-      "name": "_master_id",
-      "type": "uint",
+      "name": "master_id_",
+      "type": "uint32_t",
       "flags": ["private", "no-serial"]
     },
     {
-      "name": "_chip",
+      "name": "chip_",
       "type": "dbId<_dbChip>",
       "flags": ["private", "no-serial"]
     },
     {
       "name": "dbu_per_micron_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": 0,
       "flags": ["no-serial"]
     }

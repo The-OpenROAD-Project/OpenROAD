@@ -56,6 +56,7 @@ class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
 class ChartsWidget;
+class Chiplet3DWidget;
 class HelpWidget;
 
 // This is the main window for the GUI.  Currently we use a single
@@ -94,16 +95,24 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   Inspector* getInspector() const { return inspector_; }
   HelpWidget* getHelpViewer() const { return help_widget_; }
   ChartsWidget* getChartsWidget() const { return charts_widget_; }
+  Chiplet3DWidget* getChiplet3DViewer() const { return chiplet_viewer_; }
   TimingWidget* getTimingWidget() const { return timing_widget_; }
 
   std::vector<std::string> getRestoreTclCommands();
 
   void setTitle(const std::string& title);
 
+  // Return the selected set
+  const SelectionSet& selection();
+
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
   // to update
   void blockLoaded(odb::dbBlock* block);
+
+  // Signaled when we get a postRead3Dbx callback to tell the sub-widgets
+  // to update
+  void chipLoaded(odb::dbChip* chip);
 
   // The user chose the exit action; notify the app
   void exit();
@@ -220,6 +229,9 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
 
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
+
   // Zoom In To Items such that its bbox is in visible Area
   void zoomInToItems(const QList<const Selected*>& items);
 
@@ -333,6 +345,8 @@ class MainWindow : public QMainWindow, public odb::dbDatabaseObserver
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
   ChartsWidget* charts_widget_;
+  Chiplet3DWidget* chiplet_viewer_;
+  QDockWidget* chiplet_dock_;
   HelpWidget* help_widget_;
 
   FindObjectDialog* find_dialog_;

@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2021-2025, The OpenROAD Authors
 
-_comparable = [
+from typing import List, Optional, Dict, Any, Union
+import re
+from schema_models import Field, Struct, Class, Schema
+
+_comparable = {
     "Point",
     "Point3D",
     "Rect",
@@ -22,11 +26,11 @@ _comparable = [
     "int16_t",
     "std::string",
     "string",
-    "uint",
-    "unint_32t",
+    "uint32_t",
     "uint8_t",
-]
-std = [
+}
+
+std = {
     "bool",
     "char *",
     "char",
@@ -42,183 +46,160 @@ std = [
     "int16_t",
     "std::string",
     "string",
-    "uint",
-    "unint_32t",
+    "uint32_t",
     "uint8_t",
-]
+}
 
-_removable = ["const", "static", "unsigned"]
-
-
-def _stem(s):
-    src = s.split(" ")
-    target = []
-    for item in src:
-        if item not in _removable:
-            target.append(item)
-    return " ".join([str(elem) for elem in target])
+_removable = {"const", "static", "unsigned"}
 
 
-def _get_struct(name, structs):
+def _stem(s: str) -> str:
+    return " ".join(item for item in s.split() if item not in _removable)
+
+
+def _get_struct(name: str, structs: List[Struct]) -> Optional[Struct]:
     for struct in structs:
-        if struct["name"] == name:
+        if struct.name == name:
             return struct
     return None
 
 
-def components(structs, name, _type):
+def components(structs: List[Struct], name: str, _type: str) -> List[str]:
     if _stem(_type) in _comparable or is_ref(_type):
         return [name]
     struct = _get_struct(_type.rstrip(" *"), structs)
     if struct is not None:
         ret = []
-        for field in struct["fields"]:
-            target = components(structs, field["name"], field["type"])
-            if _type.find("*") == -1:
-                ret.extend([name + "." + str(elem) for elem in target])
-            else:
-                ret.extend([name + "->" + str(elem) for elem in target])
+        is_pointer = "*" in _type
+        separator = "->" if is_pointer else "."
+        for field in struct.fields:
+            target = components(structs, field.name, field.type)
+            ret.extend(f"{name}{separator}{elem}" for elem in target)
         return ret
     return []
 
 
-def add_once_to_dict(src, target):
+def add_once_to_dict(src: List[str], target: Union[Dict[str, Any], Class]) -> None:
     for obj in src:
-        target.setdefault(obj, [])
-    return target
+        if isinstance(target, dict):
+            target.setdefault(obj, [])
+        else:
+            if not getattr(target, obj, None):
+                setattr(target, obj, [])
 
 
-def is_bit_fields(field, structs):
-    if "bits" in field:
+def is_bit_fields(field: Field, structs: List[Struct]) -> bool:
+    if field.bits:
         return True
-    struct = _get_struct(field["type"], structs)
+    struct = _get_struct(field.type, structs)
     if struct is None:
         return False
-    for struct_field in struct["fields"]:
-        if is_bit_fields(struct_field, structs):
-            return True
-    return False
+    return any(is_bit_fields(struct_field, structs) for struct_field in struct.fields)
 
 
-def get_plural_name(name):
-    # if name ends with y, replace it with ies
+def get_plural_name(name: str) -> str:
     if name.endswith("y"):
-        return name[:-1] + "ies"
-    # if name ends with s, add es
-    elif name.endswith("s"):
-        return name + "es"
-    return name + "s"
+        return f"{name[:-1]}ies"
+    if name.endswith("s"):
+        return f"{name}es"
+    return f"{name}s"
 
 
-def get_functional_name(name):
+def get_functional_name(name: str) -> str:
     if name.islower():
-        return "".join(
-            [n.capitalize() for n in name.replace("tbl", "table").split("_")]
-        )
+        return "".join(n.capitalize() for n in name.replace("tbl", "table").split("_"))
     return name
 
 
-def get_class(schema, name):
-    for i in range(len(schema["classes"])):
-        if schema["classes"][i]["name"] == name:
-            return schema["classes"][i]
+def get_class(schema: Schema, name: str) -> Class:
+    for klass in schema.classes:
+        if klass.name == name:
+            return klass
     raise NameError(f"Class {name} in relations is not found")
 
 
-def get_table_name(name):
-    if len(name) > 2 and name[:2] == "db":
+def get_table_name(name: str) -> str:
+    if name.startswith("db"):
         name = name[2:]
-    return f"_{name.lower()}_tbl"
+    return f"{name.lower()}_tbl_"
 
 
-def is_ref(type_name):
-    return type_name.startswith("dbId<") and type_name[-1] == ">"
+def is_ref(type_name: str) -> bool:
+    return type_name.startswith("dbId<") and type_name.endswith(">")
 
 
-def is_hash_table(type_name):
-    return type_name.startswith("dbHashTable<") and type_name[-1] == ">"
+def is_hash_table(type_name: str) -> bool:
+    return type_name.startswith("dbHashTable<") and type_name.endswith(">")
 
 
-def get_hash_table_type(type_name):
+def get_hash_table_type(type_name: str) -> Optional[str]:
     if not is_hash_table(type_name) or len(type_name) < 13:
         return None
     types = get_template_types(type_name[12:-1])
-    for type in types:
-        if type.find("db") != -1:
-            return type + "*"
+    for t in types:
+        if "db" in t:
+            return f"{t}*"
     return None
 
 
-def is_pass_by_ref(type_name):
-    return type_name.find("dbVector") == 0 or type_name.find("std::vector") == 0
+def is_pass_by_ref(type_name: str) -> bool:
+    return type_name.startswith(("dbVector", "std::vector"))
 
 
-def is_set_by_ref(type_name):
+def is_set_by_ref(type_name: str) -> bool:
     return (
         type_name == "std::string"
         or type_name.startswith("std::pair")
-        or type_name.find("std::vector") == 0
+        or type_name.startswith("std::vector")
     )
 
 
-def is_template_type(type_name):
+def is_template_type(type_name: str) -> bool:
     open_bracket = type_name.find("<")
     if open_bracket == -1:
         return False
     closed_bracket = type_name.find(">")
-
     return closed_bracket >= open_bracket
 
 
-def _is_comma_divided(type_name):
-    comma = type_name.find(",")
-    return comma != -1
+def _is_comma_divided(type_name: str) -> bool:
+    return "," in type_name
 
 
-def get_template_types(type_name):
-    # extract all template types from a type name
+def get_template_types(type_name: str) -> List[str]:
     if is_template_type(type_name):
         return get_template_types(get_template_type(type_name))
-    elif _is_comma_divided(type_name):
-        # split and strip in one line
+    if _is_comma_divided(type_name):
         types = [t.strip() for t in type_name.split(",")]
-        for i in range(len(types)):
-            if types[i].isdigit() or types[i] == "true" or types[i] == "false":
-                types.pop(i)
-        return types
-    else:
-        return [type_name]
+        return [t for t in types if not (t.isdigit() or t in {"true", "false"})]
+    return [type_name]
 
 
-def get_template_type(type_name):
+def get_template_type(type_name: str) -> Optional[str]:
     if not is_template_type(type_name):
         return None
-    num_brackets = 1
-
+    num_brackets = 0
     open_bracket = type_name.find("<")
-    for i in range(open_bracket + 1, len(type_name)):
+    for i in range(open_bracket, len(type_name)):
         if type_name[i] == "<":
             num_brackets += 1
         elif type_name[i] == ">":
             num_brackets -= 1
             if num_brackets == 0:
-                closed_bracket = i
+                return type_name[open_bracket + 1 : i]
+    return None
 
-    return type_name[open_bracket + 1 : closed_bracket]
 
-
-def get_ref_type(type_name):
+def get_ref_type(type_name: str) -> Optional[str]:
     if not is_ref(type_name) or len(type_name) < 7:
         return None
+    return f"{type_name[6:-1]}*"
 
-    return type_name[6:-1] + "*"
 
-
-def fnv1a_32(string):
+def fnv1a_32(string: str) -> int:
     FNV_prime = 0x01000193
     hash_value = 0x811C9DC5
     for c in string:
         hash_value ^= ord(c)
         hash_value = (hash_value * FNV_prime) % (1 << 32)
-
     return hash_value

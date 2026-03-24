@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -29,16 +30,16 @@ class _dbModBTerm : public _dbObject
   bool operator<(const _dbModBTerm& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  uint _flags;
-  dbId<_dbModITerm> _parent_moditerm;
-  dbId<_dbModule> _parent;
-  dbId<_dbModNet> _modnet;
-  dbId<_dbModBTerm> _next_net_modbterm;
-  dbId<_dbModBTerm> _prev_net_modbterm;
-  dbId<_dbBusPort> _busPort;
-  dbId<_dbModBTerm> _next_entry;
-  dbId<_dbModBTerm> _prev_entry;
+  char* name_;
+  uint32_t flags_;
+  dbId<_dbModITerm> parent_moditerm_;
+  dbId<_dbModule> parent_;
+  dbId<_dbModNet> modnet_;
+  dbId<_dbModBTerm> next_net_modbterm_;
+  dbId<_dbModBTerm> prev_net_modbterm_;
+  dbId<_dbBusPort> busPort_;
+  dbId<_dbModBTerm> next_entry_;
+  dbId<_dbModBTerm> prev_entry_;
 
   // User Code Begin Fields
   void* _sta_port = nullptr;

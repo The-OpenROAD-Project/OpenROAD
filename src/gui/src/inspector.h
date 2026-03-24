@@ -5,12 +5,12 @@
 
 #include <QColor>
 #include <QDockWidget>
-#include <QItemDelegate>
 #include <QLabel>
 #include <QMenu>
 #include <QPushButton>
 #include <QStandardItemModel>
 #include <QString>
+#include <QStyledItemDelegate>
 #include <QTimer>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -27,7 +27,7 @@
 namespace gui {
 class SelectedItemModel;
 
-class EditorItemDelegate : public QItemDelegate
+class EditorItemDelegate : public QStyledItemDelegate
 {
   Q_OBJECT
 
@@ -38,6 +38,7 @@ class EditorItemDelegate : public QItemDelegate
   static const int kEditorType = Qt::UserRole + 2;
   static const int kEditorSelect = Qt::UserRole + 3;
   static const int kSelected = Qt::UserRole + 4;
+  static const int kHtml = Qt::UserRole + 5;
 
   enum EditType
   {
@@ -60,6 +61,13 @@ class EditorItemDelegate : public QItemDelegate
 
   static EditType getEditorType(const std::any& value);
 
+ protected:
+  void paint(QPainter* painter,
+             const QStyleOptionViewItem& option,
+             const QModelIndex& index) const override;
+  QSize sizeHint(const QStyleOptionViewItem& option,
+                 const QModelIndex& index) const override;
+
  private:
   SelectedItemModel* model_;
   const QColor background_;
@@ -75,8 +83,7 @@ class SelectedItemModel : public QStandardItemModel
                     const QColor& editable,
                     QObject* parent = nullptr);
 
-  QVariant data(const QModelIndex& index,
-                int role = Qt::DisplayRole) const override;
+  QVariant data(const QModelIndex& index, int role) const override;
 
   const QColor& getSelectableColor() { return selectable_item_; }
   const QColor& getEditableColor() { return editable_item_; }
@@ -102,11 +109,13 @@ class SelectedItemModel : public QStandardItemModel
   QStandardItem* makePropertyList(QStandardItem* name_item,
                                   const Iterator& begin,
                                   const Iterator& end);
+  QStandardItem* makePropertyTable(QStandardItem* name_item,
+                                   const PropertyTable& table);
 
   void makeItemEditor(const std::string& name,
                       QStandardItem* item,
                       const Selected& selected,
-                      const EditorItemDelegate::EditType type,
+                      EditorItemDelegate::EditType type,
                       const Descriptor::Editor& editor);
 
   const QColor selectable_item_;

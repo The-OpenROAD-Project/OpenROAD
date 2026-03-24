@@ -2,35 +2,35 @@
     "name":"dbGDSPath",
     "fields":[
       {
-        "name":"_layer",
+        "name":"layer_",
         "type":"int16_t",
         "default":"0",
         "flags":[]
       },
       {
-        "name":"_datatype",
+        "name":"datatype_",
         "type":"int16_t",
         "default":"0",
         "flags":[]
       },
       {
-        "name":"_xy",
+        "name":"xy_",
         "type":"std::vector<Point>",
         "flags":["no-template"]
       },
       {
-        "name":"_propattr",
+        "name":"propattr_",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
         "flags":["no-template", "no-get", "no-set"]
       },
       {
-        "name":"_width",
+        "name":"width_",
         "default":"0",
         "type":"int",
         "flags":[]
       },
       {
-        "name":"_path_type",
+        "name":"path_type_",
         "type":"int16_t",
         "default":"0",
         "flags":[]

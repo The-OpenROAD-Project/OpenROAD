@@ -4,12 +4,16 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbTable.h"
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -35,8 +39,8 @@ class _dbGDSStructure : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbGDSStructure> _next_entry;
+  char* name_;
+  dbId<_dbGDSStructure> next_entry_;
   dbTable<_dbGDSBoundary>* boundaries_;
   dbTable<_dbGDSBox>* boxes_;
   dbTable<_dbGDSPath>* paths_;

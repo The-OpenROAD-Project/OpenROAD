@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"
@@ -37,10 +38,9 @@ void initCoords(const frLayerCoordTrackPatternMap& map,
   for (auto& [l, m] : map) {
     coords.reserve(m.size());
     if (coords.empty()) {
-      std::transform(
-          m.begin(), m.end(), std::back_inserter(coords), [](const auto& kv) {
-            return kv.first;
-          });
+      std::ranges::transform(m, std::back_inserter(coords), [](const auto& kv) {
+        return kv.first;
+      });
     } else {
       auto it = coords.begin();
       for (auto& [k, _] : m) {
@@ -485,9 +485,7 @@ void FlexGridGraph::initTracks(
         int trackNum = ((tp->isHorizontal() ? bbox.xMin() : bbox.yMin())
                         - tp->getStartCoord())
                        / (int) tp->getTrackSpacing();
-        if (trackNum < 0) {
-          trackNum = 0;
-        }
+        trackNum = std::max(trackNum, 0);
         if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
             < (tp->isHorizontal() ? bbox.xMin() : bbox.yMin())) {
           ++trackNum;
@@ -560,7 +558,7 @@ void FlexGridGraph::print() const
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::N)) {
             if (yIdx + 1 >= yDim) {
               std::cout << "Error: no edge (" << xIdx << ", " << yIdx << ", "
-                        << zIdx << ", N) " << yDim << std::endl;
+                        << zIdx << ", N) " << yDim << '\n';
               continue;
             }
             mazeLog << "Edge: " << getPoint(p, xIdx, yIdx).x() << " "
@@ -571,7 +569,7 @@ void FlexGridGraph::print() const
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::E)) {
             if (xIdx + 1 >= xDim) {
               std::cout << "Error: no edge (" << xIdx << ", " << yIdx << ", "
-                        << zIdx << ", E) " << xDim << std::endl;
+                        << zIdx << ", E) " << xDim << '\n';
               continue;
             }
             mazeLog << "Edge: " << getPoint(p, xIdx, yIdx).x() << " "
@@ -582,7 +580,7 @@ void FlexGridGraph::print() const
           if (hasEdge(xIdx, yIdx, zIdx, frDirEnum::U)) {
             if (zIdx + 1 >= zDim) {
               std::cout << "Error: no edge (" << xIdx << ", " << yIdx << ", "
-                        << zIdx << ", U) " << zDim << std::endl;
+                        << zIdx << ", U) " << zDim << '\n';
               continue;
             }
             mazeLog << "Edge: " << getPoint(p, xIdx, yIdx).x() << " "

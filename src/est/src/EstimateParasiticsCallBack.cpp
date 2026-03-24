@@ -11,7 +11,7 @@ namespace est {
 void EstimateParasiticsCallBack::onEstimateParasiticsRequired()
 {
   estimate_parasitics_->clearParasitics();
-  auto routes = estimate_parasitics_->getGlobalRouter()->getRoutes();
+  auto routes = estimate_parasitics_->getGlobalRouter()->getPartialRoutes();
   for (auto& [db_net, route] : routes) {
     estimate_parasitics_->estimateGlobalRouteParasitics(db_net, route);
   }

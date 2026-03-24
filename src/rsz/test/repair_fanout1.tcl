@@ -18,5 +18,7 @@ estimate_parasitics -placement
 report_check_types -max_fanout
 write_verilog_for_eqy repair_fanout1 before "None"
 repair_design
-run_equivalence_test repair_fanout1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_fanout1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_check_types -max_fanout

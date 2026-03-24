@@ -2,10 +2,14 @@
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
-load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_python//python:defs.bzl", "py_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//bazel:notification.bzl", "notification_rule")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -18,10 +22,27 @@ package(
     ],
 )
 
+# Notification target to notify user if --config=opt (with LTO) is not used.
+notification_rule(
+    name = "opt_notification",
+    is_opt = select(
+        {
+            ":lto_on": True,
+            "//conditions:default": False,
+        },
+    ),
+)
+
+config_setting(
+    name = "lto_on",
+    values = {"copt": "-flto"},
+)
+
 exports_files([
     "LICENSE",
     "src/Design.i",
     "src/Exception.i",
+    "src/options.i",
 ])
 
 string_flag(
@@ -59,6 +80,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/dbSta:dbNetwork",
     "//src/dbSta:dbReadVerilog",
     "//src/dbSta:dbSdcNetwork",
+    "//src/dbSta:IpChecker",
     "//src/dbSta:SpefWriter",
     "//src/dbSta:ui",
     "//src/dft",
@@ -104,7 +126,9 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
-    "@edu_berkeley_abc//:abc-lib",
+    "//src/web",
+    "//src/web:ui",
+    "@abc",
     ":ord",
 ] + select(
     {
@@ -124,16 +148,15 @@ OPENROAD_COPTS = [
     "-Wformat-security",
     "-Wno-sign-compare",
     "-Wno-unused-parameter",
+    "-Wmismatched-tags",
     "-fopenmp",
 ]
 
 OPENROAD_DEFINES = [
-    "OPENROAD_GIT_DESCRIBE=\\\"bazel-build\\\"",
     "BUILD_TYPE=\\\"$(COMPILATION_MODE)\\\"",
     "GPU=false",
     "BUILD_PYTHON=false",
     "ABC_NAMESPACE=abc",
-    "TCLRL_VERSION_STR=",
 ]
 
 cc_binary(
@@ -142,6 +165,9 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
+    data = [
+        "@tclreadline//:tclreadline_scripts",
+    ],
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
@@ -151,6 +177,7 @@ cc_binary(
     deps = [
         ":openroad_lib",
         ":openroad_version",
+        ":opt_notification",
         ":ord",
         "//bazel:runfiles",
         "//src/cut",
@@ -159,7 +186,12 @@ cc_binary(
         "//src/utl",
         "@boost.stacktrace",
         "@rules_cc//cc/runfiles",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
+        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
+        # On systems without tclreadline these are empty stub targets (no-op).
+        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+        "@tclreadline",
+        "@tclreadline//:tclreadline_defs",
     ],
 )
 
@@ -189,8 +221,10 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//src/sta:opensta_lib",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ] + OPENROAD_LIBRARY_DEPS,
 )
 
@@ -209,6 +243,7 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
+    deps = ["@abseil-cpp//absl/synchronization"],
 )
 
 cc_library(
@@ -222,11 +257,21 @@ genrule(
     name = "OpenRoadVersion",
     srcs = [],
     outs = ["include/ord/Version.hh"],
-    cmd = """echo -e '
-#define OPENROAD_VERSION "HDL-HEAD"
-#define OPENROAD_GIT_SHA1 "HEAD"
-' > \"$@\"
+    cmd = """
+        VERSION=""
+        if [ -f bazel-out/stable-status.txt ]; then
+            VERSION=$$(grep '^STABLE_GIT_VERSION ' bazel-out/stable-status.txt \
+                        | cut -d' ' -f2-) || true
+        fi
+        [ -z "$$VERSION" ] && VERSION="bazel-nostamp"
+        printf '#define OPENROAD_VERSION "%s"\\n' "$$VERSION" > $@
+        printf '#define OPENROAD_GIT_DESCRIBE ""\\n' >> $@
     """,
+    # stamp = -1 means "stamp when --stamp is set" (via --config=release).
+    # Without --stamp (the default), STABLE_GIT_VERSION is empty and
+    # the output is deterministic, so the Bazel cache is not invalidated
+    # on every commit.
+    stamp = -1,
 )
 
 tcl_encode(
@@ -259,6 +304,7 @@ cc_binary(
     name = "_openroadpy.so",
     srcs = [":openroad_swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         ":openroad_lib",  # Depends on the core odb C++ library
@@ -283,7 +329,7 @@ cc_binary(
         "//src/tap",
         "//src/utl",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -298,6 +344,7 @@ py_library(
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [
+        "//src/gpl:gpl_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
     ],
@@ -360,5 +407,116 @@ filegroup(
     name = "design_swig",
     srcs = [
         "src/Design.i",
+    ],
+)
+
+filegroup(
+    name = "options_swig",
+    srcs = [
+        "src/options.i",
+    ],
+    visibility = ["@//:__subpackages__"],
+)
+
+sh_binary(
+    name = "install",
+    srcs = ["//bazel:install.sh"],
+    args = [],
+    data = [":tarfile"],
+)
+
+pkg_tar(
+    name = "tarfile",
+    srcs = [
+        ":openroad",
+    ],
+    include_runfiles = True,
+    package_file_name = "openroad.tar",
+)
+
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test //:dup_id_test                         # duplicate message ID check
+
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
+)
+
+# ---------------------------------------------------------------------------
+# Lint & tidy targets
+#
+# bazelisk test //:lint_test   — run all lint checks
+# bazelisk run  //:fix_lint    — auto-fix then lint
+# ---------------------------------------------------------------------------
+
+# --- TCL linting (tclint) -------------------------------------------------
+
+sh_test(
+    name = "lint_tcl_test",
+    srcs = ["//bazel:tcl_lint_test.sh"],
+    args = ["$(rootpath //bazel:tclint)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclint",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL formatting check (tclfmt --check) --------------------------------
+
+sh_test(
+    name = "fmt_tcl_test",
+    srcs = ["//bazel:tcl_fmt_test.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+    tags = ["local"],
+)
+
+# --- TCL auto-format only (tclfmt --in-place) -----------------------------
+
+sh_binary(
+    name = "tidy_tcl",
+    srcs = ["//bazel:tcl_tidy.sh"],
+    args = ["$(rootpath //bazel:tclfmt)"],
+    data = [
+        "tclint.toml",
+        "//bazel:tclfmt",
+    ],
+)
+
+# --- Umbrella targets ------------------------------------------------------
+
+test_suite(
+    name = "lint_test",
+    tests = [
+        ":fmt_tcl_test",
+        ":lint_tcl_test",
+    ],
+)
+
+# Linting is done here (not just formatting) because not all lint violations
+# are auto-fixable — fix_lint fixes what it can, then reports the rest.
+sh_binary(
+    name = "fix_lint",
+    srcs = ["//bazel:fix_lint.sh"],
+    args = [
+        "$(rootpath //bazel:tcl_tidy.sh)",
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath //bazel:tcl_lint_test.sh)",
+        "$(rootpath //bazel:tclint)",
+    ],
+    data = [
+        "tclint.toml",
+        "//bazel:tcl_lint_test.sh",
+        "//bazel:tcl_tidy.sh",
+        "//bazel:tclfmt",
+        "//bazel:tclint",
     ],
 )

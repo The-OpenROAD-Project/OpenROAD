@@ -14,8 +14,8 @@ u2/Z                                    0.03    0.07   -0.04 (VIOLATED)
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 ---------------------------------------------------------------------
         0 |     +0.0% |       0 |       0 |             0 |         4
-    final |   +122.2% |       1 |       2 |             1 |         0
+    final |    +77.8% |       1 |       1 |             1 |         0
 ---------------------------------------------------------------------
 [INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0039] Resized 1 instances.
-[INFO RSZ-0038] Inserted 2 buffers in 1 nets.
+[INFO RSZ-0038] Inserted 1 buffers in 1 nets.

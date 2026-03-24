@@ -13,7 +13,7 @@
   "fields": [
     {
       "name": "bits_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private"]
     },
@@ -39,21 +39,21 @@
     },
     {
       "name": "clock_edge_",
-      "type": "uint",
+      "type": "uint32_t",
       "default": "0",
       "flags": ["private"]
     },
     {
-      "name": "_next_list_scan_inst",
+      "name": "next_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
       "flags": ["private"],
-      "schema":"db_schema_block_owns_scan_insts"
+      "schema":"kSchemaBlockOwnsScanInsts"
     },
     {
-      "name": "_prev_list_scan_inst",
+      "name": "prev_list_scan_inst_",
       "type": "dbId<_dbScanInst>",
       "flags": ["private"],
-      "schema":"db_schema_block_owns_scan_insts"
+      "schema":"kSchemaBlockOwnsScanInsts"
     }
   ],
   "enums": [

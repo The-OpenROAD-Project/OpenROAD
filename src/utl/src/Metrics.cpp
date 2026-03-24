@@ -36,7 +36,7 @@ MetricsPolicy::MetricsPolicy(const std::string& key_pattern,
   pattern_regex_ = std::regex(pattern_);
 }
 
-bool MetricsPolicy::matching(std::string key)
+bool MetricsPolicy::matching(const std::string& key)
 {
   if (repeating_use_regex_) {
     return std::regex_match(key, pattern_regex_);

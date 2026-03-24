@@ -53,6 +53,7 @@ if { $block eq "NULL" } {
 }
 odb::dbDatabase_beginEco $block
 
+set_debug_level ODB replace_design_check_sanity 1
 puts "### module is swapped to Brent-Kung ###"
 replace_hier_module gcd_1/_552_ LCU_16_BRENT_KUNG
 report_cell_usage gcd_1/_552_
@@ -64,4 +65,6 @@ odb::dbDatabase_undoEco $block
 report_cell_usage gcd_1/_552_
 report_checks -through gcd_1/_carry_out_and_/B -fields input_pins
 
-run_equivalence_test replace_hier_mod5 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test replace_hier_mod5 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"

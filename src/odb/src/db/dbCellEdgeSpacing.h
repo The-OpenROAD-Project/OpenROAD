@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -16,12 +16,12 @@ class _dbDatabase;
 
 struct dbCellEdgeSpacingFlags
 {
-  bool except_abutted_ : 1;
-  bool except_non_filler_in_between_ : 1;
-  bool optional_ : 1;
-  bool soft_ : 1;
-  bool exact_ : 1;
-  uint spare_bits_ : 27;
+  bool except_abutted : 1;
+  bool except_non_filler_in_between : 1;
+  bool optional : 1;
+  bool soft : 1;
+  bool exact : 1;
+  uint32_t spare_bits : 27;
 };
 
 class _dbCellEdgeSpacing : public _dbObject
@@ -40,7 +40,7 @@ class _dbCellEdgeSpacing : public _dbObject
   dbCellEdgeSpacingFlags flags_;
   std::string first_edge_type_;
   std::string second_edge_type_;
-  int spacing;
+  int spacing_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbCellEdgeSpacing& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbCellEdgeSpacing& obj);

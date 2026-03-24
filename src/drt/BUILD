@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -122,6 +123,7 @@ cc_library(
         "src/dr/AbstractDRGraphics.h",
         "src/dr/FlexDR.cpp",
         "src/dr/FlexDR.h",
+        "src/dr/FlexDRFlow.cpp",
         "src/dr/FlexDR_conn.cpp",
         "src/dr/FlexDR_conn.h",
         "src/dr/FlexDR_end.cpp",
@@ -194,7 +196,7 @@ cc_library(
         "src/ta/FlexTA_rq.cpp",
     ],
     hdrs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
     ],
     copts = [
         "-Isrc/drt/src",
@@ -209,6 +211,7 @@ cc_library(
         "//src/odb",
         "//src/stt",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
         "@boost.container",
@@ -225,7 +228,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
         "src/AbstractGraphicsFactory.h",
         "src/GraphicsFactory.cpp",
         "src/GraphicsFactory.h",
@@ -256,7 +259,7 @@ cc_library(
         ":tcl",
     ],
     hdrs = [
-        "include/triton_route/MakeTritonRoute.h",
+        "include/drt/MakeTritonRoute.h",
     ],
     copts = [
         "-Isrc/drt/src",
@@ -273,13 +276,14 @@ cc_library(
         "//src/gui",
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.container",
         "@boost.geometry",
         "@boost.polygon",
         "@boost.serialization",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -312,7 +316,7 @@ tcl_wrap_cc(
 python_wrap_cc(
     name = "swig-py",
     srcs = [
-        "include/triton_route/TritonRoute.h",
+        "include/drt/TritonRoute.h",
         "src/TritonRoute-py.i",
         "//:error_swig-py",
     ],
@@ -324,4 +328,17 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/TritonRoute.tcl",
+    ],
+    visibility = ["//src/drt/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/drt/test:__pkg__"],
 )

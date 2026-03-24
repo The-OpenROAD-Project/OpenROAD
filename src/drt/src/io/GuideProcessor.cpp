@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -17,13 +18,16 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/infra/frTime.h"
 #include "db/obj/frAccess.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGCellPattern.h"
 #include "db/tech/frLayer.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
+#include "global.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -149,7 +153,7 @@ bool isPinCoveredByGuides(const frBlockObject* pin,
   for (const auto& ap_loc : getAccessPoints(pin)) {
     for (const auto& guide : guides) {
       if (guide.getLayerNum() == ap_loc.z()
-          && guide.getBBox().overlaps(ap_loc)) {
+          && guide.getBBox().intersects(ap_loc)) {
         return true;
       }
     }
@@ -207,7 +211,8 @@ Point3D findBestPinLocation(frDesign* design,
  */
 int findClosestGuide(const Point3D& best_pin_loc_coords,
                      const std::vector<frRect>& guides,
-                     const frCoord layer_change_penalty)
+                     const frCoord layer_change_penalty,
+                     const RouterConfiguration* router_cfg)
 {
   int closest_guide_idx = 0;
   int dist = 0;
@@ -217,6 +222,9 @@ int findClosestGuide(const Point3D& best_pin_loc_coords,
     dist = odb::manhattanDistance(guide.getBBox(), best_pin_loc_coords);
     dist += abs(guide.getLayerNum() - best_pin_loc_coords.z())
             * layer_change_penalty;
+    if (guide.getLayerNum() < router_cfg->BOTTOM_ROUTING_LAYER) {
+      dist += 1e9;
+    }
     if (dist < min_dist) {
       min_dist = dist;
       closest_guide_idx = guide_idx;
@@ -349,41 +357,6 @@ void fillGuidesUpToZ(const Point3D& best_pin_loc_coords,
                         best_pin_loc_coords.x() + gcell_half_size_horz,
                         best_pin_loc_coords.y() + gcell_half_size_vert,
                         curr_z,
-                        net);
-  }
-}
-/**
- * @brief Connects the guides with the best pin shape location (on the 2D
- * plane only)
- *
- * The function creates a patch guide that connects the closest guide to
- * best_pin_loc_coords (without consideration to different layers)
- *
- * @param guide_pt The center of the gcell on the guide that is closest to
- * best_pin_loc_coords
- * @param best_pin_loc_coords The gcell center point of the chosen pin shape
- * @param gcell_half_size_horz Half the horizontal size of the gcell
- * @param gcell_half_size_vert Half the vertical size of the gcell
- */
-void connectGuidesWithBestPinLoc(const Point3D& guide_pt,
-                                 const odb::Point& best_pin_loc_coords,
-                                 const frCoord gcell_half_size_horz,
-                                 const frCoord gcell_half_size_vert,
-                                 frNet* net,
-                                 std::vector<frRect>& guides)
-{
-  if (guide_pt.x() != best_pin_loc_coords.x()
-      || guide_pt.y() != best_pin_loc_coords.y()) {
-    const odb::Point pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
-                           std::min(best_pin_loc_coords.y(), guide_pt.y())};
-    const odb::Point ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
-                           std::max(best_pin_loc_coords.y(), guide_pt.y())};
-
-    guides.emplace_back(pl.x() - gcell_half_size_horz,
-                        pl.y() - gcell_half_size_vert,
-                        ph.x() + gcell_half_size_horz,
-                        ph.y() + gcell_half_size_vert,
-                        guide_pt.z(),
                         net);
   }
 }
@@ -900,33 +873,30 @@ void GuideProcessor::buildGCellPatterns()
     xgp.setHorizontal(false);
     // find first coord >= dieBox.xMin()
     frCoord startCoordX
-        = dieBox.xMin() / (frCoord) GCELLGRIDX * (frCoord) GCELLGRIDX
-          + GCELLOFFSETX;
+        = dieBox.xMin() / GCELLGRIDX * GCELLGRIDX + GCELLOFFSETX;
     if (startCoordX > dieBox.xMin()) {
-      startCoordX -= (frCoord) GCELLGRIDX;
+      startCoordX -= GCELLGRIDX;
     }
     xgp.setStartCoord(startCoordX);
     xgp.setSpacing(GCELLGRIDX);
-    if ((dieBox.xMax() - (frCoord) GCELLOFFSETX) / (frCoord) GCELLGRIDX < 1) {
+    if ((dieBox.xMax() - GCELLOFFSETX) / GCELLGRIDX < 1) {
       logger_->error(DRT, 174, "GCell cnt x < 1.");
     }
-    xgp.setCount((dieBox.xMax() - (frCoord) startCoordX)
-                 / (frCoord) GCELLGRIDX);
+    xgp.setCount((dieBox.xMax() - startCoordX) / GCELLGRIDX);
 
     ygp.setHorizontal(true);
     // find first coord >= dieBox.yMin()
     frCoord startCoordY
-        = dieBox.yMin() / (frCoord) GCELLGRIDY * (frCoord) GCELLGRIDY
-          + GCELLOFFSETY;
+        = dieBox.yMin() / GCELLGRIDY * GCELLGRIDY + GCELLOFFSETY;
     if (startCoordY > dieBox.yMin()) {
-      startCoordY -= (frCoord) GCELLGRIDY;
+      startCoordY -= GCELLGRIDY;
     }
     ygp.setStartCoord(startCoordY);
     ygp.setSpacing(GCELLGRIDY);
-    if ((dieBox.yMax() - (frCoord) GCELLOFFSETY) / (frCoord) GCELLGRIDY < 1) {
+    if ((dieBox.yMax() - GCELLOFFSETY) / GCELLGRIDY < 1) {
       logger_->error(DRT, 175, "GCell cnt y < 1.");
     }
-    ygp.setCount((dieBox.yMax() - startCoordY) / (frCoord) GCELLGRIDY);
+    ygp.setCount((dieBox.yMax() - startCoordY) / GCELLGRIDY);
     getDesign()->getTopBlock()->setGCellPatterns(
         {std::move(xgp), std::move(ygp)});
   }
@@ -946,6 +916,43 @@ void GuideProcessor::buildGCellPatterns()
                   ygp.getStartCoord(),
                   ygp.getCount(),
                   ygp.getSpacing());
+  }
+}
+
+void GuideProcessor::connectGuidesWithBestPinLoc(
+    Point3D& guide_pt,
+    const odb::Point& best_pin_loc_coords,
+    const frCoord gcell_half_size_horz,
+    const frCoord gcell_half_size_vert,
+    frNet* net,
+    std::vector<frRect>& guides)
+{
+  if (guide_pt.x() != best_pin_loc_coords.x()
+      || guide_pt.y() != best_pin_loc_coords.y()) {
+    const odb::Point pl = {std::min(best_pin_loc_coords.x(), guide_pt.x()),
+                           std::min(best_pin_loc_coords.y(), guide_pt.y())};
+    const odb::Point ph = {std::max(best_pin_loc_coords.x(), guide_pt.x()),
+                           std::max(best_pin_loc_coords.y(), guide_pt.y())};
+    bool is_horizontal = pl.x() != ph.x();
+    bool is_vertical = pl.y() != ph.y();
+    frLayerNum layer_num = guide_pt.z();
+    if (is_horizontal ^ is_vertical) {
+      if ((is_vertical && design_->isHorizontalLayer(layer_num))
+          || (is_horizontal && design_->isVerticalLayer(layer_num))) {
+        if (layer_num + 2 <= router_cfg_->TOP_ROUTING_LAYER) {
+          layer_num += 2;
+        } else {
+          layer_num -= 2;
+        }
+      }
+    }
+    guide_pt.setZ(layer_num);
+    guides.emplace_back(pl.x() - gcell_half_size_horz,
+                        pl.y() - gcell_half_size_vert,
+                        ph.x() + gcell_half_size_horz,
+                        ph.y() + gcell_half_size_vert,
+                        layer_num,
+                        net);
   }
 }
 
@@ -1012,7 +1019,7 @@ void GuideProcessor::patchGuides(frNet* net,
   // get the guide that is closest to the gCell
   // TODO: test passing layer_change_penalty = gcell size
   const int closest_guide_idx
-      = findClosestGuide(best_pin_loc_coords, guides, 1);
+      = findClosestGuide(best_pin_loc_coords, guides, 1, router_cfg_);
 
   patchGuides_helper(
       net, guides, best_pin_loc_idx, best_pin_loc_coords, closest_guide_idx);
@@ -1322,8 +1329,10 @@ void GuideProcessor::mapTermAccessPointsToGCells(
     frBlockObject* pin) const
 {
   for (const auto& ap_loc : getAccessPoints(pin)) {
-    const odb::Point idx = getDesign()->getTopBlock()->getGCellIdx(ap_loc);
-    gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
+    for (const auto& idx :
+         getDesign()->getTopBlock()->getGCellIndices(ap_loc)) {
+      gcell_pin_map[Point3D(idx, ap_loc.z())].insert(pin);
+    }
   }
 }
 
@@ -1467,7 +1476,8 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
       path_finder.connectDisconnectedComponents(rects, intvs);
     }
   }
-  logger_->error(DRT, 218, "Guide is not connected to design.");
+  logger_->error(
+      DRT, 218, "Guide is not connected to design for net {}", net->getName());
   return {};
 }
 
@@ -1595,18 +1605,19 @@ void GuidePathFinder::updateNodeMap(
 void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
 {
   for (auto& [pt, indices] : node_map_) {
-    const uint num_indices = indices.size();
+    const auto num_indices = indices.size();
     if (num_indices != 1) {
       continue;
     }
     const auto idx = *(indices.begin());
     if (isPinIdx(idx)) {
+      const double dbu_per_uu = design_->getTopBlock()->getDBUPerUU();
       logger_->error(DRT,
                      223,
-                     "Pin dangling id {} ({},{}) {}.",
+                     "Pin dangling id {} ({:.3f}um,{:.3f}um) {}.",
                      idx,
-                     pt.x(),
-                     pt.y(),
+                     pt.x() / (double) dbu_per_uu,
+                     pt.y() / (double) dbu_per_uu,
                      pt.z());
     }
     // no upper/lower guide
@@ -1638,7 +1649,7 @@ void GuidePathFinder::mergeGuides(std::vector<frRect>& rects)
   };
   for (auto& [pt, indices] : node_map_) {
     std::vector<int> visited_indices = getVisitedIndices(indices, visited_);
-    const uint num_indices = visited_indices.size();
+    const auto num_indices = visited_indices.size();
     if (num_indices == 2) {
       const auto first_idx = *(visited_indices.begin());
       const auto second_idx = *std::prev(visited_indices.end());
@@ -1816,7 +1827,7 @@ bool GuidePathFinder::traverseGraph()
         continue;
       }
       if (curr_wavefront.node_idx > getGuideCount()
-          && visited_[curr_wavefront.node_idx] == false) {
+          && !visited_[curr_wavefront.node_idx]) {
         visited_[curr_wavefront.node_idx] = true;
         prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
         visited_pin = curr_wavefront.node_idx;

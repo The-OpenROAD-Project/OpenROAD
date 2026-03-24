@@ -17,7 +17,7 @@ void open_metrics(const char* metrics_filename);
 void close_metrics(const char* metrics_filename);
 void metric(const char* metric, const char* value);
 void metric_integer(const char* metric, int64_t value);
-void metric_float(const char* metric, const double value);
+void metric_float(const char* metric, double value);
 void metric_float(const char* metric, const char* value);
 void set_metrics_stage(const char* fmt);
 void clear_metrics_stage();

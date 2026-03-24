@@ -4,19 +4,22 @@
 // This file is only used when we can't find Qt5 and are thus
 // disabling the GUI.  It is not included when Qt5 is found.
 
-#include <tcl.h>
-
 #include <any>
 #include <cstdio>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 #include <typeinfo>
 #include <vector>
 
+#include "bufferTreeDescriptor.h"
+#include "gui/descriptor_registry.h"
 #include "gui/gui.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "tcl.h"
 
 // empty gif writer class
 struct GifWriter
@@ -25,27 +28,10 @@ struct GifWriter
 
 namespace gui {
 
-Gui* Gui::singleton_ = nullptr;
-
-// Used by toString to convert dbu to microns
-DBUToString Descriptor::Property::convert_dbu
-    = [](int value, bool) { return std::to_string(value); };
-StringToDBU Descriptor::Property::convert_string
-    = [](const std::string& value, bool*) { return 0; };
-
-// empty heat map class
-class PinDensityDataSource
+Options* Painter::getOptions()
 {
-};
-
-// empty heat map class
-class PlacementDensityDataSource
-{
-};
-
-class PowerDensityDataSource
-{
-};
+  return options_;
+}
 
 ////
 
@@ -55,7 +41,8 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 Gui* gui::Gui::get()
 {
-  return singleton_;
+  static Gui* singleton = new Gui();
+  return singleton;
 }
 
 bool gui::Gui::enabled()
@@ -64,6 +51,10 @@ bool gui::Gui::enabled()
 }
 
 void gui::Gui::registerRenderer(gui::Renderer*)
+{
+}
+
+void HeatMapDataSource::registerHeatMap()
 {
 }
 
@@ -95,11 +86,14 @@ void Renderer::redraw()
 {
 }
 
-Renderer::~Renderer()
+Renderer::~Renderer() = default;
+
+void DiscreteLegend::addLegendKey(const Painter::Color& color,
+                                  const std::string& text)
 {
 }
 
-SpectrumGenerator::SpectrumGenerator(double scale) : scale_(scale)
+void DiscreteLegend::draw(Painter& painter) const
 {
 }
 
@@ -125,36 +119,39 @@ void Renderer::setSettings(const Renderer::Settings& /* settings */)
 {
 }
 
-Selected Gui::makeSelected(const std::any& /* object */)
+Selected Gui::makeSelected(const std::any& object)
 {
-  return Selected();
+  return DescriptorRegistry::instance()->makeSelected(object);
 }
 
 void Gui::setSelected(const Selected& selection)
 {
 }
 
+const SelectionSet& Gui::selection()
+{
+  static SelectionSet dummy;
+  return dummy;
+}
+
 void Gui::registerDescriptor(const std::type_info& type,
                              const Descriptor* descriptor)
 {
+  DescriptorRegistry::instance()->registerDescriptor(type, descriptor);
 }
 
 void Gui::unregisterDescriptor(const std::type_info& type)
 {
+  DescriptorRegistry::instance()->unregisterDescriptor(type);
 }
 
-const Descriptor* Gui::getDescriptor(const std::type_info& /* type */) const
+const Descriptor* Gui::getDescriptor(const std::type_info& type) const
 {
-  return nullptr;
+  return DescriptorRegistry::instance()->getDescriptor(type);
 }
 
 void Gui::removeSelectedByType(const std::string& /* type */)
 {
-}
-
-std::string Descriptor::Property::toString(const std::any& /* value */)
-{
-  return "";
 }
 
 // using namespace odb;
@@ -178,6 +175,13 @@ void initGui(Tcl_Interp* interp,
              sta::dbSta* sta,
              utl::Logger* logger)
 {
+  // Initialize the descriptor registry so that descriptors are available
+  // for the web viewer and other non-GUI consumers.
+  auto* registry = DescriptorRegistry::instance();
+  registry->setLogger(logger);
+  registry->initDescriptors(db, sta);
+  registerBuiltinHeatMapSources(sta, logger);
+
   // Tcl requires this to be a writable string
   std::string cmd_save_image(
       "proc save_image { args } {"
@@ -201,15 +205,17 @@ void initGui(Tcl_Interp* interp,
   Tcl_Eval(interp, enabled_supported.c_str());
 }
 
-void Gui::gifStart(const std::string& filename)
+int Gui::gifStart(const std::string& filename)
+{
+  return 0;
+}
+
+void Gui::gifEnd(std::optional<int> key)
 {
 }
 
-void Gui::gifEnd()
-{
-}
-
-void Gui::gifAddFrame(const odb::Rect& region,
+void Gui::gifAddFrame(std::optional<int> key,
+                      const odb::Rect& region,
                       int width_px,
                       double dbu_per_pixel,
                       std::optional<int> delay)
@@ -262,6 +268,59 @@ int Gui::select(const std::string& type,
 
 void Gui::setDisplayControlsVisible(const std::string& name, bool value)
 {
+}
+
+void Gui::clearHighlights(int highlight_group)
+{
+}
+
+void Gui::addNetToHighlightSet(const char* name, int highlight_group)
+{
+}
+
+void Gui::addFocusNet(odb::dbNet* net)
+{
+}
+
+void Gui::removeFocusNet(odb::dbNet* net)
+{
+}
+
+void Gui::addRouteGuides(odb::dbNet* net)
+{
+}
+
+void Gui::removeRouteGuides(odb::dbNet* net)
+{
+}
+
+void Gui::addNetTracks(odb::dbNet* net)
+{
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+}
+
+void Gui::timingCone(Term term, bool fanin, bool fanout)
+{
+}
+
+void Gui::timingPathsThrough(const std::set<Term>& terms)
+{
+}
+
+// BufferTree stubs — the real implementation is in bufferTreeDescriptor.cpp
+// which is only compiled in the Qt build.
+sta::dbSta* BufferTree::sta_ = nullptr;
+
+BufferTree::BufferTree(odb::dbNet* /* net */)
+{
+}
+
+bool BufferTree::isAggregate(odb::dbNet* /* net */)
+{
+  return false;
 }
 
 }  // namespace gui

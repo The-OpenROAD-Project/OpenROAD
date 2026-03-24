@@ -9,6 +9,7 @@
 ########## IR report #################
 Net              : VDD
 Corner           : default
+Total power      : 3.01e-02 W
 Supply voltage   : 1.10e+00 V
 Worstcase voltage: 1.06e+00 V
 Average voltage  : 1.08e+00 V

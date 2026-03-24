@@ -4,10 +4,11 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -31,19 +32,19 @@ class _dbModNet : public _dbObject
   bool operator<(const _dbModNet& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbModule> _parent;
-  dbId<_dbModNet> _next_entry;
-  dbId<_dbModNet> _prev_entry;
-  dbId<_dbModITerm> _moditerms;
-  dbId<_dbModBTerm> _modbterms;
-  dbId<_dbITerm> _iterms;
-  dbId<_dbBTerm> _bterms;
+  char* name_;
+  dbId<_dbModule> parent_;
+  dbId<_dbModNet> next_entry_;
+  dbId<_dbModNet> prev_entry_;
+  dbId<_dbModITerm> moditerms_;
+  dbId<_dbModBTerm> modbterms_;
+  dbId<_dbITerm> iterms_;
+  dbId<_dbBTerm> bterms_;
 
   // User Code Begin Fields
   enum Field  // dbJournalField name
   {
-    NAME
+    kName
   };
   // User Code End Fields
 };

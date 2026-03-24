@@ -4,12 +4,19 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "GeoTypes.h"
 #include "odb/db.h"
 
 namespace grt {
+
+struct LayerRange
+{
+  int min_layer;
+  int max_layer;
+};
 
 class CUGRPin
 {
@@ -42,17 +49,24 @@ class CUGRPin
 class CUGRNet
 {
  public:
-  CUGRNet(int index, odb::dbNet* db_net, const std::vector<CUGRPin>& pins);
+  CUGRNet(int index,
+          odb::dbNet* db_net,
+          const std::vector<CUGRPin>& pins,
+          LayerRange layer_range);
   int getIndex() const { return index_; }
   odb::dbNet* getDbNet() const { return db_net_; }
   std::vector<CUGRPin> getPins() const { return pins_; }
   int getNumPins() const { return pins_.size(); }
   std::string getName() const { return db_net_->getName(); }
+  LayerRange getLayerRange() const { return layer_range_; }
+  void setPins(std::vector<CUGRPin> pins) { pins_ = std::move(pins); }
+  void setLayerRange(LayerRange layer_range) { layer_range_ = layer_range; }
 
  private:
   const int index_;
   odb::dbNet* db_net_;
   std::vector<CUGRPin> pins_;
+  LayerRange layer_range_;
 };
 
 }  // namespace grt

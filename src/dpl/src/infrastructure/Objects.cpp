@@ -549,7 +549,7 @@ void Edge::addPin(Pin* pin)
 }
 void Edge::removePin(Pin* pin)
 {
-  pins_.erase(std::remove(pins_.begin(), pins_.end(), pin), pins_.end());
+  std::erase(pins_, pin);
 }
 uint64_t Edge::hpwl() const
 {

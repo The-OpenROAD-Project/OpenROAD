@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
+#include <set>
 #include <utility>
 
 #include "grt/GRoute.h"
@@ -27,7 +29,8 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     int min_layer, max_layer;
     grouter_->setDbBlock(block);
     grouter_->getMinMaxLayer(min_layer, max_layer);
-    grouter_->initFastRoute(min_layer, max_layer);
+    // Designs with invalid pin placement can still be evaluated by RUDY.
+    grouter_->initFastRoute(min_layer, max_layer, false);
   }
 
   // The wire width is the harmonic average pitch divided by the number of
@@ -45,7 +48,11 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     }
     pitch_terms += 1.0 / pitch;
   }
-  wire_width_ = (1 / pitch_terms) * 1.25;  // = harm. mean / num_routing_layers
+
+  if (pitch_terms != 0) {
+    wire_width_
+        = (1 / pitch_terms) * 1.25;  // = harm. mean / num_routing_layers
+  }
 
   int x_grids, y_grids;
   grouter_->getGridSize(x_grids, y_grids);
@@ -104,7 +111,7 @@ void Rudy::getResourceReductions()
   }
 }
 
-void Rudy::calculateRudy()
+void Rudy::calculateRudy(std::optional<std::set<odb::dbNet*>*> selection)
 {
   // Clear previous computation
   for (auto& grid_column : grid_) {
@@ -115,12 +122,23 @@ void Rudy::calculateRudy()
 
   getResourceReductions();
 
-  // refer: https://ieeexplore.ieee.org/document/4211973
-  for (auto net : block_->getNets()) {
-    if (!net->getSigType().isSupply()) {
-      const auto net_rect = net->getTermBBox();
-      processIntersectionSignalNet(net_rect);
+  if (selection.has_value()) {
+    for (auto net : *selection.value()) {
+      processNet(net);
     }
+  } else {
+    for (auto net : block_->getNets()) {
+      processNet(net);
+    }
+  }
+}
+
+void Rudy::processNet(odb::dbNet* net)
+{
+  // refer: https://ieeexplore.ieee.org/document/4211973
+  if (!net->getSigType().isSupply()) {
+    const auto net_rect = net->getTermBBox();
+    processIntersectionSignalNet(net_rect);
   }
 }
 

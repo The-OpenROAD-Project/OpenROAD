@@ -24,12 +24,32 @@
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 #include "util/journal.h"
+#include "util/symmetry.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 
 using utl::DPL;
 
 namespace dpl {
+
+// Helper to check if a cell's master allows the orientation required by the row
+static bool checkMasterSymmetry(Architecture* arch, const Node* nd, int rowId)
+{
+  const auto* rowPtr = arch->getRow(rowId);
+  const unsigned rowOri = rowPtr->getOrient();
+
+  auto* dbMaster = nd->getDbInst()->getMaster();
+  unsigned masterSym = DetailedOrient::getMasterSymmetry(dbMaster);
+
+  using odb::dbOrientType;
+  if (rowOri == dbOrientType::R0 || rowOri == dbOrientType::MY) {
+    return true;
+  }
+  if (rowOri == dbOrientType::MX || rowOri == dbOrientType::R180) {
+    return (masterSym & Symmetry_X) != 0;
+  }
+  return false;
+}
 
 DetailedMgr::DetailedMgr(Architecture* arch,
                          Network* network,
@@ -199,7 +219,7 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
       continue;
     }
 
-    std::sort(blockages.begin(), blockages.end(), compareBlockages());
+    std::ranges::sort(blockages, compareBlockages());
 
     std::stack<Blockage> s;
     s.push(blockages[0]);
@@ -225,9 +245,8 @@ void DetailedMgr::findBlockages(const bool includeRouteBlockages)
 
     // Intervals need to be sorted, but they are currently in reverse order. Can
     // either resort or reverse.
-    std::sort(blockages.begin(),
-              blockages.end(),
-              compareBlockages());  // Sort to get them left to right.
+    std::ranges::sort(blockages,
+                      compareBlockages());  // Sort to get them left to right.
   }
 }
 
@@ -513,6 +532,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
     if (nd->getGroupId() != curr->getRegId()) {
       continue;
     }
+    if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
+      continue;
+    }
 
     // Work with left edge.
     const DbuX x1 = curr->getMinX();
@@ -550,6 +572,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
         for (DetailedSeg* curr : segsInRow_[below]) {
           // Updated for regions.
           if (nd->getGroupId() != curr->getRegId()) {
+            continue;
+          }
+          if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
             continue;
           }
 
@@ -590,6 +615,9 @@ DetailedSeg* DetailedMgr::findClosestSegment(const Node* nd)
         for (DetailedSeg* curr : segsInRow_[above]) {
           // Updated for regions.
           if (nd->getGroupId() != curr->getRegId()) {
+            continue;
+          }
+          if (!checkMasterSymmetry(arch_, nd, curr->getRowId())) {
             continue;
           }
 
@@ -699,6 +727,10 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
       continue;
     }
 
+    if (!checkMasterSymmetry(arch_, nd, r)) {
+      continue;
+    }
+
     // Scan the segments in this row and look for segments in the required
     // number of rows above and below that result in non-zero interval.
     const int b = r;
@@ -768,10 +800,8 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         const DbuX dx = abs(xc - xx);
 
         if (best1.empty() || (dx.v + dy.v < disp1)) {
-          if (true) {
-            best1 = candidates_i;
-            disp1 = dx.v + dy.v;
-          }
+          best1 = candidates_i;
+          disp1 = dx.v + dy.v;
         }
         if (best2.empty() || (dx.v + dy.v < disp2)) {
           if (nd->getWidth() <= width) {
@@ -1171,7 +1201,7 @@ int DetailedMgr::checkOverlapInSegments()
 
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesX());
+    std::ranges::sort(temp, compareNodesX());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndi = temp[j - 1];
@@ -1224,7 +1254,7 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (int j = 1; j < temp.size(); j++) {
       const Node* ndl = temp[j - 1];
@@ -1420,7 +1450,7 @@ int DetailedMgr::checkRegionAssignment()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesL());
+    std::ranges::sort(temp, compareNodesL());
 
     for (const Node* ndi : temp) {
       if (ndi->getGroupId() != segments_[s]->getRegId()) {
@@ -1825,6 +1855,14 @@ bool DetailedMgr::alignPos(const Node* ndi, DbuX& xi, const DbuX xl, DbuX xr)
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+bool DetailedMgr::checkSiteOrientation(Node* node, DbuX x, DbuY y)
+{
+  odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+  const auto grid_x = grid_->gridX(x);
+  const auto grid_y = grid_->gridSnapDownY(y);
+  return grid_->getSiteOrientation(grid_x, grid_y, site).has_value();
+}
+
 bool DetailedMgr::shift(std::vector<Node*>& cells,
                         std::vector<DbuX>& targetLeft,
                         std::vector<DbuX>& posLeft,
@@ -1866,7 +1904,7 @@ bool DetailedMgr::shift(std::vector<Node*>& cells,
   // Change cell widths to be in terms of number of sites.
   std::vector<int> swid;
   swid.resize(ncells);
-  std::fill(swid.begin(), swid.end(), 0);
+  std::ranges::fill(swid, 0);
   int rsites = 0;
   for (int i = 0; i < ncells; i++) {
     const Node* ndi = cells[i];
@@ -1959,7 +1997,7 @@ bool DetailedMgr::shift(std::vector<Node*>& cells,
       // Cost if site used; avoid if invalid (too far left or right).
       const int ii = i - prev_wid;
       const int jj = j - 1;
-      if (!(ii < 0 || site_id + curr_wid - 1 > i1)) {
+      if (ii >= 0 && site_id + curr_wid - 1 <= i1) {
         const double c = tcost[ii][jj] + cost[i][j];
         if (c < tcost[i][j]) {
           tcost[i][j] = c;
@@ -2186,6 +2224,11 @@ bool DetailedMgr::tryMove(Node* ndi,
 {
   // Based on the input, call an appropriate routine to try
   // and generate a move.
+  if (!checkMasterSymmetry(arch_, ndi, segments_[sj]->getRowId())) {
+    rejectMove();
+    return false;
+  }
+
   if (arch_->getCellHeightInRows(ndi) == 1) {
     // Single height cell.
     if (si != sj) {
@@ -2220,6 +2263,10 @@ bool DetailedMgr::trySwap(Node* ndi,
                           const DbuY yj,
                           const int sj)
 {
+  if (!checkMasterSymmetry(arch_, ndi, segments_[sj]->getRowId())) {
+    rejectMove();
+    return false;
+  }
   if (trySwap1(ndi, xi, yi, si, xj, yj, sj)) {
     return verifyMove();
   }
@@ -2468,6 +2515,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2486,6 +2534,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
     }
+
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
       return false;
     }
@@ -2647,16 +2696,13 @@ bool DetailedMgr::tryMove3(Node* ndi,
       old_segs.push_back(seg->getSegId());
     }
 
-    if (!addToMoveList(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       old_segs,
-                       xj,
-                       arch_->getRow(rb)->getBottom(),
-                       segs)) {
-      return false;
-    }
-    return true;
+    return addToMoveList(ndi,
+                         ndi->getLeft(),
+                         ndi->getBottom(),
+                         old_segs,
+                         xj,
+                         arch_->getRow(rb)->getBottom(),
+                         segs);
   }
   return false;
 }
@@ -2693,6 +2739,10 @@ bool DetailedMgr::trySwap1(Node* ndi,
   if (ndj == ndi || ndj == nullptr) {
     return false;
   }
+  if (!checkMasterSymmetry(arch_, ndj, segments_[si]->getRowId())) {
+    return false;
+  }
+
   if (arch_->getCellHeightInRows(ndi) != 1
       || arch_->getCellHeightInRows(ndj) != 1) {
     return false;
@@ -2708,8 +2758,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
       = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndj);
   const int ix_j = (int) (it_j - cellsInSeg_[sj].begin());
 
-  const bool adjacent
-      = ((si == sj) && (ix_i + 1 == ix_j || ix_j + 1 == ix_i)) ? true : false;
+  const bool adjacent = (si == sj) && (ix_i + 1 == ix_j || ix_j + 1 == ix_i);
 
   const Node* prev;
   const Node* next;
@@ -2873,6 +2922,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
   const DbuX x2 = ndj->getLeft();
   const DbuY y2 = ndj->getBottom();
   // Build move list.
+
   if (!addToMoveList(ndi, x1, y1, si, xj, y2, sj)) {
     return false;
   }
@@ -2902,6 +2952,10 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 {
   // Limit maximum number of cells that can move at once.
   if (journal_.size() >= moveLimit_) {
+    return false;
+  }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
     return false;
   }
 
@@ -2946,6 +3000,11 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   if (journal_.size() >= moveLimit_) {
     return false;
   }
+
+  if (!checkSiteOrientation(ndi, newLeft, newBottom)) {
+    return false;
+  }
+
   // commit move and add to journal
   eraseFromGrid(ndi);
   for (const auto& curSeg : curSegs) {
@@ -2989,6 +3048,7 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_x = grid_->gridX(node);
   const auto grid_y = grid_->gridSnapDownY(node);
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
+
   const auto orientation
       = grid_->getSiteOrientation(grid_x, grid_y, site).value();
   grid_->paintPixel(node, grid_x, grid_y);

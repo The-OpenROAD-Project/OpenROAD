@@ -3,11 +3,10 @@
 
 #pragma once
 
-#include <Eigen/IterativeLinearSolvers>
-#include <Eigen/SparseCore>
 #include <memory>
 
-#include "graphics.h"
+#include "Eigen/IterativeLinearSolvers"
+#include "Eigen/SparseCore"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "utl/Logger.h"

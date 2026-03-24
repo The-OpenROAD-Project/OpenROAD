@@ -2,6 +2,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45_stdcell.lef, created 135 library cells
 [INFO ODB-0227] LEF file: array_tile.lef, created 1 library cells
 [INFO IFP-0001] Added 3528 rows of 26000 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 4940.000 4940.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 4940.000 4939.200 ) um
+[INFO IFP-0102] Core area:                     24399648.000 um^2
+[INFO IFP-0103] Total instances area:          20260174.500 um^2
+[INFO IFP-0104] Effective utilization:                0.830
+[INFO IFP-0105] Number of instances:                   2475
 [INFO CTS-0050] Root buffer is BUF_X4.
 [INFO CTS-0051] Sink buffer is BUF_X4.
 [INFO CTS-0052] The following clock buffers will be used for CTS:
@@ -21,28 +27,28 @@
 [INFO CTS-0204] A clustering solution was found from clustering size of 4 and clustering diameter of 600.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 122.
-[INFO CTS-0024]  Normalized sink region: [(1.43857, 44.2757), (661.439, 680.704)].
+[INFO CTS-0024]  Normalized sink region: [(1.23857, 44.2857), (661.239, 680.704)].
 [INFO CTS-0025]     Width:  660.0000.
-[INFO CTS-0026]     Height: 636.4286.
+[INFO CTS-0026]     Height: 636.4186.
  Level 1
     Direction: Horizontal
     Sinks per sub-region: 61
-    Sub-region size: 330.0000 X 636.4286
+    Sub-region size: 330.0000 X 636.4186
 [INFO CTS-0034]     Segment length (rounded): 166.
  Level 2
     Direction: Vertical
     Sinks per sub-region: 31
-    Sub-region size: 330.0000 X 318.2143
+    Sub-region size: 330.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 160.
  Level 3
     Direction: Horizontal
     Sinks per sub-region: 16
-    Sub-region size: 165.0000 X 318.2143
+    Sub-region size: 165.0000 X 318.2093
 [INFO CTS-0034]     Segment length (rounded): 82.
  Level 4
     Direction: Vertical
     Sinks per sub-region: 8
-    Sub-region size: 165.0000 X 159.1071
+    Sub-region size: 165.0000 X 159.1046
 [INFO CTS-0034]     Segment length (rounded): 80.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 122.
@@ -100,34 +106,44 @@
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 225
 [INFO CTS-0100]  Leaf buffers 103
-[INFO CTS-0101]  Average sink wire length 9415.86 um
+[INFO CTS-0101]  Average sink wire length 9413.40 um
 [INFO CTS-0102]  Path depth 16 - 17
-[INFO CTS-0207]  Leaf load cells 4
+[INFO CTS-0207]  Dummy loads inserted 0
 [INFO CTS-0098] Clock net "clk_regs"
 [INFO CTS-0099]  Sinks 2254
 [INFO CTS-0100]  Leaf buffers 227
 [INFO CTS-0101]  Average sink wire length 4117.74 um
 [INFO CTS-0102]  Path depth 17 - 17
-[INFO CTS-0207]  Leaf load cells 4
+[INFO CTS-0207]  Dummy loads inserted 4
 [INFO CTS-0033] Balancing latency for clock clk
 [INFO CTS-0036]  inserted 4 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 4
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 42 long wires.
-[INFO RSZ-0048] Inserted 115 buffers in 42 nets.
+[INFO RSZ-0048] Inserted 92 buffers in 42 nets.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                    2907
+Diamond Move Success:           2907 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement       4188.8 u
-average displacement        1.3 u
-max displacement          142.4 u
-original HPWL          193616.0 u
-legalized HPWL         194656.0 u
-delta HPWL                    1 %
+total displacement       3754.4 u
+average displacement        1.2 u
+max displacement          141.1 u
+original HPWL          193681.5 u
+legalized HPWL         194510.2 u
+delta HPWL                    0 %
 
 Clock clk
-   1.03 source latency inst_5_4/clk ^
-  -1.14 target latency inst_6_4/clk ^
+   1.25 source latency inst_3_13/clk ^
+  -1.13 target latency inst_5_13/clk ^
    0.00 CRPR
 --------------
-  -0.12 setup skew
+   0.12 setup skew
 

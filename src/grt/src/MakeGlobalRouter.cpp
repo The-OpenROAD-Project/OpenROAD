@@ -9,6 +9,7 @@
 #include "grt/GlobalRouter.h"
 #include "heatMap.h"
 #include "heatMapRudy.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {
@@ -22,8 +23,8 @@ extern const char* grt_tcl_inits[];
 
 void initGui(grt::GlobalRouter* grt, odb::dbDatabase* db, utl::Logger* logger)
 {
-  grt->initGui(std::make_unique<grt::RoutingCongestionDataSource>(logger, db),
-               std::make_unique<grt::RUDYDataSource>(logger, grt, db));
+  grt->initGui(grt::registerRoutingCongestionHeatMapSource(logger, db),
+               grt::registerRudyHeatMapSource(logger, grt, db));
 }
 
 void initTcl(Tcl_Interp* tcl_interp)

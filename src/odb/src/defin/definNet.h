@@ -3,13 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 
 #include "definBase.h"
 #include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -33,8 +33,6 @@ class definNet : public definBase
   dbWireShapeType _wire_shape_type{dbWireShapeType::NONE};
   int _prev_x{0};
   int _prev_y{0};
-  int _width{0};
-  int _point_cnt{0};
   dbTechLayerRule* _taper_rule{nullptr};
   dbTechNonDefaultRule* _non_default_rule{nullptr};
   dbTechNonDefaultRule* _rule_for_path{nullptr};
@@ -46,7 +44,7 @@ class definNet : public definBase
 
  public:
   int _net_cnt{0};
-  uint _update_cnt{0};
+  uint32_t _update_cnt{0};
   int _net_iterm_cnt{0};
 
   /// Net interface methods

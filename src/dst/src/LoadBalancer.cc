@@ -4,14 +4,16 @@
 #include "LoadBalancer.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <mutex>
 #include <queue>
 #include <string>
 #include <vector>
 
+#include "BalancerConnection.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/thread/thread.hpp"
@@ -25,7 +27,11 @@ void LoadBalancer::start_accept()
 {
   if (jobs_ != 0 && jobs_ % 100 == 0) {
     logger_->info(utl::DST, 7, "Processed {} jobs", jobs_);
-    auto copy = workers_;
+    WorkerQueue copy;
+    {
+      absl::MutexLock lock(&workers_mutex_);
+      copy = workers_;
+    }
     while (!copy.empty()) {
       auto worker = copy.top();
       logger_->report("Worker {}/{} handled {} jobs",
@@ -75,7 +81,7 @@ LoadBalancer::~LoadBalancer()
 
 bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   bool valid_worker_state = true;
   if (!broadcastData_.empty()) {
     for (auto data : broadcastData_) {
@@ -98,14 +104,14 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
     }
   }
   if (valid_worker_state) {
-    workers_.push(Worker(ip::make_address(ip), port, 0));
+    workers_.emplace(ip::make_address(ip), port, 0);
   }
   return valid_worker_state;
 }
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  absl::MutexLock lock(&workers_mutex_);
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -116,25 +122,25 @@ void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
   }
   workers_.swap(new_queue);
 }
-void LoadBalancer::getNextWorker(ip::address& ip, unsigned short& port)
+void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
+  absl::MutexLock lock(&workers_mutex_);
   if (!workers_.empty()) {
     Worker w = workers_.top();
     workers_.pop();
     ip = w.ip;
     port = w.port;
-    if (w.priority != std::numeric_limits<unsigned short>::max()) {
+    if (w.priority != std::numeric_limits<uint16_t>::max()) {
       w.priority++;
     }
     workers_.push(w);
   }
 }
 
-void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
+void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
-  std::lock_guard<std::mutex> lock(workers_mutex_);
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  absl::MutexLock lock(&workers_mutex_);
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -146,14 +152,9 @@ void LoadBalancer::punishWorker(const ip::address& ip, unsigned short port)
   workers_.swap(new_queue);
 }
 
-void LoadBalancer::removeWorker(const ip::address& ip,
-                                unsigned short port,
-                                bool lock)
+void LoadBalancer::removeWorkerLocked(const ip::address& ip, uint16_t port)
 {
-  if (lock) {
-    workers_mutex_.lock();
-  }
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -163,12 +164,9 @@ void LoadBalancer::removeWorker(const ip::address& ip,
     new_queue.push(worker);
   }
   workers_.swap(new_queue);
-  if (lock) {
-    workers_mutex_.unlock();
-  }
 }
 
-void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
+void LoadBalancer::lookUpWorkers(const char* domain, uint16_t port)
 {
   asio::io_context ios;
   std::vector<Worker> workers_set;
@@ -189,7 +187,7 @@ void LoadBalancer::lookUpWorkers(const char* domain, unsigned short port)
     int new_workers_count = 0;
     for (const auto& entry : results) {
       auto discovered_worker = Worker(entry.endpoint().address(), port, 0);
-      if (std::find(workers_set.begin(), workers_set.end(), discovered_worker)
+      if (std::ranges::find(workers_set, discovered_worker)
           == workers_set.end()) {
         workers_set.push_back(discovered_worker);
         new_workers.push_back(discovered_worker);

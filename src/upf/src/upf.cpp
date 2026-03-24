@@ -3,6 +3,7 @@
 
 #include "upf/upf.h"
 
+#include <cctype>
 #include <cmath>
 #include <limits>
 #include <map>
@@ -349,7 +350,8 @@ static odb::dbPowerDomain* match_module_to_domain(
 
   for (auto const& path : path_to_domain) {
     std::string name = path.first;
-    if (current_path.find(name) == 0 && name.length() > longest_prefix_length) {
+    if (current_path.starts_with(name)
+        && name.length() > longest_prefix_length) {
       longest_prefix_length = name.length();
       longest_prefix = std::move(name);
     }
@@ -402,16 +404,15 @@ static bool check_isolation_match(sta::FuncExpr* func,
   }
 
   sta::FuncExpr* enable_func = (enable_is_left) ? func->left() : func->right();
-  bool enable_is_inverted
-      = (enable_func->op() == sta::FuncExpr::Operator::op_not);
+  bool enable_is_inverted = (enable_func->op() == sta::FuncExpr::Op::not_);
   bool new_enable_sense = (enable_is_inverted) ? !sense : sense;
 
   switch (func->op()) {
-    case sta::FuncExpr::Operator::op_or:
+    case sta::FuncExpr::Op::or_:
       invert_output = !clamp_val;
       invert_control = !new_enable_sense;
       break;
-    case sta::FuncExpr::Operator::op_and:
+    case sta::FuncExpr::Op::and_:
       invert_output = clamp_val;
       invert_control = new_enable_sense;
       break;
@@ -1252,7 +1253,7 @@ bool eval_upf(sta::dbNetwork* network, utl::Logger* logger, odb::dbBlock* block)
   instantiate_logic_ports(logger, block);
 
   auto pds = block->getPowerDomains();
-  if (pds.size() == 0) {  // No power domains defined
+  if (pds.empty()) {  // No power domains defined
     return true;
   }
 
@@ -1467,7 +1468,7 @@ bool create_or_update_level_shifter(
   for (auto& c : upper_case_func_eqv) {
     c = toupper(c);
   }
-  ls->setUseFunctionalEquivalence(upper_case_func_eqv == "TRUE" ? true : false);
+  ls->setUseFunctionalEquivalence(upper_case_func_eqv == "TRUE");
 
   return true;
 }

@@ -3,95 +3,95 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "default_valid_",
+      "name": "default_valid",
       "type": "bit"
     },
     {
-      "name": "same_mask_",
+      "name": "same_mask",
       "type": "bit"
     },
     {
-      "name": "same_net_",
+      "name": "same_net",
       "type": "bit"
     },
     {
-      "name": "same_metal_",
+      "name": "same_metal",
       "type": "bit"
     },
     {
-      "name": "same_via_",
+      "name": "same_via",
       "type": "bit"
     },
     {
-      "name": "layer_valid_",
+      "name": "layer_valid",
       "type": "bit"
     },
     {
-      "name": "no_stack_",
+      "name": "no_stack",
       "type": "bit"
     },
     {
-      "name": "non_zero_enclosure_",
+      "name": "non_zero_enclosure",
       "type": "bit"
     },
     {
-      "name": "prl_for_aligned_cut_",
+      "name": "prl_for_aligned_cut",
       "type": "bit"
     },
     {
-      "name": "center_to_center_valid_",
+      "name": "center_to_center_valid",
       "type": "bit"
     },
     {
-      "name": "center_and_edge_valid_",
+      "name": "center_and_edge_valid",
       "type": "bit"
     },
     {
-      "name": "no_prl_",
+      "name": "no_prl",
       "type": "bit"
     },
     {
-      "name": "prl_valid_",
+      "name": "prl_valid",
       "type": "bit"
     },
     {
-      "name": "max_x_y_",
+      "name": "max_x_y",
       "type": "bit"
     },
     {
-      "name": "end_extension_valid_",
+      "name": "end_extension_valid",
       "type": "bit"
     },
     {
-      "name": "side_extension_valid_",
+      "name": "side_extension_valid",
       "type": "bit"
     },
     {
-      "name": "exact_aligned_spacing_valid_",
+      "name": "exact_aligned_spacing_valid",
       "type": "bit"
     },
     {
-      "name": "horizontal_",
+      "name": "horizontal",
       "type": "bit"
     },
     {
-      "name": "prl_horizontal_",
+      "name": "prl_horizontal",
       "type": "bit"
     },
     {
-      "name": "vertical_",
+      "name": "vertical",
       "type": "bit"
     },
     {
-      "name": "prl_vertical_",
+      "name": "prl_vertical",
       "type": "bit"
     },
     {
-      "name": "non_opposite_enclosure_spacing_valid_",
+      "name": "non_opposite_enclosure_spacing_valid",
       "type": "bit"
     },
     {
-      "name": "opposite_enclosure_resize_spacing_valid_",
+      "name": "opposite_enclosure_resize_spacing_valid",
       "type": "bit"
     },
     {
@@ -210,7 +210,7 @@
     },
     {
       "name": "row_map_",
-      "type": "std::map<std::string, uint>",
+      "type": "std::map<std::string, uint32_t>",
       "flags": [
         "no-set",
         "no-get",
@@ -219,7 +219,7 @@
     },
     {
       "name": "col_map_",
-      "type": "std::map<std::string, uint>",
+      "type": "std::map<std::string, uint32_t>",
       "flags": [
         "no-set",
         "no-get",

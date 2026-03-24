@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -65,6 +66,7 @@ cc_library(
         "src/process_ext.cpp",
     ],
     hdrs = [
+        "include/rcx/array1.h",
         "include/rcx/box.h",
         "include/rcx/dbUtil.h",
         "include/rcx/ext.h",
@@ -82,7 +84,6 @@ cc_library(
         "include/rcx/ext_options.h",
         "include/rcx/extprocess.h",
         "include/rcx/grids.h",
-        "include/rcx/name.h",
         "include/rcx/rcx.h",
         "include/rcx/util.h",
     ],
@@ -117,7 +118,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -163,4 +164,18 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/OpenRCX.tcl",
+        "src/OpenRCX_process.tcl",
+    ],
+    visibility = ["//src/rcx/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rcx/test:__pkg__"],
 )

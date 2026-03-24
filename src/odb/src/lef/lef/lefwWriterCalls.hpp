@@ -200,6 +200,9 @@ extern void lefwSetLogFunction(LEFI_LOG_FUNCTION);
 using LEFI_WARNING_LOG_FUNCTION = void (*)(const char*);
 extern void lefwSetWarningLogFunction(LEFI_WARNING_LOG_FUNCTION);
 
+extern int lefwHasInit;
+extern int lefwHasInitCbk;
+
 END_LEF_PARSER_NAMESPACE
 
 #endif

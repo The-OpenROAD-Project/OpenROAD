@@ -14,6 +14,7 @@
 #include "PlacementDRC.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
+#include "infrastructure/architecture.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 namespace dpl {
@@ -141,6 +142,10 @@ void Network::addEdge(odb::dbNet* net)
     connect(ptr, edge);
   }
   for (auto bterm : net->getBTerms()) {
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      // skip unplaced terminals
+      continue;
+    }
     Pin* ptr = addPin(bterm);
     connect(ptr, getNode(bterm));
     connect(ptr, edge);
@@ -168,9 +173,9 @@ std::vector<odb::Rect> difference(const odb::Rect& parent_segment,
   bool is_horizontal = parent_segment.yMin() == parent_segment.yMax();
   std::vector<odb::Rect> sorted_segs = segs;
   // Sort segments by start coordinate
-  std::sort(
-      sorted_segs.begin(),
-      sorted_segs.end(),
+  std::ranges::sort(
+      sorted_segs,
+
       [is_horizontal](const odb::Rect& a, const odb::Rect& b) {
         return (is_horizontal ? a.xMin() < b.xMin() : a.yMin() < b.yMin());
       });

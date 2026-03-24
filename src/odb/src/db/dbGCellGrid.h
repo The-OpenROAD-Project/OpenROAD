@@ -4,15 +4,14 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <map>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 // User Code Begin Includes
-#include "dbVector.h"
 #include "odb/dbMatrix.h"
 // User Code End Includes
 
@@ -27,9 +26,9 @@ class _dbTechLayer;
 
 struct dbGCellGridFlags
 {
-  bool x_grid_valid_ : 1;
-  bool y_grid_valid_ : 1;
-  uint spare_bits_ : 30;
+  bool x_grid_valid : 1;
+  bool y_grid_valid : 1;
+  uint32_t spare_bits : 30;
 };
 
 class _dbGCellGrid : public _dbObject
@@ -62,7 +61,6 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);
 // User Code Begin General
 dbIStream& operator>>(dbIStream& stream, dbGCellGrid::GCellData& obj);
-dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj);
 // User Code End General
 }  // namespace odb
 // Generator Code End Header

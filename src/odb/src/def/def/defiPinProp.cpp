@@ -96,7 +96,7 @@ void defiPinProp::Destroy()
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
-  free((char*) (propTypes_));
+  free(propTypes_);
 }
 
 void defiPinProp::clear()
@@ -177,7 +177,7 @@ void defiPinProp::addProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;
@@ -221,7 +221,7 @@ void defiPinProp::addNumProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;

@@ -14,11 +14,11 @@
     },
     {
       "type": "bit",
-      "name": "exact_width_valid_"
+      "name": "exact_width_valid"
     },
     {
       "type": "bit",
-      "name": "wrong_dir_spacing_valid_"
+      "name": "wrong_dir_spacing_valid"
     },
     {
       "type": "int",
@@ -27,7 +27,7 @@
     },
     {
       "type": "bit",
-      "name": "opposite_width_valid_"
+      "name": "opposite_width_valid"
     },
     {
       "type": "int",
@@ -36,7 +36,7 @@
     },
     {
       "type": "bit",
-      "name": "within_valid_"
+      "name": "within_valid"
     },
     {
       "type": "int",
@@ -45,7 +45,7 @@
     },
     {
       "type": "bit",
-      "name": "wrong_dir_within_valid_"
+      "name": "wrong_dir_within_valid"
     },
     {
       "type": "int",
@@ -54,11 +54,11 @@
     },
     {
       "type": "bit",
-      "name": "same_mask_valid_"
+      "name": "same_mask_valid"
     },
     {
       "type": "bit",
-      "name": "except_exact_width_valid_"
+      "name": "except_exact_width_valid"
     },
     {
       "type": "int",
@@ -72,7 +72,7 @@
     },
     {
       "type": "bit",
-      "name": "fill_concave_corner_valid_"
+      "name": "fill_concave_corner_valid"
     },
     {
       "type": "int",
@@ -81,11 +81,11 @@
     },
     {
       "type": "bit",
-      "name": "withcut_valid_"
+      "name": "withcut_valid"
     },
     {
       "type": "bit",
-      "name": "cut_class_valid_"
+      "name": "cut_class_valid"
     },
     {
       "type": "int",
@@ -94,7 +94,7 @@
     },
     {
       "type": "bit",
-      "name": "with_cut_above_valid_"
+      "name": "with_cut_above_valid"
     },
     {
       "type": "int",
@@ -103,7 +103,7 @@
     },
     {
       "type": "bit",
-      "name": "enclosure_end_valid_"
+      "name": "enclosure_end_valid"
     },
     {
       "type": "int",
@@ -112,7 +112,7 @@
     },
     {
       "type": "bit",
-      "name": "enclosure_end_within_valid_"
+      "name": "enclosure_end_within_valid"
     },
     {
       "type": "int",
@@ -121,7 +121,7 @@
     },
     {
       "type": "bit",
-      "name": "end_prl_spacing_valid_"
+      "name": "end_prl_spacing_valid"
     },
     {
       "type": "int",
@@ -130,7 +130,7 @@
     },
     {
       "type": "bit",
-      "name": "prl_valid_"
+      "name": "prl_valid"
     },
     {
       "type": "int",
@@ -139,7 +139,7 @@
     },
     {
       "type": "bit",
-      "name": "end_to_end_valid_"
+      "name": "end_to_end_valid"
     },
     {
       "type": "int",
@@ -148,7 +148,7 @@
     },
     {
       "type": "bit",
-      "name": "cut_spaces_valid_"
+      "name": "cut_spaces_valid"
     },
     {
       "type": "int",
@@ -162,7 +162,7 @@
     },
     {
       "type": "bit",
-      "name": "extension_valid_"
+      "name": "extension_valid"
     },
     {
       "type": "int",
@@ -171,7 +171,7 @@
     },
     {
       "type": "bit",
-      "name": "wrong_dir_extension_valid_"
+      "name": "wrong_dir_extension_valid"
     },
     {
       "type": "int",
@@ -180,7 +180,7 @@
     },
     {
       "type": "bit",
-      "name": "other_end_width_valid_"
+      "name": "other_end_width_valid"
     },
     {
       "type": "int",
@@ -189,7 +189,7 @@
     },
     {
       "type": "bit",
-      "name": "max_length_valid_"
+      "name": "max_length_valid"
     },
     {
       "type": "int",
@@ -198,7 +198,7 @@
     },
     {
       "type": "bit",
-      "name": "min_length_valid_"
+      "name": "min_length_valid"
     },
     {
       "type": "int",
@@ -207,19 +207,19 @@
     },
     {
       "type": "bit",
-      "name": "two_sides_valid_"
+      "name": "two_sides_valid"
     },
     {
       "type": "bit",
-      "name": "equal_rect_width_valid_"
+      "name": "equal_rect_width_valid"
     },
     {
       "type": "bit",
-      "name": "parallel_edge_valid_"
+      "name": "parallel_edge_valid"
     },
     {
       "type": "bit",
-      "name": "subtract_eol_width_valid_"
+      "name": "subtract_eol_width_valid"
     },
     {
       "type": "int",
@@ -233,7 +233,7 @@
     },
     {
       "type": "bit",
-      "name": "par_prl_valid_"
+      "name": "par_prl_valid"
     },
     {
       "type": "int",
@@ -242,7 +242,7 @@
     },
     {
       "type": "bit",
-      "name": "par_min_length_valid_"
+      "name": "par_min_length_valid"
     },
     {
       "type": "int",
@@ -251,31 +251,31 @@
     },
     {
       "type": "bit",
-      "name": "two_edges_valid_"
+      "name": "two_edges_valid"
     },
     {
       "type": "bit",
-      "name": "same_metal_valid_"
+      "name": "same_metal_valid"
     },
     {
       "type": "bit",
-      "name": "non_eol_corner_only_valid_"
+      "name": "non_eol_corner_only_valid"
     },
     {
       "type": "bit",
-      "name": "parallel_same_mask_valid_"
+      "name": "parallel_same_mask_valid"
     },
     {
       "type": "bit",
-      "name": "enclose_cut_valid_"
+      "name": "enclose_cut_valid"
     },
     {
       "type": "bit",
-      "name": "below_valid_"
+      "name": "below_valid"
     },
     {
       "type": "bit",
-      "name": "above_valid_"
+      "name": "above_valid"
     },
     {
       "type": "int",
@@ -284,7 +284,7 @@
     },
     {
       "type": "bit",
-      "name": "cut_spacing_valid_"
+      "name": "cut_spacing_valid"
     },
     {
       "type": "int",
@@ -293,19 +293,19 @@
     },
     {
       "type": "bit",
-      "name": "all_cuts_valid_"
+      "name": "all_cuts_valid"
     },
     {
       "type": "bit",
-      "name": "to_concave_corner_valid_"
+      "name": "to_concave_corner_valid"
     },
     {
       "type": "bit",
-      "name": "min_adjacent_length_valid_"
+      "name": "min_adjacent_length_valid"
     },
     {
       "type": "bit",
-      "name": "two_min_adj_length_valid_"
+      "name": "two_min_adj_length_valid"
     },
     {
       "type": "int",
@@ -324,7 +324,7 @@
     },
     {
       "type": "bit",
-      "name": "to_notch_length_valid_"
+      "name": "to_notch_length_valid"
     },
     {
       "type": "int",

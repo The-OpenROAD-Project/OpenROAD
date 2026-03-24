@@ -14,29 +14,29 @@ namespace odb {
 
 DefOut::DefOut(utl::Logger* logger)
 {
-  _writer = std::make_unique<Impl>(logger);
+  writer_ = std::make_unique<Impl>(logger);
 }
 
 DefOut::~DefOut() = default;
 
 void DefOut::selectNet(dbNet* net)
 {
-  _writer->selectNet(net);
+  writer_->selectNet(net);
 }
 
 void DefOut::selectInst(dbInst* inst)
 {
-  _writer->selectInst(inst);
+  writer_->selectInst(inst);
 }
 
 void DefOut::setVersion(Version v)
 {
-  _writer->setVersion(v);
+  writer_->setVersion(v);
 }
 
 bool DefOut::writeBlock(dbBlock* block, const char* def_file)
 {
-  return _writer->writeBlock(block, def_file);
+  return writer_->writeBlock(block, def_file);
 }
 
 }  // namespace odb

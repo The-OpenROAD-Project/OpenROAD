@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "odb/db.h"
@@ -22,10 +23,10 @@ class dbExtControl : public dbObject
   bool _overCell;
   bool _extracted;
   bool _lefRC;
-  uint _cornerCnt;
-  uint _ccPreseveGeom;
-  uint _ccUp;
-  uint _couplingFlag;
+  uint32_t _cornerCnt;
+  uint32_t _ccPreseveGeom;
+  uint32_t _ccUp;
+  uint32_t _couplingFlag;
   double _coupleThreshold;
   double _mergeResBound;
   bool _mergeViaRes;
@@ -33,8 +34,8 @@ class dbExtControl : public dbObject
   bool _exttreePreMerg;
   double _exttreeMaxcap;
   bool _useDbSdb;
-  uint _CCnoPowerSource;
-  uint _CCnoPowerTarget;
+  uint32_t _ccNoPowerSource;
+  uint32_t _ccNoPowerTarget;
   bool _usingMetalPlanes;
   std::string _ruleFileName;
   std::string _extractedCornerList;

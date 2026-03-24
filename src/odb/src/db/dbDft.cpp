@@ -4,18 +4,22 @@
 // Generator Code Begin Cpp
 #include "dbDft.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbScanChain.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbDft>;
 
 bool _dbDft::operator==(const _dbDft& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (scan_inserted_ != rhs.scan_inserted_) {
     return false;
   }
@@ -27,6 +31,7 @@ bool _dbDft::operator==(const _dbDft& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDft::operator<(const _dbDft& rhs) const
@@ -76,9 +81,9 @@ void _dbDft::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_pins_->collectMemInfo(info.children_["scan_pins_"]);
+  scan_pins_->collectMemInfo(info.children["scan_pins_"]);
 
-  scan_chains_->collectMemInfo(info.children_["scan_chains_"]);
+  scan_chains_->collectMemInfo(info.children["scan_chains_"]);
 }
 
 _dbDft::~_dbDft()

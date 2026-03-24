@@ -6,18 +6,18 @@
 #include <vector>
 
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
 class definPolygon
 {
-  std::vector<Point> _points;
-
  public:
-  definPolygon() {}
+  definPolygon() = default;
   definPolygon(const std::vector<Point>& points);
   void decompose(std::vector<Rect>& rect);
+
+ private:
+  std::vector<Point> _points;
 };
 
 }  // namespace odb

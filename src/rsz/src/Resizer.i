@@ -11,7 +11,8 @@
 #include "sta/Liberty.hh"
 #include "sta/Parasitics.hh"
 #include "sta/Network.hh"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "db_sta/dbNetwork.hh"
@@ -41,7 +42,7 @@ using TmpPinSet = PinSet;
 using ord::getResizer;
 using ord::ensureLinked;
 
-using sta::Corner;
+using sta::Scene;
 using sta::LibertyCellSeq;
 using sta::LibertyCell;
 using sta::Instance;
@@ -108,26 +109,24 @@ namespace rsz {
 void
 report_net_parasitic(Net *net)
 {
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
-    resizer->parasitics()->report(parasitic);
+    parasitics->report(parasitic);
   }
 }
 
 float
 sum_parasitic_network_resist(Net *net)
 {
-  Resizer *resizer = getResizer();
-  Corner *corner = sta::Sta::sta()->cmdCorner();
-  const ParasiticAnalysisPt *ap = corner->findParasiticAnalysisPt(sta::MinMax::max());
-  auto parasitic = resizer->parasitics()->findParasiticNetwork(net, ap);
+  Scene *corner = sta::Sta::sta()->cmdScene();
+  auto parasitics = corner->parasitics(sta::MinMax::max());
+  auto parasitic = parasitics->findParasiticNetwork(net);
   if (parasitic) {
     float ret = 0.0;
-    for (auto resist : resizer->parasitics()->resistors(parasitic)) {
-      ret += resizer->parasitics()->value(resist);
+    for (auto resist : parasitics->resistors(parasitic)) {
+      ret += parasitics->value(resist);
     }
     return ret;
   } else {
@@ -533,7 +532,7 @@ find_max_wire_length()
 
 double
 find_buffer_max_wire_length(LibertyCell *buffer_cell,
-                            const Corner *corner)
+                            const Scene *corner)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
@@ -576,7 +575,9 @@ PinSet
 find_fanin_fanouts(PinSet* pins)
 {
   Resizer *resizer = getResizer();
-  return resizer->findFaninFanouts(*pins);
+  PinSet result = resizer->findFaninFanouts(*pins);
+  delete pins; // memory leak fix
+  return result;
 }
 
 void
@@ -655,7 +656,171 @@ fully_rebuffer(Pin *pin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
+  resizer->resizeSlackPreamble();
   resizer->fullyRebuffer(pin);
+}
+
+Instance*
+insert_buffer_after_driver_cmd(Net *net,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  } else {
+    inst = resizer->insertBufferAfterDriver(net, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  }
+  return inst;
+}
+
+Instance*
+insert_buffer_before_load_cmd(Pin *load_pin,
+                             LibertyCell *buffer_cell,
+                             double x, double y,
+                             bool has_loc,
+                             const char *new_buf_base_name,
+                             const char *new_net_base_name)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  } else {
+    inst = resizer->insertBufferBeforeLoad(load_pin, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS);
+  }
+  return inst;
+}
+
+Instance*
+insert_buffer_before_loads_cmd(Net *net,
+                              PinSet *pins,
+                              LibertyCell *buffer_cell,
+                              double x, double y,
+                              bool has_loc,
+                              const char *new_buf_base_name,
+                              const char *new_net_base_name,
+                              bool loads_on_diff_nets)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->initBlock();
+  est::IncrementalParasiticsGuard guard(resizer->getEstimateParasitics());
+  
+  Instance* inst = nullptr;
+  const char* buf_name = (new_buf_base_name && strcmp(new_buf_base_name, "NULL") != 0) ? new_buf_base_name : nullptr;
+  const char* net_name = (new_net_base_name && strcmp(new_net_base_name, "NULL") != 0) ? new_net_base_name : nullptr;
+
+  if (has_loc) {
+    odb::Point loc(resizer->metersToDbu(x), resizer->metersToDbu(y));
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, &loc, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
+  } else {
+    inst = resizer->insertBufferBeforeLoads(net, pins, buffer_cell, nullptr, buf_name, net_name, odb::dbNameUniquifyType::ALWAYS, loads_on_diff_nets);
+  }
+
+  delete pins;
+  return inst;
+}
+
+void
+set_clock_buffer_string_cmd(const char* clk_str)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferString(clk_str);
+}
+
+void
+set_clock_buffer_footprint_cmd(const char* footprint)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->setClockBufferFootprint(footprint);
+}
+
+void
+reset_clock_buffer_pattern_cmd()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->resetClockBufferPattern();
+}
+
+bool
+has_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferString();
+}
+
+bool
+has_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->hasClockBufferFootprint();
+}
+
+const char*
+get_clock_buffer_string_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferString().c_str();
+}
+
+const char*
+get_clock_buffer_footprint_cmd()
+{
+  Resizer *resizer = getResizer();
+  return resizer->getClockBufferFootprint().c_str();
+}
+
+void check_slew_after_buffer_rm(Pin *drvr_pin, Instance *buffer_instance, const Scene *corner)
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  std::map<const Pin*, float> load_pin_slew;
+  
+  ArcDelay old_delay[RiseFall::index_count];
+  ArcDelay new_delay[RiseFall::index_count];
+  Slew old_drvr_slew[RiseFall::index_count];
+  Slew new_drvr_slew[RiseFall::index_count];
+  float old_cap, new_cap;
+  resizer->resizeSlackPreamble();
+  if (!resizer->computeNewDelaysSlews(drvr_pin,
+                                      buffer_instance,
+                                      corner,
+                                      old_delay,
+                                      new_delay,
+                                      old_drvr_slew,
+                                      new_drvr_slew,
+                                      old_cap,
+                                      new_cap)) {  
+    return;
+  }
+  (void) resizer->estimateSlewsAfterBufferRemoval
+    (drvr_pin, buffer_instance, std::max(new_drvr_slew[RiseFall::riseIndex()],
+                                         new_drvr_slew[RiseFall::fallIndex()]),
+     corner, load_pin_slew);
 }
 
 } // namespace

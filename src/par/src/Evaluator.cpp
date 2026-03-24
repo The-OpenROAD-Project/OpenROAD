@@ -142,9 +142,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto& [block_id, count] : block_counter) {
-    if (count > snaking_factor) {
-      snaking_factor = count;
-    }
+    snaking_factor = std::max(count, snaking_factor);
   }
   cost += path_snaking_factor_ * static_cast<float>(snaking_factor - 1);
   return cost;
@@ -511,13 +509,13 @@ std::map<std::pair<int, int>, float> GoldenEvaluator::GetMatchingConnectivity(
         bool block_b_flag = false;  // the hyperedge intersects with block_b
         for (const int vertex_id : hgraph->Vertices(e)) {
           const int block_id = solution[vertex_id];
-          if (block_a_flag == false && block_id == block_a) {
+          if (!block_a_flag && block_id == block_a) {
             block_a_flag = true;
           }
-          if (block_b_flag == false && block_id == block_b) {
+          if (!block_b_flag && block_id == block_b) {
             block_b_flag = true;
           }
-          if (block_a_flag == true && block_b_flag == true) {
+          if (block_a_flag && block_b_flag) {
             score += CalculateHyperedgeCost(e, hgraph);
             break;
           }
@@ -626,7 +624,7 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     }
   }
 
-  if (print_flag == true && logger_->debugCheck(PAR, "evaluation", 1)) {
+  if (print_flag && logger_->debugCheck(PAR, "evaluation", 1)) {
     logger_->report("\nConstraints and Cut Evaluation\n");
     logger_->report("Satisfy the balance constraint : {}",
                     balance_satisfied_flag);
@@ -816,27 +814,27 @@ void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
 {
   std::ofstream file_output;
   file_output.open(file_name);
-  if (with_weight_flag == true) {
+  if (with_weight_flag) {
     file_output << hgraph->GetNumHyperedges() << "  "
-                << hgraph->GetNumVertices() << " 11" << std::endl;
+                << hgraph->GetNumVertices() << " 11\n";
   } else {
     file_output << hgraph->GetNumHyperedges() << "  "
-                << hgraph->GetNumVertices() << std::endl;
+                << hgraph->GetNumVertices() << '\n';
   }
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
-    if (with_weight_flag == true) {
+    if (with_weight_flag) {
       file_output << CalculateHyperedgeCost(e, hgraph) << "  ";
     }
     for (const int vertex : hgraph->Vertices(e)) {
       file_output << vertex + 1 << " ";
     }
-    file_output << std::endl;
+    file_output << '\n';
   }
   // write vertex weight
-  if (with_weight_flag == true) {
+  if (with_weight_flag) {
     for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-      file_output << GetVertexWeightNorm(v, hgraph) << std::endl;
+      file_output << GetVertexWeightNorm(v, hgraph) << '\n';
     }
   }
   // close the file
@@ -851,18 +849,18 @@ void GoldenEvaluator::WriteIntWeightHypergraph(
   std::ofstream file_output;
   file_output.open(file_name);
   file_output << hgraph->GetNumHyperedges() << "  " << hgraph->GetNumVertices()
-              << " 11" << std::endl;
+              << " 11\n";
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
     file_output << std::round(CalculateHyperedgeCost(e, hgraph)) << "  ";
     for (const int vertex : hgraph->Vertices(e)) {
       file_output << vertex + 1 << " ";
     }
-    file_output << std::endl;
+    file_output << '\n';
   }
   // write vertex weight
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    file_output << std::round(GetVertexWeightNorm(v, hgraph)) << std::endl;
+    file_output << std::round(GetVertexWeightNorm(v, hgraph)) << '\n';
   }
   // close the file
   file_output.close();

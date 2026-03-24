@@ -7,20 +7,27 @@
 #include <string>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanInst.h"
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
+// User Code Begin Includes
+#include <string_view>
+#include <variant>
+
+#include "odb/dbObject.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanChain>;
 
 bool _dbScanChain::operator==(const _dbScanChain& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -44,6 +51,7 @@ bool _dbScanChain::operator==(const _dbScanChain& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanChain::operator<(const _dbScanChain& rhs) const
@@ -99,7 +107,7 @@ void _dbScanChain::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  scan_partitions_->collectMemInfo(info.children_["scan_partitions_"]);
+  scan_partitions_->collectMemInfo(info.children["scan_partitions_"]);
 }
 
 _dbScanChain::~_dbScanChain()

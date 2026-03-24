@@ -60,7 +60,6 @@ class TclCmdHighlighter : public QSyntaxHighlighter
                     const std::vector<CommandArguments>& or_cmds,
                     const std::string& command_start,
                     const std::string& command_end);
-  ~TclCmdHighlighter() override;
 
  protected:
   void highlightBlock(const QString& text) override;
@@ -79,7 +78,7 @@ class TclCmdHighlighter : public QSyntaxHighlighter
   void initOther();
 
   static std::string escape(const std::string& preregex);
-  static CommandRulePtr buildKeywordRule(const int command_id,
+  static CommandRulePtr buildKeywordRule(int command_id,
                                          const std::string& command,
                                          const std::string& start_of_command,
                                          const std::string& end_of_command,
@@ -89,8 +88,7 @@ class TclCmdHighlighter : public QSyntaxHighlighter
                                 const std::string& start_of_command,
                                 const std::string& end_of_command);
   static CommandRulePtr buildRule(const std::string& pattern);
-  static CommandRulePtr buildRule(const int command_id,
-                                  const std::string& pattern);
+  static CommandRulePtr buildRule(int command_id, const std::string& pattern);
   static ArgumentRulePtr buildArgumentRule(const std::vector<std::string>& args,
                                            const QTextCharFormat* format);
 

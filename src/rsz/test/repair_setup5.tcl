@@ -1,4 +1,5 @@
 # buffer chain with set_max_delay
+# repair_timing should not degrade existing max_slew or max_cap violations
 source "helpers.tcl"
 if { ![info exists repair_args] } {
   set repair_args {}
@@ -17,6 +18,10 @@ report_worst_slack -max
 
 # Get information so we can setup the test outputs correctly
 write_verilog_for_eqy repair_setup5 before "None"
+report_check_types -max_cap -max_slew
 repair_timing -setup -repair_tns 100 {*}$repair_args
-run_equivalence_test repair_setup5 ./sky130hd/work_around_yosys/ "None"
+report_check_types -max_cap -max_slew
+run_equivalence_test repair_setup5 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
 report_worst_slack -max

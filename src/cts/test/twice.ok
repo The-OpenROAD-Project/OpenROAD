@@ -39,7 +39,7 @@
 [INFO CTS-0100]  Leaf buffers 0
 [INFO CTS-0101]  Average sink wire length 18.87 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Leaf load cells 0
+[INFO CTS-0207]  Dummy loads inserted 0
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
 [INFO CTS-0052] The following clock buffers will be used for CTS:

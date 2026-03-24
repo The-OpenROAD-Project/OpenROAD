@@ -84,7 +84,7 @@ proc analyze_power_grid { args } {
 
   psm::analyze_power_grid_cmd \
     [psm::find_net $keys(-net)] \
-    [sta::parse_corner_or_default keys] \
+    [sta::parse_scene_or_default keys] \
     $source_type \
     $error_file \
     [info exists flags(-allow_reuse)] \
@@ -111,8 +111,13 @@ proc insert_decap { args } {
     set target_cap [expr [sta::capacitance_ui_sta $target_cap] / [sta::distance_ui_sta 1.0]]
   }
 
-  # Check even size
+  if { ![info exists keys(-cells)] } {
+    utl::error PSM 182 "Missing mandatory argument -cells."
+  }
+
   set cells_and_decap $keys(-cells)
+
+  # Check even size
   if { [llength $cells_and_decap] % 2 != 0 } {
     utl::error PSM 181 "-cells must be a list of cell and decap pairs"
   }
@@ -178,7 +183,7 @@ proc write_pg_spice { args } {
 
   psm::write_spice_file_cmd \
     [psm::find_net $keys(-net)] \
-    [sta::parse_corner_or_default keys] \
+    [sta::parse_scene_or_default keys] \
     $source_type \
     [lindex $args 0] \
     $voltage_source_file
@@ -195,7 +200,7 @@ proc set_pdnsim_net_voltage { args } {
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
     set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)
-    set corner [sta::parse_corner_or_all keys]
+    set corner [sta::parse_scene_or_default keys]
     psm::set_net_voltage_cmd $net $corner $voltage
   } else {
     utl::error PSM 62 "Argument -net or -voltage not specified.\
@@ -214,7 +219,7 @@ proc set_pdnsim_inst_power { args } {
   if { [info exists keys(-inst)] && [info exists keys(-power)] } {
     set inst [psm::find_inst $keys(-inst)]
     set power $keys(-power)
-    set corner [sta::parse_corner_or_all keys]
+    set corner [sta::parse_scene_or_default keys]
     psm::set_inst_power $inst $corner $power
   } else {
     utl::error PSM 63 "Argument -inst or -power not specified.\
@@ -227,11 +232,14 @@ sta::define_cmd_args "set_pdnsim_source_settings" {
   [-bump_dy pitch]
   [-bump_size size]
   [-bump_interval interval]
-  [-strap_track_pitch pitch]}
+  [-strap_track_pitch pitch]
+  [-external_resistance resistance]
+}
 
 proc set_pdnsim_source_settings { args } {
   sta::parse_key_args "set_pdnsim_source_settings" args \
-    keys {-bump_dx -bump_dy -bump_size -bump_interval -strap_track_pitch} flags {}
+    keys {-bump_dx -bump_dy -bump_size -bump_interval -strap_track_pitch -external_resistance} \
+    flags {}
 
   set dx 0
   if { [info exists keys(-bump_dx)] } {
@@ -255,7 +263,12 @@ proc set_pdnsim_source_settings { args } {
     set track_pitch $keys(-strap_track_pitch)
   }
 
-  psm::set_source_settings $dx $dy $size $interval $track_pitch
+  set resistance 0
+  if { [info exists keys(-external_resistance)] } {
+    set resistance $keys(-external_resistance)
+  }
+
+  psm::set_source_settings $dx $dy $size $interval $track_pitch $resistance
 }
 
 namespace eval psm {

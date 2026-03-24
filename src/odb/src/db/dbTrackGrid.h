@@ -3,12 +3,13 @@
 
 #pragma once
 
+#include <vector>
+
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -20,31 +21,19 @@ class dbOStream;
 class _dbTrackGrid : public _dbObject
 {
  public:
-  dbId<_dbTechLayer> _layer;
-  dbVector<int> _x_origin;
-  dbVector<int> _x_count;
-  dbVector<int> _x_step;
-  dbVector<int> _y_origin;
-  dbVector<int> _y_count;
-  dbVector<int> _y_step;
-  dbVector<int> _first_mask;
-  dbVector<bool> _samemask;
-  dbId<_dbTechLayer> _next_grid;
-
   _dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g);
   _dbTrackGrid(_dbDatabase*);
-  ~_dbTrackGrid();
 
   bool operator==(const _dbTrackGrid& rhs) const;
   bool operator!=(const _dbTrackGrid& rhs) const { return !operator==(rhs); }
 
   bool operator<(const _dbTrackGrid& rhs) const
   {
-    if (_layer < rhs._layer) {
+    if (layer_ < rhs.layer_) {
       return true;
     }
 
-    if (_layer > rhs._layer) {
+    if (layer_ > rhs.layer_) {
       return false;
     }
 
@@ -57,19 +46,34 @@ class _dbTrackGrid : public _dbObject
                               int& track_init,
                               int& num_tracks,
                               int& track_step);
+
+  dbId<_dbTechLayer> layer_;
+  dbVector<int> x_origin_;
+  dbVector<int> x_count_;
+  dbVector<int> x_step_;
+  dbVector<int> y_origin_;
+  dbVector<int> y_count_;
+  dbVector<int> y_step_;
+  dbVector<int> first_mask_;
+  dbVector<bool> samemask_;
+  dbId<_dbTechLayer> next_grid_;
+
+  // Transient
+  std::vector<int> grid_x_;
+  std::vector<int> grid_y_;
 };
 
 inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*, const _dbTrackGrid& g)
-    : _layer(g._layer),
-      _x_origin(g._x_origin),
-      _x_count(g._x_count),
-      _x_step(g._x_step),
-      _y_origin(g._y_origin),
-      _y_count(g._y_count),
-      _y_step(g._y_step),
-      _first_mask(g._first_mask),
-      _samemask(g._samemask),
-      _next_grid(g._next_grid)
+    : layer_(g.layer_),
+      x_origin_(g.x_origin_),
+      x_count_(g.x_count_),
+      x_step_(g.x_step_),
+      y_origin_(g.y_origin_),
+      y_count_(g.y_count_),
+      y_step_(g.y_step_),
+      first_mask_(g.first_mask_),
+      samemask_(g.samemask_),
+      next_grid_(g.next_grid_)
 {
 }
 
@@ -77,43 +81,39 @@ inline _dbTrackGrid::_dbTrackGrid(_dbDatabase*)
 {
 }
 
-inline _dbTrackGrid::~_dbTrackGrid()
-{
-}
-
 inline dbOStream& operator<<(dbOStream& stream, const _dbTrackGrid& grid)
 {
-  stream << grid._layer;
-  stream << grid._x_origin;
-  stream << grid._x_count;
-  stream << grid._x_step;
-  stream << grid._y_origin;
-  stream << grid._y_count;
-  stream << grid._y_step;
-  stream << grid._first_mask;
-  stream << grid._samemask;
-  stream << grid._next_grid;
+  stream << grid.layer_;
+  stream << grid.x_origin_;
+  stream << grid.x_count_;
+  stream << grid.x_step_;
+  stream << grid.y_origin_;
+  stream << grid.y_count_;
+  stream << grid.y_step_;
+  stream << grid.first_mask_;
+  stream << grid.samemask_;
+  stream << grid.next_grid_;
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbTrackGrid& grid)
 {
   _dbDatabase* db = grid.getImpl()->getDatabase();
-  stream >> grid._layer;
-  stream >> grid._x_origin;
-  stream >> grid._x_count;
-  stream >> grid._x_step;
-  stream >> grid._y_origin;
-  stream >> grid._y_count;
-  stream >> grid._y_step;
-  if (db->isSchema(db_track_mask)) {
-    stream >> grid._first_mask;
-    stream >> grid._samemask;
+  stream >> grid.layer_;
+  stream >> grid.x_origin_;
+  stream >> grid.x_count_;
+  stream >> grid.x_step_;
+  stream >> grid.y_origin_;
+  stream >> grid.y_count_;
+  stream >> grid.y_step_;
+  if (db->isSchema(kSchemaTrackMask)) {
+    stream >> grid.first_mask_;
+    stream >> grid.samemask_;
   } else {
-    grid._first_mask.push_back(0);
-    grid._samemask.push_back(false);
+    grid.first_mask_.push_back(0);
+    grid.samemask_.push_back(false);
   }
-  stream >> grid._next_grid;
+  stream >> grid.next_grid_;
   return stream;
 }
 

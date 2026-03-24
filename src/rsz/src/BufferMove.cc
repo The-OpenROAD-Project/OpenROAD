@@ -28,7 +28,6 @@ using sta::ArcDelay;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LoadPinIndexMap;
-using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;

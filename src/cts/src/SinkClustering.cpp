@@ -12,6 +12,12 @@
 #include <sstream>
 #include <vector>
 
+#include "CtsObserver.h"
+#include "CtsOptions.h"
+#include "HTreeBuilder.h"
+#include "TechChar.h"
+#include "TreeBuilder.h"
+#include "Util.h"
 #include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
@@ -100,7 +106,7 @@ void SinkClustering::computeAllThetas()
 void SinkClustering::sortPoints()
 {
   if (firstRun_) {
-    std::sort(thetaIndexVector_.begin(), thetaIndexVector_.end());
+    std::ranges::sort(thetaIndexVector_);
   }
 }
 
@@ -211,7 +217,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                "Stree",
                1,
                "Clustering with max cap limit of {:.3e}",
-               options_->getSinkBufferInputCap() * max_cap__factor_);
+               options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
   // Iterates over the theta vector.
   for (unsigned i = 0; i < thetaIndexVector_.size(); ++i) {
@@ -246,9 +252,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                    + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
           }
           pointIdx++;
-          if (cost > distanceCost) {
-            distanceCost = cost;
-          }
+          distanceCost = std::max(cost, distanceCost);
         }
         // If the cluster size is higher than groupSize,
         // or the distance is higher than maxInternalDiameter_
@@ -279,9 +283,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         } else {
           // Node will be a part of the current cluster, thus, save the highest
           // cost.
-          if (distanceCost > previousCosts[j]) {
-            previousCosts[j] = distanceCost;
-          }
+          previousCosts[j] = std::max(distanceCost, previousCosts[j]);
         }
         // Add vectors in case they are no allocated yet. (Depends if a new
         // cluster was defined above)
@@ -322,9 +324,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                      + pointsCap_[solutionPointsIdx[j][clusters[j]][pointIdx]];
         }
         pointIdx++;
-        if (cost > distanceCost) {
-          distanceCost = cost;
-        }
+        distanceCost = std::max(cost, distanceCost);
       }
 
       if (isLimitExceeded(solutionPoints[j][clusters[j]].size(),
@@ -346,9 +346,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         clusters[j] = clusters[j] + 1;
         previousCosts[j] = 0;
       } else {
-        if (distanceCost > previousCosts[j]) {
-          previousCosts[j] = distanceCost;
-        }
+        previousCosts[j] = std::max(distanceCost, previousCosts[j]);
       }
       if (solutions[j].size() < (clusters[j] + 1)) {
         solutions[j].emplace_back();
@@ -415,7 +413,7 @@ bool SinkClustering::isLimitExceeded(const unsigned size,
                                      const unsigned sizeLimit)
 {
   if (useMaxCapLimit_) {
-    return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
+    return (capCost > options_->getSinkBufferInputCap() * kMaxCapFactor);
   }
 
   return (size >= sizeLimit || cost > maxInternalDiameter_);

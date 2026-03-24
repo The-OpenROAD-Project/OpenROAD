@@ -26,15 +26,11 @@ void Grid::init(const odb::Rect& die_area,
   perfect_regular_y_ = perfect_regular_y;
   num_layers_ = num_layers;
   track_pitches_.resize(num_layers);
-  horizontal_edges_capacities_.resize(num_layers);
-  vertical_edges_capacities_.resize(num_layers);
 }
 
 void Grid::clear()
 {
   track_pitches_.clear();
-  horizontal_edges_capacities_.clear();
-  vertical_edges_capacities_.clear();
 }
 
 odb::Point Grid::getPositionOnGrid(const odb::Point& position)
@@ -190,6 +186,13 @@ odb::Point Grid::getMiddle()
 const odb::Rect& Grid::getGridArea() const
 {
   return die_area_;
+}
+
+odb::Point Grid::getPositionFromGridPoint(const int x, const int y)
+{
+  int x_loc = (tile_size_ * (x + 0.5)) + getXMin();
+  int y_loc = (tile_size_ * (y + 0.5)) + getYMin();
+  return odb::Point(x_loc, y_loc);
 }
 
 }  // namespace grt

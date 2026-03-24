@@ -3,11 +3,16 @@
 
 #pragma once
 
+#include <cstddef>
+#include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
 #include "ScanChain.hh"
+#include "ScanPin.hh"
 #include "ScanStitchConfig.hh"
 #include "Utils.hh"
 #include "odb/db.h"
@@ -50,9 +55,9 @@ class ScanStitch
 
   // Typesafe function to create Ports for the scan chains.
   template <typename Port>
-  inline Port CreateNewPort(odb::dbBlock* block,
-                            const std::string& port_name,
-                            odb::dbNet* net = nullptr)
+  Port CreateNewPort(odb::dbBlock* block,
+                     const std::string& port_name,
+                     odb::dbNet* net = nullptr)
   {
     auto port = dft::utils::CreateNewPort(block, port_name, logger_, net);
 

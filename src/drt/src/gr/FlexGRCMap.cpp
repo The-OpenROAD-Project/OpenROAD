@@ -4,6 +4,7 @@
 #include "gr/FlexGRCMap.h"
 
 #include <algorithm>
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -12,6 +13,7 @@
 
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frRPin.h"
 #include "frBaseTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -428,20 +430,14 @@ void FlexGRCMap::getTrackLocs(
 {
   for (auto& tp : tps) {
     bool skip = true;
-    if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-      skip = false;
-    } else {
-      skip = true;
-    }
+    skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
     if (skip) {
       continue;
     }
 
     int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-    if (trackNum < 0) {
-      trackNum = 0;
-    }
+    trackNum = std::max(trackNum, 0);
     if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
       ++trackNum;
     }
@@ -468,20 +464,14 @@ unsigned FlexGRCMap::getNumTracks(
   if (line2ViaPitch == 0) {
     for (auto& tp : tps) {
       bool skip = true;
-      if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-        skip = false;
-      } else {
-        skip = true;
-      }
+      skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
       if (skip) {
         continue;
       }
 
       int trackNum = (low - tp->getStartCoord()) / (int) tp->getTrackSpacing();
-      if (trackNum < 0) {
-        trackNum = 0;
-      }
+      trackNum = std::max(trackNum, 0);
       if (trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord() < low) {
         ++trackNum;
       }
@@ -496,11 +486,7 @@ unsigned FlexGRCMap::getNumTracks(
     frCoord startCoord = INT_MAX;
     for (auto& tp : tps) {
       bool skip = true;
-      if ((!isHorz && tp->isHorizontal()) || (isHorz && !tp->isHorizontal())) {
-        skip = false;
-      } else {
-        skip = true;
-      }
+      skip = (isHorz || !tp->isHorizontal()) && (!isHorz || tp->isHorizontal());
 
       if (skip) {
         continue;
@@ -512,9 +498,7 @@ unsigned FlexGRCMap::getNumTracks(
       }
       offset += low;
 
-      if (offset < startCoord) {
-        startCoord = offset;
-      }
+      startCoord = std::min(offset, startCoord);
     }
     if (startCoord != INT_MAX) {
       numTrack += (high - startCoord) / line2ViaPitch;
@@ -537,7 +521,7 @@ void FlexGRCMap::printLayers()
     } else if (dir == odb::dbTechLayerDir::VERTICAL) {
       std::cout << "V";
     }
-    std::cout << std::endl;
+    std::cout << '\n';
   }
 }
 

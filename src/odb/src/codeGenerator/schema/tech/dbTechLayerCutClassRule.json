@@ -3,7 +3,7 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "_name",
+      "name": "name_",
       "type": "char *",
       "default": "nullptr",
       "flags": [
@@ -27,11 +27,11 @@
     },
     {
       "type": "bit",
-      "name": "length_valid_"
+      "name": "length_valid"
     },
     {
       "type": "bit",
-      "name": "cuts_valid_"
+      "name": "cuts_valid"
     }
   ],
   "cpp_includes": [

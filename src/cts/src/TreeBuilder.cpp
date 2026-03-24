@@ -6,10 +6,12 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <vector>
 
+#include "Util.h"
 #include "boost/polygon/polygon.hpp"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -25,16 +27,29 @@ void TreeBuilder::mergeBlockages()
   namespace gtl = boost::polygon;
   using boost::polygon::operators::operator+=;
 
-  uint macros_max_dx = 0, macros_max_dy = 0;
+  uint32_t macros_max_dx = 0, macros_max_dy = 0;
   odb::dbBlock* block = db_->getChip()->getBlock();
   gtl::polygon_90_set_data<int> blockage_polygons;
   // Add the macros into the polygon set
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->getMaster()->getType().isBlock()
         && inst->getPlacementStatus().isPlaced()) {
-      macros_max_dx = std::max(macros_max_dx, inst->getBBox()->getDX());
-      macros_max_dy = std::max(macros_max_dy, inst->getBBox()->getDY());
-      blockage_polygons += inst->getBBox()->getBox();
+      odb::dbBox* halo = inst->getHalo();
+      odb::Rect transformed_halo = odb::Rect();
+
+      if (halo != nullptr && !halo->isSoft()) {
+        transformed_halo = inst->getTransformedHalo();
+      }
+
+      odb::Rect inst_box = inst->getBBox()->getBox();
+      odb::Rect box = odb::Rect(inst_box.xMin() - transformed_halo.xMin(),
+                                inst_box.yMin() - transformed_halo.yMin(),
+                                inst_box.xMax() + transformed_halo.xMax(),
+                                inst_box.yMax() + transformed_halo.yMax());
+
+      macros_max_dx = std::max(macros_max_dx, static_cast<uint32_t>(box.dx()));
+      macros_max_dy = std::max(macros_max_dy, static_cast<uint32_t>(box.dy()));
+      blockage_polygons += box;
     }
   }
 

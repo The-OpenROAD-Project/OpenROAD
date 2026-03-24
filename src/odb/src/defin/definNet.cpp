@@ -20,7 +20,7 @@
 
 namespace odb {
 
-inline uint get_net_dbid(const char* name)
+inline uint32_t get_net_dbid(const char* name)
 {
   if (*name != 'N') {
     return 0;
@@ -33,7 +33,7 @@ inline uint get_net_dbid(const char* name)
   }
 
   char* end;
-  uint dbid = strtoul(name, &end, 10);
+  uint32_t dbid = strtoul(name, &end, 10);
 
   if (*end != '\0') {
     return 0;
@@ -97,7 +97,7 @@ void definNet::beginMustjoin(const char* iname, const char* tname)
 
 void definNet::connection(const char* iname, const char* tname)
 {
-  if (_skip_signal_connections == true) {
+  if (_skip_signal_connections) {
     return;
   }
 

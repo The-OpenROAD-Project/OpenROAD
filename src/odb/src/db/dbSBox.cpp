@@ -3,6 +3,8 @@
 
 #include "dbSBox.h"
 
+#include <cstdint>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -11,7 +13,6 @@
 #include "dbDatabase.h"
 #include "dbSWire.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
@@ -27,23 +28,23 @@ template class dbTable<_dbSBox>;
 
 bool _dbSBox::operator==(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type) {
+  if (sflags_.wire_type != rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction != rhs._sflags._direction) {
+  if (sflags_.direction != rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask != rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask != rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask != rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -56,23 +57,23 @@ bool _dbSBox::operator==(const _dbSBox& rhs) const
 
 int _dbSBox::equal(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type != rhs._sflags._wire_type) {
+  if (sflags_.wire_type != rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction != rhs._sflags._direction) {
+  if (sflags_.direction != rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask != rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask != rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask != rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask != rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask != rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask != rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -81,43 +82,43 @@ int _dbSBox::equal(const _dbSBox& rhs) const
 
 bool _dbSBox::operator<(const _dbSBox& rhs) const
 {
-  if (_sflags._wire_type < rhs._sflags._wire_type) {
+  if (sflags_.wire_type < rhs.sflags_.wire_type) {
     return true;
   }
 
-  if (_sflags._direction < rhs._sflags._direction) {
+  if (sflags_.direction < rhs.sflags_.direction) {
     return true;
   }
 
-  if (_sflags._via_bottom_mask < rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask < rhs.sflags_.via_bottom_mask) {
     return true;
   }
 
-  if (_sflags._via_cut_mask < rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask < rhs.sflags_.via_cut_mask) {
     return true;
   }
 
-  if (_sflags._via_top_mask < rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask < rhs.sflags_.via_top_mask) {
     return true;
   }
 
-  if (_sflags._wire_type > rhs._sflags._wire_type) {
+  if (sflags_.wire_type > rhs.sflags_.wire_type) {
     return false;
   }
 
-  if (_sflags._direction > rhs._sflags._direction) {
+  if (sflags_.direction > rhs.sflags_.direction) {
     return false;
   }
 
-  if (_sflags._via_bottom_mask > rhs._sflags._via_bottom_mask) {
+  if (sflags_.via_bottom_mask > rhs.sflags_.via_bottom_mask) {
     return false;
   }
 
-  if (_sflags._via_cut_mask > rhs._sflags._via_cut_mask) {
+  if (sflags_.via_cut_mask > rhs.sflags_.via_cut_mask) {
     return false;
   }
 
-  if (_sflags._via_top_mask > rhs._sflags._via_top_mask) {
+  if (sflags_.via_top_mask > rhs.sflags_.via_top_mask) {
     return false;
   }
 
@@ -130,93 +131,84 @@ bool _dbSBox::operator<(const _dbSBox& rhs) const
 //
 ////////////////////////////////////////////////////////////////////
 
-dbWireShapeType dbSBox::getWireShapeType()
+dbWireShapeType dbSBox::getWireShapeType() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return dbWireShapeType(box->_sflags._wire_type);
+  const _dbSBox* box = (const _dbSBox*) this;
+  return dbWireShapeType(box->sflags_.wire_type);
 }
 
-dbSBox::Direction dbSBox::getDirection()
+dbSBox::Direction dbSBox::getDirection() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return (dbSBox::Direction) box->_sflags._direction;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return (dbSBox::Direction) box->sflags_.direction;
 }
 
-dbSWire* dbSBox::getSWire()
+dbSWire* dbSBox::getSWire() const
 {
   return (dbSWire*) getBoxOwner();
 }
 
-Oct dbSBox::getOct()
+Oct dbSBox::getOct() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return box->_shape._oct;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return box->shape_.oct;
 }
 
-uint dbSBox::getViaBottomLayerMask()
+uint32_t dbSBox::getViaBottomLayerMask() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return box->_sflags._via_bottom_mask;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return box->sflags_.via_bottom_mask;
 }
 
-uint dbSBox::getViaCutLayerMask()
+uint32_t dbSBox::getViaCutLayerMask() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return box->_sflags._via_cut_mask;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return box->sflags_.via_cut_mask;
 }
 
-uint dbSBox::getViaTopLayerMask()
+uint32_t dbSBox::getViaTopLayerMask() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return box->_sflags._via_top_mask;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return box->sflags_.via_top_mask;
 }
 
-bool dbSBox::hasViaLayerMasks()
+bool dbSBox::hasViaLayerMasks() const
 {
-  _dbSBox* box = (_dbSBox*) this;
-  return box->_sflags._via_bottom_mask != 0 || box->_sflags._via_cut_mask != 0
-         || box->_sflags._via_top_mask != 0;
+  const _dbSBox* box = (const _dbSBox*) this;
+  return box->sflags_.via_bottom_mask != 0 || box->sflags_.via_cut_mask != 0
+         || box->sflags_.via_top_mask != 0;
 }
 
-void dbSBox::setViaLayerMask(uint bottom, uint cut, uint top)
+void dbSBox::setViaLayerMask(const uint32_t bottom,
+                             const uint32_t cut,
+                             const uint32_t top)
 {
   _dbSBox* box = (_dbSBox*) this;
   box->checkMask(bottom);
   box->checkMask(cut);
   box->checkMask(top);
 
-  box->_sflags._via_bottom_mask = bottom;
-  box->_sflags._via_cut_mask = cut;
-  box->_sflags._via_top_mask = top;
+  box->sflags_.via_bottom_mask = bottom;
+  box->sflags_.via_cut_mask = cut;
+  box->sflags_.via_top_mask = top;
 }
 
 dbSBox* dbSBox::create(dbSWire* wire_,
                        dbTechLayer* layer_,
-                       int x1,
-                       int y1,
-                       int x2,
-                       int y2,
-                       dbWireShapeType type,
-                       Direction dir,
-                       int width)
+                       const int x1,
+                       const int y1,
+                       const int x2,
+                       const int y2,
+                       const dbWireShapeType type,
+                       const Direction dir,
+                       const int width)
 {
   _dbSWire* wire = (_dbSWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
-  _dbSBox* box = block->_sbox_tbl->create();
+  _dbSBox* box = block->sbox_tbl_->create();
 
-  uint dx;
-  if (x2 > x1) {
-    dx = x2 - x1;
-  } else {
-    dx = x1 - x2;
-  }
-
-  uint dy;
-  if (y2 > y1) {
-    dy = y2 - y1;
-  } else {
-    dy = y1 - y2;
-  }
+  const uint32_t dx = std::abs(x2 - x1);
+  const uint32_t dy = std::abs(y2 - y1);
 
   switch (dir) {
     case UNDEFINED:
@@ -244,23 +236,23 @@ dbSBox* dbSBox::create(dbSWire* wire_,
       break;
   }
 
-  box->_flags._layer_id = layer_->getImpl()->getOID();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
+  box->flags_.layer_id = layer_->getImpl()->getOID();
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
   if (dir == OCTILINEAR) {
-    Point p1(x1, y1);
-    Point p2(x2, y2);
-    new (&box->_shape._oct) Oct();
-    box->_shape._oct.init(p1, p2, width);
-    box->_flags._octilinear = true;
-    block->add_oct(box->_shape._oct);
+    const Point p1(x1, y1);
+    const Point p2(x2, y2);
+    new (&box->shape_.oct) Oct();
+    box->shape_.oct.init(p1, p2, width);
+    box->flags_.octilinear = true;
+    block->add_oct(box->shape_.oct);
   } else {
-    box->_shape._rect.init(x1, y1, x2, y2);
-    box->_flags._octilinear = false;
-    block->add_rect(box->_shape._rect);
+    box->shape_.rect.init(x1, y1, x2, y2);
+    box->flags_.octilinear = false;
+    block->add_rect(box->shape_.rect);
   }
 
-  box->_sflags._wire_type = type.getValue();
-  box->_sflags._direction = dir;
+  box->sflags_.wire_type = type.getValue();
+  box->sflags_.direction = dir;
 
   wire->addSBox(box);
 
@@ -269,75 +261,75 @@ dbSBox* dbSBox::create(dbSWire* wire_,
 
 dbSBox* dbSBox::create(dbSWire* wire_,
                        dbVia* via_,
-                       int x,
-                       int y,
-                       dbWireShapeType type)
+                       const int x,
+                       const int y,
+                       const dbWireShapeType type)
 {
   _dbSWire* wire = (_dbSWire*) wire_;
   _dbVia* via = (_dbVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
-  _dbBox* vbbox = block->_box_tbl->getPtr(via->_bbox);
-  int xmin = vbbox->_shape._rect.xMin() + x;
-  int ymin = vbbox->_shape._rect.yMin() + y;
-  int xmax = vbbox->_shape._rect.xMax() + x;
-  int ymax = vbbox->_shape._rect.yMax() + y;
-  _dbSBox* box = block->_sbox_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_shape._rect.init(xmin, ymin, xmax, ymax);
-  box->_flags._is_block_via = 1;
-  box->_flags._via_id = via->getOID();
-  box->_flags._octilinear = false;
-  box->_sflags._wire_type = type.getValue();
+  _dbBox* vbbox = block->box_tbl_->getPtr(via->bbox_);
+  const int xmin = vbbox->shape_.rect.xMin() + x;
+  const int ymin = vbbox->shape_.rect.yMin() + y;
+  const int xmax = vbbox->shape_.rect.xMax() + x;
+  const int ymax = vbbox->shape_.rect.yMax() + y;
+  _dbSBox* box = block->sbox_tbl_->create();
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
+  box->shape_.rect.init(xmin, ymin, xmax, ymax);
+  box->flags_.is_block_via = 1;
+  box->flags_.via_id = via->getOID();
+  box->flags_.octilinear = false;
+  box->sflags_.wire_type = type.getValue();
 
   wire->addSBox(box);
 
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
   return (dbSBox*) box;
 }
 
 dbSBox* dbSBox::create(dbSWire* wire_,
                        dbTechVia* via_,
-                       int x,
-                       int y,
-                       dbWireShapeType type)
+                       const int x,
+                       const int y,
+                       const dbWireShapeType type)
 {
   _dbSWire* wire = (_dbSWire*) wire_;
   _dbTechVia* via = (_dbTechVia*) via_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
 
-  if (via->_bbox == 0) {
+  if (via->bbox_ == 0) {
     return nullptr;
   }
 
   _dbTech* tech = (_dbTech*) via->getOwner();
-  _dbBox* vbbox = tech->_box_tbl->getPtr(via->_bbox);
-  int xmin = vbbox->_shape._rect.xMin() + x;
-  int ymin = vbbox->_shape._rect.yMin() + y;
-  int xmax = vbbox->_shape._rect.xMax() + x;
-  int ymax = vbbox->_shape._rect.yMax() + y;
-  _dbSBox* box = block->_sbox_tbl->create();
-  box->_flags._owner_type = dbBoxOwner::SWIRE;
-  box->_shape._rect.init(xmin, ymin, xmax, ymax);
-  box->_flags._is_tech_via = 1;
-  box->_flags._via_id = via->getOID();
-  box->_flags._octilinear = false;
-  box->_sflags._wire_type = type.getValue();
+  _dbBox* vbbox = tech->box_tbl_->getPtr(via->bbox_);
+  const int xmin = vbbox->shape_.rect.xMin() + x;
+  const int ymin = vbbox->shape_.rect.yMin() + y;
+  const int xmax = vbbox->shape_.rect.xMax() + x;
+  const int ymax = vbbox->shape_.rect.yMax() + y;
+  _dbSBox* box = block->sbox_tbl_->create();
+  box->flags_.owner_type = dbBoxOwner::SWIRE;
+  box->shape_.rect.init(xmin, ymin, xmax, ymax);
+  box->flags_.is_tech_via = 1;
+  box->flags_.via_id = via->getOID();
+  box->flags_.octilinear = false;
+  box->sflags_.wire_type = type.getValue();
 
   wire->addSBox(box);
 
-  block->add_rect(box->_shape._rect);
+  block->add_rect(box->shape_.rect);
   return (dbSBox*) box;
 }
 
-dbSBox* dbSBox::getSBox(dbBlock* block_, uint dbid_)
+dbSBox* dbSBox::getSBox(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbSBox*) block->_sbox_tbl->getPtr(dbid_);
+  return (dbSBox*) block->sbox_tbl_->getPtr(dbid_);
 }
 
 void dbSBox::destroy(dbSBox* box_)
@@ -348,9 +340,9 @@ void dbSBox::destroy(dbSBox* box_)
 
   wire->removeSBox(box);
 
-  block->remove_rect(box->_shape._rect);
+  block->remove_rect(box->shape_.rect);
   dbProperty::destroyProperties(box);
-  block->_sbox_tbl->destroy(box);
+  block->sbox_tbl_->destroy(box);
 }
 
 std::vector<dbSBox*> dbSBox::smashVia()
@@ -415,6 +407,37 @@ std::vector<dbSBox*> dbSBox::smashVia()
   }
 
   return new_boxes;
+}
+
+_dbSBox::_dbSBox(_dbDatabase* db, const _dbSBox& b)
+    : _dbBox(db, b), sflags_(b.sflags_)
+{
+}
+
+_dbSBox::_dbSBox(_dbDatabase* db) : _dbBox(db)
+{
+  sflags_.wire_type = dbWireShapeType::COREWIRE;
+  sflags_.direction = 0;
+  sflags_.via_bottom_mask = 0;
+  sflags_.via_cut_mask = 0;
+  sflags_.via_top_mask = 0;
+  sflags_.spare_bits = 0;
+}
+
+dbOStream& operator<<(dbOStream& stream, const _dbSBox& box)
+{
+  stream << (_dbBox&) box;
+  uint32_t* bit_field = (uint32_t*) &box.sflags_;
+  stream << *bit_field;
+  return stream;
+}
+
+dbIStream& operator>>(dbIStream& stream, _dbSBox& box)
+{
+  stream >> (_dbBox&) box;
+  uint32_t* bit_field = (uint32_t*) &box.sflags_;
+  stream >> *bit_field;
+  return stream;
 }
 
 }  // namespace odb

@@ -18,7 +18,13 @@
 namespace utl {
 class Logger;
 }
+
+namespace LefParser {
+class lefiLayer;
+}  // namespace LefParser
+
 namespace odb {
+
 class lefTechLayerSpacingEolParser
 {
  public:
@@ -127,7 +133,7 @@ class lefTechLayerCutEnclosureRuleParser
   void setInt(double val,
               odb::dbTechLayerCutEnclosureRule* rule,
               void (odb::dbTechLayerCutEnclosureRule::*func)(int));
-  void setCutClass(std::string,
+  void setCutClass(const std::string& val,
                    odb::dbTechLayerCutEnclosureRule* rule,
                    odb::dbTechLayer* layer);
 };
@@ -160,7 +166,7 @@ class lefTechLayerEolKeepOutRuleParser
   void setInt(double val,
               odb::dbTechLayerEolKeepOutRule* rule,
               void (odb::dbTechLayerEolKeepOutRule::*func)(int));
-  void setClass(std::string,
+  void setClass(const std::string& val,
                 odb::dbTechLayerEolKeepOutRule* rule,
                 odb::dbTechLayer* layer);
 };
@@ -189,7 +195,7 @@ class lefTechLayerAreaRuleParser
   void setExceptStep(const boost::fusion::vector<double, double>& params,
                      odb::dbTechLayerAreaRule* rule);
   void setTrimLayer(
-      std::string val,
+      const std::string& val,
       odb::dbTechLayerAreaRule* rule,
       odb::dbTechLayer* layer,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
@@ -252,7 +258,7 @@ class ArraySpacingParser
   bool parse(const std::string&);
 
  private:
-  void setCutClass(std::string name);
+  void setCutClass(const std::string& name);
   void setArraySpacing(boost::fusion::vector<int, double>& params);
   void setWithin(boost::fusion::vector<double, double>& params);
   void setCutSpacing(double spacing);
@@ -359,6 +365,49 @@ class MaxSpacingParser
 
  private:
   void setMaxSpacing(dbTechLayerMaxSpacingRule*, double);
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class lefTechLayerVoltageSpacing
+{
+ public:
+  lefTechLayerVoltageSpacing(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  dbTechLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class AntennaGatePlusDiffParser
+{
+ public:
+  AntennaGatePlusDiffParser(LefParser::lefiLayer* layer,
+                            lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  LefParser::lefiLayer* layer_;
+  lefinReader* lefin_;
+};
+
+class MinWidthParser
+{
+ public:
+  MinWidthParser(dbTechLayer* layer, lefinReader* lefinReader)
+      : layer_(layer), lefin_(lefinReader)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
   dbTechLayer* layer_;
   lefinReader* lefin_;
 };

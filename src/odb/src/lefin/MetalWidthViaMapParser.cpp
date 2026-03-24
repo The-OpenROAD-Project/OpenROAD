@@ -11,7 +11,8 @@
 #include "odb/lefin.h"
 #include "parserUtils.h"
 
-using namespace odb;
+namespace odb {
+
 void MetalWidthViaMapParser::addEntry(
     boost::fusion::vector<std::string,
                           double,
@@ -86,3 +87,5 @@ bool MetalWidthViaMapParser::parseSubRule(const std::string& s)
   }
   return valid;
 }
+
+}  // namespace odb

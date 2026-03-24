@@ -1,46 +1,15 @@
-###############################################################################
-##
-## BSD 3-Clause License
-##
-## Copyright (c) 2024, The Regents of the University of California
-## All rights reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions are met:
-##
-## * Redistributions of source code must retain the above copyright notice, this
-##   list of conditions and the following disclaimer.
-##
-## * Redistributions in binary form must reproduce the above copyright notice,
-##   this list of conditions and the following disclaimer in the documentation
-##   and/or other materials provided with the distribution.
-##
-## * Neither the name of the copyright holder nor the names of its
-##   contributors may be used to endorse or promote products derived from
-##   this software without specific prior written permission.
-##
-## THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-## AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-## ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-## LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-## CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-## SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-## INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-## CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-## POSSIBILITY OF SUCH DAMAGE.
-##
-###############################################################################
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright (c) 2024-2026, The OpenROAD Authors
 
 # This code contains the scripts to convert the individual module READMEs
 #  into individual functions for man2 and man3 level.
 
 import os
+import re
 from manpage import ManPage
 from extract_utils import extract_tcl_command, extract_description
 from extract_utils import extract_tcl_code, extract_arguments
-from extract_utils import extract_tables, parse_switch
+from extract_utils import parse_switch, extract_headers
 
 
 # Simplified extraction functions for EXAMPLES and SEE ALSO
@@ -166,15 +135,35 @@ def man2_translate(doc, path):
         global_see_also = extract_global_see_also(text)
 
         print(f"{os.path.basename(doc)}")
-        print(
-            f"""Names: {len(func_names)},\
+        print(f"""Names: {len(func_names)},\
         Desc: {len(func_descs)},\
         Syn: {len(func_synopsis)},\
         Options: {len(func_options)},\
-        Args: {len(func_args)}"""
-        )
+        Args: {len(func_args)}""")
         print(f"Global Examples: {'Found' if global_examples else 'None'}")
         print(f"Global See Also: {'Found' if global_see_also else 'None'}")
+
+        # Identify ### headers that are missing a ```tcl block — these cause count mismatches.
+        missing_tcl_headers = []
+        segments = re.split(r"(^### .*$)", text, flags=re.MULTILINE)
+        if len(segments) > 1:
+            for i in range(1, len(segments), 2):
+                header = segments[i]
+                content = segments[i + 1]
+                if "```tcl" not in content:
+                    header_text = header.lstrip("# ").strip()
+                    missing_tcl_headers.append(header_text)
+
+        missing_info = ""
+        if missing_tcl_headers:
+            missing_info = (
+                "\n\n### headers without a ```tcl block (each ### must be a Tcl command):\n"
+                + "\n".join(f"  - ### {h}" for h in missing_tcl_headers)
+                + "\n\nHeading levels in this README:\n"
+                "  ##    top-level section (e.g. Commands, TCL functions, License)\n"
+                "  ###   individual Tcl command — must be followed by a ```tcl block\n"
+                "  ####  command sub-section (Options, Arguments, etc.)"
+            )
 
         assert (
             len(func_names)
@@ -182,13 +171,14 @@ def man2_translate(doc, path):
             == len(func_synopsis)
             == len(func_options)
             == len(func_args)
-        ), f"""Counts for all 5 categories must match up.\n
-            Names: {len(func_names)}\n
-            Descs: {len(func_descs)}\n
-            Synopsis: {len(func_synopsis)}\n
-            Options: {len(func_options)}\n
-            Args: {len(func_args)}\n
-            """
+        ), (
+            f"Counts for all 5 categories must match up in {os.path.basename(doc)}:\n"
+            f"  Names:    {len(func_names)}\n"
+            f"  Descs:    {len(func_descs)}\n"
+            f"  Synopsis: {len(func_synopsis)}\n"
+            f"  Options:  {len(func_options)}\n"
+            f"  Args:     {len(func_args)}" + missing_info
+        )
 
         for func_id in range(len(func_synopsis)):
             manpage = ManPage()

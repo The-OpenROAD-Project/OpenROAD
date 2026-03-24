@@ -9,24 +9,30 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSBoundary>;
 
 bool _dbGDSBoundary::operator==(const _dbGDSBoundary& rhs) const
 {
-  if (_layer != rhs._layer) {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+  if (layer_ != rhs.layer_) {
     return false;
   }
-  if (_datatype != rhs._datatype) {
+  if (datatype_ != rhs.datatype_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSBoundary::operator<(const _dbGDSBoundary& rhs) const
@@ -36,25 +42,25 @@ bool _dbGDSBoundary::operator<(const _dbGDSBoundary& rhs) const
 
 _dbGDSBoundary::_dbGDSBoundary(_dbDatabase* db)
 {
-  _layer = 0;
-  _datatype = 0;
+  layer_ = 0;
+  datatype_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbGDSBoundary& obj)
 {
-  stream >> obj._layer;
-  stream >> obj._datatype;
-  stream >> obj._xy;
-  stream >> obj._propattr;
+  stream >> obj.layer_;
+  stream >> obj.datatype_;
+  stream >> obj.xy_;
+  stream >> obj.propattr_;
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbGDSBoundary& obj)
 {
-  stream << obj._layer;
-  stream << obj._datatype;
-  stream << obj._xy;
-  stream << obj._propattr;
+  stream << obj.layer_;
+  stream << obj.datatype_;
+  stream << obj.xy_;
+  stream << obj.propattr_;
   return stream;
 }
 
@@ -64,10 +70,10 @@ void _dbGDSBoundary::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["xy"].add(_xy);
-  info.children_["propattr"].add(_propattr);
-  for (auto& [i, s] : _propattr) {
-    info.children_["propattr"].add(s);
+  info.children["xy"].add(xy_);
+  info.children["propattr"].add(propattr_);
+  for (auto& [i, s] : propattr_) {
+    info.children["propattr"].add(s);
   }
   // User Code End collectMemInfo
 }
@@ -82,52 +88,52 @@ void dbGDSBoundary::setLayer(int16_t layer)
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
 
-  obj->_layer = layer;
+  obj->layer_ = layer;
 }
 
 int16_t dbGDSBoundary::getLayer() const
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
-  return obj->_layer;
+  return obj->layer_;
 }
 
 void dbGDSBoundary::setDatatype(int16_t datatype)
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
 
-  obj->_datatype = datatype;
+  obj->datatype_ = datatype;
 }
 
 int16_t dbGDSBoundary::getDatatype() const
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
-  return obj->_datatype;
+  return obj->datatype_;
 }
 
 void dbGDSBoundary::setXy(const std::vector<Point>& xy)
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
 
-  obj->_xy = xy;
+  obj->xy_ = xy;
 }
 
 void dbGDSBoundary::getXy(std::vector<Point>& tbl) const
 {
   _dbGDSBoundary* obj = (_dbGDSBoundary*) this;
-  tbl = obj->_xy;
+  tbl = obj->xy_;
 }
 
 // User Code Begin dbGDSBoundaryPublicMethods
 const std::vector<Point>& dbGDSBoundary::getXY()
 {
   auto obj = (_dbGDSBoundary*) this;
-  return obj->_xy;
+  return obj->xy_;
 }
 
 std::vector<std::pair<std::int16_t, std::string>>& dbGDSBoundary::getPropattr()
 {
   auto* obj = (_dbGDSBoundary*) this;
-  return obj->_propattr;
+  return obj->propattr_;
 }
 
 dbGDSBoundary* dbGDSBoundary::create(dbGDSStructure* structure)

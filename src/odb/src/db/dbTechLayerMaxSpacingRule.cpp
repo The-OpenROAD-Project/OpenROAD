@@ -6,9 +6,9 @@
 
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 namespace odb {
@@ -17,6 +17,7 @@ template class dbTable<_dbTechLayerMaxSpacingRule>;
 bool _dbTechLayerMaxSpacingRule::operator==(
     const _dbTechLayerMaxSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (cut_class_ != rhs.cut_class_) {
     return false;
   }
@@ -25,6 +26,7 @@ bool _dbTechLayerMaxSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerMaxSpacingRule::operator<(
@@ -58,7 +60,7 @@ void _dbTechLayerMaxSpacingRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["cut_class"].add(cut_class_);
+  info.children["cut_class"].add(cut_class_);
   // User Code End collectMemInfo
 }
 

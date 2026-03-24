@@ -4,9 +4,13 @@
 #pragma once
 
 #include <optional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Clock.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 

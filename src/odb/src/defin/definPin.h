@@ -3,14 +3,15 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "definBase.h"
 #include "definPolygon.h"
+#include "definTypes.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,9 +25,9 @@ class definPin : public definBase
   {
     dbTechLayer* _layer;
     Rect _rect;
-    uint _mask;
+    uint32_t _mask;
 
-    PinRect(dbTechLayer* layer, const Rect& rect, uint mask)
+    PinRect(dbTechLayer* layer, const Rect& rect, uint32_t mask)
         : _layer(layer), _rect(rect), _mask(mask)
     {
     }
@@ -35,9 +36,9 @@ class definPin : public definBase
   struct Polygon : public definPolygon
   {
     dbTechLayer* _layer;
-    uint _mask;
+    uint32_t _mask;
 
-    Polygon(dbTechLayer* layer, const std::vector<Point>& points, uint mask)
+    Polygon(dbTechLayer* layer, const std::vector<Point>& points, uint32_t mask)
         : definPolygon(points), _layer(layer), _mask(mask)
     {
     }
@@ -98,8 +99,8 @@ class definPin : public definBase
                        int y1,
                        int x2,
                        int y2,
-                       uint mask);
-  virtual void pinPolygon(std::vector<defPoint>& points, uint mask);
+                       uint32_t mask);
+  virtual void pinPolygon(std::vector<defPoint>& points, uint32_t mask);
   virtual void pinGroundPin(const char* groundPin);
   virtual void pinSupplyPin(const char* supplyPin);
   virtual void pinEnd();

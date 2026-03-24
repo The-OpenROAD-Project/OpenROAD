@@ -13,13 +13,6 @@ module top (ce_in,
  input [6:0] w_mask_in;
  input [6:0] wd_in;
 
- wire net24;
- wire net25;
- wire net26;
- wire net27;
- wire net28;
- wire net29;
- wire net30;
  wire net1;
  wire net2;
  wire net3;
@@ -28,6 +21,13 @@ module top (ce_in,
  wire net6;
  wire net7;
  wire net8;
+ wire net24;
+ wire net25;
+ wire net26;
+ wire net27;
+ wire net28;
+ wire net29;
+ wire net30;
  wire net9;
  wire net10;
  wire net11;
@@ -44,66 +44,66 @@ module top (ce_in,
  wire net22;
  wire net23;
 
- BUF_X1 output30 (.A(net30),
-    .Z(rd_out[6]));
- BUF_X1 output29 (.A(net29),
-    .Z(rd_out[5]));
- BUF_X1 output28 (.A(net28),
-    .Z(rd_out[4]));
- BUF_X1 output27 (.A(net27),
-    .Z(rd_out[3]));
- BUF_X1 output26 (.A(net26),
-    .Z(rd_out[2]));
- BUF_X1 output25 (.A(net25),
-    .Z(rd_out[1]));
- BUF_X1 output24 (.A(net24),
-    .Z(rd_out[0]));
- BUF_X1 input23 (.A(we_in),
-    .Z(net23));
- BUF_X1 input22 (.A(wd_in[6]),
-    .Z(net22));
- BUF_X1 input21 (.A(wd_in[5]),
-    .Z(net21));
- BUF_X1 input20 (.A(wd_in[4]),
-    .Z(net20));
- BUF_X1 input19 (.A(wd_in[3]),
-    .Z(net19));
- BUF_X1 input18 (.A(wd_in[2]),
-    .Z(net18));
- BUF_X1 input17 (.A(wd_in[1]),
-    .Z(net17));
- BUF_X1 input16 (.A(wd_in[0]),
-    .Z(net16));
- BUF_X1 input15 (.A(w_mask_in[6]),
-    .Z(net15));
- BUF_X1 input14 (.A(w_mask_in[5]),
-    .Z(net14));
- BUF_X1 input13 (.A(w_mask_in[4]),
-    .Z(net13));
- BUF_X1 input12 (.A(w_mask_in[3]),
-    .Z(net12));
- BUF_X1 input11 (.A(w_mask_in[2]),
-    .Z(net11));
- BUF_X1 input10 (.A(w_mask_in[1]),
-    .Z(net10));
- BUF_X1 input9 (.A(w_mask_in[0]),
-    .Z(net9));
- BUF_X1 input8 (.A(clk),
-    .Z(net8));
- BUF_X1 input7 (.A(ce_in),
-    .Z(net7));
- BUF_X1 input6 (.A(addr_in[5]),
-    .Z(net6));
- BUF_X1 input5 (.A(addr_in[4]),
-    .Z(net5));
- BUF_X1 input4 (.A(addr_in[3]),
-    .Z(net4));
- BUF_X1 input3 (.A(addr_in[2]),
-    .Z(net3));
- BUF_X1 input2 (.A(addr_in[1]),
-    .Z(net2));
  BUF_X1 input1 (.A(addr_in[0]),
     .Z(net1));
+ BUF_X1 input10 (.A(w_mask_in[1]),
+    .Z(net10));
+ BUF_X1 input11 (.A(w_mask_in[2]),
+    .Z(net11));
+ BUF_X1 input12 (.A(w_mask_in[3]),
+    .Z(net12));
+ BUF_X1 input13 (.A(w_mask_in[4]),
+    .Z(net13));
+ BUF_X1 input14 (.A(w_mask_in[5]),
+    .Z(net14));
+ BUF_X1 input15 (.A(w_mask_in[6]),
+    .Z(net15));
+ BUF_X1 input16 (.A(wd_in[0]),
+    .Z(net16));
+ BUF_X1 input17 (.A(wd_in[1]),
+    .Z(net17));
+ BUF_X1 input18 (.A(wd_in[2]),
+    .Z(net18));
+ BUF_X1 input19 (.A(wd_in[3]),
+    .Z(net19));
+ BUF_X1 input2 (.A(addr_in[1]),
+    .Z(net2));
+ BUF_X1 input20 (.A(wd_in[4]),
+    .Z(net20));
+ BUF_X1 input21 (.A(wd_in[5]),
+    .Z(net21));
+ BUF_X1 input22 (.A(wd_in[6]),
+    .Z(net22));
+ BUF_X1 input23 (.A(we_in),
+    .Z(net23));
+ BUF_X1 input3 (.A(addr_in[2]),
+    .Z(net3));
+ BUF_X1 input4 (.A(addr_in[3]),
+    .Z(net4));
+ BUF_X1 input5 (.A(addr_in[4]),
+    .Z(net5));
+ BUF_X1 input6 (.A(addr_in[5]),
+    .Z(net6));
+ BUF_X1 input7 (.A(ce_in),
+    .Z(net7));
+ BUF_X1 input8 (.A(clk),
+    .Z(net8));
+ BUF_X1 input9 (.A(w_mask_in[0]),
+    .Z(net9));
+ BUF_X1 output24 (.A(net24),
+    .Z(rd_out[0]));
+ BUF_X1 output25 (.A(net25),
+    .Z(rd_out[1]));
+ BUF_X1 output26 (.A(net26),
+    .Z(rd_out[2]));
+ BUF_X1 output27 (.A(net27),
+    .Z(rd_out[3]));
+ BUF_X1 output28 (.A(net28),
+    .Z(rd_out[4]));
+ BUF_X1 output29 (.A(net29),
+    .Z(rd_out[5]));
+ BUF_X1 output30 (.A(net30),
+    .Z(rd_out[6]));
  fakeram45_64x7 sram (.we_in(net23),
     .ce_in(net7),
     .clk(net8),

@@ -10,12 +10,13 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
+#include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "dbBPin.h"
@@ -29,6 +30,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -36,6 +38,7 @@ template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (point_ != rhs.point_) {
     return false;
   }
@@ -56,6 +59,7 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
@@ -140,12 +144,12 @@ void _dbAccessPoint::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["iterms"].add(iterms_);
-  MemInfo& via_info = info.children_["vias"];
+  info.children["iterms"].add(iterms_);
+  MemInfo& via_info = info.children["vias"];
   for (const auto& v : vias_) {
     via_info.add(v);
   }
-  info.children_["path_segs"].add(path_segs_);
+  info.children["path_segs"].add(path_segs_);
   // User Code End collectMemInfo
 }
 
@@ -218,7 +222,7 @@ void dbAccessPoint::getAccesses(std::vector<dbDirection>& tbl) const
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   for (int dir = 0; dir < 6; dir++) {
     if (obj->accesses_[dir]) {
-      tbl.push_back(dbDirection::Value(dir + 1));
+      tbl.emplace_back(dbDirection::Value(dir + 1));
     }
   }
 }
@@ -252,7 +256,7 @@ dbAccessType dbAccessPoint::getHighType() const
 void dbAccessPoint::setAccess(bool access, dbDirection dir)
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  switch (dir) {
+  switch (dir.getValue()) {
     case dbDirection::EAST:
     case dbDirection::SOUTH:
     case dbDirection::WEST:
@@ -271,7 +275,7 @@ void dbAccessPoint::setAccess(bool access, dbDirection dir)
 bool dbAccessPoint::hasAccess(dbDirection dir) const
 {
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
-  switch (dir) {
+  switch (dir.getValue()) {
     case dbDirection::EAST:
     case dbDirection::SOUTH:
     case dbDirection::WEST:
@@ -293,7 +297,7 @@ dbTechLayer* dbAccessPoint::getLayer() const
   _dbAccessPoint* obj = (_dbAccessPoint*) this;
   dbDatabase* db = (dbDatabase*) obj->getDatabase();
   _dbTech* tech = (_dbTech*) db->getTech();
-  return (dbTechLayer*) tech->_layer_tbl->getPtr(obj->layer_);
+  return (dbTechLayer*) tech->layer_tbl_->getPtr(obj->layer_);
 }
 
 dbMPin* dbAccessPoint::getMPin() const
@@ -303,9 +307,9 @@ dbMPin* dbAccessPoint::getMPin() const
     return nullptr;
   }
   _dbDatabase* db = obj->getDatabase();
-  auto lib = (_dbLib*) db->_lib_tbl->getPtr(obj->lib_);
-  auto master = (_dbMaster*) lib->_master_tbl->getPtr(obj->master_);
-  return (dbMPin*) master->_mpin_tbl->getPtr(obj->mpin_);
+  auto lib = (_dbLib*) db->lib_tbl_->getPtr(obj->lib_);
+  auto master = (_dbMaster*) lib->master_tbl_->getPtr(obj->master_);
+  return (dbMPin*) master->mpin_tbl_->getPtr(obj->mpin_);
 }
 
 dbBPin* dbAccessPoint::getBPin() const
@@ -315,7 +319,7 @@ dbBPin* dbAccessPoint::getBPin() const
     return nullptr;
   }
   _dbBlock* block = (_dbBlock*) obj->getOwner();
-  return (dbBPin*) block->_bpin_tbl->getPtr(obj->bpin_);
+  return (dbBPin*) block->bpin_tbl_->getPtr(obj->bpin_);
 }
 std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
 {
@@ -325,14 +329,14 @@ std::vector<std::vector<dbObject*>> dbAccessPoint::getVias() const
   _dbBlock* block = (_dbBlock*) obj->getOwner();
   std::vector<std::vector<dbObject*>> result;
   for (const auto& cutVias : obj->vias_) {
-    result.push_back(std::vector<dbObject*>());
+    result.emplace_back();
     for (const auto& [type, id] : cutVias) {
       if (type == dbObjectType::dbViaObj) {
         result.back().push_back(
-            (dbObject*) block->_via_tbl->getPtr(dbId<_dbVia>(id)));
+            (dbObject*) block->via_tbl_->getPtr(dbId<_dbVia>(id)));
       } else {
         result.back().push_back(
-            (dbTechVia*) tech->_via_tbl->getPtr(dbId<_dbTechVia>(id)));
+            (dbTechVia*) tech->via_tbl_->getPtr(dbId<_dbTechVia>(id)));
       }
     }
   }
@@ -359,7 +363,7 @@ void dbAccessPoint::addBlockVia(int num_cuts, dbVia* via)
       {via->getObjectType(), via->getImpl()->getOID()});
 }
 
-dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint idx)
+dbAccessPoint* dbAccessPoint::create(dbBlock* block_, dbMPin* pin, uint32_t idx)
 {
   _dbBlock* block = (_dbBlock*) block_;
   _dbAccessPoint* ap = block->ap_tbl_->create();
@@ -379,7 +383,7 @@ dbAccessPoint* dbAccessPoint::create(dbBPin* pin)
   return ((dbAccessPoint*) ap);
 }
 
-dbAccessPoint* dbAccessPoint::getAccessPoint(dbBlock* block_, uint dbid)
+dbAccessPoint* dbAccessPoint::getAccessPoint(dbBlock* block_, uint32_t dbid)
 {
   _dbBlock* block = (_dbBlock*) block_;
   return (dbAccessPoint*) block->ap_tbl_->getPtr(dbid);
@@ -417,7 +421,7 @@ void dbAccessPoint::destroy(dbAccessPoint* ap)
       }
     }
     for (const auto& iterm_id : _ap->iterms_) {
-      _dbITerm* iterm = block->_iterm_tbl->getPtr(iterm_id);
+      _dbITerm* iterm = block->iterm_tbl_->getPtr(iterm_id);
       auto ap_itr = iterm->aps_.begin();
       while (ap_itr != iterm->aps_.end()) {
         if ((*ap_itr).second == ap->getImpl()->getOID()) {

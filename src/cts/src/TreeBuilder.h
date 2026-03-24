@@ -125,10 +125,7 @@ class TreeBuilder
                     double x2,
                     double y2)
   {
-    if ((x > x1) && (x < x2) && (y > y1) && (y < y2)) {
-      return true;
-    }
-    return false;
+    return (x > x1) && (x < x2) && (y > y1) && (y < y2);
   }
   bool isAlongBbox(double x,
                    double y,
@@ -159,8 +156,8 @@ class TreeBuilder
                     double& y1,
                     double& x2,
                     double& y2);
-  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
-                                  const std::string& bufferName);
+  virtual Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                          const std::string& bufferName);
 
   void addCandidatePoint(double x,
                          double y,
@@ -221,6 +218,8 @@ class TreeBuilder
 
   float getAveSinkArrival() const { return aveArrival_; }
   void setAveSinkArrival(float arrival) { aveArrival_ = arrival; }
+  float getNDummies() const { return nDummies_; }
+  void setNDummies(float nDummies) { nDummies_ = nDummies; }
   odb::dbInst* getTopBuffer() const { return topBuffer_; }
   void setTopBuffer(odb::dbInst* inst) { topBuffer_ = inst; }
   std::string getTopBufferName() const { return topBufferName_; }
@@ -256,6 +255,7 @@ class TreeBuilder
       insertionDelays_;
   TreeType type_ = TreeType::RegularTree;
   float aveArrival_ = 0.0;
+  int nDummies_ = 0;
   odb::dbInst* topBuffer_ = nullptr;
   std::string topBufferName_;
   odb::dbNet* drivingNet_ = nullptr;

@@ -139,3 +139,69 @@ sg13g2_buf_2                                  9.1 2.7e-15 5.1e-11  2037.1
 sg13g2_buf_4                                 14.5 3.9e-15 6.0e-11  1017.5
 sg13g2_buf_8                                 23.6 8.7e-15 5.4e-11   510.2
 --------------------------------------------------------------------------------
+
+==== set clock buffer footprint to DLY ===
+[INFO RSZ-0206] Clock buffer footprint set to 'DLY'
+********************************************************************************
+Buffer Report:
+There are 5 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 5, 5.4e-10
+
+There are 1 cell footprint types:
+  BU    : 5 [100.00%]
+
+There are 1 cell site types:
+  CoreSite [H=3780]: 5 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+
+Hold Buffer Report:
+sg13g2_dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+[INFO RSZ-0207] Clock buffer string and footprint have been reset
+
+==== set clock buffer string to dlygate ===
+[INFO RSZ-0205] Clock buffer string set to 'dlygate'
+********************************************************************************
+Buffer Report:
+There are 5 buffers that are not marked as dont-use, multi-voltage
+special cells or clock buffers
+
+There are 1 VT types:
+VT type[index]: # buffers, ave leakage
+  -      [0]: 5, 5.4e-10
+
+There are 1 cell footprint types:
+  BU    : 5 [100.00%]
+
+There are 1 cell site types:
+  CoreSite [H=3780]: 5 [100.00%]
+--------------------------------------------------------------------------------
+Cell                                        Drive Drive    Leak   Site Cell   VT
+                                            Res   Res*Cin          Ht Footpt Type
+--------------------------------------------------------------------------------
+sg13g2_buf_16                               255.4 4.4e-12 1.4e-09 3780 BU      -
+sg13g2_buf_8                                510.2 4.5e-12 6.9e-10 3780 BU      -
+sg13g2_buf_4                               1017.5 4.0e-12 3.4e-10 3780 BU      -
+sg13g2_buf_2                               2037.1 5.4e-12 1.8e-10 3780 BU      -
+sg13g2_buf_1                               4066.0 9.6e-12 1.1e-10 3780 BU      -
+
+Hold Buffer Report:
+sg13g2_dlygate4sd3_1 is the buffer chosen for hold fixing
+********************************************************************************
+
+==== set clock buffer footprint to DLY ===
+==== should get an error ===
+[ERROR CTS-0134] -clock_buffer_footprint cannot be set because -clock_buffer_string is already defined.
+Error: report_buffers_ihp.tcl, 32 CTS-0134

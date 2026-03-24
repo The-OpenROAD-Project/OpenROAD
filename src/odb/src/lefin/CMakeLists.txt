@@ -7,6 +7,7 @@ add_library(lefin
     lefTechLayerSpacingEolParser.cpp
     lefTechLayerWrongDirSpacingParser.cpp
     lefTechLayerMinStepParser.cpp
+    lefTechLayerMinWidthParser.cpp
     lefTechLayerCornerSpacingParser.cpp
     lefTechLayerSpacingTablePrlParser.cpp
     lefTechLayerRightWayOnGridOnlyParser.cpp
@@ -22,9 +23,11 @@ add_library(lefin
     lefTechLayerPitchRuleParser.cpp
     lefTechLayerForbiddenSpacingRuleParser.cpp
     lefTechLayerTwoWiresForbiddenSpcRuleParser.cpp
+    lefTechLayerVoltageSpacing.cpp
     lefMacroClassParser.cpp
     lefMacroEdgeTypeParser.cpp
     CellEdgeSpacingTableParser.cpp
+    AntennaGateParser.cpp
     ArraySpacingParser.cpp
     WidthTableParser.cpp
     MinCutParser.cpp

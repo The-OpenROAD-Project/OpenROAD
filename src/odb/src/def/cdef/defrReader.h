@@ -33,6 +33,7 @@
 #ifndef CDEFRREADER_H
 #define CDEFRREADER_H
 
+#include <cstdint>
 #include <cstdio>
 
 #include "defiTypedefs.h"
@@ -598,7 +599,7 @@ EXTERN void defrSetUnusedCallbacks(defrVoidCbkFnType func);
 
 /* Return the current line number in the input file.                          */
 EXTERN int defrLineNumber();
-EXTERN long long defrLongLineNumber();
+EXTERN int64_t defrLongLineNumber();
 
 /* Routine to set the message logging routine for errors                      */
 using DEFI_LOG_FUNCTION = void (*)(const char*);
@@ -627,7 +628,7 @@ using DEFI_LINE_NUMBER_FUNCTION = void (*)(int);
 EXTERN void defrSetLineNumberFunction(DEFI_LINE_NUMBER_FUNCTION p0);
 
 /* Routine to set the line number of the file that is parsing routine (takes  */
-using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(long long);
+using DEFI_LONG_LINE_NUMBER_FUNCTION = void (*)(int64_t);
 EXTERN void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION p0);
 
 /* Set the number of lines before calling the line function callback routine  */
@@ -657,7 +658,7 @@ EXTERN void defrSetMagicCommentString(char* p0);
 EXTERN void defrDisablePropStrProcess();
 
 /* Testing purposes only                                                      */
-EXTERN void defrSetNLines(long long n);
+EXTERN void defrSetNLines(int64_t n);
 
 /* Routine to set the max number of warnings for a perticular section         */
 

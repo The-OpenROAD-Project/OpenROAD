@@ -30,7 +30,7 @@ odb::Rect frRPin::getBBox()
       pt = accessPoint_->getPoint();
       break;
     default:
-      std::cout << "ERROR: Invalid term type in frRPin." << std::endl;
+      std::cout << "ERROR: Invalid term type in frRPin.\n";
       break;
   }
 

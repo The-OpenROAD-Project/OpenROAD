@@ -173,12 +173,8 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
                                 std::vector<std::vector<odb::Rect>>& outlines,
                                 int level)
 {
-  Rect outline = parent->getBBox();
-  odb::Rect dbu_outline(block_->micronsToDbu(outline.xMin()),
-                        block_->micronsToDbu(outline.yMin()),
-                        block_->micronsToDbu(outline.xMax()),
-                        block_->micronsToDbu(outline.yMax()));
-  outlines[level].push_back(dbu_outline);
+  odb::Rect outline = parent->getBBox();
+  outlines[level].push_back(outline);
 
   for (auto& child : parent->getChildren()) {
     switch (child->getClusterType()) {
@@ -332,10 +328,10 @@ void Graphics::setXMarksSize()
 
 void Graphics::drawCluster(Cluster* cluster, gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(cluster->getX());
-  const int ly = block_->micronsToDbu(cluster->getY());
-  const int ux = lx + block_->micronsToDbu(cluster->getWidth());
-  const int uy = ly + block_->micronsToDbu(cluster->getHeight());
+  const int lx = cluster->getX();
+  const int ly = cluster->getY();
+  const int ux = lx + cluster->getWidth();
+  const int uy = ly + cluster->getHeight();
   odb::Rect bbox(lx, ly, ux, uy);
 
   painter.drawRect(bbox);
@@ -382,22 +378,17 @@ void Graphics::drawFences(gui::Painter& painter)
   }
 }
 
-void Graphics::drawOffsetRect(const Rect& rect,
+void Graphics::drawOffsetRect(const odb::Rect& rect,
                               const std::string& center_text,
                               gui::Painter& painter)
 {
-  const int lx = block_->micronsToDbu(rect.xMin());
-  const int ly = block_->micronsToDbu(rect.yMin());
-  const int ux = block_->micronsToDbu(rect.xMax());
-  const int uy = block_->micronsToDbu(rect.yMax());
-
-  odb::Rect rect_bbox(lx, ly, ux, uy);
-  rect_bbox.moveDelta(outline_.xMin(), outline_.yMin());
-  painter.drawRect(rect_bbox);
+  odb::Rect movable_rect = rect;
+  movable_rect.moveDelta(outline_.xMin(), outline_.yMin());
+  painter.drawRect(movable_rect);
 
   if (!center_text.empty()) {
-    painter.drawString(rect_bbox.xCenter(),
-                       rect_bbox.yCenter(),
+    painter.drawString(movable_rect.xCenter(),
+                       movable_rect.yCenter(),
                        gui::Painter::kCenter,
                        center_text);
   }
@@ -413,7 +404,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawCluster(root_, painter);
   }
 
-  // Draw blockages only during SA for SoftMacros
+  // Draw blockages and notches only during SA for SoftMacros
   if (!soft_macros_.empty()) {
     drawAllBlockages(painter);
   }
@@ -428,10 +419,10 @@ void Graphics::drawObjects(gui::Painter& painter)
 
     setSoftMacroBrush(painter, macro);
 
-    const int lx = block_->micronsToDbu(macro.getX());
-    const int ly = block_->micronsToDbu(macro.getY());
-    const int ux = lx + block_->micronsToDbu(macro.getWidth());
-    const int uy = ly + block_->micronsToDbu(macro.getHeight());
+    const int lx = macro.getX();
+    const int ly = macro.getY();
+    const int ux = lx + macro.getWidth();
+    const int uy = ly + macro.getHeight();
     odb::Rect bbox(lx, ly, ux, uy);
 
     bbox.moveDelta(outline_.xMin(), outline_.yMin());
@@ -453,7 +444,6 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   painter.setPen(gui::Painter::kWhite, true);
-  painter.setBrush(gui::Painter::kDarkRed);
 
   i = 0;
   for (const auto& macro : hard_macros_) {
@@ -461,48 +451,58 @@ void Graphics::drawObjects(gui::Painter& painter)
       continue;
     }
 
-    const int lx = block_->micronsToDbu(macro.getX());
-    const int ly = block_->micronsToDbu(macro.getY());
-    const int width = block_->micronsToDbu(macro.getWidth());
-    const int height = block_->micronsToDbu(macro.getHeight());
-    const int ux = lx + width;
-    const int uy = ly + height;
-    odb::Rect bbox(lx, ly, ux, uy);
+    const int width = macro.getRealWidth();
+    const int height = macro.getRealHeight();
 
-    bbox.moveDelta(outline_.xMin(), outline_.yMin());
+    odb::Rect halo_bbox(macro.getX(),
+                        macro.getY(),
+                        macro.getX() + macro.getWidth(),
+                        macro.getY() + macro.getHeight());
+    odb::Rect macro_bbox(macro.getRealX(),
+                         macro.getRealY(),
+                         macro.getRealX() + width,
+                         macro.getRealY() + height);
 
-    painter.drawRect(bbox);
-    painter.drawString(bbox.xCenter(),
-                       bbox.yCenter(),
+    halo_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+    macro_bbox.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.setBrush(gui::Painter::kDarkRed);
+    painter.drawRect(halo_bbox);
+
+    painter.setBrush(gui::Painter::kRed);
+    painter.drawRect(macro_bbox);
+
+    painter.drawString(macro_bbox.xCenter(),
+                       macro_bbox.yCenter(),
                        gui::Painter::kCenter,
                        std::to_string(i++));
-    switch (macro.getOrientation()) {
+    switch (macro.getOrientation().getValue()) {
       case odb::dbOrientType::R0: {
-        painter.drawLine(bbox.xMin(),
-                         bbox.yMin() + 0.1 * height,
-                         bbox.xMin() + 0.1 * width,
-                         bbox.yMin());
+        painter.drawLine(macro_bbox.xMin(),
+                         macro_bbox.yMin() + 0.1 * height,
+                         macro_bbox.xMin() + 0.1 * width,
+                         macro_bbox.yMin());
         break;
       }
       case odb::dbOrientType::MX: {
-        painter.drawLine(bbox.xMin(),
-                         bbox.yMax() - 0.1 * height,
-                         bbox.xMin() + 0.1 * width,
-                         bbox.yMax());
+        painter.drawLine(macro_bbox.xMin(),
+                         macro_bbox.yMax() - 0.1 * height,
+                         macro_bbox.xMin() + 0.1 * width,
+                         macro_bbox.yMax());
         break;
       }
       case odb::dbOrientType::MY: {
-        painter.drawLine(bbox.xMax(),
-                         bbox.yMin() + 0.1 * height,
-                         bbox.xMax() - 0.1 * width,
-                         bbox.yMin());
+        painter.drawLine(macro_bbox.xMax(),
+                         macro_bbox.yMin() + 0.1 * height,
+                         macro_bbox.xMax() - 0.1 * width,
+                         macro_bbox.yMin());
         break;
       }
       case odb::dbOrientType::R180: {
-        painter.drawLine(bbox.xMax(),
-                         bbox.yMax() - 0.1 * height,
-                         bbox.xMax() - 0.1 * width,
-                         bbox.yMax());
+        painter.drawLine(macro_bbox.xMax(),
+                         macro_bbox.yMax() - 0.1 * height,
+                         macro_bbox.xMax() - 0.1 * width,
+                         macro_bbox.yMax());
         break;
       }
       case odb::dbOrientType::R90:
@@ -515,8 +515,6 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 
   if (show_bundled_nets_) {
-    painter.setPen(gui::Painter::kYellow, true);
-
     if (!hard_macros_.empty()) {
       drawBundledNets(painter, hard_macros_);
     }
@@ -548,6 +546,10 @@ void Graphics::drawObjects(gui::Painter& painter)
     drawGuides(painter);
     drawFences(painter);
   }
+
+  if (!soft_macros_.empty()) {
+    drawNotches(painter);
+  }
 }
 
 template <typename T>
@@ -563,10 +565,7 @@ void Graphics::drawGuides(gui::Painter& painter)
   painter.setPen(gui::Painter::kGreen, true);
 
   for (const auto& [macro_id, guidance_region] : guides_) {
-    odb::Rect guide(block_->micronsToDbu(guidance_region.xMin()),
-                    block_->micronsToDbu(guidance_region.yMin()),
-                    block_->micronsToDbu(guidance_region.xMax()),
-                    block_->micronsToDbu(guidance_region.yMax()));
+    odb::Rect guide = guidance_region;
     guide.moveDelta(outline_.xMin(), outline_.yMin());
 
     painter.drawRect(guide);
@@ -575,6 +574,20 @@ void Graphics::drawGuides(gui::Painter& painter)
                        gui::Painter::Anchor::kCenter,
                        std::to_string(macro_id),
                        false /* rotate 90 */);
+  }
+}
+
+void Graphics::drawNotches(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::kYellow, true);
+
+  for (const auto& notch : notches_) {
+    odb::Rect rect = notch;
+    rect.moveDelta(outline_.xMin(), outline_.yMin());
+
+    painter.setBrush(gui::Painter::kYellow, gui::Painter::kDiagonal);
+
+    painter.drawRect(rect);
   }
 }
 
@@ -592,26 +605,31 @@ template <typename T>
 void Graphics::drawBundledNets(gui::Painter& painter,
                                const std::vector<T>& macros)
 {
-  for (const auto& bundled_net : bundled_nets_) {
-    const T& source = macros[bundled_net.terminals.first];
-    const T& target = macros[bundled_net.terminals.second];
+  painter.setPen(gui::Painter::kYellow, true);
 
-    if (target.isClusterOfUnplacedIOPins()) {
-      drawDistToRegion(painter, source, target);
-      continue;
-    }
-
-    const int x1 = block_->micronsToDbu(source.getPinX());
-    const int y1 = block_->micronsToDbu(source.getPinY());
-    odb::Point from(x1, y1);
-
-    const int x2 = block_->micronsToDbu(target.getPinX());
-    const int y2 = block_->micronsToDbu(target.getPinY());
-    odb::Point to(x2, y2);
-
-    addOutlineOffsetToLine(from, to);
-    painter.drawLine(from, to);
+  for (const auto& net : nets_) {
+    drawBundledNet(painter, macros, net);
   }
+}
+
+template <typename T>
+void Graphics::drawBundledNet(gui::Painter& painter,
+                              const std::vector<T>& macros,
+                              const BundledNet& net)
+{
+  const T& source = macros[net.terminals.first];
+  const T& target = macros[net.terminals.second];
+
+  if (target.isClusterOfUnplacedIOPins()) {
+    drawDistToRegion(painter, source, target);
+    return;
+  }
+
+  odb::Point from(source.getPinX(), source.getPinY());
+  odb::Point to(target.getPinX(), target.getPinY());
+
+  addOutlineOffsetToLine(from, to);
+  painter.drawLine(from, to);
 }
 
 template <typename T>
@@ -623,8 +641,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
     return;
   }
 
-  odb::Point from(block_->micronsToDbu(macro.getPinX()),
-                  block_->micronsToDbu(macro.getPinY()));
+  odb::Point from(macro.getPinX(), macro.getPinY());
   from.addX(outline_.xMin());
   from.addY(outline_.yMin());
 
@@ -644,8 +661,7 @@ void Graphics::drawDistToRegion(gui::Painter& painter,
 template <typename T>
 bool Graphics::isOutsideTheOutline(const T& macro) const
 {
-  return block_->micronsToDbu(macro.getPinX()) > outline_.dx()
-         || block_->micronsToDbu(macro.getPinY()) > outline_.dy();
+  return macro.getPinX() > outline_.dx() || macro.getPinY() > outline_.dy();
 }
 
 void Graphics::addOutlineOffsetToLine(odb::Point& from, odb::Point& to)
@@ -677,13 +693,13 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
   }
 }
 
-void Graphics::setMacroBlockages(const std::vector<mpl::Rect>& macro_blockages)
+void Graphics::setMacroBlockages(const std::vector<odb::Rect>& macro_blockages)
 {
   macro_blockages_ = macro_blockages;
 }
 
 void Graphics::setPlacementBlockages(
-    const std::vector<mpl::Rect>& placement_blockages)
+    const std::vector<odb::Rect>& placement_blockages)
 {
   placement_blockages_ = placement_blockages;
 }
@@ -719,9 +735,9 @@ void Graphics::setOnlyFinalResult(bool only_final_result)
   only_final_result_ = only_final_result;
 }
 
-void Graphics::setBundledNets(const std::vector<BundledNet>& bundled_nets)
+void Graphics::setNets(const BundledNetList& nets)
 {
-  bundled_nets_ = bundled_nets;
+  nets_ = nets;
 }
 
 void Graphics::setTargetClusterId(const int target_cluster_id)
@@ -739,14 +755,24 @@ void Graphics::setCurrentCluster(Cluster* current_cluster)
   current_cluster_ = current_cluster;
 }
 
-void Graphics::setGuides(const std::map<int, Rect>& guides)
+void Graphics::setGuides(const std::map<int, odb::Rect>& guides)
 {
   guides_ = guides;
 }
 
-void Graphics::setFences(const std::map<int, Rect>& fences)
+void Graphics::setFences(const std::map<int, odb::Rect>& fences)
 {
   fences_ = fences;
+}
+
+void Graphics::addNotch(const odb::Rect& notch)
+{
+  notches_.emplace_back(notch);
+}
+
+void Graphics::clearNotches()
+{
+  notches_.clear();
 }
 
 void Graphics::setIOConstraintsMap(
@@ -776,7 +802,7 @@ void Graphics::eraseDrawing()
   hard_macros_.clear();
   macro_blockages_.clear();
   placement_blockages_.clear();
-  bundled_nets_.clear();
+  nets_.clear();
   outline_.reset(0, 0, 0, 0);
   outlines_.clear();
   blocked_regions_for_pins_.clear();

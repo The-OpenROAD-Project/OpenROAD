@@ -26,7 +26,9 @@
 #include <cstddef>
 #include <vector>
 
+#include "objective/detailed_objective.h"
 #include "optimization/detailed_orient.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -321,7 +323,7 @@ double DetailedABU::calculateABU(bool print)
     }
   }
 
-  std::sort(util_array.begin(), util_array.end());
+  std::ranges::sort(util_array);
 
   // Get different values.
   double abu2 = 0.0, abu5 = 0.0, abu10 = 0.0, abu20 = 0.0;
@@ -631,9 +633,9 @@ void DetailedABU::clearBins()
 {
   abuChangedBinsCounter_ = 0;
   abuChangedBinsMask_.resize(abuNumBins_);
-  std::fill(abuChangedBinsMask_.begin(),
-            abuChangedBinsMask_.end(),
-            abuChangedBinsCounter_);
+  std::ranges::fill(abuChangedBinsMask_,
+
+                    abuChangedBinsCounter_);
   ++abuChangedBinsCounter_;
   abuChangedBins_.reserve(abuNumBins_);
 }
@@ -644,7 +646,7 @@ void DetailedABU::clearBuckets()
 {
   utilBuckets_.resize(10);
   utilTotals_.resize(10);
-  std::fill(utilTotals_.begin(), utilTotals_.end(), 0.0);
+  std::ranges::fill(utilTotals_, 0.0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

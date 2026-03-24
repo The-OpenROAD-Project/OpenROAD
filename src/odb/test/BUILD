@@ -1,8 +1,12 @@
-load("@openroad_rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -30,7 +34,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -43,7 +47,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -56,7 +60,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -69,7 +73,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -82,7 +86,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -95,7 +99,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -108,7 +112,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -121,7 +125,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -134,7 +138,7 @@ py_test(
     deps = [
         ":helper",
         ":odbUnitTest",
-        "//openroad:openroadpy",
+        "//python/openroad:openroadpy",
         "//src/odb:odb_py",
     ],
 )
@@ -145,8 +149,10 @@ COMPULSORY_TESTS = [
     "all_pins_placed1",
     "all_pins_placed2",
     "bterm_hier_create",
+    "check_3dblox",
     "check_routing_tracks",
     "create_blockage",
+    "create_obstruction",
     "create_sboxes",
     "def_dup_net",
     "def_parser",
@@ -189,14 +195,18 @@ COMPULSORY_TESTS = [
     "replace_hier_mod3",
     "replace_hier_mod4",
     "replace_hier_mod5",
+    "replace_hier_mod6",
     "replace_hier_mod_report_checks",
     "rounding",
     "row_settings",
     "sky130hd_multi_patterned",
     "smash_vias",
+    "swap_master",
     "transform",
     "wire_encoder",
     "write_cdl",
+    "write_3dbv",
+    "write_3dbx",
     "write_def58",
     "write_def58_gzip",
     "write_lef_and_def",
@@ -206,6 +216,9 @@ COMPULSORY_TESTS = [
 
 PASSFAIL_TESTS = [
     # pass-fail
+    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
+    # build directory structure not compatible with Bazel
+    # "cpp_tests",
     "test_block",
     "test_bterm",
     "test_destroy",
@@ -217,20 +230,12 @@ PASSFAIL_TESTS = [
     "test_wire_codec",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "odb_man_tcl_check",
-    "odb_readme_msgs_check",
-]
-
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "dump_netlists",
-    "dump_netlists_withfill",
     "replace_hier_mod1",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS + PASSFAIL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -251,6 +256,7 @@ filegroup(
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
         "Nangate45/Nangate45_typ.lib",
+        "Nangate45/fake_bumps.lef",
         "Nangate45/fake_macros.lef",
         "Nangate45/fake_macros.lib",
         "Nangate45/fakeram45.cfg",
@@ -276,6 +282,11 @@ filegroup(
         "data/design58.def",
         "data/example.3dbv",
         "data/example.3dbx",
+        "data/example.bmap",
+        "data/example1.bmap",
+        "data/example2.bmap",
+        "data/example3.bmap",
+        "data/example4.bmap",
         "data/floorplan_initialize.def",
         "data/floorplan_initialize.v",
         "data/floorplan_initialize2.def",
@@ -306,6 +317,7 @@ filegroup(
         "helper.tcl",
         "helpers.tcl",
         "replace_hier_mod1.v",
+        "replace_hier_mod6.v",
         "replace_hier_mod_undo.tcl",
         "replace_hier_mod_undo2.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
@@ -345,6 +357,9 @@ filegroup(
             "all_pins_placed2": [
                 "design_is_routed1.def",
             ],
+            "create_obstruction": [
+                "create_blockage.def",
+            ],
             "dump_netlists": [
                 "dump_netlists_cdl.ok",
             ],
@@ -374,9 +389,25 @@ filegroup(
         check_log = False if test_name in PASSFAIL_TESTS else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "odb_man_tcl_check",
+    srcs = ["odb_man_tcl_check.py"],
+    data = ["//src/odb:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "odb_readme_msgs_check",
+    data = [
+        "//src/odb:doc_files",
+        "//src/odb:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

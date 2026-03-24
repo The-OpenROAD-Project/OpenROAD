@@ -22,7 +22,7 @@ using std::vector;
 
 using utl::DPL;
 
-using utl::format_as;
+using utl::format_as;  // NOLINT(misc-unused-using-decls)
 
 void Opendp::checkPlacement(const bool verbose,
                             const std::string& report_file_name)

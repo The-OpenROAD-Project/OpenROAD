@@ -9,6 +9,7 @@
 #include "Python.h"
 
 extern "C" {
+// NOLINTNEXTLINE(bugprone-reserved-identifier)
 extern PyObject* PyInit__odb_py();
 }
 

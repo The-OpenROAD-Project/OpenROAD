@@ -4,6 +4,7 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -11,7 +12,6 @@
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -34,7 +34,7 @@ class _dbChipInst : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   std::string name_;
-  Point3D loc_;
+  Point3D origin_;
   dbOrientType3D orient_;
   dbId<_dbChip> master_chip_;
   dbId<_dbChip> parent_chip_;

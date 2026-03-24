@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
-#include <libgen.h>
 #include <stdlib.h>  // NOLINT(modernize-deprecated-headers): for setenv()
 #include <strings.h>
-#include <tcl.h>
 
 #include <array>
 #include <climits>
@@ -19,14 +17,20 @@
 #include <system_error>
 
 #include "boost/stacktrace/stacktrace.hpp"
+#include "tcl.h"
 #ifdef ENABLE_READLINE
 // If you get an error on this include be sure you have
 //   the package tcl-tclreadline-devel installed
-#include <tclreadline.h>
+#include "tclreadline.h"
 #endif
 #ifdef ENABLE_PYTHON3
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#endif
+
+#ifdef BAZEL_CURRENT_REPOSITORY
+#include "rules_cc/cc/runfiles/runfiles.h"
+using rules_cc::cc::runfiles::Runfiles;
 #endif
 
 #ifdef ENABLE_TCLX
@@ -60,6 +64,7 @@ using std::string;
   X(gpl)                                 \
   X(dpl)                                 \
   X(exa)                                 \
+  X(web)                                 \
   X(ppl)                                 \
   X(tap)                                 \
   X(cts)                                 \
@@ -314,14 +319,8 @@ int main(int argc, char* argv[])
 #ifdef ENABLE_READLINE
 static int tclReadlineInit(Tcl_Interp* interp)
 {
-  std::array<const char*, 7> readline_cmds = {
-      "history event",
-      "eval $auto_index(::tclreadline::ScriptCompleter)",
-      "::tclreadline::readline builtincompleter true",
-      "::tclreadline::readline customcompleter ::tclreadline::ScriptCompleter",
-      "proc ::tclreadline::prompt1 {} { return \"openroad> \" }",
-      "proc ::tclreadline::prompt2 {} { return \"...> \" }",
-      "::tclreadline::Loop"};
+  std::array<const char*, 2> readline_cmds
+      = {"ord::setup_tclreadline", "::tclreadline::Loop"};
 
   for (auto cmd : readline_cmds) {
     if (TCL_ERROR == Tcl_Eval(interp, cmd)) {
@@ -358,6 +357,18 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
   // problems and is not really done.
   const char* tcl_script = R"(
       namespace eval temp {
+        # Check standard Bazel runfiles relative path
+        set runfiles_path [file join [pwd] "external/tclreadline/tclreadlineInit.tcl"]
+        if {[file exists $runfiles_path]} {
+            return $runfiles_path
+        }
+        
+        # Check Bazel runfiles in adjacent directories for other run strategies
+        set runfiles_execroot_path [file join [pwd] "../tclreadline/tclreadlineInit.tcl"]
+        if {[file exists $runfiles_execroot_path]} {
+            return $runfiles_execroot_path
+        }
+
         foreach dir $::auto_path {
             set folder [file join $dir]
             set path [file join $folder "tclreadline)" TCLRL_VERSION_STR
@@ -371,8 +382,7 @@ std::string findPathToTclreadlineInit(Tcl_Interp* interp)
     )";
 
   if (Tcl_Eval(interp, tcl_script) == TCL_ERROR) {
-    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp)
-              << std::endl;
+    std::cerr << "Tcl_Eval failed: " << Tcl_GetStringResult(interp) << '\n';
     return "";
   }
 
@@ -424,9 +434,70 @@ static int tclAppInit(int& argc,
 
       if (Tcl_EvalFile(interp, TCLRL_LIBRARY "/tclreadlineInit.tcl")
           != TCL_OK) {
-        std::string path = findPathToTclreadlineInit(interp);
-        if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
-          printf("Failed to load tclreadline\n");
+        bool found = false;
+#ifdef BAZEL_CURRENT_REPOSITORY
+        std::string error;
+        std::unique_ptr<Runfiles> runfiles(
+            Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
+        if (runfiles) {
+          // Under bzlmod, the tclreadline repo might be called
+          // +_repo_rules+tclreadline
+          std::string repo_prefix;
+          std::string path = runfiles->Rlocation(
+              "+_repo_rules+tclreadline/tclreadlineInit.tcl");
+          if (!path.empty()) {
+            repo_prefix = "+_repo_rules+tclreadline";
+          } else {
+            path = runfiles->Rlocation("tclreadline/tclreadlineInit.tcl");
+            if (!path.empty()) {
+              repo_prefix = "tclreadline";
+            } else {
+              path = runfiles->Rlocation(
+                  "_main~override~tclreadline/tclreadlineInit.tcl");
+              if (!path.empty()) {
+                repo_prefix = "_main~override~tclreadline";
+              }
+            }
+          }
+          if (!path.empty()) {
+            std::string dir = path.substr(0, path.find_last_of("/\\"));
+            std::string setup_path
+                = runfiles->Rlocation(repo_prefix + "/tclreadlineSetup.tcl");
+            std::string completer_path = runfiles->Rlocation(
+                repo_prefix + "/tclreadlineCompleter.tcl");
+
+            // Setup variables so that the scripts can find themselves
+            std::string cmd
+                = std::string("namespace eval ::tclreadline {}; ")
+                  + std::string("set ::tclreadline::library \"") + dir + "\"; "
+                  + std::string("set ::tclreadline::setup_path \"") + setup_path
+                  + "\"; " + std::string("set ::tclreadline::completer_path \"")
+                  + completer_path + "\"; "
+                  + std::string("lappend ::auto_path \"") + dir + "\"; "
+                  + std::string(
+                      "if {[info commands history] == \"\"} { proc history "
+                      "{args} {} }; ");
+            Tcl_Eval(interp, cmd.c_str());
+
+            if (Tcl_EvalFile(interp, path.c_str()) == TCL_OK) {
+              found = true;
+            } else {
+              printf("Failed evaluating runfiles tclreadline: %s\n",
+                     Tcl_GetStringResult(interp));
+            }
+          } else {
+            printf(
+                "Runfiles Rlocation for tclreadlineInit.tcl returned empty.\n");
+          }
+        } else {
+          printf("Runfiles::Create failed: %s\n", error.c_str());
+        }
+#endif
+        if (!found) {
+          std::string path = findPathToTclreadlineInit(interp);
+          if (path.empty() || Tcl_EvalFile(interp, path.c_str()) != TCL_OK) {
+            printf("Failed to load tclreadline\n");
+          }
         }
       }
     }

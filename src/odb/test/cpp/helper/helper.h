@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
+#include <cstdint>
+
 #include "odb/db.h"
 #include "tst/fixture.h"
 
@@ -11,16 +13,16 @@ class SimpleDbFixture : public tst::Fixture
  protected:
   static odb::dbMaster* createMaster2X1(odb::dbLib* lib,
                                         const char* name,
-                                        uint width,
-                                        uint height,
+                                        uint32_t width,
+                                        uint32_t height,
                                         const char* in1,
                                         const char* in2,
                                         const char* out);
 
   static odb::dbMaster* createMaster1X1(dbLib* lib,
                                         const char* name,
-                                        uint width,
-                                        uint height,
+                                        uint32_t width,
+                                        uint32_t height,
                                         const char* in1,
                                         const char* out);
 

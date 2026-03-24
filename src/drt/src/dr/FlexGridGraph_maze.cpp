@@ -11,9 +11,13 @@
 #include <string>
 #include <vector>
 
+#include "db/drObj/drPin.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
+#include "dr/FlexMazeTypes.h"
+#include "dr/FlexWavefront.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 
@@ -228,19 +232,13 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(srcPoint, gridX, gridY);
   getPoint(dstPoint1, dstMazeIdx1.x(), dstMazeIdx1.y());
   getPoint(dstPoint2, dstMazeIdx2.x(), dstMazeIdx2.y());
-  frCoord minCostX = std::max(std::max(dstPoint1.x() - srcPoint.x(),
-                                       srcPoint.x() - dstPoint2.x()),
-                              0)
-                     * 1;
-  frCoord minCostY = std::max(std::max(dstPoint1.y() - srcPoint.y(),
-                                       srcPoint.y() - dstPoint2.y()),
-                              0)
-                     * 1;
-  frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
-                          getZHeight(gridZ) - getZHeight(dstMazeIdx2.z())),
-                 0)
-        * 1;
+  frCoord minCostX = std::max(
+      {dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x(), 0});
+  frCoord minCostY = std::max(
+      {dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y(), 0});
+  frCoord minCostZ = std::max({getZHeight(dstMazeIdx1.z()) - getZHeight(gridZ),
+                               getZHeight(gridZ) - getZHeight(dstMazeIdx2.z()),
+                               0});
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
               && dir != frDirEnum::W)
@@ -582,13 +580,13 @@ bool FlexGridGraph::useNDRCosts(const FlexWavefrontGrid& p) const
 frMIdx FlexGridGraph::getLowerBoundIndex(const frVector<frCoord>& tracks,
                                          frCoord v) const
 {
-  return std::lower_bound(tracks.begin(), tracks.end(), v) - tracks.begin();
+  return std::ranges::lower_bound(tracks, v) - tracks.begin();
 }
 
 frMIdx FlexGridGraph::getUpperBoundIndex(const frVector<frCoord>& tracks,
                                          frCoord v) const
 {
-  auto it = std::upper_bound(tracks.begin(), tracks.end(), v);
+  auto it = std::ranges::upper_bound(tracks, v);
   if (it == tracks.end()) {
     it = std::prev(it);
   }
@@ -684,7 +682,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.emplace_back(currX, currY, currZ);

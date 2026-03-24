@@ -83,7 +83,7 @@ void HungarianAlgorithm::assignmentoptimal(int* assignment,
   for (int row = 0; row < n_of_elements; row++) {
     int value = dist_matrix_in[row];
     if (value < 0) {
-      std::cerr << "All matrix elements have to be non-negative." << std::endl;
+      std::cerr << "All matrix elements have to be non-negative.\n";
     }
     dist_matrix[row] = value;
   }
@@ -108,9 +108,7 @@ void HungarianAlgorithm::assignmentoptimal(int* assignment,
       dist_matrix_temp += n_of_rows;
       while (dist_matrix_temp < dist_matrix_end) {
         int value = *dist_matrix_temp;
-        if (value < min_value) {
-          min_value = value;
-        }
+        min_value = std::min(value, min_value);
         dist_matrix_temp += n_of_rows;
       }
 
@@ -145,9 +143,7 @@ void HungarianAlgorithm::assignmentoptimal(int* assignment,
       int min_value = *dist_matrix_temp++;
       while (dist_matrix_temp < column_end) {
         int value = *dist_matrix_temp++;
-        if (value < min_value) {
-          min_value = value;
-        }
+        min_value = std::min(value, min_value);
       }
 
       /* subtract the smallest element from each element of the column */
@@ -478,9 +474,7 @@ void HungarianAlgorithm::step5(int* assignment,
       for (int col = 0; col < n_of_columns; col++) {
         if (!covered_columns[col]) {
           int value = dist_matrix[row + n_of_rows * col];
-          if (value < h) {
-            h = value;
-          }
+          h = std::min(value, h);
         }
       }
     }

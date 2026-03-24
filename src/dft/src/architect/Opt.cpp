@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "ScanCell.hh"
 #include "boost/geometry/geometries/register/point.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "boost/geometry/index/rtree.hpp"

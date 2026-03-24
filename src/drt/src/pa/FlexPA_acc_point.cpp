@@ -28,6 +28,7 @@
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -319,7 +320,7 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum upper_type)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
-  bool allow_via = !isIOTerm(inst_term);
+  bool allow_via = true;
   bool allow_planar = true;
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   if (isStdCellTerm(inst_term)) {
@@ -467,11 +468,8 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
       = (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum())
             ? getDesign()->getTech()->getLayer(layer_num + 2)
             : nullptr;
-  if (!is_macro_cell_pin && upper_layer
-      && upper_layer->getLef58RightWayOnGridOnlyConstraint()) {
-    return true;
-  }
-  return false;
+  return !is_macro_cell_pin && upper_layer
+         && upper_layer->getLef58RightWayOnGridOnlyConstraint();
 }
 
 void FlexPA::genAPsFromLayerShapes(
@@ -886,11 +884,31 @@ void FlexPA::filterViaAccess(
 
   if (via_defs.empty()) {  // no via map entry
     // hardcode first two single vias
-    for (auto& [tup, via_def] : layer_num_to_via_defs_[layer_num + 1][1]) {
-      via_defs.emplace_back(via_defs.size(), via_def);
-      if (via_defs.size() >= max_num_via_trial && !deep_search) {
-        break;
+    auto collect_vias = [&](int adj_layer_num, int max_trial) {
+      if (adj_layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+        return;
       }
+      if (layer_num_to_via_defs_.find(adj_layer_num)
+          != layer_num_to_via_defs_.end()) {
+        for (auto& [tup, via_def] : layer_num_to_via_defs_[adj_layer_num][1]) {
+          if (inst_term && inst_term->isStubborn()
+              && avoid_via_defs_.contains(via_def)) {
+            continue;
+          }
+          via_defs.emplace_back(via_defs.size(), via_def);
+          if (via_defs.size() >= max_trial && !deep_search) {
+            break;
+          }
+        }
+      }
+    };
+
+    // UP Vias
+    collect_vias(layer_num + 1, max_num_via_trial);
+
+    // DOWN Vias
+    if (isIOTerm(inst_term)) {
+      collect_vias(layer_num - 1, max_num_via_trial);
     }
   }
 
@@ -898,7 +916,7 @@ void FlexPA::filterViaAccess(
   for (auto& [idx, via_def] : via_defs) {
     auto via = std::make_unique<frVia>(via_def, begin_point);
     const odb::Rect box = via->getLayer1BBox();
-    if (inst_term) {
+    if (inst_term && !deep_search) {
       odb::Rect boundary_bbox = inst_term->getInst()->getBoundaryBBox();
       if (!boundary_bbox.contains(box)) {
         continue;
@@ -916,7 +934,11 @@ void FlexPA::filterViaAccess(
     }
     if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
       ap->addViaDef(via_def);
-      ap->setAccess(frDirEnum::U);
+      if (via_def->getLayer1Num() == layer_num) {
+        ap->setAccess(frDirEnum::U);
+      } else {
+        ap->setAccess(frDirEnum::D);
+      }
       valid_via_count++;
       if (valid_via_count >= max_num_via_trial) {
         break;
@@ -965,28 +987,31 @@ bool FlexPA::checkDirectionalViaAccess(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir)
 {
-  auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  frLayerNum target_layer_num;
+  if (via->getViaDef()->getLayer1Num() == ap->getLayerNum()) {
+    target_layer_num = via->getViaDef()->getLayer2Num();
+  } else {
+    target_layer_num = via->getViaDef()->getLayer1Num();
+  }
+  auto target_layer = getTech()->getLayer(target_layer_num);
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
-                         || (upper_layer->isVertical() && !vert_dir);
-  auto style = upper_layer->getDefaultSegStyle();
+  const bool wrong_dir = (target_layer->isHorizontal() && vert_dir)
+                         || (target_layer->isVertical() && !vert_dir);
+  auto style = target_layer->getDefaultSegStyle();
 
   if (wrong_dir) {
-    if (!router_cfg_->USENONPREFTRACKS || upper_layer->isUnidirectional()) {
+    if (!router_cfg_->USENONPREFTRACKS || target_layer->isUnidirectional()) {
       return false;
     }
-    style.setWidth(upper_layer->getWrongDirWidth());
+    style.setWidth(target_layer->getWrongDirWidth());
   }
 
   const odb::Point begin_point = ap->getPoint();
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  const odb::Point end_point = genEndPoint(layer_polys,
-                                           begin_point,
-                                           via->getViaDef()->getLayer2Num(),
-                                           dir,
-                                           is_block);
+  const odb::Point end_point
+      = genEndPoint(layer_polys, begin_point, target_layer_num, dir, is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1002,7 +1027,7 @@ bool FlexPA::checkDirectionalViaAccess(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-  ps->setLayerNum(upper_layer->getLayerNum());
+  ps->setLayerNum(target_layer->getLayerNum());
   ps->setStyle(style);
   if (inst_term && inst_term->hasNet()) {
     ps->addToNet(inst_term->getNet());
@@ -1085,6 +1110,14 @@ void FlexPA::filterMultipleAPAccesses(
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
+  if (isIOTerm(inst_term)) {
+    // if the pin is an I/O pin, and there is planar access, return
+    for (auto& ap : aps) {
+      if (ap->hasPlanarAccess()) {
+        return;
+      }
+    }
+  }
   std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
       pin_shapes.size());
   for (int i = 0; i < (int) pin_shapes.size(); i++) {
@@ -1357,6 +1390,13 @@ FlexPA::mergePinShapes(T* pin, frInstTerm* inst_term, const bool is_shrink)
 template <typename T>
 int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
 {
+  // IO term pin always only have one access
+  const int pin_access_idx
+      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
+  if (pin->getPinAccess(pin_access_idx)->getNumAccessPoints() > 0) {
+    pin->getPinAccess(pin_access_idx)->clearAccessPoints();
+  }
+
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
   std::vector<std::unique_ptr<frAccessPoint>> aps;
@@ -1448,9 +1488,6 @@ int FlexPA::genPinAccess(T* pin, frInstTerm* inst_term)
   }
 
   updatePinStats(aps, inst_term);
-  // IO term pin always only have one access
-  const int pin_access_idx
-      = inst_term ? inst_term->getInst()->getPinAccessIdx() : 0;
   // write to pa
   for (auto& ap : aps) {
     pin->getPinAccess(pin_access_idx)->addAccessPoint(std::move(ap));
@@ -1554,39 +1591,46 @@ void FlexPA::genAllAccessPoints()
     logger_->info(DRT, 78, "  Complete {} pins.", pin_count);
   }
 }
+void FlexPA::revertAccessPoints(frInst* inst)
+{
+  const odb::dbTransform xform = inst->getTransform();
+  const odb::Point offset(xform.getOffset());
+  odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
+
+  const auto pin_access_idx = inst->getPinAccessIdx();
+  for (auto& inst_term : inst->getInstTerms()) {
+    for (auto& pin : inst_term->getTerm()->getPins()) {
+      auto pin_access = pin->getPinAccess(pin_access_idx);
+      for (auto& access_point : pin_access->getAccessPoints()) {
+        odb::Point unique_AP_point(access_point->getPoint());
+        revertXform.apply(unique_AP_point);
+        access_point->setPoint(unique_AP_point);
+        for (auto& ps : access_point->getPathSegs()) {
+          odb::Point begin = ps.getBeginPoint();
+          odb::Point end = ps.getEndPoint();
+          revertXform.apply(begin);
+          revertXform.apply(end);
+          if (end < begin) {
+            odb::Point tmp = begin;
+            begin = end;
+            end = tmp;
+          }
+          ps.setPoints(begin, end);
+        }
+      }
+    }
+  }
+}
 
 void FlexPA::revertAccessPoints()
 {
   const auto& unique = unique_insts_.getUniqueClasses();
   for (const auto& unique_class : unique) {
-    auto candidate_inst = unique_class->getFirstInst();
-    const odb::dbTransform xform = candidate_inst->getTransform();
-    const odb::Point offset(xform.getOffset());
-    odb::dbTransform revertXform(odb::Point(-offset.getX(), -offset.getY()));
-
-    const auto pin_access_idx = candidate_inst->getPinAccessIdx();
-    for (auto& inst_term : candidate_inst->getInstTerms()) {
-      for (auto& pin : inst_term->getTerm()->getPins()) {
-        auto pin_access = pin->getPinAccess(pin_access_idx);
-        for (auto& access_point : pin_access->getAccessPoints()) {
-          odb::Point unique_AP_point(access_point->getPoint());
-          revertXform.apply(unique_AP_point);
-          access_point->setPoint(unique_AP_point);
-          for (auto& ps : access_point->getPathSegs()) {
-            odb::Point begin = ps.getBeginPoint();
-            odb::Point end = ps.getEndPoint();
-            revertXform.apply(begin);
-            revertXform.apply(end);
-            if (end < begin) {
-              odb::Point tmp = begin;
-              begin = end;
-              end = tmp;
-            }
-            ps.setPoints(begin, end);
-          }
-        }
-      }
+    if (unique_class->getInsts().empty()) {
+      continue;
     }
+    auto inst = unique_class->getFirstInst();
+    revertAccessPoints(inst);
   }
 }
 

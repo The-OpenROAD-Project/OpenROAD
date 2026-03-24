@@ -24,34 +24,58 @@ swig_lib(NAME      gpl
          SCRIPTS   src/replace.tcl
 )
 
+add_library(gpl_lib
+  src/AbstractGraphics.cpp
+  src/replace.cpp
+  src/initialPlace.cpp
+  src/nesterovPlace.cpp
+  src/placerBase.cpp
+  src/nesterovBase.cpp
+  src/fft.cpp
+  src/fftsg.cpp
+  src/fftsg2d.cpp
+  src/routeBase.cpp
+  src/timingBase.cpp
+  src/graphicsNone.cpp
+  src/solver.cpp
+  src/mbff.cpp
+)
+
 target_sources(gpl
   PRIVATE
     src/MakeReplace.cpp
-    src/replace.cpp
-    src/initialPlace.cpp
-    src/nesterovPlace.cpp
-    src/placerBase.cpp
-    src/nesterovBase.cpp
-    src/fft.cpp
-    src/fftsg.cpp
-    src/fftsg2d.cpp
-    src/routeBase.cpp
-    src/timingBase.cpp
-    src/graphics.cpp
-    src/solver.cpp
-    src/mbff.cpp
+    src/graphicsImpl.cpp
 )
 
 messages(TARGET gpl)
+messages(TARGET gpl_lib)
 
 target_include_directories(gpl
+  PUBLIC
+    include
+)
+
+target_include_directories(gpl_lib
   PUBLIC
     include
     ${LEMON_INCLUDE_DIRS}
 )
 
+target_link_libraries(gpl_lib
+    utl_lib
+    Eigen3::Eigen
+    odb
+    OpenSTA
+    rsz_lib
+    grt_lib
+    ortools::ortools
+    Threads::Threads
+    OpenMP::OpenMP_CXX
+)
+
 target_link_libraries(gpl
   PRIVATE
+    gpl_lib
     utl_lib
     Eigen3::Eigen
     gui

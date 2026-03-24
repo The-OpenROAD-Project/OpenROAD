@@ -5,20 +5,20 @@
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstdint>
 
 #include "dbBlock.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {
 
-bool dbBlockItr::reversible()
+bool dbBlockItr::reversible() const
 {
   return true;
 }
 
-bool dbBlockItr::orderReversed()
+bool dbBlockItr::orderReversed() const
 {
   return false;
 }
@@ -26,32 +26,32 @@ bool dbBlockItr::orderReversed()
 void dbBlockItr::reverse(dbObject* parent)
 {
   _dbBlock* block = (_dbBlock*) parent;
-  std::reverse(block->_children.begin(), block->_children.end());
+  std::ranges::reverse(block->children_);
 }
 
-uint dbBlockItr::sequential()
+uint32_t dbBlockItr::sequential() const
 {
   return 0;
 }
 
-uint dbBlockItr::size(dbObject* parent)
+uint32_t dbBlockItr::size(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
-uint dbBlockItr::begin(dbObject*)
+uint32_t dbBlockItr::begin(dbObject*) const
 {
   return 0;
 }
 
-uint dbBlockItr::end(dbObject* parent)
+uint32_t dbBlockItr::end(dbObject* parent) const
 {
   _dbBlock* block = (_dbBlock*) parent;
-  return block->_children.size();
+  return block->children_.size();
 }
 
-uint dbBlockItr::next(uint id, ...)
+uint32_t dbBlockItr::next(uint32_t id, ...) const
 {
   return ++id;
 }
@@ -60,15 +60,15 @@ uint dbBlockItr::next(uint id, ...)
 // ‘va_start’ is declared with ‘register’ storage [-Wvarargs]
 //     va_start(ap,id);
 
-// dbObject * dbBlockItr::getObject( uint id, ... )
-dbObject* dbBlockItr::getObject(uint id, ...)
+// dbObject * dbBlockItr::getObject( uint32_t id, ... )
+dbObject* dbBlockItr::getObject(uint32_t id, ...)
 {
   va_list ap;
   va_start(ap, id);
   _dbBlock* parent = (_dbBlock*) va_arg(ap, dbObject*);
   va_end(ap);
-  uint cid = parent->_children[id];
-  return _block_tbl->getPtr(cid);
+  uint32_t cid = parent->children_[id];
+  return block_tbl_->getPtr(cid);
 }
 
 }  // namespace odb

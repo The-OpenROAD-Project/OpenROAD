@@ -134,9 +134,7 @@ class CKMSQuantiles
       } else {
         error = q.v * rank;
       }
-      if (error < minError) {
-        minError = error;
-      }
+      minError = std::min(error, minError);
     }
 
     return minError;

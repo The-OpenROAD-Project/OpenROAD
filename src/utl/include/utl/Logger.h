@@ -46,6 +46,7 @@ class Progress;
 #define FOREACH_TOOL(X) \
   X(ANT)                \
   X(CGT)                \
+  X(CHK)                \
   X(CTS)                \
   X(CUT)                \
   X(DFT)                \
@@ -78,7 +79,8 @@ class Progress;
   X(TST)                \
   X(UKN)                \
   X(UPF)                \
-  X(UTL)
+  X(UTL)                \
+  X(WEB)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -222,6 +224,8 @@ class Logger
     return (it != groups.end() && level <= it->second);
   }
 
+  int getWarningCount() const { return warning_count_; }
+
   void startPrometheusEndpoint(uint16_t port);
   std::shared_ptr<PrometheusRegistry> getRegistry();
   bool isPrometheusServerReadyToServe();
@@ -231,7 +235,7 @@ class Logger
   void unsuppressMessage(ToolId tool, int id);
 
   void addSink(spdlog::sink_ptr sink);
-  void removeSink(spdlog::sink_ptr sink);
+  void removeSink(const spdlog::sink_ptr& sink);
   void addMetricsSink(const char* metrics_filename);
   void removeMetricsSink(const char* metrics_filename);
 

@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "Clock.h"
+#include "Util.h"
 #include "gui/gui.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"

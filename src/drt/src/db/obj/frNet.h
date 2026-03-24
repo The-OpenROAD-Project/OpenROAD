@@ -229,6 +229,8 @@ class frNet : public frBlockObject
   const std::vector<frRect>& getOrigGuides() const { return orig_guides_; }
   void setHasJumpers(bool has_jumpers) { has_jumpers_ = has_jumpers; }
   bool hasJumpers() { return has_jumpers_; }
+  void setToBeDeleted(bool to_be_deleted) { to_be_deleted_ = to_be_deleted; }
+  bool toBeDeleted() { return to_be_deleted_; }
 
  protected:
   frString name_;
@@ -268,5 +270,6 @@ class frNet : public frBlockObject
   // to prevent antenna violations
   bool has_jumpers_{false};
   std::vector<frPinFig*> all_pinfigs_;
+  bool to_be_deleted_{false};
 };
 }  // namespace drt

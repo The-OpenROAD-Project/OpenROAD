@@ -15,7 +15,7 @@
   ],
   "fields": [
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "edge_dir_",
       "flags":[
         "no-set",

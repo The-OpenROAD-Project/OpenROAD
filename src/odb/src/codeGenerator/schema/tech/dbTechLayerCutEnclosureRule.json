@@ -3,8 +3,8 @@
   "type": "dbObject",
   "fields": [
     {
-      "name": "type_",
-      "type": "uint",
+      "name": "type",
+      "type": "uint32_t",
       "flags": [
         "no-set",
         "no-get"
@@ -13,7 +13,7 @@
     },
     {
       "type": "bit",
-      "name": "cut_class_valid_"
+      "name": "cut_class_valid"
     },
     {
       "type": "dbId<_dbTechLayerCutClassRule>",
@@ -22,11 +22,11 @@
     },
     {
       "type": "bit",
-      "name": "above_"
+      "name": "above"
     },
     {
       "type": "bit",
-      "name": "below_"
+      "name": "below"
     },
     {
       "name":"eol_width_",
@@ -34,7 +34,7 @@
       "default": 0
     },
     {
-      "name":"eol_min_length_valid_",
+      "name":"eol_min_length_valid",
       "type":"bit"
     },
     {
@@ -43,11 +43,11 @@
       "default": 0
     },
     {
-      "name":"eol_only_",
+      "name":"eol_only",
       "type":"bit"
     },
     {
-      "name":"short_edge_on_eol_",
+      "name":"short_edge_on_eol",
       "type":"bit"
     },
     {
@@ -61,11 +61,11 @@
       "default": 0
     },
     {
-      "name":"side_spacing_valid_",
+      "name":"side_spacing_valid",
       "type":"bit"
     },
     {
-      "name":"end_spacing_valid_",
+      "name":"end_spacing_valid",
       "type":"bit"
     },
     {
@@ -89,11 +89,11 @@
       "default": 0
     },
     {
-      "name":"off_center_line_",
+      "name":"off_center_line",
       "type":"bit"
     },
     {
-      "name":"width_valid_",
+      "name":"width_valid",
       "type":"bit"
     },
     {
@@ -102,11 +102,11 @@
       "default": 0
     },
     {
-      "name":"include_abutted_",
+      "name":"include_abutted",
       "type":"bit"
     },
     {
-      "name":"except_extra_cut_",
+      "name":"except_extra_cut",
       "type":"bit"
     },
     {
@@ -115,15 +115,15 @@
       "default": 0
     },
     {
-      "name":"prl_",
+      "name":"prl",
       "type":"bit"
     },
     {
-      "name":"no_shared_edge_",
+      "name":"no_shared_edge",
       "type":"bit"
     },
     {
-      "name":"length_valid_",
+      "name":"length_valid",
       "type":"bit"
     },
     {
@@ -132,7 +132,7 @@
       "default": 0
     },
     {
-      "name":"extra_cut_valid_",
+      "name":"extra_cut_valid",
       "type":"bit"
     },
     {
@@ -140,11 +140,11 @@
       "type":"bit"
     },
     {
-      "name":"redundant_cut_valid_",
+      "name":"redundant_cut_valid",
       "type":"bit"
     },
     {
-      "name":"parallel_valid_",
+      "name":"parallel_valid",
       "type":"bit"
     },
     {
@@ -167,7 +167,7 @@
       "default": 0
     },
     {
-      "name":"second_par_within_valid_",
+      "name":"second_par_within_valid",
       "type":"bit"
     },
     {
@@ -176,7 +176,7 @@
       "default": 0
     },
     {
-      "name":"below_enclosure_valid_",
+      "name":"below_enclosure_valid",
       "type":"bit"
     },
     {
@@ -185,12 +185,12 @@
       "default": 0
     },
     {
-      "name":"concave_corners_valid_",
+      "name":"concave_corners_valid",
       "type":"bit"
     },
     {
       "name":"num_corners_",
-      "type":"uint",
+      "type":"uint32_t",
       "default": 0
     }
   ],

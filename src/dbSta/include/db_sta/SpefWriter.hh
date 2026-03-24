@@ -4,31 +4,37 @@
 #pragma once
 
 #include <map>
+#include <ostream>
 
 #include "db_sta/dbSta.hh"
+#include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
 #include "utl/Logger.h"
 
 namespace sta {
 
-using utl::Logger;
+class Scene;
+class Parasitic;
 
 class SpefWriter
 {
  public:
-  SpefWriter(Logger* logger,
+  SpefWriter(utl::Logger* logger,
              dbSta* sta,
-             std::map<Corner*, std::ostream*>& spef_streams);
+             std::map<Scene*, std::ostream*>& spef_streams);
   void writeHeader();
   void writePorts();
-  void writeNet(Corner* corner, const Net* net, Parasitic* parasitic);
+  void writeNet(Scene* scene,
+                const Net* net,
+                Parasitic* parasitic,
+                Parasitics* parasitics);
 
  private:
-  Logger* logger_;
+  utl::Logger* logger_;
   dbSta* sta_;
   dbNetwork* network_;
-  Parasitics* parasitics_;
 
-  std::map<Corner*, std::ostream*> spef_streams_;
+  std::map<Scene*, std::ostream*> spef_streams_;
 };
 
 }  // namespace sta

@@ -16,6 +16,7 @@ target_sources(pad
   PRIVATE
     src/MakeICeWall.cpp
     src/ICeWall.cpp
+    src/PadPlacer.cpp
     src/RDLRouter.cpp
     src/RDLRoute.cpp
     src/RDLGui.cpp

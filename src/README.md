@@ -263,8 +263,15 @@ add_global_connection -net VSS -pin_pattern {^VSSE$}
 The `global_connect` command is used to connect power and ground pins on design instances to the appropriate supplies.
 
 ```
-global_connect
+global_connect [-force] [-verbose]
 ```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-force` | If specified, global connections will overwrite existing connections |
+| `-verbose` | If specified, report the number of connections made and skipped. |
 
 #### Clear global connection rules
 
@@ -305,14 +312,15 @@ The `report_timing_histogram` command reports a visualization of the
 slack distribution in the design.
 
 ```tcl
-report_timing_histogram [-num_bins num_bins] [-setup|-hold]
+report_timing_histogram [-num_bins num_bins] [-bin_size bin_size] [-setup|-hold]
 ```
 
 ##### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_bins` | Number of histogram bins to display (default is 10). |
+| `-num_bins` | Number of histogram bins to display (default is 10). Mutually exclusive with `-bin_size`. |
+| `-bin_size` | Fixed bin size for histogram. Bins are aligned to multiples of bin_size in the user time unit (e.g., nanoseconds). Mutually exclusive with `-num_bins`. |
 | `-setup` | Use setup paths (this is the default). |
 | `-hold` | Use hold paths. |
 
@@ -334,6 +342,20 @@ report_logic_depth_histogram [-num_bins num_bins] [-exclude_buffers] [-exclude_i
 | `-num_bins` | Number of histogram bins to display (default is 10). |
 | `-exclude_buffers` | Exclude buffers when counting critical path length. |
 | `-exclude_inverters` | Exclude inverters when counting critical path length. |
+
+#### 3D Blox
+
+The `read_3dblox_bmap` command will read the bump map and place the bumps into the current design.
+
+```tcl
+read_3dblox_bmap filename
+```
+
+##### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `filename` | Path to the bump map. |
 
 ## TCL functions
 

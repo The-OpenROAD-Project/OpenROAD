@@ -4,11 +4,14 @@
 #include "definPin.h"
 
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ranges>
 #include <vector>
 
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbShape.h"
@@ -195,7 +198,7 @@ void definPin::pinRect(const char* layer_name,
                        int y1,
                        int x2,
                        int y2,
-                       uint mask)
+                       uint32_t mask)
 {
   if (_cur_bterm == nullptr) {
     return;
@@ -214,7 +217,7 @@ void definPin::pinRect(const char* layer_name,
   _rects.emplace_back(_layer, r, mask);
 }
 
-void definPin::pinPolygon(std::vector<defPoint>& points, uint mask)
+void definPin::pinPolygon(std::vector<defPoint>& points, uint32_t mask)
 {
   std::vector<Point> P;
   translate(points, P);
@@ -227,7 +230,7 @@ void definPin::pinGroundPin(const char* groundPin)
     return;
   }
 
-  _ground_pins.push_back(Pin(_cur_bterm, std::string(groundPin)));
+  _ground_pins.emplace_back(_cur_bterm, std::string(groundPin));
 }
 
 void definPin::pinSupplyPin(const char* supplyPin)
@@ -236,7 +239,7 @@ void definPin::pinSupplyPin(const char* supplyPin)
     return;
   }
 
-  _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
+  _supply_pins.emplace_back(_cur_bterm, std::string(supplyPin));
 }
 
 void definPin::portBegin()
@@ -270,16 +273,14 @@ void definPin::portEnd()
   }
 
   if (!_rects.empty()) {
-    for (auto itr = _rects.rbegin(); itr != _rects.rend(); ++itr) {
-      addRect(*itr, pin);
+    for (auto& rect : std::ranges::reverse_view(_rects)) {
+      addRect(rect, pin);
     }
   }
 
   if (!_polygons.empty()) {
-    std::vector<Polygon>::iterator itr;
-
-    for (itr = _polygons.begin(); itr != _polygons.end(); ++itr) {
-      addPolygon(*itr, pin);
+    for (Polygon& polygon : _polygons) {
+      addPolygon(polygon, pin);
     }
   }
 }

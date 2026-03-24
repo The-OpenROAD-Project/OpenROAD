@@ -4,10 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -27,7 +27,7 @@ class _dbMasterEdgeType : public _dbObject
   bool operator<(const _dbMasterEdgeType& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  uint edge_dir_;
+  uint32_t edge_dir_;
   std::string edge_type_;
   int cell_row_;
   int half_row_;

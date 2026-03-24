@@ -1,14 +1,18 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "aes_asap7_vdd",
+    "aes_test_bterms_source_resistance",
     "aes_test_bterms",
     "aes_test_multiple_bterms",
+    "aes_test_multiple_bterms_skipped",
     "aes_test_vdd",
     "aes_test_vss",
     "check_power_grid",
@@ -21,6 +25,7 @@ COMPULSORY_TESTS = [
     "check_power_grid_require_bterms_pass",
     "corners",
     "corners_assign_power",
+    "gcd_all_vss_source_res",
     "gcd_all_vss",
     "gcd_em_test_vdd",
     "gcd_no_vsrc",
@@ -42,13 +47,7 @@ COMPULSORY_TESTS = [
     "zerosoc_pads_check_only_disconnected",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "psm_man_tcl_check",
-    "psm_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -174,3 +173,20 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "psm_man_tcl_check",
+    srcs = ["psm_man_tcl_check.py"],
+    data = ["//src/psm:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "psm_readme_msgs_check",
+    data = [
+        "//src/psm:doc_files",
+        "//src/psm:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

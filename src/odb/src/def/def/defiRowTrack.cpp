@@ -109,7 +109,7 @@ void defiRow::Destroy()
   free((char*) (propNames_));
   free((char*) (propValues_));
   free((char*) (propDValues_));
-  free((char*) (propTypes_));
+  free(propTypes_);
 }
 
 void defiRow::clear()
@@ -200,7 +200,7 @@ void defiRow::addProperty(const char* name, const char* value, const char type)
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;
@@ -243,7 +243,7 @@ void defiRow::addNumProperty(const char* name,
     free((char*) (propNames_));
     free((char*) (propValues_));
     free((char*) (propDValues_));
-    free((char*) (propTypes_));
+    free(propTypes_);
     propNames_ = nn;
     propValues_ = nv;
     propDValues_ = nd;

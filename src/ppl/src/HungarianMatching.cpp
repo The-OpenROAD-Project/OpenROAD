@@ -23,7 +23,7 @@ HungarianMatching::HungarianMatching(const Section& section,
                                      Netlist* netlist,
                                      Core* core,
                                      std::vector<Slot>& slots,
-                                     Logger* logger,
+                                     utl::Logger* logger,
                                      odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),
@@ -91,11 +91,6 @@ void HungarianMatching::createMatrix()
       pin_index++;
     }
   }
-}
-
-inline bool samePos(odb::Point& a, odb::Point& b)
-{
-  return (a.x() == b.x() && a.y() == b.y());
 }
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
@@ -169,14 +164,15 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-    logger_->error(utl::PPL,
-                   82,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin {} placement.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA",
-                   mirrored_pin.getName());
+    logger_->error(
+        utl::PPL,
+        82,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not "
+        "a valid position for pin {} placement.",
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        layer ? layer->getName() : "NA",
+        mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
@@ -199,7 +195,7 @@ void HungarianMatching::createMatrixForGroups()
     group_sizes.push_back(pins.size());
   }
 
-  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+  std::ranges::sort(group_sizes, std::greater<int>());
 
   if (!group_sizes.empty()) {
     valid_starting_slots_.clear();

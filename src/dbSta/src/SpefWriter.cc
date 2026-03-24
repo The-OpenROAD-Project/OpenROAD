@@ -4,6 +4,7 @@
 #include "db_sta/SpefWriter.hh"
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <iostream>
 #include <map>
@@ -14,9 +15,10 @@
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/Corner.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Parasitics.hh"
+#include "sta/ParasiticsClass.hh"
+#include "sta/Scene.hh"
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
@@ -25,20 +27,19 @@ namespace sta {
 using std::map;
 using utl::ORD;
 
-SpefWriter::SpefWriter(Logger* logger,
+SpefWriter::SpefWriter(utl::Logger* logger,
                        dbSta* sta,
-                       std::map<Corner*, std::ostream*>& spef_streams)
+                       std::map<Scene*, std::ostream*>& spef_streams)
     : logger_(logger),
       sta_(sta),
       network_(sta_->getDbNetwork()),
-      parasitics_(sta_->parasitics()),
       spef_streams_(spef_streams)
 {
   writeHeader();
   writePorts();
 }
 
-std::string escapeSpecial(const std::string& name)
+static std::string escapeSpecial(const std::string& name)
 {
   std::string result = name;
   size_t pos = 0;
@@ -46,15 +47,10 @@ std::string escapeSpecial(const std::string& name)
     result.replace(pos, 1, "\\$");
     pos += 2;
   }
-  pos = 0;
-  while ((pos = result.find('/', pos)) != std::string::npos) {
-    result.replace(pos, 1, "\\/");
-    pos += 2;
-  }
   return result;
 }
 
-std::string escapeSpecial(const char* name)
+static std::string escapeSpecial(const char* name)
 {
   if (!name) {
     return "";
@@ -65,7 +61,7 @@ std::string escapeSpecial(const char* name)
 // Quick fix for wrong pin delimiter.
 // TODO: save the parasitics data to odb and use the existing write_spef
 // mechanism to produce the spef files from estimate_parasitics.
-std::string fixPinDelimiter(const std::string& name)
+static std::string fixPinDelimiter(const std::string& name)
 {
   const char delimiter = '/';
   std::string result = name;
@@ -93,16 +89,14 @@ void SpefWriter::writeHeader()
     stream << "*BUS_DELIMITER []" << '\n';
 
     auto units = network_->units();
-    std::string time_unit = std::string(units->timeUnit()->scaledSuffix());
+    std::string time_unit = std::string(units->timeUnit()->scaleAbbrevSuffix());
     std::string cap_unit
-        = std::string(units->capacitanceUnit()->scaledSuffix());
-    std::string res_unit = std::string(units->resistanceUnit()->scaledSuffix());
-    std::transform(
-        time_unit.begin(), time_unit.end(), time_unit.begin(), ::toupper);
-    std::transform(
-        cap_unit.begin(), cap_unit.end(), cap_unit.begin(), ::toupper);
-    std::transform(
-        res_unit.begin(), res_unit.end(), res_unit.begin(), ::toupper);
+        = std::string(units->capacitanceUnit()->scaleAbbrevSuffix());
+    std::string res_unit
+        = std::string(units->resistanceUnit()->scaleAbbrevSuffix());
+    std::ranges::transform(time_unit, time_unit.begin(), ::toupper);
+    std::ranges::transform(cap_unit, cap_unit.begin(), ::toupper);
+    std::ranges::transform(res_unit, res_unit.begin(), ::toupper);
 
     stream << "*T_UNIT 1 " << time_unit << '\n';
     stream << "*C_UNIT 1 " << cap_unit << '\n';
@@ -112,7 +106,7 @@ void SpefWriter::writeHeader()
   }
 }
 
-char getIoDirectionText(const odb::dbIoType& io_type)
+static char getIoDirectionText(const odb::dbIoType& io_type)
 {
   if (io_type == odb::dbIoType::INPUT) {
     return 'I';
@@ -158,12 +152,15 @@ void SpefWriter::writePorts()
   }
 }
 
-void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
+void SpefWriter::writeNet(Scene* scene,
+                          const Net* net,
+                          Parasitic* parasitic,
+                          Parasitics* parasitics)
 {
-  auto it = spef_streams_.find(corner);
+  auto it = spef_streams_.find(scene);
   if (it == spef_streams_.end()) {
     logger_->error(
-        ORD, 20, "Tried to write net SPEF info for corner that was not set");
+        ORD, 20, "Tried to write net SPEF info for scene that was not set");
   }
   std::ostream& stream = *it->second;
 
@@ -173,11 +170,11 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
   stream << "*D_NET " << escapeSpecial(network_->staToDb(net)->getName())
          << " ";
-  stream << parasitics_->capacitance(parasitic) / cap_scale << '\n';
+  stream << parasitics->capacitance(parasitic) / cap_scale << '\n';
 
   stream << "*CONN" << '\n';
-  for (auto node : parasitics_->nodes(parasitic)) {
-    auto pin = parasitics_->pin(node);
+  for (auto node : parasitics->nodes(parasitic)) {
+    auto pin = parasitics->pin(node);
     if (pin != nullptr) {
       odb::dbITerm* iterm = nullptr;
       odb::dbBTerm* bterm = nullptr;
@@ -186,13 +183,12 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
       if (iterm != nullptr) {
         stream << "*I "
-               << escapeSpecial(fixPinDelimiter(parasitics_->name(node)))
-               << " ";
+               << escapeSpecial(fixPinDelimiter(parasitics->name(node))) << " ";
         stream << getIoDirectionText(iterm->getIoType());
         stream << " *D " << iterm->getInst()->getMaster()->getName();
         stream << '\n';
       } else if (bterm != nullptr) {
-        stream << "*P " << escapeSpecial(parasitics_->name(node)) << " ";
+        stream << "*P " << escapeSpecial(parasitics->name(node)) << " ";
         stream << getIoDirectionText(bterm->getIoType());
         stream << '\n';
       } else {
@@ -206,51 +202,57 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
   int count = 1;
   bool label = false;
-  for (auto node : parasitics_->nodes(parasitic)) {
-    if (parasitics_->pin(node) == nullptr) {
+  for (auto node : parasitics->nodes(parasitic)) {
+    if (parasitics->pin(node) == nullptr) {
+      if (parasitics->nodeGndCap(node) == 0) {
+        continue;
+      }
       if (!label) {
         label = true;
         stream << "*CAP" << '\n';
       }
 
       stream << count++ << " ";
-      stream << escapeSpecial(parasitics_->name(node)) << " "
-             << parasitics_->nodeGndCap(node) / cap_scale;
+      stream << escapeSpecial(parasitics->name(node)) << " "
+             << parasitics->nodeGndCap(node) / cap_scale;
       stream << '\n';
     }
   }
-  for (auto cap : parasitics_->capacitors(parasitic)) {
+  for (auto cap : parasitics->capacitors(parasitic)) {
+    if (parasitics->value(cap) == 0) {
+      continue;
+    }
     if (!label) {
       label = true;
       stream << "*CAP" << '\n';
     }
     stream << count++ << " ";
 
-    auto n1 = parasitics_->node1(cap);
-    stream << escapeSpecial(parasitics_->name(n1)) << " ";
-    auto n2 = parasitics_->node2(cap);
-    stream << escapeSpecial(parasitics_->name(n2)) << " ";
-    stream << parasitics_->value(cap) / cap_scale << '\n';
+    auto n1 = parasitics->node1(cap);
+    stream << escapeSpecial(parasitics->name(n1)) << " ";
+    auto n2 = parasitics->node2(cap);
+    stream << escapeSpecial(parasitics->name(n2)) << " ";
+    stream << parasitics->value(cap) / cap_scale << '\n';
   }
 
   count = 1;
   label = false;
-  for (auto res : parasitics_->resistors(parasitic)) {
+  for (auto res : parasitics->resistors(parasitic)) {
     if (!label) {
       label = true;
       stream << "*RES" << '\n';
     }
     stream << count++ << " ";
 
-    auto n1 = parasitics_->node1(res);
-    auto n2 = parasitics_->node2(res);
+    auto n1 = parasitics->node1(res);
+    auto n2 = parasitics->node2(res);
 
     odb::dbITerm* iterm = nullptr;
     odb::dbBTerm* bterm = nullptr;
     odb::dbModITerm* moditerm = nullptr;
 
-    std::string node1_name = parasitics_->name(n1);
-    auto pin1 = parasitics_->pin(n1);
+    std::string node1_name = parasitics->name(n1);
+    auto pin1 = parasitics->pin(n1);
     if (pin1 != nullptr) {
       network_->staToDb(pin1, iterm, bterm, moditerm);
       if (iterm != nullptr) {
@@ -259,8 +261,8 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
     }
     node1_name = escapeSpecial(node1_name);
 
-    std::string node2_name = parasitics_->name(n2);
-    auto pin2 = parasitics_->pin(n2);
+    std::string node2_name = parasitics->name(n2);
+    auto pin2 = parasitics->pin(n2);
     if (pin2 != nullptr) {
       network_->staToDb(pin2, iterm, bterm, moditerm);
       if (iterm != nullptr) {
@@ -271,7 +273,7 @@ void SpefWriter::writeNet(Corner* corner, const Net* net, Parasitic* parasitic)
 
     stream << node1_name << " ";
     stream << node2_name << " ";
-    stream << parasitics_->value(res) / res_scale << '\n';
+    stream << parasitics->value(res) / res_scale << '\n';
   }
 
   stream << "*END" << '\n' << '\n';

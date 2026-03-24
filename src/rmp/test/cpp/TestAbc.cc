@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2023-2025, The OpenROAD Authors
 
-#include <string.h>
 #include <unistd.h>
 
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -30,9 +30,7 @@
 #include "sta/NetworkClass.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
 #include "sta/VerilogReader.hh"
-#include "tcl.h"
 #include "tst/fixture.h"
 #include "utl/Logger.h"
 #include "utl/deleter.h"
@@ -107,7 +105,8 @@ class AbcTest : public tst::Fixture
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr);
+                    /*comment=*/nullptr,
+                    /*mode=*/sta_->cmdMode());
 
     sta_->ensureGraph();
     sta_->ensureLevelized();
@@ -138,7 +137,7 @@ TEST_F(AbcTest, InsertingMappedLogicAfterOptimizationCutDoesNotThrow)
 
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Vertex* flop_input_vertex = nullptr;
-  for (sta::Vertex* vertex : *sta_->endpoints()) {
+  for (sta::Vertex* vertex : sta_->endpoints()) {
     if (std::string(vertex->name(network)) == "_33122_/D") {
       flop_input_vertex = vertex;
     }

@@ -7,3 +7,5 @@ read_def nangate_gcd/floorplan.def
 set_dont_touch *
 
 add_global_connection -net VDD -pin_pattern VDD -power
+
+global_connect -force

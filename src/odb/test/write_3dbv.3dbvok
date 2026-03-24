@@ -1,0 +1,36 @@
+Header:
+  version: 3
+  unit: micron
+  precision: 2000
+ChipletDef:
+  SoC:
+    type: die
+    design_area: [955, 1082]
+    thickness: 300
+    shrink: 1
+    tsv: false
+    offset: [0, 0]
+    seal_ring_width: [0, 0, 0, 0]
+    scribe_line_remaining_width: [0, 0, 0, 0]
+    external:
+      APR_tech_file: [Nangate45_tech.lef]
+      LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
+      DEF_file: SoC.def
+    regions:
+      back_reg:
+        side: back
+        bmap: SoC_back_reg.bmap
+        layer: metal1
+        coords:
+          - [0, 0]
+          - [955, 0]
+          - [955, 1082]
+          - [0, 1082]
+      front_reg:
+        side: front
+        bmap: SoC_front_reg.bmap
+        coords:
+          - [1073741.8235, 1073741.8235]
+          - [-1073741.824, 1073741.8235]
+          - [-1073741.824, -1073741.824]
+          - [1073741.8235, -1073741.824]

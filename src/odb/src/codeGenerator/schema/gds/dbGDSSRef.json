@@ -2,21 +2,21 @@
     "name":"dbGDSSRef",
     "fields":[
       {
-        "name":"_origin",
+        "name":"origin_",
         "type":"Point"
       },
       {
-        "name":"_propattr",
+        "name":"propattr_",
         "type":"std::vector<std::pair<std::int16_t, std::string>>",
         "flags":["no-template", "no-get", "no-set"]
       },
       {
-        "name":"_transform",
+        "name":"transform_",
         "type":"dbGDSSTrans",
         "flags":[]
       },
       {
-        "name":"_structure",
+        "name":"structure_",
         "type":"dbId<_dbGDSStructure>",
         "parent":"dbGDSStructure",
         "flags":["no-get", "no-set"]

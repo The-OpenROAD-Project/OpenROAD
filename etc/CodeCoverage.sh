@@ -42,7 +42,11 @@ _lcov() {
 }
 
 _coverity() {
-    cmake -B build .
+    cmakeOptions=""
+    if [[ -f "/etc/openroad_deps_prefixes.txt" ]]; then
+        cmakeOptions="$(cat "/etc/openroad_deps_prefixes.txt")"
+    fi
+    cmake ${cmakeOptions} -B build .
     # compile abc before calling cov-build to exclude from analysis.
     # Coverity fails to process abc code due to -fpermissive flag.
     cmake --build build -j $(nproc) --target abc
@@ -58,6 +62,11 @@ _coverity() {
 
     tar czvf openroad.tgz cov-int
     commitSha="$(git rev-parse HEAD)"
+
+    if [ -n "${SKIP_COVERITY_UPLOAD+x}" ]; then
+        echo "SKIP_COVERITY_UPLOAD is set. Skipping Coverity upload."
+        exit 0
+    fi
 
     # Step 1: Initialize a build. Fetch a cloud upload url.
     curl -X POST \

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+// Copyright (c) 2019-2026, The OpenROAD Authors
 
 #include "rmp/Restructure.h"
 
@@ -11,7 +11,6 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -21,36 +20,35 @@
 #include <vector>
 
 #include "annealing_strategy.h"
-#include "base/abc/abc.h"
 #include "base/main/abcapis.h"
 #include "cut/abc_init.h"
-#include "cut/abc_library_factory.h"
 #include "cut/blif.h"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
-#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PatternMatch.hh"
-#include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
 #include "zero_slack_strategy.h"
 
-using utl::RMP;
-using namespace abc;
-using cut::Blif;
-
 namespace rmp {
+
+using abc::Abc_Frame_t;
+using abc::Abc_FrameGetGlobalFrame;
+using abc::Abc_Start;
+using abc::Abc_Stop;
+using cut::Blif;
+using utl::RMP;
 
 Restructure::Restructure(utl::Logger* logger,
                          sta::dbSta* open_sta,
@@ -82,14 +80,14 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-void Restructure::resynth(sta::Corner* corner)
+void Restructure::resynth(sta::Scene* corner)
 {
   ZeroSlackStrategy zero_slack_strategy(corner);
   zero_slack_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
-void Restructure::resynthAnnealing(sta::Corner* corner)
+void Restructure::resynthAnnealing(sta::Scene* corner)
 {
   AnnealingStrategy annealing_strategy(corner,
                                        slack_threshold_,
@@ -99,6 +97,22 @@ void Restructure::resynthAnnealing(sta::Corner* corner)
                                        annealing_revert_after_,
                                        annealing_init_ops_);
   annealing_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
+}
+
+void Restructure::resynthGenetic(sta::Scene* corner)
+{
+  GeneticStrategy genetic_strategy(corner,
+                                   slack_threshold_,
+                                   genetic_seed_,
+                                   genetic_population_size_,
+                                   genetic_mutation_probability_,
+                                   genetic_crossover_probability_,
+                                   genetic_tournament_size_,
+                                   genetic_tournament_probability_,
+                                   genetic_iters_,
+                                   genetic_init_ops_);
+  genetic_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
@@ -127,7 +141,7 @@ void Restructure::run(char* liberty_file_name,
 
   getBlob(max_depth);
 
-  if (path_insts_.size()) {
+  if (!path_insts_.empty()) {
     runABC();
 
     postABC(worst_slack);
@@ -143,7 +157,7 @@ void Restructure::getBlob(unsigned max_depth)
   sta::PinSet ends(open_sta_->getDbNetwork());
 
   getEndPoints(ends, is_area_mode_, max_depth);
-  if (ends.size()) {
+  if (!ends.empty()) {
     sta::PinSet boundary_points = !is_area_mode_
                                       ? resizer_->findFanins(ends)
                                       : resizer_->findFaninFanouts(ends);
@@ -216,7 +230,7 @@ void Restructure::runABC()
 
     const std::string abc_script_file
         = prefix + std::to_string(curr_mode_idx) + "ord_abc_script.tcl";
-    if (logfile_ == "") {
+    if (logfile_.empty()) {
       logfile_ = prefix + "abc.log";
     }
 
@@ -325,10 +339,10 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                unsigned max_depth)
 {
   auto sta_state = open_sta_->search();
-  sta::VertexSet* end_points = sta_state->endpoints();
-  std::size_t path_found = end_points->size();
+  sta::VertexSet& end_points = sta_state->endpoints();
+  std::size_t path_found = end_points.size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  for (auto& end_point : *end_points) {
+  for (auto& end_point : end_points) {
     if (!is_area_mode_) {
       sta::Path* path
           = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
@@ -347,7 +361,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
 
   // unconstrained end points
   if (is_area_mode_) {
-    auto errors = open_sta_->checkTiming(false /*no_input_delay*/,
+    auto errors = open_sta_->checkTiming(open_sta_->cmdMode(),
+                                         false /*no_input_delay*/,
                                          false /*no_output_delay*/,
                                          false /*reg_multiple_clks*/,
                                          true /*reg_no_clks*/,
@@ -360,8 +375,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       bool first = true;
       for (auto pinName : *error) {
         debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
-        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str())) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName.c_str()));
         }
         first = false;
       }
@@ -371,8 +386,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       bool first = true;
       for (auto pinName : *error) {
         debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str())) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName.c_str()));
         }
         first = false;
       }
@@ -395,7 +410,7 @@ int Restructure::countConsts(odb::dbBlock* top_block)
 
 void Restructure::removeConstCells()
 {
-  if (!hicell_.size() || !locell_.size()) {
+  if (hicell_.empty() || locell_.empty()) {
     return;
   }
 
@@ -447,7 +462,8 @@ void Restructure::removeConstCells()
       }
       outputs++;
       auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);
-      sta::LogicValue pinVal = open_sta_->simLogicValue(pin);
+      sta::LogicValue pinVal
+          = open_sta_->simLogicValue(pin, open_sta_->cmdMode());
       if (pinVal == sta::LogicValue::one || pinVal == sta::LogicValue::zero) {
         odb::dbNet* net = iterm->getNet();
         if (net) {
@@ -502,7 +518,7 @@ void Restructure::removeConstCell(odb::dbInst* inst)
   odb::dbInst::destroy(inst);
 }
 
-bool Restructure::writeAbcScript(std::string file_name)
+bool Restructure::writeAbcScript(const std::string& file_name)
 {
   std::ofstream script(file_name.c_str());
 
@@ -518,20 +534,20 @@ bool Restructure::writeAbcScript(std::string file_name)
     script << read_lib_str;
   }
 
-  script << "read_blif -n " << input_blif_file_name_ << std::endl;
+  script << "read_blif -n " << input_blif_file_name_ << '\n';
 
   if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << input_blif_file_name_ + std::string(".v")
-           << std::endl;
+           << '\n';
   }
 
   writeOptCommands(script);
 
-  script << "write_blif " << output_blif_file_name_ << std::endl;
+  script << "write_blif " << output_blif_file_name_ << '\n';
 
   if (logger_->debugCheck(RMP, "remap", 1)) {
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")
-           << std::endl;
+           << '\n';
   }
 
   script.close();
@@ -548,62 +564,64 @@ void Restructure::writeOptCommands(std::ofstream& script)
       = "alias choice2 \"fraig_store; balance; fraig_store; resyn2; "
         "fraig_store; resyn2; fraig_store; resyn2; fraig_store; "
         "fraig_restore\"";
-  script << "bdd; sop" << std::endl;
+  script << "bdd; sop\n";
 
   script << "alias resyn2 \"balance; rewrite; refactor; balance; rewrite; "
             "rewrite -z; balance; refactor -z; rewrite -z; balance\""
-         << std::endl;
-  script << choice << std::endl;
-  script << choice2 << std::endl;
+         << '\n';
+  script << choice << '\n';
+  script << choice2 << '\n';
 
   if (opt_mode_ == Mode::AREA_3) {
-    script << "choice2" << std::endl;  // << "scleanup" << std::endl;
+    script << "choice2\n";  // << "scleanup" << std::endl;
   } else {
-    script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
+    script << "resyn2\n";  // << "scleanup" << std::endl;
   }
 
   switch (opt_mode_) {
     case Mode::DELAY_1: {
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "buffer -p -c" << std::endl;
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "buffer -p -c\n";
       break;
     }
     case Mode::DELAY_2: {
-      script << "choice" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "choice" << std::endl;
-      script << "map -D 0.01" << std::endl;
-      script << "buffer -p -c" << std::endl << "topo" << std::endl;
+      script << "choice\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "choice\n";
+      script << "map -D 0.01\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_3: {
-      script << "choice2" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "choice2" << std::endl;
-      script << "map -D 0.01" << std::endl;
-      script << "buffer -p -c" << std::endl << "topo" << std::endl;
+      script << "choice2\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "choice2\n";
+      script << "map -D 0.01\n";
+      script << "buffer -p -c\n"
+             << "topo\n";
       break;
     }
     case Mode::DELAY_4: {
-      script << "choice2" << std::endl;
-      script << "amap -F 20 -A 20 -C 5000 -Q 0.1 -m" << std::endl;
-      script << "choice2" << std::endl;
-      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p" << std::endl;
-      script << "buffer -p -c" << std::endl;
+      script << "choice2\n";
+      script << "amap -F 20 -A 20 -C 5000 -Q 0.1 -m\n";
+      script << "choice2\n";
+      script << "map -D 0.01 -A 0.9 -B 0.2 -M 0 -p\n";
+      script << "buffer -p -c\n";
       break;
     }
     case Mode::AREA_2:
     case Mode::AREA_3: {
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
       break;
     }
     case Mode::AREA_1:
     default: {
-      script << "choice2" << std::endl;
-      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000" << std::endl;
+      script << "choice2\n";
+      script << "amap -m -Q 0.1 -F 20 -A 20 -C 5000\n";
       break;
     }
   }
@@ -639,7 +657,7 @@ void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
   }
 }
 
-bool Restructure::readAbcLog(std::string abc_file_name,
+bool Restructure::readAbcLog(const std::string& abc_file_name,
                              int& level_gain,
                              float& final_delay)
 {
@@ -699,7 +717,7 @@ bool Restructure::readAbcLog(std::string abc_file_name,
   if (level.size() > 1) {
     level_gain = level[0] - level[level.size() - 1];
   }
-  if (delay.size() > 0) {
+  if (!delay.empty()) {
     final_delay = delay[delay.size() - 1];  // last value in file
   }
   return status;

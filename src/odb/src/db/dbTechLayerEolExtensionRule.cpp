@@ -7,18 +7,23 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <utility>
+#include <vector>
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerEolExtensionRule>;
 
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
-  if (flags_.parallel_only_ != rhs.flags_.parallel_only_) {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+  if (flags_.parallel_only != rhs.flags_.parallel_only) {
     return false;
   }
   if (spacing_ != rhs.spacing_) {
@@ -26,6 +31,7 @@ bool _dbTechLayerEolExtensionRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerEolExtensionRule::operator<(
@@ -74,7 +80,7 @@ void _dbTechLayerEolExtensionRule::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["extension_tbl"].add(extension_tbl_);
+  info.children["extension_tbl"].add(extension_tbl_);
   // User Code End collectMemInfo
 }
 
@@ -108,14 +114,14 @@ void dbTechLayerEolExtensionRule::setParallelOnly(bool parallel_only)
 {
   _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
 
-  obj->flags_.parallel_only_ = parallel_only;
+  obj->flags_.parallel_only = parallel_only;
 }
 
 bool dbTechLayerEolExtensionRule::isParallelOnly() const
 {
   _dbTechLayerEolExtensionRule* obj = (_dbTechLayerEolExtensionRule*) this;
 
-  return obj->flags_.parallel_only_;
+  return obj->flags_.parallel_only;
 }
 
 // User Code Begin dbTechLayerEolExtensionRulePublicMethods
@@ -136,7 +142,7 @@ dbTechLayerEolExtensionRule* dbTechLayerEolExtensionRule::create(
 
 dbTechLayerEolExtensionRule*
 dbTechLayerEolExtensionRule::getTechLayerEolExtensionRule(dbTechLayer* inly,
-                                                          uint dbid)
+                                                          uint32_t dbid)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
   return (dbTechLayerEolExtensionRule*) layer->eol_ext_rules_tbl_->getPtr(dbid);

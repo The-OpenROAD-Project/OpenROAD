@@ -97,11 +97,8 @@ class lefiVia
   void setName(const char* name, int viaType);
 
   void setResistance(double num);
-  void addProp(const char* name, const char* value, const char type);
-  void addNumProp(const char* name,
-                  double d,
-                  const char* value,
-                  const char type);
+  void addProp(const char* name, const char* value, char type);
+  void addNumProp(const char* name, double d, const char* value, char type);
 
   // orient=-1 means no orient was specified.
   void setForeign(const char* name, int hasPnt, double x, double y, int orient);

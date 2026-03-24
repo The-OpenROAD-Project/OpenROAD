@@ -4,9 +4,10 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -15,9 +16,9 @@ class _dbDatabase;
 
 struct dbTechLayerWidthTableRuleFlags
 {
-  bool wrong_direction_ : 1;
-  bool orthogonal_ : 1;
-  uint spare_bits_ : 30;
+  bool wrong_direction : 1;
+  bool orthogonal : 1;
+  uint32_t spare_bits : 30;
 };
 
 class _dbTechLayerWidthTableRule : public _dbObject

@@ -4,11 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
 #include "odb/dbSet.h"
-#include "odb/odb.h"
 // User Code Begin Includes
 #include <map>
 #include <string>
@@ -56,7 +57,8 @@ class _dbModule : public _dbObject
 
   static void copy(dbModule* old_module,
                    dbModule* new_module,
-                   dbModInst* new_mod_inst);
+                   dbModInst* new_mod_inst,
+                   modBTMap& mod_bt_map);
 
   static void copyModulePorts(dbModule* old_module,
                               dbModule* new_module,
@@ -77,21 +79,21 @@ class _dbModule : public _dbObject
   static bool copyToChildBlock(dbModule* module);
   // User Code End Methods
 
-  char* _name;
-  dbId<_dbModule> _next_entry;
-  dbId<_dbInst> _insts;
-  dbId<_dbModInst> _mod_inst;
-  dbId<_dbModInst> _modinsts;
-  dbId<_dbModNet> _modnets;
-  dbId<_dbModBTerm> _modbterms;
+  char* name_;
+  dbId<_dbModule> next_entry_;
+  dbId<_dbInst> insts_;
+  dbId<_dbModInst> mod_inst_;
+  dbId<_dbModInst> modinsts_;
+  dbId<_dbModNet> modnets_;
+  dbId<_dbModBTerm> modbterms_;
 
   // User Code Begin Fields
   // custom iterator for traversing ports
   // fast access
-  std::unordered_map<std::string, dbId<_dbInst>> _dbinst_hash;
-  std::unordered_map<std::string, dbId<_dbModInst>> _modinst_hash;
-  std::unordered_map<std::string, dbId<_dbModBTerm>> _modbterm_hash;
-  std::unordered_map<std::string, dbId<_dbModNet>> _modnet_hash;
+  std::unordered_map<std::string, dbId<_dbInst>> dbinst_hash_;
+  std::unordered_map<std::string, dbId<_dbModInst>> modinst_hash_;
+  std::unordered_map<std::string, dbId<_dbModBTerm>> modbterm_hash_;
+  std::unordered_map<std::string, dbId<_dbModNet>> modnet_hash_;
   dbModulePortItr* _port_iter = nullptr;
   // User Code End Fields
 };

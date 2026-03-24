@@ -4,12 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 class dbIStream;
@@ -29,15 +29,15 @@ class _dbIsolation : public _dbObject
   bool operator<(const _dbIsolation& rhs) const;
   void collectMemInfo(MemInfo& info);
 
-  char* _name;
-  dbId<_dbIsolation> _next_entry;
-  std::string _applies_to;
-  std::string _clamp_value;
-  std::string _isolation_signal;
-  std::string _isolation_sense;
-  std::string _location;
-  dbVector<std::string> _isolation_cells;
-  dbId<_dbPowerDomain> _power_domain;
+  char* name_;
+  dbId<_dbIsolation> next_entry_;
+  std::string applies_to_;
+  std::string clamp_value_;
+  std::string isolation_signal_;
+  std::string isolation_sense_;
+  std::string location_;
+  dbVector<std::string> isolation_cells_;
+  dbId<_dbPowerDomain> power_domain_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj);

@@ -610,7 +610,8 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
     const QString number_of_pins
         = QString("Number of Endpoints: %1\n").arg(num);
 
-    QString scaled_suffix = sta_->getSTA()->units()->timeUnit()->scaledSuffix();
+    QString scaled_suffix = QString::fromStdString(
+        sta_->getSTA()->units()->timeUnit()->scaleAbbrevSuffix());
 
     const auto& [lower, upper] = histogram_->getBinRange(bar_index);
 
@@ -631,14 +632,19 @@ void HistogramView::populateBins()
     return;
   }
 
+  const float min_slack = std::min(0.0f, histogram_->getMinValue());
+  const float max_slack = std::max(0.0f, histogram_->getMaxValue());
+  if (min_slack == max_slack) {
+    precision_count_ = 1;
+    histogram_->generateBins(1, -0.1, 0.2);
+    return;
+  }
+
   // determine interval
-  const float bin_interval = computeBucketInterval();
-  const float bin_min
-      = std::floor(std::min(0.0f, histogram_->getMinValue()) / bin_interval)
-        * bin_interval;
-  const float bin_max
-      = std::ceil(std::max(0.0f, histogram_->getMaxValue()) / bin_interval)
-        * bin_interval;
+  const float bin_interval = computeBucketInterval(min_slack, max_slack);
+  const float bin_min = std::floor(min_slack / bin_interval) * bin_interval;
+  const float bin_max = std::ceil(max_slack / bin_interval) * bin_interval;
+
   const int bins = (bin_max - bin_min) / bin_interval;
   histogram_->generateBins(bins, bin_min, bin_interval);
 }
@@ -716,66 +722,35 @@ void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
   setVisualConfig();
 }
 
-float HistogramView::computeBucketInterval()
+float HistogramView::computeBucketInterval(float min_slack, float max_slack)
 {
-  float min_slack = histogram_->getMinValue();
-  float max_slack = histogram_->getMaxValue();
-
-  if (min_slack < 0 && max_slack < 0) {
-    max_slack = 0;
-  } else if (min_slack > 0 && max_slack > 0) {
-    min_slack = 0;
-  }
-
   const float exact_interval
       = (max_slack - min_slack) / kDefaultNumberOfBuckets;
 
   const float snap_interval = computeSnapBucketInterval(exact_interval);
-
-  // We compute a new number of buckets based on the snap interval.
-  const int new_number_of_buckets = (max_slack - min_slack) / snap_interval;
-
-  if (new_number_of_buckets < kMinimumNumberOfBuckets) {
-    const float minimum_interval
-        = (max_slack - min_slack) / kMinimumNumberOfBuckets;
-
-    float decimal_snap_interval
-        = computeSnapBucketDecimalInterval(minimum_interval);
-
-    return decimal_snap_interval;
-  }
   return snap_interval;
-}
-
-float HistogramView::computeSnapBucketDecimalInterval(float minimum_interval)
-{
-  float integer_part = minimum_interval;
-  int power_count = 0;
-
-  while (static_cast<int>(integer_part) == 0) {
-    integer_part *= 10;
-    ++power_count;
-  }
-
-  precision_count_ = power_count;
-
-  return std::ceil(integer_part) / std::pow(10, power_count);
 }
 
 float HistogramView::computeSnapBucketInterval(float exact_interval)
 {
-  if (exact_interval < 10) {
-    return std::ceil(exact_interval);
+  int exp = std::floor(std::log10(exact_interval));
+  precision_count_ = std::max(-exp, 0);
+
+  double mag = std::pow(10.0, exp);
+  double residual = exact_interval / mag;
+
+  double nice_coeff;
+  if (residual < 1.5) {
+    nice_coeff = 1.0;
+  } else if (residual < 3.0) {
+    nice_coeff = 2.0;
+  } else if (residual < 7.0) {
+    nice_coeff = 5.0;
+  } else {
+    nice_coeff = 10.0;
   }
 
-  float snap_interval = 0;
-  const int digits = computeNumberOfDigits(exact_interval);
-
-  while (snap_interval < exact_interval) {
-    snap_interval += 5 * std::pow(10, digits - 2);
-  }
-
-  return snap_interval;
+  return nice_coeff * mag;
 }
 
 int HistogramView::computeNumberOfDigits(float value)
@@ -875,10 +850,10 @@ void HistogramView::emitEndPointsInBucket(const int bar_index)
     return;
   }
 
-  auto compare_slack = [=](const sta::Pin* a, const sta::Pin* b) {
+  auto compare_slack = [this](const sta::Pin* a, const sta::Pin* b) {
     return sta_->getPinSlack(a) < sta_->getPinSlack(b);
   };
-  std::sort(end_points.begin(), end_points.end(), compare_slack);
+  std::ranges::sort(end_points, compare_slack);
 
   // Depeding on the size of the bucket, the report can become rather slow
   // to generate so we define this limit.
@@ -904,7 +879,8 @@ void HistogramView::setXAxisTitle()
 
   sta::Unit* time_units = sta_->getSTA()->units()->timeUnit();
 
-  const QString scaled_suffix = time_units->scaledSuffix();
+  const QString scaled_suffix
+      = QString::fromStdString(time_units->scaleAbbrevSuffix());
   const QString end_title = "], Clocks: ";
 
   QString axis_x_title = start_title + scaled_suffix + end_title;

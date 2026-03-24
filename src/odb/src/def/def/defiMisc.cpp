@@ -130,7 +130,6 @@ void defiGeometries::points(int index, int* x, int* y) const
   }
   *x = x_[index];
   *y = y_[index];
-  return;
 }
 
 ////////////////////////////////////////////////////

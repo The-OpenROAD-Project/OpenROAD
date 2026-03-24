@@ -11,7 +11,6 @@
 #include "odb/dbTypes.h"
 #include "odb/defin.h"
 #include "odb/geom.h"
-#include "odb/odb.h"
 
 namespace utl {
 class Logger;

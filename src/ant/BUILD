@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -15,6 +16,7 @@ cc_library(
     name = "ant",
     srcs = [
         "src/AntennaChecker.cc",
+        "src/AntennaCheckerImpl.hh",
         "src/PinType.hh",
         "src/Polygon.cc",
         "src/Polygon.hh",
@@ -33,6 +35,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/synchronization",
         "@boost.container_hash",
         "@boost.graph",
         "@boost.polygon",
@@ -57,7 +60,7 @@ cc_library(
         "//src/odb",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -100,4 +103,17 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/AntennaChecker.tcl",
+    ],
+    visibility = ["//src/ant/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/ant/test:__pkg__"],
 )

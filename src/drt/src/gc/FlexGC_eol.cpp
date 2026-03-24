@@ -10,9 +10,13 @@
 
 #include "boost/geometry/geometry.hpp"
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcPin.h"
+#include "db/gcObj/gcShape.h"
 #include "db/obj/frMarker.h"
+#include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
 #include "frProfileTask.h"
+#include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
@@ -54,11 +58,8 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_isEolEdge(
   // skip if non convex edge
   auto prevEdge = edge->getPrevEdge();
   auto nextEdge = edge->getNextEdge();
-  if (!(gtl::orientation(*prevEdge, *edge) == 1
-        && gtl::orientation(*edge, *nextEdge) == 1)) {
-    return false;
-  }
-  return true;
+  return gtl::orientation(*prevEdge, *edge) == 1
+         && gtl::orientation(*edge, *nextEdge) == 1;
 }
 
 bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasMinMaxLength(
@@ -770,10 +771,7 @@ bool FlexGCWorker::Impl::qualifiesAsEol(gcSegment* edge,
     return false;
   }
   triggered = checkMetalEndOfLine_eol_hasMinMaxLength(edge, constraint);
-  if (!triggered) {
-    return false;
-  }
-  return true;
+  return triggered;
 }
 
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,
@@ -1325,10 +1323,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
 {
   if (targetNet_) {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {
@@ -1340,10 +1336,8 @@ void FlexGCWorker::Impl::checkMetalEndOfLine()
     }
   } else {
     // layer --> net --> polygon
-    for (int i = std::max((frLayerNum) (getTech()->getBottomLayerNum()),
-                          minLayerNum_);
-         i
-         <= std::min((frLayerNum) (getTech()->getTopLayerNum()), maxLayerNum_);
+    for (int i = std::max(getTech()->getBottomLayerNum(), minLayerNum_);
+         i <= std::min(getTech()->getTopLayerNum(), maxLayerNum_);
          i++) {
       auto currLayer = getTech()->getLayer(i);
       if (currLayer->getType() != dbTechLayerType::ROUTING) {

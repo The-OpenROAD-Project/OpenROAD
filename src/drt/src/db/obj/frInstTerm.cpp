@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "db/obj/frInst.h"
+#include "db/obj/frShape.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"

@@ -1,19 +1,32 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
-    "macro_only",
-    "no_unfixed_macros",
+    "boundary_push1",
+    "boundary_push2",
+    "boundary_push3",
+    "centralization1",
+    "clocked_macro",
+    "fixed_covers",
+    "fixed_ios1",
+    "fixed_macros1",
+    "fixed_macros2",
     "guides1",
     "guides2",
-    "fixed_ios1",
+    "halos1",
+    "halos2",
     "io_constraints1",
+    "io_constraints10",
     "io_constraints2",
     "io_constraints3",
     "io_constraints4",
@@ -22,28 +35,19 @@ COMPULSORY_TESTS = [
     "io_constraints7",
     "io_constraints8",
     "io_constraints9",
-    "io_constraints10",
-    "mixed_ios1",
     "io_pads1",
+    "keep_clustering_data",
+    "macro_only",
+    "macros_without_pins1",
+    "mixed_ios1",
+    "no_unfixed_macros",
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
-    "boundary_push1",
-    "boundary_push2",
-    "boundary_push3",
-    "centralization1",
-    "clocked_macro",
-    "keep_clustering_data",
-    "fixed_macros",
+    "unfixed_cells_dont_fit_in_core",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -52,61 +56,8 @@ filegroup(
     # per test glob patterns below.
     srcs = [
         "Nangate45/Nangate45.lef",
-        "Nangate45/Nangate45.pdn.tcl",
-        "Nangate45/Nangate45.rc",
-        "Nangate45/Nangate45.rcx_rules",
-        "Nangate45/Nangate45.tracks",
-        "Nangate45/Nangate45.vars",
-        "Nangate45/Nangate45_fast.lib",
-        "Nangate45/Nangate45_lvt.lef",
-        "Nangate45/Nangate45_lvt.lib",
-        "Nangate45/Nangate45_slow.lib",
-        "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
-        "Nangate45/Nangate45_typ.lib",
-        "Nangate45/fake_macros.lef",
-        "Nangate45/fake_macros.lib",
-        "Nangate45/fakeram45.cfg",
-        "Nangate45/fakeram45_1024x32.lef",
-        "Nangate45/fakeram45_1024x32.lib",
-        "Nangate45/fakeram45_256x16.lef",
-        "Nangate45/fakeram45_256x16.lib",
-        "Nangate45/fakeram45_512x64.lef",
-        "Nangate45/fakeram45_512x64.lib",
-        "Nangate45/fakeram45_64x32.lef",
-        "Nangate45/fakeram45_64x32.lib",
-        "Nangate45/fakeram45_64x7.lef",
-        "Nangate45/fakeram45_64x7.lib",
-        "Nangate45/fakeram45_64x96.lef",
-        "Nangate45/fakeram45_64x96.lib",
-        "Nangate45/work_around_yosys/cells.v",
-        "Nangate45_io/dummy_pads.lef",
-        "Nangate45_io/dummy_pads.lib",
-        "Nangate45_io/dummy_pads_m9.lef",
-        "Nangate45_io/dummy_pads_stagger.lef",
         "helpers.tcl",
-        "testcases/boundary_push1.def",
-        "testcases/boundary_push2.def",
-        "testcases/centralization1.def",
-        "testcases/clocked_macro.def",
-        "testcases/clocked_macro.lef",
-        "testcases/clocked_macro.lib",
-        "testcases/clocked_macro.v",
-        "testcases/fixed_ios1.def",
-        "testcases/fixed_macros.def",
-        "testcases/guides1.def",
-        "testcases/guides1.v",
-        "testcases/io_constraints1.def",
-        "testcases/io_constraints1.v",
-        "testcases/io_pads1.def",
-        "testcases/macro_only.def",
-        "testcases/macro_only.lef",
-        "testcases/macro_only.lib",
-        "testcases/macro_only.v",
-        "testcases/mixed_ios1.def",
-        "testcases/no_unfixed_macros.def",
-        "testcases/orientation_improve1.def",
-        "testcases/orientation_improve1.lef",
     ],
 )
 
@@ -117,10 +68,165 @@ filegroup(
             [
                 test_name + ".*",
             ] + {
-                "io_constraints6": ["testcases/io_constraints6.def"],
-                "io_constraints7": ["testcases/io_constraints6.def"],
-                "io_constraints8": ["testcases/io_constraints6.def"],
-                "keep_clustering_data": ["testcases/io_constraints6.def"],
+                "boundary_push1": [
+                    "testcases/boundary_push1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "boundary_push2": [
+                    "testcases/boundary_push2.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "boundary_push3": [
+                    "testcases/boundary_push2.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "centralization1": [
+                    "testcases/centralization1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "clocked_macro": [
+                    "testcases/clocked_macro.def",
+                    "testcases/clocked_macro.lef",
+                    "testcases/clocked_macro.lib",
+                    "testcases/clocked_macro.v",
+                ],
+                "fixed_covers": [
+                    "Nangate45_io/dummy_pads.lef",
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "fixed_ios1": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/fixed_ios1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "fixed_macros1": [
+                    "testcases/fixed_macros1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "fixed_macros2": [
+                    "testcases/fixed_macros2.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "guides1": [
+                    "testcases/guides1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "guides2": [
+                    "testcases/macro_only.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                    "testcases/macro_only.v",
+                ],
+                "halos1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos2": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "io_constraints1": [
+                    "testcases/io_constraints1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints10": [
+                    "testcases/io_constraints1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints2": [
+                    "testcases/io_constraints1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints3": [
+                    "testcases/io_constraints3.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints4": [
+                    "testcases/io_constraints4.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints5": [
+                    "testcases/io_constraints4.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_constraints6": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "io_constraints7": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "io_constraints8": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "io_constraints9": [
+                    "testcases/io_constraints1.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                ],
+                "io_pads1": [
+                    "Nangate45_io/dummy_pads.lef",
+                    "testcases/io_pads1.def",
+                    "testcases/macro_only.lef",
+                ],
+                "keep_clustering_data": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/io_constraints6.def",
+                    "testcases/macro_only.lef",
+                ],
+                "macro_only": [
+                    "testcases/macro_only.def",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                    "testcases/macro_only.v",
+                ],
+                "macros_without_pins1": [
+                    "Nangate45_io/dummy_pads.lef",
+                    "testcases/macros_without_pins1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "mixed_ios1": [
+                    "Nangate45/Nangate45_fast.lib",
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                    "testcases/mixed_ios1.def",
+                ],
+                "no_unfixed_macros": [
+                    "testcases/macro_only.lef",
+                    "testcases/macro_only.lib",
+                    "testcases/macro_only.v",
+                    "testcases/no_unfixed_macros.def",
+                ],
+                "orientation_improve1": [
+                    "testcases/orientation_improve1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "orientation_improve2": [
+                    "testcases/orientation_improve1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "orientation_improve3": [
+                    "testcases/orientation_improve1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "unfixed_cells_dont_fit_in_core": [
+                    "testcases/macro_only.lef",
+                    "testcases/unfixed_cells_dont_fit_in_core.def",
+                ],
             }.get(test_name, []),
         ),
     )
@@ -152,4 +258,38 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "TestSnapper",
+    srcs = [
+        "cpp/MplTest.h",
+        "cpp/TestSnapper.cpp",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
+    deps = [
+        "//src/mpl",
+        "//src/odb",
+        "//src/tst",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_test(
+    name = "mpl_man_tcl_check",
+    srcs = ["mpl_man_tcl_check.py"],
+    data = ["//src/mpl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "mpl_readme_msgs_check",
+    data = [
+        "//src/mpl:doc_files",
+        "//src/mpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

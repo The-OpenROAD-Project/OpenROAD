@@ -15,7 +15,9 @@ constexpr int GRFRACSIZE = 1;
 #include <map>
 #include <vector>
 
+#include "db/grObj/grNode.h"
 #include "db/grObj/grPin.h"
+#include "db/obj/frGCellPattern.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
@@ -644,17 +646,17 @@ class FlexGRGridGraph
   }
   frMIdx getMazeXIdx(frCoord in) const
   {
-    auto it = std::lower_bound(xCoords_.begin(), xCoords_.end(), in);
+    auto it = std::ranges::lower_bound(xCoords_, in);
     return it - xCoords_.begin();
   }
   frMIdx getMazeYIdx(frCoord in) const
   {
-    auto it = std::lower_bound(yCoords_.begin(), yCoords_.end(), in);
+    auto it = std::ranges::lower_bound(yCoords_, in);
     return it - yCoords_.begin();
   }
   frMIdx getMazeZIdx(frLayerNum in) const
   {
-    auto it = std::lower_bound(zCoords_.begin(), zCoords_.end(), in);
+    auto it = std::ranges::lower_bound(zCoords_, in);
     return it - zCoords_.begin();
   }
   FlexMazeIdx& getMazeIdx(const odb::Point& p,
@@ -763,11 +765,8 @@ class FlexGRGridGraph
   void getNextGrid(frMIdx& gridX, frMIdx& gridY, frMIdx& gridZ, frDirEnum dir);
   bool isValid(frMIdx x, frMIdx y, frMIdx z) const
   {
-    if (x < 0 || y < 0 || z < 0 || x >= (frMIdx) xCoords_.size()
-        || y >= (frMIdx) yCoords_.size() || z >= (frMIdx) zCoords_.size()) {
-      return false;
-    }
-    return true;
+    return x >= 0 && y >= 0 && z >= 0 && x < (frMIdx) xCoords_.size()
+           && y < (frMIdx) yCoords_.size() && z < (frMIdx) zCoords_.size();
   }
 
   // internal init utility

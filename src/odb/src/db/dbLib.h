@@ -7,7 +7,6 @@
 #include "dbHashTable.h"
 #include "odb/dbId.h"
 #include "odb/dbObject.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -24,26 +23,6 @@ class dbOStream;
 class _dbLib : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  int _lef_units;
-  int _dbu_per_micron;  // cached value from dbTech
-  char _hier_delimiter;
-  char _left_bus_delimiter;
-  char _right_bus_delimiter;
-  char _spare;
-  char* _name;
-  dbHashTable<_dbMaster> _master_hash;
-  dbHashTable<_dbSite> _site_hash;
-  dbId<_dbTech> _tech;
-
-  // NON-PERSISTANT-MEMBERS
-  dbTable<_dbMaster>* _master_tbl;
-  dbTable<_dbSite>* _site_tbl;
-  dbTable<_dbProperty>* _prop_tbl;
-  _dbNameCache* _name_cache;
-
-  dbPropertyItr* _prop_itr;
-
   _dbLib(_dbDatabase* db);
   ~_dbLib();
   bool operator==(const _dbLib& rhs) const;
@@ -51,6 +30,26 @@ class _dbLib : public _dbObject
   dbObjectTable* getObjectTable(dbObjectType type);
   _dbTech* getTech();
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  int lef_units_;
+  int dbu_per_micron_;  // cached value from dbTech
+  char hier_delimiter_;
+  char left_bus_delimiter_;
+  char right_bus_delimiter_;
+  char spare_;
+  char* name_;
+  dbHashTable<_dbMaster> master_hash_;
+  dbHashTable<_dbSite> site_hash_;
+  dbId<_dbTech> tech_;
+
+  // NON-PERSISTANT-MEMBERS
+  dbTable<_dbMaster>* master_tbl_;
+  dbTable<_dbSite>* site_tbl_;
+  dbTable<_dbProperty>* prop_tbl_;
+  _dbNameCache* name_cache_;
+
+  dbPropertyItr* prop_itr_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib);

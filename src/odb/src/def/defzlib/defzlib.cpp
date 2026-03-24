@@ -67,7 +67,7 @@ defGZFile defGZipOpen(const char* gzipPath, const char* mode)
     /* successfully open the gzip file */
     /* set the read function to read from a compressed file */
     defrSetReadFunction(defGZip_read);
-    return (defGZFile) fptr;
+    return fptr;
   }
   return nullptr;
 }

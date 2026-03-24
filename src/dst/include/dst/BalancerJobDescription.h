@@ -2,27 +2,30 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #pragma once
+
+#include <cstdint>
 #include <string>
 
 #include "boost/serialization/base_object.hpp"
 #include "dst/JobMessage.h"
+
 namespace boost::serialization {
 class access;
 }
+
 namespace dst {
 
 class BalancerJobDescription : public JobDescription
 {
  public:
-  BalancerJobDescription() : worker_port_(0) {}
   void setWorkerIP(const std::string& ip) { worker_ip_ = ip; }
-  void setWorkerPort(unsigned short port) { worker_port_ = port; }
+  void setWorkerPort(uint16_t port) { worker_port_ = port; }
   std::string getWorkerIP() const { return worker_ip_; }
-  unsigned short getWorkerPort() const { return worker_port_; }
+  uint16_t getWorkerPort() const { return worker_port_; }
 
  private:
   std::string worker_ip_;
-  unsigned short worker_port_;
+  uint16_t worker_port_{0};
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -33,4 +36,5 @@ class BalancerJobDescription : public JobDescription
   }
   friend class boost::serialization::access;
 };
+
 }  // namespace dst

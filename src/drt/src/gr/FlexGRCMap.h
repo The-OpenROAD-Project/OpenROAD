@@ -15,6 +15,7 @@ constexpr int CMAPFRACSIZE = 1;
 #include <vector>
 
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGCellPattern.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
@@ -608,12 +609,8 @@ class FlexGRCMap
 
   bool isValid(unsigned x, unsigned y, unsigned z) const
   {
-    if (x < 0 || y < 0 || z < 0 || x >= xgp_->getCount()
-        || y >= ygp_->getCount()
-        || z >= design_->getTech()->getLayers().size()) {
-      return false;
-    }
-    return true;
+    return x < xgp_->getCount() && y < ygp_->getCount()
+           && z < design_->getTech()->getLayers().size();
   }
 
   bool isValid(unsigned x, unsigned y, unsigned z, frDirEnum dir) const

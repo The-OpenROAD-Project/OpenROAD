@@ -28,6 +28,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
@@ -215,8 +216,9 @@ int RDLRouter::getRoutingInstanceCount() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getRouteTargetSource()->terminal->getInst());
-      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        insts.insert(iterm->getInst());
+      }
     } else {
       insts.insert(route->getTerminal()->getInst());
       for (const auto* iterm : route->getTerminals()) {
@@ -232,8 +234,9 @@ std::set<odb::dbInst*> RDLRouter::getRoutedInstances() const
   std::set<odb::dbInst*> insts;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      insts.insert(route->getRouteTargetSource()->terminal->getInst());
-      insts.insert(route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        insts.insert(iterm->getInst());
+      }
     }
   }
   return insts;
@@ -245,13 +248,10 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
   std::set<odb::dbInst*> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
-      if (isCoverTerm(route->getRouteTargetSource()->terminal)) {
-        success_covers.insert(
-            route->getRouteTargetSource()->terminal->getInst());
-      }
-      if (isCoverTerm(route->getRouteTargetDestination()->terminal)) {
-        success_covers.insert(
-            route->getRouteTargetDestination()->terminal->getInst());
+      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
+        if (isCoverTerm(iterm)) {
+          success_covers.insert(iterm->getInst());
+        }
       }
     }
   }
@@ -366,12 +366,19 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // Build list of routes
   buildIntialRouteSet();
 
+  // Process preprocessing
+  for (const auto& route : routes_) {
+    route->preprocess(layer_, logger_);
+  }
+
   // create priority queue
   auto route_compare
       = [](const std::shared_ptr<RDLRoute>& lhs,
            const std::shared_ptr<RDLRoute>& rhs) { return lhs->compare(rhs); };
-  std::priority_queue route_queue(
-      routes_.begin(), routes_.end(), route_compare);
+  std::priority_queue<RDLRoutePtr,
+                      std::vector<RDLRoutePtr>,
+                      decltype(route_compare)>
+      route_queue;
 
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
 
@@ -384,6 +391,29 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // track iteration information
   int iteration_count = 0;
   std::set<odb::dbInst*> last_itr_routed;
+
+  // add initial queue
+  for (const auto& route : routes_) {
+    if (route->isRouted()) {
+      for (odb::dbITerm* iterm0 : route->getRoutedTerminals()) {
+        if (isCoverTerm(iterm0)) {
+          routed_covers.insert(iterm0->getInst());
+        } else {
+          routed_non_covers.insert(iterm0);
+        }
+        for (odb::dbITerm* iterm1 : route->getRoutedTerminals()) {
+          if (iterm0 == iterm1) {
+            continue;
+          }
+          routed_pairs[iterm0] = iterm1;
+          routed_pairs[iterm1] = iterm0;
+        }
+      }
+    } else {
+      // Only add routes that need to routed
+      route_queue.push(route);
+    }
+  }
   while (!route_queue.empty()) {
     RDLRoutePtr route = route_queue.top();
     odb::dbITerm* src = route->getTerminal();
@@ -428,11 +458,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
           }
         }
 
-        std::stable_sort(targets.begin(),
-                         targets.end(),
-                         [](const auto& lhs, const auto& rhs) {
-                           return distance(lhs) < distance(rhs);
-                         });
+        std::ranges::stable_sort(targets, [](const auto& lhs, const auto& rhs) {
+          return distance(lhs) < distance(rhs);
+        });
 
         debugPrint(
             logger_,
@@ -637,15 +665,23 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
   // remove old routes
   for (const auto& route : routes_) {
-    route->getNet()->destroySWires();
+    auto swires = route->getNet()->getSWires();
+    for (auto itr = swires.begin(); itr != swires.end();) {
+      if ((*itr)->getWireType() == odb::dbWireType::FIXED) {
+        itr++;
+        continue;
+      }
+      itr = odb::dbSWire::destroy(itr);
+    }
   }
 
   for (const auto& route : routes_) {
     if (route->isRouted()) {
       writeToDb(route->getNet(),
                 route->getRoutePoints(),
-                *route->getRouteTargetSource(),
-                *route->getRouteTargetDestination());
+                route->getRouteTargetSource(),
+                route->getRouteTargetDestination(),
+                route->getStubs());
     }
   }
 
@@ -697,7 +733,7 @@ std::set<odb::Point> RDLRouter::generateTerminalAccessPoints(
 template <class InputIt>
 static odb::Point getValidGridPoint(
     InputIt begin,
-    InputIt end,
+    const InputIt& end,
     const std::function<bool(const odb::Point&)>& valid)
 {
   odb::Point snap;
@@ -765,7 +801,15 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
 
         for (const auto& edge : getVertexEdges(itr->second)) {
           const odb::Point& pt0 = vertex_point_map_.at(edge.m_source);
+          if (pt0 == line.pt0() || pt0 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Point& pt1 = vertex_point_map_.at(edge.m_target);
+          if (pt1 == line.pt0() || pt1 == line.pt1()) {
+            // lines will connect, so keep
+            continue;
+          }
           const odb::Line edge_line(pt0, pt1);
 
           if (boost::geometry::intersects(line.getPoints(),
@@ -833,7 +877,8 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -847,13 +892,13 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
   TerminalAccess access;
 
   // Remove snap points that would cause a violation
-  //   insersects another route
+  //   intersects another route
   std::set<odb::Point> snap_pts = target.grid_access;
   for (auto snap_itr = snap_pts.begin(); snap_itr != snap_pts.end();) {
     bool erase = false;
 
     for (const auto& route : routes_) {
-      if (route->isIntersecting(*snap_itr, spacing_ + width_)) {
+      if (route->isIntersecting(*snap_itr, width_, spacing_)) {
         erase = true;
         break;
       }
@@ -879,7 +924,8 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
       gui_->addSnap(target.center, snap);
     }
     gui_->zoomToSnap(true);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -906,12 +952,9 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
     for (const auto& vertex : vertex_to_modify) {
       for (const auto& edge : getVertexEdges(vertex)) {
-        if (std::find(
-                vertex_to_modify.begin(), vertex_to_modify.end(), edge.m_source)
+        if (std::ranges::find(vertex_to_modify, edge.m_source)
                 != vertex_to_modify.end()
-            && std::find(vertex_to_modify.begin(),
-                         vertex_to_modify.end(),
-                         edge.m_target)
+            && std::ranges::find(vertex_to_modify, edge.m_target)
                    != vertex_to_modify.end()) {
           access.removed_edges.push_back(removeGraphEdge(edge));
         }
@@ -979,7 +1022,8 @@ RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
 
   if (logger_->debugCheck(utl::PAD, "Terminal", 1) && gui_ != nullptr) {
     gui_->zoomToSnap(false);
-    gui_->pause(!isDebugNet(target.terminal->getNet()));
+    gui_->pause(!isDebugNet(target.terminal->getNet())
+                && !isDebugPin(target.terminal));
     gui_->clearSnap();
   }
 
@@ -996,41 +1040,20 @@ void RDLRouter::uncommitRoute(const std::vector<RDLRouter::GridEdge>& route)
 odb::Rect RDLRouter::getPointObstruction(const odb::Point& pt) const
 {
   const int check_dist = width_ / 2 + spacing_ + 1;
-  return odb::Rect(pt.x() - check_dist,
-                   pt.y() - check_dist,
-                   pt.x() + check_dist,
-                   pt.y() + check_dist);
+  return RDLRoute::getPointObstruction(pt, check_dist);
 }
 
 odb::Polygon RDLRouter::getEdgeObstruction(const odb::Point& pt0,
                                            const odb::Point& pt1) const
 {
   const int check_dist = width_ / 2 + spacing_ + 1;
-
-  const odb::Oct check_oct(pt0, pt1, 2 * check_dist);
-
-  std::vector<odb::Point> points = check_oct.getPoints();
-
-  if (check_oct.getDir() == odb::Oct::RIGHT) {
-    points[1].setX(check_oct.getCenterLow().x() + check_dist);
-    points[2].setY(check_oct.getCenterHigh().y() - check_dist);
-    points[5].setX(check_oct.getCenterHigh().x() - check_dist);
-    points[6].setY(check_oct.getCenterLow().y() + check_dist);
-  } else {
-    points[3].setY(check_oct.getCenterLow().y() + check_dist);
-    points[4].setX(check_oct.getCenterHigh().x() + check_dist);
-    points[7].setY(check_oct.getCenterHigh().y() - check_dist);
-    points[8].setX(check_oct.getCenterLow().x() - check_dist);
-    points[0] = points[8];
-  }
-
-  return points;
+  return RDLRoute::getEdgeObstruction(pt0, pt1, check_dist);
 }
 
 bool RDLRouter::is45DegreeEdge(const odb::Point& pt0,
                                const odb::Point& pt1) const
 {
-  return pt0.x() != pt1.x() && pt0.y() != pt1.y();
+  return RDLRoute::is45DegreeEdge(pt0, pt1);
 }
 
 std::set<GridGraphEdge> RDLRouter::getVertexEdges(
@@ -1198,18 +1221,13 @@ void RDLRouter::makeGraph()
 
   graph_weight_ = boost::get(boost::edge_weight, graph_);
 
-  std::vector<int> x_grid;
-  std::vector<int> y_grid;
-
   odb::dbTrackGrid* tracks = block_->findTrackGrid(layer_);
-  tracks->getGridX(x_grid);
-  tracks->getGridY(y_grid);
 
   // filter grid points based on spacing requirements
   const int pitch = width_ + spacing_ - 1;
   const int start = width_ / 2 + 1;
   x_grid_.clear();
-  for (const auto& x : x_grid) {
+  for (const auto& x : tracks->getGridX()) {
     bool add = false;
     if (x_grid_.empty()) {
       if (x >= start) {
@@ -1226,7 +1244,7 @@ void RDLRouter::makeGraph()
     }
   }
   y_grid_.clear();
-  for (const auto& y : y_grid) {
+  for (const auto& y : tracks->getGridY()) {
     bool add = false;
     if (y_grid_.empty()) {
       if (y >= start) {
@@ -1564,80 +1582,97 @@ odb::Rect RDLRouter::correctEndPoint(const odb::Rect& route,
 
 void RDLRouter::writeToDb(odb::dbNet* net,
                           const std::vector<odb::Point>& route,
-                          const RouteTarget& source,
-                          const RouteTarget& target)
+                          const RouteTarget* source,
+                          const RouteTarget* target,
+                          const std::set<odb::Rect>& stubs)
 {
   Utilities::makeSpecial(net);
 
-  auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
-  const auto simplified_route = simplifyRoute(route);
-  for (size_t i = 0; i < simplified_route.size(); i++) {
-    const auto& [s, t] = simplified_route[i];
-    odb::Rect shape(s, t);
-    shape.bloat(width_ / 2, shape);
-    odb::dbSBox::Direction dir;
-    if (s.x() == t.x()) {
-      shape.set_ylo(shape.yMin() + width_ / 2);
-      shape.set_yhi(shape.yMax() - width_ / 2);
-      dir = odb::dbSBox::VERTICAL;
-    } else if (s.y() == t.y()) {
-      shape.set_xlo(shape.xMin() + width_ / 2);
-      shape.set_xhi(shape.xMax() - width_ / 2);
-      dir = odb::dbSBox::HORIZONTAL;
-    } else {
-      dir = odb::dbSBox::OCTILINEAR;
-    }
+  if (source == nullptr && target == nullptr && stubs.empty()) {
+    // Nothing to create a wire for, so return
+    return;
+  }
 
-    if (dir != odb::dbSBox::OCTILINEAR) {
-      if (i == 0) {
-        shape = correctEndPoint(shape, s.y() == t.y(), source.shape);
-      } else if (i + 1 == simplified_route.size()) {
-        shape = correctEndPoint(shape, s.y() == t.y(), target.shape);
+  odb::dbSWire* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
+  for (const odb::Rect& stub : stubs) {
+    odb::dbSBox::create(swire,
+                        layer_,
+                        stub.xMin(),
+                        stub.yMin(),
+                        stub.xMax(),
+                        stub.yMax(),
+                        odb::dbWireShapeType::IOWIRE);
+  }
+  if (source != nullptr && target != nullptr) {
+    const auto simplified_route = simplifyRoute(route);
+    for (size_t i = 0; i < simplified_route.size(); i++) {
+      const auto& [s, t] = simplified_route[i];
+      odb::Rect shape(s, t);
+      shape.bloat(width_ / 2, shape);
+      odb::dbSBox::Direction dir;
+      if (s.x() == t.x()) {
+        shape.set_ylo(shape.yMin() + (width_ / 2));
+        shape.set_yhi(shape.yMax() - (width_ / 2));
+        dir = odb::dbSBox::VERTICAL;
+      } else if (s.y() == t.y()) {
+        shape.set_xlo(shape.xMin() + (width_ / 2));
+        shape.set_xhi(shape.xMax() - (width_ / 2));
+        dir = odb::dbSBox::HORIZONTAL;
+      } else {
+        dir = odb::dbSBox::OCTILINEAR;
+      }
+
+      if (dir != odb::dbSBox::OCTILINEAR) {
+        if (i == 0) {
+          shape = correctEndPoint(shape, s.y() == t.y(), source->shape);
+        } else if (i + 1 == simplified_route.size()) {
+          shape = correctEndPoint(shape, s.y() == t.y(), target->shape);
+        }
+      }
+
+      if (dir != odb::dbSBox::OCTILINEAR) {
+        odb::dbSBox::create(swire,
+                            layer_,
+                            shape.xMin(),
+                            shape.yMin(),
+                            shape.xMax(),
+                            shape.yMax(),
+                            odb::dbWireShapeType::IOWIRE);
+      } else {
+        odb::dbSBox::create(swire,
+                            layer_,
+                            s.x(),
+                            s.y(),
+                            t.x(),
+                            t.y(),
+                            odb::dbWireShapeType::IOWIRE,
+                            odb::dbSBox::OCTILINEAR,
+                            width_);
       }
     }
 
-    if (dir != odb::dbSBox::OCTILINEAR) {
+    if (source->layer != layer_) {
+      odb::dbTechVia* via = pad_accessvia_;
+      if (isCoverTerm(source->terminal)) {
+        via = bump_accessvia_;
+      }
       odb::dbSBox::create(swire,
-                          layer_,
-                          shape.xMin(),
-                          shape.yMin(),
-                          shape.xMax(),
-                          shape.yMax(),
+                          via,
+                          source->center.x(),
+                          source->center.y(),
                           odb::dbWireShapeType::IOWIRE);
-    } else {
+    }
+    if (target->layer != layer_) {
+      odb::dbTechVia* via = pad_accessvia_;
+      if (isCoverTerm(target->terminal)) {
+        via = bump_accessvia_;
+      }
       odb::dbSBox::create(swire,
-                          layer_,
-                          s.x(),
-                          s.y(),
-                          t.x(),
-                          t.y(),
-                          odb::dbWireShapeType::IOWIRE,
-                          odb::dbSBox::OCTILINEAR,
-                          width_);
+                          via,
+                          target->center.x(),
+                          target->center.y(),
+                          odb::dbWireShapeType::IOWIRE);
     }
-  }
-
-  if (source.layer != layer_) {
-    odb::dbTechVia* via = pad_accessvia_;
-    if (isCoverTerm(source.terminal)) {
-      via = bump_accessvia_;
-    }
-    odb::dbSBox::create(swire,
-                        via,
-                        source.center.x(),
-                        source.center.y(),
-                        odb::dbWireShapeType::IOWIRE);
-  }
-  if (target.layer != layer_) {
-    odb::dbTechVia* via = pad_accessvia_;
-    if (isCoverTerm(target.terminal)) {
-      via = bump_accessvia_;
-    }
-    odb::dbSBox::create(swire,
-                        via,
-                        target.center.x(),
-                        target.center.y(),
-                        odb::dbWireShapeType::IOWIRE);
   }
 }
 
@@ -1745,11 +1780,13 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   // Get already routed nets obstructions, excluding those that will be routed
   // now
   for (auto* net : block_->getNets()) {
-    if (std::find(nets.begin(), nets.end(), net) != nets.end()) {
-      continue;
-    }
+    const bool is_routing_net = std::ranges::find(nets, net) != nets.end();
 
     for (auto* swire : net->getSWires()) {
+      if (is_routing_net && swire->getWireType() != odb::dbWireType::FIXED) {
+        continue;
+      }
+
       for (auto* box : swire->getWires()) {
         if (box->getTechLayer() != layer_) {
           continue;
@@ -1829,6 +1866,18 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
 
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
+      continue;
+    }
+
+    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty);
+    if (prop && !prop->getValue()) {
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Skipping termininal on {}: {}",
+                 net->getName(),
+                 iterm->getName());
       continue;
     }
 
@@ -1963,6 +2012,15 @@ bool RDLRouter::isDebugNet(odb::dbNet* net) const
   }
 
   return net == debug_net_;
+}
+
+bool RDLRouter::isDebugPin(odb::dbITerm* pin) const
+{
+  if (debug_pin_ == nullptr) {
+    return false;
+  }
+
+  return pin == debug_pin_;
 }
 
 }  // namespace pad

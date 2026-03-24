@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "CommandLineProgress.h"
+#include "utl/Metrics.h"
 #if SPDLOG_VERSION < 10601
 #include "spdlog/details/pattern_formatter.h"
 #else
@@ -76,13 +77,12 @@ Logger::~Logger()
 
 void Logger::addMetricsSink(const char* metrics_filename)
 {
-  metrics_sinks_.push_back(metrics_filename);
+  metrics_sinks_.emplace_back(metrics_filename);
 }
 
 void Logger::removeMetricsSink(const char* metrics_filename)
 {
-  auto metrics_file = std::find(
-      metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
+  auto metrics_file = std::ranges::find(metrics_sinks_, metrics_filename);
   if (metrics_file == metrics_sinks_.end()) {
     this->error(UTL, 11, "{} is not a metrics file", metrics_filename);
   }
@@ -110,9 +110,10 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
     auto it = groups.find(group);
     if (it != groups.end()) {
       groups.erase(it);
-      debug_on_ = std::any_of(debug_group_level_.begin(),
-                              debug_group_level_.end(),
-                              [](auto& group) { return !group.empty(); });
+      debug_on_
+          = std::ranges::any_of(debug_group_level_,
+
+                                [](auto& group) { return !group.empty(); });
     }
   } else {
     debug_on_ = true;
@@ -123,20 +124,20 @@ void Logger::setDebugLevel(ToolId tool, const char* group, int level)
 void Logger::addSink(spdlog::sink_ptr sink)
 {
   sinks_.push_back(sink);
-  logger_->sinks().push_back(sink);
+  logger_->sinks().emplace_back(std::move(sink));
   setFormatter();  // updates the new sink
 }
 
-void Logger::removeSink(spdlog::sink_ptr sink)
+void Logger::removeSink(const spdlog::sink_ptr& sink)
 {
   // remove from local list of sinks_
-  auto sinks_find = std::find(sinks_.begin(), sinks_.end(), sink);
+  auto sinks_find = std::ranges::find(sinks_, sink);
   if (sinks_find != sinks_.end()) {
     sinks_.erase(sinks_find);
   }
   // remove from spdlog list of sinks
   auto& logger_sinks = logger_->sinks();
-  auto logger_find = std::find(logger_sinks.begin(), logger_sinks.end(), sink);
+  auto logger_find = std::ranges::find(logger_sinks, sink);
   if (logger_find != logger_sinks.end()) {
     logger_sinks.erase(logger_find);
   }
@@ -145,7 +146,7 @@ void Logger::removeSink(spdlog::sink_ptr sink)
 void Logger::setMetricsStage(std::string_view format)
 {
   if (metrics_stages_.empty()) {
-    metrics_stages_.push(std::string(format));
+    metrics_stages_.emplace(format);
   } else {
     metrics_stages_.top() = format;
   }
@@ -159,7 +160,7 @@ void Logger::clearMetricsStage()
 
 void Logger::pushMetricsStage(std::string_view format)
 {
-  metrics_stages_.push(std::string(format));
+  metrics_stages_.emplace(format);
 }
 
 std::string Logger::popMetricsStage()
@@ -197,7 +198,7 @@ void Logger::addWarningMetrics()
         warning_type_cnt++;
         log_metric(
             // NOLINTNEXTLINE(misc-include-cleaner)
-            fmt::format("flow__warnings__count:{}-{}", tool_names_[i], j),
+            fmt::format("flow__warnings__count:{}-{:04}", tool_names_[i], j),
             std::to_string(message_counters_[i][j]));
       }
     }

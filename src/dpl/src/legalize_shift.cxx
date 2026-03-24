@@ -315,8 +315,8 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 double ShiftLegalizer::clump(std::vector<Node*>& order)
 {
   // Clumps provided cells.
-  std::fill(offset_.begin(), offset_.end(), 0);
-  std::fill(ptr_.begin(), ptr_.end(), (Clump*) nullptr);
+  std::ranges::fill(offset_, 0);
+  std::ranges::fill(ptr_, (Clump*) nullptr);
 
   const size_t n = dummiesLeft_.size() + order.size() + dummiesRight_.size();
 
@@ -433,7 +433,7 @@ void ShiftLegalizer::merge(Clump* r)
 
   int dist = 0;
   Clump* l = nullptr;
-  while (violated(r, l, dist) == true) {
+  while (violated(r, l, dist)) {
     // Merge clump r into clump l which, in turn, could result in more merges.
 
     // Move blocks from r to l and update offsets, etc.

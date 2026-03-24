@@ -40,7 +40,7 @@ std::string GetVectorString(const std::vector<float>& vec)
 // Convert Tcl list to vector
 
 // char_match:  determine if the char is part of deliminators
-bool CharMatch(char c, const std::string& delim)
+static bool CharMatch(char c, const std::string& delim)
 {
   auto it = delim.begin();
   while (it != delim.end()) {
@@ -53,9 +53,9 @@ bool CharMatch(char c, const std::string& delim)
 }
 
 // find the next position for deliminator char
-std::string::const_iterator FindDelim(std::string::const_iterator start,
-                                      std::string::const_iterator end,
-                                      const std::string& delim)
+static std::string::const_iterator FindDelim(std::string::const_iterator start,
+                                             std::string::const_iterator end,
+                                             const std::string& delim)
 {
   while (start != end && !CharMatch(*start, delim)) {
     start++;
@@ -64,9 +64,10 @@ std::string::const_iterator FindDelim(std::string::const_iterator start,
 }
 
 // find the next position for non deliminator char
-std::string::const_iterator FindNotDelim(std::string::const_iterator start,
-                                         std::string::const_iterator end,
-                                         const std::string& delim)
+static std::string::const_iterator FindNotDelim(
+    std::string::const_iterator start,
+    std::string::const_iterator end,
+    const std::string& delim)
 {
   while (start != end && CharMatch(*start, delim)) {
     start++;
@@ -95,7 +96,7 @@ std::vector<std::string> SplitLine(const std::string& line)
 void Accumulate(std::vector<float>& a, const std::vector<float>& b)
 {
   assert(a.size() == b.size());
-  std::transform(a.begin(), a.end(), b.begin(), a.begin(), std::plus<float>());
+  std::ranges::transform(a, b, a.begin(), std::plus<float>());
 }
 
 // weighted sum
@@ -163,11 +164,7 @@ std::vector<float> operator+(const std::vector<float>& a,
   assert(a.size() == b.size());
   std::vector<float> result;
   result.reserve(a.size());
-  std::transform(a.begin(),
-                 a.end(),
-                 b.begin(),
-                 std::back_inserter(result),
-                 std::plus<float>());
+  std::ranges::transform(a, b, std::back_inserter(result), std::plus<float>());
   return result;
 }
 
@@ -177,11 +174,7 @@ std::vector<float> operator-(const std::vector<float>& a,
   assert(a.size() == b.size());
   std::vector<float> result;
   result.reserve(a.size());
-  std::transform(a.begin(),
-                 a.end(),
-                 b.begin(),
-                 std::back_inserter(result),
-                 std::minus<float>());
+  std::ranges::transform(a, b, std::back_inserter(result), std::minus<float>());
   return result;
 }
 
@@ -191,11 +184,8 @@ std::vector<float> operator*(const std::vector<float>& a,
   assert(a.size() == b.size());
   std::vector<float> result;
   result.reserve(a.size());
-  std::transform(a.begin(),
-                 a.end(),
-                 b.begin(),
-                 std::back_inserter(result),
-                 std::multiplies<float>());
+  std::ranges::transform(
+      a, b, std::back_inserter(result), std::multiplies<float>());
   return result;
 }
 
@@ -245,10 +235,8 @@ std::vector<float> abs(const std::vector<float>& a)
 {
   std::vector<float> result;
   result.reserve(a.size());
-  std::transform(a.begin(),
-                 a.end(),
-                 std::back_inserter(result),
-                 static_cast<float (*)(float)>(&std::abs));
+  std::ranges::transform(
+      a, std::back_inserter(result), static_cast<float (*)(float)>(&std::abs));
   return result;
 }
 
@@ -313,7 +301,7 @@ bool ILPPartitionInst(
   // reset variable
   solution.clear();
   solution.resize(num_vertices);
-  std::fill(solution.begin(), solution.end(), -1);
+  std::ranges::fill(solution, -1);
 
   // Google OR-Tools Implementation
   std::unique_ptr<MPSolver> solver(MPSolver::CreateSolver("SCIP"));
@@ -338,7 +326,7 @@ bool ILPPartitionInst(
           0.0, 1.0, "");  // represent whether the hyperedge is within block
     }
   }
-  const double infinity = solver->infinity();  // single-side constraints
+  const double infinity = MPSolver::infinity();  // single-side constraints
   // handle different types of constraints
   // balance constraint
   for (int i = 0; i < num_parts; i++) {

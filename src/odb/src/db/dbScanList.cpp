@@ -4,27 +4,35 @@
 // Generator Code Begin Cpp
 #include "dbScanList.h"
 
+#include <cstdint>
+
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
 #include "dbScanListScanInstItr.h"
 #include "dbScanPartition.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include "dbBlock.h"
+#include "odb/dbSet.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanList>;
 
 bool _dbScanList::operator==(const _dbScanList& rhs) const
 {
-  if (_unused != rhs._unused) {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+  if (unused_ != rhs.unused_) {
     return false;
   }
-  if (_first_scan_inst != rhs._first_scan_inst) {
+  if (first_scan_inst_ != rhs.first_scan_inst_) {
     return false;
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanList::operator<(const _dbScanList& rhs) const
@@ -34,24 +42,24 @@ bool _dbScanList::operator<(const _dbScanList& rhs) const
 
 _dbScanList::_dbScanList(_dbDatabase* db)
 {
-  _unused = 0;
+  unused_ = 0;
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbScanList& obj)
 {
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._unused;
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
+    stream >> obj.unused_;
   }
-  if (obj.getDatabase()->isSchema(db_schema_block_owns_scan_insts)) {
-    stream >> obj._first_scan_inst;
+  if (obj.getDatabase()->isSchema(kSchemaBlockOwnsScanInsts)) {
+    stream >> obj.first_scan_inst_;
   }
   return stream;
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbScanList& obj)
 {
-  stream << obj._unused;
-  stream << obj._first_scan_inst;
+  stream << obj.unused_;
+  stream << obj.first_scan_inst_;
   return stream;
 }
 
@@ -75,7 +83,7 @@ dbSet<dbScanInst> dbScanList::getScanInsts() const
   _dbScanChain* scan_chain = (_dbScanChain*) scan_partition->getOwner();
   _dbDft* dft = (_dbDft*) scan_chain->getOwner();
   _dbBlock* block = (_dbBlock*) dft->getOwner();
-  return dbSet<dbScanInst>(scan_list, block->_scan_list_scan_inst_itr);
+  return dbSet<dbScanInst>(scan_list, block->scan_list_scan_inst_itr_);
 }
 
 dbScanInst* dbScanList::add(dbInst* inst)

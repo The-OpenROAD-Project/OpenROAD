@@ -28,8 +28,8 @@ dbExtControl::dbExtControl()
   _exttreePreMerg = true;
   _exttreeMaxcap = 0.0;
   _useDbSdb = true;
-  _CCnoPowerSource = 0;
-  _CCnoPowerTarget = 0;
+  _ccNoPowerSource = 0;
+  _ccNoPowerTarget = 0;
   _usingMetalPlanes = false;
 }
 
@@ -56,8 +56,8 @@ dbOStream& operator<<(dbOStream& stream, const dbExtControl& extControl)
   stream << extControl._exttreePreMerg;
   stream << extControl._exttreeMaxcap;
   stream << extControl._useDbSdb;
-  stream << extControl._CCnoPowerSource;
-  stream << extControl._CCnoPowerTarget;
+  stream << extControl._ccNoPowerSource;
+  stream << extControl._ccNoPowerTarget;
   stream << extControl._usingMetalPlanes;
   stream << extControl._ruleFileName;
   // new fields
@@ -94,8 +94,8 @@ dbIStream& operator>>(dbIStream& stream, dbExtControl& extControl)
   stream >> extControl._exttreePreMerg;
   stream >> extControl._exttreeMaxcap;
   stream >> extControl._useDbSdb;
-  stream >> extControl._CCnoPowerSource;
-  stream >> extControl._CCnoPowerTarget;
+  stream >> extControl._ccNoPowerSource;
+  stream >> extControl._ccNoPowerTarget;
   stream >> extControl._usingMetalPlanes;
   stream >> extControl._ruleFileName;
   stream >> extControl._extractedCornerList;

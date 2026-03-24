@@ -1,4 +1,5 @@
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -35,6 +36,7 @@ COMPULSORY_TESTS = [
     "core_grid_cut_pitch",
     "core_grid_dual_followpins",
     "core_grid_dual_followpins_error",
+    "core_grid_existing_ports",
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
@@ -47,11 +49,14 @@ COMPULSORY_TESTS = [
     "core_grid_start_power",
     "core_grid_start_power_strap_ground",
     "core_grid_strap_count",
+    "core_grid_strap_outside_core",
     "core_grid_via_snap",
     "core_grid_with_M6_min_area",
     "core_grid_with_M7_pins",
+    "core_grid_with_bterms",
     "core_grid_with_dual_rings",
     "core_grid_with_fixed_pins",
+    "core_grid_with_m2_straps",
     "core_grid_with_rings",
     "core_grid_with_rings_connect",
     "core_grid_with_rings_different_offset",
@@ -63,6 +68,7 @@ COMPULSORY_TESTS = [
     "core_grid_with_rings_with_straps",
     "core_grid_with_rings_with_straps_rings_over_core",
     "core_grid_with_routing_obstructions",
+    "core_grid_with_secondary_no_shapes",
     "core_grid_with_single_edge_pins",
     "core_grid_with_single_layer_rings",
     "design_width",
@@ -76,6 +82,7 @@ COMPULSORY_TESTS = [
     "macros_cells",
     "macros_cells_dont_touch",
     "macros_cells_extend_boundary",
+    "macros_cells_halo_blocking",
     "macros_cells_no_grid",
     "macros_cells_not_fixed",
     "macros_cells_orient",
@@ -101,10 +108,12 @@ COMPULSORY_TESTS = [
     "pads_black_parrot_flipchip",
     "pads_black_parrot_flipchip_connect_bumps",
     "pads_black_parrot_flipchip_connect_overpads",
+    "pads_black_parrot_grid_define",
     "pads_black_parrot_limit_connect",
     "pads_black_parrot_max_width",
     "pads_black_parrot_no_connect",
     "pads_black_parrot_offset",
+    "pads_black_parrot_straps",
     "pads_connect_from_non_pref_edge",
     "power_switch",
     "power_switch_cut_rows",
@@ -129,22 +138,7 @@ COMPULSORY_TESTS = [
     "widthtable",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "pdn_man_tcl_check",
-    "pdn_readme_msgs_check",
-]
-
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "pads_black_parrot",
-    "pads_black_parrot_flipchip",
-    "pads_black_parrot_flipchip_connect_bumps",
-    "pads_black_parrot_flipchip_connect_overpads",
-    "pads_black_parrot_offset",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -215,6 +209,7 @@ filegroup(
         "nangate_macros/fakeram45_32x64.lef",
         "nangate_macros/fakeram45_64x32.lef",
         "nangate_macros/fakeram45_64x32_overlapping_ports.lef",
+        "nangate_macros/fakeram45_64x32_via_obs.lef",
         "nangate_macros/floorplan.def",
         "nangate_macros/floorplan_narrow.def",
         "nangate_macros/floorplan_orient.def",
@@ -299,9 +294,25 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "pdn_man_tcl_check",
+    srcs = ["pdn_man_tcl_check.py"],
+    data = ["//src/pdn:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "pdn_readme_msgs_check",
+    data = [
+        "//src/pdn:doc_files",
+        "//src/pdn:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

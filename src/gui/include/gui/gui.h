@@ -39,9 +39,6 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
-class PinDensityDataSource;
-class PlacementDensityDataSource;
-class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -166,16 +163,19 @@ class Painter
   virtual Color getPenColor() = 0;
 
   // Set the pen to whatever the user has chosen for this layer
-  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic = false) = 0;
+  virtual void setPen(odb::dbTechLayer* layer, bool cosmetic) = 0;
+  void setPen(odb::dbTechLayer* layer) { setPen(layer, false); }
 
   // Set the pen to an RGBA value
-  virtual void setPen(const Color& color, bool cosmetic = false, int width = 1)
-      = 0;
+  virtual void setPen(const Color& color, bool cosmetic, int width) = 0;
+  void setPen(const Color& color, bool cosmetic) { setPen(color, cosmetic, 1); }
+  void setPen(const Color& color) { setPen(color, false); }
 
   virtual void setPenWidth(int width) = 0;
   // Set the brush to whatever the user has chosen for this layer
   // The alpha value may be overridden
-  virtual void setBrush(odb::dbTechLayer* layer, int alpha = -1) = 0;
+  virtual void setBrush(odb::dbTechLayer* layer, int alpha) = 0;
+  void setBrush(odb::dbTechLayer* layer) { setBrush(layer, -1); }
 
   // Set the brush to whatever the user has chosen for this layer
   enum Brush
@@ -186,7 +186,8 @@ class Painter
     kCross,
     kDots
   };
-  virtual void setBrush(const Color& color, const Brush& style = kSolid) = 0;
+  virtual void setBrush(const Color& color, const Brush& style) = 0;
+  void setBrush(const Color& color) { setBrush(color, Brush::kSolid); }
 
   virtual void setFont(const Font& font) = 0;
 
@@ -253,8 +254,12 @@ class Painter
                           int y,
                           Anchor anchor,
                           const std::string& s,
-                          bool rotate_90 = false)
+                          bool rotate_90)
       = 0;
+  void drawString(int x, int y, Anchor anchor, const std::string& s)
+  {
+    drawString(x, y, anchor, s, false);
+  }
   virtual odb::Rect stringBoundaries(int x,
                                      int y,
                                      Anchor anchor,
@@ -265,9 +270,17 @@ class Painter
                          int y0,
                          int x1,
                          int y1,
-                         bool euclidian = true,
-                         const std::string& label = "")
+                         bool euclidian,
+                         const std::string& label)
       = 0;
+  void drawRuler(int x0, int y0, int x1, int y1, bool euclidian)
+  {
+    drawRuler(x0, y0, x1, y1, euclidian, "");
+  }
+  void drawRuler(int x0, int y0, int x1, int y1)
+  {
+    drawRuler(x0, y0, x1, y1, true);
+  }
 
   // Draw a line with coordinates in DBU with the current pen
   void drawLine(int xl, int yl, int xh, int yh)
@@ -276,7 +289,7 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions() { return options_; }
+  Options* getOptions();
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:
@@ -395,6 +408,58 @@ class Descriptor
   static std::string convertUnits(double value,
                                   bool area = false,
                                   int digits = 3);
+};
+
+class PropertyTable
+{
+ public:
+  PropertyTable(int rows, int columns)
+  {
+    row_header_.resize(rows);
+    column_header_.resize(columns);
+    data_.resize(rows);
+    for (auto& row : data_) {
+      row.resize(columns);
+    }
+  };
+
+  void setRowHeader(int row, const std::string& header)
+  {
+    row_header_.at(row) = header;
+  }
+  const std::vector<std::string>& getRowHeaders() const { return row_header_; }
+
+  void setColumnHeader(int column, const std::string& header)
+  {
+    column_header_.at(column) = header;
+  }
+  const std::vector<std::string>& getColumnHeaders() const
+  {
+    return column_header_;
+  }
+
+  void setData(int row, int column, const std::string& value)
+  {
+    data_.at(row).at(column) = value;
+  }
+  const std::vector<std::vector<std::string>>& getData() const { return data_; }
+
+  bool empty() const
+  {
+    for (const auto& row : data_) {
+      for (const auto& item : row) {
+        if (!item.empty()) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+ private:
+  std::vector<std::string> column_header_;
+  std::vector<std::string> row_header_;
+  std::vector<std::vector<std::string>> data_;
 };
 
 // An object selected in the gui.  The object is stored as a
@@ -547,6 +612,7 @@ class Renderer
     if (settings.count(key) == 1) {
       try {
         value = std::get<T>(settings.at(key));
+        // NOLINTNEXTLINE(bugprone-empty-catch)
       } catch (const std::bad_variant_access&) {
         // Stay with current value
       }
@@ -582,6 +648,54 @@ class SpectrumGenerator
  private:
   static const unsigned char kSpectrum[256][3];
   double scale_;
+  static constexpr int kLegendColorIncrement = 2;
+};
+
+class Legend
+{
+ public:
+  virtual ~Legend() = default;
+
+  virtual void draw(Painter& painter) const = 0;
+
+ protected:
+  Legend() = default;
+};
+
+// A legend for a linear spectrum of colors
+// The colors are specified as continuous from low to high
+// For example, a heat map legend
+class LinearLegend : public Legend
+{
+ public:
+  LinearLegend(const std::vector<Painter::Color>& colors);
+
+  // Set the legend key as a vector of (color, text) pairs
+  void setLegendKey(
+      const std::vector<std::pair<Painter::Color, std::string>>& legend_key);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<Painter::Color> colors_;
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_;
+};
+
+// A legend for discrete colors
+// Each color is associated with a text label
+// For example, a timing path legend
+class DiscreteLegend : public Legend
+{
+ public:
+  DiscreteLegend() = default;
+
+  // Add a (color, text) entry to the legend
+  void addLegendKey(const Painter::Color& color, const std::string& text);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<std::pair<Painter::Color, std::string>> color_key_;
 };
 
 // A chart with a single X axis and potentially multiple Y axes
@@ -639,6 +753,9 @@ class Gui
   // Add an instance to the selection set
   void addSelectedInst(const char* name);
 
+  // Return the selected set
+  const SelectionSet& selection();
+
   // check if any object(inst/net) is present in sect/highlight set
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type) const;
 
@@ -689,6 +806,8 @@ class Gui
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
   void zoomIn();
   void zoomIn(const odb::Point& focus_dbu);
   void zoomOut();
@@ -706,7 +825,7 @@ class Gui
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
                           const std::string& filename,
-                          const std::string& corner = "",
+                          const std::string& scene = "",
                           int width_px = 0,
                           int height_px = 0);
   void selectClockviewerClock(const std::string& clock_name,
@@ -717,6 +836,9 @@ class Gui
                           const std::string& mode,
                           int width_px = 0,
                           int height_px = 0);
+
+  void showWorstTimingPath(bool setup);
+  void clearTimingPath();
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);
@@ -821,12 +943,15 @@ class Gui
   const Selected& getInspectorSelection();
 
   // GIF API
-  void gifStart(const std::string& filename);
-  void gifAddFrame(const odb::Rect& region = odb::Rect(),
+  // Start returns the key for use by add and end.  This allows multiple
+  // gifs to be open at once.
+  int gifStart(const std::string& filename);
+  void gifAddFrame(std::optional<int> key,
+                   const odb::Rect& region = odb::Rect(),
                    int width_px = 0,
                    double dbu_per_pixel = 0,
                    std::optional<int> delay = {});
-  void gifEnd();
+  void gifEnd(std::optional<int> key);
 
   void setHeatMapSetting(const std::string& name,
                          const std::string& option,
@@ -905,49 +1030,18 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
-  // There are RTTI implementation differences between libstdc++ and libc++,
-  // where the latter seems to generate multiple typeids for classes including
-  // but not limited to sta::Instance* in different compile units. We have been
-  // unable to remedy this.
-  //
-  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
-  // and comparing are done on the type's name instead, which adds a negligible
-  // performance penalty but has the distinct advantage of not crashing when an
-  // Instance is clicked in the GUI.
-  //
-  // In the event the RTTI issue is ever resolved, the following two structs may
-  // be removed.
-  struct TypeInfoHasher
-  {
-    std::size_t operator()(const std::type_index& x) const;
-  };
-  struct TypeInfoComparator
-  {
-    bool operator()(const std::type_index& a, const std::type_index& b) const;
-  };
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index,
-                     std::unique_ptr<const Descriptor>,
-                     TypeInfoHasher,
-                     TypeInfoComparator>
-      descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
+  std::map<HeatMapDataSource*, std::unique_ptr<Renderer>> heat_map_renderers_;
+  std::vector<std::shared_ptr<HeatMapDataSource>> owned_heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
 
-  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
-  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
-
-  std::unique_ptr<GIF> gif_;
+  std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;
-
-  static Gui* singleton_;
 
   std::string main_window_title_ = "OpenROAD";
 };

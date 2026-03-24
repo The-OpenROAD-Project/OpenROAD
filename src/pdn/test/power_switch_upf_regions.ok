@@ -6,8 +6,15 @@
 [WARNING ORD-2011] LEF master sky130_fd_sc_hd__tapvpwrvgnd_1 has no liberty cell.
 [WARNING ORD-2011] LEF master HEADER has no liberty cell.
 [WARNING ORD-2011] LEF master SLC has no liberty cell.
+[INFO IFP-0107] Defining die area using utilization: 10.00% and aspect ratio: 1.
 [INFO IFP-0001] Added 60 rows of 355 site unithd.
 [INFO IFP-0001] Added 30 rows of 355 site unithddbl.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 163.670 163.670 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 163.300 163.200 ) um
+[INFO IFP-0102] Core area:                        26650.560 um^2
+[INFO IFP-0103] Total instances area:              2678.819 um^2
+[INFO IFP-0104] Effective utilization:                0.101
+[INFO IFP-0105] Number of instances:                    393
 [INFO TAP-0005] Inserted 310 tapcells.
 [WARNING ORD-0044] Net created for VIN_SW, if intended as power or ground net add the -power/-ground switch as appropriate.
 [WARNING PDN-0209] Power switch for PS_0 already exists

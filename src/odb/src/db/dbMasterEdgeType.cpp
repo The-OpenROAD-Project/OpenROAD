@@ -4,18 +4,20 @@
 // Generator Code Begin Cpp
 #include "dbMasterEdgeType.h"
 
+#include <cstdint>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbMaster.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 namespace odb {
 template class dbTable<_dbMasterEdgeType>;
 
 bool _dbMasterEdgeType::operator==(const _dbMasterEdgeType& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (edge_dir_ != rhs.edge_dir_) {
     return false;
   }
@@ -36,6 +38,7 @@ bool _dbMasterEdgeType::operator==(const _dbMasterEdgeType& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMasterEdgeType::operator<(const _dbMasterEdgeType& rhs) const
@@ -79,7 +82,7 @@ void _dbMasterEdgeType::collectMemInfo(MemInfo& info)
   info.size += sizeof(*this);
 
   // User Code Begin collectMemInfo
-  info.children_["edge_type"].add(edge_type_);
+  info.children["edge_type"].add(edge_type_);
   // User Code End collectMemInfo
 }
 
@@ -160,7 +163,7 @@ void dbMasterEdgeType::setEdgeDir(dbMasterEdgeType::EdgeDir edge_dir)
 {
   _dbMasterEdgeType* obj = (_dbMasterEdgeType*) this;
 
-  obj->edge_dir_ = (uint) edge_dir;
+  obj->edge_dir_ = (uint32_t) edge_dir;
 }
 
 dbMasterEdgeType::EdgeDir dbMasterEdgeType::getEdgeDir() const

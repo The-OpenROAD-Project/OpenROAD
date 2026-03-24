@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -24,6 +25,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "shape.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
 
@@ -50,7 +52,7 @@ Enclosure::Enclosure(odb::dbTechLayerCutEnclosureRule* rule,
       swap(layer);
       break;
     case odb::dbTechLayerCutEnclosureRule::EOL:
-      switch (direction) {
+      switch (direction.getValue()) {
         case odb::dbTechLayerDir::HORIZONTAL:
           x_ = rule->getFirstOverhang();
           y_ = rule->getSecondOverhang();
@@ -407,7 +409,7 @@ DbVia::ViaLayerShape DbTechVia::generate(
   odb::Point new_via_center;
   ViaLayerShape via_shapes;
 
-  auto add_via = [&via_shapes, this](odb::dbSBox* via,
+  auto add_via = [this, &via_shapes](odb::dbSBox* via,
                                      const odb::Point& center) {
     ViaLayerShape new_via_shapes = getLayerShapes(via);
 
@@ -580,7 +582,7 @@ DbGenerateVia::DbGenerateVia(const odb::Rect& rect,
       cut_(cut),
       top_(top)
 {
-  for (uint l = 0; rule_->getViaLayerRuleCount(); l++) {
+  for (uint32_t l = 0; l < rule_->getViaLayerRuleCount(); l++) {
     auto* layer_rule = rule_->getViaLayerRule(l);
     if (layer_rule->getLayer() == cut_) {
       layer_rule->getRect(cut_rect_);
@@ -932,7 +934,9 @@ DbVia::ViaLayerShape DbGenerateStackedVia::generate(
     }
   }
 
-  using namespace boost::polygon::operators;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator+;
+  using boost::polygon::operators::operator^;
   using Rectangle = boost::polygon::rectangle_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
@@ -1532,7 +1536,7 @@ bool ViaGenerator::checkMinCuts(odb::dbTechLayer* layer, int width) const
 
 bool ViaGenerator::checkMinEnclosure() const
 {
-  const double dbu = getTech()->getLefUnits();
+  const double dbu = getTech()->getDbUnitsPerMicron();
 
   std::vector<Enclosure> bottom_rules;
   std::vector<Enclosure> top_rules;
@@ -1777,21 +1781,44 @@ bool ViaGenerator::updateCutSpacing(int rows, int cols)
 
   bool changed = false;
   const odb::Rect cut = getCut();
-  for (auto* rule : layer->getV54SpacingRules()) {
-    uint numcuts;
-    uint within;
-    uint spacing;
-    bool except_same_pgnet;
-    if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+  for (auto* rule : layer->getTechLayerCutSpacingRules()) {
+    if (rule->getType()
+        != odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS) {
       continue;
     }
-    if (except_same_pgnet) {
+
+    if (!rule->isCutClassToAll() && rule->getCutClass() != cutclass_) {
       continue;
     }
-    if (numcuts <= adj_cuts) {
-      cut_pitch_x_ = cut.dx() + spacing;
-      cut_pitch_y_ = cut.dy() + spacing;
-      changed = true;
+
+    if (rule->getAdjacentCuts() <= adj_cuts) {
+      if (max_dim == rows) {
+        cut_pitch_y_ = cut.dy() + rule->getCutSpacing();
+        changed = true;
+      } else {
+        cut_pitch_x_ = cut.dx() + rule->getCutSpacing();
+        changed = true;
+      }
+    }
+  }
+
+  if (!changed) {
+    for (auto* rule : layer->getV54SpacingRules()) {
+      uint32_t numcuts;
+      uint32_t within;
+      uint32_t spacing;
+      bool except_same_pgnet;
+      if (!rule->getAdjacentCuts(numcuts, within, spacing, except_same_pgnet)) {
+        continue;
+      }
+      if (except_same_pgnet) {
+        continue;
+      }
+      if (numcuts <= adj_cuts) {
+        cut_pitch_x_ = cut.dx() + spacing;
+        cut_pitch_y_ = cut.dy() + spacing;
+        changed = true;
+      }
     }
   }
 
@@ -1927,8 +1954,9 @@ void ViaGenerator::determineRowsAndColumns(
 
   bool used_array = false;
 
-  const int array_size = std::max(rows, cols);
-  if (array_size >= 2) {
+  const int array_size_max = std::max(rows, cols);
+  const int array_size_min = std::min(rows, cols);
+  if (array_size_max >= 2) {
     // if array rules might apply
     const int array_area_x
         = width
@@ -1938,6 +1966,10 @@ void ViaGenerator::determineRowsAndColumns(
           - 2 * std::max(bottom_min_enclosure.getY(), top_min_enclosure.getY());
     int max_cut_area = 0;
     for (auto* rule : getCutLayer()->getTechLayerArraySpacingRules()) {
+      if (rule->isParallelOverlap()) {
+        continue;
+      }
+
       if (!isCutClass(rule->getCutClass())) {
         continue;
       }
@@ -1949,8 +1981,9 @@ void ViaGenerator::determineRowsAndColumns(
 
       for (const auto& [rule_cuts, rule_spacing] :
            rule->getCutsArraySpacing()) {
-        if (rule_cuts > array_size) {
-          // this rule is ignored due to cuts
+        if (rule_cuts > array_size_min + (rule->isLongArray() ? 1 : 0)) {
+          // this rules does not apply because the smaller dimension of the
+          // array is less than the rule
           continue;
         }
 
@@ -1968,7 +2001,7 @@ void ViaGenerator::determineRowsAndColumns(
                              top_min_enclosure.getX(),
                              cut_spacing_x + cut_width,
                              getMaxColumns());
-        // if long array allowed,  leave x alone
+        // if long array allowed, leave x alone
         x_cuts = rule->isLongArray() ? x_cuts : std::min(x_cuts, rule_cuts);
         int y_cuts = getCuts(height,
                              cut_height,
@@ -2391,21 +2424,19 @@ GenerateViaGenerator::GenerateViaGenerator(utl::Logger* logger,
                    upper_constraint),
       rule_(rule)
 {
-  const uint layer_count = rule_->getViaLayerRuleCount();
+  const uint32_t layer_count = rule_->getViaLayerRuleCount();
 
-  std::map<odb::dbTechLayer*, uint> layer_map;
+  std::map<odb::dbTechLayer*, uint32_t> layer_map;
   std::vector<odb::dbTechLayer*> layers;
-  for (uint l = 0; l < layer_count; l++) {
+  for (uint32_t l = 0; l < layer_count; l++) {
     odb::dbTechLayer* layer = rule_->getViaLayerRule(l)->getLayer();
     layer_map[layer] = l;
     layers.push_back(layer);
   }
 
-  std::sort(layers.begin(),
-            layers.end(),
-            [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
-              return l->getNumber() < r->getNumber();
-            });
+  std::ranges::sort(layers, [](odb::dbTechLayer* l, odb::dbTechLayer* r) {
+    return l->getNumber() < r->getNumber();
+  });
 
   for (int i = 0; i < 3; i++) {
     layers_[i] = layer_map[layers[i]];
@@ -2676,12 +2707,8 @@ bool TechViaGenerator::fitsShapes() const
   }
 
   transform.apply(top_rect);
-  if (!mostlyContains(
-          getUpperRect(), intersection, top_rect, getUpperConstraint())) {
-    return false;
-  }
-
-  return true;
+  return mostlyContains(
+      getUpperRect(), intersection, top_rect, getUpperConstraint());
 }
 
 // check if shape is contains on three sides
@@ -2770,12 +2797,9 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
                    enc_bottom_rect.yMax() - via_rect.yMax());
   }
   // remove rules that do not fit the tech vias enclosures.
-  bottom.erase(std::remove_if(bottom.begin(),
-                              bottom.end(),
-                              [&](const auto& enc) {
-                                return enc.getX() < odx && enc.getY() < ody;
-                              }),
-               bottom.end());
+  std::erase_if(bottom, [&](const auto& enc) {
+    return enc.getX() < odx && enc.getY() < ody;
+  });
   // "fix" rules to use the tech via enclosure
   for (auto& enc : bottom) {
     if (enc.getX() < odx) {
@@ -2798,12 +2822,9 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
                    enc_top_rect.yMax() - via_rect.yMax());
   }
   // remove rules that do not fit the tech vias enclosures.
-  top.erase(std::remove_if(top.begin(),
-                           top.end(),
-                           [&](const auto& enc) {
-                             return enc.getX() < odx && enc.getY() < ody;
-                           }),
-            top.end());
+  std::erase_if(top, [&](const auto& enc) {
+    return enc.getX() < odx && enc.getY() < ody;
+  });
   // "fix" rules to use the tech via enclosure
   for (auto& enc : top) {
     if (enc.getX() < odx) {
@@ -2821,8 +2842,7 @@ void TechViaGenerator::getMinimumEnclosures(std::vector<Enclosure>& bottom,
 std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
     utl::Logger* logger,
     odb::dbTechVia* via,
-    int x,
-    int y)
+    const odb::Point& pt)
 {
   const TechViaGenerator generator(logger, via, {}, {}, {}, {});
 
@@ -2831,7 +2851,7 @@ std::set<odb::Rect> TechViaGenerator::getViaObstructionRects(
 
   std::set<odb::Rect> obs;
 
-  const odb::dbTransform xform(odb::Point(x, y));
+  const odb::dbTransform xform(pt);
   for (auto* box : via->getBoxes()) {
     auto* layer = box->getTechLayer();
     if (layer->getType() != odb::dbTechLayerType::CUT) {
@@ -2918,7 +2938,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   }
 
   auto check_shapes
-      = [this, obstructions](
+      = [this, &obstructions](
             const ShapePtr& shape,
             const std::set<DbVia::ViaLayerShape::RectBoxPair>& via_shapes)
       -> std::set<odb::dbSBox*> {
@@ -3002,17 +3022,77 @@ void Via::writeToDb(odb::dbSWire* wire,
   ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
   if (!ripup_shapes.empty()) {
+    // Check if via stack continuity will be broken
+
+    // Collect remaining shapes
+    std::set<odb::dbTechLayer*> layers;
+    for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+      for (const auto& [rect, box] : viashapes) {
+        if (ripup_shapes.find(box) == ripup_shapes.end()) {
+          if (box->isVia()) {
+            if (auto* via = box->getBlockVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            } else if (auto* via = box->getTechVia()) {
+              for (auto* viabox : via->getBoxes()) {
+                layers.insert(viabox->getTechLayer());
+              }
+            }
+          } else {
+            layers.insert(box->getTechLayer());
+          }
+        }
+      }
+    }
+
+    bool broken = false;
+    for (auto* layer : connect_->getAllLayers()) {
+      if (layers.find(layer) == layers.end()) {
+        // stack is broken
+        broken = true;
+      }
+    }
+
+    if (broken) {
+      for (const auto& viashapes : {shapes.bottom, shapes.middle, shapes.top}) {
+        for (const auto& [rect, box] : viashapes) {
+          ripup_shapes.insert(box);
+        }
+      }
+    }
+  }
+
+  if (!ripup_shapes.empty()) {
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
     int ripup_count = 0;
+    int via_ripup_count = 0;
     for (auto* shape : ripup_shapes) {
-      int via_x, via_y;
       if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
-        shape->getViaXY(via_x, via_y);
-        x += via_x;
-        y += via_y;
+        const odb::Point pt = shape->getViaXY();
+        x += pt.getX();
+        y += pt.getY();
         ripup_count++;
+
+        if (odb::dbVia* via = shape->getBlockVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        } else if (odb::dbTechVia* via = shape->getTechVia()) {
+          for (auto* box : via->getBoxes()) {
+            if (box->getTechLayer() != nullptr
+                && box->getTechLayer()->getType()
+                       == odb::dbTechLayerType::CUT) {
+              via_ripup_count++;
+            }
+          }
+        }
       }
 
       odb::dbSBox::destroy(shape);
@@ -3026,7 +3106,7 @@ void Via::writeToDb(odb::dbSWire* wire,
         utl::PDN,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-        ripup_count,
+        via_ripup_count,
         lower_->getLayer()->getName(),
         upper_->getLayer()->getName(),
         tech_layer.dbuToMicron(x / ripup_count),

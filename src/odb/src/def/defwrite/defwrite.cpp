@@ -27,7 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <string.h>
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
 
 #include <cstdio>
 #include <cstdlib>
@@ -84,7 +84,8 @@ int main(int argc, char** argv)
       argv++;
       argc--;
       outfile = *argv;
-      if ((fout = fopen(outfile, "w")) == nullptr) {
+      fout = fopen(outfile, "w");
+      if (fout == nullptr) {
         fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
       }

@@ -1,5 +1,9 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ODB-0482] SanityCheck: dbModNet 'u1/Z' has no driver.
+[WARNING ODB-0483] SanityCheck: dbModNet 'u1/Z' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 0, # of ModITerms = 0, # of ModBTerms = 1).
+[WARNING ODB-0482] SanityCheck: dbModNet 'single_conn_wire' has no driver.
+[WARNING ODB-0483] SanityCheck: dbModNet 'single_conn_wire' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 0, # of ModITerms = 1, # of ModBTerms = 0).
 [WARNING ODB-0050] SanityCheck: dbNet 'out_unconnected' has no driver.
 [WARNING ODB-0051] SanityCheck: dbNet 'out_unconnected' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 1).
 [WARNING ODB-0051] SanityCheck: dbNet 'single_conn_wire' is dangling. It has less than 2 connections (# of ITerms = 0, # of BTerms = 0).

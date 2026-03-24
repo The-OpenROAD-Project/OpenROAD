@@ -4,8 +4,12 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
-#include "odb/odb.h"
+// User Code Begin Includes
+#include "odb/dbId.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -17,48 +21,48 @@ class _dbTechLayer;
 
 struct dbTechLayerSpacingEolRuleFlags
 {
-  bool exact_width_valid_ : 1;
-  bool wrong_dir_spacing_valid_ : 1;
-  bool opposite_width_valid_ : 1;
-  bool within_valid_ : 1;
-  bool wrong_dir_within_valid_ : 1;
-  bool same_mask_valid_ : 1;
-  bool except_exact_width_valid_ : 1;
-  bool fill_concave_corner_valid_ : 1;
-  bool withcut_valid_ : 1;
-  bool cut_class_valid_ : 1;
-  bool with_cut_above_valid_ : 1;
-  bool enclosure_end_valid_ : 1;
-  bool enclosure_end_within_valid_ : 1;
-  bool end_prl_spacing_valid_ : 1;
-  bool prl_valid_ : 1;
-  bool end_to_end_valid_ : 1;
-  bool cut_spaces_valid_ : 1;
-  bool extension_valid_ : 1;
-  bool wrong_dir_extension_valid_ : 1;
-  bool other_end_width_valid_ : 1;
-  bool max_length_valid_ : 1;
-  bool min_length_valid_ : 1;
-  bool two_sides_valid_ : 1;
-  bool equal_rect_width_valid_ : 1;
-  bool parallel_edge_valid_ : 1;
-  bool subtract_eol_width_valid_ : 1;
-  bool par_prl_valid_ : 1;
-  bool par_min_length_valid_ : 1;
-  bool two_edges_valid_ : 1;
-  bool same_metal_valid_ : 1;
-  bool non_eol_corner_only_valid_ : 1;
-  bool parallel_same_mask_valid_ : 1;
-  bool enclose_cut_valid_ : 1;
-  bool below_valid_ : 1;
-  bool above_valid_ : 1;
-  bool cut_spacing_valid_ : 1;
-  bool all_cuts_valid_ : 1;
-  bool to_concave_corner_valid_ : 1;
-  bool min_adjacent_length_valid_ : 1;
-  bool two_min_adj_length_valid_ : 1;
-  bool to_notch_length_valid_ : 1;
-  uint spare_bits_ : 23;
+  bool exact_width_valid : 1;
+  bool wrong_dir_spacing_valid : 1;
+  bool opposite_width_valid : 1;
+  bool within_valid : 1;
+  bool wrong_dir_within_valid : 1;
+  bool same_mask_valid : 1;
+  bool except_exact_width_valid : 1;
+  bool fill_concave_corner_valid : 1;
+  bool withcut_valid : 1;
+  bool cut_class_valid : 1;
+  bool with_cut_above_valid : 1;
+  bool enclosure_end_valid : 1;
+  bool enclosure_end_within_valid : 1;
+  bool end_prl_spacing_valid : 1;
+  bool prl_valid : 1;
+  bool end_to_end_valid : 1;
+  bool cut_spaces_valid : 1;
+  bool extension_valid : 1;
+  bool wrong_dir_extension_valid : 1;
+  bool other_end_width_valid : 1;
+  bool max_length_valid : 1;
+  bool min_length_valid : 1;
+  bool two_sides_valid : 1;
+  bool equal_rect_width_valid : 1;
+  bool parallel_edge_valid : 1;
+  bool subtract_eol_width_valid : 1;
+  bool par_prl_valid : 1;
+  bool par_min_length_valid : 1;
+  bool two_edges_valid : 1;
+  bool same_metal_valid : 1;
+  bool non_eol_corner_only_valid : 1;
+  bool parallel_same_mask_valid : 1;
+  bool enclose_cut_valid : 1;
+  bool below_valid : 1;
+  bool above_valid : 1;
+  bool cut_spacing_valid : 1;
+  bool all_cuts_valid : 1;
+  bool to_concave_corner_valid : 1;
+  bool min_adjacent_length_valid : 1;
+  bool two_min_adj_length_valid : 1;
+  bool to_notch_length_valid : 1;
+  uint32_t spare_bits : 23;
 };
 
 class _dbTechLayerSpacingEolRule : public _dbObject
@@ -110,7 +114,7 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   int notch_length_;
 
   // User Code Begin Fields
-  dbId<_dbTechLayer> _layer;
+  dbId<_dbTechLayer> layer_;
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);

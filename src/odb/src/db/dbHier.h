@@ -6,7 +6,6 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -25,19 +24,19 @@ class dbOStream;
 class _dbHier : public _dbObject
 {
  public:
-  dbId<_dbInst> _inst;
-  dbId<_dbBlock> _child_block;
-  dbVector<dbId<_dbBTerm>> _child_bterms;
-
   _dbHier(_dbDatabase* db);
   _dbHier(_dbDatabase* db, const _dbHier& h);
-  ~_dbHier();
+
   bool operator==(const _dbHier& rhs) const;
   bool operator!=(const _dbHier& rhs) const { return !operator==(rhs); }
   void collectMemInfo(MemInfo& info);
 
   static _dbHier* create(dbInst* inst, dbBlock* child);
   static void destroy(_dbHier* hdr);
+
+  dbId<_dbInst> inst_;
+  dbId<_dbBlock> child_block_;
+  dbVector<dbId<_dbBTerm>> child_bterms_;
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbHier& inst_hdr);

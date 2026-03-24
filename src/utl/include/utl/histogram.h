@@ -34,14 +34,8 @@ class Histogram
   {
     return *std::max_element(data_.begin(), data_.end());
   }
-  int getMinBinCount() const
-  {
-    return *std::min_element(bins_.begin(), bins_.end());
-  }
-  int getMaxBinCount() const
-  {
-    return *std::max_element(bins_.begin(), bins_.end());
-  }
+  int getMinBinCount() const { return *std::ranges::min_element(bins_); }
+  int getMaxBinCount() const { return *std::ranges::max_element(bins_); }
 
   DataType getBinsWidth() const { return bin_width_; }
   DataType getBinsMinimum() const { return min_val_; }

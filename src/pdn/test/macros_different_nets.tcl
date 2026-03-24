@@ -19,6 +19,8 @@ add_global_connection -net VDD2 \
   -inst_pattern "frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem" \
   -pin_pattern {^VDD$} -power
 
+global_connect -force -verbose
+
 set_voltage_domain -power VDD -ground VSS -secondary_power "VDD1 VDD2"
 
 define_pdn_grid -name "Core"

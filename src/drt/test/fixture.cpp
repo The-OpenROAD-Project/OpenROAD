@@ -1,30 +1,5 @@
-/* Author: Matt Liberty */
-/*
- * Copyright (c) 2020, The Regents of the University of California
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the University nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2020-2026, The OpenROAD Authors
 
 #include "fixture.h"
 
@@ -36,12 +11,17 @@
 #include <vector>
 
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frBlockage.h"
+#include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frMPin.h"
 #include "db/obj/frVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
+#include "db/tech/frLookupTbl.h"
 #include "db/tech/frTechObject.h"
+#include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frRegionQuery.h"
@@ -126,10 +106,10 @@ std::pair<frMaster*, odb::dbMaster*> Fixture::makeMacro(const char* name,
   std::vector<frBoundary> bounds;
   frBoundary bound;
   std::vector<odb::Point> points;
-  points.push_back(odb::Point(originX, originY));
-  points.push_back(odb::Point(sizeX, originY));
-  points.push_back(odb::Point(sizeX, sizeY));
-  points.push_back(odb::Point(originX, sizeY));
+  points.emplace_back(originX, originY);
+  points.emplace_back(sizeX, originY);
+  points.emplace_back(sizeX, sizeY);
+  points.emplace_back(originX, sizeY);
   bound.setPoints(points);
   bounds.push_back(bound);
   block->setBoundaries(bounds);
@@ -181,7 +161,7 @@ frBlockage* Fixture::makeMacroObs(frMaster* master,
 }
 
 frTerm* Fixture::makeMacroPin(frMaster* master,
-                              std::string name,
+                              const std::string& name,
                               frCoord xl,
                               frCoord yl,
                               frCoord xh,
@@ -213,9 +193,8 @@ frInst* Fixture::makeInst(const char* name,
                           frMaster* master,
                           odb::dbMaster* db_master)
 {
-  auto ptr_db_inst = std::make_unique<odb::dbInst>();
-  odb::dbInst* db_inst
-      = ptr_db_inst->create(db_->getChip()->getBlock(), db_master, "dummy");
+  auto db_inst
+      = odb::dbInst::create(db_->getChip()->getBlock(), db_master, "dummy");
   odb::dbTransform trans;
   db_inst->setTransform(trans);
   auto uInst = std::make_unique<frInst>(name, master, db_inst);
@@ -384,8 +363,8 @@ void Fixture::makeSpacingEndOfLineConstraint(frLayerNum layer_num,
 
 frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<std::pair<frCoord, frCoord>> valTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<std::pair<frCoord, frCoord>>& valTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
@@ -402,8 +381,8 @@ frSpacingTableInfluenceConstraint* Fixture::makeSpacingTableInfluenceConstraint(
 frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
     frLayerNum layer_num,
     frCoord spacing,
-    std::vector<frCoord> eol,
-    std::vector<frCoord> ext,
+    const std::vector<frCoord>& eol,
+    const std::vector<frCoord>& ext,
     bool parallelOnly)
 {
   frTechObject* tech = design->getTech();
@@ -421,15 +400,15 @@ frLef58EolExtensionConstraint* Fixture::makeEolExtensionConstraint(
 
 frSpacingTableTwConstraint* Fixture::makeSpacingTableTwConstraint(
     frLayerNum layer_num,
-    std::vector<frCoord> widthTbl,
-    std::vector<frCoord> prlTbl,
-    std::vector<std::vector<frCoord>> spacingTbl)
+    const std::vector<frCoord>& widthTbl,
+    const std::vector<frCoord>& prlTbl,
+    const std::vector<std::vector<frCoord>>& spacingTbl)
 {
   frTechObject* tech = design->getTech();
   frLayer* layer = tech->getLayer(layer_num);
   frCollection<frSpacingTableTwRowType> rows;
   for (size_t i = 0; i < widthTbl.size(); i++) {
-    rows.push_back(frSpacingTableTwRowType(widthTbl[i], prlTbl[i]));
+    rows.emplace_back(widthTbl[i], prlTbl[i]);
   }
   std::unique_ptr<frConstraint> uCon
       = std::make_unique<frSpacingTableTwConstraint>(rows, spacingTbl);
@@ -755,6 +734,8 @@ frViaDef* Fixture::makeViaDef(const char* name,
       case 1:
         via_p->addLayer2Fig(std::move(pinFig));
         break;
+      default:
+        logger->error(DRT, 624, "Unexpected layer diff {}", l - layer_num);
     }
   }
 

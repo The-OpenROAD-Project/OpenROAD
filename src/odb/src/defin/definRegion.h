@@ -4,7 +4,7 @@
 #pragma once
 
 #include "definBase.h"
-#include "odb/odb.h"
+#include "definTypes.h"
 
 namespace odb {
 

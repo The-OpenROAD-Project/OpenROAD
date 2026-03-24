@@ -3,17 +3,16 @@
 
 #include "BalancerConnection.h"
 
-#include <dst/JobMessage.h>
-
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "LoadBalancer.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/asio.hpp"
@@ -24,12 +23,13 @@
 #include "dst/BalancerJobDescription.h"
 #include "dst/BroadcastJobDescription.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "utl/Logger.h"
-
-using namespace dst;
 
 BOOST_CLASS_EXPORT(dst::BalancerJobDescription)
 BOOST_CLASS_EXPORT(dst::BroadcastJobDescription)
+
+namespace dst {
 
 BalancerConnection::BalancerConnection(asio::io_context& service,
                                        LoadBalancer* owner,
@@ -149,12 +149,12 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         break;
       }
       case JobMessage::kBroadcast: {
-        std::lock_guard<std::mutex> lock(owner_->workers_mutex_);
+        absl::MutexLock lock(&owner_->workers_mutex_);
         owner_->broadcastData_.push_back(data);
         asio::thread_pool pool(owner_->workers_.size());
         auto workers_copy = owner_->workers_;
-        std::mutex broadcast_failure_mutex;
-        std::vector<std::pair<ip::address, unsigned short>> failed_workers;
+        absl::Mutex broadcast_failure_mutex;
+        std::vector<std::pair<ip::address, uint16_t>> failed_workers;
         while (!workers_copy.empty()) {
           auto worker = workers_copy.top();
           workers_copy.pop();
@@ -173,7 +173,7 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
                       == std::string::npos) {
                     // Since asio::transfer_all() used with a stream buffer it
                     // always reach an eof file exception!
-                    std::lock_guard<std::mutex> lock(broadcast_failure_mutex);
+                    absl::MutexLock lock(&broadcast_failure_mutex);
                     failed_workers.emplace_back(worker.ip, worker.port);
                   }
                 }
@@ -182,11 +182,11 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         pool.join();
         JobMessage result(JobMessage::kSuccess);
         std::string msg_str;
-        unsigned short success_broadcast
+        uint16_t success_broadcast
             = owner_->workers_.size() - failed_workers.size();
         if (!failed_workers.empty()) {
           for (const auto& worker : failed_workers) {
-            owner_->removeWorker(worker.first, worker.second, false);
+            owner_->removeWorkerLocked(worker.first, worker.second);
           }
           logger_->warn(utl::DST,
                         207,
@@ -217,6 +217,8 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
     sock_.close();
   }
 }
+
+}  // namespace dst
 
 #if !SWIG && FMT_VERSION >= 100000
 namespace boost::asio::ip {

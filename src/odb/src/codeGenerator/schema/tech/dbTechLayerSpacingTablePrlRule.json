@@ -4,15 +4,15 @@
   "fields": [
     {
       "type": "bit",
-      "name": "wrong_direction_"
+      "name": "wrong_direction"
     },
     {
       "type": "bit",
-      "name": "same_mask_"
+      "name": "same_mask"
     },
     {
       "type": "bit",
-      "name": "exceept_eol_"
+      "name": "exceept_eol"
     },
     {
       "type": "int",

@@ -14,6 +14,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 
 using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
@@ -169,6 +170,18 @@ void FlexPA::initSkipInstTerm(UniqueClass* unique_class)
     }
     unique_class->setSkipTerm(term.get(), skip);
   }
+}
+
+bool FlexPA::updateSkipInstTerm(frInst* inst)
+{
+  auto unique_class = unique_insts_.getUniqueClass(inst);
+  for (const auto& term : inst->getInstTerms()) {
+    if (!isSkipInstTermLocal(term.get())
+        && unique_class->isSkipTerm(term->getTerm())) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace drt

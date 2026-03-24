@@ -5,6 +5,7 @@
 
 #include "odb/db.h"
 #include "rmp/Restructure.h"
+#include "tcl.h"
 #include "utl/decode.h"
 
 extern "C" {

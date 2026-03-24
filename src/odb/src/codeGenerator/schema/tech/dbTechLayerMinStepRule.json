@@ -8,13 +8,13 @@
       "default": 0
     },
     {
-      "type": "uint",
+      "type": "uint32_t",
       "name": "max_edges_",
       "default": 0
     },
     {
       "type": "bit",
-      "name": "max_edges_valid_"
+      "name": "max_edges_valid"
     },
     {
       "type": "int",
@@ -23,7 +23,7 @@
     },
     {
       "type": "bit",
-      "name": "min_adj_length1_valid_"
+      "name": "min_adj_length1_valid"
     },
     {
       "type": "int",
@@ -37,15 +37,15 @@
     },
     {
       "type": "bit",
-      "name": "no_between_eol_"
+      "name": "no_between_eol"
     },
     {
       "type": "bit",
-      "name": "min_adj_length2_valid_"
+      "name": "min_adj_length2_valid"
     },
     {
       "type": "bit",
-      "name": "convex_corner_"
+      "name": "convex_corner"
     },
     {
       "type": "int",
@@ -54,23 +54,23 @@
     },
     {
       "type": "bit",
-      "name": "min_between_length_valid_"
+      "name": "min_between_length_valid"
     },
     {
       "type": "bit",
-      "name": "except_same_corners_"
+      "name": "except_same_corners"
     },
     {
       "type": "bit",
-      "name": "concave_corner_"
+      "name": "concave_corner"
     },
     {
       "type": "bit",
-      "name": "except_rectangle_"
+      "name": "except_rectangle"
     },
     {
       "type": "bit",
-      "name": "no_adjacent_eol_"
+      "name": "no_adjacent_eol"
     }
   ],
   "cpp_includes": [

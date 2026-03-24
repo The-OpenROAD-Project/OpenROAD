@@ -6,19 +6,19 @@
 [INFO ODB-0133]     Created 7 nets and 30 connections.
 worst slack max -1.95
 tns max -6.294
-[INFO RSZ-0100] Repair move sequence: UnbufferMove BufferMove SizeDownMove SizeUpMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove BufferMove SizeUpMove SizeDownMove 
 [INFO RSZ-0094] Found 6 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 6 out of 6 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            | Endpts | Endpt
 --------------------------------------------------------------------------------------------------------------
         0 |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -1.954 |       -6.3 |      6 | r2/D
-    final |       5 |      14 |        7 |      0 |     0 |   +20.1% |   -0.326 |       -1.8 |      6 | r7/D
+    final |       6 |       5 |        6 |      0 |     0 |    +8.2% |   -0.294 |       -1.7 |      6 | r7/D
 --------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0059] Removed 5 buffers.
-[INFO RSZ-0040] Inserted 7 buffers.
-[INFO RSZ-0051] Resized 14 instances: 11 up, 2 up match, 1 down, 0 VT
+[INFO RSZ-0059] Removed 6 buffers.
+[INFO RSZ-0040] Inserted 6 buffers.
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 Repair timing output passed/skipped equivalence test
-worst slack max -0.33
-tns max -1.813
+worst slack max -0.29
+tns max -1.707

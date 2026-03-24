@@ -15,6 +15,10 @@
 #include <utility>
 #include <vector>
 
+#include "ScanCell.hh"
+#include "ScanChain.hh"
+#include "ScanPin.hh"
+#include "ScanStitchConfig.hh"
 #include "boost/algorithm/string.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
@@ -74,9 +78,7 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   const std::vector<std::unique_ptr<ScanCell>>& original_scan_cells
       = scan_chain.getScanCells();
 
-  std::copy(original_scan_cells.cbegin(),
-            original_scan_cells.cend(),
-            std::back_inserter(scan_cells));
+  std::ranges::copy(original_scan_cells, std::back_inserter(scan_cells));
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {

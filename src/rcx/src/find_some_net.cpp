@@ -3,6 +3,7 @@
 
 #include "find_some_net.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <vector>
@@ -21,13 +22,13 @@ bool findSomeNet(odb::dbBlock* block,
   if (!names || names[0] == '\0') {
     return false;
   }
-  auto parser = std::make_unique<Ath__parser>(logger);
+  auto parser = std::make_unique<Parser>(logger);
   parser->mkWords(names, nullptr);
   for (int ii = 0; ii < parser->getWordCnt(); ii++) {
     char* netName = parser->get(ii);
     odb::dbNet* net = block->findNet(netName);
     if (!net) {
-      uint noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
+      uint32_t noid = netName[0] == 'N' ? atoi(&netName[1]) : atoi(&netName[0]);
       net = odb::dbNet::getValidNet(block, noid);
     }
     if (net) {

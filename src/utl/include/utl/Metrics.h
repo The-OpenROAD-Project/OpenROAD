@@ -41,7 +41,7 @@ class MetricsPolicy
   std::string pattern_;
   bool repeating_use_regex_;
   std::regex pattern_regex_;
-  bool matching(std::string key);
+  bool matching(const std::string& key);
 };
 
 }  // namespace utl

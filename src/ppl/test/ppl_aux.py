@@ -137,7 +137,7 @@ def place_pins(
         )
 
     if exclude != None:
-        lef_units = dbTech.getLefUnits()
+        lef_units = dbTech.getDbUnitsPerMicron()
         for region in exclude:
             edge, interval = region.split(":")
             if not (edge in ["top", "bottom", "left", "right"]):
@@ -310,7 +310,7 @@ def set_io_pin_constraint(
     """
     dbTech = design.getTech().getDB().getTech()
     dbBlock = design.getBlock()
-    lef_units = dbTech.getLefUnits()
+    lef_units = dbTech.getDbUnitsPerMicron()
     edge = None
     interval = None
     if region != None:

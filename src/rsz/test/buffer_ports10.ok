@@ -1,6 +1,12 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [WARNING IFP-0028] Core area lower left (10.000, 10.000) snapped to (10.070, 11.200).
 [INFO IFP-0001] Added 56 rows of 420 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
+[INFO IFP-0101] Core BBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
+[INFO IFP-0102] Core area:                         6256.320 um^2
+[INFO IFP-0103] Total instances area:                 4.522 um^2
+[INFO IFP-0104] Effective utilization:                0.001
+[INFO IFP-0105] Number of instances:                      1
 Found 0 macro blocks.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0001] Number of available slots 1212
@@ -10,10 +16,14 @@ Using 2 tracks default min distance between IO pins.
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
 [INFO PPL-0012] I/O nets HPWL: 201.52 um.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
+[INFO GPL-0036] Movable instances area:          4.522 um^2
+[INFO GPL-0037] Total instances area:            4.522 um^2
+[INFO GPL-0035] Pin density area adjust:         0.000 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:                 1
 [INFO GPL-0007] Movable instances:                   1
 [INFO GPL-0008] Fixed instances:                     0
@@ -23,16 +33,22 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 100.000 100.000 ) um
 [INFO GPL-0013] Core BBox: ( 10.070 11.200 ) ( 89.870 89.600 ) um
 [INFO GPL-0016] Core area:                    6256.320 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                  6256.320 um^2
 [INFO GPL-0017] Fixed instances area:            0.000 um^2
 [INFO GPL-0018] Movable instances area:          4.522 um^2
 [INFO GPL-0019] Utilization:                     0.072 %
 [INFO GPL-0020] Standard cells area:             4.522 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 1	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 901740
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 27780
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 27780
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 27780
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 27780
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000000 HPWL: 85980
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 85980
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000000 HPWL: 85980
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 85980
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      4.522 um^2
 [INFO GPL-0025] Ideal bin area:                  6.460 um^2
@@ -41,7 +57,7 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       4.987 *  4.900 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

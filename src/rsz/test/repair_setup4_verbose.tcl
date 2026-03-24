@@ -14,5 +14,7 @@ estimate_parasitics -placement
 report_worst_slack -max -digits 3
 write_verilog_for_eqy repair_setup4_verbose before "None"
 repair_timing -verbose -setup
-run_equivalence_test repair_setup4_verbose ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup4_verbose \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"
 report_worst_slack -max -digits 3

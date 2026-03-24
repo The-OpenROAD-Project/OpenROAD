@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #include <cstddef>
+#include <cstdint>
 #include <iostream>
 #include <map>
 #include <string>
@@ -18,7 +19,7 @@
 namespace odb::lefTechLayerCutSpacingTable {
 
 void createOrthongonalSubRule(
-    std::vector<boost::fusion::vector<double, double>> params,
+    const std::vector<boost::fusion::vector<double, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -45,7 +46,7 @@ void setDefault(double value,
   parser->curRule->setDefault(lefinReader->dbdist(value));
 }
 void setLayer(
-    std::string value,
+    const std::string& value,
     odb::lefTechLayerCutSpacingTableParser* parser,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
@@ -53,13 +54,13 @@ void setLayer(
   auto secondLayer = tech->findLayer(value.c_str());
   parser->curRule->setLayerValid(true);
   if (secondLayer == nullptr) {
-    incomplete_props.push_back({parser->curRule, value});
+    incomplete_props.emplace_back(parser->curRule, value);
   } else {
     parser->curRule->setSecondLayer(secondLayer);
   }
 }
 void setPrlForAlignedCut(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setPrlForAlignedCut(true);
@@ -70,7 +71,7 @@ void setPrlForAlignedCut(
   }
 }
 void setCenterToCenter(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setCenterToCenterValid(true);
@@ -81,7 +82,7 @@ void setCenterToCenter(
   }
 }
 void setCenterAndEdge(
-    std::vector<boost::fusion::vector<std::string, std::string>> params,
+    const std::vector<boost::fusion::vector<std::string, std::string>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser)
 {
   parser->curRule->setCenterAndEdgeValid(true);
@@ -151,7 +152,7 @@ void setExactAlignedSpacing(
 }
 
 void setNonOppositeEnclosureSpacing(
-    std::vector<boost::fusion::vector<std::string, double>> params,
+    const std::vector<boost::fusion::vector<std::string, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -164,8 +165,8 @@ void setNonOppositeEnclosureSpacing(
 }
 
 void setOppositeEnclosureResizeSpacing(
-    std::vector<boost::fusion::vector<std::string, double, double, double>>
-        params,
+    const std::vector<
+        boost::fusion::vector<std::string, double, double, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -198,7 +199,7 @@ void setEndExtension(
   }
 }
 void setSideExtension(
-    std::vector<boost::fusion::vector<std::string, double>> params,
+    const std::vector<boost::fusion::vector<std::string, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
 {
@@ -257,11 +258,11 @@ void setCutClass(
   auto colsNamesAndFirstRowName = at_c<0>(params);
   auto firstRowWithOutName = at_c<1>(params);
   auto allRows = at_c<2>(params);
-  std::map<std::string, odb::uint> cols;
-  std::map<std::string, odb::uint> rows;
+  std::map<std::string, uint32_t> cols;
+  std::map<std::string, uint32_t> rows;
   std::vector<std::vector<std::pair<int, int>>> table;
-  odb::uint colSz = colsNamesAndFirstRowName.size() - 1;
-  for (odb::uint i = 0; i < colSz; i++) {
+  uint32_t colSz = colsNamesAndFirstRowName.size() - 1;
+  for (uint32_t i = 0; i < colSz; i++) {
     std::string name = at_c<0>(colsNamesAndFirstRowName[i]);
     auto OPTION = at_c<1>(colsNamesAndFirstRowName[i]);
     if (OPTION.is_initialized()) {
@@ -279,8 +280,8 @@ void setCutClass(
                at_c<1>(colsNamesAndFirstRowName[colSz]),
                firstRowWithOutName);
   allRows.insert(allRows.begin(), firstRow);
-  odb::uint rowSz = allRows.size();
-  for (odb::uint i = 0; i < rowSz; i++) {
+  uint32_t rowSz = allRows.size();
+  for (uint32_t i = 0; i < rowSz; i++) {
     std::string name = at_c<0>(allRows[i]);
     auto OPTION = at_c<1>(allRows[i]);
     auto items = at_c<2>(allRows[i]);
@@ -288,8 +289,8 @@ void setCutClass(
       name += "/" + OPTION.value();
     }
     rows[name] = i;
-    table.push_back(std::vector<std::pair<int, int>>(colSz));
-    for (odb::uint j = 0; j < items.size(); j++) {
+    table.emplace_back(colSz);
+    for (uint32_t j = 0; j < items.size(); j++) {
       auto item = items[j];
       auto spacing1 = at_c<0>(item);
       auto spacing2 = at_c<1>(item);
@@ -349,9 +350,9 @@ void setCutClass(
   }
   parser->curRule->setSpacingTable(table, rows, cols);
 }
-void print(std::string str)
+void print(const std::string& str)
 {
-  std::cout << str << std::endl;
+  std::cout << str << '\n';
 }
 
 template <typename Iterator>
@@ -362,13 +363,13 @@ bool parse(
     odb::lefinReader* lefinReader,
     std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props)
 {
-  qi::rule<std::string::const_iterator, space_type> ORTHOGONAL
+  qi::rule<std::string::const_iterator, space_type> orthogonal_rule
       = (lit("SPACINGTABLE") >> lit("ORTHOGONAL")
          >> +(lit("WITHIN") >> double_ >> lit("SPACING") >> double_)
          >> lit(";"))[boost::bind(
           &createOrthongonalSubRule, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> LAYER
+  qi::rule<std::string::const_iterator, space_type> layer_rule
       = (lit("LAYER") >> _string[boost::bind(
              &setLayer, _1, parser, boost::ref(incomplete_props))]
          >> -lit("NOSTACK")[boost::bind(&setNoStack, parser)]
@@ -377,21 +378,21 @@ bool parse(
                  >> +(_string >> lit("TO") >> _string))[boost::bind(
                   &setPrlForAlignedCut, _1, parser)]));
 
-  qi::rule<std::string::const_iterator, space_type> CENTERTOCENTER
+  qi::rule<std::string::const_iterator, space_type> center_to_center_rule
       = (lit("CENTERTOCENTER")
          >> +(_string >> lit("TO")
               >> _string))[boost::bind(&setCenterToCenter, _1, parser)];
 
-  qi::rule<std::string::const_iterator, space_type> CENTERANDEDGE
+  qi::rule<std::string::const_iterator, space_type> center_and_edge_rule
       = (lit("CENTERANDEDGE") >> -lit("NOPRL")[boost::bind(&setNoPrl, parser)]
          >> (+(_string >> lit("TO")
                >> _string))[boost::bind(&setCenterAndEdge, _1, parser)]);
-  qi::rule<std::string::const_iterator, space_type> PRL
+  qi::rule<std::string::const_iterator, space_type> prl_rule
       = (lit("PRL") >> double_ >> -(string("HORIZONTAL") | string("VERTICAL"))
          >> -string("MAXXY")
          >> *(_string >> lit("TO") >> _string
               >> double_))[boost::bind(&setPRL, _1, parser, lefinReader)];
-  qi::rule<std::string::const_iterator, space_type> EXTENSION
+  qi::rule<std::string::const_iterator, space_type> extension_rule
       = ((lit("ENDEXTENSION") >> double_
           >> *(lit("TO") >> _string >> double_))[boost::bind(
              &setEndExtension, _1, parser, lefinReader)]
@@ -399,24 +400,25 @@ bool parse(
               >> +(lit("TO") >> _string >> double_))[boost::bind(
              &setSideExtension, _1, parser, lefinReader)]);
 
-  qi::rule<std::string::const_iterator, space_type> EXACTALIGNEDSPACING
+  qi::rule<std::string::const_iterator, space_type> exact_aligned_spacing_rule
       = (lit("EXACTALIGNEDSPACING")
          >> -(string("HORIZONTAL") | string("VERTICAL"))
          >> +(_string >> double_))[boost::bind(
           &setExactAlignedSpacing, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> NONOPPOSITEENCLOSURESPACING
+  qi::rule<std::string::const_iterator, space_type>
+      non_opposite_enclosure_spacing_rule
       = (lit("NONOPPOSITEENCLOSURESPACING")
          >> +(_string >> double_))[boost::bind(
           &setNonOppositeEnclosureSpacing, _1, parser, lefinReader)];
 
   qi::rule<std::string::const_iterator, space_type>
-      OPPOSITEENCLOSURERESIZESPACING
+      opposite_enclosure_resize_spacing_rule
       = (lit("OPPOSITEENCLOSURERESIZESPACING")
          >> +(_string >> double_ >> double_ >> double_))[boost::bind(
           &setOppositeEnclosureResizeSpacing, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> CUTCLASS
+  qi::rule<std::string::const_iterator, space_type> cut_class_rule
       = (lit("CUTCLASS")
          >> +(_string
               >> -(string("SIDE")
@@ -429,7 +431,7 @@ bool parse(
                        | double_)))  // REMAINING ROWS (3rd and below)
          )[boost::bind(&setCutClass, _1, parser, lefinReader)];
 
-  qi::rule<std::string::const_iterator, space_type> DEFAULT
+  qi::rule<std::string::const_iterator, space_type> default_rule
       = (lit("SPACINGTABLE")[boost::bind(&createDefSubRule, parser)]
          >> -(lit("DEFAULT")
               >> double_[boost::bind(&setDefault, _1, parser, lefinReader)])
@@ -437,13 +439,15 @@ bool parse(
          >> -(lit("SAMENET")[boost::bind(&setSameNet, parser)]
               | lit("SAMEMETAL")[boost::bind(&setSameMetal, parser)]
               | lit("SAMEVIA")[boost::bind(&setSameVia, parser)])
-         >> -LAYER >> -CENTERTOCENTER >> -CENTERANDEDGE >> -PRL >> -EXTENSION
-         >> -EXACTALIGNEDSPACING >> -NONOPPOSITEENCLOSURESPACING
-         >> -OPPOSITEENCLOSURERESIZESPACING >> CUTCLASS >> lit(";"));
+         >> -layer_rule >> -center_to_center_rule >> -center_and_edge_rule
+         >> -prl_rule >> -extension_rule >> -exact_aligned_spacing_rule
+         >> -non_opposite_enclosure_spacing_rule
+         >> -opposite_enclosure_resize_spacing_rule >> cut_class_rule
+         >> lit(";"));
 
-  qi::rule<std::string::const_iterator, space_type> LEF58_SPACINGTABLE
-      = (+(ORTHOGONAL | DEFAULT));
-  bool valid = qi::phrase_parse(first, last, LEF58_SPACINGTABLE, space)
+  qi::rule<std::string::const_iterator, space_type> lef58_spacing_table_rule
+      = (+(orthogonal_rule | default_rule));
+  bool valid = qi::phrase_parse(first, last, lef58_spacing_table_rule, space)
                && first == last;
   if (!valid && parser->curRule != nullptr) {
     if (!incomplete_props.empty()

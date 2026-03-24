@@ -1,0 +1,120 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+Startpoint: in1 (input port clocked by clk)
+Endpoint: out2 (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.02    0.02 v sub1_inst/b1/Z (BUF_X2)
+   0.04    0.06 ^ sub1_inst/oai_inst/ZN (OAI21_X1)
+   0.06    0.11 ^ xor1/Z (XOR2_X1)
+   0.01    0.12 v nand1/ZN (NAND2_X1)
+   0.00    0.12 v out2 (out)
+           0.12   data arrival time
+
+   0.01    0.01   clock clk (rise edge)
+   0.00    0.01   clock network delay (ideal)
+   0.00    0.01   clock reconvergence pessimism
+   0.00    0.01   output external delay
+           0.01   data required time
+---------------------------------------------------------
+           0.01   data required time
+          -0.12   data arrival time
+---------------------------------------------------------
+          -0.11   slack (VIOLATED)
+
+
+[INFO RSZ-0026] Removed 4 buffers.
+Startpoint: in1 (input port clocked by clk)
+Endpoint: out2 (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.04    0.04 ^ sub1_inst/oai_inst/ZN (OAI21_X1)
+   0.06    0.09 ^ xor1/Z (XOR2_X1)
+   0.01    0.10 v nand1/ZN (NAND2_X1)
+   0.00    0.10 v out2 (out)
+           0.10   data arrival time
+
+   0.01    0.01   clock clk (rise edge)
+   0.00    0.01   clock network delay (ideal)
+   0.00    0.01   clock reconvergence pessimism
+   0.00    0.01   output external delay
+           0.01   data required time
+---------------------------------------------------------
+           0.01   data required time
+          -0.10   data arrival time
+---------------------------------------------------------
+          -0.09   slack (VIOLATED)
+
+
+Startpoint: in1 (input port clocked by clk)
+Endpoint: out2 (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.04    0.04 ^ sub1_inst/oai_inst/ZN (OAI21_X1)
+   0.06    0.09 ^ xor1/Z (XOR2_X1)
+   0.01    0.10 v nand1/ZN (NAND2_X1)
+   0.00    0.10 v out2 (out)
+           0.10   data arrival time
+
+   0.01    0.01   clock clk (rise edge)
+   0.00    0.01   clock network delay (ideal)
+   0.00    0.01   clock reconvergence pessimism
+   0.00    0.01   output external delay
+           0.01   data required time
+---------------------------------------------------------
+           0.01   data required time
+          -0.10   data arrival time
+---------------------------------------------------------
+          -0.09   slack (VIOLATED)
+
+
+Startpoint: in1 (input port clocked by clk)
+Endpoint: out2 (output port clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 v input external delay
+   0.00    0.00 v in1 (in)
+   0.04    0.04 ^ sub1_inst/oai_inst/ZN (OAI21_X1)
+   0.06    0.09 ^ xor1/Z (XOR2_X1)
+   0.01    0.10 v nand1/ZN (NAND2_X1)
+   0.00    0.10 v out2 (out)
+           0.10   data arrival time
+
+   0.01    0.01   clock clk (rise edge)
+   0.00    0.01   clock network delay (ideal)
+   0.00    0.01   clock reconvergence pessimism
+   0.00    0.01   output external delay
+           0.01   data required time
+---------------------------------------------------------
+           0.01   data required time
+          -0.10   data arrival time
+---------------------------------------------------------
+          -0.09   slack (VIOLATED)
+
+
+No differences found.

@@ -62,7 +62,7 @@ void Partitioner::Partition(const HGraphPtr& hgraph,
   if (static_cast<int>(solution.size()) != hgraph->GetNumVertices()) {
     solution.clear();
     solution.resize(hgraph->GetNumVertices());
-    std::fill(solution.begin(), solution.end(), -1);
+    std::ranges::fill(solution, -1);
   }
   switch (partitioner_choice) {
     case PartitionType::kInitRandom:
@@ -126,7 +126,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   if (hgraph->GetNumTimingPaths() > 0) {
     for (int i = 0; i < hgraph->GetNumTimingPaths(); ++i) {
       for (const int v : hgraph->PathVertices(i)) {
-        if (visited[v] == false) {
+        if (!visited[v]) {
           visited[v] = true;
           path_vertices.push_back(v);
         }
@@ -138,7 +138,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   }
   // Step 3: check remaining vertices
   for (int v = 0; v < hgraph->GetNumVertices(); v++) {
-    if (visited[v] == false) {
+    if (!visited[v]) {
       vertices.push_back(v);
     }
   }
@@ -149,7 +149,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
   // Hopefully we can push all the path_vertices into one block
   vertices.insert(vertices.begin(), path_vertices.begin(), path_vertices.end());
 
-  if (vile_mode == false) {
+  if (!vile_mode) {
     // try to generate balanced random partitioning
     int block_id = 0;
     for (const auto& v : vertices) {
@@ -172,7 +172,7 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
       block_balance[block_id]
           = block_balance[block_id] + hgraph->GetVertexWeights(v);
       if (block_balance[block_id] >= upper_block_balance[block_id]
-          && stop_flag == false) {
+          && !stop_flag) {
         block_id++;
         solution[v] = block_id;  // move the vertex to next block
         if (block_id == num_parts_ - 1) {
@@ -313,7 +313,7 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
 void Partitioner::VilePart(const HGraphPtr& hgraph,
                            std::vector<int>& solution) const
 {
-  std::fill(solution.begin(), solution.end(), 0);
+  std::ranges::fill(solution, 0);
   std::vector<int> unvisited;
   unvisited.reserve(hgraph->GetNumVertices());
   // sort the vertices based on vertex weight
@@ -341,7 +341,7 @@ void Partitioner::VilePart(const HGraphPtr& hgraph,
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
     return average_sizes[x] < average_sizes[y];
   };
-  std::sort(unvisited.begin(), unvisited.end(), lambda_sort_criteria);
+  std::ranges::sort(unvisited, lambda_sort_criteria);
   // Evenly distribute all the vertices into blocks based on sorted order
   int block_id = 0;
   for (const auto& v : unvisited) {

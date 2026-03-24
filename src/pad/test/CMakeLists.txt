@@ -24,11 +24,16 @@ or_integration_tests(
     place_pad_hv
     place_pad_no_master
     place_pad_outsideofrow
+    place_pad_overblockage
     place_pad_with_bumps
+    place_pads_bumps_bump_overlap
+    place_pads_bumps_strategy_placer_blockages
+    place_pads_bumps_strategy
     place_pad_wrong_master
     place_pads_bumps
     place_pads_too_many
     place_pads_uniform
+    place_pads_uniform_slip
     rdl_route
     rdl_route_45
     rdl_route_45_cost
@@ -36,19 +41,19 @@ or_integration_tests(
     rdl_route_45_with_2port_bump
     rdl_route_45_with_oct_bump
     rdl_route_assignments
+    rdl_route_assignments_overlapping_iterms
     rdl_route_bump_to_bump_only
     rdl_route_bump_via
     rdl_route_failed
     rdl_route_invalid
+    rdl_route_keep_existing
     rdl_route_max_iterations
     rdl_route_ports
     rdl_route_single_target
+    rdl_route_skip_iterm
     rdl_route_via
     skywater130_caravel
     skywater130_coyote_tc
     skywater130_overlapping_filler
 )
 
-# Skipped
-#pad_man_tcl_check
-#pad_readme_msgs_check

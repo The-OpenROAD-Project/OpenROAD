@@ -35,11 +35,9 @@ or_integration_tests(
     simple08
     simple09
     simple10
+    region01
 )
 
-# Skipped
-#gpl_man_tcl_check
-#gpl_readme_msgs_check
 
 add_executable(fft_test fft_test.cc)
 
@@ -66,5 +64,30 @@ target_sources(fft_test
   ../src/fftsg2d.cpp
 )
 
+add_executable(mbff_test 
+  mbff_test.cpp
+)
 
-add_dependencies(build_and_test fft_test)
+target_include_directories(mbff_test
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}
+)
+
+target_link_libraries(mbff_test PUBLIC
+  absl::strings
+  GTest::gtest
+  GTest::gtest_main
+  gpl_lib
+  tst
+)
+
+gtest_discover_tests(mbff_test
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
+target_sources(mbff_test
+  PRIVATE
+  mbff_test.cpp
+)
+
+add_dependencies(build_and_test fft_test mbff_test)

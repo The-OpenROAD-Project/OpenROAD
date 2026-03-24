@@ -3,11 +3,12 @@
 
 #include "dbBTermItr.h"
 
+#include <cstdint>
+
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/dbObject.h"
 
 namespace odb {
@@ -21,12 +22,12 @@ namespace odb {
 //
 // BTerms are ordered by io-type and cannot be reversed.
 //
-bool dbNetBTermItr::reversible()
+bool dbNetBTermItr::reversible() const
 {
   return true;
 }
 
-bool dbNetBTermItr::orderReversed()
+bool dbNetBTermItr::orderReversed() const
 {
   return true;
 }
@@ -34,39 +35,39 @@ bool dbNetBTermItr::orderReversed()
 void dbNetBTermItr::reverse(dbObject* parent)
 {
   _dbNet* net = (_dbNet*) parent;
-  uint id = net->_bterms;
-  uint list = 0;
+  uint32_t id = net->bterms_;
+  uint32_t list = 0;
 
   while (id != 0) {
-    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-    uint n = bterm->_next_bterm;
-    bterm->_next_bterm = list;
+    _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+    uint32_t n = bterm->next_bterm_;
+    bterm->next_bterm_ = list;
     list = id;
     id = n;
   }
 
-  uint prev = 0;
+  uint32_t prev = 0;
   id = list;
 
   while (id != 0) {
-    _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-    bterm->_prev_bterm = prev;
+    _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+    bterm->prev_bterm_ = prev;
     prev = id;
-    id = bterm->_next_bterm;
+    id = bterm->next_bterm_;
   }
 
-  net->_bterms = list;
+  net->bterms_ = list;
 }
 
-uint dbNetBTermItr::sequential()
+uint32_t dbNetBTermItr::sequential() const
 {
   return 0;
 }
 
-uint dbNetBTermItr::size(dbObject* parent)
+uint32_t dbNetBTermItr::size(dbObject* parent) const
 {
-  uint id;
-  uint cnt = 0;
+  uint32_t id;
+  uint32_t cnt = 0;
 
   for (id = dbNetBTermItr::begin(parent); id != dbNetBTermItr::end(parent);
        id = dbNetBTermItr::next(id)) {
@@ -76,26 +77,26 @@ uint dbNetBTermItr::size(dbObject* parent)
   return cnt;
 }
 
-uint dbNetBTermItr::begin(dbObject* parent)
+uint32_t dbNetBTermItr::begin(dbObject* parent) const
 {
   _dbNet* net = (_dbNet*) parent;
-  return net->_bterms;
+  return net->bterms_;
 }
 
-uint dbNetBTermItr::end(dbObject* /* unused: parent */)
+uint32_t dbNetBTermItr::end(dbObject* /* unused: parent */) const
 {
   return 0;
 }
 
-uint dbNetBTermItr::next(uint id, ...)
+uint32_t dbNetBTermItr::next(uint32_t id, ...) const
 {
-  _dbBTerm* bterm = _bterm_tbl->getPtr(id);
-  return bterm->_next_bterm;
+  _dbBTerm* bterm = bterm_tbl_->getPtr(id);
+  return bterm->next_bterm_;
 }
 
-dbObject* dbNetBTermItr::getObject(uint id, ...)
+dbObject* dbNetBTermItr::getObject(uint32_t id, ...)
 {
-  return _bterm_tbl->getPtr(id);
+  return bterm_tbl_->getPtr(id);
 }
 
 }  // namespace odb

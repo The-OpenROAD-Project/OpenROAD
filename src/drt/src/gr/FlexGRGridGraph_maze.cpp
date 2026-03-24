@@ -7,9 +7,13 @@
 #include <iostream>
 #include <vector>
 
+#include "db/grObj/grNode.h"
+#include "dr/FlexMazeTypes.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "gr/FlexGR.h"
 #include "gr/FlexGRGridGraph.h"
+#include "gr/FlexGRWavefront.h"
 #include "odb/geom.h"
 
 namespace drt {
@@ -91,13 +95,13 @@ frCost FlexGRGridGraph::getEstCost(const FlexMazeIdx& src,
   getPoint(dstMazeIdx1.x(), dstMazeIdx1.y(), dstPoint1);
   getPoint(dstMazeIdx2.x(), dstMazeIdx2.y(), dstPoint2);
   frCoord minCostX = std::max(
-      std::max(dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x()), 0);
+      {dstPoint1.x() - srcPoint.x(), srcPoint.x() - dstPoint2.x(), 0});
   frCoord minCostY = std::max(
-      std::max(dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y()), 0);
+      {dstPoint1.y() - srcPoint.y(), srcPoint.y() - dstPoint2.y(), 0});
   frCoord minCostZ
-      = std::max(std::max(getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
-                          getZHeight(src.z()) - getZHeight(dstMazeIdx2.z())),
-                 0);
+      = std::max({getZHeight(dstMazeIdx1.z()) - getZHeight(src.z()),
+                  getZHeight(src.z()) - getZHeight(dstMazeIdx2.z()),
+                  0});
 
   bendCnt += (minCostX && dir != frDirEnum::UNKNOWN && dir != frDirEnum::E
               && dir != frDirEnum::W)
@@ -145,7 +149,7 @@ void FlexGRGridGraph::traceBackPath(const FlexGRWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir(currX, currY, currZ);
     root.emplace_back(currX, currY, currZ);
@@ -248,12 +252,9 @@ bool FlexGRGridGraph::isExpandable(const FlexGRWavefrontGrid& currGrid,
   frMIdx gridZ = currGrid.z();
   bool hg = hasEdge(gridX, gridY, gridZ, dir);
   reverse(gridX, gridY, gridZ, dir);
-  if (!hg || isSrc(gridX, gridY, gridZ)
-      || getPrevAstarNodeDir(gridX, gridY, gridZ) != frDirEnum::UNKNOWN
-      || currGrid.getLastDir() == dir) {
-    return false;
-  }
-  return true;
+  return hg && !isSrc(gridX, gridY, gridZ)
+         && getPrevAstarNodeDir(gridX, gridY, gridZ) == frDirEnum::UNKNOWN
+         && currGrid.getLastDir() != dir;
 }
 
 void FlexGRGridGraph::expand(FlexGRWavefrontGrid& currGrid,
@@ -347,7 +348,7 @@ frCost FlexGRGridGraph::getNextPathCost(const FlexGRWavefrontGrid& currGrid,
   }
 
   // currently no congeston on via direction
-  bool congCost = (dir == frDirEnum::U || dir == frDirEnum::D) ? false : true;
+  bool congCost = dir != frDirEnum::U && dir != frDirEnum::D;
 
   bool blockCost = hasBlock(gridX, gridY, gridZ, dir);
   bool overflowCost = false;

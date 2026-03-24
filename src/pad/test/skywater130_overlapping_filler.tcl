@@ -620,22 +620,21 @@ place_corners sky130_ef_io__corner_pad
 
 place_io_fill \
   -row IO_NORTH \
-  -permit_overlaps sky130_ef_io__com_bus_slice_5um \
-  sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um
+  -permit_overlaps sky130_ef_io__com_bus_slice_20um \
+  sky130_ef_io__com_bus_slice_20um
 place_io_fill \
   -row IO_SOUTH \
-  -permit_overlaps sky130_ef_io__com_bus_slice_5um \
-  sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um
+  -permit_overlaps sky130_ef_io__com_bus_slice_20um \
+  sky130_ef_io__com_bus_slice_20um
 place_io_fill \
   -row IO_WEST \
-  -permit_overlaps sky130_ef_io__com_bus_slice_5um \
-  sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um
+  -permit_overlaps sky130_ef_io__com_bus_slice_20um \
+  sky130_ef_io__com_bus_slice_20um
 place_io_fill \
   -row IO_EAST \
-  -permit_overlaps sky130_ef_io__com_bus_slice_5um \
-  sky130_ef_io__com_bus_slice_20um sky130_ef_io__com_bus_slice_10um sky130_ef_io__com_bus_slice_5um
+  -permit_overlaps sky130_ef_io__com_bus_slice_20um \
+  sky130_ef_io__com_bus_slice_20um
 
-connect_by_abutment
 place_io_terminals */PAD
 
 set def_file [make_result_file "skywater130_overlapping_filler.def"]

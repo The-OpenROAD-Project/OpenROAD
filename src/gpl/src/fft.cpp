@@ -7,9 +7,8 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
+#include <numbers>
 #include <utility>
-
-#define REPLACE_FFT_PI 3.141592653589793238462L
 
 namespace gpl {
 
@@ -45,16 +44,16 @@ FFT::FFT(int binCntX, int binCntY, float binSizeX, float binSizeY)
 
   workArea_.resize(round(sqrt(std::max(binCntX_, binCntY_))) + 2, 0);
 
+  constexpr auto kPi = std::numbers::pi_v<long double>;
+
   for (int i = 0; i < binCntX_; i++) {
-    wx_[i]
-        = REPLACE_FFT_PI * static_cast<float>(i) / static_cast<float>(binCntX_);
+    wx_[i] = kPi * static_cast<float>(i) / static_cast<float>(binCntX_);
     wxSquare_[i] = wx_[i] * wx_[i];
   }
 
   for (int i = 0; i < binCntY_; i++) {
-    wy_[i] = REPLACE_FFT_PI * static_cast<float>(i)
-             / static_cast<float>(binCntY_) * static_cast<float>(binSizeY_)
-             / static_cast<float>(binSizeX_);
+    wy_[i] = kPi * static_cast<float>(i) / static_cast<float>(binCntY_)
+             * binSizeY_ / binSizeX_;
     wySquare_[i] = wy_[i] * wy_[i];
   }
 }

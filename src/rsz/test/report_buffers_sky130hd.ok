@@ -79,8 +79,8 @@ There are 2 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-sky130_fd_sc_hd__buf_12                      20.0 9.6e-15 9.0e-11  1076.6
 sky130_fd_sc_hd__buf_4                        7.5 2.5e-15 9.8e-11  2675.4
+sky130_fd_sc_hd__buf_12                      20.0 9.6e-15 9.0e-11  1076.6
 --------------------------------------------------------------------------------
 [INFO RSZ-0165] Buffer pruning will be disabled to enable all buffers for repair_design and repair_timing
 ********************************************************************************
@@ -171,6 +171,6 @@ There are 2 fast buffers
 Cell                                        Area  Input  Intrinsic Drive 
                                                    Cap    Delay    Res
 --------------------------------------------------------------------------------
-sky130_fd_sc_hd__buf_12                      20.0 9.6e-15 9.0e-11  1076.6
 sky130_fd_sc_hd__buf_4                        7.5 2.5e-15 9.8e-11  2675.4
+sky130_fd_sc_hd__buf_12                      20.0 9.6e-15 9.0e-11  1076.6
 --------------------------------------------------------------------------------

@@ -1,0 +1,245 @@
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13178, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13211, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13244, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13277, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13310, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13343, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 13376, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14772, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14805, timing group from output port.
+[WARNING STA-1212] asap7/asap7sc7p5t_SIMPLE_RVT_FF_nldm_211120.lib.gz line 14838, timing group from output port.
+[INFO ODB-0227] LEF file: asap7/asap7_tech_1x_201209.lef, created 30 layers, 9 vias
+[INFO ODB-0227] LEF file: asap7/asap7sc7p5t_28_R_1x_220121a.lef, created 212 library cells
+[INFO ODB-0227] LEF file: asap7/fakeram7_256x32.lef, created 1 library cells
+[WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
+            (rising edge-triggered flip-flop clocked by clk)
+Endpoint: riscv.dp.rf.rf[13][17]$_DFFE_PP_
+          (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK (DFFASRHQNx1_ASAP7_75t_R)
+  35.30   35.30 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/QN (DFFASRHQNx1_ASAP7_75t_R)
+  18.94   54.24 ^ _09626_/Y (BUFx3_ASAP7_75t_R)
+  11.77   66.01 v _09627_/Y (INVx2_ASAP7_75t_R)
+  24.75   90.76 v _09628_/Y (BUFx2_ASAP7_75t_R)
+  23.27  114.03 ^ _09741_/Y (NAND2x1_ASAP7_75t_R)
+  27.51  141.54 ^ _09902_/Y (BUFx2_ASAP7_75t_R)
+   9.51  151.05 v _10996_/Y (AOI211x1_ASAP7_75t_R)
+  17.37  168.42 v _10997_/Y (AO21x1_ASAP7_75t_R)
+  23.81  192.23 v _10998_/Y (OA211x2_ASAP7_75t_R)
+  13.78  206.01 v _10999_/Y (OA21x2_ASAP7_75t_R)
+  30.07  236.07 v _11000_/Y (OR4x1_ASAP7_75t_R)
+  18.04  254.12 v _11001_/Y (BUFx2_ASAP7_75t_R)
+  61.59  315.71 v _18167_/SN (HAxp5_ASAP7_75t_R)
+  37.12  352.83 v _14609_/Y (OR4x1_ASAP7_75t_R)
+  24.08  376.90 v _14610_/Y (OR3x1_ASAP7_75t_R)
+  33.40  410.30 v _14611_/Y (OR3x1_ASAP7_75t_R)
+  23.50  433.80 v _14612_/Y (AND3x1_ASAP7_75t_R)
+  15.36  449.17 v _14705_/Y (AND3x1_ASAP7_75t_R)
+  15.84  465.01 v _14708_/Y (OA21x2_ASAP7_75t_R)
+  37.00  502.01 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  21.57  523.57 v dmem/_155_/Y (BUFx2_ASAP7_75t_R)
+  39.42  562.99 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  19.21  582.20 v dmem/_171_/Y (BUFx6f_ASAP7_75t_R)
+  18.57  600.77 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  12.67  613.45 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+   9.60  623.05 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.17  648.22 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.71  666.93 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76  685.69 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  12.93  698.62 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  17.14  715.76 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  30.83  746.59 ^ _15383_/Y (BUFx2_ASAP7_75t_R)
+  13.67  760.26 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  19.94  780.20 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00  780.20 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+         780.20   data arrival time
+
+3000.00 3000.00   clock clk (rise edge)
+   0.00 3000.00   clock network delay (ideal)
+   0.00 3000.00   clock reconvergence pessimism
+        3000.00 ^ riscv.dp.rf.rf[13][17]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+  -8.63 2991.38   library setup time
+        2991.38   data required time
+---------------------------------------------------------
+        2991.38   data required time
+        -780.20   data arrival time
+---------------------------------------------------------
+        2211.18   slack (MET)
+
+
+[INFO RSZ-0026] Removed 1053 buffers.
+Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
+            (rising edge-triggered flip-flop clocked by clk)
+Endpoint: riscv.dp.rf.rf[13][17]$_DFFE_PP_
+          (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK (DFFASRHQNx1_ASAP7_75t_R)
+ 262.44  262.44 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/QN (DFFASRHQNx1_ASAP7_75t_R)
+ 824.75 1087.19 v _09627_/Y (INVx2_ASAP7_75t_R)
+1211.59 2298.78 ^ _09725_/Y (NAND2x1_ASAP7_75t_R)
+ 115.44 2414.22 v _10996_/Y (AOI211x1_ASAP7_75t_R)
+  32.05 2446.27 v _10997_/Y (AO21x1_ASAP7_75t_R)
+  27.36 2473.64 v _10998_/Y (OA211x2_ASAP7_75t_R)
+  15.61 2489.25 v _10999_/Y (OA21x2_ASAP7_75t_R)
+  41.27 2530.52 v _11000_/Y (OR4x1_ASAP7_75t_R)
+  66.91 2597.43 v _18167_/SN (HAxp5_ASAP7_75t_R)
+  37.12 2634.55 v _14609_/Y (OR4x1_ASAP7_75t_R)
+  24.07 2658.63 v _14610_/Y (OR3x1_ASAP7_75t_R)
+  33.40 2692.03 v _14611_/Y (OR3x1_ASAP7_75t_R)
+  23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
+  15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
+  15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
+
+3000.00 3000.00   clock clk (rise edge)
+   0.00 3000.00   clock network delay (ideal)
+   0.00 3000.00   clock reconvergence pessimism
+        3000.00 ^ riscv.dp.rf.rf[13][17]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -10.98 2989.02   library setup time
+        2989.02   data required time
+---------------------------------------------------------
+        2989.02   data required time
+        -3237.22   data arrival time
+---------------------------------------------------------
+        -248.20   slack (VIOLATED)
+
+
+[WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
+            (rising edge-triggered flip-flop clocked by clk)
+Endpoint: riscv.dp.rf.rf[13][17]$_DFFE_PP_
+          (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK (DFFASRHQNx1_ASAP7_75t_R)
+ 262.44  262.44 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/QN (DFFASRHQNx1_ASAP7_75t_R)
+ 824.75 1087.19 v _09627_/Y (INVx2_ASAP7_75t_R)
+1211.59 2298.78 ^ _09725_/Y (NAND2x1_ASAP7_75t_R)
+ 115.44 2414.22 v _10996_/Y (AOI211x1_ASAP7_75t_R)
+  32.05 2446.27 v _10997_/Y (AO21x1_ASAP7_75t_R)
+  27.36 2473.64 v _10998_/Y (OA211x2_ASAP7_75t_R)
+  15.61 2489.25 v _10999_/Y (OA21x2_ASAP7_75t_R)
+  41.27 2530.52 v _11000_/Y (OR4x1_ASAP7_75t_R)
+  66.91 2597.43 v _18167_/SN (HAxp5_ASAP7_75t_R)
+  37.12 2634.55 v _14609_/Y (OR4x1_ASAP7_75t_R)
+  24.07 2658.63 v _14610_/Y (OR3x1_ASAP7_75t_R)
+  33.40 2692.03 v _14611_/Y (OR3x1_ASAP7_75t_R)
+  23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
+  15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
+  15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
+
+3000.00 3000.00   clock clk (rise edge)
+   0.00 3000.00   clock network delay (ideal)
+   0.00 3000.00   clock reconvergence pessimism
+        3000.00 ^ riscv.dp.rf.rf[13][17]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -10.98 2989.02   library setup time
+        2989.02   data required time
+---------------------------------------------------------
+        2989.02   data required time
+        -3237.22   data arrival time
+---------------------------------------------------------
+        -248.20   slack (VIOLATED)
+
+
+[WARNING EST-0018] wire capacitance for corner default is zero. Use the set_wire_rc command to set wire resistance and capacitance.
+Startpoint: riscv.dp.pcreg.q[31]$_DFF_PP0_
+            (rising edge-triggered flip-flop clocked by clk)
+Endpoint: riscv.dp.rf.rf[13][17]$_DFFE_PP_
+          (rising edge-triggered flip-flop clocked by clk)
+Path Group: clk
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock clk (rise edge)
+   0.00    0.00   clock network delay (ideal)
+   0.00    0.00 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/CLK (DFFASRHQNx1_ASAP7_75t_R)
+ 262.44  262.44 ^ riscv.dp.pcreg.q[31]$_DFF_PP0_/QN (DFFASRHQNx1_ASAP7_75t_R)
+ 824.75 1087.19 v _09627_/Y (INVx2_ASAP7_75t_R)
+1211.59 2298.78 ^ _09725_/Y (NAND2x1_ASAP7_75t_R)
+ 115.44 2414.22 v _10996_/Y (AOI211x1_ASAP7_75t_R)
+  32.05 2446.27 v _10997_/Y (AO21x1_ASAP7_75t_R)
+  27.36 2473.64 v _10998_/Y (OA211x2_ASAP7_75t_R)
+  15.61 2489.25 v _10999_/Y (OA21x2_ASAP7_75t_R)
+  41.27 2530.52 v _11000_/Y (OR4x1_ASAP7_75t_R)
+  66.91 2597.43 v _18167_/SN (HAxp5_ASAP7_75t_R)
+  37.12 2634.55 v _14609_/Y (OR4x1_ASAP7_75t_R)
+  24.07 2658.63 v _14610_/Y (OR3x1_ASAP7_75t_R)
+  33.40 2692.03 v _14611_/Y (OR3x1_ASAP7_75t_R)
+  23.50 2715.53 v _14612_/Y (AND3x1_ASAP7_75t_R)
+  15.36 2730.89 v _14705_/Y (AND3x1_ASAP7_75t_R)
+  15.93 2746.83 v _14708_/Y (OA21x2_ASAP7_75t_R)
+ 127.53 2874.36 v _14724_/Y (OA33x2_ASAP7_75t_R)
+  85.50 2959.86 v dmem/_156_/Y (OR3x2_ASAP7_75t_R)
+  32.20 2992.06 v dmem/_203_/Y (OA22x2_ASAP7_75t_R)
+  13.40 3005.46 v dmem/_204_/Y (OA21x2_ASAP7_75t_R)
+  10.17 3015.64 ^ _15354_/Y (INVx1_ASAP7_75t_R)
+  25.25 3040.88 ^ _15376_/Y (OR3x1_ASAP7_75t_R)
+  18.74 3059.62 ^ _15378_/Y (AO21x1_ASAP7_75t_R)
+  18.76 3078.38 ^ _15380_/Y (AND2x2_ASAP7_75t_R)
+  13.00 3091.39 v _15381_/Y (NOR3x1_ASAP7_75t_R)
+  92.42 3183.81 ^ _15382_/Y (AOI22x1_ASAP7_75t_R)
+  28.20 3212.01 v _15888_/Y (NOR2x1_ASAP7_75t_R)
+  25.20 3237.22 v _15889_/Y (AO22x1_ASAP7_75t_R)
+   0.00 3237.22 v riscv.dp.rf.rf[13][17]$_DFFE_PP_/D (DFFHQNx1_ASAP7_75t_R)
+        3237.22   data arrival time
+
+3000.00 3000.00   clock clk (rise edge)
+   0.00 3000.00   clock network delay (ideal)
+   0.00 3000.00   clock reconvergence pessimism
+        3000.00 ^ riscv.dp.rf.rf[13][17]$_DFFE_PP_/CLK (DFFHQNx1_ASAP7_75t_R)
+ -10.98 2989.02   library setup time
+        2989.02   data required time
+---------------------------------------------------------
+        2989.02   data required time
+        -3237.22   data arrival time
+---------------------------------------------------------
+        -248.20   slack (VIOLATED)
+
+
+No differences found.

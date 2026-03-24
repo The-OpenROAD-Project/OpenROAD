@@ -4,13 +4,26 @@
 #include "heatMap.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <memory>
 #include <vector>
 
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
 
 namespace grt {
+
+gui::HeatMapSourceHandle registerRoutingCongestionHeatMapSource(
+    utl::Logger* logger,
+    odb::dbDatabase* db)
+{
+  return gui::registerHeatMapSource(
+      "Routing Congestion", "Routing", "RoutingCongestion", [logger, db]() {
+        return std::make_shared<RoutingCongestionDataSource>(logger, db);
+      });
+}
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
                                                          odb::dbDatabase* db)
@@ -138,12 +151,12 @@ bool RoutingCongestionDataSource::populateMapForLayer(odb::dbTechLayer* layer,
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
-  const odb::uint x_grid_sz = x_grid.size();
+  const auto x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
-  const odb::uint y_grid_sz = y_grid.size();
+  const auto y_grid_sz = y_grid.size();
 
-  for (odb::uint x_idx = 0; x_idx < congestion_data.numRows(); ++x_idx) {
-    for (odb::uint y_idx = 0; y_idx < congestion_data.numCols(); ++y_idx) {
+  for (uint32_t x_idx = 0; x_idx < congestion_data.numRows(); ++x_idx) {
+    for (uint32_t y_idx = 0; y_idx < congestion_data.numCols(); ++y_idx) {
       const auto& cong_data = congestion_data(x_idx, y_idx);
 
       const int next_x = (x_idx + 1) == x_grid_sz
@@ -190,12 +203,12 @@ bool RoutingCongestionDataSource::populateMapForDirection(
 
   std::vector<int> x_grid, y_grid;
   grid->getGridX(x_grid);
-  const odb::uint x_grid_sz = x_grid.size();
+  const auto x_grid_sz = x_grid.size();
   grid->getGridY(y_grid);
-  const odb::uint y_grid_sz = y_grid.size();
+  const auto y_grid_sz = y_grid.size();
 
-  for (odb::uint x_idx = 0; x_idx < hor_congestion_data.numRows(); ++x_idx) {
-    for (odb::uint y_idx = 0; y_idx < hor_congestion_data.numCols(); ++y_idx) {
+  for (uint32_t x_idx = 0; x_idx < hor_congestion_data.numRows(); ++x_idx) {
+    for (uint32_t y_idx = 0; y_idx < hor_congestion_data.numCols(); ++y_idx) {
       const auto& hor_cong_data = hor_congestion_data(x_idx, y_idx);
       const auto& ver_cong_data = ver_congestion_data(x_idx, y_idx);
 

@@ -1,0 +1,6 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0107] Defining die area using utilization: 99.00% and aspect ratio: 0.2.
+[WARNING IFP-0028] Core area lower left (1.000, 1.000) snapped to (1.140, 1.400).
+[WARNING IFP-0061] No rows created for site FreePDK45_38x28_10R_NP_162NW_34O.
+[ERROR IFP-0065] No rows created in the core area.
+IFP-0065

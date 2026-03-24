@@ -4,9 +4,13 @@
 // Generator Code Begin Header
 #pragma once
 
+#include <cstdint>
+
 #include "dbCore.h"
 #include "dbVector.h"
-#include "odb/odb.h"
+// User Code Begin Includes
+#include <utility>
+// User Code End Includes
 
 namespace odb {
 class dbIStream;

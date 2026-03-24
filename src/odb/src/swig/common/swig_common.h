@@ -18,7 +18,7 @@ int write_tech_lef(odb::dbTech* tech, const char* path);
 
 int write_macro_lef(odb::dbLib* lib, const char* path);
 
-odb::dbChip* read_def(odb::dbTech* tech, std::string path);
+odb::dbChip* read_def(odb::dbTech* tech, const std::string& path);
 
 int write_def(odb::dbBlock* block,
               const char* path,
@@ -65,12 +65,12 @@ std::vector<odb::Point> getPoints(const Polygon90* polygon);
 
 void createSBoxes(odb::dbSWire* swire,
                   odb::dbTechLayer* layer,
-                  std::vector<odb::Rect> rects,
+                  const std::vector<odb::Rect>& rects,
                   odb::dbWireShapeType type);
 
 void createSBoxes(odb::dbSWire* swire,
                   odb::dbVia* via,
-                  std::vector<odb::Point> points,
+                  const std::vector<odb::Point>& points,
                   odb::dbWireShapeType type);
 
-void dumpAPs(odb::dbBlock* block, const std::string file_name);
+void dumpAPs(odb::dbBlock* block, const std::string& file_name);

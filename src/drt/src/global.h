@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
@@ -16,6 +17,7 @@
 namespace odb {
 class Point;
 class Rect;
+class dbTechLayer;
 }  // namespace odb
 
 namespace drt {
@@ -97,6 +99,9 @@ struct RouterConfiguration
   std::string REPAIR_PDN_LAYER_NAME;
   frLayerNum REPAIR_PDN_LAYER_NUM = -1;
   frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
+
+  // unidirectional layers
+  std::unordered_set<odb::dbTechLayer*> unidirectional_layers_;
 };
 
 constexpr int DIRBITSIZE = 3;

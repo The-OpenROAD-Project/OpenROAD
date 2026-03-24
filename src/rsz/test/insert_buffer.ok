@@ -1,0 +1,15 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0252]     Updated 7 pins.
+[INFO ODB-0253]     Updated 34 components.
+[INFO ODB-0254]     Updated 29 nets and 81 connections.
+--- Test 1: After Driver ---
+Inserted after driver: u_mid1/u_leaf1/b_after_drvr1
+--- Test 2: Before Single Load ---
+Inserted before single load: u_mid1/u_leaf1/b_before_load2
+--- Test 3: Before Multiple Loads ---
+Inserted before multiple loads: u_mid1/b_before_loads3
+--- Test 4: Before Multiple Loads (Inferred Net) ---
+Inserted with inferred net: u_mid1/b_inferred4
+No differences found.
+No differences found.

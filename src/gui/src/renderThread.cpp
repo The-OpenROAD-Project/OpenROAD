@@ -10,16 +10,22 @@
 #include <QPolygon>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <exception>
 #include <iterator>
-#include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/geometry/geometry.hpp"
+#include "boost/geometry/index/parameters.hpp"
+#include "boost/geometry/index/predicates.hpp"
+#include "boost/geometry/index/rtree.hpp"
 #include "gui/gui.h"
+#include "label.h"
 #include "layoutViewer.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
@@ -28,6 +34,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "painter.h"
+#include "ruler.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -36,6 +43,7 @@ namespace gui {
 namespace bg = boost::geometry;
 
 using odb::dbBlock;
+using odb::dbChip;
 using odb::dbInst;
 using odb::dbMaster;
 using odb::dbOrientType;
@@ -194,7 +202,7 @@ void RenderThread::draw(QImage& image,
   }
   // Prevent a paintEvent and a save_image call from interfering
   // (eg search RTree construction)
-  std::lock_guard<std::mutex> lock(drawing_mutex_);
+  absl::MutexLock lock(&drawing_mutex_);
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 
@@ -213,7 +221,7 @@ void RenderThread::draw(QImage& image,
                          viewer_->options_,
                          viewer_->screenToDBU(draw_bounds),
                          viewer_->pixels_per_dbu_,
-                         viewer_->block_->getDbUnitsPerMicron());
+                         viewer_->getChip()->getDb()->getDbuPerMicron());
 
   if (!is_first_render_done_ && !restart_) {
     drawDesignLoadingMessage(gui_painter, dbu_bounds);
@@ -224,8 +232,15 @@ void RenderThread::draw(QImage& image,
     image.fill(background);
   }
 
-  drawBlock(&painter, viewer_->block_, dbu_bounds, 0);
-
+  drawChips(&painter, viewer_->getChip(), dbu_bounds, 0);
+  for (auto* renderer : Gui::get()->renderers()) {
+    if (restart_) {
+      break;
+    }
+    gui_painter.saveState();
+    renderer->drawObjects(gui_painter);
+    gui_painter.restoreState();
+  }
   // draw selected and over top level and fast painting events
   drawSelected(gui_painter, selected);
   // Always last so on top
@@ -299,6 +314,7 @@ bool RenderThread::instanceBelowMinSize(dbInst* inst)
 
 void RenderThread::drawTracks(dbTechLayer* layer,
                               QPainter* painter,
+                              odb::dbBlock* block,
                               const Rect& bounds)
 {
   if (!viewer_->options_->arePrefTracksVisible()
@@ -306,12 +322,16 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     return;
   }
 
-  dbTrackGrid* grid = viewer_->block_->findTrackGrid(layer);
+  if (block == nullptr) {
+    return;
+  }
+
+  dbTrackGrid* grid = block->findTrackGrid(layer);
   if (!grid) {
     return;
   }
 
-  Rect block_bounds = viewer_->block_->getDieArea();
+  Rect block_bounds = block->getDieArea();
   if (!block_bounds.intersects(bounds)) {
     return;
   }
@@ -324,7 +344,6 @@ void RenderThread::drawTracks(dbTechLayer* layer,
   painter->setBrush(Qt::NoBrush);
 
   bool is_horizontal = layer->getDirection() == dbTechLayerDir::HORIZONTAL;
-  std::vector<int> grids;
   if ((!is_horizontal && viewer_->options_->arePrefTracksVisible())
       || (is_horizontal && viewer_->options_->areNonPrefTracksVisible())) {
     bool show_grid = true;
@@ -335,8 +354,7 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     }
 
     if (show_grid) {
-      grid->getGridX(grids);
-      for (int x : grids) {
+      for (int x : grid->getGridX()) {
         if (restart_) {
           break;
         }
@@ -361,8 +379,7 @@ void RenderThread::drawTracks(dbTechLayer* layer,
     }
 
     if (show_grid) {
-      grid->getGridY(grids);
-      for (int y : grids) {
+      for (int y : grid->getGridY()) {
         if (restart_) {
           break;
         }
@@ -569,9 +586,11 @@ void RenderThread::drawInstanceShapes(dbTechLayer* layer,
       continue;
     }
 
-    dbBlock* child = nullptr;
-    if (has_child_blocks
-        && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
+    dbBlock* child
+        = has_child_blocks
+              ? inst->getBlock()->findChild(master->getName().c_str())
+              : nullptr;
+    if (child) {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
       const dbTransform inst_xfm = inst->getTransform();
@@ -822,7 +841,8 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
 
 void RenderThread::drawBlockages(QPainter* painter,
                                  odb::dbBlock* block,
-                                 const Rect& bounds)
+                                 const Rect& bounds,
+                                 const std::vector<odb::dbInst*>& insts)
 {
   if (!viewer_->options_->areBlockagesVisible()) {
     return;
@@ -845,6 +865,21 @@ void RenderThread::drawBlockages(QPainter* painter,
     }
     Rect bbox = blockage->getBBox()->getBox();
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
+  }
+
+  for (odb::dbInst* inst : insts) {
+    if (restart_) {
+      break;
+    }
+    odb::Rect halobox = inst->getTransformedHalo();
+    Rect instbox = inst->getBBox()->getBox();
+
+    instbox.set_xlo(instbox.xMin() - halobox.xMin());
+    instbox.set_ylo(instbox.yMin() - halobox.yMin());
+    instbox.set_xhi(instbox.xMax() + halobox.xMax());
+    instbox.set_yhi(instbox.yMax() + halobox.yMax());
+    painter->drawRect(
+        instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
   }
 }
 
@@ -932,9 +967,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const int shape_limit = viewer_->shapeSizeLimit();
 
   // Skip the cut layer if the cuts will be too small to see
-  const bool draw_shapes
-      = !(layer->getType() == dbTechLayerType::CUT
-          && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool draw_shapes = layer->getType() != dbTechLayerType::CUT
+                           || viewer_->cut_maximum_size_[layer] >= shape_limit;
   const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
                                 || layer->getType() == dbTechLayerType::ROUTING;
 
@@ -1072,9 +1106,13 @@ void RenderThread::drawLayer(QPainter* painter,
                  io_pins);
     }
 
-    drawTracks(layer, painter, bounds);
+    drawTracks(layer, painter, block, bounds);
     drawRouteGuides(gui_painter, layer);
     drawNetTracks(gui_painter, layer);
+  }
+
+  if (viewer_->options_->areFocusedNetsGuidesVisible()) {
+    drawNetsRouteGuides(gui_painter, viewer_->focus_nets_, layer);
   }
 
   for (auto* renderer : Gui::get()->renderers()) {
@@ -1094,29 +1132,60 @@ void RenderThread::drawLayer(QPainter* painter,
              layer_timer);
 }
 
-// Draw the region of the block.  Depth is not yet used but
-// is there for hierarchical design support.
-void RenderThread::drawBlock(QPainter* painter,
-                             dbBlock* block,
+void RenderThread::drawChips(QPainter* painter,
+                             dbChip* chip,
                              const Rect& bounds,
                              int depth)
+{
+  drawChip(painter, chip, bounds, depth);
+
+  const QTransform initial_xfm = painter->transform();
+  for (odb::dbChipInst* inst : chip->getChipInsts()) {
+    QTransform xfm = initial_xfm;
+    const dbTransform inst_xfm = inst->getTransform();
+    addInstTransform(xfm, inst_xfm);
+    painter->setTransform(xfm);
+
+    // Project bounds into inst
+    dbTransform inverse_xfm;
+    inst_xfm.invert(inverse_xfm);
+    Rect new_bounds = bounds;
+    inverse_xfm.apply(new_bounds);
+
+    drawChips(painter, inst->getMasterChip(), new_bounds, depth);
+  }
+  painter->setTransform(initial_xfm);
+}
+
+// Draw the region of the chip.  Depth is not yet used but
+// is there for hierarchical design support.
+void RenderThread::drawChip(QPainter* painter,
+                            dbChip* chip,
+                            const Rect& bounds,
+                            int depth)
 {
   utl::Timer timer;
 
   utl::Timer manufacturing_grid_timer;
   const int instance_limit = viewer_->instanceSizeLimit();
 
+  // Draw die area, if set
+  painter->setPen(QPen(Qt::gray, 0));
+  painter->setBrush(QBrush());
+
+  dbBlock* block = chip->getBlock();
+  if (!block) {
+    painter->drawRect(0, 0, chip->getWidth(), chip->getHeight());
+    return;
+  }
+
   GuiPainter gui_painter(painter,
                          viewer_->options_,
                          bounds,
                          viewer_->pixels_per_dbu_,
-                         block->getDbUnitsPerMicron());
+                         chip->getDb()->getDbuPerMicron());
 
-  painter->setPen(QPen(Qt::gray, 0));
-  painter->setBrush(QBrush());
-
-  // Draw die area, if set
-  const odb::Polygon die_area = block->getDieAreaPolygon();
+  odb::Polygon die_area = block->getDieAreaPolygon();
 
   if (die_area.getEnclosingRect().area() > 0) {
     gui_painter.drawPolygon(die_area);
@@ -1129,7 +1198,7 @@ void RenderThread::drawBlock(QPainter* painter,
     gui_painter.drawPolygon(core_area);
   }
 
-  drawManufacturingGrid(painter, bounds);
+  drawManufacturingGrid(painter, block, bounds);
   debugPrint(logger_,
              GUI,
              "draw",
@@ -1169,32 +1238,34 @@ void RenderThread::drawBlock(QPainter* painter,
 
   // draw blockages
   utl::Timer inst_blockages;
-  drawBlockages(painter, block, bounds);
+  drawBlockages(painter, block, bounds, insts);
   debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getTech();
-  std::set<dbTech*> child_techs;
-  for (auto child : block->getChildren()) {
-    dbTech* child_tech = child->getTech();
-    if (child_tech != tech) {
-      child_techs.insert(child_tech);
+  if (tech != nullptr) {
+    std::set<dbTech*> child_techs;
+    for (auto child : block->getChildren()) {
+      dbTech* child_tech = child->getTech();
+      if (child_tech != tech) {
+        child_techs.insert(child_tech);
+      }
     }
-  }
 
-  for (dbTech* child_tech : child_techs) {
-    for (dbTechLayer* layer : child_tech->getLayers()) {
+    for (dbTech* child_tech : child_techs) {
+      for (dbTechLayer* layer : child_tech->getLayers()) {
+        if (restart_) {
+          break;
+        }
+        drawLayer(painter, block, layer, insts, bounds, gui_painter);
+      }
+    }
+
+    for (dbTechLayer* layer : tech->getLayers()) {
       if (restart_) {
         break;
       }
       drawLayer(painter, block, layer, insts, bounds, gui_painter);
     }
-  }
-
-  for (dbTechLayer* layer : tech->getLayers()) {
-    if (restart_) {
-      break;
-    }
-    drawLayer(painter, block, layer, insts, bounds, gui_painter);
   }
 
   utl::Timer inst_names;
@@ -1211,7 +1282,7 @@ void RenderThread::drawBlock(QPainter* painter,
 
   utl::Timer inst_access_points;
   if (viewer_->options_->areAccessPointsVisible()) {
-    drawAccessPoints(gui_painter, insts);
+    drawAccessPoints(gui_painter, block, bounds, insts);
   }
   debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
 
@@ -1224,36 +1295,31 @@ void RenderThread::drawBlock(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
   utl::Timer inst_cell_grid;
-  drawGCellGrid(painter, bounds);
+  drawGCellGrid(painter, block, bounds);
   debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
-
-  utl::Timer inst_save_restore;
-  for (auto* renderer : Gui::get()->renderers()) {
-    if (restart_) {
-      break;
-    }
-    gui_painter.saveState();
-    renderer->drawObjects(gui_painter);
-    gui_painter.restoreState();
-  }
-  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
 
-void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
+void RenderThread::drawGCellGrid(QPainter* painter,
+                                 odb::dbBlock* block,
+                                 const odb::Rect& bounds)
 {
   if (!viewer_->options_->isGCellGridVisible()) {
     return;
   }
 
-  odb::dbGCellGrid* grid = viewer_->block_->getGCellGrid();
+  if (block == nullptr) {
+    return;
+  }
+
+  odb::dbGCellGrid* grid = block->getGCellGrid();
 
   if (grid == nullptr) {
     return;
   }
 
-  const auto die_area = viewer_->block_->getDieArea();
+  const auto die_area = block->getDieArea();
 
   if (!bounds.intersects(die_area)) {
     return;
@@ -1291,14 +1357,19 @@ void RenderThread::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
 }
 
 void RenderThread::drawManufacturingGrid(QPainter* painter,
+                                         odb::dbBlock* block,
                                          const odb::Rect& bounds)
 {
   if (!viewer_->options_->isManufacturingGridVisible()) {
     return;
   }
 
-  odb::dbTech* tech = viewer_->block_->getDb()->getTech();
-  if (!tech->hasManufacturingGrid()) {
+  if (block == nullptr) {
+    return;
+  }
+
+  odb::dbTech* tech = block->getTech();
+  if (tech == nullptr || !tech->hasManufacturingGrid()) {
     return;
   }
 
@@ -1359,16 +1430,32 @@ void RenderThread::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
   if (viewer_->route_guides_.empty()) {
     return;
   }
+
+  drawNetsRouteGuides(painter, viewer_->route_guides_, layer);
+}
+
+void RenderThread::drawNetsRouteGuides(Painter& painter,
+                                       const std::set<odb::dbNet*>& nets,
+                                       odb::dbTechLayer* layer)
+{
   painter.setPen(layer);
   painter.setBrush(layer);
-  for (auto net : viewer_->route_guides_) {
+
+  for (odb::dbNet* net : nets) {
     if (restart_) {
       break;
     }
-    for (auto guide : net->getGuides()) {
-      if (guide->getLayer() != layer) {
-        continue;
-      }
+
+    drawNetRouteGuides(painter, net, layer);
+  }
+}
+
+void RenderThread::drawNetRouteGuides(Painter& painter,
+                                      odb::dbNet* net,
+                                      odb::dbTechLayer* layer)
+{
+  for (odb::dbGuide* guide : net->getGuides()) {
+    if (guide->getLayer() == layer) {
       painter.drawRect(guide->getBox());
     }
   }
@@ -1395,6 +1482,8 @@ void RenderThread::drawNetTracks(Painter& painter, odb::dbTechLayer* layer)
 }
 
 void RenderThread::drawAccessPoints(Painter& painter,
+                                    odb::dbBlock* block,
+                                    const odb::Rect& bounds,
                                     const std::vector<odb::dbInst*>& insts)
 {
   const int shape_limit = viewer_->shapeSizeLimit();
@@ -1438,11 +1527,21 @@ void RenderThread::drawAccessPoints(Painter& painter,
       }
     }
   }
-  for (auto term : viewer_->block_->getBTerms()) {
-    if (restart_) {
-      break;
-    }
-    for (auto pin : term->getBPins()) {
+
+  odb::dbTech* tech = block->getTech();
+  if (tech == nullptr) {
+    return;
+  }
+  for (odb::dbTechLayer* layer : tech->getLayers()) {
+    for (const auto& [box, pin] : viewer_->search_.searchBPins(block,
+                                                               layer,
+                                                               bounds.xMin(),
+                                                               bounds.yMin(),
+                                                               bounds.xMax(),
+                                                               bounds.yMax())) {
+      if (restart_) {
+        break;
+      }
       for (auto ap : pin->getAccessPoints()) {
         draw(ap, {});
       }
@@ -1488,34 +1587,22 @@ void RenderThread::drawModuleView(QPainter* painter,
 
 void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
 {
-  pins_.clear();
   if (!viewer_->options_->areIOPinsVisible()) {
+    pin_draw_names_ = false;
     return;
   }
 
   const auto die_area = block->getDieArea();
-  const auto die_width = die_area.dx();
-  const auto die_height = die_area.dy();
 
-  if (viewer_->options_->areIOPinNamesVisible()) {
-    const double scale_factor
-        = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-    const int die_max_dim
-        = std::min(std::max(die_width, die_height), bounds.maxDXDY());
-    const double abs_min_dim = 8.0;  // prevent markers from falling apart
-    pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
-
+  pin_draw_names_ = viewer_->options_->areIOPinNamesVisible();
+  const double scale_factor
+      = 0.02;  // 4 Percent of bounds is used to draw pin-markers
+  const int die_max_dim = std::min(die_area.maxDXDY(), bounds.maxDXDY());
+  const double abs_min_dim = 8.0;  // prevent markers from falling apart
+  pin_max_size_ = std::max(scale_factor * die_max_dim, abs_min_dim);
+  if (pin_draw_names_) {
     pin_font_ = viewer_->options_->ioPinMarkersFont();
     const QFontMetrics font_metrics(pin_font_);
-
-    QString largest_text;
-    for (auto pin : block->getBTerms()) {
-      QString current_text = QString::fromStdString(pin->getName());
-      if (font_metrics.boundingRect(current_text).width()
-          > font_metrics.boundingRect(largest_text).width()) {
-        largest_text = std::move(current_text);
-      }
-    }
 
     const int vertical_gap
         = (viewer_->geometry().height()
@@ -1531,49 +1618,61 @@ void RenderThread::setupIOPins(odb::dbBlock* block, const odb::Rect& bounds)
           - std::ceil(pin_max_size_) * viewer_->pixels_per_dbu_;  // in pixels
 
     int font_size = pin_font_.pointSize();
-    int largest_text_width = font_metrics.boundingRect(largest_text).width();
     const int drawing_font_size = 6;  // in points
 
     // when the size is minimum the text won't be drawn
     const int minimum_font_size = drawing_font_size - 1;
 
-    while (largest_text_width > available_space) {
-      if (font_size == minimum_font_size) {
+    int largest_text_width = 0;
+    std::set<odb::dbBTerm*> checked;
+    odb::dbTech* tech = block->getTech();
+    for (odb::dbTechLayer* layer : tech->getLayers()) {
+      if (restart_) {
+        return;
+      }
+      if (font_size <= minimum_font_size) {
         break;
       }
-      font_size -= 1;
-      pin_font_.setPointSize(font_size);
-      QFontMetrics current_font_metrics(pin_font_);
-      largest_text_width
-          = current_font_metrics.boundingRect(largest_text).width();
+      for (const auto& [box, pin] :
+           viewer_->search_.searchBPins(block,
+                                        layer,
+                                        bounds.xMin(),
+                                        bounds.yMin(),
+                                        bounds.xMax(),
+                                        bounds.yMax())) {
+        if (restart_) {
+          return;
+        }
+        odb::dbBTerm* bterm = pin->getBTerm();
+        if (checked.find(bterm) != checked.end()) {
+          continue;
+        }
+        checked.insert(bterm);
+
+        QString current_text = QString::fromStdString(pin->getName());
+        const int text_width = font_metrics.boundingRect(current_text).width();
+        largest_text_width = std::max(text_width, largest_text_width);
+        while (largest_text_width > available_space) {
+          if (font_size <= minimum_font_size) {
+            break;
+          }
+          font_size -= 1;
+          pin_font_.setPointSize(font_size);
+          QFontMetrics current_font_metrics(pin_font_);
+          largest_text_width
+              = current_font_metrics.boundingRect(current_text).width();
+        }
+
+        if (font_size <= minimum_font_size) {
+          break;
+        }
+      }
     }
 
     // draw names of pins when text height is at least 6 pts
     pin_draw_names_ = font_size >= drawing_font_size;
   } else {
     pin_draw_names_ = false;
-  }
-
-  for (odb::dbBTerm* term : block->getBTerms()) {
-    if (restart_) {
-      break;
-    }
-    if (!viewer_->isNetVisible(term->getNet())) {
-      continue;
-    }
-    for (odb::dbBPin* pin : term->getBPins()) {
-      odb::dbPlacementStatus status = pin->getPlacementStatus();
-      if (!status.isPlaced()) {
-        continue;
-      }
-      for (odb::dbBox* box : pin->getBoxes()) {
-        if (!box) {
-          continue;
-        }
-
-        pins_[box->getTechLayer()].emplace_back(term, box);
-      }
-    }
   }
 }
 
@@ -1582,8 +1681,8 @@ void RenderThread::drawIOPins(Painter& painter,
                               const odb::Rect& bounds,
                               odb::dbTechLayer* layer)
 {
-  const auto& pins = pins_[layer];
-  if (pins.empty()) {
+  if (!viewer_->options_->areIOPinsVisible()
+      || !viewer_->options_->areIOPinNamesVisible()) {
     return;
   }
 
@@ -1616,10 +1715,11 @@ void RenderThread::drawIOPins(Painter& painter,
 
   // RTree used to search for overlapping shapes and decide if rotation of
   // text is needed.
-  bgi::rtree<odb::Rect, bgi::quadratic<16>> pin_text_spec_shapes;
+  using PinShapeTree = bgi::rtree<odb::Rect, bgi::quadratic<16>>;
+  PinShapeTree pin_text_spec_shapes;
   struct PinText
   {
-    odb::Rect rect;
+    std::optional<odb::Rect> rect;
     bool can_rotate;
     std::string text;
     odb::Point pt;
@@ -1627,17 +1727,44 @@ void RenderThread::drawIOPins(Painter& painter,
   };
   std::vector<PinText> pin_text_spec;
 
+  const int min_bpin_size = viewer_->options_->isDetailedVisibility()
+                                ? viewer_->fineViewableResolution()
+                                : viewer_->nominalViewableResolution();
+  const int64_t max_lin_bpins
+      = min_bpin_size > 0 ? bounds.minDXDY() / min_bpin_size : bounds.minDXDY();
+  const int64_t max_bpins
+      = std::min(kMaxBPinsPerLayer, max_lin_bpins * max_lin_bpins);
+
   painter.setPen(layer);
   painter.setBrush(layer);
 
-  for (const auto& [term, box] : pins) {
+  auto bpins = viewer_->search_.searchBPins(
+      block, layer, bounds.xMin(), bounds.yMin(), bounds.xMax(), bounds.yMax());
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             2,
+             "found {} bpins on layer {}, drawing limit {} ({}) bpins",
+             bpins.size(),
+             layer->getName(),
+             max_bpins,
+             max_lin_bpins);
+  if (bpins.size() > max_bpins) {
+    return;
+  }
+
+  std::vector<odb::Rect> pin_text_spec_shape_rects;
+  for (const auto& [box, pin] : bpins) {
     if (restart_) {
       break;
     }
-    const auto pin_dir = term->getIoType();
 
-    Point pin_center((box->xMin() + box->xMax()) / 2,
-                     (box->yMin() + box->yMax()) / 2);
+    odb::dbBTerm* term = pin->getBTerm();
+    if (!viewer_->options_->isNetVisible(term->getNet())) {
+      continue;
+    }
+
+    const Point pin_center = box->getBox().center();
 
     auto dist_to_left = std::abs(box->xMin() - die_area.xMin());
     auto dist_to_right = std::abs(box->xMax() - die_area.xMax());
@@ -1645,8 +1772,7 @@ void RenderThread::drawIOPins(Painter& painter,
     auto dist_to_bot = std::abs(box->yMin() - die_area.yMin());
     std::vector<int> dists{
         dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
-    int arg_min = std::distance(dists.begin(),
-                                std::min_element(dists.begin(), dists.end()));
+    int arg_min = std::distance(dists.begin(), std::ranges::min_element(dists));
 
     odb::dbTransform xfm(pin_center);
     if (arg_min == 0) {  // left
@@ -1673,6 +1799,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     // select marker
     const std::vector<Point>* template_points = &bi_marker;
+    const auto pin_dir = term->getIoType();
     if (pin_dir == odb::dbIoType::INPUT) {
       template_points = &in_marker;
     } else if (pin_dir == odb::dbIoType::OUTPUT) {
@@ -1681,6 +1808,7 @@ void RenderThread::drawIOPins(Painter& painter,
 
     // make new marker based on pin location
     std::vector<Point> marker;
+    marker.reserve(template_points->size());
     for (const auto& pt : *template_points) {
       Point new_pt = pt;
       xfm.apply(new_pt);
@@ -1723,12 +1851,14 @@ void RenderThread::drawIOPins(Painter& painter,
                                                        pin_specs.text);
         text_rect.bloat(text_margin, text_rect);
         pin_specs.rect = text_rect;
-        pin_text_spec_shapes.insert(pin_specs.rect);
-      } else {
-        pin_specs.rect = odb::Rect();
+        pin_text_spec_shape_rects.push_back(text_rect);
       }
       pin_text_spec.push_back(std::move(pin_specs));
     }
+  }
+  if (!pin_text_spec_shape_rects.empty()) {
+    pin_text_spec_shapes = PinShapeTree(pin_text_spec_shape_rects.begin(),
+                                        pin_text_spec_shape_rects.end());
   }
 
   painter.setPen(layer);
@@ -1744,10 +1874,10 @@ void RenderThread::drawIOPins(Painter& painter,
 
     bool do_rotate = false;
     auto anchor = pin.anchor;
-    if (pin.can_rotate) {
-      if (pin_text_spec_shapes.qbegin(bgi::intersects(pin.rect)
+    if (pin.can_rotate && pin.rect) {
+      if (pin_text_spec_shapes.qbegin(bgi::intersects(*pin.rect)
                                       && bgi::satisfies([&](const auto& other) {
-                                           return !bg::equals(other, pin.rect);
+                                           return !bg::equals(other, *pin.rect);
                                          }))
           != pin_text_spec_shapes.qend()) {
         // adjust anchor

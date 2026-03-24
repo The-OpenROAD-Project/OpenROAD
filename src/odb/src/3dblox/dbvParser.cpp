@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 
 namespace odb {
 
@@ -183,6 +184,13 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
           chiplet_node["external"], "DEF_file", chiplet.external.def_file);
       chiplet.external.def_file = resolvePath(chiplet.external.def_file);
     }
+    if (chiplet_node["external"]["verilog_file"]) {
+      extractValue(chiplet_node["external"],
+                   "verilog_file",
+                   chiplet.external.verilog_file);
+      chiplet.external.verilog_file
+          = resolvePath(chiplet.external.verilog_file);
+    }
   }
 }
 
@@ -207,10 +215,12 @@ void DbvParser::parseRegion(ChipletRegion& region,
 {
   if (region_node["bmap"]) {
     extractValue(region_node, "bmap", region.bmap);
+    region.bmap = resolvePath(region.bmap);
   }
 
   if (region_node["pmap"]) {
     extractValue(region_node, "pmap", region.pmap);
+    region.pmap = resolvePath(region.pmap);
   }
 
   if (region_node["side"]) {

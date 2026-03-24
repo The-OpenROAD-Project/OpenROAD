@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "boost/geometry/geometry.hpp"
+#include "connection.h"
 #include "ir_network.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
@@ -32,8 +33,7 @@ class Shape
   std::vector<std::unique_ptr<Node>> createFillerNodes(
       int max_distance,
       const IRNetwork::NodeTree& layer_nodes);
-  std::vector<std::unique_ptr<Connection>> connectNodes(
-      const IRNetwork::NodeTree& layer_nodes);
+  Connections connectNodes(const IRNetwork::NodeTree& layer_nodes);
   std::set<Node*> cleanupNodes(
       int min_distance,
       const IRNetwork::NodeTree& layer_nodes,

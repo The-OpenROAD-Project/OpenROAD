@@ -3,6 +3,8 @@
 
 #include "journal.h"
 
+#include <ranges>
+
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "odb/db.h"
@@ -73,9 +75,8 @@ void Journal::undo(const JournalAction* action, const bool positions_only) const
 ////////////////////////////////////////////////////////////////////////////////
 void Journal::undo(bool positions_only) const
 {
-  for (auto it = actions_.rbegin(); it != actions_.rend(); ++it) {
-    auto action = (*it).get();
-    undo(action, positions_only);
+  for (const auto& action : std::ranges::reverse_view(actions_)) {
+    undo(action.get(), positions_only);
   }
 }
 ////////////////////////////////////////////////////////////////////////////////

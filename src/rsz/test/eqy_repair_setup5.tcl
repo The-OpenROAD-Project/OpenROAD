@@ -9,7 +9,9 @@ read_def repair_setup5.def
 
 # Get information so we can setup the test outputs correctly
 write_verilog_for_eqy eqy_repair_setup5 before "None"
-run_equivalence_test eqy_repair_setup5 ./sky130hd/work_around_yosys/ "None"
+run_equivalence_test eqy_repair_setup5 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
 set db [ord::get_db]
 set chip [$db getChip]
 set block [$chip getBlock]
@@ -19,7 +21,9 @@ $iterm disconnect
 
 # handle the case where we are not really running the equivalence checks.
 if { [info exists ::env(EQUIVALENCE_CHECK)] } {
-  run_equivalence_test eqy_repair_setup5 ./sky130hd/work_around_yosys/ "None"
+  run_equivalence_test eqy_repair_setup5 \
+    -lib_dir ./sky130hd/work_around_yosys/ \
+    -remove_cells "None"
 } else {
   puts "Repair timing output failed equivalence test"
 }

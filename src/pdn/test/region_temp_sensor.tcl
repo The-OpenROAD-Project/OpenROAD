@@ -17,6 +17,8 @@ add_global_connection -net VDD -inst_pattern {temp_analog_1.*} -pin_pattern VPB
 add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPWR -power
 add_global_connection -net VIN -inst_pattern {temp_analog_0.*} -pin_pattern VPB
 
+global_connect -force -verbose
+
 set_voltage_domain -power VDD -ground VSS
 
 define_pdn_grid -name "Core"

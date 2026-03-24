@@ -71,7 +71,7 @@ void defiAssertion::Init()
 void defiAssertion::Destroy()
 {
   free(netName_);
-  free((char*) (itemTypes_));
+  free(itemTypes_);
   free((char*) (items_));
 }
 
@@ -385,7 +385,7 @@ void defiAssertion::bumpItems()
     newTypes[i] = itemTypes_[i];
   }
   free((char*) items_);
-  free((char*) itemTypes_);
+  free(itemTypes_);
   items_ = newItems;
   itemTypes_ = newTypes;
 }

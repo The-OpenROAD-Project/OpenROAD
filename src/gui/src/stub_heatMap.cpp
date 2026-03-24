@@ -41,9 +41,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
 {
 }
 
-HeatMapDataSource::~HeatMapDataSource()
-{
-}
+HeatMapDataSource::~HeatMapDataSource() = default;
 
 void HeatMapDataSource::registerHeatMap()
 {
@@ -244,7 +242,7 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
 {
 }
 
-sta::Corner* PowerDensityDataSource::getCorner() const
+sta::Scene* PowerDensityDataSource::getScene() const
 {
   return nullptr;
 }

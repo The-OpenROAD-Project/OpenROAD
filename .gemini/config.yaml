@@ -1,0 +1,8 @@
+memory_config:
+  disabled: false
+code_review:
+  pull_request_opened:
+    help: false
+    summary: false
+    code_review: true
+    include_drafts: true

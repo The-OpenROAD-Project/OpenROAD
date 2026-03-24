@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <cstdint>
 #include <cstdio>
 #include <list>
 #include <sstream>
@@ -8,12 +9,12 @@
 
 #include "odb/wOrder.h"
 #include "rcx/ext.h"
+#include "rcx/extRCap.h"
 #include "rcx/extSolverGen.h"
 #include "utl/Logger.h"
 
 namespace rcx {
 
-using utl::Logger;
 using utl::RCX;
 
 // ----------------------------- dkf 092024 --------------------------------
@@ -27,7 +28,7 @@ bool Ext::init_rcx_model(const char* corner_names, int metal_cnt)
     corners.push_back(word);
   }
   extRCModel* m = new extRCModel("MINTYPMAX", logger_);
-  uint cornerCnt = m->initModel(corners, metal_cnt);
+  uint32_t cornerCnt = m->initModel(corners, metal_cnt);
   fprintf(stdout, "Initialed %d corners <%s>\n", cornerCnt, corner_names);
   _ext->setCurrentModel(m);
   return true;
@@ -87,19 +88,5 @@ bool Ext::gen_solver_patterns(const char* process_file,
 
   return true;
 }
-
-/*
-std::istringstream iss(corner_names);
-std::string word;
-// Extract each word from the string stream and insert it into the list
-std::list<std::string> corners;
-while (iss >> word) {
-    corners.push_back(word);
-}
-extRCModel* m = new extRCModel("MINTYPMAX", nullptr);
-uint cornerCnt= m->initModel(corners, metal_cnt);
-fprintf(stdout, "Initialed %d corners <%s>\n", cornerCnt, corner_names);
-_ext->setCurrentModel(m);
-*/
 
 }  // namespace rcx

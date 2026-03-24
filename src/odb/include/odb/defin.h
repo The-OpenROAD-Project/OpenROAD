@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <mutex>
 #include <vector>
 
-#include "odb/odb.h"
+#include "absl/synchronization/mutex.h"
+
 namespace utl {
 class Logger;
 }
@@ -22,11 +22,6 @@ class dbTech;
 
 class defin
 {
-  definReader* _reader;
-
-  // Protects the DefParser namespace that has static variables
-  static std::mutex _def_mutex;
-
  public:
   enum MODE
   {
@@ -50,7 +45,14 @@ class defin
   /// Create a new chip
   void readChip(std::vector<dbLib*>& search_libs,
                 const char* def_file,
-                dbChip* chip);
+                dbChip* chip,
+                bool issue_callback = true);
+
+ private:
+  definReader* reader_;
+
+  // Protects the DefParser namespace that has static variables
+  static absl::Mutex def_mutex_;
 };
 
 }  // namespace odb

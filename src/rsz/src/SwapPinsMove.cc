@@ -11,12 +11,14 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #include "BaseMove.hh"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
+#include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
@@ -35,19 +37,20 @@ using utl::RSZ;
 
 using sta::ArcDcalcResult;
 using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
 using sta::INF;
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::LibertyCell;
 using sta::LibertyPort;
 using sta::LoadPinIndexMap;
+using sta::MinMax;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::Path;
 using sta::PathExpanded;
 using sta::Pin;
 using sta::RiseFall;
+using sta::Scene;
 using sta::Slack;
 using sta::Slew;
 using sta::TimingArc;
@@ -74,9 +77,10 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     return false;
   }
   Instance* drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt* dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+
   // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
-  const float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  const float load_cap = graph_delay_calc_->loadCap(
+      drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const int in_index = drvr_index - 1;
   const Path* in_path = expanded->path(in_index);
   Pin* in_pin = in_path->pin(sta_);
@@ -85,7 +89,7 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     // We get the driver port and the cell for that port.
     LibertyPort* input_port = network_->libertyPort(in_pin);
     LibertyPort* swap_port = input_port;
-    sta::LibertyPortSet ports;
+    LibertyPortVec ports;
 
     // Skip output to output paths
     if (input_port->direction()->isOutput()) {
@@ -103,14 +107,19 @@ bool SwapPinsMove::doMove(const Path* drvr_path,
     // and that should apply to all instances of that cell with this input_port.
     if (equiv_pin_map_.find(input_port) == equiv_pin_map_.end()) {
       equivCellPins(cell, input_port, ports);
-      equiv_pin_map_.insert(input_port, ports);
+      equiv_pin_map_.insert({input_port, ports});
     }
     ports = equiv_pin_map_[input_port];
     if (!ports.empty()) {
       // Pass slews at input pins for more accurate delay/slew estimation
-      annotateInputSlews(drvr, dcalc_ap);
-      findSwapPinCandidate(
-          input_port, drvr_port, ports, load_cap, dcalc_ap, &swap_port);
+      annotateInputSlews(drvr, drvr_path->scene(sta_), drvr_path->minMax(sta_));
+      findSwapPinCandidate(input_port,
+                           drvr_port,
+                           ports,
+                           load_cap,
+                           drvr_path->scene(sta_),
+                           drvr_path->minMax(sta_),
+                           &swap_port);
       resetInputSlews();
 
       if (!sta::LibertyPort::equiv(swap_port, input_port)) {
@@ -204,7 +213,7 @@ void SwapPinsMove::swapPins(Instance* inst,
 // (depending on agreement).
 void SwapPinsMove::equivCellPins(const LibertyCell* cell,
                                  LibertyPort* input_port,
-                                 sta::LibertyPortSet& ports)
+                                 LibertyPortVec& ports)
 {
   if (cell->hasSequentials() || cell->isIsolationCell()) {
     ports.clear();
@@ -222,7 +231,7 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
       ++outputs;
     } else if (direction->isInput()) {
       ++inputs;
-    } else if (direction->isPower() || direction->isGround()) {
+    } else if (port->isPwrGnd()) {
       // skip
     } else {
       ports.clear();
@@ -230,51 +239,59 @@ void SwapPinsMove::equivCellPins(const LibertyCell* cell,
     }
   }
 
-  if (outputs >= 1 && inputs >= 2) {
-    sta::LibertyCellPortIterator port_iter2(cell);
-    while (port_iter2.hasNext()) {
-      LibertyPort* candidate_port = port_iter2.next();
-      if (!candidate_port->direction()->isInput()) {
+  if (outputs < 1 || inputs < 2) {
+    return;
+  }
+
+  sta::LibertyCellPortIterator port_iter2(cell);
+  std::unordered_set<LibertyPort*> seen_ports;
+  while (port_iter2.hasNext()) {
+    LibertyPort* candidate_port = port_iter2.next();
+    if (!candidate_port->direction()->isInput()) {
+      continue;
+    }
+
+    sta::LibertyCellPortIterator output_port_iter(cell);
+    std::optional<bool> is_equivalent;
+    // Loop through all the output ports and make sure they are equivalent
+    // under swaps of candidate_port and input_port. For multi-ouput gates
+    // like full adders.
+    while (output_port_iter.hasNext()) {
+      LibertyPort* output_candidate_port = output_port_iter.next();
+      sta::FuncExpr* output_expr = output_candidate_port->function();
+      if (!output_candidate_port->direction()->isOutput()) {
         continue;
       }
 
-      sta::LibertyCellPortIterator output_port_iter(cell);
-      std::optional<bool> is_equivalent;
-      // Loop through all the output ports and make sure they are equivalent
-      // under swaps of candidate_port and input_port. For multi-ouput gates
-      // like full adders.
-      while (output_port_iter.hasNext()) {
-        LibertyPort* output_candidate_port = output_port_iter.next();
-        sta::FuncExpr* output_expr = output_candidate_port->function();
-        if (!output_candidate_port->direction()->isOutput()) {
-          continue;
-        }
-
-        if (output_expr == nullptr) {
-          continue;
-        }
-
-        if (input_port == candidate_port) {
-          continue;
-        }
-
-        bool is_equivalent_result
-            = isPortEqiv(output_expr, cell, input_port, candidate_port);
-
-        if (!is_equivalent.has_value()) {
-          is_equivalent = is_equivalent_result;
-          continue;
-        }
-
-        is_equivalent = is_equivalent.value() && is_equivalent_result;
+      if (output_expr == nullptr) {
+        continue;
       }
 
-      // candidate_port is equivalent to input_port under all output ports
-      // of this cell.
-      if (is_equivalent.has_value() && is_equivalent.value()) {
-        ports.insert(candidate_port);
+      if (input_port == candidate_port) {
+        continue;
       }
+
+      bool is_equivalent_result
+          = isPortEqiv(output_expr, cell, input_port, candidate_port);
+
+      if (!is_equivalent.has_value()) {
+        is_equivalent = is_equivalent_result;
+        continue;
+      }
+
+      is_equivalent = is_equivalent.value() && is_equivalent_result;
     }
+
+    // candidate_port is equivalent to input_port under all output ports
+    // of this cell.
+    if (is_equivalent.has_value() && is_equivalent.value()
+        && !seen_ports.contains(candidate_port)) {
+      seen_ports.insert(candidate_port);
+      ports.push_back(candidate_port);
+    }
+  }
+  if (!seen_ports.empty()) {  // If we added any ports sort them.
+    std::ranges::sort(ports, {}, [](auto* p1) { return p1->id(); });
   }
 }
 
@@ -293,7 +310,7 @@ void SwapPinsMove::reportSwappablePins()
         if (!port->direction()->isInput()) {
           continue;
         }
-        sta::LibertyPortSet ports;
+        LibertyPortVec ports;
         equivCellPins(cell, port, ports);
         std::ostringstream ostr;
         for (auto port : ports) {
@@ -310,9 +327,10 @@ void SwapPinsMove::reportSwappablePins()
 // where 2 paths go through the same gate (we could end up swapping pins twice)
 void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
                                         LibertyPort* drvr_port,
-                                        const sta::LibertyPortSet& equiv_ports,
+                                        const LibertyPortVec& equiv_ports,
                                         float load_cap,
-                                        const DcalcAnalysisPt* dcalc_ap,
+                                        const Scene* corner,
+                                        const MinMax* min_max,
                                         LibertyPort** swap_port)
 {
   LibertyCell* cell = drvr_port->libertyCell();
@@ -341,7 +359,8 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
                                          load_cap,
                                          nullptr,
                                          load_pin_index_map,
-                                         dcalc_ap);
+                                         corner,
+                                         min_max);
 
         const ArcDelay& gate_delay = dcalc_result.gateDelay();
 
@@ -359,24 +378,28 @@ void SwapPinsMove::findSwapPinCandidate(LibertyPort* input_port,
   }
 
   for (LibertyPort* port : equiv_ports) {
-    if (port_delays.find(port) == port_delays.end()) {
-      // It's possible than an equivalent pin doesn't have
-      // a path to the driver.
+    // Guard Clause:
+    // 1. Check if port delay exists
+    // 2. Check if port is NOT an input
+    // 3. Check if port is equivalent to input_port
+    // 4. Check if port is equivalent to drvr_port
+    if (!port_delays.contains(port) || !port->direction()->isInput()
+        || sta::LibertyPort::equiv(input_port, port)
+        || sta::LibertyPort::equiv(drvr_port, port)) {
       continue;
     }
 
-    if (port->direction()->isInput()
-        && !sta::LibertyPort::equiv(input_port, port)
-        && !sta::LibertyPort::equiv(drvr_port, port)
-        && port_delays[port] < base_delay) {
+    auto port_delay = port_delays[port];
+    if (port_delay < base_delay) {
       *swap_port = port;
-      base_delay = port_delays[port];
+      base_delay = port_delay;
     }
   }
 }
 
 void SwapPinsMove::annotateInputSlews(Instance* inst,
-                                      const DcalcAnalysisPt* dcalc_ap)
+                                      const Scene* scene,
+                                      const MinMax* min_max)
 {
   input_slew_map_.clear();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{
@@ -388,10 +411,12 @@ void SwapPinsMove::annotateInputSlews(Instance* inst,
       if (port) {
         Vertex* vertex = graph_->pinDrvrVertex(pin);
         InputSlews slews;
+        auto ap_index = scene->dcalcAnalysisPtIndex(min_max);
+        sta_->findDelays(vertex);
         slews[RiseFall::rise()->index()]
-            = sta_->vertexSlew(vertex, RiseFall::rise(), dcalc_ap);
+            = sta_->graph()->slew(vertex, RiseFall::rise(), ap_index);
         slews[RiseFall::fall()->index()]
-            = sta_->vertexSlew(vertex, RiseFall::fall(), dcalc_ap);
+            = sta_->graph()->slew(vertex, RiseFall::fall(), ap_index);
         input_slew_map_.emplace(port, slews);
       }
     }

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "OneBitScanCell.hh"
 #include "ScanCell.hh"

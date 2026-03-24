@@ -3,13 +3,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstdlib>
 
 #include "dbCommon.h"
 #include "dbCore.h"
 #include "odb/dbId.h"
 #include "odb/dbTypes.h"
-#include "odb/odb.h"
 
 namespace odb {
 
@@ -22,24 +22,14 @@ class _dbLib;
 
 struct dbRowFlags
 {
-  dbOrientType::Value _orient : 4;
-  dbRowDir::Value _dir : 2;
-  uint _spare_bits : 26;
+  dbOrientType::Value orient : 4;
+  dbRowDir::Value dir : 2;
+  uint32_t spare_bits : 26;
 };
 
 class _dbRow : public _dbObject
 {
  public:
-  // PERSISTANT-MEMBERS
-  dbRowFlags _flags;
-  char* _name;
-  dbId<_dbLib> _lib;
-  dbId<_dbSite> _site;
-  int _x;
-  int _y;
-  int _site_cnt;
-  int _spacing;
-
   _dbRow(_dbDatabase*, const _dbRow& r);
   _dbRow(_dbDatabase*);
   ~_dbRow();
@@ -48,67 +38,77 @@ class _dbRow : public _dbObject
   bool operator!=(const _dbRow& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbRow& rhs) const;
   void collectMemInfo(MemInfo& info);
+
+  // PERSISTANT-MEMBERS
+  dbRowFlags flags_;
+  char* name_;
+  dbId<_dbLib> lib_;
+  dbId<_dbSite> site_;
+  int x_;
+  int y_;
+  int site_cnt_;
+  int spacing_;
 };
 
 inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
-    : _flags(r._flags),
-      _name(nullptr),
-      _lib(r._lib),
-      _site(r._site),
-      _x(r._x),
-      _y(r._y),
-      _site_cnt(r._site_cnt),
-      _spacing(r._spacing)
+    : flags_(r.flags_),
+      name_(nullptr),
+      lib_(r.lib_),
+      site_(r.site_),
+      x_(r.x_),
+      y_(r.y_),
+      site_cnt_(r.site_cnt_),
+      spacing_(r.spacing_)
 {
-  if (r._name) {
-    _name = safe_strdup(r._name);
+  if (r.name_) {
+    name_ = safe_strdup(r.name_);
   }
 }
 
 inline _dbRow::_dbRow(_dbDatabase*)
 {
-  _flags._orient = dbOrientType::R0;
-  _flags._dir = dbRowDir::HORIZONTAL;
-  _flags._spare_bits = 0;
-  _name = nullptr;
-  _x = 0;
-  _y = 0;
-  _site_cnt = 0;
-  _spacing = 0;
+  flags_.orient = dbOrientType::R0;
+  flags_.dir = dbRowDir::HORIZONTAL;
+  flags_.spare_bits = 0;
+  name_ = nullptr;
+  x_ = 0;
+  y_ = 0;
+  site_cnt_ = 0;
+  spacing_ = 0;
 }
 
 inline _dbRow::~_dbRow()
 {
-  if (_name) {
-    free((void*) _name);
+  if (name_) {
+    free((void*) name_);
   }
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbRow& row)
 {
-  uint* bit_field = (uint*) &row._flags;
+  uint32_t* bit_field = (uint32_t*) &row.flags_;
   stream << *bit_field;
-  stream << row._name;
-  stream << row._lib;
-  stream << row._site;
-  stream << row._x;
-  stream << row._y;
-  stream << row._site_cnt;
-  stream << row._spacing;
+  stream << row.name_;
+  stream << row.lib_;
+  stream << row.site_;
+  stream << row.x_;
+  stream << row.y_;
+  stream << row.site_cnt_;
+  stream << row.spacing_;
   return stream;
 }
 
 inline dbIStream& operator>>(dbIStream& stream, _dbRow& row)
 {
-  uint* bit_field = (uint*) &row._flags;
+  uint32_t* bit_field = (uint32_t*) &row.flags_;
   stream >> *bit_field;
-  stream >> row._name;
-  stream >> row._lib;
-  stream >> row._site;
-  stream >> row._x;
-  stream >> row._y;
-  stream >> row._site_cnt;
-  stream >> row._spacing;
+  stream >> row.name_;
+  stream >> row.lib_;
+  stream >> row.site_;
+  stream >> row.x_;
+  stream >> row.y_;
+  stream >> row.site_cnt_;
+  stream >> row.spacing_;
   return stream;
 }
 

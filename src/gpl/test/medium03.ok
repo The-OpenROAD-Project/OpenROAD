@@ -4,10 +4,14 @@
 [INFO ODB-0131]     Created 98627 components and 480395 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 197254 connections.
 [INFO ODB-0133]     Created 98214 nets and 283141 connections.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: ( 10.070  9.800 ) ( 1189.970 1190.000 ) um
+[INFO GPL-0036] Movable instances area:     128253.230 um^2
+[INFO GPL-0037] Total instances area:       129713.304 um^2
+[INFO GPL-0035] Pin density area adjust:      8802.450 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:             98627
 [INFO GPL-0007] Movable instances:               93138
 [INFO GPL-0008] Fixed instances:                  5489
@@ -17,102 +21,108 @@
 [INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 1200.040 1199.800 ) um
 [INFO GPL-0013] Core BBox: ( 10.070  9.800 ) ( 1189.970 1190.000 ) um
 [INFO GPL-0016] Core area:                  1392517.980 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                1392517.980 um^2
 [INFO GPL-0017] Fixed instances area:         1460.074 um^2
-[INFO GPL-0018] Movable instances area:     128253.230 um^2
-[INFO GPL-0019] Utilization:                     9.220 %
-[INFO GPL-0020] Standard cells area:        128253.230 um^2
+[INFO GPL-0018] Movable instances area:     137055.680 um^2
+[INFO GPL-0019] Utilization:                     9.853 %
+[INFO GPL-0020] Standard cells area:        137055.680 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 93138	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00049662 HPWL: 668310670
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00035069 HPWL: 675483871
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00035308 HPWL: 672901876
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00042334 HPWL: 673962048
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00033383 HPWL: 673293188
-[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00038804 HPWL: 674344175
-[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00032906 HPWL: 673646677
-[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00030306 HPWL: 674604860
-[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00032999 HPWL: 673891380
-[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00034412 HPWL: 674796203
-[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00034056 HPWL: 674086274
-[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00039247 HPWL: 674941592
-[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00038014 HPWL: 674182249
-[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00033174 HPWL: 675049122
-[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00119681 HPWL: 674271949
-[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00030268 HPWL: 675139472
-[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00036920 HPWL: 674334738
-[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00033767 HPWL: 675136489
-[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00035014 HPWL: 674364231
-[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00032577 HPWL: 675187995
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00035069 HPWL: 682832266
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00035308 HPWL: 681005752
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00042334 HPWL: 681635512
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00033383 HPWL: 681287799
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00038804 HPWL: 682022549
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00032906 HPWL: 681633324
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00030306 HPWL: 682278762
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00032999 HPWL: 681870773
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00034412 HPWL: 682469709
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00034056 HPWL: 682066542
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00039247 HPWL: 682615829
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00038014 HPWL: 682160295
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00033174 HPWL: 682724168
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00119681 HPWL: 682253010
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00030268 HPWL: 682801145
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00036920 HPWL: 682311350
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00033767 HPWL: 682805145
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00035014 HPWL: 682342396
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00032577 HPWL: 682857635
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      1.377 um^2
-[INFO GPL-0025] Ideal bin area:                  1.967 um^2
-[INFO GPL-0026] Ideal bin count:                707876
+[INFO GPL-0024] Movable insts average area:      1.472 um^2
+[INFO GPL-0025] Ideal bin area:                  2.102 um^2
+[INFO GPL-0026] Ideal bin count:                662412
 [INFO GPL-0027] Total bin area:             1392517.980 um^2
 [INFO GPL-0028] Bin count (X, Y):         512 ,    512
 [INFO GPL-0029] Bin size (W * H):       2.304 *  2.305 um
 [INFO GPL-0030] Number of bins:                 262144
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------
-        0 |   0.9977 |  1.199804e+05 |   +0.00% |  1.84e-16 |      
-       10 |   0.9922 |  1.113061e+05 |   -7.23% |  2.98e-16 |      
-       20 |   0.9884 |  1.135535e+05 |   +2.02% |  4.85e-16 |      
-       30 |   0.9861 |  1.138499e+05 |   +0.26% |  7.89e-16 |      
-       40 |   0.9843 |  1.127437e+05 |   -0.97% |  1.29e-15 |      
-       50 |   0.9836 |  1.122776e+05 |   -0.41% |  2.09e-15 |      
-       60 |   0.9835 |  1.125285e+05 |   +0.22% |  3.41e-15 |      
-       70 |   0.9834 |  1.123826e+05 |   -0.13% |  5.56e-15 |      
-       80 |   0.9833 |  1.122387e+05 |   -0.13% |  9.05e-15 |      
-       90 |   0.9832 |  1.126371e+05 |   +0.35% |  1.47e-14 |      
-      100 |   0.9830 |  1.136618e+05 |   +0.91% |  2.40e-14 |      
-      110 |   0.9828 |  1.154965e+05 |   +1.61% |  3.91e-14 |      
-      120 |   0.9827 |  1.190752e+05 |   +3.10% |  6.36e-14 |      
-      130 |   0.9825 |  1.255924e+05 |   +5.47% |  1.03e-13 |      
-      140 |   0.9820 |  1.364330e+05 |   +8.63% |  1.68e-13 |      
-      150 |   0.9815 |  1.524978e+05 |  +11.77% |  2.73e-13 |      
-      160 |   0.9799 |  1.735031e+05 |  +13.77% |  4.43e-13 |      
-      170 |   0.9776 |  1.993181e+05 |  +14.88% |  7.17e-13 |      
-      180 |   0.9740 |  2.311443e+05 |  +15.97% |  1.16e-12 |      
-      190 |   0.9689 |  2.714943e+05 |  +17.46% |  1.87e-12 |      
-      200 |   0.9612 |  3.237743e+05 |  +19.26% |  3.02e-12 |      
-      210 |   0.9495 |  3.910216e+05 |  +20.77% |  4.85e-12 |      
-      220 |   0.9325 |  4.743641e+05 |  +21.31% |  7.75e-12 |      
-      230 |   0.9097 |  5.699028e+05 |  +20.14% |  1.24e-11 |      
-      240 |   0.8817 |  6.672006e+05 |  +17.07% |  1.97e-11 |      
-      250 |   0.8494 |  7.510170e+05 |  +12.56% |  3.15e-11 |      
-      260 |   0.8132 |  8.093380e+05 |   +7.77% |  5.07e-11 |      
-      270 |   0.7731 |  8.413925e+05 |   +3.96% |  8.20e-11 |      
-      280 |   0.7272 |  8.979653e+05 |   +6.72% |  1.32e-10 |      
-      290 |   0.6770 |  1.019267e+06 |  +13.51% |  2.10e-10 |      
-      300 |   0.6236 |  1.113611e+06 |   +9.26% |  3.34e-10 |      
-      310 |   0.5703 |  1.094276e+06 |   -1.74% |  5.43e-10 |      
-      320 |   0.5205 |  1.192579e+06 |   +8.98% |  8.69e-10 |      
-      330 |   0.4882 |  1.317480e+06 |  +10.47% |  1.37e-09 |      
-      340 |   0.4677 |  1.242005e+06 |   -5.73% |  2.22e-09 |      
-      350 |   0.4339 |  1.334919e+06 |   +7.48% |  3.51e-09 |      
-      360 |   0.4045 |  1.289949e+06 |   -3.37% |  5.65e-09 |      
-      370 |   0.3788 |  1.198715e+06 |   -7.07% |  9.16e-09 |      
-      380 |   0.3409 |  1.197446e+06 |   -0.11% |  1.45e-08 |      
-      390 |   0.3085 |  1.178150e+06 |   -1.61% |  2.13e-08 |      
-      400 |   0.2810 |  1.163571e+06 |   -1.24% |  3.12e-08 |      
-      410 |   0.2528 |  1.152437e+06 |   -0.96% |  4.60e-08 |      
-      420 |   0.2260 |  1.140881e+06 |   -1.00% |  6.77e-08 |      
-      430 |   0.1999 |  1.134138e+06 |   -0.59% |  9.98e-08 |      
-      440 |   0.1764 |  1.128232e+06 |   -0.52% |  1.47e-07 |      
-      450 |   0.1558 |  1.124563e+06 |   -0.33% |  2.17e-07 |      
-      460 |   0.1365 |  1.121429e+06 |   -0.28% |  3.19e-07 |      
-      470 |   0.1190 |  1.119172e+06 |   -0.20% |  4.70e-07 |      
-      480 |   0.1031 |  1.117662e+06 |   -0.13% |  6.92e-07 |      
-      482 |   0.0997 |  1.117495e+06 |          |  7.78e-07 |      
+        0 |   0.9979 |  1.201470e+05 |   +0.00% |  1.62e-16 |      
+       10 |   0.9928 |  1.114264e+05 |   -7.26% |  2.62e-16 |      
+       20 |   0.9893 |  1.137242e+05 |   +2.06% |  4.27e-16 |      
+       30 |   0.9873 |  1.140670e+05 |   +0.30% |  6.95e-16 |      
+       40 |   0.9857 |  1.129803e+05 |   -0.95% |  1.13e-15 |      
+       50 |   0.9850 |  1.125062e+05 |   -0.42% |  1.84e-15 |      
+       60 |   0.9848 |  1.127569e+05 |   +0.22% |  3.00e-15 |      
+       70 |   0.9848 |  1.126314e+05 |   -0.11% |  4.89e-15 |      
+       80 |   0.9847 |  1.124898e+05 |   -0.13% |  7.97e-15 |      
+       90 |   0.9846 |  1.128818e+05 |   +0.35% |  1.30e-14 |      
+      100 |   0.9844 |  1.139085e+05 |   +0.91% |  2.11e-14 |      
+      110 |   0.9842 |  1.157738e+05 |   +1.64% |  3.44e-14 |      
+      120 |   0.9841 |  1.194292e+05 |   +3.16% |  5.60e-14 |      
+      130 |   0.9839 |  1.261135e+05 |   +5.60% |  9.11e-14 |      
+      140 |   0.9835 |  1.372308e+05 |   +8.82% |  1.48e-13 |      
+      150 |   0.9830 |  1.535883e+05 |  +11.92% |  2.40e-13 |      
+      160 |   0.9816 |  1.748122e+05 |  +13.82% |  3.90e-13 |      
+      170 |   0.9795 |  2.008115e+05 |  +14.87% |  6.31e-13 |      
+      180 |   0.9762 |  2.329000e+05 |  +15.98% |  1.02e-12 |      
+      190 |   0.9714 |  2.736132e+05 |  +17.48% |  1.65e-12 |      
+      200 |   0.9643 |  3.264413e+05 |  +19.31% |  2.66e-12 |      
+      210 |   0.9533 |  3.945774e+05 |  +20.87% |  4.26e-12 |      
+      220 |   0.9372 |  4.795044e+05 |  +21.52% |  6.82e-12 |      
+      230 |   0.9156 |  5.773074e+05 |  +20.40% |  1.09e-11 |      
+      240 |   0.8886 |  6.772917e+05 |  +17.32% |  1.73e-11 |      
+      250 |   0.8569 |  7.646366e+05 |  +12.90% |  2.77e-11 |      
+      260 |   0.8213 |  8.264254e+05 |   +8.08% |  4.45e-11 |      
+      270 |   0.7819 |  8.631506e+05 |   +4.44% |  7.18e-11 |      
+      280 |   0.7372 |  9.258607e+05 |   +7.27% |  1.16e-10 |      
+      290 |   0.6873 |  1.051875e+06 |  +13.61% |  1.83e-10 |      
+      300 |   0.6344 |  1.143033e+06 |   +8.67% |  2.92e-10 |      
+      310 |   0.5808 |  1.125349e+06 |   -1.55% |  4.75e-10 |      
+      320 |   0.5323 |  1.238185e+06 |  +10.03% |  7.58e-10 |      
+      330 |   0.4953 |  1.354778e+06 |   +9.42% |  1.19e-09 |      
+      340 |   0.4738 |  1.307188e+06 |   -3.51% |  1.94e-09 |      
+      350 |   0.4427 |  1.374629e+06 |   +5.16% |  3.07e-09 |      
+      360 |   0.4073 |  1.346125e+06 |   -2.07% |  4.93e-09 |      
+      370 |   0.3884 |  1.255850e+06 |   -6.71% |  8.01e-09 |      
+      380 |   0.3488 |  1.255883e+06 |   +0.00% |  1.28e-08 |      
+      390 |   0.3177 |  1.238378e+06 |   -1.39% |  1.90e-08 |      
+      400 |   0.2896 |  1.212438e+06 |   -2.09% |  2.79e-08 |      
+      410 |   0.2605 |  1.202704e+06 |   -0.80% |  4.10e-08 |      
+      420 |   0.2340 |  1.188763e+06 |   -1.16% |  6.04e-08 |      
+      430 |   0.2081 |  1.182357e+06 |   -0.54% |  8.90e-08 |      
+      440 |   0.1858 |  1.174605e+06 |   -0.66% |  1.31e-07 |      
+      450 |   0.1644 |  1.170131e+06 |   -0.38% |  1.93e-07 |      
+      460 |   0.1437 |  1.166695e+06 |   -0.29% |  2.85e-07 |      
+      470 |   0.1255 |  1.164359e+06 |   -0.20% |  4.19e-07 |      
+      480 |   0.1093 |  1.162994e+06 |   -0.12% |  6.18e-07 |      
+      486 |   0.0994 |  1.162648e+06 |          |  8.10e-07 |      
 ---------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 482
-[INFO GPL-1002] Placed Cell Area            128253.2300
+[INFO GPL-1001] Global placement finished at iteration 486
+[INFO GPL-1002] Placed Cell Area            137055.6796
 [INFO GPL-1003] Available Free Area         1391057.9060
 [INFO GPL-1004] Minimum Feasible Density        0.1000 (cell_area / free_area)
 [INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.1024
-[INFO GPL-1008]     - For 80% usage of free space: 0.1152
-[INFO GPL-1009]     - For 50% usage of free space: 0.1844
-[INFO GPL-1014] Final placement area: 128253.23 (+0.00%)
+[INFO GPL-1007]     - For 90% usage of free space: 0.1095
+[INFO GPL-1008]     - For 80% usage of free space: 0.1232
+[INFO GPL-1009]     - For 50% usage of free space: 0.1971
+[INFO GPL-1014] Final placement area: 137055.68 (+0.00%)
 No differences found.
-final hpwl: 2762542178
+final hpwl: 2854525901

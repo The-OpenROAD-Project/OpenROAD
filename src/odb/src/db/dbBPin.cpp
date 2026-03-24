@@ -3,6 +3,7 @@
 
 #include "dbBPin.h"
 
+#include <cstdint>
 #include <vector>
 
 #include "dbAccessPoint.h"
@@ -13,7 +14,6 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"
@@ -25,56 +25,56 @@ template class dbTable<_dbBPin>;
 
 _dbBPin::_dbBPin(_dbDatabase*)
 {
-  _flags._status = dbPlacementStatus::NONE;
-  _flags._has_min_spacing = 0;
-  _flags._has_effective_width = 0;
-  _flags._spare_bits = 0;
-  _min_spacing = 0;
-  _effective_width = 0;
+  flags_.status = dbPlacementStatus::NONE;
+  flags_.has_min_spacing = 0;
+  flags_.has_effective_width = 0;
+  flags_.spare_bits = 0;
+  min_spacing_ = 0;
+  effective_width_ = 0;
 }
 
 _dbBPin::_dbBPin(_dbDatabase*, const _dbBPin& p)
-    : _flags(p._flags),
-      _bterm(p._bterm),
-      _boxes(p._boxes),
-      _next_bpin(p._next_bpin),
-      _min_spacing(p._min_spacing),
-      _effective_width(p._effective_width),
+    : flags_(p.flags_),
+      bterm_(p.bterm_),
+      boxes_(p.boxes_),
+      next_bpin_(p.next_bpin_),
+      min_spacing_(p.min_spacing_),
+      effective_width_(p.effective_width_),
       aps_(p.aps_)
 {
 }
 
 bool _dbBPin::operator==(const _dbBPin& rhs) const
 {
-  if (_flags._status != rhs._flags._status) {
+  if (flags_.status != rhs.flags_.status) {
     return false;
   }
 
-  if (_flags._has_min_spacing != rhs._flags._has_min_spacing) {
+  if (flags_.has_min_spacing != rhs.flags_.has_min_spacing) {
     return false;
   }
 
-  if (_flags._has_effective_width != rhs._flags._has_effective_width) {
+  if (flags_.has_effective_width != rhs.flags_.has_effective_width) {
     return false;
   }
 
-  if (_bterm != rhs._bterm) {
+  if (bterm_ != rhs.bterm_) {
     return false;
   }
 
-  if (_boxes != rhs._boxes) {
+  if (boxes_ != rhs.boxes_) {
     return false;
   }
 
-  if (_next_bpin != rhs._next_bpin) {
+  if (next_bpin_ != rhs.next_bpin_) {
     return false;
   }
 
-  if (_min_spacing != rhs._min_spacing) {
+  if (min_spacing_ != rhs.min_spacing_) {
     return false;
   }
 
-  if (_effective_width != rhs._effective_width) {
+  if (effective_width_ != rhs.effective_width_) {
     return false;
   }
 
@@ -87,13 +87,13 @@ bool _dbBPin::operator==(const _dbBPin& rhs) const
 
 dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin._flags;
+  uint32_t* bit_field = (uint32_t*) &bpin.flags_;
   stream << *bit_field;
-  stream << bpin._bterm;
-  stream << bpin._boxes;
-  stream << bpin._next_bpin;
-  stream << bpin._min_spacing;
-  stream << bpin._effective_width;
+  stream << bpin.bterm_;
+  stream << bpin.boxes_;
+  stream << bpin.next_bpin_;
+  stream << bpin.min_spacing_;
+  stream << bpin.effective_width_;
   stream << bpin.aps_;
 
   return stream;
@@ -101,13 +101,13 @@ dbOStream& operator<<(dbOStream& stream, const _dbBPin& bpin)
 
 dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
 {
-  uint* bit_field = (uint*) &bpin._flags;
+  uint32_t* bit_field = (uint32_t*) &bpin.flags_;
   stream >> *bit_field;
-  stream >> bpin._bterm;
-  stream >> bpin._boxes;
-  stream >> bpin._next_bpin;
-  stream >> bpin._min_spacing;
-  stream >> bpin._effective_width;
+  stream >> bpin.bterm_;
+  stream >> bpin.boxes_;
+  stream >> bpin.next_bpin_;
+  stream >> bpin.min_spacing_;
+  stream >> bpin.effective_width_;
   stream >> bpin.aps_;
 
   return stream;
@@ -121,85 +121,94 @@ dbIStream& operator>>(dbIStream& stream, _dbBPin& bpin)
 
 dbBTerm* dbBPin::getBTerm() const
 {
-  _dbBPin* pin = (_dbBPin*) this;
+  const _dbBPin* pin = (const _dbBPin*) this;
   _dbBlock* block = (_dbBlock*) pin->getOwner();
-  return (dbBTerm*) block->_bterm_tbl->getPtr(pin->_bterm);
+  return (dbBTerm*) block->bterm_tbl_->getPtr(pin->bterm_);
 }
 
 dbSet<dbBox> dbBPin::getBoxes()
 {
   _dbBPin* pin = (_dbBPin*) this;
-
   _dbBlock* block = (_dbBlock*) pin->getOwner();
-  return dbSet<dbBox>(pin, block->_box_itr);
+  return dbSet<dbBox>(pin, block->box_itr_);
 }
 
 Rect dbBPin::getBBox()
 {
   Rect bbox;
   bbox.mergeInit();
-  for (dbBox* box : getBoxes()) {
-    Rect rect = box->getBox();
+  for (const dbBox* box : getBoxes()) {
+    const Rect rect = box->getBox();
     bbox.merge(rect);
   }
   return bbox;
 }
 
-dbPlacementStatus dbBPin::getPlacementStatus()
+dbPlacementStatus dbBPin::getPlacementStatus() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
-  return dbPlacementStatus(bpin->_flags._status);
+  const _dbBPin* bpin = (const _dbBPin*) this;
+  return dbPlacementStatus(bpin->flags_.status);
 }
 
 void dbBPin::setPlacementStatus(dbPlacementStatus status)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._status = status.getValue();
+
+  if (bpin->flags_.status == status) {
+    return;
+  }
+
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
-  block->_flags._valid_bbox = 0;
+
+  for (auto callback : block->callbacks_) {
+    callback->inDbBPinPlacementStatusBefore(this, status);
+  }
+
+  bpin->flags_.status = status.getValue();
+  block->flags_.valid_bbox = 0;
 }
 
-bool dbBPin::hasEffectiveWidth()
+bool dbBPin::hasEffectiveWidth() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_flags._has_effective_width == 1U;
+  const _dbBPin* bpin = (const _dbBPin*) this;
+  return bpin->flags_.has_effective_width == 1U;
 }
 
 void dbBPin::setEffectiveWidth(int w)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._has_effective_width = 1U;
-  bpin->_effective_width = w;
+  bpin->flags_.has_effective_width = 1U;
+  bpin->effective_width_ = w;
 }
 
-int dbBPin::getEffectiveWidth()
+int dbBPin::getEffectiveWidth() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_effective_width;
+  const _dbBPin* bpin = (const _dbBPin*) this;
+  return bpin->effective_width_;
 }
 
-bool dbBPin::hasMinSpacing()
+bool dbBPin::hasMinSpacing() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_flags._has_min_spacing == 1U;
+  const _dbBPin* bpin = (const _dbBPin*) this;
+  return bpin->flags_.has_min_spacing == 1U;
 }
 
 void dbBPin::setMinSpacing(int w)
 {
   _dbBPin* bpin = (_dbBPin*) this;
-  bpin->_flags._has_min_spacing = 1U;
-  bpin->_min_spacing = w;
+  bpin->flags_.has_min_spacing = 1U;
+  bpin->min_spacing_ = w;
 }
 
-int dbBPin::getMinSpacing()
+int dbBPin::getMinSpacing() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
-  return bpin->_min_spacing;
+  const _dbBPin* bpin = (const _dbBPin*) this;
+  return bpin->min_spacing_;
 }
 
 std::vector<dbAccessPoint*> dbBPin::getAccessPoints() const
 {
-  _dbBPin* bpin = (_dbBPin*) this;
+  const _dbBPin* bpin = (const _dbBPin*) this;
   _dbBlock* block = (_dbBlock*) getBTerm()->getBlock();
   std::vector<dbAccessPoint*> aps;
   for (const auto& ap : bpin->aps_) {
@@ -212,11 +221,11 @@ dbBPin* dbBPin::create(dbBTerm* bterm_)
 {
   _dbBTerm* bterm = (_dbBTerm*) bterm_;
   _dbBlock* block = (_dbBlock*) bterm->getOwner();
-  _dbBPin* bpin = block->_bpin_tbl->create();
-  bpin->_bterm = bterm->getOID();
-  bpin->_next_bpin = bterm->_bpins;
-  bterm->_bpins = bpin->getOID();
-  for (auto callback : block->_callbacks) {
+  _dbBPin* bpin = block->bpin_tbl_->create();
+  bpin->bterm_ = bterm->getOID();
+  bpin->next_bpin_ = bterm->bpins_;
+  bterm->bpins_ = bpin->getOID();
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinCreate((dbBPin*) bpin);
   }
   return (dbBPin*) bpin;
@@ -227,34 +236,34 @@ void dbBPin::destroy(dbBPin* bpin_)
   _dbBPin* bpin = (_dbBPin*) bpin_;
   _dbBlock* block = (_dbBlock*) bpin->getOwner();
   _dbBTerm* bterm = (_dbBTerm*) bpin_->getBTerm();
-  for (auto callback : block->_callbacks) {
+  for (auto callback : block->callbacks_) {
     callback->inDbBPinDestroy(bpin_);
   }
   // unlink bpin from bterm
-  uint id = bpin->getOID();
+  uint32_t id = bpin->getOID();
   _dbBPin* prev = nullptr;
-  uint cur = bterm->_bpins;
+  uint32_t cur = bterm->bpins_;
   while (cur) {
-    _dbBPin* c = block->_bpin_tbl->getPtr(cur);
+    _dbBPin* c = block->bpin_tbl_->getPtr(cur);
     if (cur == id) {
       if (prev == nullptr) {
-        bterm->_bpins = bpin->_next_bpin;
+        bterm->bpins_ = bpin->next_bpin_;
       } else {
-        prev->_next_bpin = bpin->_next_bpin;
+        prev->next_bpin_ = bpin->next_bpin_;
       }
       break;
     }
     prev = c;
-    cur = c->_next_bpin;
+    cur = c->next_bpin_;
   }
 
-  dbId<_dbBox> nextBox = bpin->_boxes;
+  dbId<_dbBox> nextBox = bpin->boxes_;
   while (nextBox) {
-    _dbBox* b = block->_box_tbl->getPtr(nextBox);
-    nextBox = b->_next_box;
+    _dbBox* b = block->box_tbl_->getPtr(nextBox);
+    nextBox = b->next_box_;
     dbProperty::destroyProperties(b);
-    block->remove_rect(b->_shape._rect);
-    block->_box_tbl->destroy(b);
+    block->remove_rect(b->shape_.rect);
+    block->box_tbl_->destroy(b);
   }
 
   for (auto ap : bpin_->getAccessPoints()) {
@@ -262,7 +271,7 @@ void dbBPin::destroy(dbBPin* bpin_)
   }
 
   dbProperty::destroyProperties(bpin);
-  block->_bpin_tbl->destroy(bpin);
+  block->bpin_tbl_->destroy(bpin);
 }
 
 dbSet<dbBPin>::iterator dbBPin::destroy(dbSet<dbBPin>::iterator& itr)
@@ -273,10 +282,10 @@ dbSet<dbBPin>::iterator dbBPin::destroy(dbSet<dbBPin>::iterator& itr)
   return next;
 }
 
-dbBPin* dbBPin::getBPin(dbBlock* block_, uint dbid_)
+dbBPin* dbBPin::getBPin(dbBlock* block_, uint32_t dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbBPin*) block->_bpin_tbl->getPtr(dbid_);
+  return (dbBPin*) block->bpin_tbl_->getPtr(dbid_);
 }
 
 void _dbBPin::collectMemInfo(MemInfo& info)
@@ -284,29 +293,33 @@ void _dbBPin::collectMemInfo(MemInfo& info)
   info.cnt++;
   info.size += sizeof(*this);
 
-  info.children_["ap"].add(aps_);
+  info.children["ap"].add(aps_);
 }
 
 void _dbBPin::removeBox(_dbBox* box)
 {
   _dbBlock* block = (_dbBlock*) getOwner();
 
+  for (auto callback : block->callbacks_) {
+    callback->inDbBPinRemoveBox((dbBox*) box);
+  }
+
   dbId<_dbBox> boxid = box->getOID();
-  if (boxid == _boxes) {
+  if (boxid == boxes_) {
     // at head of list, need to move head
-    _boxes = box->_next_box;
+    boxes_ = box->next_box_;
   } else {
     // in the middle of the list, need to iterate and relink
-    dbId<_dbBox> id = _boxes;
+    dbId<_dbBox> id = boxes_;
     if (id == 0) {
       return;
     }
     while (id != 0) {
-      _dbBox* nbox = block->_box_tbl->getPtr(id);
-      dbId<_dbBox> nid = nbox->_next_box;
+      _dbBox* nbox = block->box_tbl_->getPtr(id);
+      dbId<_dbBox> nid = nbox->next_box_;
 
       if (nid == boxid) {
-        nbox->_next_box = box->_next_box;
+        nbox->next_box_ = box->next_box_;
         break;
       }
 
