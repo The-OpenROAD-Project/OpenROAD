@@ -184,6 +184,7 @@ void CUGR::patternRouteWithDetours(std::vector<int>& net_indices)
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
+      continue;
     }
     grid_graph_->removeTreeUsage(net->getRoutingTree());
     PatternRoute pattern_route(
@@ -220,6 +221,7 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
   for (const int net_index : net_indices) {
     GRNet* net = gr_nets_[net_index].get();
     if (net->getNumPins() < 2) {
+      continue;
     }
     MazeRoute maze_route(net, grid_graph_.get(), logger_);
     maze_route.constructSparsifiedGraph(wire_cost_view, grid);
