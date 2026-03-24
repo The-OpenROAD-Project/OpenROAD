@@ -365,14 +365,14 @@ void SimulatedAnnealing::perturbAssignment(int& prev_cost)
   boost::random::uniform_real_distribution<float> distribution;
   const float move = distribution(generator_);
 
-  // to perform pin swapping, at least two pins that are not inside a group are
-  // necessary
-  if (move < swap_pins_ && lone_pins_ > 1) {
+  // to perform pin swapping, at least two pins that are not in a group and
+  // not mirrored are necessary
+  if (move < swap_pins_ && swappable_pins_ > 1) {
     prev_cost = swapPins();
   }
 
   // move single pin when swapping a single constrained pin is not possible
-  if (move >= swap_pins_ || lone_pins_ <= 1 || prev_cost == move_fail_) {
+  if (move >= swap_pins_ || swappable_pins_ <= 1 || prev_cost == move_fail_) {
     prev_cost = movePinToFreeSlot();
     // move single pin when moving a group is not possible
     if (prev_cost == move_fail_) {
@@ -395,12 +395,15 @@ int SimulatedAnnealing::swapPins()
   if (constraint_idx != -1) {
     const std::vector<int>& pin_indices
         = constraints_[constraint_idx].pin_indices;
-    // if there is only one pin in the constraint, do not swap and fallback to
-    // move a pin to a free slot
-    const int pin_count = pin_indices.size();
-    const int mirrored_pins_count
-        = constraints_[constraint_idx].mirrored_pins_count;
-    if (pin_count == 1 || (pin_count - mirrored_pins_count) <= 1) {
+    // count eligible swap candidates: not mirrored, not in group, and not pin1
+    int eligible_count = 0;
+    for (int idx : pin_indices) {
+      const IOPin& p = netlist_->getIoPin(idx);
+      if (idx != pin1 && !p.isInGroup() && !p.isMirrored()) {
+        eligible_count++;
+      }
+    }
+    if (eligible_count < 1) {
       return move_fail_;
     }
     distribution = boost::random::uniform_int_distribution<int>(
@@ -414,6 +417,10 @@ int SimulatedAnnealing::swapPins()
       pin2 = pin_indices[pin_idx];
     }
   } else {
+    // need at least 2 unconstrained swappable pins (pin1 + one more)
+    if (unconstrained_swappable_pins_ < 2) {
+      return move_fail_;
+    }
     pin2 = distribution(generator_);
     while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
            || netlist_->getIoPin(pin2).isMirrored()
@@ -959,6 +966,9 @@ void SimulatedAnnealing::updateGroupSlots(const std::vector<int>& pin_indices,
 void SimulatedAnnealing::countLonePins()
 {
   int pins_in_groups = 0;
+  int swappable = 0;
+  int unconstrained_swappable = 0;
+
   for (const auto& group : pin_groups_) {
     for (const int pin_idx : group.pin_indices) {
       pins_in_groups++;
@@ -968,7 +978,19 @@ void SimulatedAnnealing::countLonePins()
     }
   }
 
+  for (int i = 0; i < num_pins_; i++) {
+    const IOPin& pin = netlist_->getIoPin(i);
+    if (!pin.isInGroup() && !pin.isMirrored()) {
+      swappable++;
+      if (pin.getConstraintIdx() == -1) {
+        unconstrained_swappable++;
+      }
+    }
+  }
+
   lone_pins_ = num_pins_ - pins_in_groups;
+  swappable_pins_ = swappable;
+  unconstrained_swappable_pins_ = unconstrained_swappable;
 }
 
 }  // namespace ppl

@@ -106,6 +106,8 @@ class SimulatedAnnealing
   int num_pins_;
   int num_groups_;
   int lone_pins_;
+  int swappable_pins_ = 0;
+  int unconstrained_swappable_pins_ = 0;
 
   std::vector<int> prev_slots_;
   std::vector<int> new_slots_;
