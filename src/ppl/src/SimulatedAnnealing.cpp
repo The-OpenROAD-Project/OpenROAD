@@ -302,15 +302,32 @@ int SimulatedAnnealing::randomAssignmentForGroups(
                                                                 last_slot);
 
       int slot = distribution(generator_);
-      while (!isFreeForGroup(slot, group.pin_indices.size(), last_slot)) {
+      int attempts = 0;
+      const int max_attempts = num_slots_ * 10;
+      while (!isFreeForGroup(slot, group.pin_indices.size(), last_slot)
+             && attempts < max_attempts) {
         slot = distribution(generator_);
+        attempts++;
+      }
+      if (attempts >= max_attempts) {
+        logger_->error(
+            utl::PPL,
+            115,
+            "No available contiguous slots found for constrained pin group.");
       }
       group_slot = slot;
     } else {
       int slot = slot_indices[slot_idx];
-      while (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)) {
+      while (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)
+             && slot_idx < static_cast<int>(slot_indices.size()) - 1) {
         slot_idx++;
         slot = slot_indices[slot_idx];
+      }
+      if (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)) {
+        logger_->error(
+            utl::PPL,
+            116,
+            "No available contiguous slots found for unconstrained pin group.");
       }
       group_slot = slot_indices[slot_idx];
     }
