@@ -1,0 +1,133 @@
+VERSION 5.8 ;
+
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+UNITS
+  DATABASE MICRONS 1000 ;
+END UNITS
+
+MANUFACTURINGGRID 0.005 ;
+
+# Minimal 3-layer tech to reproduce GRT issue #4211:
+# via1 metal2 enclosure (190nm wide in BOTH orientations) triggers
+# width-dependent spacing (140nm) that a 70nm wire does not.
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.140 ;
+  MINWIDTH 0.070 ;
+  WIDTH 0.070 ;
+  SPACING 0.065 ;
+  OFFSET 0.070 ;
+  AREA 0.010 ;
+  THICKNESS 0.13 ;
+  RESISTANCE RPERSQ 0.38 ;
+  CAPACITANCE CPERSQDIST 7.716e-05 ;
+  EDGECAPACITANCE 2.736e-05 ;
+END metal1
+
+LAYER via1
+  TYPE CUT ;
+  WIDTH 0.070 ;
+  SPACING 0.080 ;
+END via1
+
+LAYER metal2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.190 ;
+  MINWIDTH 0.070 ;
+  WIDTH 0.070 ;
+  SPACINGTABLE
+    PARALLELRUNLENGTH 0
+      WIDTH 0.000  0.070
+      WIDTH 0.150  0.140 ;
+  OFFSET 0.095 ;
+  AREA 0.010 ;
+  THICKNESS 0.14 ;
+  RESISTANCE RPERSQ 0.25 ;
+  CAPACITANCE CPERSQDIST 4.089e-05 ;
+  EDGECAPACITANCE 2.515e-05 ;
+END metal2
+
+LAYER via2
+  TYPE CUT ;
+  WIDTH 0.070 ;
+  SPACING 0.090 ;
+END via2
+
+LAYER metal3
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.140 ;
+  MINWIDTH 0.070 ;
+  WIDTH 0.070 ;
+  SPACING 0.065 ;
+  OFFSET 0.070 ;
+  AREA 0.010 ;
+  THICKNESS 0.14 ;
+  RESISTANCE RPERSQ 0.25 ;
+  CAPACITANCE CPERSQDIST 2.774e-05 ;
+  EDGECAPACITANCE 2.515e-05 ;
+END metal3
+
+# Via enclosures are SYMMETRIC (0.060 in both directions) so the
+# metal2 shape is 190nm x 190nm regardless of via orientation.
+# No rotation can escape the wider spacing rule.
+VIA via1_default DEFAULT
+  LAYER via1 ;
+    RECT -0.035 -0.035 0.035 0.035 ;
+  LAYER metal1 ;
+    RECT -0.070 -0.070 0.070 0.070 ;
+  LAYER metal2 ;
+    RECT -0.095 -0.095 0.095 0.095 ;
+END via1_default
+
+VIA via2_default DEFAULT
+  LAYER via2 ;
+    RECT -0.035 -0.035 0.035 0.035 ;
+  LAYER metal2 ;
+    RECT -0.095 -0.095 0.095 0.095 ;
+  LAYER metal3 ;
+    RECT -0.070 -0.070 0.070 0.070 ;
+END via2_default
+
+VIARULE via1_rule GENERATE
+  LAYER metal1 ;
+    ENCLOSURE 0.035 0.035 ;
+  LAYER metal2 ;
+    ENCLOSURE 0.060 0.060 ;
+  LAYER via1 ;
+    RECT -0.035 -0.035 0.035 0.035 ;
+    SPACING 0.150 BY 0.150 ;
+END via1_rule
+
+VIARULE via2_rule GENERATE
+  LAYER metal2 ;
+    ENCLOSURE 0.060 0.060 ;
+  LAYER metal3 ;
+    ENCLOSURE 0.035 0.035 ;
+  LAYER via2 ;
+    RECT -0.035 -0.035 0.035 0.035 ;
+    SPACING 0.160 BY 0.160 ;
+END via2_rule
+
+# Macro with metal2 obstruction forming left wall of corridor.
+# OBS right edge at x=0.900.
+#
+# Track at x=1.045 (metal2 pitch=0.190, offset=0.095):
+#   wire (70nm wide):  gap to OBS = 1010-900 = 110nm >= 70nm OK
+#   via1 (190nm wide): gap to OBS = 950-900 = 50nm  < 140nm VIOLATION
+MACRO test_macro
+  CLASS BLOCK ;
+  ORIGIN 0 0 ;
+  SIZE 0.900 BY 6.000 ;
+  OBS
+    LAYER metal2 ;
+      RECT 0.000 0.000 0.900 6.000 ;
+  END
+END test_macro
+
+END LIBRARY

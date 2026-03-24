@@ -1,0 +1,41 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN via_spacing_test ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 8000 16000 ) ;
+
+TRACKS X 70 DO 57 STEP 140 LAYER metal1 ;
+TRACKS Y 70 DO 114 STEP 140 LAYER metal1 ;
+TRACKS X 95 DO 42 STEP 190 LAYER metal2 ;
+TRACKS Y 95 DO 84 STEP 190 LAYER metal2 ;
+TRACKS X 70 DO 57 STEP 140 LAYER metal3 ;
+TRACKS Y 70 DO 114 STEP 140 LAYER metal3 ;
+GCELLGRID X 0 DO 9 STEP 1000 ;
+GCELLGRID Y 0 DO 17 STEP 1000 ;
+
+COMPONENTS 1 ;
+    - m1 test_macro + FIXED ( 0 2000 ) N ;
+END COMPONENTS
+
+BLOCKAGES 1 ;
+    - LAYER metal2
+        RECT ( 1140 2000 ) ( 8000 8000 ) ;
+END BLOCKAGES
+
+PINS 2 ;
+    - sig_a + NET sig + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( -35 -35 ) ( 35 35 )
+        + PLACED ( 1045 4970 ) N ;
+    - sig_b + NET sig + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( -35 -35 ) ( 35 35 )
+        + PLACED ( 1045 910 ) N ;
+END PINS
+
+NETS 1 ;
+    - sig ( PIN sig_a ) ( PIN sig_b ) + USE SIGNAL ;
+END NETS
+
+END DESIGN

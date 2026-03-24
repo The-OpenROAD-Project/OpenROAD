@@ -100,6 +100,7 @@ TESTS = [
     "tracks3",
     "unplaced_inst",
     "upper_layer_net",
+    "via_spacing_near_macro",
     "write_segments1",
     "write_segments2",
 ]
