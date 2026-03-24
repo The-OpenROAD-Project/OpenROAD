@@ -9,7 +9,7 @@ sta::define_cmd_args "pdngen" {[-skip_trim] \
                                [-check_only] \
                                [-failed_via_report file] \
                                [-verbose]
-} ;#checker off
+}
 
 proc pdngen { args } {
   sta::parse_key_args "pdngen" args \
@@ -172,7 +172,7 @@ sta::define_cmd_args "define_pdn_grid" {[-name <name>] \
                                         [-power_control_network (STAR|DAISY)] \
                                         [-connect_to_pads] \
                                         [-connect_to_pad_layers layers]
-} ;#checker off
+}
 
 proc define_pdn_grid { args } {
   set is_macro 0
@@ -398,7 +398,7 @@ sta::define_cmd_args "add_pdn_ring" {[-grid grid_name] \
                                      [-extend_to_boundary] \
                                      [-connect_to_pads]\
                                      [-allow_out_of_die]
-                                     } ;#checker off
+                                     }
 
 proc add_pdn_ring { args } {
   sta::parse_key_args "add_pdn_ring" args \
@@ -858,7 +858,7 @@ proc define_pdn_grid { args } {
   sta::parse_key_args "define_pdn_grid" args \
     keys {-name -voltage_domains -pins -starts_with -obstructions -power_switch_cell \
       -power_control -power_control_network -connect_to_pad_layers} \
-    flags {-connect_to_pads} ;# checker off
+    flags {-connect_to_pads}
 
   sta::check_argc_eq0 "define_pdn_grid" $args
   pdn::check_design_state "define_pdn_grid"

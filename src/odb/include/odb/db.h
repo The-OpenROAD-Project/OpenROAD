@@ -271,10 +271,10 @@ class dbBox : public dbObject
   uint32_t getDY() const;
 
   ///
-  /// Set temporary flag visited
+  /// Set the halo as soft
   ///
-  void setVisited(bool value);
-  bool isVisited() const;
+  void setSoft(bool value);
+  bool isSoft() const;
 
   ///
   /// Get the owner of this box
@@ -3119,7 +3119,7 @@ class dbInst : public dbObject
   ///
   /// Sets the halo to this instance.
   ///
-  void setHalo(int left, int bottom, int right, int top);
+  void setHalo(int left, int bottom, int right, int top, bool is_soft);
 
   ///
   /// Get the weight assigned to this instance.
@@ -4563,21 +4563,22 @@ class dbRSeg : public dbObject
   bool updatedCap();
 
   ///
-  /// Get the capacitance of this RC segment for this process corner. Returns
-  /// value in FF.
+  /// Get the ground capacitance of this RC segment for this process corner.
+  /// Returns value in FF.
   ///
-  double getCapacitance(int corner = 0);
+  double getGroundCapacitance(int corner = 0);
 
   ///
-  /// Get the capacitance of this RC segment for this process corner,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get the total capacitance (ground + coupling) of this RC segment for this
+  /// process corner. Returns value in FF.
   ///
-  double getSourceCapacitance(int corner = 0);
+  double getTotalCapacitance(int corner = 0);
 
   ///
-  /// Get the first capnode capacitance of this RC segment
-  /// for this process corner, if foreign,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get ground capacitance + coupling capacitance scaled by Miller effect
+  /// multiplier of this RC segment for this process corner. This function
+  /// should only be needed when a custom Miller effect multiplier is required.
+  /// Returns value in FF.
   ///
   double getCapacitance(int corner, double miller_mult);
 
@@ -7564,7 +7565,7 @@ class dbDatabase : public dbObject
 
   void constructUnfoldedModel();
 
-  const UnfoldedModel* getUnfoldedModel() const;
+  UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
