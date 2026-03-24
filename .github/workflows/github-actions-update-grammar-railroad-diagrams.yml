@@ -74,7 +74,7 @@ jobs:
       - name: Detect diagram changes
         id: diagram-changes
         run: |
-          if git diff --quiet -- src/odb/doc/images/; then
+          if [ -z "$(git status --porcelain src/odb/doc/images/)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
