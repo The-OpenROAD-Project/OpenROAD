@@ -389,10 +389,10 @@ proc report_design_area { args } {
   utl::report "Design area ${area} um^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]} ;# checker off
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
 
 sta::proc_redirect report_floating_nets {
-  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
+  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
 
   set verbose [info exists flags(-verbose)]
   set floating_nets [rsz::find_floating_nets]
@@ -423,12 +423,12 @@ sta::proc_redirect report_floating_nets {
 sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] \
                                                [-verbose] \
                                                [> filename] \
-                                               [>> filename]} ;# checker off
+                                               [>> filename]}
 
 sta::proc_redirect report_overdriven_nets {
   sta::parse_key_args "report_overdriven_nets" args \
     keys {} \
-    flags {-verbose -include_parallel_driven};# checker off
+    flags {-verbose -include_parallel_driven}
 
   set verbose [info exists flags(-verbose)]
   set overdriven_nets [rsz::find_overdriven_nets [info exists flags(-include_parallel_driven)]]
@@ -462,7 +462,7 @@ sta::proc_redirect report_long_wires {
   rsz::report_long_wires_cmd $count $digits
 }
 
-sta::define_cmd_args "eliminate_dead_logic" {}
+sta::define_cmd_args "eliminate_dead_logic" {} ;# checker off
 proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
