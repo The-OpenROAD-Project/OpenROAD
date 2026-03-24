@@ -295,9 +295,9 @@ export class HierarchyBrowser {
             // Style non-module rows
             if (kind === NODE_KIND.LEAF_GROUP || kind === NODE_KIND.TYPE_GROUP) {
                 tr.style.fontStyle = 'italic';
-                tr.style.color = '#999';
+                tr.style.color = 'var(--fg-disabled)';
             } else if (kind === NODE_KIND.INSTANCE) {
-                tr.style.color = '#aaa';
+                tr.style.color = 'var(--fg-secondary)';
             }
 
             // Column 0: Instance (with tree indent, color swatch, and arrow)

@@ -1,6 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -62,18 +64,12 @@ COMPULSORY_TESTS = [
     "skywater130_overlapping_filler",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "pad_man_tcl_check",
-    "pad_readme_msgs_check",
-]
-
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "rdl_route_single_target",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -217,9 +213,25 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "pad_man_tcl_check",
+    srcs = ["pad_man_tcl_check.py"],
+    data = ["//src/pad:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "pad_readme_msgs_check",
+    data = [
+        "//src/pad:doc_files",
+        "//src/pad:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

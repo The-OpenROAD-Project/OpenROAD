@@ -609,8 +609,7 @@ class FlexGRCMap
 
   bool isValid(unsigned x, unsigned y, unsigned z) const
   {
-    return x >= 0 && y >= 0 && z >= 0 && x < xgp_->getCount()
-           && y < ygp_->getCount()
+    return x < xgp_->getCount() && y < ygp_->getCount()
            && z < design_->getTech()->getLayers().size();
   }
 

@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -85,4 +86,17 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/finale.tcl",
+    ],
+    visibility = ["//src/fin/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/fin/test:__pkg__"],
 )

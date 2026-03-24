@@ -3,6 +3,8 @@
 
 // Canvas-based slack histogram widget.
 
+import { getThemeColors } from './theme.js';
+
 // Layout margins (pixels)
 export const kLeftMargin = 60;
 export const kRightMargin = 20;
@@ -151,7 +153,7 @@ export class ChartsWidget {
 
         const pgLabel = document.createElement('span');
         pgLabel.textContent = 'Path Group:';
-        pgLabel.style.color = '#888';
+        pgLabel.style.color = 'var(--fg-muted)';
         pgLabel.style.fontSize = '12px';
         this._pathGroupSelect = document.createElement('select');
         this._pathGroupSelect.className = 'charts-select';
@@ -159,7 +161,7 @@ export class ChartsWidget {
 
         const clkLabel = document.createElement('span');
         clkLabel.textContent = 'Clock:';
-        clkLabel.style.color = '#888';
+        clkLabel.style.color = 'var(--fg-muted)';
         clkLabel.style.fontSize = '12px';
         this._clockSelect = document.createElement('select');
         this._clockSelect.className = 'charts-select';
@@ -312,20 +314,23 @@ export class ChartsWidget {
         this._chartArea = result.chartArea;
     }
 
+    render() { this._render(); }
+
     _render() {
         const rect = this._canvas.getBoundingClientRect();
         const w = rect.width;
         const h = rect.height;
         const ctx = this._ctx;
+        const tc = getThemeColors();
 
         ctx.clearRect(0, 0, w, h);
 
         // Background
-        ctx.fillStyle = '#1a1a1a';
+        ctx.fillStyle = tc.canvasBg;
         ctx.fillRect(0, 0, w, h);
 
         if (!this._bars || this._bars.length === 0) {
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = tc.canvasText;
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -333,16 +338,16 @@ export class ChartsWidget {
             return;
         }
 
-        this._drawAxes(ctx);
+        this._drawAxes(ctx, tc);
         this._drawBars(ctx);
-        this._drawTitle(ctx, w);
+        this._drawTitle(ctx, w, tc);
     }
 
-    _drawAxes(ctx) {
+    _drawAxes(ctx, tc) {
         const ca = this._chartArea;
         if (!ca) return;
 
-        ctx.strokeStyle = '#555';
+        ctx.strokeStyle = tc.canvasAxis;
         ctx.lineWidth = 1;
 
         // Y axis line
@@ -358,7 +363,7 @@ export class ChartsWidget {
         ctx.stroke();
 
         // Y axis ticks and labels
-        ctx.fillStyle = '#aaa';
+        ctx.fillStyle = tc.canvasLabel;
         ctx.font = '11px monospace';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
@@ -367,12 +372,12 @@ export class ChartsWidget {
             const y = ca.bottom - (tick / this._yMax) * chartHeight;
             ctx.fillText(String(tick), ca.left - 6, y);
             if (tick > 0) {
-                ctx.strokeStyle = '#333';
+                ctx.strokeStyle = tc.canvasGrid;
                 ctx.beginPath();
                 ctx.moveTo(ca.left, y);
                 ctx.lineTo(ca.right, y);
                 ctx.stroke();
-                ctx.strokeStyle = '#555';
+                ctx.strokeStyle = tc.canvasAxis;
             }
         }
 
@@ -382,7 +387,7 @@ export class ChartsWidget {
         ctx.rotate(-Math.PI / 2);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = tc.canvasTitle;
         ctx.font = '11px monospace';
         ctx.fillText('Endpoints', 0, 0);
         ctx.restore();
@@ -390,7 +395,7 @@ export class ChartsWidget {
         // X axis labels — show bin boundaries
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = '#aaa';
+        ctx.fillStyle = tc.canvasLabel;
         ctx.font = '10px monospace';
 
         const bins = this._histogramData.bins;
@@ -410,7 +415,7 @@ export class ChartsWidget {
         }
 
         // X axis title
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = tc.canvasTitle;
         ctx.font = '11px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
@@ -438,9 +443,9 @@ export class ChartsWidget {
         }
     }
 
-    _drawTitle(ctx, canvasWidth) {
+    _drawTitle(ctx, canvasWidth, tc) {
         const mode = this._currentTab === 'setup' ? 'Setup' : 'Hold';
-        ctx.fillStyle = '#ccc';
+        ctx.fillStyle = tc.fgPrimary;
         ctx.font = '13px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';

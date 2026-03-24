@@ -74,12 +74,12 @@ sta::define_cmd_args "save_image" {[-area {x0 y0 x1 y1}] \
                                    [-resolution microns_per_pixel] \
                                    [-display_option option] \
                                    path
-} ;# checker off
+}
 
 proc save_image { args } {
   ord::parse_list_args "save_image" args list {-display_option}
   sta::parse_key_args "save_image" args \
-    keys {-area -width -resolution} flags {} ;# checker off
+    keys {-area -width -resolution} flags {}
 
   set options [gui::DisplayControlMap]
   foreach opt $list(-display_option) {
@@ -464,7 +464,7 @@ proc add_label { args } {
 namespace eval gui {
 proc show_worst_path { args } {
   sta::parse_key_args "show_worst_path" args \
-    keys {} flags {-setup -hold}
+    keys {} flags {-setup -hold} ;# checker off
 
   sta::check_argc_eq0 "show_worst_path" $args
 
@@ -476,11 +476,11 @@ proc show_worst_path { args } {
   gui::show_worst_path_internal $setup
 }
 
-sta::define_cmd_args "clear_timing_path" {}
+sta::define_cmd_args "clear_timing_path" {} ;# checker off
 
 proc clear_timing_path { args } {
   sta::parse_key_args "clear_timing_path" args \
-    keys {} flags {}
+    keys {} flags {} ;# checker off
 
   sta::check_argc_eq0 "clear_timing_path" $args
 

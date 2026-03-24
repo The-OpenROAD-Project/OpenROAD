@@ -7,6 +7,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -215,4 +216,24 @@ python_wrap_cc(
         # the warnings one by one.
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/swig/tcl/odb.tcl",
+    ],
+    visibility = ["//src/odb/test:__pkg__"],
+)
+
+messages_txt(
+    src_patterns = [
+        "src/**/*.cc",
+        "src/**/*.cpp",
+        "src/**/*.h",
+        "src/**/*.hh",
+        "src/**/*.tcl",
+    ],
+    visibility = ["//src/odb/test:__pkg__"],
 )

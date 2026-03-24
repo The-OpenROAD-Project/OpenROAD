@@ -467,7 +467,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
     for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
       const sta::PinSet* clk_pins = sta_->pins(clk, sta_->cmdMode());
       if (clk_pins) {
-        // Make a copy in case the set of pins is updated by repairNet call.
+        // Make a copy in case the set of pins is updated
         const sta::PinSet clk_pins_copy = *clk_pins;
         for (const sta::Pin* clk_pin : clk_pins_copy) {
           // clang-format off

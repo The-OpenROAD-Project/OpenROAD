@@ -102,7 +102,7 @@ proc set_ndr_layer_rule { tech ndr layerName input isSpacing } {
   }
 }
 
-sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing} ;#checker off
+sta::define_cmd_args "set_ndr_rules" {tech ndr values isSpacing} ;# checker off
 
 proc set_ndr_rules { tech ndr values isSpacing } {
   if { [llength $values] == 1 } {
@@ -250,9 +250,10 @@ proc create_voltage_domain { args } {
   $group setType VOLTAGE_DOMAIN
 }
 
-sta::define_cmd_args "delete_physical_cluster" {cluster_name} ;# checker off
+sta::define_cmd_args "delete_physical_cluster" {cluster_name}
 
 proc delete_physical_cluster { args } {
+  sta::parse_key_args "delete_physical_cluster" args keys {} flags {}
   sta::check_argc_eq1 "delete_physical_cluster" $args
   set cluster_name $args
   set db [ord::get_db]
@@ -500,8 +501,9 @@ proc report_voltage_domains { args } {
   }
 }
 
-sta::define_cmd_args "report_group" {group} ;# checker off
+sta::define_cmd_args "report_group" {group}
 proc report_group { group } {
+  sta::parse_key_args "report_group" args keys {} flags {}
   utl::report "[expr \"[$group getType]\" == \"PHYSICAL_CLUSTER\" ? \
   \"Physical Cluster\": \"Voltage Domain\"]: [$group getName]"
   if { [$group hasBox] } {
@@ -648,7 +650,7 @@ proc set_routing_layers { args } {
 sta::define_cmd_args "set_min_layer" { minLayer } ;# checker off
 
 proc set_min_layer { args } {
-  sta::parse_key_args "set_min_layer" args keys {} flags {}
+  sta::parse_key_args "set_min_layer" args keys {} flags {} ;# checker off
   sta::check_argc_eq1 "set_min_layer" $args
   set minLayer $args
   set db [ord::get_db]
@@ -663,7 +665,7 @@ proc set_min_layer { args } {
 sta::define_cmd_args "set_max_layer" { maxLayer } ;# checker off
 
 proc set_max_layer { args } {
-  sta::parse_key_args "set_max_layer" args keys {} flags {}
+  sta::parse_key_args "set_max_layer" args keys {} flags {} ;# checker off
   sta::check_argc_eq1 "set_max_layer" $args
   set maxLayer $args
   set db [ord::get_db]
@@ -695,12 +697,12 @@ sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                               [-region region] \
                                               [-mirrored_pins pins] \
                                               [-group] \
-                                              [-order]}
+                                              [-order]} ;# checker off
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
     keys {-direction -pin_names -region -mirrored_pins} \
-    flags {-group -order}
+    flags {-group -order} ;# checker off
 
   sta::check_argc_eq0 "set_io_pin_constraint" $args
 
@@ -813,11 +815,11 @@ proc set_io_pin_constraint { args } {
   }
 }
 
-sta::define_cmd_args "exclude_io_pin_region" { -region region }
+sta::define_cmd_args "exclude_io_pin_region" { -region region } ;# checker off
 
 proc exclude_io_pin_region { args } {
   ord::parse_list_args "exclude_io_pin_region" args list {-region}
-  sta::parse_key_args "exclude_io_pin_region" args keys {-region} flags {}
+  sta::parse_key_args "exclude_io_pin_region" args keys {-region} flags {} ;# checker off
 
   sta::check_argc_eq0 "exclude_io_pin_region" $args
 
@@ -1053,10 +1055,10 @@ proc create_obstruction { args } {
   return $obstruction
 }
 
-sta::define_cmd_args "clear_io_pin_constraints" {}
+sta::define_cmd_args "clear_io_pin_constraints" {} ;# checker off
 
 proc clear_io_pin_constraints { args } {
-  sta::parse_key_args "clear_io_pin_constraints" args keys {} flags {}
+  sta::parse_key_args "clear_io_pin_constraints" args keys {} flags {} ;# checker off
   ppl::clear_constraints
 }
 
@@ -1065,11 +1067,11 @@ sta::define_cmd_args "define_pin_shape_pattern" {[-layer layer] \
                                                  [-y_step y_step] \
                                                  [-region region] \
                                                  [-size size] \
-                                                 [-pin_keepout dist]}
+                                                 [-pin_keepout dist]} ;# checker off
 
 proc define_pin_shape_pattern { args } {
   sta::parse_key_args "define_pin_shape_pattern" args \
-    keys {-layer -x_step -y_step -region -size -pin_keepout} flags {}
+    keys {-layer -x_step -y_step -region -size -pin_keepout} flags {} ;# checker off
 
   sta::check_argc_eq0 "define_pin_shape_pattern" $args
 

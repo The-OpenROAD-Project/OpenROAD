@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <any>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 
 #include "gtest/gtest.h"
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "json_builder.h"
 #include "odb/db.h"

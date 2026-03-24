@@ -99,20 +99,32 @@ def extract_tables(text):
 
 
 def extract_help(text):
-    # Logic now captures everything between { to earliest "proc"
-    help_pattern = re.compile(
-        r"""
-                sta::define_cmd_args\s+
-                "(.*?)"\s*
-                (.*?)proc\s
-                """,
-        re.VERBOSE | re.DOTALL,
-    )
-
-    matches = re.findall(help_pattern, text)
-
-    # remove nodocs (usually dev commands)
-    matches = [tup for tup in matches if ";#checkeroff" not in tup[1].replace(" ", "")]
+    # Match each sta::define_cmd_args block independently by tracking
+    # brace depth, instead of spanning to the next "proc" keyword which
+    # breaks when sta::proc_redirect is used between commands.
+    matches = []
+    for m in re.finditer(r'sta::define_cmd_args\s+"([^"]+)"\s*', text):
+        name = m.group(1)
+        after = text[m.end() :]
+        # Walk through the args block tracking brace depth.
+        depth = 0
+        end = 0
+        for j, ch in enumerate(after):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = j
+                    break
+        rest_of_line = after[end + 1 :].split("\n")[0]
+        args_block = after[: end + 1] + rest_of_line
+        if ";#checkeroff" in args_block.replace(" ", ""):
+            continue
+        # Only count commands that have a matching proc or proc_redirect.
+        proc_pat = rf"(?:proc|sta::proc_redirect)\s+{re.escape(name)}\s"
+        if re.search(proc_pat, text):
+            matches.append((name, args_block))
     return matches
 
 

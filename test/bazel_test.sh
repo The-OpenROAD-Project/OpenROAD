@@ -4,7 +4,7 @@ set -ex
 # not a test name.
 export TEST_EXT=${TEST_FILE##*.}
 export TEST_NAME=$(basename "$TEST_FILE" .$TEST_EXT)
-export OPENROAD_EXE=$(realpath $OPENROAD_EXE)
+[ -n "$OPENROAD_EXE" ] && export OPENROAD_EXE=$(realpath $OPENROAD_EXE)
 export RESULTS_DIR="${TEST_UNDECLARED_OUTPUTS_DIR}/results"
 export REGRESSION_TEST=$(realpath $REGRESSION_TEST)
 
