@@ -5976,7 +5976,7 @@ void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
   fastroute_->getNetId(net, net_id, exists);
   if (!exists) {
     logger_->warn(
-        GRT, 302, "Net {} not found in global router.", net->getName());
+        GRT, 304, "Net {} not found in global router.", net->getName());
     return;
   }
 
@@ -5999,7 +5999,7 @@ void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
 
   logger_->info(
       GRT,
-      301,
+      305,
       "Net {} detour: STT={} um RST_before={} um RST_after={} um Final={} um "
       "Detour={} um ({:.1f}%)",
       net->getName(),
