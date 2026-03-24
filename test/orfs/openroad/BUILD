@@ -156,6 +156,33 @@ cc_binary(
 )
 
 cc_binary(
+    name = "init_floorplan",
+    srcs = ["init_floorplan_main.cc"],
+    deps = [
+        "//src/dbSta",
+        "//src/ifp",
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "analyze_power_grid",
+    srcs = ["analyze_power_grid_main.cc"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/psm",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
     name = "density_fill",
     srcs = ["density_fill_main.cc"],
     deps = [
