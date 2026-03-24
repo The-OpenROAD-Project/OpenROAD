@@ -88,6 +88,36 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "check_antennas",
+    srcs = ["check_antennas_main.cc"],
+    deps = [
+        "//src/ant",
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "extract_parasitics",
+    srcs = ["extract_parasitics_main.cc"],
+    deps = [
+        "//src/odb",
+        "//src/rcx",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "tapcell",
+    srcs = ["tapcell_main.cc"],
+    deps = [
+        "//src/odb",
+        "//src/tap",
+        "//src/utl",
+    ],
+)
+
 sh_binary(
     name = "openroad-detailed-placement",
     srcs = ["openroad-detailed-placement.sh"],
