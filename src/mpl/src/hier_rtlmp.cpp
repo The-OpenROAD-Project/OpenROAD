@@ -2354,6 +2354,12 @@ void HierRTLMP::commitMacroPlacementToDb()
   Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+    if (!inst->isFixed()) {
+      snapper.setMacro(inst);
+      snapper.snapMacro();
+      inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+    }
+
     if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
       hard_macro->setRealLocation(inst->getLocation());
       odb::Rect box = hard_macro->getBBox();
@@ -2361,15 +2367,6 @@ void HierRTLMP::commitMacroPlacementToDb()
           block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
       blockage->setSoft();
     }
-
-    if (inst->isFixed()) {
-      continue;
-    }
-
-    snapper.setMacro(inst);
-    snapper.snapMacro();
-
-    inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
   }
 }
 
