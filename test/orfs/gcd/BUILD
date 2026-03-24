@@ -2,7 +2,10 @@ load("@bazel-orfs//:openroad.bzl", "orfs_flow")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
-package(features = ["layering_check"])
+package(
+    default_visibility = ["//test/orfs:__subpackages__"],
+    features = ["layering_check"],
+)
 
 orfs_flow(
     name = "gcd",
