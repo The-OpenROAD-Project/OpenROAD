@@ -15,6 +15,7 @@ test --test_timeout=300,1800,1800,9600
 # bazel 7 is somewhat forgiving for glob patterns that don't
 # match, but bazel 8 will be strict. So start now.
 common --incompatible_disallow_empty_glob
+common --experimental_isolated_extension_usages
 
 build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"

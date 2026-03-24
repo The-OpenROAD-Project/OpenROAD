@@ -126,6 +126,8 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/upf:ui",
     "//src/utl",
     "//src/utl:ui",
+    "//src/web",
+    "//src/web:ui",
     "@abc",
     ":ord",
 ] + select(
@@ -432,11 +434,23 @@ pkg_tar(
     package_file_name = "openroad.tar",
 )
 
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test //:dup_id_test                         # duplicate message ID check
+
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
+)
+
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
-# bazelisk test //:lint_test   — run all linters (currently: tclint + tclfmt)
-# bazelisk run  //:fix_lint    — auto-fix what can be fixed  (currently: tclfmt)
+# bazelisk test //:lint_test   — run all lint checks
+# bazelisk run  //:fix_lint    — auto-fix then lint
 # ---------------------------------------------------------------------------
 
 # --- TCL linting (tclint) -------------------------------------------------
@@ -465,7 +479,7 @@ sh_test(
     tags = ["local"],
 )
 
-# --- TCL auto-format (tclfmt --in-place) ----------------------------------
+# --- TCL auto-format only (tclfmt --in-place) -----------------------------
 
 sh_binary(
     name = "tidy_tcl",
@@ -487,7 +501,22 @@ test_suite(
     ],
 )
 
-alias(
+# Linting is done here (not just formatting) because not all lint violations
+# are auto-fixable — fix_lint fixes what it can, then reports the rest.
+sh_binary(
     name = "fix_lint",
-    actual = ":tidy_tcl",
+    srcs = ["//bazel:fix_lint.sh"],
+    args = [
+        "$(rootpath //bazel:tcl_tidy.sh)",
+        "$(rootpath //bazel:tclfmt)",
+        "$(rootpath //bazel:tcl_lint_test.sh)",
+        "$(rootpath //bazel:tclint)",
+    ],
+    data = [
+        "tclint.toml",
+        "//bazel:tcl_lint_test.sh",
+        "//bazel:tcl_tidy.sh",
+        "//bazel:tclfmt",
+        "//bazel:tclint",
+    ],
 )
