@@ -3,6 +3,8 @@
 
 // Canvas-based clock tree viewer widget.
 
+import { getThemeColors } from './theme.js';
+
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
 export const kTopMargin = 40;      // pixels above the first node
@@ -362,19 +364,22 @@ export class ClockTreeWidget {
 
     // ---- Rendering ----
 
+    render() { this._render(); }
+
     _render() {
         const ctx = this._ctx;
         const rect = this._canvas.getBoundingClientRect();
         const w = rect.width;
         const h = rect.height;
+        const tc = getThemeColors();
         ctx.clearRect(0, 0, w, h);
 
         // Background
-        ctx.fillStyle = '#1a1a1a';
+        ctx.fillStyle = tc.canvasBg;
         ctx.fillRect(0, 0, w, h);
 
         if (!this._layout.length) {
-            ctx.fillStyle = '#666';
+            ctx.fillStyle = tc.canvasText;
             ctx.font = '14px monospace';
             ctx.textAlign = 'center';
             ctx.fillText('Click "Update" to load clock tree data',
@@ -397,7 +402,7 @@ export class ClockTreeWidget {
         ctx.restore();
 
         // Draw time scale (in screen coordinates, on the left)
-        this._drawTimeScale(ctx, w, h);
+        this._drawTimeScale(ctx, w, h, tc);
     }
 
     _drawConnections(ctx) {
@@ -503,7 +508,7 @@ export class ClockTreeWidget {
         }
     }
 
-    _drawTimeScale(ctx, canvasW, canvasH) {
+    _drawTimeScale(ctx, canvasW, canvasH, tc) {
         if (!this._sceneHeight) return;
 
         // Map layout Y to screen Y
@@ -516,8 +521,8 @@ export class ClockTreeWidget {
         if (botY < 0 || topY > canvasH) return;
 
         ctx.save();
-        ctx.fillStyle = '#aaa';
-        ctx.strokeStyle = '#555';
+        ctx.fillStyle = tc.canvasLabel;
+        ctx.strokeStyle = tc.canvasAxis;
         ctx.font = '11px monospace';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';

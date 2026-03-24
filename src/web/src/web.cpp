@@ -989,9 +989,7 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
-void WebServer::serve(const std::string& host,
-                      int port,
-                      const std::string& doc_root)
+void WebServer::serve(int port, const std::string& doc_root)
 {
   try {
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
@@ -1001,7 +999,7 @@ void WebServer::serve(const std::string& host,
     // Create Tcl evaluator with logger sink for output capture
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
-    auto const address = net::ip::make_address(host);
+    auto const address = net::ip::make_address("127.0.0.1");
     uint16_t const u_port = port;
     int const num_threads = 32;
 
@@ -1009,7 +1007,7 @@ void WebServer::serve(const std::string& host,
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
     }
 
-    std::string url = "http://" + host + ":" + std::to_string(port);
+    const std::string url = "http://localhost:" + std::to_string(port);
     logger_->info(utl::WEB,
                   1,
                   "Server starting on {} with {} threads...",

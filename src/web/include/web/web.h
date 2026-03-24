@@ -31,7 +31,7 @@ class WebServer
             Tcl_Interp* interp);
   ~WebServer();
 
-  void serve(const std::string& host, int port, const std::string& doc_root);
+  void serve(int port, const std::string& doc_root);
 
  private:
   odb::dbDatabase* db_ = nullptr;
