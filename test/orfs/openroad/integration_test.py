@@ -39,8 +39,8 @@ def find_openroad():
 
 
 def run_standalone(binary_name, input_odb, output_odb, extra_args=None):
-    """Run a standalone binary."""
-    binary = find_binary(binary_name)
+    """Run a standalone binary (openroad-{name} convention, like git-{cmd})."""
+    binary = find_binary(f"openroad-{binary_name}")
     if binary is None:
         raise FileNotFoundError(f"Binary {binary_name} not found in runfiles")
     cmd = [binary, "--read_db", input_odb, "--write_db", output_odb]

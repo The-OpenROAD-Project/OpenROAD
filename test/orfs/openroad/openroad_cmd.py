@@ -20,6 +20,22 @@ import tempfile
 # As more commands get broken out, add them here.
 NATIVE_COMMANDS = {
     "detailed_placement",
+    "check_placement",
+    "filler_placement",
+    "optimize_mirroring",
+    "detailed_route",
+    "global_route",
+    "check_antennas",
+    "extract_parasitics",
+    "tapcell",
+    "repair_design",
+    "global_placement",
+    "clock_tree_synthesis",
+    "density_fill",
+    "place_pins",
+    "macro_placement",
+    "init_floorplan",
+    "analyze_power_grid",
 }
 
 # I/O flags (double-dash) that we extract from the argument list.
@@ -122,7 +138,7 @@ def generate_tcl(command, io, cmd_flags):
 
 def run_native(command, io, cmd_flags):
     """Run a native cc_binary for the command."""
-    binary = find_binary(command)
+    binary = find_binary(f"openroad-{command}")
     if binary is None:
         return None  # Fall back to TCL
 
