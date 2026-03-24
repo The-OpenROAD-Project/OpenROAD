@@ -385,7 +385,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // track sets of routes, so we don't route the reverse by accident
   std::map<odb::dbITerm*, odb::dbITerm*> routed_pairs;
   // track cover instances we dont route the same one twice
-  std::set<odb::dbInst*> routed_covers;
+  std::set<odb::dbITerm*> routed_covers;
   // track non-cover iterms we dont route the same one twice
   std::set<odb::dbITerm*> routed_non_covers;
   // track iteration information
@@ -397,7 +397,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (route->isRouted()) {
       for (odb::dbITerm* iterm0 : route->getRoutedTerminals()) {
         if (isCoverTerm(iterm0)) {
-          routed_covers.insert(iterm0->getInst());
+          routed_covers.insert(iterm0);
         } else {
           routed_non_covers.insert(iterm0);
         }
@@ -424,7 +424,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     odb::dbNet* net = src->getNet();
     auto& net_targets = routing_targets_[net];
 
-    if (routed_covers.find(src->getInst()) != routed_covers.end()) {
+    if (routed_covers.find(src) != routed_covers.end()) {
       // we've already routed this cover once (indicates the cover has multiple
       // iterms), so go ahead and mark is as complete and skip.
 
@@ -516,12 +516,12 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
             // record cover instance
             if (isCoverTerm(src)) {
-              routed_covers.insert(src->getInst());
+              routed_covers.insert(src);
             } else {
               routed_non_covers.insert(src);
             }
             if (isCoverTerm(dst)) {
-              routed_covers.insert(dst->getInst());
+              routed_covers.insert(dst);
             } else {
               routed_non_covers.insert(dst);
             }
@@ -625,10 +625,8 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       // ripup routing
       for (auto& ripup_route : ripup) {
         uncommitRoute(ripup_route->getRouteEdges());
-        routed_covers.erase(
-            ripup_route->getRouteTargetSource()->terminal->getInst());
-        routed_covers.erase(
-            ripup_route->getRouteTargetDestination()->terminal->getInst());
+        routed_covers.erase(ripup_route->getRouteTargetSource()->terminal);
+        routed_covers.erase(ripup_route->getRouteTargetDestination()->terminal);
         routed_non_covers.erase(ripup_route->getRouteTargetSource()->terminal);
         routed_non_covers.erase(
             ripup_route->getRouteTargetDestination()->terminal);
