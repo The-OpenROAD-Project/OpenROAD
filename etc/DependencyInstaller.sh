@@ -937,8 +937,9 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
-    _execute "Installing Python click..." pip3 install click
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk zlib swig yaml-cpp
+    _execute "Installing pipx..." brew install pipx
+    _execute "Installing Python click..." pipx install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }

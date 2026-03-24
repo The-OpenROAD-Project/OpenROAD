@@ -48,6 +48,7 @@ template class dbTable<_dbModNet>;
 
 bool _dbModNet::operator==(const _dbModNet& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -74,6 +75,7 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModNet::operator<(const _dbModNet& rhs) const

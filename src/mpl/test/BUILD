@@ -1,3 +1,4 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -5,7 +6,7 @@
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -46,13 +47,7 @@ COMPULSORY_TESTS = [
     "unfixed_cells_dont_fit_in_core",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -280,4 +275,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "mpl_man_tcl_check",
+    srcs = ["mpl_man_tcl_check.py"],
+    data = ["//src/mpl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "mpl_readme_msgs_check",
+    data = [
+        "//src/mpl:doc_files",
+        "//src/mpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )
