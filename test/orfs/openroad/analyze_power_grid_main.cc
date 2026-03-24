@@ -138,9 +138,13 @@ int main(int argc, char* argv[])
   stt::SteinerTreeBuilder stt_builder(db, &logger);
   ant::AntennaChecker antenna_checker(db, &logger);
   dpl::Opendp opendp(db, &logger);
-  grt::GlobalRouter global_router(
-      &logger, &cb_handler, &stt_builder, db, sta.get(),
-      &antenna_checker, &opendp);
+  grt::GlobalRouter global_router(&logger,
+                                  &cb_handler,
+                                  &stt_builder,
+                                  db,
+                                  sta.get(),
+                                  &antenna_checker,
+                                  &opendp);
   est::EstimateParasitics estimate_parasitics(
       &logger, &cb_handler, db, sta.get(), &stt_builder, &global_router);
 

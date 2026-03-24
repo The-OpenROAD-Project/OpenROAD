@@ -5,8 +5,9 @@
 // Links only dpl + odb + utl — no TCL, no framework, no other modules.
 //
 // Usage:
-//   detailed_placement --read_db in.odb --write_db out.odb [-max_displacement N]
-//   detailed_placement --read_lef tech.lef --read_def placed.def --write_def out.def
+//   detailed_placement --read_db in.odb --write_db out.odb [-max_displacement
+//   N] detailed_placement --read_lef tech.lef --read_def placed.def --write_def
+//   out.def
 
 #include <cstdlib>
 #include <fstream>
@@ -84,7 +85,7 @@ bool parse_args(int argc, char* argv[], Options& opts)
           int y = std::stoi(argv[i + 1]);
           opts.max_displacement_y = y;
           i++;
-        } catch (...) {
+        } catch (const std::exception&) {
           opts.max_displacement_y = opts.max_displacement_x;
         }
       } else {

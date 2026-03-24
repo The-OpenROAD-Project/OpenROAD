@@ -8,8 +8,9 @@
 //   filler_placement --read_lef tech.lef --read_def placed.def \
 //     --write_def filled.def -masters "FILL*" [-prefix FILLER_] [-verbose]
 
-#include <cstdlib>
 #include <fnmatch.h>
+
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -38,21 +39,23 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr << "Usage: " << prog << " [options]\n"
-            << "\n"
-            << "I/O:\n"
-            << "  --read_db FILE          Read ODB database\n"
-            << "  --read_lef FILE         Read LEF (repeatable)\n"
-            << "  --read_def FILE         Read DEF\n"
-            << "  --write_db FILE         Write ODB database\n"
-            << "  --write_def FILE        Write DEF\n"
-            << "\n"
-            << "Required:\n"
-            << "  -masters PATTERN        Filler cell master pattern (repeatable, glob)\n"
-            << "\n"
-            << "Options:\n"
-            << "  -prefix PREFIX          Filler instance prefix (default: FILLER_)\n"
-            << "  -verbose                Verbose output\n";
+  std::cerr
+      << "Usage: " << prog << " [options]\n"
+      << "\n"
+      << "I/O:\n"
+      << "  --read_db FILE          Read ODB database\n"
+      << "  --read_lef FILE         Read LEF (repeatable)\n"
+      << "  --read_def FILE         Read DEF\n"
+      << "  --write_db FILE         Write ODB database\n"
+      << "  --write_def FILE        Write DEF\n"
+      << "\n"
+      << "Required:\n"
+      << "  -masters PATTERN        Filler cell master pattern (repeatable, "
+         "glob)\n"
+      << "\n"
+      << "Options:\n"
+      << "  -prefix PREFIX          Filler instance prefix (default: FILLER_)\n"
+      << "  -verbose                Verbose output\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)

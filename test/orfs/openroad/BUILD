@@ -1,6 +1,7 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_python//python:py_binary.bzl", "py_binary")
 load("@rules_python//python:py_test.bzl", "py_test")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 package(features = ["layering_check"])
 
@@ -247,6 +248,7 @@ cc_binary(
 
 py_test(
     name = "integration_test",
+    timeout = "long",
     srcs = ["integration_test.py"],
     data = [
         ":openroad-check_antennas",
@@ -260,7 +262,6 @@ py_test(
         "manual",
         "orfs",
     ],
-    timeout = "long",
 )
 
 sh_binary(

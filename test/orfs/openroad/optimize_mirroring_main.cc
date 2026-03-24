@@ -6,7 +6,8 @@
 //
 // Usage:
 //   optimize_mirroring --read_db in.odb --write_db out.odb
-//   optimize_mirroring --read_lef tech.lef --read_def placed.def --write_def out.def
+//   optimize_mirroring --read_lef tech.lef --read_def placed.def --write_def
+//   out.def
 
 #include <cstdlib>
 #include <fstream>

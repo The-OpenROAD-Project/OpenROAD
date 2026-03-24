@@ -63,34 +63,34 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr
-      << "Usage: " << prog << " [options]\n"
-      << "\n"
-      << "I/O:\n"
-      << "  --read_db FILE              Read ODB (with guides from global_route)\n"
-      << "  --read_lef FILE             Read LEF (repeatable)\n"
-      << "  --read_def FILE             Read DEF\n"
-      << "  --write_db FILE             Write ODB\n"
-      << "  --write_def FILE            Write DEF\n"
-      << "\n"
-      << "Routing options (same flags as TCL detailed_route):\n"
-      << "  -output_drc FILE            DRC report output\n"
-      << "  -output_maze FILE           Maze debug output\n"
-      << "  -db_process_node NAME       PDK process node\n"
-      << "  -droute_end_iter N          Max routing iterations\n"
-      << "  -via_in_pin_bottom_layer L  Bottom via layer for pin access\n"
-      << "  -via_in_pin_top_layer L     Top via layer for pin access\n"
-      << "  -bottom_routing_layer L     Bottom routing layer\n"
-      << "  -top_routing_layer L        Top routing layer\n"
-      << "  -or_seed N                  Random seed\n"
-      << "  -or_k N                     OR parameter\n"
-      << "  -verbose N                  Verbosity (default: 1)\n"
-      << "  -disable_via_gen            Disable via generation\n"
-      << "  -clean_patches              Clean patches\n"
-      << "  -no_pin_access              Skip pin access\n"
-      << "  -min_access_points N        Min access points\n"
-      << "  -repair_pdn_vias LAYER      Repair PDN vias\n"
-      << "  -threads N                  Thread count\n";
+  std::cerr << "Usage: " << prog << " [options]\n"
+            << "\n"
+            << "I/O:\n"
+            << "  --read_db FILE              Read ODB (with guides from "
+               "global_route)\n"
+            << "  --read_lef FILE             Read LEF (repeatable)\n"
+            << "  --read_def FILE             Read DEF\n"
+            << "  --write_db FILE             Write ODB\n"
+            << "  --write_def FILE            Write DEF\n"
+            << "\n"
+            << "Routing options (same flags as TCL detailed_route):\n"
+            << "  -output_drc FILE            DRC report output\n"
+            << "  -output_maze FILE           Maze debug output\n"
+            << "  -db_process_node NAME       PDK process node\n"
+            << "  -droute_end_iter N          Max routing iterations\n"
+            << "  -via_in_pin_bottom_layer L  Bottom via layer for pin access\n"
+            << "  -via_in_pin_top_layer L     Top via layer for pin access\n"
+            << "  -bottom_routing_layer L     Bottom routing layer\n"
+            << "  -top_routing_layer L        Top routing layer\n"
+            << "  -or_seed N                  Random seed\n"
+            << "  -or_k N                     OR parameter\n"
+            << "  -verbose N                  Verbosity (default: 1)\n"
+            << "  -disable_via_gen            Disable via generation\n"
+            << "  -clean_patches              Clean patches\n"
+            << "  -no_pin_access              Skip pin access\n"
+            << "  -min_access_points N        Min access points\n"
+            << "  -repair_pdn_vias LAYER      Repair PDN vias\n"
+            << "  -threads N                  Thread count\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)
@@ -264,9 +264,11 @@ int main(int argc, char* argv[])
   };
   router.initGraphics(std::make_unique<NoOpGraphicsFactory>());
 
-  // Set parameters (num_threads must be initialized — uninitialized causes hangs)
+  // Set parameters (num_threads must be initialized — uninitialized causes
+  // hangs)
   drt::ParamStruct params;
-  params.num_threads = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
+  params.num_threads
+      = std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
   params.outputMazeFile = opts.output_maze;
   params.outputDrcFile = opts.output_drc;
   params.outputCmapFile = opts.output_cmap;

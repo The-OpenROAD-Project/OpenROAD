@@ -8,14 +8,14 @@ reports.
 
 ```bash
 # Build (seconds — links dpl + odb + utl, not all 37 modules)
-bazelisk build //test/orfs/openroad:detailed_placement
+bazelisk build //test/orfs/openroad:openroad-detailed_placement
 
 # Run
-bazelisk run //test/orfs/openroad:detailed_placement -- \
+bazelisk run //test/orfs/openroad:openroad-detailed_placement -- \
   --read_db placed.odb --write_db legalized.odb -max_displacement 10
 
 # Or with LEF/DEF
-bazelisk run //test/orfs/openroad:detailed_placement -- \
+bazelisk run //test/orfs/openroad:openroad-detailed_placement -- \
   --read_lef Nangate45.lef --read_def placed.def --write_def legalized.def
 ```
 
@@ -23,14 +23,14 @@ bazelisk run //test/orfs/openroad:detailed_placement -- \
 
 ```bash
 # 1. Build (fast — only dpl module)
-bazelisk build //test/orfs/openroad:detailed_placement
+bazelisk build //test/orfs/openroad:openroad-detailed_placement
 
 # 2. Debug DIRECTLY — no TCL, no framework, just C++ main()
-gdb --args bazel-bin/test/orfs/openroad/detailed_placement \
+gdb --args bazel-bin/test/orfs/openroad/openroad-detailed_placement \
   --read_db crash.odb -max_displacement 10
 
 # 3. Or valgrind / ASAN — same binary, same args
-valgrind bazel-bin/test/orfs/openroad/detailed_placement \
+valgrind bazel-bin/test/orfs/openroad/openroad-detailed_placement \
   --read_db crash.odb
 
 # 4. Edit src/dpl/src/Place.cpp, rebuild (seconds), re-run
@@ -42,7 +42,7 @@ valgrind bazel-bin/test/orfs/openroad/detailed_placement \
 Steps to reproduce:
 1. Download the attached crash.odb
 2. Run:
-   bazelisk run //test/orfs/openroad:detailed_placement -- \
+   bazelisk run //test/orfs/openroad:openroad-detailed_placement -- \
      --read_db crash.odb -max_displacement 10
 3. Observe segfault in Opendp::detailedPlacement at Place.cpp:142
 ```
@@ -85,20 +85,28 @@ openroad-detailed-placement \
 
 ## Available Binaries
 
+Binaries follow the `openroad-{command}` naming convention (like
+`git-{cmd}` — principle of least astonishment).
+
 | Binary | Module deps | Source files | Reduction | Test result |
 |--------|------------|-------------|-----------|-------------|
-| `detailed_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 294 cells placed, 0 failures (gcd Nangate45) |
-| `check_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | Detects violations + passes on legalized |
-| `filler_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 2,092 fillers placed (gcd Nangate45) |
-| `optimize_mirroring` | dpl + odb + utl | 1,095 | 3.5x fewer | 134 mirrored, -1% HPWL (gcd Nangate45) |
-| **`detailed_route`** | **drt + dst + stt + odb + utl** | **1,165** | **3.2x fewer** | **20s, 3,623 vias, exit 0 (gcd ASAP7)** |
-| `check_antennas` | ant + odb + utl | 1,061 | 3.6x fewer | 0 violations (gcd ASAP7 routed) |
-| `extract_parasitics` | rcx + odb + utl | 1,102 | 3.4x fewer | Runs on routed ODB with -lef_rc |
-| `tapcell` | tap + odb + utl | 1,059 | 3.6x fewer | 114 endcaps (gcd Nangate45) |
-| **`global_route`** | **grt + ant + dpl + stt + dbSta** | **1,160** | **3.3x fewer** | **563 nets, 10,767 um (gcd Nangate45)** |
-| `repair_design` | rsz + est + grt + dpl + stt + dbSta | 1,184 | 3.2x fewer | Starts, reaches STA (needs liberty) |
-| `global_placement` | gpl + rsz + grt + dpl + stt + dbSta | 1,755 | 2.2x fewer | Placement converged (gcd Nangate45) |
-| `clock_tree_synthesis` | cts + rsz + est + stt + dbSta | 1,193 | 3.2x fewer | Starts, reaches STA (needs liberty) |
+| `openroad-detailed_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 294 cells, bit-for-bit identical to monolithic |
+| `openroad-check_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | Detects violations + passes on legalized |
+| `openroad-filler_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 2,092 fillers placed (gcd Nangate45) |
+| `openroad-optimize_mirroring` | dpl + odb + utl | 1,095 | 3.5x fewer | 134 mirrored, bit-for-bit identical to monolithic |
+| **`openroad-detailed_route`** | **drt + dst + stt** | **1,165** | **3.2x fewer** | **20s, 3,623 vias (gcd ASAP7)** |
+| `openroad-check_antennas` | ant + odb + utl | 1,061 | 3.6x fewer | 0 violations (gcd ASAP7 routed) |
+| `openroad-extract_parasitics` | rcx + odb + utl | 1,102 | 3.4x fewer | Runs on routed ODB with -lef_rc |
+| `openroad-tapcell` | tap + odb + utl | 1,059 | 3.6x fewer | 114 endcaps (gcd Nangate45) |
+| **`openroad-global_route`** | **grt + ant + dpl + stt + dbSta** | **1,160** | **3.3x fewer** | **563 nets, 10,767 um (gcd Nangate45)** |
+| `openroad-repair_design` | rsz + est + grt + dpl + dbSta | 1,184 | 3.2x fewer | Builds, needs liberty for STA |
+| `openroad-global_placement` | gpl + rsz + grt + dbSta | 1,755 | 2.2x fewer | Placement converged (gcd Nangate45) |
+| `openroad-clock_tree_synthesis` | cts + rsz + est + stt + dbSta | 1,193 | 3.2x fewer | Builds, needs liberty for STA |
+| `openroad-init_floorplan` | ifp + dbSta | 1,066 | 3.6x fewer | Supports -utilization and -die_area modes |
+| `openroad-analyze_power_grid` | psm + est + dpl + grt + dbSta | 1,211 | 3.1x fewer | Supports -net, -voltage_file, -enable_em |
+| `openroad-density_fill` | fin + odb + utl | 1,132 | 3.3x fewer | Takes -rules JSON from PDK |
+| `openroad-place_pins` | ppl + dbSta | 1,137 | 3.3x fewer | Pins assigned (gcd Nangate45) |
+| `openroad-macro_placement` | mpl + par + dbSta | 1,632 | 2.3x fewer | Needs design with macros |
 | *monolithic `openroad`* | *all 37 modules* | *3,788* | *baseline* | |
 
 Each standalone binary compiles **3-4x fewer source files** than the
@@ -112,7 +120,7 @@ other 34 modules you don't need.
 
 ```bash
 # Debug build of just detailed_route — compiles 1,165 files
-bazelisk build -c dbg //test/orfs/openroad:detailed_route
+bazelisk build -c dbg //test/orfs/openroad:openroad-detailed_route
 
 # vs. debug build of monolithic openroad — compiles 3,788 files
 bazelisk build -c dbg //:openroad

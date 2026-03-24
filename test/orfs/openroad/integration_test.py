@@ -56,9 +56,7 @@ def run_monolithic(tcl_commands, input_odb, output_odb):
     if openroad is None:
         raise FileNotFoundError("openroad binary not found in runfiles")
     tcl = f"read_db {input_odb}\n{tcl_commands}\nwrite_db {output_odb}\n"
-    with tempfile.NamedTemporaryFile(
-        suffix=".tcl", mode="w", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(suffix=".tcl", mode="w", delete=False) as f:
         f.write(tcl)
         tcl_path = f.name
     try:
@@ -117,14 +115,10 @@ class TestBitForBitEquivalence(unittest.TestCase):
             self.skipTest("gcd_place ODB not found")
         standalone, monolithic = self._paths("detailed_placement")
 
-        r1 = run_standalone(
-            "detailed_placement", self.gcd_place_odb, standalone
-        )
+        r1 = run_standalone("detailed_placement", self.gcd_place_odb, standalone)
         self.assertEqual(r1.returncode, 0, f"Standalone failed:\n{r1.stderr}")
 
-        r2 = run_monolithic(
-            "detailed_placement", self.gcd_place_odb, monolithic
-        )
+        r2 = run_monolithic("detailed_placement", self.gcd_place_odb, monolithic)
         self.assertEqual(r2.returncode, 0, f"Monolithic failed:\n{r2.stderr}")
 
         assert_odb_identical(standalone, monolithic, "detailed_placement")
@@ -134,14 +128,10 @@ class TestBitForBitEquivalence(unittest.TestCase):
             self.skipTest("gcd_place ODB not found")
         standalone, monolithic = self._paths("optimize_mirroring")
 
-        r1 = run_standalone(
-            "optimize_mirroring", self.gcd_place_odb, standalone
-        )
+        r1 = run_standalone("optimize_mirroring", self.gcd_place_odb, standalone)
         self.assertEqual(r1.returncode, 0, f"Standalone failed:\n{r1.stderr}")
 
-        r2 = run_monolithic(
-            "optimize_mirroring", self.gcd_place_odb, monolithic
-        )
+        r2 = run_monolithic("optimize_mirroring", self.gcd_place_odb, monolithic)
         self.assertEqual(r2.returncode, 0, f"Monolithic failed:\n{r2.stderr}")
 
         assert_odb_identical(standalone, monolithic, "optimize_mirroring")

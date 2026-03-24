@@ -134,7 +134,8 @@ int main(int argc, char* argv[])
   }
 
   ant::AntennaChecker checker(db, &logger);
-  int violations = checker.checkAntennas(nullptr, opts.num_threads, opts.verbose);
+  int violations
+      = checker.checkAntennas(nullptr, opts.num_threads, opts.verbose);
 
   std::cout << "Antenna violations: " << violations << "\n";
 

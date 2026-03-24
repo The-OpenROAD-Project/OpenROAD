@@ -5,7 +5,8 @@
 // Links gpl + rsz + grt + est + dpl + stt + ant + dbSta + sta + odb + utl.
 //
 // Usage:
-//   global_placement --read_db floorplanned.odb --write_db placed.odb [-density 0.7]
+//   global_placement --read_db floorplanned.odb --write_db placed.odb [-density
+//   0.7]
 
 #include <algorithm>
 #include <cstdlib>
@@ -54,27 +55,26 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr
-      << "Usage: " << prog << " [options]\n"
-      << "\n"
-      << "I/O:\n"
-      << "  --read_db FILE              Read ODB database\n"
-      << "  --read_lef FILE             Read LEF (repeatable)\n"
-      << "  --read_def FILE             Read DEF\n"
-      << "  --write_db FILE             Write ODB database\n"
-      << "  --write_def FILE            Write DEF\n"
-      << "\n"
-      << "Options (same flags as TCL global_placement):\n"
-      << "  -density N                  Target density (0.0-1.0)\n"
-      << "  -bin_grid_count N           Bin grid count\n"
-      << "  -overflow N                 Overflow target\n"
-      << "  -pad_left N                 Left padding\n"
-      << "  -pad_right N                Right padding\n"
-      << "  -skip_io                    Skip IO placement\n"
-      << "  -timing_driven              Enable timing-driven\n"
-      << "  -routability_driven         Enable routability-driven\n"
-      << "  -incremental                Incremental mode\n"
-      << "  -threads N                  Thread count\n";
+  std::cerr << "Usage: " << prog << " [options]\n"
+            << "\n"
+            << "I/O:\n"
+            << "  --read_db FILE              Read ODB database\n"
+            << "  --read_lef FILE             Read LEF (repeatable)\n"
+            << "  --read_def FILE             Read DEF\n"
+            << "  --write_db FILE             Write ODB database\n"
+            << "  --write_def FILE            Write DEF\n"
+            << "\n"
+            << "Options (same flags as TCL global_placement):\n"
+            << "  -density N                  Target density (0.0-1.0)\n"
+            << "  -bin_grid_count N           Bin grid count\n"
+            << "  -overflow N                 Overflow target\n"
+            << "  -pad_left N                 Left padding\n"
+            << "  -pad_right N                Right padding\n"
+            << "  -skip_io                    Skip IO placement\n"
+            << "  -timing_driven              Enable timing-driven\n"
+            << "  -routability_driven         Enable routability-driven\n"
+            << "  -incremental                Incremental mode\n"
+            << "  -threads N                  Thread count\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)
@@ -192,11 +192,15 @@ int main(int argc, char* argv[])
   stt::SteinerTreeBuilder stt_builder(db, &logger);
   ant::AntennaChecker antenna_checker(db, &logger);
   dpl::Opendp opendp(db, &logger);
-  grt::GlobalRouter global_router(
-      &logger, &cb_handler, &stt_builder, db, sta.get(),
-      &antenna_checker, &opendp);
-  rsz::Resizer resizer(&logger, db, sta.get(), &stt_builder,
-                        &global_router, &opendp, nullptr);
+  grt::GlobalRouter global_router(&logger,
+                                  &cb_handler,
+                                  &stt_builder,
+                                  db,
+                                  sta.get(),
+                                  &antenna_checker,
+                                  &opendp);
+  rsz::Resizer resizer(
+      &logger, db, sta.get(), &stt_builder, &global_router, &opendp, nullptr);
 
   gpl::Replace placer(db, sta.get(), &resizer, &global_router, &logger);
 
@@ -216,10 +220,11 @@ int main(int argc, char* argv[])
   place_opts.timingDrivenMode = opts.timing_driven;
   place_opts.routabilityDrivenMode = opts.routability_driven;
 
-  int threads = opts.threads > 0
-                    ? opts.threads
-                    : std::max(1, static_cast<int>(
-                                      std::thread::hardware_concurrency()));
+  int threads
+      = opts.threads > 0
+            ? opts.threads
+            : std::max(1,
+                       static_cast<int>(std::thread::hardware_concurrency()));
   if (opts.incremental) {
     placer.doIncrementalPlace(threads, place_opts);
   } else {

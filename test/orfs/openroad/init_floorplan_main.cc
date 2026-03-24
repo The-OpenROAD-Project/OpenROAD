@@ -6,9 +6,11 @@
 //
 // Usage:
 //   init_floorplan --read_db synth.odb --write_db floorplan.odb \
-//     -die_area "0 0 100 100" -core_area "10 10 90 90" -site FreePDK45_38x28_10R_NP_162NW_34O
+//     -die_area "0 0 100 100" -core_area "10 10 90 90" -site
+//     FreePDK45_38x28_10R_NP_162NW_34O
 //   init_floorplan --read_db synth.odb --write_db floorplan.odb \
-//     -utilization 50 -aspect_ratio 1.0 -core_space 10 -site FreePDK45_38x28_10R_NP_162NW_34O
+//     -utilization 50 -aspect_ratio 1.0 -core_space 10 -site
+//     FreePDK45_38x28_10R_NP_162NW_34O
 
 #include <cstdlib>
 #include <fstream>
@@ -46,23 +48,22 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr
-      << "Usage: " << prog << " [options]\n"
-      << "\n"
-      << "I/O:\n"
-      << "  --read_db FILE              Read ODB database\n"
-      << "  --read_lef FILE             Read LEF (repeatable)\n"
-      << "  --read_def FILE             Read DEF\n"
-      << "  --write_db FILE             Write ODB database\n"
-      << "  --write_def FILE            Write DEF\n"
-      << "\n"
-      << "Floorplan options (same flags as TCL initialize_floorplan):\n"
-      << "  -utilization N              Target utilization (%)\n"
-      << "  -aspect_ratio N             Aspect ratio (default: 1.0)\n"
-      << "  -core_space N               Core spacing (um)\n"
-      << "  -die_area \"lx ly ux uy\"     Die area coordinates\n"
-      << "  -core_area \"lx ly ux uy\"    Core area coordinates\n"
-      << "  -site NAME                  Site name\n";
+  std::cerr << "Usage: " << prog << " [options]\n"
+            << "\n"
+            << "I/O:\n"
+            << "  --read_db FILE              Read ODB database\n"
+            << "  --read_lef FILE             Read LEF (repeatable)\n"
+            << "  --read_def FILE             Read DEF\n"
+            << "  --write_db FILE             Write ODB database\n"
+            << "  --write_def FILE            Write DEF\n"
+            << "\n"
+            << "Floorplan options (same flags as TCL initialize_floorplan):\n"
+            << "  -utilization N              Target utilization (%)\n"
+            << "  -aspect_ratio N             Aspect ratio (default: 1.0)\n"
+            << "  -core_space N               Core spacing (um)\n"
+            << "  -die_area \"lx ly ux uy\"     Die area coordinates\n"
+            << "  -core_area \"lx ly ux uy\"    Core area coordinates\n"
+            << "  -site NAME                  Site name\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)
@@ -124,8 +125,10 @@ odb::Rect parse_rect(const std::string& s, odb::dbBlock* block)
   double lx, ly, ux, uy;
   iss >> lx >> ly >> ux >> uy;
   int dbu = block->getDbUnitsPerMicron();
-  return odb::Rect(static_cast<int>(lx * dbu), static_cast<int>(ly * dbu),
-                   static_cast<int>(ux * dbu), static_cast<int>(uy * dbu));
+  return odb::Rect(static_cast<int>(lx * dbu),
+                   static_cast<int>(ly * dbu),
+                   static_cast<int>(ux * dbu),
+                   static_cast<int>(uy * dbu));
 }
 
 }  // namespace
@@ -205,9 +208,11 @@ int main(int argc, char* argv[])
     ifp.initFloorplan(die, core, site);
   } else if (opts.utilization >= 0) {
     // Utilization mode
-    int space = opts.core_space >= 0 ? opts.core_space * block->getDbUnitsPerMicron() : 0;
-    ifp.initFloorplan(opts.utilization, opts.aspect_ratio,
-                      space, space, space, space, site);
+    int space = opts.core_space >= 0
+                    ? opts.core_space * block->getDbUnitsPerMicron()
+                    : 0;
+    ifp.initFloorplan(
+        opts.utilization, opts.aspect_ratio, space, space, space, space, site);
   } else {
     std::cerr << "Error: specify -die_area/-core_area or -utilization\n";
     _exit(1);

@@ -5,7 +5,8 @@
 // Links only rcx + odb + utl.
 //
 // Usage:
-//   extract_parasitics --read_db routed.odb [-ext_model_file model] [-write_spef out.spef]
+//   extract_parasitics --read_db routed.odb [-ext_model_file model]
+//   [-write_spef out.spef]
 
 #include <cstdlib>
 #include <fstream>
@@ -171,9 +172,8 @@ int main(int argc, char* argv[])
   rcx::Ext ext(db, &logger, "S");
 
   ExtractOptions ext_opts;
-  ext_opts.ext_model_file = opts.ext_model_file.empty()
-                                ? nullptr
-                                : opts.ext_model_file.c_str();
+  ext_opts.ext_model_file
+      = opts.ext_model_file.empty() ? nullptr : opts.ext_model_file.c_str();
   ext_opts.corner_cnt = opts.corner_cnt;
   ext_opts.max_res = opts.max_res;
   ext_opts.coupling_threshold = opts.coupling_threshold;

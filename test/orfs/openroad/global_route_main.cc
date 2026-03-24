@@ -7,7 +7,8 @@
 //
 // Usage:
 //   global_route --read_db placed.odb --write_db grouted.odb [-verbose]
-//   global_route --read_lef tech.lef --read_def placed.def --write_def grouted.def
+//   global_route --read_lef tech.lef --read_def placed.def --write_def
+//   grouted.def
 
 #include <algorithm>
 #include <cstdlib>
@@ -195,8 +196,13 @@ int main(int argc, char* argv[])
   dpl::Opendp opendp(db, &logger);
 
   // Create GlobalRouter
-  grt::GlobalRouter router(
-      &logger, &cb_handler, &stt_builder, db, sta.get(), &antenna_checker, &opendp);
+  grt::GlobalRouter router(&logger,
+                           &cb_handler,
+                           &stt_builder,
+                           db,
+                           sta.get(),
+                           &antenna_checker,
+                           &opendp);
 
   // Configure
   router.setVerbose(opts.verbose);

@@ -47,25 +47,24 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr
-      << "Usage: " << prog << " [options]\n"
-      << "\n"
-      << "I/O:\n"
-      << "  --read_db FILE              Read ODB database\n"
-      << "  --read_lef FILE             Read LEF (repeatable)\n"
-      << "  --read_def FILE             Read DEF\n"
-      << "  --write_db FILE             Write ODB database\n"
-      << "  --write_def FILE            Write DEF\n"
-      << "\n"
-      << "Options (same flags as TCL rtl_macro_placer):\n"
-      << "  -halo_width N               Halo width (um)\n"
-      << "  -halo_height N              Halo height (um)\n"
-      << "  -max_num_macro N            Max macros per cluster\n"
-      << "  -min_num_macro N            Min macros per cluster\n"
-      << "  -max_num_inst N             Max instances per cluster\n"
-      << "  -min_num_inst N             Min instances per cluster\n"
-      << "  -max_num_level N            Max hierarchy levels\n"
-      << "  -threads N                  Thread count\n";
+  std::cerr << "Usage: " << prog << " [options]\n"
+            << "\n"
+            << "I/O:\n"
+            << "  --read_db FILE              Read ODB database\n"
+            << "  --read_lef FILE             Read LEF (repeatable)\n"
+            << "  --read_def FILE             Read DEF\n"
+            << "  --write_db FILE             Write ODB database\n"
+            << "  --write_def FILE            Write DEF\n"
+            << "\n"
+            << "Options (same flags as TCL rtl_macro_placer):\n"
+            << "  -halo_width N               Halo width (um)\n"
+            << "  -halo_height N              Halo height (um)\n"
+            << "  -max_num_macro N            Max macros per cluster\n"
+            << "  -min_num_macro N            Min macros per cluster\n"
+            << "  -max_num_inst N             Max instances per cluster\n"
+            << "  -min_num_inst N             Min instances per cluster\n"
+            << "  -max_num_level N            Max hierarchy levels\n"
+            << "  -threads N                  Thread count\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)
@@ -177,13 +176,14 @@ int main(int argc, char* argv[])
   auto sta = std::make_unique<sta::dbSta>(nullptr, db, &logger);
   par::PartitionMgr partition_mgr(db, sta->getDbNetwork(), sta.get(), &logger);
 
-  mpl::MacroPlacer placer(sta->getDbNetwork(), db, sta.get(), &logger,
-                           &partition_mgr);
+  mpl::MacroPlacer placer(
+      sta->getDbNetwork(), db, sta.get(), &logger, &partition_mgr);
 
-  int threads = opts.threads > 0
-                    ? opts.threads
-                    : std::max(1, static_cast<int>(
-                                      std::thread::hardware_concurrency()));
+  int threads
+      = opts.threads > 0
+            ? opts.threads
+            : std::max(1,
+                       static_cast<int>(std::thread::hardware_concurrency()));
 
   odb::Rect global_fence;  // empty = no fence
   placer.place(threads,
@@ -191,26 +191,26 @@ int main(int argc, char* argv[])
                opts.min_num_macro,
                opts.max_num_inst,
                opts.min_num_inst,
-               0.1,   // tolerance
+               0.1,  // tolerance
                opts.max_num_level,
-               1.0,   // coarsening_ratio
-               200,   // large_net_threshold
+               1.0,  // coarsening_ratio
+               200,  // large_net_threshold
                opts.halo_width,
                opts.halo_height,
                global_fence,
-               1.0,   // area_weight
-               100.0, // outline_weight
-               100.0, // wirelength_weight
-               10.0,  // guidance_weight
-               0.0,   // fence_weight
-               0.0,   // boundary_weight
-               0.0,   // notch_weight
-               10.0,  // macro_blockage_weight
-               0.0,   // target_util
-               0.0,   // min_ar
-               "",    // report_directory
-               false, // keep_clustering_data
-               false); // use_def_halo
+               1.0,     // area_weight
+               100.0,   // outline_weight
+               100.0,   // wirelength_weight
+               10.0,    // guidance_weight
+               0.0,     // fence_weight
+               0.0,     // boundary_weight
+               0.0,     // notch_weight
+               10.0,    // macro_blockage_weight
+               0.0,     // target_util
+               0.0,     // min_ar
+               "",      // report_directory
+               false,   // keep_clustering_data
+               false);  // use_def_halo
 
   // Write output
   if (!opts.write_db.empty()) {

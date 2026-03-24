@@ -50,22 +50,21 @@ struct Options
 
 void usage(const char* prog)
 {
-  std::cerr
-      << "Usage: " << prog << " [options]\n"
-      << "\n"
-      << "I/O:\n"
-      << "  --read_db FILE              Read ODB database\n"
-      << "  --read_lef FILE             Read LEF (repeatable)\n"
-      << "  --read_def FILE             Read DEF\n"
-      << "  --write_db FILE             Write ODB database\n"
-      << "  --write_def FILE            Write DEF\n"
-      << "\n"
-      << "Options (same flags as TCL repair_design):\n"
-      << "  -max_wire_length N          Max wire length (um)\n"
-      << "  -slew_margin N              Slew margin (0.0-1.0)\n"
-      << "  -cap_margin N               Cap margin (0.0-1.0)\n"
-      << "  -match_cell_footprint       Match cell footprint\n"
-      << "  -verbose                    Verbose output\n";
+  std::cerr << "Usage: " << prog << " [options]\n"
+            << "\n"
+            << "I/O:\n"
+            << "  --read_db FILE              Read ODB database\n"
+            << "  --read_lef FILE             Read LEF (repeatable)\n"
+            << "  --read_def FILE             Read DEF\n"
+            << "  --write_db FILE             Write ODB database\n"
+            << "  --write_def FILE            Write DEF\n"
+            << "\n"
+            << "Options (same flags as TCL repair_design):\n"
+            << "  -max_wire_length N          Max wire length (um)\n"
+            << "  -slew_margin N              Slew margin (0.0-1.0)\n"
+            << "  -cap_margin N               Cap margin (0.0-1.0)\n"
+            << "  -match_cell_footprint       Match cell footprint\n"
+            << "  -verbose                    Verbose output\n";
 }
 
 bool parse_args(int argc, char* argv[], Options& opts)
@@ -175,19 +174,31 @@ int main(int argc, char* argv[])
   stt::SteinerTreeBuilder stt_builder(db, &logger);
   ant::AntennaChecker antenna_checker(db, &logger);
   dpl::Opendp opendp(db, &logger);
-  grt::GlobalRouter global_router(
-      &logger, &cb_handler, &stt_builder, db, sta.get(),
-      &antenna_checker, &opendp);
+  grt::GlobalRouter global_router(&logger,
+                                  &cb_handler,
+                                  &stt_builder,
+                                  db,
+                                  sta.get(),
+                                  &antenna_checker,
+                                  &opendp);
   est::EstimateParasitics estimate_parasitics(
       &logger, &cb_handler, db, sta.get(), &stt_builder, &global_router);
 
-  rsz::Resizer resizer(&logger, db, sta.get(), &stt_builder,
-                        &global_router, &opendp, &estimate_parasitics);
+  rsz::Resizer resizer(&logger,
+                       db,
+                       sta.get(),
+                       &stt_builder,
+                       &global_router,
+                       &opendp,
+                       &estimate_parasitics);
 
   // Run repair_design
-  resizer.repairDesign(opts.max_wire_length, opts.slew_margin,
-                       opts.cap_margin, opts.buffer_gain,
-                       opts.match_cell_footprint, opts.verbose);
+  resizer.repairDesign(opts.max_wire_length,
+                       opts.slew_margin,
+                       opts.cap_margin,
+                       opts.buffer_gain,
+                       opts.match_cell_footprint,
+                       opts.verbose);
 
   // Write output
   if (!opts.write_db.empty()) {
