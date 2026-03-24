@@ -83,6 +83,38 @@ openroad-detailed-placement \
   --write_db $(RESULTS_DIR)/3_5_place_dp.odb
 ```
 
+## Available Binaries
+
+| Binary | Module deps | Source files | Reduction | Test result |
+|--------|------------|-------------|-----------|-------------|
+| `detailed_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 294 cells placed, 0 failures (gcd Nangate45) |
+| `check_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | Detects violations + passes on legalized |
+| `filler_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 2,092 fillers placed (gcd Nangate45) |
+| `optimize_mirroring` | dpl + odb + utl | 1,095 | 3.5x fewer | 134 mirrored, -1% HPWL (gcd Nangate45) |
+| **`detailed_route`** | **drt + dst + stt + odb + utl** | **1,165** | **3.2x fewer** | **20s, 3,623 vias, exit 0 (gcd ASAP7)** |
+| *monolithic `openroad`* | *all 37 modules* | *3,788* | *baseline* | |
+
+Each standalone binary compiles **3-4x fewer source files** than the
+monolithic `openroad`. The ~1,100 file baseline is `odb` + `sta` (shared
+core). The delta between `detailed_placement` (1,095) and
+`detailed_route` (1,165) is only 70 files — the actual `drt` + `dst` +
+`stt` module code. The monolithic binary adds **2,600+ files** from the
+other 34 modules you don't need.
+
+## Debug Builds
+
+```bash
+# Debug build of just detailed_route — compiles 1,165 files
+bazelisk build -c dbg //test/orfs/openroad:detailed_route
+
+# vs. debug build of monolithic openroad — compiles 3,788 files
+bazelisk build -c dbg //:openroad
+```
+
+After the initial build, incremental debug rebuilds (edit one `.cpp`)
+take ~10 seconds for a standalone binary. The monolithic binary relinks
+all 37 modules.
+
 ## How It Works
 
 The `cc_binary` calls the C++ API directly:
@@ -92,4 +124,3 @@ main() → odb::dbDatabase::read() → dpl::Opendp::detailedPlacement() → writ
 ```
 
 No `Tcl_Interp`. No `InitOpenRoad()`. No SWIG. No framework.
-Links: `//src/dpl` + `//src/odb` + `//src/utl` (3 targets, not 37).
