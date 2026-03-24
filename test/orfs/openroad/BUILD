@@ -40,6 +40,16 @@ py_test(
     tags = ["no-remote"],
 )
 
+cc_binary(
+    name = "check_placement",
+    srcs = ["check_placement_main.cc"],
+    deps = [
+        "//src/dpl",
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
 sh_binary(
     name = "openroad-detailed-placement",
     srcs = ["openroad-detailed-placement.sh"],
