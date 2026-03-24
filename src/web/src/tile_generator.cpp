@@ -1009,6 +1009,66 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
 
+      // Draw via enclosures from adjacent cut layers onto this metal layer.
+      // Vias are indexed by their cut layer in the search structure.  When
+      // rendering a routing layer we look up the cut layers immediately above
+      // and below, search for vias there, and draw only the enclosure boxes
+      // that belong to the current routing layer.
+      if (!instances_only && tech_layer && vis.special_nets && shapesReady()
+          && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
+        odb::dbTechLayer* adj_cuts[2]
+            = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
+        for (odb::dbTechLayer* cut_layer : adj_cuts) {
+          if (!cut_layer || cut_layer->getType() != odb::dbTechLayerType::CUT) {
+            continue;
+          }
+          for (const auto& shape : search_->searchSNetViaShapes(block,
+                                                                cut_layer,
+                                                                dbu_x_min,
+                                                                dbu_y_min,
+                                                                dbu_x_max,
+                                                                dbu_y_max)) {
+            odb::dbNet* via_net = std::get<1>(shape);
+            if (!vis.isNetVisible(via_net)) {
+              continue;
+            }
+            if (focus_net_ids && !focus_net_ids->empty()
+                && !focus_net_ids->contains(via_net->getId())) {
+              continue;
+            }
+            odb::dbSBox* sbox = std::get<0>(shape);
+            std::vector<odb::dbBox*> via_boxes;
+            if (auto tech_via = sbox->getTechVia()) {
+              via_boxes.assign(tech_via->getBoxes().begin(),
+                               tech_via->getBoxes().end());
+            } else if (auto block_via = sbox->getBlockVia()) {
+              via_boxes.assign(block_via->getBoxes().begin(),
+                               block_via->getBoxes().end());
+            }
+            const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
+                                    (sbox->yMin() + sbox->yMax()) / 2);
+            for (odb::dbBox* vbox : via_boxes) {
+              if (vbox->getTechLayer() != tech_layer) {
+                continue;
+              }
+              odb::Rect box = vbox->getBox();
+              box.moveDelta(origin.x(), origin.y());
+              if (!box.overlaps(dbu_tile)) {
+                continue;
+              }
+              const odb::Rect overlap = box.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
+                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
+                  const int draw_y = (255 - iy);
+                  setPixel(image_buffer, ix, draw_y, color);
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Draw placement blockages (dbBlockage) on the _instances layer.
       // Diagonal white hash lines in pixel space, with period anchored in dbu
       // coordinates so the pattern is seamless across tile boundaries.
