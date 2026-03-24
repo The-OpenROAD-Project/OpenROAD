@@ -367,6 +367,7 @@ python_wrap_cc(
     ],
     deps = [
         "//src/ant:swig-py",
+        "//src/cgt:swig-py",
         "//src/cts:swig-py",
         "//src/dpl:swig-py",
         "//src/drt:swig-py",
