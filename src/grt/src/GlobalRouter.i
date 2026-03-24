@@ -19,7 +19,6 @@ using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
-%include "grt/GlobalRouter.h"
 
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
