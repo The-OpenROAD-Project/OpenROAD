@@ -524,13 +524,21 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 
   distribution
       = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
-  while (!free_slot) {
+  int attempts = 0;
+  const int max_attempts = num_slots_ * 10;
+  while (!free_slot && attempts < max_attempts) {
     new_slot = distribution(generator_);
     if (io_pin.isMirrored()) {
       free_slot = isFreeForMirrored(new_slot, mirrored_slot);
     } else {
       free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
     }
+    attempts++;
+  }
+  if (!free_slot) {
+    prev_slots_.clear();
+    pins_.clear();
+    return move_fail_;
   }
 
   new_slots_.push_back(new_slot);
