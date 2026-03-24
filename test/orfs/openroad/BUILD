@@ -41,6 +41,16 @@ py_test(
 )
 
 cc_binary(
+    name = "optimize_mirroring",
+    srcs = ["optimize_mirroring_main.cc"],
+    deps = [
+        "//src/dpl",
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
     name = "filler_placement",
     srcs = ["filler_placement_main.cc"],
     deps = [
