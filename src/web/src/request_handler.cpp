@@ -971,6 +971,410 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
   return resp;
 }
 
+WebSocketResponse SelectHandler::handleSchematicCone(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  // Limits to prevent fanout explosions (e.g. clock net at depth > 0).
+  static constexpr int kMaxConeInsts = 150;
+  static constexpr int kMaxNetFanout = 30;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* target_inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!target_inst) {
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
+    }
+
+    std::set<odb::dbInst*> all_insts;
+    all_insts.insert(target_inst);
+    bool cone_full = false;
+
+    // Fanin BFS: follow input pins upstream to their driving instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanin_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::INPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* drv : net->getITerms()) {
+              if (drv->getIoType() != odb::dbIoType::OUTPUT) {
+                continue;
+              }
+              odb::dbInst* drv_inst = drv->getInst();
+              if (all_insts.insert(drv_inst).second) {
+                next_level.push_back(drv_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        level = next_level;
+      }
+    }
+
+    // Fanout BFS: follow output pins downstream to their load instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanout_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* load : net->getITerms()) {
+              if (load->getIoType() != odb::dbIoType::INPUT) {
+                continue;
+              }
+              odb::dbInst* load_inst = load->getInst();
+              if (all_insts.insert(load_inst).second) {
+                next_level.push_back(load_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        level = next_level;
+      }
+    }
+
+    // Collect all nets that touch any visited instance.
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+    for (odb::dbInst* inst : all_insts) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (net && !net_to_id.contains(net)) {
+          net_to_id[net] = next_net_id++;
+        }
+      }
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    // Module-level attributes (required by Yosys JSON schema)
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    // Top-level ports (dbBTerm) connected to any visited net
+    builder.beginObject("ports");
+    for (const auto& [net, _id] : net_to_id) {
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        builder.beginObject(bterm->getName());
+        std::string dir = "inout";
+        if (bterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field("direction", dir);
+        builder.beginArray("bits");
+        builder.value(net_to_id[net]);
+        builder.endArray();
+        builder.endObject();
+      }
+    }
+    builder.endObject();
+
+    // Cells (instances)
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : all_insts) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      // Use master cell name as type; fall back to "$unknown" for safety
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      // Required Yosys JSON fields (netlistsvg guards these with || {}, but
+      // providing them avoids any version-specific surprises)
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
+          continue;
+        }
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net || !net_to_id.contains(net)) {
+          continue;
+        }
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+
+      builder.endObject();
+    }
+    builder.endObject();
+
+    // Net names for better labeling
+    builder.beginObject("netnames");
+    for (const auto& [net, net_id] : net_to_id) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_id);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicFull(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;
+    for (odb::dbNet* net : block->getNets()) {
+      net_to_id[net] = next_net_id++;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    builder.beginObject("ports");
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      odb::dbNet* net = bterm->getNet();
+      if (!net) {
+        continue;
+      }
+      builder.beginObject(bterm->getName());
+      std::string dir = "inout";
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        dir = "input";
+      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        dir = "output";
+      }
+      builder.field("direction", dir);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : block->getInsts()) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet()) {
+          continue;
+        }
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net) {
+          continue;
+        }
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("netnames");
+    for (odb::dbNet* net : block->getNets()) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicInspect(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!inst) {
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
+    }
+
+    gui::Selected sel = gui::DescriptorRegistry::instance()->makeSelected(inst);
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      state.current_inspected = sel;
+      state.navigation_history.clear();
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        builder, sel, new_selectables, /*can_navigate_back=*/false);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 //------------------------------------------------------------------------------
 // TclHandler
 //------------------------------------------------------------------------------

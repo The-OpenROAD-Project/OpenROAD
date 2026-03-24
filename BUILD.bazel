@@ -417,6 +417,18 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test //:dup_id_test                         # duplicate message ID check
+
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
+)
+
 # ---------------------------------------------------------------------------
 # Lint & tidy targets
 #
