@@ -89,6 +89,57 @@ cc_binary(
 )
 
 cc_binary(
+    name = "repair_design",
+    srcs = ["repair_design_main.cc"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "global_placement",
+    srcs = ["global_placement_main.cc"],
+    copts = ["-fopenmp"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/gpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/utl",
+        "@openmp",
+    ],
+)
+
+cc_binary(
+    name = "clock_tree_synthesis",
+    srcs = ["clock_tree_synthesis_main.cc"],
+    deps = [
+        "//src/ant",
+        "//src/cts",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/stt",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
     name = "global_route",
     srcs = ["global_route_main.cc"],
     copts = ["-fopenmp"],
