@@ -89,6 +89,22 @@ cc_binary(
 )
 
 cc_binary(
+    name = "global_route",
+    srcs = ["global_route_main.cc"],
+    copts = ["-fopenmp"],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dpl",
+        "//src/grt",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@openmp",
+    ],
+)
+
+cc_binary(
     name = "check_antennas",
     srcs = ["check_antennas_main.cc"],
     deps = [
