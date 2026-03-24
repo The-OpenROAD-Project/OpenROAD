@@ -579,7 +579,7 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   int max_iters = num_slots_ * 10;
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
-    if ((new_slot + group.pin_indices.size() >= num_slots_ - 1)) {
+    if ((new_slot + group.pin_indices.size() > num_slots_)) {
       iter++;
       continue;
     }
