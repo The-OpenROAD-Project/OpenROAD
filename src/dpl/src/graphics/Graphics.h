@@ -40,7 +40,7 @@ class Graphics : public gui::Renderer, public DplObserver
                        int die_xlo,
                        int die_ylo,
                        int site_width,
-                       int row_height) override;
+                       const std::vector<int>& row_y_dbu) override;
   void clearHybridPixels() override;
 
   // From Renderer API
@@ -63,7 +63,7 @@ class Graphics : public gui::Renderer, public DplObserver
   int hybrid_die_xlo_{0};
   int hybrid_die_ylo_{0};
   int hybrid_site_width_{0};
-  int hybrid_row_height_{0};
+  std::vector<int> hybrid_row_y_dbu_;
 };
 
 }  // namespace dpl

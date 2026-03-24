@@ -288,7 +288,7 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
     if (!inDie(tx, ty, cell.width, cell.height)) {
       return;
     }
-    if (!isValidRow(ty, cell)) {
+    if (!isValidRow(ty, cell, tx)) {
       return;
     }
     if (!respectsFence(cellIdx, tx, ty)) {
@@ -488,7 +488,7 @@ void HybridLegalizer::greedyImprove(int passes)
         if (!inDie(tx, ty, cell.width, cell.height)) {
           return;
         }
-        if (!isValidRow(ty, cell)) {
+        if (!isValidRow(ty, cell, tx)) {
           return;
         }
         if (!respectsFence(idx, tx, ty)) {
@@ -591,7 +591,7 @@ void HybridLegalizer::cellSwap()
         if (!respectsFence(a, cb.x, cb.y) || !respectsFence(b, ca.x, ca.y)) {
           continue;
         }
-        if (!isValidRow(cb.y, ca) || !isValidRow(ca.y, cb)) {
+        if (!isValidRow(cb.y, ca, cb.x) || !isValidRow(ca.y, cb, ca.x)) {
           continue;
         }
 

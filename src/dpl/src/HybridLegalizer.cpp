@@ -281,8 +281,13 @@ void HybridLegalizer::pushHybridPixels()
       }
     }
   }
+  const Grid* dplGrid = opendp_->grid_.get();
+  std::vector<int> row_y_dbu(gridH_ + 1);
+  for (int r = 0; r <= gridH_; ++r) {
+    row_y_dbu[r] = dplGrid->gridYToDbu(GridY{r}).v;
+  }
   debug_observer_->setHybridPixels(
-      pixels, gridW_, gridH_, dieXlo_, dieYlo_, siteWidth_, rowHeight_);
+      pixels, gridW_, gridH_, dieXlo_, dieYlo_, siteWidth_, row_y_dbu);
 }
 
 // ===========================================================================
@@ -659,7 +664,9 @@ bool HybridLegalizer::inDie(int x, int y, int w, int h) const
   return x >= 0 && y >= 0 && x + w <= gridW_ && y + h <= gridH_;
 }
 
-bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const
+bool HybridLegalizer::isValidRow(int rowIdx,
+                                 const HLCell& cell,
+                                 int gridX) const
 {
   if (rowIdx < 0 || rowIdx + cell.height > gridH_) {
     return false;
@@ -667,6 +674,15 @@ bool HybridLegalizer::isValidRow(int rowIdx, const HLCell& cell) const
   // Every row the cell spans must have real sites.
   for (int dy = 0; dy < cell.height; ++dy) {
     if (!rowHasSites_[rowIdx + dy]) {
+      return false;
+    }
+  }
+  // Verify that the cell's site type is available on the target row.
+  if (cell.inst != nullptr && opendp_ && opendp_->grid_) {
+    odb::dbSite* site = cell.inst->getMaster()->getSite();
+    if (site != nullptr
+        && !opendp_->grid_->getSiteOrientation(
+            GridX{gridX}, GridY{rowIdx}, site)) {
       return false;
     }
   }
@@ -705,7 +721,7 @@ std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
   double bestDistSq = 1e18;
 
   for (int r = 0; r + cell.height <= gridH_; ++r) {
-    if (!isValidRow(r, cell)) {
+    if (!isValidRow(r, cell, x)) {
       continue;
     }
 
@@ -828,7 +844,7 @@ void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
 
     // Skip cells that violate fence or row constraints – negotiation handles
     // them later.
-    if (!respectsFence(idx, cell.x, rowIdx) || !isValidRow(rowIdx, cell)) {
+    if (!respectsFence(idx, cell.x, rowIdx) || !isValidRow(rowIdx, cell, cell.x)) {
       continue;
     }
 
@@ -920,7 +936,7 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
   if (!inDie(cell.x, cell.y, cell.width, cell.height)) {
     return false;
   }
-  if (!isValidRow(cell.y, cell)) {
+  if (!isValidRow(cell.y, cell, cell.x)) {
     return false;
   }
   if (!respectsFence(cellIdx, cell.x, cell.y)) {

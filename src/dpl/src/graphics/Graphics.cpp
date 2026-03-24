@@ -183,8 +183,9 @@ void Graphics::drawObjects(gui::Painter& painter)
 
   if (paint_hybrid_pixels_ && !hybrid_pixels_.empty()) {
     const int sw = hybrid_site_width_;
-    const int rh = hybrid_row_height_;
     for (int gy = 0; gy < hybrid_grid_h_; ++gy) {
+      const int y_lo = hybrid_die_ylo_ + hybrid_row_y_dbu_[gy];
+      const int y_hi = hybrid_die_ylo_ + hybrid_row_y_dbu_[gy + 1];
       for (int gx = 0; gx < hybrid_grid_w_; ++gx) {
         const auto state = hybrid_pixels_[gy * hybrid_grid_w_ + gx];
         gui::Painter::Color c;
@@ -213,9 +214,9 @@ void Graphics::drawObjects(gui::Painter& painter)
         painter.setPen(c);
         painter.setBrush(c);
         odb::Rect rect(hybrid_die_xlo_ + gx * sw,
-                       hybrid_die_ylo_ + gy * rh,
+                       y_lo,
                        hybrid_die_xlo_ + (gx + 1) * sw,
-                       hybrid_die_ylo_ + (gy + 1) * rh);
+                       y_hi);
         painter.drawRect(rect);
       }
     }
@@ -228,7 +229,7 @@ void Graphics::setHybridPixels(const std::vector<HybridPixelState>& pixels,
                                int die_xlo,
                                int die_ylo,
                                int site_width,
-                               int row_height)
+                               const std::vector<int>& row_y_dbu)
 {
   hybrid_pixels_ = pixels;
   hybrid_grid_w_ = grid_w;
@@ -236,12 +237,13 @@ void Graphics::setHybridPixels(const std::vector<HybridPixelState>& pixels,
   hybrid_die_xlo_ = die_xlo;
   hybrid_die_ylo_ = die_ylo;
   hybrid_site_width_ = site_width;
-  hybrid_row_height_ = row_height;
+  hybrid_row_y_dbu_ = row_y_dbu;
 }
 
 void Graphics::clearHybridPixels()
 {
   hybrid_pixels_.clear();
+  hybrid_row_y_dbu_.clear();
   hybrid_grid_w_ = 0;
   hybrid_grid_h_ = 0;
 }

@@ -46,7 +46,7 @@ class DplObserver
                                int die_xlo,
                                int die_ylo,
                                int site_width,
-                               int row_height)
+                               const std::vector<int>& row_y_dbu)
   {
   }
   virtual void clearHybridPixels() {}

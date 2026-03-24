@@ -233,7 +233,7 @@ class HybridLegalizer
   void cellSwap();
 
   // Constraint helpers
-  [[nodiscard]] bool isValidRow(int rowIdx, const HLCell& cell) const;
+  [[nodiscard]] bool isValidRow(int rowIdx, const HLCell& cell, int gridX) const;
   [[nodiscard]] bool respectsFence(int cellIdx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
   [[nodiscard]] std::pair<int, int> snapToLegal(int cellIdx,
