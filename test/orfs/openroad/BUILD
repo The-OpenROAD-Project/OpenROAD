@@ -156,6 +156,39 @@ cc_binary(
 )
 
 cc_binary(
+    name = "density_fill",
+    srcs = ["density_fill_main.cc"],
+    deps = [
+        "//src/fin",
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "place_pins",
+    srcs = ["place_pins_main.cc"],
+    deps = [
+        "//src/dbSta",
+        "//src/odb",
+        "//src/ppl",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
+    name = "macro_placement",
+    srcs = ["macro_placement_main.cc"],
+    deps = [
+        "//src/dbSta",
+        "//src/mpl",
+        "//src/odb",
+        "//src/par",
+        "//src/utl",
+    ],
+)
+
+cc_binary(
     name = "check_antennas",
     srcs = ["check_antennas_main.cc"],
     deps = [
