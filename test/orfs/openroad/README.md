@@ -95,6 +95,10 @@ openroad-detailed-placement \
 | `check_antennas` | ant + odb + utl | 1,061 | 3.6x fewer | 0 violations (gcd ASAP7 routed) |
 | `extract_parasitics` | rcx + odb + utl | 1,102 | 3.4x fewer | Runs on routed ODB with -lef_rc |
 | `tapcell` | tap + odb + utl | 1,059 | 3.6x fewer | 114 endcaps (gcd Nangate45) |
+| **`global_route`** | **grt + ant + dpl + stt + dbSta** | **1,160** | **3.3x fewer** | **563 nets, 10,767 um (gcd Nangate45)** |
+| `repair_design` | rsz + est + grt + dpl + stt + dbSta | 1,184 | 3.2x fewer | Starts, reaches STA (needs liberty) |
+| `global_placement` | gpl + rsz + grt + dpl + stt + dbSta | 1,755 | 2.2x fewer | Placement converged (gcd Nangate45) |
+| `clock_tree_synthesis` | cts + rsz + est + stt + dbSta | 1,193 | 3.2x fewer | Starts, reaches STA (needs liberty) |
 | *monolithic `openroad`* | *all 37 modules* | *3,788* | *baseline* | |
 
 Each standalone binary compiles **3-4x fewer source files** than the
@@ -127,6 +131,27 @@ main() → odb::dbDatabase::read() → dpl::Opendp::detailedPlacement() → writ
 ```
 
 No `Tcl_Interp`. No `InitOpenRoad()`. No SWIG. No framework.
+
+## Known Workarounds
+
+These are hacks local to `test/orfs/openroad/` — no upstream modules
+were modified. Each should be fixed properly in the respective module.
+
+**`_exit(0)` in sta-dependent binaries** (global_route, repair_design,
+global_placement, clock_tree_synthesis): `sta::ReportTcl::~ReportTcl()`
+calls `Tcl_UnstackChannel()` on a nullptr `Tcl_Interp`, causing a
+segfault during cleanup. Using `_exit(0)` skips destructors. The routing/
+placement itself completes correctly and output is flushed before exit.
+Fix: make `ReportTcl` destructor null-safe w.r.t. `Tcl_Interp`.
+
+**No-op `AbstractGraphicsFactory` in detailed_route**: `TritonRoute::
+initDesign()` calls `graphics_factory_->reset()` unconditionally. Without
+a graphics factory, it segfaults. The standalone binary provides a no-op
+implementation. Fix: null-check `graphics_factory_` in `initGraphics()`.
+
+**`dbSta(nullptr, db, &logger)`**: works because `initVars` already
+checks `if (tcl_interp)` before calling `setTclInterp()`. This is not a
+hack — it's supported by the existing code, just undocumented.
 
 ## Not Yet Standalone
 
