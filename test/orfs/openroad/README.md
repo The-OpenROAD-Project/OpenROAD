@@ -92,6 +92,9 @@ openroad-detailed-placement \
 | `filler_placement` | dpl + odb + utl | 1,095 | 3.5x fewer | 2,092 fillers placed (gcd Nangate45) |
 | `optimize_mirroring` | dpl + odb + utl | 1,095 | 3.5x fewer | 134 mirrored, -1% HPWL (gcd Nangate45) |
 | **`detailed_route`** | **drt + dst + stt + odb + utl** | **1,165** | **3.2x fewer** | **20s, 3,623 vias, exit 0 (gcd ASAP7)** |
+| `check_antennas` | ant + odb + utl | 1,061 | 3.6x fewer | 0 violations (gcd ASAP7 routed) |
+| `extract_parasitics` | rcx + odb + utl | 1,102 | 3.4x fewer | Runs on routed ODB with -lef_rc |
+| `tapcell` | tap + odb + utl | 1,059 | 3.6x fewer | 114 endcaps (gcd Nangate45) |
 | *monolithic `openroad`* | *all 37 modules* | *3,788* | *baseline* | |
 
 Each standalone binary compiles **3-4x fewer source files** than the
@@ -124,3 +127,13 @@ main() → odb::dbDatabase::read() → dpl::Opendp::detailedPlacement() → writ
 ```
 
 No `Tcl_Interp`. No `InitOpenRoad()`. No SWIG. No framework.
+
+## Not Yet Standalone
+
+**PDN** (`pdngen`): requires a multi-command configuration sequence
+(`define_pdn_grid`, `add_pdn_stripe`, `add_pdn_ring`, `add_pdn_connect`)
+before running. Does not map cleanly to a single CLI invocation — would
+need a config file or TCL passthrough.
+
+**grt, rsz, gpl, cts**: depend on `sta`/`dbSta` (static timing analysis),
+which significantly increases the dependency chain and compilation units.
