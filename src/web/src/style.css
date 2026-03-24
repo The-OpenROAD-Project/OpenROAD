@@ -430,6 +430,20 @@ html, body {
     display: none;
 }
 
+/* Coordinate readout (bottom-left of layout viewer) */
+#coord-bar {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    z-index: 900;
+    background: var(--bg-status);
+    color: var(--fg-secondary);
+    padding: 2px 8px;
+    font: 12px monospace;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
 /* Loading overlay */
 #loading-overlay {
     position: fixed;
