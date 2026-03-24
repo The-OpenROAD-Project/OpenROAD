@@ -9,6 +9,7 @@ on:
 
 jobs:
   regenerate:
+    if: github.repository_owner != 'The-OpenROAD-Project-private'
     runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     permissions:
       contents: write
