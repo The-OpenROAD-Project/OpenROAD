@@ -41,7 +41,7 @@ class lefout
   double lefdist(int value) { return value * dist_factor_; }
   double lefarea(int value) { return value * area_factor_; }
 
-  lefout(utl::Logger* logger, std::ostream& out) : _out(out)
+  lefout(utl::Logger* logger, std::ostream& out) : _out(&out)
   {
     write_marked_masters_ = use_alias_ = use_master_ids_ = false;
     dist_factor_ = 0.001;
@@ -62,14 +62,16 @@ class lefout
   void writeTechAndLib(dbLib* lib);
   void writeAbstractLef(dbBlock* db_block);
 
-  std::ostream& out() { return _out; }
+  std::ostream& out() { return *_out; }
 
  private:
   using ObstructionMap
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
-  void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
+  std::set<dbVia*> writeBoxes(dbBlock* block,
+                              dbSet<GenericBox>& boxes,
+                              const char* indent);
 
   void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
@@ -108,9 +110,9 @@ class lefout
   void findLayerViaObstructions(ObstructionMap& obstructions,
                                 dbSBox* box) const;
   void writeBlock(dbBlock* db_block);
-  void writePins(dbBlock* db_block);
-  void writePowerPins(dbBlock* db_block);
-  void writeBlockTerms(dbBlock* db_block);
+  std::set<dbVia*> writePins(dbBlock* db_block);
+  std::set<dbVia*> writePowerPins(dbBlock* db_block);
+  std::set<dbVia*> writeBlockTerms(dbBlock* db_block);
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
@@ -122,7 +124,7 @@ class lefout
                          ObstructionMap& obstructions) const;
   void insertObstruction(dbBox* box, ObstructionMap& obstructions) const;
 
-  std::ostream& _out;
+  std::ostream* _out;
   bool use_master_ids_;
   bool use_alias_;
   bool write_marked_masters_;
