@@ -245,7 +245,8 @@ bool Shape::cut(const ObstructionTree& obstructions,
        it++) {
     const auto& other_shape = *it;
 
-    if (other_shape->net_ != nullptr && net_ == other_shape->net_) {
+    if (other_shape->net_ != nullptr && net_ == other_shape->net_
+        && other_shape->shapeType() != ShapeType::SHAPE) {
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {
@@ -675,34 +676,51 @@ std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 
 std::unique_ptr<Shape> Shape::extendTo(
     const odb::Rect& rect,
+    const ShapeTree& shapes,
     const ObstructionTree& obstructions,
     Shape* orig_shape,
     const std::function<bool(const ShapePtr&)>& obs_filter) const
 {
-  std::unique_ptr<Shape> new_shape = copy();
+  odb::Rect new_rect = rect_;
 
   if (isHorizontal()) {
-    new_shape->rect_.set_xlo(std::min(rect_.xMin(), rect.xMin()));
-    new_shape->rect_.set_xhi(std::max(rect_.xMax(), rect.xMax()));
+    new_rect.set_xlo(std::min(rect_.xMin(), rect.xMin()));
+    new_rect.set_xhi(std::max(rect_.xMax(), rect.xMax()));
   } else if (isVertical()) {
-    new_shape->rect_.set_ylo(std::min(rect_.yMin(), rect.yMin()));
-    new_shape->rect_.set_yhi(std::max(rect_.yMax(), rect.yMax()));
+    new_rect.set_ylo(std::min(rect_.yMin(), rect.yMin()));
+    new_rect.set_yhi(std::max(rect_.yMax(), rect.yMax()));
   } else {
     return nullptr;
   }
 
-  if (rect_ == new_shape->rect_) {
+  if (rect_ == new_rect) {
     // shape did not change
     return nullptr;
   }
 
-  if (obstructions.qbegin(bgi::intersects(new_shape->getRect())
+  if (obstructions.qbegin(bgi::intersects(new_rect)
                           && bgi::satisfies([&orig_shape](const auto& other) {
                                // ignore violations that results from itself
                                return other.get() != orig_shape;
                              })
                           && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
+    // extension not possible
+    return nullptr;
+  }
+
+  std::unique_ptr<Shape> new_shape(copy());
+  new_shape->rect_ = new_rect;
+  new_shape->generateObstruction();
+  odb::Rect new_obs_rect;
+  new_shape->getObstruction().bloat(-1, new_obs_rect);
+
+  if (shapes.qbegin(bgi::intersects(new_obs_rect)
+                    && bgi::satisfies([&orig_shape](const auto& other) {
+                         // ignore violations that results from itself
+                         return other.get() != orig_shape;
+                       }))
+      != shapes.qend()) {
     // extension not possible
     return nullptr;
   }

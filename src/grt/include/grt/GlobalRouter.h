@@ -55,6 +55,11 @@ class dbNetwork;
 class SpefWriter;
 }  // namespace sta
 
+namespace gui {
+class HeatMapSourceRegistration;
+using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
+}  // namespace gui
+
 namespace grt {
 
 class FastRouteCore;
@@ -69,7 +74,6 @@ class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class GlobalRouter;
-class AbstractRoutingCongestionDataSource;
 class GRouteDbCbk;
 class Rudy;
 
@@ -122,10 +126,8 @@ class GlobalRouter
                dpl::Opendp* opendp);
   ~GlobalRouter();
 
-  void initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source,
-               std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source_rudy);
+  void initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
+               gui::HeatMapSourceHandle routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -225,6 +227,7 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
+  void updateCUGRNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
@@ -564,8 +567,8 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
+  gui::HeatMapSourceHandle heatmap_;
+  gui::HeatMapSourceHandle heatmap_rudy_;
 
   // variables congestion report file
   const char* congestion_file_name_;

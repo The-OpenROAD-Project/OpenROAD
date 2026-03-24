@@ -1575,7 +1575,7 @@ void TritonCTS::computeITermPosition(odb::dbITerm* term, int& x, int& y) const
 
 void TritonCTS::destroyClockModNet(sta::Pin* pin_driver)
 {
-  if (pin_driver == nullptr || network_->hasHierarchy() == false) {
+  if (pin_driver == nullptr || !network_->hasHierarchy()) {
     return;
   }
 

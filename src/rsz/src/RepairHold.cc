@@ -448,7 +448,7 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
       repaired = true;
       logger_->info(
           RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
-      resizer_->level_drvr_vertices_valid_ = false;
+      resizer_->invalidateVertexOrdering();
     }
     if (inserted_buffer_count_ > max_buffer_count) {
       logger_->error(RSZ, 60, "Max buffer count reached.");
@@ -787,11 +787,7 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
 
   resizer_->checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);
   slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
-  }
-
-  return true;
+  return slack_limit_ratio >= hold_slack_limit_ratio_max_;
 }
 
 void RepairHold::printProgress(int iteration, bool force, bool end) const

@@ -52,6 +52,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -2306,6 +2307,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   for (const auto [tray, count] : tray_sizes_used_) {
     log_->report("  {}-bit: {}", tray, count);
   }
+  resizer_->invalidateVertexOrdering();
 }
 
 Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
@@ -2477,7 +2479,7 @@ void MBFF::ReadPaths()
   sta_->searchPreamble();
   sta_->ensureLevelized();
   sta::Search* search = sta_->search();
-  sta::StdStringSeq empty_group_names;
+  sta::StringSeq empty_group_names;
   sta::PathEndSeq path_ends = search->findPathEnds(e_from,
                                                    e_thrus,
                                                    e_to,

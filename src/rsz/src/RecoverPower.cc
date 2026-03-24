@@ -380,11 +380,8 @@ bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
   }
   const odb::dbMaster* candidate_cell = db_network_->staToDb(candidate);
   const odb::dbMaster* curr_cell = db_network_->staToDb(cell);
-  if (candidate_cell->getWidth() <= curr_cell->getWidth()
-      && candidate_cell->getHeight() == curr_cell->getHeight()) {
-    return true;
-  }
-  return false;
+  return candidate_cell->getWidth() <= curr_cell->getWidth()
+         && candidate_cell->getHeight() == curr_cell->getHeight();
 }
 
 sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,

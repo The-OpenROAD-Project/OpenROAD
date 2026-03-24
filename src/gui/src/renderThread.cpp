@@ -871,17 +871,15 @@ void RenderThread::drawBlockages(QPainter* painter,
     if (restart_) {
       break;
     }
-    odb::dbBox* halo = inst->getHalo();
-    if (halo != nullptr) {
-      Rect instbox = inst->getBBox()->getBox();
-      Rect halobox = halo->getBox();
-      instbox.set_xlo(instbox.xMin() - halobox.xMin());
-      instbox.set_ylo(instbox.yMin() - halobox.yMin());
-      instbox.set_xhi(instbox.xMax() + halobox.xMax());
-      instbox.set_yhi(instbox.yMax() + halobox.yMax());
-      painter->drawRect(
-          instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
-    }
+    odb::Rect halobox = inst->getTransformedHalo();
+    Rect instbox = inst->getBBox()->getBox();
+
+    instbox.set_xlo(instbox.xMin() - halobox.xMin());
+    instbox.set_ylo(instbox.yMin() - halobox.yMin());
+    instbox.set_xhi(instbox.xMax() + halobox.xMax());
+    instbox.set_yhi(instbox.yMax() + halobox.yMax());
+    painter->drawRect(
+        instbox.xMin(), instbox.yMin(), instbox.dx(), instbox.dy());
   }
 }
 
@@ -969,9 +967,8 @@ void RenderThread::drawLayer(QPainter* painter,
   const int shape_limit = viewer_->shapeSizeLimit();
 
   // Skip the cut layer if the cuts will be too small to see
-  const bool draw_shapes
-      = !(layer->getType() == dbTechLayerType::CUT
-          && viewer_->cut_maximum_size_[layer] < shape_limit);
+  const bool draw_shapes = layer->getType() != dbTechLayerType::CUT
+                           || viewer_->cut_maximum_size_[layer] >= shape_limit;
   const bool layer_is_routing = layer->getType() == dbTechLayerType::CUT
                                 || layer->getType() == dbTechLayerType::ROUTING;
 

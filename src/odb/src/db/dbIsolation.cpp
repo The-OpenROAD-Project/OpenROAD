@@ -27,6 +27,7 @@ template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -53,6 +54,7 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbIsolation::operator<(const _dbIsolation& rhs) const

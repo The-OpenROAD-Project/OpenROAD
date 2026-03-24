@@ -836,17 +836,17 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
         }
 
-        while (pop_heap2_3D_[ind1]
-               == false)  // stop until the grid position been popped out from
-                          // both src_heap_3D and dest_heap_3D
-        {
-          // relax all the adjacent grids within the enlarged region for
-          // source subtree
-          const int curL = ind1 / (grid_hv_);
-          const int remd = ind1 % (grid_hv_);
-          const int curX = remd % x_range_;
-          const int curY = remd / x_range_;
-          removeMin3D(src_heap_3D_);
+      while (
+          !pop_heap2_3D_[ind1])  // stop until the grid position been popped out
+                                 // from both src_heap_3D and dest_heap_3D
+      {
+        // relax all the adjacent grids within the enlarged region for
+        // source subtree
+        const int curL = ind1 / (grid_hv_);
+        const int remd = ind1 % (grid_hv_);
+        const int curX = remd % x_range_;
+        const int curY = remd / x_range_;
+        removeMin3D(src_heap_3D_);
 
           // If the net has more than 1 cost, use its cost as extra cost when
           // trying to find a new route

@@ -43,6 +43,7 @@ template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -69,6 +70,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModInst::operator<(const _dbModInst& rhs) const
@@ -628,8 +630,8 @@ dbModInst* dbModInst::swapMaster(dbModule* new_module)
 
     // If the flat net has external connection (external instance or BTerm),
     // it should be inserted into modbterm_name_flat_net_map.
-    bool has_external_connection = (flat_net->getBTerms().empty() == false);
-    if (has_external_connection == false) {
+    bool has_external_connection = (!flat_net->getBTerms().empty());
+    if (!has_external_connection) {
       for (dbITerm* iterm : flat_net->getITerms()) {
         if (!old_module->containsDbInst(iterm->getInst())) {
           has_external_connection = true;
