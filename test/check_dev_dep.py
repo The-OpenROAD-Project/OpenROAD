@@ -1,4 +1,5 @@
 """Check that a bazel_dep in MODULE.bazel has dev_dependency = True."""
+
 import argparse
 import re
 import sys

@@ -1,4 +1,5 @@
 """Check that a Bazel target has the expected visibility in BUILD.bazel."""
+
 import argparse
 import re
 import sys
@@ -9,14 +10,13 @@ def main():
     parser.add_argument("--build-file", required=True)
     parser.add_argument("--rule-type", required=True)
     parser.add_argument("--target", required=True)
-    parser.add_argument("--expect", required=True,
-                        choices=["public", "not_public"])
+    parser.add_argument("--expect", required=True, choices=["public", "not_public"])
     args = parser.parse_args()
 
     text = open(args.build_file).read()
     pattern = re.compile(
         rf'{args.rule_type}\(\s*name\s*=\s*"{args.target}".*?'
-        rf'visibility\s*=\s*\[([^\]]*)\]',
+        rf"visibility\s*=\s*\[([^\]]*)\]",
         re.DOTALL,
     )
     m = pattern.search(text)
