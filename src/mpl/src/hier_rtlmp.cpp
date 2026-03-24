@@ -679,14 +679,15 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   if (tilings.empty()) {
-    logger_->error(MPL,
-                   4,
-                   "Unable to fit cluster {} within outline. Macro height: {}, "
-                   "width: {}, number of macros: {}.",
-                   cluster->getName(),
-                   macro_width,
-                   macro_height,
-                   number_of_macros);
+    logger_->error(
+        MPL,
+        4,
+        "Unable to fit cluster {} within outline. Macro height: {:.2f}um, "
+        "width: {:.2f}um, number of macros: {}.",
+        cluster->getName(),
+        block_->dbuToMicrons(macro_width),
+        block_->dbuToMicrons(macro_height),
+        number_of_macros);
   }
 
   cluster->setTilings(tilings);

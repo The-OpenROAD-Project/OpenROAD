@@ -835,13 +835,14 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
 
   if (mirrored_idx < 0) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
-    logger_->error(utl::PPL,
-                   112,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   tech_layer ? tech_layer->getName() : "NA");
+    logger_->error(
+        utl::PPL,
+        112,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not "
+        "a valid position.",
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        tech_layer ? tech_layer->getName() : "NA");
   }
 
   return mirrored_idx;
