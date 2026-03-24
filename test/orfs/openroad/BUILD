@@ -41,6 +41,24 @@ py_test(
 )
 
 cc_binary(
+    name = "detailed_route",
+    srcs = ["detailed_route_main.cc"],
+    copts = [
+        "-fopenmp",
+        "-Isrc/drt/src",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/drt",
+        "//src/dst",
+        "//src/odb",
+        "//src/stt",
+        "//src/utl",
+        "@openmp",
+    ],
+)
+
+cc_binary(
     name = "optimize_mirroring",
     srcs = ["optimize_mirroring_main.cc"],
     deps = [
