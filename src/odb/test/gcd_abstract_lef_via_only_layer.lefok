@@ -1316,6 +1316,10 @@ MACRO gcd
      RECT  49.295 32.415 90.25 33.815 ;
      RECT  68.31 52.415 90.25 53.815 ;
      RECT  40.31 72.415 90.25 73.815 ;
+    LAYER metal9 ;
+     RECT  -0.4 -0.4 0.4 0.4 ;
+    LAYER metal10 ;
+     RECT  -0.4 -0.4 0.4 0.4 ;
   END
 END gcd
 END LIBRARY
