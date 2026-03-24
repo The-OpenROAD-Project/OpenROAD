@@ -151,6 +151,7 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
   sortNetIndices(net_indices);
   for (const int net_index : net_indices) {
     if (gr_nets_[net_index]->getNumPins() < 2) {
+      continue;
     }
     PatternRoute pattern_route(gr_nets_[net_index].get(),
                                grid_graph_.get(),
@@ -302,6 +303,7 @@ NetRouteMap CUGR::getRoutes()
   NetRouteMap routes;
   for (const auto& net : gr_nets_) {
     if (net->getNumPins() < 2 || net->isLocal()) {
+      continue;
     }
     odb::dbNet* db_net = net->getDbNet();
     GRoute& route = routes[db_net];
