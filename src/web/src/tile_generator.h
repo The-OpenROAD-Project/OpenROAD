@@ -241,6 +241,10 @@ class TileGenerator
                    const Color& color,
                    bool blend = false) const;
 
+  void drawFilledRect(std::vector<unsigned char>& buffer,
+                      const odb::Rect& rect,
+                      const Color& color) const;
+
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,
                          int y,

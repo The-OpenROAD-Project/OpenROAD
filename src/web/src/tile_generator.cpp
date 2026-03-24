@@ -858,12 +858,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
               const odb::Rect overlap = box.intersect(dbu_tile);
               const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                  const int draw_y = (255 - iy);
-                  setPixel(image_buffer, ix, draw_y, obs_color);
-                }
-              }
+              drawFilledRect(image_buffer, draw, obs_color);
             }
           }
 
@@ -890,12 +885,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
                   const odb::Rect overlap = box.intersect(dbu_tile);
                   const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-                  for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                    for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                      const int draw_y = (255 - iy);
-                      setPixel(image_buffer, ix, draw_y, color);
-                    }
-                  }
+                  drawFilledRect(image_buffer, draw, color);
                 }
               }
             }
@@ -926,12 +916,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
           const odb::Rect overlap = box.intersect(dbu_tile);
           const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, ix, draw_y, color);
-            }
-          }
+          drawFilledRect(image_buffer, draw, color);
         }
       }
 
@@ -999,12 +984,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
             }
             const odb::Rect overlap = box.intersect(dbu_tile);
             const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                const int draw_y = (255 - iy);
-                setPixel(image_buffer, ix, draw_y, color);
-              }
-            }
+            drawFilledRect(image_buffer, draw, color);
           }
         }
       }
@@ -1058,12 +1038,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
               }
               const odb::Rect overlap = box.intersect(dbu_tile);
               const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                  const int draw_y = (255 - iy);
-                  setPixel(image_buffer, ix, draw_y, color);
-                }
-              }
+              drawFilledRect(image_buffer, draw, color);
             }
           }
         }
@@ -1470,6 +1445,18 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
   image[i + 1] = blend_channel(c.g, image[i + 1]);
   image[i + 2] = blend_channel(c.b, image[i + 2]);
   image[i + 3] = static_cast<unsigned char>(std::lround(out_a * 255.0f));
+}
+
+void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
+                                   const odb::Rect& rect,
+                                   const Color& color) const
+{
+  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+    for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+      const int draw_y = (255 - iy);
+      setPixel(buffer, ix, draw_y, color);
+    }
+  }
 }
 
 void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
