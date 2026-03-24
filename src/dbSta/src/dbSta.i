@@ -174,12 +174,14 @@ report_cell_usage_cmd(odb::dbModule* mod,
 }
 
 void
-report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
+report_timing_histogram_cmd(int num_bins,
+                             const MinMax* min_max,
+                             float bin_size)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta->reportTimingHistogram(num_bins, min_max);
+  sta->reportTimingHistogram(num_bins, min_max, bin_size);
 }
 
 void

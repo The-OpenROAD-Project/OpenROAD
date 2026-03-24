@@ -117,6 +117,11 @@ void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
   tree_->default_halo = {halo_width, halo_height, halo_width, halo_height};
 }
 
+void HierRTLMP::setUseDefHalo(bool use_def_halo)
+{
+  use_def_halo_ = use_def_halo;
+}
+
 void HierRTLMP::setGuidanceRegions(
     const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
 {
@@ -253,7 +258,7 @@ void HierRTLMP::init()
 {
   block_ = db_->getChip()->getBlock();
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
+      block_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
@@ -267,11 +272,12 @@ void HierRTLMP::init()
 void HierRTLMP::runMultilevelAutoclustering()
 {
   clustering_engine_ = std::make_unique<ClusteringEngine>(
-      block_, network_, logger_, tritonpart_, graphics_.get());
+      block_, logger_, tritonpart_, graphics_.get());
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
   clustering_engine_->setHalos(macro_to_halo_);
+  clustering_engine_->setUseDefHalo(use_def_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -1767,11 +1773,7 @@ bool HierRTLMP::singleArraySingleStdCellCluster(
     }
   }
 
-  if (number_of_macro_arrays == 0 || number_of_std_clusters == 0) {
-    return false;
-  }
-
-  return true;
+  return number_of_macro_arrays != 0 && number_of_std_clusters != 0;
 }
 
 void HierRTLMP::placeMacros(Cluster* cluster)

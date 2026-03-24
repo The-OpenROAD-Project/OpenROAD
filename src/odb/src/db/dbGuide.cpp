@@ -25,6 +25,7 @@ template class dbTable<_dbGuide>;
 
 bool _dbGuide::operator==(const _dbGuide& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (net_ != rhs.net_) {
     return false;
   }
@@ -51,6 +52,7 @@ bool _dbGuide::operator==(const _dbGuide& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGuide::operator<(const _dbGuide& rhs) const
@@ -215,6 +217,8 @@ void dbGuide::destroy(dbGuide* guide)
     block->journal_->pushParam(_guide->layer_);
     block->journal_->pushParam(_guide->via_layer_);
     block->journal_->pushParam(_guide->is_congested_);
+    block->journal_->pushParam(_guide->is_jumper_);
+    block->journal_->pushParam(_guide->is_connect_to_term_);
     block->journal_->endAction();
   }
 

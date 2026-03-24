@@ -259,7 +259,7 @@ void dbEditHierarchy::hierarchicalConnect(odb::dbITerm* source_pin,
   //
   odb::dbNet* source_db_net = source_pin->getNet();
   odb::dbNet* dest_db_net = dest_pin->getNet();
-  if (db_network_->hasHierarchy() == false) {
+  if (!db_network_->hasHierarchy()) {
     // If both source pin and dest pin do not have a corresponding flat net,
     // Create a new net and connect it with source pin.
     if (source_db_net == nullptr && dest_db_net == nullptr) {
@@ -619,21 +619,12 @@ std::string dbEditHierarchy::makeUniqueName(odb::dbModule* module,
     base_name = name;
   }
 
-  std::string unique_name = base_name;
-  int id = 0;
-
-  Instance* inst = db_network_->dbToSta(module->getModInst());
-  if (inst == nullptr) {
-    inst = db_network_->topInstance();
-  }
-
-  // Check collision with both hierarchical ports and flat & hier nets
-  while (module->findModBTerm(unique_name.c_str())
-         || db_network_->findNet(inst, unique_name.c_str())) {
-    id++;
-    unique_name = fmt::format("{}_{}", base_name, id);
-  }
-  return unique_name;
+  odb::dbBlock* block = db_network_->block();
+  std::string full = block->makeNewNetName(
+      module,
+      base_name.c_str(),
+      odb::dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  return std::string(block->getBaseName(full.c_str()));
 }
 
 const char* dbEditHierarchy::getBaseName(const char* connection_name) const

@@ -727,7 +727,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
@@ -812,7 +812,7 @@ uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   _rsegJid.clear();
   _shortSrcJid.clear();
@@ -2249,7 +2249,7 @@ void extMain::writeSPEF(char* filename,
   }
   _spef->_termJxy = termJxy;
 
-  _writeNameMap = noNameMap ? false : true;
+  _writeNameMap = !noNameMap;
   _spef->_writeNameMap = _writeNameMap;
   _spef->setUseIdsFlag(false);
   int cntnet, cntrseg, cntcapn, cntcc;

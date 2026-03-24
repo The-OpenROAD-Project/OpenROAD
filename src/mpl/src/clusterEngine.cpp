@@ -32,12 +32,10 @@ namespace mpl {
 using utl::MPL;
 
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
-                                   sta::dbNetwork* network,
                                    utl::Logger* logger,
                                    par::PartitionMgr* triton_part,
                                    MplObserver* graphics)
     : block_(block),
-      network_(network),
       logger_(logger),
       triton_part_(triton_part),
       graphics_(graphics)
@@ -88,6 +86,11 @@ void ClusteringEngine::setHalos(
     std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
 {
   macro_to_halo_ = macro_to_halo;
+}
+
+void ClusteringEngine::setUseDefHalo(bool use_def_halo)
+{
+  use_def_halo_ = use_def_halo;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -2077,12 +2080,14 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = tree_->default_halo;
+      HardMacro::Halo halo;
 
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
+      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
         halo = HardMacro::Halo(inst->getHalo());
+      } else {
+        halo = tree_->default_halo;
       }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);

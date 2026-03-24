@@ -182,6 +182,8 @@ class Opendp
 
   // gap -> sequence of masters to fill the gap
   using GapFillers = std::vector<dbMasterSeq>;
+  // row height -> GapFillers, by implant layer
+  using GapFillersByHeight = std::map<DbuY, GapFillers>;
 
   using MasterByImplant = std::map<odb::dbTechLayer*, dbMasterSeq>;
 
@@ -189,6 +191,7 @@ class Opendp
 
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
+  friend class CellPlaceOrderLess;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);
@@ -232,9 +235,9 @@ class Opendp
                    GridX x_end,
                    GridY y_end) const;
   bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
-  bool shiftMove(Node* cell);
-  bool mapMove(Node* cell);
-  bool mapMove(Node* cell, const GridPt& grid_pt);
+  bool ripUpAndReplace(Node* cell);
+  bool diamondMove(Node* cell);
+  bool diamondMove(Node* cell, const GridPt& grid_pt);
   int distChange(const Node* cell, DbuX x, DbuY y) const;
   bool swapCells(Node* cell1, Node* cell2);
   bool refineMove(Node* cell);
@@ -316,6 +319,7 @@ class Opendp
   void setGridCells();
   dbMasterSeq& gapFillers(odb::dbTechLayer* implant,
                           GridX gap,
+                          DbuY row_height,
                           const MasterByImplant& filler_masters_by_implant);
   void placeRowFillers(GridY row,
                        const std::string& prefix,
@@ -357,7 +361,6 @@ class Opendp
   std::unique_ptr<PlacementDRC> drc_engine_;
   Journal* journal_ = nullptr;
 
-  bool have_multi_row_cells_ = false;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
   bool disallow_one_site_gaps_ = false;
@@ -368,8 +371,8 @@ class Opendp
   RtreeBox regions_rtree_;
 
   // Filler placement.
-  // gap (in sites) -> seq of masters by implant
-  std::map<odb::dbTechLayer*, GapFillers> gap_fillers_;
+  // gap (in sites) -> seq of masters by implant and row height
+  std::map<odb::dbTechLayer*, GapFillersByHeight> gap_fillers_;
   std::map<odb::dbMaster*, int> filler_count_;
   bool have_fillers_ = false;
 
@@ -388,8 +391,8 @@ class Opendp
   std::unique_ptr<Node> dummy_cell_;
   int jump_moves_ = 0;
   int move_count_ = 1;
-  bool iterative_placement_ = false;
-  bool deep_iterative_placement_ = false;
+  bool iterative_debug_ = false;
+  bool deep_iterative_debug_ = false;
   bool incremental_ = false;
 
   // Magic numbers

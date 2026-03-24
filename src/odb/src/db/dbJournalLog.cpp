@@ -50,7 +50,7 @@ void dbJournalLog::clear()
 void dbJournalLog::push(bool value)
 {
   set_type(kLogBool);
-  data_.push_back((value == true) ? 1 : 0);
+  data_.push_back((value) ? 1 : 0);
 }
 
 void dbJournalLog::push(char value)
@@ -140,7 +140,7 @@ void dbJournalLog::moveToEnd()
 void dbJournalLog::pop(bool& value)
 {
   check_type(kLogBool);
-  value = (next() == 1) ? true : false;
+  value = next() == 1;
 }
 
 void dbJournalLog::pop(char& value)
