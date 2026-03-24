@@ -19,6 +19,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "spdlog/fmt/ostr.h"
 #include "utl/scope.h"
 
@@ -173,21 +174,15 @@ void lefout::writePolygon(const std::string& indent, dbPolygon* polygon)
   fmt::print(_out, ";\n");
 }
 
-void lefout::writeRect(const std::string& indent,
-                       const boost::polygon::rectangle_data<int>& rect)
+void lefout::writeRect(const std::string& indent, const Rect& rect)
 {
-  int x1 = boost::polygon::xl(rect);
-  int y1 = boost::polygon::yl(rect);
-  int x2 = boost::polygon::xh(rect);
-  int y2 = boost::polygon::yh(rect);
-
   fmt::print(_out,
              "{}  RECT  {:.11g} {:.11g} {:.11g} {:.11g} ;\n",
              indent.c_str(),
-             lefdist(x1),
-             lefdist(y1),
-             lefdist(x2),
-             lefdist(y2));
+             lefdist(rect.xMin()),
+             lefdist(rect.yMin()),
+             lefdist(rect.xMax()),
+             lefdist(rect.yMax()));
 }
 
 void lefout::writeHeader(dbBlock* db_block)
@@ -234,7 +229,7 @@ void lefout::writeObstructions(dbBlock* db_block)
       shrink_poly.shrink2(bloat, bloat, bloat, bloat);
 
       // Decompose the polygon set to rectanges in non-preferred direction
-      std::vector<boost::polygon::rectangle_data<int>> rects;
+      std::vector<Rect> rects;
       if (tech_layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
         shrink_poly.get_rectangles(rects, boost::polygon::VERTICAL);
       } else if (tech_layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {

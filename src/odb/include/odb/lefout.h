@@ -98,8 +98,7 @@ class lefout
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
   void writeBox(const std::string& indent, dbBox* box);
   void writePolygon(const std::string& indent, dbPolygon* polygon);
-  void writeRect(const std::string& indent,
-                 const boost::polygon::rectangle_data<int>& rect);
+  void writeRect(const std::string& indent, const Rect& rect);
   void findInstsObstructions(ObstructionMap& obstructions,
                              dbBlock* db_block) const;
   void findWireLayerObstructions(ObstructionMap& obstructions,
