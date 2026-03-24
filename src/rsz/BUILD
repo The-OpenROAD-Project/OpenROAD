@@ -7,6 +7,7 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -189,4 +190,17 @@ py_library(
     data = [":_rsz_py.so"],
     imports = ["."],
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Resizer.tcl",
+    ],
+    visibility = ["//src/rsz/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rsz/test:__pkg__"],
 )
