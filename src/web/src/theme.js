@@ -3,9 +3,11 @@
 
 // Theme initialization and helpers.
 
-const savedTheme = localStorage.getItem('theme')
-    || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-document.documentElement.dataset.theme = savedTheme;
+if (typeof localStorage !== 'undefined') {
+    const savedTheme = localStorage.getItem('theme')
+        || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    document.documentElement.dataset.theme = savedTheme;
+}
 
 // Read current CSS custom property values for canvas-based widgets.
 export function getThemeColors() {

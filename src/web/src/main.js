@@ -270,6 +270,22 @@ function createLayoutViewer(container) {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
 
+    // Coordinate readout overlay (bottom-left of the layout viewer).
+    const coordBar = document.createElement('div');
+    coordBar.id = 'coord-bar';
+    mapDiv.appendChild(coordBar);
+
+    app.map.on('mousemove', (e) => {
+        if (!app.designScale) return;
+        const { dbuX, dbuY } = latLngToDbu(
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+        const precision = Math.ceil(Math.log10(dbuPerUm));
+        const xUm = (dbuX / dbuPerUm).toFixed(precision);
+        const yUm = (dbuY / dbuPerUm).toFixed(precision);
+        coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
+    });
+
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
 
