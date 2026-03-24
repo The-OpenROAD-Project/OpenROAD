@@ -31,6 +31,7 @@ ALL_TESTS = [
     "power1",
     "read_liberty1",
     "read_vcd",
+    "read_vcd_no_design",
     "read_verilog1",
     "read_verilog2",
     "read_verilog3",
@@ -135,6 +136,12 @@ filegroup(
             "read_vcd": glob(
                 [
                     "Element.*",
+                    "MockArray.*",
+                    "asap7/*",
+                ],
+            ),
+            "read_vcd_no_design": glob(
+                [
                     "MockArray.*",
                     "asap7/*",
                 ],

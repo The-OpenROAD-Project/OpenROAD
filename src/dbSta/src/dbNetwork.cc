@@ -1112,6 +1112,9 @@ bool dbNetwork::isLeaf(const Instance* instance) const
 
 Instance* dbNetwork::findInstance(const char* path_name) const
 {
+  if (block_ == nullptr) {
+    return nullptr;
+  }
   if (hasHierarchy()) {  // are we in hierarchical mode ?
     // find a hierarchical module instance first
     odb::dbModInst* mod_inst = block()->findModInst(path_name);
