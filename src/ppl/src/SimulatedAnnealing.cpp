@@ -64,11 +64,11 @@ void SimulatedAnnealing::run(float init_temperature,
   boost::random::uniform_real_distribution<float> distribution;
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      int prev_cost;
+      int64 prev_cost;
       perturbAssignment(prev_cost);
 
       const int64 cost = pre_cost + getDeltaCost(prev_cost);
-      const int delta_cost = cost - pre_cost;
+      const int64 delta_cost = cost - pre_cost;
       debugPrint(logger_,
                  utl::PPL,
                  "annealing",
@@ -258,7 +258,7 @@ void SimulatedAnnealing::randomAssignment()
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
-        while (!free && slot_idx < slot_indices.size() - 1) {
+        while (!free && slot_idx < static_cast<int>(slot_indices.size()) - 1) {
           slot_idx++;
           slot = slot_indices[slot_idx];
           free = slots_[slot].isAvailable();
@@ -363,9 +363,9 @@ int64 SimulatedAnnealing::getAssignmentCost()
   return cost;
 }
 
-int SimulatedAnnealing::getDeltaCost(const int prev_cost)
+int64 SimulatedAnnealing::getDeltaCost(const int64 prev_cost)
 {
-  int new_cost = 0;
+  int64 new_cost = 0;
   for (int pin_idx : pins_) {
     new_cost += getPinCost(pin_idx);
   }
@@ -392,7 +392,7 @@ int64 SimulatedAnnealing::getGroupCost(int group_idx)
   return cost;
 }
 
-void SimulatedAnnealing::perturbAssignment(int& prev_cost)
+void SimulatedAnnealing::perturbAssignment(int64& prev_cost)
 {
   boost::random::uniform_real_distribution<float> distribution;
   const float move = distribution(generator_);
@@ -579,7 +579,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   int max_iters = num_slots_ * 10;
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
-    if ((new_slot + pins_.size() >= num_slots_ - 1)) {
+    if ((new_slot + group.pin_indices.size() >= num_slots_ - 1)) {
+      iter++;
       continue;
     }
 
@@ -605,10 +606,10 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     netlist_->sortPinsFromGroup(group_idx, slots_[new_slot].edge);
     updateGroupSlots(group.pin_indices, new_slot);
   } else {
+    updateSlotsFromGroup(prev_slots_, true);
     prev_slots_.clear();
     new_slots_.clear();
     pins_.clear();
-    updateSlotsFromGroup(prev_slots_, true);
     return move_fail_;
   }
 
@@ -673,7 +674,10 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     max_count++;
     slot++;
   }
-  max_count -= pin_indices.size();
+  max_count -= static_cast<int>(pin_indices.size());
+  if (max_count < 0) {
+    max_count = 0;
+  }
 
   if (min_count + max_count > 0) {
     if (min_count > max_count) {

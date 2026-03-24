@@ -65,10 +65,10 @@ class SimulatedAnnealing
   int randomAssignmentForGroups(std::set<int>& placed_pins,
                                 const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
-  int getDeltaCost(int prev_cost);
+  int64 getDeltaCost(int64 prev_cost);
   int getPinCost(int pin_idx);
   int64 getGroupCost(int group_idx);
-  void perturbAssignment(int& prev_cost);
+  void perturbAssignment(int64& prev_cost);
   int swapPins();
   int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
