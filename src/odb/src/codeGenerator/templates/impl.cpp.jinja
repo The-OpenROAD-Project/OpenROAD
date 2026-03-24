@@ -145,17 +145,40 @@ namespace odb {
     {% if 'no-set' not in field.flags %}
       void {{klass.name}}::{{field.setterFunctionName}}( {% if field.isSetByRef %}const {{field.setterArgumentType}}&{% else %}{{field.setterArgumentType}}{% endif %} {{field.argument}} )
       {
-    
+
         _{{klass.name}}* obj = (_{{klass.name}}*)this;
-    
+
+        {% if 'notify' in field.flags %}
+        _dbDatabase* _notifyDb = obj->getDatabase();
+        if (_notifyDb != nullptr) {
+          std::vector<dbChipletCallBackObj*> _cbs(
+              _notifyDb->chiplet_callbacks_.begin(),
+              _notifyDb->chiplet_callbacks_.end());
+          for (auto* _notifyCb : _cbs) {
+            _notifyCb->inDb{{klass.name[2:]}}PreModify(({{klass.name}}*) this);
+          }
+        }
+        {% endif %}
+
         {% if field.isRef %}
-    
+
           obj->{{field.name}}={{field.argument}}->getImpl()->getOID();
-    
+
         {% else %}
 
           obj->{{field.name}}={{field.argument}};
-    
+
+        {% endif %}
+
+        {% if 'notify' in field.flags %}
+        if (_notifyDb != nullptr) {
+          std::vector<dbChipletCallBackObj*> _cbs(
+              _notifyDb->chiplet_callbacks_.begin(),
+              _notifyDb->chiplet_callbacks_.end());
+          for (auto* _notifyCb : _cbs) {
+            _notifyCb->inDb{{klass.name[2:]}}PostModify(({{klass.name}}*) this);
+          }
+        }
         {% endif %}
       }
     {% endif %}
@@ -197,11 +220,34 @@ namespace odb {
       {% if 'no-set' not in field.flags %}
         void {{klass.name}}::{{field.setterFunctionName}}( {{field.setterArgumentType}} {{field.argument}} )
         {
-      
+
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
-      
+
+          {% if 'notify' in field.flags %}
+          _dbDatabase* _notifyDb = obj->getDatabase();
+          if (_notifyDb != nullptr) {
+            std::vector<dbChipletCallBackObj*> _cbs(
+                _notifyDb->chiplet_callbacks_.begin(),
+                _notifyDb->chiplet_callbacks_.end());
+            for (auto* _notifyCb : _cbs) {
+              _notifyCb->inDb{{klass.name[2:]}}PreModify(({{klass.name}}*) this);
+            }
+          }
+          {% endif %}
+
           obj->{{_struct.in_class_name}}.{{field.name}}={{field.argument}};
-      
+
+          {% if 'notify' in field.flags %}
+          if (_notifyDb != nullptr) {
+            std::vector<dbChipletCallBackObj*> _cbs(
+                _notifyDb->chiplet_callbacks_.begin(),
+                _notifyDb->chiplet_callbacks_.end());
+            for (auto* _notifyCb : _cbs) {
+              _notifyCb->inDb{{klass.name[2:]}}PostModify(({{klass.name}}*) this);
+            }
+          }
+          {% endif %}
+
         }
       {% endif %}
     
@@ -218,6 +264,34 @@ namespace odb {
       {% endfor %}
     {% endif %}
   {% endfor %}
+
+  {% if klass.lifecycle_notify %}
+  void _{{klass.name}}::notifyCreate()
+  {
+    _dbDatabase* db = getDatabase();
+    if (db != nullptr) {
+      std::vector<dbChipletCallBackObj*> cbs(
+          db->chiplet_callbacks_.begin(),
+          db->chiplet_callbacks_.end());
+      for (auto* cb : cbs) {
+        cb->inDb{{klass.name[2:]}}Create(({{klass.name}}*) this);
+      }
+    }
+  }
+
+  void _{{klass.name}}::notifyDestroy()
+  {
+    _dbDatabase* db = getDatabase();
+    if (db != nullptr) {
+      std::vector<dbChipletCallBackObj*> cbs(
+          db->chiplet_callbacks_.begin(),
+          db->chiplet_callbacks_.end());
+      for (auto* cb : cbs) {
+        cb->inDb{{klass.name[2:]}}Destroy(({{klass.name}}*) this);
+      }
+    }
+  }
+  {% endif %}
 
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods

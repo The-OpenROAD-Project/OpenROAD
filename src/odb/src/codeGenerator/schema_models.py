@@ -94,6 +94,7 @@ class Class:
     needs_non_default_destructor: bool = False
     assert_alignment_is_multiple_of: Optional[int] = None
     ostream_scope: bool = False
+    lifecycle_notify: bool = False
     equal_fields: List[Dict[str, str]] = dataclass_field(default_factory=list)
     less_fields: List[Dict[str, str]] = dataclass_field(default_factory=list)
 

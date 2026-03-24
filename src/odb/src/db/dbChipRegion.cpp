@@ -5,6 +5,7 @@
 #include "dbChipRegion.h"
 
 #include <string>
+#include <vector>
 
 #include "dbChipBump.h"
 #include "dbCore.h"
@@ -12,6 +13,7 @@
 #include "dbTable.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+#include "odb/dbChipletCallBackObj.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
 #include <cstdint>
@@ -135,7 +137,26 @@ void dbChipRegion::setBox(const Rect& box)
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipRegionPreModify((dbChipRegion*) this);
+    }
+  }
+
   obj->box_ = box;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipRegionPostModify((dbChipRegion*) this);
+    }
+  }
 }
 
 Rect dbChipRegion::getBox() const
@@ -148,6 +169,30 @@ dbSet<dbChipBump> dbChipRegion::getChipBumps() const
 {
   _dbChipRegion* obj = (_dbChipRegion*) this;
   return dbSet<dbChipBump>(obj, obj->chip_bump_tbl_);
+}
+
+void _dbChipRegion::notifyCreate()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipRegionCreate((dbChipRegion*) this);
+    }
+  }
+}
+
+void _dbChipRegion::notifyDestroy()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipRegionDestroy((dbChipRegion*) this);
+    }
+  }
 }
 
 // User Code Begin dbChipRegionPublicMethods
@@ -244,6 +289,7 @@ dbChipRegion* dbChipRegion::create(dbChip* chip,
     chip_region->z_max_ = chip_thickness;
   }
 
+  chip_region->notifyCreate();
   return (dbChipRegion*) chip_region;
 }
 // User Code End dbChipRegionPublicMethods

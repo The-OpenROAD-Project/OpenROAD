@@ -389,6 +389,18 @@ class ODBGenerator:
             hash_dict[hash_value] = klass.name
             klass.hash = f"0x{hash_value:08X}"
 
+            # Auto-add includes for classes with "notify" fields or lifecycle_notify
+            has_notify = any(
+                "notify" in f.flags for f in klass.fields if not f.bitFields
+            )
+            if has_notify or klass.lifecycle_notify:
+                if "dbDatabase.h" not in klass.cpp_includes:
+                    klass.cpp_includes.append("dbDatabase.h")
+                if "odb/dbChipletCallBackObj.h" not in klass.cpp_includes:
+                    klass.cpp_includes.append("odb/dbChipletCallBackObj.h")
+                if "vector" not in klass.cpp_sys_includes:
+                    klass.cpp_sys_includes.append("vector")
+
             preprocess_klass(klass)
             self._prepare_comparisons(klass)
 

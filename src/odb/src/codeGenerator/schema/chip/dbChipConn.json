@@ -1,9 +1,10 @@
 {
   "name": "dbChipConn",
   "type": "dbObject",
+  "lifecycle_notify": true,
   "fields": [
     { "name": "name_", "type": "std::string", "flags": ["no-set"] },
-    { "name": "thickness_", "type": "int", "flags": [], "default": 0 },
+    { "name": "thickness_", "type": "int", "flags": ["notify"], "default": 0 },
     { "name": "chip_", "type": "dbId<_dbChip>", "flags": ["private"] },
     { "name": "chip_conn_next_", "type": "dbId<_dbChipConn>", "flags": ["private"] },
     { "name": "top_region_", "type": "dbId<_dbChipRegionInst>", "flags": ["private"] },

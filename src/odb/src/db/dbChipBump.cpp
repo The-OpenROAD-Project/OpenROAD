@@ -4,12 +4,15 @@
 // Generator Code Begin Cpp
 #include "dbChipBump.h"
 
+#include <vector>
+
 #include "dbChip.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
 #include "odb/db.h"
+#include "odb/dbChipletCallBackObj.h"
 // User Code Begin Includes
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -83,6 +86,30 @@ void _dbChipBump::collectMemInfo(MemInfo& info)
 // dbChipBump - Methods
 //
 ////////////////////////////////////////////////////////////////////
+
+void _dbChipBump::notifyCreate()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipBumpCreate((dbChipBump*) this);
+    }
+  }
+}
+
+void _dbChipBump::notifyDestroy()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipBumpDestroy((dbChipBump*) this);
+    }
+  }
+}
 
 // User Code Begin dbChipBumpPublicMethods
 
@@ -169,6 +196,7 @@ dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)
   obj->inst_ = _inst->getOID();
   obj->chip_ = _chip->getOID();
   obj->chip_region_ = _chip_region->getOID();
+  obj->notifyCreate();
   return (dbChipBump*) obj;
 }
 

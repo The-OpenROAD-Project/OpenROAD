@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <map>
-#include <numeric>
 #include <ranges>
 #include <string>
 #include <unordered_map>
@@ -102,6 +101,8 @@ void Checker::check()
   if (model == nullptr || chip == nullptr) {
     return;
   }
+  // Hold a shared read lock for the duration of all checks
+  UnfoldedModel::ReadGuard guard(model);
   auto* top_cat = dbMarkerCategory::createOrReplace(chip, "3DBlox");
   checkLogicalConnectivity(top_cat, model);
   checkFloatingChips(top_cat, model);
@@ -114,14 +115,19 @@ void Checker::check()
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
                                  const UnfoldedModel* model)
 {
-  const auto& chips = model->getChips();
+  // Collect valid chips into a contiguous vector for UnionFind indexing
+  std::vector<const UnfoldedChip*> valid_chips;
+  for (const auto& chip : model->getChips()) {
+    valid_chips.push_back(&chip);
+  }
+
   // Add one more node for "ground" (external world: package, PCB, ...)
-  utl::UnionFind uf(chips.size() + 1);
-  const size_t ground_node = chips.size();
+  utl::UnionFind uf(valid_chips.size() + 1);
+  const size_t ground_node = valid_chips.size();
 
   std::unordered_map<const UnfoldedChip*, size_t> chip_map;
-  for (size_t i = 0; i < chips.size(); ++i) {
-    chip_map[&chips[i]] = i;
+  for (size_t i = 0; i < valid_chips.size(); ++i) {
+    chip_map[valid_chips[i]] = i;
   }
 
   for (const auto& conn : model->getConnections()) {
@@ -147,9 +153,9 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
     }
   }
 
-  std::vector<std::vector<const UnfoldedChip*>> groups(chips.size() + 1);
-  for (size_t i = 0; i < chips.size(); ++i) {
-    groups[uf.find(i)].push_back(&chips[i]);
+  std::vector<std::vector<const UnfoldedChip*>> groups(valid_chips.size() + 1);
+  for (size_t i = 0; i < valid_chips.size(); ++i) {
+    groups[uf.find(i)].push_back(valid_chips[i]);
   }
   auto ground_leader = uf.find(ground_node);
   const bool ground_empty = groups[ground_leader].empty();
@@ -187,18 +193,21 @@ void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
 void Checker::checkOverlappingChips(dbMarkerCategory* top_cat,
                                     const UnfoldedModel* model)
 {
-  const auto& chips = model->getChips();
-  std::vector<int> sorted(chips.size());
-  std::iota(sorted.begin(), sorted.end(), 0);
-  std::ranges::sort(sorted, [&](int a, int b) {
-    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
-  });
+  // Collect valid chips into a sortable vector
+  std::vector<const UnfoldedChip*> valid_chips;
+  for (const auto& chip : model->getChips()) {
+    valid_chips.push_back(&chip);
+  }
+  std::ranges::sort(valid_chips,
+                    [](const UnfoldedChip* a, const UnfoldedChip* b) {
+                      return a->cuboid.xMin() < b->cuboid.xMin();
+                    });
 
   std::vector<std::pair<const UnfoldedChip*, const UnfoldedChip*>> overlaps;
-  for (size_t i = 0; i < sorted.size(); ++i) {
-    auto* c1 = &chips[sorted[i]];
-    for (size_t j = i + 1; j < sorted.size(); ++j) {
-      auto* c2 = &chips[sorted[j]];
+  for (size_t i = 0; i < valid_chips.size(); ++i) {
+    const UnfoldedChip* c1 = valid_chips[i];
+    for (size_t j = i + 1; j < valid_chips.size(); ++j) {
+      const UnfoldedChip* c2 = valid_chips[j];
       if (c2->cuboid.xMin() >= c1->cuboid.xMax()) {
         break;
       }
@@ -228,7 +237,7 @@ void Checker::checkInternalExtUsage(dbMarkerCategory* top_cat,
 {
   dbMarkerCategory* cat = nullptr;
   for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
+    for (const auto& region : chip.getRegions()) {
       if (region.isInternalExt() && !region.isUsed) {
         if (!cat) {
           cat = dbMarkerCategory::createOrReplace(top_cat,
@@ -292,8 +301,8 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
   dbMarkerCategory* cat = nullptr;
   int violation_count = 0;
   for (const auto& chip : model->getChips()) {
-    for (const auto& region : chip.regions) {
-      for (const auto& bump : region.bumps) {
+    for (const auto& region : chip.getRegions()) {
+      for (const auto& bump : region.getBumps()) {
         const auto& p = bump.global_position;
         if (!region.cuboid.getEnclosingRect().intersects({p.x(), p.y()})) {
           violation_count++;
@@ -354,12 +363,12 @@ void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
     }
 
     std::map<Point, const UnfoldedBump*> bot_bumps;
-    for (const auto& bump : conn.bottom_region->bumps) {
+    for (const auto& bump : conn.bottom_region->getBumps()) {
       Point p(bump.global_position.x(), bump.global_position.y());
       bot_bumps[p] = &bump;
     }
 
-    for (const auto& top_bump : conn.top_region->bumps) {
+    for (const auto& top_bump : conn.top_region->getBumps()) {
       Point p(top_bump.global_position.x(), top_bump.global_position.y());
       auto it = bot_bumps.find(p);
       if (it != bot_bumps.end()) {

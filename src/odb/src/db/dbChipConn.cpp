@@ -16,6 +16,7 @@
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/db.h"
+#include "odb/dbChipletCallBackObj.h"
 // User Code Begin Includes
 #include "utl/Logger.h"
 // User Code End Includes
@@ -106,13 +107,56 @@ void dbChipConn::setThickness(int thickness)
 {
   _dbChipConn* obj = (_dbChipConn*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipConnPreModify((dbChipConn*) this);
+    }
+  }
+
   obj->thickness_ = thickness;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipConnPostModify((dbChipConn*) this);
+    }
+  }
 }
 
 int dbChipConn::getThickness() const
 {
   _dbChipConn* obj = (_dbChipConn*) this;
   return obj->thickness_;
+}
+
+void _dbChipConn::notifyCreate()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipConnCreate((dbChipConn*) this);
+    }
+  }
+}
+
+void _dbChipConn::notifyDestroy()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipConnDestroy((dbChipConn*) this);
+    }
+  }
 }
 
 // User Code Begin dbChipConnPublicMethods
@@ -252,6 +296,7 @@ dbChipConn* dbChipConn::create(
 
   obj->chip_conn_next_ = chip->conns_;
   chip->conns_ = obj->getOID();
+  obj->notifyCreate();
   return (dbChipConn*) obj;
 }
 
@@ -274,6 +319,7 @@ void dbChipConn::destroy(dbChipConn* chipConn)
       id = _chipconn->chip_conn_next_;
     }
   }
+  obj->notifyDestroy();
   // Destroy the connection
   _db->chip_conn_tbl_->destroy(obj);
 }

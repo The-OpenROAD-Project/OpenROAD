@@ -30,6 +30,7 @@
 #include <iostream>
 #include <istream>
 #include <map>
+#include <memory>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -44,8 +45,6 @@
 #include "dbChipConnItr.h"
 #include "dbChipInstItr.h"
 #include "dbChipNetItr.h"
-#include "dbChipRegionInstItr.h"
-#include "dbCore.h"
 #include "dbGDSLib.h"
 #include "dbITerm.h"
 #include "dbJournal.h"
@@ -60,6 +59,7 @@
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
 #include "odb/unfoldedModel.h"
+#include "odb/unfoldedModelUpdater.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -211,7 +211,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
 
-  unfolded_model_ = nullptr;
+  // unfolded_model_ and unfolded_model_updater_ are default-initialized
+  // (unique_ptr defaults to nullptr)
   // User Code End Constructor
 }
 
@@ -455,7 +456,10 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_itr_;
   delete chip_bump_inst_itr_;
   delete chip_net_itr_;
-  delete unfolded_model_;
+  // Must destroy updater before chiplet_callbacks_ list (reverse declaration
+  // order would destroy the list first, causing removeOwner() to access freed
+  // memory)
+  unfolded_model_updater_.reset();
   // User Code End Destructor
 }
 
@@ -505,8 +509,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
-
-  unfolded_model_ = nullptr;
+  // unfolded_model_ defaults to nullptr via unique_ptr
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -700,14 +703,18 @@ dbChip* dbDatabase::getChip()
 void dbDatabase::constructUnfoldedModel()
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  delete db->unfolded_model_;
-  db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
+  // Unregister old updater before destroying model
+  db->unfolded_model_updater_.reset();
+  db->unfolded_model_ = std::make_unique<UnfoldedModel>(db->logger_, getChip());
+  db->unfolded_model_updater_
+      = std::make_unique<UnfoldedModelUpdater>(db->unfolded_model_.get());
+  db->unfolded_model_updater_->addOwner(this);
 }
 
 UnfoldedModel* dbDatabase::getUnfoldedModel() const
 {
   _dbDatabase* db = (_dbDatabase*) this;
-  return db->unfolded_model_;
+  return db->unfolded_model_.get();
 }
 
 dbTech* dbDatabase::getTech()

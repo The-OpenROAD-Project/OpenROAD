@@ -10,7 +10,8 @@
 #include "dbHashTable.h"
 #include "odb/dbId.h"
 // User Code Begin Includes
-#include <iostream>
+#include <list>
+#include <memory>
 #include <set>
 
 #include "dbChipRegionInstItr.h"
@@ -286,6 +287,8 @@ class _dbTech;
 class _dbLib;
 class _dbGDSLib;
 class UnfoldedModel;
+class UnfoldedModelUpdater;
+class dbChipletCallBackObj;
 // User Code End Classes
 
 class _dbDatabase : public _dbObject
@@ -339,7 +342,12 @@ class _dbDatabase : public _dbObject
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
-  UnfoldedModel* unfolded_model_;  // non-persistent object
+  std::unique_ptr<UnfoldedModel> unfolded_model_;
+  // chiplet_callbacks_ must be declared before unfolded_model_updater_
+  // so it outlives the updater -- the updater's destructor calls
+  // removeOwner() which erases from this list.
+  std::list<dbChipletCallBackObj*> chiplet_callbacks_;
+  std::unique_ptr<UnfoldedModelUpdater> unfolded_model_updater_;
 
   // User Code End Fields
 };
