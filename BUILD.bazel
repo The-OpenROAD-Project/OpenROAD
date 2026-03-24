@@ -422,6 +422,7 @@ filegroup(
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
 #   bazelisk test //:dup_id_test                         # duplicate message ID check
 
+# buildifier: disable=native-sh-test
 sh_test(
     name = "dup_id_test",
     srcs = ["//etc:find_dup_ids.sh"],
