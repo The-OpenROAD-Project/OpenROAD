@@ -29,6 +29,8 @@ def _power_report_impl(ctx):
     if not ctx.attr.sta:
         # OpenROAD needs LEF files; filter from PDK files
         lefs = [f for f in all_pdk_files if f.path.endswith(".lef")]
+        if not lefs:
+            fail("No LEF files found in PDK; OpenROAD requires at least a tech LEF")
         env["TECH_LEF"] = lefs[0].path
         if len(lefs) > 1:
             env["SC_LEF"] = " ".join([f.path for f in lefs[1:]])
