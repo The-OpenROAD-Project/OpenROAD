@@ -33,10 +33,7 @@ MANUAL_TESTS = [
     "generate_rules",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "net_name_consistency",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + MANUAL_TESTS
 

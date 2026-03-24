@@ -13,11 +13,7 @@ COMPULSORY_TESTS = [
     "write_artnet",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "partition_gcd",
-    "write_artnet",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 ALL_TESTS = COMPULSORY_TESTS
 

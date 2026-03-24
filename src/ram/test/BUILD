@@ -8,6 +8,7 @@ package(features = ["layering_check"])
 COMPULSORY_TESTS = [
 ]
 
+# TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
     "make_8x8",
 ]

@@ -35,18 +35,7 @@ PASSFAIL_TESTS = [
     # "gc_test",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "down_access_term",
-    "drc_test",
-    "ispd18_sample",
-    "ispd18_sample_incr",
-    "ndr_vias1",
-    "ndr_vias2",
-    "ndr_vias3",
-    "single_step",
-    "top_level_term2",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 

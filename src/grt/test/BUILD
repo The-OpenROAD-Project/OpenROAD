@@ -122,9 +122,7 @@ filegroup(
     ),
 )
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 [regression_test(
     name = test_name,

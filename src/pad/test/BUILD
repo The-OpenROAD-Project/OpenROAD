@@ -64,10 +64,7 @@ COMPULSORY_TESTS = [
     "skywater130_overlapping_filler",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "rdl_route_single_target",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 ALL_TESTS = COMPULSORY_TESTS
 

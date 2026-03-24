@@ -230,10 +230,7 @@ PASSFAIL_TESTS = [
     "test_wire_codec",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "replace_hier_mod1",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 

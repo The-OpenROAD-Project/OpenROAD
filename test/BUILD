@@ -75,11 +75,7 @@ COMPULSORY_TESTS = [
     "write_db",
 ] + PASSFAIL_TESTS
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "upf_test",
-    "upf_aes",
-]
+MANUAL_FOR_BAZEL_TESTS = []
 
 # Bazel OpenROAD is not compiled with Python support yet
 # leave as manual for now.
