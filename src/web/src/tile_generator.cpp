@@ -21,6 +21,7 @@
 #include "gui/heatMap.h"
 #include "lodepng.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
