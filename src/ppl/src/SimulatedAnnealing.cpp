@@ -226,12 +226,21 @@ void SimulatedAnnealing::randomAssignment()
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
-        while (!free) {
+        int attempts = 0;
+        const int max_attempts = num_slots_ * 10;
+        while (!free && attempts < max_attempts) {
           slot = distribution(generator_);
           free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
+          attempts++;
+        }
+        if (!free) {
+          logger_->error(utl::PPL,
+                         117,
+                         "No available slot found for constrained pin {}.",
+                         io_pin.getName());
         }
         pin_assignment_[i] = slot;
         slots_[slot].used = true;
@@ -249,13 +258,19 @@ void SimulatedAnnealing::randomAssignment()
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
-        while (!free) {
+        while (!free && slot_idx < slot_indices.size() - 1) {
           slot_idx++;
           slot = slot_indices[slot_idx];
           free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
+        }
+        if (!free) {
+          logger_->error(utl::PPL,
+                         114,
+                         "No available slot found for unconstrained pin {}.",
+                         io_pin.getName());
         }
         pin_assignment_[i] = slot;
         slots_[slot].used = true;
