@@ -675,9 +675,7 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     slot++;
   }
   max_count -= static_cast<int>(pin_indices.size());
-  if (max_count < 0) {
-    max_count = 0;
-  }
+  max_count = std::max(max_count, 0);
 
   if (min_count + max_count > 0) {
     if (min_count > max_count) {
