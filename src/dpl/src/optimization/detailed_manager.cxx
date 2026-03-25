@@ -3050,8 +3050,10 @@ void DetailedMgr::paintInGrid(Node* node)
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
 
   const auto orientation
-      = grid_->getSiteOrientation(grid_x, grid_y, site).value();
+      = grid_->getSiteOrientation(grid_x, grid_y, site);
   grid_->paintPixel(node, grid_x, grid_y);
-  node->adjustCurrOrient(orientation);
+  if (orientation) {
+    node->adjustCurrOrient(orientation.value());
+  }
 }
 }  // namespace dpl

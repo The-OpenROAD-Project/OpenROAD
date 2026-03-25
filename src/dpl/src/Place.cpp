@@ -1077,16 +1077,22 @@ bool Opendp::checkPixels(const Node* cell,
     }
   }
 
-  const auto orient = grid_->getSiteOrientation(x, y, site).value();
+  // getSiteOrientation() returns nullopt when the cell's site is not
+  // present in the grid's row_sites_ map at this position — e.g. for
+  // CLASS BLOCK macros that have no SITE declaration.
+  const auto orient = grid_->getSiteOrientation(x, y, site);
+  if (!orient) {
+    return false;
+  }
 
   // Check for symmetry
   auto* dbMaster = cell->getDbInst()->getMaster();
   unsigned masterSym = dpl::DetailedOrient::getMasterSymmetry(dbMaster);
-  if (!checkMasterSym(masterSym, orient)) {
+  if (!checkMasterSym(masterSym, orient.value())) {
     return false;
   }
 
-  return drc_engine_->checkDRC(cell, x, y, orient);
+  return drc_engine_->checkDRC(cell, x, y, orient.value());
 }
 
 bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
@@ -1401,7 +1407,10 @@ void Opendp::placeCell(Node* cell, const GridX x, const GridY y)
   grid_->paintPixel(cell);
   cell->setPlaced(true);
   odb::dbSite* site = cell->getDbInst()->getMaster()->getSite();
-  cell->setOrient(grid_->getSiteOrientation(x, y, site).value());
+  const auto orient = grid_->getSiteOrientation(x, y, site);
+  if (orient) {
+    cell->setOrient(orient.value());
+  }
   if (journal_) {
     MoveCellAction action(cell,
                           original_x,
