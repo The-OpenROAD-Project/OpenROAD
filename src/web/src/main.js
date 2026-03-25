@@ -12,6 +12,10 @@ import { HierarchyBrowser } from './hierarchy-browser.js';
 import { createInspectorPanel } from './inspector.js';
 import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
+import { RulerManager } from './ruler.js';
+import { SchematicWidget } from './schematic-widget.js';
+import { TclCompleter } from './tcl-completer.js';
+import './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -25,7 +29,7 @@ function updateStatus() {
     } else {
         statusDiv.textContent = `pending: ${n}`;
         statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? '#f88' : '#ff0';
+        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
     }
 }
 
@@ -60,6 +64,7 @@ const app = {
     heatMapLayer: null,
     heatMapLegendEl: null,
     renderHeatMapControls: null,
+    rulerManager: null,
 };
 
 const visibility = {
@@ -243,7 +248,7 @@ function createLayoutViewer(container) {
     mapDiv.className = 'layout-viewer';
     mapDiv.style.width = '100%';
     mapDiv.style.height = '100%';
-    mapDiv.style.backgroundColor = '#111';
+    mapDiv.style.backgroundColor = 'var(--bg-map)';
     container.element.appendChild(mapDiv);
 
     const heatMapLegend = document.createElement('div');
@@ -265,6 +270,24 @@ function createLayoutViewer(container) {
     new ResizeObserver(() => {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
+
+    // Coordinate readout overlay (bottom-left of the layout viewer).
+    const coordBar = document.createElement('div');
+    coordBar.id = 'coord-bar';
+    mapDiv.appendChild(coordBar);
+
+    app.map.on('mousemove', (e) => {
+        if (!app.designScale) return;
+        const { dbuX, dbuY } = latLngToDbu(
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+        const precision = Math.ceil(Math.log10(dbuPerUm));
+        const xUm = (dbuX / dbuPerUm).toFixed(precision);
+        const yUm = (dbuY / dbuPerUm).toFixed(precision);
+        coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
+    });
+
+    app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
 
 function createDisplayControls(container) {
@@ -297,11 +320,17 @@ function createTclConsole(container) {
 
     app.tclOutputEl = el.querySelector('.tcl-output');
     const input = el.querySelector('.tcl-input');
+    const completer = new TclCompleter(input, app.websocketManager);
+
     input.addEventListener('keydown', (e) => {
+        // Let completer handle first (Tab, arrow keys, Enter-when-popup-visible)
+        if (completer.handleKeyDown(e)) return;
+
         if (e.key === 'Enter') {
             const cmd = input.value.trim();
             if (!cmd) return;
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+            completer.addToHistory(cmd);
             input.value = '';
             app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
@@ -325,6 +354,7 @@ const inspector = createInspectorPanel(app, redrawAllLayers);
 const createInspector = inspector.createInspector;
 const updateInspector = inspector.updateInspector;
 const highlightBBox = inspector.highlightBBox;
+app.updateInspector = updateInspector;
 
 function createBrowser(container) {
     new HierarchyBrowser(container, app, redrawAllLayers);
@@ -340,11 +370,11 @@ function createDRCWidget(container) {
 }
 
 function createClockWidget(container) {
-    new ClockTreeWidget(container, app, redrawAllLayers);
+    app.clockTreeWidget = new ClockTreeWidget(container, app, redrawAllLayers);
 }
 
 function createChartsWidget(container) {
-    new ChartsWidget(container, app, redrawAllLayers);
+    app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
 }
 
 function createHelpWidget(container) {
@@ -357,6 +387,9 @@ function createHelpWidget(container) {
         '<tr><td><kbd>scroll</kbd></td><td>Zoom in/out</td></tr>' +
         '<tr><td><kbd>drag</kbd></td><td>Pan the view</td></tr>' +
         '<tr><td><kbd>right-drag</kbd></td><td>Rubber-band zoom</td></tr>' +
+        '<tr><td><kbd>k</kbd></td><td>Toggle ruler mode</td></tr>' +
+        '<tr><td><kbd>Shift+K</kbd></td><td>Clear all rulers</td></tr>' +
+        '<tr><td><kbd>Escape</kbd></td><td>Cancel ruler (when building)</td></tr>' +
         '</table>';
     container.element.appendChild(el);
 }
@@ -364,6 +397,10 @@ function createHelpWidget(container) {
 function createSelectHighlight(container) {
     createStubPanel(container, 'Selection',
         'Selection and highlight browser.');
+}
+
+function createSchematicWidget(container) {
+    new SchematicWidget(container, app);
 }
 
 function createStubPanel(container, title, description) {
@@ -392,11 +429,21 @@ const defaultLayoutConfig = {
                 width: 55,
                 content: [
                     {
-                        type: 'component',
-                        componentType: 'LayoutViewer',
-                        title: 'Layout',
+                        type: 'stack',
                         height: 70,
-                        isClosable: false,
+                        content: [
+                            {
+                                type: 'component',
+                                componentType: 'LayoutViewer',
+                                title: 'Layout',
+                                isClosable: false,
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'SchematicWidget',
+                                title: 'Schematic',
+                            },
+                        ],
                     },
                     {
                         type: 'component',
@@ -464,11 +511,19 @@ app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWi
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
+app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
 app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
-const LAYOUT_VERSION = 2;
+const LAYOUT_VERSION = 3;
+
+// ─── WebSocket Init ─────────────────────────────────────────────────────────
+// Must be created before loadLayout so that components (e.g. SchematicWidget)
+// constructed during layout initialisation can access app.websocketManager.
+
+const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -496,7 +551,23 @@ window.addEventListener('resize', () => {
     app.goldenLayout.setSize(window.innerWidth, window.innerHeight - menuBarHeight);
 });
 
-// Focus a Golden Layout component tab by its componentType name.
+// componentType → display title (must match defaultLayoutConfig).
+const componentTitles = {
+    LayoutViewer: 'Layout',
+    DisplayControls: 'Display Controls',
+    TclConsole: 'Tcl Console',
+    Inspector: 'Inspector',
+    Browser: 'Hierarchy',
+    TimingWidget: 'Timing',
+    DRCWidget: 'DRC',
+    ClockWidget: 'Clock Tree',
+    ChartsWidget: 'Charts',
+    SchematicWidget: 'Schematic',
+    HelpWidget: 'Help',
+    SelectHighlight: 'Select Highlight',
+};
+
+// Focus a Golden Layout component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
     function find(item) {
         if (item.isComponent && item.componentType === componentType) return item;
@@ -509,19 +580,28 @@ function focusComponent(componentType) {
         return null;
     }
     const item = find(app.goldenLayout.rootItem);
-    if (item) item.focus();
+    if (item) {
+        item.focus();
+    } else {
+        const title = componentTitles[componentType] || componentType;
+        app.goldenLayout.addComponent(componentType, undefined, title);
+    }
 }
 
 app.focusComponent = focusComponent;
 
+app.toggleTheme = function() {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('theme', next);
+    // Re-render canvas-based widgets that read theme colors.
+    if (app.chartsWidget) app.chartsWidget.render();
+    if (app.clockTreeWidget) app.clockTreeWidget.render();
+};
+
 // ─── Menu Bar ────────────────────────────────────────────────────────────────
 
 createMenuBar(app);
-
-// ─── WebSocket Init ─────────────────────────────────────────────────────────
-
-const websocketUrl = `ws://${window.location.hostname || 'localhost'}:8080/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
@@ -570,6 +650,7 @@ app.websocketManager.readyPromise.then(async () => {
         // Click-to-select: convert click position to DBU and query server
         app.map.on('click', (e) => {
             if (!app.designScale) return;
+            if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
                 e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
 
@@ -583,6 +664,12 @@ app.websocketManager.readyPromise.then(async () => {
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
+                        if (inst.type === 'Inst') {
+                            app.selectedInstanceName = inst.name;
+                            if (app.schematicWidget) {
+                                app.schematicWidget.refresh();
+                            }
+                        }
                         updateInspector(data);
                         focusComponent('Inspector');
                         // Highlight selected instance bbox
@@ -684,13 +771,23 @@ app.websocketManager.readyPromise.then(async () => {
 
 document.addEventListener('keydown', (e) => {
     // Ignore shortcuts when typing in an input field
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
 
-    if (e.key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
+    const key = e.key.toLowerCase();
+    if (key === 'escape' && app.rulerManager && app.rulerManager.isActive()) {
+        app.rulerManager.cancelRulerBuild();
+    } else if (key === 'k' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.rulerManager) app.rulerManager.toggleRulerMode();
+    } else if (key === 'k' && e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        if (app.rulerManager) app.rulerManager.clearAllRulers();
+    } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
-    } else if (e.key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
+    } else if (key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
         app.map.zoomIn();
-    } else if (e.key === 'Z' && e.shiftKey && !e.ctrlKey && app.map) {
+    } else if (key === 'z' && e.shiftKey && !e.ctrlKey && app.map) {
         app.map.zoomOut();
+    } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+        app.toggleTheme();
     }
-});
+}, true);

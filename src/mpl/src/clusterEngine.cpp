@@ -121,12 +121,13 @@ void ClusteringEngine::init()
       = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
 
   if (inst_area_with_halos > tree_->floorplan_shape.area()) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area considering the macros' halos {} exceeds "
-                   "the floorplan area {}",
-                   inst_area_with_halos,
-                   tree_->floorplan_shape.area());
+    logger_->error(
+        MPL,
+        16,
+        "The instance area considering the macros' halos {:.2f}um^2 exceeds "
+        "the floorplan area {:.2f}um^2",
+        block_->dbuAreaToMicrons(static_cast<int64_t>(inst_area_with_halos)),
+        block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
   }
 
   tree_->io_pads = getIOPads();
@@ -2080,12 +2081,14 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = tree_->default_halo;
+      HardMacro::Halo halo;
 
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
       } else if (use_def_halo_ && inst->getHalo() != nullptr) {
         halo = HardMacro::Halo(inst->getHalo());
+      } else {
+        halo = tree_->default_halo;
       }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);

@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <typeindex>
+#include <typeinfo>
 #include <utility>
 #include <variant>
 

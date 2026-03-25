@@ -12,7 +12,9 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -563,6 +565,9 @@ WebSocketResponse dispatch_request(
       }
       builder.endArray();
       builder.field("has_liberty", gen.hasSta());
+      if (gen.getBlock()) {
+        builder.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+      }
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -926,6 +931,452 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
   return resp;
 }
 
+WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    auto snap = gen_->snapAt(req.snap_x,
+                             req.snap_y,
+                             req.snap_radius,
+                             req.snap_point_threshold,
+                             req.snap_horizontal,
+                             req.snap_vertical,
+                             req.vis,
+                             req.visible_layers);
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("found", snap.found);
+    if (snap.found) {
+      const bool is_point = snap.edge.first == snap.edge.second;
+      builder.field("is_point", is_point);
+      builder.beginArray("edge");
+      builder.beginArray();
+      builder.value(snap.edge.first.x());
+      builder.value(snap.edge.first.y());
+      builder.endArray();
+      builder.beginArray();
+      builder.value(snap.edge.second.x());
+      builder.value(snap.edge.second.y());
+      builder.endArray();
+      builder.endArray();
+    }
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("snap error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicCone(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  // Limits to prevent fanout explosions (e.g. clock net at depth > 0).
+  static constexpr int kMaxConeInsts = 150;
+  static constexpr int kMaxNetFanout = 30;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* target_inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!target_inst) {
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
+    }
+
+    std::set<odb::dbInst*> all_insts;
+    all_insts.insert(target_inst);
+    bool cone_full = false;
+
+    // Fanin BFS: follow input pins upstream to their driving instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanin_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::INPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* drv : net->getITerms()) {
+              if (drv->getIoType() != odb::dbIoType::OUTPUT) {
+                continue;
+              }
+              odb::dbInst* drv_inst = drv->getInst();
+              if (all_insts.insert(drv_inst).second) {
+                next_level.push_back(drv_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        level = next_level;
+      }
+    }
+
+    // Fanout BFS: follow output pins downstream to their load instances.
+    {
+      std::vector<odb::dbInst*> level = {target_inst};
+      std::set<odb::dbNet*> seen_nets;
+      for (int d = 0; d < req.schematic_fanout_depth && !cone_full; ++d) {
+        std::vector<odb::dbInst*> next_level;
+        for (odb::dbInst* inst : level) {
+          for (odb::dbITerm* iterm : inst->getITerms()) {
+            if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
+              continue;
+            }
+            odb::dbNet* net = iterm->getNet();
+            if (!net || seen_nets.contains(net)
+                || static_cast<int>(net->getITerms().size()) > kMaxNetFanout) {
+              continue;
+            }
+            seen_nets.insert(net);
+            for (odb::dbITerm* load : net->getITerms()) {
+              if (load->getIoType() != odb::dbIoType::INPUT) {
+                continue;
+              }
+              odb::dbInst* load_inst = load->getInst();
+              if (all_insts.insert(load_inst).second) {
+                next_level.push_back(load_inst);
+                if (static_cast<int>(all_insts.size()) >= kMaxConeInsts) {
+                  cone_full = true;
+                  break;
+                }
+              }
+            }
+            if (cone_full) {
+              break;
+            }
+          }
+          if (cone_full) {
+            break;
+          }
+        }
+        level = next_level;
+      }
+    }
+
+    // Collect all nets that touch any visited instance.
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;  // 0 = const-0, 1 = const-1 reserved by Yosys
+    for (odb::dbInst* inst : all_insts) {
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (net && !net_to_id.contains(net)) {
+          net_to_id[net] = next_net_id++;
+        }
+      }
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    // Module-level attributes (required by Yosys JSON schema)
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    // Top-level ports (dbBTerm) connected to any visited net
+    builder.beginObject("ports");
+    for (const auto& [net, _id] : net_to_id) {
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        builder.beginObject(bterm->getName());
+        std::string dir = "inout";
+        if (bterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field("direction", dir);
+        builder.beginArray("bits");
+        builder.value(net_to_id[net]);
+        builder.endArray();
+        builder.endObject();
+      }
+    }
+    builder.endObject();
+
+    // Cells (instances)
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : all_insts) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      // Use master cell name as type; fall back to "$unknown" for safety
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      // Required Yosys JSON fields (netlistsvg guards these with || {}, but
+      // providing them avoids any version-specific surprises)
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
+          continue;
+        }
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net || !net_to_id.contains(net)) {
+          continue;
+        }
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+
+      builder.endObject();
+    }
+    builder.endObject();
+
+    // Net names for better labeling
+    builder.beginObject("netnames");
+    for (const auto& [net, net_id] : net_to_id) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_id);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicFull(
+    const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    std::map<odb::dbNet*, int> net_to_id;
+    int next_net_id = 2;
+    for (odb::dbNet* net : block->getNets()) {
+      net_to_id[net] = next_net_id++;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginObject("modules");
+    builder.beginObject("top");
+
+    builder.beginObject("attributes");
+    builder.endObject();
+
+    builder.beginObject("ports");
+    for (odb::dbBTerm* bterm : block->getBTerms()) {
+      odb::dbNet* net = bterm->getNet();
+      if (!net) {
+        continue;
+      }
+      builder.beginObject(bterm->getName());
+      std::string dir = "inout";
+      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+        dir = "input";
+      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
+        dir = "output";
+      }
+      builder.field("direction", dir);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("cells");
+    for (odb::dbInst* inst : block->getInsts()) {
+      builder.beginObject(inst->getName());
+      builder.field("hide_name", 0);
+      const std::string cell_type = inst->getMaster()
+                                        ? inst->getMaster()->getName()
+                                        : std::string("$unknown");
+      builder.field("type", cell_type);
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.beginObject("parameters");
+      builder.endObject();
+
+      builder.beginObject("port_directions");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        if (!iterm->getNet()) {
+          continue;
+        }
+        std::string dir = "inout";
+        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+          dir = "input";
+        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          dir = "output";
+        }
+        builder.field(iterm->getMTerm()->getName(), dir);
+      }
+      builder.endObject();
+
+      builder.beginObject("connections");
+      for (odb::dbITerm* iterm : inst->getITerms()) {
+        odb::dbNet* net = iterm->getNet();
+        if (!net) {
+          continue;
+        }
+        builder.beginArray(iterm->getMTerm()->getName());
+        builder.value(net_to_id[net]);
+        builder.endArray();
+      }
+      builder.endObject();
+
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.beginObject("netnames");
+    for (odb::dbNet* net : block->getNets()) {
+      builder.beginObject(net->getName());
+      builder.field("hide_name", 0);
+      builder.beginArray("bits");
+      builder.value(net_to_id[net]);
+      builder.endArray();
+      builder.beginObject("attributes");
+      builder.endObject();
+      builder.endObject();
+    }
+    builder.endObject();
+
+    builder.endObject();  // top
+    builder.endObject();  // modules
+    builder.endObject();  // root
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse SelectHandler::handleSchematicInspect(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbBlock* block = gen_->getBlock();
+    if (!block) {
+      throw std::runtime_error("No block loaded");
+    }
+
+    odb::dbInst* inst = block->findInst(req.schematic_inst_name.c_str());
+    if (!inst) {
+      throw std::runtime_error("Instance not found: "
+                               + req.schematic_inst_name);
+    }
+
+    gui::Selected sel = gui::DescriptorRegistry::instance()->makeSelected(inst);
+
+    // STA's highlight() and getProperties() are not thread-safe;
+    // serialize with other STA callers (timing, clock tree, tcl eval).
+    std::lock_guard<std::mutex> sta_lock(tcl_eval_->mutex);
+
+    {
+      std::lock_guard<std::mutex> lock(state.selection_mutex);
+      state.hover_rects.clear();
+      state.timing_rects.clear();
+      state.timing_lines.clear();
+      collectHighlightShapes(sel, state.highlight_rects, state.highlight_polys);
+      state.current_inspected = sel;
+      state.navigation_history.clear();
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    std::vector<gui::Selected> new_selectables;
+    writeInspectPayload(
+        builder, sel, new_selectables, /*can_navigate_back=*/false);
+    {
+      std::lock_guard<std::mutex> lock(state.selectables_mutex);
+      state.selectables = std::move(new_selectables);
+    }
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 //------------------------------------------------------------------------------
 // TclHandler
 //------------------------------------------------------------------------------
@@ -947,6 +1398,231 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
     builder.field("output", result.output);
     builder.field("result", result.result);
     builder.field("is_error", result.is_error);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Helper: find the start of the word at cursor_pos in line.
+// Word boundaries are: whitespace, [, ], {, }
+static int findWordStart(const std::string& line, int cursor_pos)
+{
+  static const std::string kBoundary = " \t\n\r[]{}";
+  int pos = cursor_pos - 1;
+  while (pos >= 0 && kBoundary.find(line[pos]) == std::string::npos) {
+    --pos;
+  }
+  return pos + 1;
+}
+
+// Helper: find the enclosing command name for argument completion.
+// Scans backwards from word_start past flags (-xxx) and their values
+// to find the first non-flag word (or the first word after '[').
+static std::string findEnclosingCommand(const std::string& line, int word_start)
+{
+  static const std::string kBoundary = " \t\n\r[]{}";
+  // Collect all words before the current position
+  std::vector<std::string> words;
+  int pos = 0;
+  while (pos < word_start) {
+    // skip whitespace/boundaries
+    while (pos < word_start && kBoundary.find(line[pos]) != std::string::npos) {
+      if (line[pos] == '[') {
+        // bracket resets context
+        words.clear();
+      }
+      ++pos;
+    }
+    if (pos >= word_start) {
+      break;
+    }
+    // extract word
+    int start = pos;
+    while (pos < word_start && kBoundary.find(line[pos]) == std::string::npos) {
+      ++pos;
+    }
+    words.push_back(line.substr(start, pos - start));
+  }
+
+  // Walk backwards to find the first non-flag word
+  for (int i = static_cast<int>(words.size()) - 1; i >= 0; --i) {
+    if (!words[i].empty() && words[i][0] != '-') {
+      return words[i];
+    }
+  }
+  return {};
+}
+
+WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    const std::string& line = req.tcl_complete_line;
+    int cursor_pos = req.tcl_complete_cursor_pos;
+    if (cursor_pos < 0) {
+      cursor_pos = static_cast<int>(line.size());
+    }
+    cursor_pos = std::min(cursor_pos, static_cast<int>(line.size()));
+
+    int word_start = findWordStart(line, cursor_pos);
+    std::string prefix = line.substr(word_start, cursor_pos - word_start);
+
+    std::string mode;
+    std::vector<std::string> completions;
+
+    if (!prefix.empty() && prefix[0] == '$') {
+      // Variable completion
+      mode = "variables";
+      std::string var_prefix = prefix.substr(1);  // strip $
+      bool starts_with_colon = !var_prefix.empty() && var_prefix[0] == ':';
+      std::string tcl_cmd = "info vars " + var_prefix;
+      if (!var_prefix.empty() && var_prefix.back() == ':'
+          && (var_prefix.size() == 1
+              || var_prefix[var_prefix.size() - 2] != ':')) {
+        tcl_cmd += ":";
+      }
+      tcl_cmd += "*";
+
+      auto result = tcl_eval_->eval(tcl_cmd);
+      if (!result.is_error && !result.result.empty()) {
+        // Parse Tcl list result
+        auto vars_result
+            = tcl_eval_->eval("join [lsort [" + tcl_cmd + "]] \\n");
+        if (!vars_result.is_error) {
+          std::istringstream stream(vars_result.result);
+          std::string var;
+          while (std::getline(stream, var)) {
+            if (!var.empty()) {
+              if (!starts_with_colon && !var.empty() && var[0] == ':') {
+                var = var.substr(2);
+              }
+              completions.push_back("$" + var);
+            }
+          }
+        }
+      }
+
+      // Add namespaces
+      auto ns_result = tcl_eval_->eval("join [lsort [namespace children]] \\n");
+      if (!ns_result.is_error) {
+        std::istringstream stream(ns_result.result);
+        std::string ns;
+        while (std::getline(stream, ns)) {
+          if (!ns.empty()) {
+            std::string name = ns;
+            if (!starts_with_colon && !name.empty() && name[0] == ':') {
+              name = name.substr(2);
+            }
+            completions.push_back("$" + name);
+          }
+        }
+      }
+    } else if (!prefix.empty() && prefix[0] == '-') {
+      // Argument completion
+      mode = "arguments";
+      std::string cmd_name = findEnclosingCommand(line, word_start);
+      if (!cmd_name.empty()) {
+        std::string tcl_cmd = "if {[info exists sta::cmd_args(" + cmd_name
+                              + ")]} { set sta::cmd_args(" + cmd_name
+                              + ") } else { list }";
+        auto result = tcl_eval_->eval(tcl_cmd);
+        if (!result.is_error && !result.result.empty()) {
+          // Parse flags with regex
+          static const std::regex kArgMatcher("-[a-zA-Z0-9_]+");
+          std::string args_str = result.result;
+          std::sregex_iterator it(
+              args_str.begin(), args_str.end(), kArgMatcher);
+          std::sregex_iterator end;
+          std::set<std::string> unique_args;
+          while (it != end) {
+            unique_args.insert(it->str());
+            ++it;
+          }
+          for (const auto& arg : unique_args) {
+            if (prefix.size() <= 1 || arg.substr(0, prefix.size()) == prefix) {
+              completions.push_back(arg);
+            }
+          }
+        }
+      }
+    } else {
+      // Command completion
+      mode = "commands";
+      // Get OpenROAD registered commands
+      auto cmd_result
+          = tcl_eval_->eval("join [lsort [array names sta::cmd_args]] \\n");
+      if (!cmd_result.is_error) {
+        std::istringstream stream(cmd_result.result);
+        std::string cmd;
+        while (std::getline(stream, cmd)) {
+          if (!cmd.empty()) {
+            completions.push_back(cmd);
+          }
+        }
+      }
+      // Get namespace commands
+      auto ns_result = tcl_eval_->eval("join [lsort [namespace children]] \\n");
+      if (!ns_result.is_error) {
+        std::istringstream stream(ns_result.result);
+        std::string ns;
+        while (std::getline(stream, ns)) {
+          if (!ns.empty()) {
+            auto ns_cmds_result = tcl_eval_->eval("join [lsort [info commands "
+                                                  + ns + "::*]] \\n");
+            if (!ns_cmds_result.is_error) {
+              std::istringstream ns_stream(ns_cmds_result.result);
+              std::string ns_cmd;
+              while (std::getline(ns_stream, ns_cmd)) {
+                if (!ns_cmd.empty()) {
+                  // Remove leading ::
+                  if (ns_cmd.size() > 2 && ns_cmd[0] == ':'
+                      && ns_cmd[1] == ':') {
+                    ns_cmd = ns_cmd.substr(2);
+                  }
+                  completions.push_back(ns_cmd);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Filter by prefix if non-empty
+      if (!prefix.empty()) {
+        bool add_colons = prefix[0] == ':';
+        std::vector<std::string> filtered;
+        for (const auto& c : completions) {
+          std::string match_target = c;
+          if (add_colons && !c.empty() && c[0] != ':') {
+            match_target = "::" + c;
+          }
+          if (match_target.substr(0, prefix.size()) == prefix) {
+            filtered.push_back(add_colons && c[0] != ':' ? "::" + c : c);
+          }
+        }
+        completions = std::move(filtered);
+      }
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("completions");
+    for (const auto& c : completions) {
+      builder.value(c);
+    }
+    builder.endArray();
+    builder.field("mode", mode);
+    builder.field("prefix", prefix);
+    builder.field("replace_start", word_start);
+    builder.field("replace_end", cursor_pos);
     builder.endObject();
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
@@ -1065,15 +1741,6 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
         }
       }
     }
-
-    debugPrint(tcl_eval_->logger,
-               utl::WEB,
-               "timing",
-               1,
-               "TIMING_HIGHLIGHT: {} rects, {} lines, pin_name='{}'",
-               new_rects.size(),
-               new_lines.size(),
-               req.timing_pin_name);
 
     {
       std::lock_guard<std::mutex> lock(state.selection_mutex);

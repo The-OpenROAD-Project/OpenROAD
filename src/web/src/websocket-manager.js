@@ -78,7 +78,11 @@ export class WebSocketManager {
         if (type === 2) {
             handler.reject(new Error(new TextDecoder().decode(payload)));
         } else if (type === 0) {
-            handler.resolve(JSON.parse(new TextDecoder().decode(payload)));
+            try {
+                handler.resolve(JSON.parse(new TextDecoder().decode(payload)));
+            } catch (e) {
+                handler.reject(new Error("JSON parse error: " + e.message));
+            }
         } else if (type === 1) {
             handler.resolve(new Blob([payload], { type: 'image/png' }));
         }
