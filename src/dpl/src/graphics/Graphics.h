@@ -25,7 +25,7 @@ class Graphics : public gui::Renderer, public DplObserver
            bool paint_hybrid_pixels = false);
   ~Graphics() override = default;
   void startPlacement(odb::dbBlock* block) override;
-  void placeInstance(odb::dbInst* instance) override;
+  void drawSelected(odb::dbInst* instance) override;
   void binSearch(const Node* cell,
                  GridX xl,
                  GridY yl,

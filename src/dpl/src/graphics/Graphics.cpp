@@ -35,7 +35,7 @@ void Graphics::startPlacement(odb::dbBlock* block)
   block_ = block;
 }
 
-void Graphics::placeInstance(odb::dbInst* instance)
+void Graphics::drawSelected(odb::dbInst* instance)
 {
   if (!instance || instance != debug_instance_) {
     return;
@@ -127,6 +127,20 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Check if the instance is selected
     if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
+
+      // Draw outline of instance at target location
+      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
+      int width = bbox.dx();
+      int height = bbox.dy();
+      odb::Rect target_bbox(final_location.x(),
+                            final_location.y(),
+                            final_location.x() + width,
+                            final_location.y() + height);
+      auto outline_color = gui::Painter::kYellow;
+      outline_color.a = 150;
+      painter.setPen(outline_color, /* cosmetic */ true);
+      painter.setBrush(gui::Painter::kTransparent);
+      painter.drawRect(target_bbox);
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {

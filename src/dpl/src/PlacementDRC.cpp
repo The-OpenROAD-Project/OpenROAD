@@ -16,6 +16,8 @@
 #include "odb/isotropy.h"
 
 namespace dpl {
+ 
+using utl::DPL;
 
 namespace cell_edges {
 odb::Rect transformEdgeRect(const odb::Rect& edge_rect,
@@ -50,11 +52,13 @@ odb::Rect getQueryRect(const odb::Rect& edge_box, const int spc)
 };  // namespace cell_edges
 
 // Constructor
-PlacementDRC::PlacementDRC(Grid* grid,
+PlacementDRC::PlacementDRC(utl::Logger* logger,
+                           Grid* grid,
                            odb::dbTech* tech,
                            Padding* padding,
                            bool disallow_one_site_gap)
-    : grid_(grid),
+    : logger_(logger),
+      grid_(grid),
       padding_(padding),
       disallow_one_site_gap_(disallow_one_site_gap)
 {
@@ -189,8 +193,56 @@ bool PlacementDRC::checkDRC(const Node* cell,
                             const GridY y,
                             const odb::dbOrientType& orient) const
 {
-  return checkEdgeSpacing(cell, x, y, orient) && checkPadding(cell, x, y)
-         && checkBlockedLayers(cell, x, y) && checkOneSiteGap(cell, x, y);
+  const std::string cell_name = cell->name();
+
+  const bool edge_ok = checkEdgeSpacing(cell, x, y, orient);
+  const bool padding_ok = checkPadding(cell, x, y);
+  const bool blocked_ok = checkBlockedLayers(cell, x, y);
+  const bool gap_ok = checkOneSiteGap(cell, x, y);
+
+  const bool all_ok = edge_ok && padding_ok && blocked_ok && gap_ok;
+
+  if (!all_ok && logger_->debugCheck(DPL, "checkDRC", 1)) {
+    debugPrint(logger_,
+               DPL,
+               "checkDRC",
+               1,
+               "cell {} at ({}, {}): edge={} padding={} blocked={} gap={}",
+               cell_name, x.v, y.v,
+               edge_ok ? 1 : 0,
+               padding_ok ? 1 : 0,
+               blocked_ok ? 1 : 0,
+               gap_ok ? 1 : 0);
+  }
+
+  return all_ok;
+}
+
+int PlacementDRC::countDRCViolations(const Node* cell) const
+{
+  return countDRCViolations(
+      cell, grid_->gridX(cell), grid_->gridRoundY(cell), cell->getOrient());
+}
+
+int PlacementDRC::countDRCViolations(const Node* cell,
+                                     const GridX x,
+                                     const GridY y,
+                                     const odb::dbOrientType& orient) const
+{
+  int count = 0;
+  if (!checkEdgeSpacing(cell, x, y, orient)) {
+    ++count;
+  }
+  if (!checkPadding(cell, x, y)) {
+    ++count;
+  }
+  if (!checkBlockedLayers(cell, x, y)) {
+    ++count;
+  }
+  if (!checkOneSiteGap(cell, x, y)) {
+    ++count;
+  }
+  return count;
 }
 
 namespace {
@@ -346,11 +398,13 @@ bool PlacementDRC::checkOneSiteGap(const Node* cell,
   auto isAbutted = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
     return (pixel == nullptr || pixel->cell);
+    // return (pixel != nullptr && pixel->cell);
   };
 
   auto cellAtSite = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
     return (pixel == nullptr || pixel->cell);
+    // return (pixel != nullptr && pixel->cell); 
   };
   for (GridY y = y_begin; y < y_finish; ++y) {
     // left side

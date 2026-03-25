@@ -119,7 +119,7 @@ struct FenceRegion
 // ---------------------------------------------------------------------------
 struct HLCell
 {
-  odb::dbInst* inst{nullptr};
+  odb::dbInst* db_inst_{nullptr};
 
   int initX{0};   // position after global placement (sites)
   int initY{0};   // position after global placement (rows)
@@ -226,6 +226,7 @@ class HybridLegalizer
   [[nodiscard]] double targetCost(int cellIdx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts();
+  void updateDrcHistoryCosts(const std::vector<int>& activeCells);
   void sortByNegotiationOrder(std::vector<int>& indices) const;
 
   // Post-optimisation

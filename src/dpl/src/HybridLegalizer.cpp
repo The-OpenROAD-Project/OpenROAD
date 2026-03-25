@@ -120,15 +120,17 @@ void HybridLegalizer::legalize()
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-  }
-  if (debug_observer_) {
+
     setDplPositions();
     logger_->report("Pause before Abacus pass.");
     debug_observer_->redrawAndPause();
   }
 
+  logger_->report("Build grid");
   buildGrid();
+  logger_->report("Init fence regions");
   initFenceRegions();
+  logger_->report("done init fence regions");
 
   debugPrint(logger_,
              utl::DPL,
@@ -162,11 +164,14 @@ void HybridLegalizer::legalize()
         addUsage(i, 1);
       }
     }
+
     // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
     // lookups see the correct placement state.
     syncAllCellsToDplGrid();
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
+        // TODO: potentially introduce this information to debug mode somehow (legal and illegal cells).
+        // legal cells should not be added to active set.
         cells_[i].legal = isCellLegal(i);
         if (!cells_[i].legal) {
           illegal.push_back(i);
@@ -176,7 +181,10 @@ void HybridLegalizer::legalize()
   }
 
   if (debug_observer_) {
+    logger_->report("enter debug observer");
     setDplPositions();
+    // this flush may imply functional changes. It hides initial movements for clean debugging negotiation phase.
+    flushToDb();
     pushHybridPixels();
     logger_->report("Pause after Abacus pass.");
     debug_observer_->redrawAndPause();
@@ -216,23 +224,20 @@ void HybridLegalizer::legalize()
              maxDisplacement(),
              numViolations());
 
-  // --- Write back to OpenDB ------------------------------------------------
+  flushToDb();
+
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.inst == nullptr) {
+    if (cell.fixed || cell.db_inst_ == nullptr) {
       continue;
     }
-    const int dbX = dieXlo_ + cell.x * siteWidth_;
-    const int dbY = dieYlo_ + dplGrid->gridYToDbu(GridY{cell.y}).v;
-    cell.inst->setLocation(dbX, dbY);
-    cell.inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
     // Set orientation from the row so cells are properly flipped.
-    odb::dbSite* site = cell.inst->getMaster()->getSite();
+    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
     if (site != nullptr) {
       auto orient = dplGrid->getSiteOrientation(
           GridX{cell.x}, GridY{cell.y}, site);
       if (orient.has_value()) {
-        cell.inst->setOrient(orient.value());
+        cell.db_inst_->setOrient(orient.value());
       }
     }
   }
@@ -246,12 +251,13 @@ void HybridLegalizer::flushToDb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.inst == nullptr) {
+    if (cell.fixed || cell.db_inst_ == nullptr) {
       continue;
     }
     const int dbX = dieXlo_ + cell.x * siteWidth_;
     const int dbY = dieYlo_ + dplGrid->gridYToDbu(GridY{cell.y}).v;
-    cell.inst->setLocation(dbX, dbY);
+    cell.db_inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    cell.db_inst_->setLocation(dbX, dbY);
   }
 }
 
@@ -308,10 +314,10 @@ void HybridLegalizer::setDplPositions()
   }
 
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.inst == nullptr) {
+    if (cell.fixed || cell.db_inst_ == nullptr) {
       continue;
     }
-    auto it = inst_to_node.find(cell.inst);
+    auto it = inst_to_node.find(cell.db_inst_);
     if (it != inst_to_node.end()) {
       const int coreX = cell.x * siteWidth_;
       const int coreY = opendp_->grid_->gridYToDbu(GridY{cell.y}).v;
@@ -320,7 +326,7 @@ void HybridLegalizer::setDplPositions()
       it->second->setPlaced(true);
 
       // Update orientation to match the row.
-      odb::dbSite* site = cell.inst->getMaster()->getSite();
+      odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
       if (site != nullptr) {
         auto orient = opendp_->grid_->getSiteOrientation(
             GridX{cell.x}, GridY{cell.y}, site);
@@ -346,16 +352,16 @@ bool HybridLegalizer::initFromDb()
     return false;
   }
 
-  const Grid* dplGrid = opendp_->grid_.get();
+  const Grid* dpl_grid = opendp_->grid_.get();
 
-  const odb::Rect coreArea = dplGrid->getCore();
+  const odb::Rect coreArea = dpl_grid->getCore();
   dieXlo_ = coreArea.xMin();
   dieYlo_ = coreArea.yMin();
   dieXhi_ = coreArea.xMax();
   dieYhi_ = coreArea.yMax();
 
   // Site width from the DPL grid; row height from the first DB row.
-  siteWidth_ = dplGrid->getSiteWidth().v;
+  siteWidth_ = dpl_grid->getSiteWidth().v;
   for (auto* row : block->getRows()) {
     rowHeight_ = row->getSite()->getHeight();
     break;
@@ -363,8 +369,8 @@ bool HybridLegalizer::initFromDb()
   assert(siteWidth_ > 0 && rowHeight_ > 0);
 
   // Grid dimensions from the DPL grid (accounts for actual DB rows).
-  gridW_ = dplGrid->getRowSiteCount().v;
-  gridH_ = dplGrid->getRowCount().v;
+  gridW_ = dpl_grid->getRowSiteCount().v;
+  gridH_ = dpl_grid->getRowCount().v;
 
   // Assign power-rail types using row-index parity (VSS at even rows).
   // Replace with explicit LEF pg_pin parsing for advanced PDKs.
@@ -378,32 +384,32 @@ bool HybridLegalizer::initFromDb()
   cells_.clear();
   cells_.reserve(block->getInsts().size());
 
-  for (auto* inst : block->getInsts()) {
-    const auto status = inst->getPlacementStatus();
+  for (auto* db_inst : block->getInsts()) {
+    const auto status = db_inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::NONE) {
       continue;
     }
 
     HLCell cell;
-    cell.inst = inst;
+    cell.db_inst_ = db_inst;
     cell.fixed = (status == odb::dbPlacementStatus::FIRM
                   || status == odb::dbPlacementStatus::LOCKED
                   || status == odb::dbPlacementStatus::COVER);
 
     int dbX = 0;
     int dbY = 0;
-    inst->getLocation(dbX, dbY);
-    // Use DPL grid coordinate mapping instead of die-area arithmetic.
-    cell.initX = dplGrid->gridX(DbuX{dbX - dieXlo_}).v;
-    cell.initY = dplGrid->gridSnapDownY(DbuY{dbY - dieYlo_}).v;
-    // Clamp to valid grid range – gridSnapDownY can return gridH_ because
-    // row_index_to_y_dbu_ has row_count+1 entries.
+    db_inst->getLocation(dbX, dbY);
+    // Snap to grid, findBestLocation() and snapToLegal() iterate over grid positions
+    cell.initX = dpl_grid->gridX(DbuX{dbX - dieXlo_}).v;
+    cell.initY = dpl_grid->gridRoundY(DbuY{dbY - dieYlo_}).v;
+    // Clamp to valid grid range – gridRoundY can return gridH_ when the
+    // instance is near the top edge.
     cell.initX = std::max(0, std::min(cell.initX, gridW_ - 1));
     cell.initY = std::max(0, std::min(cell.initY, gridH_ - 1));
     cell.x = cell.initX;
     cell.y = cell.initY;
 
-    auto* master = inst->getMaster();
+    auto* master = db_inst->getMaster();
     cell.width = std::max(
         1,
         static_cast<int>(
@@ -416,8 +422,8 @@ bool HybridLegalizer::initFromDb()
     cell.railType = inferRailType(cell.initY);
     // If the instance is currently flipped relative to the row's standard orientation,
     // its internal rail design is opposite of the row's bottom rail.
-    auto siteOrient = dplGrid->getSiteOrientation(GridX{cell.initX}, GridY{cell.initY}, master->getSite());
-    if (siteOrient.has_value() && inst->getOrient() != siteOrient.value()) {
+    auto siteOrient = dpl_grid->getSiteOrientation(GridX{cell.initX}, GridY{cell.initY}, master->getSite());
+    if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
       cell.railType = (cell.railType == HLPowerRailType::kVss) ? HLPowerRailType::kVdd : HLPowerRailType::kVss;
     }
 
@@ -428,8 +434,8 @@ bool HybridLegalizer::initFromDb()
     }
 
     if (padding_ != nullptr) {
-      cell.padLeft = padding_->padLeft(inst).v;
-      cell.padRight = padding_->padRight(inst).v;
+      cell.padLeft = padding_->padLeft(db_inst).v;
+      cell.padRight = padding_->padRight(db_inst).v;
     }
 
     cells_.push_back(cell);
@@ -522,10 +528,10 @@ void HybridLegalizer::initFenceRegions()
 
   // Map each instance to its fence region (if any).
   for (auto& cell : cells_) {
-    if (cell.inst == nullptr) {
+    if (cell.db_inst_ == nullptr) {
       continue;
     }
-    auto* region = cell.inst->getRegion();
+    auto* region = cell.db_inst_->getRegion();
     if (region == nullptr) {
       continue;
     }
@@ -568,10 +574,10 @@ void HybridLegalizer::syncCellToDplGrid(int cellIdx)
     return;
   }
   const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.inst == nullptr) {
+  if (hlcell.db_inst_ == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.inst);
+  Node* node = network_->getNode(hlcell.db_inst_);
   if (node == nullptr) {
     return;
   }
@@ -581,7 +587,7 @@ void HybridLegalizer::syncCellToDplGrid(int cellIdx)
   node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
 
   // Update orientation to match the row.
-  odb::dbSite* site = hlcell.inst->getMaster()->getSite();
+  odb::dbSite* site = hlcell.db_inst_->getMaster()->getSite();
   if (site != nullptr) {
     auto orient = opendp_->grid_->getSiteOrientation(
         GridX{hlcell.x}, GridY{hlcell.y}, site);
@@ -599,10 +605,10 @@ void HybridLegalizer::eraseCellFromDplGrid(int cellIdx)
     return;
   }
   const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.inst == nullptr) {
+  if (hlcell.db_inst_ == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.inst);
+  Node* node = network_->getNode(hlcell.db_inst_);
   if (node == nullptr) {
     return;
   }
@@ -622,10 +628,10 @@ void HybridLegalizer::syncAllCellsToDplGrid()
   // their current positions.  Fixed cells were already painted during
   // Opendp::setFixedGridCells() and should not be touched.
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || cells_[i].inst == nullptr) {
+    if (cells_[i].fixed || cells_[i].db_inst_ == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cells_[i].inst);
+    Node* node = network_->getNode(cells_[i].db_inst_);
     if (node == nullptr) {
       continue;
     }
@@ -635,15 +641,15 @@ void HybridLegalizer::syncAllCellsToDplGrid()
     opendp_->grid_->erasePixel(node);
   }
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || cells_[i].inst == nullptr) {
+    if (cells_[i].fixed || cells_[i].db_inst_ == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cells_[i].inst);
+    Node* node = network_->getNode(cells_[i].db_inst_);
     if (node == nullptr) {
       continue;
     }
     // Set orientation to match the row, same as syncCellToDplGrid.
-    odb::dbSite* site = cells_[i].inst->getMaster()->getSite();
+    odb::dbSite* site = cells_[i].db_inst_->getMaster()->getSite();
     if (site != nullptr) {
       auto orient = opendp_->grid_->getSiteOrientation(
           GridX{cells_[i].x}, GridY{cells_[i].y}, site);
@@ -678,8 +684,8 @@ bool HybridLegalizer::isValidRow(int rowIdx,
     }
   }
   // Verify that the cell's site type is available on the target row.
-  if (cell.inst != nullptr && opendp_ && opendp_->grid_) {
-    odb::dbSite* site = cell.inst->getMaster()->getSite();
+  if (cell.db_inst_ != nullptr && opendp_ && opendp_->grid_) {
+    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
     if (site != nullptr
         && !opendp_->grid_->getSiteOrientation(
             GridX{gridX}, GridY{rowIdx}, site)) {
@@ -924,8 +930,12 @@ void HybridLegalizer::assignClusterPositions(const AbacusCluster& cluster,
     cells_[idx].x = paddedX + cells_[idx].padLeft;
     cells_[idx].y = rowIdx;
     paddedX += effWidth;
-    if (debug_observer_ && cells_[idx].inst != nullptr) {
-      debug_observer_->placeInstance(cells_[idx].inst);
+    if (debug_observer_ && cells_[idx].db_inst_ != nullptr) {
+      debug_observer_->drawSelected(cells_[idx].db_inst_);
+      if (opendp_->iterative_debug_) {
+        pushHybridPixels();
+        debug_observer_->redrawAndPause();
+      }
     }
   }
 }
@@ -946,7 +956,7 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
   // Check placement DRCs (edge spacing, blocked layers, padding,
   // one-site gaps) against neighbours on the DPL Grid.
   if (opendp_ && opendp_->drc_engine_ && network_) {
-    Node* node = network_->getNode(cell.inst);
+    Node* node = network_->getNode(cell.db_inst_);
     if (node != nullptr
         && !opendp_->drc_engine_->checkDRC(
             node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {

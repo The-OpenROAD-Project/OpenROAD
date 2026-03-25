@@ -188,6 +188,8 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     }
     ripUp(idx);
     const auto [bx, by] = findBestLocation(idx, iter);
+    logger_->report("Negotiation iter {}, cell {}, ripUp, best location {}, {}",
+                    iter, cells_[idx].db_inst_->getName(), bx, by);
     place(idx, bx, by);
   }
 
@@ -232,6 +234,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
 
   if (totalOverflow > 0 && updateHistory) {
     updateHistoryCosts();
+    updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
   }
 
@@ -253,9 +256,13 @@ void HybridLegalizer::place(int cellIdx, int x, int y)
   cells_[cellIdx].x = x;
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
-  syncCellToDplGrid(cellIdx);
-  if (debug_observer_ && cells_[cellIdx].inst != nullptr) {
-    debug_observer_->placeInstance(cells_[cellIdx].inst);
+  syncCellToDplGrid(cellIdx);  
+  if (opendp_->iterative_debug_ && cells_[cellIdx].db_inst_ != nullptr) {
+    std::string name = cells_[cellIdx].db_inst_->getName();
+    if (name == "dpath.b_reg.out\\[13\\]$_DFFE_PP_") {
+      pushHybridPixels();
+      debug_observer_->redrawAndPause();
+    }
   }
 }
 
@@ -275,7 +282,7 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
   Node* node = (opendp_ && opendp_->drc_engine_ && network_)
-                   ? network_->getNode(cell.inst)
+                   ? network_->getNode(cell.db_inst_)
                    : nullptr;
 
   // DRC penalty escalates with iteration count: early iterations are
@@ -300,16 +307,16 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
       odb::dbOrientType targetOrient = node->getOrient();
-      odb::dbSite* site = cell.inst->getMaster()->getSite();
+      odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
       if (site != nullptr) {
         auto orient = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
         if (orient.has_value()) {
           targetOrient = orient.value();
         }
       }
-      if (!opendp_->drc_engine_->checkDRC(node, GridX{tx}, GridY{ty}, targetOrient)) {
-        cost += kDrcPenalty;
-      }
+      const int drcCount = opendp_->drc_engine_->countDRCViolations(
+          node, GridX{tx}, GridY{ty}, targetOrient);
+      cost += kDrcPenalty * drcCount;
     }
     if (cost < bestCost) {
       bestCost = cost;
@@ -414,6 +421,52 @@ void HybridLegalizer::updateHistoryCosts()
       const int ov = g.overuse();
       if (ov > 0) {
         g.hist_cost += kHfDefault * ov;
+      }
+    }
+  }
+}
+
+// ===========================================================================
+// updateDrcHistoryCosts – bump history on pixels occupied by cells that
+// have DRC violations, so the negotiation loop builds pressure to move
+// them away from DRC-problematic positions over iterations.
+// ===========================================================================
+
+void HybridLegalizer::updateDrcHistoryCosts(
+    const std::vector<int>& activeCells)
+{
+  if (!opendp_ || !opendp_->drc_engine_ || !network_) {
+    return;
+  }
+  for (int idx : activeCells) {
+    if (cells_[idx].fixed) {
+      continue;
+    }
+    const HLCell& cell = cells_[idx];
+    Node* node = network_->getNode(cell.db_inst_);
+    if (node == nullptr) {
+      continue;
+    }
+    odb::dbOrientType orient = node->getOrient();
+    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+    if (site != nullptr) {
+      auto o = opendp_->grid_->getSiteOrientation(
+          GridX{cell.x}, GridY{cell.y}, site);
+      if (o.has_value()) {
+        orient = o.value();
+      }
+    }
+    const int drcCount = opendp_->drc_engine_->countDRCViolations(
+        node, GridX{cell.x}, GridY{cell.y}, orient);
+    if (drcCount > 0) {
+      const int xBegin = effXBegin(cell);
+      const int xEnd = effXEnd(cell);
+      for (int dy = 0; dy < cell.height; ++dy) {
+        for (int gx = xBegin; gx < xEnd; ++gx) {
+          if (gridExists(gx, cell.y + dy)) {
+            gridAt(gx, cell.y + dy).hist_cost += kHfDefault * drcCount;
+          }
+        }
       }
     }
   }

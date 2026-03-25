@@ -30,7 +30,7 @@ class DplObserver
   virtual ~DplObserver() = default;
 
   virtual void startPlacement(odb::dbBlock* block) = 0;
-  virtual void placeInstance(odb::dbInst* instance) = 0;
+  virtual void drawSelected(odb::dbInst* instance) = 0;
   virtual void binSearch(const Node* cell,
                          GridX xl,
                          GridY yl,
