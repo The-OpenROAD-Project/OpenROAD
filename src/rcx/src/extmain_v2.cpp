@@ -785,11 +785,11 @@ void extMain::loopWarning(dbNet* net, const dbWirePathShape& pshape)
   }
   logger_->warn(RCX,
                 117,
-                "Net {} {} has a loop at x={} y={} {}.",
+                "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                 net->getId(),
                 net->getConstName(),
-                pshape.point.getX(),
-                pshape.point.getY(),
+                _block->dbuToMicrons(pshape.point.getX()),
+                _block->dbuToMicrons(pshape.point.getY()),
                 tname);
 }
 void extMain::initJunctionIdMaps(dbNet* net)
