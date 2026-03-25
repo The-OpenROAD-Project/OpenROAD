@@ -68,8 +68,6 @@ BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
 FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
-NINJA_VERSION="1.10.2"
-NINJA_CHECKSUM="817e12e06e2463aeb5cb4e1d19ced606"
 OR_TOOLS_VERSION_BIG="9.14"
 OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
@@ -666,27 +664,6 @@ _install_abseil() {
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
 }
 
-# ------------------------------------------------------------------------------
-# Ninja
-# ------------------------------------------------------------------------------
-_install_ninja() {
-    local ninja_prefix=${PREFIX:-"/usr/local"}
-    local ninja_bin=${ninja_prefix}/bin/ninja
-    log "Checking Ninja (Required: ${NINJA_VERSION})"
-    if [[ ! -f ${ninja_bin} ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Downloading Ninja..." wget -O ninja-linux.zip "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip"
-            _verify_checksum "${NINJA_CHECKSUM}" "ninja-linux.zip" || error "Ninja checksum failed."
-            _execute "Installing Ninja..." unzip -o ninja-linux.zip -d "${ninja_prefix}/bin/"
-            chmod +x "${ninja_bin}"
-        )
-        INSTALL_SUMMARY+=("Ninja: system=none, required=${NINJA_VERSION}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Ninja: system=found, required=${NINJA_VERSION}, status=skipped")
-    fi
-}
-
 _install_or_tools() {
     local os=$1
     local os_version=$2
@@ -784,10 +761,6 @@ _install_common_dev() {
 
     if [[ "${EQUIVALENCE_DEPS}" == "yes" ]]; then
         _install_equivalence_deps
-    fi
-
-    if [[ "${CI}" == "yes" ]]; then
-        _install_ninja
     fi
 
     if [[ -n ${PREFIX} ]]; then
