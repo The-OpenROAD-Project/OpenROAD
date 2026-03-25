@@ -2309,6 +2309,7 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 
     if (new_wirelength > original_wirelength) {
       flipRealMacro(inst, is_vertical_flip);
+      macro_location = tree_->maps.inst_to_hard[inst]->getRealLocation();
       inst->setLocation(macro_location.getX(), macro_location.getY());
     }
   }
