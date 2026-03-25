@@ -170,6 +170,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
                                      int iter,
                                      bool updateHistory)
 {
+  int moves_count = 0;
   sortByNegotiationOrder(activeCells);
 
   // for(auto cell : activeCells){
@@ -188,9 +189,10 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     }
     ripUp(idx);
     const auto [bx, by] = findBestLocation(idx, iter);
-    logger_->report("Negotiation iter {}, cell {}, ripUp, best location {}, {}",
-                    iter, cells_[idx].db_inst_->getName(), bx, by);
     place(idx, bx, by);
+    moves_count++;
+    logger_->report("Negotiation iter {}, cell {}, moves {}, best location {}, {}",
+                iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
   }
 
   // Count remaining overflows (grid overuse) AND DRC violations.
@@ -222,6 +224,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    //TODO why skip fixed here?
     if (cells_[i].fixed || activeSet.contains(i)) {
       continue;
     }

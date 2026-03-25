@@ -659,6 +659,21 @@ void HybridLegalizer::syncAllCellsToDplGrid()
     }
     opendp_->grid_->paintPixel(node, GridX{cells_[i].x}, GridY{cells_[i].y});
   }
+  // Re-paint fixed cells last so they always win over any movable cell that
+  // may have been placed at an overlapping initial position.  Without this,
+  // a movable cell painted on top of an endcap overwrites pixel->cell, and
+  // the subsequent erasePixel call clears the endcap from the grid, making
+  // checkOneSiteGap blind to it.
+  for (const HLCell& cell : cells_) {
+    if (!cell.fixed || cell.db_inst_ == nullptr) {
+      continue;
+    }
+    Node* node = network_->getNode(cell.db_inst_);
+    if (node == nullptr) {
+      continue;
+    }
+    opendp_->grid_->paintPixel(node);
+  }
 }
 
 // ===========================================================================
@@ -1006,12 +1021,16 @@ int HybridLegalizer::maxDisplacement() const
 
 int HybridLegalizer::numViolations() const
 {
-  int count = 0;
+  int count = 0, fixed_viol = 0;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed && !isCellLegal(i)) {
       ++count;
     }
+    if(cells_[i].fixed && !cells_[i].legal) {
+      ++fixed_viol;    
+    }
   }
+  logger_->report("# fixed cells with violations: {}.", fixed_viol);
   return count;
 }
 
