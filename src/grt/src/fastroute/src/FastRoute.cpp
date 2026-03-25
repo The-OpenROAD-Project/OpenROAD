@@ -1568,6 +1568,9 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+  for (const int netID : net_ids_) {
+    rst_before_wirelengths_[netID] = computeNetFinalWirelength(netID);
+  }
 
   SaveLastRouteLen();
 
@@ -1859,6 +1862,9 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+  for (const int netID : net_ids_) {
+    rst_after_wirelengths_[netID] = computeNetFinalWirelength(netID);
+  }
 
   has_2D_overflow_ = total_overflow_ > 0;
 
@@ -1941,6 +1947,9 @@ NetRouteMap FastRouteCore::run()
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
+  }
+  for (const int netID : net_ids_) {
+    final_wirelengths_[netID] = computeNetFinalWirelength(netID);
   }
 
   NetRouteMap routes = getRoutes();

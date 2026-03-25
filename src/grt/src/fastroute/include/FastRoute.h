@@ -290,12 +290,32 @@ class FastRouteCore
   void getPlanarRoute(odb::dbNet* db_net, GRoute& route);
   void get3DRoute(odb::dbNet* db_net, GRoute& route);
   void setIncrementalGrt(bool is_incremental);
+  int computeNetSttWirelength(int netID);
+  int computeNetFinalWirelength(int netID);
+  const std::unordered_map<int, int>& getSttWirelengths()
+  {
+    return stt_wirelengths_;
+  }
+  const std::unordered_map<int, int>& getRstBeforeWirelengths()
+  {
+    return rst_before_wirelengths_;
+  }
+  const std::unordered_map<int, int>& getRstAfterWirelengths()
+  {
+    return rst_after_wirelengths_;
+  }
+  const std::unordered_map<int, int>& getFinalWirelengths()
+  {
+    return final_wirelengths_;
+  }
+  int computeTotalWirelength();
+
+  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
 
   void writeCongestionMap(const std::string& filename);
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
-  void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);
   void clearNets();
   double dbuToMicrons(int dbu);
@@ -736,6 +756,14 @@ class FastRouteCore
       horizontal_blocked_intervals_;
 
   std::vector<int> net_ids_;
+  std::unordered_map<int, int>
+      stt_wirelengths_;  // netID -> STT wirelength (Stage 1: Flute/PD)
+  std::unordered_map<int, int>
+      rst_before_wirelengths_;  // netID -> RST WL before congestion (Stage 2)
+  std::unordered_map<int, int>
+      rst_after_wirelengths_;  // netID -> RST WL after congestion (Stage 3)
+  std::unordered_map<int, int>
+      final_wirelengths_;  // netID -> WL after layer assignment (Stage 4)
 
   // Maze 3D variables
   multi_array<Direction, 3> directions_3D_;

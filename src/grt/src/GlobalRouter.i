@@ -321,4 +321,9 @@ float estimate_path_resistance(odb::dbObject* pin1,
 
 } // namespace
 
+void report_net_global_routing_detour(odb::dbNet* net)
+{
+  getGlobalRouter()->reportNetGlobalRoutingDetour(net);
+}
+
 %} // inline
