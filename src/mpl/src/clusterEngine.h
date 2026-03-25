@@ -105,7 +105,6 @@ class ClusteringEngine
 
   void setTree(PhysicalHierarchy* tree);
   void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
-  void setUseDefHalo(bool use_def_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.

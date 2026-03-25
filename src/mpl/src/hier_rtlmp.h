@@ -78,7 +78,6 @@ class HierRTLMP
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
   void setDefaultHalo(int halo_width, int halo_height);
-  void setUseDefHalo(bool use_def_halo);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
   void setMacroHalo(odb::dbInst* macro,
