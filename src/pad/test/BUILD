@@ -78,6 +78,10 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "asap7/asap7_tech_1x_201209.lef",
+        "asap7/asap7sc7p5t_28_L_1x_220121a.lef",
+        "asap7_data/probe.lef",
+        "asap7_data/rdl_route_probe.def",
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45.pdn.tcl",
         "Nangate45/Nangate45.rc",
