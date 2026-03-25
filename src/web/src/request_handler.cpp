@@ -33,7 +33,6 @@
 #include "odb/geom.h"
 #include "tile_generator.h"
 #include "timing_report.h"
-#include "utl/Logger.h"
 
 namespace web {
 
@@ -1460,6 +1459,26 @@ static std::string findEnclosingCommand(const std::string& line, int word_start)
   return {};
 }
 
+// Evaluate a Tcl command that returns a list, sort it, and return
+// the elements as a vector of strings.  Returns empty on error.
+static std::vector<std::string> getTclList(TclEvaluator& eval,
+                                           const std::string& tcl_cmd)
+{
+  auto result = eval.eval("join [lsort [" + tcl_cmd + "]] \\n");
+  std::vector<std::string> items;
+  if (result.is_error) {
+    return items;
+  }
+  std::istringstream stream(result.result);
+  std::string item;
+  while (std::getline(stream, item)) {
+    if (!item.empty()) {
+      items.push_back(std::move(item));
+    }
+  }
+  return items;
+}
+
 WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
 {
   WebSocketResponse resp;
@@ -1493,39 +1512,20 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
       }
       tcl_cmd += "*";
 
-      auto result = tcl_eval_->eval(tcl_cmd);
-      if (!result.is_error && !result.result.empty()) {
-        // Parse Tcl list result
-        auto vars_result
-            = tcl_eval_->eval("join [lsort [" + tcl_cmd + "]] \\n");
-        if (!vars_result.is_error) {
-          std::istringstream stream(vars_result.result);
-          std::string var;
-          while (std::getline(stream, var)) {
-            if (!var.empty()) {
-              if (!starts_with_colon && !var.empty() && var[0] == ':') {
-                var = var.substr(2);
-              }
-              completions.push_back("$" + var);
-            }
-          }
+      for (auto var : getTclList(*tcl_eval_, tcl_cmd)) {
+        if (!starts_with_colon && !var.empty() && var[0] == ':') {
+          var = var.substr(2);
         }
+        completions.push_back("$" + var);
       }
 
       // Add namespaces
-      auto ns_result = tcl_eval_->eval("join [lsort [namespace children]] \\n");
-      if (!ns_result.is_error) {
-        std::istringstream stream(ns_result.result);
-        std::string ns;
-        while (std::getline(stream, ns)) {
-          if (!ns.empty()) {
-            std::string name = ns;
-            if (!starts_with_colon && !name.empty() && name[0] == ':') {
-              name = name.substr(2);
-            }
-            completions.push_back("$" + name);
-          }
+      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
+        std::string name = ns;
+        if (!starts_with_colon && !name.empty() && name[0] == ':') {
+          name = name.substr(2);
         }
+        completions.push_back("$" + name);
       }
     } else if (!prefix.empty() && prefix[0] == '-') {
       // Argument completion
@@ -1559,41 +1559,18 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
       // Command completion
       mode = "commands";
       // Get OpenROAD registered commands
-      auto cmd_result
-          = tcl_eval_->eval("join [lsort [array names sta::cmd_args]] \\n");
-      if (!cmd_result.is_error) {
-        std::istringstream stream(cmd_result.result);
-        std::string cmd;
-        while (std::getline(stream, cmd)) {
-          if (!cmd.empty()) {
-            completions.push_back(cmd);
-          }
-        }
+      for (auto& cmd : getTclList(*tcl_eval_, "array names sta::cmd_args")) {
+        completions.push_back(std::move(cmd));
       }
       // Get namespace commands
-      auto ns_result = tcl_eval_->eval("join [lsort [namespace children]] \\n");
-      if (!ns_result.is_error) {
-        std::istringstream stream(ns_result.result);
-        std::string ns;
-        while (std::getline(stream, ns)) {
-          if (!ns.empty()) {
-            auto ns_cmds_result = tcl_eval_->eval("join [lsort [info commands "
-                                                  + ns + "::*]] \\n");
-            if (!ns_cmds_result.is_error) {
-              std::istringstream ns_stream(ns_cmds_result.result);
-              std::string ns_cmd;
-              while (std::getline(ns_stream, ns_cmd)) {
-                if (!ns_cmd.empty()) {
-                  // Remove leading ::
-                  if (ns_cmd.size() > 2 && ns_cmd[0] == ':'
-                      && ns_cmd[1] == ':') {
-                    ns_cmd = ns_cmd.substr(2);
-                  }
-                  completions.push_back(ns_cmd);
-                }
-              }
-            }
+      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
+        for (auto ns_cmd :
+             getTclList(*tcl_eval_, "info commands " + ns + "::*")) {
+          // Remove leading ::
+          if (ns_cmd.size() > 2 && ns_cmd[0] == ':' && ns_cmd[1] == ':') {
+            ns_cmd = ns_cmd.substr(2);
           }
+          completions.push_back(std::move(ns_cmd));
         }
       }
 
