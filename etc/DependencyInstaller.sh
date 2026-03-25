@@ -655,7 +655,7 @@ _install_abseil() {
             _execute "Extracting Abseil..." tar xf "abseil-cpp-${ABSL_VERSION}.tar.gz"
             cd "abseil-cpp-${ABSL_VERSION}"
             local cmake_bin=${PREFIX:-/usr/local}/bin/cmake
-            _execute "Configuring Abseil..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${absl_prefix_install}" -DCMAKE_CXX_STANDARD=17 -B build .
+            _execute "Configuring Abseil..." "${cmake_bin}" -DCMAKE_INSTALL_PREFIX="${absl_prefix_install}" -DCMAKE_CXX_STANDARD=17 -DCMAKE_POSITION_INDEPENDENT_CODE=ON -B build .
             _execute "Building and installing Abseil..." "${cmake_bin}" --build build --target install
         )
         absl_prefix_found="${absl_prefix_install}"
@@ -953,7 +953,7 @@ _install_debian_packages() {
     export DEBIAN_FRONTEND="noninteractive"
     _execute "Updating package lists..." apt-get -y update
     local tcl_ver=""
-    if [[ "${debian_version}" == "rodete" ]]; then
+    if [[ "${debian_version}" == "rodete" ]] || ! apt-get install -s libtcl &>/dev/null; then
         tcl_ver="8.6"
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
@@ -969,6 +969,8 @@ _install_debian_packages() {
         local python_ver="3.8"
         if [[ "${debian_version}" == "rodete" ]]; then
             python_ver="3.12"
+        elif command -v python3 &>/dev/null; then
+            python_ver=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
         fi
         _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
     fi
@@ -1218,7 +1220,7 @@ To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 EOF
             ;;
-        "Debian GNU/Linux" | "Debian GNU/Linux rodete")
+        "Debian GNU/Linux"* | "Kali GNU/Linux")
             local debian_version
             debian_version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
             if [[ -z "${debian_version}" ]]; then
@@ -1229,7 +1231,12 @@ EOF
             fi
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
-                _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                local or_tools_debian_version="${debian_version}"
+                if ! [[ "${or_tools_debian_version}" =~ ^[0-9]+$ ]]; then
+                    or_tools_debian_version="12"
+                    warn "Using Debian 12 or-tools package for ${os} ${debian_version}."
+                fi
+                _install_or_tools "debian" "${or_tools_debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
                 _install_abseil
             fi
             ;;
