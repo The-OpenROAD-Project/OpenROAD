@@ -123,7 +123,9 @@ Snapper::LayerDataList Snapper::computeLayerDataList(
       track_grid->getGridY(positions);
     }
     std::ranges::sort(pins, compare_pin_center);
-    layers_data.push_back(LayerData{track_grid, std::move(positions), pins});
+    layers_data.push_back(LayerData{.track_grid = track_grid,
+                                    .available_positions = std::move(positions),
+                                    .pins = pins});
   }
 
   auto compare_layer_number = [](LayerData data1, LayerData data2) {
