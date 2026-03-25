@@ -200,7 +200,12 @@ bool UnbufferMove::doMove(const Path* drvr_path,
                  1,
                  "ACCEPT unbuffer {}",
                  network_->pathName(drvr));
-      return removeBuffer(drvr);
+      bool removed = removeBuffer(drvr);
+      if (removed) {
+        // Invalidate vertex level ordering
+        resizer_->invalidateVertexOrdering();
+      }
+      return removed;
     }
     debugPrint(logger_,
                RSZ,

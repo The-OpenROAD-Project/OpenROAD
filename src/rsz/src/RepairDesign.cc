@@ -276,7 +276,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   }
   debugPrint(logger_, RSZ, "early_sizing", 1, "Early sizing round finished.");
 
-  resizer_->level_drvr_vertices_valid_ = false;
+  resizer_->invalidateVertexOrdering();
   resizer_->ensureLevelDrvrVertices();
 }
 
@@ -426,7 +426,7 @@ void RepairDesign::repairDesign(
 
   printProgress(print_iteration, true, true, repaired_net_count);
   if (inserted_buffer_count_ > 0) {
-    resizer_->level_drvr_vertices_valid_ = false;
+    resizer_->invalidateVertexOrdering();
   }
   db_network_->removeUnusedPortsAndPinsOnModuleInstances();
 }
@@ -467,7 +467,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
     for (sta::Clock* clk : sta_->cmdMode()->sdc()->clocks()) {
       const sta::PinSet* clk_pins = sta_->pins(clk, sta_->cmdMode());
       if (clk_pins) {
-        // Make a copy in case the set of pins is updated by repairNet call.
+        // Make a copy in case the set of pins is updated
         const sta::PinSet clk_pins_copy = *clk_pins;
         for (const sta::Pin* clk_pin : clk_pins_copy) {
           // clang-format off
@@ -508,7 +508,7 @@ void RepairDesign::repairClkNets(double max_wire_length)
                   "Inserted {} buffers in {} nets.",
                   inserted_buffer_count_,
                   repaired_net_count);
-    resizer_->level_drvr_vertices_valid_ = false;
+    resizer_->invalidateVertexOrdering();
   }
 
   // Restore previous sizing restrictions when area_limit and leakage_limit go
@@ -2345,7 +2345,7 @@ void RepairDesign::reportViolationCounters(bool invalidate_driver_vertices,
                   inserted_buffer_count_,
                   repaired_net_count);
     if (invalidate_driver_vertices) {
-      resizer_->level_drvr_vertices_valid_ = false;
+      resizer_->invalidateVertexOrdering();
     }
   }
 }
