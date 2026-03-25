@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <qchar.h>
+
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
@@ -53,9 +55,9 @@ class HistogramView : public QChartView
   void setLogger(utl::Logger* logger) { logger_ = logger; }
 
   void clear();
-  void setData(const EndPointSlackMap& data, sta::ClockSet* clocks);
+  void setData(const EndPointSlackMap* data, sta::ClockSet* clocks);
   void setData(
-      const std::vector<std::pair<std::string, EndPointSlackMap>>& data_vec,
+      const std::vector<std::pair<std::string, EndPointSlackMap*>>& data_vec,
       sta::ClockSet* clocks);
   void save(const QString& path);
 
@@ -85,7 +87,7 @@ class HistogramView : public QChartView
   QBarSet* createBarSet(const QString& label,
                         const QColor& border_color,
                         const QColor& color);
-  void populateBarSets(QBarSet& neg_set, QBarSet& pos_set, QBarSet& invisible);
+  QStackedBarSeries* populateSeries();
 
   void setXAxisConfig(int all_bars_count);
   void setXAxisTitle();
@@ -113,7 +115,7 @@ class HistogramView : public QChartView
 
   // stacked data
   std::vector<std::unique_ptr<utl::Histogram<float>>> histograms_;
-  std::vector<std::string> path_groups_;
+  std::vector<QString> path_groups_;
   std::vector<PinBuckets> pins_bucket_;
 
   static constexpr int kDefaultNumberOfBuckets = 10;
@@ -146,8 +148,8 @@ class ChartsWidget : public QDockWidget
   Chart* addChart(const std::string& name,
                   const std::string& x_label,
                   const std::vector<std::string>& y_labels);
-  EndPointSlackMap getData(const std::string& path_group,
-                           sta::Clock* clock_filter);
+  EndPointSlackMap* getData(const std::string& path_group,
+                            sta::Clock* clock_filter);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -197,6 +199,7 @@ class ChartsWidget : public QDockWidget
   bool resetting_menu_;
 
   QLabel* label_;
+  bool updating_ = false;
 };
 
 }  // namespace gui

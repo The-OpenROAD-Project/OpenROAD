@@ -3,6 +3,8 @@
 
 #include "chartsWidget.h"
 
+#include <qchar.h>
+
 #include <QColor>
 #include <QComboBox>
 #include <QFrame>
@@ -25,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "colorGenerator.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "sta/Clock.hh"
@@ -479,48 +482,71 @@ void ChartsWidget::updateFilters()
   }
   clock_filter_ = clock_index_to_clock_.at(clock_menu_index);
 
-  if (all_endpoints_item_->checkState() == Qt::Checked) {
-    path_groups_names_.emplace_back("");
-  }
+  bool path_group_selected = false;
   for (auto row = 2; row < path_group_menu_model_->rowCount(); row++) {
     QStandardItem* item_iter = path_group_menu_model_->item(row);
     if (item_iter->checkState() == Qt::Checked) {
-      path_groups_names_.emplace_back(item_iter->text().toStdString());
+      path_groups_names_.push_back(item_iter->text().toStdString());
+      path_group_selected = true;
     }
+  }
+  if (path_group_selected) {
+    all_endpoints_item_->setCheckState(Qt::Unchecked);
+  }
+
+  if (all_endpoints_item_->checkState() == Qt::Checked) {
+    path_groups_names_.emplace_back("");
   }
   setData(display_);
 }
 
 void ChartsWidget::updateFilters(QStandardItem* item)
 {
+  if (updating_) {
+    return;
+  }
+  if (item == all_endpoints_item_) {
+    if (item->checkState() == Qt::Checked) {
+      updating_ = true;
+      for (auto row = 2; row < path_group_menu_model_->rowCount(); row++) {
+        QStandardItem* item_iter = path_group_menu_model_->item(row);
+        item_iter->setCheckState(Qt::Unchecked);
+      }
+      updating_ = false;
+    }
+  }
   updateFilters();
 }
 
-EndPointSlackMap ChartsWidget::getData(const std::string& path_group,
-                                       sta::Clock* clock_filter)
+EndPointSlackMap* ChartsWidget::getData(const std::string& path_group,
+                                        sta::Clock* clock_filter)
 {
-  if (clock_filter != nullptr) {
-    if (!path_group.empty()) {
-      // filter by clock and path_group
-      return stagui_->getEndPointToSlackMap(path_group, clock_filter);
+  auto key = std::make_pair(path_group, clock_filter_);
+  if (endpoints_cache_.contains(key) == 0) {
+    if (clock_filter != nullptr) {
+      if (!path_group.empty()) {
+        // filter by clock and path_group
+        endpoints_cache_[key]
+            = stagui_->getEndPointToSlackMap(path_group, clock_filter);
+      }
+      // filter only by clock
+      endpoints_cache_[key] = stagui_->getEndPointToSlackMap(clock_filter);
+    } else if (!path_group.empty()) {
+      // filter only by path_group
+      endpoints_cache_[key] = stagui_->getEndPointToSlackMap(path_group);
+    } else {
+      EndPointSlackMap data = fetchSlackHistogramData();
+      if (data.empty()) {
+        logger_->warn(
+            utl::GUI,
+            97,
+            "All pins are unconstrained. Cannot plot histogram. Check if "
+            "timing data is loaded!");
+      }
+      endpoints_cache_[key] = data;
     }
-    // filter only by clock
-    return stagui_->getEndPointToSlackMap(clock_filter);
   }
-
-  if (!path_group.empty()) {
-    // filter only by path_group
-    return stagui_->getEndPointToSlackMap(path_group);
-  }
-
-  EndPointSlackMap data = fetchSlackHistogramData();
-  if (data.empty()) {
-    logger_->warn(utl::GUI,
-                  97,
-                  "All pins are unconstrained. Cannot plot histogram. Check if "
-                  "timing data is loaded!");
-  }
-  return data;
+  return &endpoints_cache_[key];
 }
 
 void ChartsWidget::setData(HistogramView* view)
@@ -530,16 +556,29 @@ void ChartsWidget::setData(HistogramView* view)
     return;
   }
 
-  auto key = std::make_pair(path_groups_names_[0], clock_filter_);
-  if (endpoints_cache_.contains(key) == 0) {
-    endpoints_cache_[key] = getData(path_groups_names_[0], clock_filter_);
+  if (path_groups_names_.size() == 1) {
+    if (clock_filter_) {
+      sta::ClockSet clocks = {clock_filter_};
+      view->setData(getData(path_groups_names_[0], clock_filter_), &clocks);
+    } else {
+      view->setData(getData(path_groups_names_[0], clock_filter_),
+                    &all_clocks_);
+    }
+    return;
+  }
+
+  std::vector<std::pair<std::string, EndPointSlackMap*>> data(
+      path_groups_names_.size());
+  int i = 0;
+  for (auto& path_group : path_groups_names_) {
+    data[i++] = std::make_pair(path_group, getData(path_group, clock_filter_));
   }
 
   if (clock_filter_) {
     sta::ClockSet clocks = {clock_filter_};
-    view->setData(endpoints_cache_[key], &clocks);
+    view->setData(data, &clocks);
   } else {
-    view->setData(endpoints_cache_[key], &all_clocks_);
+    view->setData(data, &all_clocks_);
   }
 }
 
@@ -694,7 +733,7 @@ void HistogramView::populateBuckets(
   }
 }
 
-void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
+void HistogramView::setData(const EndPointSlackMap* data, sta::ClockSet* clocks)
 {
   clear();
 
@@ -704,7 +743,7 @@ void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
   // extract data
   sta::Unit* time_unit = sta_->getSTA()->units()->timeUnit();
 
-  for (const auto& [pin, sta_slack] : data) {
+  for (const auto& [pin, sta_slack] : *data) {
     const float slack = time_unit->staToUser(sta_slack);
     all_histogram_->addData(slack);
   }
@@ -712,7 +751,7 @@ void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
   populateBins();
 
   PinBuckets pin_buckets(all_histogram_->getBinsCount());
-  for (const auto& [pin, sta_slack] : data) {
+  for (const auto& [pin, sta_slack] : *data) {
     const float slack = time_unit->staToUser(sta_slack);
     pin_buckets[all_histogram_->getBinIndex(slack)].push_back(pin);
   }
@@ -723,7 +762,7 @@ void HistogramView::setData(const EndPointSlackMap& data, sta::ClockSet* clocks)
 }
 
 void HistogramView::setData(
-    const std::vector<std::pair<std::string, EndPointSlackMap>>& data_vec,
+    const std::vector<std::pair<std::string, EndPointSlackMap*>>& data_vec,
     sta::ClockSet* clocks)
 {
   clear();
@@ -736,11 +775,10 @@ void HistogramView::setData(
 
   for (auto& [path_group, data] : data_vec) {
     histograms_.emplace_back(std::make_unique<utl::Histogram<float>>(logger_));
-    path_groups_.emplace_back(path_group);
-    std::unique_ptr<utl::Histogram<float>>& curr_histogram = *histograms_.end();
-    for (const auto& [pin, sta_slack] : data) {
+    path_groups_.push_back(QString::fromStdString(path_group));
+    for (const auto& [pin, sta_slack] : *data) {
       const float slack = time_unit->staToUser(sta_slack);
-      curr_histogram->addData(slack);
+      histograms_[histograms_.size() - 1]->addData(slack);
       all_histogram_->addData(slack);
     }
   }
@@ -750,11 +788,10 @@ void HistogramView::setData(
   PinBuckets all_pin_buckets(all_histogram_->getBinsCount());
   for (auto& [_, data] : data_vec) {
     pins_bucket_.emplace_back(all_histogram_->getBinsCount());
-    PinBuckets& curr_bucket = *pins_bucket_.end();
-    for (const auto& [pin, sta_slack] : data) {
+    for (const auto& [pin, sta_slack] : *data) {
       const float slack = time_unit->staToUser(sta_slack);
       int index = all_histogram_->getBinIndex(slack);
-      curr_bucket[index].push_back(pin);
+      pins_bucket_[pins_bucket_.size() - 1][index].push_back(pin);
       all_pin_buckets[index].push_back(pin);
     }
   }
@@ -806,22 +843,7 @@ void HistogramView::setVisualConfig()
     return;
   }
 
-  QStackedBarSeries* series = new QStackedBarSeries(this);
-  if (path_groups_.empty()) {
-    QBarSet* neg_set = createBarSet("Negative Slack",
-                                    0x8b0000,   // darkred
-                                    0xf08080);  // lightcoral
-    QBarSet* pos_set = createBarSet("Positive Slack",
-                                    0x006400,   // darkgreen
-                                    0x90ee90);  // lightgreen
-    QBarSet* invisible = createBarSet("", Qt::transparent, Qt::transparent);
-
-    populateBarSets(*neg_set, *pos_set, *invisible);
-
-    series->append(neg_set);
-    series->append(pos_set);
-    series->append(invisible);
-  }
+  auto* series = populateSeries();
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
@@ -829,8 +851,9 @@ void HistogramView::setVisualConfig()
   setYAxisConfig();
   series->attachAxis(axis_y_);
 
-  chart_->legend()->markers(series)[0]->setVisible(true);
-  chart_->legend()->markers(series)[1]->setVisible(true);
+  for (auto& marker : chart_->legend()->markers(series)) {
+    marker->setVisible(true);
+  }
 
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
@@ -919,7 +942,8 @@ void HistogramView::setXAxisTitle()
       period = std::round(period * places) / places;
     }
 
-    // Adjust strings: two clocks in the first row and three per row afterwards
+    // Adjust strings: two clocks in the first row and three per row
+    // afterwards
     if (clock->name() != (*(clocks_.begin()))->name()) {
       axis_x_title += ", ";
 
@@ -1016,21 +1040,57 @@ int HistogramView::computeFirstDigit(int value, int digits)
   return static_cast<int>(value / std::pow(10, digits - 1));
 }
 
-void HistogramView::populateBarSets(QBarSet& neg_set,
-                                    QBarSet& pos_set,
-                                    QBarSet& invisible)
+QStackedBarSeries* HistogramView::populateSeries()
 {
+  // Create bar series
+  QStackedBarSeries* series = new QStackedBarSeries(this);
+  QBarSet* invisible = createBarSet("", Qt::transparent, Qt::transparent);
   const int max_bin_count = all_histogram_->getMaxBinCount();
+  if (path_groups_.empty()) {
+    // Default histogram
+    QBarSet* neg_set = createBarSet("Negative Slack",
+                                    0x8b0000,   // darkred
+                                    0xf08080);  // lightcoral
+    QBarSet* pos_set = createBarSet("Positive Slack",
+                                    0x006400,   // darkgreen
+                                    0x90ee90);  // lightgreen
+
+    // Populate bar series
+    for (const auto& bucket : buckets_.negative) {
+      *neg_set << bucket.size();
+      *pos_set << 0;
+    }
+    for (const auto& bucket : buckets_.positive) {
+      *neg_set << 0;
+      *pos_set << bucket.size();
+    }
+
+    series->append(neg_set);
+    series->append(pos_set);
+    series->append(invisible);
+  } else {
+    // Stacked histogram
+    ColorGenerator generator;
+    for (int i = 0; i < path_groups_.size(); i++) {
+      QColor color = generator.getQColor();
+      QBarSet* bar_set = createBarSet(path_groups_[i], color, color);
+      // Populate bar series
+      for (const auto& bucket : pins_bucket_[i]) {
+        *bar_set << bucket.size();
+      }
+      series->append(bar_set);
+    }
+  }
+
+  // Populate invisible barset
   for (const auto& bucket : buckets_.negative) {
-    neg_set << bucket.size();
-    pos_set << 0;
-    invisible << max_bin_count - bucket.size();
+    *invisible << max_bin_count - bucket.size();
   }
   for (const auto& bucket : buckets_.positive) {
-    neg_set << 0;
-    pos_set << bucket.size();
-    invisible << max_bin_count - bucket.size();
+    *invisible << max_bin_count - bucket.size();
   }
+
+  return series;
 }
 
 void HistogramView::save(const QString& path)
