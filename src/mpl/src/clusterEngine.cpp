@@ -2080,11 +2080,15 @@ void ClusteringEngine::createHardMacros()
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
       } else if (inst->getHalo() != nullptr) {
-        odb::Rect inst_halo = inst->getTransformedHalo();
+        odb::Rect inst_halo = inst->getHalo()->getBox();
+        if (inst->getHalo()->isSoft()) {
+          halo = HardMacro::Halo(inst->getHalo());
+        } else {
         halo = {std::max(inst_halo.xMin(), tree_->default_halo.left),
                 std::max(inst_halo.yMin(), tree_->default_halo.bottom),
                 std::max(inst_halo.xMax(), tree_->default_halo.right),
                 std::max(inst_halo.yMax(), tree_->default_halo.top)};
+        }
       } else {
         halo = tree_->default_halo;
       }
