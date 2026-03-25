@@ -43,7 +43,7 @@ class definComponent : public definBase
   virtual void begin(const char* name, const char* cell);
   virtual void placement(int status, int x, int y, int orient);
   virtual void region(const char* region);
-  virtual void halo(int left, int bottom, int right, int top);
+  virtual void halo(int left, int bottom, int right, int top, bool is_soft);
   virtual void source(dbSourceType source);
   virtual void weight(int weight);
   virtual void property(const char* name, const char* value);
