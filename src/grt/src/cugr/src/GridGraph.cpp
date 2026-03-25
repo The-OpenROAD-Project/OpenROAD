@@ -327,8 +327,10 @@ CostT GridGraph::getWireCost(const int layer_index,
     logger_->error(
         utl::GRT,
         1249,
-        "Wire endpoint coordinates are not aligned for direction {}.",
-        direction);
+        "Wire endpoint coordinates are not aligned for direction {}: {} != {}.",
+        direction,
+        u[1 - direction],
+        v[1 - direction]);
   }
   CostT cost = 0;
   if (direction == MetalLayer::H) {
@@ -623,10 +625,12 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
         const int direction = layer_directions_[node->getLayerIdx()];
         if (direction == MetalLayer::H) {
           if (node->y() != child->y()) {
-            logger_->error(
-                utl::GRT,
-                1252,
-                "Horizontal wire endpoints have different y coordinates.");
+            logger_->error(utl::GRT,
+                           1252,
+                           "Horizontal wire endpoints have different y "
+                           "coordinates: {} != {}.",
+                           node->y(),
+                           child->y());
           }
           const auto [l, h] = std::minmax({node->x(), child->x()});
           for (int x = l; x < h; x++) {
@@ -634,10 +638,12 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
           }
         } else {
           if (node->x() != child->x()) {
-            logger_->error(
-                utl::GRT,
-                1253,
-                "Vertical wire endpoints have different x coordinates.");
+            logger_->error(utl::GRT,
+                           1253,
+                           "Vertical wire endpoints have different x "
+                           "coordinates: {} != {}.",
+                           node->x(),
+                           child->x());
           }
           const auto [l, h] = std::minmax({node->y(), child->y()});
           for (int y = l; y < h; y++) {
@@ -665,10 +671,12 @@ int GridGraph::checkOverflow(const int layer_index,
   const int direction = layer_directions_[layer_index];
   if (direction == MetalLayer::H) {
     if (u.y() != v.y()) {
-      logger_->error(
-          utl::GRT,
-          1254,
-          "Horizontal segment endpoints have different y coordinates.");
+      logger_->error(utl::GRT,
+                     1254,
+                     "Horizontal segment endpoints have different y "
+                     "coordinates: {} != {}.",
+                     u.y(),
+                     v.y());
     }
     const auto [l, h] = std::minmax({u.x(), v.x()});
     for (int x = l; x < h; x++) {
@@ -681,7 +689,9 @@ int GridGraph::checkOverflow(const int layer_index,
       logger_->error(
           utl::GRT,
           1255,
-          "Vertical segment endpoints have different x coordinates.");
+          "Vertical segment endpoints have different x coordinates: {} != {}.",
+          u.x(),
+          v.x());
     }
     const auto [l, h] = std::minmax({u.y(), v.y()});
     for (int y = l; y < h; y++) {
@@ -890,10 +900,12 @@ void GridGraph::updateWireCostView(
             const int direction = getLayerDirection(node->getLayerIdx());
             if (direction == MetalLayer::H) {
               if (node->y() != child->y()) {
-                logger_->error(
-                    utl::GRT,
-                    1256,
-                    "Horizontal wire endpoints have different y coordinates.");
+                logger_->error(utl::GRT,
+                               1256,
+                               "Horizontal wire endpoints have different y "
+                               "coordinates: {} != {}.",
+                               node->y(),
+                               child->y());
               }
               const int l = std::min(node->x(), child->x()),
                         h = std::max(node->x(), child->x());
@@ -902,10 +914,12 @@ void GridGraph::updateWireCostView(
               }
             } else {
               if (node->x() != child->x()) {
-                logger_->error(
-                    utl::GRT,
-                    1257,
-                    "Vertical wire endpoints have different x coordinates.");
+                logger_->error(utl::GRT,
+                               1257,
+                               "Vertical wire endpoints have different x "
+                               "coordinates: {} != {}.",
+                               node->x(),
+                               child->x());
               }
               const int l = std::min(node->y(), child->y()),
                         h = std::max(node->y(), child->y());
