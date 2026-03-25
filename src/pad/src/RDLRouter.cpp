@@ -30,7 +30,6 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/geom_boost.h"
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
 
