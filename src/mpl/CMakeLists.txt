@@ -9,6 +9,7 @@ find_package(ortools REQUIRED)
 
 add_library(mpl_lib
   src/rtl_mp.cpp
+  src/snapper.cpp
   src/hier_rtlmp.cpp
   src/object.cpp
   src/SimulatedAnnealingCore.cpp
