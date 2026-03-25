@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <numeric>
 #include <utility>
 #include <vector>
 
@@ -752,19 +753,26 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       resistance_aware_ = net->isResAware();
     }
 
-    int reroute_iter = 0;
-    bool structural_change;
     int enlarge = expand;
     const int num_terminals = sttrees_[netID].num_terminals;
     auto& treeedges = sttrees_[netID].edges;
     auto& treenodes = sttrees_[netID].nodes;
     const int origEng = enlarge;
 
-    // Reroute if any structural change occurs (shift)
-    do {
-      structural_change = false;
+    // First pass processes all edges; subsequent passes retry only the edges
+    // whose content was overwritten by a node shift (updateRouteType1/2).
+    std::vector<int> edges_to_process(sttrees_[netID].num_edges());
+    std::iota(edges_to_process.begin(), edges_to_process.end(), 0);
+    int reroute_iter = 0;
 
-      for (int edgeID = 0; edgeID < sttrees_[netID].num_edges(); edgeID++) {
+    if (net->getDbNet() == debug_->net) {
+      logger_->report("Edges: {}", edges_to_process.size());
+    }
+
+    while (!edges_to_process.empty()) {
+      std::vector<int> next_retry;
+
+      for (int edgeID : edges_to_process) {
         TreeEdge* treeedge = &(treeedges[edgeID]);
 
         if (treeedge->len >= ripupTHub || treeedge->len <= ripupTHlb) {
@@ -782,6 +790,21 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         const auto [xmin, xmax] = std::minmax(n1x, n2x);
 
         int original_len = treeedge->route.routelen;
+
+        // Debug mode edges 3D
+        if (debug_->isOn() && debug_->edges3D) {
+          if (net->getDbNet() == debug_->net) {
+            logger_->report(
+                "Edge {} 3D during maze route 3D ({},{}) -> ({},{}) - M{}",
+                edgeID,
+                n1x * tile_size_,
+                n1y * tile_size_,
+                n2x * tile_size_,
+                n2y * tile_size_,
+                treeedge->route.grids.back().layer);
+            StTreeVisualization(sttrees_[netID], net, true);
+          }
+        }
 
         // ripup the routing for the edge
         if (!newRipup3DType3(netID, edgeID)) {
@@ -836,17 +859,17 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           pop_heap2_3D_[i - &d2_3D_[0][0][0]] = true;
         }
 
-      while (
-          !pop_heap2_3D_[ind1])  // stop until the grid position been popped out
-                                 // from both src_heap_3D and dest_heap_3D
-      {
-        // relax all the adjacent grids within the enlarged region for
-        // source subtree
-        const int curL = ind1 / (grid_hv_);
-        const int remd = ind1 % (grid_hv_);
-        const int curX = remd % x_range_;
-        const int curY = remd / x_range_;
-        removeMin3D(src_heap_3D_);
+        while (
+            !pop_heap2_3D_[ind1])  // stop until the grid position been popped
+                                   // out from both src_heap_3D and dest_heap_3D
+        {
+          // relax all the adjacent grids within the enlarged region for
+          // source subtree
+          const int curL = ind1 / (grid_hv_);
+          const int remd = ind1 % (grid_hv_);
+          const int curX = remd % x_range_;
+          const int curY = remd / x_range_;
+          removeMin3D(src_heap_3D_);
 
           // If the net has more than 1 cost, use its cost as extra cost when
           // trying to find a new route
@@ -1078,7 +1101,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                    && !is_incremental_grt_)
                                       ? detour_penalty_
                                       : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+            const float tmp = d1_3D_[curL][curY][curX] + cost;  // + penalty;
             const int tmpL = curL - 1;  // the bottom neighbor
 
             if (d1_3D_[tmpL][curY][curX]
@@ -1128,7 +1151,7 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                    && !is_incremental_grt_)
                                       ? detour_penalty_
                                       : 0;
-            const float tmp = d1_3D_[curL][curY][curX] + cost + penalty;
+            const float tmp = d1_3D_[curL][curY][curX] + cost;  // + penalty;
             const int tmpL = curL + 1;  // the bottom neighbor
             if (d1_3D_[tmpL][curY][curX]
                 >= BIG_INT)  // bottom neighbor not been put into src_heap_3D
@@ -1302,6 +1325,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                edge_n1A1,
                                edge_n1A2);
 
+            // Both edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n1A1);
+            next_retry.push_back(edge_n1A2);
+
             // update position for n1
 
             // treenodes[n1].l = E1l;
@@ -1327,6 +1354,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                edge_n1A1,
                                edge_n1A2,
                                edge_C1C2);
+            // All three edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n1A1);
+            next_retry.push_back(edge_n1A2);
+            next_retry.push_back(edge_C1C2);
             // update position for n1
             treenodes[n1].x = E1x;
             treenodes[n1].y = E1y;
@@ -1460,6 +1491,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                edge_n2B1,
                                edge_n2B2);
 
+            // Both edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n2B1);
+            next_retry.push_back(edge_n2B2);
+
             // update position for n2
             treenodes[n2].assigned = true;
           }  // if E2 is on (n2, B1) or (n2, B2)
@@ -1483,6 +1518,10 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                edge_n2B1,
                                edge_n2B2,
                                edge_D1D2);
+            // All three edges had their grids overwritten; schedule for retry.
+            next_retry.push_back(edge_n2B1);
+            next_retry.push_back(edge_n2B2);
+            next_retry.push_back(edge_D1D2);
             // update position for n2
             treenodes[n2].x = E2x;
             treenodes[n2].y = E2y;
@@ -1587,28 +1626,24 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
           }
         }
 
-        // Debug mode edges 3D
-        if (debug_->isOn() && debug_->edges3D) {
-          if (net->getDbNet() == debug_->net) {
-            logger_->report("Edge {} 3D during maze route 3D", edgeID);
-            StTreeVisualization(sttrees_[netID], net, true);
-          }
-        }
-
         if (!n1Shift && !n2Shift) {
           continue;
         }
         setTreeNodesVariables(netID);
-
-        // If a shift is executed, some edges can be skipped if we don't reroute
-        // from beginning
-        structural_change = true;
       }  // edges loop
 
-      if (structural_change) {
-        reroute_iter++;
+      // Deduplicate the retry set.
+      std::sort(next_retry.begin(), next_retry.end());
+      next_retry.erase(std::unique(next_retry.begin(), next_retry.end()),
+                       next_retry.end());
+
+      // Stop if nothing shifted, or the iteration cap is reached.
+      if (next_retry.empty() || reroute_iter >= max_reroute_iter) {
+        break;
       }
-    } while (structural_change && reroute_iter <= max_reroute_iter);
+      edges_to_process = std::move(next_retry);
+      reroute_iter++;
+    }  // while edges_to_process
   }  // nets loop
 }
 
