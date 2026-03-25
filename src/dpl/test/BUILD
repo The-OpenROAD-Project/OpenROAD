@@ -50,6 +50,7 @@ COMPULSORY_TESTS = [
     "mirror1",
     "mirror2",
     "mirror3",
+    "multi_height_crash",
     "multi_height_one_site_gap_disallow",
     "multi_height_rows",
     "obstruction1",
@@ -224,6 +225,9 @@ filegroup(
             ],
             "mirror3": [
                 "gcd_replace.def",
+            ],
+            "multi_height_crash": [
+                "multi_height_crash_sram.lef",
             ],
             "multi_height1-opt": [
                 "Nangate45/fake_macros.lef",
