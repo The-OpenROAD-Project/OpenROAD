@@ -4,8 +4,15 @@
 #include "snapper.h"
 
 #include <algorithm>
+#include <cmath>
+#include <iterator>
 #include <numeric>
-#include <ranges>
+#include <utility>
+#include <vector>
+
+#include "odb/db.h"
+#include "odb/dbTypes.h"
+#include "utl/Logger.h"
 
 namespace mpl {
 

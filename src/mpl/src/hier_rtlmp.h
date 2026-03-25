@@ -17,7 +17,6 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "shapes.h"
-#include "snapper.h"
 
 namespace sta {
 class dbNetwork;
@@ -39,6 +38,7 @@ class HardMacro;
 class SoftMacro;
 class SACoreSoftMacro;
 class SACoreHardMacro;
+class Snapper;
 
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 using SoftMacroNameToIdMap = std::map<std::string, int>;

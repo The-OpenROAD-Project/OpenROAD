@@ -36,6 +36,7 @@
 #include "odb/geom_boost.h"
 #include "odb/util.h"
 #include "par/PartitionMgr.h"
+#include "snapper.h"
 #include "utl/Logger.h"
 
 namespace mpl {

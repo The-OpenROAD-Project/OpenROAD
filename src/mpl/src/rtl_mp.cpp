@@ -12,6 +12,7 @@
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "snapper.h"
 #include "utl/Logger.h"
 
 namespace mpl {

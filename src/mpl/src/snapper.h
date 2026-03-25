@@ -6,9 +6,18 @@
 #include <map>
 #include <vector>
 
-#include "odb/db.h"
-#include "odb/dbTypes.h"
-#include "utl/Logger.h"
+namespace odb {
+class dbInst;
+class dbITerm;
+class dbMPin;
+class dbTechLayer;
+class dbTechLayerDir;
+class dbTrackGrid;
+}  // namespace odb
+
+namespace utl {
+class Logger;
+}
 
 namespace mpl {
 
