@@ -33,6 +33,7 @@ place_inst ff10_clk1_rising 3000 3000
 
 report_dft_plan -verbose
 execute_dft_plan
+scan_opt
 
 set verilog_file [make_result_file place_sort_sky130.v]
 write_verilog $verilog_file

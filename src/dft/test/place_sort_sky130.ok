@@ -8,16 +8,17 @@ Clock domain: No Mix
 
 Scan chain 'chain_0' has 10 cells (10 bits)
 
-  ff5_clk1_rising (main_clock, rising)
-  ff1_clk1_rising
-  ff10_clk1_rising
+  ff9_clk1_rising (main_clock, rising)
   ff8_clk1_rising
-  ff2_clk1_rising
-  ff6_clk1_rising
   ff7_clk1_rising
-  ff9_clk1_rising
+  ff6_clk1_rising
+  ff5_clk1_rising
   ff4_clk1_rising
   ff3_clk1_rising
+  ff2_clk1_rising
+  ff1_clk1_rising
+  ff10_clk1_rising
 
 
+[INFO DFT-0016] Optimized 1 scan chain(s).
 No differences found.
