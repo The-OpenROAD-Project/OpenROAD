@@ -90,4 +90,25 @@ bool OneBitScanCell::isPlaced() const
   return inst_->isPlaced();
 }
 
+static odb::Point iTermLocation(odb::dbITerm* iterm, odb::dbInst* inst)
+{
+  if (iterm) {
+    int x, y;
+    if (iterm->getAvgXY(&x, &y)) {
+      return odb::Point(x, y);
+    }
+  }
+  return inst->getOrigin();
+}
+
+odb::Point OneBitScanCell::getScanInLocation() const
+{
+  return iTermLocation(findITerm(getLibertyScanIn(test_cell_)), inst_);
+}
+
+odb::Point OneBitScanCell::getScanOutLocation() const
+{
+  return iTermLocation(findITerm(getLibertyScanOut(test_cell_)), inst_);
+}
+
 }  // namespace dft
