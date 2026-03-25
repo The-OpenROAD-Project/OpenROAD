@@ -83,11 +83,9 @@ cc_library(
     hdrs = [
         "include/mpl/MakeMacroPlacer.h",
     ],
-    copts = [
-        "-Isrc/mpl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":mpl",

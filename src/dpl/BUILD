@@ -79,11 +79,9 @@ cc_library(
         "include/dpl/Opendp.h",
         "include/dpl/OptMirror.h",
     ],
-    copts = [
-        "-Isrc/dpl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//src/odb",
