@@ -7,25 +7,9 @@ package(features = ["layering_check"])
 
 exports_files(
     [
-        "fix_lint.sh",
         "install.sh",
-        "tcl_lint_test.sh",
-        "tcl_fmt_test.sh",
-        "tcl_tidy.sh",
+        "install_test.sh",
     ],
-    visibility = ["//visibility:public"],
-)
-
-# tclint / tclfmt binaries from pip — version pinned in requirements.in
-py_console_script_binary(
-    name = "tclint",
-    pkg = "@openroad-pip//tclint",
-    visibility = ["//visibility:public"],
-)
-
-py_console_script_binary(
-    name = "tclfmt",
-    pkg = "@openroad-pip//tclint",
     visibility = ["//visibility:public"],
 )
 

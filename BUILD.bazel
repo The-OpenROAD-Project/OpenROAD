@@ -425,6 +425,13 @@ sh_binary(
     data = [":tarfile"],
 )
 
+sh_test(
+    name = "install_test",
+    size = "small",
+    srcs = ["//bazel:install_test.sh"],
+    data = ["//bazel:install.sh"],
+)
+
 pkg_tar(
     name = "tarfile",
     srcs = [
