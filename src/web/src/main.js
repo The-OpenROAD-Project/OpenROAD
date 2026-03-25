@@ -277,6 +277,7 @@ function createLayoutViewer(container) {
     mapDiv.appendChild(coordBar);
 
     app.map.on('mousemove', (e) => {
+        app.lastMouseLatLng = e.latlng;
         if (!app.designScale) return;
         const { dbuX, dbuY } = latLngToDbu(
             e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
@@ -286,6 +287,7 @@ function createLayoutViewer(container) {
         const yUm = (dbuY / dbuPerUm).toFixed(precision);
         coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
     });
+    app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
@@ -784,9 +786,17 @@ document.addEventListener('keydown', (e) => {
     } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
     } else if (key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
-        app.map.zoomIn();
+        if (app.lastMouseLatLng) {
+            app.map.setZoomAround(app.lastMouseLatLng, app.map.getZoom() + 1);
+        } else {
+            app.map.zoomIn();
+        }
     } else if (key === 'z' && e.shiftKey && !e.ctrlKey && app.map) {
-        app.map.zoomOut();
+        if (app.lastMouseLatLng) {
+            app.map.setZoomAround(app.lastMouseLatLng, app.map.getZoom() - 1);
+        } else {
+            app.map.zoomOut();
+        }
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();
     }
