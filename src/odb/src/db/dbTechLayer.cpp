@@ -502,7 +502,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   wire_extension_ = 0;
   number_ = 0;
   rlevel_ = 0;
-  area_ = 0.0;
+  area_ = 0;
   thickness_ = 0;
   min_step_ = -1;
   pt_.width = 0;
@@ -1914,18 +1914,17 @@ bool dbTechLayer::hasArea() const
   return (layer->flags_.has_area);
 }
 
-double  // Now denominated in squm
-dbTechLayer::getArea() const
+int64_t dbTechLayer::getArea() const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   if (layer->flags_.has_area) {
     return layer->area_;
   }
 
-  return 0.0;  // Default
+  return 0;
 }
 
-void dbTechLayer::setArea(double area)
+void dbTechLayer::setArea(int64_t area)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   layer->flags_.has_area = true;

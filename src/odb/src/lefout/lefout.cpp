@@ -1031,7 +1031,7 @@ void lefout::writeLayer(dbTechLayer* layer)
   }
 
   if (layer->hasArea()) {
-    fmt::print(_out, "    AREA {:.11g} ;\n", layer->getArea());
+    fmt::print(_out, "    AREA {:.11g} ;\n", layer->getArea() * area_factor_);
   }
 
   uint32_t thickness;

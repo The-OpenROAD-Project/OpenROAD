@@ -85,6 +85,23 @@ check "layer spacing" {$layer getSpacing} [expr round(0.065 * $units)]
 check "layer resistance" {$layer getResistance} 0.38
 check "layer capacitance" {$layer getCapacitance} 0.0
 
+# dbTechLayer.getArea()/setArea should use DBU^2 in scripting APIs.
+set expected_area_um 0.123456
+set expected_area_dbu [expr {round($expected_area_um * $units * $units)}]
+$layer setArea $expected_area_dbu
+check "layer area in dbu^2" {$layer getArea} $expected_area_dbu
+
+# LEF I/O remains in micron^2; verify write_tech_lef converts back.
+set out_lef [make_result_file "layer_area_units_test.lef"]
+odb::write_tech_lef $tech $out_lef
+set out_stream [open $out_lef r]
+set out_text [read $out_stream]
+close $out_stream
+set expected_area_pattern [format {AREA[[:space:]]+%.6f} \
+  [expr {$expected_area_dbu / double($units * $units)}]]
+check "layer area written as micron^2 in LEF" \
+  {regexp -- $expected_area_pattern $out_text} 1
+
 read_lef "data/gscl45nm_ext_macros.lef"
 set lib [$db findLib gscl45nm_ext_macros]
 set NOP [$lib findMaster NOP]
