@@ -233,8 +233,10 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     mazeRoute.run();
     std::shared_ptr<SteinerTreeNode> tree = mazeRoute.getSteinerTree();
     if (tree == nullptr) {
-      logger_->error(
-          utl::GRT, 1270, "Steiner tree is null for net during maze routing.");
+      logger_->error(utl::GRT,
+                     1270,
+                     "Steiner tree is null for net {} during maze routing.",
+                     net->getName());
     }
 
     PatternRoute pattern_route(
