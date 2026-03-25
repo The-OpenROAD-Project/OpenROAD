@@ -20,6 +20,14 @@ py_binary(
     visibility = ["//visibility:public"],
 )
 
+exports_files(
+    [
+        "find_dup_ids.sh",
+        "find_messages.py",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 test_suite(
     name = "all_tests",
     tests = [

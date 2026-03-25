@@ -769,7 +769,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "QYKsLwaOfoRUMu1KyupRbCxEnHtHuIAr4YE3u1WzHko=",
-        "usagesDigest": "ynfBx6Q6NeumBZvRJfZV9NdfwdlUBoKAJiC5/tayX/0=",
+        "usagesDigest": "BhZI+OrcUkb7soBeutxT7x0sm8NDpQeQP42Wtbw+1XQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -787,8 +787,8 @@
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-669-gbdeb18939",
-              "sha256": "812c5c543252460a9458010cdff4f851d6441e592c74d6254b15889e7ad95c6a",
+              "image": "docker.io/openroad/orfs:26Q1-696-gaf26ce3b6",
+              "sha256": "471ba9028897f542d9ed98e584e04bb728ef0b4742915913ae4143e2597aedd4",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -1473,8 +1473,8 @@
     },
     "@@rules_chisel+//chisel:extensions.bzl%chisel": {
       "general": {
-        "bzlTransitiveDigest": "8YiJLOvTGeBWOqC6gILmYNgsck3pSfcT1RyCktl4Jzs=",
-        "usagesDigest": "cyt2rWGIn4nNGvnFMJCaFYLV5TJb2XL/KUof4xYvBYY=",
+        "bzlTransitiveDigest": "+blXF/PncCsQI125MAJu2KliBdUnXm79a2ColXabdk0=",
+        "usagesDigest": "DGt57fukJ5xzo6u+WB4sIyT7lNznTva+pyfekI7/lxg=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1524,10 +1524,10 @@
           }
         },
         "moduleExtensionMetadata": {
-          "explicitRootModuleDirectDeps": [
+          "explicitRootModuleDirectDeps": [],
+          "explicitRootModuleDirectDevDeps": [
             "chisel_maven"
           ],
-          "explicitRootModuleDirectDevDeps": [],
           "useAllRepos": "NO",
           "reproducible": false
         },
@@ -1781,7 +1781,7 @@
     "@@rules_nodejs+//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "4pUxCNc22K4I+6+4Nxu52Hur12tFRfa1JMsN5mdDv60=",
-        "usagesDigest": "2/WrxRCEcTRlp/R9YNdf2FCycgT32EsVVJqIe9crUIg=",
+        "usagesDigest": "XgjGMMVhkRNv0fH22CXQccYVXE+qXDnSDWsfaLvKd4o=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -2350,7 +2350,7 @@
     "@@toolchains_llvm+//toolchain/extensions:llvm.bzl%llvm": {
       "general": {
         "bzlTransitiveDigest": "SFT0LhY0ioB2PsbncmTCGyGh8M0OtAJ2fCq0fHtf7ps=",
-        "usagesDigest": "gn25Ya6Nd2hLxoG8Ksgb9RPzvoiElyTJFM/4We+5U2g=",
+        "usagesDigest": "ZuaBuvEE8efZLVQ2tR8Vbv3podpYbZjO703SKYIAb4g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},

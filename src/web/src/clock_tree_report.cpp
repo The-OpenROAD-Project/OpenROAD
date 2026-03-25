@@ -165,34 +165,32 @@ struct TreeNode
     return total;
   }
 
-  sta::Delay getMinArrival() const
+  template <typename Cmp>
+  sta::Delay getArrivalBound(Cmp cmp, sta::Delay init) const
   {
-    sta::Delay minimum = std::numeric_limits<sta::Delay>::max();
+    sta::Delay result = init;
     for (const auto& [pin, arr] : drivers) {
-      minimum = std::min(minimum, arr);
+      result = cmp(result, arr);
     }
     for (const auto& [pin, arr] : leaves) {
-      minimum = std::min(minimum, arr);
+      result = cmp(result, arr);
     }
     for (const auto& child : fanout) {
-      minimum = std::min(minimum, child->getMinArrival());
+      result = cmp(result, child->getArrivalBound(cmp, init));
     }
-    return minimum;
+    return result;
+  }
+
+  sta::Delay getMinArrival() const
+  {
+    return getArrivalBound([](auto a, auto b) { return std::min(a, b); },
+                           std::numeric_limits<sta::Delay>::max());
   }
 
   sta::Delay getMaxArrival() const
   {
-    sta::Delay maximum = std::numeric_limits<sta::Delay>::lowest();
-    for (const auto& [pin, arr] : drivers) {
-      maximum = std::max(maximum, arr);
-    }
-    for (const auto& [pin, arr] : leaves) {
-      maximum = std::max(maximum, arr);
-    }
-    for (const auto& child : fanout) {
-      maximum = std::max(maximum, child->getMaxArrival());
-    }
-    return maximum;
+    return getArrivalBound([](auto a, auto b) { return std::max(a, b); },
+                           std::numeric_limits<sta::Delay>::lowest());
   }
 };
 
@@ -218,16 +216,27 @@ ClockTreeNode::Type classifyDriver(const sta::Pin* pin, sta::dbNetwork* network)
   return ClockTreeNode::UNKNOWN;
 }
 
+struct ResolvedPin
+{
+  odb::dbITerm* iterm = nullptr;
+  odb::dbBTerm* bterm = nullptr;
+};
+
+static ResolvedPin resolveStaPin(const sta::Pin* pin, sta::dbNetwork* network)
+{
+  ResolvedPin rp;
+  odb::dbModITerm* moditerm;
+  network->staToDb(pin, rp.iterm, rp.bterm, moditerm);
+  return rp;
+}
+
 ClockTreeNode::Type classifyLeaf(const sta::Pin* pin, sta::dbNetwork* network)
 {
   sta::Instance* inst = network->instance(pin);
   if (!inst) {
     return ClockTreeNode::UNKNOWN;
   }
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  network->staToDb(pin, iterm, bterm, moditerm);
+  auto [iterm, bterm] = resolveStaPin(pin, network);
   if (iterm) {
     odb::dbInst* db_inst = iterm->getInst();
     if (db_inst->getMaster()->getType().isBlock()) {
@@ -244,10 +253,7 @@ void getPinLocation(const sta::Pin* pin,
 {
   x = 0;
   y = 0;
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  network->staToDb(pin, iterm, bterm, moditerm);
+  auto [iterm, bterm] = resolveStaPin(pin, network);
   if (iterm) {
     odb::dbInst* inst = iterm->getInst();
     int lx, ly;
@@ -267,10 +273,7 @@ void getPinLocation(const sta::Pin* pin,
 
 std::string getPinName(const sta::Pin* pin, sta::dbNetwork* network)
 {
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  network->staToDb(pin, iterm, bterm, moditerm);
+  auto [iterm, bterm] = resolveStaPin(pin, network);
   if (iterm) {
     return iterm->getName();
   }
@@ -282,10 +285,7 @@ std::string getPinName(const sta::Pin* pin, sta::dbNetwork* network)
 
 std::string getInstName(const sta::Pin* pin, sta::dbNetwork* network)
 {
-  odb::dbITerm* iterm;
-  odb::dbBTerm* bterm;
-  odb::dbModITerm* moditerm;
-  network->staToDb(pin, iterm, bterm, moditerm);
+  auto [iterm, bterm] = resolveStaPin(pin, network);
   if (iterm) {
     return iterm->getInst()->getName();
   }
@@ -359,7 +359,7 @@ void flattenNode(const TreeNode* tree,
     ClockTreeNode node;
     node.id = static_cast<int>(data.nodes.size());
     node.parent_id = parent_id;
-    node.name = inst_name;
+    node.name = std::move(inst_name);
     node.pin_name = getPinName(pin, network);
     node.type = classifyDriver(pin, network);
     node.fanout = static_cast<int>(tree->fanout.size() + tree->leaves.size());
@@ -384,7 +384,7 @@ void flattenNode(const TreeNode* tree,
     }
 
     int this_id = node.id;
-    data.nodes.push_back(node);
+    data.nodes.push_back(std::move(node));
 
     // Recurse into children
     for (const auto& child : tree->fanout) {
@@ -403,7 +403,7 @@ void flattenNode(const TreeNode* tree,
       leaf.level = tree->level + 1;
       leaf.fanout = 0;
       getPinLocation(leaf_pin, network, leaf.dbu_x, leaf.dbu_y);
-      data.nodes.push_back(leaf);
+      data.nodes.push_back(std::move(leaf));
     }
   }
 }

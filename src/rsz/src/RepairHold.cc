@@ -770,19 +770,30 @@ bool RepairHold::checkMaxSlewCap(const sta::Pin* drvr_pin)
   float cap, limit, slack;
   const sta::Scene* corner;
   const sta::RiseFall* tr;
+  float slack_limit_ratio;
+
   sta_->checkCapacitance(
       drvr_pin, sta_->scenes(), max_, cap, limit, slack, tr, corner);
-  float slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
+  // checkCapacitance returns sentinel limit=-1E+30 when no
+  // limit exists, making slack/limit=-1.0 which falsely fails the threshold
+  // check.
+  if (corner) {
+    slack_limit_ratio = slack / limit;
+    if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
+      return false;
+    }
   }
 
   sta::Slew slew;
   sta_->checkSlew(
       drvr_pin, sta_->scenes(), max_, false, slew, limit, slack, tr, corner);
-  slack_limit_ratio = slack / limit;
-  if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
-    return false;
+  // checkSlew returns sentinel limit=0.0 when no limit exists, avoid
+  // divide-by-zero
+  if (corner) {
+    slack_limit_ratio = slack / limit;
+    if (slack_limit_ratio < hold_slack_limit_ratio_max_) {
+      return false;
+    }
   }
 
   resizer_->checkLoadSlews(drvr_pin, 0.0, slew, limit, slack, corner);

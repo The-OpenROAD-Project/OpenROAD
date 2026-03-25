@@ -4,10 +4,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("@rules_python//python:defs.bzl", "py_library")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -39,7 +36,9 @@ config_setting(
 )
 
 exports_files([
+    "BUILD.bazel",
     "LICENSE",
+    "MODULE.bazel",
     "src/Design.i",
     "src/Exception.i",
     "src/options.i",
@@ -218,7 +217,7 @@ cc_library(
     includes = [
         "include",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
@@ -336,7 +335,7 @@ cc_binary(
 # This packages the SWIG-generated Python wrapper (odb.py) and the
 # compiled C++ extension (_odb.so) together.
 py_library(
-    name = "ord_py",
+    name = "openroad_py",
     srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
     # The data attribute makes the .so file available at runtime.
     data = [":_openroadpy.so"],
@@ -392,7 +391,7 @@ filegroup(
     srcs = [
         "src/Exception.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -400,7 +399,7 @@ filegroup(
     srcs = [
         "src/Exception-py.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -415,23 +414,20 @@ filegroup(
     srcs = [
         "src/options.i",
     ],
-    visibility = ["@//:__subpackages__"],
+    visibility = ["//:__subpackages__"],
 )
 
-sh_binary(
-    name = "install",
-    srcs = ["//bazel:install.sh"],
-    args = [],
-    data = [":tarfile"],
-)
+# Lightweight test suites that run without building OpenROAD.
+# Usage:
+#   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
+#   bazelisk test //:dup_id_test                         # duplicate message ID check
 
-pkg_tar(
-    name = "tarfile",
-    srcs = [
-        ":openroad",
-    ],
-    include_runfiles = True,
-    package_file_name = "openroad.tar",
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "dup_id_test",
+    srcs = ["//etc:find_dup_ids.sh"],
+    data = ["//etc:find_messages.py"],
+    tags = ["local"],
 )
 
 # ---------------------------------------------------------------------------
@@ -443,6 +439,7 @@ pkg_tar(
 
 # --- TCL linting (tclint) -------------------------------------------------
 
+# buildifier: disable=native-sh-test
 sh_test(
     name = "lint_tcl_test",
     srcs = ["//bazel:tcl_lint_test.sh"],
@@ -456,6 +453,7 @@ sh_test(
 
 # --- TCL formatting check (tclfmt --check) --------------------------------
 
+# buildifier: disable=native-sh-test
 sh_test(
     name = "fmt_tcl_test",
     srcs = ["//bazel:tcl_fmt_test.sh"],
@@ -469,6 +467,7 @@ sh_test(
 
 # --- TCL auto-format only (tclfmt --in-place) -----------------------------
 
+# buildifier: disable=native-sh-binary
 sh_binary(
     name = "tidy_tcl",
     srcs = ["//bazel:tcl_tidy.sh"],
@@ -491,6 +490,7 @@ test_suite(
 
 # Linting is done here (not just formatting) because not all lint violations
 # are auto-fixable — fix_lint fixes what it can, then reports the rest.
+# buildifier: disable=native-sh-binary
 sh_binary(
     name = "fix_lint",
     srcs = ["//bazel:fix_lint.sh"],
