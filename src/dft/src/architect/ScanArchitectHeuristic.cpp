@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "ClockDomain.hh"
-#include "Opt.hh"
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
