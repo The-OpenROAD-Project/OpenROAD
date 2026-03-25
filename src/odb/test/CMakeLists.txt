@@ -1,6 +1,7 @@
 or_integration_tests(
   "odb"
   TESTS
+    abstract_bloat_pin
     abstract_origin
     all_pins_placed1
     all_pins_placed2

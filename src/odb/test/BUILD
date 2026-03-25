@@ -215,6 +215,7 @@ COMPULSORY_TESTS = [
 ]
 
 PASSFAIL_TESTS = [
+    "abstract_bloat_pin",
     # pass-fail
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
