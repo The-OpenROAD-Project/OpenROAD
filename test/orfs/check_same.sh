@@ -10,7 +10,7 @@ while [ $# -ge 2 ]; do
         diff "$a" "$b" | head -20
         status=1
     else
-        echo "OK: $(basename "$a")"
+        echo "OK: $(basename "$a") and $(basename "$b") are identical"
     fi
 done
 exit $status
