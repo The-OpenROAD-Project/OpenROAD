@@ -48,12 +48,10 @@ using utl::MPL;
 HierRTLMP::~HierRTLMP() = default;
 
 // Constructors
-HierRTLMP::HierRTLMP(sta::dbNetwork* network,
-                     odb::dbDatabase* db,
+HierRTLMP::HierRTLMP(odb::dbDatabase* db,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
-    : network_(network),
-      db_(db),
+    : db_(db),
       logger_(logger),
       tritonpart_(tritonpart),
       tree_(std::make_unique<PhysicalHierarchy>())
