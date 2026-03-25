@@ -94,6 +94,7 @@ class CUGR
   }
   void addDirtyNet(odb::dbNet* net);
   void updateNet(odb::dbNet* net);
+  void removeRouteUsage(odb::dbNet* net);
   void startIncremental();
   void endIncremental();
 
