@@ -117,6 +117,11 @@ void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
   tree_->default_halo = {halo_width, halo_height, halo_width, halo_height};
 }
 
+void HierRTLMP::setUseDefHalo(bool use_def_halo)
+{
+  use_def_halo_ = use_def_halo;
+}
+
 void HierRTLMP::setGuidanceRegions(
     const std::map<odb::dbInst*, odb::Rect>& guidance_regions)
 {
@@ -272,6 +277,7 @@ void HierRTLMP::runMultilevelAutoclustering()
   // Set target structure
   clustering_engine_->setTree(tree_.get());
   clustering_engine_->setHalos(macro_to_halo_);
+  clustering_engine_->setUseDefHalo(use_def_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {
@@ -673,14 +679,15 @@ void HierRTLMP::calculateMacroTilings(Cluster* cluster)
   }
 
   if (tilings.empty()) {
-    logger_->error(MPL,
-                   4,
-                   "Unable to fit cluster {} within outline. Macro height: {}, "
-                   "width: {}, number of macros: {}.",
-                   cluster->getName(),
-                   macro_width,
-                   macro_height,
-                   number_of_macros);
+    logger_->error(
+        MPL,
+        4,
+        "Unable to fit cluster {} within outline. Macro height: {:.2f}um, "
+        "width: {:.2f}um, number of macros: {}.",
+        cluster->getName(),
+        block_->dbuToMicrons(macro_width),
+        block_->dbuToMicrons(macro_height),
+        number_of_macros);
   }
 
   cluster->setTilings(tilings);

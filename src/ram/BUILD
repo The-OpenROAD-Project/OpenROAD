@@ -16,13 +16,13 @@ cc_library(
     srcs = [
         "src/MakeRam.cpp",
         "src/layout.cpp",
-        "src/layout.h",
         "src/ram.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
         "include/ram/MakeRam.h",
+        "include/ram/layout.h",
         "include/ram/ram.h",
     ],
     includes = [

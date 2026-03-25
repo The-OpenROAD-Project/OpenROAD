@@ -1,0 +1,39 @@
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  Stale:
+    runs-on: ${{ vars.USE_SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
+
+    permissions:
+      # Required to label and close stale issues.
+      issues: write
+      # Required to label and close stale pull requests.
+      pull-requests: write
+      # Required to save state between runs
+      actions: write
+
+    steps:
+      - uses: actions/stale@v10
+        with:
+          days-before-stale: 60
+          days-before-close: 21
+          stale-issue-label: Stale
+          stale-pr-label: Stale
+          stale-issue-message: >
+            This issue has been automatically marked as stale because it has not
+            had recent activity. It will be closed in 21 days if no further
+            activity occurs. Remove the `Stale` label or comment to keep it open.
+          stale-pr-message: >
+            This pull request has been automatically marked as stale because it
+            has not had recent activity. It will be closed in 21 days if no
+            further activity occurs. Remove the `Stale` label or comment to keep
+            it open.
+          close-issue-reason: not_planned
+          exempt-issue-labels: pinned,security
+          exempt-pr-labels: pinned,security
+          operations-per-run: 100

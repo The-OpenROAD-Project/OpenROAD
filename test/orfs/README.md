@@ -217,7 +217,7 @@ Let's say that `bazelisk test test/orfs/gcd:eqy_synth_test` fails, first create 
 After compiling sv-bugpoint, we create a check.sh script:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 cp $1 test/orfs/gcd/
 (bazelisk test test/orfs/gcd:eqy_synth_test --test_timeout=30 --test_output=streamed || error=$?) | tee /dev/tty | grep "Failed to prove equivalence of partition gcd.req_rdy"
@@ -229,3 +229,13 @@ cp $1 test/orfs/gcd/
 Next, run sv-bugpoint to whittle `test/orfs/gcd/gcd.v` down to a minimal test case:
 
     ~/sv-bugpoint/build/sv-bugpoint fail check.sh test/orfs/gcd/gcd.v
+
+## Using whittle.py to minimize .odb files
+
+While sv-bugpoint minimizes Verilog source files, `whittle.py` minimizes
+`.odb` database files by iteratively removing instances and nets.  This is
+useful when the bug is in placement, routing, or other physical stages
+where Verilog reduction would not help.
+
+See [Bazel.md](../../docs/user/Bazel.md#whittling-down-odb-files) for
+detailed instructions and recommended flags.

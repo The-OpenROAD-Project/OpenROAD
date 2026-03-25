@@ -19,6 +19,7 @@ template class dbTable<_dbTechLayerEolKeepOutRule>;
 bool _dbTechLayerEolKeepOutRule::operator==(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.class_valid != rhs.flags_.class_valid) {
     return false;
   }
@@ -51,6 +52,7 @@ bool _dbTechLayerEolKeepOutRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerEolKeepOutRule::operator<(

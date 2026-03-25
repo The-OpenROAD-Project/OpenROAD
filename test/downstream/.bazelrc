@@ -1,0 +1,2 @@
+# Required because OpenROAD's MODULE.bazel uses isolate = True on use_extension
+common --experimental_isolated_extension_usages
