@@ -2079,6 +2079,41 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
+      odb::dbMaster* master = inst->getMaster();
+      HardMacro::Halo halo_mask;
+
+      for (odb::dbMTerm* mterm : master->getMTerms()) {
+        if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+          continue;
+        }
+
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* box : mpin->getGeometry()) {
+            odb::Rect pin_rect = box->getBox();
+
+            if (pin_rect.dx() > pin_rect.dy()) {
+              int dist_L = pin_rect.xMin();
+              int dist_R = master->getWidth() - pin_rect.xMax();
+              
+              if (dist_L < dist_R) {
+                halo_mask.left = 1;
+              } else {
+                halo_mask.right = 1;
+              }
+            } else {
+              int dist_B = pin_rect.yMin();
+              int dist_T = master->getHeight() - pin_rect.yMax();
+              
+              if (dist_B < dist_T) {
+                halo_mask.bottom = 1;
+              } else {
+                halo_mask.top = 1;
+              }
+            }
+          }
+        }
+      }
+
       HardMacro::Halo halo;
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
@@ -2091,6 +2126,13 @@ void ClusteringEngine::createHardMacros()
       } else {
         halo = base_halo_;
       }
+
+      halo.left *= halo_mask.left;
+      halo.bottom *= halo_mask.bottom;
+      halo.right *= halo_mask.right;
+      halo.top *= halo_mask.top;
+
+      logger_->report("{} ({} {} {} {})", inst->getName(), halo.left, halo.bottom, halo.right, halo.top);
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 
