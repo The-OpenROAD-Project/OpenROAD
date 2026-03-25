@@ -19,9 +19,6 @@ cc_library(
     hdrs = [
         "src/snapper.h",
     ],
-    includes = [
-        "include",
-    ],
     deps = [
         "//src/odb",
         "//src/utl",
