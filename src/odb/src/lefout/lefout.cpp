@@ -227,7 +227,68 @@ void lefout::writeObstructions(dbBlock* db_block)
     fmt::print(_out, "    LAYER {} ;\n", tech_layer->getName().c_str());
 
     if (bloat_occupied_layers_) {
-      writeBox("   ", block_bounding_box);
+      // Start with the full bounding box, then subtract pin shapes so
+      // that macro pins remain accessible to pin_access (avoids DRT-0073).
+      boost::polygon::polygon_90_set_data<int> obs_poly;
+      using boost::polygon::operators::operator+=;
+      using boost::polygon::operators::operator-=;
+      obs_poly
+          += boost::polygon::rectangle_data<int>{block_bounding_box->xMin(),
+                                                 block_bounding_box->yMin(),
+                                                 block_bounding_box->xMax(),
+                                                 block_bounding_box->yMax()};
+
+      const int pitch = tech_layer->getPitch() != 0
+                            ? tech_layer->getPitch()
+                            : 2 * tech_layer->getSpacing();
+
+      // Subtract BTerm pin shapes (signal and explicitly-created power pins)
+      for (dbBTerm* bterm : db_block->getBTerms()) {
+        for (dbBPin* bpin : bterm->getBPins()) {
+          for (dbBox* box : bpin->getBoxes()) {
+            if (box->getTechLayer() != tech_layer) {
+              continue;
+            }
+            Rect pin_rect = box->getBox();
+            boost::polygon::polygon_90_set_data<int> pin_poly;
+            pin_poly += boost::polygon::rectangle_data<int>{pin_rect.xMin(),
+                                                            pin_rect.yMin(),
+                                                            pin_rect.xMax(),
+                                                            pin_rect.yMax()};
+            pin_poly.bloat(pitch, pitch, pitch, pitch);
+            obs_poly -= pin_poly;
+          }
+        }
+      }
+
+      // Subtract power pin shapes from special nets that have no BTerms
+      // (these are promoted to LEF pins by writePowerPins)
+      for (dbNet* net : db_block->getNets()) {
+        if (!net->getSigType().isSupply() || net->get1stBTerm() != nullptr) {
+          continue;
+        }
+        for (dbSWire* swire : net->getSWires()) {
+          for (dbSBox* sbox : swire->getWires()) {
+            if (sbox->isVia() || sbox->getTechLayer() != tech_layer) {
+              continue;
+            }
+            Rect pin_rect = sbox->getBox();
+            boost::polygon::polygon_90_set_data<int> pin_poly;
+            pin_poly += boost::polygon::rectangle_data<int>{pin_rect.xMin(),
+                                                            pin_rect.yMin(),
+                                                            pin_rect.xMax(),
+                                                            pin_rect.yMax()};
+            pin_poly.bloat(pitch, pitch, pitch, pitch);
+            obs_poly -= pin_poly;
+          }
+        }
+      }
+
+      std::vector<boost::polygon::rectangle_data<int>> rects;
+      obs_poly.get_rectangles(rects);
+      for (const auto& rect : rects) {
+        writeRect("   ", rect);
+      }
     } else {
       const int bloat = determineBloat(tech_layer);
       boost::polygon::polygon_90_set_data<int> shrink_poly = polySet;

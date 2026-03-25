@@ -20,7 +20,7 @@ MACRO origin
   END VDD
   OBS
     LAYER metal1 ;
-     RECT  10.07 12.515 90.25 62.685 ;
+     RECT  10.07 12.825 90.25 62.375 ;
   END
 END origin
 END LIBRARY
