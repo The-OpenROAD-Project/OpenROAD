@@ -8,6 +8,8 @@
 #include <fstream>
 #include <functional>
 #include <iomanip>
+#include <ios>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <memory>
@@ -22,6 +24,7 @@
 #include "absl/synchronization/mutex.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "heatMapPinDensity.h"
 #include "heatMapPlacementDensity.h"

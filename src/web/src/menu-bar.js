@@ -15,6 +15,8 @@ export function createMenuBar(app) {
             { label: 'Zoom In', shortcut: 'Z', action: () => app.map.zoomIn() },
             { label: 'Zoom Out', shortcut: 'Shift+Z', action: () => app.map.zoomOut() },
             { type: 'separator' },
+            { label: 'Toggle Theme', shortcut: 'T', action: () => app.toggleTheme() },
+            { type: 'separator' },
             { label: 'Find...', shortcut: 'Ctrl+F', disabled: true },
             { label: 'Go to Position...', shortcut: 'Shift+G', disabled: true },
         ]},
