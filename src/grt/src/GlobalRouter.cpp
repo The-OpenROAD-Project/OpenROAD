@@ -5976,7 +5976,7 @@ void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
   fastroute_->getNetId(net, net_id, exists);
   if (!exists) {
     logger_->warn(
-        GRT, 304, "Net {} not found in global router.", net->getName());
+        GRT, 308, "Net {} not found in global router.", net->getName());
     return;
   }
 
