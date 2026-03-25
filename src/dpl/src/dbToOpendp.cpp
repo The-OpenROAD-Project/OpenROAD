@@ -58,7 +58,6 @@ void Opendp::importDb()
 void Opendp::importClear()
 {
   deleteGrid();
-  have_multi_row_cells_ = false;
   network_->clear();
   arch_->clear();
 }
@@ -128,10 +127,6 @@ void Opendp::createNetwork()
     }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
-    if (inst->getMaster()->isCore()
-        && network_->getMaster(inst->getMaster())->isMultiRow()) {
-      have_multi_row_cells_ = true;
-    }
     if (isFiller(inst)) {
       have_fillers_ = true;
     }
@@ -309,11 +304,9 @@ void Opendp::setUpPlacementGroups()
       for (auto db_inst : db_group->getInsts()) {
         Node* nd = network_->getNode(db_inst);
         if (nd != nullptr) {
-          if (true) {
-            nd->setGroupId(rptr->getId());
-            nd->setGroup(rptr);
-            rptr->addCell(nd);
-          }
+          nd->setGroupId(rptr->getId());
+          nd->setGroup(rptr);
+          rptr->addCell(nd);
         }
       }
     }

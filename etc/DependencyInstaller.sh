@@ -841,7 +841,9 @@ _install_ubuntu_packages() {
     else
         packages+=("libtcl")
     fi
-    if _version_compare "$1" -ge "25.04"; then
+    if _version_compare "$1" -ge "26.04"; then
+        packages+=("libpython3.14")
+    elif _version_compare "$1" -ge "25.04"; then
         packages+=("libpython3.13")
     elif _version_compare "$1" -ge "24.04"; then
         packages+=("libpython3.12")
@@ -937,8 +939,9 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff libomp or-tools pandoc pkg-config pyqt5 python spdlog tcl-tk zlib swig yaml-cpp
-    _execute "Installing Python click..." pip3 install click
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk zlib swig yaml-cpp
+    _execute "Installing pipx..." brew install pipx
+    _execute "Installing Python click..." pipx install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }
@@ -952,7 +955,7 @@ _install_debian_packages() {
     export DEBIAN_FRONTEND="noninteractive"
     _execute "Updating package lists..." apt-get -y update
     local tcl_ver=""
-    if [[ "${debian_version}" == "rodete" ]]; then
+    if [[ "${debian_version}" == "rodete" ]] || _version_compare "${debian_version}" -ge "13"; then
         tcl_ver="8.6"
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
@@ -968,6 +971,8 @@ _install_debian_packages() {
         local python_ver="3.8"
         if [[ "${debian_version}" == "rodete" ]]; then
             python_ver="3.12"
+        elif _version_compare "${debian_version}" -ge "13"; then
+            python_ver="3.13"
         fi
         _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
     fi
@@ -1228,7 +1233,12 @@ EOF
             fi
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
-                _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                local debian_version_normalized=${debian_version}
+                if _version_compare "${debian_version_normalized}" -ge "13"; then
+                    # FIXME use debian-13 once or-tools publishes an official release for it
+                    debian_version_normalized="sid"
+                fi
+                _install_or_tools "debian" "${debian_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
                 _install_abseil
             fi
             ;;

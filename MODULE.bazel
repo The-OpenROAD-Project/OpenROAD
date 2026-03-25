@@ -5,6 +5,8 @@ module(
     name = "openroad",
 )
 
+# --- Regular dependencies (propagated to downstream consumers via MVS) ---
+
 bazel_dep(name = "abc", version = "0.62-yosyshq")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
@@ -13,21 +15,8 @@ bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_bison", version = "0.3.1")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "rules_flex", version = "0.3.1")
-bazel_dep(name = "rules_jvm_external", version = "6.4")
 bazel_dep(name = "rules_python", version = "1.8.5")
-
-# Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
-bazel_dep(name = "rules_scala")
-git_override(
-    module_name = "rules_scala",
-    commit = "1aced658083aac6c636fcc03b7cd3952a426eda7",
-    remote = "https://github.com/bazelbuild/rules_scala",
-)
-
-bazel_dep(name = "rules_shell", version = "0.6.1")
-bazel_dep(name = "rules_verilator", version = "0.1.0")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
-bazel_dep(name = "verilator", version = "5.036.bcr.3")
 
 BOOST_VERSION = "1.89.0.bcr.2"
 
@@ -76,10 +65,11 @@ bazel_dep(name = "tcmalloc", version = "0.0.0-20250927-12f2552")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "yaml-cpp", version = "0.9.0")
 bazel_dep(name = "tcl_lang", version = "8.6.16.bcr.1")
+bazel_dep(name = "readline", version = "8.2.bcr.3")
 
-# Make compilation DB (and possibly build cleaner)
-bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
-bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+# JavaScript / web UI (src/web uses @npm for bundled assets)
+bazel_dep(name = "aspect_rules_js", version = "3.0.2")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
 
 # A from source build of QT that allows it to link into OpenROAD.
 # Building like any other bazel project. scripts in the docker folder
@@ -89,22 +79,65 @@ bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "2b450c5d0b84e0a48e0e7797486e62d24f65c78b",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
-# Updated dependencies of qt_bazel_prebuilts. Once the updated versions
-# have been added to qt_bazel_prebuilts, they can be removed here.
-# (But CAVE, right now that would result in cyclic dependencies with,
-# WORKSPACE so that also has to go first).
-bazel_dep(name = "harfbuzz", version = "11.0.1.bcr.1")
-bazel_dep(name = "glib", version = "2.82.2.bcr.8")
-
-## Lock the compiler version and avoid any local compiler
+## Lock the compiler version and avoid any local compiler.
+## The bazel_dep stays non-dev because llvm_prebuilt's build_file
+## references @toolchains_llvm//toolchain:BUILD.llvm_repo.
+## The extension and toolchain registration are dev_dependency because
+## toolchains_llvm enforces root-module-only extension usage.
+## Downstream consumers must configure their own C++ toolchain.
 bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 
-# Configure and register the toolchain.
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+# --- Dev dependencies (not propagated to downstream consumers) ---
+
+bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
+bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
+bazel_dep(name = "rules_shell", version = "0.6.1", dev_dependency = True)
+bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
+bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
+
+# Used by chisel_binary from @bazel-orfs in test/orfs/mock-array
+bazel_dep(name = "rules_jvm_external", version = "6.4", dev_dependency = True)
+bazel_dep(name = "rules_chisel", version = "0.2.0", dev_dependency = True)
+single_version_override(
+    module_name = "rules_chisel",
+    patch_strip = 1,
+    patches = ["//:rules-chisel-dev-dep.patch"],
+)
+
+bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
+bazel_dep(name = "bazel-orfs", dev_dependency = True)
+bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
+
+BAZEL_ORFS_COMMIT = "272cc079f25521d19fe25f80e176e29adb40d920"
+
+BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+)
+
+git_override(
+    module_name = "bazel-orfs-verilog",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+    strip_prefix = "verilog",
+)
+
+# --- Extensions ---
+
+llvm = use_extension(
+    "@toolchains_llvm//toolchain/extensions:llvm.bzl",
+    "llvm",
+    dev_dependency = True,
+)
 llvm.toolchain(
     llvm_version = "20.1.8",
 )
@@ -115,6 +148,7 @@ use_repo(llvm, "llvm_toolchain")
 register_toolchains(
     "@llvm_toolchain//:all",
     "@rules_verilator//verilator:verilator_toolchain",
+    dev_dependency = True,
 )
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -132,33 +166,46 @@ pip.parse(
 )
 use_repo(pip, "openroad-pip")
 
-bazel_dep(name = "bazel-orfs")
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
-git_override(
-    module_name = "bazel-orfs",
-    commit = "dea261e6445ffc790989b22e85e15ae64172aa1f",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+node = use_extension(
+    "@rules_nodejs//nodejs:extensions.bzl",
+    "node",
 )
+node.toolchain(node_version = "22.14.0")
 
-orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+npm = use_extension(
+    "@aspect_rules_js//npm:extensions.bzl",
+    "npm",
+    isolate = True,
+)
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//src/web:pnpm-lock.yaml",
+)
+use_repo(npm, "npm")
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
 
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-473-gb75a51133",
+    image = "docker.io/openroad/orfs:26Q1-696-gaf26ce3b6",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "0d811b5bbb44861ded130e10989a64b35163341f7300da66f7b17a67e3676e6b",
+    sha256 = "471ba9028897f542d9ed98e584e04bb728ef0b4742915913ae4143e2597aedd4",
 )
 use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
-SCALA_VERSION = "2.13.16"
+SCALA_VERSION = "2.13.17"
+
+CHISEL_VERSION = "7.2.0"
+
+FIRTOOL_RESOLVER_VERSION = "2.0.1"
 
 scala_config = use_extension(
     "@rules_scala//scala/extensions:config.bzl",
     "scala_config",
+    dev_dependency = True,
 )
 scala_config.settings(
     scala_version = SCALA_VERSION,
@@ -168,13 +215,22 @@ use_repo(scala_config, "rules_scala_config")
 scala_deps = use_extension(
     "@rules_scala//scala/extensions:deps.bzl",
     "scala_deps",
+    dev_dependency = True,
 )
 scala_deps.settings(
     fetch_sources = True,
 )
 scala_deps.scala()
 
-maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel", dev_dependency = True)
+chisel.toolchain(
+    chisel_version = CHISEL_VERSION,
+    firtool_resolver_version = FIRTOOL_RESOLVER_VERSION,
+    scala_version = SCALA_VERSION,
+)
+use_repo(chisel, "chisel_maven")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven", dev_dependency = True)
 maven.install(
     name = "maven",
     artifacts = [
@@ -189,7 +245,19 @@ maven.install(
 )
 use_repo(maven, "maven")
 
+# --- External archives ---
+
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "tclreadline",
+    build_file = "//bazel:tclreadline.BUILD",
+    sha256 = "a64e0faed5957b8e1ac16f179948e21cdd6d3b8313590b7ab049a3192ab864fb",
+    strip_prefix = "tclreadline-2.3.8",
+    urls = [
+        "https://github.com/flightaware/tclreadline/archive/refs/tags/v2.3.8.tar.gz",
+    ],
+)
 
 http_archive(
     name = "circt",
@@ -210,6 +278,8 @@ http_archive(
         "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.0/openmp-20.1.0.src.tar.xz",
     ],
 )
+
+# --- Overrides ---
 
 single_version_override(
     module_name = "boost.context",

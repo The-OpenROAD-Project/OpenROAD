@@ -4,19 +4,17 @@ module top (load_output);
  wire net;
  wire net1;
  wire net3;
- wire net4;
 
  BUF_X4 buf1 (.A(net),
     .Z(net1));
  BUF_X4 buf3 (.A(net),
     .Z(net3));
  BUF_X4 buf4 (.A(net),
-    .Z(net4));
+    .Z(load_output));
  LOGIC0_X1 drvr_inst (.Z(net));
  BUF_X1 load0_inst (.A(net1));
  BUF_X1 load2_inst (.A(net3));
  MOD0 mi0 (.A(net));
- assign load_output = net4;
 endmodule
 module MOD0 (A);
  input A;

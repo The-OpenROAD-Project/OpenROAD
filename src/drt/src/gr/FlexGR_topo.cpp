@@ -176,7 +176,7 @@ void FlexGR::genMSTTopology_PD(std::vector<frNode*>& nodes, double alpha)
     pathLens[minIdx]
         = pathLens[parentIdx[minIdx]] + dists[parentIdx[minIdx]][minIdx];
     for (int idx = 0; idx < (int) nodes.size(); idx++) {
-      if (isVisited[idx] == false
+      if (!isVisited[idx]
           && (pathLens[minIdx] * alpha + dists[minIdx][idx] < keys[idx])) {
         parentIdx[idx] = minIdx;
         keys[idx] = pathLens[minIdx] * alpha + dists[minIdx][idx];
@@ -203,7 +203,7 @@ int FlexGR::genMSTTopology_PD_minIdx(const std::vector<int>& keys,
   int minIdx = -1;
 
   for (int i = 0; i < (int) isVisited.size(); i++) {
-    if (isVisited[i] == false && keys[i] < min) {
+    if (!isVisited[i] && keys[i] < min) {
       min = keys[i];
       minIdx = i;
     }

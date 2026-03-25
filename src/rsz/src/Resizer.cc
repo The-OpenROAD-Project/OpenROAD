@@ -79,7 +79,6 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
-#include "sta/StringSeq.hh"
 #include "sta/StringUtil.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -248,8 +247,8 @@ void Resizer::initBlock()
     logger_->error(RSZ, 163, "Database has no block");
   }
   core_ = block_->getCoreArea();
-  core_exists_ = !(core_.xMin() == 0 && core_.xMax() == 0 && core_.yMin() == 0
-                   && core_.yMax() == 0);
+  core_exists_ = core_.xMin() != 0 || core_.xMax() != 0 || core_.yMin() != 0
+                 || core_.yMax() != 0;
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
 
   // Apply sizing restrictions
@@ -300,7 +299,7 @@ void Resizer::initBlock()
     }
     sizing_keep_site_ = site_prop->getValue();
   } else {
-    if (sizing_keep_site_ != false) {
+    if (sizing_keep_site_) {
       swappable_cells_cache_.clear();
     }
     sizing_keep_site_ = false;
@@ -312,7 +311,7 @@ void Resizer::initBlock()
     }
     sizing_keep_vt_ = vt_prop->getValue();
   } else {
-    if (sizing_keep_vt_ != false) {
+    if (sizing_keep_vt_) {
       swappable_cells_cache_.clear();
     }
     sizing_keep_vt_ = false;
@@ -343,7 +342,7 @@ void Resizer::initBlock()
     }
     disable_buffer_pruning_ = disable_pruning_prop->getValue();
   } else {
-    if (disable_buffer_pruning_ != false) {
+    if (disable_buffer_pruning_) {
       swappable_cells_cache_.clear();
       buffer_cells_.clear();
     }
@@ -395,7 +394,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   }
   unbuffer_move_->commitMoves();
   estimate_parasitics_->updateParasitics();
-  level_drvr_vertices_valid_ = false;
+  invalidateVertexOrdering();
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
@@ -1045,7 +1044,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -1188,7 +1187,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -1440,7 +1439,7 @@ bool Resizer::hasFanout(sta::Vertex* drvr)
 
 bool Resizer::hasFanout(sta::Pin* drvr)
 {
-  if (network_->isDriver(drvr) == false) {
+  if (!network_->isDriver(drvr)) {
     return false;
   }
 
@@ -2576,7 +2575,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     db_cbk_->addOwner(block_);
     journalRestore();
     db_cbk_->removeOwner();
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3279,7 +3278,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       tie_count++;
     }
 
-    if (keep_tie == false) {
+    if (!keep_tie) {
       // Delete the tie instance if no other ports are in use.
       // A tie cell can have both tie hi and low outputs.
       deleteTieCellAndNet(tie_inst, tie_port);
@@ -3289,7 +3288,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
   if (tie_count > 0) {
     logger_->info(
         RSZ, 42, "Inserted {} tie {} instances.", tie_count, tie_cell->name());
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3361,7 +3360,7 @@ sta::Instance* Resizer::createNewTieCellForLoadPin(const sta::Pin* load_pin,
 
   // If the load pin is not in the top module, move the new tie instance
   sta::Instance* load_inst = network_->instance(load_pin);
-  if (network_->isTopInstance(load_inst) == false) {
+  if (!network_->isTopInstance(load_inst)) {
     dbInst* db_inst = nullptr;
     odb::dbModInst* db_mod_inst = nullptr;
     odb::dbModule* module = nullptr;
@@ -3473,6 +3472,8 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
   if (!has_other_fanout) {
     sta_->deleteInstance(const_cast<sta::Instance*>(tie_inst));
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
   }
 }
 
@@ -3507,7 +3508,7 @@ odb::Point Resizer::tieLocation(const sta::Pin* load, int separation)
   int load_y = load_loc.getY();
   int tie_x = load_x;
   int tie_y = load_y;
-  if (!(network_->isTopLevelPort(load) || !db_network_->isFlat(load))) {
+  if (!network_->isTopLevelPort(load) && db_network_->isFlat(load)) {
     dbInst* db_inst = db_network_->staToDb(network_->instance(load));
     dbBox* bbox = db_inst->getBBox();
     int left_dist = abs(load_x - bbox->xMin());
@@ -4103,7 +4104,7 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
   for (auto scene : sta_->scenes()) {
     scene_names.push_back(scene->name().c_str());
   }
-  sta->makeScenes(&scene_names);
+  sta->makeScenes(scene_names);
 
   sta::Instance* top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
@@ -4381,6 +4382,9 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       sta_->deleteInstance(inv);
     }
   }
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4728,6 +4732,9 @@ void Resizer::journalRestore()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 
   debugPrint(logger_,
              RSZ,
@@ -5435,6 +5442,10 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   }
 
+  if (remove_inst_count > 0 || remove_net_count > 0) {
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
+  }
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
@@ -5551,11 +5562,7 @@ bool Resizer::okToBufferNet(const sta::Pin* driver_pin) const
 
   odb::dbNet* db_net = db_network_->staToDb(net);
 
-  if (db_net->isConnectedByAbutment() || db_net->isSpecial()) {
-    return false;
-  }
-
-  return true;
+  return !(db_net->isConnectedByAbutment() || db_net->isSpecial());
 }
 
 // Check if current instance can be swapped to the

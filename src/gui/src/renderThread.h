@@ -83,6 +83,7 @@ class RenderThread : public QThread
   void drawRegions(QPainter* painter, odb::dbBlock* block);
   void drawTracks(odb::dbTechLayer* layer,
                   QPainter* painter,
+                  odb::dbBlock* block,
                   const odb::Rect& bounds);
 
   void drawInstanceOutlines(QPainter* painter,
@@ -120,8 +121,12 @@ class RenderThread : public QThread
                      odb::dbTechLayer* draw_layer,
                      const odb::Rect& bounds,
                      int shape_limit);
-  void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
-  void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
+  void drawManufacturingGrid(QPainter* painter,
+                             odb::dbBlock* block,
+                             const odb::Rect& bounds);
+  void drawGCellGrid(QPainter* painter,
+                     odb::dbBlock* block,
+                     const odb::Rect& bounds);
   void drawSelected(Painter& painter, const SelectionSet& selected);
   void drawHighlighted(Painter& painter, const HighlightSet& highlighted);
   void drawIOPins(Painter& painter,

@@ -27,7 +27,11 @@ void LoadBalancer::start_accept()
 {
   if (jobs_ != 0 && jobs_ % 100 == 0) {
     logger_->info(utl::DST, 7, "Processed {} jobs", jobs_);
-    auto copy = workers_;
+    WorkerQueue copy;
+    {
+      absl::MutexLock lock(&workers_mutex_);
+      copy = workers_;
+    }
     while (!copy.empty()) {
       auto worker = copy.top();
       logger_->report("Worker {}/{} handled {} jobs",
@@ -107,7 +111,7 @@ bool LoadBalancer::addWorker(const std::string& ip, unsigned short port)
 void LoadBalancer::updateWorker(const ip::address& ip, unsigned short port)
 {
   absl::MutexLock lock(&workers_mutex_);
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -136,7 +140,7 @@ void LoadBalancer::getNextWorker(ip::address& ip, uint16_t& port)
 void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
 {
   absl::MutexLock lock(&workers_mutex_);
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -148,12 +152,9 @@ void LoadBalancer::punishWorker(const ip::address& ip, uint16_t port)
   workers_.swap(new_queue);
 }
 
-void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
+void LoadBalancer::removeWorkerLocked(const ip::address& ip, uint16_t port)
 {
-  if (lock) {
-    workers_mutex_.Lock();
-  }
-  std::priority_queue<Worker, std::vector<Worker>, CompareWorker> new_queue;
+  WorkerQueue new_queue;
   while (!workers_.empty()) {
     auto worker = workers_.top();
     workers_.pop();
@@ -163,9 +164,6 @@ void LoadBalancer::removeWorker(const ip::address& ip, uint16_t port, bool lock)
     new_queue.push(worker);
   }
   workers_.swap(new_queue);
-  if (lock) {
-    workers_mutex_.Unlock();
-  }
 }
 
 void LoadBalancer::lookUpWorkers(const char* domain, uint16_t port)

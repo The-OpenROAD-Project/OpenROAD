@@ -1611,12 +1611,13 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
     }
     const auto idx = *(indices.begin());
     if (isPinIdx(idx)) {
+      const double dbu_per_uu = design_->getTopBlock()->getDBUPerUU();
       logger_->error(DRT,
                      223,
-                     "Pin dangling id {} ({},{}) {}.",
+                     "Pin dangling id {} ({:.3f}um,{:.3f}um) {}.",
                      idx,
-                     pt.x(),
-                     pt.y(),
+                     pt.x() / (double) dbu_per_uu,
+                     pt.y() / (double) dbu_per_uu,
                      pt.z());
     }
     // no upper/lower guide
@@ -1826,7 +1827,7 @@ bool GuidePathFinder::traverseGraph()
         continue;
       }
       if (curr_wavefront.node_idx > getGuideCount()
-          && visited_[curr_wavefront.node_idx] == false) {
+          && !visited_[curr_wavefront.node_idx]) {
         visited_[curr_wavefront.node_idx] = true;
         prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
         visited_pin = curr_wavefront.node_idx;

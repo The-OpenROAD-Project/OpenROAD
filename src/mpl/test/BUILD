@@ -1,8 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -19,6 +23,8 @@ COMPULSORY_TESTS = [
     "fixed_macros2",
     "guides1",
     "guides2",
+    "halos1",
+    "halos2",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -41,13 +47,7 @@ COMPULSORY_TESTS = [
     "unfixed_cells_dont_fit_in_core",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "mpl_man_tcl_check",
-    "mpl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -119,6 +119,14 @@ filegroup(
                     "testcases/macro_only.lef",
                     "testcases/macro_only.lib",
                     "testcases/macro_only.v",
+                ],
+                "halos1": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos2": [
+                    "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
                     "testcases/io_constraints1.def",
@@ -241,13 +249,29 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/mpl",
+        "//src/mpl:snapper",
         "//src/odb",
         "//src/tst",
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "mpl_man_tcl_check",
+    srcs = ["mpl_man_tcl_check.py"],
+    data = ["//src/mpl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "mpl_readme_msgs_check",
+    data = [
+        "//src/mpl:doc_files",
+        "//src/mpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

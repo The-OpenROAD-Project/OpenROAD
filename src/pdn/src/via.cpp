@@ -2707,12 +2707,8 @@ bool TechViaGenerator::fitsShapes() const
   }
 
   transform.apply(top_rect);
-  if (!mostlyContains(
-          getUpperRect(), intersection, top_rect, getUpperConstraint())) {
-    return false;
-  }
-
-  return true;
+  return mostlyContains(
+      getUpperRect(), intersection, top_rect, getUpperConstraint());
 }
 
 // check if shape is contains on three sides

@@ -385,7 +385,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // track sets of routes, so we don't route the reverse by accident
   std::map<odb::dbITerm*, odb::dbITerm*> routed_pairs;
   // track cover instances we dont route the same one twice
-  std::set<odb::dbInst*> routed_covers;
+  std::set<odb::dbITerm*> routed_covers;
   // track non-cover iterms we dont route the same one twice
   std::set<odb::dbITerm*> routed_non_covers;
   // track iteration information
@@ -397,7 +397,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     if (route->isRouted()) {
       for (odb::dbITerm* iterm0 : route->getRoutedTerminals()) {
         if (isCoverTerm(iterm0)) {
-          routed_covers.insert(iterm0->getInst());
+          routed_covers.insert(iterm0);
         } else {
           routed_non_covers.insert(iterm0);
         }
@@ -424,7 +424,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     odb::dbNet* net = src->getNet();
     auto& net_targets = routing_targets_[net];
 
-    if (routed_covers.find(src->getInst()) != routed_covers.end()) {
+    if (routed_covers.find(src) != routed_covers.end()) {
       // we've already routed this cover once (indicates the cover has multiple
       // iterms), so go ahead and mark is as complete and skip.
 
@@ -516,12 +516,12 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 
             // record cover instance
             if (isCoverTerm(src)) {
-              routed_covers.insert(src->getInst());
+              routed_covers.insert(src);
             } else {
               routed_non_covers.insert(src);
             }
             if (isCoverTerm(dst)) {
-              routed_covers.insert(dst->getInst());
+              routed_covers.insert(dst);
             } else {
               routed_non_covers.insert(dst);
             }
@@ -625,10 +625,8 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       // ripup routing
       for (auto& ripup_route : ripup) {
         uncommitRoute(ripup_route->getRouteEdges());
-        routed_covers.erase(
-            ripup_route->getRouteTargetSource()->terminal->getInst());
-        routed_covers.erase(
-            ripup_route->getRouteTargetDestination()->terminal->getInst());
+        routed_covers.erase(ripup_route->getRouteTargetSource()->terminal);
+        routed_covers.erase(ripup_route->getRouteTargetDestination()->terminal);
         routed_non_covers.erase(ripup_route->getRouteTargetSource()->terminal);
         routed_non_covers.erase(
             ripup_route->getRouteTargetDestination()->terminal);
@@ -1716,30 +1714,38 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   std::vector<ObsValue> obstructions;
 
   const int bloat = getBloatFactor();
-  auto insert_obstruction_rect
-      = [&obstructions, bloat](
-            const odb::Rect& rect, odb::dbNet* net, odb::dbObject* src) {
-          odb::Rect bloated;
-          rect.bloat(bloat, bloated);
+  auto insert_obstruction_rect = [&obstructions](const odb::Rect& rect,
+                                                 odb::dbNet* net,
+                                                 odb::dbObject* src,
+                                                 int bloat) {
+    odb::Rect bloated;
+    rect.bloat(bloat, bloated);
 
-          obstructions.emplace_back(bloated, bloated, net, src);
-        };
-  auto insert_obstruction_oct
-      = [&obstructions, bloat](
-            const odb::Oct& oct, odb::dbNet* net, odb::dbObject* src) {
-          const odb::Oct bloat_oct = oct.bloat(bloat);
+    obstructions.emplace_back(bloated, bloated, net, src);
+  };
+  auto insert_obstruction_oct =
+      [&obstructions](
+          const odb::Oct& oct, odb::dbNet* net, odb::dbObject* src, int bloat) {
+        const odb::Oct bloat_oct = oct.bloat(bloat);
 
-          obstructions.emplace_back(
-              bloat_oct.getEnclosingRect(), bloat_oct, net, src);
-        };
-  auto insert_obstruction_poly
-      = [&obstructions, bloat](
-            const odb::Polygon& poly, odb::dbNet* net, odb::dbObject* src) {
-          const odb::Polygon bloat_poly = poly.bloat(bloat);
+        obstructions.emplace_back(
+            bloat_oct.getEnclosingRect(), bloat_oct, net, src);
+      };
+  auto insert_obstruction_poly = [&obstructions](const odb::Polygon& poly,
+                                                 odb::dbNet* net,
+                                                 odb::dbObject* src,
+                                                 int bloat) {
+    const odb::Polygon bloat_poly = poly.bloat(bloat);
 
-          obstructions.emplace_back(
-              bloat_poly.getEnclosingRect(), bloat_poly, net, src);
-        };
+    obstructions.emplace_back(
+        bloat_poly.getEnclosingRect(), bloat_poly, net, src);
+  };
+
+  using BoostPolygon = boost::polygon::polygon_data<int>;
+  using BoostPolygonSet = boost::polygon::polygon_set_data<int>;
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+  std::map<odb::dbMaster*, std::vector<odb::Polygon>> master_obstruction_map;
 
   // Get placed instanced obstructions
   for (auto* inst : block_->getInsts()) {
@@ -1750,29 +1756,86 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     const odb::dbTransform xform = inst->getTransform();
 
     auto* master = inst->getMaster();
-    for (auto* obs : master->getPolygonObstructions()) {
-      if (obs->getTechLayer() != layer_) {
-        continue;
+    auto& master_obs = master_obstruction_map[master];
+    if (master_obs.empty()) {
+      BoostPolygonSet master_obstruction;
+      for (auto* obs : master->getPolygonObstructions()) {
+        if (obs->getTechLayer() != layer_) {
+          continue;
+        }
+
+        const odb::Polygon bloat_poly = obs->getPolygon().bloat(bloat);
+        const auto pts = bloat_poly.getPoints();
+
+        const BoostPolygon polygon_in(pts.begin(), pts.end());
+        master_obstruction += polygon_in;
+      }
+      for (auto* obs : master->getObstructions(false)) {
+        if (obs->getTechLayer() != layer_) {
+          continue;
+        }
+
+        odb::Rect bloated;
+        obs->getBox().bloat(bloat, bloated);
+        const auto pts = bloated.getPoints();
+
+        const BoostPolygon polygon_in(pts.begin(), pts.end());
+        master_obstruction += polygon_in;
       }
 
-      odb::Polygon poly = obs->getPolygon();
-      xform.apply(poly);
-      insert_obstruction_poly(poly, nullptr, nullptr);
+      // remove iterm shapes from master obstructions
+      for (auto* mterm : master->getMTerms()) {
+        for (auto* mpin : mterm->getMPins()) {
+          for (auto* geom : mpin->getPolygonGeometry()) {
+            if (geom->getTechLayer() != layer_) {
+              continue;
+            }
+
+            const odb::Polygon bloat_poly = geom->getPolygon().bloat(bloat);
+            const auto pts = bloat_poly.getPoints();
+            const BoostPolygon polygon_in(pts.begin(), pts.end());
+            master_obstruction -= polygon_in;
+          }
+          for (auto* geom : mpin->getGeometry(false)) {
+            if (geom->getTechLayer() != layer_) {
+              continue;
+            }
+            odb::Rect bloated;
+            geom->getBox().bloat(bloat, bloated);
+            const auto pts = bloated.getPoints();
+            const BoostPolygon polygon_in(pts.begin(), pts.end());
+            master_obstruction -= polygon_in;
+          }
+        }
+      }
+
+      std::vector<BoostPolygon> output_polygons;
+      master_obstruction.get(output_polygons);
+      for (const auto& polygon_out : output_polygons) {
+        std::vector<odb::Point> new_coord;
+        new_coord.reserve(polygon_out.coords_.size());
+        for (const auto& pt : polygon_out.coords_) {
+          new_coord.emplace_back(pt.x(), pt.y());
+        }
+        master_obs.emplace_back(new_coord);
+      }
     }
-    for (auto* obs : master->getObstructions(false)) {
-      if (obs->getTechLayer() != layer_) {
-        continue;
+    for (const auto& poly : master_obs) {
+      if (poly.isRect()) {
+        odb::Rect rect = poly.getEnclosingRect();
+        xform.apply(rect);
+        insert_obstruction_rect(rect, nullptr, nullptr, 0);
+      } else {
+        odb::Polygon xformpoly = poly;
+        xform.apply(xformpoly);
+        insert_obstruction_poly(xformpoly, nullptr, nullptr, 0);
       }
-
-      odb::Rect rect = obs->getBox();
-      xform.apply(rect);
-      insert_obstruction_rect(rect, nullptr, nullptr);
     }
 
     for (auto* iterm : inst->getITerms()) {
       auto* net = iterm->getNet();
       for (const auto& poly : getITermShapes(iterm)) {
-        insert_obstruction_poly(poly, net, iterm);
+        insert_obstruction_poly(poly, net, iterm, bloat);
       }
     }
   }
@@ -1793,9 +1856,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
         }
 
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
-          insert_obstruction_oct(box->getOct(), net, nullptr);
+          insert_obstruction_oct(box->getOct(), net, nullptr, bloat);
         } else {
-          insert_obstruction_rect(box->getBox(), net, nullptr);
+          insert_obstruction_rect(box->getBox(), net, nullptr, bloat);
         }
       }
     }
@@ -1808,7 +1871,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
       continue;
     }
 
-    insert_obstruction_rect(box->getBox(), nullptr, nullptr);
+    insert_obstruction_rect(box->getBox(), nullptr, nullptr, bloat);
   }
 
   // Add via obstructions when using access vias
@@ -1816,9 +1879,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     for (const auto& [iterm, targets] : routing_pairs) {
       for (const auto& target : targets) {
         if (isCoverTerm(target.terminal) && bump_accessvia_ != nullptr) {
-          insert_obstruction_rect(target.shape, net, iterm);
+          insert_obstruction_rect(target.shape, net, iterm, bloat);
         } else if (!isCoverTerm(target.terminal) && pad_accessvia_ != nullptr) {
-          insert_obstruction_rect(target.shape, net, iterm);
+          insert_obstruction_rect(target.shape, net, iterm, bloat);
         }
       }
     }

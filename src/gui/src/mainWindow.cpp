@@ -628,8 +628,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
-  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
-  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_, logger_));
+  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, logger_));
   gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(

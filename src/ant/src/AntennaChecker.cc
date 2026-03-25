@@ -318,7 +318,7 @@ void AntennaChecker::Impl::saveGates(odb::dbNet* db_net,
     dsu_parent[i] = i;
   }
 
-  boost::disjoint_sets<int*, int*> dsu(&dsu_size[0], &dsu_parent[0]);
+  boost::disjoint_sets<int*, int*> dsu(dsu_size.data(), dsu_parent.data());
 
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* iter = tech->findRoutingLayer(1);

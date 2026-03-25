@@ -534,11 +534,7 @@ bool lefin_parse(lefinReader* lef, utl::Logger* logger, const char* file_name)
   }
   LefParser::lefrClear();
 
-  if (res) {
-    return false;
-  }
-
-  return true;
+  return res == 0;
 }
 
 int lefin_get_current_line()

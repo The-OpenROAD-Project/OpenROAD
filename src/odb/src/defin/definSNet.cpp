@@ -159,7 +159,17 @@ void definSNet::rect(const char* layer_name,
                                dbdist(x2),
                                dbdist(y2),
                                dbWireShapeType(type));
-  box->setLayerMask(mask);
+  if (box != nullptr) {
+    box->setLayerMask(mask);
+  } else {
+    _logger->warn(utl::ODB,
+                  465,
+                  "Ignored RECT with invalid dimensions ({}, {}) ({}, {}).",
+                  x1,
+                  y1,
+                  x2,
+                  y2);
+  }
 }
 
 void definSNet::polygon(const char* layer_name, std::vector<defPoint>& points)

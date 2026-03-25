@@ -1450,7 +1450,7 @@ void FastRouteCore::mazeRouteMSMDSequential(const int iter,
 
       // stop when the grid position been popped out from both src_heap and
       // dest_heap
-      while (pop_heap2[ind1] == false) {
+      while (!pop_heap2[ind1]) {
         // relax all the adjacent grids within the enlarged region for
         // source subtree
         const int curX = ind1 % x_range_;

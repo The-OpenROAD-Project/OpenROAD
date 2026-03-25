@@ -136,6 +136,16 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 5 long wires.
 [INFO RSZ-0048] Inserted 5 buffers in 5 nets.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                    2901
+Diamond Move Success:           2901 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement       4030.9 u

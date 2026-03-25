@@ -55,6 +55,11 @@ class dbNetwork;
 class SpefWriter;
 }  // namespace sta
 
+namespace gui {
+class HeatMapSourceRegistration;
+using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
+}  // namespace gui
+
 namespace grt {
 
 class FastRouteCore;
@@ -69,7 +74,6 @@ class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class GlobalRouter;
-class AbstractRoutingCongestionDataSource;
 class GRouteDbCbk;
 class Rudy;
 
@@ -122,10 +126,8 @@ class GlobalRouter
                dpl::Opendp* opendp);
   ~GlobalRouter();
 
-  void initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source,
-               std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source_rudy);
+  void initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
+               gui::HeatMapSourceHandle routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -169,6 +171,7 @@ class GlobalRouter
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
+  void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
@@ -228,6 +231,7 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
+  void updateCUGRNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
@@ -460,6 +464,7 @@ class GlobalRouter
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  bool loadRoutingFromDBGuides(odb::dbNet* db_net);
   void shrinkNetRoute(odb::dbNet* db_net);
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
@@ -567,8 +572,8 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
+  gui::HeatMapSourceHandle heatmap_;
+  gui::HeatMapSourceHandle heatmap_rudy_;
 
   // variables congestion report file
   const char* congestion_file_name_;
@@ -596,6 +601,7 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
   void inDbNetCreate(odb::dbNet* net) override;
   void inDbNetPostMerge(odb::dbNet* preserved_net,
                         odb::dbNet* removed_net) override;
+  void inDbNetPostGuideRestore(odb::dbNet* net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
@@ -618,7 +624,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = false);
+  std::vector<Net*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

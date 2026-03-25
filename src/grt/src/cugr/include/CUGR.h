@@ -91,16 +91,19 @@ class CUGR
   {
     critical_nets_percentage_ = percentage;
   }
+  void addDirtyNet(odb::dbNet* net);
+  void updateNet(odb::dbNet* net);
+  void routeIncremental();
 
  private:
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
   void setInitialNetSlacks();
-  void updateOverflowNets(std::vector<int>& netIndices);
-  void patternRoute(std::vector<int>& netIndices);
-  void patternRouteWithDetours(std::vector<int>& netIndices);
-  void mazeRoute(std::vector<int>& netIndices);
-  void sortNetIndices(std::vector<int>& netIndices) const;
+  void updateOverflowNets(std::vector<int>& net_indices);
+  void patternRoute(std::vector<int>& net_indices);
+  void patternRouteWithDetours(std::vector<int>& net_indices);
+  void mazeRoute(std::vector<int>& net_indices);
+  void sortNetIndices(std::vector<int>& net_indices) const;
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
@@ -124,6 +127,8 @@ class CUGR
   int area_of_wire_patches_ = 0;
 
   float critical_nets_percentage_ = 0;
+
+  std::vector<int> nets_to_route_;
 };
 
 }  // namespace grt

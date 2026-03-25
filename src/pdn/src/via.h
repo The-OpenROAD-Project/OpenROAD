@@ -448,9 +448,9 @@ class ViaGenerator
   int getCutPitchX() const { return cut_pitch_x_; }
   void setCutPitchY(int pitch) { cut_pitch_y_ = pitch; }
   int getCutPitchY() const { return cut_pitch_y_; }
-  void setCutOffsetX(int pitch) { cut_offset_y_ = pitch; }
-  int getCutOffsetX() const { return cut_offset_y_; }
-  void setCutOffsetY(int pitch) { cut_offset_y_ = pitch; }
+  void setCutOffsetX(int offset) { cut_offset_x_ = offset; }
+  int getCutOffsetX() const { return cut_offset_x_; }
+  void setCutOffsetY(int offset) { cut_offset_y_ = offset; }
   int getCutOffsetY() const { return cut_offset_y_; }
 
   void setMaxRows(int rows) { max_rows_ = rows; }

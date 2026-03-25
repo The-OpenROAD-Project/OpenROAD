@@ -40,7 +40,7 @@ void extMeasure::printTraceNetInfo(const char* msg, uint32_t netId, int rsegId)
              shapeId,
              rsegId,
              msg,
-             rseg->getCapacitance(0, 1.0));
+             rseg->getTotalCapacitance(0));
 }
 
 double extMeasure::GetDBcoords(uint32_t coord)
@@ -176,7 +176,7 @@ void extMeasure::segInfo(const char* msg, uint32_t netId, int rsegId)
       netId,
       shapeId,
       rsegId,
-      rseg->getCapacitance(0, 1.0),
+      rseg->getTotalCapacitance(0),
       rseg->getResistance(0));
 }
 
@@ -255,10 +255,7 @@ bool extMeasure::isVia(uint32_t rsegId)
 
   bool rvia1
       = rseg1 != nullptr
-                && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId())
-                       > 0
-            ? true
-            : false;
+        && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId()) > 0;
   return rvia1;
 }
 
