@@ -19,8 +19,10 @@ read_lef Nangate45/Nangate45.lef
 set behavioral_file [make_result_file make_7x7_nangate45_behavioral.v]
 
 generate_ram \
-  -bytes_per_word 1 \
-  -word_count 7 \
+  -mask_size 7 \
+  -word_size 7 \
+  -num_words 7 \
+  -read_ports 1 \
   -read_ports 1 \
   -storage_cell DFF_X1 \
   -power_pin VDD \
