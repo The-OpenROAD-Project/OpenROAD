@@ -14,6 +14,7 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { TclCompleter } from './tcl-completer.js';
 import './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
@@ -319,11 +320,17 @@ function createTclConsole(container) {
 
     app.tclOutputEl = el.querySelector('.tcl-output');
     const input = el.querySelector('.tcl-input');
+    const completer = new TclCompleter(input, app.websocketManager);
+
     input.addEventListener('keydown', (e) => {
+        // Let completer handle first (Tab, arrow keys, Enter-when-popup-visible)
+        if (completer.handleKeyDown(e)) return;
+
         if (e.key === 'Enter') {
             const cmd = input.value.trim();
             if (!cmd) return;
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+            completer.addToHistory(cmd);
             input.value = '';
             app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
