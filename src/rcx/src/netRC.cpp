@@ -676,11 +676,11 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     }
     logger_->warn(RCX,
                   111,
-                  "Net {} {} has a loop at x={} y={} {}.",
+                  "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                   net->getId(),
                   net->getConstName(),
-                  pshape.point.getX(),
-                  pshape.point.getY(),
+                  _block->dbuToMicrons(pshape.point.getX()),
+                  _block->dbuToMicrons(pshape.point.getY()),
                   tname);
     return nullptr;
   }
@@ -727,7 +727,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
