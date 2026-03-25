@@ -199,11 +199,11 @@ cc_library(
         "include/drt/TritonRoute.h",
     ],
     copts = [
-        "-Isrc/drt/src",
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":db_hdrs",
@@ -262,11 +262,11 @@ cc_library(
         "include/drt/MakeTritonRoute.h",
     ],
     copts = [
-        "-Isrc/drt/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":db_hdrs",
