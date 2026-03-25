@@ -3049,8 +3049,7 @@ void DetailedMgr::paintInGrid(Node* node)
   const auto grid_y = grid_->gridSnapDownY(node);
   odb::dbSite* site = node->getDbInst()->getMaster()->getSite();
 
-  const auto orientation
-      = grid_->getSiteOrientation(grid_x, grid_y, site);
+  const auto orientation = grid_->getSiteOrientation(grid_x, grid_y, site);
   grid_->paintPixel(node, grid_x, grid_y);
   if (orientation) {
     node->adjustCurrOrient(orientation.value());
