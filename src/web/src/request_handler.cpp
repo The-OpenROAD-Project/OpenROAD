@@ -30,6 +30,7 @@
 #include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
 #include "timing_report.h"
@@ -973,6 +974,17 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
   return resp;
 }
 
+static const char* ioTypeToDirection(odb::dbIoType io_type)
+{
+  if (io_type == odb::dbIoType::INPUT) {
+    return "input";
+  }
+  if (io_type == odb::dbIoType::OUTPUT) {
+    return "output";
+  }
+  return "inout";
+}
+
 WebSocketResponse SelectHandler::handleSchematicCone(
     const WebSocketRequest& req)
 {
@@ -1110,13 +1122,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     for (const auto& [net, _id] : net_to_id) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         builder.beginObject(bterm->getName());
-        std::string dir = "inout";
-        if (bterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field("direction", dir);
+        builder.field("direction", ioTypeToDirection(bterm->getIoType()));
         builder.beginArray("bits");
         builder.value(net_to_id[net]);
         builder.endArray();
@@ -1147,13 +1153,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
           continue;
         }
-        std::string dir = "inout";
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field(iterm->getMTerm()->getName(), dir);
+        builder.field(iterm->getMTerm()->getName(),
+                      ioTypeToDirection(iterm->getIoType()));
       }
       builder.endObject();
 
@@ -1235,13 +1236,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         continue;
       }
       builder.beginObject(bterm->getName());
-      std::string dir = "inout";
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        dir = "input";
-      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        dir = "output";
-      }
-      builder.field("direction", dir);
+      builder.field("direction", ioTypeToDirection(bterm->getIoType()));
       builder.beginArray("bits");
       builder.value(net_to_id[net]);
       builder.endArray();
@@ -1267,13 +1262,8 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         if (!iterm->getNet()) {
           continue;
         }
-        std::string dir = "inout";
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field(iterm->getMTerm()->getName(), dir);
+        builder.field(iterm->getMTerm()->getName(),
+                      ioTypeToDirection(iterm->getIoType()));
       }
       builder.endObject();
 

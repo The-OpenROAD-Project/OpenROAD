@@ -1718,6 +1718,17 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
   return {nullptr, block->findBTerm(pin_name.c_str())};
 }
 
+static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+{
+  if (iterm) {
+    return iterm->getNet();
+  }
+  if (bterm) {
+    return bterm->getNet();
+  }
+  return nullptr;
+}
+
 static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
 {
   if (iterm) {
@@ -1794,19 +1805,8 @@ void collectTimingPathShapes(odb::dbBlock* block,
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
 
-      odb::dbNet* net_a = nullptr;
-      if (a_iterm) {
-        net_a = a_iterm->getNet();
-      } else if (a_bterm) {
-        net_a = a_bterm->getNet();
-      }
-
-      odb::dbNet* net_b = nullptr;
-      if (b_iterm) {
-        net_b = b_iterm->getNet();
-      } else if (b_bterm) {
-        net_b = b_bterm->getNet();
-      }
+      odb::dbNet* net_a = getNetFromPin(a_iterm, a_bterm);
+      odb::dbNet* net_b = getNetFromPin(b_iterm, b_bterm);
 
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {
