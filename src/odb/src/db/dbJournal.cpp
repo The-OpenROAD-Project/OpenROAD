@@ -6,7 +6,6 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
-#include <sstream>
 
 #include "dbBTerm.h"
 #include "dbBlock.h"
@@ -25,17 +24,6 @@
 #include "utl/Logger.h"
 
 namespace odb {
-
-namespace {
-
-std::string rectToString(const Rect& rect)
-{
-  std::ostringstream stream;
-  stream << rect;
-  return stream.str();
-}
-
-}  // namespace
 
 dbJournal::dbJournal(dbBlock* block)
     : block_(block), logger_(block->getImpl()->getLogger()), log_(logger_)
@@ -1795,7 +1783,7 @@ void dbJournal::undo_createObject()
                  "UNDO ECO: create dbGuide at id {}, in layer {} box {}",
                  guide_id,
                  guide->getLayer()->getName(),
-                 rectToString(guide->getBox()));
+                 guide->getBox());
       dbGuide::destroy(guide);
       break;
     }

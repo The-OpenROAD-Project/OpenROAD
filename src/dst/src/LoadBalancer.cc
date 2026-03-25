@@ -35,7 +35,7 @@ void LoadBalancer::start_accept()
     while (!copy.empty()) {
       auto worker = copy.top();
       logger_->report("Worker {}/{} handled {} jobs",
-                      worker.ip.to_string(),
+                      worker.ip,
                       worker.port,
                       worker.priority);
       copy.pop();

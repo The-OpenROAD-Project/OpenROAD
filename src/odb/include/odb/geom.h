@@ -11,7 +11,6 @@
 #include <cstdio>
 #include <iosfwd>
 #include <numbers>
-#include <string>
 #include <tuple>
 #include <vector>
 
@@ -1419,12 +1418,8 @@ inline void Cuboid::print(const char* prefix)
           dz());
 }
 
-#if !SWIG && FMT_VERSION >= 100000
-template <typename T>
-auto format_as(const T& value) -> decltype(utl::format_as(value))
-{
-  return utl::format_as(value);
-}
+#ifndef SWIG
+using utl::format_as;
 #endif
 
 }  // namespace odb

@@ -8,7 +8,6 @@
 #include <iterator>
 #include <limits>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -25,18 +24,6 @@
 using odb::dbTechLayerDir;
 
 namespace drt {
-namespace {
-
-template <typename T>
-std::string toString(const T& value)
-{
-  std::ostringstream stream;
-  stream << value;
-  return stream.str();
-}
-
-}  // namespace
-
 const int debugMazeIter = std::numeric_limits<int>::max();
 
 void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
@@ -61,10 +48,10 @@ void FlexGridGraph::printExpansion(const FlexWavefrontGrid& currGrid,
       "{} ",
       keyword,
       currGrid.z(),
-      toString(pt),
+      pt,
       currGrid.getCost(),
       currGrid.getPathCost(),
-      toString(currGrid.getLastDir()),
+      currGrid.getLastDir(),
       currGrid.getCost() - currGrid.getPathCost(),
       gridX,
       gridY);

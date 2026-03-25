@@ -227,14 +227,6 @@ inline int sumXY(DbuX x, DbuY y)
   return x.v + y.v;
 }
 
-#if !SWIG && FMT_VERSION >= 100000
-template <typename T>
-auto format_as(const T& value) -> decltype(utl::format_as(value))
-{
-  return utl::format_as(value);
-}
-#endif
-
 }  // namespace dpl
 
 // Enable use with unordered_map/set

@@ -331,12 +331,6 @@ inline bool is_loading(const Archive& ar)
   return std::is_same_v<typename Archive::is_loading, boost::mpl::true_>;
 }
 
-#if !SWIG && FMT_VERSION >= 100000
-template <typename T>
-auto format_as(const T& value) -> decltype(utl::format_as(value))
-{
-  return utl::format_as(value);
-}
-#endif
+using utl::format_as;
 
 }  // namespace drt

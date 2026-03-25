@@ -5,23 +5,11 @@
 
 #include <chrono>
 #include <ostream>
-#include <sstream>
 #include <string>
 
 #include "utl/Logger.h"
 
 namespace utl {
-
-namespace {
-
-std::string timerToString(const Timer& timer)
-{
-  std::ostringstream stream;
-  stream << timer;
-  return stream.str();
-}
-
-}  // namespace
 
 void Timer::reset()
 {
@@ -88,7 +76,7 @@ DebugScopedTimer::DebugScopedTimer(double& aggregate)
 DebugScopedTimer::~DebugScopedTimer()
 {
   if (logger_) {
-    debugPrint(logger_, tool_, group_, level_, msg_, timerToString(*this));
+    debugPrint(logger_, tool_, group_, level_, msg_, *this);
   }
   if (aggregate_) {
     *aggregate_ += elapsed();

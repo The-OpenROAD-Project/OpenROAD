@@ -37,51 +37,6 @@
 
 namespace utl {
 
-namespace detail {
-
-#if SWIG
-
-template <typename T>
-const T& logArg(const T& arg)
-{
-  return arg;
-}
-
-#else
-
-template <typename T, typename = void>
-struct is_ostreamable : std::false_type
-{
-};
-
-template <typename T>
-struct is_ostreamable<
-    T,
-    std::void_t<decltype(std::declval<std::ostream&>()
-                         << std::declval<const T&>())>> : std::true_type
-{
-};
-
-template <typename T>
-decltype(auto) logArg(const T& arg)
-{
-#if FMT_VERSION >= 80000
-  using Arg = std::decay_t<T>;
-  if constexpr (fmt::is_formattable<Arg, char>::value) {
-    return arg;
-  } else
-#endif
-      if constexpr (is_ostreamable<T>::value) {
-    return fmt::streamed(arg);
-  } else {
-    return arg;
-  }
-}
-
-#endif
-
-}  // namespace detail
-
 class PrometheusMetricsServer;
 class PrometheusRegistry;
 
@@ -158,7 +113,7 @@ class Logger
   {
     logger_->log(spdlog::level::level_enum::off,
                  FMT_RUNTIME(message + spdlog::details::os::default_eol),
-                 detail::logArg(args)...);
+                 args...);
   }
 
   // Reports a string literal with no interpolation or newline.
@@ -183,7 +138,7 @@ class Logger
         level_names[spdlog::level::level_enum::debug],
         tool_names_[tool],
         group,
-        detail::logArg(args)...);
+        args...);
     logger_->flush();
   }
 
@@ -338,7 +293,7 @@ class Logger
                    level_names[level],
                    tool_names_[tool],
                    id,
-                   detail::logArg(args)...);
+                   args...);
       return;
     }
 
