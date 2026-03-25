@@ -82,6 +82,7 @@ cc_library(
         "@eigen",
         "@openmp",
         "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
         "@or-tools//ortools/sat:cp_model",
         "@or-tools//ortools/util:sorted_interval_list",
         "@tcl_lang//:tcl",
