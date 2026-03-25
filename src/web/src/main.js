@@ -4,6 +4,7 @@
 import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 import { latLngToDbu } from './coordinates.js';
 import { WebSocketManager } from './websocket-manager.js';
+import { StaticDataManager } from './static-data-manager.js';
 import { createWebSocketTileLayer } from './websocket-tile-layer.js';
 import { TimingWidget } from './timing-widget.js';
 import { ClockTreeWidget } from './clock-tree-widget.js';
@@ -362,6 +363,7 @@ function createBrowser(container) {
 
 function createTimingWidget(container) {
     app.timingWidget = new TimingWidget(container, app, redrawAllLayers);
+    if (app.staticMode) setTimeout(() => app.timingWidget.update(), 100);
 }
 
 function createDRCWidget(container) {
@@ -375,6 +377,7 @@ function createClockWidget(container) {
 
 function createChartsWidget(container) {
     app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
+    if (app.staticMode) setTimeout(() => app.chartsWidget.update(), 100);
 }
 
 function createHelpWidget(container) {
@@ -442,6 +445,11 @@ const defaultLayoutConfig = {
                                 type: 'component',
                                 componentType: 'SchematicWidget',
                                 title: 'Schematic',
+                            },
+                            {
+                                type: 'component',
+                                componentType: 'ChartsWidget',
+                                title: 'Charts',
                             },
                         ],
                     },
@@ -522,22 +530,31 @@ const LAYOUT_VERSION = 3;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+// Static mode: if embedded data is present, use StaticDataManager instead of WebSocket.
+const embeddedEl = document.querySelector('script[type="application/json"][data-static]');
+if (embeddedEl) {
+    const data = JSON.parse(embeddedEl.textContent);
+    app.websocketManager = new StaticDataManager(data);
+    app.staticMode = true;
+    statusDiv.style.display = 'none';
+} else {
+    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+}
 
-// Restore saved layout or use default
+// Load the layout. In static mode (IIFE bundle), GoldenLayout needs
+// init(resolvedConfig) instead of loadLayout() because loadLayout
+// requires isInitialised. Detect by checking isInitialised.
 const savedLayout = localStorage.getItem('gl-layout');
 const savedVersion = parseInt(localStorage.getItem('gl-layout-version'), 10);
+let layoutConfig = defaultLayoutConfig;
 if (savedLayout && savedVersion === LAYOUT_VERSION) {
     try {
-        const resolved = JSON.parse(savedLayout);
-        app.goldenLayout.loadLayout(LayoutConfig.fromResolved(resolved));
-    } catch (e) {
-        app.goldenLayout.loadLayout(defaultLayoutConfig);
-    }
-} else {
-    app.goldenLayout.loadLayout(defaultLayoutConfig);
+        layoutConfig = LayoutConfig.fromResolved(JSON.parse(savedLayout));
+    } catch (e) { /* use default */ }
 }
+
+app.goldenLayout.loadLayout(layoutConfig);
 localStorage.setItem('gl-layout-version', LAYOUT_VERSION);
 
 // Persist layout on changes (drag, resize, close, etc.)
@@ -644,7 +661,19 @@ app.websocketManager.readyPromise.then(async () => {
                 [-minY * scale, minX * scale],
                 [-maxY * scale, maxX * scale]
             ];
-            app.map.fitBounds(app.fitBounds);
+            if (app.map) app.map.fitBounds(app.fitBounds);
+        }
+
+        // Skip interactive map features in static mode (no tiles/server)
+        if (!app.map) {
+            populateDisplayControls(app, visibility, null, techData, redrawAllLayers, null);
+            updateHeatMaps(heatMapData);
+
+            // Auto-populate widgets with pre-embedded data
+            if (app.chartsWidget) app.chartsWidget.update();
+            if (app.timingWidget) app.timingWidget.update();
+
+            return;
         }
 
         // Click-to-select: convert click position to DBU and query server

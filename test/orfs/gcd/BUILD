@@ -1,3 +1,4 @@
+load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@bazel-orfs//:sweep.bzl", "orfs_sweep")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:check_same.bzl", "check_same")
@@ -76,4 +77,67 @@ check_same(
     tags = ["orfs"],
     variant_a = "base",
     variant_b = "b",
+)
+
+# --- Static HTML report targets ---
+
+_STAGES = {
+    "cts": "4_cts",
+    "floorplan": "2_floorplan",
+    "grt": "5_1_grt",
+    "place": "3_place",
+    "route": "5_route",
+    "synth": "1_synth",
+}
+
+# Extract JSON payload + generate static HTML for each stage
+[
+    (
+        orfs_run(
+            name = "gcd_{}_json".format(stage),
+            src = ":gcd_{}".format(stage),
+            outs = ["gcd_{}.json".format(stage)],
+            arguments = {
+                "DESIGN_NAME": "gcd",
+                "GUI_TIMING": "1",
+                "OUTPUT": "$(location :gcd_{}.json)".format(stage),
+                "STAGE_NAME": orfs_name,
+            },
+            script = "//src/web:src/export_json.tcl",
+            tags = ["manual"],
+        ),
+        sh_binary(
+            name = "gcd_{}_html".format(stage),
+            srcs = ["//src/web:src/html_open.sh"],
+            data = [
+                ":gcd_{}_json".format(stage),
+                "//src/web:web_assets",
+            ],
+            tags = ["manual"],
+        ),
+    )
+    for stage, orfs_name in _STAGES.items()
+]
+
+# Generate histogram-only demo report (A/B prototype)
+sh_binary(
+    name = "gcd_route_demo_html",
+    srcs = ["//src/web:src/demo_html_open.sh"],
+    data = [
+        ":gcd_route_json",
+        "//src/web:render_static",
+    ],
+    tags = ["manual"],
+)
+
+# Launch live web viewer for the routed design
+sh_binary(
+    name = "gcd_route_web",
+    srcs = ["//src/web:src/web_open.sh"],
+    data = [
+        ":gcd_route",
+        "//:openroad",
+        "//src/web:web_assets",
+    ],
+    tags = ["manual"],
 )

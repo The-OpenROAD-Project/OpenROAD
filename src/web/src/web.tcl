@@ -20,3 +20,32 @@ proc web_server { args } {
 
   web::web_server_cmd $port $keys(-dir)
 }
+
+sta::define_cmd_args "web_export_json" { -output output_file \
+    [-design design_name] [-stage stage_name] [-variant variant_name] }
+
+proc web_export_json { args } {
+  sta::parse_key_args "web_export_json" args \
+    keys {-output -design -stage -variant} flags {}
+
+  sta::check_argc_eq0 "web_export_json" $args
+
+  if { ![info exists keys(-output)] } {
+    utl::error WEB 20 "-output is required."
+  }
+
+  set design ""
+  if { [info exists keys(-design)] } {
+    set design $keys(-design)
+  }
+  set stage ""
+  if { [info exists keys(-stage)] } {
+    set stage $keys(-stage)
+  }
+  set variant ""
+  if { [info exists keys(-variant)] } {
+    set variant $keys(-variant)
+  }
+
+  web::web_export_json_cmd $keys(-output) $design $stage $variant
+}

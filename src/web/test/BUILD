@@ -105,6 +105,20 @@ js_test(
 )
 
 js_test(
+    name = "histogram_svg_test",
+    data = ["//src/web:js_sources"],
+    entry_point = "js/test-histogram-svg.js",
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+js_test(
+    name = "timing_table_html_test",
+    data = ["//src/web:js_sources"],
+    entry_point = "js/test-timing-table-html.js",
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
+js_test(
     name = "tcl_completer_test",
     data = [
         "js/setup-dom.js",

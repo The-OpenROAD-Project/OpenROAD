@@ -166,6 +166,7 @@ cc_binary(
     copts = OPENROAD_COPTS,
     data = [
         "@tclreadline//:tclreadline_scripts",
+        "//src/web:web_assets",
     ],
     features = ["-use_header_modules"],
     malloc = select({

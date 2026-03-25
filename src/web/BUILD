@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -23,7 +23,6 @@ cc_library(
         "src/color.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
-        "src/json_builder.h",
         "src/request_handler.cpp",
         "src/request_handler.h",
         "src/search.cpp",
@@ -31,11 +30,12 @@ cc_library(
         "src/tile_generator.cpp",
         "src/tile_generator.h",
         "src/timing_report.cpp",
-        "src/timing_report.h",
         "src/web.cpp",
     ],
     hdrs = [
         "include/web/web.h",
+        "src/json_builder.h",
+        "src/timing_report.h",
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
@@ -115,4 +115,32 @@ js_library(
     name = "js_sources",
     srcs = glob(["src/*.js"]),
     visibility = ["//src/web:__subpackages__"],
+)
+
+filegroup(
+    name = "web_assets",
+    srcs = glob([
+        "src/*.html",
+        "src/*.js",
+        "src/*.css",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+# Static HTML renderer — Node.js CLI tool.
+js_binary(
+    name = "render_static",
+    data = [":js_sources"],
+    entry_point = "src/render-static.js",
+    visibility = ["//visibility:public"],
+)
+
+exports_files(
+    [
+        "src/demo_html_open.sh",
+        "src/export_json.tcl",
+        "src/html_open.sh",
+        "src/web_open.sh",
+    ],
+    visibility = ["//visibility:public"],
 )
