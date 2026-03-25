@@ -243,7 +243,7 @@ bool TileVisibility::isNetVisible(odb::dbNet* net) const
 bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 {
   odb::dbMaster* master = inst->getMaster();
-  odb::dbMasterType mtype = master->getType();
+  const odb::dbMasterType mtype = master->getType();
 
   if (sta) {
     using IT = sta::dbSta::InstType;
@@ -724,13 +724,13 @@ std::vector<unsigned char> TileGenerator::generateTile(
   int layer_index = 0;
   if (tech_layer) {
     const auto all_layers = getLayers();
-    auto it = std::ranges::find(all_layers, layer);
+    const auto it = std::ranges::find(all_layers, layer);
     if (it != all_layers.end()) {
       layer_index = std::distance(all_layers.begin(), it);
     }
   }
   const Color color = palette[layer_index % palette_size];
-  Color obs_color = color.lighter();
+  const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
@@ -811,7 +811,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
         if (instances_only) {
           // Draw the rectangle border (instances-only layer)
-          Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
+          const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
             for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
               const int draw_y = (255 - iy);
@@ -1343,8 +1343,8 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   }
 
   // Build the label string "z=<zoom> <x>/<y>"
-  std::string label = "z=" + std::to_string(z) + " " + std::to_string(x) + "/"
-                      + std::to_string(y);
+  const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
+                            + "/" + std::to_string(y);
 
   drawBitmapText(image, 4, 4, label, 3, yellow);
 }

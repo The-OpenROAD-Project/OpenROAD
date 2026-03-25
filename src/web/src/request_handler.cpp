@@ -254,10 +254,11 @@ static void serializeAnyValue(JsonBuilder& builder,
 {
   if (auto* sel = std::any_cast<gui::Selected>(&value)) {
     if (*sel) {
-      std::string name = short_name ? sel->getShortName() : sel->getName();
+      const std::string name
+          = short_name ? sel->getShortName() : sel->getName();
       int id = storeSelectable(selectables, *sel);
       builder.field(field_name, name);
-      std::string id_key = std::string(field_name) + "_select_id";
+      const std::string id_key = std::string(field_name) + "_select_id";
       builder.field(id_key, id);
       return;
     }
@@ -299,7 +300,7 @@ static void serializeProperty(JsonBuilder& builder,
       builder.field("value_select_id", id);
     }
   } else {
-    std::string val_str = prop.toString();
+    const std::string val_str = prop.toString();
     builder.field("value", val_str);
   }
 
@@ -689,7 +690,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -744,7 +745,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -792,7 +793,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -856,7 +857,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -890,7 +891,7 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -925,7 +926,7 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1195,7 +1196,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1314,7 +1315,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1371,7 +1372,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1403,7 +1404,7 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1443,7 +1444,7 @@ static std::string findEnclosingCommand(const std::string& line, int word_start)
       break;
     }
     // extract word
-    int start = pos;
+    const int start = pos;
     while (pos < word_start && kBoundary.find(line[pos]) == std::string::npos) {
       ++pos;
     }
@@ -1472,8 +1473,8 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
     }
     cursor_pos = std::min(cursor_pos, static_cast<int>(line.size()));
 
-    int word_start = findWordStart(line, cursor_pos);
-    std::string prefix = line.substr(word_start, cursor_pos - word_start);
+    const int word_start = findWordStart(line, cursor_pos);
+    const std::string prefix = line.substr(word_start, cursor_pos - word_start);
 
     std::string mode;
     std::vector<std::string> completions;
@@ -1481,8 +1482,9 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
     if (!prefix.empty() && prefix[0] == '$') {
       // Variable completion
       mode = "variables";
-      std::string var_prefix = prefix.substr(1);  // strip $
-      bool starts_with_colon = !var_prefix.empty() && var_prefix[0] == ':';
+      const std::string var_prefix = prefix.substr(1);  // strip $
+      const bool starts_with_colon
+          = !var_prefix.empty() && var_prefix[0] == ':';
       std::string tcl_cmd = "info vars " + var_prefix;
       if (!var_prefix.empty() && var_prefix.back() == ':'
           && (var_prefix.size() == 1
@@ -1528,7 +1530,7 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
     } else if (!prefix.empty() && prefix[0] == '-') {
       // Argument completion
       mode = "arguments";
-      std::string cmd_name = findEnclosingCommand(line, word_start);
+      const std::string cmd_name = findEnclosingCommand(line, word_start);
       if (!cmd_name.empty()) {
         std::string tcl_cmd = "if {[info exists sta::cmd_args(" + cmd_name
                               + ")]} { set sta::cmd_args(" + cmd_name
@@ -1537,7 +1539,7 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
         if (!result.is_error && !result.result.empty()) {
           // Parse flags with regex
           static const std::regex kArgMatcher("-[a-zA-Z0-9_]+");
-          std::string args_str = result.result;
+          const std::string args_str = result.result;
           std::sregex_iterator it(
               args_str.begin(), args_str.end(), kArgMatcher);
           std::sregex_iterator end;
@@ -1597,7 +1599,7 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
 
       // Filter by prefix if non-empty
       if (!prefix.empty()) {
-        bool add_colons = prefix[0] == ':';
+        const bool add_colons = prefix[0] == ':';
         std::vector<std::string> filtered;
         for (const auto& c : completions) {
           std::string match_target = c;
@@ -1628,7 +1630,7 @@ WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1692,7 +1694,7 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1754,7 +1756,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1790,7 +1792,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1821,7 +1823,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1883,7 +1885,7 @@ WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1917,7 +1919,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2040,7 +2042,7 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2108,7 +2110,7 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2144,7 +2146,7 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2191,7 +2193,7 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -2218,7 +2220,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     resp.payload = gen_->generateHeatMapTile(*source, req.z, req.x, req.y);
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
