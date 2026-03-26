@@ -236,7 +236,7 @@ std::unique_ptr<Cell> RamGen::makeColMux(
   auto mux_cell = std::make_unique<Cell>();
 
   for (int bit = 0; bit < 8; ++bit) {
-    auto aoi_lo_net = makeNet(prefix, fmt::format("aoi_lo_bit{}", bit));
+    auto aoi_lo_net = dbNet::create(block_, fmt::format("{}_aoi_lo_bit{}", prefix, bit).c_str());
     auto inv_in_net = aoi_lo_net;  // default for mux=2; overridden for mux=4
 
     // First AOI22: NOT((col_sel[0] & col_q[0]) | (col_sel[1] & col_q[1]))
@@ -252,7 +252,7 @@ std::unique_ptr<Cell> RamGen::makeColMux(
 
     if (mux_col_ratio == 4) {
       // Second AOI22: NOT((col_sel[2] & col_q[2]) | (col_sel[3] & col_q[3]))
-      auto aoi_hi_net = makeNet(prefix, fmt::format("aoi_hi_bit{}", bit));
+      auto aoi_hi_net = dbNet::create(block_, fmt::format("{}_aoi_hi_bit{}", prefix, bit).c_str());
       makeCellInst(mux_cell.get(),
                    prefix,
                    fmt::format("aoi_hi_bit{}", bit),
@@ -266,7 +266,7 @@ std::unique_ptr<Cell> RamGen::makeColMux(
       // AND2(aoi_lo, aoi_hi): De Morgan gives us the OR of all four AND terms
       // NOT(aoi_lo AND aoi_hi) = (cs0&q0|cs1&q1) OR (cs2&q2|cs3&q3)
       // so we still need to invert — use AND2 then INV below.
-      auto and_net = makeNet(prefix, fmt::format("mux_and_bit{}", bit));
+      auto and_net = dbNet::create(block_, fmt::format("{}_aoi_bit{}", prefix, bit).c_str());
       makeCellInst(mux_cell.get(),
                    prefix,
                    fmt::format("mux_and_bit{}", bit),
@@ -609,6 +609,22 @@ void RamGen::ramPdngen(const char* power_pin,
                        int hor_width,
                        int hor_pitch)
 {
+
+  // check for die size vs pitch to avoid pdngen segmentation fault errors
+  const odb::Rect& die = block_->getDieArea();
+  if (die.dy() < hor_pitch) {
+    logger_->error(RAM, 31,
+        "Die height ({} DBU) is less than horizontal strap pitch ({} DBU). "
+        "Use a smaller -hor_layer pitch.",
+        die.dy(), hor_pitch);
+  }
+  if (die.dx() < ver_pitch) {
+    logger_->error(RAM, 32,
+        "Die width ({} DBU) is less than vertical strap pitch ({} DBU). "
+        "Use a smaller -ver_layer pitch.",
+        die.dx(), ver_pitch);
+  }
+
   // need parameters for power and ground nets
   auto power_net = dbNet::create(block_, "VDD");
   auto ground_net = dbNet::create(block_, "VSS");
@@ -843,7 +859,7 @@ void RamGen::generate(const int bytes_per_word,
 
   for (int i = 0; i < num_inputs; ++i) {
     addr_inputs_.push_back(
-        makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
+        makeBTerm(fmt::format("addr_rw[{}]", i), dbIoType::INPUT));
   }
 
   // Inverted address nets (one per address bit, covers all bits)
