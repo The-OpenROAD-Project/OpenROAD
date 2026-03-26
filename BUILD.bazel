@@ -130,6 +130,7 @@ OPENROAD_LIBRARY_DEPS = [
     "//src/rsz:ui",
     "//src/stt",
     "//src/stt:ui",
+    "//src/syn",
     "//src/tap",
     "//src/tap:ui",
     "//src/upf",

@@ -81,6 +81,8 @@
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
+#include "syn/MakeSynthesis.h"
+#include "syn/synthesis.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
 #include "upf/MakeUpf.h"
@@ -125,6 +127,7 @@ OpenRoad::~OpenRoad()
   // sta::deleteAllMemory();
   delete ioPlacer_;
   delete resizer_;
+  delete synthesis_;
   delete opendp_;
   delete global_router_;
   delete restructure_;
@@ -228,6 +231,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
       logger_, service_registry_, db_, sta_, stt_builder_, global_router_);
   est::initGui(estimate_parasitics_);
 
+  synthesis_ = new syn::Synthesis(db_, sta_, logger_);
   resizer_ = new rsz::Resizer(logger_,
                               db_,
                               sta_,
@@ -285,6 +289,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   upf::initUpf(tcl_interp);
   ifp::initInitFloorplan(tcl_interp);
   sta::initDbSta(tcl_interp);
+  syn::initSynthesis(tcl_interp);
   rsz::initResizer(tcl_interp);
   ppl::initIoplacer(tcl_interp);
   gpl::initReplace(tcl_interp);

@@ -77,6 +77,7 @@ using std::string;
   X(rmp)                                 \
   X(cgt)                                 \
   X(stt)                                 \
+  X(syn)                                 \
   X(psm)                                 \
   X(pdn)                                 \
   X(rsz)                                 \
