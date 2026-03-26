@@ -216,14 +216,12 @@ int RDLRouter::getRoutingTermCount() const
   std::set<odb::dbITerm*> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
-        terms.insert(iterm);
-      }
+      const auto& routed_terminals = route->getRoutedTerminals();
+      terms.insert(routed_terminals.begin(), routed_terminals.end());
     } else {
       terms.insert(route->getTerminal());
-      for (auto* iterm : route->getTerminals()) {
-        terms.insert(iterm);
-      }
+      const auto& terminals = route->getTerminals();
+      terms.insert(terminals.begin(), terminals.end());
     }
   }
   return terms.size();
@@ -234,9 +232,8 @@ std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
   std::set<odb::dbITerm*> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
-        terms.insert(iterm);
-      }
+      const auto& routed_terminals = route->getRoutedTerminals();
+      terms.insert(routed_terminals.begin(), routed_terminals.end());
     }
   }
   return terms;
