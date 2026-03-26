@@ -5,10 +5,12 @@
 #include "dbChipPath.h"
 
 #include <cstdlib>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "dbChip.h"
+#include "dbChipInst.h"
 #include "dbChipRegionInst.h"
 #include "dbCore.h"
 #include "dbDatabase.h"
@@ -102,24 +104,37 @@ std::vector<dbChipPath::Entry> dbChipPath::getEntries() const
   _dbChip* chip = (_dbChip*) obj->getOwner();
   _dbDatabase* db = (_dbDatabase*) chip->getOwner();
 
-  // Translate internal (dbId, bool) pairs to public Entry objects
+  // Translate internal tuple storage to public Entry objects
   std::vector<Entry> entries;
   entries.reserve(obj->entries_.size());
-  for (const std::pair<dbId<_dbChipRegionInst>, bool>& e : obj->entries_) {
+  for (const auto& [path_ids, region_id, neg] : obj->entries_) {
     Entry entry;
+    entry.chip_inst_path.reserve(path_ids.size());
+    for (const dbId<_dbChipInst>& inst_id : path_ids) {
+      entry.chip_inst_path.push_back(
+          (dbChipInst*) db->chip_inst_tbl_->getPtr(inst_id));
+    }
     entry.region
-        = (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr(e.first);
-    entry.negated = e.second;
-    entries.push_back(entry);
+        = (dbChipRegionInst*) db->chip_region_inst_tbl_->getPtr(region_id);
+    entry.negated = neg;
+    entries.push_back(std::move(entry));
   }
   return entries;
 }
 
-void dbChipPath::addEntry(dbChipRegionInst* region, bool negated)
+void dbChipPath::addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                          dbChipRegionInst* region,
+                          bool negated)
 {
   _dbChipPath* obj = (_dbChipPath*) this;
   _dbChipRegionInst* _region = (_dbChipRegionInst*) region;
-  obj->entries_.emplace_back(_region->getOID(), negated);
+
+  std::vector<dbId<_dbChipInst>> path_ids;
+  path_ids.reserve(chip_inst_path.size());
+  for (dbChipInst* inst : chip_inst_path) {
+    path_ids.emplace_back(((_dbChipInst*) inst)->getOID());
+  }
+  obj->entries_.emplace_back(std::move(path_ids), _region->getOID(), negated);
 }
 
 dbChipPath* dbChipPath::create(dbChip* chip, const char* name)

@@ -12,7 +12,7 @@
         },
         {
             "name": "entries_",
-            "type": "std::vector<std::pair<dbId<_dbChipRegionInst>, bool>>",
+            "type": "std::vector<std::tuple<std::vector<dbId<_dbChipInst>>, dbId<_dbChipRegionInst>, bool>>",
             "flags": [
                 "private",
                 "no-cmp"
@@ -24,6 +24,7 @@
     ],
     "cpp_includes": [
         "dbChip.h",
-        "dbChipRegionInst.h"
+        "dbChipRegionInst.h",
+        "dbChipInst.h"
     ]
 }

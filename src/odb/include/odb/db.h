@@ -7454,6 +7454,7 @@ class dbChipPath : public dbObject
   // User Code Begin dbChipPath
   struct Entry
   {
+    std::vector<dbChipInst*> chip_inst_path;  // hierarchical path to the region
     dbChipRegionInst* region;
     bool negated;  // do not touch this region, i.e., the path must be connected
                    // without crossing this region
@@ -7463,7 +7464,9 @@ class dbChipPath : public dbObject
 
   std::vector<Entry> getEntries() const;
 
-  void addEntry(dbChipRegionInst* region, bool negated);
+  void addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                dbChipRegionInst* region,
+                bool negated);
 
   static dbChipPath* create(dbChip* chip, const char* name);
 

@@ -5,7 +5,7 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
+#include <tuple>
 #include <vector>
 
 #include "dbCore.h"
@@ -15,6 +15,7 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
+class _dbChipInst;
 class _dbChipRegionInst;
 
 class _dbChipPath : public _dbObject
@@ -30,7 +31,9 @@ class _dbChipPath : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   char* name_;
-  std::vector<std::pair<dbId<_dbChipRegionInst>, bool>> entries_;
+  std::vector<
+      std::tuple<std::vector<dbId<_dbChipInst>>, dbId<_dbChipRegionInst>, bool>>
+      entries_;
   dbId<_dbChipPath> next_entry_;
 };
 dbIStream& operator>>(dbIStream& stream, _dbChipPath& obj);
