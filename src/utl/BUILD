@@ -139,10 +139,10 @@ cc_library(
     hdrs = [
         "include/utl/MakeLogger.h",
     ],
-    copts = [
-        "-Isrc/utl/src",
+    includes = [
+        "include",
+        "src",
     ],
-    includes = ["include"],
     deps = [
         ":utl",
         "//:ord",

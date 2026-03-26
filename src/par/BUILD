@@ -68,6 +68,7 @@ cc_library(
         "@boost.tokenizer",
         "@boost.utility",
         "@or-tools//ortools/linear_solver",
+        "@or-tools//ortools/linear_solver:linear_solver_base",
     ],
 )
 

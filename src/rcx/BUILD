@@ -106,11 +106,9 @@ cc_library(
     hdrs = [
         "include/rcx/MakeOpenRCX.h",
     ],
-    copts = [
-        "-Isrc/rcx/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rcx",

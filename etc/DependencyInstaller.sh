@@ -68,8 +68,6 @@ BISON_VERSION="3.8.2"
 BISON_CHECKSUM="1e541a097cda9eca675d29dd2832921f"
 FLEX_VERSION="2.6.4"
 FLEX_CHECKSUM="2882e3179748cc9f9c23ec593d6adc8d"
-NINJA_VERSION="1.10.2"
-NINJA_CHECKSUM="817e12e06e2463aeb5cb4e1d19ced606"
 OR_TOOLS_VERSION_BIG="9.14"
 OR_TOOLS_VERSION_SMALL="${OR_TOOLS_VERSION_BIG}.6206"
 EQUIVALENCE_DEPS="no"
@@ -666,27 +664,6 @@ _install_abseil() {
     CMAKE_PACKAGE_ROOT_ARGS+=" -D ABSL_ROOT=$(realpath "${absl_prefix_found}") "
 }
 
-# ------------------------------------------------------------------------------
-# Ninja
-# ------------------------------------------------------------------------------
-_install_ninja() {
-    local ninja_prefix=${PREFIX:-"/usr/local"}
-    local ninja_bin=${ninja_prefix}/bin/ninja
-    log "Checking Ninja (Required: ${NINJA_VERSION})"
-    if [[ ! -f ${ninja_bin} ]]; then
-        (
-            cd "${BASE_DIR}"
-            _execute "Downloading Ninja..." wget -O ninja-linux.zip "https://github.com/ninja-build/ninja/releases/download/v${NINJA_VERSION}/ninja-linux.zip"
-            _verify_checksum "${NINJA_CHECKSUM}" "ninja-linux.zip" || error "Ninja checksum failed."
-            _execute "Installing Ninja..." unzip -o ninja-linux.zip -d "${ninja_prefix}/bin/"
-            chmod +x "${ninja_bin}"
-        )
-        INSTALL_SUMMARY+=("Ninja: system=none, required=${NINJA_VERSION}, status=installed")
-    else
-        INSTALL_SUMMARY+=("Ninja: system=found, required=${NINJA_VERSION}, status=skipped")
-    fi
-}
-
 _install_or_tools() {
     local os=$1
     local os_version=$2
@@ -786,10 +763,6 @@ _install_common_dev() {
         _install_equivalence_deps
     fi
 
-    if [[ "${CI}" == "yes" ]]; then
-        _install_ninja
-    fi
-
     if [[ -n ${PREFIX} ]]; then
         # Emit an environment setup script
         cat > "${PREFIX}/env.sh" <<EOF
@@ -841,7 +814,9 @@ _install_ubuntu_packages() {
     else
         packages+=("libtcl")
     fi
-    if _version_compare "$1" -ge "25.04"; then
+    if _version_compare "$1" -ge "26.04"; then
+        packages+=("libpython3.14")
+    elif _version_compare "$1" -ge "25.04"; then
         packages+=("libpython3.13")
     elif _version_compare "$1" -ge "24.04"; then
         packages+=("libpython3.12")
@@ -953,7 +928,7 @@ _install_debian_packages() {
     export DEBIAN_FRONTEND="noninteractive"
     _execute "Updating package lists..." apt-get -y update
     local tcl_ver=""
-    if [[ "${debian_version}" == "rodete" ]]; then
+    if [[ "${debian_version}" == "rodete" ]] || _version_compare "${debian_version}" -ge "13"; then
         tcl_ver="8.6"
     fi
     _execute "Installing base packages..." apt-get -y install --no-install-recommends \
@@ -969,6 +944,8 @@ _install_debian_packages() {
         local python_ver="3.8"
         if [[ "${debian_version}" == "rodete" ]]; then
             python_ver="3.12"
+        elif _version_compare "${debian_version}" -ge "13"; then
+            python_ver="3.13"
         fi
         _execute "Installing Debian specific packages..." apt-get install -y --no-install-recommends "libpython${python_ver}" libqt5charts5-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
     fi
@@ -1229,7 +1206,12 @@ EOF
             fi
             if [[ "${option}" == "common" || "${option}" == "all" ]]; then
                 _install_common_dev
-                _install_or_tools "debian" "${debian_version}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
+                local debian_version_normalized=${debian_version}
+                if _version_compare "${debian_version_normalized}" -ge "13"; then
+                    # FIXME use debian-13 once or-tools publishes an official release for it
+                    debian_version_normalized="sid"
+                fi
+                _install_or_tools "debian" "${debian_version_normalized}" "amd64" "${SKIP_SYSTEM_OR_TOOLS}"
                 _install_abseil
             fi
             ;;

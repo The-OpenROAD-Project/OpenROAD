@@ -75,7 +75,7 @@ html[data-theme="light"] {
     --bg-tooltip: rgba(255, 255, 255, 0.95);
     --bg-heatmap-legend: rgba(255, 255, 255, 0.92);
     --bg-rubber-band: rgba(0, 120, 212, 0.15);
-    --bg-map: #e0e0e0;
+    --bg-map: #111;
 
     --fg-primary: #1e1e1e;
     --fg-secondary: #444;
@@ -393,6 +393,14 @@ html, body {
     background: var(--border-subtle);
 }
 
+/* Leaflet map cursor */
+.leaflet-container {
+    cursor: default !important;
+}
+.leaflet-dragging .leaflet-container {
+    cursor: grabbing !important;
+}
+
 /* Leaflet tiles */
 .leaflet-tile {
     image-rendering: auto;
@@ -613,6 +621,7 @@ html, body {
     align-items: center;
     background: var(--bg-input-deep);
     border-top: 1px solid var(--border);
+    position: relative;
 }
 .tcl-prompt {
     color: var(--accent-text);
@@ -628,6 +637,40 @@ html, body {
     padding: 6px 8px 6px 0;
     font-family: monospace;
     font-size: 13px;
+}
+
+/* Tcl completion popup */
+.tcl-complete-popup {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-context);
+    border: 1px solid var(--border-strong);
+    box-shadow: 0 -4px 12px var(--shadow);
+    z-index: 10003;
+    font-family: monospace;
+    font-size: 13px;
+    color: var(--fg-primary);
+    min-width: 200px;
+}
+.tcl-complete-item {
+    padding: 3px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.tcl-complete-item:hover {
+    background: var(--bg-hover);
+}
+.tcl-complete-item.selected {
+    background: var(--bg-selected);
+    color: var(--fg-white);
+}
+.tcl-complete-more {
+    padding: 3px 10px;
+    color: var(--fg-secondary);
+    font-style: italic;
 }
 
 /* Help panel */
