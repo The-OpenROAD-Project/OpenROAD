@@ -24,12 +24,15 @@ template class dbTable<_dbScanPin>;
 
 bool _dbScanPin::operator==(const _dbScanPin& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+
   // User Code Begin ==
   if (pin_ != rhs.pin_) {
     return false;
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanPin::operator<(const _dbScanPin& rhs) const

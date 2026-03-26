@@ -51,7 +51,8 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_util,
                           const float min_ar,
                           const char* report_directory,
-                          const bool keep_clustering_data) {
+                          const bool keep_clustering_data,
+                          const bool use_def_halo) {
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
@@ -83,7 +84,8 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_util,
                              min_ar,
                              report_directory,
-                             keep_clustering_data);
+                             keep_clustering_data,
+                             use_def_halo);
 }
 
 void set_debug_cmd(odb::dbBlock* block,

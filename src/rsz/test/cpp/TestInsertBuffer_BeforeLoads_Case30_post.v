@@ -5,7 +5,7 @@ module top ();
 
  BUF_X1 buf1 (.A(ic_debug_addr_2),
     .Z(net1));
- swerv swerv_inst (.ic_debug_addr_2_0(net1),
+ swerv swerv_inst (.ic_debug_addr_2_3(net1),
     .ic_debug_addr_2(ic_debug_addr_2));
  BUF_X1 u_2884 (.A(net1));
  BUF_X1 u_2885 (.A(net1));
@@ -24,29 +24,29 @@ module dec_tlu_ctl (dec_tlu_ic_diag_pkt_2);
  BUF_X1 driver (.A(\swerv_inst/dec_tlu/zero_ ),
     .Z(dec_tlu_ic_diag_pkt_2));
 endmodule
-module ifu (ic_debug_addr_2_0,
+module ifu (ic_debug_addr_2_2,
     dec_tlu_ic_diag_pkt_2,
     ic_debug_addr_2);
- input ic_debug_addr_2_0;
+ input ic_debug_addr_2_2;
  input dec_tlu_ic_diag_pkt_2;
  output ic_debug_addr_2;
 
 
- BUF_X1 u_11044 (.A(ic_debug_addr_2_0));
- BUF_X1 u_11045 (.A(ic_debug_addr_2_0));
- BUF_X1 u_11046 (.A(ic_debug_addr_2_0));
- BUF_X1 u_11047 (.A(ic_debug_addr_2_0));
+ BUF_X1 u_11044 (.A(ic_debug_addr_2_2));
+ BUF_X1 u_11045 (.A(ic_debug_addr_2_2));
+ BUF_X1 u_11046 (.A(ic_debug_addr_2_2));
+ BUF_X1 u_11047 (.A(ic_debug_addr_2_2));
  assign ic_debug_addr_2 = dec_tlu_ic_diag_pkt_2;
 endmodule
-module swerv (ic_debug_addr_2_0,
+module swerv (ic_debug_addr_2_3,
     ic_debug_addr_2);
- input ic_debug_addr_2_0;
+ input ic_debug_addr_2_3;
  output ic_debug_addr_2;
 
  wire dec_tlu_ic_diag_pkt_2;
 
  dec_tlu_ctl dec_tlu (.dec_tlu_ic_diag_pkt_2(dec_tlu_ic_diag_pkt_2));
- ifu ifu (.ic_debug_addr_2_0(ic_debug_addr_2_0),
+ ifu ifu (.ic_debug_addr_2_2(ic_debug_addr_2_3),
     .dec_tlu_ic_diag_pkt_2(dec_tlu_ic_diag_pkt_2),
     .ic_debug_addr_2(ic_debug_addr_2));
 endmodule

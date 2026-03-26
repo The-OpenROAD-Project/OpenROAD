@@ -34,6 +34,7 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -1831,7 +1832,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
-          resizer_->level_drvr_vertices_valid_ = false;
+          resizer_->invalidateVertexOrdering();
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -2227,7 +2228,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   }
 
   printProgress(filtered_pins.size(), false, true, 0);
-  resizer_->level_drvr_vertices_valid_ = false;
+  resizer_->invalidateVertexOrdering();
 
   debugPrint(logger_, RSZ, "rebuffer", 1, "Time spent");
   debugPrint(logger_, RSZ, "rebuffer", 1, "----------");
@@ -2355,7 +2356,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
         bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
 
     if (inserted_count > 0) {
-      resizer_->level_drvr_vertices_valid_ = false;
+      resizer_->invalidateVertexOrdering();
     }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");

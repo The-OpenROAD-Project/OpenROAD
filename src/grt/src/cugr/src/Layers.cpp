@@ -37,7 +37,7 @@ MetalLayer::MetalLayer(odb::dbTechLayer* tech_layer,
   tech_layer->getV55SpacingTable(spacing_table);
   tech_layer->getV55SpacingWidthsAndLengths(widths, lengths);
 
-  for (int table_idx = 0; table_idx < spacing_table.size(); table_idx++) {
+  if (!spacing_table.empty()) {
     const int num_length = lengths.size();
     if (num_length > 0) {
       parallel_length_.resize(num_length);
@@ -97,7 +97,7 @@ IntervalT MetalLayer::rangeSearchTracks(const IntervalT& loc_range,
   const double pitch = pitch_;
   IntervalT track_range(std::ceil((lo - first_track_loc_) / pitch),
                         std::floor((hi - first_track_loc_) / pitch));
-  if (!track_range.IsValid()) {
+  if (!track_range.isValid()) {
     return track_range;
   }
   if (!include_bound) {

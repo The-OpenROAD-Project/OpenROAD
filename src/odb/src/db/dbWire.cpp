@@ -556,7 +556,8 @@ state_machine_update: {
     }
   } else if (state <= 3) {
     if ((opcode & WOP_EXTENSION) && !ignore_ext) {
-      cur_ext = wire->data_[idx + 1];
+      const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+      cur_ext = wire_op == kColinear ? wire->data_[idx] : wire->data_[idx + 1];
       has_cur_ext = true;
     }
   }
@@ -786,7 +787,8 @@ state_machine_update: {
     }
   } else if (state <= 3) {
     if ((opcode & WOP_EXTENSION) && !ignore_ext) {
-      cur_ext = wire->data_[idx + 1];
+      const WireOp wire_op = static_cast<WireOp>(opcode & WOP_OPCODE_MASK);
+      cur_ext = wire_op == kColinear ? wire->data_[idx] : wire->data_[idx + 1];
       has_cur_ext = true;
     }
   }

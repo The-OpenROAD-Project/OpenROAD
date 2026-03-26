@@ -6,13 +6,13 @@ sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-min_fanout fanout] \
                                           [-min_hpwl hpwl] \
                                           [-clock_nets]
-} ;# checker off
+}
 
 proc set_routing_alpha { args } {
   ord::parse_list_args "set_routing_alpha" args list {-net}
   sta::parse_key_args "set_routing_alpha" args \
     keys {-min_fanout -min_hpwl} \
-    flags {-clock_nets} ;# checker off
+    flags {-clock_nets}
 
   sta::check_argc_eq1 "set_routing_alpha" $args
 

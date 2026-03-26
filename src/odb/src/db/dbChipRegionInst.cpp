@@ -23,6 +23,7 @@ template class dbTable<_dbChipRegionInst>;
 
 bool _dbChipRegionInst::operator==(const _dbChipRegionInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (region_ != rhs.region_) {
     return false;
   }
@@ -37,6 +38,7 @@ bool _dbChipRegionInst::operator==(const _dbChipRegionInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipRegionInst::operator<(const _dbChipRegionInst& rhs) const

@@ -21,6 +21,7 @@ template class dbTable<_dbTechLayerWidthTableRule>;
 bool _dbTechLayerWidthTableRule::operator==(
     const _dbTechLayerWidthTableRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.wrong_direction != rhs.flags_.wrong_direction) {
     return false;
   }
@@ -29,6 +30,7 @@ bool _dbTechLayerWidthTableRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerWidthTableRule::operator<(

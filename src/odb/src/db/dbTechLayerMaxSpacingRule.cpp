@@ -17,6 +17,7 @@ template class dbTable<_dbTechLayerMaxSpacingRule>;
 bool _dbTechLayerMaxSpacingRule::operator==(
     const _dbTechLayerMaxSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (cut_class_ != rhs.cut_class_) {
     return false;
   }
@@ -25,6 +26,7 @@ bool _dbTechLayerMaxSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerMaxSpacingRule::operator<(

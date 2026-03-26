@@ -220,14 +220,19 @@ void definComponent::placement(int status, int x, int y, int orient)
   _cur_inst->setPlacementStatus(placement_status);
 }
 
-void definComponent::halo(int left, int bottom, int right, int top)
+void definComponent::halo(int left,
+                          int bottom,
+                          int right,
+                          int top,
+                          bool is_soft)
 {
   if (_cur_inst == nullptr) {
     return;
   }
 
-  dbBox::create(
+  dbBox* halo = dbBox::create(
       _cur_inst, dbdist(left), dbdist(bottom), dbdist(right), dbdist(top));
+  halo->setSoft(is_soft);
 }
 
 void definComponent::region(const char* name)

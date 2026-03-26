@@ -468,9 +468,7 @@ dbNet* dbInsertBuffer::createNewFlatNet(
     // Helper: generate a unique name to avoid collision with the port name.
     auto make_avoidance_name = [&]() {
       return block_->makeNewNetName(
-          target_module_ ? target_module_->getModInst() : nullptr,
-          new_net_name.c_str(),
-          dbNameUniquifyType::ALWAYS);
+          target_module_, new_net_name.c_str(), dbNameUniquifyType::ALWAYS);
     };
 
     // Rename the original flat net and/or modnet if they have the same name as
@@ -515,27 +513,9 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
-  const char hier_delim = block_->getHierarchyDelimiter();
-  const std::string hier_prefix
-      = module->isTop() ? "" : (module->getHierarchicalName() + hier_delim);
-
-  // Helper to check if a dbNet is an internal net of the 'module'.
-  // Note that the new name must not conflict with any internal flat nets.
-  auto hasInternalDbNet = [&](const std::string& net_base_name) {
-    dbNet* net = block_->findNet((hier_prefix + net_base_name).c_str());
-    return net != nullptr && net->isInternalTo(const_cast<dbModule*>(module));
-  };
-
-  // Ensure uniqueness against ModNets, ModBTerms, and internal dbNets
-  int id = 0;
-  std::string unique_name = name;
-  while (module->getModNet(unique_name.c_str())
-         || module->findModBTerm(unique_name.c_str())
-         || hasInternalDbNet(unique_name)) {
-    unique_name = fmt::format("{}_{}", name, id++);
-  }
-
-  return unique_name;
+  std::string full = block_->makeNewNetName(
+      module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  return std::string(block_->getBaseName(full.c_str()));
 }
 
 int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
@@ -1216,6 +1196,55 @@ void dbInsertBuffer::connectPeerITerms(dbModule* mod,
   }
 }
 
+dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
+                                                  dbModNet* mod_net,
+                                                  dbIoType io_type,
+                                                  const char* suffix)
+{
+  for (dbModBTerm* bterm : mod_net->getModBTerms()) {
+    if (bterm->getIoType() == io_type) {
+      return bterm;
+    }
+  }
+
+  dbModule* parent_module = mod_net->getParent();
+  assert(parent_module == current_mod);
+
+  std::string port_name = mod_net->getName();
+  dbModInst* mod_inst = current_mod->getModInst();
+  if (parent_module->findModBTerm(port_name.c_str()) != nullptr
+      || (mod_inst != nullptr
+          && mod_inst->findModITerm(port_name.c_str()) != nullptr)) {
+    port_name = makeUniqueHierName(current_mod, port_name, suffix);
+  }
+
+  assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);
+  dbModBTerm* port = dbModBTerm::create(parent_module, port_name.c_str());
+  assert(port != nullptr);
+
+  port->setIoType(io_type);
+  port->connect(mod_net);
+
+  if (mod_inst != nullptr) {
+    dbModITerm* existing_mod_iterm = mod_inst->findModITerm(port_name.c_str());
+    if (existing_mod_iterm == nullptr) {
+      dbModITerm::create(mod_inst, port_name.c_str(), port);
+    } else if (existing_mod_iterm->getChildModBTerm() != port) {
+      logger_->error(
+          utl::ODB,
+          1218,
+          "Parent moditerm '{}' already exists on modinst '{}' and is bound "
+          "to a different modbterm while creating a trace port for modnet "
+          "'{}'.",
+          port_name,
+          mod_inst->getName(),
+          mod_net->getName());
+    }
+  }
+
+  return port;
+}
+
 dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
                                   dbModule* current_mod,
                                   dbModule* target_mod,
@@ -1227,30 +1256,8 @@ dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
     dbModNet* mod_net
         = ensureModNet(current_obj, current_mod, corresponding_flat_net);
 
-    dbModBTerm* port = nullptr;
-    for (dbModBTerm* bterm : mod_net->getModBTerms()) {
-      if (bterm->getIoType() == io_type) {
-        port = bterm;
-        break;
-      }
-    }
-    if (!port) {
-      std::string port_name = mod_net->getName();
-      port = dbModBTerm::create(mod_net->getParent(), port_name.c_str());
-
-      // To avoid dbModBTerm name collision
-      if (!port) {
-        std::string unique_port_name
-            = makeUniqueHierName(current_mod, port_name, suffix);
-        port = dbModBTerm::create(mod_net->getParent(),
-                                  unique_port_name.c_str());
-      }
-      port->setIoType(io_type);
-      port->connect(mod_net);
-      if (dbModInst* mod_inst = current_mod->getModInst()) {
-        dbModITerm::create(mod_inst, port->getName(), port);
-      }
-    }
+    dbModBTerm* port
+        = findOrCreateTracePort(current_mod, mod_net, io_type, suffix);
 
     current_obj = port->getParentModITerm();
     current_mod = current_mod->getModInst()->getParent();

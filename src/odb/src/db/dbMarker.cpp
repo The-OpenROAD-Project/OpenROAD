@@ -40,6 +40,7 @@ template class dbTable<_dbMarker>;
 
 bool _dbMarker::operator==(const _dbMarker& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.visited != rhs.flags_.visited) {
     return false;
   }
@@ -68,6 +69,7 @@ bool _dbMarker::operator==(const _dbMarker& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbMarker::operator<(const _dbMarker& rhs) const

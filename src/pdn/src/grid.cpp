@@ -286,6 +286,24 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
              getLongName());
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
+  Shape::ShapeTreeMap search_shapes = getShapes();
+
+  odb::Rect search_area = getDomainBoundary();
+  for (const auto& [layer, shapes] : search_shapes) {
+    for (const auto& shape : shapes) {
+      search_area.merge(shape->getRect());
+    }
+  }
+
+  // populate shapes and obstructions
+  for (auto& [layer, layer_global_shape] : global_shapes) {
+    auto& shapes = search_shapes[layer];
+    for (auto it = layer_global_shape.qbegin(bgi::intersects(search_area));
+         it != layer_global_shape.qend();
+         it++) {
+      shapes.insert(*it);
+    }
+  }
 
   auto obs_filter = [this](const ShapePtr& other) -> bool {
     if (other->shapeType() != Shape::GRID_OBS) {
@@ -323,6 +341,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
       }
       auto new_lower
           = extend_test->extendTo(upper_shape->getRect(),
+                                  search_shapes[extend_test->getLayer()],
                                   obstructions[extend_test->getLayer()],
                                   lower_shape.get(),
                                   obs_filter);
@@ -338,6 +357,7 @@ bool Grid::repairVias(const Shape::ShapeTreeMap& global_shapes,
       }
       auto new_upper
           = extend_test->extendTo(lower_shape->getRect(),
+                                  search_shapes[extend_test->getLayer()],
                                   obstructions[extend_test->getLayer()],
                                   upper_shape.get(),
                                   obs_filter);
@@ -1407,16 +1427,12 @@ InstanceGrid::InstanceGrid(
     : Grid(domain, name, start_with_power, generate_obstructions), inst_(inst)
 {
   auto* halo = inst->getHalo();
-  if (halo != nullptr) {
-    odb::Rect halo_box = halo->getBox();
-
-    odb::Rect inst_box = inst->getBBox()->getBox();
+  if (halo != nullptr && !halo->isSoft()) {
+    odb::Rect halo_box = inst->getTransformedHalo();
 
     // copy halo from db
-    addHalo({halo_box.xMin() - inst_box.xMin(),
-             halo_box.yMin() - inst_box.yMin(),
-             inst_box.xMin() - halo_box.xMax(),
-             inst_box.yMin() - halo_box.yMax()});
+    addHalo(
+        {halo_box.xMin(), halo_box.yMin(), halo_box.xMax(), halo_box.yMax()});
   }
 }
 

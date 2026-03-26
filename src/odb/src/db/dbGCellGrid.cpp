@@ -46,6 +46,7 @@ static dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.x_grid_valid != rhs.flags_.x_grid_valid) {
     return false;
   }
@@ -79,6 +80,7 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const

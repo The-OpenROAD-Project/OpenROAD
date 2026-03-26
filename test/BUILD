@@ -1,9 +1,97 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
+
+# --- Downstream API surface tests ---
+# Verify visibility labels and dev_dependency markers by inspecting
+# BUILD.bazel and MODULE.bazel directly. Instant, no downstream workspace.
+
+py_test(
+    name = "openroad_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_binary",
+        "--target=openroad",
+        "--expect=public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "openroad_py_public_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=py_library",
+        "--target=openroad_py",
+        "--expect=public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "openroad_lib_restricted_test",
+    srcs = ["check_visibility.py"],
+    args = [
+        "--build-file=$(location //:BUILD.bazel)",
+        "--rule-type=cc_library",
+        "--target=openroad_lib",
+        "--expect=not_public",
+    ],
+    data = ["//:BUILD.bazel"],
+    main = "check_visibility.py",
+)
+
+py_test(
+    name = "rules_shell_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_shell",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
+
+py_test(
+    name = "rules_pkg_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_pkg",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
+
+py_test(
+    name = "rules_verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=rules_verilator",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
+
+py_test(
+    name = "verilator_dev_dep_test",
+    srcs = ["check_dev_dep.py"],
+    args = [
+        "--module-file=$(location //:MODULE.bazel)",
+        "--dep=verilator",
+    ],
+    data = ["//:MODULE.bazel"],
+    main = "check_dev_dep.py",
+)
 
 exports_files(
     [
@@ -131,6 +219,15 @@ BIG_TESTS = [
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]
+
+py_test(
+    name = "timing_report_api_test",
+    size = "medium",
+    srcs = ["timing_report_api.py"],
+    data = [":regression_resources"],
+    main = "timing_report_api.py",
+    deps = ["//python/openroad:openroadpy"],
+)
 
 # These tests take a long time, make them easy to explicitly invoke
 test_suite(

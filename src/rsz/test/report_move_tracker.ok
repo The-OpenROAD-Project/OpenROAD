@@ -1,0 +1,97 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: reg1
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 17 components and 92 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 34 connections.
+[INFO ODB-0133]     Created 7 nets and 30 connections.
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 4 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 4 out of 4 (100.00%) violating endpoints...
+[DEBUG RSZ-move_tracker] Scanned 29 driver pins, found 6 with negative slack
+[DEBUG RSZ-move_tracker] Scanned 34 endpoints, found 4 with negative slack
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.333 |       -0.3 |       -0.4 |      4 | r2/D
+       9* |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      4 | r2/D
+[DEBUG RSZ-move_tracker] LEGACY Phase Endpoint Profiler: No endpoint statistics collected
+[DEBUG RSZ-move_tracker] LAST_GASP Phase Endpoint Profiler: No endpoint statistics collected
+    final |       4 |       1 |        0 |      0 |     0 |    -4.6% |    0.013 |        0.0 |        0.0 |      0 | r2/D
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0211] 
+[INFO RSZ-0212] === Optimization Analysis Reports ===
+[DEBUG RSZ-move_tracker] Pin Slack Distribution:
+[DEBUG RSZ-move_tracker] Slack range: min=-0.333 ns, max=0.000 ns
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Pre-Optimization Gate Slack Distribution:
+[DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
+[DEBUG RSZ-move_tracker] < -0.300           |      2 | ##
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
+[DEBUG RSZ-move_tracker] >= 0.000           |      0 | 
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Post-Optimization Gate Slack Distribution:
+[DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
+[DEBUG RSZ-move_tracker] < -0.300           |      0 | 
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
+[DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Summary: 2 driver pins tracked (4 destroyed), max bin count: 2 (# = 1 gate)
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] === Endpoint Slack Distribution ===
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Pre-Optimization Endpoint Slack Distribution:
+[DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
+[DEBUG RSZ-move_tracker] < -0.300           |      1 | #
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      1 | #
+[DEBUG RSZ-move_tracker] >= 0.000           |      2 | ##
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Post-Optimization Endpoint Slack Distribution:
+[DEBUG RSZ-move_tracker] Slack (ns)         |  Count | Distribution
+[DEBUG RSZ-move_tracker] < -0.300           |      0 | 
+[DEBUG RSZ-move_tracker] [-0.300,-0.267)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.267,-0.233)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.233,-0.200)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.200,-0.167)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.167,-0.133)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.133,-0.100)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.100,-0.067)    |      0 | 
+[DEBUG RSZ-move_tracker] [-0.067,-0.033)    |      0 | 
+[DEBUG RSZ-move_tracker] >= 0.000           |      4 | ####
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] Summary: 4 endpoints tracked (0 destroyed), max bin count: 4 (# = 1 endpoint)
+[DEBUG RSZ-move_tracker] Most Critical Endpoints After Optimization:
+[DEBUG RSZ-move_tracker] No violating endpoints after optimization (all meet timing!)
+[DEBUG RSZ-move_tracker] 
+[DEBUG RSZ-move_tracker] === Critical Endpoint Path Distribution ===
+[DEBUG RSZ-move_tracker] No violating endpoints found.
+[DEBUG RSZ-move_tracker] Successful Optimizations Report: No successful optimizations
+[DEBUG RSZ-move_tracker] Unsuccessful Optimizations Report: No rejected optimizations
+[DEBUG RSZ-move_tracker] Missed Opportunities Report:
+[DEBUG RSZ-move_tracker] Category 1: All visited pins with negative slack had moves attempted (good!)
+[DEBUG RSZ-move_tracker] Category 2: All critical pins were visited (good!)
+[DEBUG RSZ-move_tracker] Summary: 0 critical pins identified, 0 visited, 0 had moves attempted
+[DEBUG RSZ-move_tracker]   Missed opportunities: 0 visited but no moves, 0 never visited
+[INFO RSZ-0213] 
+[INFO RSZ-0059] Removed 4 buffers.
+[INFO RSZ-0051] Resized 1 instances: 1 up, 0 up match, 0 down, 0 VT
