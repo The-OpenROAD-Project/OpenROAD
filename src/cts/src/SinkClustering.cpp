@@ -207,6 +207,10 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
   // Keeps track of the total cost of each solution.
   vector<double> costs(groupSize, 0);
   vector<double> previousCosts(groupSize, 0);
+  // Has the max diameter of each solution.
+  vector<double> max_diameter(groupSize, 0);
+  // Has the max size of each solution.
+  vector<unsigned> max_size(groupSize, 0);
   // Has the points for each cluster of each solution.
   vector<vector<vector<Point<double>>>> solutionPoints;
   // Has the points index for each cluster of each solution.
@@ -273,6 +277,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                      solutionPoints[j][clusters[j]].size(),
                      distanceCost,
                      capCost);
+          max_diameter[j] = std::max(max_diameter[j], previousCosts[j]);
+          max_size[j] = std::max(
+              max_size[j], (unsigned) solutionPoints[j][clusters[j]].size());
           // The cost is computed as the highest cost found on the current
           // cluster
           if (previousCosts[j] == 0) {
@@ -343,6 +350,9 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
                    solutionPoints[j][clusters[j]].size(),
                    distanceCost,
                    capCost);
+        max_diameter[j] = std::max(max_diameter[j], previousCosts[j]);
+        max_size[j] = std::max(
+            max_size[j], (unsigned) solutionPoints[j][clusters[j]].size());
         if (previousCosts[j] == 0) {
           previousCosts[j] = maxInternalDiameter_;
         }
@@ -389,6 +399,19 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
   // Save the solution for the Tree Builder.
   if (bestSolutionFound) {
     bestSolution_ = solutions[bestSolution];
+    // Calculate max diameter to save
+    double span;
+    if (xSpan_ == 0 && ySpan_ == 0) {
+      span = 1;  // arbitrary
+    } else if (xSpan_ == 0) {
+      span = ySpan_;
+    } else if (ySpan_ == 0) {
+      span = xSpan_;
+    } else {
+      span = std::min(xSpan_, ySpan_);
+    }
+    max_diameter_ = max_diameter[bestSolution] * span;
+    max_size_ = max_size[bestSolution];
     // clang-format off
     debugPrint(logger_, CTS, "clustering", 1, "Best solution from group "
                "{} has cost of {:0.3f} and size of {}", bestSolution,
