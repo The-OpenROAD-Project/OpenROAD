@@ -4152,8 +4152,9 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
           sta::ArcDelay wire_delay = dcalc_result.wireDelay(0);
           sta::Slew load_slew = dcalc_result.loadSlew(0);
           sta::Delay gate_wire = delaySum(gate_delay, wire_delay, sta_);
-          if (delayGreater(gate_wire, delay, sta_))
+          if (delayGreater(gate_wire, delay, sta_)) {
             delay = gate_wire;
+          }
           slew = max(slew, load_slew);
         }
       }

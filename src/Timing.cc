@@ -159,8 +159,8 @@ float Timing::getPinArrivalTime(sta::Clock* clk,
                                 const sta::RiseFall* rf)
 {
   sta::dbSta* sta = getSta();
-  (void)clk;
-  (void)clk_rf;
+  (void) clk;
+  (void) clk_rf;
 #if 0
   // This api no longer exists.
   if (clk) {

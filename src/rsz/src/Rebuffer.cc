@@ -2145,13 +2145,14 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
       sta::Delay relaxation
-          = std::max<float>(0.0f,
-                            ((slackAtDriverPin(timing_tree).toSeconds())
-                             - std::min(float(original_tree_slack_error), 0.0f)))
+          = std::max<float>(
+                0.0f,
+                ((slackAtDriverPin(timing_tree).toSeconds())
+                 - std::min(float(original_tree_slack_error), 0.0f)))
                 / 4.0f
-        + (std::max(float(drvr_gate_delay), 0.0f)
-           + criticalPathDelay(logger_, timing_tree).toSeconds())
-        * relaxation_factor_;
+            + (std::max(float(drvr_gate_delay), 0.0f)
+               + criticalPathDelay(logger_, timing_tree).toSeconds())
+                  * relaxation_factor_;
       target_slack
           = slackAtDriverPin(timing_tree) - FixedDelay(relaxation, resizer_);
     }

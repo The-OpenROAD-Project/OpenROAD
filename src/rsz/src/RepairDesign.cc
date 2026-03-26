@@ -876,7 +876,8 @@ void RepairDesign::checkDriverArcSlew(const sta::Scene* corner,
     float in_slew
         = use_ideal_clk_slew
               ? sta_->cmdMode()->clkNetwork()->idealClkSlew(in_pin, in_rf, max_)
-              : float(graph_->slew(graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap));
+              : float(graph_->slew(
+                    graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap));
     const sta::Pvt* pvt = corner->sdc()->pvt(inst, max_);
     if (pvt == nullptr) {
       pvt = corner->sdc()->operatingConditions(max_);
