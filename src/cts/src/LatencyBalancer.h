@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <map>
 #include <string>
@@ -45,6 +46,11 @@ struct GraphNode
   odb::dbITerm* inputTerm = nullptr;
 };
 
+struct DPResult {
+  std::vector<int> elements;  // dp_elements
+  std::vector<int64_t> values;    // dp
+};
+
 class LatencyBalancer
 {
  public:
@@ -77,7 +83,7 @@ class LatencyBalancer
   void findLeafBuilders(TreeBuilder* builder);
   void computeBuffersDelay(std::vector<int>& buffersDelay,
                            double extra_out_cap);
-  double computeWireLumpedDelay(const std::string& load, double wl, double& wireCap);
+  int64_t computeWireLumpedDelay(const std::string& load, double wl, double& wireCap);
   void buildGraph(odb::dbNet* clkInputNet);
   odb::dbITerm* getFirstInput(odb::dbInst* inst) const;
   float getVertexClkArrival(sta::Vertex* sinkVertex,
@@ -88,6 +94,10 @@ class LatencyBalancer
                                odb::dbITerm* iterm,
                                float& sumArrivals,
                                unsigned& numSinks);
+
+  DPResult solveDP(int64_t target, const std::vector<int>& bufDelays, int64_t wireDly, const std::vector<odb::dbITerm*>& sinks, const std::vector<std::string>& dlyBuffers, double extraOutCap, double loadPinsHwpl);
+  static int backtrackCount(const DPResult& dp, const std::vector<int>& bufDelays, int64_t target);
+  static std::vector<std::string> backtrackNames(const DPResult& dp, const std::vector<int>& bufDelays, const std::vector<std::string>& dlyBuffers, int64_t target);
   std::vector<std::string> computeNumberOfDelayBuffers(
       double delayNeeded,
       int srcX,
