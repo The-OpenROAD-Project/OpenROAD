@@ -102,13 +102,22 @@ void HTreeBuilder::preSinkClustering(
                wireSegmentUnit_,
                bestClusterSize,
                bestDiameter);
-
+  std::string size_log, diameter_log;
+  size_log = diameter_log = "";
+  if (!maxDiameterSet) {
+    diameter_log = "max ";
+    bestDiameter = matching.getMaxDiameter();
+  }
+  if (!clusterSizeSet) {
+    size_log = "max ";
+    bestClusterSize = matching.getMaxSize();
+  }
   if (clusterSizeSet || maxDiameterSet) {
     logger_->info(
         CTS,
         204,
-        "A clustering solution was found from clustering size of {} "
-        "and clustering diameter of {:0.0f}.",
+        "A clustering solution was found from " + size_log + "clustering size of {} "
+        "and " + diameter_log + "clustering diameter of {:0.0f}.",
         bestClusterSize,
         std::round(bestDiameter / options_->getDbUnits() * wireSegmentUnit_));
     logger_->info(CTS,
@@ -120,8 +129,8 @@ void HTreeBuilder::preSinkClustering(
     logger_->info(
         CTS,
         206,
-        "Best clustering solution was found from clustering size of {} "
-        "and clustering diameter of {:0.0f}.",
+        "Best clustering solution was found from max clustering size of {} "
+        "and max clustering diameter of {:0.0f}.",
         bestClusterSize,
         std::round(bestDiameter / options_->getDbUnits() * wireSegmentUnit_));
   }
