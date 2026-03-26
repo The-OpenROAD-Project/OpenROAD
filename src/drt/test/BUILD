@@ -37,7 +37,6 @@ PASSFAIL_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "drc_test",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
