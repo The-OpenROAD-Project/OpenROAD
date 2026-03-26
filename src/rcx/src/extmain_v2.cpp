@@ -399,7 +399,7 @@ uint32_t extMain::makeNetRCsegs_v2(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   initJunctionIdMaps(net);
 
@@ -742,7 +742,7 @@ dbRSeg* extMain::addRSeg_v2(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
@@ -785,11 +785,11 @@ void extMain::loopWarning(dbNet* net, const dbWirePathShape& pshape)
   }
   logger_->warn(RCX,
                 117,
-                "Net {} {} has a loop at x={} y={} {}.",
+                "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                 net->getId(),
                 net->getConstName(),
-                pshape.point.getX(),
-                pshape.point.getY(),
+                _block->dbuToMicrons(pshape.point.getX()),
+                _block->dbuToMicrons(pshape.point.getY()),
                 tname);
 }
 void extMain::initJunctionIdMaps(dbNet* net)
@@ -805,7 +805,7 @@ void extMain::initJunctionIdMaps(dbNet* net)
   }
   uint32_t srcJid;
   dbWirePathItr pitr;
-  if (!(_mergeResBound != 0.0 || _mergeViaRes)) {
+  if (_mergeResBound == 0.0 && !_mergeViaRes) {
     return;
   }
   dbWire* wire = net->getWire();

@@ -800,10 +800,8 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
         const DbuX dx = abs(xc - xx);
 
         if (best1.empty() || (dx.v + dy.v < disp1)) {
-          if (true) {
-            best1 = candidates_i;
-            disp1 = dx.v + dy.v;
-          }
+          best1 = candidates_i;
+          disp1 = dx.v + dy.v;
         }
         if (best2.empty() || (dx.v + dy.v < disp2)) {
           if (nd->getWidth() <= width) {
@@ -1999,7 +1997,7 @@ bool DetailedMgr::shift(std::vector<Node*>& cells,
       // Cost if site used; avoid if invalid (too far left or right).
       const int ii = i - prev_wid;
       const int jj = j - 1;
-      if (!(ii < 0 || site_id + curr_wid - 1 > i1)) {
+      if (ii >= 0 && site_id + curr_wid - 1 <= i1) {
         const double c = tcost[ii][jj] + cost[i][j];
         if (c < tcost[i][j]) {
           tcost[i][j] = c;
@@ -2698,16 +2696,13 @@ bool DetailedMgr::tryMove3(Node* ndi,
       old_segs.push_back(seg->getSegId());
     }
 
-    if (!addToMoveList(ndi,
-                       ndi->getLeft(),
-                       ndi->getBottom(),
-                       old_segs,
-                       xj,
-                       arch_->getRow(rb)->getBottom(),
-                       segs)) {
-      return false;
-    }
-    return true;
+    return addToMoveList(ndi,
+                         ndi->getLeft(),
+                         ndi->getBottom(),
+                         old_segs,
+                         xj,
+                         arch_->getRow(rb)->getBottom(),
+                         segs);
   }
   return false;
 }
@@ -2763,8 +2758,7 @@ bool DetailedMgr::trySwap1(Node* ndi,
       = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndj);
   const int ix_j = (int) (it_j - cellsInSeg_[sj].begin());
 
-  const bool adjacent
-      = ((si == sj) && (ix_i + 1 == ix_j || ix_j + 1 == ix_i)) ? true : false;
+  const bool adjacent = (si == sj) && (ix_i + 1 == ix_j || ix_j + 1 == ix_i);
 
   const Node* prev;
   const Node* next;

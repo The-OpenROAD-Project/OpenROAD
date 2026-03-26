@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2025, The OpenROAD Authors
+# Copyright (c) 2025-2026, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -18,8 +19,14 @@ cc_library(
         "src/annealing_strategy.h",
         "src/delay_optimization_strategy.cpp",
         "src/delay_optimization_strategy.h",
+        "src/genetic_strategy.cpp",
+        "src/genetic_strategy.h",
+        "src/gia.cpp",
+        "src/gia.h",
         "src/logic_optimization_strategy.h",
         "src/resynthesis_strategy.h",
+        "src/slack_tuning_strategy.cpp",
+        "src/slack_tuning_strategy.h",
         "src/utils.cpp",
         "src/utils.h",
         "src/zero_slack_strategy.cpp",
@@ -28,12 +35,10 @@ cc_library(
     hdrs = [
         "include/rmp/Restructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     defines = ["ABC_NAMESPACE=abc"],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
@@ -46,6 +51,8 @@ cc_library(
         "//src/utl",
         "@abc",
         "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/random:distributions",
         "@abseil-cpp//absl/synchronization",
         "@boost.bind",
         "@boost.config",
@@ -67,11 +74,9 @@ cc_library(
     hdrs = [
         "include/rmp/MakeRestructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rmp",
@@ -113,4 +118,17 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/rmp.tcl",
+    ],
+    visibility = ["//src/rmp/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rmp/test:__pkg__"],
 )

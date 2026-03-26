@@ -3,6 +3,7 @@
 
 %include <std_string.i>
 %include <std_vector.i>
+%include <std_pair.i>
 %include <stdint.i>
 
 %{
@@ -52,14 +53,23 @@ get_db_block();
 %template(Corners) std::vector<sta::Scene*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
 %template(Masters) std::vector<odb::dbMaster*>;
+%template(Floats) std::vector<float>;
+%template(ITerms) std::vector<odb::dbITerm*>;
+%template(BTerms) std::vector<odb::dbBTerm*>;
+%template(EndpointSlacks) std::vector<ord::EndpointSlack>;
 %include "ord/Tech.h"
 %include "ord/Design.h"
+
 %include "ord/Timing.h"
+%template(ClockInfos) std::vector<ord::ClockInfo>;
+%template(TimingArcInfos) std::vector<ord::TimingArcInfo>;
+%template(TimingPathInfos) std::vector<ord::TimingPathInfo>;
 
 #ifdef BAZEL
 %include "src/gpl/src/replace-py.i"
 %include "src/ifp/src/InitFloorplan-py.i"
 %include "src/ant/src/AntennaChecker-py.i"
+%include "src/cgt/src/cgt-py.i"
 %include "src/cts/src/TritonCTS-py.i"
 %include "src/dpl/src/Opendp-py.i"
 %include "src/drt/src/TritonRoute-py.i"

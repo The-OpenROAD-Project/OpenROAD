@@ -144,13 +144,14 @@ cc_library(
         "include/db_sta/MakeDbSta.hh",
     ],
     copts = [
-        "-Isrc/dbSta/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
+        ":IpChecker",
         ":dbNetwork",
         ":dbSta",
         "//:ord",

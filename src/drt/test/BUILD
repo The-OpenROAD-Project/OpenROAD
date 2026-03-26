@@ -1,8 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -24,10 +28,11 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "drt_man_tcl_check",
-    "drt_readme_msgs_check",
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    # NOTE: gc_test excluded - CMake build directory wrapper that runs trTest executable
+    # from build/src/drt/. The underlying C++ test (gc_unittest) is already in BUILD.
+    # "gc_test",
 ]
 
 # TODO: Enable once difference between bazel and ctest is resolved.
@@ -43,7 +48,7 @@ MANUAL_FOR_BAZEL_TESTS = [
     "top_level_term2",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -115,9 +120,9 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -142,4 +147,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "drt_man_tcl_check",
+    srcs = ["drt_man_tcl_check.py"],
+    data = ["//src/drt:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "drt_readme_msgs_check",
+    data = [
+        "//src/drt:doc_files",
+        "//src/drt:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

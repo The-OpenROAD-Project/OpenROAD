@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2024-2025, The OpenROAD Authors
 
-sta::define_cmd_args "generate_ram_netlist" {-bytes_per_word bits
-                                             -word_count words
-                                             [-mux_col_ratio ratio]
+sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
+                                             -word_size bits
+                                             -num_words words
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
@@ -13,27 +13,29 @@ sta::define_cmd_args "generate_ram_netlist" {-bytes_per_word bits
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
-    keys { -bytes_per_word -word_count -mux_col_ratio -storage_cell
-      -tristate_cell -inv_cell -read_ports -tapcell -max_tap_dist } flags {}
+    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell
+      -read_ports -tapcell -max_tap_dist } flags {}
 
-  if { [info exists keys(-bytes_per_word)] } {
-    set bytes_per_word $keys(-bytes_per_word)
+  if { [info exists keys(-mask_size)] } {
+    set mask_size $keys(-mask_size)
   } else {
-    utl::error RAM 1 "The -bytes_per_word argument must be specified."
+    utl::error RAM 1 "The -mask_size argument must be specified."
   }
 
-  if { [info exists keys(-word_count)] } {
-    set word_count $keys(-word_count)
+  if { [info exists keys(-word_size)] } {
+    set word_size $keys(-word_size)
   } else {
-    utl::error RAM 2 "The -word_count argument must be specified."
+    utl::error RAM 2 "The -word_size argument must be specified."
   }
 
-  set mux_col_ratio 1
-  if { [info exists keys(-mux_col_ratio)] } {
-    set mux_col_ratio $keys(-mux_col_ratio)
-    if { $mux_col_ratio != 1 && $mux_col_ratio != 2 && $mux_col_ratio != 4 } {
-      utl::error RAM 29 "The -mux_col_ratio must be 1, 2, or 4."
-    }
+  if { $word_size % $mask_size != 0 } {
+    utl::error RAM 26 "The -word_size ($word_size) must be divisible by -mask_size ($mask_size)."
+  }
+
+  if { [info exists keys(-num_words)] } {
+    set num_words $keys(-num_words)
+  } else {
+    utl::error RAM 27 "The -num_words argument must be specified."
   }
 
   set storage_cell ""
@@ -71,13 +73,13 @@ proc generate_ram_netlist { args } {
         The generated layout may not pass Design Rule Checks."
   }
 
-  ram::generate_ram_netlist_cmd $bytes_per_word $word_count $mux_col_ratio \
-    $storage_cell $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
+  ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $storage_cell \
+    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
 }
 
-sta::define_cmd_args "generate_ram" {-bytes_per_word bits
-                                     -word_count words
-                                     [-mux_col_ratio ratio]
+sta::define_cmd_args "generate_ram" {-mask_size bits
+                                     -word_size bits
+                                     -num_words words
                                      [-read_ports count]
                                      [-storage_cell name]
                                      [-tristate_cell name]
@@ -96,10 +98,9 @@ sta::define_cmd_args "generate_ram" {-bytes_per_word bits
 # user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
-    keys { -bytes_per_word -word_count -mux_col_ratio -storage_cell
-      -tristate_cell -inv_cell -read_ports -power_pin -ground_pin
-      -routing_layer -ver_layer -hor_layer -filler_cells
-      -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
+    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell -read_ports
+      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
+        -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
 
@@ -109,12 +110,9 @@ proc generate_ram { args } {
   }
 
   set ram_netlist_args [list \
-    -bytes_per_word $keys(-bytes_per_word) \
-    -word_count $keys(-word_count)]
-
-  if { [info exists keys(-mux_col_ratio)] } {
-    lappend ram_netlist_args -mux_col_ratio $keys(-mux_col_ratio)
-  }
+    -mask_size $keys(-mask_size) \
+    -word_size $keys(-word_size) \
+    -num_words $keys(-num_words)]
 
   if { [info exists keys(-read_ports)] } {
     lappend ram_netlist_args -read_ports $keys(-read_ports)

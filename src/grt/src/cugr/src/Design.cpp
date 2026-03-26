@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <iostream>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "CUGR.h"
@@ -19,7 +20,6 @@ namespace grt {
 
 Design::Design(odb::dbDatabase* db,
                utl::Logger* logger,
-               sta::dbSta* sta,
                const Constants& constants,
                const int min_routing_layer,
                const int max_routing_layer,
@@ -27,7 +27,6 @@ Design::Design(odb::dbDatabase* db,
     : block_(db->getChip()->getBlock()),
       tech_(db->getTech()),
       logger_(logger),
-      sta_(sta),
       constants_(constants),
       min_routing_layer_(min_routing_layer),
       max_routing_layer_(max_routing_layer),
@@ -40,8 +39,8 @@ Design::Design(odb::dbDatabase* db,
 void Design::read()
 {
   lib_dbu_ = block_->getDbUnitsPerMicron();
-  const odb::Rect dieBound = block_->getDieArea();
-  die_region_ = getBoxFromRect(dieBound);
+  const odb::Rect die_bound = block_->getDieArea();
+  die_region_ = getBoxFromRect(die_bound);
 
   readLayers();
 
@@ -55,15 +54,10 @@ void Design::read()
 
   computeGrid();
 
-  logger_->report("design statistics");
-  logger_->report("lib DBU:             {}", lib_dbu_);
-  logger_->report("die region (in DBU): {}", die_region_);
-  logger_->report("num of nets :        {}", nets_.size());
-  logger_->report("num of special nets: {}", num_special_nets);
-  logger_->report("gcell grid:          {} x {} x {}",
-                  gridlines_[0].size() - 1,
-                  gridlines_[1].size() - 1,
-                  getNumLayers());
+  logger_->report("Design statistics");
+  logger_->report("Nets:                {}", nets_.size());
+  logger_->report("Special nets:        {}", num_special_nets);
+  logger_->report("Routing layers:      {}", getNumLayers());
 }
 
 void Design::readLayers()
@@ -89,59 +83,98 @@ void Design::readNetlist()
       continue;
     }
 
-    std::vector<CUGRPin> pins;
-    int pin_count = 0;
-    for (odb::dbBTerm* db_bterm : db_net->getBTerms()) {
-      int x, y;
-      std::vector<BoxOnLayer> pin_shapes;
-      if (db_bterm->getFirstPinLocation(x, y)) {
-        odb::Point position(x, y);
-        for (odb::dbBPin* bpin : db_bterm->getBPins()) {
-          for (odb::dbBox* bpin_box : bpin->getBoxes()) {
-            // adjust layer idx to start with zero
-            int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
-            pin_shapes.emplace_back(layer_idx,
-                                    getBoxFromRect(bpin_box->getBox()));
-          }
-        }
-      }
-
-      pins.emplace_back(pin_count, db_bterm, pin_shapes);
-      pin_count++;
-    }
-
-    for (odb::dbITerm* db_iterm : db_net->getITerms()) {
-      std::vector<BoxOnLayer> pin_shapes;
-      odb::dbTransform xform = db_iterm->getInst()->getTransform();
-      for (odb::dbMPin* mpin : db_iterm->getMTerm()->getMPins()) {
-        for (odb::dbBox* box : mpin->getGeometry()) {
-          odb::dbTechLayer* tech_layer = box->getTechLayer();
-          if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
-            continue;
-          }
-
-          odb::Rect rect = box->getBox();
-          xform.apply(rect);
-
-          int layerIndex = tech_layer->getRoutingLevel() - 1;
-          pin_shapes.emplace_back(
-              layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
-        }
-      }
-
-      pins.emplace_back(pin_count, db_iterm, pin_shapes);
-      pin_count++;
-    }
+    auto pins = makeNetPins(db_net);
 
     LayerRange layer_range
         = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
-    if (clock_nets_.find(db_net) != clock_nets_.end()) {
-      layer_range.min_layer = block_->getMinLayerForClock() - 1;
-      layer_range.max_layer = block_->getMaxLayerForClock() - 1;
+    const int min_clk_layer = block_->getMinLayerForClock();
+    const int max_clk_layer = block_->getMaxLayerForClock();
+    if (clock_nets_.find(db_net) != clock_nets_.end() && min_clk_layer > 0
+        && max_clk_layer > 0) {
+      layer_range.min_layer = min_clk_layer - 1;
+      layer_range.max_layer = max_clk_layer - 1;
     }
 
     nets_.emplace_back(net_index, db_net, pins, layer_range);
+    db_net_to_id_[db_net] = net_index;
     net_index++;
+  }
+}
+
+std::vector<CUGRPin> Design::makeNetPins(odb::dbNet* db_net)
+{
+  std::vector<CUGRPin> pins;
+  int pin_count = 0;
+  for (odb::dbBTerm* db_bterm : db_net->getBTerms()) {
+    int x, y;
+    std::vector<BoxOnLayer> pin_shapes;
+    if (db_bterm->getFirstPinLocation(x, y)) {
+      odb::Point position(x, y);
+      for (odb::dbBPin* bpin : db_bterm->getBPins()) {
+        for (odb::dbBox* bpin_box : bpin->getBoxes()) {
+          // adjust layer idx to start with zero
+          int layer_idx = bpin_box->getTechLayer()->getRoutingLevel() - 1;
+          pin_shapes.emplace_back(layer_idx,
+                                  getBoxFromRect(bpin_box->getBox()));
+        }
+      }
+    }
+
+    pins.emplace_back(pin_count, db_bterm, pin_shapes);
+    pin_count++;
+  }
+
+  for (odb::dbITerm* db_iterm : db_net->getITerms()) {
+    std::vector<BoxOnLayer> pin_shapes;
+    odb::dbTransform xform = db_iterm->getInst()->getTransform();
+    for (odb::dbMPin* mpin : db_iterm->getMTerm()->getMPins()) {
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::dbTechLayer* tech_layer = box->getTechLayer();
+        if (tech_layer->getType() != odb::dbTechLayerType::ROUTING) {
+          continue;
+        }
+
+        odb::Rect rect = box->getBox();
+        xform.apply(rect);
+
+        int layer_index = tech_layer->getRoutingLevel() - 1;
+        pin_shapes.emplace_back(
+            layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+      }
+    }
+
+    pins.emplace_back(pin_count, db_iterm, pin_shapes);
+    pin_count++;
+  }
+
+  return pins;
+}
+
+void Design::updateNet(odb::dbNet* db_net)
+{
+  if (db_net->isSpecial() || db_net->getSigType().isSupply()
+      || !db_net->getSWires().empty() || db_net->isConnectedByAbutment()) {
+    return;
+  }
+
+  auto pins = makeNetPins(db_net);
+
+  LayerRange layer_range
+      = {.min_layer = min_routing_layer_, .max_layer = max_routing_layer_};
+  if (clock_nets_.find(db_net) != clock_nets_.end()) {
+    layer_range.min_layer = block_->getMinLayerForClock() - 1;
+    layer_range.max_layer = block_->getMaxLayerForClock() - 1;
+  }
+
+  auto it = db_net_to_id_.find(db_net);
+  if (it != db_net_to_id_.end()) {
+    nets_[it->second].setPins(std::move(pins));
+    nets_[it->second].setLayerRange(layer_range);
+  } else {
+    // Net is new — add it
+    const int net_index = static_cast<int>(nets_.size());
+    db_net_to_id_[db_net] = net_index;
+    nets_.emplace_back(net_index, db_net, std::move(pins), layer_range);
   }
 }
 
@@ -161,12 +194,12 @@ void Design::readInstanceObstructions()
             continue;
           }
 
-          int layerIndex = tech_layer->getRoutingLevel() - 1;
+          int layer_index = tech_layer->getRoutingLevel() - 1;
           odb::Rect rect = box->getBox();
           xform.apply(rect);
 
           BoxOnLayer box_on_layer(
-              layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+              layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
           obstacles_.push_back(box_on_layer);
         }
       }
@@ -181,14 +214,14 @@ void Design::readInstanceObstructions()
         continue;
       }
 
-      int layerIndex = tech_layer->getRoutingLevel() - 1;
+      int layer_index = tech_layer->getRoutingLevel() - 1;
       odb::Rect rect = box->getBox();
       xform.apply(rect);
 
       odb::Point lower_bound = odb::Point(rect.xMin(), rect.yMin());
       odb::Point upper_bound = odb::Point(rect.xMax(), rect.yMax());
       odb::Rect obstruction_rect = odb::Rect(lower_bound, upper_bound);
-      obstacles_.emplace_back(layerIndex,
+      obstacles_.emplace_back(layer_index,
                               obstruction_rect.xMin(),
                               obstruction_rect.yMin(),
                               obstruction_rect.xMax(),
@@ -260,11 +293,11 @@ void Design::readDesignObstructions()
       continue;
     }
 
-    int layerIndex = tech_layer->getRoutingLevel() - 1;
+    int layer_index = tech_layer->getRoutingLevel() - 1;
     odb::Rect rect = box->getBox();
 
     BoxOnLayer box_on_layer(
-        layerIndex, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
+        layer_index, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
     obstacles_.push_back(box_on_layer);
   }
 }
@@ -293,9 +326,9 @@ void Design::setUnitCosts()
   unit_length_short_costs_.resize(layers_.size());
   const CostT unit_area_short_cost
       = constants_.weight_short_area / (m2_pitch * m2_pitch);
-  for (int layerIndex = 0; layerIndex < layers_.size(); layerIndex++) {
-    unit_length_short_costs_[layerIndex]
-        = unit_area_short_cost * layers_[layerIndex].getWidth();
+  for (int layer_index = 0; layer_index < layers_.size(); layer_index++) {
+    unit_length_short_costs_[layer_index]
+        = unit_area_short_cost * layers_[layer_index].getWidth();
   }
 }
 

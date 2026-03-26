@@ -22,6 +22,7 @@ template class dbTable<_dbTechLayerCutSpacingRule>;
 bool _dbTechLayerCutSpacingRule::operator==(
     const _dbTechLayerCutSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.center_to_center != rhs.flags_.center_to_center) {
     return false;
   }
@@ -214,6 +215,7 @@ bool _dbTechLayerCutSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutSpacingRule::operator<(

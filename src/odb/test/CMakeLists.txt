@@ -30,6 +30,7 @@ or_integration_tests(
     floorplan_initialize3
     gcd_abstract_lef
     gcd_abstract_lef_with_power
+    gcd_abstract_lef_via_only_layer
     gcd_def_access
     gcd_pdn_def_access
     import_package
@@ -57,6 +58,7 @@ or_integration_tests(
     row_settings
     sky130hd_multi_patterned
     smash_vias
+    swap_master
     transform
     wire_encoder
     write_cdl

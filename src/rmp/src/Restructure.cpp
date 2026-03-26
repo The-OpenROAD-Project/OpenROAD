@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Copyright (c) 2019-2025, The OpenROAD Authors
+// Copyright (c) 2019-2026, The OpenROAD Authors
 
 #include "rmp/Restructure.h"
 
@@ -24,6 +24,7 @@
 #include "cut/abc_init.h"
 #include "cut/blif.h"
 #include "db_sta/dbSta.hh"
+#include "genetic_strategy.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
@@ -96,6 +97,22 @@ void Restructure::resynthAnnealing(sta::Scene* corner)
                                        annealing_revert_after_,
                                        annealing_init_ops_);
   annealing_strategy.OptimizeDesign(
+      open_sta_, name_generator_, resizer_, logger_);
+}
+
+void Restructure::resynthGenetic(sta::Scene* corner)
+{
+  GeneticStrategy genetic_strategy(corner,
+                                   slack_threshold_,
+                                   genetic_seed_,
+                                   genetic_population_size_,
+                                   genetic_mutation_probability_,
+                                   genetic_crossover_probability_,
+                                   genetic_tournament_size_,
+                                   genetic_tournament_probability_,
+                                   genetic_iters_,
+                                   genetic_init_ops_);
+  genetic_strategy.OptimizeDesign(
       open_sta_, name_generator_, resizer_, logger_);
 }
 
@@ -358,8 +375,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       bool first = true;
       for (auto pinName : *error) {
         debugPrint(logger_, RMP, "remap", 1, "Unconstrained pin: {}", pinName);
-        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str())) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName.c_str()));
         }
         first = false;
       }
@@ -369,8 +386,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       bool first = true;
       for (auto pinName : *error) {
         debugPrint(logger_, RMP, "remap", 1, "Unclocked pin: {}", pinName);
-        if (!first && open_sta_->getDbNetwork()->findPin(pinName)) {
-          ends.insert(open_sta_->getDbNetwork()->findPin(pinName));
+        if (!first && open_sta_->getDbNetwork()->findPin(pinName.c_str())) {
+          ends.insert(open_sta_->getDbNetwork()->findPin(pinName.c_str()));
         }
         first = false;
       }

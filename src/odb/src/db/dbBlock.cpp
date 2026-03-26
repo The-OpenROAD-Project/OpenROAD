@@ -1125,6 +1125,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     block.core_area_ = blk->computeCoreArea();
   }
 
+  // Resolve cached mterm pointers now that all tables are loaded
+  dbSet<dbITerm> iterms((dbBlock*) &block, block.iterm_tbl_);
+  for (dbITerm* iterm : iterms) {
+    ((_dbITerm*) iterm)->resolveMTerm();
+  }
+
   return stream;
 }
 
@@ -2089,7 +2095,7 @@ dbModNet* dbBlock::findModNet(const char* hierarchical_name) const
   const char delimiter = getHierarchyDelimiter();
 
   while (std::getline(ss, token, delimiter)) {
-    if (token.empty() == false) {
+    if (!token.empty()) {
       tokens.push_back(token);
     }
   }
@@ -3920,35 +3926,38 @@ std::string _dbBlock::makeNewName(
 // If uniquify is IF_NEEDED, unique suffix will be added when necessary.
 // This is added to cover the existing multiple use cases of making a
 // new net name w/ and w/o unique suffix.
-std::string dbBlock::makeNewNetName(dbModInst* parent,
+// If corresponding_flat_net is nullptr, any findNet() hit is a collision
+// (strict mode for flat net creation).
+// If corresponding_flat_net is non-null, only internal flat nets excluding
+// the corresponding one collide (lenient mode for ModNet creation).
+std::string dbBlock::makeNewNetName(const dbModule* parent,
                                     const char* base_name,
-                                    const dbNameUniquifyType& uniquify)
+                                    const dbNameUniquifyType& uniquify,
+                                    dbNet* corresponding_flat_net)
 {
-  _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  auto exists = [this](const char* name) { return findNet(name) != nullptr; };
-  return block->makeNewName(
-      parent, base_name, uniquify, block->unique_net_index_, exists);
-}
+  const dbModule* scope = parent ? parent : getTopModule();
+  dbModInst* mod_inst = scope ? scope->getModInst() : nullptr;
 
-std::string dbBlock::makeNewModNetName(dbModule* parent,
-                                       const char* base_name,
-                                       const dbNameUniquifyType& uniquify,
-                                       dbNet* corresponding_flat_net)
-{
-  auto exists = [parent, this, corresponding_flat_net](const char* full_name) {
-    const char* base_name_ptr = getBaseName(full_name);
-    if (parent->getModNet(base_name_ptr)
-        || parent->findModBTerm(base_name_ptr)) {
-      return true;
+  auto exists = [this, scope, corresponding_flat_net](const char* name) {
+    if (scope != nullptr) {
+      const char* base = getBaseName(name);
+      if (scope->getModNet(base) || scope->findModBTerm(base)) {
+        return true;
+      }
     }
 
-    // Internal flat net collision check (uses full hierarchical name)
-    // - Allow collision with the corresponding flat net (same logical net)
-    // - Collision with other internal flat nets is not allowed
-    dbNet* existing_net = findNet(full_name);
-    if (existing_net != nullptr && existing_net != corresponding_flat_net) {
-      if (existing_net->isInternalTo(parent)) {
-        return true;  // Collision with a different internal flat net
+    // Flat net collision check
+    dbNet* existing_net = findNet(name);
+    if (existing_net != nullptr) {
+      if (corresponding_flat_net == nullptr) {
+        // Strict mode: any flat net hit is a collision
+        return true;
+      }
+      // Lenient mode: only internal flat nets (excluding the corresponding
+      // one) are collisions
+      if (existing_net != corresponding_flat_net
+          && existing_net->isInternalTo(scope)) {
+        return true;
       }
     }
 
@@ -3956,11 +3965,8 @@ std::string dbBlock::makeNewModNetName(dbModule* parent,
   };
 
   _dbBlock* block = reinterpret_cast<_dbBlock*>(this);
-  return block->makeNewName(parent->getModInst(),
-                            base_name,
-                            uniquify,
-                            block->unique_net_index_,
-                            exists);
+  return block->makeNewName(
+      mod_inst, base_name, uniquify, block->unique_net_index_, exists);
 }
 
 std::string dbBlock::makeNewInstName(dbModInst* parent,

@@ -28,6 +28,7 @@ template class dbTable<_dbChipInst>;
 
 bool _dbChipInst::operator==(const _dbChipInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -48,6 +49,7 @@ bool _dbChipInst::operator==(const _dbChipInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipInst::operator<(const _dbChipInst& rhs) const

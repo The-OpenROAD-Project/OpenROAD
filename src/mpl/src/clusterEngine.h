@@ -97,7 +97,6 @@ class ClusteringEngine
 {
  public:
   ClusteringEngine(odb::dbBlock* block,
-                   sta::dbNetwork* network,
                    utl::Logger* logger,
                    par::PartitionMgr* triton_part,
                    MplObserver* graphics);
@@ -106,6 +105,7 @@ class ClusteringEngine
 
   void setTree(PhysicalHierarchy* tree);
   void setHalos(std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo);
+  void setUseDefHalo(bool use_def_halo);
 
   // Methods to update the tree as the hierarchical
   // macro placement runs.
@@ -227,7 +227,6 @@ class ClusteringEngine
   bool isValidNet(odb::dbNet* net);
 
   odb::dbBlock* block_;
-  sta::dbNetwork* network_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
   MplObserver* graphics_;
@@ -254,6 +253,7 @@ class ClusteringEngine
 
   std::unordered_set<odb::dbInst*> ignorable_macros_;
   std::map<odb::dbInst*, HardMacro::Halo> macro_to_halo_;
+  bool use_def_halo_{false};
 };
 
 }  // namespace mpl
