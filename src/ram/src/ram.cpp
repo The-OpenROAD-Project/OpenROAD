@@ -465,6 +465,25 @@ void RamGen::ramPdngen(const char* power_pin,
                        int hor_width,
                        int hor_pitch)
 {
+  const odb::Rect& die = block_->getDieArea();
+  if (die.dy() < hor_pitch) {
+    logger_->error(
+        RAM,
+        31,
+        "Die height ({} DBU) is less than horizontal strap pitch ({} DBU). "
+        "Use a smaller -hor_layer pitch.",
+        die.dy(),
+        hor_pitch);
+  }
+  if (die.dx() < ver_pitch) {
+    logger_->error(
+        RAM,
+        32,
+        "Die width ({} DBU) is less than vertical strap pitch ({} DBU). "
+        "Use a smaller -ver_layer pitch.",
+        die.dx(),
+        ver_pitch);
+  }
   // need parameters for power and ground nets
   auto power_net = dbNet::create(block_, "VDD");
   auto ground_net = dbNet::create(block_, "VSS");
