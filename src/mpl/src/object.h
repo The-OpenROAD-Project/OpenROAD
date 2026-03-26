@@ -73,18 +73,7 @@ using BundledNetList = std::vector<BundledNet>;
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
 
-enum class ClusterType
-{
-  StdCell,
-  Macro,
-  Mixed,
-  ConstrainedIOs,
-  UnconstrainedIOs,
-  IOBundle,
-  PAD,
-  MacroArray,
-  InterconnectedMacrosArray
-};
+
 
 // Metrics class for logical modules and clusters
 class Metrics
@@ -116,15 +105,28 @@ class Metrics
 class Cluster
 {
  public:
+  enum class Type
+  {
+    StdCell,
+    Macro,
+    Mixed,
+    ConstrainedIOs,
+    UnconstrainedIOs,
+    IOBundle,
+    PAD,
+    MacroArray,
+    InterconnectedMacrosArray
+  };
+
   Cluster(int cluster_id, utl::Logger* logger);
   Cluster(int cluster_id, const std::string& cluster_name, utl::Logger* logger);
 
   int getId() const;
   const std::string& getName() const;
   void setName(const std::string& name);
-  void setClusterType(const ClusterType& cluster_type);
-  ClusterType getClusterType() const;
-  std::string getClusterTypeString() const;
+  void setType(const Type& type);
+  Type getType() const;
+  std::string getTypeString() const;
 
   void addDbModule(odb::dbModule* db_module);
   void addLeafStdCell(odb::dbInst* leaf_std_cell);
@@ -151,9 +153,9 @@ class Cluster
                                     int width,
                                     int height,
                                     bool is_cluster_of_unconstrained_io_pins);
-  bool isIOPadCluster() const { return type_ == ClusterType::PAD; }
+  bool isIOPadCluster() const { return type_ == Type::PAD; }
   void setAsIOPadCluster(const odb::Point& pos, int width, int height);
-  bool isIOBundle() const { return type_ == ClusterType::IOBundle; }
+  bool isIOBundle() const { return type_ == Type::IOBundle; }
   void setAsIOBundle(const odb::Point& pos, int width, int height);
 
   bool isFixedMacro() const { return is_fixed_macro_; }
@@ -161,8 +163,8 @@ class Cluster
 
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
-  void setAsMacroArray() { type_ = ClusterType::MacroArray; }
-  bool isMacroArray() const { return type_ == ClusterType::MacroArray; }
+  void setAsMacroArray() { type_ = Type::MacroArray; }
+  bool isMacroArray() const { return type_ == Type::MacroArray; }
   bool isEmpty() const;
   bool correspondsToLogicalModule() const;
 
@@ -219,7 +221,7 @@ class Cluster
   int id_{-1};
   std::string name_;
 
-  ClusterType type_{ClusterType::Mixed};
+  Type type_{Type::Mixed};
   Metrics metrics_;
 
   std::vector<odb::dbModule*> db_modules_;

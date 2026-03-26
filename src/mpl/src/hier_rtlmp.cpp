@@ -340,7 +340,7 @@ void HierRTLMP::runCoarseShaping()
 
   if (tree_->has_only_macros) {
     logger_->warn(MPL, 27, "Design has only macros!");
-    tree_->root->setClusterType(ClusterType::Macro);
+    tree_->root->setType(Cluster::Type::Macro);
     return;
   }
 
@@ -391,7 +391,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
              parent->getName());
 
   // Current cluster is a hard macro cluster
-  if (parent->getClusterType() == ClusterType::Macro) {
+  if (parent->getType() == Cluster::Type::Macro) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
@@ -1084,14 +1084,14 @@ int HierRTLMP::computePinAccessBaseDepth(const int io_span) const
 {
   int64_t std_cell_area = 0;
   for (auto& cluster : tree_->root->getChildren()) {
-    if (cluster->getClusterType() == ClusterType::StdCell) {
+    if (cluster->getType() == Cluster::Type::StdCell) {
       std_cell_area += cluster->getArea();
     }
   }
 
   if (std_cell_area == 0) {
     for (auto& cluster : tree_->root->getChildren()) {
-      if (cluster->getClusterType() == ClusterType::Mixed) {
+      if (cluster->getType() == Cluster::Type::Mixed) {
         std_cell_area += cluster->getArea();
       }
     }
@@ -1194,7 +1194,7 @@ void HierRTLMP::adjustMacroBlockageWeight()
 
 void HierRTLMP::placeChildren(Cluster* parent)
 {
-  if (parent->getClusterType() == ClusterType::Macro) {
+  if (parent->getType() == Cluster::Type::Macro) {
     placeMacros(parent);
     return;
   }
@@ -1261,7 +1261,7 @@ void HierRTLMP::placeChildren(Cluster* parent)
     cluster->setSoftMacro(std::move(soft_macro));
 
     // merge fences and guides for hard macros within cluster
-    if (cluster->getClusterType() == ClusterType::StdCell) {
+    if (cluster->getType() == Cluster::Type::StdCell) {
       continue;
     }
     odb::Rect fence, guide;
@@ -1650,24 +1650,30 @@ bool HierRTLMP::validUtilization(
       continue;
     }
 
-    switch (cluster->getClusterType()) {
-      case ClusterType::StdCell: {
+    switch (cluster->getType()) {
+      case Cluster::Type::StdCell: {
         std_cell_cluster_area += cluster->getStdCellArea();
         break;
       }
-      case ClusterType::Macro: {
+      case Cluster::Type::Macro: {
         const TilingList& tilings = cluster->getTilings();
         macro_cluster_area += tilings.front().area();
         break;
       }
-      case ClusterType::Mixed: {
+      case Cluster::Type::Mixed: {
         const TilingList& tilings = cluster->getTilings();
         mixed_cluster_macro_area += tilings.front().area();
         mixed_cluster_std_cell_area += cluster->getStdCellArea();
         break;
       }
-      default:
+      case Cluster::Type::ConstrainedIOs:
+      case Cluster::Type::UnconstrainedIOs:
+      case Cluster::Type::IOBundle:
+      case Cluster::Type::PAD:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray:
         break;
+
     }
   }
 
@@ -2617,14 +2623,14 @@ void Pusher::fetchMacroClusters(Cluster* parent,
                                 std::vector<Cluster*>& macro_clusters)
 {
   for (auto& child : parent->getChildren()) {
-    if (child->getClusterType() == ClusterType::Macro) {
+    if (child->getType() == Cluster::Type::Macro) {
       macro_clusters.push_back(child.get());
 
       for (HardMacro* hard_macro : child->getHardMacros()) {
         hard_macros_.push_back(hard_macro);
       }
 
-    } else if (child->getClusterType() == ClusterType::Mixed) {
+    } else if (child->getType() == Cluster::Type::Mixed) {
       fetchMacroClusters(child.get(), macro_clusters);
     }
   }
@@ -2633,7 +2639,7 @@ void Pusher::fetchMacroClusters(Cluster* parent,
 void Pusher::pushMacrosToCoreBoundaries()
 {
   // Case in which the design has nothing but macros.
-  if (root_->getClusterType() == ClusterType::Macro) {
+  if (root_->getType() == Cluster::Type::Macro) {
     return;
   }
 
@@ -2676,13 +2682,13 @@ bool Pusher::designHasSingleCentralizedMacroArray()
   int macro_cluster_count = 0;
 
   for (auto& child : root_->getChildren()) {
-    switch (child->getClusterType()) {
-      case ClusterType::Mixed:
+    switch (child->getType()) {
+      case Cluster::Type::Mixed:
         return false;
-      case ClusterType::Macro:
+      case Cluster::Type::Macro:
         ++macro_cluster_count;
         break;
-      case ClusterType::StdCell: {
+      case Cluster::Type::StdCell: {
         // Note: to check whether or not a std cell cluster is "tiny"
         // we use the area of its SoftMacro abstraction, because the
         // Cluster::getArea() will give us the actual std cell area
@@ -2692,8 +2698,14 @@ bool Pusher::designHasSingleCentralizedMacroArray()
         }
         break;
       }
-      default:
+      case Cluster::Type::ConstrainedIOs:
+      case Cluster::Type::UnconstrainedIOs:
+      case Cluster::Type::IOBundle:
+      case Cluster::Type::PAD:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray:
         break;
+
     }
 
     if (macro_cluster_count > 1) {
