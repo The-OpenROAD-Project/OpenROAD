@@ -20,7 +20,7 @@
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 18900  dbu (18 um).
 [INFO CTS-0021]  Distance between buffers: 2 units (100 um).
-[INFO CTS-0204] A clustering solution was found from clustering size of 8 and clustering diameter of 50.
+[INFO CTS-0204] A clustering solution was found from clustering size of 8 and max clustering diameter of 44.
 [INFO CTS-0205] Better solution may be possible if either -sink_clustering_size, -sink_clustering_max_diameter, or both options are omitted to enable automatic clustering.
 [INFO CTS-0019]  Total number of sinks after clustering: 50.
 [INFO CTS-0024]  Normalized sink region: [(0.808748, 0.583104), (10.0189, 9.59732)].
