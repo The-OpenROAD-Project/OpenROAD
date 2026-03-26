@@ -114,13 +114,19 @@ class dbStaReport : public sta::ReportTcl
 
   void setLogger(Logger* logger);
   void warnMsg(int id, const std::string& formatted_msg);
-  void fileWarnMsg(int id, std::string_view filename, int line,
+  void fileWarnMsg(int id,
+                   std::string_view filename,
+                   int line,
                    const std::string& formatted_msg);
   void errorMsg(int id, const std::string& formatted_msg);
-  void fileErrorMsg(int id, std::string_view filename, int line,
+  void fileErrorMsg(int id,
+                    std::string_view filename,
+                    int line,
                     const std::string& formatted_msg);
   void criticalMsg(int id, const std::string& formatted_msg);
-  void fileCriticalMsg(int id, std::string_view filename, int line,
+  void fileCriticalMsg(int id,
+                       std::string_view filename,
+                       int line,
                        const std::string& formatted_msg);
   size_t printString(const char* buffer, size_t length) override;
 
@@ -705,7 +711,8 @@ void dbSta::reportTimingHistogram(int num_bins,
   sta::Unit* time_unit = sta_->units()->timeUnit();
   utl::Histogram<float> histogram(logger_);
   for (sta::Vertex* vertex : sta_->endpoints()) {
-    float slack = sta::delayAsFloat(sta_->slack(vertex, min_max), min_max, sta_);
+    float slack
+        = sta::delayAsFloat(sta_->slack(vertex, min_max), min_max, sta_);
     if (slack != sta::INF) {  // Ignore unconstrained paths.
       histogram.addData(time_unit->staToUser(slack));
     }
@@ -1010,7 +1017,9 @@ void dbStaReport::warnMsg(int id, const std::string& formatted_msg)
   logger_->warn(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileWarnMsg(int id, std::string_view filename, int line,
+void dbStaReport::fileWarnMsg(int id,
+                              std::string_view filename,
+                              int line,
                               const std::string& formatted_msg)
 {
   logger_->warn(STA, id, "{} line {}, {}", filename, line, formatted_msg);
@@ -1021,7 +1030,9 @@ void dbStaReport::errorMsg(int id, const std::string& formatted_msg)
   logger_->error(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileErrorMsg(int id, std::string_view filename, int line,
+void dbStaReport::fileErrorMsg(int id,
+                               std::string_view filename,
+                               int line,
                                const std::string& formatted_msg)
 {
   logger_->error(STA, id, "{} line {}, {}", filename, line, formatted_msg);
@@ -1032,7 +1043,9 @@ void dbStaReport::criticalMsg(int id, const std::string& formatted_msg)
   logger_->critical(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileCriticalMsg(int id, std::string_view filename, int line,
+void dbStaReport::fileCriticalMsg(int id,
+                                  std::string_view filename,
+                                  int line,
                                   const std::string& formatted_msg)
 {
   logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);

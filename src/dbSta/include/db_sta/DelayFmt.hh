@@ -10,7 +10,8 @@
 #include "sta/Delay.hh"
 
 template <>
-struct fmt::formatter<sta::Delay> : fmt::formatter<float> {
+struct fmt::formatter<sta::Delay> : fmt::formatter<float>
+{
   auto format(const sta::Delay& d, format_context& ctx) const
   {
     return fmt::formatter<float>::format(sta::delayAsFloat(d), ctx);
