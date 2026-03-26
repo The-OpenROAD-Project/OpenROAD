@@ -3,9 +3,12 @@
 
 #include "gc/FlexGC.h"
 
+#include <algorithm>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -49,8 +52,7 @@ std::vector<std::string> getMarkerSourceKey(const frMarker* marker)
         keys.push_back(static_cast<frBTerm*>(src)->getName());
         break;
       case frcInstBlockage:
-        keys.push_back(
-            static_cast<frInstBlockage*>(src)->getInst()->getName());
+        keys.push_back(static_cast<frInstBlockage*>(src)->getInst()->getName());
         break;
       case frcInst:
         keys.push_back(static_cast<frInst*>(src)->getName());

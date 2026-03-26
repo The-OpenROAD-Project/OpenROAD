@@ -1,4 +1,3 @@
-load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
@@ -6,6 +5,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regression_test")
 
 package(features = ["layering_check"])
@@ -44,6 +44,7 @@ filegroup(
     srcs = [
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
+        "drt_aux.py",
         "gcd_nangate45.route_guide",
         "gcd_nangate45.tcl",
         "gcd_nangate45_distributed.tcl",
@@ -54,7 +55,6 @@ filegroup(
         "gcd_sky130hd.guide",
         "helpers.py",
         "helpers.tcl",
-        "drt_aux.py",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
         "sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib",
@@ -179,17 +179,17 @@ doc_check_test(
 
 regression_rule_test(
     name = "aes_nangate45-py_test",
-    test_file = "aes_nangate45.py",
-    test_name = "aes_nangate45",
+    bazel_test_sh = "//test:bazel_test.sh",
     check_log = False,
     data = [
-        ":regression_resources",
         "aes_nangate45.route_guide",
         "aes_nangate45_preroute.def",
+        ":regression_resources",
     ],
-    bazel_test_sh = "//test:bazel_test.sh",
     openroad = "//:openroad",
     regression_test = "//test:regression_test.sh",
     tags = ["manual"],
+    test_file = "aes_nangate45.py",
+    test_name = "aes_nangate45",
     visibility = ["//visibility:public"],
 )

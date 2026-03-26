@@ -20,6 +20,7 @@
 #include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "global.h"
 
