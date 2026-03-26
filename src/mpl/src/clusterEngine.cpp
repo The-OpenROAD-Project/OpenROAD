@@ -2084,10 +2084,10 @@ void ClusteringEngine::createHardMacros()
         if (inst->getHalo()->isSoft()) {
           halo = HardMacro::Halo(inst->getHalo());
         } else {
-        halo = {std::max(inst_halo.xMin(), tree_->default_halo.left),
-                std::max(inst_halo.yMin(), tree_->default_halo.bottom),
-                std::max(inst_halo.xMax(), tree_->default_halo.right),
-                std::max(inst_halo.yMax(), tree_->default_halo.top)};
+          halo = {std::max(inst_halo.xMin(), tree_->default_halo.left),
+                  std::max(inst_halo.yMin(), tree_->default_halo.bottom),
+                  std::max(inst_halo.xMax(), tree_->default_halo.right),
+                  std::max(inst_halo.yMax(), tree_->default_halo.top)};
         }
       } else {
         halo = tree_->default_halo;
