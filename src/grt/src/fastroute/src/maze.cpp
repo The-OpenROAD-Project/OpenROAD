@@ -2227,11 +2227,7 @@ int FastRouteCore::computeTotalWirelength()
 
 int FastRouteCore::computeNetSttWirelength(int netID)
 {
-  int total = 0;
-  for (const auto& edge : sttrees_[netID].edges) {
-    total += edge.len;
-  }
-  return total;
+  return stt_wirelengths_[netID];
 }
 
 int FastRouteCore::computeNetFinalWirelength(int netID)

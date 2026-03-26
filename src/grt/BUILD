@@ -228,7 +228,6 @@ tcl_encode(
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "include/grt/GlobalRouter.h",
         "src/GlobalRouter.i",
         "//:error_swig",
     ],
@@ -236,7 +235,6 @@ tcl_wrap_cc(
     namespace_prefix = "grt",
     root_swig_src = "src/GlobalRouter.i",
     swig_includes = [
-        "include",
         "src",
     ],
 )

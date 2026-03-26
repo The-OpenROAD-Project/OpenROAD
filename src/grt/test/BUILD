@@ -100,6 +100,7 @@ TESTS = [
     "upper_layer_net",
     "write_segments1",
     "write_segments2",
+    "report_net_detour1",
 ]
 
 filegroup(

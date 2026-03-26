@@ -5997,17 +5997,17 @@ void GlobalRouter::reportNetGlobalRoutingDetour(odb::dbNet* net)
   const int after = get(rst_after, net_id);
   const int final_wl_val = get(final_wl, net_id);
 
-  logger_->info(
-      GRT,
-      305,
-      "Net {} detour: STT={} um RST_before={} um RST_after={} um Final={} um "
-      "Detour={} um ({:.1f}%)",
-      net->getName(),
-      stt / dbu,
-      before / dbu,
-      after / dbu,
-      final_wl_val / dbu,
-      (final_wl_val - stt) / dbu,
-      stt > 0 ? 100.0 * (final_wl_val - stt) / stt : 0.0);
+  logger_->info(GRT,
+                305,
+                "Net {} detour: STT={} um RST_before_congestion={} um "
+                "RST_after_congestion={} um Final={} um "
+                "Detour={} um ({:.1f}%)",
+                net->getName(),
+                stt / dbu,
+                before / dbu,
+                after / dbu,
+                final_wl_val / dbu,
+                (final_wl_val - stt) / dbu,
+                stt > 0 ? 100.0 * (final_wl_val - stt) / stt : 0.0);
 }
 }  // namespace grt
