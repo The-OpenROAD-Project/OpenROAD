@@ -23,11 +23,9 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "colorGenerator.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
 #include "sta/Clock.hh"
@@ -528,9 +526,10 @@ EndPointSlackMap* ChartsWidget::getData(const std::string& path_group,
         // filter by clock and path_group
         endpoints_cache_[key]
             = stagui_->getEndPointToSlackMap(path_group, clock_filter);
+      } else {
+        // filter only by clock
+        endpoints_cache_[key] = stagui_->getEndPointToSlackMap(clock_filter);
       }
-      // filter only by clock
-      endpoints_cache_[key] = stagui_->getEndPointToSlackMap(clock_filter);
     } else if (!path_group.empty()) {
       // filter only by path_group
       endpoints_cache_[key] = stagui_->getEndPointToSlackMap(path_group);
@@ -873,13 +872,13 @@ void HistogramView::setVisualConfig()
   chart_->setTitle("Endpoint Slack");
 }
 
-QBarSet* HistogramView::createBarSet(const QString& label,
-                                     const QColor& border_color,
-                                     const QColor& color)
+QBarSet* HistogramView::createBarSet(const QString& label, bool invisible)
 {
   QBarSet* bar_set = new QBarSet(label);
-  bar_set->setBorderColor(border_color);
-  bar_set->setColor(color);
+  if (invisible) {
+    bar_set->setBorderColor(Qt::transparent);
+    bar_set->setColor(Qt::transparent);
+  }
 
   connect(bar_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
 
@@ -1057,16 +1056,14 @@ QStackedBarSeries* HistogramView::populateSeries()
 {
   // Create bar series
   QStackedBarSeries* series = new QStackedBarSeries(this);
-  QBarSet* invisible = createBarSet("", Qt::transparent, Qt::transparent);
-  const int max_bin_count = all_histogram_->getMaxBinCount();
   if (path_groups_.empty()) {
     // Default histogram
-    QBarSet* pos_set = createBarSet("Positive Slack",
-                                    0x006400,   // darkgreen
-                                    0x90ee90);  // lightgreen
-    QBarSet* neg_set = createBarSet("Negative Slack",
-                                    0x8b0000,   // darkred
-                                    0xf08080);  // lightcoral
+    QBarSet* pos_set = createBarSet("Positive Slack");
+    pos_set->setBorderColor(0x006400);  // darkgreen
+    pos_set->setColor(0x90ee90);        // lightgreen
+    QBarSet* neg_set = createBarSet("Negative Slack");
+    neg_set->setBorderColor(0x8b0000);  // darkred
+    neg_set->setColor(0xf08080);        // lightcoral
 
     // Populate bar series
     for (const auto& bucket : buckets_.negative) {
@@ -1082,10 +1079,8 @@ QStackedBarSeries* HistogramView::populateSeries()
     series->append(neg_set);
   } else {
     // Stacked histogram
-    ColorGenerator generator;
     for (int i = path_groups_.size() - 1; i > -1; i--) {
-      QColor color = generator.getQColor();
-      QBarSet* bar_set = createBarSet(path_groups_[i], color, color);
+      QBarSet* bar_set = createBarSet(path_groups_[i]);
       // Populate bar series
       for (const auto& bucket : pins_bucket_[i]) {
         *bar_set << bucket.size();
@@ -1095,6 +1090,8 @@ QStackedBarSeries* HistogramView::populateSeries()
   }
 
   // Populate invisible barset
+  QBarSet* invisible = createBarSet("", true);
+  const int max_bin_count = all_histogram_->getMaxBinCount();
   for (const auto& bucket : buckets_.negative) {
     *invisible << max_bin_count - bucket.size();
   }

@@ -84,9 +84,7 @@ class HistogramView : public QChartView
                        const PinBuckets& pin_bins);
   void setVisualConfig();
 
-  QBarSet* createBarSet(const QString& label,
-                        const QColor& border_color,
-                        const QColor& color);
+  QBarSet* createBarSet(const QString& label, bool invisible = false);
   QStackedBarSeries* populateSeries();
 
   void setXAxisConfig(int all_bars_count);
