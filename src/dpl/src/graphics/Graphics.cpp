@@ -19,13 +19,9 @@
 namespace dpl {
 
 Graphics::Graphics(Opendp* dp,
-                   float min_displacement,
                    const odb::dbInst* debug_instance,
                    bool paint_pixels)
-    : dp_(dp),
-      debug_instance_(debug_instance),
-      min_displacement_(min_displacement),
-      paint_pixels_(paint_pixels)
+    : dp_(dp), debug_instance_(debug_instance), paint_pixels_(paint_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
 }

@@ -267,7 +267,7 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
     auto layerNum = (gridZ + 1) * 2;
     auto layer = getTech()->getLayer(layerNum);
     if (!router_cfg_->USENONPREFTRACKS || layer->isUnidirectional()) {
-      bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+      bool isH = layer->isHorizontal();
       if (isH && dstMazeIdx1.y() == dstMazeIdx2.y()) {
         auto gap = abs(nextPoint.y() - dstPoint1.y());
         if (gap
@@ -682,7 +682,7 @@ void FlexGridGraph::traceBackPath(const FlexWavefrontGrid& currGrid,
     prevDir = currDir;
   }
   // trace back according to grid prev dir
-  while (isSrc(currX, currY, currZ) == false) {
+  while (!isSrc(currX, currY, currZ)) {
     // get last direction
     currDir = getPrevAstarNodeDir({currX, currY, currZ});
     root.emplace_back(currX, currY, currZ);

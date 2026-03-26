@@ -2919,8 +2919,16 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case28)
   ASSERT_NE(internal_net_after, nullptr);
   EXPECT_EQ(internal_net, internal_net_after);
 
-  // Verify that a new port "_019__0" is created in H1 to avoid collision
-  dbModBTerm* punched_port = mod_h1->findModBTerm("_019__0");
+  // Verify that a new port is created in H1 to avoid collision with "_019_".
+  // The exact suffix depends on the global uniquify counter.
+  dbModBTerm* punched_port = nullptr;
+  for (dbModBTerm* bterm : mod_h1->getModBTerms()) {
+    std::string bname = bterm->getName();
+    if (bname.substr(0, 5) == "_019_" && bname != "_019_") {
+      punched_port = bterm;
+      break;
+    }
+  }
   ASSERT_NE(punched_port, nullptr);
   EXPECT_EQ(punched_port->getIoType(), dbIoType::INPUT);
 
@@ -3196,6 +3204,168 @@ TEST_F(TestInsertBuffer, BeforeLoads_Case32)
   EXPECT_EQ(num_warning, 0);
 
   // Write verilog and check the content
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Reproduce the real bug: remove_buffers + insertBufferBeforeLoad
+// on a hierarchical design.
+//
+// Synthesis creates a submodule (MOD0) with two output ports:
+//   MOD0: LOGIC0_X1 drvr -> Z_a, BUF_X1 cross_buf: Z_a -> Z_b
+// At the top level:
+//   MOD0 mod0 (.Z_a(port_a), .Z_b(port_b))
+//
+// The cross_buf connects two port-named nets (port_a and port_b).
+// remove_buffers removes it, merging port_b into port_a.
+// BTerm port_b ends up on net port_a — name mismatch.
+//
+// Then insertBufferBeforeLoad inserts a buffer before port_b.
+// Without the fix, createNewFlatNet gives the new net a generic name,
+// and write_verilog produces:
+//   MOD0 mod0 (.Z_a(port_a), .Z_b(port_b));  -- submodule drives port_b
+//   assign port_b = net1;                     -- assign also drives port_b
+// This is a multi-driver on port_b, rejected by Kepler LEC.
+TEST_F(TestInsertBuffer, BeforeLoads_Case33)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // Verify initial state: BTerm port_b matches its net name
+  dbBTerm* bterm_b = block_->findBTerm("port_b");
+  ASSERT_NE(bterm_b, nullptr);
+  EXPECT_STREQ(bterm_b->getConstName(), bterm_b->getNet()->getConstName());
+
+  // --- Step 1: remove_buffers (reproduces the real flow) ---
+  // Removes cross_buf that connects port_a -> port_b.
+  // Both nets have BTerms, so survivor = input net (port_a).
+  // BTerm port_b moves to net port_a — name mismatch.
+  resizer_.removeBuffers({});
+
+  EXPECT_EQ(block_->findInst("cross_buf"), nullptr)
+      << "cross_buf should have been removed by remove_buffers";
+  EXPECT_STREQ(bterm_b->getNet()->getConstName(), "port_a")
+      << "After remove_buffers, BTerm port_b should be on net port_a "
+         "(name mismatch)";
+
+  // --- Step 2: insertBufferBeforeLoad on port_b (reproduces buffer_ports) ---
+  dbNet* target_net = bterm_b->getNet();
+  dbInst* new_buf = target_net->insertBufferBeforeLoad(
+      bterm_b, buf_x4_master, nullptr, "output");
+  ASSERT_NE(new_buf, nullptr);
+
+  // The buffer output net must be named "port_b" — not a generic name.
+  // Without the fix, createNewFlatNet produces "net1" because
+  // bterm_name ("port_b") != net_name ("port_a"), skipping the rename.
+  // This causes write_verilog to emit a spurious assign statement,
+  // and in hierarchical designs, creates a multi-driver because the
+  // submodule port map still references port_b.
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+  EXPECT_EQ(bterm_b->getNet(), buf_out_net);
+  EXPECT_STREQ(buf_out_net->getConstName(), "port_b")
+      << "Buffer output net must be named after the BTerm (port_b), "
+         "not a generic name. Without the fix, this would be 'net1' "
+         "and write_verilog would emit 'assign port_b = net1;'";
+
+  // Write verilog and compare
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
+}
+
+// Bug reproduction: makeNewNetName only checks flat net uniqueness, not
+// ModNet or ModBTerm names. In a hierarchical design, a submodule port
+// named "net" creates a ModBTerm/ModNet "net" in the module. The
+// corresponding flat net has a different hierarchical name (from the
+// parent's connection). insertBufferBeforeLoads with IF_NEEDED uniquify
+// creates flat net "sub0/net" whose base name "net" collides with the
+// existing ModBTerm/ModNet "net", producing invalid emitted Verilog.
+//
+// Root cause from sky130hd/microwatt CTS LEC failure:
+//   SplitLoadMove calls insertBufferBeforeLoads with nullptr net base name
+//   and IF_NEEDED uniquify. createNewFlatNet defaults to "net" base name.
+//   makeNewNetName(parent, "net", IF_NEEDED) only checks findNet(), missing
+//   the existing ModNet/ModBTerm "net" in the target module.
+TEST_F(TestInsertBuffer, BeforeLoads_Case34)
+{
+  const auto* test_info = testing::UnitTest::GetInstance()->current_test_info();
+  const std::string test_name
+      = std::string(test_info->test_suite_name()) + "_" + test_info->name();
+
+  int num_warning = 0;
+  readVerilogAndSetup(test_name + "_pre.v");
+
+  dbMaster* buf_x4_master = db_->findMaster("BUF_X4");
+  ASSERT_NE(buf_x4_master, nullptr);
+
+  // Verify initial state: module SUB has ModBTerm "net" (output port)
+  dbModule* sub_mod = block_->findModule("SUB");
+  ASSERT_NE(sub_mod, nullptr);
+  EXPECT_NE(sub_mod->findModBTerm("net"), nullptr)
+      << "SUB should have ModBTerm 'net' (output port)";
+  EXPECT_NE(sub_mod->getModNet("net"), nullptr)
+      << "SUB should have ModNet 'net' (port connection)";
+
+  // The flat net for the "net" port comes from the parent's connection,
+  // so there is no flat net named "sub0/net". This naturally occurs in
+  // hierarchical designs where the flat net name is determined by the
+  // parent module's wire name, not the child module's port name.
+  EXPECT_EQ(block_->findNet("sub0/net"), nullptr)
+      << "No flat net named 'sub0/net' should exist; the port's flat net "
+         "has the parent's wire name";
+
+  // Pre sanity check
+  sta_->updateTiming(true);
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Find the flat net that drives the "net" port in SUB
+  dbITerm* drv_z = block_->findITerm("sub0/drv/Z");
+  ASSERT_NE(drv_z, nullptr);
+  dbNet* orig_net = drv_z->getNet();
+  ASSERT_NE(orig_net, nullptr);
+
+  // Insert buffer before load2 (reproduces SplitLoadMove code path:
+  // new_buf_base_name="split", new_net_base_name=nullptr, IF_NEEDED)
+  dbITerm* load2_a = block_->findITerm("sub0/load2/A");
+  ASSERT_NE(load2_a, nullptr);
+
+  std::set<dbObject*> load_pins;
+  load_pins.insert(load2_a);
+
+  dbInst* new_buf
+      = orig_net->insertBufferBeforeLoads(load_pins,
+                                          buf_x4_master,
+                                          nullptr,
+                                          "split",
+                                          nullptr,
+                                          dbNameUniquifyType::IF_NEEDED,
+                                          false);
+  ASSERT_NE(new_buf, nullptr);
+
+  // Post sanity check - detects flat net / ModNet name collision
+  num_warning = db_network_->checkAxioms();
+  num_warning += sta_->checkSanity();
+  EXPECT_EQ(num_warning, 0);
+
+  // Key assertion: the buffer output net must NOT have base name "net"
+  // because the module already has a ModBTerm/ModNet "net".
+  // Without the fix, makeNewNetName only checks flat nets, creating
+  // a flat net "sub0/net" that collides with the existing ModBTerm "net"
+  // → duplicate "wire net;" in emitted Verilog.
+  dbNet* buf_out_net = new_buf->findITerm("Z")->getNet();
+  ASSERT_NE(buf_out_net, nullptr);
+  EXPECT_STRNE(block_->getBaseName(buf_out_net->getConstName()), "net")
+      << "New flat net base name must not collide with existing ModBTerm "
+         "'net'. Without the fix, makeNewNetName misses ModNet/ModBTerm "
+         "checks, causing duplicate wire declarations in emitted Verilog.";
+
+  // Write verilog and compare
   writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 

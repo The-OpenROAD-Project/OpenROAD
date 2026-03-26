@@ -133,7 +133,7 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
     sta::Path* end_path = sta_->vertexWorstSlackPath(end, max_);
     sta::Vertex* const changed = recoverPower(end_path, end_slack_before);
     if (changed) {
-      estimate_parasitics_->updateParasitics(true);
+      estimate_parasitics_->updateParasitics();
       sta_->findRequireds();
       const sta::Slack end_slack_after = sta_->slack(end, max_);
 
@@ -380,11 +380,8 @@ bool RecoverPower::meetsSizeCriteria(const sta::LibertyCell* cell,
   }
   const odb::dbMaster* candidate_cell = db_network_->staToDb(candidate);
   const odb::dbMaster* curr_cell = db_network_->staToDb(cell);
-  if (candidate_cell->getWidth() <= curr_cell->getWidth()
-      && candidate_cell->getHeight() == curr_cell->getHeight()) {
-    return true;
-  }
-  return false;
+  return candidate_cell->getWidth() <= curr_cell->getWidth()
+         && candidate_cell->getHeight() == curr_cell->getHeight();
 }
 
 sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,

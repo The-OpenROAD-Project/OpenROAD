@@ -27,6 +27,8 @@ Net::Net(odb::dbNet* net, bool has_wires)
       is_merged_net_(false),
       is_dirty_net_(false),
       is_clk_(false),
+      restore_route_from_guides_(false),
+      are_segments_restored_(false),
       is_connected_to_pad_or_macro_(false)
 {
 }
@@ -148,11 +150,7 @@ bool Net::hasStackedVias(odb::dbTechLayer* max_routing_layer)
     }
   }
 
-  if (via_points.size() != bterms_above_max_layer) {
-    return false;
-  }
-
-  return true;
+  return via_points.size() == bterms_above_max_layer;
 }
 
 void Net::saveLastPinPositions()

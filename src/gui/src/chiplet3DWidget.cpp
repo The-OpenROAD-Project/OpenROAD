@@ -73,7 +73,10 @@ void Chiplet3DWidget::buildGeometries()
     return;
   }
   const odb::Cuboid global_cuboid = chip_->getCuboid();
-  const odb::UnfoldedModel model(logger_, chip_);
+  const odb::UnfoldedModel* model = chip_->getDb()->getUnfoldedModel();
+  if (!model) {
+    return;
+  }
   const odb::dbTransform center_transform
       = odb::dbTransform(odb::Point3D(-global_cuboid.xCenter(),
                                       -global_cuboid.yCenter(),
@@ -98,7 +101,7 @@ void Chiplet3DWidget::buildGeometries()
   }
 
   int index = 0;
-  for (const auto& chip : model.getChips()) {
+  for (const auto& chip : model->getChips()) {
     odb::Cuboid draw_cuboid = chip.cuboid;
     center_transform.apply(draw_cuboid);
     // Color by Depth (proportional to Z)

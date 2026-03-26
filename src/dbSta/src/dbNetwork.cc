@@ -752,8 +752,9 @@ ObjectId dbNetwork::id(const Port* port) const
     const dbObject* obj = reinterpret_cast<const dbObject*>(port);
     return getDbNwkObjectId(obj);
   }
-  // default
-  return ConcreteNetwork::id(port);
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
+  return (ConcreteNetwork::id(port) << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 // Note:
@@ -766,16 +767,16 @@ ObjectId dbNetwork::id(const Port* port) const
 
 ObjectId dbNetwork::id(const Cell* cell) const
 {
-  // in hierarchical flow we use the object id for the index
-  if (hasHierarchy()) {
-    if (!isConcreteCell(cell)) {
-      const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
-      return getDbNwkObjectId(obj);
-    }
+  // top_cell_ is a ConcreteCell but isConcreteCell() returns false for it;
+  // guard against reinterpret_cast to dbObject which would crash.
+  if (hasHierarchy() && !isConcreteCell(cell) && cell != top_cell_) {
+    const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
+    return getDbNwkObjectId(obj);
   }
-  // default behaviour use the concrete cell.
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  return ccell->id();
+  return (ccell->id() << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -983,10 +984,7 @@ dbModulePortIterator::dbModulePortIterator(dbModule* cell)
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_ != end_) {
-    return true;
-  }
-  return false;
+  return iter_ != end_;
 }
 
 Port* dbModulePortIterator::next()
@@ -1107,10 +1105,7 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module) {
-      return false;
-    }
-    return true;
+    return db_module == nullptr;
   }
   return instance != top_instance_;
 }
@@ -2149,18 +2144,20 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
   dbChip* chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();
-    for (dbLib* lib : db_->getLibs()) {
-      makeLibrary(lib);
-    }
-
-    for (dbModule* module : block_->getModules()) {
-      // top_module is not a hierarchical module in this context.
-      if (module != block_->getTopModule()) {
-        registerHierModule(dbToSta(module));
+    if (block_) {
+      for (dbLib* lib : db_->getLibs()) {
+        makeLibrary(lib);
       }
-    }
 
-    readDbNetlistAfter();
+      for (dbModule* module : block_->getModules()) {
+        // top_module is not a hierarchical module in this context.
+        if (module != block_->getTopModule()) {
+          registerHierModule(dbToSta(module));
+        }
+      }
+
+      readDbNetlistAfter();
+    }
   }
 
   for (dbNetworkObserver* observer : observers_) {
@@ -2908,8 +2905,10 @@ Net* dbNetwork::makeNet(const char* base_name,
                         const odb::dbNameUniquifyType& uniquify)
 {
   // Create a unique full name for a new net
+  odb::dbModInst* mod_inst = getModInst(parent);
+  odb::dbModule* parent_module = mod_inst ? mod_inst->getMaster() : nullptr;
   std::string full_name
-      = block_->makeNewNetName(getModInst(parent), base_name, uniquify);
+      = block_->makeNewNetName(parent_module, base_name, uniquify);
 
   // Create a new net
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
@@ -3437,7 +3436,7 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
 
 LibertyCell* dbNetwork::libertyCell(Cell* cell) const
 {
-  if (isConcreteCell(cell) == false) {
+  if (!isConcreteCell(cell)) {
     dbMaster* master = nullptr;
     dbModule* module = nullptr;
     staToDb(cell, master, module);
@@ -3543,10 +3542,7 @@ bool dbNetwork::isBus(const Port* port) const
   dbBTerm* bterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
-  if (modbterm && modbterm->isBusPort()) {
-    return true;
-  }
-  return false;
+  return modbterm && modbterm->isBusPort();
 }
 
 int dbNetwork::fromIndex(const Port* port) const
@@ -3802,7 +3798,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
         dbModITerm* moditerm = nullptr;
         staToDb(pin, iterm, bterm, moditerm);
         driver_pin = const_cast<Pin*>(pin);
-        if (hier == false) {
+        if (!hier) {
           return modnet->getParent();
         }
         if (bterm) {
@@ -3909,11 +3905,7 @@ bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
 
   dbNet* flat_net1 = findFlatDbNet(net1);
   dbNet* flat_net2 = findFlatDbNet(net2);
-  if (flat_net1 != nullptr && flat_net1 == flat_net2) {
-    return true;
-  }
-
-  return false;
+  return flat_net1 != nullptr && flat_net1 == flat_net2;
 }
 
 void DbNetConnectedToBTerm::operator()(const Pin* pin)
@@ -4202,7 +4194,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
     //
     //
 
-    if (db_net_search_ == false) {
+    if (!db_net_search_) {
       dbNet* db_net;
       odb::dbModNet* db_modnet;
       db_network_->staToDb(search_net_, db_net, db_modnet);
@@ -4313,10 +4305,7 @@ odb::dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 
 bool dbNetwork::hasHierarchicalElements() const
 {
-  if (!block()->getModNets().empty()) {
-    return true;
-  }
-  return false;
+  return !block()->getModNets().empty();
 }
 
 class AccumulateNetFlatLoadPins : public PinVisitor
@@ -4845,7 +4834,7 @@ void dbNetwork::checkSanityNetNames() const
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
     std::set<odb::dbModNet*> mod_nets;
-    if (net->findRelatedModNets(mod_nets) && mod_nets.empty() == false) {
+    if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
         if (net->getName() == mod_net->getHierarchicalName()) {
@@ -5016,7 +5005,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
     }
 
     // Report inconsistent point details
-    if (consistent == false) {
+    if (!consistent) {
       logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
       logger_->report("  Netlist drivers:");
       for (const Pin* pin : netlist_drivers) {

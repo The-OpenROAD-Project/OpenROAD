@@ -185,12 +185,15 @@ The `global_placement_debug` command initiates a debug mode, enabling real-time 
 
 ```tcl
 global_placement_debug
-    [-pause] 
-    [-update]
-    [-inst]
+    [-pause pause]
+    [-update update]
+    [-inst inst]
+    [-start_iter start_iter]
+    [-start_rudy start_rudy]
+    [-rudy_stride rudy_stride]
+    [-images_path images_path]
     [-draw_bins]
     [-initial]
-    [-start_iter]
     [-generate_images]
 ```
 
@@ -198,12 +201,15 @@ global_placement_debug
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Useful for closely monitoring the progression of the placement algorithm. Allowed values are integers, default is 10. |
-| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is 10.  |
-| `-inst` | Targets a specific instance name for debugging focus. Allowed value is a string, the default behavior focuses on no specific instance. |
+| `-pause` | Number of iterations between pauses during debugging. Allows for visualization of the current state. Allowed values are integers, default is `10`. |
+| `-update` | Defines the frequency (in iterations) at which the tool refreshes its layout output to display the latest state during debugging. Allowed values are integers, default is `10`. |
+| `-inst` | Targets a specific instance name for debugging focus. The default behavior focuses on no specific instance. |
+| `-start_iter` | Start debug mode from this iteration. |
+| `-start_rudy` | Start RUDY debug from this iteration. |
+| `-rudy_stride` | Stride for RUDY debug iterations. Allowed values are integers, default is `1`. |
+| `-images_path` | Path for saving generated images. |
 | `-draw_bins` | Activates visualization of placement bins, showcasing their density (indicated by the shade of white) and the direction of forces acting on them (depicted in red). The default setting is disabled. |
 | `-initial` | Pauses the debug process during the initial placement phase. The default setting is disabled. |
-| `-start_iter` | Start debug mode from such iteration. |
 | `-generate_images` | Generates a GIF animation showing the placement progression and a GIF composed of images right before each routability revert. Also saves snapshot images at the end of each routability and timing-driven iteration, including heatmaps. |
 
 Example: `global_placement_debug -pause 100 -update 1 -initial -draw_bins -inst _614_`
@@ -315,4 +321,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

@@ -52,6 +52,9 @@ inline constexpr uint32_t kSchemaInitial = 57;
 
 inline constexpr uint32_t kSchemaMinor = 127;  // Current revision number
 
+// Revision where chip_bump_ back-reference was added to dbBTerm
+inline constexpr uint32_t kSchemaBtermChipBump = 127;
+
 // Revision where dbTechLayer::wrong_way_min_width_ was added
 inline constexpr uint32_t kSchemaTechLayerMinWidthWrongway = 126;
 
@@ -282,6 +285,7 @@ class _dbNameCache;
 class _dbTech;
 class _dbLib;
 class _dbGDSLib;
+class UnfoldedModel;
 // User Code End Classes
 
 class _dbDatabase : public _dbObject
@@ -335,6 +339,8 @@ class _dbDatabase : public _dbObject
 
   utl::Logger* logger_;
   std::set<dbDatabaseObserver*> observers_;
+  UnfoldedModel* unfolded_model_;  // non-persistent object
+
   // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj);

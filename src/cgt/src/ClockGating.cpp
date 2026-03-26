@@ -913,19 +913,22 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
           abc::Abc_ObjAddFanin(obj, pi);
         }
         obj_stack.emplace_back(obj);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::zero: {
         abc::Abc_Obj_t* zero_node = abc::Abc_NtkCreateNodeConst0(abc_network);
         abc::Abc_Obj_t* zero_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(zero_net, zero_node);
         obj_stack.emplace_back(zero_net);
+        break;
       }
       case sta::FuncExpr::Op::one: {
         abc::Abc_Obj_t* one_node = abc::Abc_NtkCreateNodeConst1(abc_network);
         abc::Abc_Obj_t* one_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(one_net, one_node);
         obj_stack.emplace_back(one_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::not_: {
         auto obj = obj_stack.back();
         obj_stack.pop_back();
@@ -933,7 +936,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* inv_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(inv_net, inv_node);
         obj_stack.emplace_back(inv_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::and_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -945,7 +949,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* and_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(and_net, and_node);
         obj_stack.emplace_back(and_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::or_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -956,7 +961,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* or_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(or_net, or_node);
         obj_stack.emplace_back(or_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::xor_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -968,7 +974,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* xor_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(xor_net, xor_node);
         obj_stack.emplace_back(xor_net);
-      } break;
+        break;
+      }
     }
   }
   assert(obj_stack.size() == 1);

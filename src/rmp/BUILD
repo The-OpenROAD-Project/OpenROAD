@@ -4,6 +4,7 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -36,12 +37,10 @@ cc_library(
     hdrs = [
         "include/rmp/Restructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     defines = ["ABC_NAMESPACE=abc"],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
@@ -78,11 +77,9 @@ cc_library(
     hdrs = [
         "include/rmp/MakeRestructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rmp",
@@ -124,4 +121,17 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/rmp.tcl",
+    ],
+    visibility = ["//src/rmp/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rmp/test:__pkg__"],
 )

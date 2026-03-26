@@ -30,38 +30,5 @@
 [INFO GPL-0021] Large instances area:            0.000 um^2
 [INFO GPL-0154] Identified 294 placed instances
 [INFO GPL-0155] Identified 0 not placed instances
-[INFO GPL-0156] Identified all instances as placed. Unlocking all instances and running nesterov from scratch.
-[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
-[INFO GPL-0023] Placement target density:       0.7000
-[INFO GPL-0024] Movable insts average area:      2.108 um^2
-[INFO GPL-0025] Ideal bin area:                  3.011 um^2
-[INFO GPL-0026] Ideal bin count:                   316
-[INFO GPL-0027] Total bin area:                953.876 um^2
-[INFO GPL-0028] Bin count (X, Y):          16 ,     16
-[INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
-[INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] ---- Execute Nesterov Global Placement.
-[INFO GPL-0031] HPWL: Half-Perimeter Wirelength
-Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
----------------------------------------------------------------
-        0 |   0.2466 |  2.495867e+03 |   +0.00% |  1.93e-08 |      
-       10 |   0.3732 |  2.411577e+03 |   -3.38% |  2.85e-08 |      
-       20 |   0.3347 |  2.423753e+03 |   +0.50% |  4.20e-08 |      
-       30 |   0.3007 |  2.446505e+03 |   +0.94% |  6.18e-08 |      
-       40 |   0.2741 |  2.478868e+03 |   +1.32% |  9.10e-08 |      
-       50 |   0.2389 |  2.498691e+03 |   +0.80% |  1.34e-07 |      
-       60 |   0.2067 |  2.520472e+03 |   +0.87% |  1.98e-07 |      
-       70 |   0.1770 |  2.541236e+03 |   +0.82% |  2.91e-07 |      
-       80 |   0.1454 |  2.562968e+03 |   +0.86% |  4.29e-07 |      
-       90 |   0.1175 |  2.573346e+03 |   +0.40% |  6.32e-07 |      
-       99 |   0.0986 |  2.586218e+03 |          |  9.30e-07 |      
----------------------------------------------------------------
-[INFO GPL-1001] Global placement finished at iteration 99
-[INFO GPL-1002] Placed Cell Area              619.7347
-[INFO GPL-1003] Available Free Area           953.8760
-[INFO GPL-1004] Minimum Feasible Density        0.6500 (cell_area / free_area)
-[INFO GPL-1006]   Suggested Target Densities:
-[INFO GPL-1007]     - For 90% usage of free space: 0.7219
-[INFO GPL-1008]     - For 80% usage of free space: 0.8121
-[INFO GPL-1014] Final placement area: 619.73 (+0.00%)
+[INFO GPL-0156] Identified all instances as placed. Skipping incremental mode
 No differences found.

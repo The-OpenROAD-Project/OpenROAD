@@ -21,6 +21,7 @@ template class dbTable<_dbTechLayerSpacingEolRule>;
 bool _dbTechLayerSpacingEolRule::operator==(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.exact_width_valid != rhs.flags_.exact_width_valid) {
     return false;
   }
@@ -250,6 +251,7 @@ bool _dbTechLayerSpacingEolRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerSpacingEolRule::operator<(

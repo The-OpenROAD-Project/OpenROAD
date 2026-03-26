@@ -49,6 +49,7 @@ or_integration_tests(
     rdl_route_keep_existing
     rdl_route_max_iterations
     rdl_route_ports
+    rdl_route_probe
     rdl_route_single_target
     rdl_route_skip_iterm
     rdl_route_via

@@ -36,9 +36,9 @@ struct BundledNet;
 class Cluster;
 class HardMacro;
 class SoftMacro;
-class Snapper;
 class SACoreSoftMacro;
 class SACoreHardMacro;
+class Snapper;
 
 using BoundaryToRegionsMap = std::map<Boundary, std::queue<odb::Rect>>;
 using SoftMacroNameToIdMap = std::map<std::string, int>;
@@ -65,8 +65,7 @@ struct PatternParameters
 class HierRTLMP
 {
  public:
-  HierRTLMP(sta::dbNetwork* network,
-            odb::dbDatabase* db,
+  HierRTLMP(odb::dbDatabase* db,
             utl::Logger* logger,
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
@@ -78,9 +77,14 @@ class HierRTLMP
   // Hierarchical Macro Placement Related Options
   void setGlobalFence(odb::Rect global_fence);
   void setDefaultHalo(int halo_width, int halo_height);
+  void setUseDefHalo(bool use_def_halo);
   void setGuidanceRegions(
       const std::map<odb::dbInst*, odb::Rect>& guidance_regions);
-  void setMacroHalo(odb::dbInst* macro, int halo_width, int halo_height);
+  void setMacroHalo(odb::dbInst* macro,
+                    int left,
+                    int bottom,
+                    int right,
+                    int top);
 
   // Clustering Related Options
   void setClusterSize(int max_num_macro,
@@ -260,7 +264,6 @@ class HierRTLMP
   template <typename SACore>
   void writeCostFile(const std::string& file_name_prefix, SACore* sa_core);
 
-  sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   utl::Logger* logger_ = nullptr;
@@ -317,6 +320,7 @@ class HierRTLMP
 
   bool skip_macro_placement_ = false;
   bool keep_clustering_data_{false};
+  bool use_def_halo_{false};
 
   std::unique_ptr<MplObserver> graphics_;
   bool is_debug_only_final_result_{false};
@@ -358,55 +362,6 @@ class Pusher
 
   std::vector<odb::Rect> io_blockages_;
   std::vector<HardMacro*> hard_macros_;
-};
-
-class Snapper
-{
- public:
-  Snapper(utl::Logger* logger);
-  Snapper(utl::Logger* logger, odb::dbInst* inst);
-
-  void setMacro(odb::dbInst* inst) { inst_ = inst; }
-  void snapMacro();
-
- private:
-  struct LayerData
-  {
-    odb::dbTrackGrid* track_grid;
-    std::vector<int> available_positions;
-    // ordered by pin centers
-    std::vector<odb::dbITerm*> pins;
-  };
-  // ordered by TrackGrid layer number
-  using LayerDataList = std::vector<LayerData>;
-  using TrackGridToPinListMap
-      = std::map<odb::dbTrackGrid*, std::vector<odb::dbITerm*>>;
-
-  void snap(const odb::dbTechLayerDir& target_direction);
-  void alignWithManufacturingGrid(int& origin);
-  void setOrigin(int origin, const odb::dbTechLayerDir& target_direction);
-  int totalAlignedPins(const LayerDataList& layers_data_list,
-                       const odb::dbTechLayerDir& direction,
-                       bool error_unaligned_right_way_on_grid = false);
-
-  LayerDataList computeLayerDataList(
-      const odb::dbTechLayerDir& target_direction);
-  odb::dbTechLayer* getPinLayer(odb::dbMPin* pin);
-  void getTrackGridPattern(odb::dbTrackGrid* track_grid,
-                           int pattern_idx,
-                           int& origin,
-                           int& step,
-                           const odb::dbTechLayerDir& target_direction);
-  int getPinOffset(odb::dbITerm* pin, const odb::dbTechLayerDir& direction);
-  void snapPinToPosition(odb::dbITerm* pin,
-                         int position,
-                         const odb::dbTechLayerDir& direction);
-  void attemptSnapToExtraPatterns(int start_index,
-                                  const LayerDataList& layers_data_list,
-                                  const odb::dbTechLayerDir& target_direction);
-
-  utl::Logger* logger_;
-  odb::dbInst* inst_;
 };
 
 }  // namespace mpl

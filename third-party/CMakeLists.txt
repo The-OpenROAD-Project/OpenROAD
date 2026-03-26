@@ -73,3 +73,5 @@ target_include_directories(mockturtle
     ./mockturtle/lib/lorina/
     ./mockturtle/lib/parallel_hashmap/
 )
+
+add_subdirectory(lodepng)

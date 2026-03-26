@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -105,11 +106,9 @@ cc_library(
     hdrs = [
         "include/rcx/MakeOpenRCX.h",
     ],
-    copts = [
-        "-Isrc/rcx/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rcx",
@@ -163,4 +162,18 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/OpenRCX.tcl",
+        "src/OpenRCX_process.tcl",
+    ],
+    visibility = ["//src/rcx/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rcx/test:__pkg__"],
 )

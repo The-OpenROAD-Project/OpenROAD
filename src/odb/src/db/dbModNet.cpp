@@ -26,6 +26,7 @@
 #include <functional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "boost/container/small_vector.hpp"
@@ -47,6 +48,7 @@ template class dbTable<_dbModNet>;
 
 bool _dbModNet::operator==(const _dbModNet& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -73,6 +75,7 @@ bool _dbModNet::operator==(const _dbModNet& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModNet::operator<(const _dbModNet& rhs) const
@@ -384,7 +387,7 @@ dbModNet* dbModNet::create(dbModule* parent_module,
                            dbNet* corresponding_flat_net)
 {
   dbBlock* block = parent_module->getOwner();
-  std::string net_name = block->makeNewModNetName(
+  std::string net_name = block->makeNewNetName(
       parent_module, base_name, uniquify, corresponding_flat_net);
   return create(parent_module, block->getBaseName(net_name.c_str()));
 }
@@ -559,6 +562,70 @@ void dbModNet::checkSanity() const
   dbUtil::findModITermDrivers(this, drvr_info_list);
 
   dbUtil::checkNetSanity(this, drvr_info_list);
+
+  // Check name collision with flat nets
+  checkSanityNameCollision();
+}
+
+void dbModNet::checkSanityNameCollision() const
+{
+  dbModule* module = getParent();
+  dbBlock* block = module->getOwner();
+  const char* name = getConstName();
+
+  // Check if any flat net in this module scope has a base name
+  // matching this ModNet's name without being associated.
+  std::set<dbNet*> checked;
+  for (dbInst* inst : module->getInsts()) {
+    for (dbITerm* iterm : inst->getITerms()) {
+      dbNet* net = iterm->getNet();
+      if (net == nullptr || !checked.insert(net).second) {
+        continue;
+      }
+      // Only check flat nets whose scope is this module
+      if (net->findMainParentModule() != module) {
+        continue;
+      }
+      const char* base_name = block->getBaseName(net->getConstName());
+      if (std::string_view{base_name} != name) {
+        continue;
+      }
+      // Check if this flat net is associated with this ModNet
+      // by traversing the hierarchy.
+      std::set<dbModNet*> related_modnets;
+      net->findRelatedModNets(related_modnets);
+      bool associated = false;
+      for (dbModNet* mn : related_modnets) {
+        if (mn == this) {
+          associated = true;
+          break;
+        }
+      }
+      if (!associated) {
+        // Suppress when this ModNet positively resolves to the same
+        // flat net. When unresolvable (nullptr), suppress only if this
+        // ModNet has connections -- likely a legitimate but unresolvable
+        // hierarchical pairing. A disconnected orphan IS a collision.
+        dbNet* my_related = findRelatedNet();
+        if (my_related == net) {
+          continue;
+        }
+        if (my_related == nullptr
+            && (!getITerms().empty() || !getBTerms().empty()
+                || !getModITerms().empty() || !getModBTerms().empty())) {
+          continue;
+        }
+        utl::Logger* logger = getImpl()->getLogger();
+        logger->error(utl::ODB,
+                      494,
+                      "SanityCheck: ModNet '{}' in module '{}' has a name "
+                      "collision with flat net '{}'.",
+                      getHierarchicalName(),
+                      module->getName(),
+                      net->getConstName());
+      }
+    }
+  }
 }
 
 void dbModNet::mergeModNet(dbModNet* in_modnet)

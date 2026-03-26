@@ -67,9 +67,7 @@ using Labels = std::vector<std::unique_ptr<Label>>;
 class LabelDescriptor : public Descriptor
 {
  public:
-  LabelDescriptor(const Labels& labels,
-                  odb::dbDatabase* db,
-                  utl::Logger* logger);
+  LabelDescriptor(const Labels& labels, utl::Logger* logger);
 
   std::string getName(const std::any& object) const override;
   std::string getTypeName() const override;
@@ -90,7 +88,6 @@ class LabelDescriptor : public Descriptor
   static bool editPoint(const std::any& value, odb::Point& pt, bool is_x);
 
   const Labels& labels_;
-  odb::dbDatabase* db_;
   utl::Logger* logger_;
 };
 
