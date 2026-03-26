@@ -150,6 +150,7 @@ or_integration_tests(
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3
+    report_move_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3
