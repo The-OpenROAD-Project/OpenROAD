@@ -124,7 +124,7 @@ def man2_translate(doc, path):
         func_descs = extract_description(text)
 
         # synopsis content
-        func_synopsis = extract_tcl_code(text)
+        func_synopsis = extract_tcl_code(text, skip_markers=False)
 
         # arguments
         func_options, func_args = extract_arguments(text)

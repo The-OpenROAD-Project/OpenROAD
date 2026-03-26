@@ -84,10 +84,10 @@ cc_library(
     hdrs = [
         "include/cts/MakeTritoncts.h",
     ],
-    copts = [
-        "-Isrc/cts/src",
+    includes = [
+        "include",
+        "src",
     ],
-    includes = ["include"],
     deps = [
         ":cts",
         ":private_hdrs",

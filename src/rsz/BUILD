@@ -93,11 +93,9 @@ cc_library(
     hdrs = [
         "include/rsz/MakeResizer.hh",
     ],
-    copts = [
-        "-Isrc/rsz/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rsz",

@@ -243,7 +243,7 @@ bool TileVisibility::isNetVisible(odb::dbNet* net) const
 bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 {
   odb::dbMaster* master = inst->getMaster();
-  odb::dbMasterType mtype = master->getType();
+  const odb::dbMasterType mtype = master->getType();
 
   if (sta) {
     using IT = sta::dbSta::InstType;
@@ -724,13 +724,13 @@ std::vector<unsigned char> TileGenerator::generateTile(
   int layer_index = 0;
   if (tech_layer) {
     const auto all_layers = getLayers();
-    auto it = std::ranges::find(all_layers, layer);
+    const auto it = std::ranges::find(all_layers, layer);
     if (it != all_layers.end()) {
       layer_index = std::distance(all_layers.begin(), it);
     }
   }
   const Color color = palette[layer_index % palette_size];
-  Color obs_color = color.lighter();
+  const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
@@ -811,7 +811,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
         if (instances_only) {
           // Draw the rectangle border (instances-only layer)
-          Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
+          const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
             for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
               const int draw_y = (255 - iy);
@@ -1343,8 +1343,8 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   }
 
   // Build the label string "z=<zoom> <x>/<y>"
-  std::string label = "z=" + std::to_string(z) + " " + std::to_string(x) + "/"
-                      + std::to_string(y);
+  const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
+                            + "/" + std::to_string(y);
 
   drawBitmapText(image, 4, 4, label, 3, yellow);
 }
@@ -1718,6 +1718,17 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
   return {nullptr, block->findBTerm(pin_name.c_str())};
 }
 
+static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+{
+  if (iterm) {
+    return iterm->getNet();
+  }
+  if (bterm) {
+    return bterm->getNet();
+  }
+  return nullptr;
+}
+
 static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
 {
   if (iterm) {
@@ -1794,19 +1805,8 @@ void collectTimingPathShapes(odb::dbBlock* block,
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
 
-      odb::dbNet* net_a = nullptr;
-      if (a_iterm) {
-        net_a = a_iterm->getNet();
-      } else if (a_bterm) {
-        net_a = a_bterm->getNet();
-      }
-
-      odb::dbNet* net_b = nullptr;
-      if (b_iterm) {
-        net_b = b_iterm->getNet();
-      } else if (b_bterm) {
-        net_b = b_bterm->getNet();
-      }
+      odb::dbNet* net_a = getNetFromPin(a_iterm, a_bterm);
+      odb::dbNet* net_b = getNetFromPin(b_iterm, b_bterm);
 
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {
