@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/DelayFmt.hh"
+#include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"

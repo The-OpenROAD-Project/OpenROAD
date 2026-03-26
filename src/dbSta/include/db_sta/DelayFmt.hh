@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "spdlog/fmt/fmt.h"
+#include "spdlog/fmt/fmt.h"  // IWYU pragma: keep
 #include "sta/Delay.hh"
 
 template <>
