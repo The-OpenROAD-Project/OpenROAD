@@ -65,8 +65,7 @@ struct PatternParameters
 class HierRTLMP
 {
  public:
-  HierRTLMP(sta::dbNetwork* network,
-            odb::dbDatabase* db,
+  HierRTLMP(odb::dbDatabase* db,
             utl::Logger* logger,
             par::PartitionMgr* tritonpart);
   ~HierRTLMP();
@@ -265,7 +264,6 @@ class HierRTLMP
   template <typename SACore>
   void writeCostFile(const std::string& file_name_prefix, SACore* sa_core);
 
-  sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   utl::Logger* logger_ = nullptr;

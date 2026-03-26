@@ -48,12 +48,10 @@ using utl::MPL;
 HierRTLMP::~HierRTLMP() = default;
 
 // Constructors
-HierRTLMP::HierRTLMP(sta::dbNetwork* network,
-                     odb::dbDatabase* db,
+HierRTLMP::HierRTLMP(odb::dbDatabase* db,
                      utl::Logger* logger,
                      par::PartitionMgr* tritonpart)
-    : network_(network),
-      db_(db),
+    : db_(db),
       logger_(logger),
       tritonpart_(tritonpart),
       tree_(std::make_unique<PhysicalHierarchy>())
@@ -2309,6 +2307,7 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 
     if (new_wirelength > original_wirelength) {
       flipRealMacro(inst, is_vertical_flip);
+      macro_location = tree_->maps.inst_to_hard[inst]->getRealLocation();
       inst->setLocation(macro_location.getX(), macro_location.getY());
     }
   }
