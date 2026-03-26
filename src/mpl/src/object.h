@@ -73,8 +73,6 @@ using BundledNetList = std::vector<BundledNet>;
 // we do not accept pre-placed std cells as our inputs.
 //*****************************************************************************
 
-
-
 // Metrics class for logical modules and clusters
 class Metrics
 {
