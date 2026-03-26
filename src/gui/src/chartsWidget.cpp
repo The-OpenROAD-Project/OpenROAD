@@ -872,21 +872,6 @@ void HistogramView::setVisualConfig()
   chart_->setTitle("Endpoint Slack");
 }
 
-QBarSet* HistogramView::createBarSet(const QString& label, bool invisible)
-{
-  QBarSet* bar_set = new QBarSet(label);
-  if (invisible) {
-    bar_set->setBorderColor(Qt::transparent);
-    bar_set->setColor(Qt::transparent);
-  }
-
-  connect(bar_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
-
-  connect(
-      bar_set, &QBarSet::clicked, this, &HistogramView::emitEndPointsInBucket);
-  return bar_set;
-}
-
 void HistogramView::emitEndPointsInBucket(const int bar_index)
 {
   std::vector<const sta::Pin*> end_points;
@@ -1056,14 +1041,35 @@ QStackedBarSeries* HistogramView::populateSeries()
 {
   // Create bar series
   QStackedBarSeries* series = new QStackedBarSeries(this);
+  QBarSet* invisible = new QBarSet("");
+  connect(invisible, &QBarSet::hovered, this, &HistogramView::showToolTip);
+  invisible->setBorderColor(Qt::transparent);
+  invisible->setColor(Qt::transparent);
+
   if (path_groups_.empty()) {
     // Default histogram
-    QBarSet* pos_set = createBarSet("Positive Slack");
+    QBarSet* pos_set = new QBarSet("Positive Slack");
     pos_set->setBorderColor(0x006400);  // darkgreen
     pos_set->setColor(0x90ee90);        // lightgreen
-    QBarSet* neg_set = createBarSet("Negative Slack");
+    connect(pos_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+    connect(pos_set,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
+
+    QBarSet* neg_set = new QBarSet("Negative Slack");
     neg_set->setBorderColor(0x8b0000);  // darkred
     neg_set->setColor(0xf08080);        // lightcoral
+    connect(neg_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+    connect(neg_set,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
+
+    connect(invisible,
+            &QBarSet::clicked,
+            this,
+            &HistogramView::emitEndPointsInBucket);
 
     // Populate bar series
     for (const auto& bucket : buckets_.negative) {
@@ -1080,7 +1086,9 @@ QStackedBarSeries* HistogramView::populateSeries()
   } else {
     // Stacked histogram
     for (int i = path_groups_.size() - 1; i > -1; i--) {
-      QBarSet* bar_set = createBarSet(path_groups_[i]);
+      QBarSet* bar_set = new QBarSet(path_groups_[i]);
+      connect(bar_set, &QBarSet::hovered, this, &HistogramView::showToolTip);
+
       // Populate bar series
       for (const auto& bucket : pins_bucket_[i]) {
         *bar_set << bucket.size();
@@ -1089,8 +1097,7 @@ QStackedBarSeries* HistogramView::populateSeries()
     }
   }
 
-  // Populate invisible barset
-  QBarSet* invisible = createBarSet("", true);
+  // Populate invisible barset);
   const int max_bin_count = all_histogram_->getMaxBinCount();
   for (const auto& bucket : buckets_.negative) {
     *invisible << max_bin_count - bucket.size();
