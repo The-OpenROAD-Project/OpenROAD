@@ -671,8 +671,20 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
       }
     }
 
-    const QString number_of_pins
-        = QString("Number of Endpoints: %1\n").arg(num);
+    QString number_of_pins;
+    if (path_groups_.size() == 0) {
+      number_of_pins = QString("Number of Endpoints: %1\n").arg(num);
+    } else {
+      number_of_pins = QString("Total number of Endpoints: %1\n").arg(num);
+      int i = 0;
+      for (auto& path_group : path_groups_) {
+        int num_pins = pins_bucket_[i++][bar_index].size();
+        number_of_pins += QString("%1: %2 (%3 %)\n")
+                              .arg(path_group)
+                              .arg(num_pins)
+                              .arg(num ? (100.0 * num_pins) / num : 0);
+      }
+    }
 
     QString scaled_suffix = QString::fromStdString(
         sta_->getSTA()->units()->timeUnit()->scaleAbbrevSuffix());
@@ -857,6 +869,7 @@ void HistogramView::setVisualConfig()
 
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
+  chart_->legend()->setReverseMarkers(true);
   chart_->setTitle("Endpoint Slack");
 }
 
@@ -1048,12 +1061,12 @@ QStackedBarSeries* HistogramView::populateSeries()
   const int max_bin_count = all_histogram_->getMaxBinCount();
   if (path_groups_.empty()) {
     // Default histogram
-    QBarSet* neg_set = createBarSet("Negative Slack",
-                                    0x8b0000,   // darkred
-                                    0xf08080);  // lightcoral
     QBarSet* pos_set = createBarSet("Positive Slack",
                                     0x006400,   // darkgreen
                                     0x90ee90);  // lightgreen
+    QBarSet* neg_set = createBarSet("Negative Slack",
+                                    0x8b0000,   // darkred
+                                    0xf08080);  // lightcoral
 
     // Populate bar series
     for (const auto& bucket : buckets_.negative) {
@@ -1065,13 +1078,12 @@ QStackedBarSeries* HistogramView::populateSeries()
       *pos_set << bucket.size();
     }
 
-    series->append(neg_set);
     series->append(pos_set);
-    series->append(invisible);
+    series->append(neg_set);
   } else {
     // Stacked histogram
     ColorGenerator generator;
-    for (int i = 0; i < path_groups_.size(); i++) {
+    for (int i = path_groups_.size() - 1; i > -1; i--) {
       QColor color = generator.getQColor();
       QBarSet* bar_set = createBarSet(path_groups_[i], color, color);
       // Populate bar series
@@ -1089,6 +1101,7 @@ QStackedBarSeries* HistogramView::populateSeries()
   for (const auto& bucket : buckets_.positive) {
     *invisible << max_bin_count - bucket.size();
   }
+  series->append(invisible);
 
   return series;
 }
