@@ -310,6 +310,7 @@ cc_binary(
         ":openroad_lib",  # Depends on the core odb C++ library
         ":ord",
         "//src/ant",
+        "//src/cgt",
         "//src/cts",
         "//src/dpl",
         "//src/drt",
