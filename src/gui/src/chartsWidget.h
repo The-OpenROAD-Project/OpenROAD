@@ -4,6 +4,7 @@
 #pragma once
 
 #include <qchar.h>
+#include <qstackedbarseries.h>
 
 #include <QComboBox>
 #include <QDockWidget>
@@ -18,7 +19,7 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"

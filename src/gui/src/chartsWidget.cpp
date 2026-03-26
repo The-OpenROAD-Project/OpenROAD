@@ -3,6 +3,7 @@
 
 #include "chartsWidget.h"
 
+#include <qbarset.h>
 #include <qchar.h>
 
 #include <QColor>
@@ -18,7 +19,6 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
-#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -28,6 +28,7 @@
 
 #include "gui/gui.h"
 #include "gui_utils.h"
+#include "src/staGuiInterface.h"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
@@ -551,7 +552,7 @@ EndPointSlackMap* ChartsWidget::getData(const std::string& path_group,
 void ChartsWidget::setData(HistogramView* view)
 {
   view->clear();
-  if (path_groups_names_.size() < 1) {
+  if (path_groups_names_.empty()) {
     return;
   }
 
@@ -671,7 +672,7 @@ void HistogramView::showToolTip(bool is_hovering, int bar_index)
     }
 
     QString number_of_pins;
-    if (path_groups_.size() == 0) {
+    if (path_groups_.empty()) {
       number_of_pins = QString("Number of Endpoints: %1\n").arg(num);
     } else {
       number_of_pins = QString("Total number of Endpoints: %1\n").arg(num);
