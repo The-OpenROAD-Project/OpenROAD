@@ -229,7 +229,6 @@ class OpenRoad
   void read3Dbx(const std::string& filename);
   void write3Dbv(const std::string& filename);
   void write3Dbx(const std::string& filename);
-  void write3DbloxVerilog(const std::string& filename);
   void read3DBloxBMap(const std::string& filename);
   void check3DBlox();
 
