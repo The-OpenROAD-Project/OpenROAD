@@ -6,7 +6,6 @@
 
 #include <cstdlib>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 #include "dbChip.h"
@@ -17,6 +16,9 @@
 #include "dbTable.h"
 #include "odb/db.h"
 // User Code Begin Includes
+
+#include <utility>
+
 #include "dbCommon.h"
 #include "utl/Logger.h"
 // User Code End Includes
