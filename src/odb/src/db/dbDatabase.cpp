@@ -79,6 +79,7 @@ static std::atomic<uint32_t> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (master_id_ != rhs.master_id_) {
     return false;
   }
@@ -136,6 +137,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDatabase::operator<(const _dbDatabase& rhs) const
@@ -337,6 +339,10 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     _dbChipInst* chipinst = (_dbChipInst*) chip_region_inst->getChipInst();
     chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
+  }
+  if (db->getChips().size() > 1) {
+    // Construct unfolded model only if there are multiple chips
+    db->constructUnfoldedModel();
   }
   // User Code End >>
   return stream;
@@ -698,7 +704,7 @@ void dbDatabase::constructUnfoldedModel()
   db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
 }
 
-const UnfoldedModel* dbDatabase::getUnfoldedModel() const
+UnfoldedModel* dbDatabase::getUnfoldedModel() const
 {
   _dbDatabase* db = (_dbDatabase*) this;
   return db->unfolded_model_;

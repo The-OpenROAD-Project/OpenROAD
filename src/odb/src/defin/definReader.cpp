@@ -528,7 +528,7 @@ int definReader::componentsCallback(
   if (comp->hasHalo() > 0) {
     int left, bottom, right, top;
     comp->haloEdges(&left, &bottom, &right, &top);
-    componentR->halo(left, bottom, right, top);
+    componentR->halo(left, bottom, right, top, comp->hasHaloSoft() > 0);
   }
 
   componentR->placement(comp->placementStatus(),
