@@ -600,7 +600,20 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 
 odb::Rect HeatMapDataSource::getBounds() const
 {
+  if (getBlock() == nullptr) {
+    return getChip()->getBBox();
+  }
   return getBlock()->getDieArea();
+}
+
+odb::dbBlock* HeatMapDataSource::getBlock() const
+{
+  return chip_ != nullptr ? chip_->getBlock() : nullptr;
+}
+
+double HeatMapDataSource::getDbuPerMicron() const
+{
+  return chip_->getDb()->getDbuPerMicron();
 }
 
 void HeatMapDataSource::clearMap()
@@ -612,7 +625,7 @@ void HeatMapDataSource::clearMap()
 
 bool HeatMapDataSource::setupMap()
 {
-  if (getBlock() == nullptr || getBlock()->getDieArea().area() == 0) {
+  if (getChip() == nullptr || getBounds().area() == 0) {
     return false;
   }
 
@@ -655,8 +668,8 @@ bool HeatMapDataSource::setupMap()
 
 void HeatMapDataSource::populateXYGrid()
 {
-  const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
-  const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
+  const int dx = getGridXSize() * getDbuPerMicron();
+  const int dy = getGridYSize() * getDbuPerMicron();
 
   const odb::Rect bounds = getBounds();
 

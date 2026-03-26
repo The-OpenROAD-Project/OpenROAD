@@ -158,11 +158,8 @@ class HeatMapDataSource
   // The default implementation uses the block's bounds
   virtual odb::Rect getBounds() const;
   odb::dbChip* getChip() const { return chip_; }
-  odb::dbBlock* getBlock() const
-  {
-    return chip_ != nullptr ? chip_->getBlock() : nullptr;
-  }
-  double getDbuPerMicron() const { return chip_->getDb()->getDbuPerMicron(); }
+  odb::dbBlock* getBlock() const;
+  double getDbuPerMicron() const;
   // map controls
   void update() { destroyMap(); }
   void ensureMap();
