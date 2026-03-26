@@ -12,7 +12,9 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <regex>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -28,10 +30,10 @@
 #include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
 #include "timing_report.h"
-#include "utl/Logger.h"
 
 namespace web {
 
@@ -252,10 +254,11 @@ static void serializeAnyValue(JsonBuilder& builder,
 {
   if (auto* sel = std::any_cast<gui::Selected>(&value)) {
     if (*sel) {
-      std::string name = short_name ? sel->getShortName() : sel->getName();
+      const std::string name
+          = short_name ? sel->getShortName() : sel->getName();
       int id = storeSelectable(selectables, *sel);
       builder.field(field_name, name);
-      std::string id_key = std::string(field_name) + "_select_id";
+      const std::string id_key = std::string(field_name) + "_select_id";
       builder.field(id_key, id);
       return;
     }
@@ -297,7 +300,7 @@ static void serializeProperty(JsonBuilder& builder,
       builder.field("value_select_id", id);
     }
   } else {
-    std::string val_str = prop.toString();
+    const std::string val_str = prop.toString();
     builder.field("value", val_str);
   }
 
@@ -687,7 +690,7 @@ WebSocketResponse SelectHandler::handleSelect(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -742,7 +745,7 @@ WebSocketResponse SelectHandler::handleInspect(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -790,7 +793,7 @@ WebSocketResponse SelectHandler::handleInspectBack(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -854,7 +857,7 @@ WebSocketResponse SelectHandler::handleHover(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -888,7 +891,7 @@ WebSocketResponse SelectHandler::handleSetFocusNets(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -923,7 +926,7 @@ WebSocketResponse SelectHandler::handleSetRouteGuides(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -969,6 +972,17 @@ WebSocketResponse SelectHandler::handleSnap(const WebSocketRequest& req)
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
+}
+
+static const char* ioTypeToDirection(odb::dbIoType io_type)
+{
+  if (io_type == odb::dbIoType::INPUT) {
+    return "input";
+  }
+  if (io_type == odb::dbIoType::OUTPUT) {
+    return "output";
+  }
+  return "inout";
 }
 
 WebSocketResponse SelectHandler::handleSchematicCone(
@@ -1108,13 +1122,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     for (const auto& [net, _id] : net_to_id) {
       for (odb::dbBTerm* bterm : net->getBTerms()) {
         builder.beginObject(bterm->getName());
-        std::string dir = "inout";
-        if (bterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field("direction", dir);
+        builder.field("direction", ioTypeToDirection(bterm->getIoType()));
         builder.beginArray("bits");
         builder.value(net_to_id[net]);
         builder.endArray();
@@ -1145,13 +1153,8 @@ WebSocketResponse SelectHandler::handleSchematicCone(
         if (!iterm->getNet() || !net_to_id.contains(iterm->getNet())) {
           continue;
         }
-        std::string dir = "inout";
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field(iterm->getMTerm()->getName(), dir);
+        builder.field(iterm->getMTerm()->getName(),
+                      ioTypeToDirection(iterm->getIoType()));
       }
       builder.endObject();
 
@@ -1193,7 +1196,7 @@ WebSocketResponse SelectHandler::handleSchematicCone(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1233,13 +1236,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         continue;
       }
       builder.beginObject(bterm->getName());
-      std::string dir = "inout";
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
-        dir = "input";
-      } else if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        dir = "output";
-      }
-      builder.field("direction", dir);
+      builder.field("direction", ioTypeToDirection(bterm->getIoType()));
       builder.beginArray("bits");
       builder.value(net_to_id[net]);
       builder.endArray();
@@ -1265,13 +1262,8 @@ WebSocketResponse SelectHandler::handleSchematicFull(
         if (!iterm->getNet()) {
           continue;
         }
-        std::string dir = "inout";
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
-          dir = "input";
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-          dir = "output";
-        }
-        builder.field(iterm->getMTerm()->getName(), dir);
+        builder.field(iterm->getMTerm()->getName(),
+                      ioTypeToDirection(iterm->getIoType()));
       }
       builder.endObject();
 
@@ -1312,7 +1304,7 @@ WebSocketResponse SelectHandler::handleSchematicFull(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1369,7 +1361,7 @@ WebSocketResponse SelectHandler::handleSchematicInspect(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1401,7 +1393,211 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Helper: find the start of the word at cursor_pos in line.
+// Word boundaries are: whitespace, [, ], {, }
+static int findWordStart(const std::string& line, int cursor_pos)
+{
+  static const std::string kBoundary = " \t\n\r[]{}";
+  int pos = cursor_pos - 1;
+  while (pos >= 0 && kBoundary.find(line[pos]) == std::string::npos) {
+    --pos;
+  }
+  return pos + 1;
+}
+
+// Helper: find the enclosing command name for argument completion.
+// Scans backwards from word_start past flags (-xxx) and their values
+// to find the first non-flag word (or the first word after '[').
+static std::string findEnclosingCommand(const std::string& line, int word_start)
+{
+  static const std::string kBoundary = " \t\n\r[]{}";
+  // Collect all words before the current position
+  std::vector<std::string> words;
+  int pos = 0;
+  while (pos < word_start) {
+    // skip whitespace/boundaries
+    while (pos < word_start && kBoundary.find(line[pos]) != std::string::npos) {
+      if (line[pos] == '[') {
+        // bracket resets context
+        words.clear();
+      }
+      ++pos;
+    }
+    if (pos >= word_start) {
+      break;
+    }
+    // extract word
+    const int start = pos;
+    while (pos < word_start && kBoundary.find(line[pos]) == std::string::npos) {
+      ++pos;
+    }
+    words.push_back(line.substr(start, pos - start));
+  }
+
+  // Walk backwards to find the first non-flag word
+  for (int i = static_cast<int>(words.size()) - 1; i >= 0; --i) {
+    if (!words[i].empty() && words[i][0] != '-') {
+      return words[i];
+    }
+  }
+  return {};
+}
+
+// Evaluate a Tcl command that returns a list, sort it, and return
+// the elements as a vector of strings.  Returns empty on error.
+static std::vector<std::string> getTclList(TclEvaluator& eval,
+                                           const std::string& tcl_cmd)
+{
+  auto result = eval.eval("join [lsort [" + tcl_cmd + "]] \\n");
+  std::vector<std::string> items;
+  if (result.is_error) {
+    return items;
+  }
+  std::istringstream stream(result.result);
+  std::string item;
+  while (std::getline(stream, item)) {
+    if (!item.empty()) {
+      items.push_back(std::move(item));
+    }
+  }
+  return items;
+}
+
+WebSocketResponse TclHandler::handleTclComplete(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    const std::string& line = req.tcl_complete_line;
+    int cursor_pos = req.tcl_complete_cursor_pos;
+    if (cursor_pos < 0) {
+      cursor_pos = static_cast<int>(line.size());
+    }
+    cursor_pos = std::min(cursor_pos, static_cast<int>(line.size()));
+
+    const int word_start = findWordStart(line, cursor_pos);
+    const std::string prefix = line.substr(word_start, cursor_pos - word_start);
+
+    std::string mode;
+    std::vector<std::string> completions;
+
+    if (!prefix.empty() && prefix[0] == '$') {
+      // Variable completion
+      mode = "variables";
+      const std::string var_prefix = prefix.substr(1);  // strip $
+      const bool starts_with_colon
+          = !var_prefix.empty() && var_prefix[0] == ':';
+      std::string tcl_cmd = "info vars " + var_prefix;
+      if (!var_prefix.empty() && var_prefix.back() == ':'
+          && (var_prefix.size() == 1
+              || var_prefix[var_prefix.size() - 2] != ':')) {
+        tcl_cmd += ":";
+      }
+      tcl_cmd += "*";
+
+      for (auto var : getTclList(*tcl_eval_, tcl_cmd)) {
+        if (!starts_with_colon && !var.empty() && var[0] == ':') {
+          var = var.substr(2);
+        }
+        completions.push_back("$" + var);
+      }
+
+      // Add namespaces
+      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
+        std::string name = ns;
+        if (!starts_with_colon && !name.empty() && name[0] == ':') {
+          name = name.substr(2);
+        }
+        completions.push_back("$" + name);
+      }
+    } else if (!prefix.empty() && prefix[0] == '-') {
+      // Argument completion
+      mode = "arguments";
+      const std::string cmd_name = findEnclosingCommand(line, word_start);
+      if (!cmd_name.empty()) {
+        std::string tcl_cmd = "if {[info exists sta::cmd_args(" + cmd_name
+                              + ")]} { set sta::cmd_args(" + cmd_name
+                              + ") } else { list }";
+        auto result = tcl_eval_->eval(tcl_cmd);
+        if (!result.is_error && !result.result.empty()) {
+          // Parse flags with regex
+          static const std::regex kArgMatcher("-[a-zA-Z0-9_]+");
+          const std::string args_str = result.result;
+          std::sregex_iterator it(
+              args_str.begin(), args_str.end(), kArgMatcher);
+          std::sregex_iterator end;
+          std::set<std::string> unique_args;
+          while (it != end) {
+            unique_args.insert(it->str());
+            ++it;
+          }
+          for (const auto& arg : unique_args) {
+            if (prefix.size() <= 1 || arg.substr(0, prefix.size()) == prefix) {
+              completions.push_back(arg);
+            }
+          }
+        }
+      }
+    } else {
+      // Command completion
+      mode = "commands";
+      // Get OpenROAD registered commands
+      for (auto& cmd : getTclList(*tcl_eval_, "array names sta::cmd_args")) {
+        completions.push_back(std::move(cmd));
+      }
+      // Get namespace commands
+      for (const auto& ns : getTclList(*tcl_eval_, "namespace children")) {
+        for (auto ns_cmd :
+             getTclList(*tcl_eval_, "info commands " + ns + "::*")) {
+          // Remove leading ::
+          if (ns_cmd.size() > 2 && ns_cmd[0] == ':' && ns_cmd[1] == ':') {
+            ns_cmd = ns_cmd.substr(2);
+          }
+          completions.push_back(std::move(ns_cmd));
+        }
+      }
+
+      // Filter by prefix if non-empty
+      if (!prefix.empty()) {
+        const bool add_colons = prefix[0] == ':';
+        std::vector<std::string> filtered;
+        for (const auto& c : completions) {
+          std::string match_target = c;
+          if (add_colons && !c.empty() && c[0] != ':') {
+            match_target = "::" + c;
+          }
+          if (match_target.substr(0, prefix.size()) == prefix) {
+            filtered.push_back(add_colons && c[0] != ':' ? "::" + c : c);
+          }
+        }
+        completions = std::move(filtered);
+      }
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("completions");
+    for (const auto& c : completions) {
+      builder.value(c);
+    }
+    builder.endArray();
+    builder.field("mode", mode);
+    builder.field("prefix", prefix);
+    builder.field("replace_start", word_start);
+    builder.field("replace_end", cursor_pos);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1465,7 +1661,7 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1527,7 +1723,7 @@ WebSocketResponse TimingHandler::handleTimingHighlight(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1563,7 +1759,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1594,7 +1790,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1656,7 +1852,7 @@ WebSocketResponse ClockTreeHandler::handleClockTree(const WebSocketRequest& req)
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1690,7 +1886,7 @@ WebSocketResponse ClockTreeHandler::handleClockTreeHighlight(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1813,7 +2009,7 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1881,7 +2077,7 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1917,7 +2113,7 @@ WebSocketResponse TileHandler::handleSetActiveHeatMap(
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1964,7 +2160,7 @@ WebSocketResponse TileHandler::handleSetHeatMap(const WebSocketRequest& req,
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;
@@ -1991,7 +2187,7 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
     resp.payload = gen_->generateHeatMapTile(*source, req.z, req.x, req.y);
   } catch (const std::exception& e) {
     resp.type = 2;
-    std::string err = std::string("server error: ") + e.what();
+    const std::string err = std::string("server error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;

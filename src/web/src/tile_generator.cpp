@@ -21,6 +21,7 @@
 #include "gui/heatMap.h"
 #include "lodepng.h"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -242,7 +243,7 @@ bool TileVisibility::isNetVisible(odb::dbNet* net) const
 bool TileVisibility::isInstVisible(odb::dbInst* inst, sta::dbSta* sta) const
 {
   odb::dbMaster* master = inst->getMaster();
-  odb::dbMasterType mtype = master->getType();
+  const odb::dbMasterType mtype = master->getType();
 
   if (sta) {
     using IT = sta::dbSta::InstType;
@@ -723,13 +724,13 @@ std::vector<unsigned char> TileGenerator::generateTile(
   int layer_index = 0;
   if (tech_layer) {
     const auto all_layers = getLayers();
-    auto it = std::ranges::find(all_layers, layer);
+    const auto it = std::ranges::find(all_layers, layer);
     if (it != all_layers.end()) {
       layer_index = std::distance(all_layers.begin(), it);
     }
   }
   const Color color = palette[layer_index % palette_size];
-  Color obs_color = color.lighter();
+  const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
@@ -810,7 +811,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
         if (instances_only) {
           // Draw the rectangle border (instances-only layer)
-          Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
+          const Color gray{.r = 128, .g = 128, .b = 128, .a = 255};
           if (dbu_x_min <= xl && xl <= dbu_x_max) {
             for (int iy = pixel_yl; iy < pixel_yh; ++iy) {
               const int draw_y = (255 - iy);
@@ -858,12 +859,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
               const odb::Rect overlap = box.intersect(dbu_tile);
               const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-              for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                  const int draw_y = (255 - iy);
-                  setPixel(image_buffer, ix, draw_y, obs_color);
-                }
-              }
+              drawFilledRect(image_buffer, draw, obs_color);
             }
           }
 
@@ -890,12 +886,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
                   const odb::Rect overlap = box.intersect(dbu_tile);
                   const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-                  for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-                    for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                      const int draw_y = (255 - iy);
-                      setPixel(image_buffer, ix, draw_y, color);
-                    }
-                  }
+                  drawFilledRect(image_buffer, draw, color);
                 }
               }
             }
@@ -926,12 +917,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
           const odb::Rect overlap = box.intersect(dbu_tile);
           const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-          for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-            for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-              const int draw_y = (255 - iy);
-              setPixel(image_buffer, ix, draw_y, color);
-            }
-          }
+          drawFilledRect(image_buffer, draw, color);
         }
       }
 
@@ -999,11 +985,59 @@ std::vector<unsigned char> TileGenerator::generateTile(
             }
             const odb::Rect overlap = box.intersect(dbu_tile);
             const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
-            for (int iy = draw.yMin(); iy < draw.yMax(); ++iy) {
-              for (int ix = draw.xMin(); ix < draw.xMax(); ++ix) {
-                const int draw_y = (255 - iy);
-                setPixel(image_buffer, ix, draw_y, color);
+            drawFilledRect(image_buffer, draw, color);
+          }
+        }
+      }
+
+      // Draw via enclosures from adjacent cut layers onto this metal layer.
+      // Vias are indexed by their cut layer in the search structure.  When
+      // rendering a routing layer we look up the cut layers immediately above
+      // and below, search for vias there, and draw only the enclosure boxes
+      // that belong to the current routing layer.
+      if (!instances_only && tech_layer && vis.special_nets && shapesReady()
+          && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
+        odb::dbTechLayer* adj_cuts[2]
+            = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
+        for (odb::dbTechLayer* cut_layer : adj_cuts) {
+          if (!cut_layer || cut_layer->getType() != odb::dbTechLayerType::CUT) {
+            continue;
+          }
+          for (const auto& shape : search_->searchSNetViaShapes(block,
+                                                                cut_layer,
+                                                                dbu_x_min,
+                                                                dbu_y_min,
+                                                                dbu_x_max,
+                                                                dbu_y_max)) {
+            odb::dbNet* via_net = std::get<1>(shape);
+            if (!vis.isNetVisible(via_net)) {
+              continue;
+            }
+            if (focus_net_ids && !focus_net_ids->empty()
+                && !focus_net_ids->contains(via_net->getId())) {
+              continue;
+            }
+            odb::dbSBox* sbox = std::get<0>(shape);
+            odb::dbSet<odb::dbBox> via_boxes;
+            if (auto tech_via = sbox->getTechVia()) {
+              via_boxes = tech_via->getBoxes();
+            } else if (auto block_via = sbox->getBlockVia()) {
+              via_boxes = block_via->getBoxes();
+            }
+            const odb::Point origin((sbox->xMin() + sbox->xMax()) / 2,
+                                    (sbox->yMin() + sbox->yMax()) / 2);
+            for (odb::dbBox* vbox : via_boxes) {
+              if (vbox->getTechLayer() != tech_layer) {
+                continue;
               }
+              odb::Rect box = vbox->getBox();
+              box.moveDelta(origin.x(), origin.y());
+              if (!box.overlaps(dbu_tile)) {
+                continue;
+              }
+              const odb::Rect overlap = box.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+              drawFilledRect(image_buffer, draw, color);
             }
           }
         }
@@ -1309,8 +1343,8 @@ void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
   }
 
   // Build the label string "z=<zoom> <x>/<y>"
-  std::string label = "z=" + std::to_string(z) + " " + std::to_string(x) + "/"
-                      + std::to_string(y);
+  const std::string label = "z=" + std::to_string(z) + " " + std::to_string(x)
+                            + "/" + std::to_string(y);
 
   drawBitmapText(image, 4, 4, label, 3, yellow);
 }
@@ -1410,6 +1444,18 @@ void TileGenerator::blendPixel(std::vector<unsigned char>& image,
   image[i + 1] = blend_channel(c.g, image[i + 1]);
   image[i + 2] = blend_channel(c.b, image[i + 2]);
   image[i + 3] = static_cast<unsigned char>(std::lround(out_a * 255.0f));
+}
+
+void TileGenerator::drawFilledRect(std::vector<unsigned char>& buffer,
+                                   const odb::Rect& rect,
+                                   const Color& color) const
+{
+  for (int iy = rect.yMin(); iy < rect.yMax(); ++iy) {
+    for (int ix = rect.xMin(); ix < rect.xMax(); ++ix) {
+      const int draw_y = (255 - iy);
+      setPixel(buffer, ix, draw_y, color);
+    }
+  }
 }
 
 void TileGenerator::drawHighlight(std::vector<unsigned char>& image,
@@ -1672,6 +1718,17 @@ std::pair<odb::dbITerm*, odb::dbBTerm*> resolvePin(odb::dbBlock* block,
   return {nullptr, block->findBTerm(pin_name.c_str())};
 }
 
+static odb::dbNet* getNetFromPin(odb::dbITerm* iterm, odb::dbBTerm* bterm)
+{
+  if (iterm) {
+    return iterm->getNet();
+  }
+  if (bterm) {
+    return bterm->getNet();
+  }
+  return nullptr;
+}
+
 static odb::Point getPinLocation(odb::dbITerm* iterm, odb::dbBTerm* bterm)
 {
   if (iterm) {
@@ -1748,19 +1805,8 @@ void collectTimingPathShapes(odb::dbBlock* block,
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
 
-      odb::dbNet* net_a = nullptr;
-      if (a_iterm) {
-        net_a = a_iterm->getNet();
-      } else if (a_bterm) {
-        net_a = a_bterm->getNet();
-      }
-
-      odb::dbNet* net_b = nullptr;
-      if (b_iterm) {
-        net_b = b_iterm->getNet();
-      } else if (b_bterm) {
-        net_b = b_bterm->getNet();
-      }
+      odb::dbNet* net_a = getNetFromPin(a_iterm, a_bterm);
+      odb::dbNet* net_b = getNetFromPin(b_iterm, b_bterm);
 
       // Only draw when consecutive pins are on the same net (wire segment)
       if (net_a && net_a == net_b && seen_nets.insert(net_a).second) {

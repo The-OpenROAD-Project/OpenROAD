@@ -39,8 +39,10 @@ cc_library(
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
-    copts = ["-Isrc/gui/src"],
-    includes = ["include"],
+    includes = [
+        "include",
+        "src",
+    ],
     deps = [
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
