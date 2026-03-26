@@ -2360,6 +2360,8 @@ void HierRTLMP::commitMacroPlacementToDb()
       inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
     }
 
+    // There is no need to create blockages for soft halos since other tools
+    // capable of placement are aware of them
     if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
       hard_macro->setRealLocation(inst->getLocation());
       odb::Rect box = hard_macro->getBBox();
