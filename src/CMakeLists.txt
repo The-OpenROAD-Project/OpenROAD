@@ -238,31 +238,8 @@ endif()
 
 find_package(spdlog REQUIRED)
 message(STATUS "spdlog: ${spdlog_VERSION}")
-
-# Detect the fmt version bundled inside the installed spdlog and pre-declare
-# it for FetchContent so that OpenSTA fetches a matching version.
-# This avoids fmt::vXX ABI mismatches when SPDLOG_FMT_EXTERNAL is enabled,
-# and keeps the fix in OpenROAD's build rather than in sta/CMakeLists.txt.
-if(TARGET spdlog::spdlog)
-  get_target_property(_spdlog_incs spdlog::spdlog INTERFACE_INCLUDE_DIRECTORIES)
-  foreach(_inc IN LISTS _spdlog_incs)
-    if(EXISTS "${_inc}/spdlog/fmt/bundled/base.h")
-      file(STRINGS "${_inc}/spdlog/fmt/bundled/base.h" _fmt_ver_line
-           REGEX "^#define FMT_VERSION ")
-      string(REGEX MATCH "[0-9]+" _fmt_ver "${_fmt_ver_line}")
-      math(EXPR _v_major "${_fmt_ver} / 10000")
-      math(EXPR _v_minor "(${_fmt_ver} % 10000) / 100")
-      math(EXPR _v_patch "${_fmt_ver} % 100")
-      set(_spdlog_fmt_tag "${_v_major}.${_v_minor}.${_v_patch}")
-      message(STATUS "spdlog bundled fmt: ${_spdlog_fmt_tag} - pre-declaring for OpenSTA")
-      include(FetchContent)
-      FetchContent_Declare(fmt
-        GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-        GIT_TAG        ${_spdlog_fmt_tag}
-      )
-      break()
-    endif()
-  endforeach()
+if (${SPDLOG_FMT_EXTERNAL})
+  message(WARNING "spdlog: SPDLOG_FMT_EXTERNAL=${SPDLOG_FMT_EXTERNAL}")
 endif()
 
 find_package(Threads REQUIRED)
@@ -281,9 +258,6 @@ if (NOT USE_SYSTEM_OPENSTA)
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   endif()
   add_subdirectory(sta)
-  # Use the external fmt (fetched above) instead of spdlog's bundled copy to
-  # avoid fmt::vXX ODR violations when sta and spdlog headers share a TU.
-  target_compile_definitions(OpenSTA PUBLIC SPDLOG_FMT_EXTERNAL)
 endif()
 add_subdirectory(dbSta)
 add_subdirectory(rsz)
