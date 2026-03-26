@@ -393,6 +393,14 @@ html, body {
     background: var(--border-subtle);
 }
 
+/* Leaflet map cursor */
+.leaflet-container {
+    cursor: default !important;
+}
+.leaflet-dragging .leaflet-container {
+    cursor: grabbing !important;
+}
+
 /* Leaflet tiles */
 .leaflet-tile {
     image-rendering: auto;
