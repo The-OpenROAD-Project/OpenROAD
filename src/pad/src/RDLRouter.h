@@ -206,8 +206,8 @@ class RDLRouter
   void buildIntialRouteSet();
   int reportFailedRoutes(
       const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const;
-  std::set<odb::dbInst*> getRoutedInstances() const;
-  int getRoutingInstanceCount() const;
+  std::set<odb::dbITerm*> getRoutedTerms() const;
+  int getRoutingTermCount() const;
 
   int getBloatFactor() const;
   bool isDebugNet(odb::dbNet* net) const;

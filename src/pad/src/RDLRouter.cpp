@@ -211,46 +211,43 @@ void RDLRouter::buildIntialRouteSet()
   }
 }
 
-int RDLRouter::getRoutingInstanceCount() const
+int RDLRouter::getRoutingTermCount() const
 {
-  std::set<odb::dbInst*> insts;
+  std::set<odb::dbITerm*> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
-        insts.insert(iterm->getInst());
-      }
+      const auto& routed_terminals = route->getRoutedTerminals();
+      terms.insert(routed_terminals.begin(), routed_terminals.end());
     } else {
-      insts.insert(route->getTerminal()->getInst());
-      for (const auto* iterm : route->getTerminals()) {
-        insts.insert(iterm->getInst());
-      }
+      terms.insert(route->getTerminal());
+      const auto& terminals = route->getTerminals();
+      terms.insert(terminals.begin(), terminals.end());
     }
   }
-  return insts.size();
+  return terms.size();
 }
 
-std::set<odb::dbInst*> RDLRouter::getRoutedInstances() const
+std::set<odb::dbITerm*> RDLRouter::getRoutedTerms() const
 {
-  std::set<odb::dbInst*> insts;
+  std::set<odb::dbITerm*> terms;
   for (const auto& route : routes_) {
     if (route->isRouted()) {
-      for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
-        insts.insert(iterm->getInst());
-      }
+      const auto& routed_terminals = route->getRoutedTerminals();
+      terms.insert(routed_terminals.begin(), routed_terminals.end());
     }
   }
-  return insts;
+  return terms;
 }
 
 std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
 {
   // record sucessful
-  std::set<odb::dbInst*> success_covers;
+  std::set<odb::dbITerm*> success_covers;
   for (auto& route : routes_) {
     if (route->isRouted()) {
       for (odb::dbITerm* iterm : route->getRoutedTerminals()) {
         if (isCoverTerm(iterm)) {
-          success_covers.insert(iterm->getInst());
+          success_covers.insert(iterm);
         }
       }
     }
@@ -262,8 +259,7 @@ std::vector<RDLRouter::RDLRoutePtr> RDLRouter::getFailedRoutes() const
       continue;
     }
 
-    if (success_covers.find(route->getTerminal()->getInst())
-        != success_covers.end()) {
+    if (success_covers.find(route->getTerminal()) != success_covers.end()) {
       continue;
     }
 
@@ -390,7 +386,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   std::set<odb::dbITerm*> routed_non_covers;
   // track iteration information
   int iteration_count = 0;
-  std::set<odb::dbInst*> last_itr_routed;
+  std::set<odb::dbITerm*> last_itr_routed;
 
   // add initial queue
   for (const auto& route : routes_) {
@@ -558,18 +554,18 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       // at the end of the queue, should check for failures and retry
       iteration_count++;
 
-      const auto routed_insts = getRoutedInstances();
+      const auto routed_terms = getRoutedTerms();
       logger_->info(utl::PAD,
                     37,
                     "End of routing iteration {}: {:.1f}% complete",
                     iteration_count,
-                    100 * static_cast<double>(routed_insts.size())
-                        / getRoutingInstanceCount());
+                    100 * static_cast<double>(routed_terms.size())
+                        / getRoutingTermCount());
 
-      if (last_itr_routed == routed_insts) {
+      if (last_itr_routed == routed_terms) {
         continue;
       }
-      last_itr_routed = routed_insts;
+      last_itr_routed = routed_terms;
 
       std::vector<RDLRoutePtr> failed = getFailedRoutes();
 
@@ -1932,8 +1928,9 @@ RDLRouter::generateRoutingTargets(odb::dbNet* net) const
       continue;
     }
 
-    auto* prop = odb::dbBoolProperty::find(iterm, kRouteProperty);
-    if (prop && !prop->getValue()) {
+    auto* iprop = odb::dbBoolProperty::find(iterm, kRouteProperty);
+    auto* mprop = odb::dbBoolProperty::find(iterm->getMTerm(), kRouteProperty);
+    if ((iprop && !iprop->getValue()) || (mprop && !mprop->getValue())) {
       debugPrint(logger_,
                  utl::PAD,
                  "Router",
