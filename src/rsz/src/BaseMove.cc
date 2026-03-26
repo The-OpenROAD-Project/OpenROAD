@@ -827,18 +827,20 @@ vector<const sta::Pin*> BaseMove::getOutputPins(const sta::Instance* inst)
       outputs.push_back(pin);
     }
   }
-
   return outputs;
 }
 
 bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
-                                    sta::LibertyPort* output_port,
-                                    float output_cap)
+                                     sta::LibertyPort* output_port,
+                                     float output_cap)
 {
-  float max_cap;
-  bool cap_limit_exists;
-  // FIXME: Can we update to consider multiple corners?
-  output_port->capacitanceLimit(resizer_->max_, max_cap, cap_limit_exists);
+  // Check capacitance limit across all corners (not just one).
+  float cap1, max_cap1, cap_slack1;
+  const sta::Scene* scene1;
+  const sta::RiseFall* tr1;
+  sta_->checkCapacitance(
+      output_pin, sta_->scenes(), resizer_->max_,
+      cap1, max_cap1, cap_slack1, tr1, scene1);
 
   debugPrint(logger_,
              RSZ,
@@ -846,10 +848,10 @@ bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
              3,
              " fanout pin {} cap {} output_cap {} ",
              output_port->name(),
-             max_cap,
+             max_cap1,
              output_cap);
 
-  if (cap_limit_exists && max_cap > 0.0 && output_cap > max_cap) {
+  if (max_cap1 > 0.0 && scene1 && output_cap > max_cap1) {
     debugPrint(logger_,
                RSZ,
                "opt_moves",
@@ -858,7 +860,7 @@ bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
                network_->pathName(output_pin),
                output_port->libertyCell()->name(),
                output_cap,
-               max_cap);
+               max_cap1);
     return true;
   }
 
@@ -866,30 +868,32 @@ bool BaseMove::checkMaxCapViolation(const sta::Pin* output_pin,
 }
 
 bool BaseMove::checkMaxSlewViolation(const sta::Pin* output_pin,
-                                     sta::LibertyPort* output_port,
-                                     float output_slew_factor,
-                                     float output_cap,
-                                     const sta::Scene* scene)
+                                      sta::LibertyPort* output_port,
+                                      float output_slew_factor,
+                                      float output_cap)
 {
   float output_res = output_port->driveResistance();
   float output_slew = output_slew_factor * output_res * output_cap;
-  float max_slew;
-  bool slew_limit_exists;
 
-  sta_->findSlewLimit(
-      output_port, scene, resizer_->max_, max_slew, slew_limit_exists);
+  // Check slew limit across all scenes (not just one).
+  for (const sta::Scene* scene : sta_->scenes()) {
+    float max_slew;
+    bool slew_limit_exists;
+    sta_->findSlewLimit(
+        output_port, scene, resizer_->max_, max_slew, slew_limit_exists);
 
-  if (output_slew > max_slew) {
-    debugPrint(logger_,
-               RSZ,
-               "opt_moves",
-               2,
-               "  skip based on max slew {} gate={} slew={} max_slew={}",
-               network_->pathName(output_pin),
-               output_port->libertyCell()->name(),
-               output_slew,
-               max_slew);
-    return true;
+    if (slew_limit_exists && output_slew > max_slew) {
+      debugPrint(logger_,
+                 RSZ,
+                 "opt_moves",
+                 2,
+                 "  skip based on max slew {} gate={} slew={} max_slew={}",
+                 network_->pathName(output_pin),
+                 output_port->libertyCell()->name(),
+                 output_slew,
+                 max_slew);
+      return true;
+    }
   }
 
   return false;

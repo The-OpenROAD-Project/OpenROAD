@@ -187,8 +187,7 @@ class BaseMove : public sta::dbStaState
   bool checkMaxSlewViolation(const sta::Pin* output_pin,
                              sta::LibertyPort* output_port,
                              float output_slew_factor,
-                             float output_cap,
-                             const sta::Scene* corner);
+                             float output_cap);
   float computeElmoreSlewFactor(const sta::Pin* output_pin,
                                 sta::LibertyPort* output_port,
                                 float output_load_cap);
