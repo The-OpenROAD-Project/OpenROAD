@@ -27,6 +27,7 @@ cc_library(
         "include",
     ],
     deps = [
+        "//src/syn/src/ir",
         "//src/dbSta",
         "//src/odb/src/db",
         "//src/utl",
