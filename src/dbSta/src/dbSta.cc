@@ -113,22 +113,15 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void reportMsg(const std::string& formatted_msg) override;
-  void warnMsg(int id, const std::string& formatted_msg) override;
-  void fileWarnMsg(int id,
-                   std::string_view filename,
-                   int line,
-                   const std::string& formatted_msg) override;
-  void errorMsg(int id, const std::string& formatted_msg) override;
-  void fileErrorMsg(int id,
-                    std::string_view filename,
-                    int line,
-                    const std::string& formatted_msg) override;
-  void criticalMsg(int id, const std::string& formatted_msg) override;
-  void fileCriticalMsg(int id,
-                       std::string_view filename,
-                       int line,
-                       const std::string& formatted_msg) override;
+  void warnMsg(int id, const std::string& formatted_msg);
+  void fileWarnMsg(int id, std::string_view filename, int line,
+                   const std::string& formatted_msg);
+  void errorMsg(int id, const std::string& formatted_msg);
+  void fileErrorMsg(int id, std::string_view filename, int line,
+                    const std::string& formatted_msg);
+  void criticalMsg(int id, const std::string& formatted_msg);
+  void fileCriticalMsg(int id, std::string_view filename, int line,
+                       const std::string& formatted_msg);
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
@@ -1012,19 +1005,12 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   return length;
 }
 
-void dbStaReport::reportMsg(const std::string& formatted_msg)
-{
-  logger_->report("{}", formatted_msg);
-}
-
 void dbStaReport::warnMsg(int id, const std::string& formatted_msg)
 {
   logger_->warn(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileWarnMsg(int id,
-                              std::string_view filename,
-                              int line,
+void dbStaReport::fileWarnMsg(int id, std::string_view filename, int line,
                               const std::string& formatted_msg)
 {
   logger_->warn(STA, id, "{} line {}, {}", filename, line, formatted_msg);
@@ -1035,9 +1021,7 @@ void dbStaReport::errorMsg(int id, const std::string& formatted_msg)
   logger_->error(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileErrorMsg(int id,
-                               std::string_view filename,
-                               int line,
+void dbStaReport::fileErrorMsg(int id, std::string_view filename, int line,
                                const std::string& formatted_msg)
 {
   logger_->error(STA, id, "{} line {}, {}", filename, line, formatted_msg);
@@ -1048,9 +1032,7 @@ void dbStaReport::criticalMsg(int id, const std::string& formatted_msg)
   logger_->critical(STA, id, "{}", formatted_msg);
 }
 
-void dbStaReport::fileCriticalMsg(int id,
-                                  std::string_view filename,
-                                  int line,
+void dbStaReport::fileCriticalMsg(int id, std::string_view filename, int line,
                                   const std::string& formatted_msg)
 {
   logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);
