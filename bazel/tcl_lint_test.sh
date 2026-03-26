@@ -5,6 +5,6 @@
 # Lint all TCL files using tclint.
 set -euo pipefail
 TOOL="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
-WORKSPACE="$(cd "$(dirname "$(readlink -f tclint.toml)")" && pwd)"
+WORKSPACE="$(dirname "$(readlink -f tclint.toml)")"
 cd "$WORKSPACE"
 git ls-files '*.tcl' '*.sdc' '*.upf' -z | xargs -0 "$TOOL"
