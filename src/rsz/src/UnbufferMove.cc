@@ -58,7 +58,8 @@ using sta::Vertex;
 // 1) it is a buffer without attributes like dont-touch
 // 2) it doesn't create new max fanout violations
 // 3) it doesn't create new max cap violations
-// 4) it doesn't worsen slack
+// 4) it doesn't create new max slew violations
+// 5) it doesn't worsen slack
 bool UnbufferMove::doMove(const Path* drvr_path,
                           int drvr_index,
                           Slack drvr_slack,
@@ -70,8 +71,6 @@ bool UnbufferMove::doMove(const Path* drvr_path,
   LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
   LibertyCell* drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
 
-  // TODO:
-  // 1. add max slew check
   if (drvr_cell && drvr_cell->isBuffer()) {
     Pin* drvr_pin = drvr_path->pin(this);
     Instance* drvr = network_->instance(drvr_pin);
@@ -176,6 +175,59 @@ bool UnbufferMove::doMove(const Path* drvr_path,
             max_cap,
             network_->pathName(prev_drvr_pin));
         return false;
+      }
+    }
+
+    // Watch out for new max slew violations
+    {
+      Slew slew1;
+      float limit1, slack1;
+      const Scene* slew_corner;
+      const RiseFall* slew_tr;
+      sta_->checkSlew(prev_drvr_pin,
+                      sta_->scenes(),
+                      resizer_->max_,
+                      false,
+                      slew1,
+                      limit1,
+                      slack1,
+                      slew_tr,
+                      slew_corner);
+      if (limit1 > 0.0 && slew_corner) {
+        // Estimate new slew after buffer removal using library-accurate
+        // gate delay calculation.
+        ArcDelay old_delay[RiseFall::index_count];
+        ArcDelay new_delay[RiseFall::index_count];
+        Slew old_slew[RiseFall::index_count];
+        Slew new_slew[RiseFall::index_count];
+        float old_cap, new_cap;
+        if (resizer_->computeNewDelaysSlews(prev_drvr_pin,
+                                            drvr,
+                                            slew_corner,
+                                            old_delay,
+                                            new_delay,
+                                            old_slew,
+                                            new_slew,
+                                            old_cap,
+                                            new_cap)) {
+          float worst_new_slew
+              = std::max(new_slew[RiseFall::riseIndex()],
+                         new_slew[RiseFall::fallIndex()]);
+          if (worst_new_slew > limit1) {
+            debugPrint(
+                logger_,
+                RSZ,
+                "repair_setup",
+                2,
+                "buffer {} is not removed because of max slew limit "
+                "of {} (estimated slew {}) at {}",
+                db_network_->name(drvr),
+                limit1,
+                worst_new_slew,
+                network_->pathName(prev_drvr_pin));
+            return false;
+          }
+        }
       }
     }
 
