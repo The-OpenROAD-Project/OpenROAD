@@ -35,8 +35,7 @@ class MplObserver;
 class MacroPlacer
 {
  public:
-  MacroPlacer(sta::dbNetwork* network,
-              odb::dbDatabase* db,
+  MacroPlacer(odb::dbDatabase* db,
               sta::dbSta* sta,
               utl::Logger* logger,
               par::PartitionMgr* tritonpart);
