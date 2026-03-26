@@ -161,7 +161,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       populated_(false),
       colors_correct_(false),
       issue_redraw_(true),
-      block_(nullptr),
+      chip_(nullptr),
       logger_(logger),
       grid_x_size_(10.0),
       grid_y_size_(10.0),
@@ -201,7 +201,7 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
     logger_->error(utl::GUI, 73, "Unable to open {}", file);
   }
 
-  const double dbu_to_micron = block_->getDbUnitsPerMicron();
+  const double dbu_to_micron = getDbuPerMicron();
 
   csv << "x0,y0,x1,y1,value (" << getValueUnits() << ")\n";
   for (const auto& map_col : map_) {
@@ -501,7 +501,7 @@ std::vector<HeatMapDataSource::MapColor> HeatMapDataSource::getVisibleMap(
                              ? min_pixels_per_bin / pixels_per_dbu
                              : 0.0;
 
-  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
+  const double dbu_per_micron = getDbuPerMicron();
   const int x_scale
       = min_dbu <= 0.0
             ? 1

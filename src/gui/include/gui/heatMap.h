@@ -162,7 +162,7 @@ class HeatMapDataSource
   {
     return chip_ != nullptr ? chip_->getBlock() : nullptr;
   }
-
+  double getDbuPerMicron() const { return chip_->getDb()->getDbuPerMicron(); }
   // map controls
   void update() { destroyMap(); }
   void ensureMap();
