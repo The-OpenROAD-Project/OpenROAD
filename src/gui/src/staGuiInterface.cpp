@@ -1007,7 +1007,7 @@ std::set<std::string> STAGuiInterface::getGroupPathsNames() const
   std::set<std::string> group_paths_names;
   sta::Sdc* sdc = scene_->sdc();
   sta::GroupPathMap group_paths_map = sdc->groupPaths();
-  for (const auto [name, group_paths] : group_paths_map) {
+  for (const auto& [name, group_paths] : group_paths_map) {
     group_paths_names.insert(name);
   }
   return group_paths_names;
