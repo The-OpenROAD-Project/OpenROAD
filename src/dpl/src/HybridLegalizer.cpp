@@ -201,6 +201,13 @@ void HybridLegalizer::legalize()
     runNegotiation(illegal);
   }
 
+  // Re-sync the DPL pixel grid after negotiation.  During negotiation,
+  // overlapping cells share a single pixel->cell slot; when one is ripped
+  // up, the other's presence is lost.  A full re-sync ensures every cell
+  // is correctly painted so subsequent DRC checks (numViolations, etc.)
+  // see the true placement state.
+  syncAllCellsToDplGrid();
+
   if (debug_observer_) {
     setDplPositions();
     pushHybridPixels();
@@ -387,6 +394,12 @@ bool HybridLegalizer::initFromDb()
   for (auto* db_inst : block->getInsts()) {
     const auto status = db_inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::NONE) {
+      continue;
+    }
+    // Skip non-core-auto-placeable instances (pads, blocks, etc.) — these
+    // are absent from the Opendp network so DRC/legality checks can't be
+    // performed on them.  They are handled separately by setFixedGridCells().
+    if (!db_inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
 
@@ -977,6 +990,9 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
             node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
       return false;
     }
+  } else {
+    logger_->report("DRC objects not available!");
+    return false;
   }
 
   const int xBegin = effXBegin(cell);

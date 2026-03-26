@@ -38,6 +38,7 @@ class DplObserver
                          GridY yh)
       = 0;
   virtual void redrawAndPause() = 0;
+  virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 
   // Hybrid-legalizer grid visualisation support (default no-ops).
   virtual void setHybridPixels(const std::vector<HybridPixelState>& pixels,

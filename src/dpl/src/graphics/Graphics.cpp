@@ -136,8 +136,8 @@ void Graphics::drawObjects(gui::Painter& painter)
                             final_location.y(),
                             final_location.x() + width,
                             final_location.y() + height);
-      auto outline_color = gui::Painter::kYellow;
-      outline_color.a = 150;
+      auto outline_color = gui::Painter::kWhite;
+      // outline_color.a = 150;
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
       painter.drawRect(target_bbox);
@@ -210,7 +210,7 @@ void Graphics::drawObjects(gui::Painter& painter)
             break;
           case HybridPixelState::kFree:
             c = gui::Painter::kGreen;
-            c.a = 40;
+            c.a = 100;
             break;
           case HybridPixelState::kOccupied:
             c = gui::Painter::kWhite;

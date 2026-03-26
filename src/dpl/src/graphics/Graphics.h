@@ -32,6 +32,7 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridX xh,
                  GridY yh) override;
   void redrawAndPause() override;
+  const odb::dbInst* getDebugInstance() const override { return debug_instance_; }
 
   // HybridLegalizer grid visualisation
   void setHybridPixels(const std::vector<HybridPixelState>& pixels,

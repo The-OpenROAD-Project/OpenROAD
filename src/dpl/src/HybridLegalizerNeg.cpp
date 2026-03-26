@@ -173,12 +173,6 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   int moves_count = 0;
   sortByNegotiationOrder(activeCells);
 
-  // for(auto cell : activeCells){
-  //   logger_->report("Negotiation iter {}, cell {}, legal {}",
-  //                   iter,
-  //                   cell,
-  //                   isCellLegal(cell));
-  // }
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -191,9 +185,17 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     const auto [bx, by] = findBestLocation(idx, iter);
     place(idx, bx, by);
     moves_count++;
-    logger_->report("Negotiation iter {}, cell {}, moves {}, best location {}, {}",
+    debugPrint(logger_, utl::DPL, "hybrid", 2,
+               "Negotiation iter {}, cell {}, moves {}, best location {}, {}",
                 iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
   }
+
+  // Re-sync the DPL pixel grid before checking violations.  During the
+  // rip-up/place loop above, overlapping cells can lose their pixel->cell
+  // entry when a co-located cell is ripped up, leaving bystander cells
+  // invisible to DRC checks.  A full re-sync restores every cell so the
+  // violation scan below is accurate.
+  syncAllCellsToDplGrid();
 
   // Count remaining overflows (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
@@ -260,11 +262,12 @@ void HybridLegalizer::place(int cellIdx, int x, int y)
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
   syncCellToDplGrid(cellIdx);  
-  if (opendp_->iterative_debug_ && cells_[cellIdx].db_inst_ != nullptr) {
-    std::string name = cells_[cellIdx].db_inst_->getName();
-    if (name == "dpath.b_reg.out\\[13\\]$_DFFE_PP_") {
-      pushHybridPixels();
-      debug_observer_->redrawAndPause();
+  if (opendp_->iterative_debug_ && debug_observer_) {
+    const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
+    if (!debug_inst || cells_[cellIdx].db_inst_ == debug_inst) {
+      pushHybridPixels();            
+      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst_->getName());    
+      debug_observer_->drawSelected(cells_[cellIdx].db_inst_);
     }
   }
 }
@@ -350,6 +353,29 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   const auto [sx, sy] = snapToLegal(cellIdx, cell.initX, cell.initY);
   tryLocation(sx, sy);
 
+  if (opendp_->iterative_debug_ && debug_observer_) {
+    const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
+    if (cell.db_inst_ == debug_inst) {
+      logger_->report("  Best location for {} is ({}, {}) with cost {}.",
+                      cell.db_inst_->getName(),
+                      bestX,
+                      bestY,
+                      bestCost);
+      if (node != nullptr) {
+        odb::dbOrientType targetOrient = node->getOrient();
+        odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+        if (site != nullptr) {
+          auto orient = opendp_->grid_->getSiteOrientation(GridX{bestX}, GridY{bestY}, site);
+          if (orient.has_value()) {
+            targetOrient = orient.value();
+          }
+        }
+        const int drcCount = opendp_->drc_engine_->countDRCViolations(
+            node, GridX{bestX}, GridY{bestY}, targetOrient);
+        logger_->report("  DRC violations at best location: {}.", drcCount);
+      }
+    }
+  }
   return {bestX, bestY};
 }
 
