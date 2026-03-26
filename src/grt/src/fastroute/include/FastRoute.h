@@ -333,6 +333,15 @@ class FastRouteCore
                                int L,
                                const CostParams& cost_params,
                                float& slack_th);
+  bool runSnapshotBatchedMazeRoute(int iter,
+                                   int expand,
+                                   int ripup_threshold,
+                                   int maze_edge_threshold,
+                                   bool ordering,
+                                   int via,
+                                   int L,
+                                   const CostParams& cost_params,
+                                   float& slack_th);
   void convertToMazeroute();
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
@@ -642,6 +651,7 @@ class FastRouteCore
                                const std::vector<int>& batch_net_ids);
   void applySnapshotBatchRoute(int net_id, StTree&& sttree);
   void updatePlanarNetUsage(const StTree& sttree, FrNet* net, int edge_cost);
+  void resetSnapshotBatchStats();
   int edgeShift(stt::Tree& t, int net);
   int edgeShiftNew(stt::Tree& t, int net);
 
@@ -669,6 +679,9 @@ class FastRouteCore
   std::vector<odb::dbTechLayerDir> layer_directions_;
   std::vector<odb::dbTechLayer*> db_layers_;
   int num_threads_;
+  // When false, nets_ contains borrowed pointers from a parent
+  // FastRouteCore (snapshot-batch workers).  Workers must not outlive
+  // the parent's nets_ lifetime.
   bool owns_nets_;
   int snapshot_batched_width_;
   int x_range_;

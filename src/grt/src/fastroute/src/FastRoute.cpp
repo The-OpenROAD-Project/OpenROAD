@@ -36,9 +36,9 @@ namespace {
 constexpr int kSnapshotSemanticWidth = 16;
 constexpr int kSnapshotLowOverflowForSerialCleanup = 1500;
 constexpr int kSnapshotLowMaxOverflowForSerialCleanup = 32;
-constexpr int kSnapshotOverflowContinuationThreshold = 5000;
+constexpr int kMinNetsForSnapshotBatch = 2 * kSnapshotSemanticWidth;
 
-}
+}  // namespace
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
@@ -150,6 +150,11 @@ void FastRouteCore::clear()
   horizontal_blocked_intervals_.clear();
 
   detour_penalty_ = 0;
+  resetSnapshotBatchStats();
+}
+
+void FastRouteCore::resetSnapshotBatchStats()
+{
   snapshot_batch_sync_time_ = 0.0;
   snapshot_batch_route_time_ = 0.0;
   snapshot_batch_apply_time_ = 0.0;
@@ -225,7 +230,6 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   total_size = static_cast<int64>(y_grid_) * x_grid_;
   src_heap_2D_.resize(total_size);
-  total_size = static_cast<int64>(y_grid_) * x_grid_;
   dest_heap_2D_.resize(total_size);
 
   d1_2D_.resize(boost::extents[y_range_][x_range_]);
@@ -1024,8 +1028,7 @@ int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
   return snapshot_batched_width_ > 0 && !snapshot_batch_disabled_for_run_
-         && !debug_->isOn()
-         && net_count > resolveSnapshotBaseBatchSize(net_count)
+         && !debug_->isOn() && net_count > kMinNetsForSnapshotBatch
          && !hasNonSoftNdrNets();
 }
 
@@ -1056,24 +1059,31 @@ int FastRouteCore::resolveSnapshotNetsForBatch(const int iter,
 {
   const int nets_for_batch = resolveSnapshotBaseBatchSize(net_count);
 
-  const int early_iteration_limit = resolveSnapshotBatchIterationLimit(net_count);
+  const int early_iteration_limit
+      = resolveSnapshotBatchIterationLimit(net_count);
   const int scaled_iter = iter * 100;
-  constexpr int kHalfPercentage = 25;
-  constexpr int kQuarterPercentage = 50;
-  constexpr int kSinglePercentage = 75;
+  // Thresholds on iteration progress (% of early_iteration_limit) that
+  // progressively shrink the batch size for finer-grained convergence.
+  constexpr int kBatchHalfThreshold = 25;
+  constexpr int kBatchQuarterThreshold = 50;
+  constexpr int kBatchSingleThreshold = 75;
 
-  if (scaled_iter > kSinglePercentage * early_iteration_limit) {
+  if (scaled_iter > kBatchSingleThreshold * early_iteration_limit) {
     return 1;
   }
-  if (scaled_iter > kQuarterPercentage * early_iteration_limit) {
+  if (scaled_iter > kBatchQuarterThreshold * early_iteration_limit) {
     return std::max(1, nets_for_batch / 4);
   }
-  if (scaled_iter > kHalfPercentage * early_iteration_limit) {
+  if (scaled_iter > kBatchHalfThreshold * early_iteration_limit) {
     return std::max(1, nets_for_batch / 2);
   }
   return nets_for_batch;
 }
 
+// Build a lightweight worker that shares read-only config and net pointers
+// with the parent but owns its own routing state (graph2d_, sttrees_, etc.).
+// NOTE: new members added to FastRouteCore may need to be copied here;
+// consider grouping routing config into a struct if this list keeps growing.
 std::unique_ptr<FastRouteCore> FastRouteCore::buildSnapshotBatchWorker() const
 {
   auto worker = std::make_unique<FastRouteCore>(
@@ -1676,13 +1686,7 @@ NetRouteMap FastRouteCore::run()
     return getRoutes();
   }
 
-  snapshot_batch_sync_time_ = 0.0;
-  snapshot_batch_route_time_ = 0.0;
-  snapshot_batch_apply_time_ = 0.0;
-  snapshot_batch_count_ = 0;
-  snapshot_batch_net_count_ = 0;
-  snapshot_batch_wave_count_ = 0;
-  snapshot_batch_disabled_for_run_ = false;
+  resetSnapshotBatchStats();
 
   double total_run_time = 0.0;
   double initial_rsmt_time = 0.0;
@@ -1916,176 +1920,118 @@ NetRouteMap FastRouteCore::run()
             GRT, 102, "Start extra iteration {}/{}", i, overflow_iterations_);
       }
 
-    if (THRESH_M > 15) {
-      THRESH_M -= thStep1;
-    } else if (THRESH_M >= 2) {
-      THRESH_M -= thStep2;
-    } else {
-      THRESH_M = 0;
-    }
-    THRESH_M = std::max(THRESH_M, 0);
+      if (THRESH_M > 15) {
+        THRESH_M -= thStep1;
+      } else if (THRESH_M >= 2) {
+        THRESH_M -= thStep2;
+      } else {
+        THRESH_M = 0;
+      }
+      THRESH_M = std::max(THRESH_M, 0);
 
-    if (total_overflow_ > 2000) {
-      enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
-      cost_step = CSTEP1;
-    } else if (total_overflow_ < 500) {
-      cost_step = CSTEP3;
-      enlarge_ += ESTEP3;
-      ripup_threshold = -1;
-    } else {
-      cost_step = CSTEP2;
-      enlarge_ += ESTEP2;
-    }
-    graph2d_.updateCongestionHistory(upType, ahth_, stopDEC, max_adj);
-
-    if (total_overflow_ > 15000 && maxOverflow > 400) {
-      enlarge_ = std::max(x_grid_, y_grid_) / 30;
-      slope = BIG_INT;
-      if (i == 5) {
-        VIA = 0;
-        logistic_coef = 1.33;
+      if (total_overflow_ > 2000) {
+        enlarge_ += ESTEP1;  // ENLARGE+(i-1)*ESTEP;
+        cost_step = CSTEP1;
+      } else if (total_overflow_ < 500) {
+        cost_step = CSTEP3;
+        enlarge_ += ESTEP3;
         ripup_threshold = -1;
-      } else if (i > 6) {
-        if (i % 2 == 0) {
-          logistic_coef += 0.5;
+      } else {
+        cost_step = CSTEP2;
+        enlarge_ += ESTEP2;
+      }
+      graph2d_.updateCongestionHistory(upType, ahth_, stopDEC, max_adj);
+
+      if (total_overflow_ > 15000 && maxOverflow > 400) {
+        enlarge_ = std::max(x_grid_, y_grid_) / 30;
+        slope = BIG_INT;
+        if (i == 5) {
+          VIA = 0;
+          logistic_coef = 1.33;
+          ripup_threshold = -1;
+        } else if (i > 6) {
+          if (i % 2 == 0) {
+            logistic_coef += 0.5;
+          }
+        }
+        if (i > 10) {
+          ripup_threshold = 0;
         }
       }
-      if (i > 10) {
-        ripup_threshold = 0;
+
+      enlarge_ = std::min(enlarge_, x_grid_ / 2);
+      costheight_ += cost_step;
+      mazeedge_threshold_ = THRESH_M;
+
+      if (upType == 3) {
+        logistic_coef = std::max<float>(2.0 / (1 + log(maxOverflow + max_adj)),
+                                        logistic_coef);
+      } else {
+        logistic_coef
+            = std::max<float>(2.0 / (1 + log(maxOverflow)), logistic_coef);
       }
-    }
 
-    enlarge_ = std::min(enlarge_, x_grid_ / 2);
-    costheight_ += cost_step;
-    mazeedge_threshold_ = THRESH_M;
-
-    if (upType == 3) {
-      logistic_coef = std::max<float>(2.0 / (1 + log(maxOverflow + max_adj)),
-                                      logistic_coef);
-    } else {
-      logistic_coef
-          = std::max<float>(2.0 / (1 + log(maxOverflow)), logistic_coef);
-    }
-
-    if (i == 8) {
-      L = 0;
-      upType = 2;
-      graph2d_.InitLastUsage(upType);
-    }
-
-    if (maxOverflow == 1) {
-      ripup_threshold = -1;
-      slope = 5;
-    }
-
-    if (maxOverflow > 300 && past_cong > 15000) {
-      L = 0;
-    }
-
-    const int snapshot_batch_count_before = snapshot_batch_count_;
-    auto cost_params = CostParams(logistic_coef, costheight_, slope);
-    mazeRouteMSMD(i,
-                  enlarge_,
-                  ripup_threshold,
-                  mazeedge_threshold_,
-                  !(i % 3),
-                  VIA,
-                  L,
-                  cost_params,
-                  slack_th);
-
-    int last_cong = past_cong;
-    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-    snapshot_cleanup_active
-        = snapshot_cleanup_active
-          || snapshot_batch_count_ > snapshot_batch_count_before;
-
-    if (minofl > past_cong) {
-      minofl = past_cong;
-      minoflrnd = i;
-    }
-
-    if (snapshot_cleanup_active && past_cong < bmfl) {
-      copyRS();
-      bmfl = past_cong;
-      bwcnt = 0;
-    }
-
-    if (i == 8) {
-      L = 1;
-    }
-
-    i++;
-
-    if (past_cong < 200 && i > 30 && upType == 2 && max_adj <= 20) {
-      upType = 4;
-      stopDEC = true;
-    }
-
-    if (maxOverflow < 150) {
-      if (i == 20 && past_cong > 200) {
+      if (i == 8) {
         L = 0;
-        upType = 3;
-        stopDEC = true;
-        slope = 5;
-        auto cost_params = CostParams(logistic_coef, costheight_, slope);
-        mazeRouteMSMD(i,
-                      enlarge_,
-                      ripup_threshold,
-                      mazeedge_threshold_,
-                      !(i % 3),
-                      VIA,
-                      L,
-                      cost_params,
-                      slack_th);
-        last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-
-        graph2d_.str_accu(12);
-        L = 1;
-        stopDEC = false;
-        slope = 3;
         upType = 2;
+        graph2d_.InitLastUsage(upType);
       }
-      if (i == 35 && tUsage > 800000) {
-        graph2d_.str_accu(25);
-      }
-      if (i == 50 && tUsage > 800000) {
-        graph2d_.str_accu(40);
-      }
-    }
 
-    if (i > 50) {
-      upType = 4;
-      if (i > 70) {
+      if (maxOverflow == 1) {
+        ripup_threshold = -1;
+        slope = 5;
+      }
+
+      if (maxOverflow > 300 && past_cong > 15000) {
+        L = 0;
+      }
+
+      const int snapshot_batch_count_before = snapshot_batch_count_;
+      auto cost_params = CostParams(logistic_coef, costheight_, slope);
+      mazeRouteMSMD(i,
+                    enlarge_,
+                    ripup_threshold,
+                    mazeedge_threshold_,
+                    !(i % 3),
+                    VIA,
+                    L,
+                    cost_params,
+                    slack_th);
+
+      int last_cong = past_cong;
+      past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+      snapshot_cleanup_active
+          = snapshot_cleanup_active
+            || snapshot_batch_count_ > snapshot_batch_count_before;
+
+      if (minofl > past_cong) {
+        minofl = past_cong;
+        minoflrnd = i;
+      }
+
+      if (snapshot_cleanup_active && past_cong < bmfl) {
+        copyRS();
+        bmfl = past_cong;
+        bwcnt = 0;
+      }
+
+      if (i == 8) {
+        L = 1;
+      }
+
+      i++;
+
+      if (past_cong < 200 && i > 30 && upType == 2 && max_adj <= 20) {
+        upType = 4;
         stopDEC = true;
       }
-    }
 
-    if (past_cong > 0.7 * last_cong) {
-      costheight_ += CSTEP3;
-    }
-
-    if (past_cong >= last_cong) {
-      VIA = 0;
-    }
-
-    if (snapshot_cleanup_active && i > snapshot_iteration_limit) {
-      if (past_cong >= bmfl) {
-        bwcnt++;
-      }
-
-      if (bwcnt > snapshot_cleanup_patience) {
-        break;
-      }
-    } else {
-      if (past_cong < bmfl) {
-        bwcnt = 0;
-        if (i > 140 || (i > 80 && past_cong < 20)) {
-          copyRS();
-          bmfl = past_cong;
-
+      if (maxOverflow < 150) {
+        if (i == 20 && past_cong > 200) {
           L = 0;
+          upType = 3;
+          stopDEC = true;
+          slope = 5;
           auto cost_params = CostParams(logistic_coef, costheight_, slope);
           mazeRouteMSMD(i,
                         enlarge_,
@@ -2098,101 +2044,159 @@ NetRouteMap FastRouteCore::run()
                         slack_th);
           last_cong = past_cong;
           past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-          if (past_cong < last_cong) {
-            copyRS();
-            bmfl = past_cong;
-          }
+
+          graph2d_.str_accu(12);
           L = 1;
-          if (minofl > past_cong) {
-            minofl = past_cong;
-            minoflrnd = i;
-          }
+          stopDEC = false;
+          slope = 3;
+          upType = 2;
+        }
+        if (i == 35 && tUsage > 800000) {
+          graph2d_.str_accu(25);
+        }
+        if (i == 50 && tUsage > 800000) {
+          graph2d_.str_accu(40);
+        }
+      }
+
+      if (i > 50) {
+        upType = 4;
+        if (i > 70) {
+          stopDEC = true;
+        }
+      }
+
+      if (past_cong > 0.7 * last_cong) {
+        costheight_ += CSTEP3;
+      }
+
+      if (past_cong >= last_cong) {
+        VIA = 0;
+      }
+
+      if (snapshot_cleanup_active && i > snapshot_iteration_limit) {
+        if (past_cong >= bmfl) {
+          bwcnt++;
+        }
+
+        if (bwcnt > snapshot_cleanup_patience) {
+          break;
         }
       } else {
-        bwcnt++;
-      }
+        if (past_cong < bmfl) {
+          bwcnt = 0;
+          if (i > 140 || (i > 80 && past_cong < 20)) {
+            copyRS();
+            bmfl = past_cong;
 
-      if (bmfl > 10) {
-        if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
-          break;
+            L = 0;
+            auto cost_params = CostParams(logistic_coef, costheight_, slope);
+            mazeRouteMSMD(i,
+                          enlarge_,
+                          ripup_threshold,
+                          mazeedge_threshold_,
+                          !(i % 3),
+                          VIA,
+                          L,
+                          cost_params,
+                          slack_th);
+            last_cong = past_cong;
+            past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+            if (past_cong < last_cong) {
+              copyRS();
+              bmfl = past_cong;
+            }
+            L = 1;
+            if (minofl > past_cong) {
+              minofl = past_cong;
+              minoflrnd = i;
+            }
+          }
+        } else {
+          bwcnt++;
         }
-        if (bmfl < 30 && bwcnt > 50) {
-          break;
+
+        if (bmfl > 10) {
+          if (bmfl > 30 && bmfl < 72 && bwcnt > 50) {
+            break;
+          }
+          if (bmfl < 30 && bwcnt > 50) {
+            break;
+          }
         }
       }
-    }
 
-    if (i >= mazeRound) {
-      getOverflow2Dmaze(&maxOverflow, &tUsage);
-      break;
-    }
+      if (i >= mazeRound) {
+        getOverflow2Dmaze(&maxOverflow, &tUsage);
+        break;
+      }
 
-    if (total_overflow_ > last_total_overflow) {
-      overflow_increases++;
-    }
-    if (last_total_overflow > 0) {
-      overflow_reduction_percent
-          = std::max(overflow_reduction_percent,
-                     1 - ((float) total_overflow_ / last_total_overflow));
-    }
+      if (total_overflow_ > last_total_overflow) {
+        overflow_increases++;
+      }
+      if (last_total_overflow > 0) {
+        overflow_reduction_percent
+            = std::max(overflow_reduction_percent,
+                       1 - ((float) total_overflow_ / last_total_overflow));
+      }
 
-    last_total_overflow = total_overflow_;
+      last_total_overflow = total_overflow_;
 
-    if (logger_->debugCheck(GRT, "congestionIterations", 1)) {
-      logger_->report(
-          "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
-          "OverflowIncreases {} - MaxOverIncr {} ===",
-          i,
-          total_overflow_,
-          overflow_iterations_,
-          overflow_increases,
-          max_overflow_increases);
-    }
+      if (logger_->debugCheck(GRT, "congestionIterations", 1)) {
+        logger_->report(
+            "=== Overflow Iteration {} - TotalOverflow {} - OverflowIter {} - "
+            "OverflowIncreases {} - MaxOverIncr {} ===",
+            i,
+            total_overflow_,
+            overflow_iterations_,
+            overflow_increases,
+            max_overflow_increases);
+      }
 
-    // Try disabling NDR nets to fix congestion
-    if (total_overflow_ > 0
-        && (i == overflow_iterations_
-            || overflow_increases == max_overflow_increases)) {
-      // Compute all the NDR nets involved in congestion
-      computeCongestedNDRnets();
+      // Try disabling NDR nets to fix congestion
+      if (total_overflow_ > 0
+          && (i == overflow_iterations_
+              || overflow_increases == max_overflow_increases)) {
+        // Compute all the NDR nets involved in congestion
+        computeCongestedNDRnets();
 
-      std::vector<int> net_ids;
+        std::vector<int> net_ids;
 
-      // If the congestion is not that high (note that the overflow is inflated
-      // by 100x when there is no capacity available for a NDR net in a specific
-      // edge)
-      if (total_overflow_ < soft_ndr_overflow_th) {
-        // Select one NDR net to be disabled
-        int net_id = graph2d_.getOneCongestedNDRnet();
-        if (net_id != -1) {
-          net_ids.push_back(net_id);
+        // If the congestion is not that high (note that the overflow is inflated
+        // by 100x when there is no capacity available for a NDR net in a specific
+        // edge)
+        if (total_overflow_ < soft_ndr_overflow_th) {
+          // Select one NDR net to be disabled
+          int net_id = graph2d_.getOneCongestedNDRnet();
+          if (net_id != -1) {
+            net_ids.push_back(net_id);
+          }
+        } else {  // Select multiple NDR nets
+          net_ids = graph2d_.getMultipleCongestedNDRnet();
         }
-      } else {  // Select multiple NDR nets
-        net_ids = graph2d_.getMultipleCongestedNDRnet();
+
+        // Only apply soft NDR if there is NDR nets involved in congestion
+        if (!net_ids.empty()) {
+          // Apply the soft NDR to the selected list of nets
+          applySoftNDR(net_ids);
+
+          // Reset loop parameters
+          overflow_increases = 0;
+          i = 1;
+          costheight_ = COSHEIGHT;
+          enlarge_ = ENLARGE;
+          ripup_threshold = Ripvalue;
+          minofl = total_overflow_;
+          bmfl = minofl;
+          stopDEC = false;
+
+          slope = 20;
+          L = 1;
+
+          // Increase maze route 3D threshold to fix bad routes
+          long_edge_len = BIG_INT;
+        }
       }
-
-      // Only apply soft NDR if there is NDR nets involved in congestion
-      if (!net_ids.empty()) {
-        // Apply the soft NDR to the selected list of nets
-        applySoftNDR(net_ids);
-
-        // Reset loop parameters
-        overflow_increases = 0;
-        i = 1;
-        costheight_ = COSHEIGHT;
-        enlarge_ = ENLARGE;
-        ripup_threshold = Ripvalue;
-        minofl = total_overflow_;
-        bmfl = minofl;
-        stopDEC = false;
-
-        slope = 20;
-        L = 1;
-
-        // Increase maze route 3D threshold to fix bad routes
-        long_edge_len = BIG_INT;
-      }
-    }
 
       // generate DRC report each interval
       if (congestion_report_iter_step_
