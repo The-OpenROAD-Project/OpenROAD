@@ -276,17 +276,12 @@ void NesterovPlace::updateIterGraphics(
     int timing_driven_count,
     bool& final_routability_image_saved)
 {
-  if (graphics_) {
-    graphics_->addIter(iter, average_overflow_unscaled_);
-  }
-
-  if (!graphics_ || !graphics_->enabled()) {
+  if (!graphics_ || !graphics_->enabled() || !npVars_.debug) {
     return;
   }
 
-  if (!npVars_.debug) {
-    return;
-  }
+  graphics_->addIter(iter, average_overflow_unscaled_);
+
   // For JPEG Saving
   updateDb();
 

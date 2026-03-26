@@ -577,62 +577,52 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
     return;
   }
   odb::dbBlock* block = pbc_->db()->getChip()->getBlock();
-  if (main_chart_ != nullptr) {
-    main_chart_->addPoint(iter,
-                          {block->dbuToMicrons(nbc_->getHpwl()), overflow});
-  }
+  main_chart_->addPoint(iter, {block->dbuToMicrons(nbc_->getHpwl()), overflow});
 
-  if (density_chart_ != nullptr) {
-    std::vector<double> values;
-    if (!nbVec_.empty() && nbVec_[0]) {
-      values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
-      values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
-    } else {
-      values.push_back(0.0);
-      values.push_back(0.0);
-    }
-    density_chart_->addPoint(iter, values);
+  std::vector<double> values;
+  if (!nbVec_.empty() && nbVec_[0]) {
+    values.push_back((static_cast<double>(nbVec_[0]->getDensityPenalty())));
+    values.push_back(static_cast<double>(nbVec_[0]->getStoredPhiCoef()));
+  } else {
+    values.push_back(0.0);
+    values.push_back(0.0);
   }
+  density_chart_->addPoint(iter, values);
 
-  if (stepLength_chart_ != nullptr) {
-    std::vector<double> values;
-    if (!nbVec_.empty() && nbVec_[0]) {
-      values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
-      values.push_back(
-          static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
-      values.push_back(static_cast<double>(nbVec_[0]->getStoredGradDistance()));
-      values.push_back(
-          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
-    } else {
-      values.push_back(0.0);
-      values.push_back(0.0);
-      values.push_back(0.0);
-      values.push_back(0.0);
-    }
-    stepLength_chart_->addPoint(iter, values);
+  values.clear();
+  if (!nbVec_.empty() && nbVec_[0]) {
+    values.push_back(static_cast<double>(nbVec_[0]->getStoredStepLength()));
+    values.push_back(static_cast<double>(nbVec_[0]->getStoredCoordiDistance()));
+    values.push_back(static_cast<double>(nbVec_[0]->getStoredGradDistance()));
+    values.push_back(
+        block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+  } else {
+    values.push_back(0.0);
+    values.push_back(0.0);
+    values.push_back(0.0);
+    values.push_back(0.0);
   }
+  stepLength_chart_->addPoint(iter, values);
 
-  if (routing_chart_ != nullptr) {
-    std::vector<double> values;
-    if (!nbVec_.empty() && nbVec_[0]) {
-      values.push_back(static_cast<double>(rb_->getRudyAverage()));
-      values.push_back(
-          block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
-      const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
-      values.push_back(total_tiles > 0.0 ? (static_cast<double>(
-                                                rb_->getOverflowedTilesCount())
-                                            / total_tiles * 100.0)
-                                         : 0.0);
-      values.push_back((rb_->getTotalRudyOverflow()));
-    } else {
-      values.push_back(0.0);
-      values.push_back(0.0);
-      values.push_back(0.0);
-      values.push_back(0.0);
-      values.push_back(0.0);
-    }
-    routing_chart_->addPoint(iter, values);
+  values.clear();
+  if (!nbVec_.empty() && nbVec_[0]) {
+    values.push_back(static_cast<double>(rb_->getRudyAverage()));
+    values.push_back(
+        block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
+    const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
+    values.push_back(total_tiles > 0.0
+                         ? (static_cast<double>(rb_->getOverflowedTilesCount())
+                            / total_tiles * 100.0)
+                         : 0.0);
+    values.push_back((rb_->getTotalRudyOverflow()));
+  } else {
+    values.push_back(0.0);
+    values.push_back(0.0);
+    values.push_back(0.0);
+    values.push_back(0.0);
+    values.push_back(0.0);
   }
+  routing_chart_->addPoint(iter, values);
 }
 
 void GraphicsImpl::addTimingDrivenIter(const int iter)
