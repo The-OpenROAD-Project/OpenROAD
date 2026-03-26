@@ -411,8 +411,8 @@ void initGuideIntervals(const std::vector<frRect>& rects,
     const frCoord x2 = idx2.x();
     const frCoord y2 = idx2.y();
     const frLayerNum layer_num = rect.getLayerNum();
-    const bool is_horizontal = design->getTech()->getLayer(layer_num)->getDir()
-                               == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal
+        = design->getTech()->getLayer(layer_num)->isHorizontal();
     if (is_horizontal) {
       for (auto track_idx = y1; track_idx <= y2; track_idx++) {
         intvs[layer_num][track_idx].insert(Interval::closed(x1, x2));
@@ -761,12 +761,10 @@ void GuideProcessor::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
       odb::Rect guideBBox = rect.getBBox();
-      frCoord guideWidth = (getTech()->getLayer(layerNum)->getDir()
-                            == dbTechLayerDir::HORIZONTAL)
+      frCoord guideWidth = getTech()->getLayer(layerNum)->isHorizontal()
                                ? guideBBox.dy()
                                : guideBBox.dx();
-      if (getTech()->getLayer(layerNum)->getDir()
-          == dbTechLayerDir::HORIZONTAL) {
+      if (getTech()->getLayer(layerNum)->isHorizontal()) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
@@ -1187,8 +1185,7 @@ void GuideProcessor::genGuides_split(
   std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>
       pin_helper(getTech()->getLayers().size());
   for (const auto& [point, pins] : gcell_pin_map) {
-    if (getTech()->getLayer(point.z())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
+    if (getTech()->getLayer(point.z())->isHorizontal()) {
       pin_helper[point.z()][point.y()][point.x()] = pins;
     } else {
       pin_helper[point.z()][point.x()][point.y()] = pins;
@@ -1196,8 +1193,7 @@ void GuideProcessor::genGuides_split(
   }
 
   for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
-    auto dir = getTech()->getLayer(layer_num)->getDir();
-    const bool is_horizontal = dir == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal = getTech()->getLayer(layer_num)->isHorizontal();
     for (auto& [track_idx, curr_intvs] : intvs[layer_num]) {
       // split by lower/upper seg
       for (const auto& intv : curr_intvs) {
@@ -1611,12 +1607,13 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
     }
     const auto idx = *(indices.begin());
     if (isPinIdx(idx)) {
+      const double dbu_per_uu = design_->getTopBlock()->getDBUPerUU();
       logger_->error(DRT,
                      223,
-                     "Pin dangling id {} ({},{}) {}.",
+                     "Pin dangling id {} ({:.3f}um,{:.3f}um) {}.",
                      idx,
-                     pt.x(),
-                     pt.y(),
+                     pt.x() / (double) dbu_per_uu,
+                     pt.y() / (double) dbu_per_uu,
                      pt.z());
     }
     // no upper/lower guide

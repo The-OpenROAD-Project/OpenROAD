@@ -50,6 +50,7 @@ or_integration_tests(
     annealing_mirrored3
     annealing_mirrored4
     annealing_mirrored5
+    annealing_mirrored_hang
     blocked_region
     cells_not_placed
     exclude1

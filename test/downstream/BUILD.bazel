@@ -1,0 +1,34 @@
+# Targets for testing OpenROAD's public API from a downstream module.
+
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_test")
+
+# //:openroad is the public CLI binary — should be visible.
+genrule(
+    name = "openroad_visible",
+    srcs = ["@openroad"],
+    outs = ["openroad_visible.txt"],
+    cmd = "echo ok > $@",
+)
+
+# //:openroad_py is the public Python bindings — should be visible.
+py_test(
+    name = "openroad_py_test",
+    srcs = ["openroad_py_test.py"],
+    deps = ["@openroad//:openroad_py"],
+)
+
+# Targets below are expected to FAIL analysis (visibility restricted).
+# Used by visibility_test.sh to verify internal targets are not exposed.
+
+cc_library(
+    name = "openroad_lib_consumer",
+    deps = ["@openroad//:openroad_lib"],
+)
+
+genrule(
+    name = "openroadpy_so_consumer",
+    srcs = ["@openroad//:_openroadpy.so"],
+    outs = ["so_consumer.txt"],
+    cmd = "echo ok > $@",
+)

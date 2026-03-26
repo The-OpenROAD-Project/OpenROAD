@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025-2025, The OpenROAD Authors
+
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+sh_binary(
+    name = "install",
+    srcs = ["//bazel:install.sh"],
+    data = [":tarfile"],
+)
+
+pkg_tar(
+    name = "tarfile",
+    srcs = ["//:openroad"],
+    include_runfiles = True,
+    package_file_name = "openroad.tar",
+)
