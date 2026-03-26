@@ -1673,7 +1673,6 @@ bool HierRTLMP::validUtilization(
       case Cluster::Type::MacroArray:
       case Cluster::Type::InterconnectedMacrosArray:
         break;
-
     }
   }
 
@@ -2705,7 +2704,6 @@ bool Pusher::designHasSingleCentralizedMacroArray()
       case Cluster::Type::MacroArray:
       case Cluster::Type::InterconnectedMacrosArray:
         break;
-
     }
 
     if (macro_cluster_count > 1) {

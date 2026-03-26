@@ -299,8 +299,8 @@ void Cluster::setAsFixedMacro(const HardMacro* hard_macro)
 bool Cluster::isIOCluster() const
 {
   return type_ == Cluster::Type::ConstrainedIOs
-         || type_ == Cluster::Type::UnconstrainedIOs || type_ == Cluster::Type::PAD
-         || type_ == Cluster::Type::IOBundle;
+         || type_ == Cluster::Type::UnconstrainedIOs
+         || type_ == Cluster::Type::PAD || type_ == Cluster::Type::IOBundle;
 }
 
 bool Cluster::isClusterOfUnconstrainedIOPins() const
@@ -1052,8 +1052,7 @@ void SoftMacro::setArea(int64_t area)
 {
   if (area_ == 0 || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getType() == Cluster::Type::Macro
-      || cluster_->isIOCluster()
+      || cluster_->getType() == Cluster::Type::Macro || cluster_->isIOCluster()
       || area <= (width_intervals_.front().min
                   * static_cast<int64_t>(height_intervals_.front().max))) {
     return;

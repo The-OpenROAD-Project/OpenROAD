@@ -204,7 +204,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
       case Cluster::Type::MacroArray:
       case Cluster::Type::InterconnectedMacrosArray:
         break;
-
     }
   }
 }

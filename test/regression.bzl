@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: BSD-3-Clause
+wq# SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, The OpenROAD Authors
 
 """Instantiate a regression test based on .py or .tcl
@@ -45,19 +45,13 @@ exec "{bazel_test_sh}" "$@"
     return DefaultInfo(
         executable = test_script,
         runfiles = ctx.runfiles(
-            transitive_files = depset(
-                ctx.files.data + [
-                    ctx.file.test_file,
-                    ctx.file.bazel_test_sh,
-                    ctx.file.regression_test,
-                    ctx.executable.openroad,
-                ],
-                transitive = [
-                    ctx.attr.openroad[DefaultInfo].default_runfiles.files,
-                    ctx.attr.openroad[DefaultInfo].default_runfiles.symlinks,
-                ],
-            ),
-        ),
+            files = ctx.files.data + [
+                ctx.file.test_file,
+                ctx.file.bazel_test_sh,
+                ctx.file.regression_test,
+                ctx.executable.openroad,
+            ],
+        ).merge(ctx.attr.openroad[DefaultInfo].default_runfiles),
     )
 
 regression_rule_test = rule(
