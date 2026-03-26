@@ -3,6 +3,7 @@
 
 #include "UnbufferMove.hh"
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 #include <string>
@@ -14,6 +15,7 @@
 #include "SplitLoadMove.hh"
 #include "SwapPinsMove.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
@@ -373,13 +375,19 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   odb::dbModNet* ip_modnet = db_network_->hierNet(in_pin);
   odb::dbModNet* survivor_modnet = ip_modnet;
   odb::dbModNet* removed_modnet = op_modnet;
-  bool in_net_has_port = db_network_->hasPort(in_net);
-  bool out_net_has_port = db_network_->hasPort(out_net);
-  if (!in_net_has_port && out_net_has_port) {
-    survivor = out_net;
-    removed = in_net;
-    survivor_modnet = op_modnet;
-    removed_modnet = ip_modnet;
+
+  // When the buffer removal creates a feedthrough (input port directly
+  // wired to output port), the input ModNet must survive so that
+  // VerilogWriter sees port_name != net_name and emits the assign.
+  if (!bufferRemovalCreatesFeedthrough(ip_modnet, op_modnet)) {
+    bool in_net_has_port = db_network_->hasPort(in_net);
+    bool out_net_has_port = db_network_->hasPort(out_net);
+    if (!in_net_has_port && out_net_has_port) {
+      survivor = out_net;
+      removed = in_net;
+      survivor_modnet = op_modnet;
+      removed_modnet = ip_modnet;
+    }
   }
 
   // Disconnect the buffer and handle the nets
@@ -451,6 +459,31 @@ bool UnbufferMove::removeBuffer(Instance* buffer)
   }
 
   return true;
+}
+
+// Check if removing a buffer creates a feedthrough: input port directly
+// wired to output port within the same module.
+bool UnbufferMove::bufferRemovalCreatesFeedthrough(
+    odb::dbModNet* ip_modnet,
+    odb::dbModNet* op_modnet) const
+{
+  if (!ip_modnet || !op_modnet
+      || ip_modnet->getParent() != op_modnet->getParent()) {
+    return false;
+  }
+  odb::dbSet<odb::dbModBTerm> ip_bterms = ip_modnet->getModBTerms();
+  const bool ip_has_input_port
+      = std::ranges::any_of(ip_bterms, [](odb::dbModBTerm* bt) {
+          return bt->getIoType() == odb::dbIoType::INPUT;
+        });
+
+  odb::dbSet<odb::dbModBTerm> op_bterms = op_modnet->getModBTerms();
+  const bool op_has_output_port
+      = std::ranges::any_of(op_bterms, [](odb::dbModBTerm* bt) {
+          return bt->getIoType() == odb::dbIoType::OUTPUT;
+        });
+
+  return ip_has_input_port && op_has_output_port;
 }
 
 }  // namespace rsz
