@@ -113,21 +113,21 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport() = default;
 
   void setLogger(Logger* logger);
-  void warnMsg(int id, const std::string& formatted_msg);
+  void warnMsg(int id, const std::string& formatted_msg) override;
   void fileWarnMsg(int id,
                    std::string_view filename,
                    int line,
-                   const std::string& formatted_msg);
-  void errorMsg(int id, const std::string& formatted_msg);
+                   const std::string& formatted_msg) override;
+  void errorMsg(int id, const std::string& formatted_msg) override;
   void fileErrorMsg(int id,
                     std::string_view filename,
                     int line,
-                    const std::string& formatted_msg);
-  void criticalMsg(int id, const std::string& formatted_msg);
+                    const std::string& formatted_msg) override;
+  void criticalMsg(int id, const std::string& formatted_msg) override;
   void fileCriticalMsg(int id,
                        std::string_view filename,
                        int line,
-                       const std::string& formatted_msg);
+                       const std::string& formatted_msg) override;
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.

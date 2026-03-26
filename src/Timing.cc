@@ -161,13 +161,6 @@ float Timing::getPinArrivalTime(sta::Clock* clk,
   sta::dbSta* sta = getSta();
   (void) clk;
   (void) clk_rf;
-#if 0
-  // This api no longer exists.
-  if (clk) {
-    return sta::delayAsFloat(sta->arrival(
-        vertex, rf, clk->edge(clk_rf), sta->scenes(), sta::MinMax::max()));
-  }
-#endif
   return sta::delayAsFloat(sta->arrival(
       vertex, rf->asRiseFallBoth(), sta->scenes(), sta::MinMax::max()));
 }

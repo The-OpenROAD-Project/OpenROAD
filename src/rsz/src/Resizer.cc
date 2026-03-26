@@ -5865,9 +5865,9 @@ float Resizer::getSlewRCFactor() const
   return repair_design_->getSlewRCFactor();
 }
 
-float Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
-                                     float load,
-                                     const sta::Scene* scene)
+sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
+                                         float load,
+                                         const sta::Scene* scene)
 {
   float max_slew = 0;
 
