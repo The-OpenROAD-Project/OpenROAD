@@ -982,7 +982,7 @@ _install_ci_packages() {
     log "Install CI dependencies (-ci)"
     _execute "Updating package lists..." apt-get -y update
     _execute "Installing CI packages..." apt-get -y install --no-install-recommends \
-        apt-transport-https ca-certificates curl gnupg jq parallel \
+        apt-transport-https ca-certificates curl gnupg jq lsb-release parallel \
         python3 python3-pandas python3-pip software-properties-common \
         time unzip zip
 
