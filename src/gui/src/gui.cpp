@@ -1510,7 +1510,7 @@ void Gui::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
       continue;
     }
     auto instance = source->createInstance();
-    instance->setBlock(db->getChip() ? db->getChip()->getBlock() : nullptr);
+    instance->setChip(db->getChip());
     registerHeatMap(instance.get());
     owned_heat_maps_.push_back(std::move(instance));
   }
