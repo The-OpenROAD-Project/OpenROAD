@@ -3,7 +3,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -305,11 +305,14 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+py_test(
     name = "dpl_readme_msgs_check",
+    srcs = ["dpl_readme_msgs_check.py"],
     data = [
         "//src/dpl:doc_files",
         "//src/dpl:messages_txt",
     ],
+    tags = ["doc_check"],
     visibility = ["//visibility:public"],
+    deps = ["//docs/src/scripts:md_roff_compat"],
 )

@@ -6,7 +6,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -139,11 +139,14 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+py_test(
     name = "rcx_readme_msgs_check",
+    srcs = ["rcx_readme_msgs_check.py"],
     data = [
         "//src/rcx:doc_files",
         "//src/rcx:messages_txt",
     ],
+    tags = ["doc_check"],
     visibility = ["//visibility:public"],
+    deps = ["//docs/src/scripts:md_roff_compat"],
 )

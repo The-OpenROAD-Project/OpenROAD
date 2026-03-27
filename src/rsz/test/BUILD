@@ -3,7 +3,7 @@ load("@rules_python//python:defs.bzl", "py_test")
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -452,11 +452,14 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+py_test(
     name = "rsz_readme_msgs_check",
+    srcs = ["rsz_readme_msgs_check.py"],
     data = [
         "//src/rsz:doc_files",
         "//src/rsz:messages_txt",
     ],
+    tags = ["doc_check"],
     visibility = ["//visibility:public"],
+    deps = ["//docs/src/scripts:md_roff_compat"],
 )
