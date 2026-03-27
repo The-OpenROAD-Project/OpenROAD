@@ -20,9 +20,6 @@
 #include "heatMapGui.h"
 #include "heatMapSetup.h"
 #include "odb/db.h"
-#include "odb/dbTransform.h"
-#include "odb/unfoldedModel.h"
-#include "sta/PowerClass.hh"
 #include "utl/Logger.h"
 
 namespace gui {
@@ -55,6 +52,7 @@ class HeatMapRenderer : public Renderer
 
     if (first_paint_) {
       first_paint_ = false;
+      datasource_.ensureMap();
       datasource_.onShow();
     }
 

@@ -1523,16 +1523,16 @@ std::string Gui::loadExternalHeatMap(const std::string& file_path)
     return "";
   }
   const std::string short_name
-      = "External_" + std::to_string(external_heat_maps_.size() + 1);
+      = "External_" + std::to_string(owned_heat_maps_.size() + 1);
   auto parsed_data = ExternalHeatMapDataSource::parse(file_path, logger_);
   auto unfolded_chip
       = db_->getUnfoldedModel()->findUnfoldedChip(parsed_data.chiplet_name);
-  auto source = std::make_unique<ExternalHeatMapDataSource>(
+  auto source = std::make_shared<ExternalHeatMapDataSource>(
       logger_, parsed_data, short_name);
   source->setChip(db_->getChip());
   source->setUnfoldedChip(unfolded_chip);
-  source->registerHeatMap();
-  external_heat_maps_.push_back(std::move(source));
+  registerHeatMap(source.get());
+  owned_heat_maps_.push_back(std::move(source));
   return short_name;
 }
 
