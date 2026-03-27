@@ -64,7 +64,20 @@ When adding documentation tests for a new module:
 1. Add `filegroup(name = "doc_files")` and `messages_txt()` macro call
    to `src/{module}/BUILD` (load `messages_txt` from
    `//test:regression.bzl`)
-2. Add `doc_check_test` entries to `src/{module}/test/BUILD`
+2. Create symlinks in `src/{module}/test/` pointing to the shared scripts:
+   ```bash
+   cd src/{module}/test
+   ln -s ../../../docs/src/scripts/readme_msgs_check.py {module}_readme_msgs_check.py
+   ln -s ../../../docs/src/scripts/man_tcl_check.py {module}_man_tcl_check.py
+   ln -s ../../../docs/src/scripts/extract_utils.py extract_utils.py
+   ln -s ../../../docs/src/scripts/manpage.py manpage.py
+   ln -s ../../../docs/src/scripts/md_roff_compat.py md_roff_compat.py
+   ```
+3. Add `{module}_readme_msgs_check.ok` (expected output) to
+   `src/{module}/test/`
+4. Add test targets to `src/{module}/test/BUILD`:
+   - `doc_check_test` for `{module}_readme_msgs_check`
+   - `py_test` for `{module}_man_tcl_check`
 
 The `doc_check` tag is automatically added by the macro, so
 `--test_tag_filters=doc_check` picks up new tests without any changes
