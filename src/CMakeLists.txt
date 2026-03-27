@@ -245,18 +245,6 @@ endif()
 find_package(Threads REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-# Pre-fetch fmt for platforms without std::format (e.g. macOS).
-if(NOT TARGET fmt::fmt)
-  find_package(fmt QUIET)
-  if(NOT fmt_FOUND)
-    include(FetchContent)
-    FetchContent_Declare(fmt
-      GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-      GIT_TAG 11.0.2)
-    FetchContent_MakeAvailable(fmt)
-  endif()
-endif()
-
 ################################################################
 
 # Build flow tools
