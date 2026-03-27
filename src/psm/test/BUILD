@@ -178,8 +178,8 @@ py_test(
     name = "psm_man_tcl_check",
     srcs = ["psm_man_tcl_check.py"],
     data = ["//src/psm:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

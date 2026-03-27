@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 
 from md_roff_compat import man2_translate, man3_translate
@@ -11,7 +12,8 @@ class TestReadmeMsgsCheck(unittest.TestCase):
         test_dir = os.path.dirname(os.path.abspath(__file__))
         self.readme_path = os.path.join(test_dir, "../README.md")
         self.messages_path = os.path.join(test_dir, "../messages.txt")
-        self.save_dir = os.path.join(os.getcwd(), "results/docs")
+        tmp_base = os.environ.get("TEST_TMPDIR") or tempfile.mkdtemp()
+        self.save_dir = os.path.join(tmp_base, "results/docs")
         os.makedirs(self.save_dir, exist_ok=True)
 
     def test_man2_translate(self):

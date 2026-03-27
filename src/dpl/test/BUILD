@@ -301,8 +301,8 @@ py_test(
     name = "dpl_man_tcl_check",
     srcs = ["dpl_man_tcl_check.py"],
     data = ["//src/dpl:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

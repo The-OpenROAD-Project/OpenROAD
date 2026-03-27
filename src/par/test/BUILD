@@ -92,8 +92,8 @@ py_test(
     name = "par_man_tcl_check",
     srcs = ["par_man_tcl_check.py"],
     data = ["//src/par:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

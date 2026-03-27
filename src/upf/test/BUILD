@@ -62,8 +62,8 @@ py_test(
     name = "upf_man_tcl_check",
     srcs = ["upf_man_tcl_check.py"],
     data = ["//src/upf:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

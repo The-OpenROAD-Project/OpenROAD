@@ -304,8 +304,8 @@ py_test(
     name = "pdn_man_tcl_check",
     srcs = ["pdn_man_tcl_check.py"],
     data = ["//src/pdn:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

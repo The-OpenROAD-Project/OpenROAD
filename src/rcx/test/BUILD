@@ -135,8 +135,8 @@ py_test(
     name = "rcx_man_tcl_check",
     srcs = ["rcx_man_tcl_check.py"],
     data = ["//src/rcx:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

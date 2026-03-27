@@ -197,8 +197,8 @@ py_test(
     name = "rmp_man_tcl_check",
     srcs = ["rmp_man_tcl_check.py"],
     data = ["//src/rmp:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

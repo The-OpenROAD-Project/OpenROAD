@@ -181,8 +181,8 @@ py_test(
     name = "tap_man_tcl_check",
     srcs = ["tap_man_tcl_check.py"],
     data = ["//src/tap:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(

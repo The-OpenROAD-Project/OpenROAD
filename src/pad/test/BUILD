@@ -228,8 +228,8 @@ py_test(
     name = "pad_man_tcl_check",
     srcs = ["pad_man_tcl_check.py"],
     data = ["//src/pad:doc_files"],
-    tags = ["doc_check"],
     deps = ["//docs/src/scripts:extract_utils"],
+    tags = ["doc_check"],
 )
 
 py_test(
