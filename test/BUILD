@@ -138,12 +138,14 @@ filegroup(
 
 filegroup(
     name = "regression_resources",
-    # TODO Refine glob later.
-    #
-    # This is a very broad glob, but most of the data in size
-    # comes from .lib files and we can't know which pdk files
-    # to include for a test given the name only.
-    srcs = glob(["**/*"]),
+    # Broad glob, but exclude directories that regression tests never use.
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            "orfs/**",
+            "downstream/**",
+        ],
+    ),
     visibility = ["//visibility:public"],
 )
 

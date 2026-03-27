@@ -1,0 +1,28 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -112,7 +112,24 @@
+ 
+ filegroup(
+     name = "tcl_core",
+-    srcs = glob(["library/**"]),
++    # Exclude files that OpenROAD does not need at runtime.
++    # This reduces per-test runfiles from 831 to ~15 symlinks.
++    srcs = glob(
++        ["library/**"],
++        exclude = [
++            "library/tzdata/**",
++            "library/msgs/**",
++            "library/encoding/**",
++            "library/http/**",
++            "library/http1.0/**",
++            "library/tcltest/**",
++            "library/opt/**",
++            "library/msgcat/**",
++            "library/dde/**",
++            "library/platform/**",
++            "library/reg/**",
++        ],
++    ),
+     visibility = ["//visibility:public"],
+ )
+ 
