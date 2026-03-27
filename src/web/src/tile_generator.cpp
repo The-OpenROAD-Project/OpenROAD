@@ -676,6 +676,11 @@ odb::dbBlock* TileGenerator::getBlock() const
   return chip ? chip->getBlock() : nullptr;
 }
 
+odb::dbChip* TileGenerator::getChip() const
+{
+  return db_->getChip();
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
