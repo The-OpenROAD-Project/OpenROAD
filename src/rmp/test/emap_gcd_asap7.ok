@@ -96,42 +96,42 @@ tns max -15641.01
 -- After --
 
 [i] WARNING: library does not contain cells that can implement output pin 1 of the multi-output cell FAx1_ASAP7_75t_R
-[i] WARNING: library does not contain cells that could match the delay of output pin 2 of multi-output cell HAxp5_ASAP7_75t_R
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell HAxp5_ASAP7_75t_R
 [i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
 Extended technology mapping stats:
-        area: 16.840
-        delay: 469.740
-        power: 0.000
-        inverters: 0
-        multioutput gates: 13
+	area: 16.840
+	delay: 469.740
+	power: 0.000
+	inverters: 0
+	multioutput gates: 13
 
 [i] Report cells usage:
-[i] AO222x2_ASAP7_75t_R          Instance =         16   Area =         2.72    16.15 %
-[i] AO22x1_ASAP7_75t_R           Instance =          1   Area =         0.13     0.77 %
-[i] AOI21xp33_ASAP7_75t_R        Instance =         19   Area =         1.33     7.90 %
-[i] AOI22xp33_ASAP7_75t_R        Instance =         11   Area =         0.99     5.88 %
-[i] AOI31xp33_ASAP7_75t_R        Instance =         16   Area =         1.44     8.55 %
-[i] AOI321xp33_ASAP7_75t_R       Instance =         16   Area =         1.92    11.40 %
-[i] AOI32xp33_ASAP7_75t_R        Instance =          1   Area =         0.10     0.59 %
-[i] INVx1_ASAP7_75t_R            Instance =         52   Area =         2.08    12.35 %
-[i] OA21x2_ASAP7_75t_R           Instance =          1   Area =         0.10     0.59 %
-[i] OAI21xp33_ASAP7_75t_R        Instance =          5   Area =         0.35     2.08 %
-[i] OAI31xp33_ASAP7_75t_R        Instance =          1   Area =         0.09     0.53 %
-[i] FAx1_ASAP7_75t_R             Instance =         13   Area =         2.60    15.44 %
-[i] MAJIxp5_ASAP7_75t_R          Instance =          1   Area =         0.10     0.59 %
-[i] MAJx2_ASAP7_75t_R            Instance =          1   Area =         0.13     0.77 %
-[i] NAND2xp33_ASAP7_75t_R        Instance =          4   Area =         0.24     1.43 %
-[i] NAND5xp2_ASAP7_75t_R         Instance =          2   Area =         0.20     1.19 %
-[i] NOR2xp33_ASAP7_75t_R         Instance =          4   Area =         0.24     1.43 %
-[i] NOR3xp33_ASAP7_75t_R         Instance =          1   Area =         0.07     0.42 %
-[i] NOR4xp25_ASAP7_75t_R         Instance =          1   Area =         0.09     0.53 %
-[i] NOR5xp2_ASAP7_75t_R          Instance =          1   Area =         0.10     0.59 %
-[i] XNOR2xp5_ASAP7_75t_R         Instance =         13   Area =         1.69    10.04 %
-[i] XOR2xp5_ASAP7_75t_R          Instance =          1   Area =         0.13     0.77 %
-[i] TOTAL                        Instance =        181   Area =        16.84   100.00 %
+[i] AO222x2_ASAP7_75t_R      	 Instance =         16	 Area =         2.72    16.15 %
+[i] AO22x1_ASAP7_75t_R       	 Instance =          1	 Area =         0.13     0.77 %
+[i] AOI21xp33_ASAP7_75t_R    	 Instance =         19	 Area =         1.33     7.90 %
+[i] AOI22xp33_ASAP7_75t_R    	 Instance =         11	 Area =         0.99     5.88 %
+[i] AOI31xp33_ASAP7_75t_R    	 Instance =         16	 Area =         1.44     8.55 %
+[i] AOI321xp33_ASAP7_75t_R   	 Instance =         16	 Area =         1.92    11.40 %
+[i] AOI32xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.10     0.59 %
+[i] INVx1_ASAP7_75t_R        	 Instance =         52	 Area =         2.08    12.35 %
+[i] OA21x2_ASAP7_75t_R       	 Instance =          1	 Area =         0.10     0.59 %
+[i] OAI21xp33_ASAP7_75t_R    	 Instance =          5	 Area =         0.35     2.08 %
+[i] OAI31xp33_ASAP7_75t_R    	 Instance =          1	 Area =         0.09     0.53 %
+[i] FAx1_ASAP7_75t_R         	 Instance =         13	 Area =         2.60    15.44 %
+[i] MAJIxp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.59 %
+[i] MAJx2_ASAP7_75t_R        	 Instance =          1	 Area =         0.13     0.77 %
+[i] NAND2xp33_ASAP7_75t_R    	 Instance =          4	 Area =         0.24     1.43 %
+[i] NAND5xp2_ASAP7_75t_R     	 Instance =          2	 Area =         0.20     1.19 %
+[i] NOR2xp33_ASAP7_75t_R     	 Instance =          4	 Area =         0.24     1.43 %
+[i] NOR3xp33_ASAP7_75t_R     	 Instance =          1	 Area =         0.07     0.42 %
+[i] NOR4xp25_ASAP7_75t_R     	 Instance =          1	 Area =         0.09     0.53 %
+[i] NOR5xp2_ASAP7_75t_R      	 Instance =          1	 Area =         0.10     0.59 %
+[i] XNOR2xp5_ASAP7_75t_R     	 Instance =         13	 Area =         1.69    10.04 %
+[i] XOR2xp5_ASAP7_75t_R      	 Instance =          1	 Area =         0.13     0.77 %
+[i] TOTAL                    	 Instance =        181	 Area =        16.84   100.00 %
 [i] Report stats: area = 16.84; delay = 479.06;
 [WARNING EST-0027] no estimated parasitics. Using wire load models.
-[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 45 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 45 out of 45 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   TNS      |  Viol  | Worst
