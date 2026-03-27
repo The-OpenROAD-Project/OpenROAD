@@ -125,7 +125,10 @@ LogicCut::BuildMappedMockturtleNetwork(
 
     sta::PinSet* drivers = network->drivers(net);
     if (!drivers || drivers->empty()) {
-      logger->error(utl::CUT, 55, "Net driven from outside the cut {}", network->name(net));
+      logger->error(utl::CUT,
+                    50,
+                    "Net driven from outside the cut {}",
+                    network->name(net));
     }
 
     if (drivers->size() != 1) {
@@ -143,10 +146,13 @@ LogicCut::BuildMappedMockturtleNetwork(
     // Driver should not be sequential or outside the cut (handled by logic
     // extractor)
     if (!driver_cell) {
-      logger->error(utl::CUT, 54, "Driver pin not found: {}", network->name(driver_inst));
+      logger->error(
+          utl::CUT, 52, "Driver pin not found: {}", network->name(driver_inst));
     }
-    if (driver_cell->hasSequentials() || !cut_instances_set.contains(driver_inst)) {
-      logger->error(utl::CUT, 55, "Invalid driver for: {}", network->name(driver_inst));
+    if (driver_cell->hasSequentials()
+        || !cut_instances_set.contains(driver_inst)) {
+      logger->error(
+          utl::CUT, 53, "Invalid driver for: {}", network->name(driver_inst));
     }
 
     const std::string cell_name = driver_cell->name();
@@ -155,7 +161,7 @@ LogicCut::BuildMappedMockturtleNetwork(
     auto gate_it = gate_by_name.find(fmt::format("{}_{}", cell_name, pin_name));
     if (gate_it == gate_by_name.end()) {
       logger->error(utl::CUT,
-                    52,
+                    54,
                     "Cell {} not found in mockturtle technology library.",
                     cell_name);
     }
@@ -163,7 +169,7 @@ LogicCut::BuildMappedMockturtleNetwork(
     const gate* g = gate_it->second;
 
     if (g->pins.size() != g->function.num_vars()) {
-      logger->error(utl::CUT, 52, "Invalid pin count");
+      logger->error(utl::CUT, 55, "Invalid pin count");
     }
 
     // Build fanin signals in the same order as GENLIB pins
@@ -174,7 +180,7 @@ LogicCut::BuildMappedMockturtleNetwork(
       sta::Pin* sta_pin = network->findPin(driver_inst, p.name.c_str());
       if (sta_pin == nullptr) {
         logger->error(utl::CUT,
-                      53,
+                      56,
                       "Cannot find pin {} on instance {}.",
                       p.name,
                       network->name(driver_inst));
@@ -188,7 +194,8 @@ LogicCut::BuildMappedMockturtleNetwork(
     std::vector<uint32_t> vars(g->function.num_vars());
     std::iota(vars.begin(), vars.end(), 0u);
 
-    const signal out_sig = mockturtle::shannon_decomposition(ntk, g->function, vars, fanins);
+    const signal out_sig
+        = mockturtle::shannon_decomposition(ntk, g->function, vars, fanins);
     if (!ntk.has_name(out_sig)) {
       ntk.set_name(out_sig, network->name(net));
     }
