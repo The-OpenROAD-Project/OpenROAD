@@ -101,6 +101,22 @@ class FlexGridGraph
     return nodes_[getIdx(x, y, z)].hasGridCostUp;
   }
 
+  // unsafe access, no check
+  bool hasApCostE(frMIdx x, frMIdx y, frMIdx z) const
+  {
+    return nodes_[getIdx(x, y, z)].hasApCostEast;
+  }
+  // unsafe access, no check
+  bool hasApCostN(frMIdx x, frMIdx y, frMIdx z) const
+  {
+    return nodes_[getIdx(x, y, z)].hasApCostNorth;
+  }
+  // unsafe access, no check
+  bool hasApCostU(frMIdx x, frMIdx y, frMIdx z) const
+  {
+    return nodes_[getIdx(x, y, z)].hasApCostUp;
+  }
+
   void getBBox(odb::Rect& in) const
   {
     if (!xCoords_.empty() && !yCoords_.empty()) {
@@ -248,6 +264,22 @@ class FlexGridGraph
         break;
       default:
         sol = hasGridCostU(x, y, z);
+    }
+    return sol;
+  }
+  bool hasApCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
+  {
+    bool sol = false;
+    correct(x, y, z, dir);
+    switch (dir) {
+      case frDirEnum::E:
+        sol = hasApCostE(x, y, z);
+        break;
+      case frDirEnum::N:
+        sol = hasApCostN(x, y, z);
+        break;
+      default:
+        sol = hasApCostU(x, y, z);
     }
     return sol;
   }
@@ -774,6 +806,25 @@ class FlexGridGraph
       }
     }
   }
+  void setApCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
+  {
+    correct(x, y, z, dir);
+    if (isValid(x, y, z)) {
+      Node& node = nodes_[getIdx(x, y, z)];
+      switch (dir) {
+        case frDirEnum::E:
+          node.hasApCostEast = true;
+          break;
+        case frDirEnum::N:
+          node.hasApCostNorth = true;
+          break;
+        case frDirEnum::U:
+          node.hasApCostUp = true;
+          break;
+        default:;
+      }
+    }
+  }
   void setGridCostE(frMIdx x, frMIdx y, frMIdx z)
   {
     nodes_[getIdx(x, y, z)].hasGridCostEast = true;
@@ -785,6 +836,18 @@ class FlexGridGraph
   void setGridCostU(frMIdx x, frMIdx y, frMIdx z)
   {
     nodes_[getIdx(x, y, z)].hasGridCostUp = true;
+  }
+  void setApCostE(frMIdx x, frMIdx y, frMIdx z)
+  {
+    nodes_[getIdx(x, y, z)].hasApCostEast = true;
+  }
+  void setApCostN(frMIdx x, frMIdx y, frMIdx z)
+  {
+    nodes_[getIdx(x, y, z)].hasApCostNorth = true;
+  }
+  void setApCostU(frMIdx x, frMIdx y, frMIdx z)
+  {
+    nodes_[getIdx(x, y, z)].hasApCostUp = true;
   }
   // unsafe access, no idx check
   void resetSrc(frMIdx x, frMIdx y, frMIdx z)
@@ -818,6 +881,25 @@ class FlexGridGraph
           break;
         case frDirEnum::U:
           node.hasGridCostUp = false;
+          break;
+        default:;
+      }
+    }
+  }
+  void resetApCost(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir)
+  {
+    correct(x, y, z, dir);
+    if (isValid(x, y, z)) {
+      Node& node = nodes_[getIdx(x, y, z)];
+      switch (dir) {
+        case frDirEnum::E:
+          node.hasApCostEast = false;
+          break;
+        case frDirEnum::N:
+          node.hasApCostNorth = false;
+          break;
+        case frDirEnum::U:
+          node.hasApCostUp = false;
           break;
         default:;
       }
@@ -1024,9 +1106,9 @@ class FlexGridGraph
     frUInt4 hasGridCostEast : 1;
     frUInt4 hasGridCostNorth : 1;
     frUInt4 hasGridCostUp : 1;
-    frUInt4 unused3 : 1;
-    frUInt4 unused4 : 1;
-    frUInt4 unused5 : 1;
+    frUInt4 hasApCostEast : 1;
+    frUInt4 hasApCostNorth : 1;
+    frUInt4 hasApCostUp : 1;
     // Byte 2
     frUInt4 routeShapeCostPlanar : cost_bits;
     // Byte 3

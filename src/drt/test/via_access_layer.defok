@@ -26,14 +26,14 @@ COMPONENTS 4 ;
 END COMPONENTS
 NETS 2 ;
     - net1 ( comp1 A ) ( comp2 A ) + USE SIGNAL
-      + ROUTED met3 ( 21120 21460 ) ( 23520 * )
-      NEW met3 ( 23520 21090 ) ( * 21460 )
-      NEW met3 ( 23520 21090 ) ( 75360 * )
-      NEW met3 ( 75360 80290 ) ( 77280 * )
-      NEW met3 ( 77280 80290 ) ( * 81400 )
-      NEW met3 ( 77280 81400 ) ( 80400 * )
+      + ROUTED met3 ( 20640 21460 ) ( 21600 * )
+      NEW met3 ( 21600 21090 ) ( * 21460 )
+      NEW met3 ( 21600 21090 ) ( 75360 * )
+      NEW met3 ( 75360 80290 ) ( 80160 * )
+      NEW met3 ( 80160 80290 ) ( * 81400 )
+      NEW met3 ( 80160 81400 ) ( 80400 * )
       NEW met4 ( 75360 21090 ) ( * 80290 )
-      NEW met2 ( 21120 21460 ) M2M3_PR_M
+      NEW met2 ( 20640 21460 ) M2M3_PR_MR
       NEW met3 ( 75360 21090 ) M3M4_PR
       NEW met3 ( 75360 80290 ) M3M4_PR
       NEW met2 ( 80400 81400 ) M2M3_PR_M ;
