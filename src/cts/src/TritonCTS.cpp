@@ -1164,10 +1164,9 @@ void TritonCTS::findLongEdges(
       }
     }
 
-    // Place ICG at the center of its sinks, then legalize.
-    clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
-    clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    resolveLocationCollision(clone, occupiedPositions);
+    // Resolve location collision and finalize placement.
+    resolveLocationCollision(
+        clone, {sinksBbox.xCenter(), sinksBbox.yCenter()}, occupiedPositions);
   }
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
@@ -1175,21 +1174,21 @@ void TritonCTS::findLongEdges(
 
 void TritonCTS::resolveLocationCollision(
     odb::dbInst* clone,
+    odb::Point location,
     std::set<odb::Point>& occupiedPositions)
 {
   // Ensure position is unique among both other clones and pre-existing
   // instances to prevent mapLocationToSink_ key collision.
-  int cloneX, cloneY;
-  clone->getLocation(cloneX, cloneY);
-  odb::Point cloneLoc(cloneX, cloneY);
-  // Shift by site width to stay on legal sites (fall back to 1 DBU
-  // if no rows are defined in test designs).
+  odb::Point cloneLoc = location;
+  // Shift by 1 DBU to guarantee unique coordinates on collision case.
+  // Site-legal placement is handled by downstream DPL.
   int shift = 1;
   while (occupiedPositions.contains(cloneLoc)) {
     cloneLoc.setX(cloneLoc.getX() + shift);
   }
   occupiedPositions.insert(cloneLoc);
   clone->setLocation(cloneLoc.getX(), cloneLoc.getY());
+  clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 void TritonCTS::populateTritonCTS()
