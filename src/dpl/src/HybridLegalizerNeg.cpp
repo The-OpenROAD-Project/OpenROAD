@@ -101,6 +101,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 1 converged at iteration {}.",
                  iter);
+      logger_->metric("HL__converge__phase_1__iteration", iter);
       if(debug_observer_) {
         setDplPositions();
         pushHybridPixels();
@@ -136,6 +137,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 2 converged at iteration {}.",
                  iter);
+      logger_->metric("HL__converge__phase_2__iteration", iter);
       if(debug_observer_) {
         setDplPositions();
         pushHybridPixels();

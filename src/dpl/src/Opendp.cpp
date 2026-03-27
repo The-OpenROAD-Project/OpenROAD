@@ -150,11 +150,14 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                            / static_cast<double>(core_area))
                               * 100.0
                         : 0.0;
-    logger_->report("Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
+    logger_->info(DPL,
+                  6,
+                  "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
                     "Utilization: {:.1f}%",
                     block_->dbuAreaToMicrons(core_area),
                     block_->dbuAreaToMicrons(inst_area),
                     utilization);
+    logger_->metric("utilizatin__before__dpl", utilization);
     if(utilization > 100.0) {
       logger_->error(DPL, 38, "Utilization greater than 100%, impossible to legalize");
     }
@@ -213,6 +216,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     if (hybrid.numViolations() > 0) {
       logger_->warn(DPL, 777, "HybridLegalizer did not fully converge. "
         "Violations remain: {}", hybrid.numViolations());
+      logger_->metric("HL__no__converge__final_violations", hybrid.numViolations());
     }
   }
 
@@ -288,6 +292,8 @@ void Opendp::reportLegalizationStats() const
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
+  logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
+  logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }
 
 ////////////////////////////////////////////////////////////////
