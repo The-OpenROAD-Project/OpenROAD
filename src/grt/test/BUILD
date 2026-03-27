@@ -1,5 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_test")
-load("//test:regression.bzl", "doc_check_test", "regression_test")
+load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -140,11 +140,14 @@ py_test(
     deps = ["//docs/src/scripts:extract_utils"],
 )
 
-doc_check_test(
+py_test(
     name = "grt_readme_msgs_check",
+    srcs = ["grt_readme_msgs_check.py"],
     data = [
         "//src/grt:doc_files",
         "//src/grt:messages_txt",
     ],
+    deps = ["//docs/src/scripts:md_roff_compat"],
+    tags = ["doc_check"],
     visibility = ["//visibility:public"],
 )

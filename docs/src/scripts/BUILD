@@ -10,6 +10,22 @@ py_library(
     visibility = ["//visibility:public"],
 )
 
+py_library(
+    name = "manpage",
+    srcs = ["manpage.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "md_roff_compat",
+    srcs = ["md_roff_compat.py"],
+    deps = [
+        ":extract_utils",
+        ":manpage",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 py_test(
     name = "test_extract_utils",
     srcs = ["test_extract_utils.py"],

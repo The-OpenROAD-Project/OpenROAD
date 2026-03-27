@@ -1,14 +1,25 @@
 import os
+import unittest
+
 from md_roff_compat import man2_translate, man3_translate
 
-# Test objective: Check man2/man3 items parsed.
 
-cur_dir = os.getcwd()
-save_dir = os.path.join(cur_dir, "results/docs")
-os.makedirs(save_dir, exist_ok=True)
+class TestReadmeMsgsCheck(unittest.TestCase):
+    """Test that README.md and messages.txt parse correctly into man page formats."""
 
-readme_path = os.path.join(cur_dir, "../README.md")
-messages_path = os.path.join(cur_dir, "../messages.txt")
+    def setUp(self):
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        self.readme_path = os.path.join(test_dir, "../README.md")
+        self.messages_path = os.path.join(test_dir, "../messages.txt")
+        self.save_dir = os.path.join(os.getcwd(), "results/docs")
+        os.makedirs(self.save_dir, exist_ok=True)
 
-man2_translate(readme_path, save_dir)
-man3_translate(messages_path, save_dir)
+    def test_man2_translate(self):
+        man2_translate(self.readme_path, self.save_dir)
+
+    def test_man3_translate(self):
+        man3_translate(self.messages_path, self.save_dir)
+
+
+if __name__ == "__main__":
+    unittest.main()
