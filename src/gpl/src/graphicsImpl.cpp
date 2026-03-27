@@ -165,7 +165,7 @@ void GraphicsImpl::initHeatmap()
         }
       });
 
-  setBlock(pbc_->db()->getChip()->getBlock());
+  setChip(pbc_->db()->getChip());
   registerHeatMap();
 }
 
