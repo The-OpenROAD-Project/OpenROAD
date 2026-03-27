@@ -2088,10 +2088,11 @@ void ClusteringEngine::createHardMacros()
         }
 
         for (odb::dbMPin* mpin : mterm->getMPins()) {
+          auto direction = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
           for (odb::dbBox* box : mpin->getGeometry()) {
             odb::Rect pin_rect = box->getBox();
 
-            if (pin_rect.dx() > pin_rect.dy()) {
+            if (direction == odb::dbTechLayerDir::HORIZONTAL) {
               int dist_L = pin_rect.xMin();
               int dist_R = master->getWidth() - pin_rect.xMax();
               
