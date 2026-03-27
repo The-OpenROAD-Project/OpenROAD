@@ -155,9 +155,9 @@ proc resynth_annealing { args } {
 
 sta::define_cmd_args "resynth_emap" {
                                       [-scene scene]
-                                      [-target area|timing]\
-                                      [-map_multioutput]\
-                                      [-verbose]\
+                                      [-target area|timing]
+                                      [-map_multioutput]
+                                      [-verbose]
                                       [-work_dir workdir_name]
                                     }
 
@@ -184,7 +184,7 @@ proc resynth_emap { args } {
 }
 
 sta::define_cmd_args "resynth_genetic" {
-                                            [-corner corner]
+                                            [-scene scene]
                                             [-slack_threshold slack_threshold]
                                             [-seed seed]
                                             [-population_size population_size]
@@ -198,11 +198,11 @@ sta::define_cmd_args "resynth_genetic" {
 
 proc resynth_genetic { args } {
   sta::parse_key_args "resynth_genetic" args \
-    keys {-corner -iters -seed -population_size -mutation_probability -crossover_probability \
+    keys {-scene -iters -seed -population_size -mutation_probability -crossover_probability \
               -tournament_size -tournament_probability -initial_ops -slack_threshold} \
     flags {}
 
-  set corner [sta::parse_scene keys]
+  set scene [sta::parse_scene keys]
   if { [info exists keys(-slack_threshold)] } {
     rmp::set_slack_threshold $keys(-slack_threshold)
   }
@@ -231,5 +231,5 @@ proc resynth_genetic { args } {
     rmp::set_genetic_initial_ops $keys(-initial_ops)
   }
 
-  rmp::resynth_genetic_cmd $corner
+  rmp::resynth_genetic_cmd $scene
 }
