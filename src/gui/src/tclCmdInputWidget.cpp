@@ -373,7 +373,7 @@ void TclCmdInputWidget::initOpenRoadCommands()
   // get registered commands
   if (Tcl_Eval(interp_, "array names sta::cmd_args") == TCL_OK) {
     Tcl_Obj* cmd_names = Tcl_GetObjResult(interp_);
-    int cmd_size;
+    Tcl_Size cmd_size;
     Tcl_Obj** cmds_objs;
     if (Tcl_ListObjGetElements(interp_, cmd_names, &cmd_size, &cmds_objs)
         == TCL_OK) {
@@ -399,7 +399,7 @@ void TclCmdInputWidget::initOpenRoadCommands()
     std::string info = "info commands " + ns + "::*";
     if (Tcl_Eval(interp_, info.c_str()) == TCL_OK) {
       Tcl_Obj* cmd_names = Tcl_GetObjResult(interp_);
-      int cmd_size;
+      Tcl_Size cmd_size;
       Tcl_Obj** cmds_objs;
       if (Tcl_ListObjGetElements(interp_, cmd_names, &cmd_size, &cmds_objs)
           == TCL_OK) {
@@ -420,7 +420,7 @@ void TclCmdInputWidget::collectNamespaces(std::set<std::string>& namespaces)
 {
   if (Tcl_Eval(interp_, "namespace children") == TCL_OK) {
     Tcl_Obj* ns = Tcl_GetObjResult(interp_);
-    int namespace_size;
+    Tcl_Size namespace_size;
     Tcl_Obj** namespace_objs;
     if (Tcl_ListObjGetElements(interp_, ns, &namespace_size, &namespace_objs)
         == TCL_OK) {
@@ -525,7 +525,7 @@ void TclCmdInputWidget::setCompleterVariables()
 
   if (Tcl_Eval(interp_, tcl_cmd.c_str()) == TCL_OK) {
     Tcl_Obj* var_names = Tcl_GetObjResult(interp_);
-    int var_size;
+    Tcl_Size var_size;
     Tcl_Obj** vars_objs;
     if (Tcl_ListObjGetElements(interp_, var_names, &var_size, &vars_objs)
         == TCL_OK) {

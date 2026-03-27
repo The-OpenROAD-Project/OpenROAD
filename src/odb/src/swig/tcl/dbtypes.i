@@ -172,7 +172,7 @@
 %typemap(in) std::vector< T* >* (std::vector< T* > *v, std::vector< T* > w),
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
-    int       nitems;
+    Tcl_Size  nitems;
     int       i;
     T*        temp;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
@@ -197,7 +197,7 @@
 }
 %typemap(typecheck) vector< T * >, std::vector< T * >, vector< T * > &, std::vector< T * > & {
     Tcl_Obj **listobjv;
-    int       nitems;
+    Tcl_Size   nitems;
     T         *temp;
     std::vector< T > *v;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");

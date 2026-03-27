@@ -57,7 +57,7 @@ static utl::Logger* getLogger() {
 // Typemap to convert TCL list of coordinates to std::vector<odb::Point>
 %typemap(in) std::vector<odb::Point>& (std::vector<odb::Point> temp_vector) {
   Tcl_Obj **listobjv;
-  int nitems;
+  Tcl_Size nitems;
   
   if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR) {
     return TCL_ERROR;
