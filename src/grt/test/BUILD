@@ -136,8 +136,8 @@ py_test(
     name = "grt_man_tcl_check",
     srcs = ["grt_man_tcl_check.py"],
     data = ["//src/grt:doc_files"],
-    deps = ["//docs/src/scripts:extract_utils"],
     tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
 )
 
 py_test(
@@ -147,7 +147,7 @@ py_test(
         "//src/grt:doc_files",
         "//src/grt:messages_txt",
     ],
-    deps = ["//docs/src/scripts:md_roff_compat"],
     tags = ["doc_check"],
     visibility = ["//visibility:public"],
+    deps = ["//docs/src/scripts:md_roff_compat"],
 )

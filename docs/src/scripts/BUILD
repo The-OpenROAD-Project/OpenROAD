@@ -19,11 +19,11 @@ py_library(
 py_library(
     name = "md_roff_compat",
     srcs = ["md_roff_compat.py"],
+    visibility = ["//visibility:public"],
     deps = [
         ":extract_utils",
         ":manpage",
     ],
-    visibility = ["//visibility:public"],
 )
 
 py_test(
