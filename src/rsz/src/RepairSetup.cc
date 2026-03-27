@@ -1711,7 +1711,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
         for (size_t i = 0; i < std::min(viol_pins.size(), size_t(20)); i++) {
           sta::Vertex* pin_vertex = graph_->pinDrvrVertex(viol_pins[i]);
           sta::Slack pin_slack
-              = pin_vertex ? sta_->slack(pin_vertex, max_) : 0.0;
+              = pin_vertex ? sta_->slack(pin_vertex, max_) : sta::Slack(0.0);
           debugPrint(logger_,
                      RSZ,
                      "repair_setup",
@@ -1740,7 +1740,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
         for (size_t i = 0; i < std::min(viol_pins.size(), size_t(20)); i++) {
           sta::Vertex* pin_vertex = graph_->pinDrvrVertex(viol_pins[i]);
           sta::Slack pin_slack
-              = pin_vertex ? sta_->slack(pin_vertex, max_) : 0.0;
+              = pin_vertex ? sta_->slack(pin_vertex, max_) : sta::Slack(0.0);
           debugPrint(logger_,
                      RSZ,
                      "repair_setup",
@@ -2461,7 +2461,7 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
 
   // Diminishing returns threshold: stop if improvement < 10ps
   // Increased from 1ps to 10ps to reduce iterations with minimal improvement
-  constexpr sta::Slack diminishing_returns_threshold = 1e-11;  // 10 picoseconds
+  constexpr float diminishing_returns_threshold = 1e-11;  // 10 picoseconds
 
   debugPrint(logger_,
              RSZ,

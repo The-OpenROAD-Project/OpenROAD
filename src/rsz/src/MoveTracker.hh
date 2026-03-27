@@ -182,9 +182,8 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // Helper function to enumerate paths to an endpoint and count negative slack
   // paths Returns a vector of (path_slack, path_end) pairs for all paths to the
   // endpoint
-  std::vector<std::pair<float, const sta::PathEnd*>> enumerateEndpointPaths(
-      const sta::Pin* endpoint_pin,
-      int max_paths = 100);
+  std::vector<std::pair<sta::Slack, const sta::PathEnd*>>
+  enumerateEndpointPaths(const sta::Pin* endpoint_pin, int max_paths = 100);
 
   // Helper function to draw a histogram given bin labels and counts
   void drawHistogram(const std::string& title,
