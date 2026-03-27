@@ -18,6 +18,7 @@ template class dbTable<_dbTechLayerAreaRule>;
 
 bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.except_rectangle != rhs.flags_.except_rectangle) {
     return false;
   }
@@ -44,6 +45,7 @@ bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerAreaRule::operator<(const _dbTechLayerAreaRule& rhs) const

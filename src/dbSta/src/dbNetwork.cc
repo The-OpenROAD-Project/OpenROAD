@@ -2144,18 +2144,20 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
   dbChip* chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();
-    for (dbLib* lib : db_->getLibs()) {
-      makeLibrary(lib);
-    }
-
-    for (dbModule* module : block_->getModules()) {
-      // top_module is not a hierarchical module in this context.
-      if (module != block_->getTopModule()) {
-        registerHierModule(dbToSta(module));
+    if (block_) {
+      for (dbLib* lib : db_->getLibs()) {
+        makeLibrary(lib);
       }
-    }
 
-    readDbNetlistAfter();
+      for (dbModule* module : block_->getModules()) {
+        // top_module is not a hierarchical module in this context.
+        if (module != block_->getTopModule()) {
+          registerHierModule(dbToSta(module));
+        }
+      }
+
+      readDbNetlistAfter();
+    }
   }
 
   for (dbNetworkObserver* observer : observers_) {
@@ -2903,8 +2905,10 @@ Net* dbNetwork::makeNet(const char* base_name,
                         const odb::dbNameUniquifyType& uniquify)
 {
   // Create a unique full name for a new net
+  odb::dbModInst* mod_inst = getModInst(parent);
+  odb::dbModule* parent_module = mod_inst ? mod_inst->getMaster() : nullptr;
   std::string full_name
-      = block_->makeNewNetName(getModInst(parent), base_name, uniquify);
+      = block_->makeNewNetName(parent_module, base_name, uniquify);
 
   // Create a new net
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);

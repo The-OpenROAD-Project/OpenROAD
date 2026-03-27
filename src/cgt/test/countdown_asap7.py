@@ -1,6 +1,8 @@
 from openroad import Tech
 import helpers
 
+helpers.if_bazel_change_working_dir_to("/_main/src/cgt/test/")
+
 tech = Tech()
 
 tech.readLiberty("asap7/asap7sc7p5t_AO_RVT_FF_nldm_211120.lib.gz")

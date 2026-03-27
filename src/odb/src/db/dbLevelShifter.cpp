@@ -27,6 +27,7 @@ template class dbTable<_dbLevelShifter>;
 
 bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -92,6 +93,7 @@ bool _dbLevelShifter::operator==(const _dbLevelShifter& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbLevelShifter::operator<(const _dbLevelShifter& rhs) const

@@ -43,6 +43,7 @@ template class dbTable<_dbChip>;
 
 bool _dbChip::operator==(const _dbChip& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -128,6 +129,7 @@ bool _dbChip::operator==(const _dbChip& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChip::operator<(const _dbChip& rhs) const

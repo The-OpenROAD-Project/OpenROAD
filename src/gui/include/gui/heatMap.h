@@ -6,7 +6,10 @@
 #include <array>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -15,6 +18,7 @@
 #include "absl/synchronization/mutex.h"
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
+#include "odb/db.h"
 
 namespace odb {
 class dbBlock;
@@ -31,8 +35,7 @@ class Logger;
 }  // namespace utl
 
 namespace gui {
-class HeatMapRenderer;
-class HeatMapSetup;
+class HeatMapSourceRegistration;
 
 class HeatMapDataSource
 {
@@ -71,12 +74,26 @@ class HeatMapDataSource
                     const std::string& settings_group = "");
   virtual ~HeatMapDataSource();
 
+  bool useSelectedOnly() const { return use_selected_only_; }
+  void setUseSelectedOnly(bool value)
+  {
+    if (use_selected_only_ != value) {
+      use_selected_only_ = value;
+      destroyMap();
+      redraw();
+    }
+  }
+
+  // Returns the label for the "use selected only" checkbox in the setup dialog.
+  // An empty string means this heatmap does not support selection filtering
+  // and the checkbox will not be shown.
+  virtual std::string getSelectionFilterLabel() const { return ""; }
+
   void registerHeatMap();
 
   virtual void setBlock(odb::dbBlock* block) { block_ = block; }
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
-
-  HeatMapRenderer* getRenderer() { return renderer_.get(); }
+  bool getUseDBU() const { return use_dbu_; }
 
   const std::string& getName() const { return name_; }
   const std::string& getShortName() const { return short_name_; }
@@ -147,6 +164,9 @@ class HeatMapDataSource
   void destroyMap();
   const Map& getMap() const { return map_; }
   MapView getMapView(const odb::Rect& bounds);
+  std::vector<MapColor> getVisibleMap(const odb::Rect& bounds,
+                                      double pixels_per_dbu,
+                                      double min_pixels_per_bin = 2.0);
   bool isPopulated() const { return populated_; }
 
   bool hasData() const;
@@ -162,6 +182,9 @@ class HeatMapDataSource
   virtual void onHide();
 
   void redraw();
+  void setRedrawCallback(std::function<void()> callback);
+  void setSetupCallback(std::function<void()> callback);
+  void setUnregisterCallback(std::function<void(HeatMapDataSource*)> callback);
 
  protected:
   void addBooleanSetting(const std::string& name,
@@ -205,6 +228,10 @@ class HeatMapDataSource
 
   void setIssueRedraw(bool state) { issue_redraw_ = state; }
 
+  // Returns the set of selected dbInst* objects when use_selected_only_ is
+  // enabled, or an empty set (meaning no filtering) when it is disabled.
+  std::set<odb::dbInst*> getSelectedInsts() const;
+
  private:
   const std::string name_;
   const std::string short_name_;
@@ -229,13 +256,11 @@ class HeatMapDataSource
   bool reverse_log_;
   bool show_numbers_;
   bool show_legend_;
+  bool use_selected_only_;
 
   Map map_;
   std::vector<int> map_x_grid_;
   std::vector<int> map_y_grid_;
-
-  std::unique_ptr<HeatMapRenderer> renderer_;
-  HeatMapSetup* setup_;
 
   SpectrumGenerator color_generator_;
 
@@ -243,28 +268,11 @@ class HeatMapDataSource
 
   std::vector<MapSetting> settings_;
 
+  std::function<void()> redraw_callback_;
+  std::function<void()> setup_callback_;
+  std::function<void(HeatMapDataSource*)> unregister_callback_;
+
   absl::Mutex ensure_mutex_;
-};
-
-class HeatMapRenderer : public Renderer
-{
- public:
-  HeatMapRenderer(HeatMapDataSource& datasource);
-
-  const char* getDisplayControlGroupName() override { return "Heat Maps"; }
-
-  void drawObjects(Painter& painter) override;
-
-  std::string getSettingsGroupName() override;
-  Settings getSettings() override;
-  void setSettings(const Settings& settings) override;
-
- private:
-  HeatMapDataSource& datasource_;
-  bool first_paint_;
-
-  static constexpr char kDatasourcePrefix[] = "data#";
-  static constexpr char kGroupnamePrefix[] = "HeatMap#";
 };
 
 class RealValueHeatMapDataSource : public HeatMapDataSource
@@ -334,6 +342,11 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
 
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
+
  protected:
   bool populateMap() override;
   void combineMapData(bool base_has_value,
@@ -354,5 +367,42 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
 
   sta::Scene* getScene() const;
 };
+
+class HeatMapSourceRegistration
+{
+ public:
+  using Factory = std::function<std::shared_ptr<HeatMapDataSource>()>;
+
+  HeatMapSourceRegistration(std::string name,
+                            std::string short_name,
+                            std::string settings_group,
+                            Factory factory);
+
+  const std::string& getName() const { return name_; }
+  const std::string& getShortName() const { return short_name_; }
+  const std::string& getSettingsGroupName() const { return settings_group_; }
+
+  std::shared_ptr<HeatMapDataSource> createInstance() const;
+  void invalidateInstances() const;
+
+ private:
+  std::string name_;
+  std::string short_name_;
+  std::string settings_group_;
+  Factory factory_;
+  mutable std::vector<std::weak_ptr<HeatMapDataSource>> instances_;
+  mutable std::mutex instances_mutex_;
+};
+
+using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
+
+HeatMapSourceHandle registerHeatMapSource(
+    const std::string& name,
+    const std::string& short_name,
+    const std::string& settings_group,
+    const HeatMapSourceRegistration::Factory& factory);
+const std::vector<HeatMapSourceHandle>& getRegisteredHeatMapSources();
+HeatMapSourceHandle findRegisteredHeatMapSource(const std::string& short_name);
+void registerBuiltinHeatMapSources(sta::dbSta* sta, utl::Logger* logger);
 
 }  // namespace gui

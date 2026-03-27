@@ -29,8 +29,9 @@ utl::Logger* getLogger();
 namespace ram {
 
 void
-generate_ram_netlist_cmd(int bytes_per_word,
-                         int word_count,
+generate_ram_netlist_cmd(int mask_size,
+                         int word_size,
+                         int num_words,
                          const char* storage_cell_name,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
@@ -86,7 +87,7 @@ generate_ram_netlist_cmd(int bytes_per_word,
     }
   }
 
-  ram_gen->generate(bytes_per_word, word_count, read_ports,
+  ram_gen->generate(mask_size, word_size, num_words, read_ports,
                     storage_cell, tristate_cell, inv_cell, tapcell,
                     max_tap_dist);
 }

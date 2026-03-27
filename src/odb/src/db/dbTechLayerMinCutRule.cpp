@@ -19,6 +19,7 @@ template class dbTable<_dbTechLayerMinCutRule>;
 
 bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.per_cut_class != rhs.flags_.per_cut_class) {
     return false;
   }
@@ -69,6 +70,7 @@ bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerMinCutRule::operator<(const _dbTechLayerMinCutRule& rhs) const

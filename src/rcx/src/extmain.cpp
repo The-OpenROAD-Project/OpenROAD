@@ -446,7 +446,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
 {
   double cap = frCap + ccCap - deltaFr;
 
-  double tot = rseg->getCapacitance(modelIndex);
+  double tot = rseg->getGroundCapacitance(modelIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, modelIndex);
@@ -511,7 +511,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     }
 
     extDbIndex = getProcessCornerDbIndex(modelIndex);
-    tot = rseg->getCapacitance(extDbIndex);
+    tot = rseg->getGroundCapacitance(extDbIndex);
     tot += cap;
 
     rseg->setCapacitance(tot, extDbIndex);
@@ -520,7 +520,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
       continue;
     }
     getScaledGndC(sci, cap);
-    tot = rseg->getCapacitance(scDbIdx);
+    tot = rseg->getGroundCapacitance(scDbIdx);
     tot += cap;
     rseg->setCapacitance(tot, scDbIdx);
   }

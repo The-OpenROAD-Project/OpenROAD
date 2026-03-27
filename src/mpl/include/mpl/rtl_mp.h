@@ -35,8 +35,7 @@ class MplObserver;
 class MacroPlacer
 {
  public:
-  MacroPlacer(sta::dbNetwork* network,
-              odb::dbDatabase* db,
+  MacroPlacer(odb::dbDatabase* db,
               sta::dbSta* sta,
               utl::Logger* logger,
               par::PartitionMgr* tritonpart);
@@ -65,7 +64,8 @@ class MacroPlacer
              float target_util,
              float min_ar,
              const char* report_directory,
-             bool keep_clustering_data);
+             bool keep_clustering_data,
+             bool use_def_halo);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,

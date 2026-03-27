@@ -1,0 +1,41 @@
+# Mock downstream project to verify that OpenROAD's public API surface
+# and dev_dependency isolation work correctly for external consumers.
+module(name = "downstream-test")
+
+bazel_dep(name = "openroad")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_python", version = "1.8.5")
+
+local_path_override(
+    module_name = "openroad",
+    path = "../..",
+)
+
+# qt-bazel is not in BCR and uses git_override in OpenROAD's MODULE.bazel.
+# git_override is root-module-only, so downstream consumers must repeat it.
+bazel_dep(name = "qt-bazel")
+git_override(
+    module_name = "qt-bazel",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+)
+
+# toolchains_llvm is dev_dependency in OpenROAD, so the root module must
+# configure the C++ toolchain.
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    llvm_version = "20.1.8",
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains(
+    "@llvm_toolchain//:all",
+)
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.13",
+)

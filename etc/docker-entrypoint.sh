@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 if [ ! -z ${CUSTOM_USER+x} ]; then
         if [ -z ${CUSTOM_USER_ID+x} ] || [ -z ${CUSTOM_GROUP_ID+x} ]; then
                 echo "You need to set CUSTOM_USER_ID and CUSTOM_GROUP_ID"

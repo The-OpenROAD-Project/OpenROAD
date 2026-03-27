@@ -273,6 +273,9 @@ PINS 1 ;
         + LAYER metal5 ( -140 -140 ) ( 140 140 )
         + PLACED ( 440000 125000 ) N ;
 END PINS
+BLOCKAGES 1 ;
+    - PLACEMENT + SOFT + COMPONENT MACRO_1 RECT ( 83820 33330 ) ( 299820 249330 ) ;
+END BLOCKAGES
 NETS 2 ;
     - io_1 ( PIN io_1 ) ( PAD_1 PAD ) + USE SIGNAL ;
     - pad_net ( PAD_1 PU ) ( MACRO_1 I1 ) + USE SIGNAL ;

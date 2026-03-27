@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include "gui/heatMap.h"
@@ -13,6 +14,16 @@
 #include "utl/Logger.h"
 
 namespace grt {
+
+gui::HeatMapSourceHandle registerRoutingCongestionHeatMapSource(
+    utl::Logger* logger,
+    odb::dbDatabase* db)
+{
+  return gui::registerHeatMapSource(
+      "Routing Congestion", "Routing", "RoutingCongestion", [logger, db]() {
+        return std::make_shared<RoutingCongestionDataSource>(logger, db);
+      });
+}
 
 RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
                                                          odb::dbDatabase* db)

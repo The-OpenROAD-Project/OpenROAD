@@ -1,8 +1,9 @@
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
-load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -88,13 +89,7 @@ COMPULSORY_TESTS = [
     "regions2-opt",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "dpl_man_tcl_check",
-    "dpl_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -283,7 +278,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -300,4 +295,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "dpl_man_tcl_check",
+    srcs = ["dpl_man_tcl_check.py"],
+    data = ["//src/dpl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "dpl_readme_msgs_check",
+    data = [
+        "//src/dpl:doc_files",
+        "//src/dpl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

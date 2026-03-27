@@ -60,6 +60,7 @@ template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.num_masks != rhs.flags_.num_masks) {
     return false;
   }
@@ -357,6 +358,7 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const

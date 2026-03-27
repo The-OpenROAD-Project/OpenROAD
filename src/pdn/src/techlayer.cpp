@@ -227,7 +227,9 @@ int TechLayer::getMinIncrementStep() const
   return 1;
 }
 
-odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
+odb::Rect TechLayer::adjustToMinArea(
+    const odb::Rect& rect,
+    const std::optional<odb::dbTechLayerDir>& dir) const
 {
   if (!layer_->hasArea()) {
     return rect;
@@ -246,8 +248,9 @@ odb::Rect TechLayer::adjustToMinArea(const odb::Rect& rect) const
 
   const int width = new_rect.dx();
   const int height = new_rect.dy();
-  if (width * height < area) {
-    if (layer_->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+  if (new_rect.area() < area) {
+    if (dir.value_or(layer_->getDirection())
+        == odb::dbTechLayerDir::HORIZONTAL) {
       const int required_width = std::ceil(area / height);
       const double added_width = required_width - width;
       const int adjust_min = std::ceil(added_width / 2.0);

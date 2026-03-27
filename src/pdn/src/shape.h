@@ -177,7 +177,8 @@ class Shape
 
   std::unique_ptr<Shape> extendTo(
       const odb::Rect& rect,
-      const ObstructionTree& obstructions,
+      const Shape::ShapeTree& shapes,
+      const Shape::ObstructionTree& obstructions,
       Shape* orig_shape,
       const std::function<bool(const ShapePtr&)>& obs_filter
       = [](const ShapePtr&) { return true; }) const;

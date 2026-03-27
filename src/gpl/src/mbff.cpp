@@ -2307,6 +2307,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   for (const auto [tray, count] : tray_sizes_used_) {
     log_->report("  {}-bit: {}", tray, count);
   }
+  resizer_->invalidateVertexOrdering();
 }
 
 Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)

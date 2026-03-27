@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,9 @@ class TechLayer
 
   int getMinWidth() const { return layer_->getMinWidth(); }
   int getMaxWidth() const { return layer_->getMaxWidth(); }
-  odb::Rect adjustToMinArea(const odb::Rect& rect) const;
+  odb::Rect adjustToMinArea(const odb::Rect& rect,
+                            const std::optional<odb::dbTechLayerDir>& dir
+                            = std::nullopt) const;
   // get the spacing by also checking for spacing constraints not normally
   // checked for
   int getSpacing(int width, int length = 0) const;

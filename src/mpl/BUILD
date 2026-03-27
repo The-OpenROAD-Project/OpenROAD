@@ -4,10 +4,25 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
+)
+
+cc_library(
+    name = "snapper",
+    srcs = [
+        "src/snapper.cpp",
+    ],
+    hdrs = [
+        "src/snapper.h",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/utl",
+    ],
 )
 
 cc_library(
@@ -38,6 +53,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":snapper",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
@@ -67,11 +83,9 @@ cc_library(
     hdrs = [
         "include/mpl/MakeMacroPlacer.h",
     ],
-    copts = [
-        "-Isrc/mpl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":mpl",
@@ -108,4 +122,17 @@ tcl_wrap_cc(
     deps = [
         "//src/odb:swig",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/mpl.tcl",
+    ],
+    visibility = ["//src/mpl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/mpl/test:__pkg__"],
 )

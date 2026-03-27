@@ -6,6 +6,9 @@ proc read_upf { args } {
   sta::parse_key_args "read_upf" args \
     keys {-file} flags {}
 
+  if { ![info exists keys(-file)] } {
+    utl::error UPF 78 "The -file argument is required for the read_upf command."
+  }
   source $keys(-file)
 }
 
@@ -88,14 +91,14 @@ sta::define_cmd_args "create_power_switch" { \
     [-control_port control_port] \
     [-on_state on_state] \
     name
-} ;# checker off
+}
 proc create_power_switch { args } {
   upf::check_block_exists
 
   ord::parse_list_args "create_power_switch" args \
     list {-input_supply_port -control_port -ack_port -on_state}
   sta::parse_key_args "create_power_switch" args \
-    keys {-domain -output_supply_port} flags {} ;# checker off
+    keys {-domain -output_supply_port} flags {}
 
   sta::check_argc_eq1 "create_power_switch" $args
 

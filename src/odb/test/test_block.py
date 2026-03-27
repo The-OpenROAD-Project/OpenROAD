@@ -92,8 +92,16 @@ class TestBlock(odbUnitTest.TestCase):
                 swire, self.lib.getTech().findLayer("L1"), 0, 4000, 100, 4100, "NONE"
             )
         if (flag and test_num == 5) or (not flag and test_num >= 5):
-            pass
-            # TODO ADD WIRE
+            L1 = self.lib.getTech().findLayer("L1")
+            L1.setWidth(200)
+            n_w = odb.dbNet_create(self.block, "n_w")
+            wire = odb.dbWire_create(n_w)
+            encoder = odb.dbWireEncoder()
+            encoder.begin(wire)
+            encoder.newPath(L1, "ROUTED")
+            encoder.addPoint(0, 4500)
+            encoder.addPoint(3000, 4500)
+            encoder.end()
 
     def test_bbox0(self):
         box = self.block.getBBox()
@@ -134,6 +142,12 @@ class TestBlock(odbUnitTest.TestCase):
         box = self.block.getBBox()
         self.block_placement(4, False)
         self.check_box_rect(-1580, -1000, 2550, 4100)
+
+    def test_bbox5(self):
+        box = self.block.getBBox()
+        self.block_placement(5, False)
+        # xMax is 3100 (not 3000): wire endpoint is extended by half-width (100).
+        self.check_box_rect(-1580, -1000, 3100, 4600)
 
 
 if __name__ == "__main__":

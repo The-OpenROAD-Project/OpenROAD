@@ -206,6 +206,11 @@ void IRDropDataSource::ensureNet()
     return;
   }
 
+  if (psm_ != nullptr && psm_->getLastAnalyzedNet() != nullptr) {
+    net_ = psm_->getLastAnalyzedNet();
+    return;
+  }
+
   if (getBlock() == nullptr) {
     return;
   }
@@ -235,6 +240,11 @@ void IRDropDataSource::setCorner(const std::string& name)
 void IRDropDataSource::ensureCorner()
 {
   if (corner_ != nullptr) {
+    return;
+  }
+
+  if (psm_ != nullptr && psm_->getLastAnalyzedCorner() != nullptr) {
+    corner_ = psm_->getLastAnalyzedCorner();
     return;
   }
 
