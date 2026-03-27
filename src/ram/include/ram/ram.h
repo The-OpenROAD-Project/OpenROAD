@@ -66,6 +66,7 @@ class RamGen
   void generate(int mask_size,
                 int word_size,
                 int num_words,
+                int column_mux_ratio,
                 int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
@@ -137,6 +138,14 @@ class RamGen
                 const std::vector<odb::dbNet*>& data_input,
                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
+  std::unique_ptr<Cell> makeColMux(
+      const std::string& prefix,
+      int column_mux_ratio,
+      int mask_size,
+      const std::vector<std::vector<odb::dbNet*>>& col_q_nets,
+      const std::vector<odb::dbNet*>& col_sel_nets,
+      const std::vector<odb::dbNet*>& q_out_nets);
+
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
   std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
@@ -166,12 +175,15 @@ class RamGen
   odb::dbMaster* and2_cell_{nullptr};
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
+  odb::dbMaster* aoi22_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
+  std::string aoi22_in_a1_, aoi22_in_a2_, aoi22_in_b1_, aoi22_in_b2_,
+      aoi22_out_;
   Grid ram_grid_;
 };
 

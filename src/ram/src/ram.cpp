@@ -236,6 +236,90 @@ void RamGen::makeWord(const int slices_per_word,
   }
 }
 
+// mux made out of AOI22 cells used for col/mux feature. currently support only
+// even mux ratios (1,2,4,8)
+std::unique_ptr<Cell> RamGen::makeColMux(
+    const std::string& prefix,
+    const int column_mux_ratio,
+    const int mask_size,
+    const vector<vector<dbNet*>>& col_q_nets,
+    const vector<dbNet*>& col_sel_nets,
+    const vector<dbNet*>& q_out_nets)
+{
+  auto mux_cell = std::make_unique<Cell>();
+  const int num_stages = static_cast<int>(std::log2(column_mux_ratio));
+  const bool need_final_inv = (num_stages % 2 == 1);
+
+  for (int bit = 0; bit < mask_size; ++bit) {
+    // Stage 1: one AOI22 per pair of sub columns determined by column_mux_ratio
+    // value using select signal S0 with output polarity: inverted (~mux)
+    int num_pairs = column_mux_ratio / 2;
+    vector<dbNet*> prev_nets(num_pairs);
+
+    for (int i = 0; i < num_pairs; ++i) {
+      // for ratio=2 with no INV needed (num_stages=1 is odd so
+      // need_final_inv=true), stage 1 output always goes to intermediate wire,
+      // never directly to Q here
+      prev_nets[i] = dbNet::create(
+          block_, fmt::format("{}_aoi_s1_g{}_bit{}", prefix, i, bit).c_str());
+      makeInst(mux_cell.get(),
+               prefix,
+               fmt::format("aoi_s1_g{}_bit{}", i, bit),
+               aoi22_cell_,
+               {{aoi22_in_a1_, col_sel_nets[0]},
+                {aoi22_in_a2_, col_q_nets[i * 2][bit]},
+                {aoi22_in_b1_, col_sel_nets[1]},
+                {aoi22_in_b2_, col_q_nets[i * 2 + 1][bit]},
+                {aoi22_out_, prev_nets[i]}});
+    }
+
+    // Stages 2 to N: each stage halves the number of signals
+    // sel index increases by 2 per stage (~Sn at sel_idx, Sn at sel_idx+1)
+    for (int stage = 1; stage < num_stages; ++stage) {
+      int num_out = static_cast<int>(prev_nets.size()) / 2;
+      vector<dbNet*> curr_nets(num_out);
+      int sel_idx = stage * 2;
+      bool is_last_stage = (stage == num_stages - 1);
+      for (int i = 0; i < num_out; ++i) {
+        // if this is the last stage and no INV needed, drive Q directly
+        // to avoid adding an unnecessary buffer gate
+        if (is_last_stage && !needs_final_inv) {
+          curr_nets[i] = q_out_nets[bit];
+        } else {
+          curr_nets[i] = dbNet::create(
+              block_,
+              fmt::format("{}_aoi_s{}_g{}_bit{}", prefix, stage + 1, i, bit)
+                  .c_str());
+        }
+        makeInst(mux_cell.get(),
+                 prefix,
+                 fmt::format("aoi_s{}_g{}_bit{}", stage + 1, i, bit),
+                 aoi22_cell_,
+                 {{aoi22_in_a1_, col_sel_nets[sel_idx]},
+                  {aoi22_in_a2_, prev_nets[i * 2]},
+                  {aoi22_in_b1_, col_sel_nets[sel_idx + 1]},
+                  {aoi22_in_b2_, prev_nets[i * 2 + 1]},
+                  {aoi22_out_, curr_nets[i]}});
+      }
+      prev_nets = curr_nets;
+    }
+
+    // Final stage/output:
+    // "odd" stages (ratio = 2,8 meaning num_stages = 1,3): output inverted, add
+    // inverter "even" stages (ratio = 4 meaning num_stages = 2): Q driven
+    // directly by last AOI22 output, no inverter needed
+    if (need_final_inv) {
+      makeInst(mux_cell.get(),
+               prefix,
+               fmt::format("mux_inv_bit{}", bit),
+               inv_cell_,
+               {{"A", prev_nets[0]}, {"Y", q_out_nets[bit]}});
+    }
+  }
+
+  return mux_cell;
+}
+
 std::unique_ptr<Layout> RamGen::generateTapColumn(const int num_words,
                                                   const int tapcell_col)
 {
@@ -452,6 +536,99 @@ void RamGen::findMasters()
         [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
         "buffer");
   }
+
+  // aoi cells used for column mux functionality when column_mux_ratio > 1
+  if (!aoi22_cell_) {
+    auto isNotPort = [](const sta::FuncExpr* e) {
+      return e && e->op() == sta::FuncExpr::Op::not_ && e->left()
+             && e->left()->op() == sta::FuncExpr::Op::port;
+    };
+    auto isAndOfNots = [&isNotPort](const sta::FuncExpr* e) {
+      return e && e->op() == sta::FuncExpr::Op::and_ && isNotPort(e->left())
+             && isNotPort(e->right());
+    };
+    aoi22_cell_ = findMaster(
+        [&isNotPort, &isAndOfNots](sta::LibertyPort* port) {
+          if (!port->direction()->isOutput()) {
+            return false;
+          }
+          auto f = port->function();
+          if (!f) {
+            return false;
+          }
+          if (f->op() == sta::FuncExpr::Op::not_) {
+            auto inner = f->left();
+            if (!inner || inner->op() != sta::FuncExpr::Op::or_) {
+              return false;
+            }
+            auto L = inner->left();
+            auto R = inner->right();
+            return L && L->op() == sta::FuncExpr::Op::and_ && L->left()
+                   && L->left()->op() == sta::FuncExpr::Op::port && L->right()
+                   && L->right()->op() == sta::FuncExpr::Op::port && R
+                   && R->op() == sta::FuncExpr::Op::and_ && R->left()
+                   && R->left()->op() == sta::FuncExpr::Op::port && R->right()
+                   && R->right()->op() == sta::FuncExpr::Op::port;
+          }
+          if (f->op() == sta::FuncExpr::Op::or_) {
+            auto l1 = f->left();
+            auto t4 = f->right();
+            if (!isAndOfNots(t4) || !l1 || l1->op() != sta::FuncExpr::Op::or_) {
+              return false;
+            }
+            auto l2 = l1->left();
+            auto t3 = l1->right();
+            if (!isAndOfNots(t3) || !l2 || l2->op() != sta::FuncExpr::Op::or_) {
+              return false;
+            }
+            return isAndOfNots(l2->left()) && isAndOfNots(l2->right());
+          }
+          return false;
+        },
+        "aoi22");
+
+    // extract port names from the liberty function tree
+    auto cell = network_->libertyCell(network_->dbToSta(aoi22_cell_));
+    auto port_iter = cell->portIterator();
+    while (port_iter->hasNext()) {
+      auto p = static_cast<sta::ConcretePort*>(port_iter->next());
+      if (p->direction()->isAnyOutput()) {
+        auto f = p->libertyPort()->function();
+        if (f->op() == sta::FuncExpr::Op::not_) {
+          // Compact form: not_(or_(and_(A1,A2), and_(B1,B2)))
+          auto or_expr = f->left();
+          auto and_a = or_expr->left();
+          auto and_b = or_expr->right();
+          aoi22_in_a1_ = and_a->left()->port()->name();
+          aoi22_in_a2_ = and_a->right()->port()->name();
+          aoi22_in_b1_ = and_b->left()->port()->name();
+          aoi22_in_b2_ = and_b->right()->port()->name();
+        } else {
+          // SOP expanded form used by sky130hd:
+          // or_(or_(or_(and_(not_(A1),not_(B1)), and_(not_(A1),not_(B2))),
+          //     and_(not_(A2),not_(B1))),
+          //     and_(not_(A2),not_(B2)))
+          // Port names are inside not_() wrappers, requiring an extra
+          // ->left() to reach the actual port compared to the compact form.
+          // e.g. and_(not_(A1), not_(B1))->left()->left()->port() gives A1
+          // NOTE: this branch is PDK-specific to sky130hd's liberty
+          // representation. If adding support for other PDKs, verify their
+          // AOI22 function expression form and extend this extraction
+          // accordingly.
+          auto t1 = f->left()->left()->left();
+          auto t2 = f->left()->left()->right();
+          auto t3 = f->left()->right();
+          aoi22_in_a1_ = t1->left()->left()->port()->name();
+          aoi22_in_a2_ = t3->left()->left()->port()->name();
+          aoi22_in_b1_ = t1->right()->left()->port()->name();
+          aoi22_in_b2_ = t2->right()->left()->port()->name();
+        }
+        aoi22_out_ = p->name();
+        break;
+      }
+    }
+    delete port_iter;
+  }
 }
 
 void RamGen::ramPdngen(const char* power_pin,
@@ -636,6 +813,7 @@ void RamGen::generate(const int mask_size,
   and2_cell_ = nullptr;
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
+  aoi22_cell_ = nullptr;
   findMasters();
 
   auto chip = db_->getChip();
