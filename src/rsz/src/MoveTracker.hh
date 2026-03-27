@@ -12,6 +12,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbBlockCallBackObj.h"
+#include "sta/Delay.hh"
 
 namespace odb {
 class dbBlock;
