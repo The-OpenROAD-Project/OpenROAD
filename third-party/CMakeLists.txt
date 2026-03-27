@@ -59,11 +59,15 @@ endif()
 
 add_library(mockturtle INTERFACE)
 
+find_package(absl REQUIRED)
 find_package(spdlog REQUIRED)
 
 target_link_libraries(mockturtle
   INTERFACE
     spdlog::spdlog
+    absl::city
+    absl::core_headers
+    absl::random_random
 )
 
 target_include_directories(mockturtle
