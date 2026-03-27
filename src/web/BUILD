@@ -39,10 +39,10 @@ cc_library(
     ],
     copts = [
         "-DBOOST_ASIO_NO_DEPRECATED",
-        "-Isrc/web/src",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//src/dbSta",
@@ -69,11 +69,9 @@ cc_library(
     hdrs = [
         "include/web/MakeWeb.h",
     ],
-    copts = [
-        "-Isrc/web/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":web",

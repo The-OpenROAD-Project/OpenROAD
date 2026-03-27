@@ -79,6 +79,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "tcl_eval") {
     req.type = WebSocketRequest::TCL_EVAL;
     req.tcl_cmd = extract_string(msg, "cmd");
+  } else if (type_str == "tcl_complete") {
+    req.type = WebSocketRequest::TCL_COMPLETE;
+    req.tcl_complete_line = extract_string(msg, "line");
+    req.tcl_complete_cursor_pos = extract_int_or(msg, "cursor_pos", -1);
   } else if (type_str == "timing_report") {
     req.type = WebSocketRequest::TIMING_REPORT;
     req.timing_is_setup = extract_int_or(msg, "is_setup", 1);
@@ -508,6 +512,13 @@ void WebSocketSession::on_read(beast::error_code ec)
                 [self = std::move(self), req = std::move(req)]() {
                   self->queue_response(self->tcl_handler_.handleTclEval(req));
                 });
+      break;
+    case WebSocketRequest::TCL_COMPLETE:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->tcl_handler_.handleTclComplete(req));
+          });
       break;
     case WebSocketRequest::TIMING_REPORT:
       net::post(

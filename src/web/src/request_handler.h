@@ -69,6 +69,7 @@ struct WebSocketRequest
     INSPECT_BACK,
     HOVER,
     TCL_EVAL,
+    TCL_COMPLETE,
     TIMING_REPORT,
     TIMING_HIGHLIGHT,
     CLOCK_TREE,
@@ -109,6 +110,10 @@ struct WebSocketRequest
 
   // TCL_EVAL fields
   std::string tcl_cmd;
+
+  // TCL_COMPLETE fields
+  std::string tcl_complete_line;
+  int tcl_complete_cursor_pos = -1;
 
   // SCHEMATIC_CONE / SCHEMATIC_INSPECT fields
   std::string schematic_inst_name;
@@ -263,6 +268,7 @@ class TclHandler
   explicit TclHandler(std::shared_ptr<TclEvaluator> tcl_eval);
 
   WebSocketResponse handleTclEval(const WebSocketRequest& req);
+  WebSocketResponse handleTclComplete(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TclEvaluator> tcl_eval_;

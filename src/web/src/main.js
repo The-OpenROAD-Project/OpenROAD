@@ -14,6 +14,7 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { TclCompleter } from './tcl-completer.js';
 import './theme.js';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
@@ -270,6 +271,24 @@ function createLayoutViewer(container) {
         app.map.invalidateSize({ animate: false });
     }).observe(mapDiv);
 
+    // Coordinate readout overlay (bottom-left of the layout viewer).
+    const coordBar = document.createElement('div');
+    coordBar.id = 'coord-bar';
+    mapDiv.appendChild(coordBar);
+
+    app.map.on('mousemove', (e) => {
+        app.lastMouseLatLng = e.latlng;
+        if (!app.designScale) return;
+        const { dbuX, dbuY } = latLngToDbu(
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+        const dbuPerUm = app.techData?.dbu_per_micron || 1000;
+        const precision = Math.ceil(Math.log10(dbuPerUm));
+        const xUm = (dbuX / dbuPerUm).toFixed(precision);
+        const yUm = (dbuY / dbuPerUm).toFixed(precision);
+        coordBar.textContent = `X: ${xUm}  Y: ${yUm}`;
+    });
+    app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
+
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
 }
 
@@ -303,11 +322,17 @@ function createTclConsole(container) {
 
     app.tclOutputEl = el.querySelector('.tcl-output');
     const input = el.querySelector('.tcl-input');
+    const completer = new TclCompleter(input, app.websocketManager);
+
     input.addEventListener('keydown', (e) => {
+        // Let completer handle first (Tab, arrow keys, Enter-when-popup-visible)
+        if (completer.handleKeyDown(e)) return;
+
         if (e.key === 'Enter') {
             const cmd = input.value.trim();
             if (!cmd) return;
             tclAppend(`>>> ${cmd}\n`, 'tcl-cmd');
+            completer.addToHistory(cmd);
             input.value = '';
             app.websocketManager.request({ type: 'tcl_eval', cmd })
                 .then(data => {
@@ -761,9 +786,17 @@ document.addEventListener('keydown', (e) => {
     } else if (key === 'f' && !e.ctrlKey && !e.metaKey && app.fitBounds) {
         app.map.fitBounds(app.fitBounds);
     } else if (key === 'z' && !e.shiftKey && !e.ctrlKey && app.map) {
-        app.map.zoomIn();
+        if (app.lastMouseLatLng) {
+            app.map.setZoomAround(app.lastMouseLatLng, app.map.getZoom() + 1);
+        } else {
+            app.map.zoomIn();
+        }
     } else if (key === 'z' && e.shiftKey && !e.ctrlKey && app.map) {
-        app.map.zoomOut();
+        if (app.lastMouseLatLng) {
+            app.map.setZoomAround(app.lastMouseLatLng, app.map.getZoom() - 1);
+        } else {
+            app.map.zoomOut();
+        }
     } else if (key === 't' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         app.toggleTheme();
     }
