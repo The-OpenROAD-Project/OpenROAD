@@ -190,9 +190,7 @@ def report_floating_nets(design):
 
 def report_long_wires(design, count, *, digits=2):
     if not isinstance(count, int) or count < 0:
-        _error(
-            utl.RSZ, 1052, "report_long_wires count must be a non-negative integer."
-        )
+        _error(utl.RSZ, 1052, "report_long_wires count must be a non-negative integer.")
     design.getResizer().reportLongWires(count, digits)
 
 
