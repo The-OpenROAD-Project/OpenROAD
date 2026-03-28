@@ -59,7 +59,7 @@ class FlexWavefrontGrid
       return xIdx_ > b.xIdx_;  // prefer smaller x for stable tie-breaking
     }
     if (yIdx_ != b.yIdx_) {
-      return yIdx_ > b.yIdx_;  // prefer smaller y for stable tie-breaking
+      return yIdx_ > b.yIdx_;
     }
     if (getLastDir() != b.getLastDir()) {
       return getLastDir() > b.getLastDir();

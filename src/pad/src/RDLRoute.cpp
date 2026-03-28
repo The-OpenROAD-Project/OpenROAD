@@ -49,7 +49,18 @@ RDLRoute::RDLRoute(odb::dbITerm* source,
         const auto rhs_dist = odb::Point::squaredDistance(
             iterm_center, rhs->getBBox().center());
         // sort non-cover terms first
-        return std::tie(lhs_cover, lhs_dist) < std::tie(rhs_cover, rhs_dist);
+        if (lhs_cover != rhs_cover) {
+          return lhs_cover < rhs_cover;
+        }
+        if (lhs_dist != rhs_dist) {
+          return lhs_dist < rhs_dist;
+        }
+        const std::string lhs_name = lhs->getName();
+        const std::string rhs_name = rhs->getName();
+        if (lhs_name != rhs_name) {
+          return lhs_name < rhs_name;
+        }
+        return lhs->getId() < rhs->getId();
       });
 
   resetRoute();
@@ -88,8 +99,12 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
                                     rhs_shortest->getBBox().center());
 
   if (lhs_dist == rhs_dist) {
-    // if distances are equal, use id for stable sorting
-    return compare_by_id(getTerminal(), other->getTerminal());
+    const std::string lhs_name = getTerminal()->getName();
+    const std::string rhs_name = other->getTerminal()->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return getTerminal()->getId() < other->getTerminal()->getId();
   }
 
   return lhs_dist > rhs_dist;

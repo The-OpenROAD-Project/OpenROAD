@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
@@ -34,6 +35,32 @@ class Logger;
 }
 
 namespace pad {
+
+struct DbNetPtrLess
+{
+  bool operator()(const odb::dbNet* lhs, const odb::dbNet* rhs) const
+  {
+    const std::string lhs_name = lhs->getName();
+    const std::string rhs_name = rhs->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return lhs->getId() < rhs->getId();
+  }
+};
+
+struct DbITermPtrLess
+{
+  bool operator()(const odb::dbITerm* lhs, const odb::dbITerm* rhs) const
+  {
+    const std::string lhs_name = lhs->getName();
+    const std::string rhs_name = rhs->getName();
+    if (lhs_name != rhs_name) {
+      return lhs_name < rhs_name;
+    }
+    return lhs->getId() < rhs->getId();
+  }
+};
 
 class RDLRouter;
 
@@ -100,9 +127,12 @@ class RDLRouter
     std::set<odb::Point> added_points;
   };
 
-  using NetRoutingTargetMap
-      = std::map<odb::dbNet*,
-                 std::map<odb::dbITerm*, std::vector<RouteTarget>>>;
+  using NetRoutingTargetMap = std::map<
+      odb::dbNet*,
+      std::map<odb::dbITerm*, std::vector<RouteTarget>, DbITermPtrLess>,
+      DbNetPtrLess>;
+  using ITermRoutingTargetMap
+      = std::map<odb::dbITerm*, std::vector<RouteTarget>, DbITermPtrLess>;
 
   using RDLRoutePtr = std::shared_ptr<RDLRoute>;
 
@@ -205,8 +235,7 @@ class RDLRouter
                                       const RouteTarget& source);
   void removeTerminalAccess(const TerminalAccess& access);
 
-  std::map<odb::dbITerm*, std::vector<RouteTarget>> generateRoutingTargets(
-      odb::dbNet* net) const;
+  ITermRoutingTargetMap generateRoutingTargets(odb::dbNet* net) const;
   odb::dbTechLayer* getOtherLayer(odb::dbTechVia* via) const;
   std::set<GridGraphEdge> getVertexEdges(const GridGraphVertex& vertex) const;
 

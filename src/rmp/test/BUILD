@@ -129,7 +129,10 @@ filegroup(
     regression_test(
         name = test_name,
         size = "medium" if test_name in MEDIUM_TESTS else "small",
-        data = [":" + test_name + "_resources"],
+        data = [
+            ":" + test_name + "_resources",
+            "//src/rmp:rmp_py",
+        ],
         tags = [],
         visibility = ["//visibility:public"],
     )

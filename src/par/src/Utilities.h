@@ -6,6 +6,9 @@
 // This file includes the basic utility functions for operations
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <map>
 #include <string>
 #include <vector>
@@ -102,6 +105,34 @@ std::vector<float> abs(const std::vector<float>& a);
 float norm2(const std::vector<float>& a);
 
 float norm2(const std::vector<float>& a, const std::vector<float>& factor);
+
+// A fully specified Fisher-Yates shuffle so Bazel and CMake do not depend on
+// implementation-defined std::shuffle behavior across standard libraries.
+template <typename RandomIt, typename URBG>
+void DeterministicShuffle(RandomIt first, RandomIt last, URBG& gen)
+{
+  using diff_t = typename std::iterator_traits<RandomIt>::difference_type;
+  const diff_t count = last - first;
+  if (count <= 1) {
+    return;
+  }
+
+  constexpr std::uint64_t range
+      = static_cast<std::uint64_t>(URBG::max())
+        - static_cast<std::uint64_t>(URBG::min()) + 1ULL;
+
+  for (diff_t i = count - 1; i > 0; --i) {
+    const std::uint64_t bound = static_cast<std::uint64_t>(i) + 1ULL;
+    const std::uint64_t limit = range - (range % bound);
+    std::uint64_t value = 0;
+    do {
+      value = static_cast<std::uint64_t>(gen())
+              - static_cast<std::uint64_t>(URBG::min());
+    } while (value >= limit);
+    const diff_t j = static_cast<diff_t>(value % bound);
+    std::iter_swap(first + i, first + j);
+  }
+}
 
 // ILP-based Partitioning Instance
 // Call ILP Solver to partition the design

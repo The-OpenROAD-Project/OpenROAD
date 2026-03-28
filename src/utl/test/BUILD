@@ -26,9 +26,6 @@ COMPULSORY_TESTS = [
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
-    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
-    # build directory structure not compatible with Bazel
-    # "cpp_tests",
 ]
 
 ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
@@ -80,6 +77,16 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+test_suite(
+    name = "cpp_tests",
+    tests = [
+        ":TestAlgorithms",
+        ":TestCFileUtils",
+        ":TestMetrics",
+        ":TestSuppressStdout",
+    ],
+)
 
 cc_test(
     name = "utl_cfile_unittest",
