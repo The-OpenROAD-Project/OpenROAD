@@ -2,6 +2,8 @@ from openroad import Design, Tech
 import helpers
 import rsz_aux
 
+helpers.if_bazel_change_working_dir_to("/_main/src/rsz/test/")
+
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
 tech.readLef("Nangate45/Nangate45.lef")

@@ -325,6 +325,7 @@ cc_binary(
         "//src/ppl",
         "//src/psm",
         "//src/rcx",
+        "//src/rsz",
         "//src/stt",
         "//src/tap",
         "//src/utl",

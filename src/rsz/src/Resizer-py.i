@@ -5,7 +5,8 @@
 #include <memory>
 
 #include "rsz/Resizer.hh"
-#include "ord/OpenRoad.hh"
+
+using namespace rsz;
 %}
 
 %include "../../Exception-py.i"

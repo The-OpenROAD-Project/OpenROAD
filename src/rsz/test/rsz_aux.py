@@ -1,7 +1,28 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
+import os
+
 import utl
+
+
+# utl.warn and utl.error are free functions from LoggerCommon.h which is only
+# compiled into CMake builds (guarded by #ifndef BAZEL in Logger-py.i).
+# In Bazel py_tests (TEST_SRCDIR is set) we fall back to Python-native
+# equivalents so that all code paths in this file are safe to call from
+# either build system.
+def _warn(tool, msg_id, msg):
+    if os.environ.get("TEST_SRCDIR", ""):
+        print(f"Warning: {msg}")
+    else:
+        utl.warn(tool, msg_id, msg)
+
+
+def _error(tool, msg_id, msg):
+    if os.environ.get("TEST_SRCDIR", ""):
+        raise ValueError(msg)
+    else:
+        utl.error(tool, msg_id, msg)
 
 
 def buffer_ports(
@@ -52,7 +73,7 @@ def repair_clock_nets(design, *, max_wire_length=None):
 
 def repair_tie_fanout(design, lib_port, *, separation=0, verbose=False):
     if lib_port is None:
-        utl.error(utl.RSZ, 1020, "lib_port argument is required.")
+        _error(utl.RSZ, 1020, "lib_port argument is required.")
     separation_m = separation * 1e-6
     design.getResizer().repairTieFanout(lib_port, separation_m, verbose)
 
@@ -85,7 +106,7 @@ def repair_timing(
     verbose=False,
 ):
     if not setup and not hold and recover_power is None:
-        utl.warn(
+        _warn(
             utl.RSZ,
             1033,
             "repair_timing: neither setup nor hold selected; nothing to repair.",
@@ -96,13 +117,13 @@ def repair_timing(
     _set_max_utilization(resizer, max_utilization)
 
     if not (0 <= repair_tns <= 100):
-        utl.error(utl.RSZ, 1030, "repair_tns must be between 0 and 100.")
+        _error(utl.RSZ, 1030, "repair_tns must be between 0 and 100.")
     if not (0 <= max_buffer_percent <= 100):
-        utl.error(utl.RSZ, 1031, "max_buffer_percent must be between 0 and 100.")
+        _error(utl.RSZ, 1031, "max_buffer_percent must be between 0 and 100.")
 
     if recover_power is not None:
         if not (0 <= recover_power <= 100):
-            utl.error(utl.RSZ, 1032, "recover_power must be between 0 and 100.")
+            _error(utl.RSZ, 1032, "recover_power must be between 0 and 100.")
         resizer.recoverPower(recover_power / 100.0, match_cell_footprint, verbose)
         return
 
@@ -148,7 +169,13 @@ def report_design_area(design):
     resizer = design.getResizer()
     util = round(resizer.utilization() * 100)
     area = round(resizer.designArea() * 1e12)
-    utl.report(f"Design area {area} um^2 {util}% utilization.")
+    msg = f"Design area {area} um^2 {util}% utilization."
+    # utl.report is a free function only available in CMake builds;
+    # in Bazel (TEST_SRCDIR set) fall back to print.
+    if os.environ.get("TEST_SRCDIR", ""):
+        print(msg)
+    else:
+        utl.report(msg)
 
 
 def report_floating_nets(design):
@@ -156,14 +183,14 @@ def report_floating_nets(design):
     floating_net_count = resizer.findFloatingNetsCount()
     floating_pin_count = resizer.findFloatingPinsCount()
     if floating_net_count > 0:
-        utl.warn(utl.RSZ, 1040, f"found {floating_net_count} floating nets.")
+        _warn(utl.RSZ, 1040, f"found {floating_net_count} floating nets.")
     if floating_pin_count > 0:
-        utl.warn(utl.RSZ, 1041, f"found {floating_pin_count} floating pins.")
+        _warn(utl.RSZ, 1041, f"found {floating_pin_count} floating pins.")
 
 
 def report_long_wires(design, count, *, digits=2):
     if not isinstance(count, int) or count < 0:
-        utl.error(
+        _error(
             utl.RSZ, 1052, "report_long_wires count must be a non-negative integer."
         )
     design.getResizer().reportLongWires(count, digits)
@@ -174,7 +201,7 @@ def _set_max_utilization(resizer, max_utilization):
         resizer.setMaxUtilization(0.0)
         return
     if not (0.0 <= max_utilization <= 100.0):
-        utl.error(utl.RSZ, 1050, "max_utilization must be between 0 and 100.")
+        _error(utl.RSZ, 1050, "max_utilization must be between 0 and 100.")
     resizer.setMaxUtilization(max_utilization / 100.0)
 
 
@@ -182,5 +209,5 @@ def _parse_max_wire_length(max_wire_length):
     if max_wire_length is None:
         return 0.0
     if not isinstance(max_wire_length, (int, float)) or max_wire_length <= 0:
-        utl.error(utl.RSZ, 1051, "max_wire_length must be a positive number.")
+        _error(utl.RSZ, 1051, "max_wire_length must be a positive number.")
     return max_wire_length * 1e-6
