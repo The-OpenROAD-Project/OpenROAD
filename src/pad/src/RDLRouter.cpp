@@ -1441,12 +1441,10 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
   bool added;
   GridGraphEdge edge;
 
+  // For undirected graphs, we only need to check one direction
+  // since edge (v0, v1) is the same as edge (v1, v0)
   bool exists;
   boost::tie(edge, exists) = boost::lookup_edge(v0, v1, graph_);
-  if (exists) {
-    return true;
-  }
-  boost::tie(edge, exists) = boost::lookup_edge(v1, v0, graph_);
   if (exists) {
     return true;
   }
