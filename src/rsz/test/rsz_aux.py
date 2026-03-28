@@ -6,11 +6,6 @@ import os
 import utl
 
 
-# utl.warn and utl.error are free functions from LoggerCommon.h which is only
-# compiled into CMake builds (guarded by #ifndef BAZEL in Logger-py.i).
-# In Bazel py_tests (TEST_SRCDIR is set) we fall back to Python-native
-# equivalents so that all code paths in this file are safe to call from
-# either build system.
 def _warn(tool, msg_id, msg):
     if os.environ.get("TEST_SRCDIR", ""):
         print(f"Warning: {msg}")
@@ -87,6 +82,7 @@ def repair_timing(
     hold_margin=0.0,
     allow_setup_violations=False,
     sequence="",
+    phases="",
     skip_pin_swap=False,
     skip_gate_cloning=False,
     skip_size_down=False,
@@ -142,6 +138,7 @@ def repair_timing(
             match_cell_footprint,
             verbose,
             sequence,
+            phases,
             skip_pin_swap,
             skip_gate_cloning,
             skip_size_down,
@@ -170,8 +167,7 @@ def report_design_area(design):
     util = round(resizer.utilization() * 100)
     area = round(resizer.designArea() * 1e12)
     msg = f"Design area {area} um^2 {util}% utilization."
-    # utl.report is a free function only available in CMake builds;
-    # in Bazel (TEST_SRCDIR set) fall back to print.
+    # In Bazel use print as the global utl functions have been removed.
     if os.environ.get("TEST_SRCDIR", ""):
         print(msg)
     else:

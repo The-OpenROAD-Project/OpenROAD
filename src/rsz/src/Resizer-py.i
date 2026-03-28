@@ -35,6 +35,7 @@ using namespace rsz;
 
 %ignore rsz::Resizer::repairSetup(double, double, int, int, int, bool, bool,
                                   const std::vector<rsz::MoveType>&,
+                                  const char*,
                                   bool, bool, bool, bool, bool, bool, bool, bool);
 
 %ignore rsz::Resizer::computeNewDelaysSlews;
@@ -81,6 +82,7 @@ using namespace rsz;
                    bool match_cell_footprint,
                    bool verbose,
                    const char* sequence,
+                   const char* phases,
                    bool skip_pin_swap,
                    bool skip_gate_cloning,
                    bool skip_size_down,
@@ -95,6 +97,7 @@ using namespace rsz;
     return $self->repairSetup(setup_margin, repair_tns_end_percent,
                               max_passes, max_iterations, max_repairs_per_pass,
                               match_cell_footprint, verbose, move_seq,
+                              phases ? phases : "",
                               skip_pin_swap, skip_gate_cloning, skip_size_down,
                               skip_buffering, skip_buffer_removal,
                               skip_last_gasp, skip_vt_swap, skip_crit_vt_swap);
