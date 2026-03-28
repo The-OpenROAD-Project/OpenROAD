@@ -51,7 +51,7 @@ def restructure(
     workdir_name=".",
     tielo_port=None,
     tiehi_port=None,
-    abc_logfile=""
+    abc_logfile="",
 ):
     os.makedirs(workdir_name, exist_ok=True)
     rst = design.getRestructure()
