@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <iosfwd>
 #include <numbers>
 #include <tuple>
@@ -1423,3 +1424,17 @@ using utl::format_as;
 #endif
 
 }  // namespace odb
+
+namespace std {
+template <>
+struct hash<odb::Point>
+{
+  size_t operator()(const odb::Point& p) const noexcept
+  {
+    size_t seed = 0;
+    seed ^= std::hash<int>{}(p.x()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= std::hash<int>{}(p.y()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    return seed;
+  }
+};
+}  // namespace std
