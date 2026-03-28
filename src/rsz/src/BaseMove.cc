@@ -794,7 +794,7 @@ sta::ArcDelay BaseMove::getWorstIntrinsicDelay(
   for (const sta::LibertyPort* output_port : output_ports) {
     if (output_port->direction()->isOutput()) {
       worst_intrinsic_delay
-          = max(worst_intrinsic_delay, output_port->intrinsicDelay(nullptr));
+          = max(worst_intrinsic_delay, output_port->intrinsicDelay(sta_));
     }
   }
   return worst_intrinsic_delay;

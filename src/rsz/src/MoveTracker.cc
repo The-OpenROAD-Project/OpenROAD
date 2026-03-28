@@ -624,13 +624,16 @@ void MoveTracker::printEndpointSummary(const std::string& title)
 
       // Accumulate TNS (sum of negative slacks)
       if (original_slack < 0.0) {
-        tns_original += original_slack;
+        tns_original = sta::delayAsFloat(tns_original)
+                       + sta::delayAsFloat(original_slack);
       }
       if (pre_phase_slack < 0.0) {
-        tns_post_endpoint += pre_phase_slack;
+        tns_post_endpoint = sta::delayAsFloat(tns_post_endpoint)
+                            + sta::delayAsFloat(pre_phase_slack);
       }
       if (post_phase_slack < 0.0) {
-        tns_final += post_phase_slack;
+        tns_final = sta::delayAsFloat(tns_final)
+                    + sta::delayAsFloat(post_phase_slack);
       }
     }
 
@@ -2182,7 +2185,8 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
     for (const auto& [path_slack, path_end] : paths) {
       if (path_slack < 0.0) {
         neg_path_count++;
-        local_tns += path_slack;
+        local_tns
+            = sta::delayAsFloat(local_tns) + sta::delayAsFloat(path_slack);
       }
     }
 
@@ -2233,7 +2237,8 @@ void MoveTracker::printTopBinEndpoints(const std::string& title,
 
   sta::Slack total_negative_slack = 0.0;
   for (const auto& [ep_pin, ep_slack] : violating_endpoints) {
-    total_negative_slack += ep_slack;
+    total_negative_slack
+        = sta::delayAsFloat(total_negative_slack) + sta::delayAsFloat(ep_slack);
   }
   float tns_ns = sta::delayAsFloat(total_negative_slack) * 1e9;
 

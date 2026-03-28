@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "db_sta/DelayFmt.hh"  // IWYU pragma: keep
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbDatabaseObserver.h"
@@ -155,7 +156,7 @@ class dbSta : public Sta, public odb::dbDatabaseObserver
   dbNetwork* getDbNetwork() { return db_network_; }
   dbStaReport* getDbReport() { return db_report_; }
 
-  Slack slack(const odb::dbNet* net, const MinMax* min_max);
+  float slack(const odb::dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
   void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
