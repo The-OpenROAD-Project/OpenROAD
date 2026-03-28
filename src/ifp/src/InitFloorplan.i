@@ -66,7 +66,7 @@ static utl::Logger* getLogger() {
   temp_vector.clear();
   temp_vector.reserve(nitems / 2);
   
-  for (int i = 0; i < nitems; i += 2) {
+  for (Tcl_Size i = 0; i < nitems; i += 2) {
     double x, y;
     if (Tcl_GetDoubleFromObj(interp, listobjv[i], &x) != TCL_OK) {
       return TCL_ERROR;

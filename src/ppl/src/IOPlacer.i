@@ -32,7 +32,7 @@ tclListStdSeq(Tcl_Obj *const source,
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
     vector<TYPE> *seq = new vector<TYPE>;
-    for (int i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
@@ -56,7 +56,7 @@ tclSetStdSeq(Tcl_Obj *const source,
   if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
       && argc > 0) {
     set<TYPE> *seq = new set<TYPE>;
-    for (int i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
       void *obj;
       // Ignore returned TCL_ERROR because can't get swig_type_info.
       SWIG_ConvertPtr(argv[i], &obj, swig_type, false);

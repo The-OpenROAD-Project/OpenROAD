@@ -27,7 +27,7 @@
     }
 
     // 3. Iterate and populate the temp map
-    for (int i = 0; i < len; i += 2) {
+    for (Tcl_Size i = 0; i < len; i += 2) {
         char *key = Tcl_GetString(elemObjv[i]);
         char *value = Tcl_GetString(elemObjv[i+1]);
         temp[key] = value;

@@ -173,7 +173,7 @@
              std::vector< T* >& (std::vector< T* > *v, std::vector< T* > w) {
     Tcl_Obj **listobjv;
     Tcl_Size  nitems;
-    int       i;
+    Tcl_Size  i;
     T*        temp;
     swig_type_info *tf = SWIG_TypeQuery("T" "*");
 

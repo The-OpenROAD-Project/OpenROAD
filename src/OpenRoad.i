@@ -254,7 +254,7 @@ using odb::dbTech;
 
   if (Tcl_ListObjGetElements(interp, $input, &argc, &argv) == TCL_OK) {
     vector<const char*>* seq = new vector<const char*>;
-    for (int i = 0; i < argc; i++) {
+    for (Tcl_Size i = 0; i < argc; i++) {
       Tcl_Size length;
       const char* str = Tcl_GetStringFromObj(argv[i], &length);
       seq->push_back(str);
