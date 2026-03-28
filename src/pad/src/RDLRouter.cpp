@@ -14,6 +14,7 @@
 #include <queue>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -40,7 +41,7 @@ class RDLRouterDistanceHeuristic
 {
  public:
   RDLRouterDistanceHeuristic(
-      const std::map<GridGraphVertex, odb::Point>& vertex_map,
+      const std::unordered_map<GridGraphVertex, odb::Point>& vertex_map,
       const std::vector<GridGraphVertex>& predecessor,
       const GridGraphVertex& start_vertex,
       const odb::Point& goal,
@@ -85,7 +86,7 @@ class RDLRouterDistanceHeuristic
   }
 
  private:
-  const std::map<GridGraphVertex, odb::Point>& vertex_map_;
+  const std::unordered_map<GridGraphVertex, odb::Point>& vertex_map_;
   const std::vector<GridGraphVertex>& predecessor_;
   const GridGraphVertex& start_vertex_;
   odb::Point goal_;
@@ -1306,8 +1307,18 @@ void RDLRouter::makeGraph()
     }
   }
 
+  // Create a deterministic ordering of map entries to ensure consistent R-tree
+  // structure
+  std::vector<std::pair<odb::Point, GridGraphVertex>> sorted_entries(
+      point_vertex_map_.begin(), point_vertex_map_.end());
+  std::ranges::sort(sorted_entries);
+
   std::vector<GridValue> grid_tree;
-  for (const auto& [point, vertex] : point_vertex_map_) {
+  grid_tree.reserve(sorted_entries.size());
+
+  // Avoid getVertexEdges() which creates/destroys sets for each vertex
+  // Instead, directly iterate through boost graph edges
+  for (const auto& [point, vertex] : sorted_entries) {
     odb::Rect rect(point, point);
     for (const auto& edge : getVertexEdges(vertex)) {
       rect.merge(odb::Rect(vertex_point_map_[edge.m_source],
