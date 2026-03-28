@@ -655,11 +655,10 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
                               std::vector<int>& vertices) const
 {
   switch (vertex_order_choice_) {
-    case CoarsenOrder::kRandom:
-      {
-        std::mt19937 generator(random_seed_);
-        DeterministicShuffle(vertices.begin(), vertices.end(), generator);
-      }
+    case CoarsenOrder::kRandom: {
+      std::mt19937 generator(random_seed_);
+      DeterministicShuffle(vertices.begin(), vertices.end(), generator);
+    }
       return;
 
     case CoarsenOrder::kDefault:
@@ -695,8 +694,7 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
         }
         degrees[v] = static_cast<int>(nbr_vertices.size());
       }
-      auto lambda_sort_degree
-          = [&](int& x, int& y) -> bool {
+      auto lambda_sort_degree = [&](int& x, int& y) -> bool {
         if (degrees[x] != degrees[y]) {
           return degrees[x] > degrees[y];
         }

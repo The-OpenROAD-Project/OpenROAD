@@ -287,9 +287,9 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = static_cast<int>(
-        gen() & static_cast<std::mt19937::result_type>(
-                    std::numeric_limits<int>::max()));
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);
@@ -317,9 +317,9 @@ void MultilevelPartitioner::InitialPartition(
   }
   // generate random vile solution
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
-    const int seed = static_cast<int>(
-        gen() & static_cast<std::mt19937::result_type>(
-                    std::numeric_limits<int>::max()));
+    const int seed = static_cast<int>(gen()
+                                      & static_cast<std::mt19937::result_type>(
+                                          std::numeric_limits<int>::max()));
     auto& solution = initial_solutions[i + num_initial_random_solutions_];
     // call random partitioning
     partitioner_->SetRandomSeed(seed);

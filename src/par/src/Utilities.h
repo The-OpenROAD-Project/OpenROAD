@@ -117,9 +117,9 @@ void DeterministicShuffle(RandomIt first, RandomIt last, URBG& gen)
     return;
   }
 
-  constexpr std::uint64_t range
-      = static_cast<std::uint64_t>(URBG::max())
-        - static_cast<std::uint64_t>(URBG::min()) + 1ULL;
+  constexpr std::uint64_t range = static_cast<std::uint64_t>(URBG::max())
+                                  - static_cast<std::uint64_t>(URBG::min())
+                                  + 1ULL;
 
   for (diff_t i = count - 1; i > 0; --i) {
     const std::uint64_t bound = static_cast<std::uint64_t>(i) + 1ULL;
