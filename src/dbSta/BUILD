@@ -16,6 +16,7 @@ cc_library(
         "src/dbSta.cc",
     ],
     hdrs = [
+        "include/db_sta/DelayFmt.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [

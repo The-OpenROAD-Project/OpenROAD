@@ -24,6 +24,8 @@ cc_library(
         "src/CloneMove.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
+        "src/MoveTracker.cc",
+        "src/MoveTracker.hh",
         "src/OdbCallBack.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
@@ -52,6 +54,8 @@ cc_library(
         "src/UnbufferMove.hh",
         "src/VTSwapMove.cc",
         "src/VTSwapMove.hh",
+        "src/ViolatorCollector.cc",
+        "src/ViolatorCollector.hh",
     ],
     hdrs = [
         "include/rsz/OdbCallBack.hh",
