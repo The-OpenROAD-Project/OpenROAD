@@ -318,25 +318,28 @@ struct indexed_access<odb::Line, Index, Dimension>
   {
     if (Index == 0) {
       return Dimension == 0 ? line.pt0().getX() : line.pt0().getY();
-    } else {
-      return Dimension == 0 ? line.pt1().getX() : line.pt1().getY();
     }
+    return Dimension == 0 ? line.pt1().getX() : line.pt1().getY();
   }
 
   static void set(odb::Line& line, const int value)
   {
     if (Index == 0) {
+      odb::Point pt = line.pt0();
       if (Dimension == 0) {
-        line.pt0().setX(value);
+        pt.setX(value);
       } else {
-        line.pt0().setY(value);
+        pt.setY(value);
       }
+      line.setPt0(pt);
     } else {
+      odb::Point pt = line.pt1();
       if (Dimension == 0) {
-        line.pt1().setX(value);
+        pt.setX(value);
       } else {
-        line.pt1().setY(value);
+        pt.setY(value);
       }
+      line.setPt1(pt);
     }
   }
 };

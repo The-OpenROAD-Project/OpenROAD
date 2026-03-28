@@ -519,6 +519,9 @@ class Line
   void addX(int value);
   void addY(int value);
 
+  void setPt0(const Point& pt);
+  void setPt1(const Point& pt);
+
   friend dbIStream& operator>>(dbIStream& stream, Line& l);
   friend dbOStream& operator<<(dbOStream& stream, const Line& l);
 
@@ -1120,6 +1123,16 @@ inline void Line::addY(int value)
 {
   pt0_.setY(pt0_.getY() + value);
   pt1_.setY(pt1_.getY() + value);
+}
+
+inline void Line::setPt0(const Point& pt)
+{
+  pt0_ = pt;
+}
+
+inline void Line::setPt1(const Point& pt)
+{
+  pt1_ = pt;
 }
 
 inline std::vector<Point> Line::getPoints() const
