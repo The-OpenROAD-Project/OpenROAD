@@ -701,7 +701,7 @@ void ClusteringEngine::treatEachMacroAsSingleCluster()
       const std::string cluster_name = inst->getName();
       auto cluster = std::make_unique<Cluster>(id_, cluster_name, logger_);
       cluster->addLeafMacro(inst);
-      cluster->setClusterType(HardMacroCluster);
+      cluster->setType(Cluster::Type::Macro);
       incorporateNewCluster(std::move(cluster), tree_->root.get());
 
       debugPrint(logger_,
@@ -742,8 +742,9 @@ void ClusteringEngine::incorporateNewCluster(std::unique_ptr<Cluster> cluster,
 void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 {
   const int cluster_id = cluster->getId();
-  const ClusterType cluster_type = cluster->getClusterType();
-  if (cluster_type == HardMacroCluster || cluster_type == MixedCluster) {
+  const Cluster::Type cluster_type = cluster->getType();
+  if (cluster_type == Cluster::Type::Macro
+      || cluster_type == Cluster::Type::Mixed) {
     for (odb::dbInst* inst : cluster->getLeafMacros()) {
       if (isIgnoredInst(inst)) {
         continue;
@@ -753,7 +754,8 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
     }
   }
 
-  if (cluster_type == StdCellCluster || cluster_type == MixedCluster) {
+  if (cluster_type == Cluster::Type::StdCell
+      || cluster_type == Cluster::Type::Mixed) {
     for (odb::dbInst* inst : cluster->getLeafStdCells()) {
       if (isIgnoredInst(inst)) {
         continue;
@@ -764,11 +766,11 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
   }
 
   // Note: macro clusters have no module.
-  if (cluster_type == StdCellCluster) {
+  if (cluster_type == Cluster::Type::StdCell) {
     for (odb::dbModule* module : cluster->getDbModules()) {
       updateInstancesAssociation(module, cluster_id, false);
     }
-  } else if (cluster_type == MixedCluster) {
+  } else if (cluster_type == Cluster::Type::Mixed) {
     for (odb::dbModule* module : cluster->getDbModules()) {
       updateInstancesAssociation(module, cluster_id, true);
     }
@@ -1689,11 +1691,11 @@ void ClusteringEngine::fetchMixedLeaves(
     updateInstancesAssociation(child.get());
 
     if (child->getNumMacro() == 0) {
-      child->setClusterType(StdCellCluster);
+      child->setType(Cluster::Type::StdCell);
     }
 
     if (child->getChildren().empty()) {
-      if (child->getClusterType() != StdCellCluster) {
+      if (child->getType() != Cluster::Type::StdCell) {
         sister_mixed_leaves.push_back(child.get());
       }
     } else {
@@ -1800,14 +1802,14 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
       movable_macro_cluster->setAsArrayOfInterconnectedMacros();
     }
 
-    movable_macro_cluster->setClusterType(HardMacroCluster);
+    movable_macro_cluster->setType(Cluster::Type::Macro);
     setClusterMetrics(movable_macro_cluster);
     virtual_conn_clusters.push_back(movable_macro_cluster->getId());
   }
 
   // Deal with the fixed macros.
   for (Cluster* fixed_macro_cluster : fixed_macro_clusters) {
-    fixed_macro_cluster->setClusterType(HardMacroCluster);
+    fixed_macro_cluster->setType(Cluster::Type::Macro);
     setClusterMetrics(fixed_macro_cluster);
     virtual_conn_clusters.push_back(fixed_macro_cluster->getId());
   }
@@ -1824,7 +1826,7 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
 // Map all the macros into their HardMacro objects for all the clusters
 void ClusteringEngine::mapMacroInCluster2HardMacro(Cluster* cluster)
 {
-  if (cluster->getClusterType() == StdCellCluster) {
+  if (cluster->getType() == Cluster::Type::StdCell) {
     return;
   }
 
@@ -2033,7 +2035,7 @@ void ClusteringEngine::replaceByStdCellCluster(
     std::vector<int>& virtual_conn_clusters)
 {
   mixed_leaf->clearLeafMacros();
-  mixed_leaf->setClusterType(StdCellCluster);
+  mixed_leaf->setType(Cluster::Type::StdCell);
 
   setClusterMetrics(mixed_leaf);
 
@@ -2180,7 +2182,7 @@ void ClusteringEngine::printPhysicalHierarchyTree(Cluster* parent, int level)
   line += fmt::format("{}  ({}) Type: {}",
                       parent->getName(),
                       parent->getId(),
-                      parent->getClusterTypeString());
+                      parent->getTypeString());
 
   if (parent->isClusterOfUnplacedIOPins() || parent->isIOBundle()) {
     line += fmt::format(" Pins: {}", getNumberOfIOs(parent));

@@ -116,12 +116,12 @@ void Cluster::setName(const std::string& name)
   name_ = name;
 }
 
-void Cluster::setClusterType(const ClusterType& cluster_type)
+void Cluster::setType(const Cluster::Type& cluster_type)
 {
   type_ = cluster_type;
 }
 
-ClusterType Cluster::getClusterType() const
+Cluster::Type Cluster::getType() const
 {
   return type_;
 }
@@ -195,43 +195,34 @@ void Cluster::clearHardMacros()
   hard_macros_.clear();
 }
 
-std::string Cluster::getClusterTypeString() const
+std::string Cluster::getTypeString() const
 {
-  std::string cluster_type;
-
-  if (is_io_bundle_) {
-    return "IO Bundle";
-  }
-
-  if (is_cluster_of_unconstrained_io_pins_) {
-    return "Unconstrained IOs";
-  }
-
-  if (is_cluster_of_unplaced_io_pins_) {
-    return "Unplaced IOs";
-  }
-
-  if (is_io_pad_cluster_) {
-    return "IO Pad";
-  }
-
   if (is_fixed_macro_) {
     return "Fixed Macro";
   }
 
   switch (type_) {
-    case StdCellCluster:
-      cluster_type = "StdCell";
-      break;
-    case MixedCluster:
-      cluster_type = "Mixed";
-      break;
-    case HardMacroCluster:
-      cluster_type = "Macro";
-      break;
+    case Cluster::Type::IOBundle:
+      return "IO Bundle";
+    case Cluster::Type::UnconstrainedIOs:
+      return "Unconstrained IOs";
+    case Cluster::Type::ConstrainedIOs:
+      return "Constrained IOs";
+    case Cluster::Type::PAD:
+      return "IO Pad";
+    case Cluster::Type::StdCell:
+      return "StdCell";
+    case Cluster::Type::Mixed:
+      return "Mixed";
+    case Cluster::Type::Macro:
+      return "Macro";
+    case Cluster::Type::MacroArray:
+      return "Macro Array";
+    case Cluster::Type::InterconnectedMacrosArray:
+      return "Interconnected Macros Array";
   }
 
-  return cluster_type;
+  return "Unknown";
 }
 
 std::string Cluster::getIsLeafString() const
@@ -252,11 +243,11 @@ void Cluster::copyInstances(const Cluster& cluster)
   leaf_macros_.clear();
   hard_macros_.clear();
 
-  if (type_ == HardMacroCluster) {
+  if (type_ == Cluster::Type::Macro) {
     leaf_macros_.insert(leaf_macros_.end(),
                         cluster.leaf_macros_.begin(),
                         cluster.leaf_macros_.end());
-  } else if (type_ == StdCellCluster) {
+  } else if (type_ == Cluster::Type::StdCell) {
     leaf_std_cells_.insert(leaf_std_cells_.end(),
                            cluster.leaf_std_cells_.begin(),
                            cluster.leaf_std_cells_.end());
@@ -282,20 +273,20 @@ void Cluster::setAsClusterOfUnplacedIOPins(
     const int height,
     const bool is_cluster_of_unconstrained_io_pins)
 {
-  is_cluster_of_unplaced_io_pins_ = true;
-  is_cluster_of_unconstrained_io_pins_ = is_cluster_of_unconstrained_io_pins;
+  is_cluster_of_unconstrained_io_pins ? type_ = Cluster::Type::UnconstrainedIOs
+                                      : type_ = Cluster::Type::ConstrainedIOs;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
 void Cluster::setAsIOPadCluster(const odb::Point& pos, int width, int height)
 {
-  is_io_pad_cluster_ = true;
+  type_ = Cluster::Type::PAD;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
 void Cluster::setAsIOBundle(const odb::Point& pos, int width, int height)
 {
-  is_io_bundle_ = true;
+  type_ = Cluster::Type::IOBundle;
   soft_macro_ = std::make_unique<SoftMacro>(pos, name_, width, height, this);
 }
 
@@ -307,27 +298,30 @@ void Cluster::setAsFixedMacro(const HardMacro* hard_macro)
 
 bool Cluster::isIOCluster() const
 {
-  return is_cluster_of_unplaced_io_pins_ || is_io_pad_cluster_ || is_io_bundle_;
+  return type_ == Cluster::Type::ConstrainedIOs
+         || type_ == Cluster::Type::UnconstrainedIOs
+         || type_ == Cluster::Type::PAD || type_ == Cluster::Type::IOBundle;
 }
 
 bool Cluster::isClusterOfUnconstrainedIOPins() const
 {
-  return is_cluster_of_unconstrained_io_pins_;
+  return type_ == Cluster::Type::UnconstrainedIOs;
 }
 
 bool Cluster::isClusterOfUnplacedIOPins() const
 {
-  return is_cluster_of_unplaced_io_pins_;
+  return type_ == Cluster::Type::ConstrainedIOs
+         || type_ == Cluster::Type::UnconstrainedIOs;
 }
 
 void Cluster::setAsArrayOfInterconnectedMacros()
 {
-  is_array_of_interconnected_macros_ = true;
+  type_ = Cluster::Type::InterconnectedMacrosArray;
 }
 
 bool Cluster::isArrayOfInterconnectedMacros() const
 {
-  return is_array_of_interconnected_macros_;
+  return type_ == Cluster::Type::InterconnectedMacrosArray;
 }
 
 bool Cluster::isEmpty() const
@@ -354,7 +348,7 @@ const Metrics& Cluster::getMetrics() const
 
 int Cluster::getNumStdCell() const
 {
-  if (type_ == HardMacroCluster) {
+  if (type_ == Cluster::Type::Macro) {
     return 0;
   }
   return metrics_.getNumStdCell();
@@ -362,7 +356,7 @@ int Cluster::getNumStdCell() const
 
 int Cluster::getNumMacro() const
 {
-  if (type_ == StdCellCluster) {
+  if (type_ == Cluster::Type::StdCell) {
     return 0;
   }
   return metrics_.getNumMacro();
@@ -379,7 +373,7 @@ int64_t Cluster::getArea() const
 
 int64_t Cluster::getStdCellArea() const
 {
-  if (type_ == HardMacroCluster) {
+  if (type_ == Cluster::Type::Macro) {
     return 0;
   }
 
@@ -388,7 +382,7 @@ int64_t Cluster::getStdCellArea() const
 
 int64_t Cluster::getMacroArea() const
 {
-  if (type_ == StdCellCluster) {
+  if (type_ == Cluster::Type::StdCell) {
     return 0;
   }
 
@@ -1003,7 +997,7 @@ void SoftMacro::setWidth(int width)
   if (width <= 0 || area_ == 0
       || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() == HardMacroCluster
+      || cluster_->getType() == Cluster::Type::Macro
       || cluster_->isIOCluster()) {
     return;
   }
@@ -1031,7 +1025,7 @@ void SoftMacro::setHeight(int height)
   if (height <= 0 || area_ == 0
       || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() == HardMacroCluster
+      || cluster_->getType() == Cluster::Type::Macro
       || cluster_->isIOCluster()) {
     return;
   }
@@ -1058,8 +1052,7 @@ void SoftMacro::setArea(int64_t area)
 {
   if (area_ == 0 || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getClusterType() == HardMacroCluster
-      || cluster_->isIOCluster()
+      || cluster_->getType() == Cluster::Type::Macro || cluster_->isIOCluster()
       || area <= (width_intervals_.front().min
                   * static_cast<int64_t>(height_intervals_.front().max))) {
     return;
@@ -1095,7 +1088,7 @@ void SoftMacro::setShapes(const TilingList& tilings, bool force)
 {
   if (!force
       && (tilings.empty() || cluster_ == nullptr
-          || cluster_->getClusterType() != HardMacroCluster)) {
+          || cluster_->getType() != Cluster::Type::Macro)) {
     return;
   }
 
@@ -1119,7 +1112,7 @@ void SoftMacro::setShapes(const IntervalList& width_intervals, int64_t area)
 {
   if (width_intervals.empty() || area <= 0 || cluster_ == nullptr
       || cluster_->isIOCluster()
-      || cluster_->getClusterType() == HardMacroCluster) {
+      || cluster_->getType() == Cluster::Type::Macro) {
     return;
   }
 
@@ -1168,7 +1161,7 @@ bool SoftMacro::isMacroCluster() const
   if (cluster_ == nullptr) {
     return false;
   }
-  return (cluster_->getClusterType() == HardMacroCluster);
+  return (cluster_->getType() == Cluster::Type::Macro);
 }
 
 bool SoftMacro::isStdCellCluster() const
@@ -1177,7 +1170,7 @@ bool SoftMacro::isStdCellCluster() const
     return false;
   }
 
-  return (cluster_->getClusterType() == StdCellCluster);
+  return (cluster_->getType() == Cluster::Type::StdCell);
 }
 
 int SoftMacro::getNumMacro() const
@@ -1225,11 +1218,11 @@ float SoftMacro::getMacroUtil() const
     return 0.0;
   }
 
-  if (cluster_->getClusterType() == HardMacroCluster) {
+  if (cluster_->getType() == Cluster::Type::Macro) {
     return 1.0;
   }
 
-  if (cluster_->getClusterType() == MixedCluster) {
+  if (cluster_->getType() == Cluster::Type::Mixed) {
     return cluster_->getMacroArea() / static_cast<float>(area_);
   }
 
@@ -1242,7 +1235,7 @@ bool SoftMacro::isMixedCluster() const
     return false;
   }
 
-  return (cluster_->getClusterType() == MixedCluster);
+  return (cluster_->getType() == Cluster::Type::Mixed);
 }
 
 // Cluster support to identify if a fixed terminal correponds
@@ -1289,7 +1282,7 @@ void SoftMacro::reportShapeCurve(utl::Logger* logger) const
   logger->report("Name: {}", name_);
   logger->report("Has Cluster: {}", cluster_ != nullptr);
   if (cluster_) {
-    logger->report("Type: {}", cluster_->getClusterTypeString());
+    logger->report("Type: {}", cluster_->getTypeString());
   }
 
   std::string widths_text, heights_text;

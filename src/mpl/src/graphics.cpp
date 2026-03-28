@@ -177,15 +177,15 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
   outlines[level].push_back(outline);
 
   for (auto& child : parent->getChildren()) {
-    switch (child->getClusterType()) {
-      case HardMacroCluster: {
+    switch (child->getType()) {
+      case Cluster::Type::Macro: {
         std::vector<mpl::HardMacro*> hard_macros = child->getHardMacros();
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
         }
         break;
       }
-      case StdCellCluster: {
+      case Cluster::Type::StdCell: {
         if (child->isLeaf()) {
           soft.push_back(*child->getSoftMacro());
         } else {
@@ -193,10 +193,17 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
         }
         break;
       }
-      case MixedCluster: {
+      case Cluster::Type::Mixed: {
         fetchSoftAndHard(child.get(), hard, soft, outlines, (level + 1));
         break;
       }
+      case Cluster::Type::ConstrainedIOs:
+      case Cluster::Type::UnconstrainedIOs:
+      case Cluster::Type::IOBundle:
+      case Cluster::Type::PAD:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray:
+        break;
     }
   }
 }
@@ -682,9 +689,9 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
     return;
   }
 
-  if (soft_macro.getCluster()->getClusterType() == StdCellCluster) {
+  if (soft_macro.getCluster()->getType() == Cluster::Type::StdCell) {
     painter.setBrush(gui::Painter::kDarkBlue);
-  } else if (soft_macro.getCluster()->getClusterType() == HardMacroCluster) {
+  } else if (soft_macro.getCluster()->getType() == Cluster::Type::Macro) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
   } else {
