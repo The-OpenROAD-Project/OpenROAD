@@ -269,7 +269,8 @@ TEST(Utl, metrics_server_responds_with_basic_metric)
     }
 
     if (std::chrono::steady_clock::now() >= deadline) {
-      GTEST_SKIP() << "Prometheus endpoint did not become ready before timeout.";
+      GTEST_SKIP()
+          << "Prometheus endpoint did not become ready before timeout.";
     }
 
     std::this_thread::sleep_for(10ms);

@@ -1,4 +1,6 @@
 #include <cstdint>
+#include <exception>
+#include <stexcept>
 #include <string>
 #include <vector>
 
@@ -28,8 +30,7 @@ bool isSocketPermissionError(const boost::system::system_error& error)
 bool isSocketStartupRuntimeError(const std::runtime_error& error)
 {
   const std::string message = error.what();
-  return message.rfind("DST-0001", 0) == 0
-         || message.rfind("DST-0009", 0) == 0;
+  return message.starts_with("DST-0001") || message.starts_with("DST-0009");
 }
 
 bool isSocketEnvironmentErrorMessage(const std::string& message)

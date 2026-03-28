@@ -1,3 +1,5 @@
+#include <exception>
+#include <stdexcept>
 #include <string>
 
 #include "HelperCallBack.h"
@@ -29,7 +31,7 @@ bool isSocketPermissionError(const boost::system::system_error& error)
 bool isSocketStartupRuntimeError(const std::runtime_error& error)
 {
   const std::string message = error.what();
-  return message.rfind("DST-0001", 0) == 0;
+  return message.starts_with("DST-0001");
 }
 
 bool isSocketEnvironmentErrorMessage(const std::string& message)

@@ -1,4 +1,6 @@
 #include <cstdint>
+#include <exception>
+#include <stdexcept>
 #include <string>
 
 #include "HelperCallBack.h"
@@ -29,8 +31,7 @@ bool isSocketPermissionError(const boost::system::system_error& error)
 bool isSocketStartupRuntimeError(const std::runtime_error& error)
 {
   const std::string message = error.what();
-  return message.rfind("DST-0001", 0) == 0
-         || message.rfind("DST-0009", 0) == 0;
+  return message.starts_with("DST-0001") || message.starts_with("DST-0009");
 }
 
 bool isSocketEnvironmentErrorMessage(const std::string& message)
@@ -82,8 +83,8 @@ TEST(test_suite, test_balancer)
     EXPECT_TRUE(dist->sendJob(msg, local_ip.c_str(), balancer_port, result));
     EXPECT_EQ(result.getJobType(), JobMessage::JobType::kSuccess);
 
-    // Checking if a balancer can relay a message to a worker and send the result
-    // correctly. note we make worker 2, which is not running, the next
+    // Checking if a balancer can relay a message to a worker and send the
+    // result correctly. note we make worker 2, which is not running, the next
     // worker. That should be handled correctly by balancer.
     balancer->updateWorker(asio::ip::make_address(local_ip), worker_port_2);
     dist->addCallBack(new HelperCallBack(dist));

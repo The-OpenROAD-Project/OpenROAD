@@ -14,6 +14,7 @@
 #include <queue>
 #include <set>
 #include <tuple>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>

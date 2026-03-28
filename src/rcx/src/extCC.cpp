@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <tuple>
 #include <vector>
 
 #include "gseq.h"
