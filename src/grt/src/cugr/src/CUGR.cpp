@@ -1,7 +1,6 @@
 #include "CUGR.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -229,7 +228,12 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
     maze_route.constructSparsifiedGraph(wire_cost_view, grid);
     maze_route.run();
     std::shared_ptr<SteinerTreeNode> tree = maze_route.getSteinerTree();
-    assert(tree != nullptr);
+    if (tree == nullptr) {
+      logger_->error(GRT,
+                     610,
+                     "Failed to generate Steiner tree for net {}.",
+                     net->getName());
+    }
 
     PatternRoute pattern_route(
         net, grid_graph_.get(), stt_builder_, constants_, logger_);
@@ -248,9 +252,14 @@ void CUGR::mazeRoute(std::vector<int>& net_indices)
 void CUGR::route()
 {
   std::vector<int> net_indices;
-  net_indices.reserve(gr_nets_.size());
-  for (const auto& net : gr_nets_) {
-    net_indices.push_back(net->getIndex());
+  if (!nets_to_route_.empty()) {
+    net_indices = nets_to_route_;
+    nets_to_route_.clear();
+  } else {
+    net_indices.reserve(gr_nets_.size());
+    for (const auto& net : gr_nets_) {
+      net_indices.push_back(net->getIndex());
+    }
   }
 
   patternRoute(net_indices);
@@ -414,7 +423,12 @@ void CUGR::getGuides(const GRNet* net,
   };
 
   // 1. Pin access patches
-  assert(constants_.min_routing_layer + 1 < grid_graph_->getNumLayers());
+  if (constants_.min_routing_layer + 1 >= grid_graph_->getNumLayers()) {
+    logger_->error(GRT,
+                   611,
+                   "Min routing layer {} exceeds available layers.",
+                   constants_.min_routing_layer);
+  }
   for (auto& gpts : net->getPinAccessPoints()) {
     for (auto& gpt : gpts) {
       if (gpt.getLayerIdx() < constants_.min_routing_layer) {
@@ -616,7 +630,11 @@ void CUGR::addDirtyNet(odb::dbNet* net)
 {
   auto it = db_net_map_.find(net);
   if (it != db_net_map_.end()) {
-    dirty_net_indices_.insert(it->second->getIndex());
+    GRNet* gr_net = it->second;
+    if (gr_net->getRoutingTree()) {
+      grid_graph_->removeTreeUsage(gr_net->getRoutingTree());
+    }
+    nets_to_route_.push_back(gr_net->getIndex());
   } else {
     logger_->warn(
         GRT, 600, "Net {} not found in CUGR net map.", net->getConstName());
@@ -636,9 +654,7 @@ void CUGR::updateNet(odb::dbNet* db_net)
     const CUGRNet& base_net = design_->getAllNets()[idx];
     gr_nets_[idx] = std::make_unique<GRNet>(base_net, grid_graph_.get());
     db_net_map_[db_net] = gr_nets_[idx].get();
-    if (incremental_mode_ && gr_nets_[idx]->getNumPins() >= 2) {
-      dirty_net_indices_.insert(idx);
-    }
+    nets_to_route_.push_back(idx);
   } else {
     design_->updateNet(db_net);
     const CUGRNet& base_net = design_->getAllNets().back();
@@ -649,62 +665,34 @@ void CUGR::updateNet(odb::dbNet* db_net)
     gr_nets_.push_back(std::make_unique<GRNet>(base_net, grid_graph_.get()));
     net_indices_.push_back(new_index);
     db_net_map_[db_net] = gr_nets_.back().get();
-    if (incremental_mode_) {
-      dirty_net_indices_.insert(new_index);
-    }
+    nets_to_route_.push_back(new_index);
   }
-  updated_nets_.insert(db_net);
 }
 
-void CUGR::startIncremental()
+void CUGR::routeIncremental()
 {
-  incremental_mode_ = true;
-  dirty_net_indices_.clear();
-}
-
-void CUGR::rerouteNets(std::vector<int>& net_indices)
-{
-  for (const int idx : net_indices) {
-    if (gr_nets_[idx]->getRoutingTree()) {
-      grid_graph_->removeTreeUsage(gr_nets_[idx]->getRoutingTree());
-    }
-  }
-  patternRoute(net_indices);
-  patternRouteWithDetours(net_indices);
-  mazeRoute(net_indices);
-}
-
-void CUGR::endIncremental()
-{
-  if (!incremental_mode_ || dirty_net_indices_.empty()) {
+  if (nets_to_route_.empty()) {
     return;
   }
 
-  std::vector<int> nets_to_route(dirty_net_indices_.begin(),
-                                 dirty_net_indices_.end());
+  std::vector<int> initial_nets = nets_to_route_;
+  std::ranges::sort(initial_nets);
+  auto [first, last] = std::ranges::unique(initial_nets);
+  initial_nets.erase(first, last);
 
-  for (const int idx : dirty_net_indices_) {
-    odb::dbNet* db_net = gr_nets_[idx]->getDbNet();
-    if (updated_nets_.find(db_net) == updated_nets_.end()) {
-      updateNet(db_net);
-    }
-  }
-  updated_nets_.clear();
+  route();
 
-  rerouteNets(nets_to_route);
-
-  // Check for secondary overflow caused by rerouting
   std::vector<int> overflow_nets;
   updateOverflowNets(overflow_nets);
   std::vector<int> secondary_nets;
   std::ranges::set_difference(
-      overflow_nets, dirty_net_indices_, std::back_inserter(secondary_nets));
+      overflow_nets, initial_nets, std::back_inserter(secondary_nets));
   if (!secondary_nets.empty()) {
-    rerouteNets(secondary_nets);
+    for (int idx : secondary_nets) {
+      addDirtyNet(gr_nets_[idx]->getDbNet());
+    }
+    route();
   }
-
-  incremental_mode_ = false;
-  dirty_net_indices_.clear();
 
   printStatistics();
 }

@@ -104,6 +104,17 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "tcl_completer_test",
+    data = [
+        "js/setup-dom.js",
+        "//src/web:js_sources",
+        "//src/web:node_modules/jsdom",
+    ],
+    entry_point = "js/test-tcl-completer.js",
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
