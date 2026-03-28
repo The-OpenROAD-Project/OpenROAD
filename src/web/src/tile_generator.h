@@ -167,6 +167,7 @@ class TileGenerator
                     const std::set<std::string>& visible_layers) const;
 
   odb::dbBlock* getBlock() const;
+  odb::dbChip* getChip() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -240,6 +241,10 @@ class TileGenerator
                    double scale,
                    const Color& color,
                    bool blend = false) const;
+
+  void drawFilledRect(std::vector<unsigned char>& buffer,
+                      const odb::Rect& rect,
+                      const Color& color) const;
 
   static void blendPixel(std::vector<unsigned char>& image,
                          int x,

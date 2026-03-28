@@ -357,5 +357,68 @@ TEST_F(TileGeneratorTest, SemiTransparentOverlayUsesStraightAlpha)
   EXPECT_EQ(pixels[center + 3], 30);
 }
 
+//------------------------------------------------------------------------------
+// Via enclosure rendering tests
+//------------------------------------------------------------------------------
+
+TEST_F(TileGeneratorTest, SpecialNetViaEnclosureDrawnOnMetalLayer)
+{
+  // Create a power net with a special wire containing a tech via.
+  // via1_0 has boxes on via1 (cut), metal1 (enclosure), metal2 (enclosure).
+  // The search index stores vias under the cut layer.  The renderer must
+  // look up adjacent cut layers when rendering a metal layer to find and
+  // draw the enclosure boxes.
+
+  odb::dbTech* tech = getDb()->getTech();
+  odb::dbTechVia* via_def = tech->findVia("via1_0");
+  ASSERT_NE(via_def, nullptr);
+  odb::dbTechLayer* m1 = tech->findLayer("metal1");
+  ASSERT_NE(m1, nullptr);
+
+  odb::dbNet* pwr = odb::dbNet::create(block_, "VDD");
+  pwr->setSigType(odb::dbSigType::POWER);
+  odb::dbSWire* swire = odb::dbSWire::create(pwr, odb::dbWireType::ROUTED);
+
+  // Add a metal1 power strap that defines a small bounding box (1000 dbu)
+  // so the via enclosure (280 dbu) occupies many pixels at zoom 0.
+  odb::dbSBox::create(
+      swire, m1, 0, 0, 1000, 1000, odb::dbWireShapeType::STRIPE);
+  odb::dbSBox* sbox = odb::dbSBox::create(
+      swire, via_def, 500, 500, odb::dbWireShapeType::IOWIRE);
+  ASSERT_NE(sbox, nullptr);
+
+  makeTileGen();
+  tile_gen_->eagerInit();
+
+  TileVisibility vis;
+  vis.stdcells = false;
+
+  // Sanity check: the cut layer itself should have pixels (existing code).
+  auto png_cut = tile_gen_->generateTile("via1", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels_cut = decodePng(png_cut, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_cut))
+      << "Via cut should be drawn on via1 (sanity check)";
+
+  // Render metal1 with special_nets enabled — should see the enclosure.
+  auto png = tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  auto pixels = decodePng(png, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "Via enclosure should be drawn on metal1";
+
+  // Also check metal2 enclosure.
+  auto png_m2 = tile_gen_->generateTile("metal2", 0, 0, 0, vis);
+  auto pixels_m2 = decodePng(png_m2, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_m2))
+      << "Via enclosure should be drawn on metal2";
+
+  // Disable special_nets — tile should be transparent.
+  vis.special_nets = false;
+  auto png_off = tile_gen_->generateTile("metal1", 0, 0, 0, vis);
+  auto pixels_off = decodePng(png_off, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels_off))
+      << "Via enclosure should be hidden when special_nets is off";
+}
+
 }  // namespace
 }  // namespace web

@@ -15,8 +15,9 @@ add_library(rsz_lib
     BufferedNet.cc
     BufferMove.cc
     CloneMove.cc
-    PreChecks.cc      
-    RecoverPower.cc    
+    MoveTracker.cc
+    PreChecks.cc
+    RecoverPower.cc
     RepairDesign.cc
     RepairHold.cc
     RepairSetup.cc
@@ -30,6 +31,7 @@ add_library(rsz_lib
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
+    ViolatorCollector.cc
 )
 
 target_sources(rsz

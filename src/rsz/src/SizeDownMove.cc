@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "BaseMove.hh"
-#include "sta/ContainerHelpers.hh"
+#include "db_sta/dbSta.hh"
 #include "sta/Delay.hh"
 #include "sta/DelayFloat.hh"
 #include "sta/Graph.hh"
@@ -21,7 +21,6 @@
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -32,35 +31,28 @@ using std::vector;
 
 using utl::RSZ;
 
-bool SizeDownMove::doMove(const sta::Path* drvr_path,
-                          int drvr_index,
-                          sta::Slack drvr_slack,
-                          sta::PathExpanded* expanded,
-                          float setup_slack_margin)
+bool SizeDownMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
-  sta::Pin* drvr_pin = drvr_path->pin(this);
-  sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
-  sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const sta::Path* load_path = expanded->path(drvr_index + 1);
-  sta::Vertex* load_vertex = load_path->vertex(sta_);
-  sta::Pin* load_pin = load_vertex->pin();
-
-  // Skip nets with large fanout because we will need to buffer them.
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
+  sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
   const int fanout = this->fanout(drvr_vertex);
+  // Skip nets with large fanout because we will need to buffer them.
   if (fanout >= size_down_max_fanout_) {
+    debugPrint(logger_,
+               RSZ,
+               "size_down_move",
+               2,
+               "REJECT SizeDownMove {}: Fanout {} >= {} max fanout",
+               network_->pathName(drvr_pin),
+               fanout,
+               size_down_max_fanout_);
     return false;
   }
 
-  // Divide and conquer.
-  debugPrint(logger_,
-             RSZ,
-             "size_down",
-             2,
-             "sizing down for crit fanout {} -> {}",
-             network_->pathName(drvr_pin),
-             network_->pathName(load_pin));
+  sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
 
   // Sort fanouts of the drvr by slack
+  const sta::Slack drvr_slack = sta_->slack(drvr_vertex, resizer_->max_);
   vector<pair<sta::Vertex*, sta::Slack>> fanout_slacks;
   sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
@@ -74,9 +66,27 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
       sta::Instance* fanout_inst = network_->instance(fanout_pin);
       // If we already have a move on the fanout gate, don't try to size down
       // again
-      if (!hasMoves(fanout_inst)) {
-        fanout_slacks.emplace_back(fanout_vertex, fanout_slack);
+      if (hasMoves(fanout_inst)) {
+        debugPrint(logger_,
+                   RSZ,
+                   "size_down_move",
+                   5,
+                   "SizeDownMove {}: {} is not downsized because "
+                   "it has other moves",
+                   network_->pathName(drvr_pin),
+                   network_->pathName(fanout_inst));
+        continue;
       }
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down_move",
+                 5,
+                 "SizeDownMove {}: Unsorted {}, slack = {}, driver slack = {}",
+                 network_->pathName(drvr_pin),
+                 network_->pathName(fanout_vertex->pin()),
+                 delayAsString(fanout_slack, sta_, 3),
+                 delayAsString(drvr_slack, sta_, 3));
+      fanout_slacks.emplace_back(fanout_vertex, fanout_slack);
     }
   }
 
@@ -93,15 +103,19 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
   for (auto& fanout_slack : fanout_slacks) {
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               2,
-               " fanout {} slack: {} drvr slack: {}",
+               "size_down_move",
+               4,
+               "SizeDownMove {}: Fanout {}, slack = {}, driver slack = {}",
+               network_->pathName(drvr_pin),
                network_->pathName(fanout_slack.first->pin()),
                delayAsString(fanout_slack.second, sta_, 3),
                delayAsString(drvr_slack, sta_, 3))
   }
 
-  bool accept_move = false;
+  sta::Scene* scene = drvr_path->scene(sta_);
+  const sta::MinMax* min_max = drvr_path->minMax(sta_);
+
+  int num_down_sizes = 0;
 
   for (auto& fanout_slack : fanout_slacks) {
     sta::Vertex* load_vertex = fanout_slack.first;
@@ -120,42 +134,27 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
       continue;
     }
 
-    sta::LibertyCell* new_cell = downSizeGate(drvr_port,
-                                              load_port,
-                                              load_pin,
-                                              drvr_path->scene(sta_),
-                                              drvr_path->minMax(sta_),
-                                              fanout_slack.second);
+    sta::LibertyCell* new_cell = downSizeGate(
+        drvr_port, load_port, load_pin, scene, min_max, fanout_slack.second);
     if (new_cell && replaceCell(load_inst, new_cell)) {
       debugPrint(logger_,
                  RSZ,
-                 "opt_moves",
-                 1,
-                 "ACCEPT size_down {} -> {} ({} -> {}) slack={}",
-                 network_->pathName(drvr_pin),
-                 network_->pathName(load_pin),
-                 load_cell->name(),
-                 new_cell->name(),
-                 delayAsString(fanout_slack.second, sta_, 3));
-      debugPrint(logger_,
-                 RSZ,
-                 "repair_setup",
+                 "size_down_move",
                  3,
-                 "size_down {} -> {} ({} -> {}) slack={}",
+                 "ACCEPT SizeDownMove {} -> {}: ({} -> {}) slack={}",
                  network_->pathName(drvr_pin),
                  network_->pathName(load_pin),
                  load_cell->name(),
                  new_cell->name(),
                  delayAsString(fanout_slack.second, sta_, 3));
-
-      addMove(load_inst);
-      accept_move = true;
+      countMove(load_inst);
+      num_down_sizes++;
     } else {
       debugPrint(logger_,
                  RSZ,
-                 "opt_moves",
+                 "size_down_move",
                  3,
-                 "REJECT size_down {} -> {} ({} -> {}) slack={}",
+                 "REJECT SizeDownMove {} -> {}: ({} -> {}) slack={}",
                  network_->pathName(drvr_pin),
                  network_->pathName(load_pin),
                  load_cell->name(),
@@ -164,11 +163,28 @@ bool SizeDownMove::doMove(const sta::Path* drvr_path,
     }
   }
 
-  return accept_move;
+  if (num_down_sizes == 0) {
+    debugPrint(logger_,
+               RSZ,
+               "size_down_move",
+               2,
+               "REJECT SizeDownMove {}: Couldn't size down any gates",
+               network_->pathName(drvr_pin));
+    return false;
+  }
+
+  debugPrint(logger_,
+             RSZ,
+             "size_down_move",
+             1,
+             "ACCEPT SizeDownMove {}: Downsized {} gates",
+             network_->pathName(drvr_pin),
+             num_down_sizes);
+  return true;
 }
 
-// This will downsize the gate to the smallest input capacitance that that
-// satisfies the given slack margin.
+// This will downsize the gate to the smallest input capacitance that satisfies
+// the given slack margin.
 sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
                                              const sta::LibertyPort* load_port,
                                              const sta::Pin* load_pin,
@@ -186,29 +202,30 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
   if (swappable_cells.size() > 1) {
     // Sort from the smallest input capacitance to the smallest
     // breaking tie by the intrinsic delay
-    sort(&swappable_cells,
-         [=, this](const sta::LibertyCell* cell1,
-                   const sta::LibertyCell* cell2) {
-           // Cast to const to use the public version of scenePort
-           const sta::LibertyPort* port1
-               = static_cast<const sta::LibertyPort*>(
-                     cell1->findLibertyPort(load_port_name))
-                     ->scenePort(lib_ap);
-           const sta::LibertyPort* port2
-               = static_cast<const sta::LibertyPort*>(
-                     cell2->findLibertyPort(load_port_name))
-                     ->scenePort(lib_ap);
+    std::ranges::sort(
+        swappable_cells,
+        [=, this](const sta::LibertyCell* cell1,
+                  const sta::LibertyCell* cell2) {
+          // Cast to const to use the public version of scenePort
+          const sta::LibertyPort* port1
+              = static_cast<const sta::LibertyPort*>(
+                    cell1->findLibertyPort(load_port_name))
+                    ->scenePort(lib_ap);
+          const sta::LibertyPort* port2
+              = static_cast<const sta::LibertyPort*>(
+                    cell2->findLibertyPort(load_port_name))
+                    ->scenePort(lib_ap);
 
-           const float cap1 = port1->capacitance();
-           const float cap2 = port2->capacitance();
+          const float cap1 = port1->capacitance();
+          const float cap2 = port2->capacitance();
 
-           const sta::ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
-           const sta::ArcDelay intrinsic2 = getWorstIntrinsicDelay(port2);
-           return (std::tie(cap1, intrinsic2) < std::tie(cap2, intrinsic1));
-         });
+          const sta::ArcDelay intrinsic1 = getWorstIntrinsicDelay(port1);
+          const sta::ArcDelay intrinsic2 = getWorstIntrinsicDelay(port2);
+          return (std::tie(cap1, intrinsic2) < std::tie(cap2, intrinsic1));
+        });
   }
 
-  if (logger_->debugCheck(RSZ, "size_down", 3)) {
+  if (logger_->debugCheck(RSZ, "size_down_move", 6)) {
     string swappable_names;
     for (sta::LibertyCell* swappable : swappable_cells) {
       if (swappable == load_cell) {
@@ -222,9 +239,9 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
     }
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               3,
-               "size_down fanout {} swaps={}",
+               "size_down_move",
+               6,
+               " fanout {}, swappables = {}",
                network_->pathName(load_pin),
                swappable_names.c_str());
   }
@@ -272,8 +289,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
 
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               4,
+               "size_down_move",
+               6,
                " current {}->{} gate={} delay={} cap={} slew={} slack={}",
                network_->pathName(load_pin),
                network_->pathName(output_pin),
@@ -293,8 +310,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
     }
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               4,
+               "size_down_move",
+               6,
                " considering swap {} {} -> {}",
                network_->pathName(load_pin),
                load_cell->name(),
@@ -312,8 +329,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
     if (new_input_cap > best_cap || new_area > best_area) {
       debugPrint(logger_,
                  RSZ,
-                 "size_down",
-                 4,
+                 "size_down_move",
+                 6,
                  "  skip based on cap/area {} gate={} cap={}>{} area={}>{}",
                  network_->pathName(load_pin),
                  swappable->name(),
@@ -357,22 +374,22 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
     if (load_cell->hasSequentials()) {
       // Sequential elements: use worst output slack
       actual_slack_margin = getWorstOutputSlack(load_inst);
-      debugPrint(
-          logger_,
-          RSZ,
-          "size_down",
-          4,
-          " Sequential element: using worst output slack: {} (pin slack: {})",
-          delayAsString(actual_slack_margin, sta_, 3),
-          delayAsString(slack_margin, sta_, 3));
+      debugPrint(logger_,
+                 RSZ,
+                 "size_down_move",
+                 6,
+                 " Sequential element: using worst output slack: {} "
+                 "(pin slack: {})",
+                 delayAsString(actual_slack_margin, sta_, 3),
+                 delayAsString(slack_margin, sta_, 3));
     } else {
       // For combinational gates, consider worst slack of all input pins
       sta::Slack worst_input_slack = getWorstInputSlack(load_inst);
       actual_slack_margin = std::min(slack_margin, worst_input_slack);
       debugPrint(logger_,
                  RSZ,
-                 "size_down",
-                 4,
+                 "size_down_move",
+                 6,
                  " Combinational gate: using worst input slack: {} (pin slack: "
                  "{}, worst input: {})",
                  delayAsString(actual_slack_margin, sta_, 3),
@@ -415,8 +432,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
 
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               4,
+               "size_down_move",
+               6,
                " new delay {}->{} gate={} drvr_delta {} + new_delay {} - "
                "old_delay {} < "
                "slack {} ({} < {})",
@@ -437,8 +454,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
         || (actual_slack_margin < 0 && worst_delay_change > 0)) {
       debugPrint(logger_,
                  RSZ,
-                 "size_down",
-                 4,
+                 "size_down_move",
+                 6,
                  " skip based on delay {}->{} gate={} drvr_delta {} + "
                  "new_delay {} - "
                  "old_delay {} < "
@@ -461,8 +478,8 @@ sta::LibertyCell* SizeDownMove::downSizeGate(const sta::LibertyPort* drvr_port,
     best_area = new_area;
     debugPrint(logger_,
                RSZ,
-               "size_down",
-               3,
+               "size_down_move",
+               6,
                " new best size down {} -> {} ({} -> {})",
                network_->pathName(load_pin),
                network_->pathName(output_pins[0]),
