@@ -1907,7 +1907,7 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   state.heatmaps.clear();
   for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
     auto source = source_handle->createInstance();
-    source->setBlock(gen_->getBlock());
+    source->setChip(gen_->getChip());
     state.heatmaps[source_handle->getShortName()] = std::move(source);
   }
 }
