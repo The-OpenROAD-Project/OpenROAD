@@ -1441,12 +1441,10 @@ bool RDLRouter::addGraphEdge(const odb::Point& point0,
   bool added;
   GridGraphEdge edge;
 
+  // For undirected graphs, we only need to check one direction
+  // since edge (v0, v1) is the same as edge (v1, v0)
   bool exists;
   boost::tie(edge, exists) = boost::lookup_edge(v0, v1, graph_);
-  if (exists) {
-    return true;
-  }
-  boost::tie(edge, exists) = boost::lookup_edge(v1, v0, graph_);
   if (exists) {
     return true;
   }
@@ -1755,6 +1753,9 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
     auto& master_obs = master_obstruction_map[master];
     if (master_obs.empty()) {
       BoostPolygonSet master_obstruction;
+
+      // Collect all polygons to add (obstructions)
+      std::vector<BoostPolygon> polys_to_add;
       for (auto* obs : master->getPolygonObstructions()) {
         if (obs->getTechLayer() != layer_) {
           continue;
@@ -1762,9 +1763,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
 
         const odb::Polygon bloat_poly = obs->getPolygon().bloat(bloat);
         const auto pts = bloat_poly.getPoints();
-
-        const BoostPolygon polygon_in(pts.begin(), pts.end());
-        master_obstruction += polygon_in;
+        polys_to_add.emplace_back(pts.begin(), pts.end());
       }
       for (auto* obs : master->getObstructions(false)) {
         if (obs->getTechLayer() != layer_) {
@@ -1774,12 +1773,18 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
         odb::Rect bloated;
         obs->getBox().bloat(bloat, bloated);
         const auto pts = bloated.getPoints();
-
-        const BoostPolygon polygon_in(pts.begin(), pts.end());
-        master_obstruction += polygon_in;
+        polys_to_add.emplace_back(pts.begin(), pts.end());
       }
 
-      // remove iterm shapes from master obstructions
+      // Build temporary set for all additions, then assign to
+      // master_obstruction
+      if (!polys_to_add.empty()) {
+        master_obstruction
+            = BoostPolygonSet(polys_to_add.begin(), polys_to_add.end());
+      }
+
+      // Collect all polygons to subtract (iterm shapes)
+      std::vector<BoostPolygon> polys_to_subtract;
       for (auto* mterm : master->getMTerms()) {
         for (auto* mpin : mterm->getMPins()) {
           for (auto* geom : mpin->getPolygonGeometry()) {
@@ -1789,8 +1794,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
 
             const odb::Polygon bloat_poly = geom->getPolygon().bloat(bloat);
             const auto pts = bloat_poly.getPoints();
-            const BoostPolygon polygon_in(pts.begin(), pts.end());
-            master_obstruction -= polygon_in;
+            polys_to_subtract.emplace_back(pts.begin(), pts.end());
           }
           for (auto* geom : mpin->getGeometry(false)) {
             if (geom->getTechLayer() != layer_) {
@@ -1799,10 +1803,16 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
             odb::Rect bloated;
             geom->getBox().bloat(bloat, bloated);
             const auto pts = bloated.getPoints();
-            const BoostPolygon polygon_in(pts.begin(), pts.end());
-            master_obstruction -= polygon_in;
+            polys_to_subtract.emplace_back(pts.begin(), pts.end());
           }
         }
+      }
+
+      // Build temporary set for all subtractions, then subtract from
+      // master_obstruction
+      if (!polys_to_subtract.empty()) {
+        master_obstruction -= BoostPolygonSet(polys_to_subtract.begin(),
+                                              polys_to_subtract.end());
       }
 
       std::vector<BoostPolygon> output_polygons;
