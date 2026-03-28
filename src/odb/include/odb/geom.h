@@ -1436,6 +1436,11 @@ inline void Cuboid::print(const char* prefix)
 using utl::format_as;
 #endif
 
+inline void hash_combine(size_t& seed, size_t value)
+{
+  seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 }  // namespace odb
 
 namespace std {
@@ -1445,8 +1450,8 @@ struct hash<odb::Point>
   size_t operator()(const odb::Point& p) const noexcept
   {
     size_t seed = 0;
-    seed ^= std::hash<int>{}(p.x()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-    seed ^= std::hash<int>{}(p.y()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    odb::hash_combine(seed, std::hash<int>{}(p.x()));
+    odb::hash_combine(seed, std::hash<int>{}(p.y()));
     return seed;
   }
 };
