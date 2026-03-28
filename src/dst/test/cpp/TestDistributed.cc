@@ -1,6 +1,6 @@
 #include <cstdint>
 #include <exception>
-#include <stexcept>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
