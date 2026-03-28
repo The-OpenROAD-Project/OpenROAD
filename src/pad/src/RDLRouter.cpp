@@ -31,6 +31,7 @@
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "pad/ICeWall.h"
 #include "utl/Logger.h"
 
@@ -776,17 +777,17 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
   //   insersects another edge
   for (auto snap_itr = snap_pts.begin(); snap_itr != snap_pts.end();) {
     const odb::Line line(target.center, *snap_itr);
-    bool erase = obstructions_.qbegin(
-                     boost::geometry::index::intersects(line.getPoints())
-                     && boost::geometry::index::satisfies(
-                         [&target](const ObsValue& value) {
-                           return std::get<3>(value) != target.terminal;
-                         }))
+    bool erase = obstructions_.qbegin(boost::geometry::index::intersects(line)
+                                      && boost::geometry::index::satisfies(
+                                          [&target](const ObsValue& value) {
+                                            return std::get<3>(value)
+                                                   != target.terminal;
+                                          }))
                  != obstructions_.qend();
 
     if (!erase) {
-      for (auto itr = vertex_grid_tree_.qbegin(
-               boost::geometry::index::intersects(line.getPoints()));
+      for (auto itr
+           = vertex_grid_tree_.qbegin(boost::geometry::index::intersects(line));
            itr != vertex_grid_tree_.qend();
            itr++) {
         const odb::Point& pt = vertex_point_map_.at(itr->second);
@@ -807,8 +808,7 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
           }
           const odb::Line edge_line(pt0, pt1);
 
-          if (boost::geometry::intersects(line.getPoints(),
-                                          edge_line.getPoints())) {
+          if (boost::geometry::intersects(line, edge_line)) {
             erase = true;
             break;
           }
@@ -1080,12 +1080,11 @@ std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
   }
 
   // remove intersecting edges
-  using Line = boost::geometry::model::segment<odb::Point>;
   auto handle_rect_edge
       = [this, &edges](const odb::Rect& rect, const GridGraphEdge& edge) {
           const odb::Point& lpt0 = vertex_point_map_[edge.m_source];
           const odb::Point& lpt1 = vertex_point_map_[edge.m_target];
-          if (boost::geometry::intersects(rect, Line(lpt0, lpt1))) {
+          if (boost::geometry::intersects(rect, odb::Line(lpt0, lpt1))) {
             edges.insert(edge);
           }
         };
@@ -1107,12 +1106,11 @@ std::vector<RDLRouter::GridEdge> RDLRouter::commitRoute(
 
   if (allow45_) {
     // remove intersecting edges on 45 degrees
-
     auto handle_poly_edge
         = [this, &edges](const odb::Polygon& poly, const GridGraphEdge& edge) {
             const odb::Point& lpt0 = vertex_point_map_[edge.m_source];
             const odb::Point& lpt1 = vertex_point_map_[edge.m_target];
-            if (boost::geometry::intersects(poly, Line(lpt0, lpt1))) {
+            if (boost::geometry::intersects(poly, odb::Line(lpt0, lpt1))) {
               edges.insert(edge);
             }
           };
@@ -1316,8 +1314,6 @@ void RDLRouter::makeGraph()
   std::vector<GridValue> grid_tree;
   grid_tree.reserve(sorted_entries.size());
 
-  // Avoid getVertexEdges() which creates/destroys sets for each vertex
-  // Instead, directly iterate through boost graph edges
   for (const auto& [point, vertex] : sorted_entries) {
     odb::Rect rect(point, point);
     for (const auto& edge : getVertexEdges(vertex)) {
@@ -1340,20 +1336,27 @@ bool RDLRouter::isEdgeObstructed(const odb::Point& pt0,
                                  const odb::Point& pt1,
                                  bool use_routes) const
 {
-  using Line = boost::geometry::model::segment<odb::Point>;
-  const Line line(pt0, pt1);
+  const odb::Line line(pt0, pt1);
+
+  // Create a bounding box from the line for more efficient R-tree queries
+  // Rect-rect intersection (for R-tree filtering) is cheaper than line-rect
+  const odb::Rect bbox(pt0, pt1);
+
+  // Query using bbox (more efficient R-tree filtering) then verify with
+  // line-polygon
   for (auto itr
-       = obstructions_.qbegin(boost::geometry::index::intersects(line));
+       = obstructions_.qbegin(boost::geometry::index::intersects(bbox));
        itr != obstructions_.qend();
        itr++) {
     const ObsValue& obs = *itr;
+    // Check polygon with actual line segment for precise intersection
     if (boost::geometry::intersects(line, std::get<1>(obs))) {
       return true;
     }
   }
   if (use_routes) {
     for (const auto& route : routes_) {
-      if (route->isIntersecting(odb::Line(pt0, pt1), 0)) {
+      if (route->isIntersecting(line, 0)) {
         return true;
       }
     }
