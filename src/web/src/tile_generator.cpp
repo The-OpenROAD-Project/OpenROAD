@@ -40,6 +40,10 @@ constexpr int kBitmapGlyphWidth = 5;
 constexpr int kBitmapGlyphHeight = 7;
 constexpr int kBitmapGlyphSpacing = 1;
 
+constexpr float kPinMarkerSizeRatio = 0.02;
+constexpr int kMinPinMarkerSize = 8;
+constexpr int kMinPinNameSizePixels = 20;
+
 const unsigned char* getBitmapGlyph(const char ch)
 {
   // Minimal 5x7 bitmap font. Each byte is one row, only the low 5 bits are
@@ -139,9 +143,9 @@ const unsigned char* getBitmapGlyph(const char ch)
     case 'U': case 'u': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return g; }
     case 'V': case 'v': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return g; }
     case 'W': case 'w': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return g; }
-    case 'X':            { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return g; }
-    case 'Y':            { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return g; }
-    case 'Z': case 'z':  { static constexpr unsigned char g[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return g; }
+    case 'X': case 'x': { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return g; }
+    case 'Y': case 'y': { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return g; }
+    case 'Z': case 'z': { static constexpr unsigned char g[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return g; }
     case '_': { static constexpr unsigned char g[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return g; }
     case '[': { static constexpr unsigned char g[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return g; }
     case ']': { static constexpr unsigned char g[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return g; }
@@ -526,7 +530,8 @@ int TileGenerator::getPinMaxSize() const
   }
   const odb::Rect die = block->getDieArea();
   const int die_max_dim = std::max(die.dx(), die.dy());
-  return std::max(static_cast<int>(0.02 * die_max_dim), 8);
+  return std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
+                  kMinPinMarkerSize);
 }
 
 std::vector<std::string> TileGenerator::getLayers() const
@@ -836,16 +841,18 @@ std::vector<unsigned char> TileGenerator::generateTile(
       const int tile_extent = static_cast<int>(tile_dbu_size);
       const int effective_dim = std::min(die_max_dim, tile_extent);
       const int pin_max_size
-          = std::max(static_cast<int>(0.02 * effective_dim), 8);
+          = std::max(static_cast<int>(kPinMarkerSizeRatio * effective_dim),
+                     kMinPinMarkerSize);
       const int qw = pin_max_size / 4;  // quarter-width of marker
 
       // Show pin names when the full (die-relative) marker is large enough
       // in pixels.  pin_max_size shrinks with zoom, but the die-relative
       // size grows as scale increases, so names appear when zoomed in.
       const int die_pin_size
-          = std::max(static_cast<int>(0.02 * die_max_dim), 8);
+          = std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
+                     kMinPinMarkerSize);
       const bool draw_pin_names
-          = (static_cast<int>(die_pin_size * scale) >= 20);
+          = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
 
       // Marker templates (same as GUI renderThread.cpp).
       // Defined for "top edge" orientation; rotated per actual edge.
@@ -886,7 +893,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
             const odb::Rect box_rect = box->getBox();
 
             // Layer color for this box.
-            Color marker_color{200, 200, 200, 220};
+            Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
             odb::dbTechLayer* pin_layer = box->getTechLayer();
             if (pin_layer) {
               const auto it = std::ranges::find(
@@ -991,8 +998,8 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
               // Position text beyond the marker, anchored per edge.
               const int marker_px = static_cast<int>(pin_max_size * scale);
-              int px = anchor_px;
-              int py = anchor_py;
+              int px;
+              int py;
               if (arg_min == 0) {  // left — right-aligned, left of marker
                 px = anchor_px - marker_px - text_margin_px - text_w;
                 py = anchor_py - text_h / 2;
@@ -1009,8 +1016,10 @@ std::vector<unsigned char> TileGenerator::generateTile(
 
               if (px > -block_w && px < kTileSizeInPixel && py > -block_h
                   && py < kTileSizeInPixel) {
-                const Color text_color{
-                    marker_color.r, marker_color.g, marker_color.b, 255};
+                const Color text_color{.r = marker_color.r,
+                                       .g = marker_color.g,
+                                       .b = marker_color.b,
+                                       .a = 255};
                 if (rotated) {
                   drawBitmapTextRotated(
                       image_buffer, px, py, name, text_scale, text_color);
