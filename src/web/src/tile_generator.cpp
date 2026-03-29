@@ -737,6 +737,50 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids) const
 {
+  auto image_buffer = renderTileBuffer(layer,
+                                       z,
+                                       x,
+                                       y,
+                                       vis,
+                                       highlight_rects,
+                                       highlight_polys,
+                                       colored_rects,
+                                       flight_lines,
+                                       module_colors,
+                                       focus_net_ids,
+                                       route_guide_net_ids);
+
+  std::vector<unsigned char> png_data;
+  const unsigned error = lodepng::encode(
+      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
+  if (error) {
+    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
+  }
+
+  if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
+    const std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z)
+                                 + "_" + std::to_string(x) + "_"
+                                 + std::to_string(y) + ".png";
+    lodepng::save_file(png_data, filename);
+  }
+
+  return png_data;
+}
+
+std::vector<unsigned char> TileGenerator::renderTileBuffer(
+    const std::string& layer,
+    const int z,
+    const int x,
+    int y,
+    const TileVisibility& vis,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::map<uint32_t, Color>* module_colors,
+    const std::set<uint32_t>* focus_net_ids,
+    const std::set<uint32_t>* route_guide_net_ids) const
+{
   static_assert(sizeof(Color) == 4);
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image_buffer(buffer_size, 0);
@@ -1477,21 +1521,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     drawDebugOverlay(image_buffer, z, x, y);
   }
 
-  std::vector<unsigned char> png_data;
-  unsigned error = lodepng::encode(
-      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
-  if (error) {
-    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
-  }
-
-  if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
-    std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z) + "_"
-                           + std::to_string(x) + "_" + std::to_string(y)
-                           + ".png";
-    lodepng::save_file(png_data, filename);
-  }
-
-  return png_data;
+  return image_buffer;
 }
 
 std::vector<unsigned char> TileGenerator::generateHeatMapTile(
@@ -1578,6 +1608,201 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
   return png_data;
+}
+
+// Alpha-composite src onto dst (Porter-Duff "over").
+static void compositePixel(unsigned char* dst, const unsigned char* src)
+{
+  const int sa = src[3];
+  if (sa == 0) {
+    return;
+  }
+  if (sa == 255 || dst[3] == 0) {
+    std::memcpy(dst, src, 4);
+    return;
+  }
+  const int da = dst[3];
+  const int out_a = sa + da * (255 - sa) / 255;
+  if (out_a == 0) {
+    return;
+  }
+  for (int c = 0; c < 3; ++c) {
+    dst[c] = (src[c] * sa + dst[c] * da * (255 - sa) / 255) / out_a;
+  }
+  dst[3] = out_a;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    logger_->error(utl::WEB, 20, "No design loaded.");
+    return;
+  }
+
+  // Determine rendering region (DBU).
+  odb::Rect area = region;
+  if (area.dx() == 0 || area.dy() == 0) {
+    area = block->getDieArea();
+    if (area.dx() == 0 || area.dy() == 0) {
+      area = block->getBBox()->getBox();
+    }
+    // Bloat by 5% like GUI headless default.
+    const int margin_x = area.dx() * 5 / 100;
+    const int margin_y = area.dy() * 5 / 100;
+    area.bloat(std::max(margin_x, margin_y), area);
+  }
+
+  // Determine scale (pixels per DBU).
+  double scale = 0;
+  if (width_px > 0) {
+    scale = static_cast<double>(width_px) / area.dx();
+  } else if (dbu_per_pixel > 0) {
+    scale = 1.0 / dbu_per_pixel;
+  } else {
+    // Default: 1024px wide.
+    scale = 1024.0 / area.dx();
+  }
+
+  const int img_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int img_h = static_cast<int>(std::ceil(area.dy() * scale));
+
+  if (img_w <= 0 || img_h <= 0) {
+    logger_->error(utl::WEB, 21, "Invalid image dimensions.");
+    return;
+  }
+
+  // Cap image size at 16k x 16k to prevent excessive memory usage.
+  constexpr int kMaxDim = 16384;
+  if (img_w > kMaxDim || img_h > kMaxDim) {
+    logger_->warn(utl::WEB,
+                  22,
+                  "Image dimensions {}x{} exceed max {}; clamping.",
+                  img_w,
+                  img_h,
+                  kMaxDim);
+    scale = std::min(static_cast<double>(kMaxDim) / area.dx(),
+                     static_cast<double>(kMaxDim) / area.dy());
+  }
+
+  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+
+  // Compute zoom level that gives tile_scale close to our target scale.
+  // tile_scale = kTileSizeInPixel / (maxDXDY / 2^z)
+  // We want tile_scale >= scale, so z = ceil(log2(scale * maxDXDY / 256)).
+  const odb::Rect bounds = getBounds();
+  const double max_dxdy = bounds.maxDXDY();
+  const int z = std::max(0,
+                         static_cast<int>(std::ceil(
+                             std::log2(scale * max_dxdy / kTileSizeInPixel))));
+  const int num_tiles = static_cast<int>(std::pow(2, z));
+  const double tile_dbu_size = max_dxdy / num_tiles;
+  const double tile_scale = kTileSizeInPixel / tile_dbu_size;
+
+  // Determine which tiles overlap our area.
+  const int tx_min = std::max(
+      0, static_cast<int>((area.xMin() - bounds.xMin()) / tile_dbu_size));
+  const int ty_min = std::max(
+      0, static_cast<int>((area.yMin() - bounds.yMin()) / tile_dbu_size));
+  const int tx_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.xMax() - bounds.xMin()) / tile_dbu_size)));
+  const int ty_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
+
+  // Allocate output buffer (RGBA).
+  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
+  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  std::vector<unsigned char> output(tile_span_w * tile_span_h * 4, 0);
+
+  // Layers to render (bottom to top): _instances, tech layers, _pins.
+  std::vector<std::string> layers_to_render;
+  layers_to_render.emplace_back("_instances");
+  for (const auto& name : getLayers()) {
+    layers_to_render.push_back(name);
+  }
+  if (vis.pin_markers) {
+    layers_to_render.emplace_back("_pins");
+  }
+
+  // Render each tile, compositing all layers.
+  for (int ty = ty_min; ty <= ty_max; ++ty) {
+    for (int tx = tx_min; tx <= tx_max; ++tx) {
+      // Tile position in the output buffer.
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      // Y is flipped: tile_y in generateTile is bottom-up, output is top-down.
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+
+      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
+      const int leaflet_y = num_tiles - 1 - ty;
+
+      for (const auto& layer : layers_to_render) {
+        auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+
+        // Composite tile onto output at (out_ox, out_oy).
+        for (int py = 0; py < kTileSizeInPixel; ++py) {
+          for (int px = 0; px < kTileSizeInPixel; ++px) {
+            const int src_idx = (py * kTileSizeInPixel + px) * 4;
+            const int dst_x = out_ox + px;
+            const int dst_y = out_oy + py;
+            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+              continue;
+            }
+            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+            compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+          }
+        }
+      }
+    }
+  }
+
+  // Crop to the exact requested area.
+  // The tile span covers a larger region; compute the pixel offset of the
+  // area's origin within the tile span.
+  const int crop_x = static_cast<int>(
+      (area.xMin() - bounds.xMin() - tx_min * tile_dbu_size) * tile_scale);
+  const int crop_y_bottom = static_cast<int>(
+      (area.yMin() - bounds.yMin() - ty_min * tile_dbu_size) * tile_scale);
+  // In the output buffer, y=0 is the top (ty_max), and area.yMin maps
+  // to the bottom.  The crop origin in output coords:
+  const int crop_y
+      = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
+
+  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
+  // to target scale).
+  std::vector<unsigned char> final_buf(final_w * final_h * 4, 0);
+  for (int fy = 0; fy < final_h; ++fy) {
+    for (int fx = 0; fx < final_w; ++fx) {
+      // Map final pixel to tile-span pixel.
+      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
+      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
+        const int src_idx = (sy * tile_span_w + sx) * 4;
+        const int dst_idx = (fy * final_w + fx) * 4;
+        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      }
+    }
+  }
+
+  // Encode to PNG and save.
+  std::vector<unsigned char> png_data;
+  const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
+  if (error) {
+    logger_->error(
+        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+    return;
+  }
+  lodepng::save_file(png_data, filename);
+  logger_->info(
+      utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
 }
 
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,

@@ -30,6 +30,77 @@ web_server
 | `-port` | TCP port to listen on. Default: `8080`. |
 | `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
 
+### Save Image
+
+Save the layout to a PNG file. This command runs entirely server-side and
+does not require a running web server or a display, making it suitable for
+headless CI environments.
+
+```tcl
+web_save_image
+    [-area {x0 y0 x1 y1}]
+    [-width width]
+    [-resolution microns_per_pixel]
+    [-display_option option]
+    path
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: die area with 5% margin. |
+| `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
+| `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
+| `-display_option` | Repeatable visibility overrides as `{control value}` pairs (e.g. `{routing false}`, `{pin_markers true}`). See [Display option keys](#display-option-keys) below. |
+| `path` | Output PNG file path. |
+
+If neither `-width` nor `-resolution` is specified, the image defaults to
+1024 pixels wide. The maximum image dimension is 16384 pixels; larger
+requests are clamped automatically.
+
+#### Display option keys
+
+Display options control which elements are rendered. Each option is a
+`{key value}` pair where the key matches a `TileVisibility` field and
+the value is `true` or `false`.
+
+| Key | Default | Description |
+| --- | ------- | ----------- |
+| `stdcells` | true | Standard cells |
+| `macros` | true | Macros |
+| `routing` | true | Signal routing |
+| `special_nets` | true | Power/ground straps |
+| `pins` | true | Instance pins |
+| `pin_markers` | true | IO pin direction markers |
+| `blockages` | true | Blockages |
+| `net_signal` | true | Signal nets |
+| `net_power` | true | Power nets |
+| `net_clock` | true | Clock nets |
+| `rows` | false | Row outlines |
+| `tracks_pref` | false | Preferred-direction tracks |
+
+#### Examples
+
+```tcl
+# Save full design at default resolution
+web_save_image layout.png
+
+# Save at 1024px wide
+web_save_image -width 1024 layout.png
+
+# Save at 0.1 um per pixel
+web_save_image -resolution 0.1 layout.png
+
+# Save a specific region (in microns)
+web_save_image -area {0 0 100 100} -width 2048 region.png
+
+# Hide routing and power nets
+web_save_image -display_option {routing false} \
+               -display_option {net_power false} \
+               layout.png
+```
+
 ## Features
 
 - **Tile-based rendering** — The server renders 256x256 PNG tiles on demand,
