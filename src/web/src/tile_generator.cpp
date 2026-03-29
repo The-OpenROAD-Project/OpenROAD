@@ -1721,7 +1721,7 @@ void TileGenerator::saveImage(const std::string& filename,
   // Allocate output buffer (RGBA).
   const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
   const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
-  std::vector<unsigned char> output(tile_span_w * tile_span_h * 4, 0);
+  std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
 
   // Layers to render (bottom to top): _instances, tech layers, _pins.
   std::vector<std::string> layers_to_render;
@@ -1778,7 +1778,7 @@ void TileGenerator::saveImage(const std::string& filename,
 
   // Resample to exact requested dimensions (nearest-neighbor from tile_scale
   // to target scale).
-  std::vector<unsigned char> final_buf(final_w * final_h * 4, 0);
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
   for (int fy = 0; fy < final_h; ++fy) {
     for (int fx = 0; fx < final_w; ++fx) {
       // Map final pixel to tile-span pixel.

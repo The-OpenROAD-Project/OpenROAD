@@ -55,10 +55,10 @@ proc web_save_image { args } {
     set db [ord::get_db]
     set dbu [$db getDbuPerMicron]
     set area [list \
-      [expr {int([lindex $area 0] * $dbu)}] \
-      [expr {int([lindex $area 1] * $dbu)}] \
-      [expr {int([lindex $area 2] * $dbu)}] \
-      [expr {int([lindex $area 3] * $dbu)}]]
+      [expr { int([lindex $area 0] * $dbu) }] \
+      [expr { int([lindex $area 1] * $dbu) }] \
+      [expr { int([lindex $area 2] * $dbu) }] \
+      [expr { int([lindex $area 3] * $dbu) }]]
   }
 
   set width 0
