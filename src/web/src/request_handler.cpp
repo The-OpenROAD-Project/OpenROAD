@@ -546,6 +546,7 @@ WebSocketResponse dispatch_request(
       builder.endArray();
       builder.endArray();
       builder.field("shapes_ready", gen.shapesReady());
+      builder.field("pin_max_size", gen.getPinMaxSize());
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
