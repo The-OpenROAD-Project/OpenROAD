@@ -43,9 +43,17 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     instancesLayer.addTo(app.map);
     app.allLayers.push(instancesLayer);
 
+    // IO pin markers layer (between instances and routing layers)
+    const pinsLayer = new WebSocketTileLayer(app.websocketManager, '_pins', {
+        zIndex: 1,
+    });
+    pinsLayer.addTo(app.map);
+    app.pinsLayer = pinsLayer;
+    app.allLayers.push(pinsLayer);
+
     // Module coloring overlay layer (between instances and routing layers)
     const modulesLayer = new WebSocketTileLayer(app.websocketManager, '_modules', {
-        zIndex: 1,
+        zIndex: 2,
     });
     // Don't add to map until "Module view" is enabled
     app.modulesLayer = modulesLayer;
@@ -62,7 +70,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         children: techData.layers.map((name, index) => {
             const layer = new WebSocketTileLayer(app.websocketManager, name, {
                 opacity: 0.7,
-                zIndex: index + 2,
+                zIndex: index + 3,
             });
             layer.addTo(app.map);
             app.allLayers.push(layer);
@@ -263,6 +271,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'routing', label: 'Routing' },
         { key: 'special_nets', label: 'Special Nets' },
         { key: 'pins', label: 'Pins' },
+        { key: 'pin_markers', label: 'Pin Markers' },
         { key: 'blockages', label: 'Blockages' },
     ]});
     visTree.add({ label: 'Blockages', children: [

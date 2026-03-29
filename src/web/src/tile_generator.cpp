@@ -4,6 +4,7 @@
 #include "tile_generator.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -114,21 +115,37 @@ const unsigned char* getBitmapGlyph(const char ch)
           = {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
       return glyph;
     }
-    case 'x': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11};
-      return glyph;
-    }
-    case 'y': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04};
-      return glyph;
-    }
-    case 'z': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F};
-      return glyph;
-    }
+      // clang-format off
+    case 'A': case 'a': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x1F,0x11,0x11,0x11}; return g; }
+    case 'B': case 'b': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E}; return g; }
+    case 'C': case 'c': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x10,0x10,0x11,0x0E}; return g; }
+    case 'D': case 'd': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x11,0x11,0x11,0x1E}; return g; }
+    case 'E': case 'e': { static constexpr unsigned char g[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F}; return g; }
+    case 'F': case 'f': { static constexpr unsigned char g[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x10}; return g; }
+    case 'G': case 'g': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x17,0x11,0x11,0x0F}; return g; }
+    case 'H': case 'h': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x1F,0x11,0x11,0x11}; return g; }
+    case 'I': case 'i': { static constexpr unsigned char g[]={0x0E,0x04,0x04,0x04,0x04,0x04,0x0E}; return g; }
+    case 'J': case 'j': { static constexpr unsigned char g[]={0x07,0x02,0x02,0x02,0x02,0x12,0x0C}; return g; }
+    case 'K': case 'k': { static constexpr unsigned char g[]={0x11,0x12,0x14,0x18,0x14,0x12,0x11}; return g; }
+    case 'L': case 'l': { static constexpr unsigned char g[]={0x10,0x10,0x10,0x10,0x10,0x10,0x1F}; return g; }
+    case 'M': case 'm': { static constexpr unsigned char g[]={0x11,0x1B,0x15,0x15,0x11,0x11,0x11}; return g; }
+    case 'N': case 'n': { static constexpr unsigned char g[]={0x11,0x19,0x15,0x13,0x11,0x11,0x11}; return g; }
+    case 'O': case 'o': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x11,0x11,0x11,0x0E}; return g; }
+    case 'P': case 'p': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x10,0x10,0x10}; return g; }
+    case 'Q': case 'q': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x11,0x15,0x12,0x0D}; return g; }
+    case 'R': case 'r': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x14,0x12,0x11}; return g; }
+    case 'S': case 's': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x0E,0x01,0x11,0x0E}; return g; }
+    case 'T': case 't': { static constexpr unsigned char g[]={0x1F,0x04,0x04,0x04,0x04,0x04,0x04}; return g; }
+    case 'U': case 'u': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return g; }
+    case 'V': case 'v': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return g; }
+    case 'W': case 'w': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return g; }
+    case 'X':            { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return g; }
+    case 'Y':            { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return g; }
+    case 'Z': case 'z':  { static constexpr unsigned char g[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return g; }
+    case '_': { static constexpr unsigned char g[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return g; }
+    case '[': { static constexpr unsigned char g[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return g; }
+    case ']': { static constexpr unsigned char g[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return g; }
+    // clang-format on
     default:
       return nullptr;
   }
@@ -191,6 +208,7 @@ void TileVisibility::parseFromJson(const std::string& json)
     {"routing",            &TileVisibility::routing,            true},
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"pins",               &TileVisibility::pins,               true},
+    {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"blockages",              &TileVisibility::blockages,              true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
@@ -488,8 +506,27 @@ odb::Rect TileGenerator::getBounds() const
   odb::Rect bounds;
   if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
+    // Expand for pin markers that extend outside the die edge.
+    const int margin = getPinMaxSize();
+    if (margin > 0) {
+      bounds.set_xlo(bounds.xMin() - margin);
+      bounds.set_ylo(bounds.yMin() - margin);
+      bounds.set_xhi(bounds.xMax() + margin);
+      bounds.set_yhi(bounds.yMax() + margin);
+    }
   }
   return bounds;
+}
+
+int TileGenerator::getPinMaxSize() const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return 0;
+  }
+  const odb::Rect die = block->getDieArea();
+  const int die_max_dim = std::max(die.dx(), die.dy());
+  return std::max(static_cast<int>(0.02 * die_max_dim), 8);
 }
 
 std::vector<std::string> TileGenerator::getLayers() const
@@ -736,11 +773,14 @@ std::vector<unsigned char> TileGenerator::generateTile(
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
     y = num_tiles_at_zoom - 1 - y;  // flip
-    const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
-    const int dbu_x_min = x * tile_dbu_size;
-    const int dbu_y_min = y * tile_dbu_size;
-    const int dbu_x_max = std::ceil((x + 1) * tile_dbu_size);
-    const int dbu_y_max = std::ceil((y + 1) * tile_dbu_size);
+    const odb::Rect full_bounds = getBounds();
+    const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+    const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+    const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
+    const int dbu_x_max
+        = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+    const int dbu_y_max
+        = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
     const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
     const double scale = kTileSizeInPixel / tile_dbu_size;
 
@@ -781,12 +821,211 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
     }
 
+    // Special "_pins" layer: draw IO pin direction markers
+    const bool pins_layer = (layer == "_pins");
+    if (pins_layer && vis.pin_markers) {
+      const odb::Rect die_area = block->getDieArea();
+      // Match GUI: scale markers to min(die, viewport) so they shrink
+      // when zoomed in (GUI renderThread.cpp:1598-1602).
+      const int die_max_dim = std::max(die_area.dx(), die_area.dy());
+      const int tile_extent = static_cast<int>(tile_dbu_size);
+      const int effective_dim = std::min(die_max_dim, tile_extent);
+      const int pin_max_size
+          = std::max(static_cast<int>(0.02 * effective_dim), 8);
+      const int qw = pin_max_size / 4;  // quarter-width of marker
+
+      // Show pin names when the full (die-relative) marker is large enough
+      // in pixels.  pin_max_size shrinks with zoom, but the die-relative
+      // size grows as scale increases, so names appear when zoomed in.
+      const int die_pin_size
+          = std::max(static_cast<int>(0.02 * die_max_dim), 8);
+      const bool draw_pin_names
+          = (static_cast<int>(die_pin_size * scale) >= 20);
+
+      // Marker templates (same as GUI renderThread.cpp).
+      // Defined for "top edge" orientation; rotated per actual edge.
+      using Pts = std::vector<odb::Point>;
+      const Pts in_marker{// arrow pointing into block
+                          {qw, pin_max_size},
+                          {0, 0},
+                          {-qw, pin_max_size},
+                          {qw, pin_max_size}};
+      const Pts out_marker{// arrow pointing out of block
+                           {0, pin_max_size},
+                           {-qw, 0},
+                           {qw, 0},
+                           {0, pin_max_size}};
+      const Pts bi_marker{// diamond
+                          {0, 0},
+                          {-qw, pin_max_size / 2},
+                          {0, pin_max_size},
+                          {qw, pin_max_size / 2},
+                          {0, 0}};
+
+      // Determine layer colors for per-layer coloring of markers.
+      const auto all_layers = getLayers();
+
+      // Iterate per-box like the GUI (each dbBox gets its own marker).
+      for (odb::dbBTerm* term : block->getBTerms()) {
+        for (odb::dbBPin* pin : term->getBPins()) {
+          const odb::dbPlacementStatus status = pin->getPlacementStatus();
+          if (status == odb::dbPlacementStatus::NONE
+              || status == odb::dbPlacementStatus::UNPLACED) {
+            continue;
+          }
+
+          for (odb::dbBox* box : pin->getBoxes()) {
+            if (!box) {
+              continue;
+            }
+            const odb::Rect box_rect = box->getBox();
+
+            // Layer color for this box.
+            Color marker_color{200, 200, 200, 220};
+            odb::dbTechLayer* pin_layer = box->getTechLayer();
+            if (pin_layer) {
+              const auto it = std::ranges::find(
+                  all_layers, std::string(pin_layer->getName()));
+              if (it != all_layers.end()) {
+                const int idx = std::distance(all_layers.begin(), it);
+                marker_color = palette[idx % palette_size];
+                marker_color.a = 220;
+              }
+            }
+
+            // Center and edge distances from this specific box.
+            const odb::Point pin_center = box_rect.center();
+
+            const int dist_to_left
+                = std::abs(box_rect.xMin() - die_area.xMin());
+            const int dist_to_right
+                = std::abs(box_rect.xMax() - die_area.xMax());
+            const int dist_to_top = std::abs(box_rect.yMax() - die_area.yMax());
+            const int dist_to_bot = std::abs(box_rect.yMin() - die_area.yMin());
+            const std::array<int, 4> dists{
+                dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
+            const int arg_min = static_cast<int>(
+                std::distance(dists.begin(), std::ranges::min_element(dists)));
+
+            odb::dbTransform xfm(pin_center);
+            if (arg_min == 0) {  // left
+              xfm.setOrient(odb::dbOrientType::R90);
+              if (dist_to_left == 0) {
+                xfm.setOffset({die_area.xMin(), pin_center.y()});
+              }
+            } else if (arg_min == 1) {  // right
+              xfm.setOrient(odb::dbOrientType::R270);
+              if (dist_to_right == 0) {
+                xfm.setOffset({die_area.xMax(), pin_center.y()});
+              }
+            } else if (arg_min == 2) {  // top
+              // No rotation needed.
+              if (dist_to_top == 0) {
+                xfm.setOffset({pin_center.x(), die_area.yMax()});
+              }
+            } else {  // bottom
+              xfm.setOrient(odb::dbOrientType::MX);
+              if (dist_to_bot == 0) {
+                xfm.setOffset({pin_center.x(), die_area.yMin()});
+              }
+            }
+
+            // Select template based on IO direction.
+            const Pts* tmpl = &bi_marker;
+            const auto pin_dir = term->getIoType();
+            if (pin_dir == odb::dbIoType::INPUT) {
+              tmpl = &in_marker;
+            } else if (pin_dir == odb::dbIoType::OUTPUT) {
+              tmpl = &out_marker;
+            }
+
+            // Transform template to final marker polygon.
+            std::vector<odb::Point> marker_pts;
+            marker_pts.reserve(tmpl->size());
+            for (const auto& pt : *tmpl) {
+              odb::Point new_pt = pt;
+              xfm.apply(new_pt);
+              marker_pts.push_back(new_pt);
+            }
+            const odb::Polygon marker_poly(marker_pts);
+
+            // Only draw if marker intersects this tile.
+            const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
+            if (marker_bbox.overlaps(dbu_tile)) {
+              fillPolygon(
+                  image_buffer, marker_poly, dbu_tile, scale, marker_color);
+            }
+
+            // Draw the box rect itself (same as GUI painter.drawRect).
+            if (box_rect.overlaps(dbu_tile)) {
+              const odb::Rect overlap = box_rect.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+              drawFilledRect(image_buffer, draw, marker_color);
+            }
+
+            // Draw pin name label when zoomed in enough.
+            if (draw_pin_names) {
+              const std::string name = term->getName();
+              const odb::Point anchor_pt = xfm.getOffset();
+              constexpr int text_scale = 2;
+              const int text_w = getBitmapTextWidth(name, text_scale);
+              const int text_h = getBitmapTextHeight(text_scale);
+              const int text_margin_px = text_scale + 1;
+              const bool rotated = (arg_min == 2 || arg_min == 3);
+
+              // For rotated text, width/height swap.
+              const int block_w = rotated ? text_h : text_w;
+              const int block_h = rotated ? text_w : text_h;
+
+              // Convert anchor to pixel coords.
+              const int anchor_px
+                  = static_cast<int>((anchor_pt.x() - dbu_tile.xMin()) * scale);
+              const int anchor_py_raw
+                  = static_cast<int>((anchor_pt.y() - dbu_tile.yMin()) * scale);
+              const int anchor_py = 255 - anchor_py_raw;
+
+              // Position text beyond the marker, anchored per edge.
+              const int marker_px = static_cast<int>(pin_max_size * scale);
+              int px = anchor_px;
+              int py = anchor_py;
+              if (arg_min == 0) {  // left — right-aligned, left of marker
+                px = anchor_px - marker_px - text_margin_px - text_w;
+                py = anchor_py - text_h / 2;
+              } else if (arg_min == 1) {  // right — left-aligned
+                px = anchor_px + marker_px + text_margin_px;
+                py = anchor_py - text_h / 2;
+              } else if (arg_min == 2) {  // top — rotated, above marker
+                px = anchor_px - block_w / 2;
+                py = anchor_py - marker_px - text_margin_px - block_h;
+              } else {  // bottom — rotated, below marker
+                px = anchor_px - block_w / 2;
+                py = anchor_py + marker_px + text_margin_px;
+              }
+
+              if (px > -block_w && px < kTileSizeInPixel && py > -block_h
+                  && py < kTileSizeInPixel) {
+                const Color text_color{
+                    marker_color.r, marker_color.g, marker_color.b, 255};
+                if (rotated) {
+                  drawBitmapTextRotated(
+                      image_buffer, px, py, name, text_scale, text_color);
+                } else {
+                  drawBitmapText(
+                      image_buffer, px, py, name, text_scale, text_color);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Special "_instances" layer: only draw instance borders, no routing
     const bool instances_only = (layer == "_instances");
 
-    // "_modules" layer only draws filled module-color rects (already done
-    // above); skip all other drawing (instances, routing, etc.)
-    if (!modules_layer) {
+    // "_modules" and "_pins" layers handle their own drawing above;
+    // skip all other drawing (instances, routing, etc.)
+    if (!modules_layer && !pins_layer) {
       // Draw instances
       for (odb::dbInst* inst : search_->searchInsts(
                block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
@@ -1202,7 +1441,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
 
-    }  // end if (!modules_layer)
+    }  // end if (!modules_layer && !pins_layer)
 
     if (!highlight_rects.empty() || !highlight_polys.empty()) {
       drawHighlight(
@@ -1256,11 +1495,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   }
 
   y = num_tiles_at_zoom - 1 - y;
-  const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
-  const int dbu_x_min = x * tile_dbu_size;
-  const int dbu_y_min = y * tile_dbu_size;
-  const int dbu_x_max = std::ceil((x + 1) * tile_dbu_size);
-  const int dbu_y_max = std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect hm_bounds = getBounds();
+  const double tile_dbu_size = hm_bounds.maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = hm_bounds.xMin() + x * tile_dbu_size;
+  const int dbu_y_min = hm_bounds.yMin() + y * tile_dbu_size;
+  const int dbu_x_max = hm_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = hm_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
   const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
   const double scale = kTileSizeInPixel / tile_dbu_size;
   constexpr double text_rect_margin = 0.8;
@@ -1410,6 +1650,51 @@ void TileGenerator::drawBitmapText(std::vector<unsigned char>& image,
     }
 
     cursor_x += getBitmapGlyphAdvance(ch) * scale;
+  }
+}
+
+/* static */
+void TileGenerator::drawBitmapTextRotated(std::vector<unsigned char>& image,
+                                          const int x,
+                                          const int y,
+                                          const std::string_view text,
+                                          const int scale,
+                                          const Color& color)
+{
+  // 90° CW rotation: original (col, row) → (H-1-row, col)
+  // where H = kBitmapGlyphHeight.  Characters stack downward (y increasing).
+  int cursor_y = y;
+  for (const char ch : text) {
+    if (ch == ' ') {
+      cursor_y += getBitmapGlyphAdvance(ch) * scale;
+      continue;
+    }
+
+    const unsigned char* glyph = getBitmapGlyph(ch);
+    if (glyph == nullptr) {
+      cursor_y += getBitmapGlyphAdvance(ch) * scale;
+      continue;
+    }
+
+    // Rotated glyph: width = kBitmapGlyphHeight, height = kBitmapGlyphWidth
+    for (int row = 0; row < kBitmapGlyphHeight; ++row) {
+      const unsigned char bits = glyph[row];
+      for (int col = 0; col < kBitmapGlyphWidth; ++col) {
+        if ((bits & (0x10 >> col)) == 0) {
+          continue;
+        }
+        // 90° CW: (col, row) → screen (x + (H-1-row), cursor_y + col)
+        const int px = x + (kBitmapGlyphHeight - 1 - row) * scale;
+        const int py = cursor_y + col * scale;
+        for (int sy = 0; sy < scale; ++sy) {
+          for (int sx = 0; sx < scale; ++sx) {
+            blendPixel(image, px + sx, py + sy, color);
+          }
+        }
+      }
+    }
+
+    cursor_y += getBitmapGlyphAdvance(ch) * scale;
   }
 }
 
