@@ -13,7 +13,7 @@ class dbSdcNetwork : public SdcNetwork
 {
  public:
   explicit dbSdcNetwork(Network* network);
-  Instance* findInstance(const char* path_name) const override;
+  Instance* findInstance(std::string_view path_name) const override;
   InstanceSeq findInstancesMatching(const Instance* contex,
                                     const PatternMatch* pattern) const override;
   NetSeq findNetsMatching(const Instance*,
@@ -28,7 +28,7 @@ class dbSdcNetwork : public SdcNetwork
   void findMatchingPins(const Instance* instance,
                         const PatternMatch* port_pattern,
                         PinSeq& pins) const;
-  Pin* findPin(const char* path_name) const override;
+  Pin* findPin(std::string_view path_name) const override;
   using SdcNetwork::findPin;
 };
 

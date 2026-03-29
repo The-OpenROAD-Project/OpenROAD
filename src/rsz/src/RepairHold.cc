@@ -326,8 +326,7 @@ bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
 
     bool footprint_matches = true;
     if (match_footprint) {
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      const std::string &footprint = buffer->footprint();
       footprint_matches = !lib_has_footprints || isDelayCell(footprint);
     }
 

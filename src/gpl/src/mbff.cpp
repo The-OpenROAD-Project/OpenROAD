@@ -869,13 +869,13 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
 
         // standard pins
         if (IsDPin(iterm)) {
-          tray_inst[tray_idx]->findITerm(d_pin->name())->connect(net);
+          tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
         }
         if (IsQPin(iterm)) {
           if (IsInvertingQPin(iterm)) {
-            tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
+            tray_inst[tray_idx]->findITerm(qn_pin->name().c_str())->connect(net);
           } else {
-            tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
+            tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
           }
         }
         if (IsSupplyPin(iterm)) {
@@ -2393,11 +2393,11 @@ void MBFF::ReadLibs()
         std::vector<Point> qn;
 
         for (const auto& p : pin_mappings_[array_mask][idx]) {
-          dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
-          dbITerm* q_pin = (p.second.q ? tmp_tray->findITerm(p.second.q->name())
+          dbITerm* d_pin = tmp_tray->findITerm(p.first->name().c_str());
+          dbITerm* q_pin = (p.second.q ? tmp_tray->findITerm(p.second.q->name().c_str())
                                        : nullptr);
           dbITerm* qn_pin
-              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name())
+              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name().c_str())
                              : nullptr);
 
           d.push_back(Point{

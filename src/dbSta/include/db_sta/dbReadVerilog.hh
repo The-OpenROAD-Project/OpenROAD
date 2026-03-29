@@ -29,7 +29,7 @@ class dbVerilogNetwork : public sta::ConcreteNetwork
 {
  public:
   dbVerilogNetwork(sta::dbSta* sta);
-  sta::Cell* findAnyCell(const char* name) override;
+  sta::Cell* findAnyCell(std::string_view name) override;
   bool isBlackBox(sta::ConcreteCell* cell);
   sta::dbNetwork* getDbNetwork()
   {

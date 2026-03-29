@@ -867,7 +867,7 @@ void RepairDesign::checkDriverArcSlew(const sta::Scene* corner,
   const sta::RiseFall* in_rf = arc->fromEdge()->asRiseFall();
   sta::GateTimingModel* model
       = dynamic_cast<sta::GateTimingModel*>(arc->model());
-  sta::Pin* in_pin = network_->findPin(inst, arc->from()->name());
+  sta::Pin* in_pin = network_->findPin(inst, arc->from()->name().c_str());
 
   if (model && in_pin) {
     const bool use_ideal_clk_slew
