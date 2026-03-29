@@ -44,7 +44,7 @@ def check_same(name, flow, variant_a, variant_b, stages = STAGES, tags = []):
 
         sh_test(
             name = name + "_" + stage_short,
-            srcs = ["//test/orfs:check_same.sh"],
+            srcs = ["//:check_same.sh"],
             args = args,
             data = data,
             tags = tags,

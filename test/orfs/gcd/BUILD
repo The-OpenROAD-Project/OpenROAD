@@ -1,7 +1,7 @@
 load("@bazel-orfs//:sweep.bzl", "orfs_sweep")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//test/orfs:check_same.bzl", "check_same")
-load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
+load("//:check_same.bzl", "check_same")
+load("//:eqy-flow.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
 
@@ -30,9 +30,6 @@ orfs_sweep(
         "base": {},
     },
     tags = ["manual"],
-    test_kwargs = {
-        "tags": ["orfs"],
-    },
     verilog_files = ["gcd.v"],
 )
 
@@ -62,18 +59,16 @@ sh_test(
     ],
     data = [
         ":gcd_floorplan_odb",
-        "//:openroad",
-        "//etc:whittle.py",
-        "//etc:whittle_cleanup.tcl",
-        "//etc:whittle_cut.tcl",
+        "@openroad//:openroad",
+        "@openroad//etc:whittle.py",
+        "@openroad//etc:whittle_cleanup.tcl",
+        "@openroad//etc:whittle_cut.tcl",
     ],
-    tags = ["orfs"],
 )
 
 check_same(
     name = "gcd_idempotent_test",
     flow = "gcd",
-    tags = ["orfs"],
     variant_a = "base",
     variant_b = "b",
 )

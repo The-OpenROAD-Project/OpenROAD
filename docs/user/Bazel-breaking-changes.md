@@ -19,7 +19,7 @@ try {
 
 ## Publish a Docker image with the changes
 
-To update MODULE.bazel to point to a new ORFS docker image and bazel-orfs in OpenROAD, run [bazelisk run //bazel-orfs:bump](../../test/orfs/README.md#updating-orfs-and-bazel-orfs), then use `git add -p .` to pick what you want to commit.
+To update MODULE.bazel to point to a new ORFS docker image and bazel-orfs in OpenROAD, run `cd test/orfs && bazelisk run @bazel-orfs//:bump` (see [test/orfs/README.md](../../test/orfs/README.md#updating-orfs-and-bazel-orfs)), then use `git add -p .` to pick what you want to commit.
 
 Then, to create an OpenROAD PR which uses an interim ORFS Docker image:
 

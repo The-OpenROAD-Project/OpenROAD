@@ -4,7 +4,7 @@ This module defines the ORFS equivalence for orfs_flow() using EQY and OpenROAD.
 
 load("@bazel-orfs//:eqy.bzl", "eqy_test")
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
-load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
+load("//asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 
 STAGES = [
     "source",
@@ -44,7 +44,7 @@ def eqy_flow_test(name, flow, verilog_files, module_top, other_verilog_files = [
                 "ASAP7_REMOVE_CELLS": " ".join(ASAP7_REMOVE_CELLS),
                 "OUTPUT": "$(location :{name}_{stage}.v)".format(stage = stage, name = name),
             },
-            script = "//test/orfs/mock-array:write_verilog.tcl",
+            script = "//mock-array:write_verilog.tcl",
             tags = ["manual"],
         )
 
@@ -68,11 +68,11 @@ def eqy_flow_test(name, flow, verilog_files, module_top, other_verilog_files = [
             depth = 1,
             gate_verilog_files = [
                 ":{name}_{stage}_files".format(stage = STAGES[i + 1], name = name),
-                "//test/orfs/asap7:asap7_files",
+                "//asap7:asap7_files",
             ] + other_verilog_files,
             gold_verilog_files = [
                 ":{name}_{stage}_files".format(stage = STAGES[i], name = name),
-                "//test/orfs/asap7:asap7_files",
+                "//asap7:asap7_files",
             ] + other_verilog_files,
             module_top = module_top,
             **kwargs

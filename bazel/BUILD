@@ -9,6 +9,7 @@ exports_files(
     [
         "fix_lint.sh",
         "install.sh",
+        "run_all_tests.sh",
         "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
         "tcl_tidy.sh",

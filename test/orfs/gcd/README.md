@@ -21,20 +21,20 @@ In terms of expectations for LEC tests, this is experimental and contributions a
 $ cd test/orfs/gcd
 $ bazelisk query :* | grep eqy | grep _test
 Loading: 0 packages loaded
-//test/orfs/gcd:gcd_eqy_cts_test
-//test/orfs/gcd:gcd_eqy_final_test
-//test/orfs/gcd:gcd_eqy_floorplan_test
-//test/orfs/gcd:gcd_eqy_grt_test
-//test/orfs/gcd:gcd_eqy_place_test
-//test/orfs/gcd:gcd_eqy_route_test
-//test/orfs/gcd:gcd_eqy_source_test
-//test/orfs/gcd:gcd_eqy_synth_test
-//test/orfs/gcd:gcd_eqy_tests
+//gcd:gcd_eqy_cts_test
+//gcd:gcd_eqy_final_test
+//gcd:gcd_eqy_floorplan_test
+//gcd:gcd_eqy_grt_test
+//gcd:gcd_eqy_place_test
+//gcd:gcd_eqy_route_test
+//gcd:gcd_eqy_source_test
+//gcd:gcd_eqy_synth_test
+//gcd:gcd_eqy_tests
 ```
 
 To run all the tests:
 
-    bazelisk test //test/orfs/gcd:gcd_eqy_tests --keep_going
+    bazelisk test //gcd:gcd_eqy_tests --keep_going
 
 ## Whittle test
 
@@ -44,4 +44,4 @@ delta-debugging tool that minimises `.odb` files. It reuses the floorplan
 (`global_placement -density 0.35 -skip_io`) while whittle removes
 instances and nets until iteration 100 is no longer reached.
 
-    bazelisk test //test/orfs/gcd:gcd_whittle_test
+    bazelisk test //gcd:gcd_whittle_test

@@ -119,7 +119,4 @@ build --remote_cache=https://bazel.precisioninno.com
 build --remote_cache_compression=true
 build --remote_upload_local_results=false
 
-# Without this, bazelisk build ... builds the bazel-orfs tests
-build --build_tag_filters=-orfs
-
 try-import %workspace%/user.bazelrc

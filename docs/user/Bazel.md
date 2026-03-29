@@ -118,8 +118,11 @@ The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
 - `rules_shell`, `rules_pkg` — only needed for `//packaging:install`
-- `rules_verilator`, `verilator` — only needed for test/orfs simulation
 - `toolchains_llvm` extension and toolchain registration
+
+Note: `rules_verilator`, `verilator`, `bazel-orfs`, `rules_chisel`,
+`rules_scala`, etc. have been moved to the `test/orfs/MODULE.bazel`
+sub-module and are no longer in the root `MODULE.bazel`.
 
 The downstream test at `test/downstream/` verifies these invariants.
 
@@ -229,55 +232,59 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
 
 ## Creating an ORFS issue with bazel-orfs targets using `_deps` targes
 
-Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
+> **Note:** ORFS tests live in the `test/orfs/` sub-module.  All
+> `bazelisk` commands in this section should be run from `test/orfs/`
+> (or via `bazelisk run //:test` from the repo root).
 
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
+Consider a failure in `//mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
+
+    $ cd test/orfs && bazelisk test //mock-array:MockArray_test
     [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
+    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
     [deleted]
     [ERROR MPL-0040] Failed on cluster root
     Error: macro_place.tcl, 5 MPL-0040
     [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
+    //mock-array:MockArray_test                           FAILED TO BUILD
 
 To create an ORFS `make issue`, follow these steps:
 
-    bazelisk run //test/orfs/mock-array:MockArray_floorplan_deps
+    bazelisk run //mock-array:MockArray_floorplan_deps
 
-- In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
-- bazel-orfs adds a `//test/orfs/mock-array:MockArray_floorplan_deps` target that sets up all the dependencies for running `make do-floorplan`, similarly for `_synth/place/cts/grt/route/final`.
-- Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
+- In Bazel `//mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
+- bazel-orfs adds a `//mock-array:MockArray_floorplan_deps` target that sets up all the dependencies for running `make do-floorplan`, similarly for `_synth/place/cts/grt/route/final`.
+- Files are placed in `tmp/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
 
 First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
 
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make do-floorplan
+    tmp/mock-array/MockArray_floorplan_deps/make do-floorplan
 
 Now create an issue for e.g. `macro_place.tcl`:
 
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/make macro_place_issue
+    tmp/mock-array/MockArray_floorplan_deps/make macro_place_issue
 
 The generated file is placed into the `_main` subfolder:
 
-    tmp/test/orfs/mock-array/MockArray_floorplan_deps/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
+    tmp/mock-array/MockArray_floorplan_deps/_main/macro_place_MockArray_asap7_base_2025-06-19_21-50.tar.gz
 
 ## Creating an ORFS issue with bazel-orfs targets using `--sandbox_debug`
 
 Hermeticity in Bazel requires some extra steps when debugging failures. If the action fails, then `--sandbox_debug` can be used. If the action succeeds or it is cached, `--sandbox_debug` does nothing.
 
-If you have a failure in `//test/orfs/mock-array:MockArray_floorplan`, look for `ERROR:` and looking for `target`, find the error:
+If you have a failure in `//mock-array:MockArray_floorplan`, look for `ERROR:` and looking for `target`, find the error:
 
-    $ bazelisk test //test/orfs/mock-array:MockArray_test
+    $ bazelisk test //mock-array:MockArray_test
     [deleted]
-    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //test/orfs/mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
+    ERROR: /tmp/workspace/OpenROAD-Public_PR-7619-head/test/orfs/mock-array/BUILD:116:10: Action test/orfs/mock-array/results/asap7/MockArray/base/2_floorplan.odb failed: (Exit 2): bash failed: error executing Action command (from target //mock-array:MockArray_floorplan) /bin/bash -c ... (remaining 5 arguments skipped)
     [deleted]
     [ERROR MPL-0040] Failed on cluster root
     Error: macro_place.tcl, 5 MPL-0040
     [deleted]
-    //test/orfs/mock-array:MockArray_test                           FAILED TO BUILD
+    //mock-array:MockArray_test                           FAILED TO BUILD
 
 Use `--sandbox_debug` to keep the files around after failure:
 
-    bazelisk build //test/orfs/mock-array:MockArray_floorplan --sandbox_debug
+    bazelisk build //mock-array:MockArray_floorplan --sandbox_debug
 
 Scan the log for setting up the shell and enviornment variables without linux-sandbox.
 
@@ -415,7 +422,7 @@ To test a PR with the GUI on gcd, run:
 ```
     $ git fetch origin pull/7856/head
     $ git checkout FETCH_HEAD
-    $ bazelisk run test/orfs/gcd:gcd_final gui_final
+    $ cd test/orfs && bazelisk run //gcd:gcd_final gui_final
 ```
 
 This will:
@@ -423,20 +430,20 @@ This will:
 - fetch and checkout pull request 7856
 - build OpenROAD
 - run bazel-orfs flow on gcd
-- set up ORFS project in `tmp/test/orfs/gcd/gcd_final/`
+- set up ORFS project in `tmp/gcd/gcd_final/`
 - launch the GUI opening gui_final gcd
 
-`bazelisk run test/orfs/gcd:gcd_final` run alone would set up the project. Additional arguments are forwarded to the `tmp/test/orfs/gcd/gcd_final/make` script.
+`bazelisk run //gcd:gcd_final` (from `test/orfs/`) run alone would set up the project. Additional arguments are forwarded to the `tmp/gcd/gcd_final/make` script.
 
-## Hacking ORFS with `//test/orfs/gcd:gcd_test` test case
+## Hacking ORFS with `//gcd:gcd_test` test case
 
 First set up a local work folder with all dependencies for the step that you want to work on:
 
-    bazelisk run //test/orfs/gcd:gcd_floorplan_deps
+    bazelisk run //gcd:gcd_floorplan_deps
 
 Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
 
-    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/test/orfs/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
+    make --file ~/OpenROAD-flow-scripts/flow/Makefile --dir tmp/gcd/gcd_floorplan_deps/_main DESIGN_CONFIG=config.mk do-floorplan
 
 ## Whittling down .odb files
 
@@ -448,12 +455,12 @@ Consider an error such as:
 
 First set up a folder with all the dependencies to run global placement:
 
-    bazelisk run //test/orfs/gcd:gcd_place_deps
+    bazelisk run //gcd:gcd_place_deps
 
 Drop into a shell that has the build environment set up:
 
-    $ tmp/test/orfs/gcd/gcd_place_deps/make bash
-    Makefile Environment  tmp/test/orfs/gcd/gcd_place_deps/_main
+    $ tmp/gcd/gcd_place_deps/make bash
+    Makefile Environment  tmp/gcd/gcd_place_deps/_main
 
 Run up to the failing stage and stop with ctrl-c on the step that you want to run the whittling down on:
 
@@ -468,7 +475,7 @@ an ORFS checkout):
 
 This should eventually leave you with a whittled down .odb file. Copy the whittled down .odb file into the correct place for 3_2_place_iop.odb, then create a bug report:
 
-    tmp/test/orfs/gcd/gcd_place_deps/make global_place_issue
+    tmp/gcd/gcd_place_deps/make global_place_issue
 
 ### Monitoring progress
 

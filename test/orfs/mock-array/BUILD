@@ -1,6 +1,6 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
 load("@rules_chisel//chisel:defs.bzl", "chisel_binary")
-load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
+load("//asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
 package(
@@ -59,7 +59,7 @@ genrule(
     $(location //src/sta:opensta) >$@
     """,
     tags = ["manual"],
-    tools = ["//src/sta:opensta"],
+    tools = ["@openroad//src/sta:opensta"],
 )
 
 CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [

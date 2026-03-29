@@ -1,0 +1,29 @@
+common --enable_bzlmod
+common --incompatible_disallow_empty_glob
+common --experimental_isolated_extension_usages
+
+build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
+build --cxxopt "-xc++"             --host_cxxopt "-xc++"
+
+# Default to optimized build (-c opt)
+build -c opt
+
+# Improve hermeticity by disallowing user envars and network access
+build --incompatible_strict_action_env
+build --nosandbox_default_allow_network
+
+test --build_tests_only
+
+# --- Performance Optimizations ---
+build --jobs=200
+
+# Enable local disk caching to supplement the remote cache.
+build --disk_cache=~/.cache/bazel-disk-cache
+build --repository_cache=~/.cache/bazel-repository-cache
+
+# Setup remote cache
+build --remote_cache=https://bazel.precisioninno.com
+build --remote_cache_compression=true
+build --remote_upload_local_results=false
+
+try-import %workspace%/user.bazelrc

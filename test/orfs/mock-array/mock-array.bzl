@@ -9,7 +9,7 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
+load("//:eqy-flow.bzl", "eqy_flow_test")
 
 FIRTOOL_OPTIONS = [
     "-disable-all-randomization",
@@ -33,7 +33,7 @@ def verilog(name, rows, cols):
         name = "generate_{name}_fir".format(name = name),
         data = [
         ],
-        generator = "//test/orfs/mock-array:generate_verilog",
+        generator = "//mock-array:generate_verilog",
         opts = [
             "--width=" + str(cols),
             "--height=" + str(rows),
@@ -296,9 +296,6 @@ def mock_array(name, config):
                 "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
             } if variant == "4x4_flat" else {}),
             tags = ["manual"],
-            test_kwargs = {
-                "tags": ["orfs"],
-            },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
         )
@@ -510,7 +507,7 @@ def mock_array(name, config):
                            ) for macro in MACROS] if stage != "final" else []),
                     script = ":{power_test}.tcl".format(power_test = power_test if power_test != "openroad" else "power"),
                     tags = ["manual"],
-                    tools = ["//src/sta:opensta"],
+                    tools = ["@openroad//src/sta:opensta"],
                     visibility = ["//visibility:public"],
                 )
 

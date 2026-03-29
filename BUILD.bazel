@@ -421,6 +421,19 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
+# ---------------------------------------------------------------------------
+# Run all tests across workspaces (root + test/orfs sub-module).
+#
+# bazelisk run //:test
+# bazelisk run //:test -- --keep_going --test_output=errors
+# ---------------------------------------------------------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "test",
+    srcs = ["//bazel:run_all_tests.sh"],
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks

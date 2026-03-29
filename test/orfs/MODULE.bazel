@@ -1,0 +1,174 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2025, Precision Innovations Inc.
+#
+# ORFS integration tests for OpenROAD.
+#
+# These tests live in the OpenROAD repo for monorepo benefits: simple local
+# testing of OpenROAD changes with full RTL-to-GDS flows.  The test cases
+# are directly motivated by OpenROAD integration testing concerns with flows
+# that don't fit the mold of ORFS nicely (idempotency, equivalence checking
+# across stages, Chisel-generated designs, Verilator simulation).
+
+module(name = "openroad-orfs-tests")
+
+# --- OpenROAD (parent repo, two levels up) ---
+
+bazel_dep(name = "openroad")
+local_path_override(
+    module_name = "openroad",
+    path = "../..",
+)
+
+# qt-bazel is not in BCR and uses git_override in OpenROAD's MODULE.bazel.
+# git_override is root-module-only, so sub-modules must repeat it.
+bazel_dep(name = "qt-bazel")
+git_override(
+    module_name = "qt-bazel",
+    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
+)
+
+# toolchains_llvm is dev_dependency in OpenROAD, so the root module must
+# configure the C++ toolchain.
+bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    llvm_version = "20.1.8",
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains(
+    "@llvm_toolchain//:all",
+    "@rules_verilator//verilator:verilator_toolchain",
+)
+
+# --- Regular dependencies ---
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_python", version = "1.8.5")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+
+# --- bazel-orfs: RTL-to-GDS flow ---
+
+bazel_dep(name = "bazel-orfs")
+bazel_dep(name = "bazel-orfs-verilog")
+
+BAZEL_ORFS_COMMIT = "272cc079f25521d19fe25f80e176e29adb40d920"
+
+BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+git_override(
+    module_name = "bazel-orfs",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+)
+
+git_override(
+    module_name = "bazel-orfs-verilog",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
+    strip_prefix = "verilog",
+)
+
+# --- Verilator (simulation tests) ---
+
+bazel_dep(name = "rules_verilator", version = "0.1.0")
+bazel_dep(name = "verilator", version = "5.036.bcr.3")
+
+# --- Chisel (mock-array test generates Verilog from Chisel) ---
+
+bazel_dep(name = "rules_jvm_external", version = "6.4")
+bazel_dep(name = "rules_chisel", version = "0.2.0")
+single_version_override(
+    module_name = "rules_chisel",
+    patch_strip = 1,
+    patches = ["@openroad//:rules-chisel-dev-dep.patch"],
+)
+
+bazel_dep(name = "rules_scala", version = "7.1.5")
+
+# --- Extensions ---
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    ignore_root_user_error = True,
+    python_version = "3.13",
+)
+
+orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+
+# To bump version, run: bazelisk run @bazel-orfs//:bump
+orfs.default(
+    # Official image https://hub.docker.com/r/openroad/orfs/tags
+    image = "docker.io/openroad/orfs:26Q1-745-g8d0f94b28",
+    # Use OpenROAD of this repo instead of from the docker image
+    openroad = "@openroad//:openroad",
+    sha256 = "6bb7cdaa64b8e845f5d6c072330c685ae5f9d065ed8927fade5f0afd1e122eb0",
+)
+use_repo(orfs, "com_github_nixos_patchelf_download")
+use_repo(orfs, "docker_orfs")
+
+SCALA_VERSION = "2.13.17"
+
+CHISEL_VERSION = "7.2.0"
+
+FIRTOOL_RESOLVER_VERSION = "2.0.1"
+
+scala_config = use_extension(
+    "@rules_scala//scala/extensions:config.bzl",
+    "scala_config",
+)
+scala_config.settings(
+    scala_version = SCALA_VERSION,
+)
+use_repo(scala_config, "rules_scala_config")
+
+scala_deps = use_extension(
+    "@rules_scala//scala/extensions:deps.bzl",
+    "scala_deps",
+)
+scala_deps.settings(
+    fetch_sources = True,
+)
+scala_deps.scala()
+
+chisel = use_extension("@rules_chisel//chisel:extensions.bzl", "chisel")
+chisel.toolchain(
+    chisel_version = CHISEL_VERSION,
+    firtool_resolver_version = FIRTOOL_RESOLVER_VERSION,
+    scala_version = SCALA_VERSION,
+)
+use_repo(chisel, "chisel_maven")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    name = "maven",
+    artifacts = [
+    ],
+    # Update by running: bazelisk run @maven//:pin
+    lock_file = "@openroad//bazel:maven_install.json",
+    repositories = [
+        "https://repo1.maven.org/maven2",
+        "https://s01.oss.sonatype.org/content/repositories/releases",
+        "https://s01.oss.sonatype.org/content/repositories/snapshots",
+    ],
+)
+use_repo(maven, "maven")
+
+# --- External archives ---
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "circt",
+    build_file_content = """
+exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
+""",
+    sha256 = "b1b57d1b76ceba2bb37229dab53839d5db6d61394149708c71f6265565991ce6",
+    strip_prefix = "firtool-1.108.0",
+    url = "https://github.com/llvm/circt/releases/download/firtool-1.108.0/firrtl-bin-linux-x64.tar.gz",
+)
