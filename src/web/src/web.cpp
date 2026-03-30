@@ -1000,6 +1000,29 @@ WebServer::WebServer(odb::dbDatabase* db,
 
 WebServer::~WebServer() = default;
 
+void WebServer::saveImage(const std::string& filename,
+                          const int x0,
+                          const int y0,
+                          const int x1,
+                          const int y1,
+                          const int width_px,
+                          const double dbu_per_pixel,
+                          const std::string& vis_json)
+{
+  // Create generator on demand (server may not be running).
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+  }
+  generator_->eagerInit();
+
+  const odb::Rect region(x0, y0, x1, y1);
+  TileVisibility vis;
+  if (!vis_json.empty()) {
+    vis.parseFromJson(vis_json);
+  }
+  generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
+}
+
 void WebServer::serve(int port, const std::string& doc_root)
 {
   try {

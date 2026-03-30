@@ -189,7 +189,30 @@ class TileGenerator
                                                  int x,
                                                  int y) const;
 
+  // Render full design (or region) to a PNG file.  Works without a running
+  // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel,
+                 const TileVisibility& vis) const;
+
  private:
+  // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
+  // Same signature as generateTile but returns raw pixels.
+  std::vector<unsigned char> renderTileBuffer(
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis = {},
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::set<uint32_t>* focus_net_ids = nullptr,
+      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
