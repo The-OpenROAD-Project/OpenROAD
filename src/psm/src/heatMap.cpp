@@ -94,14 +94,14 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       [this](const std::string& value) { setCorner(value); });
 }
 
-void IRDropDataSource::setBlock(odb::dbBlock* block)
+void IRDropDataSource::setChip(odb::dbChip* chip)
 {
-  if (block && block->getParent()) {
-    return;  // not the top block so ignore it
-  }
-  gui::HeatMapDataSource::setBlock(block);
-  if (block != nullptr) {
-    tech_ = block->getTech();
+  gui::HeatMapDataSource::setChip(chip);
+  if (chip != nullptr) {
+    odb::dbBlock* block = chip->getBlock();
+    tech_ = block != nullptr ? block->getTech() : nullptr;
+  } else {
+    tech_ = nullptr;
   }
 }
 
@@ -206,6 +206,11 @@ void IRDropDataSource::ensureNet()
     return;
   }
 
+  if (psm_ != nullptr && psm_->getLastAnalyzedNet() != nullptr) {
+    net_ = psm_->getLastAnalyzedNet();
+    return;
+  }
+
   if (getBlock() == nullptr) {
     return;
   }
@@ -235,6 +240,11 @@ void IRDropDataSource::setCorner(const std::string& name)
 void IRDropDataSource::ensureCorner()
 {
   if (corner_ != nullptr) {
+    return;
+  }
+
+  if (psm_ != nullptr && psm_->getLastAnalyzedCorner() != nullptr) {
+    corner_ = psm_->getLastAnalyzedCorner();
     return;
   }
 

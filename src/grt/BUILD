@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -184,12 +185,12 @@ cc_library(
         "include/grt/MakeGlobalRouter.h",
     ],
     copts = [
-        "-Isrc/grt/src",
         "-Wno-missing-braces",  # from TCL swigging
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":abstract-fastroute",
@@ -252,4 +253,17 @@ python_wrap_cc(
         "include",
         "src",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/GlobalRouter.tcl",
+    ],
+    visibility = ["//src/grt/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/grt/test:__pkg__"],
 )

@@ -34,6 +34,7 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
+#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -306,7 +307,7 @@ std::optional<FixedDelay> Rebuffer::evaluateOption(const BnetPtr& option,
              index,
              option->bufferCount(),
              option->area(),
-             delayAsString(slack.toSeconds(), this, 3),
+             delayAsString(slack.toSeconds(), 3, this),
              units_->capacitanceUnit()->asString(option->cap()));
   return slack;
 }
@@ -1385,7 +1386,7 @@ void Rebuffer::insertBufferOptions(
           501,
           "buffering pin {} failed: area recovery cannot reproduce solution",
           network_->name(pin_),
-          delayAsString(slack_threshold.toSeconds(), this, 3));
+          delayAsString(slack_threshold.toSeconds(), 3, this));
     }
   }
 
@@ -1831,7 +1832,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
         if (buf_inst) {
           count++;
-          resizer_->level_drvr_vertices_valid_ = false;
+          resizer_->invalidateVertexOrdering();
 
           sta::LibertyPort *input, *output;
           buffer_cell->bufferPorts(input, output);
@@ -2057,7 +2058,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
                iter,
                network_->name(drvr_pin),
                fanout_limit_,
-               delayAsString(drvr_pin_max_slew_, this, 3));
+               delayAsString(drvr_pin_max_slew_, 3, this));
 
     BnetPtr original_tree = importBufferTree(drvr_pin, corner_);
     if (!original_tree) {
@@ -2145,11 +2146,12 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
     // Check the tree isn't fully unconstrained
     if (timing_tree->slackTransition() != nullptr) {
       sta::Delay relaxation
-          = std::max<float>(0.0f,
-                            ((slackAtDriverPin(timing_tree).toSeconds())
-                             - std::min(original_tree_slack_error, 0.0f)))
+          = std::max<float>(
+                0.0f,
+                ((slackAtDriverPin(timing_tree).toSeconds())
+                 - std::min(float(original_tree_slack_error), 0.0f)))
                 / 4.0f
-            + (std::max(drvr_gate_delay, 0.0f)
+            + (std::max(float(drvr_gate_delay), 0.0f)
                + criticalPathDelay(logger_, timing_tree).toSeconds())
                   * relaxation_factor_;
       target_slack
@@ -2227,7 +2229,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   }
 
   printProgress(filtered_pins.size(), false, true, 0);
-  resizer_->level_drvr_vertices_valid_ = false;
+  resizer_->invalidateVertexOrdering();
 
   debugPrint(logger_, RSZ, "rebuffer", 1, "Time spent");
   debugPrint(logger_, RSZ, "rebuffer", 1, "----------");
@@ -2326,7 +2328,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     sta::Delay drvr_gate_delay;
     std::tie(drvr_gate_delay, std::ignore, std::ignore) = drvrPinTiming(bnet);
-    sta::Delay relaxation = (std::max(drvr_gate_delay, 0.0f)
+    sta::Delay relaxation = (std::max(float(drvr_gate_delay), 0.0f)
                              + criticalPathDelay(logger_, bnet).toSeconds())
                             * relaxation_factor_;
 
@@ -2355,7 +2357,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
         bnet, db_network_->dbToSta(db_net), 1, parent, "rebuffer");
 
     if (inserted_count > 0) {
-      resizer_->level_drvr_vertices_valid_ = false;
+      resizer_->invalidateVertexOrdering();
     }
 
     debugPrint(logger_, RSZ, "rebuffer", 2, "-------------------------------");

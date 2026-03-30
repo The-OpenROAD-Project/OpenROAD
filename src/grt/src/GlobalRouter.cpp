@@ -26,7 +26,6 @@
 
 #include "AbstractFastRouteRenderer.h"
 #include "AbstractGrouteRenderer.h"
-#include "AbstractRoutingCongestionDataSource.h"
 #include "CUGR.h"
 #include "DataType.h"
 #include "FastRoute.h"
@@ -42,6 +41,7 @@
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
+#include "gui/heatMap.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -109,15 +109,12 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
   cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
 }
 
-void GlobalRouter::initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
-                               routing_congestion_data_source,
-                           std::unique_ptr<AbstractRoutingCongestionDataSource>
-                               routing_congestion_data_source_rudy)
+void GlobalRouter::initGui(
+    gui::HeatMapSourceHandle routing_congestion_data_source,
+    gui::HeatMapSourceHandle routing_congestion_data_source_rudy)
 {
   heatmap_ = std::move(routing_congestion_data_source);
-  heatmap_->registerHeatMap();
   heatmap_rudy_ = std::move(routing_congestion_data_source_rudy);
-  heatmap_rudy_->registerHeatMap();
 }
 
 void GlobalRouter::clear()
@@ -338,7 +335,7 @@ void GlobalRouter::endIncremental(bool save_guides)
 {
   is_incremental_ = true;
   fastroute_->setResistanceAware(resistance_aware_);
-  updateDirtyRoutes();
+  updateDirtyRoutes(save_guides);
   grouter_cbk_->removeOwner();
   delete grouter_cbk_;
   grouter_cbk_ = nullptr;
@@ -479,7 +476,12 @@ void GlobalRouter::updateDbCongestion()
   } else {
     fastroute_->updateDbCongestion(min_layer, max_layer);
   }
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
 }
 
 int GlobalRouter::repairAntennas(odb::dbMTerm* diode_mterm,
@@ -1371,10 +1373,7 @@ void GlobalRouter::findFastRoutePins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net->getDbNet(), sta::MinMax::max());
 }
 
 void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
@@ -2433,7 +2432,12 @@ void GlobalRouter::readGuides(const char* file_name)
   updateEdgesUsage();
   computeGCellGridPatternFromGuides(guides);
   updateDbCongestionFromGuides();
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
   saveGuidesFromFile(guides);
 }
 
@@ -2472,7 +2476,12 @@ void GlobalRouter::loadGuidesFromDB()
   if (block_->getGCellGrid() == nullptr) {
     updateDbCongestion();
   }
-  heatmap_->update();
+  if (heatmap_) {
+    heatmap_->invalidateInstances();
+  }
+  if (heatmap_rudy_) {
+    heatmap_rudy_->invalidateInstances();
+  }
 }
 
 void GlobalRouter::ensurePinsPositions(odb::dbNet* db_net)
@@ -3172,6 +3181,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
 {
   std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
   int last_layer = -1;
+  int min_pin_layer = std::numeric_limits<int>::max();
   for (size_t p = 0; p < pins.size(); p++) {
     if (p > 0) {
       odb::Point pin_pos0 = pins[p - 1].getOnGridPosition();
@@ -3185,6 +3195,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       }
     }
 
+    min_pin_layer = std::min(min_pin_layer, pins[p].getConnectionLayer());
     last_layer = std::max(pins[p].getConnectionLayer(), last_layer);
   }
 
@@ -3194,7 +3205,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
     last_layer--;
   }
 
-  for (int l = 1; l <= last_layer; l++) {
+  const int min_layer = std::min(min_pin_layer, min_routing_layer);
+  for (int l = min_layer; l <= last_layer; l++) {
     odb::Point pin_pos = pins[0].getOnGridPosition();
     GSegment segment = GSegment(
         pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
@@ -3333,9 +3345,10 @@ void GlobalRouter::checkPinPlacement()
           logger_->warn(
               GRT,
               31,
-              "At least 2 pins in position ({}, {}), layer {}, port {}.",
-              pos.x(),
-              pos.y(),
+              "At least 2 pins in position ({:.2f}um, {:.2f}um), layer {}, "
+              "port {}.",
+              dbuToMicrons(pos.x()),
+              dbuToMicrons(pos.y()),
               tech_layer->getName(),
               port->getName().c_str());
           invalid = true;

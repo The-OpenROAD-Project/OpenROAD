@@ -1,6 +1,8 @@
+load("@rules_python//python:defs.bzl", "py_test")
+
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -45,13 +47,7 @@ COMPULSORY_TESTS = [
     "zerosoc_pads_check_only_disconnected",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "psm_man_tcl_check",
-    "psm_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -177,3 +173,20 @@ filegroup(
     )
     for test_name in ALL_TESTS
 ]
+
+py_test(
+    name = "psm_man_tcl_check",
+    srcs = ["psm_man_tcl_check.py"],
+    data = ["//src/psm:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "psm_readme_msgs_check",
+    data = [
+        "//src/psm:doc_files",
+        "//src/psm:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

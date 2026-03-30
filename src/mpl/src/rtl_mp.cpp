@@ -12,6 +12,7 @@
 #include "object.h"
 #include "odb/db.h"
 #include "odb/geom.h"
+#include "snapper.h"
 #include "utl/Logger.h"
 
 namespace mpl {
@@ -20,13 +21,12 @@ using utl::MPL;
 
 class Snapper;
 
-MacroPlacer::MacroPlacer(sta::dbNetwork* network,
-                         odb::dbDatabase* db,
+MacroPlacer::MacroPlacer(odb::dbDatabase* db,
                          sta::dbSta* sta,
                          utl::Logger* logger,
                          par::PartitionMgr* tritonpart)
 {
-  hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, logger, tritonpart);
+  hier_rtlmp_ = std::make_unique<HierRTLMP>(db, logger, tritonpart);
   logger_ = logger;
   db_ = db;
 }

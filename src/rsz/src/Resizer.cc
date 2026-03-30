@@ -42,6 +42,7 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
+#include "ViolatorCollector.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -394,7 +395,7 @@ void Resizer::removeBuffers(sta::InstanceSeq insts)
   }
   unbuffer_move_->commitMoves();
   estimate_parasitics_->updateParasitics();
-  level_drvr_vertices_valid_ = false;
+  invalidateVertexOrdering();
   logger_->info(RSZ, 26, "Removed {} buffers.", unbuffer_move_->numMoves());
 }
 
@@ -1044,7 +1045,7 @@ void Resizer::bufferInputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -1187,7 +1188,7 @@ void Resizer::bufferOutputs(sta::LibertyCell* buffer_cell, bool verbose)
                 selected_buffer_cell->name());
 
   if (inserted_buffer_count_ > 0) {
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -2423,7 +2424,7 @@ sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
                cell->name(),
                units_->capacitanceUnit()->asString(load_cap),
                best_dist,
-               delayAsString(best_delay, sta_, 3));
+               delayAsString(best_delay, 3, sta_));
     for (sta::LibertyCell* target_cell : swappable_cells) {
       float target_load = (*target_load_map_)[target_cell];
       float delay = 0.0;
@@ -2438,7 +2439,7 @@ sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
                  " {} dist={:.2e} delay={}",
                  target_cell->name(),
                  dist,
-                 delayAsString(delay, sta_, 3));
+                 delayAsString(delay, 3, sta_));
       if (is_buf_inv
               // Library may have "delay" buffers/inverters that are
               // functionally buffers/inverters but have additional
@@ -2575,7 +2576,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     db_cbk_->addOwner(block_);
     journalRestore();
     db_cbk_->removeOwner();
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3100,6 +3101,8 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell,
   return 0.0;
 }
 
+// This SHOULD return float. It would need to call LumpedCapDelayCalc::gateDelay
+// instead of accessing the models directly to get POCV parameters.
 // objective function
 sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
                                 sta::TimingArc* arc,
@@ -3110,9 +3113,8 @@ sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
 
 {
   const sta::Pvt* pvt = sta_->cmdMode()->sdc()->operatingConditions(max_);
-  sta::ArcDelay arc_delay;
-  sta::Slew arc_slew;
-  model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
+  float arc_delay, arc_slew;
+  model->gateDelay(pvt, in_slew, load_cap, arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
 
@@ -3133,7 +3135,7 @@ void Resizer::findBufferTargetSlews()
     int lib_ap_index = corner->libertyIndex(max_);
     const sta::Pvt* pvt = sta_->cmdMode()->sdc()->operatingConditions(max_);
     // Average slews across buffers at corner.
-    sta::Slew slews[sta::RiseFall::index_count]{0.0};
+    float slews[sta::RiseFall::index_count]{0.0};
     int counts[sta::RiseFall::index_count]{0};
     for (sta::LibertyCell* buffer : buffer_cells_) {
       sta::LibertyCell* corner_buffer = buffer->sceneCell(lib_ap_index);
@@ -3158,14 +3160,14 @@ void Resizer::findBufferTargetSlews()
              1,
              "target slew corner {} = {}/{}",
              tgt_slew_corner_->name(),
-             delayAsString(tgt_slews_[sta::RiseFall::riseIndex()], sta_, 3),
-             delayAsString(tgt_slews_[sta::RiseFall::fallIndex()], sta_, 3));
+             delayAsString(tgt_slews_[sta::RiseFall::riseIndex()], 3, sta_),
+             delayAsString(tgt_slews_[sta::RiseFall::fallIndex()], 3, sta_));
 }
 
 void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
                                     const sta::Pvt* pvt,
                                     // Return values.
-                                    sta::Slew slews[],
+                                    float slews[],
                                     int counts[])
 {
   sta::LibertyPort *input, *output;
@@ -3179,10 +3181,9 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
         const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
-        sta::ArcDelay arc_delay;
-        sta::Slew arc_slew;
-        model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
-        model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+        float arc_delay, arc_slew;
+        model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
+        model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
       }
@@ -3288,7 +3289,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
   if (tie_count > 0) {
     logger_->info(
         RSZ, 42, "Inserted {} tie {} instances.", tie_count, tie_cell->name());
-    level_drvr_vertices_valid_ = false;
+    invalidateVertexOrdering();
   }
 }
 
@@ -3472,6 +3473,8 @@ void Resizer::deleteTieCellAndNet(const sta::Instance* tie_inst,
   }
   if (!has_other_fanout) {
     sta_->deleteInstance(const_cast<sta::Instance*>(tie_inst));
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
   }
 }
 
@@ -3560,7 +3563,7 @@ void Resizer::reportLongWires(int count, int digits)
                     sdc_network_->pathName(drvr_pin),
                     units_->distanceUnit()->asString(wire_length, 1),
                     units_->distanceUnit()->asString(steiner_length, 1),
-                    delayAsString(delay, sta_, digits));
+                    delayAsString(delay, digits, sta_));
     if (i == count) {
       break;
     }
@@ -4148,8 +4151,11 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
           sta::ArcDelay gate_delay = dcalc_result.gateDelay();
           // Only one load pin, so load_idx is 0.
           sta::ArcDelay wire_delay = dcalc_result.wireDelay(0);
-          sta::ArcDelay load_slew = dcalc_result.loadSlew(0);
-          delay = max(delay, gate_delay + wire_delay);
+          sta::Slew load_slew = dcalc_result.loadSlew(0);
+          sta::Delay gate_wire = delaySum(gate_delay, wire_delay, sta_);
+          if (delayGreater(gate_wire, delay, sta_)) {
+            delay = gate_wire;
+          }
           slew = max(slew, load_slew);
         }
       }
@@ -4380,6 +4386,9 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
       sta_->deleteInstance(inv);
     }
   }
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -4392,6 +4401,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool match_cell_footprint,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
+                          const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down,
@@ -4417,6 +4427,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
+                                    phases,
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_size_down,
@@ -4727,6 +4738,9 @@ void Resizer::journalRestore()
   vt_swap_speed_move_->undoMoves();
   unbuffer_move_->undoMoves();
   split_load_move_->undoMoves();
+
+  // Invalidate vertex level ordering
+  invalidateVertexOrdering();
 
   debugPrint(logger_,
              RSZ,
@@ -5434,6 +5448,10 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
     }
   }
 
+  if (remove_inst_count > 0 || remove_net_count > 0) {
+    // Invalidate vertex level ordering
+    invalidateVertexOrdering();
+  }
   logger_->report("Removed {} unused instances and {} unused nets.",
                   remove_inst_count,
                   remove_net_count);
@@ -5524,9 +5542,12 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     const std::string& sequence)
 {
   std::vector<rsz::MoveType> result;
-  std::stringstream ss(sequence);
+  // Replace commas with spaces to support both separators
+  std::string normalized(sequence);
+  std::ranges::replace(normalized, ',', ' ');
+  std::stringstream ss(normalized);
   std::string item;
-  while (std::getline(ss, item, ',')) {
+  while (ss >> item) {
     result.push_back(parseMove(item));
   }
   return result;
@@ -5854,7 +5875,7 @@ sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
                                          float load,
                                          const sta::Scene* scene)
 {
-  sta::Slew max_slew = 0;
+  float max_slew = 0;
 
   sta::Instance* inst = network_->instance(drvr_pin);
   const sta::Pvt* pvt = scene->sdc()->pvt(inst, max_);
@@ -5878,9 +5899,8 @@ sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
         if (model) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, in_slew, load, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, in_slew, load, arc_delay, arc_slew);
           max_slew = std::max(max_slew, arc_slew);
         }
       }

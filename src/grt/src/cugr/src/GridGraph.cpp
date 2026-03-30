@@ -1,7 +1,6 @@
 #include "GridGraph.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <cstdio>
@@ -325,7 +324,15 @@ CostT GridGraph::getWireCost(const int layer_index,
                              const PointT v) const
 {
   const int direction = layer_directions_[layer_index];
-  assert(u[1 - direction] == v[1 - direction]);
+  if (u[1 - direction] != v[1 - direction]) {
+    logger_->error(
+        utl::GRT,
+        1249,
+        "Wire endpoint coordinates are not aligned for direction {}: {} != {}.",
+        direction,
+        u[1 - direction],
+        v[1 - direction]);
+  }
   CostT cost = 0;
   if (direction == MetalLayer::H) {
     const auto [l, h] = std::minmax({u.x(), v.x()});
@@ -343,7 +350,13 @@ CostT GridGraph::getWireCost(const int layer_index,
 
 CostT GridGraph::getViaCost(const int layer_index, const PointT loc) const
 {
-  assert(layer_index + 1 < num_layers_);
+  if (layer_index + 1 >= num_layers_) {
+    logger_->error(utl::GRT,
+                   1250,
+                   "Via layer index {} exceeds number of layers {}.",
+                   layer_index,
+                   num_layers_);
+  }
   CostT cost = unit_via_cost_;
   // Estimated wire cost to satisfy min-area
   for (int l = layer_index; l <= layer_index + 1; l++) {
@@ -582,7 +595,13 @@ void GridGraph::commitVia(const int layer_index,
                           const PointT loc,
                           const bool rip_up)
 {
-  assert(layer_index + 1 < num_layers_);
+  if (layer_index + 1 >= num_layers_) {
+    logger_->error(utl::GRT,
+                   1251,
+                   "Via layer index {} exceeds number of layers {}.",
+                   layer_index,
+                   num_layers_);
+  }
   for (int l = layer_index; l <= layer_index + 1; l++) {
     const int direction = layer_directions_[l];
     PointT lower_loc = loc;
@@ -623,13 +642,27 @@ void GridGraph::commitTree(const std::shared_ptr<GRTreeNode>& tree,
       if (node->getLayerIdx() == child->getLayerIdx()) {
         const int direction = layer_directions_[node->getLayerIdx()];
         if (direction == MetalLayer::H) {
-          assert(node->y() == child->y());
+          if (node->y() != child->y()) {
+            logger_->error(utl::GRT,
+                           1252,
+                           "Horizontal wire endpoints have different y "
+                           "coordinates: {} != {}.",
+                           node->y(),
+                           child->y());
+          }
           const auto [l, h] = std::minmax({node->x(), child->x()});
           for (int x = l; x < h; x++) {
             commitWire(node->getLayerIdx(), {x, node->y()}, rip_up);
           }
         } else {
-          assert(node->x() == child->x());
+          if (node->x() != child->x()) {
+            logger_->error(utl::GRT,
+                           1253,
+                           "Vertical wire endpoints have different x "
+                           "coordinates: {} != {}.",
+                           node->x(),
+                           child->x());
+          }
           const auto [l, h] = std::minmax({node->y(), child->y()});
           for (int y = l; y < h; y++) {
             commitWire(node->getLayerIdx(), {node->x(), y}, rip_up);
@@ -656,7 +689,14 @@ int GridGraph::checkOverflow(const int layer_index,
   int num = 0;
   const int direction = layer_directions_[layer_index];
   if (direction == MetalLayer::H) {
-    assert(u.y() == v.y());
+    if (u.y() != v.y()) {
+      logger_->error(utl::GRT,
+                     1254,
+                     "Horizontal segment endpoints have different y "
+                     "coordinates: {} != {}.",
+                     u.y(),
+                     v.y());
+    }
     const auto [l, h] = std::minmax({u.x(), v.x()});
     for (int x = l; x < h; x++) {
       if (checkOverflow(layer_index, x, u.y())) {
@@ -664,7 +704,14 @@ int GridGraph::checkOverflow(const int layer_index,
       }
     }
   } else {
-    assert(u.x() == v.x());
+    if (u.x() != v.x()) {
+      logger_->error(
+          utl::GRT,
+          1255,
+          "Vertical segment endpoints have different x coordinates: {} != {}.",
+          u.x(),
+          v.x());
+    }
     const auto [l, h] = std::minmax({u.y(), v.y()});
     for (int y = l; y < h; y++) {
       if (checkOverflow(layer_index, u.x(), y)) {
@@ -872,14 +919,28 @@ void GridGraph::updateWireCostView(
           if (node->getLayerIdx() == child->getLayerIdx()) {
             const int direction = getLayerDirection(node->getLayerIdx());
             if (direction == MetalLayer::H) {
-              assert(node->y() == child->y());
+              if (node->y() != child->y()) {
+                logger_->error(utl::GRT,
+                               1256,
+                               "Horizontal wire endpoints have different y "
+                               "coordinates: {} != {}.",
+                               node->y(),
+                               child->y());
+              }
               const int l = std::min(node->x(), child->x()),
                         h = std::max(node->x(), child->x());
               for (int x = l; x < h; x++) {
                 update(direction, x, node->y());
               }
             } else {
-              assert(node->x() == child->x());
+              if (node->x() != child->x()) {
+                logger_->error(utl::GRT,
+                               1257,
+                               "Vertical wire endpoints have different x "
+                               "coordinates: {} != {}.",
+                               node->x(),
+                               child->x());
+              }
               const int l = std::min(node->y(), child->y()),
                         h = std::max(node->y(), child->y());
               for (int y = l; y < h; y++) {
