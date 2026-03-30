@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -o pipefail
 
 RESULTS_DIR="${RESULTS_DIR:-results}"
 LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
@@ -29,7 +30,8 @@ echo "Exitcode:  $?"
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
     echo "Diff:      ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"
-    diff $LOG_FILE $TEST_NAME.ok > ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    python3 "$SCRIPT_DIR/numeric_diff.py" $LOG_FILE $TEST_NAME.ok > ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff
 fi
 
 if [ "$TEST_CHECK_PASSFAIL" == "True" ]; then

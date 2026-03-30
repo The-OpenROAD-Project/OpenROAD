@@ -546,6 +546,7 @@ WebSocketResponse dispatch_request(
       builder.endArray();
       builder.endArray();
       builder.field("shapes_ready", gen.shapesReady());
+      builder.field("pin_max_size", gen.getPinMaxSize());
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -1907,7 +1908,7 @@ void TileHandler::initializeHeatMaps(SessionState& state)
   state.heatmaps.clear();
   for (const auto& source_handle : gui::getRegisteredHeatMapSources()) {
     auto source = source_handle->createInstance();
-    source->setBlock(gen_->getBlock());
+    source->setChip(gen_->getChip());
     state.heatmaps[source_handle->getShortName()] = std::move(source);
   }
 }

@@ -45,6 +45,8 @@ const app = {
     allLayers: [],
     designScale: null,   // pixels-per-DBU for coordinate conversion
     designMaxDXDY: null, // max(width, height) in DBU for Y-axis mapping
+    designOriginX: 0,    // bounds.xMin() in DBU (tile grid origin)
+    designOriginY: 0,    // bounds.yMin() in DBU (tile grid origin)
     websocketManager: null,     // set after construction below
     goldenLayout: null,  // set after GL init below
     hasLiberty: false,
@@ -55,6 +57,7 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    pinsLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -108,6 +111,7 @@ const visibility = {
     routing: true,
     special_nets: true,
     pins: true,
+    pin_markers: true,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -234,6 +238,14 @@ function redrawAllLayers() {
             app.map.removeLayer(app.modulesLayer);
         }
     }
+    // Show/hide pin markers layer
+    if (app.pinsLayer) {
+        if (visibility.pin_markers && !app.map.hasLayer(app.pinsLayer)) {
+            app.pinsLayer.addTo(app.map);
+        } else if (!visibility.pin_markers && app.map.hasLayer(app.pinsLayer)) {
+            app.map.removeLayer(app.pinsLayer);
+        }
+    }
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -280,7 +292,8 @@ function createLayoutViewer(container) {
         app.lastMouseLatLng = e.latlng;
         if (!app.designScale) return;
         const { dbuX, dbuY } = latLngToDbu(
-            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
         const dbuPerUm = app.techData?.dbu_per_micron || 1000;
         const precision = Math.ceil(Math.log10(dbuPerUm));
         const xUm = (dbuX / dbuPerUm).toFixed(precision);
@@ -638,13 +651,16 @@ app.websocketManager.readyPromise.then(async () => {
         const hasDesign = designWidth > 0 && designHeight > 0;
         if (hasDesign) {
             const tileSize = 256;
-            const scale = tileSize / Math.max(designWidth, designHeight);
+            const maxDXDY = Math.max(designWidth, designHeight);
+            const scale = tileSize / maxDXDY;
             app.designScale = scale;
-            app.designMaxDXDY = Math.max(designWidth, designHeight);
+            app.designMaxDXDY = maxDXDY;
+            app.designOriginX = minX;
+            app.designOriginY = minY;
 
             app.fitBounds = [
-                [-minY * scale, minX * scale],
-                [-maxY * scale, maxX * scale]
+                [-maxDXDY * scale, 0],
+                [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
             app.map.fitBounds(app.fitBounds);
         }
@@ -654,7 +670,8 @@ app.websocketManager.readyPromise.then(async () => {
             if (!app.designScale) return;
             if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
-                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+                app.designOriginX, app.designOriginY);
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {

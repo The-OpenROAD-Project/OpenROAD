@@ -1533,7 +1533,7 @@ void FlexDRWorker::initNets_boundaryArea()
 
 void FlexDRWorker::initRipUpNetsFromMarkers()
 {
-  std::set<drNet*> ripUpNets;
+  frOrderedIdSet<drNet*> ripUpNets;
   for (auto& marker : markers_) {
     const auto bloatDist
         = getTech()->getLayer(marker.getLayerNum())->getWidth() * 2;
@@ -2052,8 +2052,8 @@ void FlexDRWorker::initMazeCost_ap()
 void FlexDRWorker::initMazeCost_marker_route_queue_addHistoryCost(
     const frMarker& marker)
 {
-  std::set<drNet*> vioNets;  // for self-violation, only add cost for one side
-                             // (experiment with self cut spacing)
+  frOrderedIdSet<drNet*> vioNets;  // for self-violation, only add cost for one
+                                   // side (experiment with self cut spacing)
 
   const odb::Rect mBox = marker.getBBox();
   const auto lNum = marker.getLayerNum();
@@ -2284,8 +2284,8 @@ void FlexDRWorker::route_queue_addMarkerCost()
 void FlexDRWorker::route_queue_init_queue(
     std::queue<RouteQueueEntry>& rerouteQueue)
 {
-  std::set<frBlockObject*> uniqueVictims;
-  std::set<frBlockObject*> uniqueAggressors;
+  frOrderedIdSet<frBlockObject*> uniqueVictims;
+  frOrderedIdSet<frBlockObject*> uniqueAggressors;
   std::vector<RouteQueueEntry> checks;
   std::vector<RouteQueueEntry> routes;
 
@@ -2324,7 +2324,7 @@ void FlexDRWorker::route_queue_init_queue(
       }
     }
     int currId = ripupNets.size();
-    std::set<drNet*> addedNets;
+    frOrderedIdSet<drNet*> addedNets;
     for (auto& marker : markers_) {
       for (auto net : ripupNets) {
         if (marker.getSrcs().find(net->getFrNet()) != marker.getSrcs().end()) {
@@ -2399,8 +2399,8 @@ void FlexDRWorker::route_queue_update_queue(
 //*****************************************************************************************//
 void FlexDRWorker::route_queue_update_from_marker(
     frMarker* marker,
-    std::set<frBlockObject*>& uniqueVictims,
-    std::set<frBlockObject*>& uniqueAggressors,
+    frOrderedIdSet<frBlockObject*>& uniqueVictims,
+    frOrderedIdSet<frBlockObject*>& uniqueAggressors,
     std::vector<RouteQueueEntry>& checks,
     std::vector<RouteQueueEntry>& routes,
     frBlockObject* checkingObj)
@@ -2430,8 +2430,8 @@ void FlexDRWorker::route_queue_update_from_marker(
   std::vector<frBlockObject*> uniqueAggressorOwners;  // to maintain order
 
   auto& markerAggressors = marker->getAggressors();
-  std::set<frNet*> movableAggressorNets;
-  std::set<frBlockObject*> movableAggressorOwners;
+  frOrderedIdSet<frNet*> movableAggressorNets;
+  frOrderedIdSet<frBlockObject*> movableAggressorOwners;
 
   for (auto& aggressorPair : markerAggressors) {
     auto& aggressor = aggressorPair.first;
@@ -2475,7 +2475,7 @@ void FlexDRWorker::route_queue_update_from_marker(
   }
 
   if (hasRerouteNet) {
-    std::set<frBlockObject*> checkDRCOwners;
+    frOrderedIdSet<frBlockObject*> checkDRCOwners;
     for (auto& src : marker->getSrcs()) {
       if (movableAggressorOwners.find(src) == movableAggressorOwners.end()) {
         if (src) {
@@ -2493,7 +2493,7 @@ void FlexDRWorker::route_queue_update_from_marker(
       }
     }
   } else {
-    std::set<frBlockObject*> owners, otherOwners, routeOwners;
+    frOrderedIdSet<frBlockObject*> owners, otherOwners, routeOwners;
     auto& srcs = marker->getSrcs();
     for (auto& src : srcs) {
       if (src) {
@@ -2525,7 +2525,7 @@ void FlexDRWorker::route_queue_update_from_marker(
       }
     }
     if (hasRerouteNet) {
-      std::set<frBlockObject*> checkDRCOwners;
+      frOrderedIdSet<frBlockObject*> checkDRCOwners;
       for (auto& src : marker->getSrcs()) {
         if (routeOwners.find(src) == routeOwners.end()) {
           if (src) {
@@ -2585,7 +2585,7 @@ void FlexDRWorker::route_queue_update_from_marker(
 }
 
 void FlexDRWorker::getRipUpNetsFromMarker(frMarker* marker,
-                                          std::set<drNet*>& nets,
+                                          frOrderedIdSet<drNet*>& nets,
                                           const frCoord bloatDist)
 {
   // if shapes don't overlap routeBox, ignore violation
@@ -2633,8 +2633,8 @@ void FlexDRWorker::route_queue_update_queue(
     std::queue<RouteQueueEntry>& rerouteQueue,
     frBlockObject* checkingObj)
 {
-  std::set<frBlockObject*> uniqueVictims;
-  std::set<frBlockObject*> uniqueAggressors;
+  frOrderedIdSet<frBlockObject*> uniqueVictims;
+  frOrderedIdSet<frBlockObject*> uniqueAggressors;
   std::vector<RouteQueueEntry> checks;
   std::vector<RouteQueueEntry> routes;
   if (checkingObj != nullptr
@@ -2681,7 +2681,7 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 {
   frRegionQuery::Objects<frBlockObject> result;
   frMIdx zIdx = 0;
-  std::map<frNet*, std::set<frBlockObject*>> frNet2Terms;
+  frOrderedIdMap<frNet*, frOrderedIdSet<frBlockObject*>> frNet2Terms;
   for (auto layerNum = getTech()->getBottomLayerNum();
        layerNum <= getTech()->getTopLayerNum();
        ++layerNum) {
@@ -2731,11 +2731,17 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     for (auto& [box, obj] : result) {
       switch (obj->typeId()) {
         case frcBTerm: {  // term no bloat
-          frNet2Terms[static_cast<frBTerm*>(obj)->getNet()].insert(obj);
+          auto* net = static_cast<frBTerm*>(obj)->getNet();
+          if (net != nullptr) {
+            frNet2Terms[net].insert(obj);
+          }
           break;
         }
         case frcInstTerm: {
-          frNet2Terms[static_cast<frInstTerm*>(obj)->getNet()].insert(obj);
+          auto* net = static_cast<frInstTerm*>(obj)->getNet();
+          if (net != nullptr) {
+            frNet2Terms[net].insert(obj);
+          }
           if (isRoutingLayer) {
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
@@ -2832,9 +2838,10 @@ void FlexDRWorker::modBlockedEdgesForMacroPin(frInstTerm* instTerm,
   }
 }
 
-void FlexDRWorker::initMazeCost_terms(const std::set<frBlockObject*>& objs,
-                                      const bool isAddPathCost,
-                                      const bool isSkipVia)
+void FlexDRWorker::initMazeCost_terms(
+    const frOrderedIdSet<frBlockObject*>& objs,
+    const bool isAddPathCost,
+    const bool isSkipVia)
 {
   for (auto& obj : objs) {
     if (obj->typeId() == frcBTerm) {

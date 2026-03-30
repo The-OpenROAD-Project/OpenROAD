@@ -589,7 +589,7 @@ float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
       is_rise ? sta::RiseFallBoth::rise() : sta::RiseFallBoth::fall(),
       open_sta_->scenes(),
       sta::MinMax::max());
-  if (sta::delayInf(req)) {
+  if (sta::delayInf(req, open_sta_)) {
     return 0;
   }
   return req;
@@ -608,7 +608,7 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
       is_rise ? sta::RiseFallBoth::rise() : sta::RiseFallBoth::fall(),
       scene1,
       path->minMax(open_sta_));
-  if (sta::delayInf(arr)) {
+  if (sta::delayInf(arr, open_sta_)) {
     return 0;
   }
   return arr;
