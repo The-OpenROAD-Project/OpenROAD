@@ -9,8 +9,17 @@ cmake_policy(SET CMP0078 NEW)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
 
-# Allows <PackageName>_ROOT to be used
+# CMP0074: Allows find_package to use <PackageName>_ROOT variables. This
+# policy was the original mechanism for letting users specify custom
+# dependency locations.
 cmake_policy(SET CMP0074 NEW)
+
+# CMP0144: Standardizes the use of <PACKAGENAME>_ROOT (uppercase) variables
+# in find_package. Newer CMake modules rely on this policy for consistent
+# behavior. Setting both CMP0074 and CMP0144 ensures that both older and
+# newer find modules correctly respect custom dependency paths, which is
+# critical for builds in non-standard environments.
+cmake_policy(SET CMP0144 NEW)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
   # Disallows <PACKAGENAME>_ROOT in find_package.
