@@ -131,7 +131,8 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   //       if (lib_port->libertyPort() && lib_port->libertyPort()->isClock()) {
   //         clk_pin = lib_port->name();
   //       }
-  //       if (lib_port->libertyPort() && lib_port->libertyPort()->isLatchData()) {
+  //       if (lib_port->libertyPort() &&
+  //       lib_port->libertyPort()->isLatchData()) {
   //         data_in_pin = lib_port->name();
   //       }
   //     }
@@ -144,8 +145,6 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   //                  "No clock pin found on storage cell {}.",
   //                  storage_cell_->getName());
   // }
-
-  logger_->info(RAM, 12, "making bit");
 
   makeInst(bit_cell.get(),
            prefix,
@@ -211,8 +210,8 @@ void RamGen::makeSlice(const int slice_idx,
            "cg",
            clock_gate_cell_,
            {{clock_gate_pins_[{PinRoleType::Clock, 0}], clock},
-           {clock_gate_pins_[{PinRoleType::DataIn, 0}], we0_net},
-           {clock_gate_pins_[{PinRoleType::DataOut, 0}], gclock_net}});
+            {clock_gate_pins_[{PinRoleType::DataIn, 0}], we0_net},
+            {clock_gate_pins_[{PinRoleType::DataOut, 0}], gclock_net}});
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
@@ -460,7 +459,8 @@ std::map<PinRole, std::string> RamGen::buildPinMap(dbMaster* master)
       } else if (pwr_gnd_type == sta::PwrGndType::primary_ground) {
         pin_map[{PinRoleType::Ground, 0}] = lib_port->name();
       }
-    } else if (lib_port->isClock()) {
+    } else if (lib_port->isClock() || lib_port->isRegClk()
+               || lib_port->isClockGateClock()) {
       pin_map[{PinRoleType::Clock, 0}] = lib_port->name();
     } else if (dir->isTristate()) {
       pin_map[{PinRoleType::DataOut, 0}] = lib_port->name();
@@ -564,6 +564,16 @@ void RamGen::findMasters()
         "clock gate");
   }
   clock_gate_pins_ = buildPinMap(clock_gate_cell_);
+
+  // Debug: log the clock gate pins that were found
+  for (const auto& [role, name] : clock_gate_pins_) {
+    logger_->info(RAM,
+                  99,
+                  "Clock gate pin - Role: {}/{}, Name: {}",
+                  static_cast<int>(role.type),
+                  role.index,
+                  name);
+  }
 
   // for input buffers
   if (!buffer_cell_) {
