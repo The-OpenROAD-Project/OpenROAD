@@ -140,12 +140,15 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
 void RamGen::makeSlice(const int slice_idx,
                        const int mask_size,
                        const int row_idx,
+                       const int word_idx,
                        const int read_ports,
+                       const int column_mux_ratio,
                        dbNet* clock,
                        dbNet* write_enable,
+                       dbNet* word_select,
                        const vector<dbNet*>& selects,
                        const vector<dbNet*>& data_input,
-                       const vector<vector<dbBTerm*>>& data_output)
+                       const vector<vector<dbNet*>>& data_output)
 {
   const int start_bit_idx = slice_idx * mask_size;
   std::string prefix = fmt::format("storage_{}_{}", row_idx, start_bit_idx);
@@ -161,15 +164,18 @@ void RamGen::makeSlice(const int slice_idx,
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
     vector<dbNet*> outs(read_ports);
     for (int read_port = 0; read_port < read_ports; ++read_port) {
-      outs[read_port] = data_output[read_port][local_bit]->getNet();
+      outs[read_port] = data_output[read_port][local_bit];
     }
+
+    int bit_col = slice_idx * (mask_size * column_mux_ratio + column_mux_ratio)
+                  + local_bit * column_mux_ratio + word_idx;
     ram_grid_.addCell(makeBit(name,
                               read_ports,
                               gclock_net,
                               select_b_nets,
                               data_input[local_bit],
                               outs),
-                      start_bit_idx + local_bit + slice_idx);
+                      bit_col);
   }
 
   auto sel_cell = std::make_unique<Cell>();
@@ -180,6 +186,19 @@ void RamGen::makeSlice(const int slice_idx,
            clock_gate_cell_,
            {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
 
+  // Write path: this net is row_select AND with word_select so clock gate only
+  // fires for the addressed word within the row. Read path handled by AOI mux.
+  // word_select is nullptr when column_mux_ratio=1 (no mux needed).
+  dbNet* write_sel = selects[0];
+  if (word_select) {
+    write_sel = makeNet(prefix, "write_sel");
+    makeInst(sel_cell.get(),
+             prefix,
+             "word_and",
+             and2_cell_,
+             {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
+  }
+
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port
@@ -187,7 +206,7 @@ void RamGen::makeSlice(const int slice_idx,
            prefix,
            "gcand",
            and2_cell_,
-           {{"A", selects[0]}, {"B", write_enable}, {"X", we0_net}});
+           {{"A", write_sel}, {"B", write_enable}, {"X", we0_net}});
 
   // Make select inverters
   for (int i = 0; i < selects.size(); ++i) {
@@ -197,26 +216,30 @@ void RamGen::makeSlice(const int slice_idx,
              inv_cell_,
              {{"A", selects[i]}, {"Y", select_b_nets[i]}});
   }
-
-  ram_grid_.addCell(std::move(sel_cell), start_bit_idx + mask_size + slice_idx);
+  int sel_col = slice_idx * (mask_size * column_mux_ratio + column_mux_ratio)
+                + mask_size * column_mux_ratio + word_idx;
+  ram_grid_.addCell(std::move(sel_cell), sel_col);
 }
 
 void RamGen::makeWord(const int slices_per_word,
                       const int mask_size,
                       const int row_idx,
+                      const int word_idx,
                       const int read_ports,
+                      const int column_mux_ratio,
                       dbNet* clock,
+                      dbNet* word_select,
                       vector<dbBTerm*>& write_enable,
                       const vector<dbNet*>& selects,
                       const vector<dbNet*>& data_input,
-                      const vector<vector<dbBTerm*>>& data_output)
+                      const vector<vector<dbNet*>>& data_output)
 {
   for (int slice = 0; slice < slices_per_word; ++slice) {
     int start_idx = slice * mask_size;
 
     vector<dbNet*> slice_inputs(data_input.begin() + start_idx,
                                 data_input.begin() + start_idx + mask_size);
-    std::vector<std::vector<odb::dbBTerm*>> slice_outputs;
+    std::vector<std::vector<odb::dbNet*>> slice_outputs;
     slice_outputs.reserve(read_ports);
     for (int port = 0; port < read_ports; ++port) {
       const auto& port_outputs = data_output[port];
@@ -227,9 +250,12 @@ void RamGen::makeWord(const int slices_per_word,
     makeSlice(slice,
               mask_size,
               row_idx,
+              word_idx,
               read_ports,
+              column_mux_ratio,
               clock,
               write_enable[slice]->getNet(),
+              word_select,
               selects,
               slice_inputs,
               slice_outputs);
@@ -237,84 +263,86 @@ void RamGen::makeWord(const int slices_per_word,
 }
 
 // mux made out of AOI22 cells used for col/mux feature. currently support only
-// even mux ratios (1,2,4,8)
-std::unique_ptr<Cell> RamGen::makeColMux(
-    const std::string& prefix,
-    const int column_mux_ratio,
-    const int mask_size,
-    const vector<vector<dbNet*>>& col_q_nets,
-    const vector<dbNet*>& col_sel_nets,
-    const vector<dbNet*>& q_out_nets)
+// col_mux_ratio = 1,2,4 NOTE: ratio =1 mean no muxing so this function is not
+// called in that case called once per bit by generate(), it will mux between
+// every corresponding pair of bits of column_mux_ratio words
+std::unique_ptr<Cell> RamGen::makeColMux(const std::string& prefix,
+                                         const int column_mux_ratio,
+                                         const vector<dbNet*>& word_q_nets,
+                                         const vector<dbNet*>& word_sel_nets,
+                                         dbNet* q_out_net)
 {
+  // NOTE: word_sel_nets must be in strict alternating 'ascending' order of
+  // select signal i.e. [S0', S0, S1', S1, S2', S2, etc]
   auto mux_cell = std::make_unique<Cell>();
   const int num_stages = static_cast<int>(std::log2(column_mux_ratio));
   const bool need_final_inv = (num_stages % 2 == 1);
 
-  for (int bit = 0; bit < mask_size; ++bit) {
-    // Stage 1: one AOI22 per pair of sub columns determined by column_mux_ratio
-    // value using select signal S0 with output polarity: inverted (~mux)
-    int num_pairs = column_mux_ratio / 2;
-    vector<dbNet*> prev_nets(num_pairs);
+  // Stage 1: one AOI22 per pair of word bits determined by column_mux_ratio
+  int num_pairs = column_mux_ratio / 2;
+  vector<dbNet*> prev_nets(num_pairs);
 
-    for (int i = 0; i < num_pairs; ++i) {
-      // for ratio=2 with no INV needed (num_stages=1 is odd so
-      // need_final_inv=true), stage 1 output always goes to intermediate wire,
-      // never directly to Q here
-      prev_nets[i] = dbNet::create(
-          block_, fmt::format("{}_aoi_s1_g{}_bit{}", prefix, i, bit).c_str());
-      makeInst(mux_cell.get(),
-               prefix,
-               fmt::format("aoi_s1_g{}_bit{}", i, bit),
-               aoi22_cell_,
-               {{aoi22_in_a1_, col_sel_nets[0]},
-                {aoi22_in_a2_, col_q_nets[i * 2][bit]},
-                {aoi22_in_b1_, col_sel_nets[1]},
-                {aoi22_in_b2_, col_q_nets[i * 2 + 1][bit]},
-                {aoi22_out_, prev_nets[i]}});
-    }
+  for (int i = 0; i < num_pairs; ++i) {
+    prev_nets[i] = dbNet::create(
+        block_, fmt::format("{}_aoi_s1_g{}", prefix, i).c_str());
 
-    // Stages 2 to N: each stage halves the number of signals
-    // sel index increases by 2 per stage (~Sn at sel_idx, Sn at sel_idx+1)
-    for (int stage = 1; stage < num_stages; ++stage) {
-      int num_out = static_cast<int>(prev_nets.size()) / 2;
-      vector<dbNet*> curr_nets(num_out);
-      int sel_idx = stage * 2;
-      bool is_last_stage = (stage == num_stages - 1);
-      for (int i = 0; i < num_out; ++i) {
-        // if this is the last stage and no INV needed, drive Q directly
-        // to avoid adding an unnecessary buffer gate
-        if (is_last_stage && !needs_final_inv) {
-          curr_nets[i] = q_out_nets[bit];
-        } else {
-          curr_nets[i] = dbNet::create(
-              block_,
-              fmt::format("{}_aoi_s{}_g{}_bit{}", prefix, stage + 1, i, bit)
-                  .c_str());
-        }
-        makeInst(mux_cell.get(),
-                 prefix,
-                 fmt::format("aoi_s{}_g{}_bit{}", stage + 1, i, bit),
-                 aoi22_cell_,
-                 {{aoi22_in_a1_, col_sel_nets[sel_idx]},
-                  {aoi22_in_a2_, prev_nets[i * 2]},
-                  {aoi22_in_b1_, col_sel_nets[sel_idx + 1]},
-                  {aoi22_in_b2_, prev_nets[i * 2 + 1]},
-                  {aoi22_out_, curr_nets[i]}});
+    // AOI boolean function:  Y = (S0'I0 + S0I1)' = AOI22(S0', I0, S0, I1)
+    // AOI has inverted output so need an inverter if num_stage is odd
+    makeInst(
+        mux_cell.get(),
+        prefix,
+        fmt::format("aoi_s1_g{}", i),
+        aoi22_cell_,
+        {{aoi22_in_a1_, word_sel_nets[0]},        // S0'
+         {aoi22_in_a2_, word_q_nets[i * 2]},      // I0 = bit from word i*2
+         {aoi22_in_b1_, word_sel_nets[1]},        // S0
+         {aoi22_in_b2_, word_q_nets[i * 2 + 1]},  // I1 = bit from word i*2+1
+         {aoi22_out_, prev_nets[i]}});            // output to next stage
+  }
+
+  // Stages 2 to N: each stage halves the number of signals
+  // sel index increases by 2 per stage (Sn' at sel_idx, Sn at sel_idx+1)
+  for (int stage = 1; stage < num_stages; ++stage) {
+    int num_out = static_cast<int>(prev_nets.size()) / 2;
+    vector<dbNet*> curr_nets(num_out);
+    int sel_idx = stage * 2;
+    bool is_last_stage = (stage == num_stages - 1);
+
+    for (int i = 0; i < num_out; ++i) {
+      // if this is the last stage and no INV needed, drive Q directly
+      // else create intermediate net for next stage or for final inverter
+      if (is_last_stage && !need_final_inv) {
+        curr_nets[i] = q_out_net;
+      } else {
+        curr_nets[i] = dbNet::create(
+            block_,
+            fmt::format("{}_aoi_s{}_g{}", prefix, stage + 1, i).c_str());
       }
-      prev_nets = curr_nets;
-    }
 
-    // Final stage/output:
-    // "odd" stages (ratio = 2,8 meaning num_stages = 1,3): output inverted, add
-    // inverter "even" stages (ratio = 4 meaning num_stages = 2): Q driven
-    // directly by last AOI22 output, no inverter needed
-    if (need_final_inv) {
       makeInst(mux_cell.get(),
                prefix,
-               fmt::format("mux_inv_bit{}", bit),
-               inv_cell_,
-               {{"A", prev_nets[0]}, {"Y", q_out_nets[bit]}});
+               fmt::format("aoi_s{}_g{}", stage + 1, i),
+               aoi22_cell_,
+               {{aoi22_in_a1_, word_sel_nets[sel_idx]},
+                {aoi22_in_a2_, prev_nets[i * 2]},
+                {aoi22_in_b1_, word_sel_nets[sel_idx + 1]},
+                {aoi22_in_b2_, prev_nets[i * 2 + 1]},
+                {aoi22_out_, curr_nets[i]}});
     }
+    prev_nets = curr_nets;  // output net of current stage becomes input net of
+                            // next stage
+  }
+
+  // Final stage/output:
+  // If "odd" stages (ratio = 2,8 meaning num_stages = 1,3): output inverted,
+  // add inverter If "even" stages (ratio = 4 meaning num_stages = 2): Q driven
+  // directly by last AOI22 output, no inverter needed
+  if (need_final_inv) {
+    makeInst(mux_cell.get(),
+             prefix,
+             "mux_inv",
+             inv_cell_,
+             {{"A", prev_nets[0]}, {"Y", q_out_net}});
   }
 
   return mux_cell;
@@ -786,6 +814,7 @@ void RamGen::ramRouting(int thread_count)
 void RamGen::generate(const int mask_size,
                       const int word_size,
                       const int num_words,
+                      const int column_mux_ratio,
                       const int read_ports,
                       dbMaster* storage_cell,
                       dbMaster* tristate_cell,
@@ -803,6 +832,33 @@ void RamGen::generate(const int mask_size,
         RAM, 25, "The ram generator currently only supports 1 read port.");
     return;
   }
+
+  // error checking for column_mux_ratio
+  if (column_mux_ratio != 1 && column_mux_ratio != 2 && column_mux_ratio != 4) {
+    logger_->error(RAM,
+                   33,
+                   "The ram generator currently only supports column_mux_ratio "
+                   "values of 1, 2, or 4.");
+  }
+
+  if (num_words % column_mux_ratio != 0) {
+    logger_->error(RAM,
+                   34,
+                   "num_words ({}) must be divisible by column_mux_ratio ({}).",
+                   num_words,
+                   column_mux_ratio);
+  }
+
+  int num_inputs = std::ceil(std::log2(num_words));
+  // compute information to support col/mux ratio feature
+  int num_rows = num_words / column_mux_ratio;
+  // if column mux ratio > 1, then the lower log2(column_mux_ratio) bits are
+  // used to select the word within a row
+  int num_word_bits = (column_mux_ratio > 1)
+                          ? static_cast<int>(std::log2(column_mux_ratio))
+                          : 0;
+  // the remaining upper bits are used to select the row
+  int num_row_bits = num_inputs - num_word_bits;
 
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
@@ -827,9 +883,13 @@ void RamGen::generate(const int mask_size,
     block_ = odb::dbBlock::create(chip, ram_name.c_str());
   }
 
-  // One column per bit plus one select/control column per slice,
-  // plus one extra decoder column.
-  int col_cell_count = slices_per_word * (mask_size + 1);
+  // With column_mux_ratio = 1: One column per bit plus one select/control
+  // column per slice, plus one extra decoder column With column_mux_ratio > 1:
+  // Each slice has (mask_size * column_mux_ratio) columns (one per bit per word
+  // in the row), plus one select/control column per slice (one per word), plus
+  // one extra decoder column at far right shared across all row
+  int col_cell_count
+      = slices_per_word * (mask_size * column_mux_ratio + column_mux_ratio);
   ram_grid_.setNumLayouts(col_cell_count + 1);
 
   auto clock = makeBTerm("clk", dbIoType::INPUT);
@@ -841,7 +901,6 @@ void RamGen::generate(const int mask_size,
   }
 
   // input bterms
-  int num_inputs = std::ceil(std::log2(num_words));
   for (int i = 0; i < num_inputs; ++i) {
     addr_inputs_.push_back(
         makeBTerm(fmt::format("addr[{}]", i), dbIoType::INPUT));
@@ -853,20 +912,69 @@ void RamGen::generate(const int mask_size,
     inv_addr[i] = makeNet("inv", fmt::format("addr[{}]", i));
   }
 
+  // word select nets: one per word_idx (word within a row) shared between all
+  // rows, derived from lower num_word_bits of address inputs used to determine
+  // word selection within a row for column muxing. word_sel_nets[word_idx] =
+  // HIGH when this word_idx is addressed. word_idx starts at 0 for the leftmost
+  // bit of the row, i.e. word 3 on row 1 with column_mux_ratio =2 will have
+  // word_idx = 1 nullptr for all entries when column_mux_ratio = 1 (no column
+  // muxing)
+  vector<dbNet*> word_sel_nets(column_mux_ratio, nullptr);
+
+  if (column_mux_ratio == 2) {
+    word_sel_nets[0] = inv_addr[0];
+    word_sel_nets[1] = addr_inputs_[0]->getNet();
+  } else if (column_mux_ratio == 4) {
+    auto word_sel_cell = std::make_unique<Cell>();
+    for (int c = 0; c < 4; ++c) {
+      word_sel_nets[c] = makeNet("word_sel", fmt::format("{}", c));
+    }
+    makeInst(word_sel_cell.get(),
+             "word_sel",
+             "and_0",
+             and2_cell_,
+             {{"A", inv_addr[1]}, {"B", inv_addr[0]}, {"X", word_sel_nets[0]}});
+    makeInst(word_sel_cell.get(),
+             "word_sel",
+             "and_1",
+             and2_cell_,
+             {{"A", inv_addr[1]},
+              {"B", addr_inputs_[0]->getNet()},
+              {"X", word_sel_nets[1]}});
+    makeInst(word_sel_cell.get(),
+             "word_sel",
+             "and_2",
+             and2_cell_,
+             {{"A", addr_inputs_[1]->getNet()},
+              {"B", inv_addr[0]},
+              {"X", word_sel_nets[2]}});
+    makeInst(word_sel_cell.get(),
+             "word_sel",
+             "and_3",
+             and2_cell_,
+             {{"A", addr_inputs_[1]->getNet()},
+              {"B", addr_inputs_[0]->getNet()},
+              {"X", word_sel_nets[3]}});
+    ram_grid_.addCell(std::move(word_sel_cell), col_cell_count);
+  }
+
   // decoder_layer nets
-  vector<vector<dbNet*>> decoder_input_nets(num_words,
-                                            vector<dbNet*>(num_inputs));
-  for (int word = 0; word < num_words; ++word) {
-    int word_num = word;
+  // for column muxing, deocder input nets uses only the upper address bits
+  // (num_row_bits) to determine row
+  vector<vector<dbNet*>> decoder_input_nets(num_rows,
+                                            vector<dbNet*>(num_row_bits));
+  for (int row = 0; row < num_rows; ++row) {
+    int row_num = row;
     // start at right most bit
-    for (int input = 0; input < num_inputs; ++input) {
-      if (word_num % 2 == 0) {
+    for (int input = 0; input < num_row_bits; ++input) {
+      if (row_num % 2 == 0) {
         // places inverted address for each input
-        decoder_input_nets[word][input] = inv_addr[input];
+        decoder_input_nets[row][input] = inv_addr[num_word_bits + input];
       } else {  // puts original input in invert nets
-        decoder_input_nets[word][input] = addr_inputs_[input]->getNet();
+        decoder_input_nets[row][input]
+            = addr_inputs_[num_word_bits + input]->getNet();
       }
-      word_num /= 2;
+      row_num /= 2;
     }
   }
 
@@ -874,11 +982,12 @@ void RamGen::generate(const int mask_size,
   // slices of a word
   vector<vector<dbNet*>> word_decoder_nets(num_words);
 
-  for (int row = 0; row < num_words; ++row) {
+  for (int row = 0; row < num_rows; ++row) {
     auto decoder_name = fmt::format("decoder_{}", row);
 
-    if (num_words == 2) {
-      dbNet* addr_net = (row == 0 ? inv_addr[0] : addr_inputs_[0]->getNet());
+    if (num_rows == 2) {
+      dbNet* addr_net = (row == 0 ? inv_addr[num_word_bits]
+                                  : addr_inputs_[num_word_bits]->getNet());
       for (int i = 0; i < read_ports; ++i) {
         word_decoder_nets[row].push_back(addr_net);
       }
@@ -886,7 +995,7 @@ void RamGen::generate(const int mask_size,
       word_decoder_nets[row] = selectNets(decoder_name, read_ports);
 
       auto decoder_and_cell = makeDecoder(decoder_name,
-                                          num_words,
+                                          num_rows,
                                           read_ports,
                                           word_decoder_nets[row],
                                           decoder_input_nets[row]);
@@ -915,16 +1024,77 @@ void RamGen::generate(const int mask_size,
     }
   }
 
-  for (int row = 0; row < num_words; ++row) {
-    makeWord(slices_per_word,
-             mask_size,
-             row,
-             read_ports,
-             clock->getNet(),
-             write_enable,
-             word_decoder_nets[row],
-             D_nets,
-             q_outputs_);
+  // Intermediate nets between tristate outputs and Q BTerms
+  // When column_mux_ratio = 1: tristate drives Q directly, so reuse Q BTerm
+  // nets When column_mux_ratio > 1: tristate drives intermediate net, AOI mux
+  // selects correct net based on lower address bits (word_select net)
+  // word_q_nets[word_idx][bit] = intermed. net for that word and bit pair
+  vector<vector<dbNet*>> word_q_nets(column_mux_ratio,
+                                     vector<dbNet*>(word_size));
+  if (column_mux_ratio == 1) {
+    for (int bit = 0; bit < word_size; ++bit) {
+      word_q_nets[0][bit] = q_outputs_[0][bit]->getNet();
+    }
+  } else {
+    for (int w = 0; w < column_mux_ratio; ++w) {
+      for (int bit = 0; bit < word_size; ++bit) {
+        word_q_nets[w][bit]
+            = makeNet(fmt::format("word{}_q", w), fmt::format("[{}]", bit));
+      }
+    }
+  }
+
+  for (int row = 0; row < num_rows; ++row) {
+    for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
+      vector<vector<dbNet*>> word_output_nets(read_ports);
+      for (int port = 0; port < read_ports; ++port) {
+        for (int bit = 0; bit < word_size; ++bit) {
+          word_output_nets[port].push_back(word_q_nets[word_idx][bit]);
+        }
+      }
+
+      makeWord(slices_per_word,
+               mask_size,
+               row,
+               word_idx,
+               read_ports,
+               column_mux_ratio,
+               clock->getNet(),
+               word_sel_nets[word_idx],
+               write_enable,
+               word_decoder_nets[row],
+               D_nets,
+               word_output_nets);
+    }
+  }
+
+  if (column_mux_ratio > 1) {
+    // build select nets once to be used for every bit and every slice
+    // NOTE: must be in exact alternating format: [S0', S0, S1', S1, ...]
+    vector<dbNet*> mux_word_sel_nets;
+    for (int bit_idx = 0; bit_idx < num_word_bits; ++bit_idx) {
+      mux_word_sel_nets.push_back(inv_addr[bit_idx]);
+      mux_word_sel_nets.push_back(addr_inputs_[bit_idx]->getNet());
+    }
+
+    for (int slice = 0; slice < slices_per_word; ++slice) {
+      for (int bit = 0; bit < mask_size; ++bit) {
+        const int global_bit = slice * mask_size + bit;
+        vector<dbNet*> bit_word_q_nets(column_mux_ratio);
+        for (int word_idx = 0; word_idx < column_mux_ratio; ++word_idx) {
+          bit_word_q_nets[word_idx] = word_q_nets[word_idx][global_bit];
+        }
+        int mux_col = slice * (mask_size * column_mux_ratio + column_mux_ratio)
+                      + bit * column_mux_ratio;
+        ram_grid_.addCell(
+            makeColMux(fmt::format("mux_slice{}_bit{}", slice, bit),
+                       column_mux_ratio,
+                       bit_word_q_nets,
+                       mux_word_sel_nets,
+                       q_outputs_[0][global_bit]->getNet()),
+            mux_col);
+      }
+    }
   }
 
   for (int slice = 0; slice < slices_per_word; ++slice) {
@@ -977,7 +1147,7 @@ void RamGen::generate(const int mask_size,
   if (tapcell_) {
     // max tap distance specified is greater than the length of ram
     if (ram_grid_.getRowWidth() <= max_tap_dist) {
-      auto tapcell_layout = generateTapColumn(num_words, 0);
+      auto tapcell_layout = generateTapColumn(num_rows, 0);
       ram_grid_.insertLayout(std::move(tapcell_layout), 0);
     } else {
       // needed this calculation so first cells have right distance
@@ -988,7 +1158,7 @@ void RamGen::generate(const int mask_size,
       for (int col = 0; col < ram_grid_.numLayouts(); ++col) {
         if (nearest_tap + ram_grid_.getLayoutWidth(col) >= max_tap_dist) {
           // if the nearest_tap is too far, generate tap column
-          auto tapcell_layout = generateTapColumn(num_words, tapcell_count);
+          auto tapcell_layout = generateTapColumn(num_rows, tapcell_count);
           ram_grid_.insertLayout(std::move(tapcell_layout), col);
           ++col;  // col adjustment after insertion
           nearest_tap = 0;
@@ -998,7 +1168,7 @@ void RamGen::generate(const int mask_size,
       }
       // check for last column in the grid
       if (nearest_tap >= max_tap_dist) {
-        auto tapcell_layout = generateTapColumn(num_words, tapcell_count);
+        auto tapcell_layout = generateTapColumn(num_rows, tapcell_count);
         ram_grid_.addLayout(std::move(tapcell_layout));
       }
     }
@@ -1013,8 +1183,8 @@ void RamGen::generate(const int mask_size,
   int num_sites = ram_grid_.getRowWidth() / db_sites->getWidth();
 
   // One extra row at the top for placing input buffers
-  const int num_rows = num_words + 1;
-  for (int i = 0; i < num_rows; ++i) {
+  const int num_rows_grid = num_rows + 1;
+  for (int i = 0; i < num_rows_grid; ++i) {
     auto row_name = fmt::format("RAM_ROW{}", i);
     auto y_coord = i * ram_grid_.getHeight();
     auto row_orient = odb::dbOrientType::R0;
@@ -1034,7 +1204,7 @@ void RamGen::generate(const int mask_size,
 
   ram_grid_.placeGrid();
 
-  int max_y_coord = ram_grid_.getHeight() * (num_rows);
+  int max_y_coord = ram_grid_.getHeight() * (num_rows_grid);
   int max_x_coord = ram_grid_.getRowWidth();
 
   block_->setDieArea(odb::Rect(0, 0, max_x_coord, max_y_coord));

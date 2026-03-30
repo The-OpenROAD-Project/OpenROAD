@@ -121,30 +121,34 @@ class RamGen
   void makeSlice(int slice_idx,
                  int mask_size,
                  int row_idx,
+                 int word_idx,
                  int read_ports,
+                 int column_mux_ratio,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
                  const std::vector<odb::dbNet*>& selects,
                  const std::vector<odb::dbNet*>& data_input,
-                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                 const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   void makeWord(int slices_per_word,
                 int mask_size,
                 int row_idx,
+                int word_idx,
                 int read_ports,
+                int column_mux_ratio,
                 odb::dbNet* clock,
+                odb::dbNet* word_select,
                 std::vector<odb::dbBTerm*>& write_enable,
                 const std::vector<odb::dbNet*>& selects,
                 const std::vector<odb::dbNet*>& data_input,
-                const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+                const std::vector<std::vector<odb::dbNet*>>& data_output);
 
   std::unique_ptr<Cell> makeColMux(
       const std::string& prefix,
       int column_mux_ratio,
-      int mask_size,
-      const std::vector<std::vector<odb::dbNet*>>& col_q_nets,
-      const std::vector<odb::dbNet*>& col_sel_nets,
-      const std::vector<odb::dbNet*>& q_out_nets);
+      const std::vector<odb::dbNet*>& word_q_nets,
+      const std::vector<odb::dbNet*>& word_sel_nets,
+      odb::dbNet* q_out_net);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
