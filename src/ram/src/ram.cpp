@@ -411,6 +411,47 @@ dbMaster* RamGen::findMaster(
   return best;
 }
 
+std::map<PinRole, std::string> RamGen::buildPinMap(dbMaster* master)
+{
+  auto sta_cell = network_->dbToSta(master);
+  if (!sta_cell) {
+    logger_->error(RAM, 72, "Can't find STA cell");
+  }
+  auto liberty = network_->libertyCell(sta_cell);
+  if (!liberty) {
+    logger_->error(RAM, 73, "Can't find liberty cell");
+  }
+  std::map<PinRole, std::string> pin_map;
+  int in_idx = 0;
+
+  auto port_iter = liberty->portIterator();
+  while (port_iter->hasNext()) {
+    auto concrete = port_iter->next();
+    auto lib_port = concrete->libertyPort();
+    auto dir = concrete->direction();
+    logger_->info(RAM, 74, "name of port {}", lib_port->name());
+    if (lib_port->isPwrGnd()) {
+      auto pwr_gnd_type = lib_port->pwrGndType();
+      if (pwr_gnd_type == sta::PwrGndType::primary_power) {
+        pin_map[{PinRoleType::Power, 0}] = lib_port->name();
+      } else if (pwr_gnd_type == sta::PwrGndType::primary_ground) {
+        pin_map[{PinRoleType::Ground, 0}] = lib_port->name();
+      }
+    } else if (lib_port->isClock()) {
+      pin_map[{PinRoleType::Clock, 0}] = lib_port->name();
+    } else if (lib_port->isLatchData()) {
+      // post-decrement so current usage isn't affected
+      pin_map[{PinRoleType::DataIn, in_idx++}] = lib_port->name();
+    } else if (dir->isAnyOutput()) {
+      pin_map[{PinRoleType::DataOut, 0}] = lib_port->name();
+    } else if (dir->isInput()) {
+      pin_map[{PinRoleType::DataIn, in_idx++}] = lib_port->name();
+    }
+  }
+  delete port_iter;
+  return pin_map;
+}
+
 void RamGen::findMasters()
 {
   if (!inv_cell_) {
@@ -420,6 +461,7 @@ void RamGen::findMasters()
         },
         "inverter");
   }
+  inv_pins_ = buildPinMap(inv_cell_);
 
   if (!tristate_cell_) {
     tristate_cell_ = findMaster(
@@ -432,6 +474,7 @@ void RamGen::findMasters()
         },
         "tristate");
   }
+  tristate_pins_ = buildPinMap(tristate_cell_);
 
   if (!and2_cell_) {
     and2_cell_ = findMaster(
@@ -446,21 +489,32 @@ void RamGen::findMasters()
         },
         "and2");
   }
+  and2_pins_ = buildPinMap(and2_cell_);
 
   if (!storage_cell_) {
     // FIXME
     storage_cell_ = findMaster(
         [](sta::LibertyPort* port) {
-          if (!port->direction()->isOutput()) {
+          if (!port->isRegOutput()) {
             return false;
           }
-          auto function = port->function();
-          return function && function->op() == sta::FuncExpr::Op::and_
-                 && function->left()->op() == sta::FuncExpr::Op::port
-                 && function->right()->op() == sta::FuncExpr::Op::port;
+          // looking for DFF specifically
+          auto cell = port->libertyCell();
+          auto port_iter = cell->portIterator();
+          while (port_iter->hasNext()) {
+            auto p = port_iter->next()->libertyPort();
+            // check to filter out latches
+            if (p && p->isLatchData()) {
+              delete port_iter;
+              return false;
+            }
+          }
+          delete port_iter;
+          return true;
         },
         "storage");
   }
+  storage_pins_ = buildPinMap(storage_cell_);
 
   if (!clock_gate_cell_) {
     clock_gate_cell_ = findMaster(
@@ -469,12 +523,15 @@ void RamGen::findMasters()
         },
         "clock gate");
   }
+  clock_gate_pins_ = buildPinMap(clock_gate_cell_);
+
   // for input buffers
   if (!buffer_cell_) {
     buffer_cell_ = findMaster(
         [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
         "buffer");
   }
+  buffer_pins_ = buildPinMap(buffer_cell_);
 }
 
 void RamGen::ramPdngen(const char* power_pin,

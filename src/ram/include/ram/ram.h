@@ -50,6 +50,29 @@ class TritonRoute;
 
 namespace ram {
 
+enum class PinRoleType
+{
+  Clock,
+  DataIn,
+  DataOut,
+  WriteEnable,
+  Select,  // for mux support in future
+  Power,
+  Ground
+};
+
+struct PinRole
+{
+  PinRoleType type;
+  int index;
+
+  // for map so that keys are comparable
+  bool operator<(const PinRole& other) const
+  {
+    return std::tie(type, index) < std::tie(other.type, other.index);
+  }
+};
+
 class RamGen
 {
  public:
@@ -96,15 +119,10 @@ class RamGen
 
  private:
   void findMasters();
+  std::map<PinRole, std::string> buildPinMap(odb::dbMaster*);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
-  odb::dbInst* makeInst(
-      Layout* layout,
-      const std::string& prefix,
-      const std::string& name,
-      odb::dbMaster* master,
-      const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
   odb::dbInst* makeInst(
       Cell* cell,
       const std::string& prefix,
@@ -167,6 +185,13 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  std::map<PinRole, std::string> storage_pins_;
+  std::map<PinRole, std::string> tristate_pins_;
+  std::map<PinRole, std::string> inv_pins_;
+  std::map<PinRole, std::string> and2_pins_;
+  std::map<PinRole, std::string> clock_gate_pins_;
+  std::map<PinRole, std::string> buffer_pins_;
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
