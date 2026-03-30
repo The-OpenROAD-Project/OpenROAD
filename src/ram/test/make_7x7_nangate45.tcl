@@ -23,7 +23,6 @@ generate_ram \
   -word_size 7 \
   -num_words 7 \
   -read_ports 1 \
-  -read_ports 1 \
   -storage_cell DFF_X1 \
   -power_pin VDD \
   -ground_pin VSS \

@@ -8,8 +8,10 @@
 #include <fstream>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -115,36 +117,6 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   auto bit_cell = std::make_unique<Cell>();
 
   auto storage_net = makeNet(prefix, "storage");
-
-  // Resolve the clock-pin name for the storage cell by querying the
-  // Liberty data.  This avoids hard-coding technology-specific pin names
-  // (e.g. "CLK", "CK") and works with any technology node.
-  // const char* clk_pin = nullptr;
-  // const char* data_in_pin = nullptr;
-  // auto sta_cell = network_->dbToSta(storage_cell_);
-  // if (sta_cell) {
-  //   auto liberty = network_->libertyCell(sta_cell);
-  //   if (liberty) {
-  //     auto port_iter = liberty->portIterator();
-  //     while (port_iter->hasNext()) {
-  //       auto lib_port = port_iter->next();
-  //       if (lib_port->libertyPort() && lib_port->libertyPort()->isClock()) {
-  //         clk_pin = lib_port->name();
-  //       }
-  //       if (lib_port->libertyPort() &&
-  //       lib_port->libertyPort()->isLatchData()) {
-  //         data_in_pin = lib_port->name();
-  //       }
-  //     }
-  //     delete port_iter;
-  //   }
-  // }
-  // if (!clk_pin) {
-  //   logger_->error(RAM,
-  //                  12,
-  //                  "No clock pin found on storage cell {}.",
-  //                  storage_cell_->getName());
-  // }
 
   makeInst(bit_cell.get(),
            prefix,
@@ -342,7 +314,7 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
                fmt::format("and_layer{}", i),
                and2_cell_,
                {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
-                {and2_pins_[{PinRoleType::DataIn, 0}], input_net},
+                {and2_pins_[{PinRoleType::DataIn, 1}], input_net},
                 {and2_pins_[{PinRoleType::DataIn, 0}], prev_net}});
       prev_net = input_net;
     }
@@ -446,12 +418,6 @@ std::map<PinRole, std::string> RamGen::buildPinMap(dbMaster* master)
     auto lib_port = concrete->libertyPort();
     auto dir = concrete->direction();
 
-    logger_->info(RAM,
-                  98,
-                  "port name:{} dir:{} isPwrGnd:{}",
-                  lib_port->name(),
-                  dir->name(),
-                  lib_port->isPwrGnd());
     if (lib_port->isPwrGnd()) {
       auto pwr_gnd_type = lib_port->pwrGndType();
       if (pwr_gnd_type == sta::PwrGndType::primary_power) {
@@ -564,16 +530,6 @@ void RamGen::findMasters()
         "clock gate");
   }
   clock_gate_pins_ = buildPinMap(clock_gate_cell_);
-
-  // Debug: log the clock gate pins that were found
-  for (const auto& [role, name] : clock_gate_pins_) {
-    logger_->info(RAM,
-                  99,
-                  "Clock gate pin - Role: {}/{}, Name: {}",
-                  static_cast<int>(role.type),
-                  role.index,
-                  name);
-  }
 
   // for input buffers
   if (!buffer_cell_) {
