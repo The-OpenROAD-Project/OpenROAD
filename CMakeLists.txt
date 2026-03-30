@@ -108,7 +108,7 @@ message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
 message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # Detect OS distribution and version from /etc/os-release
-# LTO is known to cause build errors on Debian 11 and Rocky Linux 8
+# LTO is known to cause build errors on Rocky Linux 8
 set(LTO_UNSUPPORTED_OS FALSE)
 if(EXISTS "/etc/os-release")
   file(STRINGS "/etc/os-release" OS_RELEASE_CONTENTS)
@@ -124,8 +124,7 @@ if(EXISTS "/etc/os-release")
   endforeach()
 
   # Check for unsupported OS for LTO
-  if((OS_ID STREQUAL "debian" AND OS_VERSION_ID STREQUAL "11") OR
-     (OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8"))
+  if(OS_ID STREQUAL "rocky" AND OS_VERSION_ID MATCHES "^8")
     set(LTO_UNSUPPORTED_OS TRUE)
     message(STATUS "Detected unsupported OS (${OS_ID} ${OS_VERSION_ID}): LTO will be disabled due to known build issues")
   endif()
