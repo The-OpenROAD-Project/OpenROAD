@@ -74,8 +74,10 @@ proc save_image { args } {
   if { $use_web } {
     # Convert area from microns to DBU for the web renderer.
     set web_area $area
-    if { [lindex $area 0] != 0 || [lindex $area 1] != 0 \
-         || [lindex $area 2] != 0 || [lindex $area 3] != 0 } {
+    if {
+      [lindex $area 0] != 0 || [lindex $area 1] != 0
+      || [lindex $area 2] != 0 || [lindex $area 3] != 0
+    } {
       set db [ord::get_db]
       set dbu [$db getDbuPerMicron]
       set web_area [list \
