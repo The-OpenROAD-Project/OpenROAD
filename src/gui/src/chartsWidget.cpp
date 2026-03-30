@@ -28,12 +28,12 @@
 
 #include "gui/gui.h"
 #include "gui_utils.h"
-#include "staGuiInterface.h"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
 #include "sta/SdcClass.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 #include "utl/Logger.h"
 #include "utl/histogram.h"
 
