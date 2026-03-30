@@ -142,12 +142,8 @@ COMPULSORY_TESTS = [
 
 # TODO: Enable once difference between bazel and ctest is resolved.
 MANUAL_FOR_BAZEL_TESTS = [
-    "upf_test",
-    "upf_aes",
 ]
 
-# Bazel OpenROAD is not compiled with Python support yet
-# leave as manual for now.
 PYTHON_TESTS = [
     "timing_api",
     "timing_api_2",
@@ -191,9 +187,10 @@ BIG_TESTS = [
     regression_test(
         name = test_name,
         size = "enormous" if test_name in BIG_TESTS else "medium",
-        check_log = False if test_name in PASSFAIL_TESTS else True,
+        check_log = False if test_name in PASSFAIL_TESTS + ["upf_aes"] else True,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
-        tags = [] if test_name in COMPULSORY_TESTS and test_name not in MANUAL_FOR_BAZEL_TESTS else ["manual"],
+        data = ["//src/odb/test:design_odb_data"] if test_name == "two_designs" else [],
+        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
     )
     for test_name in COMPULSORY_TESTS + PYTHON_TESTS + BIG_TESTS
 ]

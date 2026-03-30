@@ -336,6 +336,12 @@ filegroup(
     visibility = ["//src/odb/test/cpp:__subpackages__"],
 )
 
+filegroup(
+    name = "design_odb_data",
+    srcs = ["data/design.odb"],
+    visibility = ["//visibility:public"],
+)
+
 [
     filegroup(
         name = test_name + "_resources",
