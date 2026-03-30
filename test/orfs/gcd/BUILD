@@ -59,7 +59,7 @@ sh_test(
     ],
     data = [
         ":gcd_floorplan_odb",
-        "@openroad//:openroad",
+        "@openroad",
         "@openroad//etc:whittle.py",
         "@openroad//etc:whittle_cleanup.tcl",
         "@openroad//etc:whittle_cut.tcl",
