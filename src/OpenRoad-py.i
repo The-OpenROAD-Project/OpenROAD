@@ -69,6 +69,7 @@ get_db_block();
 %include "src/gpl/src/replace-py.i"
 %include "src/ifp/src/InitFloorplan-py.i"
 %include "src/ant/src/AntennaChecker-py.i"
+%include "src/cgt/src/cgt-py.i"
 %include "src/cts/src/TritonCTS-py.i"
 %include "src/dpl/src/Opendp-py.i"
 %include "src/drt/src/TritonRoute-py.i"

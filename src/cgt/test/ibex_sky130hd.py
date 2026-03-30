@@ -1,6 +1,8 @@
 from openroad import Tech
 import helpers
 
+helpers.if_bazel_change_working_dir_to("/_main/src/cgt/test/")
+
 tech = Tech()
 
 tech.readLiberty("sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib")

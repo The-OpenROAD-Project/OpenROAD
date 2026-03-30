@@ -805,7 +805,7 @@ _install_ubuntu_packages() {
         automake autotools-dev binutils bison build-essential ccache clang \
         debhelper devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev \
         libgomp1 libomp-dev libpcre2-dev libreadline-dev pandoc \
-        pkg-config python3-dev python3-click qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
+        pkg-config python3-dev qt5-image-formats-plugins tcl tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     local packages=()
@@ -847,7 +847,7 @@ _install_rhel_packages() {
         autoconf automake clang clang-devel gcc gcc-c++ gdb git glibc-devel \
         bzip2-devel libffi-devel libtool llvm llvm-devel llvm-libs make \
         pcre2-devel pkg-config pkgconf pkgconf-m4 pkgconf-pkg-config python3 \
-        python3-devel python3-pip python3-click qt5-qtbase-devel qt5-qtcharts-devel \
+        python3-devel python3-pip qt5-qtbase-devel qt5-qtcharts-devel \
         qt5-qtimageformats readline tcl-devel tcl-tclreadline \
         tcl-tclreadline-devel tcl-thread-devel tcllib wget yaml-cpp-devel \
         zlib-devel tzdata redhat-rpm-config rpm-build
@@ -886,7 +886,7 @@ _install_opensuse_packages() {
         binutils clang gcc gcc11-c++ git groff gzip lcov libbz2-devel libffi-devel \
         libgomp1 libomp11-devel libpython3_6m1_0 libqt5-creator libqt5-qtbase \
         libqt5-qtstyleplugins libstdc++6-devel-gcc8 llvm pandoc \
-        pcre2-devel pkg-config python3-devel python3-pip python3-click qimgv readline-devel tcl \
+        pcre2-devel pkg-config python3-devel python3-pip readline-devel tcl \
         tcl-devel tcllib wget yaml-cpp-devel zlib-devel
 
     _execute "Setting gcc alternatives..." update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -935,7 +935,7 @@ _install_debian_packages() {
         automake autotools-dev binutils bison build-essential clang debhelper \
         devscripts flex g++ gcc git groff lcov libbz2-dev libffi-dev libfl-dev libgomp1 \
         libomp-dev libpcre2-dev libreadline-dev "libtcl${tcl_ver}" \
-        pandoc pkg-config python3-dev python3-click qt5-image-formats-plugins tcl-dev tcl-tclreadline \
+        pandoc pkg-config python3-dev qt5-image-formats-plugins tcl-dev tcl-tclreadline \
         tcllib unzip wget libyaml-cpp-dev zlib1g-dev tzdata
 
     if [[ "${debian_version}" == "10" ]]; then
@@ -960,9 +960,9 @@ _install_ci_packages() {
     log "Install CI dependencies (-ci)"
     _execute "Updating package lists..." apt-get -y update
     _execute "Installing CI packages..." apt-get -y install --no-install-recommends \
-        apt-transport-https ca-certificates curl default-jdk gnupg python3 \
-        python3-pip python3-pandas jq lsb-release parallel \
-        software-properties-common time unzip zip
+        apt-transport-https ca-certificates curl gnupg jq lsb-release parallel \
+        python3 python3-pandas python3-pip software-properties-common \
+        time unzip zip
 
     _execute "Downloading bazelisk..." curl -Lo bazelisk https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64
     chmod +x bazelisk

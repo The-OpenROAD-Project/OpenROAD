@@ -58,8 +58,9 @@ global_route
 This command sets the minimum and maximum routing layers for signal and clock nets.
 Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
+<!-- checker: skip -->
 ```tcl
-set_routing_layers 
+set_routing_layers
     [-signal min-max]
     [-clock min-max]
 ```
@@ -86,20 +87,6 @@ set_macro_extension extension
 | Argument Name | Description | 
 | ----- | ----- |
 | `extension` | Number of `GCells` added to the blockage boundaries from macros. The default `GCell` size is 15 `M3` pitches. |
-
-### Set Pin Offset
-
-This command sets the pin offset distance.
-
-```tcl
-set_pin_offset offset 
-```
-
-#### Options
-
-| Argument Name | Description | 
-| ----- | ----- |
-| `offset` | Pin offset in microns (must be a positive integer). | 
 
 ### Set Global Routing Layer Adjustment
 
@@ -235,17 +222,13 @@ repair_antennas
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
 
 
-### Plot Global Routing Guides
+### Draw Route Segments
 
-The `draw_route_guides` command plots the route guides for a set of nets.
-It also plots the route segments for a set of nets when using the -show_segments flag.
-To erase the route guides from the GUI, pass an empty list to this command:
-`draw_route_guides {}`.
+The `draw_route_segments` command draws the route segments for a set of nets in the GUI.
 
 ```tcl
-draw_route_guides 
+draw_route_segments
     net_names
-    [-show_segments]
     [-show_pin_locations]
 ```
 
@@ -253,8 +236,7 @@ draw_route_guides
 
 | Switch Name | Description |
 | ----- | ----- |
-| `net_names` | Tcl list of set of nets (e.g. `{net1, net2}`). |
-| `-show_segments` | Draw the route segments instead of the route guides. |
+| `net_names` | Tcl list of nets (e.g. `{net1 net2}`). |
 | `-show_pin_locations` | Draw circles for the pin positions on the routing grid. |
 
 ### Report Wirelength
