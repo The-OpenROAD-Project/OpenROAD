@@ -3,9 +3,12 @@
 
 #include "gc/FlexGC.h"
 
+#include <algorithm>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -23,6 +26,47 @@
 #include "utl/Logger.h"
 
 namespace drt {
+
+namespace {
+
+std::vector<std::string> getMarkerSourceKey(const frMarker* marker)
+{
+  std::vector<std::string> keys;
+  keys.reserve(marker->getSrcs().size());
+  for (auto* src : marker->getSrcs()) {
+    if (src == nullptr) {
+      keys.emplace_back();
+      continue;
+    }
+    switch (src->typeId()) {
+      case frcNet:
+        keys.push_back(static_cast<frNet*>(src)->getName());
+        break;
+      case frcInstTerm: {
+        auto* inst_term = static_cast<frInstTerm*>(src);
+        keys.push_back(inst_term->getInst()->getName() + "/"
+                       + inst_term->getTerm()->getName());
+        break;
+      }
+      case frcBTerm:
+        keys.push_back(static_cast<frBTerm*>(src)->getName());
+        break;
+      case frcInstBlockage:
+        keys.push_back(static_cast<frInstBlockage*>(src)->getInst()->getName());
+        break;
+      case frcInst:
+        keys.push_back(static_cast<frInst*>(src)->getName());
+        break;
+      default:
+        keys.push_back(std::to_string(static_cast<int>(src->typeId())) + ":"
+                       + std::to_string(src->getId()));
+        break;
+    }
+  }
+  return keys;
+}
+
+}  // namespace
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,
                            utl::Logger* logger,
@@ -73,6 +117,48 @@ void FlexGCWorker::Impl::addMarker(std::unique_ptr<frMarker> in)
   }
   mapMarkers_[{bbox, layerNum, con, in->getSrcs()}] = in.get();
   markers_.push_back(std::move(in));
+}
+
+void FlexGCWorker::Impl::normalizeMarkerOrder()
+{
+  auto same_run = [](const frMarker* lhs, const frMarker* rhs) {
+    const auto lhs_bbox = lhs->getBBox();
+    const auto rhs_bbox = rhs->getBBox();
+    const auto lhs_constraint_id
+        = lhs->getConstraint() == nullptr ? -1 : lhs->getConstraint()->getId();
+    const auto rhs_constraint_id
+        = rhs->getConstraint() == nullptr ? -1 : rhs->getConstraint()->getId();
+    return lhs->getLayerNum() == rhs->getLayerNum()
+           && lhs_constraint_id == rhs_constraint_id
+           && lhs_bbox.xMin() == rhs_bbox.xMin()
+           && lhs_bbox.xMax() == rhs_bbox.xMax()
+           && getMarkerSourceKey(lhs) == getMarkerSourceKey(rhs);
+  };
+
+  auto less_in_run = [](const std::unique_ptr<frMarker>& lhs,
+                        const std::unique_ptr<frMarker>& rhs) {
+    const auto lhs_bbox = lhs->getBBox();
+    const auto rhs_bbox = rhs->getBBox();
+    if (lhs_bbox.yMin() != rhs_bbox.yMin()) {
+      return lhs_bbox.yMin() < rhs_bbox.yMin();
+    }
+    if (lhs_bbox.yMax() != rhs_bbox.yMax()) {
+      return lhs_bbox.yMax() > rhs_bbox.yMax();
+    }
+    return lhs_bbox.area() > rhs_bbox.area();
+  };
+
+  auto begin = markers_.begin();
+  while (begin != markers_.end()) {
+    auto end = std::next(begin);
+    while (end != markers_.end() && same_run(begin->get(), end->get())) {
+      ++end;
+    }
+    if (std::distance(begin, end) > 1) {
+      std::stable_sort(begin, end, less_in_run);
+    }
+    begin = end;
+  }
 }
 
 void FlexGCWorker::addPAObj(frConnFig* obj, frBlockObject* owner)

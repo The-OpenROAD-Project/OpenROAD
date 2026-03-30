@@ -44,11 +44,9 @@ cc_library(
     hdrs = [
         "include/ifp/MakeInitFloorplan.hh",
     ],
-    copts = [
-        "-Isrc/ifp/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",

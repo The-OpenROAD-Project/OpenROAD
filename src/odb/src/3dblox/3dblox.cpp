@@ -37,6 +37,7 @@
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "verilogWriter.h"
 namespace odb {
 
 static std::map<std::string, std::string> dup_orient_map
@@ -301,8 +302,21 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
 
   writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
 
+  // Write the Verilog connectivity file for this HIER chiplet.
+  writeVerilog(current_dir_path + chip->getName() + ".v", chip);
+
   DbxWriter writer(logger_, db_);
   writer.writeChiplet(dbx_file, chip);
+}
+
+void ThreeDBlox::writeVerilog(const std::string& verilog_file,
+                              odb::dbChip* chip)
+{
+  if (chip == nullptr) {
+    return;
+  }
+  VerilogWriter writer(logger_);
+  writer.writeChiplet(verilog_file, chip);
 }
 
 void ThreeDBlox::writeBMap(const std::string& bmap_file,
