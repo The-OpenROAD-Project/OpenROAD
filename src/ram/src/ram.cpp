@@ -315,7 +315,7 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
                and2_cell_,
                {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
                 {and2_pins_[{PinRoleType::DataIn, 1}], input_net},
-                {and2_pins_[{PinRoleType::DataIn, 0}], prev_net}});
+                {and2_pins_[{PinRoleType::DataOut, 0}], prev_net}});
       prev_net = input_net;
     }
   }
