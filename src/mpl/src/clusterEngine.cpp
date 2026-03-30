@@ -32,12 +32,10 @@ namespace mpl {
 using utl::MPL;
 
 ClusteringEngine::ClusteringEngine(odb::dbBlock* block,
-                                   sta::dbNetwork* network,
                                    utl::Logger* logger,
                                    par::PartitionMgr* triton_part,
                                    MplObserver* graphics)
     : block_(block),
-      network_(network),
       logger_(logger),
       triton_part_(triton_part),
       graphics_(graphics)
@@ -90,6 +88,11 @@ void ClusteringEngine::setHalos(
   macro_to_halo_ = macro_to_halo;
 }
 
+void ClusteringEngine::setUseDefHalo(bool use_def_halo)
+{
+  use_def_halo_ = use_def_halo;
+}
+
 // Check if macro placement is both needed and feasible.
 // Also report some design data relevant for the user and
 // initialize the tree with data from the design.
@@ -118,12 +121,13 @@ void ClusteringEngine::init()
       = tree_->macro_with_halo_area + design_metrics_->getStdCellArea();
 
   if (inst_area_with_halos > tree_->floorplan_shape.area()) {
-    logger_->error(MPL,
-                   16,
-                   "The instance area considering the macros' halos {} exceeds "
-                   "the floorplan area {}",
-                   inst_area_with_halos,
-                   tree_->floorplan_shape.area());
+    logger_->error(
+        MPL,
+        16,
+        "The instance area considering the macros' halos {:.2f}um^2 exceeds "
+        "the floorplan area {:.2f}um^2",
+        block_->dbuAreaToMicrons(static_cast<int64_t>(inst_area_with_halos)),
+        block_->dbuAreaToMicrons(tree_->floorplan_shape.area()));
   }
 
   tree_->io_pads = getIOPads();
@@ -305,8 +309,7 @@ void ClusteringEngine::reportDesignData()
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tHalo width: {:.2f}\n"
-      "\tHalo height: {:.2f}\n"
+      "\tDefault halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -317,8 +320,10 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->default_halo.width),
-      block_->dbuToMicrons(tree_->default_halo.height),
+      block_->dbuToMicrons(tree_->default_halo.left),
+      block_->dbuToMicrons(tree_->default_halo.bottom),
+      block_->dbuToMicrons(tree_->default_halo.right),
+      block_->dbuToMicrons(tree_->default_halo.top),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2076,9 +2081,15 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      HardMacro::Halo halo = macro_to_halo_.contains(inst)
-                                 ? macro_to_halo_.at(inst)
-                                 : tree_->default_halo;
+      HardMacro::Halo halo;
+
+      if (macro_to_halo_.contains(inst)) {
+        halo = macro_to_halo_.at(inst);
+      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
+        halo = HardMacro::Halo(inst->getHalo());
+      } else {
+        halo = tree_->default_halo;
+      }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
 

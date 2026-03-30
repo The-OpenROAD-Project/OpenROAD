@@ -36,11 +36,12 @@ proc report_cell_usage { args } {
   report_cell_usage_cmd $module $verbose $file_name $stage_name
 }
 
-define_cmd_args "report_timing_histogram" {[-num_bins num_bins] [-setup|-hold]}
+define_cmd_args "report_timing_histogram" \
+  {[-num_bins num_bins] [-bin_size bin_size] [-setup|-hold]}
 
 proc report_timing_histogram { args } {
   parse_key_args "report_timing_histogram" args \
-    keys {-num_bins} \
+    keys {-num_bins -bin_size} \
     flags {-setup -hold}
 
   check_argc_eq0 "report_timing_histogram" $args
@@ -49,9 +50,21 @@ proc report_timing_histogram { args } {
     utl::error STA 7 "Both -setup and -hold cannot be specified"
   }
 
+  if { [info exists keys(-num_bins)] && [info exists keys(-bin_size)] } {
+    utl::error STA 73 "Both -num_bins and -bin_size cannot be specified"
+  }
+
   set num_bins 10
   if { [info exists keys(-num_bins)] } {
     set num_bins $keys(-num_bins)
+  }
+
+  set bin_size 0.0
+  if { [info exists keys(-bin_size)] } {
+    set bin_size $keys(-bin_size)
+    if { $bin_size <= 0 } {
+      utl::error STA 74 "-bin_size must be a positive value"
+    }
   }
 
   set min_max max
@@ -59,7 +72,7 @@ proc report_timing_histogram { args } {
     set min_max min
   }
 
-  report_timing_histogram_cmd $num_bins $min_max
+  report_timing_histogram_cmd $num_bins $min_max $bin_size
 }
 
 define_cmd_args "report_logic_depth_histogram" { \
@@ -148,6 +161,40 @@ proc check_axioms { args } {
 
 proc endpoint_path_count { } {
   return [endpoint_count]
+}
+
+define_cmd_args "check_ip" {
+  [-master master_name]
+  [-all]
+  [-max_polygons count]
+  [-verbose]
+}
+
+proc check_ip { args } {
+  parse_key_args "check_ip" args \
+    keys {-master -max_polygons} \
+    flags {-all -verbose}
+
+  set master_name ""
+  if { [info exists keys(-master)] } {
+    set master_name $keys(-master)
+  }
+
+  set check_all [info exists flags(-all)]
+
+  if { !$check_all && $master_name eq "" } {
+    utl::error CHK 7 "Must specify either -master or -all"
+  }
+
+  set max_polygons 10000
+  if { [info exists keys(-max_polygons)] } {
+    set max_polygons $keys(-max_polygons)
+    sta::check_positive_integer "-max_polygons" $max_polygons
+  }
+
+  set verbose [info exists flags(-verbose)]
+
+  return [sta::check_ip_cmd $master_name $check_all $max_polygons $verbose]
 }
 
 # namespace

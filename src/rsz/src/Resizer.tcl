@@ -240,7 +240,8 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-slack_margin slack_margin]\
                                         [-libraries libs]\
                                         [-allow_setup_violations]\
-                                        [-sequence move_string]\
+                                        [-sequence move_list]\
+                                        [-phases phases]\
                                         [-skip_pin_swap]\
                                         [-skip_gate_cloning]\
                                         [-skip_size_down]\
@@ -262,6 +263,7 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent -sequence \
+            -phases \
             -recover_power -repair_tns -max_passes -max_iterations -max_repairs_per_pass} \
     flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning \
              -skip_size_down -skip_buffering -skip_buffer_removal -skip_last_gasp \
@@ -293,6 +295,12 @@ proc repair_timing { args } {
     set sequence $keys(-sequence)
   } else {
     set sequence ""
+  }
+
+  if { [info exists keys(-phases)] } {
+    set phases $keys(-phases)
+  } else {
+    set phases ""
   }
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
@@ -364,7 +372,7 @@ proc repair_timing { args } {
     if { $setup } {
       set repaired_setup [rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
         $max_iterations $max_repairs_per_pass $match_cell_footprint $verbose \
-        $sequence \
+        $sequence $phases \
         $skip_pin_swap $skip_gate_cloning $skip_size_down $skip_buffering \
         $skip_buffer_removal $skip_last_gasp $skip_vt_swap $skip_crit_vt_swap]
     }
@@ -389,10 +397,10 @@ proc report_design_area { args } {
   utl::report "Design area ${area} um^2 ${util}% utilization."
 }
 
-sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]} ;# checker off
+sta::define_cmd_args "report_floating_nets" {[-verbose] [> filename] [>> filename]}
 
 sta::proc_redirect report_floating_nets {
-  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose};# checker off
+  sta::parse_key_args "report_floating_nets" args keys {} flags {-verbose}
 
   set verbose [info exists flags(-verbose)]
   set floating_nets [rsz::find_floating_nets]
@@ -423,12 +431,12 @@ sta::proc_redirect report_floating_nets {
 sta::define_cmd_args "report_overdriven_nets" {[-include_parallel_driven] \
                                                [-verbose] \
                                                [> filename] \
-                                               [>> filename]} ;# checker off
+                                               [>> filename]}
 
 sta::proc_redirect report_overdriven_nets {
   sta::parse_key_args "report_overdriven_nets" args \
     keys {} \
-    flags {-verbose -include_parallel_driven};# checker off
+    flags {-verbose -include_parallel_driven}
 
   set verbose [info exists flags(-verbose)]
   set overdriven_nets [rsz::find_overdriven_nets [info exists flags(-include_parallel_driven)]]
@@ -462,7 +470,7 @@ sta::proc_redirect report_long_wires {
   rsz::report_long_wires_cmd $count $digits
 }
 
-sta::define_cmd_args "eliminate_dead_logic" {}
+sta::define_cmd_args "eliminate_dead_logic" {} ;# checker off
 proc eliminate_dead_logic { } {
   rsz::eliminate_dead_logic_cmd 1
 }
@@ -760,14 +768,15 @@ proc replace_arith_modules { args } {
   } else {
     set target "setup"
   }
-  if { [info exists keys(-slack_margin)] } {
-    set slack_margin [rsz::parse_time_margin_arg "-slack_margin" keys]
+  if { [info exists keys(-slack_threshold)] } {
+    set slack_threshold [rsz::parse_time_margin_arg "-slack_threshold" keys]
   } else {
-    set slack_margin 0.0
+    set slack_threshold 0.0
   }
 
-  puts "replace_arith_module -path_count $path_count -target $target -slack_margin $slack_margin"
-  rsz::swap_arith_modules_cmd $path_count $target $slack_margin
+  puts [format "replace_arith_modules -path_count %s -target %s -slack_threshold %s" \
+    $path_count $target $slack_threshold]
+  rsz::swap_arith_modules_cmd $path_count $target $slack_threshold
 }
 
 sta::define_cmd_args "report_buffers" { [-filtered] }

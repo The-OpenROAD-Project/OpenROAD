@@ -6,6 +6,7 @@
 #include <string>
 
 #include "definBase.h"
+#include "definTypes.h"
 
 namespace odb {
 

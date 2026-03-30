@@ -37,6 +37,7 @@ cc_library(
     deps = [
         "//src/odb",
         "//src/utl",
+        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
         "@boost.asio",
         "@boost.bind",
@@ -69,7 +70,7 @@ cc_library(
         "//src/utl",
         "@boost.asio",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

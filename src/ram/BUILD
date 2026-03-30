@@ -16,13 +16,13 @@ cc_library(
     srcs = [
         "src/MakeRam.cpp",
         "src/layout.cpp",
-        "src/layout.h",
         "src/ram.cpp",
         ":swig",
         ":tcl",
     ],
     hdrs = [
         "include/ram/MakeRam.h",
+        "include/ram/layout.h",
         "include/ram/ram.h",
     ],
     includes = [
@@ -40,7 +40,7 @@ cc_library(
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

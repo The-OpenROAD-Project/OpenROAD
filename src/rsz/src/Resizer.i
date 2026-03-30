@@ -366,6 +366,7 @@ repair_setup(double setup_margin,
              bool match_cell_footprint,
              bool verbose,
              std::vector<rsz::MoveType> sequence,
+             const char* phases,
              bool skip_pin_swap,
              bool skip_gate_cloning,
              bool skip_size_down,
@@ -380,7 +381,7 @@ repair_setup(double setup_margin,
   return resizer->repairSetup(setup_margin, repair_tns_end_percent,
                        max_passes, max_iterations,
                        max_repairs_per_pass, match_cell_footprint,
-                       verbose, sequence,
+                       verbose, sequence, phases,
                        skip_pin_swap, skip_gate_cloning,
                        skip_size_down,
                        skip_buffering, skip_buffer_removal,
@@ -575,7 +576,9 @@ PinSet
 find_fanin_fanouts(PinSet* pins)
 {
   Resizer *resizer = getResizer();
-  return resizer->findFaninFanouts(*pins);
+  PinSet result = resizer->findFaninFanouts(*pins);
+  delete pins; // memory leak fix
+  return result;
 }
 
 void

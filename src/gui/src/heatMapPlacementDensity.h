@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "gui/heatMap.h"
 #include "odb/dbBlockCallBackObj.h"
 
@@ -16,12 +18,16 @@ class PlacementDensityDataSource : public HeatMapDataSource,
 
   odb::Rect getBounds() const override { return getBlock()->getCoreArea(); }
 
+  std::string getSelectionFilterLabel() const override
+  {
+    return "Only use selected instances";
+  }
+
   void onShow() override;
   void onHide() override;
 
   // from dbBlockCallBackObj API
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
   void inDbInstPlacementStatusBefore(odb::dbInst*,
                                      const odb::dbPlacementStatus&) override;

@@ -639,7 +639,7 @@ uint32_t dbMaster::isMarked()
 void dbMaster::setSpecialPower(bool value)
 {
   _dbMaster* master = (_dbMaster*) this;
-  master->flags_.special_power = (value == true) ? 1 : 0;
+  master->flags_.special_power = (value) ? 1 : 0;
 }
 
 bool dbMaster::isSpecialPower()

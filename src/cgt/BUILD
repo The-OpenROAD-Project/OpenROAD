@@ -2,6 +2,7 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -43,7 +44,7 @@ cc_library(
         "//src/utl",
         "@abc",
         "@boost.stacktrace",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -65,4 +66,21 @@ tcl_wrap_cc(
     module = "cgt",
     namespace_prefix = "cgt",
     root_swig_src = "src/cgt.i",
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/cgt/ClockGating.h",
+        "src/cgt-py.i",
+        "//:error_swig-py",
+    ],
+    module = "cgt_py",
+    root_swig_src = "src/cgt-py.i",
+    swig_includes = [
+        "include",
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
 )

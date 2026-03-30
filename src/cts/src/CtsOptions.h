@@ -331,7 +331,6 @@ class CtsOptions : public odb::dbBlockCallBackObj
 
   // Callbacks
   void inDbInstCreate(odb::dbInst* inst) override;
-  void inDbInstCreate(odb::dbInst* inst, odb::dbRegion* region) override;
 
   void setRepairClockNets(bool value) { repairClockNets_ = value; }
   bool getRepairClockNets() { return repairClockNets_; }

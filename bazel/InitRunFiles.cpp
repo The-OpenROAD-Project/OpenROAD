@@ -1,6 +1,7 @@
 #include <unistd.h>
 
 #include <climits>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -55,11 +56,11 @@ class BazelInitializer
     }
 
     // Set the TCL_LIBRARY environment variable
-    const std::string tcl_path = runfiles->Rlocation("tk_tcl/library/");
+    const std::string tcl_path = runfiles->Rlocation("tcl_lang/library/");
     if (!tcl_path.empty()) {
-      setenv("TCL_LIBRARY", tcl_path.c_str(), 0);
+      setenv("TCL_LIBRARY", tcl_path.c_str(), true);
     } else {
-      std::cerr << "Error: Could not locate 'tk_tcl/library/' in runfiles."
+      std::cerr << "Error: Could not locate 'tcl_lang/library/' in runfiles."
                 << std::endl;
       std::exit(1);
     }

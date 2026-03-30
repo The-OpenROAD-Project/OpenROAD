@@ -22,7 +22,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       populated_(false),
       colors_correct_(false),
       issue_redraw_(true),
-      block_(nullptr),
+      chip_(nullptr),
       logger_(logger),
       grid_x_size_(10.0),
       grid_y_size_(10.0),
@@ -242,7 +242,7 @@ void PowerDensityDataSource::combineMapData(bool base_has_value,
 {
 }
 
-sta::Scene* PowerDensityDataSource::getCorner() const
+sta::Scene* PowerDensityDataSource::getScene() const
 {
   return nullptr;
 }

@@ -12,6 +12,7 @@
 #include <iterator>
 #include <set>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -885,7 +886,7 @@ void dbNet::setSpef(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
-  net->flags_.spef = (value == true) ? 1 : 0;
+  net->flags_.spef = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -912,7 +913,7 @@ void dbNet::setSelect(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
-  net->flags_.select = (value == true) ? 1 : 0;
+  net->flags_.select = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -973,7 +974,7 @@ void dbNet::setMark(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
-  net->flags_.mark = (value == true) ? 1 : 0;
+  net->flags_.mark = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1000,7 +1001,7 @@ void dbNet::setMark_1(bool value)
   _dbNet* net = (_dbNet*) this;
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
-  net->flags_.mark_1 = (value == true) ? 1 : 0;
+  net->flags_.mark_1 = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1029,7 +1030,7 @@ void dbNet::setWireOrdered(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
 
-  net->flags_.wire_ordered = (value == true) ? 1 : 0;
+  net->flags_.wire_ordered = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1058,7 +1059,7 @@ void dbNet::setDisconnected(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
 
-  net->flags_.disconnected = (value == true) ? 1 : 0;
+  net->flags_.disconnected = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1081,7 +1082,7 @@ void dbNet::setWireAltered(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
 
-  net->flags_.wire_altered = (value == true) ? 1 : 0;
+  net->flags_.wire_altered = (value) ? 1 : 0;
   if (value) {
     net->flags_.wire_ordered = 0;
   }
@@ -1113,7 +1114,7 @@ void dbNet::setExtracted(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
 
-  net->flags_.extracted = (value == true) ? 1 : 0;
+  net->flags_.extracted = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1142,7 +1143,7 @@ void dbNet::setRCgraph(bool value)
   _dbBlock* block = (_dbBlock*) net->getOwner();
   uint32_t prev_flags = flagsToUInt(net);
 
-  net->flags_.rc_graph = (value == true) ? 1 : 0;
+  net->flags_.rc_graph = (value) ? 1 : 0;
 
   debugPrint(getImpl()->getLogger(),
              utl::ODB,
@@ -1962,7 +1963,7 @@ double dbNet::getTotalCapacitance(uint32_t corner, bool cc)
     }
   } else {
     for (dbRSeg* rc : getRSegs()) {
-      cap1 = rc->getCapacitance(corner);
+      cap1 = rc->getGroundCapacitance(corner);
       cap += cap1;
     }
   }
@@ -2220,8 +2221,7 @@ dbNet* dbNet::create(dbBlock* block,
                      const dbNameUniquifyType& uniquify,
                      dbModule* parent_module)
 {
-  std::string net_name = block->makeNewNetName(
-      parent_module ? parent_module->getModInst() : nullptr, name, uniquify);
+  std::string net_name = block->makeNewNetName(parent_module, name, uniquify);
   return create(block, net_name.c_str());
 }
 
@@ -2453,6 +2453,9 @@ void dbNet::checkSanity() const
 
   // Check the consistency with the related dbModNet
   checkSanityModNetConsistency();
+
+  // Check name collision with ModNet/ModBTerm
+  checkSanityNameCollision();
 }
 
 dbModInst* dbNet::findMainParentModInst() const
@@ -2594,7 +2597,7 @@ bool dbNet::isDeeperThan(const dbNet* net) const
 dbModNet* dbNet::findModNetInHighestHier() const
 {
   std::set<dbModNet*> modnets;
-  if (findRelatedModNets(modnets) == false) {
+  if (!findRelatedModNets(modnets)) {
     return nullptr;
   }
 
@@ -2628,7 +2631,7 @@ void dbNet::renameWithModNetInHighestHier()
   }
 }
 
-bool dbNet::isInternalTo(dbModule* module) const
+bool dbNet::isInternalTo(const dbModule* module) const
 {
   // If it's connected to any top-level ports (BTerms), it's not internal.
   if (!getBTerms().empty()) {
@@ -2687,7 +2690,7 @@ void dbNet::checkSanityModNetConsistency() const
   std::ranges::set_difference(
       flat_iterms, hier_iterms, std::back_inserter(iterms_in_flat_only));
 
-  if (iterms_in_flat_only.empty() == false) {
+  if (!iterms_in_flat_only.empty()) {
     issued_warning = true;
     logger->warn(utl::ODB,
                  484,
@@ -2703,7 +2706,7 @@ void dbNet::checkSanityModNetConsistency() const
   std::ranges::set_difference(
       hier_iterms, flat_iterms, std::back_inserter(iterms_in_hier_only));
 
-  if (iterms_in_hier_only.empty() == false) {
+  if (!iterms_in_hier_only.empty()) {
     issued_warning = true;
     logger->warn(utl::ODB,
                  488,
@@ -2723,7 +2726,7 @@ void dbNet::checkSanityModNetConsistency() const
   std::ranges::set_difference(
       flat_bterms, hier_bterms, std::back_inserter(bterms_in_flat_only));
 
-  if (bterms_in_flat_only.empty() == false) {
+  if (!bterms_in_flat_only.empty()) {
     issued_warning = true;
     logger->warn(utl::ODB,
                  486,
@@ -2739,7 +2742,7 @@ void dbNet::checkSanityModNetConsistency() const
   std::ranges::set_difference(
       hier_bterms, flat_bterms, std::back_inserter(bterms_in_hier_only));
 
-  if (bterms_in_hier_only.empty() == false) {
+  if (!bterms_in_hier_only.empty()) {
     issued_warning = true;
     logger->warn(utl::ODB,
                  490,
@@ -2758,6 +2761,81 @@ void dbNet::checkSanityModNetConsistency() const
   if (issued_warning) {
     dump(true);
   }
+}
+
+void dbNet::checkSanityNameCollision() const
+{
+  dbBlock* block = getBlock();
+  if (!block->getDb()->hasHierarchy()) {
+    return;
+  }
+
+  dbModule* module = findMainParentModule();
+  const char* base_name = block->getBaseName(getConstName());
+
+  // Check if base name collides with a ModNet or ModBTerm in this module
+  bool collides = module->getModNet(base_name) != nullptr
+                  || module->findModBTerm(base_name) != nullptr;
+  if (!collides) {
+    return;
+  }
+
+  // Check if this flat net is associated with the colliding ModNet
+  // by traversing the hierarchy. If any related ModNet has the same
+  // name in the same module, it's the same logical signal.
+  std::set<dbModNet*> related_modnets;
+  findRelatedModNets(related_modnets);
+  for (dbModNet* mn : related_modnets) {
+    if (mn->getParent() == module
+        && std::string_view{mn->getConstName()} == base_name) {
+      return;
+    }
+  }
+
+  // Cross-check from the ModNet side. Suppress when the matching
+  // hierarchical object positively resolves back to THIS flat net.
+  // When unresolvable (nullptr), suppress only if the ModNet has some
+  // connections -- likely a legitimate but unresolvable hierarchical
+  // pairing. A totally disconnected (orphan) ModNet IS a collision.
+  auto has_connections = [](dbModNet* mn) {
+    return !mn->getITerms().empty() || !mn->getBTerms().empty()
+           || !mn->getModITerms().empty() || !mn->getModBTerms().empty();
+  };
+
+  dbModNet* matching_modnet = module->getModNet(base_name);
+  if (matching_modnet) {
+    dbNet* other = matching_modnet->findRelatedNet();
+    if (other == this) {
+      return;
+    }
+    if (other == nullptr && has_connections(matching_modnet)) {
+      return;
+    }
+  } else {
+    // Only ModBTerm matches -- check its ModNet
+    dbModBTerm* matching_modbterm = module->findModBTerm(base_name);
+    if (matching_modbterm) {
+      dbModNet* bt_modnet = matching_modbterm->getModNet();
+      if (bt_modnet != nullptr) {
+        dbNet* other = bt_modnet->findRelatedNet();
+        if (other == this) {
+          return;
+        }
+        if (other == nullptr && has_connections(bt_modnet)) {
+          return;
+        }
+      }
+    }
+  }
+
+  utl::Logger* logger = getImpl()->getLogger();
+  logger->error(utl::ODB,
+                493,
+                "SanityCheck: Flat net '{}' (base '{}') has a name collision "
+                "with ModNet/ModBTerm in module '{}'.",
+                getConstName(),
+                base_name,
+                module->getName());
 }
 
 void dbNet::dumpConnectivity(int level) const

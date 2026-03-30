@@ -5,6 +5,7 @@
 
 #include <cassert>
 
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 

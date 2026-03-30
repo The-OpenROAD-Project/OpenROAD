@@ -1,5 +1,9 @@
 common --enable_bzlmod
-common --enable_workspace  # explicitly currently still needing this
+build --workspace_status_command=tools/workspace_status.sh
+
+# Release builds embed real git version info; dev builds use cache-safe placeholders.
+# Usage: bazel build --config=release //...
+build:release --stamp
 
 # suppress distracting warning about newer module
 # versions found in dependency graph.
@@ -11,6 +15,7 @@ test --test_timeout=300,1800,1800,9600
 # bazel 7 is somewhat forgiving for glob patterns that don't
 # match, but bazel 8 will be strict. So start now.
 common --incompatible_disallow_empty_glob
+common --experimental_isolated_extension_usages
 
 build --cxxopt "-std=c++20"        --host_cxxopt "-std=c++20"
 build --cxxopt "-xc++"             --host_cxxopt "-xc++"
@@ -38,28 +43,39 @@ build --copt "-Wextra"             --host_copt "-Wextra"
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
 build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
-build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
 build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
 build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declarations"
 build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
+build --cxxopt "-Wno-c++20-designator"   --host_cxxopt "-Wno-c++20-designator"
 
 # The warning acceptance bar in CI for PRs is set by -Werror of a specific
 # version of some chosen compiler. Disable warnings from other compilers until
 # they are fixed and under CI -Werror acceptance critera as there is nothing the
 # developers can(they can't be reproduced locally or in CI) or should do about
 # these warnings in code they are not working on.
-build --copt "-Wno-unused-private-field"  --host_copt "-Wno-unused-private-field"
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
-build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
-build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
-build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
+build --cxxopt "-Wno-deprecated-copy"  --host_cxxopt "-Wno-deprecated-copy"
+build --cxxopt "-Wno-deprecated-copy-with-user-provided-copy"  --host_cxxopt "-Wno-deprecated-copy-with-user-provided-copy"
+build --cxxopt "-Wno-dangling"  --host_cxxopt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.
 build --per_file_copt=.*external/.*@-w
 build --host_per_file_copt=.*external/.*@-w
+
+##### Platform-specific configs (auto-selected) #############
+# --enable_platform_specific_config makes bazel automatically apply
+# build:macos on macOS, build:linux on Linux, etc.
+common --enable_platform_specific_config
+
+# macOS: boost.stacktrace needs this since backtrace() doesn't require GNU source
+build:macos --copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+build:macos --host_copt=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+# Aligned allocation/deallocation for abseil is only available since 10.13
+build:macos --macos_minimum_os=10.13
+build:macos --host_macos_minimum_os=10.13
 
 # Settings for --config=asan address sanitizer build
 build:asan --strip=never
@@ -76,8 +92,9 @@ build:profile --copt -g --host_copt -g
 build:profile --copt -gmlt --host_copt -gmlt
 build:profile --copt -fno-omit-frame-pointer --host_copt -fno-omit-frame-pointer
 
-# TODO: document
+# Improve hermeticity by disallowing user envars and network access
 build --incompatible_strict_action_env
+build --nosandbox_default_allow_network
 
 test --build_tests_only
 

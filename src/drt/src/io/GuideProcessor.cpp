@@ -411,8 +411,8 @@ void initGuideIntervals(const std::vector<frRect>& rects,
     const frCoord x2 = idx2.x();
     const frCoord y2 = idx2.y();
     const frLayerNum layer_num = rect.getLayerNum();
-    const bool is_horizontal = design->getTech()->getLayer(layer_num)->getDir()
-                               == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal
+        = design->getTech()->getLayer(layer_num)->isHorizontal();
     if (is_horizontal) {
       for (auto track_idx = y1; track_idx <= y2; track_idx++) {
         intvs[layer_num][track_idx].insert(Interval::closed(x1, x2));
@@ -761,12 +761,10 @@ void GuideProcessor::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
     for (auto& rect : rects) {
       frLayerNum layerNum = rect.getLayerNum();
       odb::Rect guideBBox = rect.getBBox();
-      frCoord guideWidth = (getTech()->getLayer(layerNum)->getDir()
-                            == dbTechLayerDir::HORIZONTAL)
+      frCoord guideWidth = getTech()->getLayer(layerNum)->isHorizontal()
                                ? guideBBox.dy()
                                : guideBBox.dx();
-      if (getTech()->getLayer(layerNum)->getDir()
-          == dbTechLayerDir::HORIZONTAL) {
+      if (getTech()->getLayer(layerNum)->isHorizontal()) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
         }
@@ -1187,8 +1185,7 @@ void GuideProcessor::genGuides_split(
   std::vector<std::map<frCoord, std::map<frCoord, frBlockObjectSet>>>
       pin_helper(getTech()->getLayers().size());
   for (const auto& [point, pins] : gcell_pin_map) {
-    if (getTech()->getLayer(point.z())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
+    if (getTech()->getLayer(point.z())->isHorizontal()) {
       pin_helper[point.z()][point.y()][point.x()] = pins;
     } else {
       pin_helper[point.z()][point.x()][point.y()] = pins;
@@ -1196,8 +1193,7 @@ void GuideProcessor::genGuides_split(
   }
 
   for (int layer_num = 0; layer_num < (int) intvs.size(); layer_num++) {
-    auto dir = getTech()->getLayer(layer_num)->getDir();
-    const bool is_horizontal = dir == dbTechLayerDir::HORIZONTAL;
+    const bool is_horizontal = getTech()->getLayer(layer_num)->isHorizontal();
     for (auto& [track_idx, curr_intvs] : intvs[layer_num]) {
       // split by lower/upper seg
       for (const auto& intv : curr_intvs) {
@@ -1410,8 +1406,16 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
 
   std::map<Point3D, frBlockObjectSet> gcell_pin_map;
   frBlockObjectMap<std::set<Point3D>> pin_gcell_map;
+  std::vector<frBlockObject*> pins;
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);
+  pins.reserve(net->getInstTerms().size() + net->getBTerms().size());
+  for (auto& inst_term : net->getInstTerms()) {
+    pins.push_back(inst_term);
+  }
+  for (auto& bterm : net->getBTerms()) {
+    pins.push_back(bterm);
+  }
 
   // Run for 3 iterations max
   for (int i = 0; i < 4; i++) {
@@ -1467,6 +1471,7 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
                                 net,
                                 force_pin_feed_through,
                                 rects,
+                                pins,
                                 pin_gcell_map);
     path_finder.setAllowWarnings(i != 0);
     if (path_finder.traverseGraph()) {
@@ -1488,12 +1493,14 @@ GuidePathFinder::GuidePathFinder(
     frNet* net,
     const bool force_feed_through,
     const std::vector<frRect>& rects,
+    const std::vector<frBlockObject*>& pins,
     const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
     : design_(design),
       logger_(logger),
       router_cfg_(router_cfg),
       net_(net),
       force_feed_through_(force_feed_through),
+      pins_(pins),
       pin_gcell_map_(pin_gcell_map),
       rects_(rects)
 {
@@ -1517,8 +1524,12 @@ void GuidePathFinder::buildNodeMap(
   }
   guide_count_ = rects.size();  // total guide cnt
   int node_idx = rects.size();
-  for (const auto& [obj, gcells] : pin_gcell_map) {
-    for (const auto& gcell : gcells) {
+  for (auto* pin : pins_) {
+    const auto it = pin_gcell_map.find(pin);
+    if (it == pin_gcell_map.end()) {
+      continue;
+    }
+    for (const auto& gcell : it->second) {
       node_map_[gcell].insert(node_idx);
     }
     ++node_idx;
@@ -1611,12 +1622,13 @@ void GuidePathFinder::clipGuides(std::vector<frRect>& rects)
     }
     const auto idx = *(indices.begin());
     if (isPinIdx(idx)) {
+      const double dbu_per_uu = design_->getTopBlock()->getDBUPerUU();
       logger_->error(DRT,
                      223,
-                     "Pin dangling id {} ({},{}) {}.",
+                     "Pin dangling id {} ({:.3f}um,{:.3f}um) {}.",
                      idx,
-                     pt.x(),
-                     pt.y(),
+                     pt.x() / (double) dbu_per_uu,
+                     pt.y() / (double) dbu_per_uu,
                      pt.z());
     }
     // no upper/lower guide
@@ -1689,41 +1701,42 @@ GuidePathFinder::commitPathToGuides(
     std::vector<frRect>& rects,
     const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
 {
-  std::vector<frBlockObject*> pins;
-  pins.reserve(getPinCount());
-  for (const auto& [pin, _] : pin_gcell_map) {
-    pins.emplace_back(pin);
-  }
   // find pin in which guide
   std::vector<std::vector<Point3D>> pin_to_gcell
-      = getPinToGCellList(rects, pin_gcell_map, pins);
+      = getPinToGCellList(rects, pin_gcell_map, pins_);
   int pin_idx = 0;
   for (auto& guides : pin_to_gcell) {
     if (guides.empty()) {
       logger_->error(DRT,
                      222,
                      "Pin {} is not visited by any guide",
-                     getPinName(pins[pin_idx]));
+                     getPinName(pins_[pin_idx]));
     }
     ++pin_idx;
   }
   updateNodeMap(rects, pin_to_gcell);
   std::vector<std::pair<frBlockObject*, odb::Point>> gr_pins
-      = getGRPins(pins, pin_to_gcell);
+      = getGRPins(pins_, pin_to_gcell);
   clipGuides(rects);
   mergeGuides(rects);
+  std::vector<std::pair<frLayerNum, odb::Rect>> final_guides;
+  final_guides.reserve(getGuideCount());
   for (int i = 0; i < getGuideCount(); i++) {
     if (!visited_[i]) {
       continue;
     }
-    auto& rect = rects[i];
-    odb::Rect box = rect.getBBox();
+    final_guides.emplace_back(rects[i].getLayerNum(), rects[i].getBBox());
+  }
+  std::sort(final_guides.begin(), final_guides.end());
+  final_guides.erase(std::unique(final_guides.begin(), final_guides.end()),
+                     final_guides.end());
+  for (const auto& [layer_num, box] : final_guides) {
     auto guide = std::make_unique<frGuide>();
     odb::Point begin = getDesign()->getTopBlock()->getGCellCenter(box.ll());
     odb::Point end = getDesign()->getTopBlock()->getGCellCenter(box.ur());
     guide->setPoints(begin, end);
-    guide->setBeginLayerNum(rect.getLayerNum());
-    guide->setEndLayerNum(rect.getLayerNum());
+    guide->setBeginLayerNum(layer_num);
+    guide->setEndLayerNum(layer_num);
     guide->addToNet(net_);
     net_->addGuide(std::move(guide));
   }
@@ -1826,7 +1839,7 @@ bool GuidePathFinder::traverseGraph()
         continue;
       }
       if (curr_wavefront.node_idx > getGuideCount()
-          && visited_[curr_wavefront.node_idx] == false) {
+          && !visited_[curr_wavefront.node_idx]) {
         visited_[curr_wavefront.node_idx] = true;
         prev_idx_[curr_wavefront.node_idx] = curr_wavefront.prev_idx;
         visited_pin = curr_wavefront.node_idx;

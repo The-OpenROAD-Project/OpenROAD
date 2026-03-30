@@ -64,11 +64,11 @@ void SimulatedAnnealing::run(float init_temperature,
   boost::random::uniform_real_distribution<float> distribution;
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      int prev_cost;
+      int64 prev_cost;
       perturbAssignment(prev_cost);
 
       const int64 cost = pre_cost + getDeltaCost(prev_cost);
-      const int delta_cost = cost - pre_cost;
+      const int64 delta_cost = cost - pre_cost;
       debugPrint(logger_,
                  utl::PPL,
                  "annealing",
@@ -226,12 +226,21 @@ void SimulatedAnnealing::randomAssignment()
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
-        while (!free) {
+        int attempts = 0;
+        const int max_attempts = num_slots_ * 10;
+        while (!free && attempts < max_attempts) {
           slot = distribution(generator_);
           free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
+          attempts++;
+        }
+        if (!free) {
+          logger_->error(utl::PPL,
+                         117,
+                         "No available slot found for constrained pin {}.",
+                         io_pin.getName());
         }
         pin_assignment_[i] = slot;
         slots_[slot].used = true;
@@ -249,13 +258,19 @@ void SimulatedAnnealing::randomAssignment()
         if (io_pin.isMirrored()) {
           free = free && isFreeForMirrored(slot, mirrored_slot);
         }
-        while (!free) {
+        while (!free && slot_idx < static_cast<int>(slot_indices.size()) - 1) {
           slot_idx++;
           slot = slot_indices[slot_idx];
           free = slots_[slot].isAvailable();
           if (io_pin.isMirrored()) {
             free = free && isFreeForMirrored(slot, mirrored_slot);
           }
+        }
+        if (!free) {
+          logger_->error(utl::PPL,
+                         114,
+                         "No available slot found for unconstrained pin {}.",
+                         io_pin.getName());
         }
         pin_assignment_[i] = slot;
         slots_[slot].used = true;
@@ -287,15 +302,32 @@ int SimulatedAnnealing::randomAssignmentForGroups(
                                                                 last_slot);
 
       int slot = distribution(generator_);
-      while (!isFreeForGroup(slot, group.pin_indices.size(), last_slot)) {
+      int attempts = 0;
+      const int max_attempts = num_slots_ * 10;
+      while (!isFreeForGroup(slot, group.pin_indices.size(), last_slot)
+             && attempts < max_attempts) {
         slot = distribution(generator_);
+        attempts++;
+      }
+      if (attempts >= max_attempts) {
+        logger_->error(
+            utl::PPL,
+            115,
+            "No available contiguous slots found for constrained pin group.");
       }
       group_slot = slot;
     } else {
       int slot = slot_indices[slot_idx];
-      while (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)) {
+      while (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)
+             && slot_idx < static_cast<int>(slot_indices.size()) - 1) {
         slot_idx++;
         slot = slot_indices[slot_idx];
+      }
+      if (!isFreeForGroup(slot, group.pin_indices.size(), num_slots_ - 1)) {
+        logger_->error(
+            utl::PPL,
+            116,
+            "No available contiguous slots found for unconstrained pin group.");
       }
       group_slot = slot_indices[slot_idx];
     }
@@ -331,9 +363,9 @@ int64 SimulatedAnnealing::getAssignmentCost()
   return cost;
 }
 
-int SimulatedAnnealing::getDeltaCost(const int prev_cost)
+int64 SimulatedAnnealing::getDeltaCost(const int64 prev_cost)
 {
-  int new_cost = 0;
+  int64 new_cost = 0;
   for (int pin_idx : pins_) {
     new_cost += getPinCost(pin_idx);
   }
@@ -360,19 +392,19 @@ int64 SimulatedAnnealing::getGroupCost(int group_idx)
   return cost;
 }
 
-void SimulatedAnnealing::perturbAssignment(int& prev_cost)
+void SimulatedAnnealing::perturbAssignment(int64& prev_cost)
 {
   boost::random::uniform_real_distribution<float> distribution;
   const float move = distribution(generator_);
 
-  // to perform pin swapping, at least two pins that are not inside a group are
-  // necessary
-  if (move < swap_pins_ && lone_pins_ > 1) {
+  // to perform pin swapping, at least two pins that are not in a group and
+  // not mirrored are necessary
+  if (move < swap_pins_ && swappable_pins_ > 1) {
     prev_cost = swapPins();
   }
 
   // move single pin when swapping a single constrained pin is not possible
-  if (move >= swap_pins_ || lone_pins_ <= 1 || prev_cost == move_fail_) {
+  if (move >= swap_pins_ || swappable_pins_ <= 1 || prev_cost == move_fail_) {
     prev_cost = movePinToFreeSlot();
     // move single pin when moving a group is not possible
     if (prev_cost == move_fail_) {
@@ -395,12 +427,15 @@ int SimulatedAnnealing::swapPins()
   if (constraint_idx != -1) {
     const std::vector<int>& pin_indices
         = constraints_[constraint_idx].pin_indices;
-    // if there is only one pin in the constraint, do not swap and fallback to
-    // move a pin to a free slot
-    const int pin_count = pin_indices.size();
-    const int mirrored_pins_count
-        = constraints_[constraint_idx].mirrored_pins_count;
-    if (pin_count == 1 || (pin_count - mirrored_pins_count) <= 1) {
+    // count eligible swap candidates: not mirrored, not in group, and not pin1
+    int eligible_count = 0;
+    for (int idx : pin_indices) {
+      const IOPin& p = netlist_->getIoPin(idx);
+      if (idx != pin1 && !p.isInGroup() && !p.isMirrored()) {
+        eligible_count++;
+      }
+    }
+    if (eligible_count < 1) {
       return move_fail_;
     }
     distribution = boost::random::uniform_int_distribution<int>(
@@ -414,6 +449,10 @@ int SimulatedAnnealing::swapPins()
       pin2 = pin_indices[pin_idx];
     }
   } else {
+    // need at least 2 unconstrained swappable pins (pin1 + one more)
+    if (unconstrained_swappable_pins_ < 2) {
+      return move_fail_;
+    }
     pin2 = distribution(generator_);
     while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
            || netlist_->getIoPin(pin2).isMirrored()
@@ -485,13 +524,21 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 
   distribution
       = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
-  while (!free_slot) {
+  int attempts = 0;
+  const int max_attempts = num_slots_ * 10;
+  while (!free_slot && attempts < max_attempts) {
     new_slot = distribution(generator_);
     if (io_pin.isMirrored()) {
       free_slot = isFreeForMirrored(new_slot, mirrored_slot);
     } else {
       free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
     }
+    attempts++;
+  }
+  if (!free_slot) {
+    prev_slots_.clear();
+    pins_.clear();
+    return move_fail_;
   }
 
   new_slots_.push_back(new_slot);
@@ -532,7 +579,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   int max_iters = num_slots_ * 10;
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
-    if ((new_slot + pins_.size() >= num_slots_ - 1)) {
+    if ((new_slot + group.pin_indices.size() > num_slots_)) {
+      iter++;
       continue;
     }
 
@@ -558,10 +606,10 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     netlist_->sortPinsFromGroup(group_idx, slots_[new_slot].edge);
     updateGroupSlots(group.pin_indices, new_slot);
   } else {
+    updateSlotsFromGroup(prev_slots_, true);
     prev_slots_.clear();
     new_slots_.clear();
     pins_.clear();
-    updateSlotsFromGroup(prev_slots_, true);
     return move_fail_;
   }
 
@@ -626,7 +674,8 @@ int SimulatedAnnealing::shiftGroup(int group_idx)
     max_count++;
     slot++;
   }
-  max_count -= pin_indices.size();
+  max_count -= static_cast<int>(pin_indices.size());
+  max_count = std::max(max_count, 0);
 
   if (min_count + max_count > 0) {
     if (min_count > max_count) {
@@ -835,13 +884,14 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
 
   if (mirrored_idx < 0) {
     odb::dbTechLayer* tech_layer = db_->getTech()->findRoutingLayer(layer);
-    logger_->error(utl::PPL,
-                   112,
-                   "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position.",
-                   mirrored_pos.getX(),
-                   mirrored_pos.getY(),
-                   tech_layer ? tech_layer->getName() : "NA");
+    logger_->error(
+        utl::PPL,
+        112,
+        "Mirrored position ({:.2f}um, {:.2f}um) at layer {} is not "
+        "a valid position.",
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getX()),
+        db_->getChip()->getBlock()->dbuToMicrons(mirrored_pos.getY()),
+        tech_layer ? tech_layer->getName() : "NA");
   }
 
   return mirrored_idx;
@@ -959,6 +1009,9 @@ void SimulatedAnnealing::updateGroupSlots(const std::vector<int>& pin_indices,
 void SimulatedAnnealing::countLonePins()
 {
   int pins_in_groups = 0;
+  int swappable = 0;
+  int unconstrained_swappable = 0;
+
   for (const auto& group : pin_groups_) {
     for (const int pin_idx : group.pin_indices) {
       pins_in_groups++;
@@ -968,7 +1021,19 @@ void SimulatedAnnealing::countLonePins()
     }
   }
 
+  for (int i = 0; i < num_pins_; i++) {
+    const IOPin& pin = netlist_->getIoPin(i);
+    if (!pin.isInGroup() && !pin.isMirrored()) {
+      swappable++;
+      if (pin.getConstraintIdx() == -1) {
+        unconstrained_swappable++;
+      }
+    }
+  }
+
   lone_pins_ = num_pins_ - pins_in_groups;
+  swappable_pins_ = swappable;
+  unconstrained_swappable_pins_ = unconstrained_swappable;
 }
 
 }  // namespace ppl

@@ -175,7 +175,7 @@ proc improve_placement { args } {
   }
 
   if { [info exists flags(-disallow_one_site_gaps)] } {
-    utl::warn DPL 343"-disallow_one_site_gaps is deprecated"
+    utl::warn DPL 343 "-disallow_one_site_gaps is deprecated"
   }
   set seed 1
   if { [info exists keys(-random_seed)] } {
@@ -298,7 +298,8 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-    keys {-instance -min_displacement -jump_moves} flags {-iterative -deep_iterative -paint_pixels}
+    keys {-instance -min_displacement -jump_moves} \
+    flags {-iterative -deep_iterative -paint_pixels} ;# checker off
 
 
   if { [info exists keys(-min_displacement)] } {

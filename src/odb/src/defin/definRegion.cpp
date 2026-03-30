@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "definTypes.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"

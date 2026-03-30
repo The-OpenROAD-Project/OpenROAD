@@ -1,8 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -20,13 +24,14 @@ COMPULSORY_TESTS = [
     "test_suppress_message",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "utl_man_tcl_check",
-    "utl_readme_msgs_check",
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
+    # build directory structure not compatible with Bazel
+    # "cpp_tests",
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -68,6 +73,7 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
@@ -77,6 +83,18 @@ filegroup(
 
 cc_test(
     name = "utl_cfile_unittest",
+    srcs = ["cpp/TestCFileUtils.cpp"],
+    deps = [
+        "//src/utl",
+        "@boost.asio",
+        "@boost.beast",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestCFileUtils",
     srcs = ["cpp/TestCFileUtils.cpp"],
     deps = [
         "//src/utl",
@@ -119,4 +137,21 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "utl_man_tcl_check",
+    srcs = ["utl_man_tcl_check.py"],
+    data = ["//src/utl:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "utl_readme_msgs_check",
+    data = [
+        "//src/utl:doc_files",
+        "//src/utl:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

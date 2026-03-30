@@ -3,8 +3,10 @@
 
 #include "staDescriptors.h"
 
+#ifdef ENABLE_QT
 #include <QInputDialog>
 #include <QStringList>
+#endif
 #include <algorithm>
 #include <any>
 #include <array>
@@ -184,17 +186,17 @@ Descriptor::Properties LibertyLibraryDescriptor::getProperties(
     props.push_back({"Default fanout load", load});
   }
 
-  SelectionSet corners;
-  for (auto* corner : sta_->scenes()) {
+  SelectionSet scenes;
+  for (auto* scene : sta_->scenes()) {
     for (const sta::MinMax* min_max :
          {sta::MinMax::min(), sta::MinMax::max()}) {
-      const auto& libs = corner->libertyLibraries(min_max);
+      const auto& libs = scene->libertyLibraries(min_max);
       if (std::ranges::find(libs, library) != libs.end()) {
-        corners.insert(gui->makeSelected(corner));
+        scenes.insert(gui->makeSelected(scene));
       }
     }
   }
-  props.push_back({"Corners", corners});
+  props.push_back({"Scenes", scenes});
 
   SelectionSet cells;
   sta::LibertyCellIterator cell_iter(library);
@@ -546,41 +548,41 @@ void LibertyPortDescriptor::visitAllObjects(
 
 //////////////////////////////////////////////////
 
-CornerDescriptor::CornerDescriptor(sta::dbSta* sta) : sta_(sta)
+SceneDescriptor::SceneDescriptor(sta::dbSta* sta) : sta_(sta)
 {
 }
 
-std::string CornerDescriptor::getName(const std::any& object) const
+std::string SceneDescriptor::getName(const std::any& object) const
 {
   return std::any_cast<sta::Scene*>(object)->name();
 }
 
-std::string CornerDescriptor::getTypeName() const
+std::string SceneDescriptor::getTypeName() const
 {
-  return "Timing corner";
+  return "Timing scene";
 }
 
-bool CornerDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
+bool SceneDescriptor::getBBox(const std::any& object, odb::Rect& bbox) const
 {
   return false;
 }
 
-void CornerDescriptor::highlight(const std::any& object, Painter& painter) const
+void SceneDescriptor::highlight(const std::any& object, Painter& painter) const
 {
 }
 
-Descriptor::Properties CornerDescriptor::getProperties(
+Descriptor::Properties SceneDescriptor::getProperties(
     const std::any& object) const
 {
-  auto corner = std::any_cast<sta::Scene*>(object);
+  auto scene = std::any_cast<sta::Scene*>(object);
 
   auto gui = Gui::get();
 
-  Properties props;
+  Properties props({{.name = "Mode", .value = scene->mode()->name()}});
 
   SelectionSet libs;
   for (auto* min_max : {sta::MinMax::min(), sta::MinMax::max()}) {
-    for (auto* lib : corner->libertyLibraries(min_max)) {
+    for (auto* lib : scene->libertyLibraries(min_max)) {
       libs.insert(gui->makeSelected(lib));
     }
   }
@@ -589,22 +591,22 @@ Descriptor::Properties CornerDescriptor::getProperties(
   return props;
 }
 
-Selected CornerDescriptor::makeSelected(const std::any& object) const
+Selected SceneDescriptor::makeSelected(const std::any& object) const
 {
-  if (auto corner = std::any_cast<sta::Scene*>(&object)) {
-    return Selected(*corner, this);
+  if (auto scene = std::any_cast<sta::Scene*>(&object)) {
+    return Selected(*scene, this);
   }
   return Selected();
 }
 
-bool CornerDescriptor::lessThan(const std::any& l, const std::any& r) const
+bool SceneDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
-  auto l_corner = std::any_cast<sta::Scene*>(l);
-  auto r_corner = std::any_cast<sta::Scene*>(r);
-  return l_corner->name() < r_corner->name();
+  auto l_scene = std::any_cast<sta::Scene*>(l);
+  auto r_scene = std::any_cast<sta::Scene*>(r);
+  return l_scene->name() < r_scene->name();
 }
 
-void CornerDescriptor::visitAllObjects(
+void SceneDescriptor::visitAllObjects(
     const std::function<void(const Selected&)>& func) const
 {
   for (auto* scene : sta_->scenes()) {
@@ -663,7 +665,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
   auto is_inf = [](double value) -> bool {
     // mirrored from:
     // https://github.com/The-OpenROAD-Project/OpenSTA/blob/20925bb00965c1199c45aca0318c2baeb4042c5a/liberty/Units.cc#L153
-    return abs(value) >= 0.1 * sta::INF;
+    // ^ and apparently, that is broken, as abs() only does int. Use std::abs()
+    return std::abs(value) >= 0.1 * sta::INF;
   };
 
   bool has_sdc_constraint = false;
@@ -707,7 +710,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       port_id = network->name(port);
     }
 
-    if (is_lib_port) {
+    if (is_lib_port
+        && !network->libertyPort(port)->direction()->isPowerGround()) {
       const std::string freq
           = Descriptor::convertUnits(power.density(), false, kFloatPrecision);
       const std::string activity_info = fmt::format("{:.2f}% at {}Hz from {}",
@@ -717,8 +721,8 @@ Descriptor::Properties StaInstanceDescriptor::getProperties(
       port_power_activity.emplace_back(port_id, activity_info);
 
       const sta::Unit* timeunit = sta_->units()->timeUnit();
-      const auto setup_arrival
-          = sta_->arrival(pin, nullptr, sta::MinMax::max());
+      const auto setup_arrival = sta_->arrival(
+          pin, sta::RiseFallBoth::riseFall(), sta::MinMax::max());
       const std::string setup_text
           = is_inf(setup_arrival)
                 ? "None"

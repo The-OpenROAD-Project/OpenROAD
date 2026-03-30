@@ -26,13 +26,13 @@ proc configure_cts_characterization { args } {
   if { [info exists keys(-slew_steps)] } {
     set steps $keys(-slew_steps)
     sta::check_cardinal "-slew_steps" $steps
-    cts::set_slew_steps $slew
+    cts::set_slew_steps $steps
   }
 
   if { [info exists keys(-cap_steps)] } {
     set steps $keys(-cap_steps)
     sta::check_cardinal "-cap_steps" $steps
-    cts::set_cap_steps $cap
+    cts::set_cap_steps $steps
   }
 }
 
@@ -407,7 +407,7 @@ sta::define_cmd_args "clock_tree_synthesis" {[-wire_unit unit]
                                              [-library] \
                                              [-repair_clock_nets] \
                                              [-no_insertion_delay]
-} ;# checker off
+}
 
 proc clock_tree_synthesis { args } {
   sta::parse_key_args "clock_tree_synthesis" args \
@@ -423,7 +423,7 @@ proc clock_tree_synthesis { args } {
     flags {-post_cts_disable -sink_clustering_enable -balance_levels \
            -obstruction_aware -no_obstruction_aware \
            -dont_use_dummy_load -repair_clock_nets -no_insertion_delay
-  } ;# checker off
+  }
 
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
