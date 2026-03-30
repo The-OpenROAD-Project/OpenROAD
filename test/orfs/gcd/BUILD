@@ -53,8 +53,8 @@ sh_test(
     timeout = "long",
     srcs = ["test_whittle.sh"],
     args = [
-        "$(rootpath //:openroad)",
-        "$(rootpath //etc:whittle.py)",
+        "$(rootpath @openroad//:openroad)",
+        "$(rootpath @openroad//etc:whittle.py)",
         "$(rootpath :gcd_floorplan_odb)",
     ],
     data = [

@@ -56,7 +56,7 @@ genrule(
     srcs = [],
     outs = ["dummy"],
     cmd = """
-    $(location //src/sta:opensta) >$@
+    $(location @openroad//src/sta:opensta) >$@
     """,
     tags = ["manual"],
     tools = ["@openroad//src/sta:opensta"],

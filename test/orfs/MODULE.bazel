@@ -86,7 +86,7 @@ bazel_dep(name = "rules_chisel", version = "0.2.0")
 single_version_override(
     module_name = "rules_chisel",
     patch_strip = 1,
-    patches = ["@openroad//:rules-chisel-dev-dep.patch"],
+    patches = ["//:rules-chisel-dev-dep.patch"],
 )
 
 bazel_dep(name = "rules_scala", version = "7.1.5")
