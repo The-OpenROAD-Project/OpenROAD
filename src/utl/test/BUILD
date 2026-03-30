@@ -74,8 +74,8 @@ filegroup(
     regression_test(
         name = test_name,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
-        expected_exit_code = 1 if test_name in EXCEPTION_TESTS else 0,
         data = [":" + test_name + "_resources"],
+        expected_exit_code = 1 if test_name in EXCEPTION_TESTS else 0,
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],
     )
