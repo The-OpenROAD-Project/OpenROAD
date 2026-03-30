@@ -28,6 +28,10 @@ entries:
         title: Unit Tests (Python)
       - file: main/src/odb/doc/OpenDB-AddFieldsInDbObjects
         title: Add Fields in DB Objects
+      - file: main/src/odb/doc/LEF_Grammar
+        title: LEF Grammar (Railroad Diagram)
+      - file: main/src/odb/doc/DEF_Grammar
+        title: DEF Grammar (Railroad Diagram)
   - file: main/src/gui/README
     title: GUI
   - file: main/src/par/README
