@@ -267,9 +267,11 @@ std::string BufferedNet::to_string(const Resizer* resizer) const
   sta::Network* sdc_network = resizer->sdcNetwork();
   sta::Units* units = resizer->units();
   sta::Unit* dist_unit = units->distanceUnit();
-  const char* x = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
-  const char* y = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);
-  const char* cap = units->capacitanceUnit()->asString(cap_);
+  const std::string x
+      = dist_unit->asString(resizer->dbuToMeters(location_.x()), 2);
+  const std::string y
+      = dist_unit->asString(resizer->dbuToMeters(location_.y()), 2);
+  const std::string cap = units->capacitanceUnit()->asString(cap_);
 
   switch (type_) {
     case BufferedNetType::load:

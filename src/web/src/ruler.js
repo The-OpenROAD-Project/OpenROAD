@@ -143,7 +143,8 @@ export class RulerManager {
             e.clientX - rect.left, e.clientY - rect.top
         ]);
         const dbu = latLngToDbu(pt.lat, pt.lng,
-            this._app.designScale, this._app.designMaxDXDY);
+            this._app.designScale, this._app.designMaxDXDY,
+            this._app.designOriginX, this._app.designOriginY);
 
         // Debounce snap requests at ~50ms
         if (this._snapTimer) clearTimeout(this._snapTimer);
@@ -165,7 +166,8 @@ export class RulerManager {
         }
 
         const dbu = latLngToDbu(e.latlng.lat, e.latlng.lng,
-            this._app.designScale, this._app.designMaxDXDY);
+            this._app.designScale, this._app.designMaxDXDY,
+            this._app.designOriginX, this._app.designOriginY);
 
         // Use the last snap result if available, otherwise raw click
         const snapped = this._getSnappedPoint(dbu.dbuX, dbu.dbuY);
@@ -304,9 +306,11 @@ export class RulerManager {
 
         const scale = this._app.designScale;
         const maxDXDY = this._app.designMaxDXDY;
+        const originX = this._app.designOriginX;
+        const originY = this._app.designOriginY;
 
         if (snap.is_point) {
-            const ll = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY);
+            const ll = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY, originX, originY);
             const marker = L.circleMarker(ll, {
                 radius: 5,
                 color: SNAP_INDICATOR_COLOR,
@@ -318,8 +322,8 @@ export class RulerManager {
             });
             this._snapGroup.addLayer(marker);
         } else {
-            const p1 = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY);
-            const p2 = dbuToLatLng(snap.edge[1][0], snap.edge[1][1], scale, maxDXDY);
+            const p1 = dbuToLatLng(snap.edge[0][0], snap.edge[0][1], scale, maxDXDY, originX, originY);
+            const p2 = dbuToLatLng(snap.edge[1][0], snap.edge[1][1], scale, maxDXDY, originX, originY);
             const line = L.polyline([p1, p2], {
                 color: SNAP_INDICATOR_COLOR,
                 weight: 1,
@@ -336,10 +340,12 @@ export class RulerManager {
 
         const scale = this._app.designScale;
         const maxDXDY = this._app.designMaxDXDY;
+        const originX = this._app.designOriginX;
+        const originY = this._app.designOriginY;
         const snapped = this._getSnappedPoint(rawX, rawY);
 
-        const p0 = dbuToLatLng(this._pt0.x, this._pt0.y, scale, maxDXDY);
-        const p1 = dbuToLatLng(snapped.x, snapped.y, scale, maxDXDY);
+        const p0 = dbuToLatLng(this._pt0.x, this._pt0.y, scale, maxDXDY, originX, originY);
+        const p1 = dbuToLatLng(snapped.x, snapped.y, scale, maxDXDY, originX, originY);
 
         const line = L.polyline([p0, p1], {
             color: RULER_COLOR,
@@ -386,9 +392,11 @@ export class RulerManager {
     _renderRuler(ruler) {
         const scale = this._app.designScale;
         const maxDXDY = this._app.designMaxDXDY;
+        const originX = this._app.designOriginX;
+        const originY = this._app.designOriginY;
 
-        const p0 = dbuToLatLng(ruler.pt0.x, ruler.pt0.y, scale, maxDXDY);
-        const p1 = dbuToLatLng(ruler.pt1.x, ruler.pt1.y, scale, maxDXDY);
+        const p0 = dbuToLatLng(ruler.pt0.x, ruler.pt0.y, scale, maxDXDY, originX, originY);
+        const p1 = dbuToLatLng(ruler.pt1.x, ruler.pt1.y, scale, maxDXDY, originX, originY);
         const isSelected = ruler.id === this._selectedRulerId;
         const color = isSelected ? RULER_SELECTED_COLOR : RULER_COLOR;
 
@@ -423,8 +431,8 @@ export class RulerManager {
             const py = dx / len;
 
             for (const pt of [ruler.pt0, ruler.pt1]) {
-                const t0 = dbuToLatLng(pt.x + px * tickLen, pt.y + py * tickLen, scale, maxDXDY);
-                const t1 = dbuToLatLng(pt.x - px * tickLen, pt.y - py * tickLen, scale, maxDXDY);
+                const t0 = dbuToLatLng(pt.x + px * tickLen, pt.y + py * tickLen, scale, maxDXDY, originX, originY);
+                const t1 = dbuToLatLng(pt.x - px * tickLen, pt.y - py * tickLen, scale, maxDXDY, originX, originY);
                 group.addLayer(L.polyline([t0, t1], {
                     color,
                     weight: 2,
