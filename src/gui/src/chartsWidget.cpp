@@ -28,7 +28,7 @@
 
 #include "gui/gui.h"
 #include "gui_utils.h"
-#include "src/staGuiInterface.h"
+#include "staGuiInterface.h"
 #include "sta/Clock.hh"
 #include "sta/MinMax.hh"
 #include "sta/PortDirection.hh"
