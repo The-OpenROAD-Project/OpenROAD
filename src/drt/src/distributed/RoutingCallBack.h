@@ -18,6 +18,7 @@
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
+#include "utl/exception.h"
 #include "distributed/paUpdate.h"
 #include "dr/FlexDR.h"
 #include "drt/TritonRoute.h"
@@ -167,10 +168,16 @@ class RoutingCallBack : public dst::JobCallBack
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
         omp_set_num_threads(router_->getRouterConfiguration()->MAX_THREADS);
+        utl::ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < instRows.size(); i++) {  // NOLINT
-          pa_.genInstRowPattern(instRows.at(i));
+          try {
+            pa_.genInstRowPattern(instRows.at(i));
+          } catch (...) {
+            exception.capture();
+          }
         }
+        exception.rethrow();
         paUpdate update;
         for (const auto& row : instRows) {
           for (auto inst : row) {
