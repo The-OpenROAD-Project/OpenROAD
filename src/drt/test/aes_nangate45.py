@@ -20,10 +20,13 @@ gr = design.getGlobalRouter()
 gr.readGuides("aes_nangate45.route_guide")
 set_thread_count(4)
 
+drc_file = helpers.make_result_file("aes_nangate45.output.drc.rpt")
+maze_file = helpers.make_result_file("aes_nangate45.output.maze.log")
+
 drt_aux.detailed_route(
     design,
-    output_drc="results/aes_nangate45.output.drc-py.rpt",
-    output_maze="results/aes_nangate45.output.maze-py.log",
+    output_drc=drc_file,
+    output_maze=maze_file,
     verbose=1,
 )
 

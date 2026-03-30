@@ -1373,10 +1373,7 @@ void GlobalRouter::findFastRoutePins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net->getDbNet(), sta::MinMax::max());
 }
 
 void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
@@ -3184,6 +3181,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
 {
   std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
   int last_layer = -1;
+  int min_pin_layer = std::numeric_limits<int>::max();
   for (size_t p = 0; p < pins.size(); p++) {
     if (p > 0) {
       odb::Point pin_pos0 = pins[p - 1].getOnGridPosition();
@@ -3197,6 +3195,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       }
     }
 
+    min_pin_layer = std::min(min_pin_layer, pins[p].getConnectionLayer());
     last_layer = std::max(pins[p].getConnectionLayer(), last_layer);
   }
 
@@ -3206,7 +3205,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
     last_layer--;
   }
 
-  for (int l = 1; l <= last_layer; l++) {
+  const int min_layer = std::min(min_pin_layer, min_routing_layer);
+  for (int l = min_layer; l <= last_layer; l++) {
     odb::Point pin_pos = pins[0].getOnGridPosition();
     GSegment segment = GSegment(
         pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);

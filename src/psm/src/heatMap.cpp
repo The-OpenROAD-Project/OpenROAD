@@ -94,14 +94,14 @@ IRDropDataSource::IRDropDataSource(PDNSim* psm,
       [this](const std::string& value) { setCorner(value); });
 }
 
-void IRDropDataSource::setBlock(odb::dbBlock* block)
+void IRDropDataSource::setChip(odb::dbChip* chip)
 {
-  if (block && block->getParent()) {
-    return;  // not the top block so ignore it
-  }
-  gui::HeatMapDataSource::setBlock(block);
-  if (block != nullptr) {
-    tech_ = block->getTech();
+  gui::HeatMapDataSource::setChip(chip);
+  if (chip != nullptr) {
+    odb::dbBlock* block = chip->getBlock();
+    tech_ = block != nullptr ? block->getTech() : nullptr;
+  } else {
+    tech_ = nullptr;
   }
 }
 

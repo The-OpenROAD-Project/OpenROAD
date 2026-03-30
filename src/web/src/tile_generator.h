@@ -102,6 +102,7 @@ struct TileVisibility
   bool routing = true;
   bool special_nets = true;
   bool pins = true;
+  bool pin_markers = true;
   bool blockages = true;
 
   // Blockages (dbBlockage / dbObstruction)
@@ -139,6 +140,7 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
 
   odb::Rect getBounds() const;
+  int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
@@ -167,6 +169,7 @@ class TileGenerator
                     const std::set<std::string>& visible_layers) const;
 
   odb::dbBlock* getBlock() const;
+  odb::dbChip* getChip() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -205,6 +208,14 @@ class TileGenerator
                              std::string_view text,
                              int scale,
                              const Color& color);
+  // Draw text rotated 90° CCW (reads bottom-to-top).
+  // (x, y) is the bottom-left corner of the rotated text block.
+  static void drawBitmapTextRotated(std::vector<unsigned char>& image,
+                                    int x,
+                                    int y,
+                                    std::string_view text,
+                                    int scale,
+                                    const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,

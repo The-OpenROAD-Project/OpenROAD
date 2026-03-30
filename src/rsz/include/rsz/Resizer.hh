@@ -611,7 +611,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findBufferTargetSlews(sta::LibertyCell* buffer,
                              const sta::Pvt* pvt,
                              // Return values.
-                             sta::Slew slews[],
+                             float slews[],
                              int counts[]);
   bool hasMultipleOutputs(const sta::Instance* inst);
 
