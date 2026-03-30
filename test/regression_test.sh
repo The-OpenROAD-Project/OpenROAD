@@ -28,7 +28,11 @@ python)
 esac
 
 echo "Command: $CMD"
+EXPECTED_EXIT_CODE="${TEST_EXPECTED_EXIT_CODE:-0}"
+set +e
 $CMD 2>&1 | tee $LOG_FILE
+CMD_EXIT=${PIPESTATUS[0]}
+set -e
 
 case "$TEST_TYPE" in
 python | standalone_python)
@@ -45,7 +49,12 @@ python | standalone_python)
 	;;
 esac
 
-echo "Exitcode:  $?"
+echo "Exitcode:  $CMD_EXIT"
+
+if [ "$CMD_EXIT" -ne "$EXPECTED_EXIT_CODE" ]; then
+	echo "Expected exit code: $EXPECTED_EXIT_CODE"
+	exit 1
+fi
 
 if [ "$TEST_CHECK_LOG" == "True" ]; then
     echo "Diff:      ${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.diff"

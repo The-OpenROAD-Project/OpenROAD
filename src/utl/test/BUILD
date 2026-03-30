@@ -18,17 +18,20 @@ COMPULSORY_TESTS = [
     "tee",
     "tee_fails",
     "test_error",
-    "test_error_exception",
     "test_info",
     "test_metrics",
     "test_suppress_message",
+]
+
+EXCEPTION_TESTS = [
+    "test_error_exception",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
 PASSFAIL_TESTS = [
 ]
 
-ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS
+ALL_TESTS = COMPULSORY_TESTS + PASSFAIL_TESTS + EXCEPTION_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -71,6 +74,7 @@ filegroup(
     regression_test(
         name = test_name,
         check_passfail = True if test_name in PASSFAIL_TESTS else False,
+        expected_exit_code = 1 if test_name in EXCEPTION_TESTS else 0,
         data = [":" + test_name + "_resources"],
         tags = [] if test_name in COMPULSORY_TESTS else ["manual"],
         visibility = ["//visibility:public"],

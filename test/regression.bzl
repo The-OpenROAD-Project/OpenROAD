@@ -32,6 +32,7 @@ export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_GOLDEN_FILE={TEST_GOLDEN_FILE}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export TEST_EXPECTED_EXIT_CODE={TEST_EXPECTED_EXIT_CODE}
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,
@@ -43,6 +44,7 @@ exec "{bazel_test_sh}" "$@"
             TEST_GOLDEN_FILE = ctx.file.golden_file.short_path if ctx.file.golden_file else "",
             TEST_CHECK_LOG = "True" if ctx.attr.check_log else "False",
             TEST_CHECK_PASSFAIL = "True" if ctx.attr.check_passfail else "False",
+            TEST_EXPECTED_EXIT_CODE = str(ctx.attr.expected_exit_code),
         ),
         is_executable = True,
     )
@@ -88,6 +90,10 @@ regression_rule_test = rule(
         "data": attr.label_list(
             doc = "Additional test files required for the test.",
             allow_files = True,
+        ),
+        "expected_exit_code": attr.int(
+            doc = "Expected command exit code for the regression.",
+            default = 0,
         ),
         "golden_file": attr.label(
             doc = "Optional expected output file used for log diffing.",

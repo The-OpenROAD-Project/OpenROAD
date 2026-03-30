@@ -1,9 +1,9 @@
 *SPEF "ieee 1481-1999"
 *DESIGN "top"
-*DATE "01:06:20 Saturday April 25, 2026"
+*DATE "00:32:25 Monday March 30, 2026"
 *VENDOR "The OpenROAD Project"
 *PROGRAM "OpenROAD"
-*VERSION "bazel-nostamp"
+*VERSION "26Q1-2760-g03ca1c9590"
 *DESIGN_FLOW "NAME_SCOPE LOCAL" "PIN_CAP NONE"
 *DIVIDER /
 *DELIMITER :
