@@ -56,6 +56,7 @@ enum class PinRoleType
   DataIn,
   DataOut,
   WriteEnable,
+  TriEnable,
   Select,  // for mux support in future
   Power,
   Ground

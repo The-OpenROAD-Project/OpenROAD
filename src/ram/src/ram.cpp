@@ -119,42 +119,51 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
   // Resolve the clock-pin name for the storage cell by querying the
   // Liberty data.  This avoids hard-coding technology-specific pin names
   // (e.g. "CLK", "CK") and works with any technology node.
-  const char* clk_pin = nullptr;
-  auto sta_cell = network_->dbToSta(storage_cell_);
-  if (sta_cell) {
-    auto liberty = network_->libertyCell(sta_cell);
-    if (liberty) {
-      auto port_iter = liberty->portIterator();
-      while (port_iter->hasNext()) {
-        auto lib_port = port_iter->next();
-        if (lib_port->libertyPort() && lib_port->libertyPort()->isClock()) {
-          clk_pin = lib_port->name();
-          break;
-        }
-      }
-      delete port_iter;
-    }
-  }
-  if (!clk_pin) {
-    logger_->error(RAM,
-                   12,
-                   "No clock pin found on storage cell {}.",
-                   storage_cell_->getName());
-  }
+  // const char* clk_pin = nullptr;
+  // const char* data_in_pin = nullptr;
+  // auto sta_cell = network_->dbToSta(storage_cell_);
+  // if (sta_cell) {
+  //   auto liberty = network_->libertyCell(sta_cell);
+  //   if (liberty) {
+  //     auto port_iter = liberty->portIterator();
+  //     while (port_iter->hasNext()) {
+  //       auto lib_port = port_iter->next();
+  //       if (lib_port->libertyPort() && lib_port->libertyPort()->isClock()) {
+  //         clk_pin = lib_port->name();
+  //       }
+  //       if (lib_port->libertyPort() && lib_port->libertyPort()->isLatchData()) {
+  //         data_in_pin = lib_port->name();
+  //       }
+  //     }
+  //     delete port_iter;
+  //   }
+  // }
+  // if (!clk_pin) {
+  //   logger_->error(RAM,
+  //                  12,
+  //                  "No clock pin found on storage cell {}.",
+  //                  storage_cell_->getName());
+  // }
+
+  logger_->info(RAM, 12, "making bit");
+
   makeInst(bit_cell.get(),
            prefix,
            "bit",
            storage_cell_,
-           {{clk_pin, clock}, {"D", data_input}, {"Q", storage_net}});
+           {{storage_pins_[{PinRoleType::Clock, 0}], clock},
+            {storage_pins_[{PinRoleType::DataIn, 0}], data_input},
+            {storage_pins_[{PinRoleType::DataOut, 0}], storage_net}});
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
-    makeInst(bit_cell.get(),
-             prefix,
-             fmt::format("obuf{}", read_port),
-             tristate_cell_,
-             {{"A", storage_net},
-              {"TE_B", select[read_port]},
-              {"Z", data_output[read_port]}});
+    makeInst(
+        bit_cell.get(),
+        prefix,
+        fmt::format("obuf{}", read_port),
+        tristate_cell_,
+        {{tristate_pins_[{PinRoleType::DataIn, 0}], storage_net},
+         {tristate_pins_[{PinRoleType::TriEnable, 0}], select[read_port]},
+         {tristate_pins_[{PinRoleType::DataOut, 0}], data_output[read_port]}});
   }
 
   return bit_cell;
@@ -201,7 +210,9 @@ void RamGen::makeSlice(const int slice_idx,
            prefix,
            "cg",
            clock_gate_cell_,
-           {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
+           {{clock_gate_pins_[{PinRoleType::Clock, 0}], clock},
+           {clock_gate_pins_[{PinRoleType::DataIn, 0}], we0_net},
+           {clock_gate_pins_[{PinRoleType::DataOut, 0}], gclock_net}});
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
@@ -210,7 +221,9 @@ void RamGen::makeSlice(const int slice_idx,
            prefix,
            "gcand",
            and2_cell_,
-           {{"A", selects[0]}, {"B", write_enable}, {"X", we0_net}});
+           {{and2_pins_[{PinRoleType::DataIn, 0}], selects[0]},
+            {and2_pins_[{PinRoleType::DataIn, 1}], write_enable},
+            {and2_pins_[{PinRoleType::DataOut, 0}], we0_net}});
 
   // Make select inverters
   for (int i = 0; i < selects.size(); ++i) {
@@ -218,7 +231,8 @@ void RamGen::makeSlice(const int slice_idx,
              prefix,
              fmt::format("select_inv_{}", i),
              inv_cell_,
-             {{"A", selects[i]}, {"Y", select_b_nets[i]}});
+             {{inv_pins_[{PinRoleType::DataIn, 0}], selects[i]},
+              {inv_pins_[{PinRoleType::DataOut, 0}], select_b_nets[i]}});
   }
 
   ram_grid_.addCell(std::move(sel_cell), start_bit_idx + mask_size + slice_idx);
@@ -301,30 +315,36 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]},
-                {"B", addr_nets[i + 1]},
-                {"X", decoder_out_net}});
+               {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_pins_[{PinRoleType::DataIn, 1}], addr_nets[i + 1]},
+                {and2_pins_[{PinRoleType::DataOut, 0}], decoder_out_net}});
       prev_net = input_net;
     } else if (i == 0) {
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", input_net}, {"X", decoder_out_net}});
+               {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_pins_[{PinRoleType::DataIn, 1}], input_net},
+                {and2_pins_[{PinRoleType::DataOut, 0}], decoder_out_net}});
       prev_net = input_net;
     } else if (i == layers - 1) {  // last AND gate layer
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", prev_net}});
+               {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_pins_[{PinRoleType::DataIn, 1}], addr_nets[i + 1]},
+                {and2_pins_[{PinRoleType::DataOut, 0}], prev_net}});
       prev_net = input_net;
     } else {  // middle AND gate layers
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
+               {{and2_pins_[{PinRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_pins_[{PinRoleType::DataIn, 0}], input_net},
+                {and2_pins_[{PinRoleType::DataIn, 0}], prev_net}});
       prev_net = input_net;
     }
   }
@@ -334,7 +354,8 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
              prefix,
              fmt::format("buf_port{}", port),
              buffer_cell_,
-             {{"A", decoder_out_net}, {"X", selects[port]}});
+             {{buffer_pins_[{PinRoleType::DataIn, 0}], decoder_out_net},
+              {buffer_pins_[{PinRoleType::DataOut, 0}], selects[port]}});
   }
 
   return word_cell;
@@ -414,22 +435,24 @@ dbMaster* RamGen::findMaster(
 std::map<PinRole, std::string> RamGen::buildPinMap(dbMaster* master)
 {
   auto sta_cell = network_->dbToSta(master);
-  if (!sta_cell) {
-    logger_->error(RAM, 72, "Can't find STA cell");
-  }
   auto liberty = network_->libertyCell(sta_cell);
-  if (!liberty) {
-    logger_->error(RAM, 73, "Can't find liberty cell");
-  }
   std::map<PinRole, std::string> pin_map;
   int in_idx = 0;
+
+  std::string tri_enable_name;
 
   auto port_iter = liberty->portIterator();
   while (port_iter->hasNext()) {
     auto concrete = port_iter->next();
     auto lib_port = concrete->libertyPort();
     auto dir = concrete->direction();
-    logger_->info(RAM, 74, "name of port {}", lib_port->name());
+
+    logger_->info(RAM,
+                  98,
+                  "port name:{} dir:{} isPwrGnd:{}",
+                  lib_port->name(),
+                  dir->name(),
+                  lib_port->isPwrGnd());
     if (lib_port->isPwrGnd()) {
       auto pwr_gnd_type = lib_port->pwrGndType();
       if (pwr_gnd_type == sta::PwrGndType::primary_power) {
@@ -439,14 +462,31 @@ std::map<PinRole, std::string> RamGen::buildPinMap(dbMaster* master)
       }
     } else if (lib_port->isClock()) {
       pin_map[{PinRoleType::Clock, 0}] = lib_port->name();
-    } else if (lib_port->isLatchData()) {
-      // post-decrement so current usage isn't affected
-      pin_map[{PinRoleType::DataIn, in_idx++}] = lib_port->name();
-    } else if (dir->isAnyOutput()) {
+    } else if (dir->isTristate()) {
+      pin_map[{PinRoleType::DataOut, 0}] = lib_port->name();
+      auto tri_expr = lib_port->tristateEnable();
+      if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::port) {
+        tri_enable_name = tri_expr->port()->name();
+      } else if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::not_) {
+        tri_enable_name = tri_expr->left()->port()->name();
+      }
+    } else if (dir->isAnyOutput()) {  // catches isOutput() and isTristate()
       pin_map[{PinRoleType::DataOut, 0}] = lib_port->name();
     } else if (dir->isInput()) {
       pin_map[{PinRoleType::DataIn, in_idx++}] = lib_port->name();
     }
+  }
+
+  if (!tri_enable_name.empty()) {
+    // find and remove it from DataIn
+    for (auto it = pin_map.begin(); it != pin_map.end(); ++it) {
+      if (it->second == tri_enable_name
+          && it->first.type == PinRoleType::DataIn) {
+        pin_map.erase(it);
+        break;
+      }
+    }
+    pin_map[{PinRoleType::TriEnable, 0}] = tri_enable_name;
   }
   delete port_iter;
   return pin_map;
@@ -833,12 +873,13 @@ void RamGen::generate(const int mask_size,
     for (int bit = 0; bit < mask_size; ++bit) {
       int bit_idx = bit + slice * mask_size;
       auto buffer_grid_cell = std::make_unique<Cell>();
-      makeInst(
-          buffer_grid_cell.get(),
-          "buffer",
-          fmt::format("in[{}]", bit_idx),
-          buffer_cell_,
-          {{"A", data_inputs_[bit_idx]->getNet()}, {"X", D_nets[bit_idx]}});
+      makeInst(buffer_grid_cell.get(),
+               "buffer",
+               fmt::format("in[{}]", bit_idx),
+               buffer_cell_,
+               {{buffer_pins_[{PinRoleType::DataIn, 0}],
+                 data_inputs_[bit_idx]->getNet()},
+                {buffer_pins_[{PinRoleType::DataOut, 0}], D_nets[bit_idx]}});
       ram_grid_.addCell(std::move(buffer_grid_cell), bit_idx + slice);
     }
   }
@@ -848,11 +889,13 @@ void RamGen::generate(const int mask_size,
   if (num_inputs > 1) {
     for (int i = num_inputs - 1; i >= 0; --i) {
       auto inv_grid_cell = std::make_unique<Cell>();
-      makeInst(inv_grid_cell.get(),
-               "decoder",
-               fmt::format("inv_{}", i),
-               inv_cell_,
-               {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
+      makeInst(
+          inv_grid_cell.get(),
+          "decoder",
+          fmt::format("inv_{}", i),
+          inv_cell_,
+          {{inv_pins_[{PinRoleType::DataIn, 0}], addr_inputs_[i]->getNet()},
+           {inv_pins_[{PinRoleType::DataOut, 0}], inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
       for (int filler_count = 0; filler_count < num_inputs - 1;
            ++filler_count) {
@@ -865,7 +908,8 @@ void RamGen::generate(const int mask_size,
              "decoder",
              fmt::format("inv_{}", 0),
              inv_cell_,
-             {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
+             {{inv_pins_[{PinRoleType::DataIn, 0}], addr_inputs_[0]->getNet()},
+              {inv_pins_[{PinRoleType::DataOut, 0}], inv_addr[0]}});
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 
