@@ -1,4 +1,4 @@
-from openroad import Design, Tech
+from openroad import Tech
 import helpers
 import rsz_aux
 
@@ -45,3 +45,7 @@ rsz_aux.report_long_wires(design, 10)
 rsz_aux.report_floating_nets(design)
 
 rsz_aux.report_design_area(design)
+
+def_file = helpers.make_result_file("gcd_resize.def")
+design.writeDef(def_file)
+helpers.diff_files(def_file, "gcd_resize.defok")
