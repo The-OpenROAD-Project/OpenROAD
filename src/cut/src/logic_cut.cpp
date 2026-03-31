@@ -216,8 +216,7 @@ void ConnectPinToDriver(
     abc::Abc_Obj_t* abc_input = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_ObjAddFanin(abc_net, abc_input);
     std::string driver_name = network->name(driver);
-    abc::Abc_ObjAssignName(
-        abc_net, driver_name.data(), nullptr);
+    abc::Abc_ObjAssignName(abc_net, driver_name.data(), nullptr);
   } else if (abc_instances.find(driver_instance) == abc_instances.end()) {
     logger->error(
         utl::CUT,
