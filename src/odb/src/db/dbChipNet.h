@@ -19,9 +19,6 @@ class _dbDatabase;
 class _dbChip;
 class _dbChipInst;
 class _dbChipBumpInst;
-// User Code Begin Classes
-class _dbChipBumpInst;
-// User Code End Classes
 
 class _dbChipNet : public _dbObject
 {
