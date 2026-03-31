@@ -1,7 +1,7 @@
 # Read UPF Utility
 
 This module contains functionality to read, and modify information
-from Unified Power Format (UPF) files. 
+from Unified Power Format (UPF) files.
 
 ## Commands
 
@@ -12,7 +12,7 @@ from Unified Power Format (UPF) files.
 
 ### Read UPF
 
-Sources the UPF file. 
+Sources the UPF file.
 
 ```tcl
 read_upf
@@ -21,7 +21,7 @@ read_upf
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-file` | Path to `.upf` file. |
 
@@ -35,7 +35,7 @@ write_upf file_name
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `file_name` | Filename argument. |
 
@@ -46,12 +46,12 @@ This command creates power domain for a group of modules.
 ```tcl
 create_power_domain
     [-elements elements]
-    name 
+    name
 ```
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-elements` | List of module paths that belong this this domain OR `.` for top domain. |
 | `name` | Domain name. |
@@ -69,7 +69,7 @@ create_logic_port
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-direction` | Direction of the port (`in`, `out`, `inout`). |
 | `port_name` | Port name. |
@@ -90,7 +90,7 @@ create_power_switch
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-domain` | Power domain name. |
 | `-output_supply_port` | Output supply port of the switch. |
@@ -99,11 +99,11 @@ create_power_switch
 | `-on_state` | One of {`state_name`, `input_supply_port`, `boolean_expression`}. |
 | `name` | Power switch name. |
 
-### Create or Update Isolation Strategy 
+### Create or Update Isolation Strategy
 
 This command creates or update isolation strategy.
 
-```tcl 
+```tcl
 set_isolation
     [-domain domain]
     [-applies_to applies_to]
@@ -117,7 +117,7 @@ set_isolation
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-domain` | Power domain |
 | `-applies_to` | Restricts the strategy to apply one of these (`inputs`, `outputs`, `both`), default value is `both`. |
@@ -132,7 +132,7 @@ set_isolation
 
 This command sets the interface cell.
 
-```tcl 
+```tcl
 use_interface_cell
     -domain domain
     -strategy strategy
@@ -142,7 +142,7 @@ use_interface_cell
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-domain` | Power domain name. |
 | `-strategy` | Isolation strategy name. |
@@ -161,7 +161,7 @@ set_domain_area
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `domain_name` | Power domain name. |
 | `-area` | x-/y- coordinates in microns for the lower left and upper right corners of the power domain area. |
@@ -171,7 +171,7 @@ set_domain_area
 
 This command maps existing power switch.
 
-```tcl 
+```tcl
 map_power_switch
     [-switch_name_list switch_name_list]
     [-lib_cells lib_cells]
@@ -180,7 +180,7 @@ map_power_switch
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-switch_name_list` |  A list of switches (as defined by create_power_switch) to map. |
 | `-lib_cells` | A list of library cells that could be mapped to the power switch |
@@ -214,12 +214,12 @@ set_level_shifter
     [-instance instance] \
     [-update] \
     [-use_equivalence use_equivalence] \
-    name 
+    name
 ```
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-domain` | |
 | `-elements` | |
@@ -251,12 +251,12 @@ This command sets the voltage of a power domain.
 ```tcl
 set_domain_voltage
     [-domain domain] \
-    [-voltage voltage] 
+    [-voltage voltage]
 ```
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-domain` | Power domain name. |
 | `-voltage` | Power domain voltage. The allowed values are `float`, default value is `0.0`. |
@@ -270,12 +270,12 @@ set_level_shifter_cell
     [-level_shifter level_shifter] \
     [-cell_name cell_name] \
     [-input_port input_port] \
-    [-output_port output_port] 
+    [-output_port output_port]
 ```
 
 #### Options
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-level_shifter` | KIV. |
 | `-cell_name` | KIV. |
@@ -292,15 +292,49 @@ Example script demonstrating how to run `upf` related commands can be found here
 
 ## Regression tests
 
-There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests).
 
-Simply run the following script: 
+Simply run the following script:
 
 ```shell
 ./test/regression
 ```
 
 ## Limitations
+
+### Unsupported UPF standard commands
+
+The following standard commands are not implemented
+(verified by grep returning no output and runtime
+returning "invalid command name"):
+
+- `upf_version` — UPF version declaration
+- `create_supply_net` — named supply net creation
+- `create_supply_port` — supply port creation
+- `connect_supply_net` — supply net connectivity
+- `add_power_state` — power state definition
+- `create_pst` — power state table creation
+- `add_pst_state` — power state table entries
+
+### Partially supported commands
+
+- `set_isolation` — missing options: `-isolation_supply_set`,
+  `-source`, `-sink` (verified: absent from both
+  upf.tcl keys list and upf.cpp function signature)
+- `set_level_shifter` — fully implemented in code but
+  all option descriptions in this README are empty
+  (marked "Options coming soon")
+- `set_level_shifter_cell` — all four options
+  (`-level_shifter`, `-cell_name`, `-input_port`,
+  `-output_port`) are undocumented (marked KIV)
+
+### Missing infrastructure
+
+- No validation framework for UPF rule compliance
+  (verified: no files matching "valid*" or "check*"
+  exist in src/upf/)
+- No power state table verification
+- No cross-domain signal integrity checks
 
 ## FAQs
 
