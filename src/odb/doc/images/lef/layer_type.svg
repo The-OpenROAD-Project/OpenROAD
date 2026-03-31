@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="221" height="257"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ROUTING"
+      xlink:title="K_ROUTING">
+      <rect x="51" y="3" width="92" height="32"/>
+      <rect x="49" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_ROUTING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CUT"
+      xlink:title="K_CUT">
+      <rect x="51" y="47" width="60" height="32"/>
+      <rect x="49" y="45" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_CUT</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OVERLAP"
+      xlink:title="K_OVERLAP">
+      <rect x="51" y="91" width="92" height="32"/>
+      <rect x="49" y="89" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_OVERLAP</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_MASTERSLICE"
+      xlink:title="K_MASTERSLICE">
+      <rect x="51" y="135" width="122" height="32"/>
+      <rect x="49" y="133" width="122" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">K_MASTERSLICE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_VIRTUAL"
+      xlink:title="K_VIRTUAL">
+      <rect x="51" y="179" width="88" height="32"/>
+      <rect x="49" y="177" width="88" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">K_VIRTUAL</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_IMPLANT"
+      xlink:title="K_IMPLANT">
+      <rect x="51" y="223" width="90" height="32"/>
+      <rect x="49" y="221" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">K_IMPLANT</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m92 0 h10 m0 0 h30 m-162 0 h20 m142 0 h20 m-182 0 q10 0 10 10 m162 0 q0 -10 10 -10 m-172 10 v24 m162 0 v-24 m-162 24 q0 10 10 10 m142 0 q10 0 10 -10 m-152 10 h10 m60 0 h10 m0 0 h62 m-152 -10 v20 m162 0 v-20 m-162 20 v24 m162 0 v-24 m-162 24 q0 10 10 10 m142 0 q10 0 10 -10 m-152 10 h10 m92 0 h10 m0 0 h30 m-152 -10 v20 m162 0 v-20 m-162 20 v24 m162 0 v-24 m-162 24 q0 10 10 10 m142 0 q10 0 10 -10 m-152 10 h10 m122 0 h10 m-152 -10 v20 m162 0 v-20 m-162 20 v24 m162 0 v-24 m-162 24 q0 10 10 10 m142 0 q10 0 10 -10 m-152 10 h10 m88 0 h10 m0 0 h34 m-152 -10 v20 m162 0 v-20 m-162 20 v24 m162 0 v-24 m-162 24 q0 10 10 10 m142 0 q10 0 10 -10 m-152 10 h10 m90 0 h10 m0 0 h32 m23 -220 h-3"/>
+   <polygon points="211 17 219 13 219 21"/>
+   <polygon points="211 17 203 13 203 21"/>
+</svg>

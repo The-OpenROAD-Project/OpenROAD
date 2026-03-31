@@ -557,7 +557,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
     save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
-    heat_map->setBlock(block);
+    heat_map->setChip(block != nullptr ? block->getChip() : nullptr);
   }
   hierarchy_widget_->setBlock(block);
 }

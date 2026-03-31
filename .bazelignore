@@ -5,3 +5,5 @@ src/sta/debug/
 # we use abc from MODULE.bazel
 third-party/abc/
 tmp
+# standalone workspace for downstream consumer tests
+test/downstream/

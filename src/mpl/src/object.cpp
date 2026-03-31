@@ -774,7 +774,7 @@ void HardMacro::setRealX(int x)
 
   switch (getOrientation().getValue()) {
     case odb::dbOrientType::Value::R180:
-    case odb::dbOrientType::Value::MX:
+    case odb::dbOrientType::Value::MY:
       x_ = x - halo_.right;
       break;
     default:
@@ -790,7 +790,7 @@ void HardMacro::setRealY(int y)
 
   switch (getOrientation().getValue()) {
     case odb::dbOrientType::Value::R180:
-    case odb::dbOrientType::Value::MY:
+    case odb::dbOrientType::Value::MX:
       y_ = y - halo_.top;
       break;
     default:

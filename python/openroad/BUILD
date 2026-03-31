@@ -16,7 +16,7 @@ py_library(
     imports = [".."],
     visibility = ["//visibility:public"],
     deps = [
-        "//:ord_py",
+        "//:openroad_py",
         "//src/odb:odb_py",
         "//src/utl:utl_py",
     ],

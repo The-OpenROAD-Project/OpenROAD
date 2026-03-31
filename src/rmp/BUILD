@@ -35,12 +35,10 @@ cc_library(
     hdrs = [
         "include/rmp/Restructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     defines = ["ABC_NAMESPACE=abc"],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         "//:ord",
@@ -76,11 +74,9 @@ cc_library(
     hdrs = [
         "include/rmp/MakeRestructure.h",
     ],
-    copts = [
-        "-Isrc/rmp/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rmp",

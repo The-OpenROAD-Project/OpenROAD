@@ -71,12 +71,12 @@ cc_library(
         "include/est/MakeEstimateParasitics.h",
     ],
     copts = [
-        "-Isrc/est/src",
         "-Wno-missing-braces",  # from TCL swigging
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":est",

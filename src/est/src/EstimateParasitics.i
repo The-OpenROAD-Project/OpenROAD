@@ -83,7 +83,7 @@ using est::ParasiticsSrc;
 }
 
 %typemap(in) ParasiticsSrc {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   if (stringEq(arg, "placement"))
     $1 = ParasiticsSrc::placement;

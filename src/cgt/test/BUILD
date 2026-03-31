@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//test:regression.bzl", "regression_test")
 
 package(features = ["layering_check"])
@@ -16,6 +17,7 @@ filegroup(
     # but at least it is not a glob of everything and there are
     # per test glob patterns below.
     srcs = [
+        "helpers.py",
         "helpers.tcl",
     ],
 )
@@ -60,4 +62,32 @@ filegroup(
         visibility = ["//visibility:public"],
     )
     for test_name in TESTS
+]
+
+py_library(
+    name = "helpers",
+    srcs = ["helpers.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+PY_TESTS = [
+    "aes_nangate45",
+    "countdown_asap7",
+    "ibex_sky130hd",
+]
+
+[
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [":" + test_name + "_resources"],
+        deps = [
+            ":helpers",
+            "//python/openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
 ]

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="515" height="257"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SPACING"
+      xlink:title="K_SPACING">
+      <rect x="51" y="3" width="92" height="32"/>
+      <rect x="49" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_SPACING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_WIREEXTENSION"
+      xlink:title="K_WIREEXTENSION">
+      <rect x="51" y="47" width="142" height="32"/>
+      <rect x="49" y="45" width="142" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_WIREEXTENSION</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RESISTANCE"
+      xlink:title="K_RESISTANCE">
+      <rect x="51" y="91" width="114" height="32"/>
+      <rect x="49" y="89" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_RESISTANCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RPERSQ"
+      xlink:title="K_RPERSQ">
+      <rect x="185" y="91" width="86" height="32"/>
+      <rect x="183" y="89" width="86" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="193" y="109">K_RPERSQ</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CAPACITANCE"
+      xlink:title="K_CAPACITANCE">
+      <rect x="51" y="135" width="124" height="32"/>
+      <rect x="49" y="133" width="124" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">K_CAPACITANCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CPERSQDIST"
+      xlink:title="K_CPERSQDIST">
+      <rect x="195" y="135" width="116" height="32"/>
+      <rect x="193" y="133" width="116" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="203" y="153">K_CPERSQDIST</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_EDGECAPACITANCE"
+      xlink:title="K_EDGECAPACITANCE">
+      <rect x="51" y="179" width="158" height="32"/>
+      <rect x="49" y="177" width="158" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">K_EDGECAPACITANCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_DIAGWIDTH"
+      xlink:title="K_DIAGWIDTH">
+      <rect x="51" y="223" width="110" height="32"/>
+      <rect x="49" y="221" width="110" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">K_DIAGWIDTH</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="351" y="3" width="92" height="32"/>
+      <rect x="349" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="359" y="21">int_number</text>
+   </a>
+   <rect x="463" y="3" width="24" height="32" rx="10"/>
+   <rect x="461"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="471" y="21">;</text>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m92 0 h10 m0 0 h168 m-300 0 h20 m280 0 h20 m-320 0 q10 0 10 10 m300 0 q0 -10 10 -10 m-310 10 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m142 0 h10 m0 0 h118 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m114 0 h10 m0 0 h10 m86 0 h10 m0 0 h40 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m124 0 h10 m0 0 h10 m116 0 h10 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m158 0 h10 m0 0 h102 m-290 -10 v20 m300 0 v-20 m-300 20 v24 m300 0 v-24 m-300 24 q0 10 10 10 m280 0 q10 0 10 -10 m-290 10 h10 m110 0 h10 m0 0 h150 m20 -220 h10 m92 0 h10 m0 0 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="505 17 513 13 513 21"/>
+   <polygon points="505 17 497 13 497 21"/>
+</svg>

@@ -185,12 +185,12 @@ cc_library(
         "include/grt/MakeGlobalRouter.h",
     ],
     copts = [
-        "-Isrc/grt/src",
         "-Wno-missing-braces",  # from TCL swigging
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":abstract-fastroute",

@@ -104,6 +104,17 @@ js_test(
     no_copy_to_bin = ["//src/web:js_sources"],
 )
 
+js_test(
+    name = "tcl_completer_test",
+    data = [
+        "js/setup-dom.js",
+        "//src/web:js_sources",
+        "//src/web:node_modules/jsdom",
+    ],
+    entry_point = "js/test-tcl-completer.js",
+    no_copy_to_bin = ["//src/web:js_sources"],
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
@@ -149,6 +160,27 @@ cc_test(
 cc_test(
     name = "tile_generator_test",
     srcs = ["cpp/TestTileGenerator.cpp"],
+    copts = ["-Isrc/web/src"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web",
+        "//third-party/lodepng",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_image_test",
+    srcs = ["cpp/TestSaveImage.cpp"],
     copts = ["-Isrc/web/src"],
     data = [
         "//test:nangate45_data",

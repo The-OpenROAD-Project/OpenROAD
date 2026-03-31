@@ -7,6 +7,20 @@ include("openroad")
 
 find_package(ortools REQUIRED)
 
+add_library(mpl_snapper
+  src/snapper.cpp
+)
+
+target_include_directories(mpl_snapper
+  PUBLIC
+    include
+)
+
+target_link_libraries(mpl_snapper
+    utl_lib
+    odb
+)
+
 add_library(mpl_lib
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
@@ -24,6 +38,7 @@ target_include_directories(mpl_lib
 )
 
 target_link_libraries(mpl_lib
+    mpl_snapper
     utl_lib
     dbSta_lib
     OpenSTA

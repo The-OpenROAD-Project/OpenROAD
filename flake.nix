@@ -7,8 +7,8 @@
 #      take around 5 minutes depending on your internet connection and
 #      CPU speed.
 #   3. cd build
-#   4. cmake -G Ninja $cmakeFlags ..
-#   5. ninja
+#   4. cmake $cmakeFlags ..
+#   5. make
 
 # To build OpenROAD with Nix:
 #   1. Install Nix: https://github.com/DeterminateSystems/nix-installer

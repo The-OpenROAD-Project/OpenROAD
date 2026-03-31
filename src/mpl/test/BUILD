@@ -249,26 +249,8 @@ cc_test(
         "cpp/MplTest.h",
         "cpp/TestSnapper.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
     deps = [
-        "//src/mpl",
-        "//src/odb",
-        "//src/tst",
-        "//src/utl",
-        "@googletest//:gtest",
-        "@googletest//:gtest_main",
-    ],
-)
-
-cc_test(
-    name = "TestSnapper",
-    srcs = [
-        "cpp/MplTest.h",
-        "cpp/TestSnapper.cpp",
-    ],
-    features = ["-layering_check"],  # TODO: includes private headers
-    deps = [
-        "//src/mpl",
+        "//src/mpl:snapper",
         "//src/odb",
         "//src/tst",
         "//src/utl",

@@ -142,7 +142,7 @@ bool TimingBase::executeTimingDriven(bool run_journal_restore)
       = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
             .value();
 
-  log_->info(GPL, 106, "Timing-driven: worst slack {:.3g}", slack_min);
+  log_->info(GPL, 106, "Timing-driven: worst slack {}", slack_min);
 
   if (sta::fuzzyInf(slack_min)) {
     log_->warn(GPL,

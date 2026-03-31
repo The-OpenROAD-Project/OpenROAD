@@ -1,10 +1,11 @@
-load("@bazel-orfs//:openroad.bzl", "orfs_flow")
+load("@bazel-orfs//:sweep.bzl", "orfs_sweep")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//test/orfs:check_same.bzl", "check_same")
 load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
 
-orfs_flow(
+orfs_sweep(
     name = "gcd",
     # buildifier: disable=unsorted-dict-items
     arguments = {
@@ -22,6 +23,11 @@ orfs_flow(
     sources = {
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],
+    },
+    stage = "final",
+    sweep = {
+        "b": {},
+        "base": {},
     },
     tags = ["manual"],
     test_kwargs = {
@@ -62,4 +68,12 @@ sh_test(
         "//etc:whittle_cut.tcl",
     ],
     tags = ["orfs"],
+)
+
+check_same(
+    name = "gcd_idempotent_test",
+    flow = "gcd",
+    tags = ["orfs"],
+    variant_a = "base",
+    variant_b = "b",
 )

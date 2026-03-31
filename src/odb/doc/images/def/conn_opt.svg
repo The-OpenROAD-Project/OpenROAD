@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="271" height="101"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#extension_stmt"
+      xlink:title="extension_stmt">
+      <rect x="51" y="23" width="118" height="32"/>
+      <rect x="49" y="21" width="118" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="41">extension_stmt</text>
+   </a>
+   <rect x="51" y="67" width="30" height="32" rx="10"/>
+   <rect x="49"
+         y="65"
+         width="30"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="59" y="85">+</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SYNTHESIZED"
+      xlink:title="K_SYNTHESIZED">
+      <rect x="101" y="67" width="122" height="32"/>
+      <rect x="99" y="65" width="122" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="109" y="85">K_SYNTHESIZED</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m20 0 h10 m0 0 h182 m-212 0 h20 m192 0 h20 m-232 0 q10 0 10 10 m212 0 q0 -10 10 -10 m-222 10 v12 m212 0 v-12 m-212 12 q0 10 10 10 m192 0 q10 0 10 -10 m-202 10 h10 m118 0 h10 m0 0 h54 m-202 -10 v20 m212 0 v-20 m-212 20 v24 m212 0 v-24 m-212 24 q0 10 10 10 m192 0 q10 0 10 -10 m-202 10 h10 m30 0 h10 m0 0 h10 m122 0 h10 m23 -76 h-3"/>
+   <polygon points="261 5 269 1 269 9"/>
+   <polygon points="261 5 253 1 253 9"/>
+</svg>

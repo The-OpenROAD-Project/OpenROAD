@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <map>
 #include <ostream>
-#include <sstream>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -69,37 +69,47 @@ class lefout
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
   template <typename GenericBox>
-  void writeBoxes(dbBlock* block, dbSet<GenericBox>& boxes, const char* indent);
+  std::set<dbVia*> writeBoxes(std::ostream& out,
+                              dbBlock* block,
+                              dbSet<GenericBox>& boxes,
+                              const char* indent);
 
-  void writeTechBody(dbTech* tech);
-  void writeLayer(dbTechLayer* layer);
-  void writeVia(dbTechVia* via);
-  void writeBlockVia(dbBlock* db_block, dbVia* via);
-  void writeHeader(dbLib* lib);
-  void writeHeader(dbBlock* db_block);
-  void writeLibBody(dbLib* lib);
-  void writeMaster(dbMaster* master);
-  void writeMTerm(dbMTerm* mterm);
-  void writeSite(dbSite* site);
-  void writeViaMap(dbTech* tech, bool use_via_cut_class);
-  void writeNonDefaultRule(dbTech* tech, dbTechNonDefaultRule* rule);
-  void writeLayerRule(dbTechLayerRule* rule);
-  void writeSameNetRule(dbTechSameNetRule* rule);
-  void writeTechViaRule(dbTechViaRule* rule);
-  void writeTechViaGenerateRule(dbTechViaGenerateRule* rule);
-  void writePropertyDefinition(dbProperty* prop);
-  void writePropertyDefinitions(dbLib* lib);
-  void writeVersion(const std::string& version);
-  void writeNameCaseSensitive(dbOnOffType on_off_type);
-  void writeBusBitChars(char left_bus_delimiter, char right_bus_delimiter);
-  void writeUnits(int database_units);
-  void writeDividerChar(char hier_delimiter);
-  void writeObstructions(dbBlock* db_block);
+  void writeTechBody(std::ostream& out, dbTech* tech);
+  void writeLayer(std::ostream& out, dbTechLayer* layer);
+  void writeVia(std::ostream& out, dbTechVia* via);
+  void writeBlockVia(std::ostream& out, dbBlock* db_block, dbVia* via);
+  void writeHeader(std::ostream& out, dbLib* lib);
+  void writeHeader(std::ostream& out, dbBlock* db_block);
+  void writeLibBody(std::ostream& out, dbLib* lib);
+  void writeMaster(std::ostream& out, dbMaster* master);
+  void writeMTerm(std::ostream& out, dbMTerm* mterm);
+  void writeSite(std::ostream& out, dbSite* site);
+  void writeViaMap(std::ostream& out, dbTech* tech, bool use_via_cut_class);
+  void writeNonDefaultRule(std::ostream& out,
+                           dbTech* tech,
+                           dbTechNonDefaultRule* rule);
+  void writeLayerRule(std::ostream& out, dbTechLayerRule* rule);
+  void writeSameNetRule(std::ostream& out, dbTechSameNetRule* rule);
+  void writeTechViaRule(std::ostream& out, dbTechViaRule* rule);
+  void writeTechViaGenerateRule(std::ostream& out, dbTechViaGenerateRule* rule);
+  void writePropertyDefinition(std::ostream& out, dbProperty* prop);
+  void writePropertyDefinitions(std::ostream& out, dbLib* lib);
+  void writeVersion(std::ostream& out, const std::string& version);
+  void writeNameCaseSensitive(std::ostream& out, dbOnOffType on_off_type);
+  void writeBusBitChars(std::ostream& out,
+                        char left_bus_delimiter,
+                        char right_bus_delimiter);
+  void writeUnits(std::ostream& out, int database_units);
+  void writeDividerChar(std::ostream& out, char hier_delimiter);
+  void writeObstructions(std::ostream& out, dbBlock* db_block);
   void getObstructions(dbBlock* db_block, ObstructionMap& obstructions) const;
-  void writeBox(const std::string& indent, dbBox* box);
-  void writePolygon(const std::string& indent, dbPolygon* polygon);
-  void writeRect(const std::string& indent,
-                 const boost::polygon::rectangle_data<int>& rect);
+  void writeBox(std::ostream& out, const std::string& indent, dbBox* box);
+  void writePolygon(std::ostream& out,
+                    const std::string& indent,
+                    dbPolygon* polygon);
+  void writeRect(std::ostream& out,
+                 const std::string& indent,
+                 const Rect& rect);
   void findInstsObstructions(ObstructionMap& obstructions,
                              dbBlock* db_block) const;
   void findWireLayerObstructions(ObstructionMap& obstructions,
@@ -108,12 +118,13 @@ class lefout
                                   dbNet* net) const;
   void findLayerViaObstructions(ObstructionMap& obstructions,
                                 dbSBox* box) const;
-  void writeBlock(dbBlock* db_block);
-  void writePins(dbBlock* db_block);
-  void writePowerPins(dbBlock* db_block);
-  void writeBlockTerms(dbBlock* db_block);
+  void writeBlock(std::ostream& out, dbBlock* db_block);
+  std::set<dbVia*> writePins(std::ostream& out, dbBlock* db_block);
+  std::set<dbVia*> writePowerPins(std::ostream& out, dbBlock* db_block);
+  std::set<dbVia*> writeBlockTerms(std::ostream& out, dbBlock* db_block);
 
   inline void writeObjectPropertyDefinitions(
+      std::ostream& out,
       dbObject* obj,
       std::unordered_map<std::string, int16_t>& propertiesMap);
 

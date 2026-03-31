@@ -47,6 +47,10 @@ void TechLayer::populateGrid(odb::dbBlock* block, odb::dbTechLayerDir dir)
   }
 
   auto* tracks = block->findTrackGrid(layer_);
+  if (tracks == nullptr) {
+    return;
+  }
+
   if (dir == odb::dbTechLayerDir::HORIZONTAL) {
     grid_ = tracks->getGridY();
   } else if (dir == odb::dbTechLayerDir::VERTICAL) {

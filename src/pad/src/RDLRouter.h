@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -135,7 +136,7 @@ class RDLRouter
                                       boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
-  const std::map<GridGraphVertex, odb::Point>& getVertexMap() const
+  const std::unordered_map<GridGraphVertex, odb::Point>& getVertexMap() const
   {
     return vertex_point_map_;
   }
@@ -206,8 +207,8 @@ class RDLRouter
   void buildIntialRouteSet();
   int reportFailedRoutes(
       const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const;
-  std::set<odb::dbInst*> getRoutedInstances() const;
-  int getRoutingInstanceCount() const;
+  std::set<odb::dbITerm*> getRoutedTerms() const;
+  int getRoutingTermCount() const;
 
   int getBloatFactor() const;
   bool isDebugNet(odb::dbNet* net) const;
@@ -232,9 +233,9 @@ class RDLRouter
   ObsTree obstructions_;
 
   // Lookup tables
-  std::map<odb::Point, GridGraphVertex> point_vertex_map_;
+  std::unordered_map<odb::Point, GridGraphVertex> point_vertex_map_;
   GridTree vertex_grid_tree_;
-  std::map<GridGraphVertex, odb::Point> vertex_point_map_;
+  std::unordered_map<GridGraphVertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
   // Routing grid

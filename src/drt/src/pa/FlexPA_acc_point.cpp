@@ -242,7 +242,7 @@ void FlexPA::createSingleAccessPoint(
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
-    if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (lower_layer->isHorizontal()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
@@ -252,7 +252,7 @@ void FlexPA::createSingleAccessPoint(
       }
     }
     // vert layer
-    if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
+    if (lower_layer->isVertical()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
@@ -653,9 +653,8 @@ bool FlexPA::filterPlanarAccess(
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool wrong_dir
-      = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
-        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
+  const bool wrong_dir = (layer->isHorizontal() && vert_dir)
+                         || (layer->isVertical() && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);

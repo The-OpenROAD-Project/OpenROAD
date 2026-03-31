@@ -23,4 +23,4 @@ add_pdn_connect -layers {metal1 metal2}
 add_pdn_connect -layers {metal2 metal4}
 add_pdn_connect -layers {metal4 metal7}
 
-pdngen
+catch { pdngen }

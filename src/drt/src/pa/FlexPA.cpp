@@ -193,10 +193,16 @@ void FlexPA::updateDirtyInsts()
     processed_insts.insert(inst_row.begin(), inst_row.end());
     inst_rows.push_back(inst_row);
   }
+  ThreadException exception;
 #pragma omp parallel for schedule(dynamic)
   for (auto& inst_row : inst_rows) {
-    genInstRowPattern(inst_row);
+    try {
+      genInstRowPattern(inst_row);
+    } catch (...) {
+      exception.capture();
+    }
   }
+  exception.rethrow();
   dirty_insts_.clear();
 }
 

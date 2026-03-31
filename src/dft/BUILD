@@ -48,11 +48,9 @@ cc_library(
     hdrs = [
         "include/dft/MakeDft.hh",
     ],
-    copts = [
-        "-Isrc/dft/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":dft",

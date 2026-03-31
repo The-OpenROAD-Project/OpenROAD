@@ -16,6 +16,7 @@ cc_library(
         "src/dbSta.cc",
     ],
     hdrs = [
+        "include/db_sta/DelayFmt.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [
@@ -144,11 +145,11 @@ cc_library(
         "include/db_sta/MakeDbSta.hh",
     ],
     copts = [
-        "-Isrc/dbSta/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":IpChecker",

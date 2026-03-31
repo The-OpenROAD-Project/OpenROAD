@@ -138,11 +138,13 @@ cc_library(
     hdrs = ["include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
-        "-Isrc/odb/src/swig/common",
-        "-Isrc/odb/include",
     ],
     features = [
         "-use_header_modules",
+    ],
+    includes = [
+        "include",
+        "src/swig/common",
     ],
     deps = [
         ":odb",

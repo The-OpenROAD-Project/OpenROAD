@@ -230,6 +230,11 @@ void check_axioms_cmd()
   sta->checkSanity();
 }
 
+bool parasitics_annotated(Pin *pin, Scene *scene) {
+  auto parasitics = scene->parasitics(sta::MinMax::max());
+  return parasitics->findParasiticNetwork(pin) != nullptr;
+}
+
 } // namespace sta
 
 bool

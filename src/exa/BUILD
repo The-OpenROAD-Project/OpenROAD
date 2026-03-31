@@ -43,11 +43,9 @@ cc_library(
     hdrs = [
         "include/exa/MakeExample.h",
     ],
-    copts = [
-        "-Isrc/exa/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":exa",

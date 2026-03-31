@@ -12,6 +12,20 @@ package(
 )
 
 cc_library(
+    name = "snapper",
+    srcs = [
+        "src/snapper.cpp",
+    ],
+    hdrs = [
+        "src/snapper.h",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/utl",
+    ],
+)
+
+cc_library(
     name = "mpl",
     srcs = [
         "src/MplObserver.h",
@@ -39,6 +53,7 @@ cc_library(
         "include",
     ],
     deps = [
+        ":snapper",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",
@@ -68,11 +83,9 @@ cc_library(
     hdrs = [
         "include/mpl/MakeMacroPlacer.h",
     ],
-    copts = [
-        "-Isrc/mpl/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":mpl",

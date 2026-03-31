@@ -1003,9 +1003,9 @@ void ClockTreeView::drawTimeScale(QPainter* painter,
                                   sta::Delay max_time,
                                   sta::Delay mouse_time) const
 {
-  min_time /= unit_scale_;
-  max_time /= unit_scale_;
-  mouse_time /= unit_scale_;
+  min_time = sta::delayAsFloat(min_time) / unit_scale_;
+  max_time = sta::delayAsFloat(max_time) / unit_scale_;
+  mouse_time = sta::delayAsFloat(mouse_time) / unit_scale_;
 
   const sta::Delay time_range = max_time - min_time;
 
@@ -1031,9 +1031,10 @@ void ClockTreeView::drawTimeScale(QPainter* painter,
       = std::pow(10, std::floor(std::log10(time_range * scale_time)))
         / scale_time;
   if (time_range / tick_interval < min_tick_marks) {
-    tick_interval /= 10;
+    tick_interval = sta::delayAsFloat(tick_interval) / 10;
   }
-  tick_interval = std::max(tick_interval, 1 / scale_time);
+  tick_interval = std::max<float>(sta::delayAsFloat(tick_interval),
+                                  1 / sta::delayAsFloat(scale_time));
 
   sta::Delay tick = std::floor(min_time / tick_interval) * tick_interval;
   while (tick < max_time) {
@@ -1041,7 +1042,7 @@ void ClockTreeView::drawTimeScale(QPainter* painter,
     const QPoint tick_end(tick_start.x() + tick_length, tick_start.y());
     painter->drawLine(tick_start, tick_end);
     painter->drawText(tick_end, time_to_string(tick, digits));
-    tick += tick_interval;
+    tick = sta::delayAsFloat(tick) + sta::delayAsFloat(tick_interval);
   }
 
   if (show_mouse_time_tick_) {

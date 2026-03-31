@@ -2,11 +2,12 @@
 [Describe your changes here]
 
 ## Type of Change
-- [ ] Bug Fix
-- [ ] New Feature
-- [ ] Refactor
-- [ ] Documentation
-- [ ] Other
+<!-- Delete items that do not apply -->
+- Bug fix
+- New feature
+- Breaking change
+- Refactoring
+- Documentation update
 
 ## Impact
 [How does this change the tool's behavior?]

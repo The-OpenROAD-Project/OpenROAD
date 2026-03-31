@@ -43,11 +43,11 @@ build --copt "-Wextra"             --host_copt "-Wextra"
 # ... and disable the warnings we're not interested in.
 build --copt "-Wno-sign-compare"          --host_copt "-Wno-sign-compare"
 build --copt "-Wno-unused-parameter"      --host_copt "-Wno-unused-parameter"
-build --copt "-Wno-c++20-designator"      --host_copt "-Wno-c++20-designator"
 build --copt "-Wno-gcc-compat"            --host_copt "-Wno-gcc-compat"
 build --copt "-Wno-nullability-extension" --host_copt "-Wno-nullability-extension"
 build --copt "-Wno-deprecated-declarations" --host_copt "-Wno-deprecated-declarations"
 build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
+build --cxxopt "-Wno-c++20-designator"   --host_cxxopt "-Wno-c++20-designator"
 
 # The warning acceptance bar in CI for PRs is set by -Werror of a specific
 # version of some chosen compiler. Disable warnings from other compilers until
@@ -56,9 +56,9 @@ build --copt "-Wno-unused-local-typedef" --host_copt "-Wno-unused-local-typedef"
 # these warnings in code they are not working on.
 build --copt "-Wno-cast-function-type-mismatch"  --host_copt "-Wno-cast-function-type-mismatch"
 build --copt "-Wno-unused-but-set-variable"  --host_copt "-Wno-unused-but-set-variable"
-build --copt "-Wno-deprecated-copy"  --host_copt "-Wno-deprecated-copy"
-build --copt "-Wno-deprecated-copy-with-user-provided-copy"  --host_copt "-Wno-deprecated-copy-with-user-provided-copy"
-build --copt "-Wno-dangling"  --host_copt "-Wno-dangling"
+build --cxxopt "-Wno-deprecated-copy"  --host_cxxopt "-Wno-deprecated-copy"
+build --cxxopt "-Wno-deprecated-copy-with-user-provided-copy"  --host_cxxopt "-Wno-deprecated-copy-with-user-provided-copy"
+build --cxxopt "-Wno-dangling"  --host_cxxopt "-Wno-dangling"
 
 # For 3rd party code: Disable warnings entirely.
 # They are not actionable and just create noise.

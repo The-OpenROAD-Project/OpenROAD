@@ -1,8 +1,12 @@
 import re
 import utl
-import pdn
 import odb
 from collections import defaultdict
+
+try:
+    import pdn
+except ModuleNotFoundError:
+    import openroad as pdn
 
 
 #  In tcl land, this lives in OpenRoad.tcl. However, it seems to be only called

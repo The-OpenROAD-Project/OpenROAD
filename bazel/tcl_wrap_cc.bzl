@@ -49,8 +49,10 @@ def _tcl_wrap_cc_impl(ctx):
     output_file = ctx.actions.declare_file(outfile_name)
 
     include_root_directory = ""
+    if ctx.label.workspace_root:
+        include_root_directory = ctx.label.workspace_root + "/"
     if ctx.label.package:
-        include_root_directory = ctx.label.package + "/"
+        include_root_directory += ctx.label.package + "/"
 
     src_inputs = _get_transitive_srcs(ctx.files.srcs + ctx.files.root_swig_src, ctx.attr.deps)
     includes_paths = _get_transitive_includes(
@@ -69,11 +71,12 @@ def _tcl_wrap_cc_impl(ctx):
         args.add("-namespace")
         args.add("-prefix")
         args.add(ctx.attr.namespace_prefix)
-        args.add_all(swig_options.to_list())
-        args.add_all(includes_paths.to_list(), format_each = "-I%s")
-        args.add("-o")
-        args.add(output_file.path)
-        args.add(root_file.path)
+
+    args.add_all(swig_options.to_list())
+    args.add_all(includes_paths.to_list(), format_each = "-I%s")
+    args.add("-o")
+    args.add(output_file.path)
+    args.add(root_file.path)
 
     ctx.actions.run(
         outputs = [output_file],

@@ -293,4 +293,55 @@ struct interior_rings<odb::Polygon>
   }
 };
 
+//
+// Make odb's Line work with boost geometry.
+//
+
+template <>
+struct tag<odb::Line>
+{
+  using type = segment_tag;
+};
+
+template <>
+struct point_type<odb::Line>
+{
+  using type = odb::Point;
+};
+
+template <std::size_t Index, std::size_t Dimension>
+struct indexed_access<odb::Line, Index, Dimension>
+{
+  using coordinate_type = int;
+
+  static constexpr coordinate_type get(const odb::Line& line)
+  {
+    if (Index == 0) {
+      return Dimension == 0 ? line.pt0().getX() : line.pt0().getY();
+    }
+    return Dimension == 0 ? line.pt1().getX() : line.pt1().getY();
+  }
+
+  static void set(odb::Line& line, const int value)
+  {
+    if (Index == 0) {
+      odb::Point pt = line.pt0();
+      if (Dimension == 0) {
+        pt.setX(value);
+      } else {
+        pt.setY(value);
+      }
+      line.setPt0(pt);
+    } else {
+      odb::Point pt = line.pt1();
+      if (Dimension == 0) {
+        pt.setX(value);
+      } else {
+        pt.setY(value);
+      }
+      line.setPt1(pt);
+    }
+  }
+};
+
 }  // namespace boost::geometry::traits

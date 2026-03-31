@@ -28,7 +28,6 @@ struct RouterConfiguration
   std::string OUT_MAZE_FILE;
   std::string DRC_RPT_FILE;
   std::optional<int> DRC_RPT_ITER_STEP = std::nullopt;
-  std::string CMAP_FILE;
   std::string GUIDE_REPORT_FILE;
 
   // to be removed
@@ -92,10 +91,6 @@ struct RouterConfiguration
   frUInt4 GUIDECOST = 1;      // disabled change getNextPathCost to enable
   float SHAPEBLOATWIDTH = 3;  // unused
 
-  // GR
-  int CONGCOST = 8;
-  int HISTCOST = 32;
-
   std::string REPAIR_PDN_LAYER_NAME;
   frLayerNum REPAIR_PDN_LAYER_NUM = -1;
   frLayerNum GC_IGNORE_PDN_LAYER_NUM = -1;
@@ -109,12 +104,6 @@ constexpr int WAVEFRONTBUFFERSIZE = 2;
 constexpr int WAVEFRONTBITSIZE = (WAVEFRONTBUFFERSIZE * DIRBITSIZE);
 constexpr int WAVEFRONTBUFFERHIGHMASK
     = (111 << ((WAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
-
-// GR
-constexpr int GRWAVEFRONTBUFFERSIZE = 2;
-constexpr int GRWAVEFRONTBITSIZE = (GRWAVEFRONTBUFFERSIZE * DIRBITSIZE);
-constexpr int GRWAVEFRONTBUFFERHIGHMASK
-    = (111 << ((GRWAVEFRONTBUFFERSIZE - 1) * DIRBITSIZE));
 
 constexpr int LARGE_NET_FANOUT_THRESHOLD = 100;
 

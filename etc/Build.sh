@@ -19,7 +19,6 @@ EOF
   numThreads=2
 fi
 cmakeOptions=""
-isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
@@ -46,7 +45,6 @@ OPTIONS:
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
   -no-tests                                     Disable GTest
-  -ninja                                        Use Ninja build system
   -cpp20                                        Use C++20 standard
   -build-man                                    Build Man Pages (optional)
   -threads=NUM_THREADS                          Number of threads to use during
@@ -85,10 +83,6 @@ while [ "$#" -gt 0 ]; do
             ;;
         -no-tests)
             cmakeOptions+=" -DENABLE_TESTS=OFF"
-            ;;
-        -ninja)
-            cmakeOptions+=" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja"
-            isNinja=yes
             ;;
         -cpp20)
             cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
@@ -258,11 +252,5 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-if [[ "$isNinja" == "yes" ]]; then
-    eval cmake "${cmakeOptions}" -B "${buildDir}" .
-    cd "${buildDir}"
-    CLICOLOR_FORCE=1 ninja build_and_test
-    exit 0
-fi
 eval cmake "${cmakeOptions}" -B "${buildDir}" .
 eval time cmake --build "${buildDir}" -j "${numThreads}"

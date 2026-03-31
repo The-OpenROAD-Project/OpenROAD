@@ -12,7 +12,6 @@
   boost189,
   eigen,
   cudd,
-  ninja,
   tcl,
   python3,
   readline,
@@ -135,7 +134,6 @@ let
       flex
       gnumake
       libsForQt5.wrapQtAppsHook
-      ninja
       pkg-config
       swig
     ];

@@ -26,7 +26,7 @@ using sta::Scene;
 %include "tcl/StaTclTypes.i"
 
 %typemap(in) psm::GeneratedSourceType {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
 
   if (strcmp(arg, "BUMPS") == 0) {
@@ -119,4 +119,3 @@ set_inst_power(odb::dbInst* inst, Scene* corner, float power)
 }
 
 %} // inline
-
