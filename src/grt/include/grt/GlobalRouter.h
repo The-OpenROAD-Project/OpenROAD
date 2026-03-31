@@ -170,7 +170,8 @@ class GlobalRouter
   void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
-  bool updateUncoveredPinsPositions(odb::dbNet* db_net);
+  bool updateUncoveredPinsPositions(odb::dbNet* db_net,
+                                    std::string& pins_not_covered);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);

@@ -917,11 +917,14 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
     is_congested_ = is_congested_ || guide->isCongested();
   }
 
-  if (!updateUncoveredPinsPositions(db_net)) {
+  std::string pins_not_covered;
+  if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
     logger_->warn(GRT,
                   304,
-                  "Fail to restore routing segments from guides for net {}.",
-                  net->getName());
+                  "Fail to restore routing segments from guides for net {}. "
+                  "The following pins are not covered: {}.",
+                  net->getName(),
+                  pins_not_covered);
     return false;
   }
 
@@ -2521,11 +2524,14 @@ bool GlobalRouter::findCoveredAccessPoint(const Net* net, Pin& pin)
 // For each pin not covered by the restored guide segments, search all access
 // points to find one that is covered. Returns true if all pins are covered
 // after the update, false if any pin remains uncovered (triggering a reroute).
-bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net)
+// pins_not_covered is populated with the names of pins that could not be fixed.
+bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
+                                                std::string& pins_not_covered)
 {
   Net* net = db_net_map_[db_net];
   const GRoute& segments = routes_[db_net];
   bool all_covered = true;
+  pins_not_covered = "";
 
   for (Pin& pin : net->getPins()) {
     bool pin_is_covered = false;
@@ -2536,6 +2542,7 @@ bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net)
       }
     }
     if (!pin_is_covered && !findCoveredAccessPoint(net, pin)) {
+      pins_not_covered += pin.getName() + " ";
       all_covered = false;
     }
   }
