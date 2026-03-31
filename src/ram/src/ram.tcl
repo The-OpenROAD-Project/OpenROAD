@@ -150,7 +150,7 @@ proc generate_ram { args } {
   set power_pin ""
   if { [info exists keys(-power_pin)] } {
     set power_pin $keys(-power_pin)
-  } 
+  }
 
   set ground_pin ""
   if { [info exists keys(-ground_pin)] } {
