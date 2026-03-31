@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -o pipefail
 
 RESULTS_DIR="${RESULTS_DIR:-results}"
 LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"

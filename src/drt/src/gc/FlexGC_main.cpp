@@ -4204,6 +4204,7 @@ int FlexGCWorker::Impl::main()
   checkMetalWidthViaTable();
   // modify markers for pwires
   modifyMarkers();
+  normalizeMarkerOrder();
   return 0;
 }
 

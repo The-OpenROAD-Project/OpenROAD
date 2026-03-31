@@ -126,6 +126,7 @@ class RamGen
                  int column_mux_ratio,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
+                 odb::dbNet* word_select,
                  const std::vector<odb::dbNet*>& selects,
                  const std::vector<odb::dbNet*>& data_input,
                  const std::vector<std::vector<odb::dbNet*>>& data_output);
@@ -142,13 +143,6 @@ class RamGen
                 const std::vector<odb::dbNet*>& selects,
                 const std::vector<odb::dbNet*>& data_input,
                 const std::vector<std::vector<odb::dbNet*>>& data_output);
-
-  std::unique_ptr<Cell> makeColMux(
-      const std::string& prefix,
-      int column_mux_ratio,
-      const std::vector<odb::dbNet*>& word_q_nets,
-      const std::vector<odb::dbNet*>& word_sel_nets,
-      odb::dbNet* q_out_net);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 

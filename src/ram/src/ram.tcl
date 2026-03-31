@@ -15,8 +15,8 @@ sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -column_mux_ratio -storage_cell -tristate_cell -inv_cell
-      -read_ports -tapcell -max_tap_dist } flags {}
-      
+      -read_ports -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
+
   set column_mux_ratio 1
   if { [info exists keys(-column_mux_ratio)] } {
     set column_mux_ratio $keys(-column_mux_ratio)
@@ -77,6 +77,10 @@ proc generate_ram_netlist { args } {
   } else {
     utl::warn RAM 22 "No tapcell is specified.
         The generated layout may not pass Design Rule Checks."
+  }
+
+  if { [info exists keys(-write_behavioral_verilog)] } {
+    ram::set_behavioral_verilog_filename $keys(-write_behavioral_verilog)
   }
 
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $column_mux_ratio $storage_cell \
