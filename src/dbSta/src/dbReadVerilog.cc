@@ -11,6 +11,7 @@
 #include <memory>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -87,15 +88,15 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
                           VerilogReader* verilog_reader)
 {
   if (verilog_reader) {
-    network->setLinkFunc(
-      [=](std::string_view top_cell_name, bool make_black_boxes) -> Instance* {
-          return verilog_reader->linkNetwork(
-              top_cell_name,
-              make_black_boxes,
-              // don't delete modules after link so we can swap to
-              // uninstantiated modules if needed
-              false);
-        });
+    network->setLinkFunc([=](std::string_view top_cell_name,
+                             bool make_black_boxes) -> Instance* {
+      return verilog_reader->linkNetwork(
+          top_cell_name,
+          make_black_boxes,
+          // don't delete modules after link so we can swap to
+          // uninstantiated modules if needed
+          false);
+    });
   }
 }
 
@@ -372,8 +373,8 @@ void Verilog2db::makeDbModule(
   } else {
     const std::string name = network_->name(cell);
     // This uniquifies the cell
-    module = dbModule::makeUniqueDbModule(name.c_str(), network_->name(inst).c_str(),
-                                          block_);
+    module = dbModule::makeUniqueDbModule(
+        name.c_str(), network_->name(inst).c_str(), block_);
     if (name != module->getName()) {
       odb::dbStringProperty::create(module, "original_name", name.c_str());
     }
@@ -558,7 +559,8 @@ void Verilog2db::makeChildInsts(Instance* inst,
         continue;
       }
 
-      auto db_inst = dbInst::create(block_, master, child_name.c_str(), false, module);
+      auto db_inst
+          = dbInst::create(block_, master, child_name.c_str(), false, module);
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
@@ -1129,7 +1131,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
                cell->name());
     // It is important to use actual top cell name as top module name
     (void) verilog_network->linkNetwork(
-        cell->name().c_str(), link_make_black_boxes, verilog_network->report());
+        cell->name(), link_make_black_boxes, verilog_network->report());
 
     makeUnusedDbNetlist();
     if (logger_->debugCheck(utl::ODB, "dbReadVerilog", 1)) {

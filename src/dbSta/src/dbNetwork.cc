@@ -790,7 +790,7 @@ std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
-    return cport->name().c_str();
+    return cport->name();
   }
   dbMTerm* mterm = nullptr;
   dbModBTerm* modbterm = nullptr;
@@ -902,7 +902,7 @@ std::string dbNetwork::getAttribute(const Cell* cell,
   }
   if (obj) {
     odb::dbStringProperty* property
-      = odb::dbStringProperty::find(obj, std::string(key).c_str());
+        = odb::dbStringProperty::find(obj, std::string(key).c_str());
     if (property) {
       return property->getValue();
     }
@@ -924,13 +924,14 @@ void dbNetwork::setAttribute(Cell* cell,
     obj = db_module;
   }
   if (obj) {
+    const std::string key_str(key);
+    const std::string value_str(value);
     odb::dbStringProperty* property
-      = odb::dbStringProperty::find(obj, std::string(key).c_str());
+        = odb::dbStringProperty::find(obj, key_str.c_str());
     if (property) {
-      property->setValue(std::string(value).c_str());
+      property->setValue(value_str.c_str());
     } else {
-      odb::dbStringProperty::create(obj, std::string(key).c_str(),
-                                    std::string(value).c_str());
+      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
     }
   }
 }
@@ -1066,7 +1067,8 @@ Port* dbNetwork::findPort(const Cell* cell, std::string_view name) const
     dbModule* db_module;
     staToDb(cell, db_master, db_module);
     if (db_module) {
-      dbModBTerm* mod_bterm = db_module->findModBTerm(std::string(name).c_str());
+      dbModBTerm* mod_bterm
+          = db_module->findModBTerm(std::string(name).c_str());
       Port* ret = dbToSta(mod_bterm);
       return ret;
     }
@@ -1144,10 +1146,11 @@ Instance* dbNetwork::findInstance(std::string_view path_name) const
   return dbToSta(inst);
 }
 
-Instance* dbNetwork::findChild(const Instance* parent, std::string_view name) const
+Instance* dbNetwork::findChild(const Instance* parent,
+                               std::string_view name) const
 {
   std::string name_str(name);
-  const char *name_cstr = name_str.c_str();
+  const char* name_cstr = name_str.c_str();
   if (parent == top_instance_) {
     dbInst* inst = block_->findInst(name_cstr);
     if (!inst) {
@@ -1176,10 +1179,11 @@ Instance* dbNetwork::findChild(const Instance* parent, std::string_view name) co
 }
 
 // port -> pin by name.
-Pin* dbNetwork::findPin(const Instance* instance, std::string_view port_name) const
+Pin* dbNetwork::findPin(const Instance* instance,
+                        std::string_view port_name) const
 {
   std::string port_name_str(port_name);
-  const char *port_name_cstr = port_name_str.c_str();
+  const char* port_name_cstr = port_name_str.c_str();
   if (instance == top_instance_) {
     dbBTerm* bterm = block_->findBTerm(port_name_cstr);
     return dbToSta(bterm);
@@ -1218,7 +1222,7 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
 {
   std::string net_sname(net_name);
-  const char *net_cname = net_sname.c_str();
+  const char* net_cname = net_sname.c_str();
   for (dbModule* dbm : block_->getModules()) {
     dbNet* dnet = block_->findNet(net_cname);
     if (dnet) {
@@ -1232,12 +1236,13 @@ Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
   return nullptr;
 }
 
-Net* dbNetwork::findNet(const Instance* instance, std::string_view net_name) const
+Net* dbNetwork::findNet(const Instance* instance,
+                        std::string_view net_name) const
 {
   dbModule* scope = nullptr;
 
   std::string net_sname(net_name);
-  const char *net_cname = net_sname.c_str();
+  const char* net_cname = net_sname.c_str();
   if (instance == top_instance_) {
     scope = block_->getTopModule();
     dbNet* dnet = block_->findNet(net_cname);
@@ -1323,7 +1328,7 @@ std::string dbNetwork::getAttribute(const Instance* inst,
   }
   if (obj) {
     odb::dbStringProperty* property
-      = odb::dbStringProperty::find(obj, std::string(key).c_str());
+        = odb::dbStringProperty::find(obj, std::string(key).c_str());
     if (property) {
       return property->getValue();
     }
@@ -1345,13 +1350,14 @@ void dbNetwork::setAttribute(Instance* instance,
     obj = mod_inst;
   }
   if (obj) {
+    const std::string key_str(key);
+    const std::string value_str(value);
     odb::dbStringProperty* property
-      = odb::dbStringProperty::find(obj, std::string(key).c_str());
+        = odb::dbStringProperty::find(obj, key_str.c_str());
     if (property) {
-      property->setValue(std::string(value).c_str());
+      property->setValue(value_str.c_str());
     } else {
-      odb::dbStringProperty::create(obj, std::string(key).c_str(),
-                                    std::string(value).c_str());
+      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
     }
   }
 }
@@ -1810,7 +1816,7 @@ std::string dbNetwork::pathName(const Net* net) const
                      block_->getHierarchyDelimiter());
     }
     full_path_buf.append(modnet_name);
-    return std::string(full_path_buf.data(), full_path_buf.size());
+    return fmt::to_string(full_path_buf);
   }
   return "";
 }
@@ -2116,7 +2122,9 @@ bool dbNetwork::isLinked() const
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(std::string_view, bool make_black_boxes, Report* report)
+bool dbNetwork::linkNetwork(std::string_view,
+                            bool make_black_boxes,
+                            Report* report)
 {
   // Not called.
   return true;
@@ -2325,12 +2333,13 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
-bool dbNetwork::portMsbFirst(std::string_view port_name, std::string_view cell_name)
+bool dbNetwork::portMsbFirst(std::string_view port_name,
+                             std::string_view cell_name)
 {
   std::string key = "bus_msb_first ";
-  key += std::string(port_name);
+  key += port_name;
   key += " ";
-  key += std::string(cell_name);
+  key += cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());
   if (property) {
     return property->getValue();
@@ -2400,7 +2409,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 ccell->portBitIterator()};
             while (port_iter->hasNext()) {
               ConcretePort* cport = port_iter->next();
-              const std::string &port_name = cport->name();
+              const std::string& port_name = cport->name();
               Port* cur_port = reinterpret_cast<Port*>(cport);
               registerConcretePort(cur_port);
               LibertyPort* lport = lcell->findLibertyPort(port_name);
@@ -2911,8 +2920,8 @@ Net* dbNetwork::makeNet(std::string_view base_name,
   odb::dbModInst* mod_inst = getModInst(parent);
   odb::dbModule* parent_module = mod_inst ? mod_inst->getMaster() : nullptr;
   const std::string base_owned(base_name);
-  std::string full_name = block_->makeNewNetName(
-      parent_module, base_owned.c_str(), uniquify);
+  std::string full_name
+      = block_->makeNewNetName(parent_module, base_owned.c_str(), uniquify);
 
   // Create a new net
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);

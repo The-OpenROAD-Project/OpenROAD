@@ -43,7 +43,7 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
   if (pattern->hasWildcards()) {
     findInstancesMatching1(pattern, insts);
   } else {
-    Instance* inst = findInstance(pattern->pattern().c_str());
+    Instance* inst = findInstance(pattern->pattern());
     if (inst) {
       insts.push_back(inst);
     } else {
@@ -116,7 +116,7 @@ NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
   if (pattern->hasWildcards()) {
     findNetsMatching1(pattern, nets);
   } else {
-    Net* net = findNet(pattern->pattern().c_str());
+    Net* net = findNet(pattern->pattern());
     if (net) {
       nets.push_back(net);
     } else {

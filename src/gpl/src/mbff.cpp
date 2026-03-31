@@ -873,7 +873,9 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
         if (IsQPin(iterm)) {
           if (IsInvertingQPin(iterm)) {
-            tray_inst[tray_idx]->findITerm(qn_pin->name().c_str())->connect(net);
+            tray_inst[tray_idx]
+                ->findITerm(qn_pin->name().c_str())
+                ->connect(net);
           } else {
             tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
           }
@@ -2394,8 +2396,9 @@ void MBFF::ReadLibs()
 
         for (const auto& p : pin_mappings_[array_mask][idx]) {
           dbITerm* d_pin = tmp_tray->findITerm(p.first->name().c_str());
-          dbITerm* q_pin = (p.second.q ? tmp_tray->findITerm(p.second.q->name().c_str())
-                                       : nullptr);
+          dbITerm* q_pin
+              = (p.second.q ? tmp_tray->findITerm(p.second.q->name().c_str())
+                            : nullptr);
           dbITerm* qn_pin
               = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name().c_str())
                              : nullptr);

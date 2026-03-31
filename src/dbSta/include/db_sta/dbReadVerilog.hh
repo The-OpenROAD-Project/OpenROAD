@@ -2,6 +2,8 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+#include <string_view>
+
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "sta/ConcreteLibrary.hh"

@@ -1026,7 +1026,8 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
     if (!curr_state) {
       abc::Abc_Obj_t* pi = abc::Abc_NtkCreatePi(abc_network.get());
       abc::Abc_Obj_t* net = abc::Abc_NtkCreateNet(abc_network.get());
-      abc::Abc_ObjAssignName(net, const_cast<char*>(output_name.c_str()), nullptr);
+      abc::Abc_ObjAssignName(
+          net, const_cast<char*>(output_name.c_str()), nullptr);
       abc::Abc_ObjAddFanin(net, pi);
       curr_state = net;
     } else {

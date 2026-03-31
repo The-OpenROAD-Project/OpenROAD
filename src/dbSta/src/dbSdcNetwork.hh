@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+#include <string_view>
 
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
