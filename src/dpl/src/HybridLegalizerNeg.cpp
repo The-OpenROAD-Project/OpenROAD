@@ -179,6 +179,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   // Reset findBestLocation profiling accumulators.
   profInitSearchNs_ = 0;
   profCurrSearchNs_ = 0;
+  profSnapNs_ = 0;
   profFilterNs_ = 0;
   profNegCostNs_ = 0;
   profDrcNs_ = 0;
@@ -290,6 +291,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   const double historyMs = ms(t5, t6);
   const double initSearchMs = profInitSearchNs_ / 1e6;
   const double currSearchMs = profCurrSearchNs_ / 1e6;
+  const double snapMs = profSnapNs_ / 1e6;
   const double filterMs = profFilterNs_ / 1e6;
   const double negCostMs = profNegCostNs_ / 1e6;
   const double drcMs = profDrcNs_ / 1e6;
@@ -307,9 +309,11 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
   logger_->report(
       "    findBest by region ({} candidates, {} filtered): "
-      "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%)",
+      "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
+      "snap {:.1f}ms ({:.0f}%)",
       profCandidatesEvaluated_, profCandidatesFiltered_,
-      initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs));
+      initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs),
+      snapMs, pct(snapMs));
   logger_->report(
       "    findBest by function: "
       "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
@@ -445,10 +449,6 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
     }
   }
   const auto tCurrEnd = Clock::now();
-
-  // The init-position search window already covers candidates around
-  // initX/initY, so the expensive snapToLegal() call is unnecessary.
-  tryLocation(cell.initX, cell.initY);
 
   profInitSearchNs_ += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart).count();
   profCurrSearchNs_ += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart).count();

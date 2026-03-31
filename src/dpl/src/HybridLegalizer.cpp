@@ -141,6 +141,19 @@ void HybridLegalizer::legalize()
              gridW_,
              gridH_);
 
+  // Snap initX/initY to the nearest blockage-free, valid-row position.
+  // initFromDb() only grid-snaps coordinates; it cannot check blockages
+  // because the grid isn't built yet at that point.
+  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+    if (!cells_[i].fixed) {
+      const auto [sx, sy] = snapToLegal(i, cells_[i].initX, cells_[i].initY);
+      cells_[i].initX = sx;
+      cells_[i].initY = sy;
+      cells_[i].x = sx;
+      cells_[i].y = sy;
+    }
+  }
+
   // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
   if (run_abacus_) 
@@ -760,7 +773,6 @@ std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
     }
 
     // Find nearest valid X region in this row.
-    // Scan around target X first.
     int localBestX = -1;
     int localBestDx = 1e9;
 
@@ -788,7 +800,6 @@ std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
     }
 
     if (localBestX != -1) {
-      // Row cost weight (dy * rowHeight_ vs dx * siteWidth_)
       const double dy = static_cast<double>(r - y);
       const double dx = static_cast<double>(localBestDx);
       const double distSq = dx * dx + dy * dy;

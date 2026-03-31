@@ -303,6 +303,7 @@ class HybridLegalizer
   // Mutable profiling accumulators for findBestLocation breakdown.
   mutable double profInitSearchNs_{0};
   mutable double profCurrSearchNs_{0};
+  mutable double profSnapNs_{0};
   mutable double profFilterNs_{0};
   mutable double profNegCostNs_{0};
   mutable double profDrcNs_{0};
