@@ -15,8 +15,6 @@ generate_ram \
   -num_words 8 \
   -read_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
-  -power_pin VPWR \
-  -ground_pin VGND \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 40} \
   -hor_layer {met3 0.48 20} \
@@ -26,12 +24,12 @@ generate_ram \
   -max_tap_dist 15 \
   -write_behavioral_verilog $behavioral_file
 
-set lef_file [make_result_file make_8x8.lef]
+set lef_file [make_result_file make_8x8_sky130.lef]
 write_abstract_lef $lef_file
-diff_files make_8x8.lefok $lef_file
+diff_files make_8x8_sky130.lefok $lef_file
 
-set def_file [make_result_file make_8x8.def]
+set def_file [make_result_file make_8x8_sky130.def]
 write_def $def_file
-diff_files make_8x8.defok $def_file
+diff_files make_8x8_sky130.defok $def_file
 
-diff_files make_8x8_behavioral.vok $behavioral_file
+diff_files make_8x8_sky130_behavioral.vok $behavioral_file

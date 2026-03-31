@@ -52,7 +52,7 @@ class TritonRoute;
 
 namespace ram {
 
-enum class PinRoleType
+enum class PortRoleType
 {
   Clock,
   DataIn,
@@ -64,13 +64,13 @@ enum class PinRoleType
   Ground
 };
 
-struct PinRole
+struct PortRole
 {
-  PinRoleType type;
+  PortRoleType type;
   int index;
 
   // for map so that keys are comparable
-  bool operator<(const PinRole& other) const
+  bool operator<(const PortRole& other) const
   {
     return std::tie(type, index) < std::tie(other.type, other.index);
   }
@@ -122,7 +122,7 @@ class RamGen
 
  private:
   void findMasters();
-  std::map<PinRole, std::string> buildPinMap(odb::dbMaster*);
+  std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
@@ -189,12 +189,12 @@ class RamGen
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
 
-  std::map<PinRole, std::string> storage_pins_;
-  std::map<PinRole, std::string> tristate_pins_;
-  std::map<PinRole, std::string> inv_pins_;
-  std::map<PinRole, std::string> and2_pins_;
-  std::map<PinRole, std::string> clock_gate_pins_;
-  std::map<PinRole, std::string> buffer_pins_;
+  std::map<PortRole, std::string> storage_ports_;
+  std::map<PortRole, std::string> tristate_ports_;
+  std::map<PortRole, std::string> inv_ports_;
+  std::map<PortRole, std::string> and2_ports_;
+  std::map<PortRole, std::string> clock_gate_ports_;
+  std::map<PortRole, std::string> buffer_ports_;
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
