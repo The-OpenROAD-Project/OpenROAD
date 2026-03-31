@@ -81,6 +81,7 @@ get_db_block();
 %include "src/ppl/src/IOPlacer-py.i"
 %include "src/psm/src/pdnsim-py.i"
 %include "src/rcx/src/ext-py.i"
+%include "src/rsz/src/Resizer-py.i"
 %include "src/stt/src/SteinerTreeBuilder-py.i"
 %include "src/tap/src/tapcell-py.i"
 %import "src/odb/src/swig/common/odb.i"
