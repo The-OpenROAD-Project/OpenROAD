@@ -374,7 +374,7 @@ void Verilog2db::makeDbModule(
     // This uniquifies the cell
     module = dbModule::makeUniqueDbModule(name.c_str(), network_->name(inst).c_str(),
                                           block_);
-    if (name == module->getName()) {
+    if (name != module->getName()) {
       odb::dbStringProperty::create(module, "original_name", name.c_str());
     }
 

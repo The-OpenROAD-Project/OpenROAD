@@ -1810,7 +1810,7 @@ std::string dbNetwork::pathName(const Net* net) const
                      block_->getHierarchyDelimiter());
     }
     full_path_buf.append(modnet_name);
-    return std::string(full_path_buf.data());
+    return std::string(full_path_buf.data(), full_path_buf.size());
   }
   return "";
 }

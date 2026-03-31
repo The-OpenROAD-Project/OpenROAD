@@ -203,8 +203,8 @@ bool VertexLevelLess::operator()(const sta::Vertex* vertex1,
   return (level1 < level2)
          || (level1 == level2
              // Break ties for stable results.
-             && sta::stringLess(network_->pathName(vertex1->pin()),
-                                network_->pathName(vertex2->pin())));
+             && network_->pathName(vertex1->pin())
+                    < network_->pathName(vertex2->pin()));
 }
 
 sta::VertexSeq Resizer::orderedLoadPinVertices()
@@ -1732,13 +1732,14 @@ void Resizer::reportBuffers(bool filtered)
       continue;
     }
 
+    const std::string& fp = buffer->footprint();
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
                     drive_res,
                     drive_res * c_in,
                     cell_leak.value_or(0.0f),
                     master->getSite()->getHeight(),
-                    buffer->footprint(),
+                    fp.empty() ? "N/A" : fp,
                     cellVTType(master).vt_name);
   }
 
@@ -1776,13 +1777,14 @@ void Resizer::reportBuffers(bool filtered)
         continue;
       }
 
+      const std::string& fp2 = buffer->footprint();
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
                       drive_res,
                       drive_res * c_in,
                       cell_leak.value_or(0.0f),
                       master->getSite()->getHeight(),
-                      buffer->footprint(),
+                      fp2.empty() ? "N/A" : fp2,
                       cellVTType(master).vt_name);
     }
   }
@@ -3259,7 +3261,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
     std::vector<const sta::Pin*> load_pins(load_pins_set.begin(),
                                            load_pins_set.end());
     std::ranges::sort(load_pins, [this](const sta::Pin* a, const sta::Pin* b) {
-      return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+      return db_network_->pathName(a) < db_network_->pathName(b);
     });
 
     // Create new TIE cell instances for each load pin
@@ -3267,9 +3269,9 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       sta::Instance* load_inst = network_->instance(load_pin);
 
       // Create a new tie cell instance
-      const char* tie_inst_name = network_->name(load_inst);
+      std::string tie_inst_name = network_->name(load_inst);
       createNewTieCellForLoadPin(load_pin,
-                                 tie_inst_name,
+                                 tie_inst_name.c_str(),
                                  db_network_->parent(load_inst),
                                  tie_port,
                                  separation_dbu);
@@ -3495,7 +3497,7 @@ void Resizer::findCellInstances(sta::LibertyCell* cell,
   // - The sort will be removed when hierarhical flow is enabled by default.
   std::ranges::sort(
       insts, [this](const sta::Instance* a, const sta::Instance* b) {
-        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+        return db_network_->pathName(a) < db_network_->pathName(b);
       });
 }
 
@@ -4336,7 +4338,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
                           ? network_->net(network_->term(out_pin))
                           : network_->net(out_pin);
   if (out_net) {
-    const char* inv_name = network_->name(inv);
+    std::string inv_name = network_->name(inv);
     sta::Instance* top_inst = network_->topInstance();
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
@@ -4345,7 +4347,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
         odb::Point clone_loc = db_network_->location(load_pin);
         sta::Instance* clone
             = makeInstance(inv_cell,
-                           inv_name,
+                           inv_name.c_str(),
                            top_inst,
                            clone_loc,
                            odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
