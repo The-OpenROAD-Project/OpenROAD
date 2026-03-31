@@ -10,8 +10,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <optional>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,8 +17,6 @@
 #include "gui/gui.h"
 #include "heatMapGui.h"
 #include "heatMapSetup.h"
-#include "odb/db.h"
-#include "utl/Logger.h"
 
 namespace gui {
 

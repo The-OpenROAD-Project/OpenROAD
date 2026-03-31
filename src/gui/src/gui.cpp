@@ -39,6 +39,7 @@
 #include "displayControls.h"
 #include "drcWidget.h"
 #include "gif.h"
+#include "gui/heatMap.h"
 #include "heatMapGui.h"
 #include "helpWidget.h"
 #include "inspector.h"
@@ -1524,8 +1525,6 @@ std::string Gui::loadExternalHeatMap(const std::string& file_path)
   // row 0 = chiplet_name, heatmap_name;
   // rows 1+ = x0,y0,x1,y1,value.
   const auto csv_rows = utl::readCsv(file_path, logger_);
-  std::string chiplet_name;
-  std::string heatmap_name;
   if (csv_rows.empty()) {
     logger_->error(utl::GUI, 113, "No data in CSV file: {}", file_path);
   }
@@ -1537,8 +1536,8 @@ std::string Gui::loadExternalHeatMap(const std::string& file_path)
                    file_path,
                    csv_rows[0].size());
   }
-  chiplet_name = csv_rows[0][0];
-  heatmap_name = csv_rows[0][1];
+  const std::string chiplet_name = csv_rows[0][0];
+  const std::string heatmap_name = csv_rows[0][1];
   std::vector<ExternalHeatMapDataSource::Entry> data;
   for (size_t i = 1; i < csv_rows.size(); ++i) {
     const auto& row = csv_rows[i];
@@ -1591,7 +1590,7 @@ std::string Gui::loadExternalHeatMap(const std::string& file_path)
     }
     chip = db_->getChip();
   }
-  const std::string short_name
+  std::string short_name
       = "External_" + std::to_string(owned_heat_maps_.size() + 1);
   auto source = std::make_shared<ExternalHeatMapDataSource>(
       logger_, heatmap_name, short_name, std::move(data));
