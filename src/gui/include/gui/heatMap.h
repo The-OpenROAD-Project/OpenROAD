@@ -97,8 +97,8 @@ class HeatMapDataSource
   void setUseDBU(bool use_dbu) { use_dbu_ = use_dbu; }
   bool getUseDBU() const { return use_dbu_; }
 
-  virtual const std::string& getName() const { return name_; }
-  virtual const std::string& getShortName() const { return short_name_; }
+  const std::string& getName() const { return name_; }
+  const std::string& getShortName() const { return short_name_; }
 
   utl::Logger* getLogger() const { return logger_; }
 
@@ -235,11 +235,9 @@ class HeatMapDataSource
   // enabled, or an empty set (meaning no filtering) when it is disabled.
   std::set<odb::dbInst*> getSelectedInsts() const;
 
- protected:
+ private:
   const std::string name_;
   const std::string short_name_;
-
- private:
   const std::string settings_group_;
   bool destroy_map_;
   bool use_dbu_;
