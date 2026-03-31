@@ -1,4 +1,4 @@
-module RAM7x8 (
+module RAM7x7 (
   clk,
   D,
   Q,
@@ -6,20 +6,20 @@ module RAM7x8 (
   we
 );
   input clk;
-  input [7:0] D;
-  output reg [7:0] Q;
+  input [6:0] D;
+  output reg [6:0] Q;
   input [2:0] addr_rw;
   input [0:0] we;
 
   // memory array declaration
-  reg [7:0] mem[0:6];
+  reg [6:0] mem[0:6];
 
   // write logic
   integer i;
   always @(posedge clk) begin
     for (i = 0; i < 1; i = i + 1) begin
       if (we[i]) begin
-        mem[addr_rw][i*8 +:8] <= D[i*8 +:8];
+        mem[addr_rw][i*7 +:7] <= D[i*7 +:7];
       end
     end
   end
