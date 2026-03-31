@@ -20,18 +20,18 @@ FFT::FFT(int binCntX, int binCntY, float binSizeX, float binSizeY)
 {
   binDensity_ = new float*[binCntX_];
   electroPhi_ = new float*[binCntX_];
-  electroForceX_ = new float*[binCntX_];
-  electroForceY_ = new float*[binCntX_];
+  electroFieldX_ = new float*[binCntX_];
+  electroFieldY_ = new float*[binCntX_];
 
   for (int i = 0; i < binCntX_; i++) {
     binDensity_[i] = new float[binCntY_];
     electroPhi_[i] = new float[binCntY_];
-    electroForceX_[i] = new float[binCntY_];
-    electroForceY_[i] = new float[binCntY_];
+    electroFieldX_[i] = new float[binCntY_];
+    electroFieldY_[i] = new float[binCntY_];
 
     for (int j = 0; j < binCntY_; j++) {
-      binDensity_[i][j] = electroPhi_[i][j] = electroForceX_[i][j]
-          = electroForceY_[i][j] = 0.0f;
+      binDensity_[i][j] = electroPhi_[i][j] = electroFieldX_[i][j]
+          = electroFieldY_[i][j] = 0.0f;
     }
   }
 
@@ -64,13 +64,13 @@ FFT::~FFT()
   for (int i = 0; i < binCntX_; i++) {
     delete[] binDensity_[i];
     delete[] electroPhi_[i];
-    delete[] electroForceX_[i];
-    delete[] electroForceY_[i];
+    delete[] electroFieldX_[i];
+    delete[] electroFieldY_[i];
   }
   delete[] binDensity_;
   delete[] electroPhi_;
-  delete[] electroForceX_;
-  delete[] electroForceY_;
+  delete[] electroFieldX_;
+  delete[] electroFieldY_;
 
   csTable_.clear();
   wx_.clear();
@@ -86,9 +86,9 @@ void FFT::updateDensity(int x, int y, float density)
   binDensity_[x][y] = density;
 }
 
-std::pair<float, float> FFT::getElectroForce(int x, int y) const
+std::pair<float, float> FFT::getElectroField(int x, int y) const
 {
-  return std::make_pair(electroForceX_[x][y], electroForceY_[x][y]);
+  return std::make_pair(electroFieldX_[x][y], electroFieldY_[x][y]);
 }
 
 float FFT::getElectroPhi(int x, int y) const
@@ -106,20 +106,20 @@ void FFT::doFFT()
          workArea_.data(),
          csTable_.data());
 
-  for (int i = 0; i < binCntX_; i++) {
+  // Normalizations required to perform the inverse operation
+  for (int i = 1; i < binCntX_; i++) {
     binDensity_[i][0] *= 0.5;
   }
-
-  for (int i = 0; i < binCntY_; i++) {
+  for (int i = 1; i < binCntY_; i++) {
     binDensity_[0][i] *= 0.5;
   }
-
   for (int i = 0; i < binCntX_; i++) {
     for (int j = 0; j < binCntY_; j++) {
       binDensity_[i][j] *= 4.0 / binCntX_ / binCntY_;
     }
   }
 
+  // Solve the PDE in the new basis
   for (int i = 0; i < binCntX_; i++) {
     float wx = wx_[i];
     float wx2 = wxSquare_[i];
@@ -127,34 +127,34 @@ void FFT::doFFT()
     for (int j = 0; j < binCntY_; j++) {
       float wy = wy_[j];
       float wy2 = wySquare_[j];
-
       float density = binDensity_[i][j];
-      float phi = 0;
-      float electroX = 0, electroY = 0;
 
-      if (i == 0 && j == 0) {
-        phi = electroX = electroY = 0.0f;
-      } else {
-        //////////// lutong
-        //  denom =
-        //  wx2 / 4.0 +
-        //  wy2 / 4.0 ;
-        // a_phi = a_den / denom ;
-        ////b_phi = 0 ; // -1.0 * b / denom ;
-        ////a_ex = 0 ; // b_phi * wx ;
-        // a_ex = a_phi * wx / 2.0 ;
-        ////a_ey = 0 ; // b_phi * wy ;
-        // a_ey = a_phi * wy / 2.0 ;
-        ///////////
-        phi = density / (wx2 + wy2);
-        electroX = phi * wx;
-        electroY = phi * wy;
-      }
+      //////////// lutong
+      //  denom =
+      //  wx2 / 4.0 +
+      //  wy2 / 4.0 ;
+      // a_phi = a_den / denom ;
+      ////b_phi = 0 ; // -1.0 * b / denom ;
+      ////a_ex = 0 ; // b_phi * wx ;
+      // a_ex = a_phi * wx / 2.0 ;
+      ////a_ey = 0 ; // b_phi * wy ;
+      // a_ey = a_phi * wy / 2.0 ;
+      ///////////
+      float phi = density / (wx2 + wy2);
+      float electroX = phi * wx;
+      float electroY = phi * wy;
+
       electroPhi_[i][j] = phi;
-      electroForceX_[i][j] = electroX;
-      electroForceY_[i][j] = electroY;
+      electroFieldX_[i][j] = electroX;
+      electroFieldY_[i][j] = electroY;
     }
   }
+
+  // Removes the DC component
+  electroPhi_[0][0] = 0.f;
+  electroFieldX_[0][0] = 0.f;
+  electroFieldY_[0][0] = 0.f;
+
   // Inverse DCT
   ddct2d(binCntX_,
          binCntY_,
@@ -166,14 +166,14 @@ void FFT::doFFT()
   ddsct2d(binCntX_,
           binCntY_,
           1,
-          electroForceX_,
+          electroFieldX_,
           nullptr,
           workArea_.data(),
           csTable_.data());
   ddcst2d(binCntX_,
           binCntY_,
           1,
-          electroForceY_,
+          electroFieldY_,
           nullptr,
           workArea_.data(),
           csTable_.data());

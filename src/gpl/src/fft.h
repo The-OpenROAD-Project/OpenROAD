@@ -21,7 +21,7 @@ class FFT
   void doFFT();
 
   // returning func
-  std::pair<float, float> getElectroForce(int x, int y) const;
+  std::pair<float, float> getElectroField(int x, int y) const;
   float getElectroPhi(int x, int y) const;
 
  private:
@@ -29,8 +29,8 @@ class FFT
   // No hope to use Vector at this moment...
   float** binDensity_ = nullptr;
   float** electroPhi_ = nullptr;
-  float** electroForceX_ = nullptr;
-  float** electroForceY_ = nullptr;
+  float** electroFieldX_ = nullptr;
+  float** electroFieldY_ = nullptr;
 
   // cos/sin table (prev: w_2d)
   // length:  max(binCntX, binCntY) * 3 / 2
