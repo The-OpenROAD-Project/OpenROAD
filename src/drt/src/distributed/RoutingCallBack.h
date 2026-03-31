@@ -18,7 +18,6 @@
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
-#include "utl/exception.h"
 #include "distributed/paUpdate.h"
 #include "dr/FlexDR.h"
 #include "drt/TritonRoute.h"
@@ -29,6 +28,7 @@
 #include "omp.h"
 #include "pa/FlexPA.h"
 #include "utl/Logger.h"
+#include "utl/exception.h"
 
 namespace asio = boost::asio;
 namespace odb {
