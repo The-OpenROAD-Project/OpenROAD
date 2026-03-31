@@ -19,12 +19,12 @@
 #include "boost/multi_array.hpp"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 
 namespace odb {
 class dbBlock;
 class dbChip;
 class Rect;
-class UnfoldedChip;
 }  // namespace odb
 
 namespace sta {
@@ -377,31 +377,20 @@ class PowerDensityDataSource : public RealValueHeatMapDataSource
 class ExternalHeatMapDataSource : public HeatMapDataSource
 {
  public:
-  struct ParsedData
+  struct Entry
   {
-    std::string file_path;
-    std::string name;          // display name (empty if not in file)
-    std::string chiplet_name;  // for 3D designs (empty if not in file)
-    struct Row
-    {
-      double x0, y0, x1, y1, value;
-    };
-    std::vector<Row> rows;
+    double x0, y0, x1, y1, value;
   };
 
-  static ParsedData parse(const std::string& file_path, utl::Logger* logger);
-
   ExternalHeatMapDataSource(utl::Logger* logger,
-                            ParsedData data,
-                            const std::string& unique_short_name);
+                            const std::string& name,
+                            const std::string& short_name,
+                            std::vector<Entry> data);
 
-  void setUnfoldedChip(odb::UnfoldedChip* unfolded_chip)
+  void setTransform(const odb::dbTransform& transform)
   {
-    unfolded_chip_ = unfolded_chip;
+    transform_ = transform;
   }
-
-  Renderer::Settings getSettings() const override;
-  void setSettings(const Renderer::Settings& settings) override;
 
  protected:
   bool populateMap() override;
@@ -414,8 +403,8 @@ class ExternalHeatMapDataSource : public HeatMapDataSource
   odb::Rect getBounds() const override;
 
  private:
-  ParsedData parsed_data_;
-  odb::UnfoldedChip* unfolded_chip_ = nullptr;
+  std::vector<Entry> data_entries_;
+  odb::dbTransform transform_;
 };
 
 class HeatMapSourceRegistration

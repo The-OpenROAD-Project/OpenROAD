@@ -1223,130 +1223,40 @@ sta::Scene* PowerDensityDataSource::getScene() const
   return nullptr;
 }
 
-namespace {
-
-static std::string trim(const std::string& s)
-{
-  const auto start = s.find_first_not_of(" \t\r\n");
-  const auto end = s.find_last_not_of(" \t\r\n");
-  if (start == std::string::npos || end == std::string::npos) {
-    return "";
-  }
-  return s.substr(start, end - start + 1);
-}
-
-}  // namespace
-
-// Parses CSV: first line = chiplet_path, heatmap_unique_name (2 columns);
-// second line = header "x0,y0,x1,y1,value (units)"; then one line per cell.
-ExternalHeatMapDataSource::ParsedData ExternalHeatMapDataSource::parse(
-    const std::string& file_path,
-    utl::Logger* logger)
-{
-  ParsedData out;
-  out.file_path = file_path;
-  std::ifstream in(file_path);
-  if (!in.is_open()) {
-    logger->error(utl::GUI, 1173, "Unable to open {}", file_path);
-    return out;
-  }
-  std::string line;
-  if (!std::getline(in, line)) {
-    return out;  // empty file
-  }
-  // First line: chiplet name, heatmap unique name (2 columns).
-  {
-    std::string col0, col1;
-    std::stringstream ss(line);
-    if (std::getline(ss, col0, ',') && std::getline(ss, col1, ',')) {
-      out.chiplet_name = trim(col0);
-      out.name = trim(col1);
-    }
-  }
-  // Second line is the data header (x0,y0,x1,y1,value ...); discard.
-  if (!std::getline(in, line)) {
-    return out;
-  }
-  while (std::getline(in, line)) {
-    if (line.empty()) {
-      continue;
-    }
-    std::stringstream ss(line);
-    std::string part;
-    std::vector<double> vals;
-    while (vals.size() < 5 && std::getline(ss, part, ',')) {
-      try {
-        vals.push_back(std::stod(part));
-      } catch (const std::exception&) {
-        break;
-      }
-    }
-    if (vals.size() == 5) {
-      out.rows.push_back({vals[0], vals[1], vals[2], vals[3], vals[4]});
-    }
-  }
-  return out;
-}
-
 ExternalHeatMapDataSource::ExternalHeatMapDataSource(
     utl::Logger* logger,
-    ParsedData data,
-    const std::string& unique_short_name)
-    : HeatMapDataSource(logger,
-                        data.name,
-                        unique_short_name,
-                        "ExternalHeatMap"),
-      parsed_data_(std::move(data))
+    const std::string& name,
+    const std::string& short_name,
+    std::vector<Entry> data)
+    : HeatMapDataSource(logger, name, short_name, "ExternalHeatMap"),
+      data_entries_(std::move(data))
 {
-}
-
-Renderer::Settings ExternalHeatMapDataSource::getSettings() const
-{
-  auto settings = HeatMapDataSource::getSettings();
-  settings["File"] = parsed_data_.file_path;
-  return settings;
-}
-
-void ExternalHeatMapDataSource::setSettings(const Renderer::Settings& settings)
-{
-  HeatMapDataSource::setSettings(settings);
-  std::string new_path;
-  Renderer::setSetting<std::string>(settings, "File", new_path);
-  if (new_path != parsed_data_.file_path) {
-    parsed_data_ = parse(new_path, getLogger());
-    destroyMap();
-  }
 }
 
 bool ExternalHeatMapDataSource::populateMap()
 {
-  if (getChip() == nullptr || parsed_data_.rows.empty()) {
+  if (getChip() == nullptr || data_entries_.empty()) {
     return false;
   }
-  odb::dbTransform transform;
-  if (unfolded_chip_) {
-    transform = unfolded_chip_->transform;
-  }
-  const double dbu_per_micron = getChip()->getDb()->getDbuPerMicron();
-  for (const auto& row : parsed_data_.rows) {
-    const int x0 = static_cast<int>(std::round(row.x0 * dbu_per_micron));
-    const int y0 = static_cast<int>(std::round(row.y0 * dbu_per_micron));
-    const int x1 = static_cast<int>(std::round(row.x1 * dbu_per_micron));
-    const int y1 = static_cast<int>(std::round(row.y1 * dbu_per_micron));
+  const double dbu_per_micron = getDbuPerMicron();
+  for (const auto& entry : data_entries_) {
+    const int x0 = static_cast<int>(std::round(entry.x0 * dbu_per_micron));
+    const int y0 = static_cast<int>(std::round(entry.y0 * dbu_per_micron));
+    const int x1 = static_cast<int>(std::round(entry.x1 * dbu_per_micron));
+    const int y1 = static_cast<int>(std::round(entry.y1 * dbu_per_micron));
     odb::Rect rect(
         std::min(x0, x1), std::min(y0, y1), std::max(x0, x1), std::max(y0, y1));
-    transform.apply(rect);
-    addToMap(rect, row.value);
+    transform_.apply(rect);
+    addToMap(rect, entry.value);
   }
   return true;
 }
 
 odb::Rect ExternalHeatMapDataSource::getBounds() const
 {
-  if (unfolded_chip_) {
-    return unfolded_chip_->cuboid.getEnclosingRect();
-  }
-  return HeatMapDataSource::getBounds();
+  odb::Rect bounds = HeatMapDataSource::getBounds();
+  transform_.apply(bounds);
+  return bounds;
 }
 
 void ExternalHeatMapDataSource::combineMapData(
