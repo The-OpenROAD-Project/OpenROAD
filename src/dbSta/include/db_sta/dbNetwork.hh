@@ -233,7 +233,8 @@ class dbNetwork : public ConcreteNetwork
   bool isLeaf(const Pin* pin) const override;
   Port* findPort(const Cell* cell, std::string_view name) const override;
   Instance* findInstance(std::string_view path_name) const override;
-  Instance* findChild(const Instance* parent, std::string_view name) const override;
+  Instance* findChild(const Instance* parent,
+                      std::string_view name) const override;
   InstanceChildIterator* childIterator(const Instance* instance) const override;
   InstancePinIterator* pinIterator(const Instance* instance) const override;
   InstanceNetIterator* netIterator(const Instance* instance) const override;
@@ -248,7 +249,8 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Pin functions
   ObjectId id(const Pin* pin) const override;
-  Pin* findPin(const Instance* instance, std::string_view port_name) const override;
+  Pin* findPin(const Instance* instance,
+               std::string_view port_name) const override;
   Pin* findPin(const Instance* instance, const Port* port) const override;
   Port* port(const Pin* pin) const override;
   Instance* instance(const Pin* pin) const override;
@@ -324,7 +326,8 @@ class dbNetwork : public ConcreteNetwork
   ////////////////////////////////////////////////////////////////
   // Net functions
   ObjectId id(const Net* net) const override;
-  Net* findNet(const Instance* instance, std::string_view net_name) const override;
+  Net* findNet(const Instance* instance,
+               std::string_view net_name) const override;
   Net* findNetAllScopes(std::string_view net_name) const;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
