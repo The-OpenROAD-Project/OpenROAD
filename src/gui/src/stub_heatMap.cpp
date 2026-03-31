@@ -249,29 +249,13 @@ sta::Scene* PowerDensityDataSource::getScene() const
 
 //////////
 
-ExternalHeatMapDataSource::ParsedData ExternalHeatMapDataSource::parse(
-    const std::string& /* file_path */,
-    utl::Logger* /* logger */)
-{
-  return {};
-}
-
 ExternalHeatMapDataSource::ExternalHeatMapDataSource(
     utl::Logger* /* logger */,
-    ParsedData /* data */,
-    const std::string& unique_short_name)
+    const std::string& /* name */,
+    const std::string& unique_short_name,
+    std::vector<Entry> /* data */)
     : HeatMapDataSource(nullptr, "", unique_short_name, "")
 {
-}
-
-Renderer::Settings ExternalHeatMapDataSource::getSettings() const
-{
-  return HeatMapDataSource::getSettings();
-}
-
-void ExternalHeatMapDataSource::setSettings(const Renderer::Settings& settings)
-{
-  HeatMapDataSource::setSettings(settings);
 }
 
 bool ExternalHeatMapDataSource::populateMap()
@@ -284,12 +268,13 @@ odb::Rect ExternalHeatMapDataSource::getBounds() const
   return HeatMapDataSource::getBounds();
 }
 
-void ExternalHeatMapDataSource::combineMapData(bool /* base_has_value */,
-                                                double& /* base */,
-                                                const double /* new_data */,
-                                                const double /* data_area */,
-                                                const double /* intersection_area */,
-                                                const double /* rect_area */)
+void ExternalHeatMapDataSource::combineMapData(
+    bool /* base_has_value */,
+    double& /* base */,
+    const double /* new_data */,
+    const double /* data_area */,
+    const double /* intersection_area */,
+    const double /* rect_area */)
 {
 }
 

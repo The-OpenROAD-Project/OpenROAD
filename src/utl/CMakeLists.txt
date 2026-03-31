@@ -40,6 +40,7 @@ add_library(utl_lib
   src/CallBack.cpp
   src/Metrics.cpp
   src/CFileUtils.cpp
+  src/CsvParser.cpp
   src/ScopedTemporaryFile.cpp
   src/SuppressStdout.cpp
   src/Logger.cpp
