@@ -1349,8 +1349,15 @@ void IncrementalParasiticsGuard::update()
 IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
 {
   if (need_unregister_) {
-    estimate_parasitics_->removeDbCbkOwner();
-    estimate_parasitics_->updateParasitics();
+    try {
+      estimate_parasitics_->removeDbCbkOwner();
+      estimate_parasitics_->updateParasitics();
+    } catch (const std::exception& e) {
+      // Exceptions must not escape destructors (implicitly noexcept).
+      // Log and continue with cleanup.
+      estimate_parasitics_->getLogger()->warn(
+          EST, 165, "Exception during parasitic update: {}", e.what());
+    }
 
     switch (estimate_parasitics_->getParasiticsSrc()) {
       case ParasiticsSrc::placement:
