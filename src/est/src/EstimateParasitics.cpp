@@ -1356,10 +1356,10 @@ IncrementalParasiticsGuard::~IncrementalParasiticsGuard()
     } catch (const std::exception& e) {
       // Exceptions must not escape destructors (implicitly noexcept).
       // Log and continue with cleanup.
-      estimate_parasitics_->getLogger()->error(
+      estimate_parasitics_->getLogger()->warn(
           EST, 165, "Exception during parasitic update: {}.", e.what());
     } catch (...) {
-      estimate_parasitics_->getLogger()->error(
+      estimate_parasitics_->getLogger()->warn(
           EST, 166, "Unknown exception during parasitic update.");
     }
 
