@@ -67,7 +67,6 @@ target_compile_options(dbSta
   PRIVATE
     -Wno-redundant-decls
     -Wno-unused-function
-    -Wno-deprecated-declarations
 )
 
 target_include_directories(dbSta
