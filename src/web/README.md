@@ -30,6 +30,82 @@ web_server
 | `-port` | TCP port to listen on. Default: `8080`. |
 | `-dir` | Path to the document root directory containing the web assets (`index.html`, `*.js`, `*.css`). |
 
+### Save Image
+
+Save the layout to a PNG file. By default, the command uses the GUI (Qt)
+renderer. Pass `-web` to use the web tile renderer instead, which runs
+entirely server-side without a display and is suitable for headless CI.
+
+```tcl
+save_image
+    [-web]
+    [-area {x0 y0 x1 y1}]
+    [-width width]
+    [-resolution microns_per_pixel]
+    [-display_option option]
+    path
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-web` | Use the web tile renderer instead of the GUI renderer. Does not require a display or a running web server. |
+| `-area` | Bounding box in microns `{x0 y0 x1 y1}`. Default: die area (with 5% margin in `-web` mode). |
+| `-width` | Output image width in pixels. Cannot be used with `-resolution`. |
+| `-resolution` | Resolution in microns per pixel. Minimum: 1 DBU per pixel. Cannot be used with `-width`. |
+| `-display_option` | Repeatable visibility overrides as `{control value}` pairs. See [Display option keys](#display-option-keys) below. |
+| `path` | Output PNG file path. |
+
+When using `-web`, if neither `-width` nor `-resolution` is specified, the
+image defaults to 1024 pixels wide. The maximum image dimension is 16384
+pixels; larger requests are clamped automatically.
+
+#### Display option keys (web mode)
+
+Display options control which elements are rendered when using `-web`.
+Each option is a `{key value}` pair where the key matches a visibility
+field and the value is `true` or `false`.
+
+| Key | Default | Description |
+| --- | ------- | ----------- |
+| `stdcells` | true | Standard cells |
+| `macros` | true | Macros |
+| `routing` | true | Signal routing |
+| `special_nets` | true | Power/ground straps |
+| `pins` | true | Instance pins |
+| `pin_markers` | true | IO pin direction markers |
+| `blockages` | true | Blockages |
+| `net_signal` | true | Signal nets |
+| `net_power` | true | Power nets |
+| `net_clock` | true | Clock nets |
+| `rows` | false | Row outlines |
+| `tracks_pref` | false | Preferred-direction tracks |
+
+#### Examples
+
+```tcl
+# Save using the GUI renderer (default)
+save_image layout.png
+
+# Save using the web renderer (headless)
+save_image -web layout.png
+
+# Save at 1024px wide with the web renderer
+save_image -web -width 1024 layout.png
+
+# Save at 0.1 um per pixel
+save_image -web -resolution 0.1 layout.png
+
+# Save a specific region (in microns)
+save_image -web -area {0 0 100 100} -width 2048 region.png
+
+# Hide routing and power nets
+save_image -web -display_option {routing false} \
+                -display_option {net_power false} \
+                layout.png
+```
+
 ## Features
 
 - **Tile-based rendering** — The server renders 256x256 PNG tiles on demand,

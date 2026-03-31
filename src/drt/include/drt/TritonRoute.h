@@ -61,7 +61,6 @@ struct ParamStruct
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::optional<int> drcReportIterStep;
-  std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
@@ -214,7 +213,6 @@ class TritonRoute
 
   void initDesign();
   void initGraphics();
-  void gr();
   void ta();
   void dr();
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);
