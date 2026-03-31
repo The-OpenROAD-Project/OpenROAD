@@ -360,7 +360,10 @@ class dbNetwork : public ConcreteNetwork
 
   // Return the highest net above the given net.
   // - If the net is a flat net, return it.
-  // - If the net is a hier net, return the modnet in the highest hierarchy.
+  // - If the net is a hier net (dbModNet), return the associated flat dbNet.
+  // This ensures parasitic externality checks in ensureParasiticNode work
+  // correctly: net_ is always a flat net, so the comparison net != net_
+  // must also operate on flat nets.
   Net* highestNetAbove(Net* net) const override;
 
   ////////////////////////////////////////////////////////////////
