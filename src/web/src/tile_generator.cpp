@@ -1398,10 +1398,24 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
         }
       }
 
-      // Draw rows as outlines on the _instances layer
+      // Draw rows (and individual sites when zoomed in) on _instances layer.
       if (instances_only && vis.rows) {
         const Color row_color{
             .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
+
+        // Lambda to draw a rectangle outline.
+        auto drawOutline = [&](const odb::Rect& rect) {
+          const odb::Rect draw = toPixels(scale, rect, dbu_tile);
+          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
+            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
+            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
+          }
+          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
+            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
+            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+          }
+        };
+
         for (const auto& [row_rect, row] : search_->searchRows(
                  block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
           if (!row_rect.overlaps(dbu_tile)) {
@@ -1411,15 +1425,49 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           if (site && !vis.isSiteVisible(site->getName())) {
             continue;
           }
-          const odb::Rect draw = toPixels(scale, row_rect, dbu_tile);
-          // Draw outline only (top, bottom, left, right edges)
-          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
-            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
-            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
-          }
-          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
-            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
-            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+
+          // Always draw the row outline.
+          drawOutline(row_rect);
+
+          // Draw individual sites when zoomed in enough (site >= 5px).
+          // Matches GUI nominalViewableResolution threshold.
+          if (site) {
+            int site_w = site->getWidth();
+            int site_h = site->getHeight();
+
+            // Swap dimensions for rotated orientations.
+            switch (row->getOrient().getValue()) {
+              case odb::dbOrientType::R90:
+              case odb::dbOrientType::R270:
+              case odb::dbOrientType::MYR90:
+              case odb::dbOrientType::MXR90:
+                std::swap(site_w, site_h);
+                break;
+              default:
+                break;
+            }
+
+            const int site_w_px = static_cast<int>(site_w * scale);
+            if (site_w_px >= 5) {
+              odb::Point pt = row->getOrigin();
+              const int spacing = row->getSpacing();
+              const int count = row->getSiteCount();
+              const bool horizontal
+                  = (row->getDirection() == odb::dbRowDir::HORIZONTAL);
+
+              for (int i = 0; i < count; ++i) {
+                const odb::Rect site_rect(
+                    pt.x(), pt.y(), pt.x() + site_w, pt.y() + site_h);
+                if (site_rect.overlaps(dbu_tile)) {
+                  drawOutline(site_rect);
+                }
+                if (horizontal) {
+                  pt.addX(spacing);
+                } else {
+                  pt.addY(spacing);
+                }
+              }
+            }
           }
         }
       }
