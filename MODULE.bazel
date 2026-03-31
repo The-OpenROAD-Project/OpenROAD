@@ -194,7 +194,6 @@ orfs.default(
     openroad = "//:openroad",
     sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
 )
-use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.17"
