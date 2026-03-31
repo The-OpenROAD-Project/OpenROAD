@@ -299,6 +299,15 @@ class HybridLegalizer
   int adjWindow_{kAdjWindow};
   int numThreads_{1};
   bool run_abacus_{false};
+
+  // Mutable profiling accumulators for findBestLocation breakdown.
+  mutable double profInitSearchNs_{0};
+  mutable double profCurrSearchNs_{0};
+  mutable double profFilterNs_{0};
+  mutable double profNegCostNs_{0};
+  mutable double profDrcNs_{0};
+  mutable int profCandidatesEvaluated_{0};
+  mutable int profCandidatesFiltered_{0};
 };
 
 }  // namespace dpl

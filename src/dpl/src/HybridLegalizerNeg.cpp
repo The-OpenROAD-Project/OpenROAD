@@ -34,6 +34,7 @@
 // HybridLegalizerNeg.cpp – negotiation pass and post-optimisation.
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <ranges>
@@ -172,9 +173,24 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
                                      int iter,
                                      bool updateHistory)
 {
+  using Clock = std::chrono::steady_clock;
+  const auto t0 = Clock::now();
+
+  // Reset findBestLocation profiling accumulators.
+  profInitSearchNs_ = 0;
+  profCurrSearchNs_ = 0;
+  profFilterNs_ = 0;
+  profNegCostNs_ = 0;
+  profDrcNs_ = 0;
+  profCandidatesEvaluated_ = 0;
+  profCandidatesFiltered_ = 0;
+
   int moves_count = 0;
   sortByNegotiationOrder(activeCells);
 
+  const auto t1 = Clock::now();
+
+  double ripUpMs = 0, findBestMs = 0, placeMs = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -183,14 +199,23 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     if (iter >= kIsolationPt && isCellLegal(idx)) {
       continue;
     }
+    auto ta = Clock::now();
     ripUp(idx);
+    auto tb = Clock::now();
     const auto [bx, by] = findBestLocation(idx, iter);
+    auto tc = Clock::now();
     place(idx, bx, by);
+    auto td = Clock::now();
+    ripUpMs += std::chrono::duration<double, std::milli>(tb - ta).count();
+    findBestMs += std::chrono::duration<double, std::milli>(tc - tb).count();
+    placeMs += std::chrono::duration<double, std::milli>(td - tc).count();
     moves_count++;
     debugPrint(logger_, utl::DPL, "hybrid", 2,
                "Negotiation iter {}, cell {}, moves {}, best location {}, {}",
                 iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
   }
+
+  const auto t2 = Clock::now();
 
   // Re-sync the DPL pixel grid before checking violations.  During the
   // rip-up/place loop above, overlapping cells can lose their pixel->cell
@@ -198,6 +223,8 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
   // invisible to DRC checks.  A full re-sync restores every cell so the
   // violation scan below is accurate.
   syncAllCellsToDplGrid();
+
+  const auto t3 = Clock::now();
 
   // Count remaining overflows (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
@@ -224,11 +251,13 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       ++totalOverflow;
     }
   }
+
+  const auto t4 = Clock::now();
+
   // Scan all movable cells for newly-created DRC violations outside the
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    //TODO why skip fixed here?
     if (cells_[i].fixed || activeSet.contains(i)) {
       continue;
     }
@@ -239,12 +268,62 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     }
   }
 
+  const auto t5 = Clock::now();
+
   if (totalOverflow > 0 && updateHistory) {
     updateHistoryCosts();
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
   }
 
+  const auto t6 = Clock::now();
+
+  auto ms = [](auto a, auto b) {
+    return std::chrono::duration<double, std::milli>(b - a).count();
+  };
+  const double totalMs = ms(t0, t6);
+  auto pct = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
+  const double sortMs = ms(t0, t1);
+  const double syncMs = ms(t2, t3);
+  const double overflowMs = ms(t3, t4);
+  const double bystanderMs = ms(t4, t5);
+  const double historyMs = ms(t5, t6);
+  const double initSearchMs = profInitSearchNs_ / 1e6;
+  const double currSearchMs = profCurrSearchNs_ / 1e6;
+  const double filterMs = profFilterNs_ / 1e6;
+  const double negCostMs = profNegCostNs_ / 1e6;
+  const double drcMs = profDrcNs_ / 1e6;
+  const double overhead = findBestMs - filterMs - negCostMs - drcMs;
+  logger_->report(
+      "  negotiationIter {} ({:.1f}ms, {} moves): "
+      "sort {:.1f}ms ({:.0f}%), "
+      "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms ({:.0f}%), "
+      "syncGrid {:.1f}ms ({:.0f}%), overflowCount {:.1f}ms ({:.0f}%), "
+      "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
+      iter, totalMs, moves_count,
+      sortMs, pct(sortMs),
+      ripUpMs, pct(ripUpMs), findBestMs, pct(findBestMs), placeMs, pct(placeMs),
+      syncMs, pct(syncMs), overflowMs, pct(overflowMs),
+      bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
+  logger_->report(
+      "    findBest by region ({} candidates, {} filtered): "
+      "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%)",
+      profCandidatesEvaluated_, profCandidatesFiltered_,
+      initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs));
+  logger_->report(
+      "    findBest by function: "
+      "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
+      "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
+      filterMs, pct(filterMs), negCostMs, pct(negCostMs),
+      drcMs, pct(drcMs), overhead, pct(overhead));
+
+  if(opendp_->iterative_debug_ && debug_observer_) {
+    logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
+    setDplPositions();
+    pushHybridPixels();
+    logger_->report("Pause after negotiation iteration {}.", iter);
+    debug_observer_->redrawAndPause();
+  }
   return totalOverflow;
 }
 
@@ -264,7 +343,7 @@ void HybridLegalizer::place(int cellIdx, int x, int y)
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
   syncCellToDplGrid(cellIdx);  
-  if (opendp_->iterative_debug_ && debug_observer_) {
+  if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (!debug_inst || cells_[cellIdx].db_inst_ == debug_inst) {
       pushHybridPixels();            
@@ -298,22 +377,32 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   // later iterations strongly penalise DRC violations to force resolution.
   const double kDrcPenalty = 1e3 * (1.0 + iter);
 
+  using Clock = std::chrono::steady_clock;
+  Clock::duration localFilterTime{};
+  Clock::duration localNegCostTime{};
+  Clock::duration localDrcTime{};
+
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
-    if (!inDie(tx, ty, cell.width, cell.height)) {
+    const auto tFilter = Clock::now();
+    if (!inDie(tx, ty, cell.width, cell.height)
+        || !isValidRow(ty, cell, tx)
+        || !respectsFence(cellIdx, tx, ty)) {
+      localFilterTime += Clock::now() - tFilter;
+      ++profCandidatesFiltered_;
       return;
     }
-    if (!isValidRow(ty, cell, tx)) {
-      return;
-    }
-    if (!respectsFence(cellIdx, tx, ty)) {
-      return;
-    }
+    localFilterTime += Clock::now() - tFilter;
+
+    const auto tNeg = Clock::now();
     double cost = negotiationCost(cellIdx, tx, ty);
+    localNegCostTime += Clock::now() - tNeg;
+
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
+      const auto tDrc = Clock::now();
       odb::dbOrientType targetOrient = node->getOrient();
       odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
       if (site != nullptr) {
@@ -325,7 +414,9 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node, GridX{tx}, GridY{ty}, targetOrient);
       cost += kDrcPenalty * drcCount;
+      localDrcTime += Clock::now() - tDrc;
     }
+    ++profCandidatesEvaluated_;
     if (cost < bestCost) {
       bestCost = cost;
       bestX = tx;
@@ -334,15 +425,18 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   };
 
   // Search around the initial (GP) position.
+  const auto tInitStart = Clock::now();
   for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
     for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
       tryLocation(cell.initX + dx, cell.initY + dy);
     }
   }
+  const auto tInitEnd = Clock::now();
 
   // Also search around the current position — critical when the cell has
   // already been displaced far from initX and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
+  const auto tCurrStart = Clock::now();
   if (cell.x != cell.initX || cell.y != cell.initY) {
     for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
       for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
@@ -350,12 +444,19 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
       }
     }
   }
+  const auto tCurrEnd = Clock::now();
 
-  // Also try snapping to the original position.
-  const auto [sx, sy] = snapToLegal(cellIdx, cell.initX, cell.initY);
-  tryLocation(sx, sy);
+  // The init-position search window already covers candidates around
+  // initX/initY, so the expensive snapToLegal() call is unnecessary.
+  tryLocation(cell.initX, cell.initY);
 
-  if (opendp_->iterative_debug_ && debug_observer_) {
+  profInitSearchNs_ += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart).count();
+  profCurrSearchNs_ += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart).count();
+  profFilterNs_ += std::chrono::duration<double, std::nano>(localFilterTime).count();
+  profNegCostNs_ += std::chrono::duration<double, std::nano>(localNegCostTime).count();
+  profDrcNs_ += std::chrono::duration<double, std::nano>(localDrcTime).count();
+
+  if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (cell.db_inst_ == debug_inst) {
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
