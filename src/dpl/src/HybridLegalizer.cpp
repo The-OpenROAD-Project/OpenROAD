@@ -37,10 +37,13 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <queue>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -114,23 +117,37 @@ void HybridLegalizer::legalize()
              1,
              "HybridLegalizer: starting legalization.");
 
+  using Clock = std::chrono::steady_clock;
+  auto ms = [](auto a, auto b) {
+    return std::chrono::duration<double, std::milli>(b - a).count();
+  };
+
+  const auto tLegalizeStart = Clock::now();
+
+  const auto tInitFromDbStart = Clock::now();
   if (!initFromDb()) {
     return;
   }
+  const double initFromDbMs = ms(tInitFromDbStart, Clock::now());
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "initFromDb: {:.1f}ms", initFromDbMs);
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
 
     setDplPositions();
-    logger_->report("Pause before Abacus pass.");
+    logger_->report("Pause after initFromDb.");
     debug_observer_->redrawAndPause();
   }
 
-  logger_->report("Build grid");
+  const auto tBuildGridStart = Clock::now();
   buildGrid();
-  logger_->report("Init fence regions");
+  const double buildGridMs = ms(tBuildGridStart, Clock::now());
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "buildGrid: {:.1f}ms", buildGridMs);
+
+  const auto tFenceRegionsStart = Clock::now();
   initFenceRegions();
-  logger_->report("done init fence regions");
+  const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
 
   debugPrint(logger_,
              utl::DPL,
@@ -141,27 +158,15 @@ void HybridLegalizer::legalize()
              gridW_,
              gridH_);
 
-  // Snap initX/initY to the nearest blockage-free, valid-row position.
-  // initFromDb() only grid-snaps coordinates; it cannot check blockages
-  // because the grid isn't built yet at that point.
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (!cells_[i].fixed) {
-      const auto [sx, sy] = snapToLegal(i, cells_[i].initX, cells_[i].initY);
-      cells_[i].initX = sx;
-      cells_[i].initY = sy;
-      cells_[i].x = sx;
-      cells_[i].y = sy;
-    }
-  }
-
   // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
-  if (run_abacus_) 
-  {
+  double phase1Ms = 0.0;
+  if (run_abacus_) {
     debugPrint(
         logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
+    const auto tAbacusStart = Clock::now();
     illegal = runAbacus();
-
+    phase1Ms = ms(tAbacusStart, Clock::now());
     debugPrint(logger_,
                utl::DPL,
                "hybrid",
@@ -171,16 +176,34 @@ void HybridLegalizer::legalize()
   } else {
     debugPrint(
         logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: skipping Abacus pass.");
+
+    const auto tSkipAbacusStart = Clock::now();
+
     // Populate usage from initial coordinates
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
         addUsage(i, 1);
       }
     }
+    const auto tSkipAbacusUsageEnd = Clock::now();
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "skip-Abacus addUsage: {:.1f}ms",
+               ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
 
     // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
     // lookups see the correct placement state.
     syncAllCellsToDplGrid();
+    const auto tSkipAbacusSyncEnd = Clock::now();
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",
+               ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
+
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
         // TODO: potentially introduce this information to debug mode somehow (legal and illegal cells).
@@ -191,6 +214,16 @@ void HybridLegalizer::legalize()
         }
       }
     }
+    const auto tSkipAbacusDrcEnd = Clock::now();
+    debugPrint(logger_,
+               utl::DPL,
+               "hybrid",
+               1,
+               "skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",
+               ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),
+               illegal.size());
+
+    phase1Ms = ms(tSkipAbacusStart, tSkipAbacusDrcEnd);
   }
 
   if (debug_observer_) {
@@ -204,6 +237,7 @@ void HybridLegalizer::legalize()
   }
 
   // --- Phase 2: Negotiation (fixes remaining violations) -------------------
+  double negotiationMs = 0.0;
   if (!illegal.empty()) {
     debugPrint(logger_,
                utl::DPL,
@@ -211,7 +245,9 @@ void HybridLegalizer::legalize()
                1,
                "HybridLegalizer: negotiation pass on {} cells.",
                illegal.size());
+    const auto tNegStart = Clock::now();
     runNegotiation(illegal);
+    negotiationMs = ms(tNegStart, Clock::now());
   }
 
   // Re-sync the DPL pixel grid after negotiation.  During negotiation,
@@ -219,7 +255,15 @@ void HybridLegalizer::legalize()
   // up, the other's presence is lost.  A full re-sync ensures every cell
   // is correctly painted so subsequent DRC checks (numViolations, etc.)
   // see the true placement state.
+  const auto tPostNegSyncStart = Clock::now();
   syncAllCellsToDplGrid();
+  const double postNegSyncMs = ms(tPostNegSyncStart, Clock::now());
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "post-negotiation syncAllCellsToDplGrid: {:.1f}ms",
+             postNegSyncMs);
 
   if (debug_observer_) {
     setDplPositions();
@@ -235,17 +279,33 @@ void HybridLegalizer::legalize()
   // cellSwap();
   // greedyImprove(1);
 
+  const auto tMetricsStart = Clock::now();
+  const double avgDisp = avgDisplacement();
+  const int maxDisp = maxDisplacement();
+  const int nViol = numViolations();
+  const double metricsMs = ms(tMetricsStart, Clock::now());
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "metrics (avgDisp/maxDisp/violations): {:.1f}ms",
+             metricsMs);
+
   debugPrint(logger_,
              utl::DPL,
              "hybrid",
              1,
              "HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",
-             avgDisplacement(),
-             maxDisplacement(),
-             numViolations());
+             avgDisp,
+             maxDisp,
+             nViol);
 
+  const auto tFlushStart = Clock::now();
   flushToDb();
+  const double flushMs = ms(tFlushStart, Clock::now());
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "flushToDb: {:.1f}ms", flushMs);
 
+  const auto tOrientStart = Clock::now();
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
     if (cell.fixed || cell.db_inst_ == nullptr) {
@@ -261,6 +321,35 @@ void HybridLegalizer::legalize()
       }
     }
   }
+  const double orientMs = ms(tOrientStart, Clock::now());
+  debugPrint(logger_, utl::DPL, "hybrid", 1, "orientation update: {:.1f}ms", orientMs);
+
+  const double totalMs = ms(tLegalizeStart, Clock::now());
+  auto pct = [totalMs](double t) { return totalMs > 0 ? 100.0 * t / totalMs : 0.0; };
+  debugPrint(logger_,
+             utl::DPL,
+             "hybrid",
+             1,
+             "legalize() total {:.1f}ms breakdown: "
+             "initFromDb {:.1f}ms ({:.0f}%), "
+             "buildGrid {:.1f}ms ({:.0f}%), "
+             "initFenceRegions {:.1f}ms ({:.0f}%), "
+             "phase1 {:.1f}ms ({:.0f}%), "
+             "negotiation {:.1f}ms ({:.0f}%), "
+             "postNegSync {:.1f}ms ({:.0f}%), "
+             "metrics {:.1f}ms ({:.0f}%), "
+             "flushToDb {:.1f}ms ({:.0f}%), "
+             "orientUpdate {:.1f}ms ({:.0f}%)",
+             totalMs,
+             initFromDbMs, pct(initFromDbMs),
+             buildGridMs, pct(buildGridMs),
+             fenceRegionsMs, pct(fenceRegionsMs),
+             phase1Ms, pct(phase1Ms),
+             negotiationMs, pct(negotiationMs),
+             postNegSyncMs, pct(postNegSyncMs),
+             metricsMs, pct(metricsMs),
+             flushMs, pct(flushMs),
+             orientMs, pct(orientMs));
 }
 
 // ===========================================================================
@@ -444,6 +533,87 @@ bool HybridLegalizer::initFromDb()
         1,
         static_cast<int>(
             std::round(static_cast<double>(master->getHeight()) / rowHeight_)));
+
+    // gridX() / gridRoundY() are purely arithmetic and don't check whether a
+    // site actually exists at the computed position.  Instances near the chip
+    // boundary or in sparse-row designs can land on invalid (is_valid=false) pixels
+    // pixels or on pixels that don't support this cell's site type.  Fix those
+    // with a diamond search from the initial position; we only check site
+    // validity here, not blockages — the negotiation phase handles those.
+    if (!cell.fixed) {
+      odb::dbSite* site = master->getSite();
+      // Check that the full cell footprint (width x height) fits on valid sites.
+      auto isValidSite = [&](int gx, int gy) -> bool {
+        if (gx < 0 || gx + cell.width > gridW_
+            || gy < 0 || gy + cell.height > gridH_) {
+          return false;
+        }
+        // Site type check at the anchor row is representative for all rows.
+        if (site != nullptr
+            && !dpl_grid->getSiteOrientation(GridX{gx}, GridY{gy}, site)
+                    .has_value()) {
+          return false;
+        }
+        for (int dy = 0; dy < cell.height; ++dy) {
+          for (int dx = 0; dx < cell.width; ++dx) {
+            if (!dpl_grid->pixel(GridY{gy + dy}, GridX{gx + dx}).is_valid) {
+              return false;
+            }
+          }
+        }
+        return true;
+      };
+
+      if (!isValidSite(cell.initX, cell.initY)) {
+        logger_->report(
+            "Warning: instance {} at ({}, {}) snaps to invalid site at "
+            "({}, {}). Searching for nearest valid site.",
+            cell.db_inst_->getName(),
+            dbX,
+            dbY,
+            dieXlo_ + cell.initX * siteWidth_,
+            dieYlo_ + cell.initY * rowHeight_);
+
+        // Priority queue keyed on physical Manhattan distance (DBU) so the
+        // search expands in true physical proximity, not grid-unit proximity.
+        // One step in X = siteWidth_ DBU; one step in Y = rowHeight_ DBU.
+        using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
+        std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
+        std::unordered_set<int> visited;
+
+        auto tryEnqueue = [&](int gx, int gy) {
+          // Leave room for the full cell footprint before enqueueing.
+          if (gx < 0 || gx + cell.width > gridW_
+              || gy < 0 || gy + cell.height > gridH_) {
+            return;
+          }
+          if (!visited.insert(gy * gridW_ + gx).second) {
+            return;
+          }
+          const int dist = std::abs(gx - cell.initX) * siteWidth_
+                         + std::abs(gy - cell.initY) * rowHeight_;
+          pq.emplace(dist, gx, gy);
+        };
+
+        tryEnqueue(cell.initX, cell.initY);
+        constexpr std::array<std::pair<int, int>, 4> kNeighbors{
+            {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
+        while (!pq.empty()) {
+          auto [dist, gx, gy] = pq.top();
+          pq.pop();
+          if (isValidSite(gx, gy)) {
+            cell.initX = gx;
+            cell.initY = gy;
+            cell.x = cell.initX;
+            cell.y = cell.initY;
+            break;
+          }
+          for (auto [ox, oy] : kNeighbors) {
+            tryEnqueue(gx + ox, gy + oy);
+          }
+        }
+      }
+    }
 
     cell.railType = inferRailType(cell.initY);
     // If the instance is currently flipped relative to the row's standard orientation,
@@ -1048,16 +1218,12 @@ int HybridLegalizer::maxDisplacement() const
 
 int HybridLegalizer::numViolations() const
 {
-  int count = 0, fixed_viol = 0;
+  int count = 0;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed && !isCellLegal(i)) {
       ++count;
     }
-    if(cells_[i].fixed && !cells_[i].legal) {
-      ++fixed_viol;    
-    }
   }
-  logger_->report("# fixed cells with violations: {}.", fixed_viol);
   return count;
 }
 

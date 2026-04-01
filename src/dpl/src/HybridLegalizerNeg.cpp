@@ -173,6 +173,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
                                      int iter,
                                      bool updateHistory)
 {
+  logger_->report("Starting negotiation iteration {} ({} active cells)", iter, activeCells.size());
   using Clock = std::chrono::steady_clock;
   const auto t0 = Clock::now();
 

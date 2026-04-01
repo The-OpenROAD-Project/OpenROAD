@@ -224,6 +224,10 @@ void Graphics::drawObjects(gui::Painter& painter)
             c = gui::Painter::kYellow;
             c.a = 80;
             break;
+          case HybridPixelState::kInvalid:
+            c = gui::Painter::kBlack;
+            c.a = 200;
+            break;
         }
         painter.setPen(c);
         painter.setBrush(c);
