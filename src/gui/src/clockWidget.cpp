@@ -1110,7 +1110,7 @@ void ClockTreeView::selectionChanged()
 
 const char* ClockTreeView::getClockName() const
 {
-  return tree_->getClock()->name();
+  return tree_->getClock()->name().c_str();
 }
 
 void ClockTreeView::setRendererState(RendererState state)
