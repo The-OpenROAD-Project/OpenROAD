@@ -3296,6 +3296,9 @@ void dbNetwork::staToDb(PortDirection* dir,
   } else if (dir == PortDirection::power()) {
     sig_type = dbSigType::POWER;
     io_type = dbIoType::INOUT;
+  } else if (dir == PortDirection::bias()) {
+    sig_type = dbSigType::SIGNAL;
+    io_type = dbIoType::INOUT;
   } else if (dir == PortDirection::ground()) {
     sig_type = dbSigType::GROUND;
     io_type = dbIoType::INOUT;

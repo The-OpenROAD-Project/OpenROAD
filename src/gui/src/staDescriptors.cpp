@@ -321,6 +321,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
                    sta::PortDirection::internal(),
                    sta::PortDirection::ground(),
                    sta::PortDirection::power(),
+                   sta::PortDirection::bias(),
                    sta::PortDirection::unknown()}) {
     if (!ports[dir->index()].empty()) {
       std::string direction_str(dir->name());
