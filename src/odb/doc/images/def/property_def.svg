@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="623" height="433"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_DESIGN"
+      xlink:title="K_DESIGN">
+      <rect x="71" y="3" width="84" height="32"/>
+      <rect x="69" y="1" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="21">K_DESIGN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_NET"
+      xlink:title="K_NET">
+      <rect x="71" y="47" width="60" height="32"/>
+      <rect x="69" y="45" width="60" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="65">K_NET</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_SNET"
+      xlink:title="K_SNET">
+      <rect x="71" y="91" width="68" height="32"/>
+      <rect x="69" y="89" width="68" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="109">K_SNET</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_REGION"
+      xlink:title="K_REGION">
+      <rect x="71" y="135" width="84" height="32"/>
+      <rect x="69" y="133" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="153">K_REGION</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_GROUP"
+      xlink:title="K_GROUP">
+      <rect x="71" y="179" width="80" height="32"/>
+      <rect x="69" y="177" width="80" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="197">K_GROUP</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_COMPONENT"
+      xlink:title="K_COMPONENT">
+      <rect x="71" y="223" width="114" height="32"/>
+      <rect x="69" y="221" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="241">K_COMPONENT</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ROW"
+      xlink:title="K_ROW">
+      <rect x="71" y="267" width="66" height="32"/>
+      <rect x="69" y="265" width="66" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="285">K_ROW</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_COMPONENTPIN"
+      xlink:title="K_COMPONENTPIN">
+      <rect x="71" y="311" width="136" height="32"/>
+      <rect x="69" y="309" width="136" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="329">K_COMPONENTPIN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_NONDEFAULTRULE"
+      xlink:title="K_NONDEFAULTRULE">
+      <rect x="71" y="355" width="150" height="32"/>
+      <rect x="69" y="353" width="150" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="373">K_NONDEFAULTRULE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="261" y="3" width="82" height="32"/>
+      <rect x="259" y="1" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="269" y="21">T_STRING</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#property_type_and_val"
+      xlink:title="property_type_and_val">
+      <rect x="363" y="3" width="168" height="32"/>
+      <rect x="361" y="1" width="168" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="371" y="21">property_type_and_val</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#error"
+      xlink:title="error">
+      <rect x="51" y="399" width="50" height="32"/>
+      <rect x="49" y="397" width="50" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="417">error</text>
+   </a>
+   <rect x="571" y="3" width="24" height="32" rx="10"/>
+   <rect x="569"
+         y="1"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="579" y="21">;</text>
+   <path class="line"
+         d="m17 17 h2 m40 0 h10 m84 0 h10 m0 0 h66 m-190 0 h20 m170 0 h20 m-210 0 q10 0 10 10 m190 0 q0 -10 10 -10 m-200 10 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m60 0 h10 m0 0 h90 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m68 0 h10 m0 0 h82 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m84 0 h10 m0 0 h66 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m80 0 h10 m0 0 h70 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m114 0 h10 m0 0 h36 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m66 0 h10 m0 0 h84 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m136 0 h10 m0 0 h14 m-180 -10 v20 m190 0 v-20 m-190 20 v24 m190 0 v-24 m-190 24 q0 10 10 10 m170 0 q10 0 10 -10 m-180 10 h10 m150 0 h10 m20 -352 h10 m82 0 h10 m0 0 h10 m168 0 h10 m-520 0 h20 m500 0 h20 m-540 0 q10 0 10 10 m520 0 q0 -10 10 -10 m-530 10 v376 m520 0 v-376 m-520 376 q0 10 10 10 m500 0 q10 0 10 -10 m-510 10 h10 m50 0 h10 m0 0 h430 m20 -396 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="613 17 621 13 621 21"/>
+   <polygon points="613 17 605 13 605 21"/>
+</svg>

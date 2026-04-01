@@ -2354,14 +2354,21 @@ void HierRTLMP::commitMacroPlacementToDb()
   Snapper snapper(logger_);
 
   for (auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
-    if (!inst || inst->isFixed()) {
-      continue;
+    if (!inst->isFixed()) {
+      snapper.setMacro(inst);
+      snapper.snapMacro();
+      inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
     }
 
-    snapper.setMacro(inst);
-    snapper.snapMacro();
-
-    inst->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
+    // There is no need to create blockages for soft halos since other tools
+    // capable of placement are aware of them
+    if (inst->getHalo() == nullptr || !inst->getHalo()->isSoft()) {
+      hard_macro->setRealLocation(inst->getLocation());
+      odb::Rect box = hard_macro->getBBox();
+      odb::dbBlockage* blockage = odb::dbBlockage::create(
+          block_, box.xMin(), box.yMin(), box.xMax(), box.yMax(), inst);
+      blockage->setSoft();
+    }
   }
 }
 

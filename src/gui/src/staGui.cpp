@@ -70,9 +70,11 @@ const Painter::Color TimingPathRenderer::kClockColor
 const Painter::Color TimingPathRenderer::kCaptureClockColor
     = Painter::Color(gui::Painter::kGreen, 100);
 
-static QString convertDelay(float time, sta::Unit* convert)
+static QString convertDelay(float time,
+                            sta::Unit* convert,
+                            const sta::StaState* sta)
 {
-  if (sta::delayInf(time)) {
+  if (sta::delayInf(time, sta)) {
     QString infinity = "∞";
 
     if (time < 0) {
@@ -80,7 +82,7 @@ static QString convertDelay(float time, sta::Unit* convert)
     }
     return infinity;
   }
-  return convert->asString(time);
+  return QString::fromStdString(convert->asString(time));
 }
 
 /////////
@@ -133,15 +135,19 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case kClock:
         return QString::fromStdString(timing_path->getEndClock());
       case kRequired:
-        return convertDelay(timing_path->getPathRequiredTime(), time_units);
+        return convertDelay(
+            timing_path->getPathRequiredTime(), time_units, sta_->getSTA());
       case kArrival:
-        return convertDelay(timing_path->getPathArrivalTime(), time_units);
+        return convertDelay(
+            timing_path->getPathArrivalTime(), time_units, sta_->getSTA());
       case kSlack:
-        return convertDelay(timing_path->getSlack(), time_units);
+        return convertDelay(
+            timing_path->getSlack(), time_units, sta_->getSTA());
       case kSkew:
-        return convertDelay(timing_path->getSkew(), time_units);
+        return convertDelay(timing_path->getSkew(), time_units, sta_->getSTA());
       case kLogicDelay:
-        return convertDelay(timing_path->getLogicDelay(), time_units);
+        return convertDelay(
+            timing_path->getLogicDelay(), time_units, sta_->getSTA());
       case kLogicDepth:
         return timing_path->getLogicDepth();
       case kFanout:
@@ -402,7 +408,7 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
                        "delay to sequential elements): %3")
                 .arg(inst->getMaster()->getName().c_str())
                 .arg(path_type)
-                .arg(convertDelay(clk_tree_delay, time_units));
+                .arg(convertDelay(clk_tree_delay, time_units, sta_));
           }
         }
       }
@@ -419,10 +425,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case kPin:
           return "clock network delay";
         case kTime:
-          return convertDelay(node->getArrival(), time_units);
+          return convertDelay(node->getArrival(), time_units, sta_);
         case kDelay:
           return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(),
-                              time_units);
+                              time_units,
+                              sta_);
         default:
           return QVariant();
       }
@@ -435,17 +442,17 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case kRiseFall:
           return node->isRisingEdge() ? kUpArrow : kDownArrow;
         case kTime:
-          return convertDelay(node->getArrival(), time_units);
+          return convertDelay(node->getArrival(), time_units, sta_);
         case kDelay:
-          return convertDelay(node->getDelay(), time_units);
+          return convertDelay(node->getDelay(), time_units, sta_);
         case kSlew:
-          return convertDelay(node->getSlew(), time_units);
+          return convertDelay(node->getSlew(), time_units, sta_);
         case kLoad: {
           if (node->getLoad() == 0) {
             return "";
           }
           const auto cap_units = sta_->units()->capacitanceUnit();
-          return cap_units->asString(node->getLoad());
+          return QString::fromStdString(cap_units->asString(node->getLoad()));
         }
         case kFanout: {
           if (node->getFanout() == 0) {
@@ -778,7 +785,7 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   max_timing_ = std::numeric_limits<float>::lowest();
   for (const auto& [level, pin_list] : map_) {
     for (const auto& pin : pin_list) {
-      if (sta::delayInf(pin->getPathSlack()) || !pin->hasValues()) {
+      if (sta::delayInf(pin->getPathSlack(), sta_) || !pin->hasValues()) {
         continue;
       }
 
@@ -1036,7 +1043,7 @@ void PinSetWidget::updatePins()
   if (!pins_.empty()) {
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
-      auto* item = new QListWidgetItem(network->name(pin));
+      auto* item = new QListWidgetItem(network->name(pin).c_str());
       item->setData(Qt::UserRole, QVariant::fromValue((void*) pin));
       box_->addItem(item);
     }
@@ -1318,7 +1325,7 @@ void TimingControlsDialog::populate()
   scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
-    QString clk_name = clk->name();
+    QString clk_name = clk->name().c_str();
 
     if (qstring_to_clk_.count(clk_name) != 1) {
       qstring_to_clk_[clk_name] = clk;
