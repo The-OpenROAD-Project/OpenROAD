@@ -288,10 +288,7 @@ void FastRouteCore::fillVIA()
           treeedge.route.type = RouteType::MazeRoute;
           treeedge.route.routelen = newCNT - 1;
         }
-      } else if ((treenodes[treeedge.n1].hID == BIG_INT
-                  && treenodes[treeedge.n1].lID == BIG_INT)
-                 || (treenodes[treeedge.n2].hID == BIG_INT
-                     && treenodes[treeedge.n2].lID == BIG_INT)) {
+      } else if (treeedge.len == 0) {
         int node1 = treeedge.n1;
         int node2 = treeedge.n2;
         if ((treenodes[node1].botL == num_layers_
