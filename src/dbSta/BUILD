@@ -16,6 +16,7 @@ cc_library(
         "src/dbSta.cc",
     ],
     hdrs = [
+        "include/db_sta/DelayFmt.hh",
         "include/db_sta/dbSta.hh",
     ],
     includes = [
@@ -92,6 +93,26 @@ cc_library(
 )
 
 cc_library(
+    name = "IpChecker",
+    srcs = [
+        "src/IpChecker.cc",
+    ],
+    hdrs = [
+        "include/db_sta/IpChecker.hh",
+    ],
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":dbSta",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@spdlog",
+    ],
+)
+
+cc_library(
     name = "dbNetwork",
     srcs = [
         "src/dbEditHierarchy.cc",
@@ -114,6 +135,7 @@ cc_library(
 cc_library(
     name = "ui",
     srcs = [
+        "include/db_sta/IpChecker.hh",
         "src/MakeDbSta.cc",
         ":swig",
         ":tcl",
@@ -123,13 +145,14 @@ cc_library(
         "include/db_sta/MakeDbSta.hh",
     ],
     copts = [
-        "-Isrc/dbSta/src",
         "-Wno-missing-braces",  # from TCL swigging
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
+        ":IpChecker",
         ":dbNetwork",
         ":dbSta",
         "//:ord",

@@ -53,24 +53,22 @@
 [INFO GRT-0019] Found 6 clock nets.
 [INFO GRT-0001] Minimum degree: 2
 [INFO GRT-0002] Maximum degree: 22
-design statistics
-lib DBU:             1000
-die region (in DBU): [x: (0, 299960), y: (0, 300130)]
-num of nets :        411
-num of special nets: 2
-gcell grid:          41 x 41 x 6
-stage 1: pattern routing
-105 / 411 nets have overflow.
-stage 2: pattern routing with possible detours
-63 / 411 nets have overflow.
-stage 3: maze routing on sparsified routing graph
-19 / 411 nets have overflow.
-routing statistics
-wire length (metric):  62545
-total via count:       3294
-total wire overflow:   0
-min resource: -0.9861111111111116
-bottleneck:   (3, 20, 27)
-[INFO GRT-0018] Total wirelength: 31291 um
+Design statistics
+Nets:                411
+Special nets:        2
+Routing layers:      6
+Stage 1: Pattern routing.
+Nets with overflow: 108.
+Stage 2: Pattern routing with detours.
+Nets with overflow: 62.
+Stage 3: Maze routing on sparsified graph.
+Nets with overflow: 20.
+Routing statistics
+Wire length:           62020
+Total via count:       3233
+Total wire overflow:   0
+Min resource:          -0.5555555555555571
+Bottleneck:            (3, 13, 14)
+[INFO GRT-0018] Total wirelength: 31082 um
 [INFO GRT-0014] Routed nets: 411
 No differences found.

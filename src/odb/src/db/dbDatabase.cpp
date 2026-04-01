@@ -59,6 +59,7 @@
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -78,6 +79,7 @@ static std::atomic<uint32_t> db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (master_id_ != rhs.master_id_) {
     return false;
   }
@@ -135,6 +137,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDatabase::operator<(const _dbDatabase& rhs) const
@@ -207,6 +210,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_model_ = nullptr;
   // User Code End Constructor
 }
 
@@ -335,6 +340,10 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
   }
+  if (db->getChips().size() > 1) {
+    // Construct unfolded model only if there are multiple chips
+    db->constructUnfoldedModel();
+  }
   // User Code End >>
   return stream;
 }
@@ -446,6 +455,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_itr_;
   delete chip_bump_inst_itr_;
   delete chip_net_itr_;
+  delete unfolded_model_;
   // User Code End Destructor
 }
 
@@ -495,6 +505,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_model_ = nullptr;
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -683,6 +695,19 @@ dbChip* dbDatabase::getChip()
   }
 
   return (dbChip*) db->chip_tbl_->getPtr(db->chip_);
+}
+
+void dbDatabase::constructUnfoldedModel()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  delete db->unfolded_model_;
+  db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
+}
+
+UnfoldedModel* dbDatabase::getUnfoldedModel() const
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  return db->unfolded_model_;
 }
 
 dbTech* dbDatabase::getTech()
@@ -993,6 +1018,7 @@ void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
+  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()

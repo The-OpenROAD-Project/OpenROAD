@@ -26,29 +26,29 @@ COMPONENTS 4 ;
 END COMPONENTS
 NETS 2 ;
     - net1 ( comp1 A ) ( comp2 A ) + USE SIGNAL
-      + ROUTED met3 ( 21120 21460 ) ( 23520 * )
-      NEW met3 ( 23520 21090 ) ( * 21460 )
-      NEW met3 ( 23520 21090 ) ( 75360 * )
+      + ROUTED met3 ( 20880 21460 ) ( 21600 * )
+      NEW met3 ( 21600 21090 ) ( * 21460 )
+      NEW met3 ( 21600 21090 ) ( 75360 * )
       NEW met3 ( 75360 80290 ) ( 77280 * )
       NEW met3 ( 77280 80290 ) ( * 81400 )
       NEW met3 ( 77280 81400 ) ( 80400 * )
       NEW met4 ( 75360 21090 ) ( * 80290 )
-      NEW met2 ( 21120 21460 ) M2M3_PR_M
+      NEW met2 ( 20880 21460 ) M2M3_PR_MR
       NEW met3 ( 75360 21090 ) M3M4_PR
       NEW met3 ( 75360 80290 ) M3M4_PR
       NEW met2 ( 80400 81400 ) M2M3_PR_M ;
     - net2 ( comp3 A ) ( comp4 A ) + USE SIGNAL
       + ROUTED met3 ( 19680 81030 ) ( 20640 * )
       NEW met3 ( 20640 81030 ) ( * 81215 )
-      NEW met3 ( 20400 81215 ) ( 20640 * )
+      NEW met3 ( 20640 81215 ) ( 20880 * )
       NEW met4 ( 19680 20350 ) ( * 81030 )
       NEW met3 ( 80160 20350 ) ( * 21275 )
       NEW met3 ( 80160 21275 ) ( 80400 * )
       NEW met3 ( 19680 20350 ) ( 80160 * )
       NEW met3 ( 19680 20350 ) M3M4_PR
       NEW met3 ( 19680 81030 ) M3M4_PR
-      NEW met1 ( 20400 81215 ) M1M2_PR
-      NEW met2 ( 20400 81215 ) M2M3_PR
+      NEW met1 ( 20880 81215 ) M1M2_PR
+      NEW met2 ( 20880 81215 ) M2M3_PR
       NEW met1 ( 80400 21275 ) M1M2_PR
       NEW met2 ( 80400 21275 ) M2M3_PR ;
 END NETS

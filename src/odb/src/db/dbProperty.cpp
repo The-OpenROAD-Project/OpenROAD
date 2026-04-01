@@ -34,6 +34,7 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -56,6 +57,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbProperty::operator<(const _dbProperty& rhs) const
@@ -411,6 +413,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
+  _dbProperty* prev = nullptr;
   uint32_t oid = prop->getOID();
 
   while (cur) {
@@ -420,12 +423,13 @@ void dbProperty::destroy(dbProperty* prop_)
       if (cur == propList) {
         ownerTable->setPropList(prop->owner_, p->next_);
       } else {
-        p->next_ = prop->next_;
+        prev->next_ = prop->next_;
       }
 
       break;
     }
 
+    prev = p;
     cur = p->next_;
   }
 

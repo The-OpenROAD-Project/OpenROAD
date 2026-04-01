@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
 #include <iosfwd>
 #include <numbers>
 #include <tuple>
@@ -154,6 +155,7 @@ class Cuboid
   int xCenter() const { return (xlo_ + xhi_) / 2; }
   int yCenter() const { return (ylo_ + yhi_) / 2; }
   int zCenter() const { return (zlo_ + zhi_) / 2; }
+  Rect getEnclosingRect() const;
 
   std::vector<Point3D> getPoints() const;
   Point3D lll() const;  // lower corner (xMin, yMin, zMin)
@@ -211,6 +213,8 @@ class Cuboid
 
   void printf(FILE* fp, const char* prefix = "");
   void print(const char* prefix = "");
+  friend dbIStream& operator>>(dbIStream& stream, Cuboid& c);
+  friend dbOStream& operator<<(dbOStream& stream, const Cuboid& c);
 
  private:
   int xlo_ = 0;
@@ -514,6 +518,9 @@ class Line
 
   void addX(int value);
   void addY(int value);
+
+  void setPt0(const Point& pt);
+  void setPt1(const Point& pt);
 
   friend dbIStream& operator>>(dbIStream& stream, Line& l);
   friend dbOStream& operator<<(dbOStream& stream, const Line& l);
@@ -1118,6 +1125,16 @@ inline void Line::addY(int value)
   pt1_.setY(pt1_.getY() + value);
 }
 
+inline void Line::setPt0(const Point& pt)
+{
+  pt0_ = pt;
+}
+
+inline void Line::setPt1(const Point& pt)
+{
+  pt1_ = pt;
+}
+
 inline std::vector<Point> Line::getPoints() const
 {
   std::vector<Point> pts{pt0_, pt1_};
@@ -1244,6 +1261,11 @@ inline Point3D Cuboid::uur() const
 inline Point3D Cuboid::center() const
 {
   return Point3D(xCenter(), yCenter(), zCenter());
+}
+
+inline Rect Cuboid::getEnclosingRect() const
+{
+  return Rect(xlo_, ylo_, xhi_, yhi_);
 }
 
 inline bool Cuboid::intersects(const Point3D& p) const
@@ -1414,4 +1436,23 @@ inline void Cuboid::print(const char* prefix)
 using utl::format_as;
 #endif
 
+inline void hash_combine(size_t& seed, size_t value)
+{
+  seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 }  // namespace odb
+
+namespace std {
+template <>
+struct hash<odb::Point>
+{
+  size_t operator()(const odb::Point& p) const noexcept
+  {
+    size_t seed = 0;
+    odb::hash_combine(seed, std::hash<int>{}(p.x()));
+    odb::hash_combine(seed, std::hash<int>{}(p.y()));
+    return seed;
+  }
+};
+}  // namespace std

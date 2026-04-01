@@ -29,4 +29,4 @@ report_buffers
 
 puts "\n==== set clock buffer footprint to DLY ==="
 puts "==== should get an error ==="
-set_cts_config -clock_buffer_footprint DLY
+catch { set_cts_config -clock_buffer_footprint DLY }

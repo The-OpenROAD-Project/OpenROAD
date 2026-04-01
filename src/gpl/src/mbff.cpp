@@ -19,6 +19,7 @@
 #include "AbstractGraphics.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "lemon/core.h"
 #include "lemon/list_graph.h"
 #include "lemon/network_simplex.h"
 #include "odb/db.h"
@@ -28,6 +29,7 @@
 #include "omp.h"
 #include "ortools/linear_solver/linear_solver.h"
 #include "ortools/sat/cp_model.h"
+#include "ortools/util/sorted_interval_list.h"
 #include "rsz/Resizer.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/ConcreteLibrary.hh"
@@ -46,9 +48,11 @@
 #include "sta/PortDirection.hh"
 #include "sta/PowerClass.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sequential.hh"
+#include "sta/StringUtil.hh"
 #include "utl/Logger.h"
 
 namespace gpl {
@@ -748,11 +752,11 @@ MBFF::DataToOutputsMap MBFF::GetPinMapping(dbInst* tray)
   }
 
   DataToOutputsMap ret;
-  if (q_pins.size() && qn_pins.size()) {
+  if (!q_pins.empty() && !qn_pins.empty()) {
     for (size_t i = 0; i < d_pins.size(); i++) {
       ret[d_pins[i]] = {q_pins[i], qn_pins[i]};
     }
-  } else if (q_pins.size()) {
+  } else if (!q_pins.empty()) {
     for (size_t i = 0; i < d_pins.size(); i++) {
       ret[d_pins[i]] = {q_pins[i], nullptr};
     }
@@ -865,13 +869,15 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
 
         // standard pins
         if (IsDPin(iterm)) {
-          tray_inst[tray_idx]->findITerm(d_pin->name())->connect(net);
+          tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
         }
         if (IsQPin(iterm)) {
           if (IsInvertingQPin(iterm)) {
-            tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
+            tray_inst[tray_idx]
+                ->findITerm(qn_pin->name().c_str())
+                ->connect(net);
           } else {
-            tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
+            tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
           }
         }
         if (IsSupplyPin(iterm)) {
@@ -1954,7 +1960,7 @@ void MBFF::KMeansDecomp(const std::vector<Flop>& flops,
 
   // recurse on each new cluster
   for (int i = 0; i < best_k; i++) {
-    if (nxt_clusters[i].size()) {
+    if (!nxt_clusters[i].empty()) {
       std::vector<std::vector<Flop>> R;
       KMeansDecomp(nxt_clusters[i], max_sz, R);
       for (auto& x : R) {
@@ -2246,7 +2252,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
     dbInst* ff_inst = insts_[FFs[i].back().idx];
     const Mask array_mask = GetArrayMask(ff_inst, false);
     // do we even have trays to cluster these flops?
-    if (!best_master_[array_mask].size()) {
+    if (best_master_[array_mask].empty()) {
       tot_ilp += (alpha * FFs[i].size());
       tray_sizes_used_[1] += FFs[i].size();
       log_->info(GPL,
@@ -2303,6 +2309,7 @@ void MBFF::Run(const int mx_sz, const float alpha, const float beta)
   for (const auto [tray, count] : tray_sizes_used_) {
     log_->report("  {}-bit: {}", tray, count);
   }
+  resizer_->invalidateVertexOrdering();
 }
 
 Point MBFF::GetTrayCenter(const Mask& array_mask, const int idx)
@@ -2388,11 +2395,12 @@ void MBFF::ReadLibs()
         std::vector<Point> qn;
 
         for (const auto& p : pin_mappings_[array_mask][idx]) {
-          dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
-          dbITerm* q_pin = (p.second.q ? tmp_tray->findITerm(p.second.q->name())
-                                       : nullptr);
+          dbITerm* d_pin = tmp_tray->findITerm(p.first->name().c_str());
+          dbITerm* q_pin
+              = (p.second.q ? tmp_tray->findITerm(p.second.q->name().c_str())
+                            : nullptr);
           dbITerm* qn_pin
-              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name())
+              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name().c_str())
                              : nullptr);
 
           d.push_back(Point{
@@ -2417,7 +2425,7 @@ void MBFF::ReadLibs()
 
         // slots w.r.t. bottom-left corner
         for (int i = 0; i < num_slots; i++) {
-          if (q.size() && qn.size()) {
+          if (!q.empty() && !qn.empty()) {
             slot_to_tray_x_[array_mask][idx].push_back(
                 (std::max(d[i].x, std::max(q[i].x, qn[i].x))
                  + std::min(d[i].x, std::min(q[i].x, qn[i].x)))
@@ -2426,7 +2434,7 @@ void MBFF::ReadLibs()
                 (std::max(d[i].y, std::max(q[i].y, qn[i].y))
                  + std::min(d[i].y, std::min(q[i].y, qn[i].y)))
                 / 2.0);
-          } else if (q.size()) {
+          } else if (!q.empty()) {
             slot_to_tray_x_[array_mask][idx].push_back(
                 (std::max(d[i].x, q[i].x) + std::min(d[i].x, q[i].x)) / 2.0);
             slot_to_tray_y_[array_mask][idx].push_back(
@@ -2474,7 +2482,7 @@ void MBFF::ReadPaths()
   sta_->searchPreamble();
   sta_->ensureLevelized();
   sta::Search* search = sta_->search();
-  sta::StdStringSeq empty_group_names;
+  sta::StringSeq empty_group_names;
   sta::PathEndSeq path_ends = search->findPathEnds(e_from,
                                                    e_thrus,
                                                    e_to,

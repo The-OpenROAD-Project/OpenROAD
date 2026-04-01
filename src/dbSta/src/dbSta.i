@@ -8,6 +8,7 @@
 #include "odb/db.h"
 #include "db_sta/dbSta.hh"
 #include "db_sta/dbNetwork.hh"
+#include "db_sta/IpChecker.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "ord/OpenRoad.hh"
 #include "sta/Property.hh"
@@ -173,12 +174,14 @@ report_cell_usage_cmd(odb::dbModule* mod,
 }
 
 void
-report_timing_histogram_cmd(int num_bins, const MinMax* min_max)
+report_timing_histogram_cmd(int num_bins,
+                             const MinMax* min_max,
+                             float bin_size)
 {
   ord::OpenRoad *openroad = ord::getOpenRoad();
   sta::dbSta *sta = openroad->getSta();
   sta->ensureLinked();
-  sta->reportTimingHistogram(num_bins, min_max);
+  sta->reportTimingHistogram(num_bins, min_max, bin_size);
 }
 
 void
@@ -227,6 +230,33 @@ void check_axioms_cmd()
   sta->checkSanity();
 }
 
+bool parasitics_annotated(Pin *pin, Scene *scene) {
+  auto parasitics = scene->parasitics(sta::MinMax::max());
+  return parasitics->findParasiticNetwork(pin) != nullptr;
+}
+
 } // namespace sta
+
+bool
+check_ip_cmd(const char* master_name,
+             bool check_all,
+             int max_polygons,
+             bool verbose)
+{
+  ord::OpenRoad* openroad = ord::getOpenRoad();
+  odb::dbDatabase* db = openroad->getDb();
+  sta::dbSta* sta = openroad->getSta();
+  utl::Logger* logger = openroad->getLogger();
+
+  sta::IpChecker checker(db, sta, logger);
+  checker.setMaxPolygons(max_polygons);
+  checker.setVerbose(verbose);
+
+  if (check_all) {
+    return checker.checkAll();
+  } else {
+    return checker.checkMaster(master_name);
+  }
+}
 
 %} // inline

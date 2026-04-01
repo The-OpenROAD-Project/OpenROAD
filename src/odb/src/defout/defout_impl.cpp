@@ -48,6 +48,19 @@ std::string getPinName(dbITerm* iterm)
   return iterm->getMTerm()->getName();
 }
 
+// Format a scan chain start/stop pin for DEF output.
+// BTerm: "PIN <pinname>", ITerm: "<instname> <pinname>"
+std::string getScanPinDef(dbBTerm* bterm)
+{
+  return fmt::format("PIN {}", bterm->getName());
+}
+
+std::string getScanPinDef(dbITerm* iterm)
+{
+  return fmt::format(
+      "{} {}", iterm->getInst()->getName(), iterm->getMTerm()->getName());
+}
+
 static const int max_name_length = 256;
 
 template <typename T>
@@ -683,8 +696,8 @@ void DefOut::Impl::writeInst(dbInst* inst)
       int right = defdist(box->xMax());
       int top = defdist(box->yMax());
 
-      *_out << " + HALO " << left << " " << bottom << " " << right << " "
-            << top;
+      *_out << " + HALO " << (box->isSoft() ? "SOFT " : "") << left << " "
+            << bottom << " " << right << " " << top;
     }
   }
 
@@ -870,13 +883,15 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
                 ? scan_chain->getName()
                 : fmt::format("{}_{}", scan_chain->getName(), chain_suffix);
 
-      const std::string start_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanIn());
-      const std::string stop_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanOut());
+      const std::string start_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanIn());
+      const std::string stop_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanOut());
 
       *_out << "- " << chain_name << "\n";
-      *_out << "+ START PIN " << start_pin_name << "\n";
+      *_out << "+ START " << start_pin << "\n";
 
       for (dbScanList* scan_list : scan_partition->getScanLists()) {
         dbSet<dbScanInst> scan_insts = scan_list->getScanInsts();
@@ -901,7 +916,7 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
         }
       }
       *_out << "+ PARTITION " << scan_partition->getName() << "\n";
-      *_out << "+ STOP PIN " << stop_pin_name << " ;\n\n";
+      *_out << "+ STOP " << stop_pin << " ;\n\n";
       ++chain_suffix;
     }
   }
@@ -2046,6 +2061,7 @@ void DefOut::Impl::writePropValue(dbProperty* prop)
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
       double v = p->getValue();
       *_out << fmt::format("{:g} ", v);
+      break;
     }
 
     default:

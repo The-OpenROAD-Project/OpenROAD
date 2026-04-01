@@ -193,7 +193,7 @@ class PdnGen
   VoltageDomain* getCoreDomain() const;
   void ensureCoreDomain();
 
-  void updateRenderer() const;
+  void updateRenderer(bool reset) const;
 
   bool importUPF(VoltageDomain* domain);
   bool importUPF(Grid* grid, PowerSwitchNetworkType type) const;

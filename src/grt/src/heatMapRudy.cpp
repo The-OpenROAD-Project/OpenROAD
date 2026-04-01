@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <any>
 #include <cmath>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <vector>
@@ -19,6 +20,16 @@
 #include "utl/Logger.h"
 
 namespace grt {
+
+gui::HeatMapSourceHandle registerRudyHeatMapSource(utl::Logger* logger,
+                                                   grt::GlobalRouter* grouter,
+                                                   odb::dbDatabase* db)
+{
+  return gui::registerHeatMapSource(
+      "Estimated Congestion (RUDY)", "RUDY", "RUDY", [logger, grouter, db]() {
+        return std::make_shared<RUDYDataSource>(logger, grouter, db);
+      });
+}
 
 RUDYDataSource::RUDYDataSource(utl::Logger* logger,
                                grt::GlobalRouter* grouter,
@@ -160,11 +171,6 @@ void RUDYDataSource::onHide()
 }
 
 void RUDYDataSource::inDbInstCreate(odb::dbInst*)
-{
-  destroyMap();
-}
-
-void RUDYDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
   destroyMap();
 }

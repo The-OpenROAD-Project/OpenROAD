@@ -3,6 +3,7 @@
 
 #include "heatMapPinDensity.h"
 
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -29,6 +30,10 @@ bool PinDensityDataSource::populateMap()
     return false;
   }
 
+  // Collect selected instances if filter is enabled
+  const std::set<odb::dbInst*> selected_insts = getSelectedInsts();
+  const bool filter = !selected_insts.empty();
+
   // Iterate through blocks hierarchically to gather the flattened data
   // for this view.
   std::vector<std::pair<odb::dbBlock*, odb::dbTransform>> blocks
@@ -40,6 +45,9 @@ bool PinDensityDataSource::populateMap()
 
     for (auto* inst : block->getInsts()) {
       if (!inst->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+      if (filter && selected_insts.find(inst) == selected_insts.end()) {
         continue;
       }
 
@@ -99,11 +107,6 @@ void PinDensityDataSource::onHide()
 }
 
 void PinDensityDataSource::inDbInstCreate(odb::dbInst*)
-{
-  destroyMap();
-}
-
-void PinDensityDataSource::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
 {
   destroyMap();
 }

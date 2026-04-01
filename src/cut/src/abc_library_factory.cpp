@@ -20,6 +20,8 @@
 #include "misc/vec/vecWrd.h"
 #include "rsz/Resizer.hh"
 #include "sta/LibertyClass.hh"
+#include "sta/Scene.hh"
+#include "sta/SdcClass.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
 #include "utl/Logger.h"
@@ -208,7 +210,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcInputPins(
 
     abc::SC_Pin* input_pin = abc::Abc_SclPinAlloc();
     input_pin->dir = abc::sc_dir_Input;
-    input_pin->pName = strdup(cell_port->name());
+    input_pin->pName = strdup(cell_port->name().c_str());
     input_pin->rise_cap = capacitance_unit->staToUser(
         cell_port->capacitance(sta::RiseFall::rise(), sta::MinMax::max()));
     input_pin->fall_cap = capacitance_unit->staToUser(
@@ -238,7 +240,7 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
 
     abc::SC_Pin* output_pin = abc::Abc_SclPinAlloc();
     output_pin->dir = abc::sc_dir_Output;
-    output_pin->pName = strdup(cell_port->name());
+    output_pin->pName = strdup(cell_port->name().c_str());
 
     float max_output_capacitance = 0;
     bool exists = false;
@@ -435,11 +437,11 @@ void AbcLibraryFactory::PopulateLibraryDetails(abc::SC_Lib* sc_library,
   sta::Unit* cap_unit = units->capacitanceUnit();
 
   if (!sc_library->pName) {
-    sc_library->pName = strdup(library->name());
+    sc_library->pName = strdup(library->name().c_str());
   }
 
   if (!sc_library->pFileName) {
-    sc_library->pFileName = strdup(library->filename());
+    sc_library->pFileName = strdup(library->filename().c_str());
   }
 
   sc_library->default_wire_load = nullptr;
@@ -481,7 +483,7 @@ void AbcLibraryFactory::PopulateAbcSclLibFromSta(
     abc_cell->Id = abc::SC_LibCellNum(sc_library);
     abc::Vec_PtrPush(&sc_library->vCells, abc_cell);
 
-    abc_cell->pName = strdup(cell->name());
+    abc_cell->pName = strdup(cell->name().c_str());
     abc_cell->area = cell->area();
     abc_cell->drive_strength = 0;
 

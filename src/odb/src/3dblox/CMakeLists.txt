@@ -12,8 +12,8 @@ add_library(3dblox
   bmapWriter.cpp
   dbvWriter.cpp
   dbxWriter.cpp
+  verilogWriter.cpp
   3dblox.cpp
-  unfoldedModel.cpp
   checker.cpp
 )
 

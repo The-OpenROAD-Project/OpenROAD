@@ -71,7 +71,7 @@ void Straps::checkLayerSpecifications() const
         layer_->getName());
   }
 
-  const TechLayer layer(layer_);
+  TechLayer layer(layer_);
 
   checkLayerWidth(layer_, width_, direction_);
   checkLayerSpacing(layer_, width_, spacing_, direction_);
@@ -79,6 +79,17 @@ void Straps::checkLayerSpecifications() const
   layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
   layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
   layer.checkIfManufacturingGrid(offset_, getLogger(), "Offset");
+
+  if (snap_) {
+    layer.populateGrid(getBlock(), direction_);
+    if (!layer.hasGrid()) {
+      getLogger()->error(utl::PDN,
+                         215,
+                         "Unable to snap strap on {} to grid, no routing grid "
+                         "defined for layer.",
+                         layer_->getName());
+    }
+  }
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {
@@ -1456,7 +1467,7 @@ bool PadDirectConnectionStraps::refineShapes(
     return GridComponent::refineShapes(all_shapes, all_obstructions);
   }
 
-  std::vector<Shape*> refine;
+  std::vector<ShapePtr> refine;
   for (const auto& [layer, shapes] : getShapes()) {
     for (const auto& shape : shapes) {
       if (!strapViaIsObstructed(
@@ -1464,7 +1475,7 @@ bool PadDirectConnectionStraps::refineShapes(
         continue;
       }
 
-      refine.push_back(shape.get());
+      refine.push_back(shape);
     }
   }
 
@@ -1475,37 +1486,24 @@ bool PadDirectConnectionStraps::refineShapes(
   const auto [first, last] = std::ranges::unique(refine.begin(), refine.end());
   refine.erase(first, last);
 
-  for (auto* refine_shape : refine) {
-    std::unique_ptr<Shape> shape = refine_shape->copy();
-    removeShape(refine_shape);
+  for (const auto& refine_shape : refine) {
+    std::unique_ptr<Shape> shape(refine_shape->copy());
+    const auto& target_pin = target_pin_shape_[refine_shape.get()];
+    removeShape(refine_shape.get());
 
-    // remove shape from all_shapes and all_obstructions
-    auto* layer = shape->getLayer();
-    auto find_shape = [&refine_shape](const ShapePtr& other) {
-      return other.get() == refine_shape;
-    };
     // remove from all_shapes
-    auto& layer_shapes = all_shapes[layer];
-    auto find_all_shapes_itr = layer_shapes.qbegin(bgi::satisfies(find_shape));
-    if (find_all_shapes_itr != layer_shapes.qend()) {
-      layer_shapes.remove(*find_all_shapes_itr);
-    }
-    // remove from all_obstructions
-    auto& layer_obstruction = all_obstructions[layer];
-    auto find_all_obstructions_itr
-        = layer_obstruction.qbegin(bgi::satisfies(find_shape));
-    if (find_all_obstructions_itr != layer_obstruction.qend()) {
-      layer_obstruction.remove(*find_all_obstructions_itr);
-    }
+    auto* layer = shape->getLayer();
+    all_shapes[layer].remove(refine_shape);
+    all_obstructions[layer].remove(refine_shape);
 
     const TechLayer tech_layer(layer);
     for (int width : {getWidth(), tech_layer.getMinWidth()}) {
       setWidth(width);
 
-      if (refineShape(shape.get(),
-                      target_pin_shape_[refine_shape],
-                      all_shapes,
-                      all_obstructions)) {
+      if (refineShape(shape.get(), target_pin, all_shapes, all_obstructions)) {
+        // add shape to all_shapes and all_obstructions
+        getObstructions(all_obstructions);
+        getShapes(all_shapes);
         break;
       }
     }
@@ -1517,8 +1515,8 @@ bool PadDirectConnectionStraps::refineShapes(
 bool PadDirectConnectionStraps::refineShape(
     Shape* shape,
     const odb::Rect& pin_shape,
-    Shape::ShapeTreeMap& all_shapes,
-    Shape::ObstructionTreeMap& all_obstructions)
+    const Shape::ShapeTreeMap& all_shapes,
+    const Shape::ObstructionTreeMap& all_obstructions)
 {
   const TechLayer tech_layer(shape->getLayer());
 
@@ -1549,7 +1547,7 @@ bool PadDirectConnectionStraps::refineShape(
       new_rect.set_xhi(check_loc + getWidth());
     }
 
-    std::unique_ptr<Shape> new_shape = shape->copy();
+    std::unique_ptr<Shape> new_shape(shape->copy());
     new_shape->setRect(new_rect);
 
     debugPrint(getLogger(),
@@ -1580,10 +1578,6 @@ bool PadDirectConnectionStraps::refineShape(
       if (getShapeCount() == 0) {
         continue;
       }
-
-      // add shape to all_shapes and all_obstructions
-      getObstructions(all_obstructions);
-      getShapes(all_shapes);
 
       return true;
     }
@@ -2384,14 +2378,14 @@ void RepairChannelStraps::repairGridChannels(
   for (const auto& channel : channels) {
     bool dont_repair = false;
     for (const auto& other : areas_repaired) {
-      if (!(channel.area.xMax() <= other.xMin()
-            || channel.area.xMin() >= other.xMax())) {
+      if (channel.area.xMax() > other.xMin()
+          && channel.area.xMin() < other.xMax()) {
         // channels cover similar x regions
         dont_repair = true;
         break;
       }
-      if (!(channel.area.yMax() <= other.yMin()
-            || channel.area.yMin() >= other.yMax())) {
+      if (channel.area.yMax() > other.yMin()
+          && channel.area.yMin() < other.yMax()) {
         // channels cover similar y regions
         dont_repair = true;
         break;

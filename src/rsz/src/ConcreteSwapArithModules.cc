@@ -16,6 +16,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
 #include "sta/PathEnd.hh"
@@ -306,7 +307,12 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                 target);
   logger_->metric("design__instance__count__swapped_arithmetic_operator",
                   swapped_count);
-  return (swapped_count > 0);
+  bool swapped = swapped_count > 0;
+  if (swapped) {
+    // Invalidate vertex level ordering
+    resizer_->invalidateVertexOrdering();
+  }
+  return swapped;
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

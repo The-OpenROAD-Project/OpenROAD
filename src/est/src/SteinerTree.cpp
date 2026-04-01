@@ -3,6 +3,7 @@
 
 #include "est/SteinerTree.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <string>
@@ -26,7 +27,6 @@ using std::string;
 using utl::EST;
 
 using sta::NetConnectedPinIterator;
-using sta::stringPrintTmp;
 
 void SteinerTree::setTree(const stt::Tree& tree)
 {
@@ -83,6 +83,18 @@ void SteinerTree::locAddPin(const odb::Point& loc, const sta::Pin* pin)
   loc_pin_map_[loc].push_back(pin);
 }
 
+int SteinerTree::getMaxIndex() const
+{
+  int max_index = -1;
+  for (int i = 0; i < branchCount(); i++) {
+    const stt::Branch& branch_pt = tree_.branch[i];
+    max_index = std::max(max_index, i);
+    max_index = std::max({max_index, branch_pt.n});
+  }
+
+  return max_index;
+}
+
 void SteinerTree::branch(int index,
                          // Return values.
                          odb::Point& pt1,
@@ -119,7 +131,7 @@ void SteinerTree::report(utl::Logger* logger, const sta::Network* network)
   }
 }
 
-const char* SteinerTree::name(const SteinerPt pt, const sta::Network* network)
+std::string SteinerTree::name(const SteinerPt pt, const sta::Network* network)
 {
   if (pt == null_pt) {
     return "NULL";
@@ -135,9 +147,10 @@ const char* SteinerTree::name(const SteinerPt pt, const sta::Network* network)
       pin_names += network->pathName(pin);
       first = false;
     }
-    return stringPrintTmp("%s", pin_names.c_str());
+    return pin_names;
   }
-  return stringPrintTmp("S%d", pt);
+  std::string pt_name = "S" + std::to_string(pt);
+  return pt_name;
 }
 
 const sta::PinSeq* SteinerTree::pins(const SteinerPt pt) const

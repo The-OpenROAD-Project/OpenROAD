@@ -2,8 +2,10 @@
 # Copyright (c) 2025, The OpenROAD Authors
 
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -23,6 +25,8 @@ cc_library(
         "src/CloneMove.hh",
         "src/ConcreteSwapArithModules.cc",
         "src/ConcreteSwapArithModules.hh",
+        "src/MoveTracker.cc",
+        "src/MoveTracker.hh",
         "src/OdbCallBack.cc",
         "src/PreChecks.cc",
         "src/PreChecks.hh",
@@ -51,6 +55,8 @@ cc_library(
         "src/UnbufferMove.hh",
         "src/VTSwapMove.cc",
         "src/VTSwapMove.hh",
+        "src/ViolatorCollector.cc",
+        "src/ViolatorCollector.hh",
     ],
     hdrs = [
         "include/rsz/OdbCallBack.hh",
@@ -92,11 +98,9 @@ cc_library(
     hdrs = [
         "include/rsz/MakeResizer.hh",
     ],
-    copts = [
-        "-Isrc/rsz/src",
-    ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":rsz",
@@ -142,4 +146,35 @@ tcl_wrap_cc(
         "../sta",
         "src",
     ],
+)
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/rsz/Resizer.hh",
+        "src/Resizer-py.i",
+        "//:error_swig-py",
+    ],
+    module = "rsz_py",
+    root_swig_src = "src/Resizer-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Resizer.tcl",
+    ],
+    visibility = ["//src/rsz/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/rsz/test:__pkg__"],
 )

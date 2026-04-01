@@ -11,16 +11,15 @@
 #include <vector>
 
 #include "BaseMove.hh"
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
-#include "sta/ArcDelayCalc.hh"
 #include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/Transition.hh"
 #include "utl/Logger.h"
 
@@ -35,24 +34,6 @@ using odb::dbNet;
 using odb::Point;
 
 using utl::RSZ;
-
-using sta::ArcDelay;
-using sta::Edge;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::LoadPinIndexMap;
-using sta::Net;
-using sta::NetConnectedPinIterator;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Pin;
-using sta::RiseFall;
-using sta::Slack;
-using sta::Slew;
-using sta::Vertex;
-using sta::VertexOutEdgeIterator;
 
 /// SplitLoadMove: Optimize timing by splitting high-fanout nets
 ///
@@ -77,69 +58,63 @@ using sta::VertexOutEdgeIterator;
 ///
 /// Precondition: Fanout count must exceed split_load_min_fanout_
 ///
-bool SplitLoadMove::doMove(const Path* drvr_path,
-                           int drvr_index,
-                           Slack drvr_slack,
-                           PathExpanded* expanded,
-                           float setup_slack_margin)
+bool SplitLoadMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 {
-  Pin* drvr_pin = drvr_path->pin(this);
-  Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const Path* load_path = expanded->path(drvr_index + 1);
-  Vertex* load_vertex = load_path->vertex(sta_);
-  Pin* load_pin = load_vertex->pin();
+  const sta::Pin* drvr_pin = drvr_path->pin(sta_);
+  sta::Vertex* drvr_vertex = graph_->pinDrvrVertex(drvr_pin);
 
   const int fanout = this->fanout(drvr_vertex);
   // Don't split loads on low fanout nets.
   if (fanout <= split_load_min_fanout_) {
+    debugPrint(logger_,
+               RSZ,
+               "split_load_move",
+               2,
+               "REJECT SplitLoadMove {}: Fanout {} <= {} min fanout",
+               network_->pathName(drvr_pin),
+               fanout,
+               split_load_min_fanout_);
     return false;
   }
   if (!resizer_->okToBufferNet(drvr_pin)) {
+    debugPrint(logger_,
+               RSZ,
+               "split_load_move",
+               2,
+               "REJECT SplitLoadMove {}: Not OK to buffer net",
+               network_->pathName(drvr_pin));
     return false;
   }
 
-  debugPrint(logger_,
-             RSZ,
-             "repair_setup",
-             3,
-             "split loads {} -> {}",
-             network_->pathName(drvr_pin),
-             network_->pathName(load_pin));
-
-  debugPrint(logger_,
-             RSZ,
-             "split_load",
-             3,
-             "split loads {} -> {}",
-             network_->pathName(drvr_pin),
-             network_->pathName(load_pin));
-
-  const RiseFall* rf = drvr_path->transition(sta_);
+  const sta::RiseFall* rf = drvr_path->transition(sta_);
   // Sort fanouts of the drvr on the critical path by slack margin
   // wrt the critical path slack.
-  vector<pair<Vertex*, Slack>> fanout_slacks;
-  VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
+  const sta::Slack drvr_slack = sta_->slack(drvr_vertex, resizer_->max_);
+  vector<pair<sta::Vertex*, sta::Slack>> fanout_slacks;
+  sta::VertexOutEdgeIterator edge_iter(drvr_vertex, graph_);
   while (edge_iter.hasNext()) {
-    Edge* edge = edge_iter.next();
+    sta::Edge* edge = edge_iter.next();
     // Watch out for problematic asap7 output->output timing arcs.
     if (edge->isWire()) {
-      Vertex* fanout_vertex = edge->to(graph_);
-      const Slack fanout_slack = sta_->slack(fanout_vertex, rf, resizer_->max_);
-      const Slack slack_margin = fanout_slack - drvr_slack;
+      sta::Vertex* fanout_vertex = edge->to(graph_);
+      const sta::Slack fanout_slack
+          = sta_->slack(fanout_vertex, rf, resizer_->max_);
+      const sta::Slack slack_margin = fanout_slack - drvr_slack;
       debugPrint(logger_,
                  RSZ,
-                 "split_load",
-                 4,
-                 " fanin {} slack_margin = {}",
+                 "split_load_move",
+                 3,
+                 "SplitLoadMove {}: fanin {} slack_margin = {}",
+                 network_->pathName(drvr_pin),
                  network_->pathName(fanout_vertex->pin()),
-                 delayAsString(slack_margin, sta_, 3));
+                 delayAsString(slack_margin, 3, sta_));
       fanout_slacks.emplace_back(fanout_vertex, slack_margin);
     }
   }
 
   std::ranges::sort(fanout_slacks,
-                    [=, this](const pair<Vertex*, Slack>& pair1,
-                              const pair<Vertex*, Slack>& pair2) {
+                    [=, this](const pair<sta::Vertex*, sta::Slack>& pair1,
+                              const pair<sta::Vertex*, sta::Slack>& pair2) {
                       return (pair1.second > pair2.second
                               || (pair1.second == pair2.second
                                   && network_->pathNameLess(
@@ -151,15 +126,15 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   dbModNet* db_mod_drvr_net;
   db_network_->net(drvr_pin, db_drvr_net, db_mod_drvr_net);
 
-  LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
+  sta::LibertyCell* buffer_cell = resizer_->buffer_lowest_drive_;
   const Point drvr_loc = db_network_->location(drvr_pin);
 
   // Identify loads to split (top 50% with most slack)
   sta::PinSet load_pins(network_);
   const int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
-    Vertex* load_vertex = fanout_slacks[i].first;
-    Pin* load_pin = load_vertex->pin();
+    sta::Vertex* load_vertex = fanout_slacks[i].first;
+    sta::Pin* load_pin = load_vertex->pin();
 
     // Leave ports connected to original net so verilog port names are
     // preserved.
@@ -173,8 +148,8 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
   }
 
   // Insert buffer
-  Net* drvr_net = db_network_->dbToSta(db_drvr_net);
-  Instance* buffer
+  sta::Net* drvr_net = db_network_->dbToSta(db_drvr_net);
+  sta::Instance* buffer
       = resizer_->insertBufferBeforeLoads(drvr_net,
                                           &load_pins,
                                           buffer_cell,
@@ -183,35 +158,38 @@ bool SplitLoadMove::doMove(const Path* drvr_path,
                                           nullptr,
                                           odb::dbNameUniquifyType::IF_NEEDED);
 
-  if (buffer) {
+  if (!buffer) {
     debugPrint(logger_,
                RSZ,
-               "split_load",
-               1,
-               "ACCEPT make_buffer {}",
-               network_->pathName(buffer));
-    debugPrint(logger_,
-               RSZ,
-               "repair_setup",
-               3,
-               "split_load make_buffer {}",
-               network_->pathName(buffer));
-    addMove(buffer);
-
-    LibertyPort *input, *output;
-    buffer_cell->bufferPorts(input, output);
-    Pin* buffer_out_pin = network_->findPin(buffer, output);
-    resizer_->resizeToTargetSlew(buffer_out_pin);
-
-    // Invalidate parasitics for both original and new nets
-    estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
-    Net* out_net = network_->net(buffer_out_pin);
-    estimate_parasitics_->parasiticsInvalid(out_net);
-
-    return true;
+               "split_load_move",
+               2,
+               "REJECT SplitLoadMove {}: Couldn't insert buffer",
+               network_->pathName(drvr_pin));
+    return false;
   }
 
-  return false;
+  sta::LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  sta::Pin* buffer_out_pin = network_->findPin(buffer, output);
+  resizer_->resizeToTargetSlew(buffer_out_pin);
+
+  // Invalidate parasitics for both original and new nets
+  estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
+  sta::Net* out_net = network_->net(buffer_out_pin);
+  estimate_parasitics_->parasiticsInvalid(out_net);
+
+  // Invalidate vertex level ordering
+  resizer_->invalidateVertexOrdering();
+
+  debugPrint(logger_,
+             RSZ,
+             "split_load_move",
+             1,
+             "ACCEPT SplitLoadMove {}: Inserted buffer {}",
+             network_->pathName(drvr_pin),
+             network_->pathName(buffer));
+  countMove(buffer);
+  return true;
 }
 
 }  // namespace rsz

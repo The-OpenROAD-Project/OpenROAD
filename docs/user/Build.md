@@ -19,7 +19,26 @@ There are three methods for building OpenROAD (in order of recommendation): preb
 
 Build OpenROAD with GUI support and install into ../install/OpenROAD/bin
 
-    bazelisk run --//:platform=gui //:install
+    bazelisk run --//:platform=gui //packaging:install
+
+To install to a custom location, e.g. /tmp/myinstall
+
+    bazelisk run --//:platform=gui //packaging:install -- /tmp/myinstall
+
+To produce an openroad.tar file with install files
+
+    bazelisk build --//:platform=gui //packaging:tarfile
+
+The tarfile is located at bazel-bin/packaging/openroad.tar.
+
+To embed the real git version string, add `--config=release`:
+
+    bazelisk run --config=release --//:platform=gui //packaging:install
+
+The install process will install the binary "openroad" and the runfile directory
+"openroad.runfiles" which contains runtime data needed by the binary.
+
+See [Bazel](Bazel.md) for more details on testing, profiling and build configurations.
 
 ## Build with Prebuilt Binaries
 

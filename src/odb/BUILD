@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025-2025, Precision Innovations Inc.
 
-load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -105,10 +106,11 @@ cc_binary(
     srcs = [":swig-py"],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src/swig/common"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         ":odb",  # Depends on the core odb C++ library
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -136,11 +138,13 @@ cc_library(
     hdrs = ["include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
-        "-Isrc/odb/src/swig/common",
-        "-Isrc/odb/include",
     ],
     features = [
         "-use_header_modules",
+    ],
+    includes = [
+        "include",
+        "src/swig/common",
     ],
     deps = [
         ":odb",
@@ -214,4 +218,24 @@ python_wrap_cc(
         # the warnings one by one.
         "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/swig/tcl/odb.tcl",
+    ],
+    visibility = ["//src/odb/test:__pkg__"],
+)
+
+messages_txt(
+    src_patterns = [
+        "src/**/*.cc",
+        "src/**/*.cpp",
+        "src/**/*.h",
+        "src/**/*.hh",
+        "src/**/*.tcl",
+    ],
+    visibility = ["//src/odb/test:__pkg__"],
 )

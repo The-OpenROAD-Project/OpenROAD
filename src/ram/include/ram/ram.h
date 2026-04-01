@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "layout.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "utl/Logger.h"
@@ -49,10 +50,6 @@ class TritonRoute;
 
 namespace ram {
 
-class Cell;
-class Layout;
-class Grid;
-
 class RamGen
 {
  public:
@@ -60,14 +57,15 @@ class RamGen
          odb::dbDatabase* db,
          utl::Logger* logger,
          pdn::PdnGen* pdngen,
-         ppl::IOPlacer* ioPlacer,
-         dpl::Opendp* opendp_,
-         grt::GlobalRouter* global_router_,
-         drt::TritonRoute* detailed_router_);
+         ppl::IOPlacer* io_placer,
+         dpl::Opendp* opendp,
+         grt::GlobalRouter* global_router,
+         drt::TritonRoute* detailed_router);
   ~RamGen() = default;
 
-  void generate(int bytes_per_word,
-                int word_count,
+  void generate(int mask_size,
+                int word_size,
+                int num_words,
                 int read_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
@@ -89,6 +87,13 @@ class RamGen
   void ramFiller(const std::vector<std::string>& filler_cells);
   void ramRouting(int thread_count);
 
+  void setBehavioralVerilogFilename(const std::string& filename);
+  void writeBehavioralVerilog(const std::string& filename,
+                              int slices_per_word,
+                              int mask_size,
+                              int word_count,
+                              int read_ports);
+
  private:
   void findMasters();
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
@@ -100,28 +105,37 @@ class RamGen
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
-  odb::dbInst* makeCellInst(
+  odb::dbInst* makeInst(
       Cell* cell,
       const std::string& prefix,
       const std::string& name,
       odb::dbMaster* master,
       const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
-  std::unique_ptr<Cell> makeCellBit(const std::string& prefix,
-                                    int read_ports,
-                                    odb::dbNet* clock,
-                                    std::vector<odb::dbNet*>& select,
-                                    odb::dbNet* data_input,
-                                    std::vector<odb::dbNet*>& data_output);
-  void makeCellByte(
-      Grid& ram_grid,
-      int byte_number,
-      const std::string& prefix,
-      int read_ports,
-      odb::dbNet* clock,
-      odb::dbNet* write_enable,
-      const std::vector<odb::dbNet*>& selects,
-      const std::array<odb::dbNet*, 8>& data_input,
-      const std::vector<std::array<odb::dbBTerm*, 8>>& data_output);
+  std::unique_ptr<Cell> makeBit(const std::string& prefix,
+                                int read_ports,
+                                odb::dbNet* clock,
+                                std::vector<odb::dbNet*>& select,
+                                odb::dbNet* data_input,
+                                std::vector<odb::dbNet*>& data_output);
+  void makeSlice(int slice_idx,
+                 int mask_size,
+                 int row_idx,
+                 int read_ports,
+                 odb::dbNet* clock,
+                 odb::dbNet* write_enable,
+                 const std::vector<odb::dbNet*>& selects,
+                 const std::vector<odb::dbNet*>& data_input,
+                 const std::vector<std::vector<odb::dbBTerm*>>& data_output);
+
+  void makeWord(int slices_per_word,
+                int mask_size,
+                int row_idx,
+                int read_ports,
+                odb::dbNet* clock,
+                std::vector<odb::dbBTerm*>& write_enable,
+                const std::vector<odb::dbNet*>& selects,
+                const std::vector<odb::dbNet*>& data_input,
+                const std::vector<std::vector<odb::dbBTerm*>>& data_output);
 
   odb::dbBTerm* makeBTerm(const std::string& name, odb::dbIoType io_type);
 
@@ -141,7 +155,7 @@ class RamGen
   odb::dbBlock* block_{nullptr};
   utl::Logger* logger_;
   pdn::PdnGen* pdngen_{nullptr};
-  ppl::IOPlacer* ioPlacer_{nullptr};
+  ppl::IOPlacer* io_placer_{nullptr};
   dpl::Opendp* opendp_{nullptr};
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
@@ -156,7 +170,9 @@ class RamGen
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
-  std::vector<std::array<odb::dbBTerm*, 8>> q_outputs_;
+  std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
+  std::string behavioral_verilog_filename_;
+  Grid ram_grid_;
 };
 
 }  // namespace ram

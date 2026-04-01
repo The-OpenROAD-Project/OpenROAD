@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-load("@openroad_rules_python//python:defs.bzl", "py_library")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("//bazel:python_wrap_cc.bzl", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -105,11 +106,12 @@ cc_binary(
     ],
     defines = [PYTHON_STABLE_API_DEFINE],
     includes = ["src"],
+    linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
         "//src/utl",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
@@ -137,10 +139,10 @@ cc_library(
     hdrs = [
         "include/utl/MakeLogger.h",
     ],
-    copts = [
-        "-Isrc/utl/src",
+    includes = [
+        "include",
+        "src",
     ],
-    includes = ["include"],
     deps = [
         ":utl",
         "//:ord",
@@ -151,7 +153,7 @@ cc_library(
         "@boost.iterator",
         "@boost.random",
         "@boost.stacktrace",
-        "@openroad_rules_python//python/cc:current_py_cc_headers",
+        "@rules_python//python/cc:current_py_cc_headers",
         "@spdlog",
         "@tcl_lang//:tcl",
     ],
@@ -198,4 +200,17 @@ python_wrap_cc(
         "src",
     ],
     visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/Utl.tcl",
+    ],
+    visibility = ["//src/utl/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/utl/test:__pkg__"],
 )

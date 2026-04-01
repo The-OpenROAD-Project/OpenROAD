@@ -202,6 +202,50 @@ TEST_F(SimpleDbFixture, test_bump_map_reader)
   EXPECT_EQ(sig2_box->getBox().yMax(), 202000);
 }
 
+TEST_F(SimpleDbFixture, test_bump_map_reader_rounding)
+{
+  createSimpleDB();
+
+  db_->setDbuPerMicron(1000);
+
+  // Create BUMP master
+  dbLib* lib = db_->findLib("lib1");
+  dbTechLayer* bot_layer
+      = dbTechLayer::create(lib->getTech(), "BOT", dbTechLayerType::ROUTING);
+  dbTechLayer* layer
+      = dbTechLayer::create(lib->getTech(), "TOP", dbTechLayerType::ROUTING);
+  dbMaster* master = dbMaster::create(lib, "BUMP");
+  master->setWidth(10000);
+  master->setHeight(10000);
+  master->setOrigin(5000, 5000);
+  master->setType(dbMasterType::COVER_BUMP);
+  dbMTerm* term
+      = dbMTerm::create(master, "PAD", dbIoType::INOUT, dbSigType::SIGNAL);
+  dbMPin* bot_pin = dbMPin::create(term);
+  dbBox::create(bot_pin, bot_layer, -1000, -1000, 1000, 1000);
+  dbMPin* pin = dbMPin::create(term);
+  dbBox::create(pin, layer, -2000, -2000, 2000, 2000);
+  master->setFrozen();
+
+  dbBlock* block = db_->getChip()->getBlock();
+  block->setDieArea(Rect(0, 0, 500, 500));
+
+  EXPECT_EQ(block->getInsts().size(), 0);
+
+  ThreeDBlox parser(&logger_, db_.get());
+  std::string path = getFilePath(prefix + "data/example4.bmap");
+  parser.readBMap(path);
+
+  // Check bumps were created
+  EXPECT_EQ(block->getInsts().size(), 2);
+  dbInst* inst1 = block->findInst("bump1");
+  EXPECT_EQ(inst1->getBBox()->getBox().xCenter(), 1036800);
+  EXPECT_EQ(inst1->getBBox()->getBox().yCenter(), 5991840);
+  dbInst* inst2 = block->findInst("bump2");
+  EXPECT_EQ(inst2->getBBox()->getBox().xCenter(), 1041120);
+  EXPECT_EQ(inst2->getBBox()->getBox().yCenter(), 5991840);
+}
+
 TEST_F(SimpleDbFixture, test_bump_map_reader_netsonly)
 {
   createSimpleDB();
@@ -343,6 +387,52 @@ TEST_F(SimpleDbFixture, test_bump_map_reader_no_bterms)
   ThreeDBlox parser(&logger_, db_.get());
   std::string path = getFilePath(prefix + "data/example3.bmap");
   EXPECT_THROW(parser.readBMap(path), std::runtime_error);
+}
+
+TEST_F(SimpleDbFixture, test_bterm_get_chip_bump)
+{
+  createSimpleDB();
+
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+
+  // Create a chip region on the chip
+  dbChipRegion* region = dbChipRegion::create(
+      chip, "bump_region", dbChipRegion::Side::BACK, nullptr);
+  ASSERT_NE(region, nullptr);
+
+  // Create an inst to back the bump
+  dbLib* lib = db_->findLib("lib1");
+  dbMaster* bump_master = dbMaster::create(lib, "BUMP_CELL");
+  bump_master->setType(dbMasterType::COVER_BUMP);
+  bump_master->setFrozen();
+  dbInst* bump_inst = dbInst::create(block, bump_master, "bump1");
+  ASSERT_NE(bump_inst, nullptr);
+
+  // Create a chip bump
+  dbChipBump* bump = dbChipBump::create(region, bump_inst);
+  ASSERT_NE(bump, nullptr);
+
+  // Create bterms: one that will be associated with the bump, one that won't
+  dbBTerm* sig1 = dbBTerm::create(dbNet::create(block, "SIG1"), "SIG1");
+  dbBTerm* sig2 = dbBTerm::create(dbNet::create(block, "SIG2"), "SIG2");
+  ASSERT_NE(sig1, nullptr);
+  ASSERT_NE(sig2, nullptr);
+
+  // Before setBTerm: both bterms return nullptr for getChipBump
+  EXPECT_EQ(sig1->getChipBump(), nullptr);
+  EXPECT_EQ(sig2->getChipBump(), nullptr);
+
+  // Associate sig1 with the bump
+  bump->setBTerm(sig1);
+
+  // After setBTerm: sig1 returns the bump, sig2 still returns nullptr
+  EXPECT_EQ(sig1->getChipBump(), bump);
+  EXPECT_EQ(sig2->getChipBump(), nullptr);
+
+  // Verify the reverse link is also consistent
+  EXPECT_EQ(bump->getBTerm(), sig1);
+  EXPECT_EQ(bump->getChipRegion(), region);
 }
 
 }  // namespace

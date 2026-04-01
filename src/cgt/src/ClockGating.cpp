@@ -867,8 +867,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
       continue;
     }
     auto& obj = port_to_obj[port];
-    obj = abc::Abc_NtkFindNet(abc_network,
-                              const_cast<char*>(network->name(net)));
+    std::string net_name = network->name(net);
+    obj = abc::Abc_NtkFindNet(abc_network, net_name.data());
   }
   delete pin_iter;
   std::vector<sta::FuncExpr*> expr_stack = {getRegDataFunction(network, inst)};
@@ -913,19 +913,22 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
           abc::Abc_ObjAddFanin(obj, pi);
         }
         obj_stack.emplace_back(obj);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::zero: {
         abc::Abc_Obj_t* zero_node = abc::Abc_NtkCreateNodeConst0(abc_network);
         abc::Abc_Obj_t* zero_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(zero_net, zero_node);
         obj_stack.emplace_back(zero_net);
+        break;
       }
       case sta::FuncExpr::Op::one: {
         abc::Abc_Obj_t* one_node = abc::Abc_NtkCreateNodeConst1(abc_network);
         abc::Abc_Obj_t* one_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(one_net, one_node);
         obj_stack.emplace_back(one_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::not_: {
         auto obj = obj_stack.back();
         obj_stack.pop_back();
@@ -933,7 +936,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* inv_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(inv_net, inv_node);
         obj_stack.emplace_back(inv_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::and_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -945,7 +949,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* and_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(and_net, and_node);
         obj_stack.emplace_back(and_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::or_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -956,7 +961,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* or_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(or_net, or_node);
         obj_stack.emplace_back(or_net);
-      } break;
+        break;
+      }
       case sta::FuncExpr::Op::xor_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
@@ -968,7 +974,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* xor_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(xor_net, xor_node);
         obj_stack.emplace_back(xor_net);
-      } break;
+        break;
+      }
     }
   }
   assert(obj_stack.size() == 1);
@@ -1012,14 +1019,15 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
   auto out_pin = getRegOutPin(network, instance);
   assert(out_pin);
   auto out_pin_name = network->name(out_pin);
-  auto out_net_name = network->name(network->net(out_pin));
+  std::string out_net_name = network->name(network->net(out_pin));
   for (const auto& output_name : {out_pin_name, out_net_name}) {
     abc::Abc_Obj_t* curr_state = abc::Abc_NtkFindNet(
-        abc_network.get(), const_cast<char*>(output_name));
+        abc_network.get(), const_cast<char*>(output_name.c_str()));
     if (!curr_state) {
       abc::Abc_Obj_t* pi = abc::Abc_NtkCreatePi(abc_network.get());
       abc::Abc_Obj_t* net = abc::Abc_NtkCreateNet(abc_network.get());
-      abc::Abc_ObjAssignName(net, const_cast<char*>(output_name), nullptr);
+      abc::Abc_ObjAssignName(
+          net, const_cast<char*>(output_name.c_str()), nullptr);
       abc::Abc_ObjAddFanin(net, pi);
       curr_state = net;
     } else {
@@ -1383,7 +1391,7 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::exportToAbc(
       = cut.BuildMappedAbcNetwork(*abc_library_, network, logger_);
 
   auto top = network->topInstance();
-  abc::Abc_NtkSetName(abc_network.get(), strdup(network->name(top)));
+  abc::Abc_NtkSetName(abc_network.get(), strdup(network->name(top).c_str()));
 
   auto library = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
   // Install library for NtkMap

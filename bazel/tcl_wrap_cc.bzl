@@ -42,14 +42,17 @@ def _tcl_wrap_cc_impl(ctx):
     if len(ctx.files.srcs) > 1 and not ctx.attr.root_swig_src:
         fail("If multiple src files are provided, root_swig_src must be specified.")
 
+    swig_lib_dir = ctx.file._swig_swg.dirname
     root_file = ctx.file.root_swig_src or ctx.files.srcs[0]
 
     outfile_name = ctx.attr.out or (ctx.attr.name + ".cc")
     output_file = ctx.actions.declare_file(outfile_name)
 
     include_root_directory = ""
+    if ctx.label.workspace_root:
+        include_root_directory = ctx.label.workspace_root + "/"
     if ctx.label.package:
-        include_root_directory = ctx.label.package + "/"
+        include_root_directory += ctx.label.package + "/"
 
     src_inputs = _get_transitive_srcs(ctx.files.srcs + ctx.files.root_swig_src, ctx.attr.deps)
     includes_paths = _get_transitive_includes(
@@ -68,6 +71,7 @@ def _tcl_wrap_cc_impl(ctx):
         args.add("-namespace")
         args.add("-prefix")
         args.add(ctx.attr.namespace_prefix)
+
     args.add_all(swig_options.to_list())
     args.add_all(includes_paths.to_list(), format_each = "-I%s")
     args.add("-o")
@@ -78,8 +82,9 @@ def _tcl_wrap_cc_impl(ctx):
         outputs = [output_file],
         inputs = src_inputs,
         arguments = [args],
-        tools = ctx.files._swig,
-        executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
+        env = {"SWIG_LIB": swig_lib_dir},
+        tools = ctx.files._swig_lib,
+        executable = ctx.executable._swig,
     )
 
     output_files = [output_file]
@@ -92,10 +97,11 @@ def _tcl_wrap_cc_impl(ctx):
         runtime_args.add(runtime_header)
         ctx.actions.run(
             outputs = [runtime_header],
-            inputs = [],
+            inputs = depset(ctx.files._swig_lib),
             arguments = [runtime_args],
-            tools = [ctx.attr._swig.files_to_run],
-            executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
+            env = {"SWIG_LIB": swig_lib_dir},
+            executable = ctx.executable._swig,
+            tools = ctx.files._swig_lib,
             toolchain = None,
         )
         output_files.append(runtime_header)
@@ -149,9 +155,20 @@ tcl_wrap_cc = rule(
             doc = "args to pass directly to the swig binary",
         ),
         "_swig": attr.label(
-            default = "@org_swig//:swig_stable",
+            default = "@swig",
+            executable = True,
             allow_files = True,
             cfg = "exec",
+        ),
+        "_swig_lib": attr.label(
+            default = "@swig//:lib_tcl",
+            allow_files = True,
+        ),
+        "_swig_swg": attr.label(
+            default = "@swig//:swig_swg",
+            allow_single_file = True,
+            doc = "SWIG swig.swg library file used for determining SWIG_LIB " +
+                  "env variable (internal attribute).",
         ),
     },
 )

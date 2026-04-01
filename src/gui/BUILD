@@ -8,6 +8,7 @@ load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -17,20 +18,41 @@ package(
 cc_library(
     name = "gui",
     srcs = [
+        "src/bufferTreeDescriptor.h",
+        "src/dbDescriptors.cpp",
+        "src/dbDescriptors.h",
+        "src/descriptor_registry.cpp",
+        "src/heatMapCore.cpp",
+        "src/heatMapPinDensity.cpp",
+        "src/heatMapPinDensity.h",
+        "src/heatMapPlacementDensity.cpp",
+        "src/heatMapPlacementDensity.h",
+        "src/init_descriptors.cpp",
+        "src/staDescriptors.cpp",
+        "src/staDescriptors.h",
         "src/stub.cpp",
-        "src/stub_heatMap.cpp",
         ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
+        "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
         "include/gui/heatMap.h",
     ],
-    includes = ["include"],
+    includes = [
+        "include",
+        "src",
+    ],
     deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
         "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
         "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
         "@boost.multi_array",
+        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )
@@ -60,12 +82,14 @@ QT_GUI_PLATFORMS = {
         ],
         hdrs = [
             "include/gui/MakeGui.h",
+            "include/gui/descriptor_registry.h",
             "include/gui/gui.h",
             "include/gui/heatMap.h",
         ],
-        defines = [
-            "STATIC_QPA_PLUGIN_XCB=1",
-        ],
+        defines = select({
+            "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
+            "//conditions:default": [],
+        }),
         includes = [
             "include",
             "src",
@@ -140,4 +164,17 @@ tcl_encode(
     ],
     char_array_name = "gui_tcl_inits",
     namespace = "gui",
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/gui.tcl",
+    ],
+    visibility = ["//src/gui/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/gui/test:__pkg__"],
 )

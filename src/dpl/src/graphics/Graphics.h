@@ -20,7 +20,6 @@ class Graphics : public gui::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp,
-           float min_displacement,
            const odb::dbInst* debug_instance,
            bool paint_pixels = true);
   ~Graphics() override = default;
@@ -42,7 +41,6 @@ class Graphics : public gui::Renderer, public DplObserver
   Opendp* dp_;
   const odb::dbInst* debug_instance_;
   odb::dbBlock* block_ = nullptr;
-  float min_displacement_;  // in row height
   bool paint_pixels_;
   std::vector<odb::Rect> searched_;
 };

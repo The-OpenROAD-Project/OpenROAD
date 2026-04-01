@@ -56,6 +56,7 @@ Recommended conclusion: use map for concrete cells. They are invariant.
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <unordered_set>
 #include <vector>
@@ -119,19 +120,11 @@ using odb::dbSigType;
 
 namespace {
 
-// TODO: move to StringUtil
-char* tmpStringCopy(const char* str)
-{
-  char* tmp = makeTmpString(strlen(str) + 1);
-  strcpy(tmp, str);
-  return tmp;
-}
-
 // This struct contains common information about Pins
 // (dbITerm, dbBTerm or dbModITerm) for debugging purposes.
 struct PinInfo
 {
-  const char* name = "NOT_ALLOC";  // Pin hierarchical name
+  std::string name = "NOT_ALLOC";  // Pin hierarchical name
   int id = 0;                      // dbObject ID
   const char* type_name = "NULL";  // dbObject type name
   bool valid = false;              // false if it is a freed dbObject
@@ -752,8 +745,9 @@ ObjectId dbNetwork::id(const Port* port) const
     const dbObject* obj = reinterpret_cast<const dbObject*>(port);
     return getDbNwkObjectId(obj);
   }
-  // default
-  return ConcreteNetwork::id(port);
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
+  return (ConcreteNetwork::id(port) << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 // Note:
@@ -766,16 +760,16 @@ ObjectId dbNetwork::id(const Port* port) const
 
 ObjectId dbNetwork::id(const Cell* cell) const
 {
-  // in hierarchical flow we use the object id for the index
-  if (hasHierarchy()) {
-    if (!isConcreteCell(cell)) {
-      const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
-      return getDbNwkObjectId(obj);
-    }
+  // top_cell_ is a ConcreteCell but isConcreteCell() returns false for it;
+  // guard against reinterpret_cast to dbObject which would crash.
+  if (hasHierarchy() && !isConcreteCell(cell) && cell != top_cell_) {
+    const dbObject* obj = reinterpret_cast<const dbObject*>(cell);
+    return getDbNwkObjectId(obj);
   }
-  // default behaviour use the concrete cell.
+
+  // Tag ID to avoid ID collision b/w dbObject and STA object
   const ConcreteCell* ccell = reinterpret_cast<const ConcreteCell*>(cell);
-  return ccell->id();
+  return (ccell->id() << DBIDTAG_WIDTH) | CONCRETE_OBJECT_ID;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -792,7 +786,7 @@ ObjectId dbNetwork::id(const Instance* instance) const
   return staToDb(instance)->getId();
 }
 
-const char* dbNetwork::name(const Port* port) const
+std::string dbNetwork::name(const Port* port) const
 {
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
@@ -813,20 +807,16 @@ const char* dbNetwork::name(const Port* port) const
     name = modbterm->getName();
   }
 
-  if (name.empty()) {
-    return nullptr;
-  }
-
   if (hasHierarchy()) {
     size_t last_idx = name.find_last_of('/');
     if (last_idx != std::string::npos) {
       name = name.substr(last_idx + 1);
     }
   }
-  return tmpStringCopy(name.c_str());
+  return name;
 }
 
-const char* dbNetwork::busName(const Port* port) const
+std::string dbNetwork::busName(const Port* port) const
 {
   if (isConcretePort(port)) {
     const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
@@ -844,13 +834,13 @@ const char* dbNetwork::busName(const Port* port) const
     }
   }
   logger_->error(ORD, 2020, "Database badly formed bus name");
-  return nullptr;
+  return "";
 }
 
-const char* dbNetwork::name(const Instance* instance) const
+std::string dbNetwork::name(const Instance* instance) const
 {
   if (instance == top_instance_) {
-    return tmpStringCopy(block_->getConstName());
+    return block_->getConstName();
   }
 
   dbInst* db_inst;
@@ -881,10 +871,10 @@ const char* dbNetwork::name(const Instance* instance) const
       name = name.substr(last_idx + 1);
     }
   }
-  return tmpStringCopy(name.c_str());
+  return name;
 }
 
-const char* dbNetwork::name(const Cell* cell) const
+std::string dbNetwork::name(const Cell* cell) const
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -895,11 +885,11 @@ const char* dbNetwork::name(const Cell* cell) const
   if (db_module) {
     return db_module->getName();
   }
-  return nullptr;
+  return "";
 }
 
 std::string dbNetwork::getAttribute(const Cell* cell,
-                                    const std::string& key) const
+                                    std::string_view key) const
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -912,7 +902,7 @@ std::string dbNetwork::getAttribute(const Cell* cell,
   }
   if (obj) {
     odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key.c_str());
+        = odb::dbStringProperty::find(obj, std::string(key).c_str());
     if (property) {
       return property->getValue();
     }
@@ -921,8 +911,8 @@ std::string dbNetwork::getAttribute(const Cell* cell,
 }
 
 void dbNetwork::setAttribute(Cell* cell,
-                             const std::string& key,
-                             const std::string& value)
+                             std::string_view key,
+                             std::string_view value)
 {
   dbMaster* db_master;
   dbModule* db_module;
@@ -934,12 +924,14 @@ void dbNetwork::setAttribute(Cell* cell,
     obj = db_module;
   }
   if (obj) {
+    const std::string key_str(key);
+    const std::string value_str(value);
     odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key.c_str());
+        = odb::dbStringProperty::find(obj, key_str.c_str());
     if (property) {
-      property->setValue(value.c_str());
+      property->setValue(value_str.c_str());
     } else {
-      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
     }
   }
 }
@@ -983,10 +975,7 @@ dbModulePortIterator::dbModulePortIterator(dbModule* cell)
 
 bool dbModulePortIterator::hasNext()
 {
-  if (iter_ != end_) {
-    return true;
-  }
-  return false;
+  return iter_ != end_;
 }
 
 Port* dbModulePortIterator::next()
@@ -1071,14 +1060,15 @@ Instance* dbNetwork::parent(const Instance* instance) const
   return top_instance_;
 }
 
-Port* dbNetwork::findPort(const Cell* cell, const char* name) const
+Port* dbNetwork::findPort(const Cell* cell, std::string_view name) const
 {
   if (hasHierarchy()) {
     dbMaster* db_master;
     dbModule* db_module;
     staToDb(cell, db_master, db_module);
     if (db_module) {
-      dbModBTerm* mod_bterm = db_module->findModBTerm(name);
+      dbModBTerm* mod_bterm
+          = db_module->findModBTerm(std::string(name).c_str());
       Port* ret = dbToSta(mod_bterm);
       return ret;
     }
@@ -1107,24 +1097,21 @@ bool dbNetwork::isLeaf(const Instance* instance) const
     dbModule* db_module;
     Cell* cur_cell = cell(instance);
     staToDb(cur_cell, db_master, db_module);
-    if (db_module) {
-      return false;
-    }
-    return true;
+    return db_module == nullptr;
   }
   return instance != top_instance_;
 }
 
-Instance* dbNetwork::findInstance(const char* path_name) const
+Instance* dbNetwork::findInstance(std::string_view path_name) const
 {
+  std::string path_name_str(path_name);
   if (hasHierarchy()) {  // are we in hierarchical mode ?
     // find a hierarchical module instance first
-    odb::dbModInst* mod_inst = block()->findModInst(path_name);
+    odb::dbModInst* mod_inst = block()->findModInst(path_name_str.c_str());
     if (mod_inst) {
       return dbToSta(mod_inst);
     }
 
-    std::string path_name_str = path_name;
     // search for the last token in the string, which is the leaf instance name
     size_t last_idx = path_name_str.find_last_of('/');
     if (last_idx != std::string::npos) {
@@ -1155,17 +1142,20 @@ Instance* dbNetwork::findInstance(const char* path_name) const
   // (currently we,mostly, stash the names flat in the block and that is wrong
   // in hierachical mode).
   //
-  dbInst* inst = block_->findInst(path_name);
+  dbInst* inst = block_->findInst(path_name_str.c_str());
   return dbToSta(inst);
 }
 
-Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
+Instance* dbNetwork::findChild(const Instance* parent,
+                               std::string_view name) const
 {
+  std::string name_str(name);
+  const char* name_cstr = name_str.c_str();
   if (parent == top_instance_) {
-    dbInst* inst = block_->findInst(name);
+    dbInst* inst = block_->findInst(name_cstr);
     if (!inst) {
       dbModule* top_module = block_->getTopModule();
-      odb::dbModInst* mod_inst = top_module->findModInst(name);
+      odb::dbModInst* mod_inst = top_module->findModInst(name_cstr);
       return dbToSta(mod_inst);
     }
     return dbToSta(inst);
@@ -1177,34 +1167,37 @@ Instance* dbNetwork::findChild(const Instance* parent, const char* name) const
     return nullptr;
   }
   dbModule* master_module = mod_inst->getMaster();
-  odb::dbModInst* child_inst = master_module->findModInst(name);
+  odb::dbModInst* child_inst = master_module->findModInst(name_cstr);
   if (child_inst) {
     return dbToSta(child_inst);
   }
   // Look for a leaf instance
   std::string full_name = mod_inst->getHierarchicalName();
-  full_name += pathDivider() + std::string(name);
+  full_name += pathDivider() + name_str;
   dbInst* inst = block_->findInst(full_name.c_str());
   return dbToSta(inst);
 }
 
 // port -> pin by name.
-Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
+Pin* dbNetwork::findPin(const Instance* instance,
+                        std::string_view port_name) const
 {
+  std::string port_name_str(port_name);
+  const char* port_name_cstr = port_name_str.c_str();
   if (instance == top_instance_) {
-    dbBTerm* bterm = block_->findBTerm(port_name);
+    dbBTerm* bterm = block_->findBTerm(port_name_cstr);
     return dbToSta(bterm);
   }
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
   staToDb(instance, db_inst, mod_inst);
   if (db_inst) {
-    dbITerm* iterm = db_inst->findITerm(port_name);
+    dbITerm* iterm = db_inst->findITerm(port_name_cstr);
     return dbToSta(iterm);
   }
   if (mod_inst) {
     dbModule* module = mod_inst->getMaster();
-    dbModBTerm* mbterm = module->findModBTerm(port_name);
+    dbModBTerm* mbterm = module->findModBTerm(port_name_cstr);
     if (mbterm) {
       dbModITerm* moditerm = mbterm->getParentModITerm();
       return dbToSta(moditerm);
@@ -1215,7 +1208,7 @@ Pin* dbNetwork::findPin(const Instance* instance, const char* port_name) const
 
 Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 {
-  const char* port_name = this->name(port);
+  std::string port_name = this->name(port);
   return findPin(instance, port_name);
 }
 
@@ -1226,14 +1219,16 @@ Pin* dbNetwork::findPin(const Instance* instance, const Port* port) const
 // net names stored in their scope (so dbNet in top dbModule not
 // in block).
 //
-Net* dbNetwork::findNetAllScopes(const char* net_name) const
+Net* dbNetwork::findNetAllScopes(std::string_view net_name) const
 {
+  std::string net_sname(net_name);
+  const char* net_cname = net_sname.c_str();
   for (dbModule* dbm : block_->getModules()) {
-    dbNet* dnet = block_->findNet(net_name);
+    dbNet* dnet = block_->findNet(net_cname);
     if (dnet) {
       return dbToSta(dnet);
     }
-    odb::dbModNet* modnet = dbm->getModNet(net_name);
+    odb::dbModNet* modnet = dbm->getModNet(net_cname);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1241,17 +1236,20 @@ Net* dbNetwork::findNetAllScopes(const char* net_name) const
   return nullptr;
 }
 
-Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
+Net* dbNetwork::findNet(const Instance* instance,
+                        std::string_view net_name) const
 {
   dbModule* scope = nullptr;
 
+  std::string net_sname(net_name);
+  const char* net_cname = net_sname.c_str();
   if (instance == top_instance_) {
     scope = block_->getTopModule();
-    dbNet* dnet = block_->findNet(net_name);
+    dbNet* dnet = block_->findNet(net_cname);
     if (dnet) {
       return dbToSta(dnet);
     }
-    odb::dbModNet* modnet = scope->getModNet(net_name);
+    odb::dbModNet* modnet = scope->getModNet(net_cname);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1264,7 +1262,7 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
 
   // check to see if net is in flat space
   std::string flat_net_name = pathName(instance);
-  flat_net_name += pathDivider() + std::string(net_name);
+  flat_net_name += pathDivider() + net_sname;
   dbNet* dnet = block_->findNet(flat_net_name.c_str());
   if (dnet) {
     return dbToSta(dnet);
@@ -1272,7 +1270,7 @@ Net* dbNetwork::findNet(const Instance* instance, const char* net_name) const
 
   if (mod_inst) {
     scope = mod_inst->getMaster();
-    odb::dbModNet* modnet = scope->getModNet(net_name);
+    odb::dbModNet* modnet = scope->getModNet(net_cname);
     if (modnet) {
       return dbToSta(modnet);
     }
@@ -1293,7 +1291,7 @@ void dbNetwork::findInstNetsMatching(const Instance* instance,
         }
       }
     } else {
-      dbNet* dnet = block_->findNet(pattern->pattern());
+      dbNet* dnet = block_->findNet(pattern->pattern().c_str());
       if (dnet) {
         nets.push_back(dbToSta(dnet));
       }
@@ -1317,7 +1315,7 @@ InstanceNetIterator* dbNetwork::netIterator(const Instance* instance) const
 }
 
 std::string dbNetwork::getAttribute(const Instance* inst,
-                                    const std::string& key) const
+                                    std::string_view key) const
 {
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1330,7 +1328,7 @@ std::string dbNetwork::getAttribute(const Instance* inst,
   }
   if (obj) {
     odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key.c_str());
+        = odb::dbStringProperty::find(obj, std::string(key).c_str());
     if (property) {
       return property->getValue();
     }
@@ -1339,8 +1337,8 @@ std::string dbNetwork::getAttribute(const Instance* inst,
 }
 
 void dbNetwork::setAttribute(Instance* instance,
-                             const std::string& key,
-                             const std::string& value)
+                             std::string_view key,
+                             std::string_view value)
 {
   dbInst* db_inst;
   odb::dbModInst* mod_inst;
@@ -1352,12 +1350,14 @@ void dbNetwork::setAttribute(Instance* instance,
     obj = mod_inst;
   }
   if (obj) {
+    const std::string key_str(key);
+    const std::string value_str(value);
     odb::dbStringProperty* property
-        = odb::dbStringProperty::find(obj, key.c_str());
+        = odb::dbStringProperty::find(obj, key_str.c_str());
     if (property) {
-      property->setValue(value.c_str());
+      property->setValue(value_str.c_str());
     } else {
-      odb::dbStringProperty::create(obj, key.c_str(), value.c_str());
+      odb::dbStringProperty::create(obj, key_str.c_str(), value_str.c_str());
     }
   }
 }
@@ -1546,11 +1546,11 @@ Port* dbNetwork::port(const Pin* pin) const
     const char* port_name = bterm->getConstName();
     ret = findPort(top_cell_, port_name);
   } else if (moditerm) {
-    std::string port_name_str = moditerm->getName();
-    const char* port_name = port_name_str.c_str();
+    std::string port_sname = moditerm->getName();
+    const char* port_cname = port_sname.c_str();
     odb::dbModInst* mod_inst = moditerm->getParent();
     dbModule* module = mod_inst->getMaster();
-    dbModBTerm* mod_port = module->findModBTerm(port_name);
+    dbModBTerm* mod_port = module->findModBTerm(port_cname);
     if (mod_port) {
       ret = dbToSta(mod_port);
       return ret;
@@ -1779,7 +1779,7 @@ to.
 If we have a modnet, we construct its hierarchical name
 */
 
-const char* dbNetwork::pathName(const Net* net) const
+std::string dbNetwork::pathName(const Net* net) const
 {
   // note that in flat mode, because a net is always
   // created in the top instance the path name is just
@@ -1800,7 +1800,7 @@ const char* dbNetwork::pathName(const Net* net) const
     // if a top net, don't prefix with top module name
     dbModule* parent_module = modnet->getParent();
     if (parent_module == block_->getTopModule()) {
-      return tmpStringCopy(modnet_name.c_str());
+      return modnet_name;
     }
 
     // Make a full hierarchical name
@@ -1816,10 +1816,9 @@ const char* dbNetwork::pathName(const Net* net) const
                      block_->getHierarchyDelimiter());
     }
     full_path_buf.append(modnet_name);
-    full_path_buf.push_back('\0');
-    return tmpStringCopy(full_path_buf.data());
+    return fmt::to_string(full_path_buf);
   }
-  return nullptr;
+  return "";
 }
 
 /*
@@ -1827,7 +1826,7 @@ const char* dbNetwork::pathName(const Net* net) const
   "boundaries".
  */
 
-const char* dbNetwork::name(const Net* net) const
+std::string dbNetwork::name(const Net* net) const
 {
   odb::dbModNet* modnet = nullptr;
   dbNet* dnet = nullptr;
@@ -1846,7 +1845,7 @@ const char* dbNetwork::name(const Net* net) const
       // If this is not a hierarchical name, return it
       //
       if (name.find_last_of('/') == std::string::npos) {
-        return tmpStringCopy(name.c_str());
+        return name;
       }
       //
       // Get the net name within this module of the hierarchy
@@ -1883,9 +1882,9 @@ const char* dbNetwork::name(const Net* net) const
     name = modnet->getName();
   }
   if (dnet || modnet) {
-    return tmpStringCopy(name.c_str());
+    return name;
   }
-  return nullptr;
+  return "";
 }
 
 Instance* dbNetwork::instance(const Net*) const
@@ -2123,7 +2122,9 @@ bool dbNetwork::isLinked() const
   return top_cell_ != nullptr;
 }
 
-bool dbNetwork::linkNetwork(const char*, bool make_black_boxes, Report* report)
+bool dbNetwork::linkNetwork(std::string_view,
+                            bool make_black_boxes,
+                            Report* report)
 {
   // Not called.
   return true;
@@ -2149,18 +2150,20 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
   dbChip* chip = db_->getChip();
   if (chip) {
     block_ = chip->getBlock();
-    for (dbLib* lib : db_->getLibs()) {
-      makeLibrary(lib);
-    }
-
-    for (dbModule* module : block_->getModules()) {
-      // top_module is not a hierarchical module in this context.
-      if (module != block_->getTopModule()) {
-        registerHierModule(dbToSta(module));
+    if (block_) {
+      for (dbLib* lib : db_->getLibs()) {
+        makeLibrary(lib);
       }
-    }
 
-    readDbNetlistAfter();
+      for (dbModule* module : block_->getModules()) {
+        // top_module is not a hierarchical module in this context.
+        if (module != block_->getTopModule()) {
+          registerHierModule(dbToSta(module));
+        }
+      }
+
+      readDbNetlistAfter();
+    }
   }
 
   for (dbNetworkObserver* observer : observers_) {
@@ -2171,7 +2174,7 @@ void dbNetwork::readDbAfter(odb::dbDatabase* db)
 void dbNetwork::makeLibrary(dbLib* lib)
 {
   const char* lib_name = lib->getConstName();
-  Library* library = makeLibrary(lib_name, nullptr);
+  Library* library = makeLibrary(lib_name, "");
   for (dbMaster* master : lib->getMasters()) {
     makeCell(library, master);
   }
@@ -2180,7 +2183,7 @@ void dbNetwork::makeLibrary(dbLib* lib)
 void dbNetwork::makeCell(Library* library, dbMaster* master)
 {
   const char* cell_name = master->getConstName();
-  Cell* cell = makeCell(library, cell_name, true, nullptr);
+  Cell* cell = makeCell(library, cell_name, true, "");
   master->staSetCell(reinterpret_cast<void*>(cell));
   // keep track of db leaf cells. These are cells for which we
   // use the concrete network.
@@ -2241,7 +2244,7 @@ void dbNetwork::makeCell(Library* library, dbMaster* master)
   // This generates the top level ports
   // TODO: MSB first assumption looks risky because there can be LSB first
   // buses.
-  groupBusPorts(cell, [](const char*) { return true; });
+  groupBusPorts(cell, [](std::string_view) { return true; });
 
   // Fill in liberty to db/LEF master correspondence for libraries not used
   // for corners that are not used for "linking".
@@ -2293,13 +2296,13 @@ void dbNetwork::makeTopCell()
     deleteLibrary(top_lib);
   }
   const char* design_name = block_->getConstName();
-  Library* top_lib = makeLibrary(design_name, nullptr);
-  top_cell_ = makeCell(top_lib, design_name, false, nullptr);
+  Library* top_lib = makeLibrary(design_name, "");
+  top_cell_ = makeCell(top_lib, design_name, false, "");
   // bterms in top cell include bus components
   for (dbBTerm* bterm : block_->getBTerms()) {
     makeTopPort(bterm);
   }
-  groupBusPorts(top_cell_, [=, this](const char* port_name) {
+  groupBusPorts(top_cell_, [=, this](std::string_view port_name) {
     return portMsbFirst(port_name, design_name);
   });
 
@@ -2330,11 +2333,13 @@ void dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
 
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
-bool dbNetwork::portMsbFirst(const char* port_name, const char* cell_name)
+bool dbNetwork::portMsbFirst(std::string_view port_name,
+                             std::string_view cell_name)
 {
   std::string key = "bus_msb_first ";
-  //  key += port_name;
-  key = key + port_name + " " + cell_name;
+  key += port_name;
+  key += " ";
+  key += cell_name;
   dbBoolProperty* property = odb::dbBoolProperty::find(block_, key.c_str());
   if (property) {
     return property->getValue();
@@ -2404,7 +2409,7 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
                 ccell->portBitIterator()};
             while (port_iter->hasNext()) {
               ConcretePort* cport = port_iter->next();
-              const char* port_name = cport->name();
+              const std::string& port_name = cport->name();
               Port* cur_port = reinterpret_cast<Port*>(cport);
               registerConcretePort(cur_port);
               LibertyPort* lport = lcell->findLibertyPort(port_name);
@@ -2443,14 +2448,15 @@ void dbNetwork::readLibertyAfter(LibertyLibrary* lib)
 // Edit functions
 
 Instance* dbNetwork::makeInstance(LibertyCell* cell,
-                                  const char* name,  // full_name
+                                  std::string_view name,
                                   Instance* parent)
 {
-  const char* cell_name = cell->name();
+  const std::string inst_name(name);
+  const char* cell_name = cell->name().c_str();
   if (isTopInstanceOrNull(parent)) {
     dbMaster* master = db_->findMaster(cell_name);
     if (master) {
-      dbInst* inst = dbInst::create(block_, master, name);
+      dbInst* inst = dbInst::create(block_, master, inst_name.c_str());
       //
       // Register all liberty cells as being concrete
       // Sometimes this method is called by the sta
@@ -2473,7 +2479,8 @@ Instance* dbNetwork::makeInstance(LibertyCell* cell,
     if (mod_inst) {
       dbMaster* master = db_->findMaster(cell_name);
       dbModule* parent = mod_inst->getMaster();
-      dbInst* inst = dbInst::create(block_, master, name, false, parent);
+      dbInst* inst
+          = dbInst::create(block_, master, inst_name.c_str(), false, parent);
       Cell* inst_cell = dbToSta(master);
       //
       // Register all ports of liberty cells as being concrete
@@ -2646,12 +2653,12 @@ Pin* dbNetwork::connect(Instance* inst, Port* port, Net* net)
   Pin* pin = nullptr;
   dbNet* dnet = staToDb(net);
   if (inst == top_instance_) {
-    const char* port_name = name(port);
-    dbBTerm* bterm = block_->findBTerm(port_name);
+    const std::string port_name = name(port);
+    dbBTerm* bterm = block_->findBTerm(port_name.c_str());
     if (bterm) {
       bterm->connect(dnet);
     } else {
-      bterm = dbBTerm::create(dnet, port_name);
+      bterm = dbBTerm::create(dnet, port_name.c_str());
       PortDirection* dir = direction(port);
       dbSigType sig_type;
       dbIoType io_type;
@@ -2690,7 +2697,7 @@ void dbNetwork::connectPinAfter(Pin* pin)
 Pin* dbNetwork::connect(Instance* inst, LibertyPort* port, Net* net)
 {
   dbNet* dnet = staToDb(net);
-  const char* port_name = port->name();
+  const char* port_name = port->name().c_str();
   Pin* pin = nullptr;
   if (inst == top_instance_) {
     dbBTerm* bterm = block_->findBTerm(port_name);
@@ -2865,21 +2872,23 @@ void dbNetwork::deletePin(Pin* pin)
   }
 }
 
-Port* dbNetwork::makePort(Cell* cell, const char* name)
+Port* dbNetwork::makePort(Cell* cell, std::string_view name)
 {
-  if (cell == top_cell_ && !block_->findBTerm(name)) {
-    odb::dbNet* net = block_->findNet(name);
+  const std::string name_str(name);
+  const char* name_c = name_str.c_str();
+  if (cell == top_cell_ && !block_->findBTerm(name_c)) {
+    odb::dbNet* net = block_->findNet(name_c);
     if (!net) {
       // a bterm must have a net
-      net = odb::dbNet::create(block_, name);
+      net = odb::dbNet::create(block_, name_c);
     }
     // Making the bterm creates the port in the db callback
-    odb::dbBTerm::create(net, name);
+    odb::dbBTerm::create(net, name_c);
     Port* ret = findPort(cell, name);
     registerConcretePort(ret);
     return ret;
   }
-  Port* cur_port = ConcreteNetwork::makePort(cell, name);
+  Port* cur_port = ConcreteNetwork::makePort(cell, name_str);
   registerConcretePort(cur_port);
   return cur_port;
 }
@@ -2897,19 +2906,22 @@ Net* dbNetwork::makeNet(Instance* parent)
   return makeNet("net", parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
-Net* dbNetwork::makeNet(const char* base_name, Instance* parent)
+Net* dbNetwork::makeNet(std::string_view base_name, Instance* parent)
 {
   return makeNet(base_name, parent, odb::dbNameUniquifyType::ALWAYS);
 }
 
 // If uniquify is IF_NEEDED, unique suffix will be added when necessary.
-Net* dbNetwork::makeNet(const char* base_name,
+Net* dbNetwork::makeNet(std::string_view base_name,
                         Instance* parent,
                         const odb::dbNameUniquifyType& uniquify)
 {
   // Create a unique full name for a new net
+  odb::dbModInst* mod_inst = getModInst(parent);
+  odb::dbModule* parent_module = mod_inst ? mod_inst->getMaster() : nullptr;
+  const std::string base_owned(base_name);
   std::string full_name
-      = block_->makeNewNetName(getModInst(parent), base_name, uniquify);
+      = block_->makeNewNetName(parent_module, base_owned.c_str(), uniquify);
 
   // Create a new net
   dbNet* dnet = dbNet::create(block_, full_name.c_str(), false);
@@ -3224,9 +3236,9 @@ dbBTerm* dbNetwork::isTopPort(const Port* port) const
     if (port == port_iter->next()) {
       const ConcretePort* cport = reinterpret_cast<const ConcretePort*>(port);
       if (cport->isBus()) {
-        return block_->findBTerm(busName(port));
+        return block_->findBTerm(busName(port).c_str());
       }
-      return block_->findBTerm(name(port));
+      return block_->findBTerm(name(port).c_str());
     }
   }
   return nullptr;
@@ -3437,7 +3449,7 @@ PortDirection* dbNetwork::dbToSta(const dbSigType& sig_type,
 
 LibertyCell* dbNetwork::libertyCell(Cell* cell) const
 {
-  if (isConcreteCell(cell) == false) {
+  if (!isConcreteCell(cell)) {
     dbMaster* master = nullptr;
     dbModule* module = nullptr;
     staToDb(cell, master, module);
@@ -3543,10 +3555,7 @@ bool dbNetwork::isBus(const Port* port) const
   dbBTerm* bterm = nullptr;
   dbModBTerm* modbterm = nullptr;
   staToDb(port, bterm, mterm, modbterm);
-  if (modbterm && modbterm->isBusPort()) {
-    return true;
-  }
-  return false;
+  return modbterm && modbterm->isBusPort();
 }
 
 int dbNetwork::fromIndex(const Port* port) const
@@ -3802,7 +3811,7 @@ dbModule* dbNetwork::getNetDriverParentModule(Net* net,
         dbModITerm* moditerm = nullptr;
         staToDb(pin, iterm, bterm, moditerm);
         driver_pin = const_cast<Pin*>(pin);
-        if (hier == false) {
+        if (!hier) {
           return modnet->getParent();
         }
         if (bterm) {
@@ -3909,11 +3918,7 @@ bool dbNetwork::isConnected(const Net* net1, const Net* net2) const
 
   dbNet* flat_net1 = findFlatDbNet(net1);
   dbNet* flat_net2 = findFlatDbNet(net2);
-  if (flat_net1 != nullptr && flat_net1 == flat_net2) {
-    return true;
-  }
-
-  return false;
+  return flat_net1 != nullptr && flat_net1 == flat_net2;
 }
 
 void DbNetConnectedToBTerm::operator()(const Pin* pin)
@@ -4202,7 +4207,7 @@ void PinModDbNetConnection::operator()(const Pin* pin)
     //
     //
 
-    if (db_net_search_ == false) {
+    if (!db_net_search_) {
       dbNet* db_net;
       odb::dbModNet* db_modnet;
       db_network_->staToDb(search_net_, db_net, db_modnet);
@@ -4313,10 +4318,7 @@ odb::dbModNet* dbNetwork::findModNetForPin(const Pin* drvr_pin)
 
 bool dbNetwork::hasHierarchicalElements() const
 {
-  if (!block()->getModNets().empty()) {
-    return true;
-  }
-  return false;
+  return !block()->getModNets().empty();
 }
 
 class AccumulateNetFlatLoadPins : public PinVisitor
@@ -4845,7 +4847,7 @@ void dbNetwork::checkSanityNetNames() const
   // - Flat net name should be one of the hierarchical net names
   for (odb::dbNet* net : block_->getNets()) {
     std::set<odb::dbModNet*> mod_nets;
-    if (net->findRelatedModNets(mod_nets) && mod_nets.empty() == false) {
+    if (net->findRelatedModNets(mod_nets) && !mod_nets.empty()) {
       bool name_match = false;
       for (odb::dbModNet* mod_net : mod_nets) {
         if (net->getName() == mod_net->getHierarchicalName()) {
@@ -5016,7 +5018,7 @@ void dbNetwork::checkSanityNetDrvrPinMapConsistency() const
     }
 
     // Report inconsistent point details
-    if (consistent == false) {
+    if (!consistent) {
       logger_->warn(ORD, 2006, "Inconsistency found for net {}", pathName(net));
       logger_->report("  Netlist drivers:");
       for (const Pin* pin : netlist_drivers) {

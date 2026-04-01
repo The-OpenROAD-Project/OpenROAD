@@ -48,6 +48,16 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 33616
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000007 HPWL: 34236
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34076
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                      71
+Diamond Move Success:             71 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
 total displacement        741.5 u
@@ -68,6 +78,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
         0 |     +0.0% |       0 |       0 |             0 |       144
     final |     +2.0% |       0 |       8 |             1 |         0
 ---------------------------------------------------------------------
+[INFO RSZ-0034] Found 1 slew violations.
 [INFO RSZ-0035] Found 1 fanout violations.
 [INFO RSZ-0038] Inserted 8 buffers in 1 nets.
 max fanout

@@ -113,7 +113,7 @@ class AbcTest : public tst::Fixture
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr,
+                    /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 
     sta_->ensureGraph();

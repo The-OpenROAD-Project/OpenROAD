@@ -43,13 +43,13 @@
 #include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "global.h"
-#include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -566,8 +566,6 @@ bool TritonRoute::initGuide()
       getDesign(), db_, logger_, router_cfg_.get());
   bool guideOk = guide_processor.readGuides();
   guide_processor.processGuides();
-  io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  parser.initRPin();
   return guideOk;
 }
 void TritonRoute::initDesign()
@@ -650,12 +648,6 @@ void TritonRoute::prep()
 {
   FlexRP rp(getDesign(), logger_, router_cfg_.get());
   rp.main();
-}
-
-void TritonRoute::gr()
-{
-  FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
-  gr.main(db_);
 }
 
 void TritonRoute::ta()
@@ -1058,12 +1050,7 @@ int TritonRoute::main()
                    .getStream());
   }
   if (!initGuide()) {
-    gr();
-    router_cfg_->ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(
-        getDesign(), db_, logger_, router_cfg_.get());
-    guide_processor.readGuides();
-    guide_processor.processGuides();
+    logger_->error(DRT, 626, "Guide loading failed.");
   }
   prep();
   ta();
@@ -1298,7 +1285,6 @@ void TritonRoute::setParams(const ParamStruct& params)
   router_cfg_->OUT_MAZE_FILE = params.outputMazeFile;
   router_cfg_->DRC_RPT_FILE = params.outputDrcFile;
   router_cfg_->DRC_RPT_ITER_STEP = params.drcReportIterStep;
-  router_cfg_->CMAP_FILE = params.outputCmapFile;
   router_cfg_->GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   router_cfg_->VERBOSE = params.verbose;
   router_cfg_->ENABLE_VIA_GEN = params.enableViaGen;

@@ -29,7 +29,8 @@ Rudy::Rudy(odb::dbBlock* block, grt::GlobalRouter* grouter)
     int min_layer, max_layer;
     grouter_->setDbBlock(block);
     grouter_->getMinMaxLayer(min_layer, max_layer);
-    grouter_->initFastRoute(min_layer, max_layer);
+    // Designs with invalid pin placement can still be evaluated by RUDY.
+    grouter_->initFastRoute(min_layer, max_layer, false);
   }
 
   // The wire width is the harmonic average pitch divided by the number of
@@ -104,6 +105,9 @@ void Rudy::getResourceReductions()
       Tile& tile = getEditableTile(x, y);
       uint8_t tile_cap = cap_usage_data[x][y].capacity;
       float tile_reduction = cap_usage_data[x][y].reduction;
+      if (tile_cap == 0) {
+        continue;
+      }
       float cap_usage_data = tile_reduction / tile_cap;
       tile.addRudy(cap_usage_data * 100);
     }

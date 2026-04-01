@@ -3,6 +3,7 @@
 
 %include <std_string.i>
 %include <std_vector.i>
+%include <std_pair.i>
 %include <stdint.i>
 
 %{
@@ -47,19 +48,28 @@ get_db_block();
 
 %}
 
+%include "Exception-py.i"
+
 %template(Corners) std::vector<sta::Scene*>;
 %template(MTerms) std::vector<odb::dbMTerm*>;
 %template(Masters) std::vector<odb::dbMaster*>;
-
-%include "Exception-py.i"
+%template(Floats) std::vector<float>;
+%template(ITerms) std::vector<odb::dbITerm*>;
+%template(BTerms) std::vector<odb::dbBTerm*>;
+%template(EndpointSlacks) std::vector<ord::EndpointSlack>;
 %include "ord/Tech.h"
 %include "ord/Design.h"
+
 %include "ord/Timing.h"
+%template(ClockInfos) std::vector<ord::ClockInfo>;
+%template(TimingArcInfos) std::vector<ord::TimingArcInfo>;
+%template(TimingPathInfos) std::vector<ord::TimingPathInfo>;
 
 #ifdef BAZEL
 %include "src/gpl/src/replace-py.i"
 %include "src/ifp/src/InitFloorplan-py.i"
 %include "src/ant/src/AntennaChecker-py.i"
+%include "src/cgt/src/cgt-py.i"
 %include "src/cts/src/TritonCTS-py.i"
 %include "src/dpl/src/Opendp-py.i"
 %include "src/drt/src/TritonRoute-py.i"
@@ -71,6 +81,7 @@ get_db_block();
 %include "src/ppl/src/IOPlacer-py.i"
 %include "src/psm/src/pdnsim-py.i"
 %include "src/rcx/src/ext-py.i"
+%include "src/rsz/src/Resizer-py.i"
 %include "src/stt/src/SteinerTreeBuilder-py.i"
 %include "src/tap/src/tapcell-py.i"
 %import "src/odb/src/swig/common/odb.i"

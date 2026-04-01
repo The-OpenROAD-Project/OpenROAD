@@ -557,7 +557,7 @@ void MainWindow::setBlock(odb::dbBlock* block)
     save_->setEnabled(true);
   }
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
-    heat_map->setBlock(block);
+    heat_map->setChip(block != nullptr ? block->getChip() : nullptr);
   }
   hierarchy_widget_->setBlock(block);
 }
@@ -628,8 +628,8 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
-  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
-  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, db_, logger_));
+  gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_));
+  gui->registerDescriptor<Label*>(new LabelDescriptor(labels_, logger_));
   gui->registerDescriptor<odb::dbBlock*>(new DbBlockDescriptor(db_));
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
@@ -651,7 +651,7 @@ void MainWindow::init(sta::dbSta* sta, const std::string& help_path)
   gui->registerDescriptor<odb::dbCellEdgeSpacing*>(
       new DbCellEdgeSpacingDescriptor(db_));
 
-  gui->registerDescriptor<sta::Scene*>(new CornerDescriptor(sta));
+  gui->registerDescriptor<sta::Scene*>(new SceneDescriptor(sta));
   gui->registerDescriptor<sta::LibertyLibrary*>(
       new LibertyLibraryDescriptor(sta));
   gui->registerDescriptor<sta::LibertyCell*>(new LibertyCellDescriptor(sta));

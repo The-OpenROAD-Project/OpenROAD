@@ -640,6 +640,7 @@ void FlexDRWorker::modMinimumcutCostVia(const odb::Rect& box,
             case setFixedShape:
               gridGraph_.setFixedShapeCostVia(gridGraph_.getIdx(i, j, z),
                                               1);  // safe access
+              break;
             default:;
           }
         }
@@ -744,8 +745,7 @@ void FlexDRWorker::modMinSpacingCostViaHelper(const odb::Rect& box,
 
   // via prl should check min area patch metal if not fat via
   auto lNum = gridGraph_.getLayerNum(z);
-  bool isH
-      = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isH = getTech()->getLayer(lNum)->isHorizontal();
   bool isFatVia = (isH) ? (viaBox.dy() > width) : (viaBox.dx() > width);
 
   frCoord length2_mar = length2;
@@ -1937,7 +1937,7 @@ void FlexDRWorker::route_queue_main(std::queue<RouteQueueEntry>& rerouteQueue)
       mazeNetInit(net);
       std::vector<FlexMazeIdx> paths;
       bool isRouted = routeNet(net, paths);
-      if (isRouted == false) {
+      if (!isRouted) {
         if (router_cfg_->OUT_MAZE_FILE == std::string("")) {
           if (router_cfg_->VERBOSE > 0) {
             std::cout
@@ -3215,7 +3215,6 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 
   // Verify if net has jumpers
   const bool route_with_jumpers = net->getFrNet()->hasJumpers();
-
   if (net->getPins().size() <= 1) {
     return true;
   }
@@ -3365,7 +3364,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
           = (minAreaConstraint) ? minAreaConstraint->getMinArea() : 0;
       // add curr via enclosure
       frMIdx z = (nextIdx.z() < currIdx.z()) ? currIdx.z() - 1 : currIdx.z();
-      bool isLayer1 = (nextIdx.z() < currIdx.z()) ? false : true;
+      bool isLayer1 = nextIdx.z() >= currIdx.z();
       if (prev_is_wire) {
         currArea += getHalfViaEncArea(
             z, isLayer1, net->getFrNet()->getNondefaultRule());
@@ -3491,7 +3490,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio_helper(
     end_point = points[point_idx - 1];
     FlexMazeIdx begin_point_successor = points[prev_point_idx + 1],
                 end_point_predecessor = points[point_idx - 2];
-    if (curr_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (curr_layer->isHorizontal()) {
       is_bp_patch_style_left
           = (begin_point.x() == begin_point_successor.x())
                 ? (begin_point.x() < end_point.x())
@@ -3683,11 +3682,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
-    isPatchHorz = true;
-  } else {
-    isPatchHorz = false;
-  }
+  isPatchHorz = getTech()->getLayer(layerNum)->isHorizontal();
 
   auto costL = routeNet_postAstarAddPathMetal_isClean(
       bpIdx, isPatchHorz, bpPatchLeft, patchLength);

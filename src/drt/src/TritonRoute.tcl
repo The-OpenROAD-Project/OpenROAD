@@ -4,7 +4,6 @@
 sta::define_cmd_args "detailed_route" {
     [-output_maze filename]
     [-output_drc filename]
-    [-output_cmap filename]
     [-output_guide_coverage filename]
     [-drc_report_iter_step step]
     [-db_process_node name]
@@ -33,7 +32,7 @@ sta::define_cmd_args "detailed_route" {
 
 proc detailed_route { args } {
   sta::parse_key_args "detailed_route" args \
-    keys {-output_maze -output_drc -output_cmap -output_guide_coverage \
+    keys {-output_maze -output_drc -output_guide_coverage \
       -db_process_node -droute_end_iter -via_in_pin_bottom_layer \
       -via_in_pin_top_layer -via_access_layer -or_seed -or_k -bottom_routing_layer \
       -top_routing_layer -verbose -remote_host -remote_port -shared_volume \
@@ -70,11 +69,6 @@ proc detailed_route { args } {
   } else {
     set drc_report_iter_step 0
   }
-  if { [info exists keys(-output_cmap)] } {
-    set output_cmap $keys(-output_cmap)
-  } else {
-    set output_cmap ""
-  }
   if { [info exists keys(-output_guide_coverage)] } {
     set output_guide_coverage $keys(-output_guide_coverage)
   } else {
@@ -85,11 +79,14 @@ proc detailed_route { args } {
   } else {
     set db_process_node ""
   }
+  set max_droute_end_iter 64
   if { [info exists keys(-droute_end_iter)] } {
     sta::check_positive_integer "-droute_end_iter" $keys(-droute_end_iter)
-    if { $keys(-droute_end_iter) > 64 } {
-      utl::warn "-droute_end_iter cannot be greater than 64. Setting -droute_end_iter to 64."
-      set droute_end_iter 64
+    if { $keys(-droute_end_iter) > $max_droute_end_iter } {
+      utl::warn DRT 518 \
+        "-droute_end_iter cannot be greater than $max_droute_end_iter.\
+        Setting -droute_end_iter to $max_droute_end_iter."
+      set droute_end_iter $max_droute_end_iter
     } else {
       set droute_end_iter $keys(-droute_end_iter)
     }
@@ -164,7 +161,7 @@ proc detailed_route { args } {
   } else {
     set min_access_points -1
   }
-  drt::detailed_route_cmd $output_maze $output_drc $output_cmap \
+  drt::detailed_route_cmd $output_maze $output_drc \
     $output_guide_coverage $db_process_node $enable_via_gen $droute_end_iter \
     $via_in_pin_bottom_layer $via_in_pin_top_layer \
     $via_access_layer $or_seed $or_k $verbose \

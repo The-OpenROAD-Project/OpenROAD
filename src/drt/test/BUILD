@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2025, The OpenROAD Authors
 
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_rule_test", "regression_test")
 
 package(features = ["layering_check"])
 
-# From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "down_access_term",
     "drc_test",
@@ -24,26 +27,14 @@ COMPULSORY_TESTS = [
     "via_access_layer",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "drt_man_tcl_check",
-    "drt_readme_msgs_check",
-]
+ALL_TESTS = COMPULSORY_TESTS
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "down_access_term",
-    "drc_test",
+PY_TESTS = [
     "ispd18_sample",
-    "ispd18_sample_incr",
-    "ndr_vias1",
-    "ndr_vias2",
-    "ndr_vias3",
     "single_step",
+    "top_level_term",
     "top_level_term2",
 ]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -53,6 +44,7 @@ filegroup(
     srcs = [
         "Nangate45/Nangate45_stdcell.lef",
         "Nangate45/Nangate45_tech.lef",
+        "drt_aux.py",
         "gcd_nangate45.route_guide",
         "gcd_nangate45.tcl",
         "gcd_nangate45_distributed.tcl",
@@ -61,6 +53,7 @@ filegroup(
         "gcd_nangate45_test_worker.tcl",
         "gcd_sky130hd.def",
         "gcd_sky130hd.guide",
+        "helpers.py",
         "helpers.tcl",
         "sky130hd/sky130_fd_sc_hd__ff_n40C_1v95.lib",
         "sky130hd/sky130_fd_sc_hd__ss_n40C_1v40.lib",
@@ -116,11 +109,34 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
+]
+
+py_library(
+    name = "helpers",
+    srcs = [
+        "drt_aux.py",
+        "helpers.py",
+    ],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+[
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [":" + test_name + "_resources"],
+        deps = [
+            ":helpers",
+            "//python/openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
 ]
 
 cc_test(
@@ -142,4 +158,38 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+py_test(
+    name = "drt_man_tcl_check",
+    srcs = ["drt_man_tcl_check.py"],
+    data = ["//src/drt:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "drt_readme_msgs_check",
+    data = [
+        "//src/drt:doc_files",
+        "//src/drt:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+regression_rule_test(
+    name = "aes_nangate45-py_test",
+    bazel_test_sh = "//test:bazel_test.sh",
+    check_log = False,
+    data = [
+        "aes_nangate45.route_guide",
+        "aes_nangate45_preroute.def",
+        ":regression_resources",
+    ],
+    openroad = "//:openroad",
+    regression_test = "//test:regression_test.sh",
+    tags = ["manual"],
+    test_file = "aes_nangate45.py",
+    test_name = "aes_nangate45",
+    visibility = ["//visibility:public"],
 )

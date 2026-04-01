@@ -47,11 +47,13 @@
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
@@ -206,7 +208,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
-  sta::StdStringSeq group_names_empty;
+  sta::StringSeq group_names_empty;
   sta::PathEndSeq path_ends = sta_->search()->findPathEnds(  // from, thrus, to,
                                                              // unconstrained
       e_from,   // return paths from a list of clocks/instances/ports/register
@@ -261,15 +263,15 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       }
       std::string name;
 
-      if (db_network_->isTopLevelPort(pin) == true) {
-        auto bterm = block->findBTerm(db_network_->pathName(pin));
+      if (db_network_->isTopLevelPort(pin)) {
+        auto bterm = block->findBTerm(db_network_->pathName(pin).c_str());
         name = bterm->getName();
         if (visitedBterms.insert(name).second) {
           depth++;
         }
       } else {
         auto inst = db_network_->instance(pin);
-        auto db_inst = block->findInst(db_network_->pathName(inst));
+        auto db_inst = block->findInst(db_network_->pathName(inst).c_str());
         name = db_inst->getName();
         if (visitedInstances.insert(name).second) {
           depth++;

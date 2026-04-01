@@ -1,8 +1,12 @@
+load("@rules_python//python:defs.bzl", "py_test")
 # SPDX-License-Identifier: BSD-3-Clause
-# Copyright (c) 2022-2025, The OpenROAD Authors
+# Copyright (c) 2022-2026, The OpenROAD Authors
+
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -27,15 +31,11 @@ COMPULSORY_TESTS = [
     "aes_annealing",
     "gcd_annealing1",
     "gcd_annealing2",
+    "aes_genetic",
+    "gcd_genetic",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "rmp_man_tcl_check",
-    "rmp_readme_msgs_check",
-]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
+ALL_TESTS = COMPULSORY_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -125,7 +125,7 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
@@ -160,4 +160,52 @@ cc_test(
         "@googletest//:gtest_main",
         "@tcl_lang//:tcl",
     ],
+)
+
+cc_test(
+    name = "RmpGTests",
+    srcs = [
+        "cpp/TestAbc.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45_stdcell.lef",
+        "Nangate45/Nangate45_tech.lef",
+        "Nangate45/Nangate45_typ.lib",
+        "aes_nangate45.v",
+    ],
+    features = ["-layering_check"],  # TODO: includes private headers
+    includes = [
+        "../src",
+    ],
+    deps = [
+        "//src/cut",
+        "//src/dbSta",
+        "//src/dbSta:dbReadVerilog",
+        "//src/odb",
+        "//src/rmp",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/utl",
+        "@abc",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+py_test(
+    name = "rmp_man_tcl_check",
+    srcs = ["rmp_man_tcl_check.py"],
+    data = ["//src/rmp:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "rmp_readme_msgs_check",
+    data = [
+        "//src/rmp:doc_files",
+        "//src/rmp:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )
