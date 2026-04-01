@@ -710,6 +710,13 @@ std::string OpenRoad::getDocsPath() const
     return "";
   }
 
+  // Check Bazel runfiles layout first
+  const std::filesystem::path runfiles_docs
+      = std::filesystem::path(exe + ".runfiles") / "_main" / "docs";
+  if (std::filesystem::exists(runfiles_docs)) {
+    return runfiles_docs;
+  }
+
   std::filesystem::path path(exe);
 
   // remove binary name

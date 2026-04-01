@@ -193,5 +193,8 @@ filegroup(
 )
 
 messages_txt(
-    visibility = ["//src/dpl/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/dpl/test:__pkg__",
+    ],
 )

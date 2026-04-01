@@ -166,5 +166,8 @@ messages_txt(
     src_patterns = [
         "include/odb/*.h",
     ],
-    visibility = ["//src/odb/test:__pkg__"],
+    visibility = [
+        "//docs:__pkg__",
+        "//src/odb/test:__pkg__",
+    ],
 )
