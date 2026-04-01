@@ -35,6 +35,7 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
+      use_selected_only_(false),
       color_generator_(SpectrumGenerator(100.0))
 {
 }
