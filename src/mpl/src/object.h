@@ -162,7 +162,16 @@ class Cluster
   void setAsArrayOfInterconnectedMacros();
   bool isArrayOfInterconnectedMacros() const;
   void setAsMacroArray() { type_ = Type::MacroArray; }
-  bool isMacroArray() const { return type_ == Type::MacroArray; }
+  bool isMacroArray() const
+  {
+    return type_ == Type::MacroArray
+           || type_ == Type::InterconnectedMacrosArray;
+  }
+  bool isAnyMacroCluster() const
+  {
+    return type_ == Type::Macro || type_ == Type::MacroArray
+           || type_ == Type::InterconnectedMacrosArray;
+  }
   bool isEmpty() const;
   bool correspondsToLogicalModule() const;
 

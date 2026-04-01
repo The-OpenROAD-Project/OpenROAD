@@ -178,7 +178,9 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
 
   for (auto& child : parent->getChildren()) {
     switch (child->getType()) {
-      case Cluster::Type::Macro: {
+      case Cluster::Type::Macro:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray: {
         std::vector<mpl::HardMacro*> hard_macros = child->getHardMacros();
         for (HardMacro* hard_macro : hard_macros) {
           hard.push_back(*hard_macro);
@@ -201,8 +203,6 @@ void Graphics::fetchSoftAndHard(Cluster* parent,
       case Cluster::Type::UnconstrainedIOs:
       case Cluster::Type::IOBundle:
       case Cluster::Type::PAD:
-      case Cluster::Type::MacroArray:
-      case Cluster::Type::InterconnectedMacrosArray:
         break;
     }
   }
@@ -691,7 +691,7 @@ void Graphics::setSoftMacroBrush(gui::Painter& painter,
 
   if (soft_macro.getCluster()->getType() == Cluster::Type::StdCell) {
     painter.setBrush(gui::Painter::kDarkBlue);
-  } else if (soft_macro.getCluster()->getType() == Cluster::Type::Macro) {
+  } else if (soft_macro.getCluster()->isAnyMacroCluster()) {
     // dark red
     painter.setBrush(gui::Painter::Color(0x80, 0x00, 0x00, 150));
   } else {

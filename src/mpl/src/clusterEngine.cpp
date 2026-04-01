@@ -742,8 +742,7 @@ void ClusteringEngine::updateInstancesAssociation(Cluster* cluster)
 {
   const int cluster_id = cluster->getId();
   const Cluster::Type cluster_type = cluster->getType();
-  if (cluster_type == Cluster::Type::Macro
-      || cluster_type == Cluster::Type::Mixed) {
+  if (cluster->isAnyMacroCluster() || cluster_type == Cluster::Type::Mixed) {
     for (odb::dbInst* inst : cluster->getLeafMacros()) {
       if (isIgnoredInst(inst)) {
         continue;
@@ -1801,7 +1800,6 @@ void ClusteringEngine::breakMixedLeaf(Cluster* mixed_leaf)
       movable_macro_cluster->setAsArrayOfInterconnectedMacros();
     }
 
-    movable_macro_cluster->setType(Cluster::Type::Macro);
     setClusterMetrics(movable_macro_cluster);
     virtual_conn_clusters.push_back(movable_macro_cluster->getId());
   }

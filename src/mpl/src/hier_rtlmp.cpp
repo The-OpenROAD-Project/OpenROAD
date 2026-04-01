@@ -391,7 +391,7 @@ void HierRTLMP::calculateChildrenTilings(Cluster* parent)
              parent->getName());
 
   // Current cluster is a hard macro cluster
-  if (parent->getType() == Cluster::Type::Macro) {
+  if (parent->isAnyMacroCluster()) {
     debugPrint(logger_,
                MPL,
                "coarse_shaping",
@@ -1194,7 +1194,7 @@ void HierRTLMP::adjustMacroBlockageWeight()
 
 void HierRTLMP::placeChildren(Cluster* parent)
 {
-  if (parent->getType() == Cluster::Type::Macro) {
+  if (parent->isAnyMacroCluster()) {
     placeMacros(parent);
     return;
   }
@@ -1655,7 +1655,9 @@ bool HierRTLMP::validUtilization(
         std_cell_cluster_area += cluster->getStdCellArea();
         break;
       }
-      case Cluster::Type::Macro: {
+      case Cluster::Type::Macro:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray: {
         const TilingList& tilings = cluster->getTilings();
         macro_cluster_area += tilings.front().area();
         break;
@@ -2622,7 +2624,7 @@ void Pusher::fetchMacroClusters(Cluster* parent,
                                 std::vector<Cluster*>& macro_clusters)
 {
   for (auto& child : parent->getChildren()) {
-    if (child->getType() == Cluster::Type::Macro) {
+    if (child->isAnyMacroCluster()) {
       macro_clusters.push_back(child.get());
 
       for (HardMacro* hard_macro : child->getHardMacros()) {
@@ -2638,7 +2640,7 @@ void Pusher::fetchMacroClusters(Cluster* parent,
 void Pusher::pushMacrosToCoreBoundaries()
 {
   // Case in which the design has nothing but macros.
-  if (root_->getType() == Cluster::Type::Macro) {
+  if (root_->isAnyMacroCluster()) {
     return;
   }
 
@@ -2685,6 +2687,8 @@ bool Pusher::designHasSingleCentralizedMacroArray()
       case Cluster::Type::Mixed:
         return false;
       case Cluster::Type::Macro:
+      case Cluster::Type::MacroArray:
+      case Cluster::Type::InterconnectedMacrosArray:
         ++macro_cluster_count;
         break;
       case Cluster::Type::StdCell: {
@@ -2701,8 +2705,6 @@ bool Pusher::designHasSingleCentralizedMacroArray()
       case Cluster::Type::UnconstrainedIOs:
       case Cluster::Type::IOBundle:
       case Cluster::Type::PAD:
-      case Cluster::Type::MacroArray:
-      case Cluster::Type::InterconnectedMacrosArray:
         break;
     }
 

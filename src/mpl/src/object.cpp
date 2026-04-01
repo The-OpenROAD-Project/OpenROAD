@@ -243,7 +243,7 @@ void Cluster::copyInstances(const Cluster& cluster)
   leaf_macros_.clear();
   hard_macros_.clear();
 
-  if (type_ == Cluster::Type::Macro) {
+  if (isAnyMacroCluster()) {
     leaf_macros_.insert(leaf_macros_.end(),
                         cluster.leaf_macros_.begin(),
                         cluster.leaf_macros_.end());
@@ -348,7 +348,7 @@ const Metrics& Cluster::getMetrics() const
 
 int Cluster::getNumStdCell() const
 {
-  if (type_ == Cluster::Type::Macro) {
+  if (isAnyMacroCluster()) {
     return 0;
   }
   return metrics_.getNumStdCell();
@@ -373,7 +373,7 @@ int64_t Cluster::getArea() const
 
 int64_t Cluster::getStdCellArea() const
 {
-  if (type_ == Cluster::Type::Macro) {
+  if (isAnyMacroCluster()) {
     return 0;
   }
 
@@ -997,8 +997,7 @@ void SoftMacro::setWidth(int width)
   if (width <= 0 || area_ == 0
       || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getType() == Cluster::Type::Macro
-      || cluster_->isIOCluster()) {
+      || cluster_->isAnyMacroCluster() || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1025,8 +1024,7 @@ void SoftMacro::setHeight(int height)
   if (height <= 0 || area_ == 0
       || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getType() == Cluster::Type::Macro
-      || cluster_->isIOCluster()) {
+      || cluster_->isAnyMacroCluster() || cluster_->isIOCluster()) {
     return;
   }
 
@@ -1052,7 +1050,7 @@ void SoftMacro::setArea(int64_t area)
 {
   if (area_ == 0 || width_intervals_.size() != height_intervals_.size()
       || width_intervals_.empty() || cluster_ == nullptr
-      || cluster_->getType() == Cluster::Type::Macro || cluster_->isIOCluster()
+      || cluster_->isAnyMacroCluster() || cluster_->isIOCluster()
       || area <= (width_intervals_.front().min
                   * static_cast<int64_t>(height_intervals_.front().max))) {
     return;
@@ -1088,7 +1086,7 @@ void SoftMacro::setShapes(const TilingList& tilings, bool force)
 {
   if (!force
       && (tilings.empty() || cluster_ == nullptr
-          || cluster_->getType() != Cluster::Type::Macro)) {
+          || !cluster_->isAnyMacroCluster())) {
     return;
   }
 
@@ -1111,8 +1109,7 @@ void SoftMacro::setShapes(const TilingList& tilings, bool force)
 void SoftMacro::setShapes(const IntervalList& width_intervals, int64_t area)
 {
   if (width_intervals.empty() || area <= 0 || cluster_ == nullptr
-      || cluster_->isIOCluster()
-      || cluster_->getType() == Cluster::Type::Macro) {
+      || cluster_->isIOCluster() || cluster_->isAnyMacroCluster()) {
     return;
   }
 
@@ -1161,7 +1158,7 @@ bool SoftMacro::isMacroCluster() const
   if (cluster_ == nullptr) {
     return false;
   }
-  return (cluster_->getType() == Cluster::Type::Macro);
+  return cluster_->isAnyMacroCluster();
 }
 
 bool SoftMacro::isStdCellCluster() const
@@ -1218,7 +1215,7 @@ float SoftMacro::getMacroUtil() const
     return 0.0;
   }
 
-  if (cluster_->getType() == Cluster::Type::Macro) {
+  if (cluster_->isAnyMacroCluster()) {
     return 1.0;
   }
 
