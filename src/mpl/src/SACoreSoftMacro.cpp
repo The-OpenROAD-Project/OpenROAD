@@ -999,7 +999,10 @@ void SACoreSoftMacro::printResults() const
   report({"Soft Blockage",
           soft_blockage_weight_,
           soft_blockage_penalty_,
-          norm_soft_blockage_penalty_});
+  report({.name="Soft Blockage",
+          .weight=soft_blockage_weight_,
+          .value=soft_blockage_penalty_,
+          .normalization_factor=norm_soft_blockage_penalty_});
   report({"Notch", notch_weight_, notch_penalty_, norm_notch_penalty_});
   reportTotalCost();
   if (logger_->debugCheck(MPL, "hierarchical_macro_placement", 2)) {
