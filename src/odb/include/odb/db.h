@@ -6669,6 +6669,7 @@ class dbTechLayerAntennaRule : public dbObject
   pwl_pair getDiffPSR() const;
   pwl_pair getDiffCSR() const;
   pwl_pair getAreaDiffReduce() const;
+  pwl_pair getGatePlusDiffPWL() const;
 
   // PWL
   void setDiffPAR(const std::vector<double>& diff_idx,
@@ -6679,6 +6680,8 @@ class dbTechLayerAntennaRule : public dbObject
                   const std::vector<double>& ratios);
   void setDiffCSR(const std::vector<double>& diff_idx,
                   const std::vector<double>& ratios);
+  void setGatePlusDiffPWL(const std::vector<double>& diff_idx,
+                          const std::vector<double>& ratios);
 
   // Single value
   void setDiffPAR(double ratio);
