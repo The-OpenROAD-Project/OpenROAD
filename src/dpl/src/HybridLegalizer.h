@@ -71,8 +71,8 @@ class Edge;
 inline constexpr int kInfCost = std::numeric_limits<int>::max() / 2;
 inline constexpr int kHorizWindow = 20;     // search width, current row (sites)
 inline constexpr int kAdjWindow = 5;       // search width, adjacent rows
-inline constexpr int kMaxIterNeg = 20;    // negotiation phase-1 limit
-inline constexpr int kMaxIterNeg2 = 20;  // negotiation phase-2 limit
+inline constexpr int kMaxIterNeg = 400;    // negotiation phase-1 limit
+inline constexpr int kMaxIterNeg2 = 1000;  // negotiation phase-2 limit
 inline constexpr int kIsolationPt = 1;     // isolation-point parameter I
 inline constexpr double kMfDefault = 1.5;  // max-disp penalty multiplier
 inline constexpr int kThDefault = 30;      // max-disp threshold (sites)
