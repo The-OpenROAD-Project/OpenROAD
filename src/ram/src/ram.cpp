@@ -586,14 +586,7 @@ void RamGen::ramPdngen(const char* power_pin,
   power_net->setSigType(odb::dbSigType::POWER);
   ground_net->setSpecial();
   ground_net->setSigType(odb::dbSigType::GROUND);
-
-  // finds power and gorund of a cell if not given
-  if (!power_pin || power_pin[0] == '\0') {
-    power_pin = inv_ports_[{PortRoleType::Power, 0}].c_str();
-  }
-  if (!ground_pin || ground_pin[0] == '\0') {
-    ground_pin = inv_ports_[{PortRoleType::Ground, 0}].c_str();
-  }
+  
   block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
   block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
 

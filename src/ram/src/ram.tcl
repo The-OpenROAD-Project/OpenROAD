@@ -147,14 +147,16 @@ proc generate_ram { args } {
 
   ord::design_created
 
-  set power_pin ""
   if { [info exists keys(-power_pin)] } {
     set power_pin $keys(-power_pin)
+  } else {
+    utl::error RAM 5 "The -power_pin argument must be specified."
   }
 
-  set ground_pin ""
   if { [info exists keys(-ground_pin)] } {
     set ground_pin $keys(-ground_pin)
+  } else {
+    utl::error RAM 6 "The -ground_pin argument must be specified."
   }
 
   if { [info exists keys(-routing_layer)] } {
