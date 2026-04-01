@@ -225,6 +225,19 @@ void RamGen::makeSlice(const int slice_idx,
               {and2_ports_[{PortRoleType::DataOut, 0}], write_sel}});
   }
 
+  // Write path: this net is row_select AND with word_select so clock gate only
+  // fires for the addressed word within the row. Read path handled by AOI mux.
+  // word_select is nullptr when column_mux_ratio=1 (no mux needed).
+  dbNet* write_sel = selects[0];
+  if (word_select) {
+    write_sel = makeNet(prefix, "write_sel");
+    makeInst(sel_cell.get(),
+             prefix,
+             "word_and",
+             and2_cell_,
+             {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
+  }
+
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
   // adding any net will automatically connect with any port

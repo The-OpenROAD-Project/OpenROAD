@@ -1,28 +1,27 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
-%{
+% {
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "ord/OpenRoad.hh"
 #include "ram/ram.h"
 #include "utl/Logger.h"
 
-namespace ord {
-// Defined in OpenRoad.i
-odb::dbDatabase* getDb();
+    namespace ord{// Defined in OpenRoad.i
+                  odb::dbDatabase * getDb();
 ram::RamGen* getRamGen();
 utl::Logger* getLogger();
-} // namespace ord
+}  // namespace ord
 
-%}
+%
+}
 
-%include <std_vector.i>
-%include <std_string.i>
-%template(vector_str) std::vector<std::string>;
-%include "../../Exception.i"
+% include<std_vector.i> % include<std_string.i>
+    % template(vector_str) std::vector<std::string>;
+% include "../../Exception.i"
 
 %inline %{
 
@@ -40,52 +39,104 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* tapcell_name,
                          const int max_tap_dist)
 {
-  RamGen* ram_gen = ord::getRamGen();
-  odb::dbDatabase* db = ord::getDb();
-  utl::Logger* logger = ord::getLogger();
+  namespace ram {
 
-  odb::dbMaster* storage_cell = nullptr;
-  if (storage_cell_name[0] != '\0') {
-    storage_cell = db->findMaster(storage_cell_name);
-    if (!storage_cell) {
-      logger->error(utl::RAM,
-                    4,
-                    "Storage cell {} can't be found",
-                    storage_cell_name);
+  void generate_ram_netlist_cmd(int mask_size,
+                                int word_size,
+                                int num_words,
+                                int column_mux_ratio,
+                                const char* storage_cell_name,
+                                const char* tristate_cell_name,
+                                const char* inv_cell_name,
+                                const int read_ports,
+                                const char* tapcell_name,
+                                const int max_tap_dist)
+  {
+    RamGen* ram_gen = ord::getRamGen();
+    odb::dbDatabase* db = ord::getDb();
+    utl::Logger* logger = ord::getLogger();
+
+    odb::dbMaster* storage_cell = nullptr;
+    if (storage_cell_name[0] != '\0') {
+      storage_cell = db->findMaster(storage_cell_name);
+      if (!storage_cell) {
+        logger->error(
+            utl::RAM, 4, "Storage cell {} can't be found", storage_cell_name);
+      }
     }
+
+    odb::dbMaster* tristate_cell = nullptr;
+    if (tristate_cell_name[0] != '\0') {
+      tristate_cell = db->findMaster(tristate_cell_name);
+      if (!tristate_cell) {
+        logger->error(
+            utl::RAM, 7, "Tristate cell {} can't be found", tristate_cell_name);
+      }
+    }
+
+    odb::dbMaster* inv_cell = nullptr;
+    if (inv_cell_name[0] != '\0') {
+      inv_cell = db->findMaster(inv_cell_name);
+      if (!inv_cell) {
+        logger->error(utl::RAM, 8, "Inv cell {} can't be found", inv_cell_name);
+      }
+    }
+
+    odb::dbMaster* tapcell = nullptr;
+    if (tapcell_name[0] != '\0') {
+      tapcell = db->findMaster(tapcell_name);
+      if (!tapcell) {
+        logger->error(utl::RAM, 19, "Tapcell {} can't be found", tapcell_name);
+      }
+    }
+
+    ram_gen->generate(mask_size,
+                      word_size,
+                      num_words,
+                      column_mux_ratio,
+                      read_ports,
+                      storage_cell,
+                      tristate_cell,
+                      inv_cell,
+                      tapcell,
+                      max_tap_dist);
   }
 
-  odb::dbMaster* tristate_cell = nullptr;
-  if (tristate_cell_name[0] != '\0') {
-    tristate_cell = db->findMaster(tristate_cell_name);
-    if (!tristate_cell) {
-      logger->error(utl::RAM,
-                    7,
-                    "Tristate cell {} can't be found",
-                    tristate_cell_name);
-    }
+  void ram_pdngen(const char* power_pin,
+                  const char* ground_pin,
+                  const char* route_name,
+                  int route_width,
+                  const char* ver_name,
+                  int ver_width,
+                  int ver_pitch,
+                  const char* hor_name,
+                  int hor_width,
+                  int hor_pitch)
+
+  {
+    RamGen* ram_gen = ord::getRamGen();
+    ram_gen->ramPdngen(power_pin,
+                       ground_pin,
+                       route_name,
+                       route_width,
+                       ver_name,
+                       ver_width,
+                       ver_pitch,
+                       hor_name,
+                       hor_width,
+                       hor_pitch);
   }
 
-  odb::dbMaster* inv_cell = nullptr;
-  if (inv_cell_name[0] != '\0') {
-    inv_cell = db->findMaster(inv_cell_name);
-    if (!inv_cell) {
-      logger->error(utl::RAM,
-                    8,
-                    "Inv cell {} can't be found",
-                    inv_cell_name);
-    }
+  void ram_pinplacer(const char* ver_name, const char* hor_name)
+  {
+    RamGen* ram_gen = ord::getRamGen();
+    ram_gen->ramPinplacer(ver_name, hor_name);
   }
 
-  odb::dbMaster* tapcell = nullptr;
-  if (tapcell_name[0] != '\0') {
-    tapcell = db->findMaster(tapcell_name);
-    if (!tapcell) {
-      logger->error(utl::RAM,
-                    19,
-                    "Tapcell {} can't be found",
-                    tapcell_name);
-    }
+  void ram_filler(const std::vector<std::string>& filler_cells)
+  {
+    RamGen* ram_gen = ord::getRamGen();
+    ram_gen->ramFiller(filler_cells);
   }
 
   ram_gen->generate(mask_size, word_size, num_words, column_mux_ratio, read_ports,
