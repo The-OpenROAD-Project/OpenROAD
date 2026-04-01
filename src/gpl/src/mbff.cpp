@@ -2364,7 +2364,7 @@ void MBFF::ReadLibs()
 
       const float cur_area = (master->getHeight() / multiplier_)
                              * (master->getWidth() / multiplier_);
-      const float leakage = getLeakage(tmp_tray->getMaster());
+      const float cur_leakage = getLeakage(tmp_tray->getMaster());
 
       debugPrint(log_,
                  GPL,
@@ -2374,11 +2374,12 @@ void MBFF::ReadLibs()
                  master->getName(),
                  array_mask.to_string(),
                  cur_area,
-                 leakage);
+                 cur_leakage);
 
-      if (tray_area_[array_mask][idx] > cur_area) {
+      if (std::tie(tray_power_[array_mask][idx], tray_area_[array_mask][idx])
+          > std::tie(cur_leakage, cur_area)) {
         tray_area_[array_mask][idx] = cur_area;
-        tray_power_[array_mask][idx] = leakage;
+        tray_power_[array_mask][idx] = cur_leakage;
         best_master_[array_mask][idx] = master;
         pin_mappings_[array_mask][idx] = GetPinMapping(tmp_tray);
         tray_width_[array_mask][idx] = master->getWidth() / multiplier_;
