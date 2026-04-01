@@ -2374,7 +2374,9 @@ void MBFF::ReadLibs()
                  cur_area,
                  cur_leakage);
 
-      if (tray_power_[array_mask][idx] > cur_leakage) {
+      if (tray_power_[array_mask][idx] > cur_leakage
+          || (tray_power_[array_mask][idx] == cur_leakage
+              && tray_area_[array_mask][idx] > cur_area)) {
         tray_area_[array_mask][idx] = cur_area;
         tray_power_[array_mask][idx] = cur_leakage;
         best_master_[array_mask][idx] = master;
