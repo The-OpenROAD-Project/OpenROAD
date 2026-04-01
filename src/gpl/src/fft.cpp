@@ -127,33 +127,36 @@ void FFT::doFFT()
     for (int j = 0; j < binCntY_; j++) {
       float wy = wy_[j];
       float wy2 = wySquare_[j];
-      float density = binDensity_[i][j];
 
-      //////////// lutong
-      //  denom =
-      //  wx2 / 4.0 +
-      //  wy2 / 4.0 ;
-      // a_phi = a_den / denom ;
-      ////b_phi = 0 ; // -1.0 * b / denom ;
-      ////a_ex = 0 ; // b_phi * wx ;
-      // a_ex = a_phi * wx / 2.0 ;
-      ////a_ey = 0 ; // b_phi * wy ;
-      // a_ey = a_phi * wy / 2.0 ;
-      ///////////
-      float phi = density / (wx2 + wy2);
-      float electroX = phi * wx;
-      float electroY = phi * wy;
+      float density = binDensity_[i][j];
+      float phi = 0;
+      float electroX = 0, electroY = 0;
+
+      if (i == 0 && j == 0) {
+        // Removes the DC component
+        phi = electroX = electroY = 0.0f;
+      } else {
+        //////////// lutong
+        //  denom =
+        //  wx2 / 4.0 +
+        //  wy2 / 4.0 ;
+        // a_phi = a_den / denom ;
+        ////b_phi = 0 ; // -1.0 * b / denom ;
+        ////a_ex = 0 ; // b_phi * wx ;
+        // a_ex = a_phi * wx / 2.0 ;
+        ////a_ey = 0 ; // b_phi * wy ;
+        // a_ey = a_phi * wy / 2.0 ;
+        ///////////
+        phi = density / (wx2 + wy2);
+        electroX = phi * wx;
+        electroY = phi * wy;
+      }
 
       electroPhi_[i][j] = phi;
       electroFieldX_[i][j] = electroX;
       electroFieldY_[i][j] = electroY;
     }
   }
-
-  // Removes the DC component
-  electroPhi_[0][0] = 0.f;
-  electroFieldX_[0][0] = 0.f;
-  electroFieldY_[0][0] = 0.f;
 
   // Inverse DCT
   ddct2d(binCntX_,
