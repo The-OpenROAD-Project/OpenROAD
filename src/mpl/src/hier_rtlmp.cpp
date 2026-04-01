@@ -1508,6 +1508,11 @@ RectList HierRTLMP::findOffsetIntersections(const RectList& candidate_blockages,
   for (const odb::Rect& candidate_blockage : candidate_blockages) {
     odb::Rect intersection;
     candidate_blockage.intersection(outline, intersection);
+
+    if (intersection.isInverted() || intersection.area() == 0) {
+      continue;
+    }
+
     intersection.moveDelta(-outline.xMin(), -outline.yMin());
     intersections.push_back(intersection);
   }

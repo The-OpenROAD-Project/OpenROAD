@@ -996,7 +996,7 @@ void SACoreSoftMacro::printResults() const
           boundary_weight_,
           boundary_penalty_,
           norm_boundary_penalty_});
-  report({"Macro Blockage",
+  report({"Soft Blockage",
           soft_blockage_weight_,
           soft_blockage_penalty_,
           norm_soft_blockage_penalty_});
