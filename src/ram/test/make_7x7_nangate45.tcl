@@ -3,9 +3,8 @@
 #
 # Test: ram/make_7x7_nangate45
 # Verifies that generate_ram works correctly with the Nangate45 technology
-# node using an intentionally odd 7-word x 1-byte (56-bit) configuration
+# node using an intentionally odd 7-word x 1-byte (49-bit) configuration
 # to exercise the decoder logic on a non-power-of-2 word count.
-# Addresses Issue #9468.
 
 source "helpers.tcl"
 
@@ -27,8 +26,8 @@ generate_ram \
   -power_pin VDD \
   -ground_pin VSS \
   -routing_layer {metal1 0.07} \
-  -ver_layer {metal2 0.07 0.42} \
-  -hor_layer {metal3 0.07 0.42} \
+  -ver_layer {metal4 0.28 8} \
+  -hor_layer {metal5 0.28 8} \
   -filler_cells {FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8} \
   -write_behavioral_verilog $behavioral_file
 
