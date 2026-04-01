@@ -175,8 +175,6 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   master->addTerm(std::move(uTerm));
   odb::dbSigType termType = odb::dbSigType::SIGNAL;
   term->setType(termType);
-  odb::dbIoType termDirection = odb::dbIoType::INPUT;
-  term->setDirection(termDirection);
   auto pinIn = std::make_unique<frMPin>();
   pinIn->setId(0);
   std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();

@@ -359,8 +359,8 @@ void RepairDesign::repairDesign(
                            2,
                            "Fwd pass: drvr {} has slew {} vs. limit {}",
                            sdc_network_->pathName(drvr_pin),
-                           delayAsString(actual, this, 3),
-                           delayAsString(limit, this, 3));
+                           delayAsString(actual, 3, this),
+                           delayAsString(limit, 3, this));
               }
             }
           }
@@ -717,8 +717,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       if (la < lb) {
         return false;
       }
-      return sta::stringLess(network_->pathName(a.pin),
-                             network_->pathName(b.pin));
+      return network_->pathName(a.pin) < network_->pathName(b.pin);
     }
   };
 
@@ -873,18 +872,19 @@ void RepairDesign::checkDriverArcSlew(const sta::Scene* corner,
     const bool use_ideal_clk_slew
         = arc->set()->role()->genericRole() == sta::TimingRole::regClkToQ()
           && sta_->cmdMode()->clkNetwork()->isIdealClock(in_pin);
-    sta::Slew in_slew
+    float in_slew
         = use_ideal_clk_slew
               ? sta_->cmdMode()->clkNetwork()->idealClkSlew(in_pin, in_rf, max_)
-              : graph_->slew(graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap);
+              : float(graph_->slew(
+                    graph_->pinLoadVertex(in_pin), in_rf, dcalc_ap));
     const sta::Pvt* pvt = corner->sdc()->pvt(inst, max_);
     if (pvt == nullptr) {
       pvt = corner->sdc()->operatingConditions(max_);
     }
 
-    sta::ArcDelay arc_delay;
-    sta::Slew arc_slew;
-    model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
+    float arc_delay;
+    float arc_slew;
+    model->gateDelay(pvt, in_slew, load_cap, arc_delay, arc_slew);
 
     if (arc_slew > limit) {
       violation = max(arc_slew - limit, violation);
@@ -1074,7 +1074,8 @@ void RepairDesign::repairNet(sta::Net* net,
 
       // First repair driver slew -- addressed by resizing the driver,
       // and if that doesn't fix it fully, by inserting buffers
-      float slew1, max_slew1, slew_slack1;
+      sta::Slew slew1;
+      float max_slew1, slew_slack1;
       const sta::Scene* corner1;
       checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
       if (slew_slack1 < 0.0f) {
@@ -1084,8 +1085,8 @@ void RepairDesign::repairNet(sta::Net* net,
                    2,
                    "drvr slew violation pin={} slew={} max_slew={}",
                    network_->name(drvr_pin),
-                   delayAsString(slew1, this, 3),
-                   delayAsString(max_slew1, this, 3));
+                   delayAsString(slew1, 3, this),
+                   delayAsString(max_slew1, 3, this));
 
         slew_violation = true;
         if (repairDriverSlew(corner1, drvr_pin)) {
@@ -1119,8 +1120,8 @@ void RepairDesign::repairNet(sta::Net* net,
                      2,
                      "load slew violation pin={} load_slew={} max_slew={}",
                      network_->name(drvr_pin),
-                     delayAsString(slew1, this, 3),
-                     delayAsString(max_slew1, this, 3));
+                     delayAsString(slew1, 3, this),
+                     delayAsString(max_slew1, 3, this));
           slew_violation = true;
           repair_load_slew = true;
           // If repair_cap is true, corner is already set to correspond
@@ -1465,9 +1466,9 @@ void RepairDesign::repairNetWire(
              "ref_cap={} layer={} wire_res={}",
              "",
              level,
-             delayAsString(load_slew, this, 3),
+             delayAsString(load_slew, 3, this),
              units_->resistanceUnit()->asString(r_drvr, 3),
-             delayAsString(bnet->ref()->maxLoadSlew(), this, 3),
+             delayAsString(bnet->ref()->maxLoadSlew(), 3, this),
              r_wire,
              ref_cap,
              bnet->layer(),
@@ -1534,8 +1535,8 @@ void RepairDesign::repairNetWire(
                  "{:{}s}max load slew violation {} > {}",
                  "",
                  level,
-                 delayAsString(load_slew, this, 3),
-                 delayAsString(max_load_slew_margined, this, 3));
+                 delayAsString(load_slew, 3, this),
+                 delayAsString(max_load_slew_margined, 3, this));
       // We are inserting a buffer to cut this wire segment short.
       // The slew at the end of the wire segment is a quadratic polynomial
       // in terms of the wire segment's length (in Elmore approx.).
@@ -1637,7 +1638,7 @@ void RepairDesign::repairNetWire(
                  "",
                  level,
                  units_->distanceUnit()->asString(length1, 1),
-                 delayAsString(load_slew, this, 3));
+                 delayAsString(load_slew, 3, this));
     } else {
       break;
     }
@@ -1734,8 +1735,8 @@ void RepairDesign::repairNetJunc(
                "{:{}s}load slew violation {} > {}",
                "",
                level,
-               delayAsString(load_slew, this, 3),
-               delayAsString(max_load_slew_margined, this, 3));
+               delayAsString(load_slew, 3, this),
+               delayAsString(max_load_slew_margined, 3, this));
     double slew_left = r_drvr * cap_left * (*slew_rc_factor_);
     double slew_slack_left = maxSlewMargined(max_load_slew_left) - slew_left;
     double slew_right = r_drvr * cap_right * (*slew_rc_factor_);
@@ -1747,8 +1748,8 @@ void RepairDesign::repairNetJunc(
                "{:{}s} slew slack left={} right={}",
                "",
                level,
-               delayAsString(slew_slack_left, this, 3),
-               delayAsString(slew_slack_right, this, 3));
+               delayAsString(slew_slack_left, 3, this),
+               delayAsString(slew_slack_right, 3, this));
     // Isolate the branch with the smaller slack.
     if (slew_slack_left < slew_slack_right) {
       repeater_left = true;
@@ -2230,12 +2231,12 @@ sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
   sta::LibertyCellSeq swappable_cells
       = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
   if (!swappable_cells.empty()) {
-    sort(swappable_cells,
-         [this](const sta::LibertyCell* buffer1,
-                const sta::LibertyCell* buffer2) {
-           return resizer_->bufferDriveResistance(buffer1)
-                  > resizer_->bufferDriveResistance(buffer2);
-         });
+    std::ranges::sort(swappable_cells,
+                      [this](const sta::LibertyCell* buffer1,
+                             const sta::LibertyCell* buffer2) {
+                        return resizer_->bufferDriveResistance(buffer1)
+                               > resizer_->bufferDriveResistance(buffer2);
+                      });
     for (sta::LibertyCell* buffer : swappable_cells) {
       float slew = resizer_->bufferSlew(
           buffer, load_cap, resizer_->tgt_slew_corner_, resizer_->max_);

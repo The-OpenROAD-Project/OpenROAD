@@ -125,9 +125,7 @@ static void emitLeafNodes(odb::dbModule* module,
     const char* type_name = typeBucketName(inst_type);
     auto& bucket = buckets[type_name];
     bucket.count++;
-    auto* box = inst->getBBox();
-    bucket.area_dbu2 += static_cast<int64_t>(box->getDX())
-                        * static_cast<int64_t>(box->getDY());
+    bucket.area_dbu2 += inst->getBBox()->getBox().area();
     if (inst_type == sta::dbSta::InstType::BLOCK) {
       bucket.is_macro = true;
       bucket.macro_insts.push_back(inst);
@@ -190,10 +188,7 @@ static void emitLeafNodes(odb::dbModule* module,
         inst_node.node_kind = HierarchyNodeKind::INSTANCE;
         inst_node.macros = 1;
         inst_node.local_macros = 1;
-        auto* box = inst->getBBox();
-        inst_node.area
-            = static_cast<double>(static_cast<int64_t>(box->getDX())
-                                  * static_cast<int64_t>(box->getDY()));
+        inst_node.area = static_cast<double>(inst->getBBox()->getBox().area());
       }
     }
   }
@@ -223,9 +218,7 @@ static ModuleStats addModule(odb::dbModule* module,
     if (isPhysicalType(inst_type)) {
       continue;
     }
-    auto* box = inst->getBBox();
-    local.area_dbu2 += static_cast<int64_t>(box->getDX())
-                       * static_cast<int64_t>(box->getDY());
+    local.area_dbu2 += inst->getBBox()->getBox().area();
     if (inst->isBlock()) {
       local.macros++;
     } else {

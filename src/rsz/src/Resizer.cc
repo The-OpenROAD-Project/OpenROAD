@@ -42,6 +42,7 @@
 #include "SwapPinsMove.hh"
 #include "UnbufferMove.hh"
 #include "VTSwapMove.hh"
+#include "ViolatorCollector.hh"
 #include "boost/functional/hash.hpp"
 #include "boost/multi_array.hpp"
 #include "db_sta/dbSta.hh"
@@ -202,8 +203,8 @@ bool VertexLevelLess::operator()(const sta::Vertex* vertex1,
   return (level1 < level2)
          || (level1 == level2
              // Break ties for stable results.
-             && sta::stringLess(network_->pathName(vertex1->pin()),
-                                network_->pathName(vertex2->pin())));
+             && network_->pathName(vertex1->pin())
+                    < network_->pathName(vertex2->pin()));
 }
 
 sta::VertexSeq Resizer::orderedLoadPinVertices()
@@ -820,14 +821,14 @@ void Resizer::findBuffers()
 
   sta::LibertyCellSeq new_buffer_list;
   for (sta::LibertyCell* buffer : buffer_list) {
-    const char* footprint = buffer->footprint();
+    const std::string& footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
     if (master == nullptr) {
       continue;
     }
     auto vt_type = cellVTType(master);
     bool footprint_matches
-        = best_footprint.empty() || (footprint && best_footprint == footprint);
+        = best_footprint.empty() || (best_footprint == footprint);
     bool vt_matches = best_vt_index == -1 || vt_type.vt_index == best_vt_index;
 
     if (footprint_matches && vt_matches) {
@@ -1731,13 +1732,14 @@ void Resizer::reportBuffers(bool filtered)
       continue;
     }
 
+    const std::string& fp = buffer->footprint();
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
                     drive_res,
                     drive_res * c_in,
                     cell_leak.value_or(0.0f),
                     master->getSite()->getHeight(),
-                    (buffer->footprint() ? buffer->footprint() : "N/A"),
+                    fp.empty() ? "N/A" : fp,
                     cellVTType(master).vt_name);
   }
 
@@ -1775,13 +1777,14 @@ void Resizer::reportBuffers(bool filtered)
         continue;
       }
 
+      const std::string& fp2 = buffer->footprint();
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
                       drive_res,
                       drive_res * c_in,
                       cell_leak.value_or(0.0f),
                       master->getSite()->getHeight(),
-                      (buffer->footprint() ? buffer->footprint() : "N/A"),
+                      fp2.empty() ? "N/A" : fp2,
                       cellVTType(master).vt_name);
     }
   }
@@ -1825,7 +1828,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         lib_data_->cells_by_site[master->getSite()]++;
 
         // Track cell footprint distribution
-        if (buffer->footprint()) {
+        if (!buffer->footprint().empty()) {
           lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
 
@@ -1935,16 +1938,17 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
       }
 
       if (match_cell_footprint_) {
-        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
-                                                      equiv_cell->footprint());
+        const bool footprints_match
+            = source_cell->footprint() == equiv_cell->footprint();
         if (!footprints_match) {
           continue;
         }
       }
 
-      if (source_cell->userFunctionClass()) {
-        const bool user_function_classes_match = sta::stringEqIf(
-            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
+      if (!source_cell->userFunctionClass().empty()) {
+        const bool user_function_classes_match
+            = source_cell->userFunctionClass()
+              == equiv_cell->userFunctionClass();
         if (!user_function_classes_match) {
           continue;
         }
@@ -2037,13 +2041,11 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       continue;
     }
 
-    if (!sta::stringEqIf(source_cell->footprint(), equiv_cell->footprint())) {
+    if (source_cell->footprint() != equiv_cell->footprint()) {
       continue;
     }
 
-    if (source_cell->userFunctionClass()
-        && !sta::stringEqIf(source_cell->userFunctionClass(),
-                            equiv_cell->userFunctionClass())) {
+    if (source_cell->userFunctionClass() != equiv_cell->userFunctionClass()) {
       continue;
     }
 
@@ -2423,7 +2425,7 @@ sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
                cell->name(),
                units_->capacitanceUnit()->asString(load_cap),
                best_dist,
-               delayAsString(best_delay, sta_, 3));
+               delayAsString(best_delay, 3, sta_));
     for (sta::LibertyCell* target_cell : swappable_cells) {
       float target_load = (*target_load_map_)[target_cell];
       float delay = 0.0;
@@ -2438,7 +2440,7 @@ sta::LibertyCell* Resizer::findTargetCell(sta::LibertyCell* cell,
                  " {} dist={:.2e} delay={}",
                  target_cell->name(),
                  dist,
-                 delayAsString(delay, sta_, 3));
+                 delayAsString(delay, 3, sta_));
       if (is_buf_inv
               // Library may have "delay" buffers/inverters that are
               // functionally buffers/inverters but have additional
@@ -2466,7 +2468,7 @@ bool Resizer::replaceCell(sta::Instance* inst,
                           const sta::LibertyCell* replacement,
                           const bool journal)
 {
-  const char* replacement_name = replacement->name();
+  const char* replacement_name = replacement->name().c_str();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
   if (replacement_master) {
@@ -3100,6 +3102,8 @@ float Resizer::findTargetLoad(sta::LibertyCell* cell,
   return 0.0;
 }
 
+// This SHOULD return float. It would need to call LumpedCapDelayCalc::gateDelay
+// instead of accessing the models directly to get POCV parameters.
 // objective function
 sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
                                 sta::TimingArc* arc,
@@ -3110,9 +3114,8 @@ sta::Slew Resizer::gateSlewDiff(sta::LibertyCell* cell,
 
 {
   const sta::Pvt* pvt = sta_->cmdMode()->sdc()->operatingConditions(max_);
-  sta::ArcDelay arc_delay;
-  sta::Slew arc_slew;
-  model->gateDelay(pvt, in_slew, load_cap, false, arc_delay, arc_slew);
+  float arc_delay, arc_slew;
+  model->gateDelay(pvt, in_slew, load_cap, arc_delay, arc_slew);
   return arc_slew - out_slew;
 }
 
@@ -3133,7 +3136,7 @@ void Resizer::findBufferTargetSlews()
     int lib_ap_index = corner->libertyIndex(max_);
     const sta::Pvt* pvt = sta_->cmdMode()->sdc()->operatingConditions(max_);
     // Average slews across buffers at corner.
-    sta::Slew slews[sta::RiseFall::index_count]{0.0};
+    float slews[sta::RiseFall::index_count]{0.0};
     int counts[sta::RiseFall::index_count]{0};
     for (sta::LibertyCell* buffer : buffer_cells_) {
       sta::LibertyCell* corner_buffer = buffer->sceneCell(lib_ap_index);
@@ -3158,14 +3161,14 @@ void Resizer::findBufferTargetSlews()
              1,
              "target slew corner {} = {}/{}",
              tgt_slew_corner_->name(),
-             delayAsString(tgt_slews_[sta::RiseFall::riseIndex()], sta_, 3),
-             delayAsString(tgt_slews_[sta::RiseFall::fallIndex()], sta_, 3));
+             delayAsString(tgt_slews_[sta::RiseFall::riseIndex()], 3, sta_),
+             delayAsString(tgt_slews_[sta::RiseFall::fallIndex()], 3, sta_));
 }
 
 void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
                                     const sta::Pvt* pvt,
                                     // Return values.
-                                    sta::Slew slews[],
+                                    float slews[],
                                     int counts[])
 {
   sta::LibertyPort *input, *output;
@@ -3179,10 +3182,9 @@ void Resizer::findBufferTargetSlews(sta::LibertyCell* buffer,
         const sta::RiseFall* out_rf = arc->toEdge()->asRiseFall();
         float in_cap = input->capacitance(in_rf, max_);
         float load_cap = in_cap * tgt_slew_load_cap_factor;
-        sta::ArcDelay arc_delay;
-        sta::Slew arc_slew;
-        model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
-        model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+        float arc_delay, arc_slew;
+        model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
+        model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
         slews[out_rf->index()] += arc_slew;
         counts[out_rf->index()]++;
       }
@@ -3260,7 +3262,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
     std::vector<const sta::Pin*> load_pins(load_pins_set.begin(),
                                            load_pins_set.end());
     std::ranges::sort(load_pins, [this](const sta::Pin* a, const sta::Pin* b) {
-      return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+      return db_network_->pathName(a) < db_network_->pathName(b);
     });
 
     // Create new TIE cell instances for each load pin
@@ -3268,9 +3270,9 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       sta::Instance* load_inst = network_->instance(load_pin);
 
       // Create a new tie cell instance
-      const char* tie_inst_name = network_->name(load_inst);
+      std::string tie_inst_name = network_->name(load_inst);
       createNewTieCellForLoadPin(load_pin,
-                                 tie_inst_name,
+                                 tie_inst_name.c_str(),
                                  db_network_->parent(load_inst),
                                  tie_port,
                                  separation_dbu);
@@ -3496,7 +3498,7 @@ void Resizer::findCellInstances(sta::LibertyCell* cell,
   // - The sort will be removed when hierarhical flow is enabled by default.
   std::ranges::sort(
       insts, [this](const sta::Instance* a, const sta::Instance* b) {
-        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+        return db_network_->pathName(a) < db_network_->pathName(b);
       });
 }
 
@@ -3562,7 +3564,7 @@ void Resizer::reportLongWires(int count, int digits)
                     sdc_network_->pathName(drvr_pin),
                     units_->distanceUnit()->asString(wire_length, 1),
                     units_->distanceUnit()->asString(steiner_length, 1),
-                    delayAsString(delay, sta_, digits));
+                    delayAsString(delay, digits, sta_));
     if (i == count) {
       break;
     }
@@ -4150,8 +4152,11 @@ void Resizer::cellWireDelay(sta::LibertyPort* drvr_port,
           sta::ArcDelay gate_delay = dcalc_result.gateDelay();
           // Only one load pin, so load_idx is 0.
           sta::ArcDelay wire_delay = dcalc_result.wireDelay(0);
-          sta::ArcDelay load_slew = dcalc_result.loadSlew(0);
-          delay = max(delay, gate_delay + wire_delay);
+          sta::Slew load_slew = dcalc_result.loadSlew(0);
+          sta::Delay gate_wire = delaySum(gate_delay, wire_delay, sta_);
+          if (delayGreater(gate_wire, delay, sta_)) {
+            delay = gate_wire;
+          }
           slew = max(slew, load_slew);
         }
       }
@@ -4334,7 +4339,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
                           ? network_->net(network_->term(out_pin))
                           : network_->net(out_pin);
   if (out_net) {
-    const char* inv_name = network_->name(inv);
+    std::string inv_name = network_->name(inv);
     sta::Instance* top_inst = network_->topInstance();
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
@@ -4343,7 +4348,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
         odb::Point clone_loc = db_network_->location(load_pin);
         sta::Instance* clone
             = makeInstance(inv_cell,
-                           inv_name,
+                           inv_name.c_str(),
                            top_inst,
                            clone_loc,
                            odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
@@ -4397,6 +4402,7 @@ bool Resizer::repairSetup(double setup_margin,
                           bool match_cell_footprint,
                           bool verbose,
                           const std::vector<MoveType>& sequence,
+                          const char* phases,
                           bool skip_pin_swap,
                           bool skip_gate_cloning,
                           bool skip_size_down,
@@ -4422,6 +4428,7 @@ bool Resizer::repairSetup(double setup_margin,
                                     max_repairs_per_pass,
                                     verbose,
                                     sequence,
+                                    phases,
                                     skip_pin_swap,
                                     skip_gate_cloning,
                                     skip_size_down,
@@ -4821,7 +4828,8 @@ sta::Instance* Resizer::insertBufferAfterDriver(
     const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -4915,7 +4923,8 @@ sta::Instance* Resizer::insertBufferBeforeLoad(
     const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -5032,7 +5041,8 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
     bool loads_on_diff_nets)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -5536,9 +5546,12 @@ std::vector<rsz::MoveType> Resizer::parseMoveSequence(
     const std::string& sequence)
 {
   std::vector<rsz::MoveType> result;
-  std::stringstream ss(sequence);
+  // Replace commas with spaces to support both separators
+  std::string normalized(sequence);
+  std::ranges::replace(normalized, ',', ' ');
+  std::stringstream ss(normalized);
   std::string item;
-  while (std::getline(ss, item, ',')) {
+  while (ss >> item) {
     result.push_back(parseMove(item));
   }
   return result;
@@ -5658,8 +5671,8 @@ BufferUse Resizer::getBufferUse(sta::LibertyCell* buffer)
       return BufferUse::CLOCK;
     }
   } else if (!clock_buffer_footprint_.empty()) {
-    const char* footprint = buffer->footprint();
-    if (footprint && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+    const std::string& footprint = buffer->footprint();
+    if (containsIgnoreCase(footprint, clock_buffer_footprint_)) {
       return BufferUse::CLOCK;
     }
   } else {
@@ -5698,7 +5711,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     // Filter by library name if provided.
-    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+    if (lib_name != nullptr && strcmp(lib->name().c_str(), lib_name) != 0) {
       continue;
     }
 
@@ -5715,7 +5728,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
       }
 
       // Priority 2: Check for any input pin with LEF signal type set to CLOCK.
-      odb::dbMaster* master = db_->findMaster(buffer->name());
+      odb::dbMaster* master = db_->findMaster(buffer->name().c_str());
       for (odb::dbMTerm* mterm : master->getMTerms()) {
         if (mterm->getIoType() == odb::dbIoType::INPUT
             && mterm->getSigType() == odb::dbSigType::CLOCK) {
@@ -5730,9 +5743,8 @@ void Resizer::inferClockBufferList(const char* lib_name,
           user_clock_buffers.emplace_back(buffer);
         }
       } else if (use_user_footprint) {
-        const char* footprint = buffer->footprint();
-        if (footprint
-            && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+        const std::string& footprint = buffer->footprint();
+        if (containsIgnoreCase(footprint, clock_buffer_footprint_)) {
           user_clock_buffers.emplace_back(buffer);
         }
       }
@@ -5765,7 +5777,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
   } else if (!lef_use_clock_buffers.empty()) {
     selected_ptr = &lef_use_clock_buffers;
     for (sta::LibertyCell* buffer : *selected_ptr) {
-      odb::dbMaster* master = db_->findMaster(buffer->name());
+      odb::dbMaster* master = db_->findMaster(buffer->name().c_str());
       for (odb::dbMTerm* mterm : master->getMTerms()) {
         if (mterm->getIoType() == odb::dbIoType::INPUT
             && mterm->getSigType() == odb::dbSigType::CLOCK) {
@@ -5866,7 +5878,7 @@ sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
                                          float load,
                                          const sta::Scene* scene)
 {
-  sta::Slew max_slew = 0;
+  float max_slew = 0;
 
   sta::Instance* inst = network_->instance(drvr_pin);
   const sta::Pvt* pvt = scene->sdc()->pvt(inst, max_);
@@ -5890,9 +5902,8 @@ sta::Slew Resizer::findDriverSlewForLoad(sta::Pin* drvr_pin,
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
         if (model) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, in_slew, load, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, in_slew, load, arc_delay, arc_slew);
           max_slew = std::max(max_slew, arc_slew);
         }
       }

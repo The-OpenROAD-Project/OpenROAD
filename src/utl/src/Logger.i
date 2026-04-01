@@ -19,7 +19,7 @@ using ord::getLogger;
 %}
 
 %typemap(in) utl::ToolId {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }

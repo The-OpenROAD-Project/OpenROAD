@@ -79,7 +79,6 @@
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
@@ -237,8 +236,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                                   estimate_parasitics_);
   tapcell_ = new tap::Tapcell(db_, logger_);
   partitionMgr_ = new par::PartitionMgr(db_, getDbNetwork(), sta_, logger_);
-  macro_placer_
-      = new mpl::MacroPlacer(getDbNetwork(), db_, sta_, logger_, partitionMgr_);
+  macro_placer_ = new mpl::MacroPlacer(db_, sta_, logger_, partitionMgr_);
   extractor_ = new rcx::Ext(db_, logger_, getVersion());
   distributer_ = new dst::Distributed(logger_);
   detailed_router_ = new drt::TritonRoute(

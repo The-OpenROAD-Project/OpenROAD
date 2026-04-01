@@ -855,7 +855,8 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 
 // db functions
 
-void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
+void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
+                                 std::set<odb::Point>& occupiedPositions)
 {
   odb::dbITerm* driver = clkNet->getFirstOutput();
   std::vector<int> xs;
@@ -888,7 +889,7 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
       if (libertyCell->isInverter() || libertyCell->isBuffer()) {
         continue;
       }
-      cloneClockGaters(outputNet);
+      cloneClockGaters(outputNet, occupiedPositions);
     }
   }
   if (!driver) {
@@ -906,13 +907,14 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet)
   point2pin[{drvrX, drvrY}].push_back(driver);
   stt::Tree ftree
       = options_->getSttBuilder()->makeSteinerTree(clkNet, xs, ys, 0);
-  findLongEdges(ftree, {drvrX, drvrY}, point2pin);
+  findLongEdges(ftree, {drvrX, drvrY}, point2pin, occupiedPositions);
 }
 
 void TritonCTS::findLongEdges(
     stt::Tree& clkSteiner,
     odb::Point driverPt,
-    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin)
+    std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin,
+    std::set<odb::Point>& occupiedPositions)
 {
   const int threshold = options_->getMaxWl();
   debugPrint(
@@ -1031,7 +1033,7 @@ void TritonCTS::findLongEdges(
              validClusters);
 
   // Insert original ICG to its closest cluster, create clones to drive the
-  // other clusters
+  // other clusters.
   int nClones = 0;
   // hierarchy fix, make the clone net in the right scope
   sta::Pin* driver = nullptr;
@@ -1162,12 +1164,31 @@ void TritonCTS::findLongEdges(
       }
     }
 
-    // Move ICG (clone or original) to the center of its sinks
-    clone->setLocation(sinksBbox.xCenter(), sinksBbox.yCenter());
-    clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    // Resolve location collision and finalize placement.
+    resolveLocationCollision(
+        clone, {sinksBbox.xCenter(), sinksBbox.yCenter()}, occupiedPositions);
   }
   debugPrint(
       logger_, CTS, "clock gate cloning", 1, "Created {} clones", nClones);
+}
+
+void TritonCTS::resolveLocationCollision(
+    odb::dbInst* clone,
+    odb::Point location,
+    std::set<odb::Point>& occupiedPositions)
+{
+  // Ensure position is unique among both other clones and pre-existing
+  // instances to prevent mapLocationToSink_ key collision.
+  odb::Point cloneLoc = location;
+  // Shift by 1 DBU to guarantee unique coordinates on collision case.
+  // Site-legal placement is handled by downstream DPL.
+  int shift = 1;
+  while (occupiedPositions.contains(cloneLoc)) {
+    cloneLoc.setX(cloneLoc.getX() + shift);
+  }
+  occupiedPositions.insert(cloneLoc);
+  clone->setLocation(cloneLoc.getX(), cloneLoc.getY());
+  clone->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
 
 void TritonCTS::populateTritonCTS()
@@ -1207,13 +1228,23 @@ void TritonCTS::populateTritonCTS()
       allClkNets.insert(clkNets.begin(), clkNets.end());
     }
   }
+  // Seed with all existing instance positions to prevent clones from
+  // landing on a pre-existing cell and causing mapLocationToSink_
+  // key collision in HTreeBuilder.
+  std::set<odb::Point> occupiedPositions;
+  for (odb::dbInst* inst : block_->getInsts()) {
+    int x, y;
+    inst->getLocation(x, y);
+    occupiedPositions.emplace(x, y);
+  }
+
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
     std::set<odb::dbNet*> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
-        cloneClockGaters(net);
+        cloneClockGaters(net, occupiedPositions);
         if (clkName.empty()) {
           logger_->info(CTS, 95, "Net \"{}\" found.", net->getName());
         } else {
@@ -2203,7 +2234,10 @@ double TritonCTS::computeInsertionDelay(const std::string& name,
       if (rise != 0 || fall != 0) {
         // use average of max rise and max fall
         // TODO: do we need to look at min insertion delays?
-        double delayPerSec = (rise + fall) / 2.0;
+        double delayPerSec = (rise + fall);
+        if (rise != 0 && fall != 0) {
+          delayPerSec /= 2.0;
+        }
         // convert delay to length because HTree uses lengths
         sta::Scene* corner = openSta_->cmdScene();
         double capPerMicron

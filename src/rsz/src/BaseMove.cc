@@ -21,7 +21,6 @@
 #include "odb/geom.h"
 #include "rsz/Resizer.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/ContainerHelpers.hh"
 #include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Fuzzy.hh"
@@ -31,6 +30,7 @@
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/TimingArc.hh"
@@ -42,8 +42,6 @@ namespace rsz {
 using std::max;
 using std::string;
 using std::vector;
-
-using odb::dbMaster;
 
 using odb::dbMaster;
 using odb::Point;
@@ -65,18 +63,12 @@ BaseMove::BaseMove(Resizer* resizer)
   sta_ = resizer_->sta_;
   opendp_ = resizer_->opendp_;
 
+  all_inst_set_ = sta::InstanceSet(db_network_);
+  accepted_inst_set_ = sta::InstanceSet(db_network_);
+  pending_inst_set_ = sta::InstanceSet(db_network_);
   accepted_count_ = 0;
   rejected_count_ = 0;
-  all_inst_set_ = sta::InstanceSet(db_network_);
   pending_count_ = 0;
-  pending_inst_set_ = sta::InstanceSet(db_network_);
-}
-
-void BaseMove::commitMoves()
-{
-  accepted_count_ += pending_count_;
-  pending_count_ = 0;
-  pending_inst_set_.clear();
 }
 
 void BaseMove::init()
@@ -84,8 +76,30 @@ void BaseMove::init()
   pending_count_ = 0;
   rejected_count_ = 0;
   accepted_count_ = 0;
-  pending_inst_set_.clear();
   all_inst_set_.clear();
+  accepted_inst_set_.clear();
+  pending_inst_set_.clear();
+}
+
+void BaseMove::countMove(sta::Instance* inst, int count)
+{
+  // Add it as a candidate move, not accepted yet
+  // This count is for the cloned gates where we only count the clone
+  // but we also add the main gate to the pending set.
+  // This count is also used when we add more than 1 buffer during rebuffer.
+  // Default is to add 1 to the pending count.
+  pending_count_ += count;
+  pending_inst_set_.insert(inst);
+  // Add it to all moves, even though it wasn't accepted.
+  // This is the behavior to match the current resizer.
+  all_inst_set_.insert(inst);
+}
+
+void BaseMove::commitMoves()
+{
+  accepted_count_ += pending_count_;
+  pending_count_ = 0;
+  accepted_inst_set_.merge(pending_inst_set_);
 }
 
 void BaseMove::undoMoves()
@@ -123,21 +137,6 @@ int BaseMove::numRejectedMoves() const
 int BaseMove::numMoves() const
 {
   return accepted_count_ + pending_count_;
-}
-
-void BaseMove::addMove(sta::Instance* inst, int count)
-{
-  // Add it as a candidate move, not accepted yet
-  // This count is for the cloned gates where we only count the clone
-  // but we also add the main gate to the pending set.
-  // This count is also used when we add more than 1 buffer during rebuffer.
-  // Default is to add 1 to the pending count.
-  pending_count_ += count;
-  // Add it to all moves, even though it wasn't accepted.
-  // This is the behavior to match the current resizer.
-  all_inst_set_.insert(inst);
-  // Also add it to the pending moves
-  pending_inst_set_.insert(inst);
 }
 
 double BaseMove::area(sta::Cell* cell)
@@ -290,9 +289,9 @@ sta::Instance* BaseMove::makeBuffer(sta::LibertyCell* cell,
 //
 bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
 {
-  const sta::Scene* scene = params.corner;
+  const sta::Scene* scene = params.scene;
   if (scene == nullptr) {
-    // can't do any estimation without a corner
+    // can't do any estimation without a scene
     return false;
   }
 
@@ -305,7 +304,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
   float old_cap, new_cap;
   if (!resizer_->computeNewDelaysSlews(params.prev_driver_pin,
                                        params.driver,
-                                       params.corner,
+                                       params.scene,
                                        old_delay,
                                        new_delay,
                                        old_drvr_slew,
@@ -327,13 +326,14 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
     return false;
   }
 
+  const sta::RiseFall* rf = params.driver_path->transition(sta_);
   const sta::RiseFall* prev_driver_rf
       = params.prev_driver_path->transition(sta_);
   float delay_degrad
       = new_delay[prev_driver_rf->index()] - old_delay[prev_driver_rf->index()];
   float delay_imp = resizer_->bufferDelay(
       params.driver_cell,
-      params.driver_path->transition(sta_),
+      rf,
       dcalc->loadCap(params.driver_pin, scene, sta::MinMax::max()),
       scene,
       sta::MinMax::max());
@@ -357,7 +357,7 @@ bool BaseMove::estimatedSlackOK(const SlackEstimatorParams& params)
           params.prev_driver_pin,
           params.driver,
           new_drvr_slew[prev_driver_rf->index()],
-          params.corner,
+          params.scene,
           load_pin_slew)) {
     return false;
   }
@@ -565,28 +565,29 @@ sta::LibertyCell* BaseMove::upsizeCell(sta::LibertyPort* in_port,
   sta::LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
-    const char* in_port_name = in_port->name();
-    const char* drvr_port_name = drvr_port->name();
-    sort(swappable_cells,
-         [=, this](const sta::LibertyCell* cell1,
-                   const sta::LibertyCell* cell2) {
-           const sta::LibertyPort* port1
-               = static_cast<const sta::LibertyPort*>(
-                     cell1->findLibertyPort(drvr_port_name))
-                     ->scenePort(lib_ap);
-           const sta::LibertyPort* port2
-               = static_cast<const sta::LibertyPort*>(
-                     cell2->findLibertyPort(drvr_port_name))
-                     ->scenePort(lib_ap);
-           const float drive1 = port1->driveResistance();
-           const float drive2 = port2->driveResistance();
-           const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
-           const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-           const float capacitance1 = port1->capacitance();
-           const float capacitance2 = port2->capacitance();
-           return std::tie(drive2, intrinsic1, capacitance1)
-                  < std::tie(drive1, intrinsic2, capacitance2);
-         });
+    const std::string& in_port_name = in_port->name();
+    const std::string& drvr_port_name = drvr_port->name();
+    std::ranges::sort(
+        swappable_cells,
+        [=, this](const sta::LibertyCell* cell1,
+                  const sta::LibertyCell* cell2) {
+          const sta::LibertyPort* port1
+              = static_cast<const sta::LibertyPort*>(
+                    cell1->findLibertyPort(drvr_port_name))
+                    ->scenePort(lib_ap);
+          const sta::LibertyPort* port2
+              = static_cast<const sta::LibertyPort*>(
+                    cell2->findLibertyPort(drvr_port_name))
+                    ->scenePort(lib_ap);
+          const float drive1 = port1->driveResistance();
+          const float drive2 = port2->driveResistance();
+          const sta::ArcDelay intrinsic1 = port1->intrinsicDelay(this);
+          const sta::ArcDelay intrinsic2 = port2->intrinsicDelay(this);
+          const float capacitance1 = port1->capacitance();
+          const float capacitance2 = port2->capacitance();
+          return std::tie(drive2, intrinsic1, capacitance1)
+                 < std::tie(drive1, intrinsic2, capacitance2);
+        });
     const float drive = static_cast<const sta::LibertyPort*>(drvr_port)
                             ->scenePort(lib_ap)
                             ->driveResistance();
@@ -619,7 +620,7 @@ sta::LibertyCell* BaseMove::upsizeCell(sta::LibertyPort* in_port,
 bool BaseMove::replaceCell(sta::Instance* inst,
                            const sta::LibertyCell* replacement)
 {
-  const char* replacement_name = replacement->name();
+  const char* replacement_name = replacement->name().c_str();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
   if (!replacement_master) {
@@ -721,7 +722,7 @@ float BaseMove::getInputPinCapacitance(sta::Pin* pin,
 bool BaseMove::checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta)
 {
   float cap, max_cap, cap_slack;
-  const sta::Scene* corner;
+  const sta::Scene* scene;
   const sta::RiseFall* tr;
   sta_->checkCapacitance(drvr_pin,
                          sta_->scenes(),
@@ -731,9 +732,9 @@ bool BaseMove::checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta)
                          max_cap,
                          cap_slack,
                          tr,
-                         corner);
+                         scene);
 
-  if (max_cap > 0.0 && corner) {
+  if (max_cap > 0.0 && scene) {
     float new_cap = cap + cap_delta;
     // If it is already violating, accept only if violation is no worse
     if (cap_slack < 0.0) {
@@ -793,7 +794,7 @@ sta::ArcDelay BaseMove::getWorstIntrinsicDelay(
   for (const sta::LibertyPort* output_port : output_ports) {
     if (output_port->direction()->isOutput()) {
       worst_intrinsic_delay
-          = max(worst_intrinsic_delay, output_port->intrinsicDelay(nullptr));
+          = max(worst_intrinsic_delay, output_port->intrinsicDelay(sta_));
     }
   }
   return worst_intrinsic_delay;
@@ -951,6 +952,4 @@ sta::LibertyCellSeq BaseMove::getSwappableCells(sta::LibertyCell* base)
   return resizer_->getSwappableCells(base);
 }
 
-////////////////////////////////////////////////////////////////
-// namespace rsz
 }  // namespace rsz
