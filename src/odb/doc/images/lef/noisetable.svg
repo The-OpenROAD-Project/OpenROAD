@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="733" height="53"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 33 1 29 1 37"/>
+   <polygon points="17 33 9 29 9 37"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_NOISETABLE"
+      xlink:title="K_NOISETABLE">
+      <rect x="31" y="19" width="114" height="32"/>
+      <rect x="29" y="17" width="114" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="37">K_NOISETABLE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="165" y="19" width="92" height="32"/>
+      <rect x="163" y="17" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="173" y="37">int_number</text>
+   </a>
+   <rect x="277" y="19" width="24" height="32" rx="10"/>
+   <rect x="275"
+         y="17"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="285" y="37">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#noise_table_entry"
+      xlink:title="noise_table_entry">
+      <rect x="341" y="19" width="136" height="32"/>
+      <rect x="339" y="17" width="136" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="349" y="37">noise_table_entry</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#end_noisetable"
+      xlink:title="end_noisetable">
+      <rect x="517" y="19" width="118" height="32"/>
+      <rect x="515" y="17" width="118" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="525" y="37">end_noisetable</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#dtrm"
+      xlink:title="dtrm">
+      <rect x="655" y="19" width="50" height="32"/>
+      <rect x="653" y="17" width="50" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="663" y="37">dtrm</text>
+   </a>
+   <path class="line"
+         d="m17 33 h2 m0 0 h10 m114 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m24 0 h10 m20 0 h10 m136 0 h10 m-176 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -12 q0 -10 10 -10 m156 32 l20 0 m-20 0 q10 0 10 -10 l0 -12 q0 -10 -10 -10 m-156 0 h10 m0 0 h146 m20 32 h10 m118 0 h10 m0 0 h10 m50 0 h10 m3 0 h-3"/>
+   <polygon points="723 33 731 29 731 37"/>
+   <polygon points="723 33 715 29 715 37"/>
+</svg>

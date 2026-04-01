@@ -114,7 +114,7 @@ bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "272cc079f25521d19fe25f80e176e29adb40d920"
+BAZEL_ORFS_COMMIT = "f5e20547f93729a4f67929902aaa3386d933bad0"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -189,12 +189,11 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dep
 # To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
     # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-745-g8d0f94b28",
+    image = "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "6bb7cdaa64b8e845f5d6c072330c685ae5f9d065ed8927fade5f0afd1e122eb0",
+    sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
 )
-use_repo(orfs, "com_github_nixos_patchelf_download")
 use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.17"

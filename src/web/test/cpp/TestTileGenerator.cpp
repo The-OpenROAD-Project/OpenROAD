@@ -420,5 +420,128 @@ TEST_F(TileGeneratorTest, SpecialNetViaEnclosureDrawnOnMetalLayer)
       << "Via enclosure should be hidden when special_nets is off";
 }
 
+//------------------------------------------------------------------------------
+// Row and site rendering tests
+//------------------------------------------------------------------------------
+
+// Helper to create a row with the Nangate45 site.
+class RowRenderingTest : public TileGeneratorTest
+{
+ protected:
+  void SetUp() override
+  {
+    TileGeneratorTest::SetUp();
+    site_ = lib_->findSite("FreePDK45_38x28_10R_NP_162NW_34O");
+    ASSERT_NE(site_, nullptr);
+    // Site is 380 x 2800 DBU (0.19 x 1.4 um at 2000 DBU/um).
+    // Create a row with 100 sites starting at origin.
+    row_ = odb::dbRow::create(block_,
+                              "row0",
+                              site_,
+                              0,
+                              0,
+                              odb::dbOrientType::R0,
+                              odb::dbRowDir::HORIZONTAL,
+                              100,
+                              site_->getWidth());
+    ASSERT_NE(row_, nullptr);
+  }
+
+  odb::dbSite* site_ = nullptr;
+  odb::dbRow* row_ = nullptr;
+};
+
+TEST_F(RowRenderingTest, RowOutlineDrawnWhenVisible)
+{
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.rows = true;
+  vis.stdcells = false;
+  // Enable site visibility via raw JSON.
+  vis.parseFromJson(
+      "{\"rows\":1,\"stdcells\":0,"
+      "\"site_FreePDK45_38x28_10R_NP_162NW_34O\":1}");
+
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels))
+      << "Row outline should be drawn when rows are visible";
+}
+
+TEST_F(RowRenderingTest, RowHiddenWhenSiteNotVisible)
+{
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.rows = true;
+  vis.stdcells = false;
+  // Rows enabled but this specific site is not visible.
+  vis.parseFromJson("{\"rows\":1,\"stdcells\":0}");
+
+  auto png = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w = 0, h = 0;
+  auto pixels = decodePng(png, w, h);
+  EXPECT_FALSE(hasNonTransparentPixel(pixels))
+      << "Row should be hidden when its site is not in the visibility list";
+}
+
+TEST_F(RowRenderingTest, IndividualSitesDrawnWhenZoomedIn)
+{
+  makeTileGen();
+
+  TileVisibility vis;
+  vis.parseFromJson(
+      "{\"rows\":1,\"stdcells\":0,"
+      "\"site_FreePDK45_38x28_10R_NP_162NW_34O\":1}");
+
+  // At zoom 0, tile covers the full design. Site is 380 DBU wide.
+  // site_px = 380 * (256 / ~104000) ≈ 0.9 → no individual sites.
+  auto png_z0 = tile_gen_->generateTile("_instances", 0, 0, 0, vis);
+  unsigned w0 = 0, h0 = 0;
+  auto pixels_z0 = decodePng(png_z0, w0, h0);
+  EXPECT_TRUE(hasNonTransparentPixel(pixels_z0))
+      << "Row outline should be visible at zoom 0";
+
+  // At a high zoom, site_px should exceed the 5px threshold and
+  // individual sites should be drawn.  Use renderTileBuffer to scan
+  // for the tile that contains our row at y=[0, 2800].
+  const int zoom = 8;  // 256 tiles, ~400 DBU per tile → site_px ≈ 240
+  const int num_tiles = 1 << zoom;
+  const odb::Rect bounds = tile_gen_->getBounds();
+  const double tile_dbu = static_cast<double>(bounds.maxDXDY()) / num_tiles;
+
+  // Find the tile column/row containing the row origin (0,0).
+  const int tx = static_cast<int>((0 - bounds.xMin()) / tile_dbu);
+  // Leaflet y is flipped: dbu_y_index = num_tiles - 1 - leaflet_y.
+  const int dbu_y_idx = static_cast<int>((0 - bounds.yMin()) / tile_dbu);
+  const int ly = num_tiles - 1 - dbu_y_idx;
+
+  ASSERT_GE(tx, 0);
+  ASSERT_LT(tx, num_tiles);
+  ASSERT_GE(ly, 0);
+  ASSERT_LT(ly, num_tiles);
+
+  auto png_hi = tile_gen_->generateTile("_instances", zoom, tx, ly, vis);
+  unsigned wh = 0, hh = 0;
+  auto pixels_hi = decodePng(png_hi, wh, hh);
+
+  int count_hi = 0;
+  for (size_t i = 3; i < pixels_hi.size(); i += 4) {
+    if (pixels_hi[i] > 0) {
+      ++count_hi;
+    }
+  }
+  EXPECT_GT(count_hi, 0)
+      << "Zoomed-in tile at row origin should have site outlines";
+}
+
+TEST_F(RowRenderingTest, RowsDefaultOff)
+{
+  TileVisibility vis;
+  EXPECT_FALSE(vis.rows);
+}
+
 }  // namespace
 }  // namespace web

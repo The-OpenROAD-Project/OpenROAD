@@ -817,27 +817,17 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "QYKsLwaOfoRUMu1KyupRbCxEnHtHuIAr4YE3u1WzHko=",
-        "usagesDigest": "agL7N8opPCRTHImq1zSX81Ebp4kjbaKk1+zUPqjh/fk=",
+        "bzlTransitiveDigest": "1T9b1AS979F7qaxyw/OjMC5ZMrWRH/7sYB76ydIETxQ=",
+        "usagesDigest": "XBFQgDjQPrBrrmKJmJEV3y0UmOjGg925SInSvHhAgIA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
-          "com_github_nixos_patchelf_download": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "build_file_content": "\n    export_files(\n      [\"bin/patchelf\"],\n      visibility = [\"//visibility:public\"],\n    )\n    ",
-              "sha256": "ce84f2447fb7a8679e58bc54a20dc2b01b37b5802e12c57eece772a6f14bf3f0",
-              "urls": [
-                "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz"
-              ]
-            }
-          },
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-745-g8d0f94b28",
-              "sha256": "6bb7cdaa64b8e845f5d6c072330c685ae5f9d065ed8927fade5f0afd1e122eb0",
+              "image": "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
+              "sha256": "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -855,12 +845,20 @@
             "repoRuleId": "@@bazel-orfs+//:config.bzl%global_config",
             "attributes": {
               "klayout": "@@bazel-orfs++orfs_repositories+docker_orfs//:klayout",
+              "make": "@@bazel-orfs++orfs_repositories+docker_orfs//:make",
               "makefile": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile",
-              "pdk": "@@bazel-orfs++orfs_repositories+docker_orfs//:asap7",
               "makefile_yosys": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile_yosys",
               "openroad": "@@//:openroad",
+              "opensta": "@@bazel-orfs++orfs_repositories+docker_orfs//:sta",
+              "pdk": "@@bazel-orfs++orfs_repositories+docker_orfs//:asap7",
               "yosys": "@@bazel-orfs++orfs_repositories+docker_orfs//:yosys",
               "yosys_abc": "@@bazel-orfs++orfs_repositories+docker_orfs//:yosys-abc"
+            }
+          },
+          "orfs_variable_metadata": {
+            "repoRuleId": "@@bazel-orfs+//:load_json_file.bzl%load_json_file",
+            "attributes": {
+              "src": "@@bazel-orfs++orfs_repositories+docker_orfs//:OpenROAD-flow-scripts/flow/scripts/variables.yaml"
             }
           }
         },
@@ -869,11 +867,6 @@
             "bazel-orfs+",
             "bazel_tools",
             "bazel_tools"
-          ],
-          [
-            "bazel-orfs+",
-            "com_github_nixos_patchelf_download",
-            "bazel-orfs++orfs_repositories+com_github_nixos_patchelf_download"
           ],
           [
             "bazel-orfs+",
