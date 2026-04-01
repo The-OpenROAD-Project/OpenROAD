@@ -7,7 +7,6 @@
 #include <limits>
 #include <memory>
 #include <optional>
-#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -59,7 +58,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              bool draw_bins,
-                             odb::dbInst* inst) override;
+                             odb::dbInst* debg_inst) override;
 
   void addIter(int iter, double overflow) override;
   void addTimingDrivenIter(int iter) override;
@@ -189,6 +188,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void drawMBFF(gui::Painter& painter);
   void drawBounds(gui::Painter& painter);
   void reportSelected();
+  std::optional<size_t> getSelectedNbIndex() const;
 };
 
 }  // namespace gpl

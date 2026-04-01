@@ -27,6 +27,21 @@
 
 namespace gpl {
 
+std::optional<size_t> GraphicsImpl::getSelectedNbIndex() const
+{
+  if (nb_selected_index_ != kInvalidIndex) {
+    if (nb_selected_index_ < nbVec_.size()) {
+      return nb_selected_index_;
+    }
+    return std::nullopt;
+  }
+
+  // Fall back to index 0 if available
+  if (nbVec_.empty()) {
+    return std::nullopt;
+  }
+  return 0;
+}
 gui::Chart* GraphicsImpl::main_chart_ = nullptr;
 gui::Chart* GraphicsImpl::density_chart_ = nullptr;
 gui::Chart* GraphicsImpl::stepLength_chart_ = nullptr;
@@ -70,7 +85,7 @@ void GraphicsImpl::debugForNesterovPlace(
     std::vector<std::shared_ptr<PlacerBase>>& pbVec,
     std::vector<std::shared_ptr<NesterovBase>>& nbVec,
     bool draw_bins,
-    odb::dbInst* debug_inst)
+    odb::dbInst* debg_inst)
 {
   pbc_ = std::move(pbc);
   nbc_ = std::move(nbc);
@@ -90,10 +105,10 @@ void GraphicsImpl::debugForNesterovPlace(
     addDisplayControl(kDrawInstances, true);
     gui::Gui::get()->registerRenderer(this);
 
-    if (debug_inst) {
+    if (debg_inst) {
       for (size_t idx = 0; idx < nbc_->getGCells().size(); ++idx) {
         auto cell = nbc_->getGCellByIndex(idx);
-        if (cell->contains(debug_inst)) {
+        if (cell->contains(debg_inst)) {
           selected_ = idx;
           break;
         }
@@ -103,7 +118,7 @@ void GraphicsImpl::debugForNesterovPlace(
     for (const auto& nb : nbVec_) {
       for (size_t idx = 0; idx < nb->getGCells().size(); ++idx) {
         GCellHandle cell_handle = nb->getGCells()[idx];
-        if (cell_handle->contains(debug_inst)) {
+        if (cell_handle->contains(debg_inst)) {
           nb_selected_index_ = &nb - nbVec_.data();
           break;
         }
@@ -417,17 +432,16 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     }
 
     // Draw gradient direction lines in the GUI from the GCell center.
-    // We scale vectors to fit nicely within the cell (similar to drawForce()).
+    // We scale vectors to fit nicely within the cell (similar to
+    // drawForce()).
     const GCell* gcell = nbc_->getGCellByIndex(selected_);
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
-    size_t nb_index = 0;
-    if (nb_selected_index_ != kInvalidIndex) {
-      nb_index = nb_selected_index_;
-    } else {
-      logger_->warn(
-          utl::GPL, 317, "Selected instance not found in any NesterovBase");
+    auto opt_nb_index = getSelectedNbIndex();
+    if (!opt_nb_index) {
+      return;
     }
+    size_t nb_index = *opt_nb_index;
     FloatPoint densityGrad = nbVec_[nb_index]->getDensityGradient(gcell);
     FloatPoint wlGrad
         = nbc_->getWireLengthGradientWA(gcell, wlCoeffX, wlCoeffY);
@@ -460,7 +474,8 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     // Draw WL gradient line
     {
       auto [dx, dy] = scaleVector(wlGrad.x, wlGrad.y);
-      painter.setPen(gui::Painter::kRed, true);  // Use red for WL gradient
+      painter.setPen(gui::Painter::kRed,
+                     true);  // Use red for WL gradient
       painter.drawLine(
           cx, cy, cx + static_cast<int>(dx), cy + static_cast<int>(dy));
     }
@@ -552,13 +567,11 @@ void GraphicsImpl::reportSelected()
         = nbc_->getWireLengthGradientWA(gcell, wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    size_t nb_index = 0;
-    if (nb_selected_index_ != kInvalidIndex) {
-      nb_index = nb_selected_index_;
-    } else {
-      logger_->warn(
-          utl::GPL, 318, "Selected instance not found in any NesterovBase");
+    auto opt_nb_index = getSelectedNbIndex();
+    if (!opt_nb_index) {
+      return;
     }
+    size_t nb_index = *opt_nb_index;
     FloatPoint densityGrad = nbVec_[nb_index]->getDensityGradient(gcell);
     float densityPenalty = nbVec_[nb_index]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
