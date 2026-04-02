@@ -1839,7 +1839,7 @@ int Rebuffer::exportBufferTree(const BufferedNetPtr& choice,
 
           // 3. The input of this new buffer becomes the load for the parent
           // node
-          odb::dbITerm* input_term = buf_inst->findITerm(input->name());
+          odb::dbITerm* input_term = buf_inst->findITerm(input->name().c_str());
           if (input_term) {
             sta::Pin* sta_input_pin = db_network_->dbToSta(input_term);
             current_loads.insert(sta_input_pin);

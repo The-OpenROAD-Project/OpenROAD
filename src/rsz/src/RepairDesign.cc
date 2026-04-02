@@ -715,8 +715,7 @@ bool RepairDesign::performGainBuffering(sta::Net* net,
       if (la < lb) {
         return false;
       }
-      return sta::stringLess(network_->pathName(a.pin),
-                             network_->pathName(b.pin));
+      return network_->pathName(a.pin) < network_->pathName(b.pin);
     }
   };
 

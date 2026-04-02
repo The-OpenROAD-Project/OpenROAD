@@ -204,8 +204,8 @@ bool VertexLevelLess::operator()(const sta::Vertex* vertex1,
   return (level1 < level2)
          || (level1 == level2
              // Break ties for stable results.
-             && sta::stringLess(network_->pathName(vertex1->pin()),
-                                network_->pathName(vertex2->pin())));
+             && network_->pathName(vertex1->pin())
+                    < network_->pathName(vertex2->pin()));
 }
 
 sta::VertexSeq Resizer::orderedLoadPinVertices()
@@ -805,14 +805,14 @@ void Resizer::findBuffers()
 
   sta::LibertyCellSeq new_buffer_list;
   for (sta::LibertyCell* buffer : buffer_list) {
-    const char* footprint = buffer->footprint();
+    const std::string& footprint = buffer->footprint();
     odb::dbMaster* master = db_network_->staToDb(buffer);
     if (master == nullptr) {
       continue;
     }
     auto vt_type = cellVTType(master);
     bool footprint_matches
-        = best_footprint.empty() || (footprint && best_footprint == footprint);
+        = best_footprint.empty() || (best_footprint == footprint);
     bool vt_matches = best_vt_index == -1 || vt_type.vt_index == best_vt_index;
 
     if (footprint_matches && vt_matches) {
@@ -1707,13 +1707,14 @@ void Resizer::reportBuffers(bool filtered)
       continue;
     }
 
+    const std::string& fp = buffer->footprint();
     logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                     buffer->name(),
                     drive_res,
                     drive_res * c_in,
                     cell_leak.value_or(0.0f),
                     master->getSite()->getHeight(),
-                    (buffer->footprint() ? buffer->footprint() : "N/A"),
+                    fp.empty() ? "N/A" : fp,
                     cellVTType(master).vt_name);
   }
 
@@ -1751,13 +1752,14 @@ void Resizer::reportBuffers(bool filtered)
         continue;
       }
 
+      const std::string& fp2 = buffer->footprint();
       logger_->report("{:<41} {:>7.1f} {:>7.1e} {:>7.1e} {:>3} {:<7} {:<}",
                       buffer->name(),
                       drive_res,
                       drive_res * c_in,
                       cell_leak.value_or(0.0f),
                       master->getSite()->getHeight(),
-                      (buffer->footprint() ? buffer->footprint() : "N/A"),
+                      fp2.empty() ? "N/A" : fp2,
                       cellVTType(master).vt_name);
     }
   }
@@ -1801,7 +1803,7 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
         lib_data_->cells_by_site[master->getSite()]++;
 
         // Track cell footprint distribution
-        if (buffer->footprint()) {
+        if (!buffer->footprint().empty()) {
           lib_data_->cells_by_footprint[buffer->footprint()]++;
         }
 
@@ -1911,16 +1913,17 @@ sta::LibertyCellSeq Resizer::getSwappableCells(sta::LibertyCell* source_cell)
       }
 
       if (match_cell_footprint_) {
-        const bool footprints_match = sta::stringEqIf(source_cell->footprint(),
-                                                      equiv_cell->footprint());
+        const bool footprints_match
+            = source_cell->footprint() == equiv_cell->footprint();
         if (!footprints_match) {
           continue;
         }
       }
 
-      if (source_cell->userFunctionClass()) {
-        const bool user_function_classes_match = sta::stringEqIf(
-            source_cell->userFunctionClass(), equiv_cell->userFunctionClass());
+      if (!source_cell->userFunctionClass().empty()) {
+        const bool user_function_classes_match
+            = source_cell->userFunctionClass()
+              == equiv_cell->userFunctionClass();
         if (!user_function_classes_match) {
           continue;
         }
@@ -2013,13 +2016,11 @@ sta::LibertyCellSeq Resizer::getVTEquivCells(sta::LibertyCell* source_cell)
       continue;
     }
 
-    if (!sta::stringEqIf(source_cell->footprint(), equiv_cell->footprint())) {
+    if (source_cell->footprint() != equiv_cell->footprint()) {
       continue;
     }
 
-    if (source_cell->userFunctionClass()
-        && !sta::stringEqIf(source_cell->userFunctionClass(),
-                            equiv_cell->userFunctionClass())) {
+    if (source_cell->userFunctionClass() != equiv_cell->userFunctionClass()) {
       continue;
     }
 
@@ -2442,7 +2443,7 @@ bool Resizer::replaceCell(sta::Instance* inst,
                           const sta::LibertyCell* replacement,
                           const bool journal)
 {
-  const char* replacement_name = replacement->name();
+  const char* replacement_name = replacement->name().c_str();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
   if (replacement_master) {
@@ -3234,7 +3235,7 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
     std::vector<const sta::Pin*> load_pins(load_pins_set.begin(),
                                            load_pins_set.end());
     std::ranges::sort(load_pins, [this](const sta::Pin* a, const sta::Pin* b) {
-      return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+      return db_network_->pathName(a) < db_network_->pathName(b);
     });
 
     // Create new TIE cell instances for each load pin
@@ -3242,9 +3243,9 @@ void Resizer::repairTieFanout(sta::LibertyPort* tie_port,
       sta::Instance* load_inst = network_->instance(load_pin);
 
       // Create a new tie cell instance
-      const char* tie_inst_name = network_->name(load_inst);
+      std::string tie_inst_name = network_->name(load_inst);
       createNewTieCellForLoadPin(load_pin,
-                                 tie_inst_name,
+                                 tie_inst_name.c_str(),
                                  db_network_->parent(load_inst),
                                  tie_port,
                                  separation_dbu);
@@ -3467,7 +3468,7 @@ void Resizer::findCellInstances(sta::LibertyCell* cell,
   // - The sort will be removed when hierarhical flow is enabled by default.
   std::ranges::sort(
       insts, [this](const sta::Instance* a, const sta::Instance* b) {
-        return strcmp(db_network_->pathName(a), db_network_->pathName(b)) < 0;
+        return db_network_->pathName(a) < db_network_->pathName(b);
       });
 }
 
@@ -4308,7 +4309,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
                           ? network_->net(network_->term(out_pin))
                           : network_->net(out_pin);
   if (out_net) {
-    const char* inv_name = network_->name(inv);
+    std::string inv_name = network_->name(inv);
     sta::Instance* top_inst = network_->topInstance();
     sta::NetConnectedPinIterator* load_iter = network_->pinIterator(out_net);
     while (load_iter->hasNext()) {
@@ -4317,7 +4318,7 @@ void Resizer::cloneClkInverter(sta::Instance* inv)
         odb::Point clone_loc = db_network_->location(load_pin);
         sta::Instance* clone
             = makeInstance(inv_cell,
-                           inv_name,
+                           inv_name.c_str(),
                            top_inst,
                            clone_loc,
                            odb::dbNameUniquifyType::ALWAYS_WITH_UNDERSCORE);
@@ -4791,7 +4792,8 @@ sta::Instance* Resizer::insertBufferAfterDriver(
     const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -4885,7 +4887,8 @@ sta::Instance* Resizer::insertBufferBeforeLoad(
     const odb::dbNameUniquifyType& uniquify)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -5002,7 +5005,8 @@ sta::Instance* Resizer::insertBufferBeforeLoads(
     bool loads_on_diff_nets)
 {
   odb::dbMaster* buffer_master
-      = db_network_->block()->getDataBase()->findMaster(buffer_cell->name());
+      = db_network_->block()->getDataBase()->findMaster(
+          buffer_cell->name().c_str());
   if (!buffer_master) {
     logger_->error(
         RSZ,
@@ -5627,8 +5631,8 @@ BufferUse Resizer::getBufferUse(sta::LibertyCell* buffer)
       return BufferUse::CLOCK;
     }
   } else if (!clock_buffer_footprint_.empty()) {
-    const char* footprint = buffer->footprint();
-    if (footprint && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+    const std::string& footprint = buffer->footprint();
+    if (containsIgnoreCase(footprint, clock_buffer_footprint_)) {
       return BufferUse::CLOCK;
     }
   } else {
@@ -5667,7 +5671,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
   while (lib_iter->hasNext()) {
     sta::LibertyLibrary* lib = lib_iter->next();
     // Filter by library name if provided.
-    if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+    if (lib_name != nullptr && strcmp(lib->name().c_str(), lib_name) != 0) {
       continue;
     }
 
@@ -5684,7 +5688,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
       }
 
       // Priority 2: Check for any input pin with LEF signal type set to CLOCK.
-      odb::dbMaster* master = db_->findMaster(buffer->name());
+      odb::dbMaster* master = db_->findMaster(buffer->name().c_str());
       for (odb::dbMTerm* mterm : master->getMTerms()) {
         if (mterm->getIoType() == odb::dbIoType::INPUT
             && mterm->getSigType() == odb::dbSigType::CLOCK) {
@@ -5699,9 +5703,8 @@ void Resizer::inferClockBufferList(const char* lib_name,
           user_clock_buffers.emplace_back(buffer);
         }
       } else if (use_user_footprint) {
-        const char* footprint = buffer->footprint();
-        if (footprint
-            && containsIgnoreCase(footprint, clock_buffer_footprint_)) {
+        const std::string& footprint = buffer->footprint();
+        if (containsIgnoreCase(footprint, clock_buffer_footprint_)) {
           user_clock_buffers.emplace_back(buffer);
         }
       }
@@ -5734,7 +5737,7 @@ void Resizer::inferClockBufferList(const char* lib_name,
   } else if (!lef_use_clock_buffers.empty()) {
     selected_ptr = &lef_use_clock_buffers;
     for (sta::LibertyCell* buffer : *selected_ptr) {
-      odb::dbMaster* master = db_->findMaster(buffer->name());
+      odb::dbMaster* master = db_->findMaster(buffer->name().c_str());
       for (odb::dbMTerm* mterm : master->getMTerms()) {
         if (mterm->getIoType() == odb::dbIoType::INPUT
             && mterm->getSigType() == odb::dbSigType::CLOCK) {
