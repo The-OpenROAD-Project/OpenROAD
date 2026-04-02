@@ -101,10 +101,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       ++stall_count;
       if (stall_count == 3) {
         logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.", phase_1_overflows);
-      }
-      if (stall_count >= 10) {
-        logger_->warn(utl::DPL, 701, "Negotiation phase 1: overflow unchanged for 10 iterations, stopping early.");
-        break;
+        diamondRecovery(active);
       }
     } else {
       stall_count = 0;
@@ -132,6 +129,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       ++stall_count;
       if (stall_count == 3) {
         logger_->warn(utl::DPL, 702, "Negotiation phase 2: overflow stuck at {} for 3 consecutive iterations.", phase_2_overflows);
+        diamondRecovery(active);
       }
       if (stall_count >= 10) {
         logger_->warn(utl::DPL, 703, "Negotiation phase 2: overflow unchanged for 10 iterations, stopping early.");
@@ -768,6 +766,47 @@ void HybridLegalizer::cellSwap()
       }
     }
   }
+}
+
+// ===========================================================================
+// diamondRecovery – break stalls by trying the Opendp BFS diamond search on
+// each illegal cell.  Unlike findBestLocation (bounded rectangular window),
+// the diamond search expands outward in physical Manhattan order until it
+// finds a pixel where canBePlaced() passes, so it can escape local congestion
+// pockets that the rectangular window cannot resolve.
+// ===========================================================================
+
+void HybridLegalizer::diamondRecovery(const std::vector<int>& activeCells)
+{
+  if (!opendp_ || !network_) {
+    return;
+  }
+  int recovered = 0;
+  for (int idx : activeCells) {
+    if (cells_[idx].fixed || isCellLegal(idx)) {
+      continue;
+    }
+    const HLCell& cell = cells_[idx];
+    Node* node = network_->getNode(cell.db_inst_);
+    if (node == nullptr) {
+      continue;
+    }
+    // diamondSearch uses canBePlaced which reads the DPL pixel grid, so the
+    // cell must be ripped up first to avoid blocking itself.
+    ripUp(idx);
+    const PixelPt pt = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
+    if (pt.pixel) {
+      place(idx, pt.x.v, pt.y.v);
+      ++recovered;
+    } else {
+      // No legal site found — restore at current position so the negotiation
+      // loop can keep trying.
+      place(idx, cell.x, cell.y);
+    }
+  }
+  debugPrint(logger_, utl::DPL, "hybrid", 1,
+             "diamondRecovery: recovered {}/{} stuck cells.",
+             recovered, activeCells.size());
 }
 
 }  // namespace dpl

@@ -168,8 +168,6 @@ void Opendp::detailedPlacement(const int max_displacement_x,
 
   initGrid();
   setFixedGridCells();
-
-  if (use_diamond) {
     if (max_displacement_x == 0 || max_displacement_y == 0) {
       max_displacement_x_ = 500;
       max_displacement_y_ = 100;
@@ -184,6 +182,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
         max_displacement_x_,
         max_displacement_y_);
+  if (use_diamond) {
+
 
     diamondDPL();
 

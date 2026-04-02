@@ -228,6 +228,9 @@ void Graphics::drawObjects(gui::Painter& painter)
             c = gui::Painter::kBlack;
             c.a = 200;
             break;
+          case HybridPixelState::kDrcViolation:
+            c = gui::Painter::Color{255, 140, 0, 200};  // orange
+            break;
         }
         painter.setPen(c);
         painter.setBrush(c);

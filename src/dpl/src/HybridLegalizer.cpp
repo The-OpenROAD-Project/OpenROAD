@@ -335,6 +335,30 @@ void HybridLegalizer::pushHybridPixels()
       }
     }
   }
+  // Overlay cells that fail PlacementDRC checks.
+  if (opendp_->drc_engine_ && network_) {
+    for (const auto& cell : cells_) {
+      if (cell.fixed) {
+        continue;
+      }
+      Node* node = network_->getNode(cell.db_inst_);
+      if (node == nullptr) {
+        continue;
+      }
+      if (!opendp_->drc_engine_->checkDRC(
+              node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
+        for (int dy = 0; dy < cell.height; ++dy) {
+          for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
+            const int pidx = (cell.y + dy) * gridW_ + gx;
+            if (pidx >= 0 && pidx < static_cast<int>(pixels.size())) {
+              pixels[pidx] = HybridPixelState::kDrcViolation;
+            }
+          }
+        }
+      }
+    }
+  }
+
   const Grid* dplGrid = opendp_->grid_.get();
   std::vector<int> row_y_dbu(gridH_ + 1);
   for (int r = 0; r <= gridH_; ++r) {

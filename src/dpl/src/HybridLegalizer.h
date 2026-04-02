@@ -234,6 +234,7 @@ class HybridLegalizer
   // Post-optimisation
   void greedyImprove(int passes);
   void cellSwap();
+  void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
   [[nodiscard]] bool isValidRow(int rowIdx, const HLCell& cell, int gridX) const;

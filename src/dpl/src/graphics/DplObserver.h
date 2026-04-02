@@ -22,7 +22,8 @@ enum class HybridPixelState : int8_t
   kOccupied = 2, // valid site, usage == capacity
   kOveruse = 3,  // valid site, usage > capacity
   kBlocked = 4,  // blockage (fixed cell / capacity forced to 0)
-  kInvalid = 5   // pixel is outside of core or in a hole (is_valid == false)
+  kInvalid = 5,  // pixel is outside of core or in a hole (is_valid == false)
+  kDrcViolation = 6  // cell at this site fails a PlacementDRC check
 };
 
 class DplObserver
