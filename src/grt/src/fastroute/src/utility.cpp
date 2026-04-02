@@ -533,8 +533,18 @@ int FastRouteCore::getWireCost(const int layer, const int length, FrNet* net)
 
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
-  double default_resistance = default_layer->getResistance();
-  float final_resistance = getWireResistance(layer, length, net);
+  const double default_resistance = default_layer->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_resistance <= 0.0) {
+    return 0;
+  }
+
+  const float final_resistance = getWireResistance(layer, length, net);
+  // Prevent int overflow when final_resistance is BIG_INT (i.e., layer is out
+  // of net layer range).
+  if (final_resistance >= BIG_INT) {
+    return BIG_INT;
+  }
 
   return std::ceil(final_resistance / default_resistance);
 }
@@ -569,8 +579,13 @@ int FastRouteCore::getViaCost(const int from_layer, const int to_layer)
   }
 
   // Calculate total resistance
-  float total_via_resistance = getViaResistance(from_layer, to_layer);
-  float default_res = getTechLayer(0, true)->getResistance();
+  const float default_res = getTechLayer(0, true)->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_res <= 0.0) {
+    return 0;
+  }
+
+  const float total_via_resistance = getViaResistance(from_layer, to_layer);
 
   return std::ceil(total_via_resistance / default_res);
 }
