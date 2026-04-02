@@ -76,7 +76,7 @@ void AntennaGatePlusDiffParser::parse(const std::string& s)
   state.layer = layer_;
   state.lefin = lefin_;
 
-  using boost::spirit::qi;
+  namespace qi = boost::spirit::qi;
 
   qi::rule<std::string::const_iterator, space_type> pair_rule
       = (lit("(") >> double_[boost::bind(&ParserState::setX, &state, _1)]
