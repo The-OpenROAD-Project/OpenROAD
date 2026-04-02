@@ -24,7 +24,7 @@ Clang-Tidy CI can fail not only for code issues but also for **unresolved review
 ## Private-to-Staging Sync
 
 To sync a private repo PR to the staging (public) repo:
-1. Push commits to the **private repo** (`The-OpenROAD-Project-private/OpenROAD-flow-scripts`)
+1. Push commits to the **private repo** (`The-OpenROAD-Project-private/OpenROAD`)
 2. Add the label **"Ready To Sync Public"** on the **private repo PR**
 
 **Important**: The label is **consumed** after each sync (removed by the sync bot). After pushing new commits, you must **re-add** the label. If the label already exists, remove it first, then re-add to trigger the workflow.

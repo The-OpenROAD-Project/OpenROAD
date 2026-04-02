@@ -61,9 +61,7 @@ Best practice reference: `src/rsz/test/repair_tie12_hier.tcl`
 
 5. **Generate `<test_name>.ok` file**: Create golden test log by executing the script, redirecting stdout, and removing the openroad banner at the top.
 
-6. **Registration (BOTH files -- do NOT skip Bazel)**:
-   - `src/<module>/test/CMakeLists.txt` -- add to `or_integration_tests(...)`
-   - `src/<module>/test/BUILD` -- add to `or_integration_tests(...)` (test will be missing from Bazel CI without this)
+6. **Registration (BOTH files for CMake and Bazel -- do NOT skip Bazel)**
 
 ### Test Framework Flags
 - `-no_splash -no_init -exit`
