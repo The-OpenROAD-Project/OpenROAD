@@ -586,7 +586,7 @@ void RamGen::ramPdngen(const char* power_pin,
   power_net->setSigType(odb::dbSigType::POWER);
   ground_net->setSpecial();
   ground_net->setSigType(odb::dbSigType::GROUND);
-  
+
   block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
   block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
 

@@ -25,10 +25,12 @@ generate_ram \
   -storage_cell DFF_X1 \
   -power_pin VDD \
   -ground_pin VSS \
-  -routing_layer {metal1 0.07} \
-  -ver_layer {metal4 0.28 8} \
-  -hor_layer {metal5 0.28 8} \
+  -routing_layer {metal1 0.08} \
+  -ver_layer {metal4 0.14 9} \
+  -hor_layer {metal3 0.08 8} \
   -filler_cells {FILLCELL_X1 FILLCELL_X2 FILLCELL_X4 FILLCELL_X8} \
+ -tapcell TAPCELL_X1 \
+ -max_tap_dist 10 \
   -write_behavioral_verilog $behavioral_file
 
 set lef_file [make_result_file make_7x7_nangate45.lef]
