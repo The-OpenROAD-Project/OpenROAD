@@ -21,6 +21,7 @@ generate_ram \
   -tapcell sky130_fd_sc_hd__tap_1 \
   -max_tap_dist 15 \
   -write_behavioral_verilog $behavioral_file
+
 set lef_file [make_result_file make_8x8_mux2.lef]
 write_abstract_lef $lef_file
 diff_files make_8x8_mux2.lefok $lef_file

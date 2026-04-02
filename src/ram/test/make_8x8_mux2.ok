@@ -16,8 +16,8 @@
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 375.12 um.
-[INFO DPL-0001] Placed 82 filler instances.
+[INFO PPL-0012] I/O nets HPWL: 371.70 um.
+[INFO DPL-0001] Placed 79 filler instances.
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
 [WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
@@ -40,9 +40,9 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] FR_MASTERSLICE shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] li1 shape region query size = 7825.
+[INFO DRT-0033] li1 shape region query size = 7819.
 [INFO DRT-0033] mcon shape region query size = 574.
-[INFO DRT-0033] met1 shape region query size = 1377.
+[INFO DRT-0033] met1 shape region query size = 1371.
 [INFO DRT-0033] via shape region query size = 63.
 [INFO DRT-0033] met2 shape region query size = 166.
 [INFO DRT-0033] via2 shape region query size = 21.
@@ -56,7 +56,7 @@
 [INFO DRT-0036] FR_VIA guide region query size = 0.
 [INFO DRT-0036] li1 guide region query size = 355.
 [INFO DRT-0036] mcon guide region query size = 0.
-[INFO DRT-0036] met1 guide region query size = 217.
+[INFO DRT-0036] met1 guide region query size = 216.
 [INFO DRT-0036] via guide region query size = 0.
 [INFO DRT-0036] met2 guide region query size = 21.
 [INFO DRT-0036] via2 guide region query size = 0.
