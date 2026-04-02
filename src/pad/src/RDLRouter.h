@@ -193,6 +193,8 @@ class RDLRouter
                         bool use_routes) const;
 
   void populateTerminalAccessPoints(RouteTarget& target) const;
+  void cleanupTerminalAccessPoints(odb::dbITerm* iterm,
+                                   std::vector<RouteTarget>& targets) const;
   std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
                                                     bool do_x) const;
   TerminalAccess insertTerminalAccess(const RouteTarget& target,

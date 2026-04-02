@@ -354,6 +354,7 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
       for (auto& target : targets) {
         populateTerminalAccessPoints(target);
       }
+      cleanupTerminalAccessPoints(iterm, targets);
     }
   }
 
@@ -859,11 +860,8 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
       }
     }
 
-    // check if points can be removed
-    if (poly_intersect.size() < snap_pts.size()) {
-      for (const odb::Point& pt : poly_intersect) {
-        snap_pts.erase(pt);
-      }
+    for (const odb::Point& pt : poly_intersect) {
+      snap_pts.erase(pt);
     }
   }
 
@@ -878,6 +876,46 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
   }
 
   target.grid_access = std::move(snap_pts);
+}
+
+void RDLRouter::cleanupTerminalAccessPoints(
+    odb::dbITerm* iterm,
+    std::vector<RouteTarget>& targets) const
+{
+  // map snapping points
+  std::map<odb::Point, std::vector<RouteTarget*>> access_map;
+  for (auto& target : targets) {
+    for (const auto& snap : target.grid_access) {
+      access_map[snap].push_back(&target);
+    }
+  }
+
+  // check for overlapping points and remove from all but closest
+  for (auto& [snap, target_ptrs] : access_map) {
+    if (target_ptrs.size() < 2) {
+      continue;
+    }
+
+    std::ranges::stable_sort(
+        target_ptrs, [&snap](const RouteTarget* lhs, const RouteTarget* rhs) {
+          return distance(snap, lhs->center) < distance(snap, rhs->center);
+        });
+
+    // keep closest, remove rest
+    for (size_t i = 1; i < target_ptrs.size(); i++) {
+      auto& access = target_ptrs[i]->grid_access;
+      access.erase(snap);
+    }
+  }
+
+  // remove empty targets
+  for (auto target_itr = targets.begin(); target_itr != targets.end();) {
+    if (target_itr->grid_access.empty()) {
+      target_itr = targets.erase(target_itr);
+    } else {
+      target_itr++;
+    }
+  }
 }
 
 RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
