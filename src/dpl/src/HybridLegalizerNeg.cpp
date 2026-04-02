@@ -90,6 +90,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   int prev_overflows = -1;
   int stall_count = 0;
   for (int iter = 0; iter < maxIterNeg_; ++iter) {
+    logger_->report("Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
     const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
       debugPrint(logger_,    utl::DPL,    "hybrid",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
@@ -117,6 +118,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   prev_overflows = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
+    logger_->report("Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, maxIterNeg_, active.size());
     const int phase_2_overflows
         = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
@@ -154,8 +156,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
                                      int iter,
                                      bool updateHistory)
-{
-  logger_->report("Starting negotiation iteration {} ({} active cells)", iter, activeCells.size());
+{  
   using Clock = std::chrono::steady_clock;
   const auto t0 = Clock::now();
 
@@ -797,6 +798,7 @@ void HybridLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     const PixelPt pt = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
+      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).", cell.db_inst_->getName(), pt.x.v, pt.y.v);
       ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation
@@ -804,8 +806,7 @@ void HybridLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       place(idx, cell.x, cell.y);
     }
   }
-  debugPrint(logger_, utl::DPL, "hybrid", 1,
-             "diamondRecovery: recovered {}/{} stuck cells.",
+  logger_->report("diamondRecovery: recovered {}/{} stuck cells.",
              recovered, activeCells.size());
 }
 

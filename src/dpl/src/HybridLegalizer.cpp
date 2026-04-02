@@ -538,9 +538,11 @@ bool HybridLegalizer::initFromDb()
         return true;
       };
 
+      //The snapping here is actually quite similar to the "hopeless" approach in original DPL.
+      // they achieve the same objective, and the previous is more simple, consider replacing this.
       if (!isValidSite(cell.initX, cell.initY)) {
         logger_->report(
-            "Warning: instance {} at ({}, {}) snaps to invalid site at "
+            "Instance {} at ({}, {}) snaps to invalid site at "
             "({}, {}). Searching for nearest valid site.",
             cell.db_inst_->getName(),
             dbX,
