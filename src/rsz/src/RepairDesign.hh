@@ -280,6 +280,9 @@ class RepairDesign : sta::dbStaState
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
 
+  // Needed for printProgress bookkeeping
+  int num_drvr_vertices_ = 0;
+
   friend class Resizer;
 };
 
