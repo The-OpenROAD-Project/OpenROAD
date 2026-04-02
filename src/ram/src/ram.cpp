@@ -466,8 +466,7 @@ void RamGen::ramPdngen(const char* power_pin,
                        int hor_pitch)
 {
   const odb::Rect& die = block_->getDieArea();
-  auto tech = block_->getDb()->getTech();
-  const double dbu_per_um = tech->getDbUnitsPerMicron();
+  const double dbu_per_um = block_->getDb()->getTech()->getDbUnitsPerMicron();
 
   if (die.dy() < hor_pitch) {
     logger_->error(RAM,
