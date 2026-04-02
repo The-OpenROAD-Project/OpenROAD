@@ -9313,6 +9313,7 @@ class dbTechLayer : public dbObject
   ///
   dbTechLayerAntennaRule* createDefaultAntennaRule();
   dbTechLayerAntennaRule* createOxide2AntennaRule();
+  dbTechLayerAntennaRule* getOrCreateAntennaModel(int oxide_idx);
 
   ///
   /// Access and write antenna rule models -- get functions will return nullptr

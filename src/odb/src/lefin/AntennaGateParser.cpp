@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <string>
+#include <vector>
 
 #include "boost/bind/bind.hpp"
 #include "boost/spirit/home/qi/detail/parse_auto.hpp"
@@ -9,6 +10,7 @@
 #include "boostParser.h"
 #include "lefLayerPropParser.h"
 #include "lefiLayer.hpp"
+#include "odb/db.h"
 #include "odb/lefin.h"
 
 namespace odb {
@@ -34,13 +36,11 @@ void AntennaGatePlusDiffParser::parse(const std::string& s)
     dbTechLayerAntennaRule* getRule()
     {
       if (oxide == "OXIDE2") {
-        auto rule = layer->getOxide2AntennaRule();
-        return rule ? rule : layer->createOxide2AntennaRule();
+        return layer->getOrCreateAntennaModel(/*oxide_idx=*/2);
       }
 
       if (oxide == "OXIDE1" || oxide.empty()) {
-        auto rule = layer->getDefaultAntennaRule();
-        return rule ? rule : layer->createDefaultAntennaRule();
+        return layer->getOrCreateAntennaModel(/*oxide_idx=*/1);
       }
 
       lefin->warning(
@@ -76,7 +76,7 @@ void AntennaGatePlusDiffParser::parse(const std::string& s)
   state.layer = layer_;
   state.lefin = lefin_;
 
-  using namespace boost::spirit::qi;
+  using boost::spirit::qi;
 
   qi::rule<std::string::const_iterator, space_type> pair_rule
       = (lit("(") >> double_[boost::bind(&ParserState::setX, &state, _1)]

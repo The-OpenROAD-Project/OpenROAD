@@ -1014,12 +1014,7 @@ void lefinReader::layer(LefParser::lefiLayer* layer)
 
   if (layer->numAntennaModel() > 0) {
     for (j = 0; j < std::min(layer->numAntennaModel(), 2); j++) {
-      cur_ant_rule
-          = (j == 1) ? l->getOxide2AntennaRule() : l->getDefaultAntennaRule();
-      if (!cur_ant_rule) {
-        cur_ant_rule = (j == 1) ? l->createOxide2AntennaRule()
-                                : l->createDefaultAntennaRule();
-      }
+      cur_ant_rule = l->getOrCreateAntennaModel(/*oxide_idx=*/j + 1);
       cur_model = layer->antennaModel(j);
       if (cur_model->hasAntennaAreaFactor()) {
         cur_ant_rule->setAreaFactor(cur_model->antennaAreaFactor(),
