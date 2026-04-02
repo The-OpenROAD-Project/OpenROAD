@@ -256,7 +256,7 @@ _execute() {
         return
     fi
 
-    echo -n "${BLUE}${BOLD}[INFO]${NC} ${description}..."
+    echo -n "${BLUE}${BOLD}[INFO]${NC} ${description}"
     local log_file
     log_file=$(mktemp)
     if ! "$@" &> "${log_file}"; then
