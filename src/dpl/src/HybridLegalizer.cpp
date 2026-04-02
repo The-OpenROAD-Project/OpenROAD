@@ -111,11 +111,7 @@ HybridLegalizer::HybridLegalizer(Opendp* opendp,
 
 void HybridLegalizer::legalize()
 {
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "HybridLegalizer: starting legalization.");
+  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: starting legalization.");
 
   using Clock = std::chrono::steady_clock;
   auto ms = [](auto a, auto b) {
@@ -129,53 +125,38 @@ void HybridLegalizer::legalize()
     return;
   }
   const double initFromDbMs = ms(tInitFromDbStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "initFromDb: {:.1f}ms", initFromDbMs);
+  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFromDb: {:.1f}ms", initFromDbMs);
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-
-    setDplPositions();
-    logger_->report("Pause after initFromDb.");
-    debug_observer_->redrawAndPause();
+    debugPause("Pause after initFromDb.");
   }
 
   const auto tBuildGridStart = Clock::now();
   buildGrid();
   const double buildGridMs = ms(tBuildGridStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "buildGrid: {:.1f}ms", buildGridMs);
+  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "buildGrid: {:.1f}ms", buildGridMs);
 
   const auto tFenceRegionsStart = Clock::now();
   initFenceRegions();
   const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
+  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
 
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "HybridLegalizer: {} cells, grid {}x{}.",
-             cells_.size(),
-             gridW_,
-             gridH_);
+  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: {} cells, grid {}x{}.",cells_.size(),gridW_,gridH_);
 
-  // --- Phase 1: Abacus (handles the majority of cells cheaply) -------------
+  // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
-  double phase1Ms = 0.0;
+  double abacusMs = 0.0;
   if (run_abacus_) {
-    debugPrint(
-        logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
+    debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
     const auto tAbacusStart = Clock::now();
+
     illegal = runAbacus();
-    phase1Ms = ms(tAbacusStart, Clock::now());
-    debugPrint(logger_,
-               utl::DPL,
-               "hybrid",
-               1,
-               "HybridLegalizer: Abacus done, {} cells still illegal.",
-               illegal.size());
+
+    abacusMs = ms(tAbacusStart, Clock::now());
+    debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: Abacus done, {} cells still illegal.",illegal.size());
   } else {
-    debugPrint(
-        logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: skipping Abacus pass.");
+    debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: skipping Abacus pass.");
 
     const auto tSkipAbacusStart = Clock::now();
 
@@ -186,23 +167,14 @@ void HybridLegalizer::legalize()
       }
     }
     const auto tSkipAbacusUsageEnd = Clock::now();
-    debugPrint(logger_,
-               utl::DPL,
-               "hybrid",
-               1,
-               "skip-Abacus addUsage: {:.1f}ms",
-               ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
+    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus addUsage: {:.1f}ms",ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
 
     // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
     // lookups see the correct placement state.
     syncAllCellsToDplGrid();
+
     const auto tSkipAbacusSyncEnd = Clock::now();
-    debugPrint(logger_,
-               utl::DPL,
-               "hybrid",
-               1,
-               "skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",
-               ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
+    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
 
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
@@ -215,19 +187,11 @@ void HybridLegalizer::legalize()
       }
     }
     const auto tSkipAbacusDrcEnd = Clock::now();
-    debugPrint(logger_,
-               utl::DPL,
-               "hybrid",
-               1,
-               "skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",
-               ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),
-               illegal.size());
-
-    phase1Ms = ms(tSkipAbacusStart, tSkipAbacusDrcEnd);
+    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),illegal.size());
+    abacusMs = ms(tSkipAbacusStart, tSkipAbacusDrcEnd);
   }
 
   if (debug_observer_) {
-    logger_->report("enter debug observer");
     setDplPositions();
     // this flush may imply functional changes. It hides initial movements for clean debugging negotiation phase.
     flushToDb();
@@ -236,17 +200,14 @@ void HybridLegalizer::legalize()
     debug_observer_->redrawAndPause();
   }
 
-  // --- Phase 2: Negotiation (fixes remaining violations) -------------------
+  // --- Part 2: Negotiation (main legalization) -------------------
   double negotiationMs = 0.0;
   if (!illegal.empty()) {
-    debugPrint(logger_,
-               utl::DPL,
-               "hybrid",
-               1,
-               "HybridLegalizer: negotiation pass on {} cells.",
-               illegal.size());
+    debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: negotiation pass on {} cells.",illegal.size());
     const auto tNegStart = Clock::now();
+
     runNegotiation(illegal);
+
     negotiationMs = ms(tNegStart, Clock::now());
   }
 
@@ -258,21 +219,11 @@ void HybridLegalizer::legalize()
   const auto tPostNegSyncStart = Clock::now();
   syncAllCellsToDplGrid();
   const double postNegSyncMs = ms(tPostNegSyncStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "post-negotiation syncAllCellsToDplGrid: {:.1f}ms",
-             postNegSyncMs);
+  debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"post-negotiation syncAllCellsToDplGrid: {:.1f}ms",postNegSyncMs);
 
-  if (debug_observer_) {
-    setDplPositions();
-    pushHybridPixels();
-    logger_->report("Pause after negotiation pass.");
-    debug_observer_->redrawAndPause();
-  }
+  debugPause("Pause after negotiation pass");
 
-  // --- Phase 3: Post-optimisation ------------------------------------------
+  // --- Part 3: Post-optimisation ------------------------------------------
   debugPrint(
       logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
   // greedyImprove(5);
@@ -284,26 +235,14 @@ void HybridLegalizer::legalize()
   const int maxDisp = maxDisplacement();
   const int nViol = numViolations();
   const double metricsMs = ms(tMetricsStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "metrics (avgDisp/maxDisp/violations): {:.1f}ms",
-             metricsMs);
+  debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"metrics (avgDisp/maxDisp/violations): {:.1f}ms",metricsMs);
 
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",
-             avgDisp,
-             maxDisp,
-             nViol);
+  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",avgDisp,maxDisp,nViol);
 
   const auto tFlushStart = Clock::now();
   flushToDb();
   const double flushMs = ms(tFlushStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "flushToDb: {:.1f}ms", flushMs);
+  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {:.1f}ms", flushMs);
 
   const auto tOrientStart = Clock::now();
   const Grid* dplGrid = opendp_->grid_.get();
@@ -322,19 +261,19 @@ void HybridLegalizer::legalize()
     }
   }
   const double orientMs = ms(tOrientStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "hybrid", 1, "orientation update: {:.1f}ms", orientMs);
+  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "orientation update: {:.1f}ms", orientMs);
 
   const double totalMs = ms(tLegalizeStart, Clock::now());
   auto pct = [totalMs](double t) { return totalMs > 0 ? 100.0 * t / totalMs : 0.0; };
   debugPrint(logger_,
              utl::DPL,
-             "hybrid",
+             "negotiation_runtime",
              1,
              "legalize() total {:.1f}ms breakdown: "
              "initFromDb {:.1f}ms ({:.0f}%), "
              "buildGrid {:.1f}ms ({:.0f}%), "
              "initFenceRegions {:.1f}ms ({:.0f}%), "
-             "phase1 {:.1f}ms ({:.0f}%), "
+             "abacus {:.1f}ms ({:.0f}%), "
              "negotiation {:.1f}ms ({:.0f}%), "
              "postNegSync {:.1f}ms ({:.0f}%), "
              "metrics {:.1f}ms ({:.0f}%), "
@@ -344,7 +283,7 @@ void HybridLegalizer::legalize()
              initFromDbMs, pct(initFromDbMs),
              buildGridMs, pct(buildGridMs),
              fenceRegionsMs, pct(fenceRegionsMs),
-             phase1Ms, pct(phase1Ms),
+             abacusMs, pct(abacusMs),
              negotiationMs, pct(negotiationMs),
              postNegSyncMs, pct(postNegSyncMs),
              metricsMs, pct(metricsMs),
@@ -403,6 +342,17 @@ void HybridLegalizer::pushHybridPixels()
   }
   debug_observer_->setHybridPixels(
       pixels, gridW_, gridH_, dieXlo_, dieYlo_, siteWidth_, row_y_dbu);
+}
+
+void HybridLegalizer::debugPause(const std::string& msg)
+{
+  if (!debug_observer_) {
+    return;
+  }
+  setDplPositions();
+  pushHybridPixels();
+  logger_->report("{}", msg);
+  debug_observer_->redrawAndPause();
 }
 
 // ===========================================================================
@@ -539,7 +489,7 @@ bool HybridLegalizer::initFromDb()
     // boundary or in sparse-row designs can land on invalid (is_valid=false) pixels
     // pixels or on pixels that don't support this cell's site type.  Fix those
     // with a diamond search from the initial position; we only check site
-    // validity here, not blockages — the negotiation phase handles those.
+    // validity here, not blockages — the negotiation part handles those.
     if (!cell.fixed) {
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid sites.

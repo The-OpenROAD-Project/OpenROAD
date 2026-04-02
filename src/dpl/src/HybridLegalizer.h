@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -205,6 +206,7 @@ class HybridLegalizer
   [[nodiscard]] HLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
   void pushHybridPixels();  // Send grid state to debug observer for rendering
+  void debugPause(const std::string& msg);  // setDplPositions + pushHybridPixels + redrawAndPause
 
   // Abacus pass
   [[nodiscard]] std::vector<int> runAbacus();

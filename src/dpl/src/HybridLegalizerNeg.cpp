@@ -85,84 +85,68 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   std::vector<int> active(activeSet.begin(), activeSet.end());
 
   // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "Negotiation phase 1: {} active cells, {} iterations.",
-             active.size(),
-             maxIterNeg_);
+  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),maxIterNeg_);
 
+  int prev_overflows = -1;
+  int stall_count = 0;
   for (int iter = 0; iter < maxIterNeg_; ++iter) {
-    const int overflows = negotiationIter(active, iter, /*updateHistory=*/true);
-    if (overflows == 0) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "hybrid",
-                 1,
-                 "Negotiation phase 1 converged at iteration {}.",
-                 iter);
+    const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
+    if (phase_1_overflows == 0) {
+      debugPrint(logger_,    utl::DPL,    "hybrid",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
       logger_->metric("HL__converge__phase_1__iteration", iter);
-      if(debug_observer_) {
-        setDplPositions();
-        pushHybridPixels();
-        logger_->report("Pause after convergence at phase 1.");
-        debug_observer_->redrawAndPause();
-      }
+      debugPause("Pause after convergence at phase 1.");
       return;
     }
+    if (phase_1_overflows == prev_overflows) {
+      ++stall_count;
+      if (stall_count == 3) {
+        logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.", phase_1_overflows);
+      }
+      if (stall_count >= 10) {
+        logger_->warn(utl::DPL, 701, "Negotiation phase 1: overflow unchanged for 10 iterations, stopping early.");
+        break;
+      }
+    } else {
+      stall_count = 0;
+    }
+    prev_overflows = phase_1_overflows;
   }
 
-  if(debug_observer_) {
-    setDplPositions();
-    pushHybridPixels();
-    logger_->report("Pause before negotiation phase 2.");
-    debug_observer_->redrawAndPause();
-  }
+  debugPause("Pause before negotiation phase 2.");
 
   // Phase 2 – isolation point active: skip already-legal cells.
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "Negotiation phase 2: isolation point active, {} iterations.",
-             kMaxIterNeg2);
+  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation phase 2: isolation point active, {} iterations.",kMaxIterNeg2);
 
+  prev_overflows = -1;
+  stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    const int overflows
+    const int phase_2_overflows
         = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
-    if (overflows == 0) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "hybrid",
-                 1,
-                 "Negotiation phase 2 converged at iteration {}.",
-                 iter);
+    if (phase_2_overflows == 0) {
+      debugPrint(logger_,    utl::DPL,    "hybrid",    1,    "Negotiation phase 2 converged at iteration {}.",    iter);
       logger_->metric("HL__converge__phase_2__iteration", iter);
-      if(debug_observer_) {
-        setDplPositions();
-        pushHybridPixels();
-        logger_->report("Pause after convergence at phase 2.");
-        debug_observer_->redrawAndPause();
-      }
+      debugPause("Pause after convergence at phase 2.");
       return;
     }
+    if (phase_2_overflows == prev_overflows) {
+      ++stall_count;
+      if (stall_count == 3) {
+        logger_->warn(utl::DPL, 702, "Negotiation phase 2: overflow stuck at {} for 3 consecutive iterations.", phase_2_overflows);
+      }
+      if (stall_count >= 10) {
+        logger_->warn(utl::DPL, 703, "Negotiation phase 2: overflow unchanged for 10 iterations, stopping early.");
+        break;
+      }
+    } else {
+      stall_count = 0;
+    }
+    prev_overflows = phase_2_overflows;
   }
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)
   // via numViolations(), which avoids registering a message ID in this file.
-  debugPrint(logger_,
-             utl::DPL,
-             "hybrid",
-             1,
-             "Negotiation did not fully converge. Remaining violations: {}.",
-             numViolations());
-  if(debug_observer_) {
-    setDplPositions();
-    pushHybridPixels();
-    logger_->report("Pause after non-convergence at negotiation phases 1 and 2.");
-    debug_observer_->redrawAndPause();
-  }
+  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation did not fully converge. Remaining violations: {}.",numViolations());
+  debugPause("Pause after non-convergence at negotiation phases 1 and 2.");
 }
 
 // ===========================================================================
@@ -212,9 +196,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     findBestMs += std::chrono::duration<double, std::milli>(tc - tb).count();
     placeMs += std::chrono::duration<double, std::milli>(td - tc).count();
     moves_count++;
-    debugPrint(logger_, utl::DPL, "hybrid", 2,
-               "Negotiation iter {}, cell {}, moves {}, best location {}, {}",
-                iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
+    debugPrint(logger_, utl::DPL, "hybrid", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
   }
 
   const auto t2 = Clock::now();
@@ -322,8 +304,8 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       filterMs, pct(filterMs), negCostMs, pct(negCostMs),
       drcMs, pct(drcMs), overhead, pct(overhead));
 
-  if(opendp_->iterative_debug_ && debug_observer_) {
-    logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
+  logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
+  if(opendp_->iterative_debug_ && debug_observer_) {    
     setDplPositions();
     pushHybridPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);
@@ -460,11 +442,7 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (cell.db_inst_ == debug_inst) {
-      logger_->report("  Best location for {} is ({}, {}) with cost {}.",
-                      cell.db_inst_->getName(),
-                      bestX,
-                      bestY,
-                      bestCost);
+      logger_->report("  Best location for {} is ({}, {}) with cost {}.",         cell.db_inst_->getName(),         bestX,         bestY,         bestCost);
       if (node != nullptr) {
         odb::dbOrientType targetOrient = node->getOrient();
         odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
