@@ -2,6 +2,11 @@
 
 ## Style Rules
 
+### General C++ Guidelines
+- Follow the Google C++ Style Guide.
+- Use modern C++20 style and features.
+- Apply `const` qualifiers whenever possible.
+
 ### Type Declarations
 - Use C++ casts, not C-style casts
 

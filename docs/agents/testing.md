@@ -9,7 +9,7 @@ OpenROAD has two types of tests: **integration tests** (Tcl) and **unit tests** 
 | Build System | Registration File | Block/Macro |
 |-------------|-------------------|-------------|
 | **CMake** | `src/<module>/test/CMakeLists.txt` | `or_integration_tests(...)` |
-| **Bazel** | `src/<module>/test/BUILD` | `or_integration_tests(...)` |
+| **Bazel** | `src/<module>/test/BUILD` | `regression_test(...)` |
 
 Forgetting the Bazel `BUILD` file is the most common mistake -- CMake-only registration
 silently passes local `make test` but the **test will be missing from Bazel CI**.
