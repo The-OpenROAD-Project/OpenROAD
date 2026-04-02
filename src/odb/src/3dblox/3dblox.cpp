@@ -120,7 +120,7 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       temp_network.netIterator(top_inst));
   while (net_iter->hasNext()) {
     auto* net = net_iter->next();
-    const char* net_name = temp_network.name(net);
+    const std::string net_name = temp_network.name(net);
     auto* chip_net = dbChipNet::create(chip, net_name);
 
     debugPrint(logger_,
@@ -146,10 +146,10 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
         continue;
       }
 
-      const char* port_name = temp_network.name(temp_network.port(pin));
+      const std::string port_name = temp_network.name(temp_network.port(pin));
       dbChip* master = chip_inst->getMasterChip();
 
-      dbBTerm* bterm = master->getBlock()->findBTerm(port_name);
+      dbBTerm* bterm = master->getBlock()->findBTerm(port_name.c_str());
       if (!bterm) {
         continue;
       }

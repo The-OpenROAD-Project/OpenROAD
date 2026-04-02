@@ -56,8 +56,7 @@ bool MacroPlacer::place(const int num_threads,
                         const float target_util,
                         const float min_ar,
                         const char* report_directory,
-                        const bool keep_clustering_data,
-                        const bool use_def_halo)
+                        const bool keep_clustering_data)
 {
   hier_rtlmp_->init();
   hier_rtlmp_->setClusterSize(
@@ -81,7 +80,6 @@ bool MacroPlacer::place(const int num_threads,
   hier_rtlmp_->setReportDirectory(report_directory);
   hier_rtlmp_->setNumThreads(num_threads);
   hier_rtlmp_->setKeepClusteringData(keep_clustering_data);
-  hier_rtlmp_->setUseDefHalo(use_def_halo);
   hier_rtlmp_->setGuidanceRegions(guidance_regions_);
 
   hier_rtlmp_->run();

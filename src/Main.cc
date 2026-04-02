@@ -77,6 +77,7 @@ using std::string;
   X(stt)                                 \
   X(psm)                                 \
   X(pdn)                                 \
+  X(rsz)                                 \
   X(odb)                                 \
   X(ord)
 

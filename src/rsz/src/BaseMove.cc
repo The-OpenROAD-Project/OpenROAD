@@ -565,8 +565,8 @@ sta::LibertyCell* BaseMove::upsizeCell(sta::LibertyPort* in_port,
   sta::LibertyCell* cell = drvr_port->libertyCell();
   sta::LibertyCellSeq swappable_cells = resizer_->getSwappableCells(cell);
   if (!swappable_cells.empty()) {
-    const char* in_port_name = in_port->name();
-    const char* drvr_port_name = drvr_port->name();
+    const std::string& in_port_name = in_port->name();
+    const std::string& drvr_port_name = drvr_port->name();
     std::ranges::sort(
         swappable_cells,
         [=, this](const sta::LibertyCell* cell1,
@@ -620,7 +620,7 @@ sta::LibertyCell* BaseMove::upsizeCell(sta::LibertyPort* in_port,
 bool BaseMove::replaceCell(sta::Instance* inst,
                            const sta::LibertyCell* replacement)
 {
-  const char* replacement_name = replacement->name();
+  const char* replacement_name = replacement->name().c_str();
   dbMaster* replacement_master = db_->findMaster(replacement_name);
 
   if (!replacement_master) {
