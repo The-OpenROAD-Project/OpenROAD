@@ -326,7 +326,7 @@ bool Opendp::checkInRows(const Node& cell) const
   const auto grid_rect = grid_->gridCovering(&cell);
   debugPrint(logger_,
              DPL,
-             "old_hybrid",
+             "hybrid",
              1,
              "Checking cell {} with site {} and "
              "height {} in rows. Y start {} y end {}",

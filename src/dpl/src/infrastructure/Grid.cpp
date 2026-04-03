@@ -392,7 +392,7 @@ void Grid::visitCellBoundaryPixels(
     const auto grid_rect = gridCovering(&cell);
     debugPrint(logger_,
                DPL,
-               "old_hybrid",
+               "hybrid",
                1,
                "Checking cell {} isHybrid {} in rows. Y start {} y end {}",
                cell.getDbInst()->getName(),
@@ -414,14 +414,14 @@ void Grid::erasePixel(Node* cell)
   const auto grid_rect = gridCoveringPadded(cell);
   debugPrint(logger_,
              DPL,
-             "old_hybrid",
+             "hybrid",
              1,
              "Checking cell {} isHybrid {}",
              cell->getDbInst()->getName(),
              cell->isHybrid());
   debugPrint(logger_,
              DPL,
-             "old_hybrid",
+             "hybrid",
              1,
              "Checking cell {} in rows. Y start {} y end {}",
              cell->getDbInst()->getName(),
