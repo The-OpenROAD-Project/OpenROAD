@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2025, The OpenROAD Authors
 
-# This file only currently supports the gui disabled.  More work
-# is needed to handle Qt and build a working gui.
+# Qt-specific targets (gui_qt, qt_resources) live in //src/gui/qt so that
+# @qt-bazel is only loaded when building with --//:platform=gui.
 
-load("@qt-bazel//:build_defs.bzl", "qt6_library", "qt6_resource_library")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
@@ -15,33 +14,73 @@ package(
     features = ["layering_check"],
 )
 
+# Shared descriptor code, compiled without Qt.  Used by the CLI stub build
+# and (via deps) by the Qt gui_qt target in //src/gui/qt.
 cc_library(
-    name = "gui",
+    name = "gui_descriptors",
     srcs = [
-        "src/bufferTreeDescriptor.h",
         "src/dbDescriptors.cpp",
-        "src/dbDescriptors.h",
         "src/descriptor_registry.cpp",
-        "src/heatMapCore.cpp",
-        "src/heatMapPinDensity.cpp",
-        "src/heatMapPinDensity.h",
-        "src/heatMapPlacementDensity.cpp",
-        "src/heatMapPlacementDensity.h",
         "src/init_descriptors.cpp",
+        "src/ruler.cpp",
         "src/staDescriptors.cpp",
-        "src/staDescriptors.h",
-        "src/stub.cpp",
-        ":tcl",
     ],
     hdrs = [
         "include/gui/MakeGui.h",
         "include/gui/descriptor_registry.h",
         "include/gui/gui.h",
-        "include/gui/heatMap.h",
+        "src/bufferTreeDescriptor.h",
+        "src/dbDescriptors.h",
+        "src/ruler.h",
+        "src/staDescriptors.h",
     ],
     includes = [
+        ".",
         "include",
         "src",
+    ],
+    visibility = [
+        "//:__subpackages__",
+        "//src/gui/qt:__pkg__",
+    ],
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
+        "@boost.geometry",
+        "@boost.multi_array",
+        "@spdlog",
+        "@tcl_lang//:tcl",
+    ],
+)
+
+# Shared heat-map core, compiled without Qt.  Used by the CLI stub build
+# and (via deps) by the Qt gui_qt target in //src/gui/qt.
+cc_library(
+    name = "gui_heatmap_core",
+    srcs = [
+        "src/heatMapCore.cpp",
+        "src/heatMapPinDensity.cpp",
+        "src/heatMapPlacementDensity.cpp",
+    ],
+    hdrs = [
+        "include/gui/gui.h",
+        "include/gui/heatMap.h",
+        "src/heatMapPinDensity.h",
+        "src/heatMapPlacementDensity.h",
+    ],
+    includes = [
+        ".",
+        "include",
+        "src",
+    ],
+    visibility = [
+        "//:__subpackages__",
+        "//src/gui/qt:__pkg__",
     ],
     deps = [
         "//src/dbSta",
@@ -53,92 +92,39 @@ cc_library(
         "@boost.algorithm",
         "@boost.multi_array",
         "@spdlog",
-        "@tcl_lang//:tcl",
     ],
 )
 
-# A Qt 'headless' build is added for environments that require GUI features
-# but do not have an attached display. This requires setting 'qt_gui_platform'
-# to `headless`, and subsituting the dependency in the top-level BUILD.
-QT_GUI_PLATFORMS = {
-    "headless": "_headless",
-    "native": "",
-}
-
-[
-    qt6_library(
-        name = "gui_qt" + suffix,
-        srcs = glob(
-            include = [
-                "src/*.cpp",
-            ],
-            exclude = [
-                "src/stub.cpp",
-                "src/stub_heatMap.cpp",
-            ],
-        ) + [
-            ":gui_swig",
-            ":tcl",
-        ],
-        hdrs = [
-            "include/gui/MakeGui.h",
-            "include/gui/descriptor_registry.h",
-            "include/gui/gui.h",
-            "include/gui/heatMap.h",
-        ],
-        defines = select({
-            "@platforms//os:linux": ["STATIC_QPA_PLUGIN_XCB=1"],
-            "//conditions:default": [],
-        }),
-        includes = [
-            "include",
-            "src",
-            "ui",
-        ],
-        moc_hdrs = glob(["src/*.h"]),
-        qt_gui_platform = platform,
-        uic_srcs = glob(["ui/*.ui"]) if platform == "native" else [],
-        deps = [
-            ":qt_resources",
-            "//:ord",
-            "//src/dbSta",
-            "//src/dbSta:dbNetwork",
-            "//src/odb",
-            "//src/sta:opensta_lib",
-            "//src/utl",
-            "//third-party/gif-h:gif_h",
-            "@abseil-cpp//absl/synchronization",
-            "@boost.algorithm",
-            "@boost.geometry",
-            "@boost.multi_array",
-            "@boost.stacktrace",
-            "@spdlog",
-            "@tcl_lang//:tcl",
-        ] + ([":uic_lib"] if platform == "headless" else []),
-    )
-    for platform, suffix in QT_GUI_PLATFORMS.items()
-]
-
-# This is used to work around the limitation of the `qt6_library` rule which
-# only supports use of one `qt6_library` rule using `uic_srcs` per package.
 cc_library(
-    name = "uic_lib",
-    hdrs = [
-        ":ui/ui_findDlg.h",
-        ":ui/ui_gotoDlg.h",
-        ":ui/ui_highlightGroupDlg.h",
-        ":ui/ui_selectedWidget.h",
+    name = "gui",
+    srcs = [
+        "src/stub.cpp",
+        ":tcl",
     ],
-)
-
-qt6_resource_library(
-    name = "qt_resources",
-    data_srcs = glob([
-        "resources/**/*.png",
-    ]),
-    external_init_name = "resource",
-    qrc_srcs = [
-        "resources/resource.qrc",
+    hdrs = [
+        "include/gui/MakeGui.h",
+        "include/gui/descriptor_registry.h",
+        "include/gui/gui.h",
+        "include/gui/heatMap.h",
+    ],
+    includes = [
+        ".",
+        "include",
+        "src",
+    ],
+    deps = [
+        ":gui_descriptors",
+        ":gui_heatmap_core",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/utl",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.algorithm",
+        "@boost.multi_array",
+        "@spdlog",
+        "@tcl_lang//:tcl",
     ],
 )
 

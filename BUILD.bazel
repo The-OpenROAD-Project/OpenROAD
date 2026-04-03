@@ -134,7 +134,7 @@ OPENROAD_LIBRARY_DEPS = [
 ] + select(
     {
         ":platform_cli": ["//src/gui"],
-        ":platform_gui": ["//src/gui:gui_qt"],
+        ":platform_gui": ["//src/gui/qt:gui_qt"],
     },
 )
 
