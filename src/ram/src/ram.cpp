@@ -231,11 +231,8 @@ void RamGen::makeSlice(const int slice_idx,
   dbNet* write_sel = selects[0];
   if (word_select) {
     write_sel = makeNet(prefix, "write_sel");
-    makeInst(sel_cell.get(),
-             prefix,
-             "word_and",
-             and2_cell_,
-             {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
+    makeInst(sel_cell.get(), prefix, "word_and", and2_cell_,
+         {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
   }
 
   // Make clock and
@@ -1181,6 +1178,19 @@ void RamGen::generate(const int mask_size,
       ram_grid_.addCell(std::move(decoder_and_cell), col_cell_count);
     }
   }
+} else {
+   word_decoder_nets[row] = selectNets(decoder_name, read_ports);
+  auto decoder_and_cell = makeDecoder(decoder_name,
+                                      num_rows,
+                                      read_ports,
+                                      word_decoder_nets[row],
+                                      decoder_input_nets[row]);
+  ram_grid_.addCell(std::move(decoder_and_cell), col_cell_count);
+}
+  }
+
+  std::unique_ptr<Cell> inv_sel_cell;
+  std::unique_ptr<Cell> word_sel_cell;
 
   std::unique_ptr<Cell> inv_sel_cell;
   std::unique_ptr<Cell> word_sel_cell;
