@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "HybridLegalizer.h"
+#include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
 #include "boost/geometry/index/predicates.hpp"
 #include "dpl/OptMirror.h"
@@ -205,18 +205,18 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   } else {
     logger_->info(DPL,
                   1102,
-                  "Running HybridLegalizer (default mode).");
+                  "Running NegotiationLegalizer (default mode).");
 
-    HybridLegalizer hybrid(
+    NegotiationLegalizer hybrid(
         this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
     hybrid.setRunAbacus(run_abacus);
     hybrid.legalize();
     hybrid.setDplPositions();
 
     if (hybrid.numViolations() > 0) {
-      logger_->warn(DPL, 777, "HybridLegalizer did not fully converge. "
+      logger_->warn(DPL, 777, "NegotiationLegalizer did not fully converge. "
         "Violations remain: {}", hybrid.numViolations());
-      logger_->metric("HL__no__converge__final_violations", hybrid.numViolations());
+      logger_->metric("NL__no__converge__final_violations", hybrid.numViolations());
     }
   }
 
@@ -225,14 +225,14 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   updateDbInstLocations();
 }
 
-int Opendp::hybridLegalize(bool run_abacus)
+int Opendp::negotiationLegalize(bool run_abacus)
 {
   importDb();
   adjustNodesOrient();
   initGrid();
   setFixedGridCells();
 
-  HybridLegalizer hybrid(
+  NegotiationLegalizer hybrid(
       this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
   if (run_abacus) {
     hybrid.setRunAbacus(true);

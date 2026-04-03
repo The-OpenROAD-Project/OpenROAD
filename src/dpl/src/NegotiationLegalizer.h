@@ -31,9 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// HybridLegalizer.h
+// NegotiationLegalizer.h
 //
-// Hybrid Abacus + Negotiation-Based Legalizer for OpenROAD (dpl module).
+// Negotiation-Based Legalizer for OpenROAD (dpl module).
 //
 // Pipeline:
 //   1. Abacus pass   – fast, near-optimal for uncongested single/multi-row
@@ -84,9 +84,9 @@ inline constexpr double kGamma = 0.005;    // adaptive-pf γ
 inline constexpr int kIth = 300;           // pf ramp-up threshold iteration
 
 // ---------------------------------------------------------------------------
-// HLPowerRailType
+// NLPowerRailType
 // ---------------------------------------------------------------------------
-enum class HLPowerRailType
+enum class NLPowerRailType
 {
   kVss = 0,
   kVdd = 1
@@ -132,7 +132,7 @@ struct HLCell
   int padRight{0}; // right padding (sites)
 
   bool fixed{false};
-  HLPowerRailType railType{HLPowerRailType::kVss};
+  NLPowerRailType railType{NLPowerRailType::kVss};
   int fenceId{-1};       // -1 → default region
   bool flippable{true};  // odd-height cells may flip vertically
   bool legal{false};     // updated each negotiation iteration
@@ -158,23 +158,23 @@ struct AbacusCluster
 };
 
 // ---------------------------------------------------------------------------
-// HybridLegalizer
+// NegotiationLegalizer
 // ---------------------------------------------------------------------------
-class HybridLegalizer
+class NegotiationLegalizer
 {
  public:
-  HybridLegalizer(Opendp* opendp,
+  NegotiationLegalizer(Opendp* opendp,
                   odb::dbDatabase* db,
                   utl::Logger* logger,
                   const Padding* padding = nullptr,
                   DplObserver* debug_observer = nullptr,
                   Network* network = nullptr);
-  ~HybridLegalizer() = default;
+  ~NegotiationLegalizer() = default;
 
-  HybridLegalizer(const HybridLegalizer&) = delete;
-  HybridLegalizer& operator=(const HybridLegalizer&) = delete;
-  HybridLegalizer(HybridLegalizer&&) = delete;
-  HybridLegalizer& operator=(HybridLegalizer&&) = delete;
+  NegotiationLegalizer(const NegotiationLegalizer&) = delete;
+  NegotiationLegalizer& operator=(const NegotiationLegalizer&) = delete;
+  NegotiationLegalizer(NegotiationLegalizer&&) = delete;
+  NegotiationLegalizer& operator=(NegotiationLegalizer&&) = delete;
 
   // Main entry point – call instead of (or after) the existing opendp path.
   // May be called multiple times on the same object; internal state is reset
@@ -203,10 +203,10 @@ class HybridLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  [[nodiscard]] HLPowerRailType inferRailType(int rowIdx) const;
+  [[nodiscard]] NLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
-  void pushHybridPixels();  // Send grid state to debug observer for rendering
-  void debugPause(const std::string& msg);  // setDplPositions + pushHybridPixels + redrawAndPause
+  void pushNegotiationPixels();  // Send grid state to debug observer for rendering
+  void debugPause(const std::string& msg);  // setDplPositions + pushNegotiationPixels + redrawAndPause
 
   // Abacus pass
   [[nodiscard]] std::vector<int> runAbacus();
@@ -245,7 +245,7 @@ class HybridLegalizer
                                                 int y) const;
 
   // DPL Grid synchronisation helpers – keep the Opendp pixel grid in sync
-  // with HybridLegalizer cell positions so that PlacementDRC neighbour
+  // with NegotiationLegalizer cell positions so that PlacementDRC neighbour
   // lookups (edge spacing, padding, one-site gaps) see correct data.
   void syncCellToDplGrid(int cellIdx);
   void eraseCellFromDplGrid(int cellIdx);
@@ -292,7 +292,7 @@ class HybridLegalizer
 
   std::vector<HLCell> cells_;
   std::vector<FenceRegion> fences_;
-  std::vector<HLPowerRailType> rowRail_;
+  std::vector<NLPowerRailType> rowRail_;
   std::vector<bool> rowHasSites_;  // true when at least one DB row exists at y
 
   double mf_{kMfDefault};

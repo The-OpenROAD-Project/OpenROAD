@@ -31,9 +31,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// HybridLegalizer.cpp – initialisation, grid, Abacus pass, metrics.
+// NegotiationLegalizer.cpp – initialisation, grid, Abacus pass, metrics.
 
-#include "HybridLegalizer.h"
+#include "NegotiationLegalizer.h"
 
 #include <algorithm>
 #include <cassert>
@@ -95,7 +95,7 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 // Constructor
 // ===========================================================================
 
-HybridLegalizer::HybridLegalizer(Opendp* opendp,
+NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
                                  odb::dbDatabase* db,
                                  utl::Logger* logger,
                                  const Padding* padding,
@@ -109,9 +109,9 @@ HybridLegalizer::HybridLegalizer(Opendp* opendp,
 // legalize – top-level entry point
 // ===========================================================================
 
-void HybridLegalizer::legalize()
+void NegotiationLegalizer::legalize()
 {
-  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: starting legalization.");
+  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: starting legalization.");
 
   using Clock = std::chrono::steady_clock;
   auto ms = [](auto a, auto b) {
@@ -142,21 +142,21 @@ void HybridLegalizer::legalize()
   const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
   debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
 
-  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: {} cells, grid {}x{}.",cells_.size(),gridW_,gridH_);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: {} cells, grid {}x{}.",cells_.size(),gridW_,gridH_);
 
   // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
   double abacusMs = 0.0;
   if (run_abacus_) {
-    debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: running Abacus pass.");
+    debugPrint(logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: running Abacus pass.");
     const auto tAbacusStart = Clock::now();
 
     illegal = runAbacus();
 
     abacusMs = ms(tAbacusStart, Clock::now());
-    debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: Abacus done, {} cells still illegal.",illegal.size());
+    debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: Abacus done, {} cells still illegal.",illegal.size());
   } else {
-    debugPrint(logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: skipping Abacus pass.");
+    debugPrint(logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: skipping Abacus pass.");
 
     const auto tSkipAbacusStart = Clock::now();
 
@@ -195,7 +195,7 @@ void HybridLegalizer::legalize()
     setDplPositions();
     // this flush may imply functional changes. It hides initial movements for clean debugging negotiation phase.
     flushToDb();
-    pushHybridPixels();
+    pushNegotiationPixels();
     logger_->report("Pause after Abacus pass.");
     debug_observer_->redrawAndPause();
   }
@@ -203,7 +203,7 @@ void HybridLegalizer::legalize()
   // --- Part 2: Negotiation (main legalization) -------------------
   double negotiationMs = 0.0;
   if (!illegal.empty()) {
-    debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: negotiation pass on {} cells.",illegal.size());
+    debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: negotiation pass on {} cells.",illegal.size());
     const auto tNegStart = Clock::now();
 
     runNegotiation(illegal);
@@ -225,7 +225,7 @@ void HybridLegalizer::legalize()
 
   // --- Part 3: Post-optimisation ------------------------------------------
   debugPrint(
-      logger_, utl::DPL, "hybrid", 1, "HybridLegalizer: post-optimisation.");
+      logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: post-optimisation.");
   // greedyImprove(5);
   // cellSwap();
   // greedyImprove(1);
@@ -237,7 +237,7 @@ void HybridLegalizer::legalize()
   const double metricsMs = ms(tMetricsStart, Clock::now());
   debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"metrics (avgDisp/maxDisp/violations): {:.1f}ms",metricsMs);
 
-  debugPrint(logger_,utl::DPL,"hybrid",1,"HybridLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",avgDisp,maxDisp,nViol);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",avgDisp,maxDisp,nViol);
 
   const auto tFlushStart = Clock::now();
   flushToDb();
@@ -295,7 +295,7 @@ void HybridLegalizer::legalize()
 // flushToDb – write current cell positions to ODB so the GUI reflects them
 // ===========================================================================
 
-void HybridLegalizer::flushToDb()
+void NegotiationLegalizer::flushToDb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
@@ -310,28 +310,28 @@ void HybridLegalizer::flushToDb()
 }
 
 // ===========================================================================
-// pushHybridPixels – send grid state to the debug observer for rendering
+// pushNegotiationPixels – send grid state to the debug observer for rendering
 // ===========================================================================
 
-void HybridLegalizer::pushHybridPixels()
+void NegotiationLegalizer::pushNegotiationPixels()
 {
   if (!debug_observer_) {
     return;
   }
-  std::vector<HybridPixelState> pixels(gridW_ * gridH_);
+  std::vector<NegotiationPixelState> pixels(gridW_ * gridH_);
   for (int gy = 0; gy < gridH_; ++gy) {
     for (int gx = 0; gx < gridW_; ++gx) {
       const Pixel& g = gridAt(gx, gy);
       const int idx = gy * gridW_ + gx;
       if (g.capacity == 0) {
-        pixels[idx] = (g.usage > 0) ? HybridPixelState::kBlocked
-                                    : HybridPixelState::kNoRow;
+        pixels[idx] = (g.usage > 0) ? NegotiationPixelState::kBlocked
+                                    : NegotiationPixelState::kNoRow;
       } else if (g.overuse() > 0) {
-        pixels[idx] = HybridPixelState::kOveruse;
+        pixels[idx] = NegotiationPixelState::kOveruse;
       } else if (g.usage > 0) {
-        pixels[idx] = HybridPixelState::kOccupied;
+        pixels[idx] = NegotiationPixelState::kOccupied;
       } else {
-        pixels[idx] = HybridPixelState::kFree;
+        pixels[idx] = NegotiationPixelState::kFree;
       }
     }
   }
@@ -351,7 +351,7 @@ void HybridLegalizer::pushHybridPixels()
           for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
             const int pidx = (cell.y + dy) * gridW_ + gx;
             if (pidx >= 0 && pidx < static_cast<int>(pixels.size())) {
-              pixels[pidx] = HybridPixelState::kDrcViolation;
+              pixels[pidx] = NegotiationPixelState::kDrcViolation;
             }
           }
         }
@@ -364,17 +364,17 @@ void HybridLegalizer::pushHybridPixels()
   for (int r = 0; r <= gridH_; ++r) {
     row_y_dbu[r] = dplGrid->gridYToDbu(GridY{r}).v;
   }
-  debug_observer_->setHybridPixels(
+  debug_observer_->setNegotiationPixels(
       pixels, gridW_, gridH_, dieXlo_, dieYlo_, siteWidth_, row_y_dbu);
 }
 
-void HybridLegalizer::debugPause(const std::string& msg)
+void NegotiationLegalizer::debugPause(const std::string& msg)
 {
   if (!debug_observer_) {
     return;
   }
   setDplPositions();
-  pushHybridPixels();
+  pushNegotiationPixels();
   logger_->report("{}", msg);
   debug_observer_->redrawAndPause();
 }
@@ -383,7 +383,7 @@ void HybridLegalizer::debugPause(const std::string& msg)
 // setDplPositions – pass the positions to the DPL original structure (Node)
 // ===========================================================================
 
-void HybridLegalizer::setDplPositions()
+void NegotiationLegalizer::setDplPositions()
 {
   if (!network_) {
     return;
@@ -425,7 +425,7 @@ void HybridLegalizer::setDplPositions()
 // Initialisation
 // ===========================================================================
 
-bool HybridLegalizer::initFromDb()
+bool NegotiationLegalizer::initFromDb()
 {
   if (db_->getChip() == nullptr || !opendp_ || !opendp_->grid_) {
     return false;
@@ -460,7 +460,7 @@ bool HybridLegalizer::initFromDb()
   rowRail_.clear();
   rowRail_.resize(gridH_);
   for (int r = 0; r < gridH_; ++r) {
-    rowRail_[r] = (r % 2 == 0) ? HLPowerRailType::kVss : HLPowerRailType::kVdd;
+    rowRail_[r] = (r % 2 == 0) ? NLPowerRailType::kVss : NLPowerRailType::kVdd;
   }
 
   // Build HLCell records from all placed instances.
@@ -596,7 +596,7 @@ bool HybridLegalizer::initFromDb()
     // its internal rail design is opposite of the row's bottom rail.
     auto siteOrient = dpl_grid->getSiteOrientation(GridX{cell.initX}, GridY{cell.initY}, master->getSite());
     if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
-      cell.railType = (cell.railType == HLPowerRailType::kVss) ? HLPowerRailType::kVdd : HLPowerRailType::kVss;
+      cell.railType = (cell.railType == NLPowerRailType::kVss) ? NLPowerRailType::kVdd : NLPowerRailType::kVss;
     }
 
     cell.flippable = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
@@ -616,15 +616,15 @@ bool HybridLegalizer::initFromDb()
   return true;
 }
 
-HLPowerRailType HybridLegalizer::inferRailType(int rowIdx) const
+NLPowerRailType NegotiationLegalizer::inferRailType(int rowIdx) const
 {
   if (rowIdx >= 0 && rowIdx < static_cast<int>(rowRail_.size())) {
     return rowRail_[rowIdx];
   }
-  return HLPowerRailType::kVss;
+  return NLPowerRailType::kVss;
 }
 
-void HybridLegalizer::buildGrid()
+void NegotiationLegalizer::buildGrid()
 {
   Grid* dplGrid = opendp_->grid_.get();
 
@@ -674,7 +674,7 @@ void HybridLegalizer::buildGrid()
   }
 }
 
-void HybridLegalizer::initFenceRegions()
+void NegotiationLegalizer::initFenceRegions()
 {
   fences_.clear();  // Guard against double-population if legalize() is re-run.
 
@@ -721,7 +721,7 @@ void HybridLegalizer::initFenceRegions()
 // HLGrid helpers
 // ===========================================================================
 
-void HybridLegalizer::addUsage(int cellIdx, int delta)
+void NegotiationLegalizer::addUsage(int cellIdx, int delta)
 {
   const HLCell& cell = cells_[cellIdx];
   const int xBegin = effXBegin(cell);
@@ -740,7 +740,7 @@ void HybridLegalizer::addUsage(int cellIdx, int delta)
 // DPL Grid synchronisation
 // ===========================================================================
 
-void HybridLegalizer::syncCellToDplGrid(int cellIdx)
+void NegotiationLegalizer::syncCellToDplGrid(int cellIdx)
 {
   if (!opendp_ || !opendp_->grid_ || !network_) {
     return;
@@ -771,7 +771,7 @@ void HybridLegalizer::syncCellToDplGrid(int cellIdx)
   opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
 }
 
-void HybridLegalizer::eraseCellFromDplGrid(int cellIdx)
+void NegotiationLegalizer::eraseCellFromDplGrid(int cellIdx)
 {
   if (!opendp_ || !opendp_->grid_ || !network_) {
     return;
@@ -791,7 +791,7 @@ void HybridLegalizer::eraseCellFromDplGrid(int cellIdx)
   opendp_->grid_->erasePixel(node);
 }
 
-void HybridLegalizer::syncAllCellsToDplGrid()
+void NegotiationLegalizer::syncAllCellsToDplGrid()
 {
   if (!opendp_ || !opendp_->grid_ || !network_) {
     return;
@@ -852,12 +852,12 @@ void HybridLegalizer::syncAllCellsToDplGrid()
 // Constraint helpers
 // ===========================================================================
 
-bool HybridLegalizer::inDie(int x, int y, int w, int h) const
+bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
 {
   return x >= 0 && y >= 0 && x + w <= gridW_ && y + h <= gridH_;
 }
 
-bool HybridLegalizer::isValidRow(int rowIdx,
+bool NegotiationLegalizer::isValidRow(int rowIdx,
                                  const HLCell& cell,
                                  int gridX) const
 {
@@ -879,7 +879,7 @@ bool HybridLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  const HLPowerRailType rowBot = rowRail_[rowIdx];
+  const NLPowerRailType rowBot = rowRail_[rowIdx];
   if (cell.height % 2 == 1) {
     // Odd-height: bottom rail must match, or cell can be vertically flipped.
     return cell.flippable || (rowBot == cell.railType);
@@ -889,7 +889,7 @@ bool HybridLegalizer::isValidRow(int rowIdx,
   return rowBot == cell.railType;
 }
 
-bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const
+bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
 {
   const HLCell& cell = cells_[cellIdx];
   if (cell.fenceId < 0) {
@@ -904,7 +904,7 @@ bool HybridLegalizer::respectsFence(int cellIdx, int x, int y) const
   return fences_[cell.fenceId].contains(x, y, cell.width, cell.height);
 }
 
-std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
+std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
                                                  int x,
                                                  int y) const
 {
@@ -964,7 +964,7 @@ std::pair<int, int> HybridLegalizer::snapToLegal(int cellIdx,
 // Abacus pass
 // ===========================================================================
 
-std::vector<int> HybridLegalizer::runAbacus()
+std::vector<int> NegotiationLegalizer::runAbacus()
 {
   // Build sorted order: ascending y then x.
   std::vector<int> order;
@@ -1026,7 +1026,7 @@ std::vector<int> HybridLegalizer::runAbacus()
   return illegal;
 }
 
-void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
+void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
 {
   std::vector<AbacusCluster> clusters;
 
@@ -1061,7 +1061,7 @@ void HybridLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
   }
 }
 
-void HybridLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
+void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
                                        int /*rowIdx*/)
 {
   while (clusters.size() >= 2) {
@@ -1101,7 +1101,7 @@ void HybridLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
   }
 }
 
-void HybridLegalizer::assignClusterPositions(const AbacusCluster& cluster,
+void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
                                              int rowIdx)
 {
   // cluster.optX is the padded-left edge of the cluster.
@@ -1118,14 +1118,14 @@ void HybridLegalizer::assignClusterPositions(const AbacusCluster& cluster,
     if (debug_observer_ && cells_[idx].db_inst_ != nullptr) {
       debug_observer_->drawSelected(cells_[idx].db_inst_);
       if (opendp_->iterative_debug_) {
-        pushHybridPixels();
+        pushNegotiationPixels();
         debug_observer_->redrawAndPause();
       }
     }
   }
 }
 
-bool HybridLegalizer::isCellLegal(int cellIdx) const
+bool NegotiationLegalizer::isCellLegal(int cellIdx) const
 {
   const HLCell& cell = cells_[cellIdx];
   if (!inDie(cell.x, cell.y, cell.width, cell.height)) {
@@ -1168,7 +1168,7 @@ bool HybridLegalizer::isCellLegal(int cellIdx) const
 // Metrics
 // ===========================================================================
 
-double HybridLegalizer::avgDisplacement() const
+double NegotiationLegalizer::avgDisplacement() const
 {
   double sum = 0.0;
   int count = 0;
@@ -1181,7 +1181,7 @@ double HybridLegalizer::avgDisplacement() const
   return count > 0 ? sum / count : 0.0;
 }
 
-int HybridLegalizer::maxDisplacement() const
+int NegotiationLegalizer::maxDisplacement() const
 {
   int mx = 0;
   for (const auto& cell : cells_) {
@@ -1192,7 +1192,7 @@ int HybridLegalizer::maxDisplacement() const
   return mx;
 }
 
-int HybridLegalizer::numViolations() const
+int NegotiationLegalizer::numViolations() const
 {
   int count = 0;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {

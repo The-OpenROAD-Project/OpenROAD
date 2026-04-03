@@ -107,7 +107,7 @@ set_debug_cmd(float min_displacement,
               bool iterative_placement,
               bool deep_iterative_placement,
               bool paint_pixels,
-              bool paint_hybrid_pixels)
+              bool paint_negotiation_pixels)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setJumpMoves(jump_moves);
@@ -115,7 +115,7 @@ set_debug_cmd(float min_displacement,
   opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, debug_instance, paint_pixels, paint_hybrid_pixels);
+          opendp, debug_instance, paint_pixels, paint_negotiation_pixels);
       opendp->setDebug(graphics);
   }
 }
@@ -173,10 +173,10 @@ void set_extra_dpl_cmd(bool enable)
   opendp->setExtraDplEnabled(enable);
 }
 
-int hybrid_legalize_cmd(bool run_abacus)
+int negotiation_legalize_cmd(bool run_abacus)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->hybridLegalize(run_abacus);
+  return opendp->negotiationLegalize(run_abacus);
 }
 
 } // namespace

@@ -14,8 +14,8 @@ namespace dpl {
 class Opendp;
 class Node;
 
-// Pixel state values passed from HybridLegalizer to the observer.
-enum class HybridPixelState : int8_t
+// Pixel state values passed from NegotiationLegalizer to the observer.
+enum class NegotiationPixelState : int8_t
 {
   kNoRow = 0,    // no row exists here (capacity == 0, not a blockage)
   kFree = 1,     // valid site, unused
@@ -42,8 +42,8 @@ class DplObserver
   virtual void redrawAndPause() = 0;
   virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 
-  // Hybrid-legalizer grid visualisation support (default no-ops).
-  virtual void setHybridPixels(const std::vector<HybridPixelState>& pixels,
+  // Negotiation-legalizer grid visualisation support (default no-ops).
+  virtual void setNegotiationPixels(const std::vector<NegotiationPixelState>& pixels,
                                int grid_w,
                                int grid_h,
                                int die_xlo,
@@ -52,7 +52,7 @@ class DplObserver
                                const std::vector<int>& row_y_dbu)
   {
   }
-  virtual void clearHybridPixels() {}
+  virtual void clearNegotiationPixels() {}
 };
 
 }  // namespace dpl

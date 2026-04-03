@@ -21,11 +21,11 @@ namespace dpl {
 Graphics::Graphics(Opendp* dp,
                    const odb::dbInst* debug_instance,
                    bool paint_pixels,
-                   bool paint_hybrid_pixels)
+                   bool paint_negotiation_pixels)
     : dp_(dp),
       debug_instance_(debug_instance),
       paint_pixels_(paint_pixels),
-      paint_hybrid_pixels_(paint_hybrid_pixels)
+      paint_negotiation_pixels_(paint_negotiation_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -195,48 +195,48 @@ void Graphics::drawObjects(gui::Painter& painter)
     }
   }
 
-  if (paint_hybrid_pixels_ && !hybrid_pixels_.empty()) {
-    const int sw = hybrid_site_width_;
-    for (int gy = 0; gy < hybrid_grid_h_; ++gy) {
-      const int y_lo = hybrid_die_ylo_ + hybrid_row_y_dbu_[gy];
-      const int y_hi = hybrid_die_ylo_ + hybrid_row_y_dbu_[gy + 1];
-      for (int gx = 0; gx < hybrid_grid_w_; ++gx) {
-        const auto state = hybrid_pixels_[gy * hybrid_grid_w_ + gx];
+  if (paint_negotiation_pixels_ && !negotiation_pixels_.empty()) {
+    const int sw = negotiation_site_width_;
+    for (int gy = 0; gy < negotiation_grid_h_; ++gy) {
+      const int y_lo = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy];
+      const int y_hi = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy + 1];
+      for (int gx = 0; gx < negotiation_grid_w_; ++gx) {
+        const auto state = negotiation_pixels_[gy * negotiation_grid_w_ + gx];
         gui::Painter::Color c;
         switch (state) {
-          case HybridPixelState::kNoRow:
+          case NegotiationPixelState::kNoRow:
             c = gui::Painter::kDarkGray;
             c.a = 60;
             break;
-          case HybridPixelState::kFree:
+          case NegotiationPixelState::kFree:
             c = gui::Painter::kGreen;
             c.a = 100;
             break;
-          case HybridPixelState::kOccupied:
+          case NegotiationPixelState::kOccupied:
             c = gui::Painter::kWhite;
             c.a = 100;
             break;
-          case HybridPixelState::kOveruse:
+          case NegotiationPixelState::kOveruse:
             c = gui::Painter::kRed;
             c.a = 150;
             break;
-          case HybridPixelState::kBlocked:
+          case NegotiationPixelState::kBlocked:
             c = gui::Painter::kYellow;
             c.a = 80;
             break;
-          case HybridPixelState::kInvalid:
+          case NegotiationPixelState::kInvalid:
             c = gui::Painter::kBlack;
             c.a = 200;
             break;
-          case HybridPixelState::kDrcViolation:
+          case NegotiationPixelState::kDrcViolation:
             c = gui::Painter::Color{255, 140, 0, 200};  // orange
             break;
         }
         painter.setPen(c);
         painter.setBrush(c);
-        odb::Rect rect(hybrid_die_xlo_ + gx * sw,
+        odb::Rect rect(negotiation_die_xlo_ + gx * sw,
                        y_lo,
-                       hybrid_die_xlo_ + (gx + 1) * sw,
+                       negotiation_die_xlo_ + (gx + 1) * sw,
                        y_hi);
         painter.drawRect(rect);
       }
@@ -244,7 +244,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
-void Graphics::setHybridPixels(const std::vector<HybridPixelState>& pixels,
+void Graphics::setNegotiationPixels(const std::vector<NegotiationPixelState>& pixels,
                                int grid_w,
                                int grid_h,
                                int die_xlo,
@@ -252,21 +252,21 @@ void Graphics::setHybridPixels(const std::vector<HybridPixelState>& pixels,
                                int site_width,
                                const std::vector<int>& row_y_dbu)
 {
-  hybrid_pixels_ = pixels;
-  hybrid_grid_w_ = grid_w;
-  hybrid_grid_h_ = grid_h;
-  hybrid_die_xlo_ = die_xlo;
-  hybrid_die_ylo_ = die_ylo;
-  hybrid_site_width_ = site_width;
-  hybrid_row_y_dbu_ = row_y_dbu;
+  negotiation_pixels_ = pixels;
+  negotiation_grid_w_ = grid_w;
+  negotiation_grid_h_ = grid_h;
+  negotiation_die_xlo_ = die_xlo;
+  negotiation_die_ylo_ = die_ylo;
+  negotiation_site_width_ = site_width;
+  negotiation_row_y_dbu_ = row_y_dbu;
 }
 
-void Graphics::clearHybridPixels()
+void Graphics::clearNegotiationPixels()
 {
-  hybrid_pixels_.clear();
-  hybrid_row_y_dbu_.clear();
-  hybrid_grid_w_ = 0;
-  hybrid_grid_h_ = 0;
+  negotiation_pixels_.clear();
+  negotiation_row_y_dbu_.clear();
+  negotiation_grid_w_ = 0;
+  negotiation_grid_h_ = 0;
 }
 
 /* static */

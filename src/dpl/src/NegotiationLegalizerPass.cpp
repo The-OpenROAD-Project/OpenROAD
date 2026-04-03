@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-// HybridLegalizerNeg.cpp – negotiation pass and post-optimisation.
+// NegotiationLegalizerPass.cpp – negotiation pass and post-optimisation.
 
 #include <algorithm>
 #include <chrono>
@@ -43,7 +43,7 @@
 #include <utility>
 #include <vector>
 
-#include "HybridLegalizer.h"
+#include "NegotiationLegalizer.h"
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
@@ -58,7 +58,7 @@ namespace dpl {
 // runNegotiation – top-level negotiation driver
 // ===========================================================================
 
-void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
+void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 {
   // Seed with illegal cells and all movable neighbors within the search
   // window so the loop can create space organically.
@@ -85,7 +85,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   std::vector<int> active(activeSet.begin(), activeSet.end());
 
   // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
-  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),maxIterNeg_);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),maxIterNeg_);
 
   int prev_overflows = -1;
   int stall_count = 0;
@@ -93,7 +93,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     logger_->report("Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
     const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
-      debugPrint(logger_,    utl::DPL,    "hybrid",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
+      debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
       logger_->metric("HL__converge__phase_1__iteration", iter);
       debugPause("Pause after convergence at phase 1.");
       return;
@@ -113,7 +113,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   debugPause("Pause before negotiation phase 2.");
 
   // Phase 2 – isolation point active: skip already-legal cells.
-  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation phase 2: isolation point active, {} iterations.",kMaxIterNeg2);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 2: isolation point active, {} iterations.",kMaxIterNeg2);
 
   prev_overflows = -1;
   stall_count = 0;
@@ -122,7 +122,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     const int phase_2_overflows
         = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
-      debugPrint(logger_,    utl::DPL,    "hybrid",    1,    "Negotiation phase 2 converged at iteration {}.",    iter);
+      debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 2 converged at iteration {}.",    iter);
       logger_->metric("HL__converge__phase_2__iteration", iter);
       debugPause("Pause after convergence at phase 2.");
       return;
@@ -145,7 +145,7 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)
   // via numViolations(), which avoids registering a message ID in this file.
-  debugPrint(logger_,utl::DPL,"hybrid",1,"Negotiation did not fully converge. Remaining violations: {}.",numViolations());
+  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation did not fully converge. Remaining violations: {}.",numViolations());
   debugPause("Pause after non-convergence at negotiation phases 1 and 2.");
 }
 
@@ -153,10 +153,10 @@ void HybridLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 // negotiationIter – one full rip-up/replace sweep over activeCells
 // ===========================================================================
 
-int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
+int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                                      int iter,
                                      bool updateHistory)
-{  
+{
   using Clock = std::chrono::steady_clock;
   const auto t0 = Clock::now();
 
@@ -195,7 +195,7 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
     findBestMs += std::chrono::duration<double, std::milli>(tc - tb).count();
     placeMs += std::chrono::duration<double, std::milli>(td - tc).count();
     moves_count++;
-    debugPrint(logger_, utl::DPL, "hybrid", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
+    debugPrint(logger_, utl::DPL, "negotiation", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
   }
 
   const auto t2 = Clock::now();
@@ -304,9 +304,9 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
       drcMs, pct(drcMs), overhead, pct(overhead));
 
   logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
-  if(opendp_->iterative_debug_ && debug_observer_) {    
+  if(opendp_->iterative_debug_ && debug_observer_) {
     setDplPositions();
-    pushHybridPixels();
+    pushNegotiationPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);
     debug_observer_->redrawAndPause();
   }
@@ -317,23 +317,23 @@ int HybridLegalizer::negotiationIter(std::vector<int>& activeCells,
 // ripUp / place
 // ===========================================================================
 
-void HybridLegalizer::ripUp(int cellIdx)
+void NegotiationLegalizer::ripUp(int cellIdx)
 {
   eraseCellFromDplGrid(cellIdx);
   addUsage(cellIdx, -1);
 }
 
-void HybridLegalizer::place(int cellIdx, int x, int y)
+void NegotiationLegalizer::place(int cellIdx, int x, int y)
 {
   cells_[cellIdx].x = x;
   cells_[cellIdx].y = y;
   addUsage(cellIdx, 1);
-  syncCellToDplGrid(cellIdx);  
+  syncCellToDplGrid(cellIdx);
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (!debug_inst || cells_[cellIdx].db_inst_ == debug_inst) {
-      pushHybridPixels();            
-      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst_->getName());    
+      pushNegotiationPixels();
+      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst_->getName());
       debug_observer_->drawSelected(cells_[cellIdx].db_inst_);
     }
   }
@@ -343,7 +343,7 @@ void HybridLegalizer::place(int cellIdx, int x, int y)
 // findBestLocation – enumerate candidates within the search window
 // ===========================================================================
 
-std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
+std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
                                                       int iter) const
 {
   const HLCell& cell = cells_[cellIdx];
@@ -465,7 +465,7 @@ std::pair<int, int> HybridLegalizer::findBestLocation(int cellIdx,
 //   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
 // ===========================================================================
 
-double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
+double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
 {
   const HLCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
@@ -500,7 +500,7 @@ double HybridLegalizer::negotiationCost(int cellIdx, int x, int y) const
 //   b(x,y) = δ + mf * max(δ − th, 0)
 // ===========================================================================
 
-double HybridLegalizer::targetCost(int cellIdx, int x, int y) const
+double NegotiationLegalizer::targetCost(int cellIdx, int x, int y) const
 {
   const HLCell& cell = cells_[cellIdx];
   const int disp = std::abs(x - cell.initX) + std::abs(y - cell.initY);
@@ -513,7 +513,7 @@ double HybridLegalizer::targetCost(int cellIdx, int x, int y) const
 //   pf = 1.0 + α * exp(−β * exp(−γ * (i − ith)))
 // ===========================================================================
 
-double HybridLegalizer::adaptivePf(int iter) const
+double NegotiationLegalizer::adaptivePf(int iter) const
 {
   return 1.0 + kAlpha * std::exp(-kBeta * std::exp(-kGamma * (iter - kIth)));
 }
@@ -523,7 +523,7 @@ double HybridLegalizer::adaptivePf(int iter) const
 //   h_new = h_old + hf * overuse
 // ===========================================================================
 
-void HybridLegalizer::updateHistoryCosts()
+void NegotiationLegalizer::updateHistoryCosts()
 {
   for (int gy = 0; gy < gridH_; ++gy) {
     for (int gx = 0; gx < gridW_; ++gx) {
@@ -542,7 +542,7 @@ void HybridLegalizer::updateHistoryCosts()
 // them away from DRC-problematic positions over iterations.
 // ===========================================================================
 
-void HybridLegalizer::updateDrcHistoryCosts(
+void NegotiationLegalizer::updateDrcHistoryCosts(
     const std::vector<int>& activeCells)
 {
   if (!opendp_ || !opendp_->drc_engine_ || !network_) {
@@ -589,7 +589,7 @@ void HybridLegalizer::updateDrcHistoryCosts(
 //   Tertiary:  width ascending
 // ===========================================================================
 
-void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
+void NegotiationLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
 {
   auto cellOveruse = [this](int idx) {
     const HLCell& cell = cells_[idx];
@@ -624,7 +624,7 @@ void HybridLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
 // new overlaps.
 // ===========================================================================
 
-void HybridLegalizer::greedyImprove(int passes)
+void NegotiationLegalizer::greedyImprove(int passes)
 {
   std::vector<int> order;
   order.reserve(cells_.size());
@@ -698,7 +698,7 @@ void HybridLegalizer::greedyImprove(int passes)
 // without exceeding the current maximum displacement.
 // ===========================================================================
 
-void HybridLegalizer::cellSwap()
+void NegotiationLegalizer::cellSwap()
 {
   const int maxDisp = maxDisplacement();
 
@@ -707,7 +707,7 @@ void HybridLegalizer::cellSwap()
   {
     int height;
     int width;
-    HLPowerRailType rail;
+    NLPowerRailType rail;
     bool operator==(const GroupKey& o) const
     {
       return height == o.height && width == o.width && rail == o.rail;
@@ -777,7 +777,7 @@ void HybridLegalizer::cellSwap()
 // pockets that the rectangular window cannot resolve.
 // ===========================================================================
 
-void HybridLegalizer::diamondRecovery(const std::vector<int>& activeCells)
+void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
 {
   if (!opendp_ || !network_) {
     return;
