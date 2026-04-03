@@ -20,8 +20,6 @@
 [WARNING ODB-0217] duplicate VIARULE (Via9Array-0) ignoring...
 [INFO ODB-0394] Duplicate site FreePDK45_38x28_10R_NP_162NW_34O in Nangate45 already seen in Nangate45_tech
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 135 library cells
-[WARNING RAM-0022] No tapcell is specified.
-        The generated layout may not pass Design Rule Checks.
 [INFO RAM-0003] Generating RAM7x7
 [INFO RAM-0016] Selected inverter cell INV_X1
 [INFO RAM-0016] Selected tristate cell TBUF_X1
@@ -30,18 +28,22 @@
 [INFO RAM-0016] Selected buffer cell BUF_X1
 [INFO RAM-0024] Behavioral Verilog written for RAM7x7
 [INFO PDN-0001] Inserting grid: ram_grid
-[WARNING PDN-0195] Removing 3 via(s) between metal1 and metal4 at (8.0000 um, 0.0050 um) for VSS
-[WARNING PDN-0195] Removing 3 via(s) between metal1 and metal4 at (16.0000 um, 0.0050 um) for VSS
-[WARNING PDN-0195] Removing 3 via(s) between metal1 and metal4 at (24.0000 um, 0.0050 um) for VSS
-[WARNING PDN-0195] Removing 3 via(s) between metal1 and metal4 at (32.0000 um, 0.0050 um) for VSS
-[INFO PPL-0067] Restrict pins [ D[0] Q[0] D[1] Q[1] D[2] ... ] to region 0.00u-38.57u at the TOP edge.
-[INFO PPL-0001] Number of available slots 148
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (4.5000 um, 4.0000 um) for VDD
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (9.0000 um, 8.0000 um) for VSS
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (13.5000 um, 4.0000 um) for VDD
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (18.0000 um, 8.0000 um) for VSS
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (22.5000 um, 4.0000 um) for VDD
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (27.0000 um, 8.0000 um) for VSS
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (31.5000 um, 4.0000 um) for VDD
+[WARNING PDN-0195] Removing 1 via(s) between metal3 and metal4 at (36.0000 um, 8.0000 um) for VSS
+[INFO PPL-0067] Restrict pins [ D[0] Q[0] D[1] Q[1] D[2] ... ] to region 0.00u-39.52u at the TOP edge.
+[INFO PPL-0001] Number of available slots 184
 [INFO PPL-0002] Number of I/O             19
 [INFO PPL-0003] Number of I/O w/sink      19
 [INFO PPL-0004] Number of I/O w/o sink    0
 [INFO PPL-0005] Slots per section         200
 [INFO PPL-0008] Successfully assigned pins to sections.
-[INFO PPL-0012] I/O nets HPWL: 120.41 um.
+[INFO PPL-0012] I/O nets HPWL: 120.70 um.
 [INFO DPL-0001] Placed 35 filler instances.
 [INFO DRT-0167] List of default vias:
   Layer via2
@@ -63,15 +65,15 @@
 [INFO DRT-0168] Init region query.
 [INFO DRT-0033] active shape region query size = 0.
 [INFO DRT-0033] FR_VIA shape region query size = 0.
-[INFO DRT-0033] metal1 shape region query size = 4372.
+[INFO DRT-0033] metal1 shape region query size = 4532.
 [INFO DRT-0033] via1 shape region query size = 36.
 [INFO DRT-0033] metal2 shape region query size = 72.
 [INFO DRT-0033] via2 shape region query size = 36.
-[INFO DRT-0033] metal3 shape region query size = 72.
+[INFO DRT-0033] metal3 shape region query size = 77.
 [INFO DRT-0033] via3 shape region query size = 36.
-[INFO DRT-0033] metal4 shape region query size = 86.
-[INFO DRT-0033] via4 shape region query size = 9.
-[INFO DRT-0033] metal5 shape region query size = 20.
+[INFO DRT-0033] metal4 shape region query size = 74.
+[INFO DRT-0033] via4 shape region query size = 0.
+[INFO DRT-0033] metal5 shape region query size = 0.
 [INFO DRT-0033] via5 shape region query size = 0.
 [INFO DRT-0033] metal6 shape region query size = 0.
 [INFO DRT-0033] via6 shape region query size = 0.
@@ -85,15 +87,15 @@
 [INFO DRT-0178] Init guide query.
 [INFO DRT-0036] active guide region query size = 0.
 [INFO DRT-0036] FR_VIA guide region query size = 0.
-[INFO DRT-0036] metal1 guide region query size = 284.
+[INFO DRT-0036] metal1 guide region query size = 264.
 [INFO DRT-0036] via1 guide region query size = 0.
-[INFO DRT-0036] metal2 guide region query size = 229.
+[INFO DRT-0036] metal2 guide region query size = 190.
 [INFO DRT-0036] via2 guide region query size = 0.
-[INFO DRT-0036] metal3 guide region query size = 152.
+[INFO DRT-0036] metal3 guide region query size = 132.
 [INFO DRT-0036] via3 guide region query size = 0.
-[INFO DRT-0036] metal4 guide region query size = 19.
+[INFO DRT-0036] metal4 guide region query size = 14.
 [INFO DRT-0036] via4 guide region query size = 0.
-[INFO DRT-0036] metal5 guide region query size = 5.
+[INFO DRT-0036] metal5 guide region query size = 0.
 [INFO DRT-0036] via5 guide region query size = 0.
 [INFO DRT-0036] metal6 guide region query size = 0.
 [INFO DRT-0036] via6 guide region query size = 0.
