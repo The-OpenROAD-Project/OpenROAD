@@ -27,8 +27,8 @@ add_library(dpl_lib
   src/OptMirror.cpp
   src/PlacementDRC.cpp
 
-  src/HybridLegalizer.cpp
-  src/HybridLegalizerNeg.cpp
+  src/NegotiationLegalizer.cpp
+  src/NegotiationLegalizerPass.cpp
 
   src/Optdp.cpp
   src/infrastructure/architecture.cxx

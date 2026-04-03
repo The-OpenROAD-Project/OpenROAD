@@ -110,7 +110,7 @@ class Opendp
                          bool incremental = false,
                          bool use_diamond = false,
                          bool run_abacus = false);
-  int hybridLegalize(bool run_abacus = false);
+  int negotiationLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -195,7 +195,7 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   friend class CellPlaceOrderLess;
-  friend class HybridLegalizer;
+  friend class NegotiationLegalizer;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);

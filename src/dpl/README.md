@@ -7,7 +7,7 @@ Open-Source Detailed Placement Engine. Its key features are:
 -   Fragmented ROWs,
 -   Two-pass legalization (optional)
 
-Implements a two-pass hybrid legalizer targeting OpenROAD's `dpl` (detailed
+Implements a two-pass NegotiationLegalizer targeting OpenROAD's `dpl` (detailed
 placement) module:
 
 ```
@@ -71,8 +71,8 @@ detailed_placement
 | `-disallow_one_site_gaps` | Option is deprecated. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
-| `-use_diamond` | Use the diamond search detailed placement engine instead of the default HybridLegalizer. |
-| `-abacus` | Enable the Abacus pass within the HybridLegalizer. Only effective when using the default HybridLegalizer mode. |
+| `-use_diamond` | Use the diamond search detailed placement engine instead of the default NegotiationLegalizer. |
+| `-abacus` | Enable the Abacus pass within the NegotiationLegalizer. Only effective when using the default NegotiationLegalizer mode. |
 
 ### Set Placement Padding
 
