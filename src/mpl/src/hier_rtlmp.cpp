@@ -1672,8 +1672,6 @@ bool HierRTLMP::validUtilization(
       case Cluster::Type::UnconstrainedIOs:
       case Cluster::Type::IOBundle:
       case Cluster::Type::PAD:
-      case Cluster::Type::MacroArray:
-      case Cluster::Type::InterconnectedMacrosArray:
         break;
     }
   }
