@@ -644,6 +644,12 @@ void report_hpwl()
   w.reportHpwl(getLogger());
 }
 
+void report_design_area_metrics_cmd()
+{
+  OpenRoad *ord = getOpenRoad();
+  ord->designMetrics();
 }
+
+} // namespace ord
 
 %} // inline

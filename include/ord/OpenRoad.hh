@@ -251,6 +251,8 @@ class OpenRoad
   static bool getPythonCompileOption();
   static bool getGUICompileOption();
 
+  void designMetrics();
+
  protected:
   ~OpenRoad();
 
