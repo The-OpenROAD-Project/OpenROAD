@@ -540,13 +540,8 @@ int FastRouteCore::getWireCost(const int layer, const int length, FrNet* net)
   }
 
   const float final_resistance = getWireResistance(layer, length, net);
-  // Prevent int overflow when final_resistance is BIG_INT (i.e., layer is out
-  // of net layer range).
-  if (final_resistance >= BIG_INT) {
-    return BIG_INT;
-  }
-
-  return std::ceil(final_resistance / default_resistance);
+  const double cost = std::ceil(final_resistance / default_resistance);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 // Get via resistance in ohms going from layer A to layer B
@@ -586,8 +581,8 @@ int FastRouteCore::getViaCost(const int from_layer, const int to_layer)
   }
 
   const float total_via_resistance = getViaResistance(from_layer, to_layer);
-
-  return std::ceil(total_via_resistance / default_res);
+  const double cost = std::ceil(total_via_resistance / default_res);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 void FastRouteCore::updateWorstMetrics(FrNet* net)
