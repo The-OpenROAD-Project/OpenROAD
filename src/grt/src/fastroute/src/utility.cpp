@@ -291,7 +291,7 @@ void FastRouteCore::fillVIA()
       } else {
         // Handle zero-length edges (len == 0) that may need via grids.
         // These arise when two pins share the same gcell (x,y) but sit on
-        // different layers.  FLUTE creates zero-length Steiner edges between
+        // different layers.  STT creates zero-length Steiner edges between
         // them (directly or through a Steiner node at the same position).
         //
         // For Steiner nodes co-located with terminals, layerAssignment
@@ -300,31 +300,32 @@ void FastRouteCore::fillVIA()
         // meaningful layer information.
         int node1 = treeedge.n1;
         int node2 = treeedge.n2;
-        int eff1 = (treenodes[node1].botL == num_layers_
-                    && treenodes[node1].topL == -1)
-                       ? treenodes[node1].stackAlias
-                       : node1;
-        int eff2 = (treenodes[node2].botL == num_layers_
-                    && treenodes[node2].topL == -1)
-                       ? treenodes[node2].stackAlias
-                       : node2;
+        int effective_node1 = (treenodes[node1].botL == num_layers_
+                               && treenodes[node1].topL == -1)
+                                  ? treenodes[node1].stackAlias
+                                  : node1;
+        int effective_node2 = (treenodes[node2].botL == num_layers_
+                               && treenodes[node2].topL == -1)
+                                  ? treenodes[node2].stackAlias
+                                  : node2;
 
         // Skip if both resolved nodes still lack layer information.
-        if ((treenodes[eff1].botL == num_layers_ && treenodes[eff1].topL == -1)
-            && (treenodes[eff2].botL == num_layers_
-                && treenodes[eff2].topL == -1)) {
+        if ((treenodes[effective_node1].botL == num_layers_
+             && treenodes[effective_node1].topL == -1)
+            && (treenodes[effective_node2].botL == num_layers_
+                && treenodes[effective_node2].topL == -1)) {
           continue;
         }
 
-        int16_t bottom_layer
-            = std::min(treenodes[eff1].botL, treenodes[eff2].botL);
-        int16_t top_layer
-            = std::max(treenodes[eff1].botL, treenodes[eff2].botL);
-        if (eff1 < num_terminals) {
-          extendLayerRange(eff1, bottom_layer, top_layer);
+        int16_t bottom_layer = std::min(treenodes[effective_node1].botL,
+                                        treenodes[effective_node2].botL);
+        int16_t top_layer = std::max(treenodes[effective_node1].botL,
+                                     treenodes[effective_node2].botL);
+        if (effective_node1 < num_terminals) {
+          extendLayerRange(effective_node1, bottom_layer, top_layer);
         }
-        if (eff2 < num_terminals) {
-          extendLayerRange(eff2, bottom_layer, top_layer);
+        if (effective_node2 < num_terminals) {
+          extendLayerRange(effective_node2, bottom_layer, top_layer);
         }
 
         if (top_layer <= bottom_layer) {
