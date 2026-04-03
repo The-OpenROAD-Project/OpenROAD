@@ -1099,6 +1099,12 @@ NesterovBaseCommon::NesterovBaseCommon(
   gNetStor_.reserve(pbc_->getNets().size());
   for (auto& net : pbc_->getNets()) {
     GNet myGNet(net);
+    // Read custom placement weight from ODB property (set by set_net_weight)
+    odb::dbDoubleProperty* wp
+        = odb::dbDoubleProperty::find(net->getDbNet(), "gpl_weight");
+    if (wp) {
+      myGNet.setCustomWeight(static_cast<float>(wp->getValue()));
+    }
     gNetStor_.push_back(myGNet);
   }
 

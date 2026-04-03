@@ -36,6 +36,8 @@ or_integration_tests(
     simple09
     simple10
     region01
+    net_weight01
+    net_weight_negative
 )
 
 
