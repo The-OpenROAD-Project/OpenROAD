@@ -231,8 +231,11 @@ void RamGen::makeSlice(const int slice_idx,
   dbNet* write_sel = selects[0];
   if (word_select) {
     write_sel = makeNet(prefix, "write_sel");
-    makeInst(sel_cell.get(), prefix, "word_and", and2_cell_,
-         {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
+    makeInst(sel_cell.get(),
+             prefix,
+             "word_and",
+             and2_cell_,
+             {{"A", selects[0]}, {"B", word_select}, {"X", write_sel}});
   }
 
   // Make clock and
