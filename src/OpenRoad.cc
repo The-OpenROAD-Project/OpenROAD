@@ -3,6 +3,7 @@
 
 #include "ord/OpenRoad.hh"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -57,6 +58,7 @@
 #include "odb/MakeOdb.h"
 #include "odb/cdl.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/defin.h"
 #include "odb/defout.h"
 #include "odb/lefin.h"
@@ -780,7 +782,6 @@ void OpenRoad::designMetrics()
   int num_padcells = 0;
   int num_cover = 0;
 
-  double total_area = 0.0;
   double stdcell_area = 0.0;
   double macro_area = 0.0;
   double padcell_area = 0.0;
@@ -795,7 +796,6 @@ void OpenRoad::designMetrics()
     const int wid = inst_master->getWidth();
     const int ht = inst_master->getHeight();
     const double inst_area = static_cast<double>(wid) * ht;
-    total_area += inst_area;
 
     if (inst_master->isBlock()) {
       num_macros++;
@@ -814,7 +814,6 @@ void OpenRoad::designMetrics()
 
   const double die_area_um = die_area / (dbu_per_uu * dbu_per_uu);
   const double core_area_um = core_area / (dbu_per_uu * dbu_per_uu);
-  total_area /= (dbu_per_uu * dbu_per_uu);
   stdcell_area /= (dbu_per_uu * dbu_per_uu);
   macro_area /= (dbu_per_uu * dbu_per_uu);
   padcell_area /= (dbu_per_uu * dbu_per_uu);
@@ -837,12 +836,12 @@ void OpenRoad::designMetrics()
   logger_->metric("design__instance__count__cover", num_cover);
   logger_->metric("design__instance__area__cover", cover_area);
 
-  if (core_area > 0) {
+  if (core_area_um > 0) {
     logger_->metric("design__instance__utilization",
-                    total_active_area / core_area);
+                    total_active_area / core_area_um);
     double stdcell_util = 0.0;
-    if (core_area > macro_area) {
-      stdcell_util = stdcell_area / (core_area - macro_area);
+    if (core_area_um > macro_area) {
+      stdcell_util = stdcell_area / (core_area_um - macro_area);
     }
     logger_->metric("design__instance__utilization__stdcell", stdcell_util);
   }
