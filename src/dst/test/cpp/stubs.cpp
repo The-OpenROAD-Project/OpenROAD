@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2022-2026, The OpenROAD Authors
 
+#include "ord/CpuThrottle.h"
 #include "ord/OpenRoad.hh"
 
 // Stubs out functions from OpenRoad that aren't needed by Testing but

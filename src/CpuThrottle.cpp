@@ -3,6 +3,8 @@
 
 #include "ord/CpuThrottle.h"
 
+#ifdef ENABLE_THROTTLE
+
 #ifdef __linux__
 #include <fcntl.h>
 #include <sys/file.h>
@@ -311,3 +313,62 @@ CpuThreadGuard acquireGlobalCpuThreads(int num_threads)
 }
 
 }  // namespace ord
+
+#else  // !ENABLE_THROTTLE
+
+namespace ord {
+
+// No-op implementations when throttle is disabled (CMake builds).
+
+CpuThreadThrottle::CpuThreadThrottle(utl::Logger* /*logger*/)
+{
+}
+CpuThreadThrottle::~CpuThreadThrottle() = default;
+CpuThreadThrottle::CpuThreadThrottle(CpuThreadThrottle&&) noexcept = default;
+CpuThreadThrottle& CpuThreadThrottle::operator=(CpuThreadThrottle&&) noexcept
+    = default;
+void CpuThreadThrottle::resize(int /*num_threads*/)
+{
+}
+void CpuThreadThrottle::ensureDirectory()
+{
+}
+bool CpuThreadThrottle::tryAcquireAdditional(int /*additional*/)
+{
+  return false;
+}
+
+CpuThreadGuard::CpuThreadGuard(CpuThreadThrottle* /*throttle*/,
+                               int /*num_threads*/)
+{
+}
+CpuThreadGuard::~CpuThreadGuard() = default;
+CpuThreadGuard::CpuThreadGuard(CpuThreadGuard&&) noexcept = default;
+CpuThreadGuard& CpuThreadGuard::operator=(CpuThreadGuard&&) noexcept = default;
+
+CpuThreadThrottle* globalCpuThrottle()
+{
+  return nullptr;
+}
+void setGlobalCpuThrottle(CpuThreadThrottle* /*throttle*/)
+{
+}
+void setGlobalCpuTargetThreads(int /*threads*/)
+{
+}
+int globalCpuTargetThreads()
+{
+  return 1;
+}
+CpuThreadGuard acquireGlobalCpuThreads()
+{
+  return CpuThreadGuard(nullptr, 0);
+}
+CpuThreadGuard acquireGlobalCpuThreads(int /*num_threads*/)
+{
+  return CpuThreadGuard(nullptr, 0);
+}
+
+}  // namespace ord
+
+#endif  // ENABLE_THROTTLE
