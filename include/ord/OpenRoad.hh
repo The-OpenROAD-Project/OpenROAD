@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -132,6 +133,7 @@ class WebServer;
 
 namespace ord {
 
+class CpuThreadThrottle;
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -241,6 +243,9 @@ class OpenRoad
   void setThreadCount(const char* threads, bool print_info = true);
   int getThreadCount();
 
+  void setDisableThrottle(bool disable);
+  bool getDisableThrottle() const { return disable_throttle_; }
+
   std::string getExePath() const;
   std::string getDocsPath() const;
 
@@ -291,6 +296,8 @@ class OpenRoad
   utl::CallBackHandler* callback_handler_ = nullptr;
 
   int threads_ = 1;
+  bool disable_throttle_ = false;
+  std::unique_ptr<CpuThreadThrottle> cpu_throttle_;
 
   static OpenRoad* app_;
 

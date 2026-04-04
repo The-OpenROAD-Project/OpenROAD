@@ -206,6 +206,8 @@ GUI_BUILD_FLAGS = select(
 cc_library(
     name = "openroad_lib",
     srcs = [
+        "src/CpuThrottle.cpp",
+        "src/CpuThrottle.h",
         "src/Design.cc",
         "src/OpenRoad.cc",
         "src/Tech.cc",

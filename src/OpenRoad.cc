@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "CpuThrottle.h"
 #include "ord/Version.hh"
 #include "tcl.h"
 #ifdef ENABLE_PYTHON3
@@ -665,6 +666,15 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
+
+  if (!disable_throttle_ && threads_ > 0) {
+    cpu_throttle_ = std::make_unique<CpuThreadThrottle>(threads_, logger_);
+  }
+}
+
+void OpenRoad::setDisableThrottle(bool disable)
+{
+  disable_throttle_ = disable;
 }
 
 void OpenRoad::setThreadCount(const char* threads, bool print_info)

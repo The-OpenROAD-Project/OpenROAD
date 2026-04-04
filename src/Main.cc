@@ -281,6 +281,10 @@ int main(int argc, char* argv[])
       logger->warn(utl::ORD, 39, ".openroad ignored with -python");
     }
 
+    if (findCmdLineFlag(cmd_argc, cmd_argv, "-disable_throttle")) {
+      ord::OpenRoad::openRoad()->setDisableThrottle(true);
+    }
+
     const char* threads = findCmdLineKey(cmd_argc, cmd_argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads);
@@ -512,6 +516,10 @@ static int tclAppInit(int& argc,
       showSplash();
     }
 
+    if (findCmdLineFlag(argc, argv, "-disable_throttle")) {
+      ord::OpenRoad::openRoad()->setDisableThrottle(true);
+    }
+
     const char* threads = findCmdLineKey(argc, argv, "-threads");
     if (threads) {
       ord::OpenRoad::openRoad()->setThreadCount(threads, !no_splash);
@@ -613,12 +621,17 @@ int ord::tclInit(Tcl_Interp* interp)
 static void showUsage(const char* prog, const char* init_filename)
 {
   printf("Usage: %s [-help] [-version] [-no_init] [-no_splash] [-exit] ", prog);
-  printf("[-gui] [-threads count|max] [-log file_name] [-metrics file_name] ");
+  printf(
+      "[-gui] [-threads count|max] [-disable_throttle] [-log file_name] "
+      "[-metrics file_name] ");
   printf("[-db file_name] [-no_settings] [-minimize] cmd_file\n");
   printf("  -help                 show help and exit\n");
   printf("  -version              show version and exit\n");
   printf("  -no_init              do not read %s init file\n", init_filename);
   printf("  -threads count|max    use count threads\n");
+  printf(
+      "  -disable_throttle     disable cross-process CPU throttling "
+      "(debug only)\n");
   printf("  -no_splash            do not show the license splash at startup\n");
   printf("  -exit                 exit after reading cmd_file\n");
   printf("  -gui                  start in gui mode\n");

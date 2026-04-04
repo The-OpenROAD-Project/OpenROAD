@@ -29,6 +29,7 @@ set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
 set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
+  CpuThrottle.cpp
   Design.cc
   Timing.cc
   Tech.cc
