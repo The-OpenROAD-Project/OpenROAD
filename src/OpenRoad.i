@@ -646,8 +646,13 @@ void report_hpwl()
 
 void report_design_area_metrics_cmd()
 {
-  OpenRoad *ord = getOpenRoad();
-  ord->designMetrics();
+  dbDatabase* db = OpenRoad::openRoad()->getDb();
+  odb::dbChip* chip = db->getChip();
+  if (chip == nullptr) {
+    return;
+  }
+  dbBlock* block = chip->getBlock();
+  odb::blockMetrics(block, getLogger());
 }
 
 } // namespace ord
