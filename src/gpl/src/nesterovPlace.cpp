@@ -207,7 +207,7 @@ void NesterovPlace::init()
 
     // bin, FFT, wlen update with prevSLPCoordi.
     nb->updateDensityCenterPrevSLP();
-    nb->updateDensityForceBin();
+    nb->updateDensityFieldBin();
   }
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);

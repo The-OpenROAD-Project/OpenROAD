@@ -64,6 +64,7 @@ or_integration_tests(
     regions2
     regions3
     report_failures
+    row_boundary_filter
     simple01
     simple02
     simple03
