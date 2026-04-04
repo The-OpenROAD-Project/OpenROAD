@@ -85,6 +85,7 @@ cc_library(
         ":stt",
         "//:ord",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/utl",
         "@boost.multi_array",

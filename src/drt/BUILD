@@ -248,6 +248,7 @@ cc_library(
         "//:ord",
         "//src/dst",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",

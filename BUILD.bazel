@@ -134,7 +134,7 @@ OPENROAD_LIBRARY_DEPS = [
 ] + select(
     {
         ":platform_cli": ["//src/gui"],
-        ":platform_gui": ["//src/gui:gui_qt"],
+        ":platform_gui": ["//src/gui/qt:gui_qt"],
     },
 )
 
@@ -183,6 +183,7 @@ cc_binary(
         "//bazel:runfiles",
         "//src/cut",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
@@ -221,6 +222,7 @@ cc_library(
     ],
     visibility = ["//:__subpackages__"],
     deps = [
+        "//src/gui:gui_headers",
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",

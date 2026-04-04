@@ -125,6 +125,7 @@ cc_library(
         ":dpl",
         "//:ord",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/utl",
         "@boost.geometry",

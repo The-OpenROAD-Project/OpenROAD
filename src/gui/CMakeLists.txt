@@ -61,7 +61,7 @@ if (Qt5_FOUND AND BUILD_GUI)
   set(CMAKE_AUTOMOC ON)
   set(CMAKE_AUTORCC ON)
   set(CMAKE_AUTOUIC ON)
-  set(CMAKE_AUTOUIC_SEARCH_PATHS ui)
+  set(CMAKE_AUTOUIC_SEARCH_PATHS qt/ui)
 
   set(GUI_WRAP ${CMAKE_CURRENT_BINARY_DIR}/gui_wrap.cc)
 
@@ -76,47 +76,47 @@ if (Qt5_FOUND AND BUILD_GUI)
 
   target_sources(gui
    PRIVATE
-    src/layoutViewer.cpp
-    src/layoutTabs.cpp
-    src/renderThread.cpp
-    src/painter.cpp
-    src/mainWindow.cpp
-    src/scriptWidget.cpp
-    src/cmdInputWidget.cpp
-    src/tclCmdInputWidget.cpp
-    src/tclCmdHighlighter.cpp
-    src/displayControls.cpp
-    src/gui.cpp
-    src/search.cpp
-    src/findDialog.cpp
-    src/gotoDialog.cpp
-    src/inspector.cpp
+    qt/src/layoutViewer.cpp
+    qt/src/layoutTabs.cpp
+    qt/src/renderThread.cpp
+    qt/src/painter.cpp
+    qt/src/mainWindow.cpp
+    qt/src/scriptWidget.cpp
+    qt/src/cmdInputWidget.cpp
+    qt/src/tclCmdInputWidget.cpp
+    qt/src/tclCmdHighlighter.cpp
+    qt/src/displayControls.cpp
+    qt/src/gui.cpp
+    qt/src/search.cpp
+    qt/src/findDialog.cpp
+    qt/src/gotoDialog.cpp
+    qt/src/inspector.cpp
     src/init_descriptors.cpp
     src/dbDescriptors.cpp
     src/staDescriptors.cpp
-    src/highlightGroupDialog.cpp
-    src/selectHighlightWindow.cpp
-    src/staGui.cpp
-    src/staGuiInterface.cpp
-    src/timingWidget.cpp
-    src/drcWidget.cpp
-    src/helpWidget.cpp
+    qt/src/highlightGroupDialog.cpp
+    qt/src/selectHighlightWindow.cpp
+    qt/src/staGui.cpp
+    qt/src/staGuiInterface.cpp
+    qt/src/timingWidget.cpp
+    qt/src/drcWidget.cpp
+    qt/src/helpWidget.cpp
     src/ruler.cpp
-    src/label.cpp
-    src/heatMap.cpp
-    src/heatMapSetup.cpp
-    src/browserWidget.cpp
-    src/globalConnectDialog.cpp
-    src/insertBufferDialog.cpp
-    src/clockWidget.cpp
-    src/gui_utils.cpp
-    src/colorGenerator.cpp
-    src/bufferTreeDescriptor.cpp
-    src/chartsWidget.cpp
-    src/chiplet3DWidget.cpp
-    src/GUIProgress.cpp
-    src/dropdownCheckboxes.cpp
-    resources/resource.qrc
+    qt/src/label.cpp
+    qt/src/heatMap.cpp
+    qt/src/heatMapSetup.cpp
+    qt/src/browserWidget.cpp
+    qt/src/globalConnectDialog.cpp
+    qt/src/insertBufferDialog.cpp
+    qt/src/clockWidget.cpp
+    qt/src/gui_utils.cpp
+    qt/src/colorGenerator.cpp
+    qt/src/bufferTreeDescriptor.cpp
+    qt/src/chartsWidget.cpp
+    qt/src/chiplet3DWidget.cpp
+    qt/src/GUIProgress.cpp
+    qt/src/dropdownCheckboxes.cpp
+    qt/resources/resource.qrc
   )
 
   target_compile_definitions(gui PRIVATE ENABLE_QT)
@@ -136,6 +136,12 @@ if (Qt5_FOUND AND BUILD_GUI)
       utl_lib
       Boost::boost
       OpenSTA
+  )
+
+  target_include_directories(gui
+    PRIVATE
+      src
+      qt/src
   )
 
   # Disable LTO for gui. LTO causes a crash with Qt plugin loading
@@ -198,6 +204,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     resources/openroad.desktop
   )
 
-  install(FILES resources/icon.png DESTINATION ${OPENROAD_SHARE_GUI_DIR})
+  install(FILES qt/resources/icon.png DESTINATION ${OPENROAD_SHARE_GUI_DIR})
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/resources/openroad.desktop DESTINATION ${CMAKE_INSTALL_PREFIX}/share/applications/)
 endif()

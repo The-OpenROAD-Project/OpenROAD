@@ -48,6 +48,7 @@ cc_library(
         "//src/dpl",
         "//src/est",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",

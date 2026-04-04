@@ -95,6 +95,7 @@ cc_library(
         "//src/dbSta",
         "//src/est",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/rsz",
         "//src/utl",

@@ -48,6 +48,7 @@ cc_library(
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/gui",
+        "//src/gui:gui_headers",
         "//src/odb",
         "//src/sta:opensta_lib",
         "//src/utl",
