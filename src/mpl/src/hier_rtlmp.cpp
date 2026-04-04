@@ -35,6 +35,7 @@
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/util.h"
+#include "ord/CpuThrottle.h"
 #include "par/PartitionMgr.h"
 #include "snapper.h"
 #include "utl/Logger.h"
@@ -371,6 +372,7 @@ void HierRTLMP::setRootShapes()
 // place standard cells in the empty space between macros.
 void HierRTLMP::calculateChildrenTilings(Cluster* parent)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   // base case, no macros in current cluster
   if (parent->getNumMacro() == 0) {
     return;
@@ -1188,6 +1190,7 @@ void HierRTLMP::adjustSoftBlockageWeight()
 
 void HierRTLMP::placeChildren(Cluster* parent)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   if (parent->getClusterType() == HardMacroCluster) {
     placeMacros(parent);
     return;
@@ -1765,6 +1768,7 @@ bool HierRTLMP::singleArraySingleStdCellCluster(
 
 void HierRTLMP::placeMacros(Cluster* cluster)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   if (cluster->isFixedMacro()) {
     return;
   }

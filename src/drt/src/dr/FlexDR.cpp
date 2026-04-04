@@ -53,6 +53,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "serialization.h"
 #include "utl/Logger.h"
 #include "utl/Progress.h"
@@ -461,6 +462,7 @@ void FlexDR::init_halfViaEncArea()
 void FlexDR::init()
 {
   ProfileTask profile("DR:init");
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   frTime t;
   if (router_cfg_->VERBOSE > 0) {
     logger_->info(DRT, 187, "Start routing data preparation.");
@@ -1342,6 +1344,7 @@ void FlexDR::optimizationFlow(const SearchRepairArgs& args,
 
 void FlexDR::searchRepair(const SearchRepairArgs& args)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   // Calculate flow state
   const auto flow_state = flow_state_machine_->determineNextFlow(
       {.num_violations = getDesign()->getTopBlock()->getNumMarkers(),
@@ -1658,6 +1661,7 @@ void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet,
 
 void FlexDR::reportGuideCoverage()
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   using boost::polygon::operators::operator&;
 
   const auto numLayers = getTech()->getLayers().size();
@@ -1775,6 +1779,7 @@ void FlexDR::reportGuideCoverage()
 }
 void FlexDR::fixMaxSpacing()
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   logger_->info(DRT, 227, "Checking For LEF58_MAXSPACING violations");
   io::Parser parser(db_, getDesign(), logger_, router_cfg_);
   parser.initSecondaryVias();

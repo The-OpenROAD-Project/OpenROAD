@@ -18,6 +18,7 @@
 #include "PriorityQueue.h"
 #include "Refiner.h"
 #include "Utilities.h"
+#include "ord/CpuThrottle.h"
 
 // ------------------------------------------------------------------------------
 // K-way pair-wise FM refinement
@@ -50,6 +51,7 @@ float KWayPMRefine::Pass(
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   // Step 1: determine the matching score
   std::vector<std::pair<int, int>>
       maximum_matches;  // maximum matching between blocks

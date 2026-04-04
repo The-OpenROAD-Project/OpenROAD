@@ -33,6 +33,7 @@ cc_library(
         "include",
     ],
     deps = [
+        "//:ord",
         "//src/odb",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",

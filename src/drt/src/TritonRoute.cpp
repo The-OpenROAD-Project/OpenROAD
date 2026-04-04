@@ -50,6 +50,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -387,6 +388,7 @@ static void deserializeUpdates(frDesign* design,
 void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
                                int num_threads)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads(num_threads);
   omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates(updatesStrs.size());
 #pragma omp parallel for schedule(dynamic)
@@ -398,6 +400,7 @@ void TritonRoute::updateDesign(const std::vector<std::string>& updatesStrs,
 
 void TritonRoute::updateDesign(const std::string& path, int num_threads)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads(num_threads);
   omp_set_num_threads(num_threads);
   std::vector<std::vector<drUpdate>> updates;
   deserializeUpdates(design_.get(), path, updates);
@@ -920,6 +923,7 @@ void TritonRoute::sendGlobalsUpdates(const std::string& router_cfg_path,
 void TritonRoute::sendDesignUpdates(const std::string& router_cfg_path,
                                     int num_threads)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads(num_threads);
   if (!distributed_) {
     return;
   }
@@ -1150,6 +1154,7 @@ void TritonRoute::fixMaxSpacing(int num_threads)
 void TritonRoute::getDRCMarkers(frList<std::unique_ptr<frMarker>>& markers,
                                 const odb::Rect& requiredDrcBox)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   std::vector<std::vector<std::unique_ptr<FlexGCWorker>>> workersBatches(1);
   auto size = 7;
   auto offset = 0;

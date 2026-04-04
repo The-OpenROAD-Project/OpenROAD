@@ -24,6 +24,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -81,6 +82,7 @@ bool RepairAntennas::checkAntennaViolations(
 
   arc_->makeNetWiresFromGuides(nets_to_repair);
   arc_->initAntennaRules();
+  auto cpu_guard = ord::acquireGlobalCpuThreads(num_threads);
   omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < nets_to_repair.size(); i++) {

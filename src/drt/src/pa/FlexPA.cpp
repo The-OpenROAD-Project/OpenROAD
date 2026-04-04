@@ -30,6 +30,7 @@
 #include "global.h"
 #include "odb/db.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_unique.h"
 #include "serialization.h"
@@ -449,6 +450,7 @@ bool FlexPA::isIOTerm(frInstTerm* inst_term)
 int FlexPA::main()
 {
   ProfileTask profile("PA:main");
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
 
   frTime t;
   if (router_cfg_->VERBOSE > 0) {

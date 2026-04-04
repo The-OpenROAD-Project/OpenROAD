@@ -145,6 +145,7 @@ cc_library(
         ":cugr",
         ":fastroute",
         ":groute",
+        "//:ord",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",

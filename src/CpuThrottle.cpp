@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
-#include "CpuThrottle.h"
+#include "ord/CpuThrottle.h"
 
 #ifdef __linux__
+#include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -12,75 +13,64 @@
 #include <cstring>
 #endif
 
+#include <algorithm>
+#include <chrono>
 #include <string>
 #include <thread>
+#include <utility>
+#include <vector>
 
 #include "utl/Logger.h"
 
 namespace ord {
 
-CpuThreadThrottle::CpuThreadThrottle(int num_threads, utl::Logger* logger)
-    : logger_(logger)
+CpuThreadThrottle::CpuThreadThrottle(utl::Logger* logger) : logger_(logger)
 {
 #ifndef __linux__
-  // flock-based throttling is Linux-only; no-op on other platforms.
   return;
-#endif
-  const int total_cpus = std::thread::hardware_concurrency();
-  if (total_cpus == 0) {
+#else
+  total_cpus_ = std::thread::hardware_concurrency();
+  if (total_cpus_ == 0) {
     logger_->warn(
         utl::ORD, 40, "Throttle: cannot detect CPU count, skipping throttle.");
     return;
   }
 
-  if (num_threads > total_cpus) {
-    num_threads = total_cpus;
-  }
-
   ensureDirectory();
 
-  logger_->info(utl::ORD,
-                41,
-                "Throttle: requesting {} CPU slot(s) out of {} total.",
-                num_threads,
-                total_cpus);
-
-  bool logged_waiting = false;
-  while (!tryAcquire(num_threads, total_cpus)) {
-    if (!logged_waiting) {
-      logger_->info(
-          utl::ORD,
-          42,
-          "Throttle: waiting for {} CPU slot(s) to become available...",
-          num_threads);
-      logged_waiting = true;
-    }
-    usleep(100000);  // 100ms
-  }
-
-  logger_->info(
-      utl::ORD, 43, "Throttle: acquired {} CPU slot(s).", num_threads);
+  // Acquire 1 slot for the main thread.
+  resize(1);
+#endif
 }
 
 CpuThreadThrottle::~CpuThreadThrottle()
 {
+  if (contention_count_ > 0 && logger_) {
+    logger_->info(utl::ORD,
+                  82,
+                  "Throttle: summary - {} resizes, {} contentions, {}ms "
+                  "total wait.",
+                  resize_count_,
+                  contention_count_,
+                  total_wait_ms_);
+  }
   for (int fd : held_fds_) {
     close(fd);
   }
   held_fds_.clear();
-  if (coordinator_fd_ >= 0) {
-    close(coordinator_fd_);
-    coordinator_fd_ = -1;
-  }
 }
 
 CpuThreadThrottle::CpuThreadThrottle(CpuThreadThrottle&& other) noexcept
     : held_fds_(std::move(other.held_fds_)),
-      coordinator_fd_(other.coordinator_fd_),
-      logger_(other.logger_)
+      total_cpus_(other.total_cpus_),
+      logger_(other.logger_),
+      total_wait_ms_(other.total_wait_ms_),
+      resize_count_(other.resize_count_),
+      contention_count_(other.contention_count_)
 {
-  other.coordinator_fd_ = -1;
+  other.total_cpus_ = 0;
   other.logger_ = nullptr;
+  other.contention_count_ = 0;
 }
 
 CpuThreadThrottle& CpuThreadThrottle::operator=(
@@ -90,36 +80,122 @@ CpuThreadThrottle& CpuThreadThrottle::operator=(
     for (int fd : held_fds_) {
       close(fd);
     }
-    if (coordinator_fd_ >= 0) {
-      close(coordinator_fd_);
-    }
     held_fds_ = std::move(other.held_fds_);
-    coordinator_fd_ = other.coordinator_fd_;
+    total_cpus_ = other.total_cpus_;
     logger_ = other.logger_;
-    other.coordinator_fd_ = -1;
+    total_wait_ms_ = other.total_wait_ms_;
+    resize_count_ = other.resize_count_;
+    contention_count_ = other.contention_count_;
+    other.total_cpus_ = 0;
     other.logger_ = nullptr;
+    other.contention_count_ = 0;
   }
   return *this;
+}
+
+void CpuThreadThrottle::resize(int num_threads)
+{
+#ifndef __linux__
+  return;
+#else
+  if (total_cpus_ == 0) {
+    return;
+  }
+
+  num_threads = std::max(1, std::min(num_threads, total_cpus_));
+  const int current = heldCount();
+
+  if (num_threads == current) {
+    return;
+  }
+
+  ++resize_count_;
+
+  if (num_threads < current) {
+    // Release excess slots from the back.
+    while (heldCount() > num_threads) {
+      close(held_fds_.back());
+      held_fds_.pop_back();
+    }
+    logger_->info(utl::ORD,
+                  78,
+                  "Throttle: resized to {} CPU slot(s) (released {}).",
+                  heldCount(),
+                  current - heldCount());
+    return;
+  }
+
+  // Need more slots.
+  const int additional = num_threads - current;
+  logger_->info(utl::ORD,
+                58,
+                "Throttle: requesting {} additional CPU slot(s) "
+                "(currently holding {}, target {}).",
+                additional,
+                current,
+                num_threads);
+
+  bool logged_waiting = false;
+  int retries = 0;
+  while (!tryAcquireAdditional(additional)) {
+    if (!logged_waiting) {
+      logger_->info(
+          utl::ORD,
+          77,
+          "Throttle: waiting for {} CPU slot(s) to become available...",
+          additional);
+      logged_waiting = true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(kRetryDelayMs));
+    if (++retries >= kMaxRetries) {
+      logger_->warn(utl::ORD,
+                    81,
+                    "Throttle: timed out after {}s waiting for CPU slots. "
+                    "Proceeding with {} slot(s).",
+                    kMaxRetries * kRetryDelayMs / 1000,
+                    heldCount());
+      return;
+    }
+  }
+
+  if (logged_waiting) {
+    const int wait_ms = retries * kRetryDelayMs;
+    total_wait_ms_ += wait_ms;
+    ++contention_count_;
+    logger_->info(utl::ORD,
+                  64,
+                  "Throttle: acquired {} slot(s) after waiting {}ms.",
+                  heldCount(),
+                  wait_ms);
+  } else {
+    logger_->info(
+        utl::ORD, 79, "Throttle: now holding {} CPU slot(s).", heldCount());
+  }
+#endif
 }
 
 #ifdef __linux__
 
 void CpuThreadThrottle::ensureDirectory()
 {
-  mkdir(kSemDir, 0777);
+  if (mkdir(kSemDir, 0777) == 0) {
+    // Ensure world-writable regardless of umask.
+    chmod(kSemDir, 0777);
+  }
   // Ignore EEXIST — directory may already exist from another process.
 }
 
-bool CpuThreadThrottle::tryAcquire(int num_threads, int total_cpus)
+bool CpuThreadThrottle::tryAcquireAdditional(int additional)
 {
   // Open and lock the coordinator to serialize allocation attempts.
-  // This prevents deadlock: only one process tries to grab CPU slots at a time.
-  int coord_fd = open(kCoordinatorLock, O_CREAT | O_RDWR, 0666);
+  int coord_fd = open(kCoordinatorLock, O_CREAT | O_RDONLY | O_CLOEXEC, 0666);
   if (coord_fd < 0) {
-    logger_->warn(utl::ORD,
-                  44,
-                  "Throttle: cannot open coordinator lock: {}",
-                  std::strerror(errno));
+    if (errno == EACCES || errno == ENOSPC || errno == EROFS) {
+      logger_->error(utl::ORD,
+                     80,
+                     "Throttle: cannot open coordinator lock: {}",
+                     std::strerror(errno));
+    }
     return false;
   }
   if (flock(coord_fd, LOCK_EX) != 0) {
@@ -128,13 +204,13 @@ bool CpuThreadThrottle::tryAcquire(int num_threads, int total_cpus)
   }
 
   std::vector<int> acquired;
-  acquired.reserve(num_threads);
+  acquired.reserve(additional);
 
   for (int i = 0;
-       i < total_cpus && static_cast<int>(acquired.size()) < num_threads;
+       i < total_cpus_ && static_cast<int>(acquired.size()) < additional;
        ++i) {
     std::string path = std::string(kSemDir) + "/cpu." + std::to_string(i);
-    int fd = open(path.c_str(), O_CREAT | O_RDWR, 0666);
+    int fd = open(path.c_str(), O_CREAT | O_RDONLY | O_CLOEXEC, 0666);
     if (fd < 0) {
       continue;
     }
@@ -145,23 +221,93 @@ bool CpuThreadThrottle::tryAcquire(int num_threads, int total_cpus)
     }
   }
 
-  if (static_cast<int>(acquired.size()) == num_threads) {
-    // Success — release coordinator but keep CPU locks held.
-    flock(coord_fd, LOCK_UN);
-    close(coord_fd);
-    held_fds_ = std::move(acquired);
+  // Release coordinator lock.
+  flock(coord_fd, LOCK_UN);
+  close(coord_fd);
+
+  if (static_cast<int>(acquired.size()) == additional) {
+    // Success — append newly acquired fds to held set.
+    held_fds_.insert(held_fds_.end(), acquired.begin(), acquired.end());
     return true;
   }
 
-  // Not enough slots — release everything and retry later.
+  // Not enough slots — release everything we just acquired.
   for (int fd : acquired) {
     close(fd);
   }
-  flock(coord_fd, LOCK_UN);
-  close(coord_fd);
   return false;
 }
 
 #endif  // __linux__
+
+// --- CpuThreadGuard ---
+
+CpuThreadGuard::CpuThreadGuard(CpuThreadThrottle* throttle, int num_threads)
+    : throttle_(throttle)
+{
+  if (throttle_) {
+    throttle_->resize(num_threads);
+  }
+}
+
+CpuThreadGuard::~CpuThreadGuard()
+{
+  if (throttle_) {
+    throttle_->resize(1);
+  }
+}
+
+CpuThreadGuard::CpuThreadGuard(CpuThreadGuard&& other) noexcept
+    : throttle_(other.throttle_)
+{
+  other.throttle_ = nullptr;
+}
+
+CpuThreadGuard& CpuThreadGuard::operator=(CpuThreadGuard&& other) noexcept
+{
+  if (this != &other) {
+    if (throttle_) {
+      throttle_->resize(1);
+    }
+    throttle_ = other.throttle_;
+    other.throttle_ = nullptr;
+  }
+  return *this;
+}
+
+// --- Global throttle ---
+
+static CpuThreadThrottle* g_cpu_throttle = nullptr;
+static int g_target_threads = 1;
+
+CpuThreadThrottle* globalCpuThrottle()
+{
+  return g_cpu_throttle;
+}
+
+void setGlobalCpuThrottle(CpuThreadThrottle* throttle)
+{
+  g_cpu_throttle = throttle;
+}
+
+void setGlobalCpuTargetThreads(int threads)
+{
+  g_target_threads = threads;
+}
+
+int globalCpuTargetThreads()
+{
+  return g_target_threads;
+}
+
+CpuThreadGuard acquireGlobalCpuThreads()
+{
+  return CpuThreadGuard(g_cpu_throttle, g_target_threads);
+}
+
+CpuThreadGuard acquireGlobalCpuThreads(int num_threads)
+{
+  return CpuThreadGuard(g_cpu_throttle, num_threads);
+}
 
 }  // namespace ord

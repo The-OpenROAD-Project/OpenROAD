@@ -52,6 +52,7 @@ cc_library(
         "include",
     ],
     deps = [
+        "//:ord",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/dbSta:dbReadVerilog",

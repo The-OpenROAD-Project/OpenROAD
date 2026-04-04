@@ -19,6 +19,7 @@
 #include "global.h"
 #include "odb/dbTypes.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "ta/AbstractTAGraphics.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
@@ -103,6 +104,7 @@ int FlexTA::initTA_helper(int iter,
                           bool isH,
                           int& numPanels)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);

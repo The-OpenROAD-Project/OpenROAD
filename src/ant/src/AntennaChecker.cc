@@ -29,6 +29,7 @@
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "utl/Logger.h"
 
 namespace ant {
@@ -1212,6 +1213,7 @@ int AntennaChecker::Impl::checkAntennas(odb::dbNet* net,
         nets_.push_back(net);
       }
     }
+    auto cpu_guard = ord::acquireGlobalCpuThreads(num_threads);
     omp_set_num_threads(num_threads);
 #pragma omp parallel for schedule(dynamic)
     for (auto net : nets_) {

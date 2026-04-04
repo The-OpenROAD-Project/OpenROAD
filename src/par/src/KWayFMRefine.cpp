@@ -17,6 +17,7 @@
 #include "PriorityQueue.h"
 #include "Refiner.h"
 #include "Utilities.h"
+#include "ord/CpuThrottle.h"
 #include "utl/Logger.h"
 
 // Implement the direct k-way FM refinement
@@ -52,6 +53,7 @@ float KWayFMRefine::Pass(
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
 {
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   // initialize the gain buckets
   GainBuckets buckets;
   for (int i = 0; i < num_parts_; ++i) {

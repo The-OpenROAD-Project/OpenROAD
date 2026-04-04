@@ -181,6 +181,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
+        "//:ord",
         "//src/dst",
         "//src/odb",
         "//src/stt",

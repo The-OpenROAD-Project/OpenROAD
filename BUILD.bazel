@@ -206,8 +206,6 @@ GUI_BUILD_FLAGS = select(
 cc_library(
     name = "openroad_lib",
     srcs = [
-        "src/CpuThrottle.cpp",
-        "src/CpuThrottle.h",
         "src/Design.cc",
         "src/OpenRoad.cc",
         "src/Tech.cc",
@@ -233,7 +231,11 @@ cc_library(
 
 cc_library(
     name = "ord",
+    srcs = [
+        "src/CpuThrottle.cpp",
+    ],
     hdrs = [
+        "include/ord/CpuThrottle.h",
         "include/ord/Design.h",
         "include/ord/InitOpenRoad.hh",
         "include/ord/OpenRoad.hh",
@@ -246,7 +248,10 @@ cc_library(
         "include/ord",
     ],
     visibility = ["//:__subpackages__"],
-    deps = ["@abseil-cpp//absl/synchronization"],
+    deps = [
+        "//src/utl",
+        "@abseil-cpp//absl/synchronization",
+    ],
 )
 
 cc_library(

@@ -8,12 +8,13 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include "CpuThrottle.h"
+#include "ord/CpuThrottle.h"
 #include "ord/Version.hh"
 #include "tcl.h"
 #ifdef ENABLE_PYTHON3
@@ -667,9 +668,13 @@ void OpenRoad::setThreadCount(int threads, bool print_info)
   // place limits on tools with threads
   sta_->setThreadCount(threads_);
 
-  if (!disable_throttle_ && threads_ > 0) {
-    cpu_throttle_ = std::make_unique<CpuThreadThrottle>(threads_, logger_);
+  // Create the throttle on first call (holds 1 slot for main thread).
+  // It will be resized to threads_ dynamically when tools need parallelism.
+  if (!disable_throttle_ && !cpu_throttle_ && threads_ > 0) {
+    cpu_throttle_ = std::make_unique<CpuThreadThrottle>(logger_);
+    setGlobalCpuThrottle(cpu_throttle_.get());
   }
+  setGlobalCpuTargetThreads(threads_);
 }
 
 void OpenRoad::setDisableThrottle(bool disable)
@@ -698,6 +703,11 @@ void OpenRoad::setThreadCount(const char* threads, bool print_info)
 int OpenRoad::getThreadCount()
 {
   return threads_;
+}
+
+CpuThreadGuard OpenRoad::acquireThreads()
+{
+  return CpuThreadGuard(cpu_throttle_.get(), threads_);
 }
 
 std::string OpenRoad::getExePath() const

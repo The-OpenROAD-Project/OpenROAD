@@ -24,6 +24,7 @@
 #include "Utilities.h"
 #include "boost/random/uniform_int_distribution.hpp"
 #include "boost/range/iterator_range_core.hpp"
+#include "ord/CpuThrottle.h"
 #include "utl/Logger.h"
 
 namespace par {
@@ -501,6 +502,8 @@ void MultilevelPartitioner::RefinePartition(
     }
 
     // Parallel refine all the solutions
+    auto cpu_guard
+        = ord::acquireGlobalCpuThreads(static_cast<int>(top_solutions.size()));
     std::vector<std::thread> threads;
     threads.reserve(top_solutions.size());
     for (auto& top_solution : top_solutions) {

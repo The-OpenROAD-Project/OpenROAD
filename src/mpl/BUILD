@@ -54,6 +54,7 @@ cc_library(
     ],
     deps = [
         ":snapper",
+        "//:ord",
         "//src/dbSta",
         "//src/dbSta:dbNetwork",
         "//src/odb",

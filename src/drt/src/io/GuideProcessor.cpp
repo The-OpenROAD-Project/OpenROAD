@@ -32,6 +32,7 @@
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "omp.h"
+#include "ord/CpuThrottle.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -2009,6 +2010,7 @@ void GuideProcessor::processGuides()
   if (tmp_guides_.empty()) {
     return;
   }
+  auto cpu_guard = ord::acquireGlobalCpuThreads();
   frTime t;
   ProfileTask profile("IO:postProcessGuide");
   if (router_cfg_->VERBOSE > 0) {

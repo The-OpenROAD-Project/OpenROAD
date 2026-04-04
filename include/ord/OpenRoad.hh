@@ -134,6 +134,7 @@ class WebServer;
 namespace ord {
 
 class CpuThreadThrottle;
+class CpuThreadGuard;
 class dbVerilogNetwork;
 
 // Only pointers to components so the header has no dependents.
@@ -245,6 +246,11 @@ class OpenRoad
 
   void setDisableThrottle(bool disable);
   bool getDisableThrottle() const { return disable_throttle_; }
+
+  // Returns an RAII guard that acquires threads_ CPU slots.
+  // Slots are released back to 1 when the guard is destroyed.
+  CpuThreadGuard acquireThreads();
+  CpuThreadThrottle* getThrottle() { return cpu_throttle_.get(); }
 
   std::string getExePath() const;
   std::string getDocsPath() const;
