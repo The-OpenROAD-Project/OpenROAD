@@ -3,6 +3,15 @@
 
 #include "ord/CpuThrottle.h"
 
+#include <algorithm>
+#include <chrono>
+#include <string>
+#include <thread>
+#include <utility>
+#include <vector>
+
+#include "utl/Logger.h"
+
 #ifdef ENABLE_THROTTLE
 
 #ifdef __linux__
@@ -14,15 +23,6 @@
 #include <cerrno>
 #include <cstring>
 #endif
-
-#include <algorithm>
-#include <chrono>
-#include <string>
-#include <thread>
-#include <utility>
-#include <vector>
-
-#include "utl/Logger.h"
 
 namespace ord {
 
