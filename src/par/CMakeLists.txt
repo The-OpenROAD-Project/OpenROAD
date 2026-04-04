@@ -45,6 +45,7 @@ target_link_libraries(par_lib
     odb
     OpenSTA
     utl_lib
+    ord_lib
     dbSta_lib
     ortools::ortools
 )

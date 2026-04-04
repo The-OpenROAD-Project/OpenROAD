@@ -222,6 +222,12 @@ target_link_libraries(ord
     OpenSTA
 )
 
+add_library(ord_lib INTERFACE)
+target_include_directories(ord_lib
+  INTERFACE
+    ${PROJECT_SOURCE_DIR}/include
+)
+
 ################################################################
 #
 # Library dependencies

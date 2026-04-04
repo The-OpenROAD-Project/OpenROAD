@@ -34,6 +34,7 @@ target_include_directories(grt_lib
 
 target_link_libraries(grt_lib
     utl_lib
+    ord_lib
     FastRoute4.1
     CUGR
     ant_lib

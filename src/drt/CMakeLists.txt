@@ -102,6 +102,7 @@ target_link_libraries(drt_lib
     absl::synchronization
     stt_lib
     utl_lib
+    ord_lib
     dst_lib
     Threads::Threads
     OpenMP::OpenMP_CXX

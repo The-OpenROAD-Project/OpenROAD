@@ -31,6 +31,7 @@ target_link_libraries(ant_lib
   PUBLIC
     odb
     utl_lib
+    ord_lib
     OpenMP::OpenMP_CXX
 )
 
