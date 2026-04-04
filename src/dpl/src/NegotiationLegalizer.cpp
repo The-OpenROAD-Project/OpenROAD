@@ -178,8 +178,6 @@ void NegotiationLegalizer::legalize()
 
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
-        // TODO: potentially introduce this information to debug mode somehow (legal and illegal cells).
-        // legal cells should not be added to active set.
         cells_[i].legal = isCellLegal(i);
         if (!cells_[i].legal) {
           illegal.push_back(i);

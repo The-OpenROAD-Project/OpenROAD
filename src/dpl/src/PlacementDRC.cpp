@@ -399,13 +399,11 @@ bool PlacementDRC::checkOneSiteGap(const Node* cell,
   auto isAbutted = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
     return (pixel == nullptr || pixel->cell);
-    // return (pixel != nullptr && pixel->cell);
   };
 
   auto cellAtSite = [this](const GridX x, const GridY y) {
     const Pixel* pixel = grid_->gridPixel(x, y);
     return (pixel == nullptr || pixel->cell);
-    // return (pixel != nullptr && pixel->cell); 
   };
   for (GridY y = y_begin; y < y_finish; ++y) {
     // left side

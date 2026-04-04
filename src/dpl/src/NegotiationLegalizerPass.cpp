@@ -101,7 +101,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_1_overflows == prev_overflows) {
       ++stall_count;
       if (stall_count == 3) {
-        logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.", phase_1_overflows);
+        logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.\nUsing old diamond search for remaining cells.", phase_1_overflows);
         diamondRecovery(active);
       }
     } else {
@@ -132,10 +132,6 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       if (stall_count == 3) {
         logger_->warn(utl::DPL, 702, "Negotiation phase 2: overflow stuck at {} for 3 consecutive iterations.", phase_2_overflows);
         diamondRecovery(active);
-      }
-      if (stall_count >= 10) {
-        logger_->warn(utl::DPL, 703, "Negotiation phase 2: overflow unchanged for 10 iterations, stopping early.");
-        break;
       }
     } else {
       stall_count = 0;
@@ -264,44 +260,47 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   auto ms = [](auto a, auto b) {
     return std::chrono::duration<double, std::milli>(b - a).count();
   };
-  const double totalMs = ms(t0, t6);
-  auto pct = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
-  const double sortMs = ms(t0, t1);
-  const double syncMs = ms(t2, t3);
-  const double overflowMs = ms(t3, t4);
-  const double bystanderMs = ms(t4, t5);
-  const double historyMs = ms(t5, t6);
-  const double initSearchMs = profInitSearchNs_ / 1e6;
-  const double currSearchMs = profCurrSearchNs_ / 1e6;
-  const double snapMs = profSnapNs_ / 1e6;
-  const double filterMs = profFilterNs_ / 1e6;
-  const double negCostMs = profNegCostNs_ / 1e6;
-  const double drcMs = profDrcNs_ / 1e6;
-  const double overhead = findBestMs - filterMs - negCostMs - drcMs;
-  logger_->report(
-      "  negotiationIter {} ({:.1f}ms, {} moves): "
-      "sort {:.1f}ms ({:.0f}%), "
-      "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms ({:.0f}%), "
-      "syncGrid {:.1f}ms ({:.0f}%), overflowCount {:.1f}ms ({:.0f}%), "
-      "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
-      iter, totalMs, moves_count,
-      sortMs, pct(sortMs),
-      ripUpMs, pct(ripUpMs), findBestMs, pct(findBestMs), placeMs, pct(placeMs),
-      syncMs, pct(syncMs), overflowMs, pct(overflowMs),
-      bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
-  logger_->report(
-      "    findBest by region ({} candidates, {} filtered): "
-      "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
-      "snap {:.1f}ms ({:.0f}%)",
-      profCandidatesEvaluated_, profCandidatesFiltered_,
-      initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs),
-      snapMs, pct(snapMs));
-  logger_->report(
-      "    findBest by function: "
-      "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
-      "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
-      filterMs, pct(filterMs), negCostMs, pct(negCostMs),
-      drcMs, pct(drcMs), overhead, pct(overhead));
+
+  if(logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
+    const double totalMs = ms(t0, t6);
+    auto pct = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
+    const double sortMs = ms(t0, t1);
+    const double syncMs = ms(t2, t3);
+    const double overflowMs = ms(t3, t4);
+    const double bystanderMs = ms(t4, t5);
+    const double historyMs = ms(t5, t6);
+    const double initSearchMs = profInitSearchNs_ / 1e6;
+    const double currSearchMs = profCurrSearchNs_ / 1e6;
+    const double snapMs = profSnapNs_ / 1e6;
+    const double filterMs = profFilterNs_ / 1e6;
+    const double negCostMs = profNegCostNs_ / 1e6;
+    const double drcMs = profDrcNs_ / 1e6;
+    const double overhead = findBestMs - filterMs - negCostMs - drcMs;  
+    logger_->report(
+        "  negotiationIter {} ({:.1f}ms, {} moves): "
+        "sort {:.1f}ms ({:.0f}%), "
+        "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms ({:.0f}%), "
+        "syncGrid {:.1f}ms ({:.0f}%), overflowCount {:.1f}ms ({:.0f}%), "
+        "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
+        iter, totalMs, moves_count,
+        sortMs, pct(sortMs),
+        ripUpMs, pct(ripUpMs), findBestMs, pct(findBestMs), placeMs, pct(placeMs),
+        syncMs, pct(syncMs), overflowMs, pct(overflowMs),
+        bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
+    logger_->report(
+        "    findBest by region ({} candidates, {} filtered): "
+        "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
+        "snap {:.1f}ms ({:.0f}%)",
+        profCandidatesEvaluated_, profCandidatesFiltered_,
+        initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs),
+        snapMs, pct(snapMs));
+    logger_->report(
+        "    findBest by function: "
+        "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
+        "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
+        filterMs, pct(filterMs), negCostMs, pct(negCostMs),
+        drcMs, pct(drcMs), overhead, pct(overhead));
+  }
 
   logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
   if(opendp_->iterative_debug_ && debug_observer_) {

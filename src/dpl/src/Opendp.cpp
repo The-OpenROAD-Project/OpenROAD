@@ -179,12 +179,12 @@ void Opendp::detailedPlacement(const int max_displacement_x,
     logger_->info(
         DPL,
         5,
-        "Max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
+        "Diamond search max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
         max_displacement_x_,
         max_displacement_y_);
+
   if (use_diamond) {
-
-
+    logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
 
     if (!placement_failures_.empty()) {
@@ -205,18 +205,18 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   } else {
     logger_->info(DPL,
                   1102,
-                  "Running NegotiationLegalizer (default mode).");
+                  "Legalizing using negotiation legalizer.");
 
-    NegotiationLegalizer hybrid(
+    NegotiationLegalizer negotiation(
         this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
-    hybrid.setRunAbacus(run_abacus);
-    hybrid.legalize();
-    hybrid.setDplPositions();
+    negotiation.setRunAbacus(run_abacus);
+    negotiation.legalize();
+    negotiation.setDplPositions();
 
-    if (hybrid.numViolations() > 0) {
-      logger_->warn(DPL, 777, "NegotiationLegalizer did not fully converge. "
-        "Violations remain: {}", hybrid.numViolations());
-      logger_->metric("NL__no__converge__final_violations", hybrid.numViolations());
+    if (negotiation.numViolations() > 0) {
+      logger_->warn(DPL, 701, "NegotiationLegalizer did not fully converge. "
+        "Violations remain: {}", negotiation.numViolations());
+      logger_->metric("NL__no__converge__final_violations", negotiation.numViolations());
     }
   }
 
@@ -232,14 +232,14 @@ int Opendp::negotiationLegalize(bool run_abacus)
   initGrid();
   setFixedGridCells();
 
-  NegotiationLegalizer hybrid(
+  NegotiationLegalizer negotiation(
       this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
   if (run_abacus) {
-    hybrid.setRunAbacus(true);
+    negotiation.setRunAbacus(true);
   }
-  hybrid.legalize();
-  hybrid.setDplPositions();
-  return hybrid.numViolations();
+  negotiation.legalize();
+  negotiation.setDplPositions();
+  return negotiation.numViolations();
 }
 
 void Opendp::updateDbInstLocations()
