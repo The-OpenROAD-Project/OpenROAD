@@ -3,6 +3,7 @@
 
 #include "utl/CsvParser.h"
 
+#include <boost/algorithm/string/trim.hpp>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -12,20 +13,6 @@
 #include "utl/Logger.h"
 
 namespace utl {
-
-namespace {
-
-static std::string trim(const std::string& s)
-{
-  const auto start = s.find_first_not_of(" \t\r\n");
-  const auto end = s.find_last_not_of(" \t\r\n");
-  if (start == std::string::npos || end == std::string::npos) {
-    return "";
-  }
-  return s.substr(start, end - start + 1);
-}
-
-}  // namespace
 
 std::vector<std::vector<std::string>> readCsv(const std::string& file_path,
                                               Logger* logger,
@@ -47,7 +34,8 @@ std::vector<std::vector<std::string>> readCsv(const std::string& file_path,
     std::stringstream ss(line);
     std::string cell;
     while (std::getline(ss, cell, delimiter)) {
-      cells.push_back(trim(cell));
+      boost::algorithm::trim(cell);
+      cells.push_back(cell);
     }
     rows.push_back(std::move(cells));
   }
