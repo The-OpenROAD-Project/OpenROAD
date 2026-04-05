@@ -9,8 +9,20 @@ if (typeof localStorage !== 'undefined') {
     document.documentElement.dataset.theme = savedTheme;
 }
 
+// Dark-theme defaults for non-browser environments (e.g. Node.js tests).
+// Values must match the dark theme in style.css.
+const DARK_THEME_DEFAULTS = {
+    canvasBg: '#1a1a1a', canvasText: '#666', canvasAxis: '#555',
+    canvasLabel: '#aaa', canvasGrid: '#333', canvasTitle: '#888',
+    fgPrimary: '#ccc', fgMuted: '#888', bgPanel: '#252525',
+    bgMap: '#111',
+};
+
 // Read current CSS custom property values for canvas-based widgets.
 export function getThemeColors() {
+    if (typeof document === 'undefined') {
+        return { ...DARK_THEME_DEFAULTS };
+    }
     const s = getComputedStyle(document.documentElement);
     const v = (name) => s.getPropertyValue(name).trim();
     return {
