@@ -25,7 +25,6 @@ cc_library(
         "include/gui/heatMap.h",
     ],
     includes = [
-        ".",
         "include",
     ],
     visibility = [

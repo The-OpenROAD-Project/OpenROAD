@@ -222,6 +222,10 @@ void Gui::gifAddFrame(std::optional<int> key,
 {
 }
 
+void Gui::deleteRuler(const std::string& name)
+{
+}
+
 void Gui::deleteLabel(const std::string& name)
 {
 }
