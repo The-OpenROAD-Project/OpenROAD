@@ -62,7 +62,7 @@ class CpuThreadGuard
 {
  public:
   CpuThreadGuard(CpuThreadThrottle* throttle, int num_threads);
-  ~CpuThreadGuard();
+  ~CpuThreadGuard();  // NOLINT(performance-trivially-destructible)
 
   CpuThreadGuard(const CpuThreadGuard&) = delete;
   CpuThreadGuard& operator=(const CpuThreadGuard&) = delete;

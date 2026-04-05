@@ -3,16 +3,16 @@
 
 #include "ord/CpuThrottle.h"
 
+#include "utl/Logger.h"
+
+#ifdef ENABLE_THROTTLE
+
 #include <algorithm>
 #include <chrono>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
-
-#include "utl/Logger.h"
-
-#ifdef ENABLE_THROTTLE
 
 #ifdef __linux__
 #include <fcntl.h>
