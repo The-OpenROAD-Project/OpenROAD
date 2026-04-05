@@ -172,7 +172,7 @@ void Replace::doPlace(const int threads, const PlaceOptions& options)
 
 void Replace::doInitialPlace(const int threads, const PlaceOptions& options)
 {
-  auto cpu_guard = ord::acquireGlobalCpuThreads();
+  auto cpu_guard = ord::acquireGlobalCpuThreads(threads);
   checkHasCoreRows();
   if (pbc_ == nullptr) {
     pbc_ = std::make_shared<PlacerBaseCommon>(db_, options, log_);
@@ -214,7 +214,7 @@ void Replace::runMBFF(const int max_sz,
                       const int threads,
                       const int num_paths)
 {
-  auto cpu_guard = ord::acquireGlobalCpuThreads();
+  auto cpu_guard = ord::acquireGlobalCpuThreads(threads);
   MBFF pntset(db_,
               sta_,
               log_,
@@ -315,7 +315,7 @@ int Replace::doNesterovPlace(const int threads,
                              const PlaceOptions& options,
                              const int start_iter)
 {
-  auto cpu_guard = ord::acquireGlobalCpuThreads();
+  auto cpu_guard = ord::acquireGlobalCpuThreads(threads);
   checkHasCoreRows();
   if (!initNesterovPlace(options, threads, true)) {
     return 0;
