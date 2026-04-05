@@ -11,18 +11,22 @@
 
 #include "dbBlock.h"
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
 #include "dbName.h"
 #include "dbNameCache.h"
 #include "dbPropertyItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <cassert>
+#include <cstdlib>
 #include <sstream>
 
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "spdlog/fmt/ostr.h"
 // User Code End Includes
 namespace odb {
@@ -30,6 +34,7 @@ template class dbTable<_dbProperty>;
 
 bool _dbProperty::operator==(const _dbProperty& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.owner_type != rhs.flags_.owner_type) {
     return false;
   }
@@ -52,6 +57,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbProperty::operator<(const _dbProperty& rhs) const
@@ -407,6 +413,7 @@ void dbProperty::destroy(dbProperty* prop_)
 
   dbId<_dbProperty> propList = ownerTable->getPropList(prop->owner_);
   dbId<_dbProperty> cur = propList;
+  _dbProperty* prev = nullptr;
   uint32_t oid = prop->getOID();
 
   while (cur) {
@@ -416,12 +423,13 @@ void dbProperty::destroy(dbProperty* prop_)
       if (cur == propList) {
         ownerTable->setPropList(prop->owner_, p->next_);
       } else {
-        p->next_ = prop->next_;
+        prev->next_ = prop->next_;
       }
 
       break;
     }
 
+    prev = p;
     cur = p->next_;
   }
 

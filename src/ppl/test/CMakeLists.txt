@@ -50,6 +50,7 @@ or_integration_tests(
     annealing_mirrored3
     annealing_mirrored4
     annealing_mirrored5
+    annealing_mirrored_hang
     blocked_region
     cells_not_placed
     exclude1
@@ -125,6 +126,3 @@ or_integration_tests(
     write_pin_placement6
 )
 
-# Skipped
-#ppl_man_tcl_check
-#ppl_readme_msgs_check

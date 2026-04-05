@@ -3,8 +3,7 @@
 
 #include "db_sta/dbReadVerilog.hh"
 
-#include <odb/dbSet.h>
-
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -12,19 +11,20 @@
 #include <memory>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "sta/ConcreteLibrary.hh"
 #include "sta/ConcreteNetwork.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/NetworkCmp.hh"
 #include "sta/PortDirection.hh"
-#include "sta/Vector.hh"
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 
@@ -70,6 +70,7 @@ using sta::Network;
 using sta::Pin;
 using sta::PinPathNameLess;
 using sta::PinSeq;
+using sta::PinSet;
 using sta::Port;
 using sta::PortDirection;
 using sta::Term;
@@ -87,23 +88,23 @@ void setDbNetworkLinkFunc(dbVerilogNetwork* network,
                           VerilogReader* verilog_reader)
 {
   if (verilog_reader) {
-    network->setLinkFunc(
-        [=](const char* top_cell_name, bool make_black_boxes) -> Instance* {
-          return verilog_reader->linkNetwork(
-              top_cell_name,
-              make_black_boxes,
-              // don't delete modules after link so we can swap to
-              // uninstantiated modules if needed
-              false);
-        });
+    network->setLinkFunc([=](std::string_view top_cell_name,
+                             bool make_black_boxes) -> Instance* {
+      return verilog_reader->linkNetwork(
+          top_cell_name,
+          make_black_boxes,
+          // don't delete modules after link so we can swap to
+          // uninstantiated modules if needed
+          false);
+    });
   }
 }
 
 // Facade that looks in the db network for a liberty cell if
 // there isn't one in the verilog network.
-Cell* dbVerilogNetwork::findAnyCell(const char* name)
+Cell* dbVerilogNetwork::findAnyCell(std::string_view name)
 {
-  Cell* cell = ConcreteNetwork::findAnyCell(name);
+  Cell* cell = sta::ConcreteNetwork::findAnyCell(name);
   if (cell == nullptr) {
     cell = db_network_->findAnyCell(name);
   }
@@ -161,10 +162,10 @@ class Verilog2db
                dbModBTerm*& mod_bterm,
                dbModITerm*& mod_iterm);
   void recordBusPortsOrder();
-  void makeDbNets(const Instance* inst);
+  void makeDbNets(const Instance* inst, PinSet& visited_pins);
 
-  void makeVModNets(const Instance* inst, dbModInst* mod_inst);
-  void makeVModNets(InstPairs& inst_pairs);
+  void makeModNetsForSubmodule(const Instance* inst, dbModInst* mod_inst);
+  void makeModNetsForSubmodules(InstPairs& inst_pairs);
   dbModNet* constructModNet(Net* inst_pin_net, dbModule* module);
 
   bool hasTerminals(Net* net) const;
@@ -256,9 +257,9 @@ void Verilog2db::makeBlock()
       iter = dbModInst::destroy(iter);
     }
   } else {
-    const char* design
+    std::string design
         = network_->name(network_->cell(network_->topInstance()));
-    block_ = dbBlock::create(chip, design, network_->pathDivider());
+    block_ = dbBlock::create(chip, design.c_str(), network_->pathDivider());
   }
   dbTech* tech = chip->getTech();
   block_->setDefUnits(tech->getLefUnits());
@@ -271,9 +272,10 @@ void Verilog2db::makeDbNetlist()
   // As a side effect we accumulate the instance <-> modinst pairs
   InstPairs inst_pairs;
   makeDbModule(network_->topInstance(), /* parent */ nullptr, inst_pairs);
-  makeDbNets(network_->topInstance());
+  PinSet visited_pins(network_);
+  makeDbNets(network_->topInstance(), visited_pins);
   if (hierarchy_) {
-    makeVModNets(inst_pairs);
+    makeModNetsForSubmodules(inst_pairs);
   }
   for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
@@ -290,8 +292,8 @@ void Verilog2db::recordBusPortsOrder()
   while (bus_iter->hasNext()) {
     Port* port = bus_iter->next();
     if (network_->isBus(port)) {
-      const char* port_name = network_->name(port);
-      const char* cell_name = network_->name(top_cell);
+      const std::string port_name = network_->name(port);
+      const std::string cell_name = network_->name(top_cell);
       int from = network_->fromIndex(port);
       int to = network_->toIndex(port);
       std::string key
@@ -369,11 +371,12 @@ void Verilog2db::makeDbModule(
   if (parent == nullptr) {
     module = block_->getTopModule();
   } else {
-    const char* name = network_->name(cell);
+    const std::string name = network_->name(cell);
     // This uniquifies the cell
-    module = dbModule::makeUniqueDbModule(name, network_->name(inst), block_);
-    if (strcmp(name, module->getName()) != 0) {
-      odb::dbStringProperty::create(module, "original_name", name);
+    module = dbModule::makeUniqueDbModule(
+        name.c_str(), network_->name(inst).c_str(), block_);
+    if (name != module->getName()) {
+      odb::dbStringProperty::create(module, "original_name", name.c_str());
     }
 
     registerHierModule(module);
@@ -441,8 +444,8 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
     const dbIoType io_type = staToDb(network_->direction(port));
     if (network_->isBus(port)) {
       // make the bus port as part of the port set for the cell.
-      const char* port_name = network_->name(port);
-      dbModBTerm* bmodterm = dbModBTerm::create(module, port_name);
+      const std::string port_name = network_->name(port);
+      dbModBTerm* bmodterm = dbModBTerm::create(module, port_name.c_str());
       dbbusport = dbBusPort::create(module,
                                     bmodterm,  // the root of the bus port
                                     network_->fromIndex(port),
@@ -459,7 +462,7 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
 
       const int from_index = network_->fromIndex(port);
       const int to_index = network_->toIndex(port);
-      const bool updown = (from_index <= to_index) ? true : false;
+      const bool updown = from_index <= to_index;
       const int size
           = updown ? to_index - from_index + 1 : from_index - to_index + 1;
       for (int i = 0; i < size; i++) {
@@ -495,30 +498,20 @@ void Verilog2db::makeModBTerms(Cell* cell, dbModule* module)
 
 void Verilog2db::makeModITerms(Instance* inst, dbModInst* modinst)
 {
-  // make the instance iterms and set up their reference
-  // to the child ports (dbModBTerms).
-
-  std::unique_ptr<InstancePinIterator> ip_iter(network_->pinIterator(inst));
-  while (ip_iter->hasNext()) {
-    Pin* cur_pin = ip_iter->next();
-    const std::string pin_name_string = network_->portName(cur_pin);
-    //
-    // we do not need to store the pin names.. But they are
-    // assumed to exist in the STA world.
-    //
-
-    dbModBTerm* modbterm;
-    std::string port_name_str = pin_name_string;  // intentionally make copy
-    const size_t last_idx = port_name_str.find_last_of('/');
-    if (last_idx != std::string::npos) {
-      port_name_str = port_name_str.substr(last_idx + 1);
+  for (dbModBTerm* modbterm : modinst->getMaster()->getModBTerms()) {
+    // Do not create bus aggregator (or sentinel) for dbModITerm.
+    // - STA network iterators (e.g. pinIterator) typically iterate over
+    //   bit-blasted pins (leaves) and do not expect bus aggregate pins.
+    // - Creating dbModITerm for bus aggregates (which have isBusPort() == true)
+    //   causes dbNetwork::pinIterator to return them, confusing downstream
+    //   tools like VerilogWriter which expect to find a net or standard signal
+    //   for every pin.
+    if (modbterm->isBusPort()) {
+      continue;
     }
-    dbModule* module = modinst->getMaster();
-    modbterm = module->findModBTerm(port_name_str.c_str());
-    // pass the modbterm into the moditerm creator
-    // so that during journalling we keep the moditerm/modbterm correlation
+
     dbModITerm* moditerm
-        = dbModITerm::create(modinst, pin_name_string.c_str(), modbterm);
+        = dbModITerm::create(modinst, modbterm->getName(), modbterm);
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -542,31 +535,32 @@ void Verilog2db::makeChildInsts(Instance* inst,
     if (network_->isHierarchical(child)) {
       makeDbModule(child, module, inst_pairs);
     } else {
-      const char* child_name = network_->pathName(child);
+      const std::string child_name = network_->pathName(child);
       Instance* parent_instance = network_->parent(child);
       dbModule* parent_module = nullptr;
       Cell* parent_cell = nullptr;
-      if (parent_instance == network_->topInstance() || hierarchy_ == false) {
+      if (parent_instance == network_->topInstance() || !hierarchy_) {
         parent_module = block_->getTopModule();
         parent_cell = network_->cell(parent_instance);
       } else {
         parent_cell = network_->cell(parent_instance);
-        parent_module = block_->findModule(network_->name(parent_cell));
+        parent_module = block_->findModule(network_->name(parent_cell).c_str());
       }
       (void) parent_module;
       (void) parent_cell;
       Cell* cell = network_->cell(child);
       dbMaster* master = getMaster(cell);
       if (master == nullptr) {
-        logger_->warn(ORD,
-                      2013,
-                      "instance {} LEF master {} not found.",
-                      child_name,
-                      network_->name(cell));
+        logger_->error(ORD,
+                       2013,
+                       "instance {} LEF master {} not found.",
+                       child_name,
+                       network_->name(cell));
         continue;
       }
 
-      auto db_inst = dbInst::create(block_, master, child_name, false, module);
+      auto db_inst
+          = dbInst::create(block_, master, child_name.c_str(), false, module);
       debugPrint(logger_,
                  utl::ODB,
                  "dbReadVerilog",
@@ -620,7 +614,7 @@ bool Verilog2db::staToDb(dbModule* module,
   bterm = nullptr;
   iterm = nullptr;
 
-  const char* port_name = network_->portName(pin);
+  const std::string port_name = network_->portName(pin);
   Instance* cur_inst = network_->instance(pin);
   std::string pin_name = network_->portName(pin);
 
@@ -650,11 +644,11 @@ bool Verilog2db::staToDb(dbModule* module,
   if (!mod_iterm) {
     // a pin on the top level. Use the port name
     if (cur_inst == network_->topInstance()) {
-      bterm = block_->findBTerm(port_name);
+      bterm = block_->findBTerm(port_name.c_str());
     } else {
       // a pin on an instance
       // we store just the pin name on the db inst iterm
-      std::string instance_name = network_->pathName(cur_inst);
+      const std::string instance_name = network_->pathName(cur_inst);
       size_t last_idx = pin_name.find_last_of('/');
       if (last_idx != std::string::npos) {
         pin_name = pin_name.substr(last_idx + 1);
@@ -695,7 +689,7 @@ dbIoType Verilog2db::staToDb(PortDirection* dir)
   return dbIoType::INOUT;
 }
 
-void Verilog2db::makeDbNets(const Instance* inst)
+void Verilog2db::makeDbNets(const Instance* inst, PinSet& visited_pins)
 {
   bool is_top = (inst == network_->topInstance());
   std::unique_ptr<NetIterator> net_iter{network_->netIterator(inst)};
@@ -707,8 +701,28 @@ void Verilog2db::makeDbNets(const Instance* inst)
       continue;
     }
 
-    const char* net_name = network_->pathName(net);
-    dbNet* db_net = dbNet::create(block_, net_name);
+    // Collect connected pins
+    PinSeq net_pins;
+    bool already_visited = false;
+    std::unique_ptr<NetConnectedPinIterator> pin_iter{
+        network_->connectedPinIterator(net)};
+    while (pin_iter->hasNext()) {
+      const Pin* pin = pin_iter->next();
+      if (visited_pins.contains(pin)) {
+        already_visited = true;
+        break;
+      }
+      net_pins.push_back(pin);
+      visited_pins.insert(pin);
+    }
+
+    if (already_visited) {
+      continue;
+    }
+
+    // Create a new flat net
+    const std::string net_name = network_->pathName(net);
+    dbNet* db_net = dbNet::create(block_, net_name.c_str());
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -723,21 +737,15 @@ void Verilog2db::makeDbNets(const Instance* inst)
       db_net->setSigType(odb::dbSigType::GROUND);
     }
 
-    // Sort connected pins for regression stability.
-    PinSeq net_pins;
-    std::unique_ptr<NetConnectedPinIterator> pin_iter{
-        network_->connectedPinIterator(net)};
-    while (pin_iter->hasNext()) {
-      const Pin* pin = pin_iter->next();
-      net_pins.push_back(pin);
-    }
-    sort(net_pins, PinPathNameLess(network_));
+    // Sort connected pins for regression stability
+    std::ranges::sort(net_pins, PinPathNameLess(network_));
 
+    // Connect pins to the new flat net
     for (const Pin* pin : net_pins) {
       if (network_->isTopLevelPort(pin)) {
-        const char* port_name = network_->portName(pin);
-        if (block_->findBTerm(port_name) == nullptr) {
-          dbBTerm* bterm = dbBTerm::create(db_net, port_name);
+        const std::string port_name = network_->portName(pin);
+        if (block_->findBTerm(port_name.c_str()) == nullptr) {
+          dbBTerm* bterm = dbBTerm::create(db_net, port_name.c_str());
           debugPrint(logger_,
                      utl::ODB,
                      "dbReadVerilog",
@@ -749,13 +757,13 @@ void Verilog2db::makeDbNets(const Instance* inst)
           bterm->setIoType(io_type);
         }
       } else if (network_->isLeaf(pin)) {
-        const char* port_name = network_->portName(pin);
+        const std::string port_name = network_->portName(pin);
         Instance* inst = network_->instance(pin);
-        const char* inst_name = network_->pathName(inst);
-        dbInst* db_inst = block_->findInst(inst_name);
+        const std::string inst_name = network_->pathName(inst);
+        dbInst* db_inst = block_->findInst(inst_name.c_str());
         if (db_inst) {
           dbMaster* master = db_inst->getMaster();
-          dbMTerm* mterm = master->findMTerm(block_, port_name);
+          dbMTerm* mterm = master->findMTerm(block_, port_name.c_str());
           if (mterm) {
             db_inst->getITerm(mterm)->connect(db_net);
             debugPrint(logger_,
@@ -774,22 +782,24 @@ void Verilog2db::makeDbNets(const Instance* inst)
     }
   }
 
+  // Recursion into child module instances
   std::unique_ptr<InstanceChildIterator> child_iter{
       network_->childIterator(inst)};
   while (child_iter->hasNext()) {
     const Instance* child = child_iter->next();
-    makeDbNets(child);
+    makeDbNets(child, visited_pins);
   }
 }
 
-void Verilog2db::makeVModNets(InstPairs& inst_pairs)
+void Verilog2db::makeModNetsForSubmodules(InstPairs& inst_pairs)
 {
   for (auto& [inst, modinst] : inst_pairs) {
-    makeVModNets(inst, modinst);
+    makeModNetsForSubmodule(inst, modinst);
   }
 }
 
-void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
+void Verilog2db::makeModNetsForSubmodule(const Instance* inst,
+                                         dbModInst* mod_inst)
 {
   // Given a hierarchical instance, get the pins on the outside
   // and the inside of the instance and construct the modnets
@@ -861,24 +871,15 @@ void Verilog2db::makeVModNets(const Instance* inst, dbModInst* mod_inst)
         }
       }
     }
+  }
 
-    // push down inside the hierarchical instance to find any
-    // modnets connected on the inside of the instance
-    Net* below_pin_net;
-    Term* below_term = network_->term(inst_pin);
-    if (below_term) {
-      below_pin_net = network_->net(below_term);
-      const char* below_net_name = network_->name(below_pin_net);
-      if (child_module->getModNet(below_net_name)) {
-        continue;
-      }
-      std::string pin_name = network_->name(below_term);
-      size_t last_idx = pin_name.find_last_of('/');
-      if (last_idx != std::string::npos) {
-        pin_name = pin_name.substr(last_idx + 1);
-      }
-      dbModBTerm* mod_bterm = child_module->findModBTerm(pin_name.c_str());
-      dbModNet* lower_mod_net = constructModNet(below_pin_net, child_module);
+  // push down inside the hierarchical instance to find any
+  // modnets connected on the inside of the instance
+  for (dbModBTerm* mod_bterm : child_module->getModBTerms()) {
+    const char* port_name = mod_bterm->getName();
+    Net* internal_net = network_->findNet(inst, port_name);
+    if (internal_net != nullptr) {
+      dbModNet* lower_mod_net = constructModNet(internal_net, child_module);
       mod_bterm->connect(lower_mod_net);
       debugPrint(logger_,
                  utl::ODB,
@@ -905,10 +906,10 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
     net_pin_map[network_->name(net_pin)] = net_pin;
   }
 
-  const char* net_name = network_->name(inst_pin_net);
-  db_mod_net = module->getModNet(net_name);
+  const std::string net_name = network_->name(inst_pin_net);
+  db_mod_net = module->getModNet(net_name.c_str());
   if (!db_mod_net) {
-    db_mod_net = dbModNet::create(module, net_name);
+    db_mod_net = dbModNet::create(module, net_name.c_str());
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -980,7 +981,7 @@ dbModNet* Verilog2db::constructModNet(Net* inst_pin_net, dbModule* module)
       network_->termIterator(inst_pin_net)};
   while (nti->hasNext()) {
     const sta::Term* term = nti->next();
-    dbModBTerm* mod_bterm = module->findModBTerm(network_->name(term));
+    dbModBTerm* mod_bterm = module->findModBTerm(network_->name(term).c_str());
     if (mod_bterm) {
       mod_bterm->connect(db_mod_net);
       debugPrint(logger_,
@@ -1010,8 +1011,8 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
   if (miter != master_map_.end()) {
     return miter->second;
   }
-  const char* cell_name = network_->name(cell);
-  dbMaster* master = db_->findMaster(cell_name);
+  const std::string cell_name = network_->name(cell);
+  dbMaster* master = db_->findMaster(cell_name.c_str());
   if (master) {
     master_map_[cell] = master;
     // Check for corresponding liberty cell.
@@ -1051,7 +1052,7 @@ void Verilog2db::makeModNets(Instance* inst)
     if (below_term) {
       below_pin_net = network_->net(below_term);
       if (below_pin_net) {
-        const char* below_net_name = network_->name(below_pin_net);
+        const std::string below_net_name = network_->name(below_pin_net);
         debugPrint(logger_,
                    utl::ODB,
                    "dbReadVerilog",
@@ -1059,7 +1060,7 @@ void Verilog2db::makeModNets(Instance* inst)
                    "makeModNets below_net is {} for pin {}",
                    below_net_name,
                    network_->name(inst_pin));
-        if (module->getModNet(below_net_name)) {
+        if (module->getModNet(below_net_name.c_str())) {
           debugPrint(logger_,
                      utl::ODB,
                      "dbReadVerilog",
@@ -1070,9 +1071,8 @@ void Verilog2db::makeModNets(Instance* inst)
           continue;
         }
         dbModBTerm* mod_bterm
-            = module->findModBTerm(network_->name(below_term));
+            = module->findModBTerm(network_->name(below_term).c_str());
         dbModNet* lower_mod_net = constructModNet(below_pin_net, module);
-        mod_bterm->connect(lower_mod_net);
         debugPrint(logger_,
                    utl::ODB,
                    "dbReadVerilog",
@@ -1106,7 +1106,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
     while (lib_cell_iter->hasNext()) {
       sta::ConcreteCell* curr_cell = lib_cell_iter->next();
       std::string impl_oper = curr_cell->getAttribute("implements_operator");
-      if (!impl_oper.empty() && !block_->findModule(curr_cell->name())
+      if (!impl_oper.empty() && !block_->findModule(curr_cell->name().c_str())
           && !verilog_network->isBlackBox(curr_cell)) {
         unused_cells_.emplace_back(curr_cell);
         debugPrint(logger_,
@@ -1122,7 +1122,7 @@ void Verilog2db::processUnusedCells(const char* top_cell_name,
   // Link each unused module and populate content in a separate child block.
   // There will one child block for each unused module.
   for (ConcreteCell* cell : unused_cells_) {
-    makeUnusedBlock(cell->name());
+    makeUnusedBlock(cell->name().c_str());
     debugPrint(logger_,
                utl::ODB,
                "dbReadVerilog",
@@ -1189,11 +1189,12 @@ void Verilog2db::makeUnusedDbNetlist()
   makeModBTerms(cell, module);
   InstPairs inst_pairs;
   makeChildInsts(inst, module, inst_pairs);
-  makeDbNets(inst);
-  // Create top-level mod nets
+  // Create top-level
+  PinSet visited_pins(network_);
+  makeDbNets(inst, visited_pins);
   makeModNets(inst);
   if (hierarchy_) {
-    makeVModNets(inst_pairs);
+    makeModNetsForSubmodules(inst_pairs);
   }
   for (auto inst : dont_touch_insts_) {
     inst->setDoNotTouch(true);
@@ -1206,7 +1207,7 @@ void Verilog2db::makeUnusedDbNetlist()
 void Verilog2db::restoreTopBlock(const char* orig_top_cell_name)
 {
   Instance* top_inst = network_->findInstance(orig_top_cell_name);
-  ConcreteNetwork* cnetwork = static_cast<ConcreteNetwork*>(network_);
+  sta::ConcreteNetwork* cnetwork = static_cast<sta::ConcreteNetwork*>(network_);
   cnetwork->setTopInstance(top_inst);
   block_ = top_block_;
 }

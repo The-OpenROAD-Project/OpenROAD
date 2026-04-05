@@ -14,7 +14,6 @@
 #include "dbJournal.h"
 #include "dbNet.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
@@ -349,7 +348,7 @@ bool dbCCSeg::isMarked()
 void dbCCSeg::setMark(bool value)
 {
   _dbCCSeg* seg = (_dbCCSeg*) this;
-  seg->flags_.mark = (value == true) ? 1 : 0;
+  seg->flags_.mark = (value) ? 1 : 0;
 }
 
 void dbCCSeg::printCapnCC(uint32_t capn)

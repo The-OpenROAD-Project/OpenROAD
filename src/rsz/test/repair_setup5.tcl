@@ -21,5 +21,7 @@ write_verilog_for_eqy repair_setup5 before "None"
 report_check_types -max_cap -max_slew
 repair_timing -setup -repair_tns 100 {*}$repair_args
 report_check_types -max_cap -max_slew
-run_equivalence_test repair_setup5 ./sky130hd/work_around_yosys/ "None"
+run_equivalence_test repair_setup5 \
+  -lib_dir ./sky130hd/work_around_yosys/ \
+  -remove_cells "None"
 report_worst_slack -max

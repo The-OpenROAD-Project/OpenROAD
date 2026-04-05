@@ -26,7 +26,6 @@
 #include "dbRegion.h"
 #include "dbSWire.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
@@ -1004,9 +1003,18 @@ void dbBox::destroy(dbBox* box)
       block->box_tbl_->destroy(db_box);
       break;
     }
+    case dbBoxOwner::INST: {
+      _dbInst* inst = (_dbInst*) box->getBoxOwner();
+      if (inst->halo_ == db_box->getOID()) {
+        // Only remove if this box is the halo box
+        inst->halo_ = 0;
+        _dbBlock* block = (_dbBlock*) inst->getOwner();
+        block->box_tbl_->destroy(db_box);
+      }
+      return;
+    }
     case dbBoxOwner::UNKNOWN:
     case dbBoxOwner::BLOCK:
-    case dbBoxOwner::INST:
     case dbBoxOwner::BTERM:
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:
@@ -1039,15 +1047,15 @@ dbBox* dbBox::getBox(dbMaster* master_, uint32_t dbid_)
   return (dbBox*) master->box_tbl_->getPtr(dbid_);
 }
 
-bool dbBox::isVisited() const
+bool dbBox::isSoft() const
 {
   const _dbBox* box = (const _dbBox*) this;
-  return box->flags_.visited == 1;
+  return box->flags_.soft == 1;
 }
-void dbBox::setVisited(const bool value)
+void dbBox::setSoft(const bool value)
 {
   _dbBox* box = (_dbBox*) this;
-  box->flags_.visited = (value == true) ? 1 : 0;
+  box->flags_.soft = (value) ? 1 : 0;
 }
 
 void _dbBox::collectMemInfo(MemInfo& info) const
@@ -1064,7 +1072,7 @@ _dbBox::_dbBox(_dbDatabase*)
   flags_.layer_id = 0;
   flags_.layer_mask = 0;
   flags_.via_id = 0;
-  flags_.visited = 0;
+  flags_.soft = 0;
   flags_.octilinear = false;
   owner_ = 0;
   design_rule_width_ = -1;
@@ -1110,7 +1118,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBox& box)
     uint32_t* bit_field = (uint32_t*) &old;
     stream >> *bit_field;
     box.flags_.owner_type = old.owner_type;
-    box.flags_.visited = old.visited;
+    box.flags_.soft = 0;
     box.flags_.octilinear = old.octilinear;
     box.flags_.is_tech_via = old.is_tech_via;
     box.flags_.is_block_via = old.is_block_via;
@@ -1122,7 +1130,7 @@ dbIStream& operator>>(dbIStream& stream, _dbBox& box)
     uint32_t* bit_field = (uint32_t*) &old;
     stream >> *bit_field;
     box.flags_.owner_type = old.owner_type;
-    box.flags_.visited = old.visited;
+    box.flags_.soft = 0;
     box.flags_.octilinear = old.octilinear;
     box.flags_.is_tech_via = old.is_tech_via;
     box.flags_.is_block_via = old.is_block_via;

@@ -1,0 +1,32 @@
+{% macro serializer_in(klass, parent=None, comment_tag = "", static=False) %}
+  {% set sname = (parent.name + "::" if parent else '_') + klass.name %}
+  {% if static %}static{% endif %}
+  dbIStream& operator>>(dbIStream& stream, {{sname}}& obj)
+  {
+    {% for field in klass.fields %}
+      {% if field.bitFields %}
+        {% if field.numBits == 32 %}
+          uint32_t {{field.name}}bit_field;
+        {% else %}
+          uint64_t {{field.name}}bit_field;
+        {% endif %}
+        stream >> {{field.name}}bit_field;
+        static_assert(sizeof(obj.{{field.name}}) == sizeof({{field.name}}bit_field));
+        std::memcpy(&obj.{{field.name}}, &{{field.name}}bit_field, sizeof({{field.name}}bit_field));
+      {% else %}
+        {% if 'no-serial' not in field.flags %}
+          {% if field.schema %}
+          if (obj.getDatabase()->isSchema({{field.schema}})) {
+          {% endif %}
+          stream >> {% if field.table %}*{% endif %}obj.{{field.name}};
+          {% if field.schema %}
+          }
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    //User Code Begin >>{{ comment_tag }}
+    //User Code End >>{{ comment_tag }}
+    return stream;
+  }
+{%- endmacro %}

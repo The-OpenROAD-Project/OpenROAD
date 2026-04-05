@@ -5,9 +5,9 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <span>
 #include <string>
 
-#include "boost/core/span.hpp"
 #include "utl/Logger.h"
 
 namespace utl {
@@ -33,6 +33,6 @@ std::string GetContents(FILE* file, Logger* logger);
 //
 // "logger" is used to flag any errors in the writing process. Returns when all
 // of "data" has been written successfully.
-void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger);
+void WriteAll(FILE* file, std::span<const uint8_t> data, Logger* logger);
 
 }  // namespace utl

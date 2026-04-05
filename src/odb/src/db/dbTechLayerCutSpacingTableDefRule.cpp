@@ -10,14 +10,19 @@
 #include <string>
 #include <tuple>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <algorithm>
+#include <utility>
+#include <vector>
+
 #include "dbTech.h"
 #include "dbTechLayerCutClassRule.h"
+#include "dbVector.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCutSpacingTableDefRule>;
@@ -25,6 +30,7 @@ template class dbTable<_dbTechLayerCutSpacingTableDefRule>;
 bool _dbTechLayerCutSpacingTableDefRule::operator==(
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.default_valid != rhs.flags_.default_valid) {
     return false;
   }
@@ -111,6 +117,7 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutSpacingTableDefRule::operator<(

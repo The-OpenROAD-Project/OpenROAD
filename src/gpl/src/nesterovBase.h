@@ -11,6 +11,7 @@
 #include <deque>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -18,6 +19,7 @@
 #include <variant>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "gpl/Replace.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -539,14 +541,14 @@ class Bin
   int dy() const;
 
   float electroPhi() const;
-  float electroForceX() const;
-  float electroForceY() const;
+  float electroFieldX() const;
+  float electroFieldY() const;
   float getTargetDensity() const;
   float getDensity() const;
 
   void setDensity(float density);
   void setBinTargetDensity(float density);
-  void setElectroForce(float electroForceX, float electroForceY);
+  void setElectroField(float electroFieldX, float electroFieldY);
   void setElectroPhi(float phi);
 
   void setNonPlaceArea(int64_t area);
@@ -592,8 +594,8 @@ class Bin
   float density_ = 0;
   float targetDensity_ = 0;  // will enable bin-wise density screening
   float electroPhi_ = 0;
-  float electroForceX_ = 0;
-  float electroForceY_ = 0;
+  float electroFieldX_ = 0;
+  float electroFieldY_ = 0;
 };
 
 inline int Bin::cx() const
@@ -858,7 +860,8 @@ class NesterovBaseCommon
   size_t createCbkGCell(odb::dbInst* db_inst);
   void createCbkGNet(odb::dbNet* net, bool skip_io_mode);
   void createCbkITerm(odb::dbITerm* iTerm);
-  std::pair<odb::dbInst*, size_t> destroyCbkGCell(odb::dbInst* db_inst);
+  std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
+      odb::dbInst* db_inst);
   void destroyCbkGNet(odb::dbNet*);
   void destroyCbkITerm(odb::dbITerm*);
   void resizeGCell(odb::dbInst* db_inst);
@@ -905,14 +908,18 @@ class NesterovBaseCommon
   std::vector<GNet*> gNets_;
   std::vector<GPin*> gPins_;
 
-  std::unordered_map<Instance*, GCell*> gCellMap_;
-  std::unordered_map<Pin*, GPin*> gPinMap_;
-  std::unordered_map<Net*, GNet*> gNetMap_;
+  boost::unordered::unordered_flat_map<Instance*, GCell*> gCellMap_;
+  boost::unordered::unordered_flat_map<Pin*, GPin*> gPinMap_;
+  boost::unordered::unordered_flat_map<Net*, GNet*> gNetMap_;
 
-  std::unordered_map<odb::dbInst*, size_t> db_inst_to_nbc_index_map_;
-  std::unordered_map<odb::dbNet*, size_t> db_net_to_index_map_;
-  std::unordered_map<odb::dbITerm*, size_t> db_iterm_to_index_map_;
-  std::unordered_map<odb::dbBTerm*, size_t> db_bterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, size_t>
+      db_inst_to_nbc_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, size_t>
+      db_net_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbITerm*, size_t>
+      db_iterm_to_index_map_;
+  boost::unordered::unordered_flat_map<odb::dbBTerm*, size_t>
+      db_bterm_to_index_map_;
 
   // These three deques should not be required if placerBase allows for dynamic
   // modifications on its vectors.
@@ -1029,8 +1036,8 @@ class NesterovBase
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
 
-  // update electrostatic forces within Bin
-  void updateDensityForceBin();
+  // update electrostatic field within Bin
+  void updateDensityFieldBin();
 
   BinGrid& getBinGrid() { return bg_; }
 
@@ -1087,6 +1094,7 @@ class NesterovBase
   bool checkConvergence(int gpl_iter_count,
                         int routability_gpl_iter_count,
                         RouteBase* rb);
+  void resetConverged() { isConverged_ = false; }
 
   bool checkDivergence();
   void saveSnapshot();
@@ -1108,7 +1116,9 @@ class NesterovBase
   bool isDiverged() const { return isDiverged_; }
 
   void createCbkGCell(odb::dbInst* db_inst, size_t stor_index);
-  void destroyCbkGCell(odb::dbInst* db_inst);
+  std::optional<std::pair<odb::dbInst*, size_t>> destroyCbkGCell(
+      odb::dbInst* db_inst);
+  bool updateHandle(odb::dbInst* db_inst, size_t handle);
 
   // Must be called after fixPointers() to initialize internal values of gcells,
   // including parallel vectors.

@@ -12,9 +12,9 @@
 #include "dbChipInst.h"
 #include "dbChipNet.h"
 #include "dbChipRegionInst.h"
+#include "dbCore.h"
 #include "dbProperty.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 // User Code Begin Includes
@@ -30,12 +30,12 @@
 #include <iostream>
 #include <istream>
 #include <map>
-#include <mutex>
 #include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbCCSeg.h"
@@ -59,6 +59,7 @@
 #include "odb/dbDatabaseObserver.h"
 #include "odb/dbObject.h"
 #include "odb/dbStream.h"
+#include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -72,12 +73,13 @@ constexpr int kMagic2 = 0x4E414442;  // NADB
 
 static dbTable<_dbDatabase>* db_tbl = nullptr;
 // Must be held to access db_tbl
-static std::mutex* db_tbl_mutex = new std::mutex;
+static absl::Mutex* db_tbl_mutex = new absl::Mutex;
 static std::atomic<uint32_t> db_unique_id = 0;
 // User Code End Static
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (master_id_ != rhs.master_id_) {
     return false;
   }
@@ -135,6 +137,7 @@ bool _dbDatabase::operator==(const _dbDatabase& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbDatabase::operator<(const _dbDatabase& rhs) const
@@ -207,6 +210,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* db)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_model_ = nullptr;
   // User Code End Constructor
 }
 
@@ -335,6 +340,10 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& obj)
     chipinst->region_insts_map_[chip_region_inst->getChipRegion()->getId()]
         = chip_region_inst->getId();
   }
+  if (db->getChips().size() > 1) {
+    // Construct unfolded model only if there are multiple chips
+    db->constructUnfoldedModel();
+  }
   // User Code End >>
   return stream;
 }
@@ -446,6 +455,7 @@ _dbDatabase::~_dbDatabase()
   delete chip_conn_itr_;
   delete chip_bump_inst_itr_;
   delete chip_net_itr_;
+  delete unfolded_model_;
   // User Code End Destructor
 }
 
@@ -495,6 +505,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   chip_bump_inst_itr_ = new dbChipBumpInstItr(chip_bump_inst_tbl_);
 
   chip_net_itr_ = new dbChipNetItr(chip_net_tbl_);
+
+  unfolded_model_ = nullptr;
 }
 
 utl::Logger* _dbDatabase::getLogger() const
@@ -683,6 +695,19 @@ dbChip* dbDatabase::getChip()
   }
 
   return (dbChip*) db->chip_tbl_->getPtr(db->chip_);
+}
+
+void dbDatabase::constructUnfoldedModel()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  delete db->unfolded_model_;
+  db->unfolded_model_ = new UnfoldedModel(db->logger_, getChip());
+}
+
+UnfoldedModel* dbDatabase::getUnfoldedModel() const
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  return db->unfolded_model_;
 }
 
 dbTech* dbDatabase::getTech()
@@ -886,7 +911,7 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
         nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
@@ -906,14 +931,14 @@ void dbDatabase::clear()
 
 void dbDatabase::destroy(dbDatabase* db_)
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   _dbDatabase* db = (_dbDatabase*) db_;
   db_tbl->destroy(db);
 }
 
 dbDatabase* dbDatabase::getDatabase(uint32_t dbid)
 {
-  std::lock_guard<std::mutex> lock(*db_tbl_mutex);
+  absl::MutexLock lock(db_tbl_mutex);
   return (dbDatabase*) db_tbl->getPtr(dbid);
 }
 
@@ -993,6 +1018,7 @@ void dbDatabase::triggerPostRead3Dbx(dbChip* chip)
   for (dbDatabaseObserver* observer : db->observers_) {
     observer->postRead3Dbx(chip);
   }
+  constructUnfoldedModel();
 }
 
 void dbDatabase::triggerPostReadDb()

@@ -6,10 +6,17 @@
 #include <memory>
 #include <utility>
 
+#include "dr/AbstractDRGraphics.h"
+#include "dr/FlexDR_graphics.h"
+#include "frBaseTypes.h"
 #include "frDesign.h"
 #include "global.h"
+#include "gui/gui.h"
 #include "odb/db.h"
+#include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA_graphics.h"
+#include "ta/AbstractTAGraphics.h"
+#include "ta/FlexTA_graphics.h"
 
 namespace drt {
 

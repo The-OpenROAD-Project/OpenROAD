@@ -8,9 +8,9 @@
 #include <cstring>
 #include <map>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
 #include "odb/db.h"
@@ -20,6 +20,7 @@ template class dbTable<_dbTechLayerArraySpacingRule>;
 bool _dbTechLayerArraySpacingRule::operator==(
     const _dbTechLayerArraySpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.parallel_overlap != rhs.flags_.parallel_overlap) {
     return false;
   }
@@ -49,6 +50,7 @@ bool _dbTechLayerArraySpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerArraySpacingRule::operator<(

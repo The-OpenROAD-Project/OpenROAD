@@ -47,9 +47,8 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float fence_weight,
                           const float boundary_weight,
                           const float notch_weight,
-                          const float macro_blockage_weight,
+                          const float soft_blockage_weight,
                           const float target_util,
-                          const float target_dead_space,
                           const float min_ar,
                           const char* report_directory,
                           const bool keep_clustering_data) {
@@ -80,9 +79,8 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              fence_weight,
                              boundary_weight,
                              notch_weight,
-                             macro_blockage_weight,
+                             soft_blockage_weight,
                              target_util,
-                             target_dead_space,
                              min_ar,
                              report_directory,
                              keep_clustering_data);
@@ -137,6 +135,22 @@ add_guidance_region(odb::dbInst* macro,
   getMacroPlacer()->addGuidanceRegion(macro, region);
 }
 
+void
+set_macro_halo(odb::dbInst* macro, 
+               float left, 
+               float bottom,
+               float right,
+               float top) 
+{
+  auto block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
+  int left_dbu = block->micronsToDbu(left);
+  int bottom_dbu = block->micronsToDbu(bottom);
+  int right_dbu = block->micronsToDbu(right);
+  int top_dbu = block->micronsToDbu(top);
+
+
+  getMacroPlacer()->setMacroHalo(macro, left_dbu, bottom_dbu, right_dbu, top_dbu);
+}
 
 void
 set_macro_placement_file(std::string file_name)

@@ -7,17 +7,22 @@
 #include <regex>
 #include <string>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <map>
+#include <set>
 #include <utility>
+#include <vector>
 
+#include "dbBlock.h"
 #include "dbInst.h"
 #include "dbLib.h"
 #include "dbMTerm.h"
 #include "dbMaster.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -25,6 +30,7 @@ template class dbTable<_dbGlobalConnect>;
 
 bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (region_ != rhs.region_) {
     return false;
   }
@@ -39,6 +45,7 @@ bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const

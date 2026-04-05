@@ -35,8 +35,7 @@ class MplObserver;
 class MacroPlacer
 {
  public:
-  MacroPlacer(sta::dbNetwork* network,
-              odb::dbDatabase* db,
+  MacroPlacer(odb::dbDatabase* db,
               sta::dbSta* sta,
               utl::Logger* logger,
               par::PartitionMgr* tritonpart);
@@ -61,9 +60,8 @@ class MacroPlacer
              float fence_weight,
              float boundary_weight,
              float notch_weight,
-             float macro_blockage_weight,
+             float soft_blockage_weight,
              float target_util,
-             float target_dead_space,
              float min_ar,
              const char* report_directory,
              bool keep_clustering_data);
@@ -78,6 +76,11 @@ class MacroPlacer
 
   void setMacroPlacementFile(const std::string& file_name);
   void addGuidanceRegion(odb::dbInst* macro, odb::Rect region);
+  void setMacroHalo(odb::dbInst* macro,
+                    int left,
+                    int bottom,
+                    int right,
+                    int top);
 
   void setDebug(std::unique_ptr<MplObserver>& graphics);
   void setDebugShowBundledNets(bool show_bundled_nets);

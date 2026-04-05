@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -129,7 +130,6 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
   rewireBufferSimple(insertBefore, orig_mod_net, term_obj);
 
   // 5. Place the new buffer
-  // 5. Place the new buffer
   if (loc) {
     placeBufferAtLocation(buffer_inst, *loc);
   } else {
@@ -138,6 +138,8 @@ dbInst* dbInsertBuffer::insertBufferSimple(dbObject* term_obj,
 
   // 6. Set buffer attributes
   setBufferAttributes(buffer_inst);
+
+  checkSanity();
 
   return buffer_inst;
 }
@@ -193,7 +195,6 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
   rewireBufferLoadPins(load_pins);
 
   // 5. Place the Buffer
-  // 5. Place the Buffer
   if (loc) {
     placeBufferAtLocation(buffer_inst, *loc);
   } else {
@@ -205,6 +206,8 @@ dbInst* dbInsertBuffer::insertBufferBeforeLoads(
 
   dlogInsertBufferSuccess(buffer_inst);
   dlogSeparator();
+
+  checkSanity();
 
   return buffer_inst;
 }
@@ -306,19 +309,16 @@ bool dbInsertBuffer::checkDontTouch(const dbITerm* iterm) const
   }
 
   dbNet* net = iterm->getNet();
-  if (net != nullptr && net->isDoNotTouch()) {
-    return true;
-  }
-
-  return false;
+  return net != nullptr && net->isDoNotTouch();
 }
 
 void dbInsertBuffer::placeBufferAtLocation(dbInst* buffer_inst,
-                                           const Point& loc)
+                                           const Point& loc,
+                                           const char* reason)
 {
   buffer_inst->setLocation(loc.getX(), loc.getY());
   buffer_inst->setPlacementStatus(dbPlacementStatus::PLACED);
-  dlogPlacedBuffer(buffer_inst, loc);
+  dlogPlacedBuffer(buffer_inst, loc, reason);
 }
 
 void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
@@ -326,9 +326,10 @@ void dbInsertBuffer::placeBufferAtPin(dbInst* buffer_inst, const dbObject* term)
   int x = 0;
   int y = 0;
   if (getPinLocation(term, x, y)) {
-    placeBufferAtLocation(buffer_inst, Point(x, y));
+    placeBufferAtLocation(buffer_inst, Point(x, y), "pin location");
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst, "pin location not available");
   }
 }
 
@@ -442,57 +443,66 @@ dbNet* dbInsertBuffer::createNewFlatNet(
   // Algorithm:
   // - The new net will drive the connected_terms, and the original net will be
   //   connected to the buffer terminal.
-  // - If the original net name matches a connected BTerm, rename the original
-  //   net to a unique name and assign the BTerm's name to the new net.
-  //   This ensures that the net name matches the port name for Verilog
-  //   compatibility.
+  // - If connected_terms contains a BTerm, the new net is always named after
+  //   the BTerm to ensure Verilog compatibility. If the original net or its
+  //   modnet has the same name, they are renamed first to avoid collision.
+  //   This handles the case where remove_buffers merges two port-named nets,
+  //   leaving a BTerm on a net with a different port's name.
 
   std::string new_net_name = (new_net_base_name_) ? new_net_base_name_ : "net";
   dbNameUniquifyType new_net_uniquify = uniquify_;
 
-  // Check if the net name conflicts with any port name
+  // Find the first BTerm in connected_terms (if any) to use its port name
+  // as the new net name for Verilog compatibility.
+  dbBTerm* bterm = nullptr;
   for (dbObject* obj : connected_terms) {
-    if (obj->getObjectType() != dbBTermObj) {
-      continue;
-    }
-
-    dbBTerm* bterm = static_cast<dbBTerm*>(obj);
-    std::string_view bterm_name{bterm->getConstName()};
-    if (bterm_name == block_->getBaseName(net_->getConstName())) {
-      // The original net names uses the BTerm name.
-      // Rename this net if its name is the same as a port name in loads_pins
-      std::string new_orig_net_name = block_->makeNewNetName(
-          target_module_ ? target_module_->getModInst() : nullptr,
-          new_net_name.c_str(),
-          dbNameUniquifyType::ALWAYS);
-      net_->rename(new_orig_net_name.c_str());
-
-      // Rename the mod net name connected to the load pin if it is the
-      // same as the port name
-      dbModNet* load_mnet = bterm->getModNet();
-      if (load_mnet) {
-        std::string_view mnet_name{load_mnet->getConstName()};
-        if (mnet_name == bterm_name) {
-          load_mnet->rename(new_orig_net_name.c_str());
-        }
-      }
-
-      // New net name should be the port name
-      new_net_name = bterm_name;
-      new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
+    if (obj->getObjectType() == dbBTermObj) {
+      bterm = static_cast<dbBTerm*>(obj);
       break;
     }
+  }
+
+  if (bterm) {
+    std::string_view bterm_name{bterm->getConstName()};
+
+    // Helper: generate a unique name to avoid collision with the port name.
+    auto make_avoidance_name = [&]() {
+      return block_->makeNewNetName(
+          target_module_, new_net_name.c_str(), dbNameUniquifyType::ALWAYS);
+    };
+
+    // Rename the original flat net and/or modnet if they have the same name as
+    // the port.
+    const bool flat_net_collides
+        = (bterm_name == block_->getBaseName(net_->getConstName()));
+    dbModNet* load_mnet = bterm->getModNet();
+    const bool mod_net_collides
+        = (load_mnet
+           && std::string_view{load_mnet->getConstName()} == bterm_name);
+
+    if (flat_net_collides || mod_net_collides) {
+      const std::string avoidance_name = make_avoidance_name();
+      if (flat_net_collides) {
+        net_->rename(avoidance_name.c_str());
+      }
+      if (mod_net_collides) {
+        load_mnet->rename(avoidance_name.c_str());
+      }
+    }
+
+    new_net_name = bterm_name;
+    new_net_uniquify = dbNameUniquifyType::IF_NEEDED;
   }
 
   // Create a new net
   dbNet* new_net = dbNet::create(
       block_, new_net_name.c_str(), new_net_uniquify, target_module_);
   if (new_net == nullptr) {
-    logger_->error(utl::ODB,
-                   1203,
-                   "Failed to create a new net '{}'. Should review the name "
-                   "uniquification logic in the source code.",
-                   new_net_name);
+    logger_->error(
+        utl::ODB,
+        1203,
+        "Failed to create a new net '{}'. There may be a name collision.",
+        new_net_name);
   }
 
   return new_net;
@@ -503,27 +513,9 @@ std::string dbInsertBuffer::makeUniqueHierName(const dbModule* module,
                                                const char* suffix) const
 {
   std::string name = (suffix == nullptr) ? base_name : base_name + suffix;
-  const char hier_delim = block_->getHierarchyDelimiter();
-  const std::string hier_prefix
-      = module->isTop() ? "" : (module->getHierarchicalName() + hier_delim);
-
-  // Helper to check if a dbNet is an internal net of the 'module'.
-  // Note that the new name must not conflict with any internal flat nets.
-  auto hasInternalDbNet = [&](const std::string& net_base_name) {
-    dbNet* net = block_->findNet((hier_prefix + net_base_name).c_str());
-    return net != nullptr && net->isInternalTo(const_cast<dbModule*>(module));
-  };
-
-  // Ensure uniqueness against ModNets, ModBTerms, and internal dbNets
-  int id = 0;
-  std::string unique_name = name;
-  while (module->getModNet(unique_name.c_str())
-         || module->findModBTerm(unique_name.c_str())
-         || hasInternalDbNet(unique_name)) {
-    unique_name = fmt::format("{}_{}", name, id++);
-  }
-
-  return unique_name;
+  std::string full = block_->makeNewNetName(
+      module, name.c_str(), dbNameUniquifyType::IF_NEEDED_WITH_UNDERSCORE);
+  return std::string(block_->getBaseName(full.c_str()));
 }
 
 int dbInsertBuffer::getModuleDepth(const dbModule* mod) const
@@ -579,6 +571,15 @@ dbModule* dbInsertBuffer::findLCA(dbModule* m1, dbModule* m2) const
   return m1;
 }
 
+std::optional<bool> dbInsertBuffer::getCachedReusability(dbModNet* net) const
+{
+  auto it = is_target_only_cache_.find(net);
+  if (it != is_target_only_cache_.end()) {
+    return it->second;
+  }
+  return std::nullopt;
+}
+
 bool dbInsertBuffer::checkAllLoadsAreTargets(
     dbModNet* start_net,
     const std::set<dbObject*>& load_pins) const
@@ -588,9 +589,8 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
   }
 
   // Check cache first
-  auto it = is_target_only_cache_.find(start_net);
-  if (it != is_target_only_cache_.end()) {
-    return it->second;
+  if (std::optional<bool> result = getCachedReusability(start_net)) {
+    return *result;
   }
 
   std::set<dbModNet*> visited;
@@ -601,9 +601,8 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
     }
 
     // Check cache
-    auto it = is_target_only_cache_.find(net);
-    if (it != is_target_only_cache_.end()) {
-      return it->second;
+    if (std::optional<bool> result = getCachedReusability(net)) {
+      return *result;
     }
 
     // Cycle detection
@@ -657,7 +656,7 @@ bool dbInsertBuffer::checkAllLoadsAreTargets(
     }
 
     // Cache result
-    is_target_only_cache_[net] = result;
+    markModNetReusability(net, result);
     return result;
   };
 
@@ -796,6 +795,11 @@ bool dbInsertBuffer::tryReuseModNetInModule(dbObject*& load_obj,
   }
 
   for (dbModNet* candidate_net : it->second) {
+    // Check if this net has been tainted (marked as fan-in of the buffer)
+    if (isMarkedAsNotReusable(candidate_net)) {
+      continue;
+    }
+
     dbModBTerm* modbterm = nullptr;
     for (dbModBTerm* bterm : candidate_net->getModBTerms()) {
       if (bterm->getIoType() == dbIoType::INPUT) {
@@ -837,7 +841,7 @@ void dbInsertBuffer::createNewHierConnection(dbObject*& load_obj,
   mod_bterm->connect(mod_net);
 
   // Register this new net as reusable for subsequent loads
-  is_target_only_cache_[mod_net] = true;
+  markModNetReusability(mod_net, true);
   module_reusable_nets_[current_module].insert(mod_net);
 
   // Connect lower level object (either leaf ITerm or previous ModITerm)
@@ -895,13 +899,13 @@ bool dbInsertBuffer::stitchLoadToDriver(dbITerm* load_pin,
   dbModule* current_module = load_pin->getInst()->getModule();
   dbModITerm* top_mod_iterm = nullptr;
 
-  if (current_module == target_module
-      || block_->getDb()->hasHierarchy() == false) {
+  if (current_module == target_module || !block_->getDb()->hasHierarchy()) {
     top_mod_iterm = nullptr;  // Already in same module, no hierarchy handling
   } else {
     dbObject* load_obj = (dbObject*) load_pin;
-    std::string base_name
-        = block_->getBaseName(load_pin->getNet()->getConstName());
+    dbNet* load_net = load_pin->getNet();
+    std::string base_name = block_->getBaseName(
+        load_net ? load_net->getConstName() : net_->getConstName());
 
     while (current_module != target_module && current_module != nullptr) {
       if (current_module->getModInst()
@@ -982,7 +986,6 @@ dbNet* dbInsertBuffer::getNet(const dbObject* obj) const
   if (obj->getObjectType() == dbBTermObj) {
     return static_cast<const dbBTerm*>(obj)->getNet();
   }
-  assert(false);
   return nullptr;
 }
 
@@ -1126,78 +1129,135 @@ void dbInsertBuffer::connectSameModule(dbObject* driver,
       base_name = block_->getBaseName(flat_load_net->getConstName());
     }
 
-    dbModNet* new_net = dbModNet::create(driver_mod, base_name, uniquify_);
-    connect(driver, new_net);
-    connect(load, new_net);
+    dbNet* flat_net = flat_driver_net ? flat_driver_net : flat_load_net;
+    dbModNet* new_modnet
+        = dbModNet::create(driver_mod, base_name, uniquify_, flat_net);
+    connect(driver, new_modnet);
+    connect(load, new_modnet);
   }
 }
 
 dbModNet* dbInsertBuffer::ensureModNet(dbObject* obj,
                                        dbModule* mod,
+                                       dbNet* corresponding_flat_net,
                                        const char* suffix)
 {
   dbModNet* mod_net = getModNet(obj);
   if (!mod_net) {
-    mod_net = dbModNet::create(mod, "net", uniquify_);
-
+    mod_net = dbModNet::create(mod, "net", uniquify_, corresponding_flat_net);
     connect(obj, mod_net);
+  }
 
-    if (obj->getObjectType() == dbITermObj
-        || obj->getObjectType() == dbBTermObj) {
-      dbNet* flat_net = getNet(obj);
-      if (flat_net) {
-        // Connect ITerms in the same module
-        for (dbITerm* peer_iterm : flat_net->getITerms()) {
-          if (peer_iterm->getInst()->getModule() == mod) {
-            peer_iterm->connect(mod_net);
-          }
-        }
+  // Connect peer ITerms/BTerms on the same flat net in the same module scope.
+  // This handles cases where obj is dbModITerm and we still need to connect
+  // leaf ITerms to the modnet.
+  connectPeerITerms(mod, mod_net, corresponding_flat_net);
+  return mod_net;
+}
 
-        // Connect BTerms if this is the top module
-        if (mod == block_->getTopModule()) {
-          for (dbBTerm* peer_bterm : flat_net->getBTerms()) {
-            peer_bterm->connect(mod_net);
-          }
-        }
+void dbInsertBuffer::connectPeerITerms(dbModule* mod,
+                                       dbModNet* mod_net,
+                                       dbNet* corresponding_flat_net)
+{
+  if (corresponding_flat_net == nullptr) {
+    return;
+  }
+
+  debugPrint(logger_,
+             utl::ODB,
+             "insert_buffer",
+             3,
+             "connectPeerITerms: mod='{}' flat_net='{}' iterms={}",
+             mod->getName(),
+             corresponding_flat_net->getConstName(),
+             corresponding_flat_net->getITerms().size());
+
+  for (dbITerm* peer_iterm : corresponding_flat_net->getITerms()) {
+    if (peer_iterm->getInst()->getModule() == mod) {
+      if (peer_iterm->getModNet() == nullptr) {
+        debugPrint(logger_,
+                   utl::ODB,
+                   "insert_buffer",
+                   3,
+                   "connectPeerITerms: connecting peer_iterm '{}'",
+                   peer_iterm->getName());
+        peer_iterm->connect(mod_net);
       }
     }
   }
-  return mod_net;
+
+  // Connect BTerms if this is the top module
+  if (mod == block_->getTopModule()) {
+    for (dbBTerm* peer_bterm : corresponding_flat_net->getBTerms()) {
+      if (peer_bterm->getModNet() == nullptr) {
+        peer_bterm->connect(mod_net);
+      }
+    }
+  }
+}
+
+dbModBTerm* dbInsertBuffer::findOrCreateTracePort(dbModule* current_mod,
+                                                  dbModNet* mod_net,
+                                                  dbIoType io_type,
+                                                  const char* suffix)
+{
+  for (dbModBTerm* bterm : mod_net->getModBTerms()) {
+    if (bterm->getIoType() == io_type) {
+      return bterm;
+    }
+  }
+
+  dbModule* parent_module = mod_net->getParent();
+  assert(parent_module == current_mod);
+
+  std::string port_name = mod_net->getName();
+  dbModInst* mod_inst = current_mod->getModInst();
+  if (parent_module->findModBTerm(port_name.c_str()) != nullptr
+      || (mod_inst != nullptr
+          && mod_inst->findModITerm(port_name.c_str()) != nullptr)) {
+    port_name = makeUniqueHierName(current_mod, port_name, suffix);
+  }
+
+  assert(parent_module->findModBTerm(port_name.c_str()) == nullptr);
+  dbModBTerm* port = dbModBTerm::create(parent_module, port_name.c_str());
+  assert(port != nullptr);
+
+  port->setIoType(io_type);
+  port->connect(mod_net);
+
+  if (mod_inst != nullptr) {
+    dbModITerm* existing_mod_iterm = mod_inst->findModITerm(port_name.c_str());
+    if (existing_mod_iterm == nullptr) {
+      dbModITerm::create(mod_inst, port_name.c_str(), port);
+    } else if (existing_mod_iterm->getChildModBTerm() != port) {
+      logger_->error(
+          utl::ODB,
+          1218,
+          "Parent moditerm '{}' already exists on modinst '{}' and is bound "
+          "to a different modbterm while creating a trace port for modnet "
+          "'{}'.",
+          port_name,
+          mod_inst->getName(),
+          mod_net->getName());
+    }
+  }
+
+  return port;
 }
 
 dbObject* dbInsertBuffer::traceUp(dbObject* current_obj,
                                   dbModule* current_mod,
                                   dbModule* target_mod,
                                   dbIoType io_type,
-                                  const char* suffix)
+                                  const char* suffix,
+                                  dbNet* corresponding_flat_net)
 {
   while (current_mod != target_mod) {
-    dbModNet* mod_net = ensureModNet(current_obj, current_mod);
+    dbModNet* mod_net
+        = ensureModNet(current_obj, current_mod, corresponding_flat_net);
 
-    dbModBTerm* port = nullptr;
-    for (dbModBTerm* bterm : mod_net->getModBTerms()) {
-      if (bterm->getIoType() == io_type) {
-        port = bterm;
-        break;
-      }
-    }
-    if (!port) {
-      std::string port_name = mod_net->getName();
-      port = dbModBTerm::create(mod_net->getParent(), port_name.c_str());
-
-      // To avoid dbModBTerm name collision
-      if (!port) {
-        std::string unique_port_name
-            = makeUniqueHierName(current_mod, port_name, suffix);
-        port = dbModBTerm::create(mod_net->getParent(),
-                                  unique_port_name.c_str());
-      }
-      port->setIoType(io_type);
-      port->connect(mod_net);
-      if (dbModInst* mod_inst = current_mod->getModInst()) {
-        dbModITerm::create(mod_inst, port->getName(), port);
-      }
-    }
+    dbModBTerm* port
+        = findOrCreateTracePort(current_mod, mod_net, io_type, suffix);
 
     current_obj = port->getParentModITerm();
     current_mod = current_mod->getModInst()->getParent();
@@ -1213,12 +1273,17 @@ void dbInsertBuffer::connectDifferentModule(dbObject* driver,
   // Find the LCA of the driver and load modules.
   dbModule* lca = findLCA(driver_mod, load_mod);
 
+  dbNet* driver_net = getNet(driver);
+  dbNet* load_net = getNet(load);
+  dbNet* corresponding_flat_net = (driver_net) ? driver_net : load_net;
+
   // Trace UP from driver to LCA
-  dbObject* driver_lca_obj
-      = traceUp(driver, driver_mod, lca, dbIoType::OUTPUT, "out");
+  dbObject* driver_lca_obj = traceUp(
+      driver, driver_mod, lca, dbIoType::OUTPUT, "out", corresponding_flat_net);
 
   // Trace UP from load to LCA
-  dbObject* load_lca_obj = traceUp(load, load_mod, lca, dbIoType::INPUT, "in");
+  dbObject* load_lca_obj = traceUp(
+      load, load_mod, lca, dbIoType::INPUT, "in", corresponding_flat_net);
 
   // Connect at LCA
   dbModNet* driver_modnet = getModNet(driver_lca_obj);
@@ -1230,11 +1295,17 @@ void dbInsertBuffer::connectDifferentModule(dbObject* driver,
   } else if (load_modnet) {
     lca_modnet = load_modnet;
   } else {
-    lca_modnet = dbModNet::create(lca, "net", uniquify_);
+    dbNet* flat_net = getNet(driver);
+    if (flat_net == nullptr) {
+      flat_net = getNet(load);
+    }
+    lca_modnet = dbModNet::create(lca, "net", uniquify_, flat_net);
   }
 
   connect(driver_lca_obj, lca_modnet);
   connect(load_lca_obj, lca_modnet);
+
+  connectPeerITerms(lca, lca_modnet, corresponding_flat_net);
 }
 
 void dbInsertBuffer::hierarchicalConnect(dbObject* driver, dbObject* load)
@@ -1399,8 +1470,10 @@ void dbInsertBuffer::createNewFlatAndHierNets(
   if (needs_mod_net) {
     const char* base_name = block_->getBaseName(new_flat_net_->getConstName());
     dlogCreatingNewHierNet(base_name);
-    new_mod_net_ = dbModNet::create(
-        target_module_, base_name, dbNameUniquifyType::IF_NEEDED);
+    new_mod_net_ = dbModNet::create(target_module_,
+                                    base_name,
+                                    dbNameUniquifyType::IF_NEEDED,
+                                    new_flat_net_);
   }
 }
 
@@ -1410,7 +1483,7 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
   buf_input_iterm_->connect(net_);
   dlogConnectedBufferInputFlat();
 
-  // 1.2. Also connect to ModNet if it exists in this module
+  // 1.2. Also connect to ModNet
   if (block_->getDb()->hasHierarchy()) {
     std::set<dbModNet*> related_modnets;
     net_->findRelatedModNets(related_modnets);
@@ -1430,9 +1503,11 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
     }
 
     if (orig_mod_net) {
+      // 1.2.1. Connect to the existing modnet
       buf_input_iterm_->connect(orig_mod_net);
       dlogConnectedBufferInputHier(orig_mod_net);
     } else {
+      // 1.2.2. Connect to a new modnet if driver & buf hiers are different
       dbObject* drvr = net_->getFirstDriverTerm();
       if (drvr) {
         dbModule* drvr_mod = nullptr;
@@ -1442,11 +1517,17 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
           drvr_mod = block_->getTopModule();
         }
 
-        if (drvr_mod && drvr_mod != target_module_) {
+        if (drvr_mod != target_module_) {
           hierarchicalConnect(drvr, buf_input_iterm_);
           dlogConnectedBufferInputViaHierConnect(drvr);
         }
       }
+    }
+
+    // Mark all nets in the fanin cone of the buffer input as non-reusable
+    // to prevent creating loops when connecting the buffer output.
+    if (dbModNet* input_mod_net = buf_input_iterm_->getModNet()) {
+      markFaninModNetsNotReusable(input_mod_net);
     }
   }
 
@@ -1477,15 +1558,76 @@ void dbInsertBuffer::rewireBufferLoadPins(const std::set<dbObject*>& load_pins)
   }
 }
 
+bool dbInsertBuffer::isMarkedAsNotReusable(dbModNet* net) const
+{
+  std::optional<bool> result = getCachedReusability(net);
+  return result && !*result;
+}
+
+void dbInsertBuffer::markModNetReusability(dbModNet* net,
+                                           bool is_reusable) const
+{
+  is_target_only_cache_[net] = is_reusable;
+}
+
+void dbInsertBuffer::checkSanity() const
+{
+  if (logger_->debugCheck(utl::ODB, "insert_buffer_check_sanity", 1)) {
+    net_->checkSanity();
+    new_flat_net_->checkSanity();
+  }
+}
+
+void dbInsertBuffer::markFaninModNetsNotReusable(dbModNet* net)
+{
+  if (!net) {
+    return;
+  }
+
+  // If already marked as false, stop (already visited).
+  if (isMarkedAsNotReusable(net)) {
+    return;
+  }
+  markModNetReusability(net, false);
+
+  // 1. Child Instances (Down hierarchy, but Upstream signal flow)
+  // Look for Child OUTPUT ports driving this net.
+  for (dbModITerm* miterm : net->getModITerms()) {
+    dbModBTerm* child_bterm = miterm->getChildModBTerm();
+    if (child_bterm
+        && (child_bterm->getIoType() == dbIoType::OUTPUT
+            || child_bterm->getIoType() == dbIoType::INOUT)) {
+      if (dbModNet* child_net = child_bterm->getModNet()) {
+        markFaninModNetsNotReusable(child_net);
+      }
+    }
+  }
+
+  // 2. Parent Module (Up hierarchy, but Upstream signal flow)
+  // Look for Parent INPUT ports driving this net.
+  for (dbModBTerm* mbterm : net->getModBTerms()) {
+    if (mbterm->getIoType() == dbIoType::INPUT
+        || mbterm->getIoType() == dbIoType::INOUT) {
+      if (dbModITerm* parent_miterm = mbterm->getParentModITerm()) {
+        if (dbModNet* parent_net = parent_miterm->getModNet()) {
+          markFaninModNetsNotReusable(parent_net);
+        }
+      }
+    }
+  }
+}
+
 void dbInsertBuffer::placeBufferAtCentroid(dbInst* buffer_inst,
                                            const dbObject* drvr_pin,
                                            const std::set<dbObject*>& load_pins)
 {
   Point placement_loc;
   if (computeCentroid(drvr_pin, load_pins, placement_loc)) {
-    placeBufferAtLocation(buffer_inst, placement_loc);
+    placeBufferAtLocation(buffer_inst, placement_loc, "centroid");
   } else {
     buffer_inst->setPlacementStatus(dbPlacementStatus::UNPLACED);
+    dlogUnplacedBuffer(buffer_inst,
+                       "centroid computation failed (no placed pins)");
   }
 }
 
@@ -1554,7 +1696,7 @@ void dbInsertBuffer::dlogLCAModule(const dbModule* target_module) const
                "BeforeLoads: LCA module: {} '{}'",
                target_module ? target_module->getName() : "null_module",
                target_mod_inst ? target_mod_inst->getHierarchicalName()
-                               : "<null_modinst_or_top>");
+                               : "<top_or_null_mod_inst>");
   }
 }
 
@@ -1677,16 +1819,30 @@ void dbInsertBuffer::dlogMovedBTermLoad(int load_idx,
 }
 
 void dbInsertBuffer::dlogPlacedBuffer(const dbInst* buffer_inst,
-                                      const Point& loc) const
+                                      const Point& loc,
+                                      const char* reason) const
 {
   debugPrint(logger_,
              utl::ODB,
              "insert_buffer",
              1,
-             "Placed the new buffer '{}' at ({}, {})",
+             "Placed the new buffer '{}' at ({}, {}) using {}",
              buffer_inst->getName(),
              loc.getX(),
-             loc.getY());
+             loc.getY(),
+             reason);
+}
+
+void dbInsertBuffer::dlogUnplacedBuffer(const dbInst* buffer_inst,
+                                        const char* reason) const
+{
+  debugPrint(logger_,
+             utl::ODB,
+             "insert_buffer",
+             1,
+             "Buffer '{}' set to UNPLACED: {}",
+             buffer_inst->getName(),
+             reason);
 }
 
 void dbInsertBuffer::dlogInsertBufferSuccess(const dbInst* buffer_inst) const

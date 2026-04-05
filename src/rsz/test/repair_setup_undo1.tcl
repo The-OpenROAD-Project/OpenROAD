@@ -34,4 +34,6 @@ puts "post undo repair_timing QoR"
 report_worst_slack -max
 report_tns -digits 3
 
-run_equivalence_test repair_setup_undo1 ./Nangate45/work_around_yosys/ "None"
+run_equivalence_test repair_setup_undo1 \
+  -lib_dir ./Nangate45/work_around_yosys/ \
+  -remove_cells "None"

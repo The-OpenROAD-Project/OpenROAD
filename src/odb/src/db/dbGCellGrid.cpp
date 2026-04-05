@@ -8,19 +8,23 @@
 #include <cstring>
 #include <map>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <cassert>
+#include <iterator>
+#include <utility>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbTech.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "utl/algorithms.h"
 // User Code End Includes
 namespace odb {
@@ -42,6 +46,7 @@ static dbIStream& operator>>(dbIStream& stream, OldGCellData& obj)
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.x_grid_valid != rhs.flags_.x_grid_valid) {
     return false;
   }
@@ -75,6 +80,7 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const

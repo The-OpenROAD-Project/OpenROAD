@@ -4,13 +4,15 @@
 // Generator Code Begin Cpp
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayerCutSpacingRule.h"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cstdint>
+#include <utility>
+#include <vector>
 
 #include "dbTechLayer.h"
 // User Code End Includes
@@ -20,7 +22,10 @@ template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator<(

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "db/obj/frBPin.h"
 #include "db/obj/frRef.h"
 #include "db/obj/frShape.h"
 #include "db/tech/frViaDef.h"

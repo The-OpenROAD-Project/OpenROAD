@@ -9,16 +9,21 @@
 #include <utility>
 #include <vector>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "dbGDSStructure.h"
+#include "odb/geom.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbGDSText>;
 
 bool _dbGDSText::operator==(const _dbGDSText& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (layer_ != rhs.layer_) {
     return false;
   }
@@ -33,6 +38,7 @@ bool _dbGDSText::operator==(const _dbGDSText& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbGDSText::operator<(const _dbGDSText& rhs) const

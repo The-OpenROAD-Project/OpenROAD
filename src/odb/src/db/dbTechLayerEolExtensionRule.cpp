@@ -7,17 +7,22 @@
 #include <cstdint>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <utility>
+#include <vector>
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerEolExtensionRule>;
 
 bool _dbTechLayerEolExtensionRule::operator==(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.parallel_only != rhs.flags_.parallel_only) {
     return false;
   }
@@ -26,6 +31,7 @@ bool _dbTechLayerEolExtensionRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerEolExtensionRule::operator<(

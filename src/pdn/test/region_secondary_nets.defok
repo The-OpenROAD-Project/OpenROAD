@@ -1969,10 +1969,7 @@ SPECIALNETS 4 ;
       NEW met2 370 + SHAPE DRCFILL ( 13870 36630 ) ( 18610 36630 )
       NEW met2 0 + SHAPE STRIPE ( 16240 36630 ) via3_4_5000_480_1_12_400_400
       NEW met1 0 + SHAPE STRIPE ( 16240 36630 ) via2_3_5000_480_1_15_320_320 ;
-    - VREG1 ( pt_array_unit\[9\] VREG ) ( pt_array_unit\[8\] VREG ) ( pt_array_unit\[7\] VREG ) ( pt_array_unit\[6\] VREG ) ( pt_array_unit\[5\] VREG ) ( pt_array_unit\[4\] VREG ) ( pt_array_unit\[3\] VREG )
-      ( pt_array_unit\[2\] VREG ) ( pt_array_unit\[22\] VREG ) ( pt_array_unit\[21\] VREG ) ( pt_array_unit\[20\] VREG ) ( pt_array_unit\[1\] VREG ) ( pt_array_unit\[19\] VREG ) ( pt_array_unit\[18\] VREG ) ( pt_array_unit\[17\] VREG )
-      ( pt_array_unit\[16\] VREG ) ( pt_array_unit\[15\] VREG ) ( pt_array_unit\[14\] VREG ) ( pt_array_unit\[13\] VREG ) ( pt_array_unit\[12\] VREG ) ( pt_array_unit\[11\] VREG ) ( pt_array_unit\[10\] VREG ) ( pt_array_unit\[0\] VREG )
-      ( pmos_2 VREG ) ( pmos_1 VREG ) ( cmp1 VREG ) + USE POWER
+    - VREG1 ( * VREG ) + USE POWER
       + ROUTED met4 1600 + SHAPE STRIPE ( 168520 56500 ) ( 168520 193500 )
       NEW met4 1600 + SHAPE STRIPE ( 158520 56500 ) ( 158520 193500 )
       NEW met4 1600 + SHAPE STRIPE ( 148520 56500 ) ( 148520 193500 )

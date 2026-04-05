@@ -8,6 +8,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <vector>
 
 #include "node.h"
 

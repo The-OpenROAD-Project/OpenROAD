@@ -55,8 +55,8 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   float getNormBoundaryPenalty() const;
   float getNotchPenalty() const;
   float getNormNotchPenalty() const;
-  float getMacroBlockagePenalty() const;
-  float getNormMacroBlockagePenalty() const;
+  float getSoftBlockagePenalty() const;
+  float getNormSoftBlockagePenalty() const;
 
   void printResults() const;  // just for test
 
@@ -65,13 +65,28 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   // adjust the size of MixedCluster to fill the empty space
   void fillDeadSpace() override;
   void attemptMacroClusterAlignment();
-  void addBlockages(const std::vector<odb::Rect>& blockages);
+  void setSoftBlockages(const RectList& soft_blockages);
 
   bool centralizationWasReverted() { return centralization_was_reverted_; }
 
   void enableEnhancements() { enhancements_on_ = true; };
 
+  void forceCentralization() { force_centralization_ = true; }
+
  private:
+  // Used to check the vicinity of candidate notches
+  struct NotchVicinity
+  {
+    bool top = true;
+    bool bottom = true;
+    bool left = true;
+    bool right = true;
+
+    int total() { return top + bottom + left + right; }
+
+    bool operator==(const NotchVicinity&) const = default;
+  };
+
   float calNormCost() const override;
   void calPenalty() override;
 
@@ -84,9 +99,24 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   int getSegmentIndex(int segment, const std::vector<int>& coords);
 
   void calBoundaryPenalty();
-  float calSingleNotchPenalty(float width, float height);
+  void fillCoordsLists(std::vector<int>& x_coords, std::vector<int>& y_coords);
+  static NotchVicinity checkNotchVicinity(
+      const std::vector<std::vector<bool>>& grid,
+      int start_row,
+      int start_col,
+      int end_row,
+      int end_col);
+  static bool isRowEmpty(const std::vector<std::vector<bool>>& grid,
+                         int row,
+                         int start_col,
+                         int end_col);
+  static bool isColEmpty(const std::vector<std::vector<bool>>& grid,
+                         int col,
+                         int start_row,
+                         int end_row);
+  float calSingleNotchPenalty(int width, int height);
   void calNotchPenalty();
-  void calMacroBlockagePenalty();
+  void calSoftBlockagePenalty();
   void calFixedMacrosPenalty();
 
   std::vector<odb::Point> getClustersLocations() const;
@@ -97,7 +127,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   void findFixedMacros();
 
-  std::vector<odb::Rect> blockages_;
+  std::vector<odb::Rect> soft_blockages_;
   std::vector<odb::Rect> fixed_macros_;
 
   Cluster* root_;
@@ -113,22 +143,22 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   // additional penalties
   float boundary_weight_ = 0.0;
-  float macro_blockage_weight_ = 0.0;
+  float soft_blockage_weight_ = 0.0;
   float notch_weight_ = 0.0;
   const float fixed_macros_weight_ = 100.0;
 
   float boundary_penalty_ = 0.0;
   float notch_penalty_ = 0.0;
-  float macro_blockage_penalty_ = 0.0;
+  float soft_blockage_penalty_ = 0.0;
   float fixed_macros_penalty_ = 0.0;
 
   float pre_boundary_penalty_ = 0.0;
   float pre_notch_penalty_ = 0.0;
-  float pre_macro_blockage_penalty_ = 0.0;
+  float pre_soft_blockage_penalty_ = 0.0;
 
   float norm_boundary_penalty_ = 0.0;
   float norm_notch_penalty_ = 0.0;
-  float norm_macro_blockage_penalty_ = 0.0;
+  float norm_soft_blockage_penalty_ = 0.0;
   float norm_fixed_macros_penalty_ = 0.0;
 
   // action prob
@@ -136,6 +166,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
 
   bool enhancements_on_ = false;
   bool centralization_was_reverted_ = false;
+  bool force_centralization_ = false;
 };
 
 }  // namespace mpl

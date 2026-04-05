@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include <cstdint>
+#include <memory>
+#include <string>
+
 #include "ScanCell.hh"
 #include "ScanPin.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "sta/Liberty.hh"
 
 namespace dft {

@@ -20,6 +20,7 @@
 #include "db/drObj/drPin.h"
 #include "db/infra/frBox.h"
 #include "db/obj/frTrackPattern.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexMazeTypes.h"
@@ -635,16 +636,19 @@ class FlexGridGraph
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostPlanar = currCost;
+          break;
         case frDirEnum::N:
           currCost = node.markerCostPlanar;
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostPlanar = currCost;
+          break;
         case frDirEnum::U:
           currCost = node.markerCostVia;
           currCost *= d;
           currCost = std::max(0, currCost);
           node.markerCostVia = currCost;
+          break;
         default:;
       }
     }
@@ -1228,11 +1232,8 @@ class FlexGridGraph
                    frDirEnum dir) const;
   bool isValid(frMIdx x, frMIdx y, frMIdx z) const
   {
-    if (x < 0 || y < 0 || z < 0 || x >= (frMIdx) xCoords_.size()
-        || y >= (frMIdx) yCoords_.size() || z >= (frMIdx) zCoords_.size()) {
-      return false;
-    }
-    return true;
+    return x >= 0 && y >= 0 && z >= 0 && x < (frMIdx) xCoords_.size()
+           && y < (frMIdx) yCoords_.size() && z < (frMIdx) zCoords_.size();
   }
   bool isValid(frMIdx x, frMIdx y, frMIdx z, frDirEnum dir) const
   {

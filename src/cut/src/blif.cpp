@@ -18,6 +18,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Delay.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
@@ -169,9 +170,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
                 if (expr
                     // Tristate outputs do not force the output to be constant.
                     && port_->tristateEnable() == nullptr
-                    && (expr->op() == sta::FuncExpr::op_zero
-                        || expr->op() == sta::FuncExpr::op_one)) {
-                  if (expr->op() == sta::FuncExpr::op_zero) {
+                    && (expr->op() == sta::FuncExpr::Op::zero
+                        || expr->op() == sta::FuncExpr::Op::one)) {
+                  if (expr->op() == sta::FuncExpr::Op::zero) {
                     if (const0.empty()) {
                       const0_cell_ = port_->libertyCell()->name();
                       const0_cell_port_ = port_->name();
@@ -222,9 +223,9 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
               if (expr
                   // Tristate outputs do not force the output to be constant.
                   && port_->tristateEnable() == nullptr
-                  && (expr->op() == sta::FuncExpr::op_zero
-                      || expr->op() == sta::FuncExpr::op_one)) {
-                if (expr->op() == sta::FuncExpr::op_zero) {
+                  && (expr->op() == sta::FuncExpr::Op::zero
+                      || expr->op() == sta::FuncExpr::Op::one)) {
+                if (expr->op() == sta::FuncExpr::Op::zero) {
                   const0.insert(netName);
                 } else {
                   const1.insert(netName);
@@ -583,11 +584,12 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
 float Blif::getRequiredTime(sta::Pin* term, bool is_rise)
 {
   auto vert = open_sta_->getDbNetwork()->graph()->pinLoadVertex(term);
-  auto req = open_sta_->vertexRequired(
+  auto req = open_sta_->required(
       vert,
-      is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
+      is_rise ? sta::RiseFallBoth::rise() : sta::RiseFallBoth::fall(),
+      open_sta_->scenes(),
       sta::MinMax::max());
-  if (sta::delayInf(req)) {
+  if (sta::delayInf(req, open_sta_)) {
     return 0;
   }
   return req;
@@ -600,11 +602,13 @@ float Blif::getArrivalTime(sta::Pin* term, bool is_rise)
   if (path == nullptr) {
     return 0;
   }
-
-  auto ap = path->pathAnalysisPt(open_sta_);
-  auto arr = open_sta_->vertexArrival(
-      vert, is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(), ap);
-  if (sta::delayInf(arr)) {
+  sta::SceneSeq scene1({path->scene(open_sta_)});
+  auto arr = open_sta_->arrival(
+      vert,
+      is_rise ? sta::RiseFallBoth::rise() : sta::RiseFallBoth::fall(),
+      scene1,
+      path->minMax(open_sta_));
+  if (sta::delayInf(arr, open_sta_)) {
     return 0;
   }
   return arr;

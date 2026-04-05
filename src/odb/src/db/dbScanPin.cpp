@@ -7,12 +7,13 @@
 #include <variant>
 
 #include "dbBlock.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
+#include <type_traits>
 namespace {
 template <class>
 inline constexpr bool always_false_v = false;
@@ -23,12 +24,15 @@ template class dbTable<_dbScanPin>;
 
 bool _dbScanPin::operator==(const _dbScanPin& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
+
   // User Code Begin ==
   if (pin_ != rhs.pin_) {
     return false;
   }
   // User Code End ==
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanPin::operator<(const _dbScanPin& rhs) const

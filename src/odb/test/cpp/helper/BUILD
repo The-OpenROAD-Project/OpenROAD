@@ -9,6 +9,7 @@ package(
 
 cc_library(
     name = "helper",
+    testonly = 1,
     srcs = [
         "helper.cpp",
     ],

@@ -76,6 +76,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   void setDebugOn(bool set_on) override { debug_on_ = set_on; }
 
   void setDisplayControl(std::string_view name, bool value) override;
+  const char* getDisplayControlGroupName() override { return "GPL"; }
 
   int gifStart(std::string_view path) override;
   void deleteLabel(std::string_view label_name) override;
@@ -90,7 +91,6 @@ class GraphicsImpl : public gpl::AbstractGraphics,
                          int image_width_px) override;
   void saveLabeledImageImpl(std::string_view path,
                             std::string_view label,
-                            bool select_buffers,
                             std::string_view heatmap_control,
                             int image_width_px) override;
   void gifAddFrameImpl(int key,
@@ -141,7 +141,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
       gui::Painter::kDarkYellow,
   };
 
-  // These are used for bin forces, fillers, and dummies (lighter) for each
+  // These are used for bin field, fillers, and dummies (lighter) for each
   // region.
   std::vector<gui::Painter::Color> region_colors_ = {
       gui::Painter::kDarkMagenta,
@@ -151,7 +151,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   };
 
-  void drawForce(gui::Painter& painter);
+  void drawField(gui::Painter& painter);
   void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
   void drawCells(const std::vector<GCellHandle>& cells,
                  gui::Painter& painter,
@@ -167,6 +167,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   NesterovPlace* np_ = nullptr;
   static constexpr size_t kInvalidIndex = std::numeric_limits<size_t>::max();
+  static constexpr const char* kDrawInstances = "Draw GPL Cells";
   size_t selected_ = kInvalidIndex;
   size_t nb_selected_index_ = kInvalidIndex;
   bool draw_bins_ = false;
@@ -175,13 +176,14 @@ class GraphicsImpl : public gpl::AbstractGraphics,
   LineSegs mbff_edges_;
   std::vector<odb::dbInst*> mbff_cluster_;
   Mode mode_;
-  gui::Chart* main_chart_{nullptr};
-  gui::Chart* density_chart_{nullptr};
-  gui::Chart* stepLength_chart_{nullptr};
-  gui::Chart* routing_chart_{nullptr};
+  static gui::Chart* main_chart_;
+  static gui::Chart* density_chart_;
+  static gui::Chart* stepLength_chart_;
+  static gui::Chart* routing_chart_;
   bool debug_on_{false};
 
-  void initHeatmap();
+  void initCharts();
+  void initDebugHeatmap();
   void drawNesterov(gui::Painter& painter);
   void drawInitial(gui::Painter& painter);
   void drawMBFF(gui::Painter& painter);

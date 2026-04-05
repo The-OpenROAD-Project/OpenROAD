@@ -1,69 +1,4 @@
 {
-    "cts__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "detailedplace__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "detailedroute__flow__warnings__count:GRT-0246": {
-        "value": 1,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "detailedroute__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "finish__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "floorplan__flow__warnings__count:EST-0027": {
-        "value": 1,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "floorplan__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "globalplace__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "globalroute__flow__warnings__count:GRT-0246": {
-        "value": 1,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "globalroute__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "placeopt__flow__warnings__count:RSZ-0020": {
-        "value": 1,
-        "compare": "<=",
-        "level": "warning"
-    },
-    "placeopt__flow__warnings__count:STA-1212": {
-        "value": 1001,
-        "compare": "<=",
-        "level": "warning"
-    },
     "synth__design__instance__area__stdcell": {
         "value": 3550.0,
         "compare": "<="
@@ -129,7 +64,7 @@
         "compare": ">="
     },
     "detailedroute__route__wirelength": {
-        "value": 40069,
+        "value": 39961,
         "compare": "<="
     },
     "detailedroute__route__drc_errors": {
@@ -143,22 +78,6 @@
     "detailedroute__antenna_diodes_count": {
         "value": 100,
         "compare": "<="
-    },
-    "detailedroute__timing__setup__ws": {
-        "value": -12.5,
-        "compare": ">="
-    },
-    "detailedroute__timing__setup__tns": {
-        "value": -50.0,
-        "compare": ">="
-    },
-    "detailedroute__timing__hold__ws": {
-        "value": -12.5,
-        "compare": ">="
-    },
-    "detailedroute__timing__hold__tns": {
-        "value": -50.0,
-        "compare": ">="
     },
     "finish__timing__setup__ws": {
         "value": -12.5,

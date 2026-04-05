@@ -31,6 +31,7 @@ global_route
     [-end_incremental]
     [-use_cugr]
     [-resistance_aware]
+    [-infinite_cap]
 ```
 
 #### Options
@@ -50,14 +51,16 @@ global_route
 | `-end_incremental` | This flag run incremental GRT with the nets modified. The default is false. |
 | `-use_cugr` | This flag run GRT using CUGR as the router solver. NOTE: this is not ready for production. |
 | `-resistance_aware` | This flag enables resistance-aware layer assignment and 3D routing. NOTE: this is not ready for production. |
+| `-infinite_cap` | Enables "infinite" gcell capacity for testing purpose. NOTE: this is not recommended for production flows. |
 
 ### Set Routing Layers
 
 This command sets the minimum and maximum routing layers for signal and clock nets.
 Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
+<!-- checker: skip -->
 ```tcl
-set_routing_layers 
+set_routing_layers
     [-signal min-max]
     [-clock min-max]
 ```
@@ -84,20 +87,6 @@ set_macro_extension extension
 | Argument Name | Description | 
 | ----- | ----- |
 | `extension` | Number of `GCells` added to the blockage boundaries from macros. The default `GCell` size is 15 `M3` pitches. |
-
-### Set Pin Offset
-
-This command sets the pin offset distance.
-
-```tcl
-set_pin_offset offset 
-```
-
-#### Options
-
-| Argument Name | Description | 
-| ----- | ----- |
-| `offset` | Pin offset in microns (must be a positive integer). | 
 
 ### Set Global Routing Layer Adjustment
 
@@ -233,17 +222,13 @@ repair_antennas
 | `-ratio_margin` | Add a margin to the antenna ratios. The default value is `0`, and the allowed values are integers `[0, 100]`. |
 
 
-### Plot Global Routing Guides
+### Draw Route Segments
 
-The `draw_route_guides` command plots the route guides for a set of nets.
-It also plots the route segments for a set of nets when using the -show_segments flag.
-To erase the route guides from the GUI, pass an empty list to this command:
-`draw_route_guides {}`.
+The `draw_route_segments` command draws the route segments for a set of nets in the GUI.
 
 ```tcl
-draw_route_guides 
+draw_route_segments
     net_names
-    [-show_segments]
     [-show_pin_locations]
 ```
 
@@ -251,8 +236,7 @@ draw_route_guides
 
 | Switch Name | Description |
 | ----- | ----- |
-| `net_names` | Tcl list of set of nets (e.g. `{net1, net2}`). |
-| `-show_segments` | Draw the route segments instead of the route guides. |
+| `net_names` | Tcl list of nets (e.g. `{net1 net2}`). |
 | `-show_pin_locations` | Draw circles for the pin positions on the routing grid. |
 
 ### Report Wirelength
@@ -488,7 +472,7 @@ about this tool.
     version was received from [Yue Xu](mailto:yuexu@iastate.edu) on June 15, 2019.
 -   Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and
     High-Quality Global Router. VLSI Design, Article ID 608362, 2012."
-    Available [here](https://home.engineering.iastate.edu/~cnchu/pubs/j52.pdf).
+    Available [here](https://onlinelibrary.wiley.com/doi/10.1155/2012/608362).
 -   C. J. Alpert, T. C. Hu, J. H. Huang, A. B. Kahng and
     D. Karger, "Prim-Dijkstra Tradeoffs for Improved Performance-Driven
     Global Routing", IEEE Transactions on Computer-Aided Design of
@@ -498,4 +482,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

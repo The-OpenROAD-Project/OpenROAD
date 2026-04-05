@@ -32,6 +32,7 @@ struct ChipletInst;
 struct Connection;
 struct DesignDef;
 struct BumpMapEntry;
+struct DbxData;
 
 class ThreeDBlox
 {
@@ -44,6 +45,8 @@ class ThreeDBlox
   void check();
   void writeDbv(const std::string& dbv_file, odb::dbChip* chip);
   void writeDbx(const std::string& dbx_file, odb::dbChip* chip);
+  void writeBMap(const std::string& bmap_file, odb::dbChipRegion* region);
+  void writeVerilog(const std::string& verilog_file, odb::dbChip* chip);
 
  private:
   void createChiplet(const ChipletDef& chiplet);
@@ -58,11 +61,13 @@ class ThreeDBlox
                                 std::vector<dbChipInst*>& path_insts);
   void readHeaderIncludes(const std::vector<std::string>& includes);
   void calculateSize(dbChip* chip);
+  void buildChipNetsFromVerilog(dbChip* chip, const DbxData& data);
 
   utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   sta::Sta* sta_ = nullptr;
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
+  std::unordered_set<std::string> read_files_;
 };
 }  // namespace odb

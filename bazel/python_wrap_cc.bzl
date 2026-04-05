@@ -19,6 +19,14 @@ PythonSwigInfo = provider(
 
 PYTHON_STABLE_API_DEFINE = "Py_LIMITED_API=0x030A0000"
 
+PYTHON_EXTENSION_LINKOPTS = select({
+    "@platforms//os:macos": [
+        "-undefined",
+        "dynamic_lookup",
+    ],
+    "//conditions:default": [],
+})
+
 def _get_transitive_srcs(srcs, deps):
     return depset(
         srcs,
@@ -42,6 +50,8 @@ def _python_wrap_cc_impl(ctx):
     if len(ctx.files.srcs) > 1 and not ctx.attr.root_swig_src:
         fail("If multiple src files are provided, root_swig_src must be specified.")
 
+    swig_lib_dir = ctx.file._swig_swg.dirname
+
     root_file = ctx.file.root_swig_src or ctx.files.srcs[0]
 
     cc_outfile_name = ctx.attr.out or (ctx.attr.name + ".cc")
@@ -50,8 +60,10 @@ def _python_wrap_cc_impl(ctx):
     py_output_file = ctx.actions.declare_file(py_outfile_name)
 
     include_root_directory = ""
+    if ctx.label.workspace_root:
+        include_root_directory = ctx.label.workspace_root + "/"
     if ctx.label.package:
-        include_root_directory = ctx.label.package + "/"
+        include_root_directory += ctx.label.package + "/"
 
     src_inputs = _get_transitive_srcs(ctx.files.srcs + ctx.files.root_swig_src, ctx.attr.deps)
     includes_paths = _get_transitive_includes(
@@ -77,8 +89,9 @@ def _python_wrap_cc_impl(ctx):
         outputs = [cc_output_file, py_output_file],
         inputs = src_inputs,
         arguments = [args],
-        tools = ctx.files._swig,
-        executable = ([file for file in ctx.files._swig if file.basename == "swig"][0]),
+        env = {"SWIG_LIB": swig_lib_dir},
+        tools = ctx.files._swig_lib,
+        executable = ctx.executable._swig,
     )
     return [
         DefaultInfo(files = depset([cc_output_file, py_output_file])),
@@ -122,9 +135,20 @@ python_wrap_cc = rule(
             doc = "args to pass directly to the swig binary",
         ),
         "_swig": attr.label(
-            default = "@org_swig//:swig_stable",
+            default = "@swig",
             allow_files = True,
             cfg = "exec",
+            executable = True,
+        ),
+        "_swig_lib": attr.label(
+            default = "@swig//:lib_python",
+            allow_files = True,
+        ),
+        "_swig_swg": attr.label(
+            default = "@swig//:swig_swg",
+            allow_single_file = True,
+            doc = "SWIG swig.swg library file used for determining SWIG_LIB " +
+                  "env variable (internal attribute).",
         ),
     },
 )

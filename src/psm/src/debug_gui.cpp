@@ -21,7 +21,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "shape.h"
-#include "sta/Corner.hh"
+#include "sta/Scene.hh"
 
 namespace psm {
 
@@ -85,7 +85,7 @@ gui::Descriptor::Properties NodeDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});
@@ -297,7 +297,7 @@ gui::Descriptor::Properties ConnectionDescriptor::getProperties(
     return props;
   }
 
-  std::vector<sta::Corner*> corners;
+  std::vector<sta::Scene*> corners;
   if (solver != nullptr) {
     corners = solver->getCorners();
     props.push_back({"Net", gui->makeSelected(solver->getNet())});
@@ -611,6 +611,16 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
       drawSource(*node_itr, painter);
     }
   }
+
+  gui::DiscreteLegend legend;
+  legend.addLegendKey(shape_color_, "Shape");
+  legend.addLegendKey(node_color_, "Node");
+  legend.addLegendKey(iterm_node_color_, "ITerm Node");
+  legend.addLegendKey(bpin_node_color_, "BPin Node");
+  legend.addLegendKey(connection_color_, "Connection");
+  legend.addLegendKey(term_connection_color_, "Terminal Connection");
+  legend.addLegendKey(src_node_color_, "Source Node/Shape");
+  legend.draw(painter);
 }
 
 gui::SelectionSet DebugGui::select(odb::dbTechLayer* layer,

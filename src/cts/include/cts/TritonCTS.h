@@ -14,10 +14,7 @@
 
 #include "odb/db.h"
 #include "odb/geom.h"
-
-namespace utl {
-class Logger;
-}
+#include "utl/Logger.h"
 
 namespace est {
 class EstimateParasitics;
@@ -44,8 +41,6 @@ struct Tree;
 }  // namespace stt
 
 namespace cts {
-
-using utl::Logger;
 
 class ClockInst;
 class CtsOptions;
@@ -125,11 +120,16 @@ class TritonCTS
   void incrementNumClocks() { ++numberOfClocks_; }
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
-  void cloneClockGaters(odb::dbNet* clkNet);
+  void cloneClockGaters(odb::dbNet* clkNet,
+                        std::set<odb::Point>& occupiedPositions);
   void findLongEdges(
       stt::Tree& clkSteiner,
       odb::Point driverPt,
-      std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin);
+      std::map<odb::Point, std::vector<odb::dbITerm*>>& point2pin,
+      std::set<odb::Point>& occupiedPositions);
+  void resolveLocationCollision(odb::dbInst* clone,
+                                odb::Point location,
+                                std::set<odb::Point>& occupiedPositions);
   void initOneClockTree(odb::dbNet* driverNet,
                         odb::dbNet* clkInputNet,
                         const std::string& sdcClockName,
@@ -216,7 +216,7 @@ class TritonCTS
 
   sta::dbSta* openSta_ = nullptr;
   sta::dbNetwork* network_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   CtsOptions* options_ = nullptr;
   std::unique_ptr<TechChar> techChar_;
   rsz::Resizer* resizer_ = nullptr;

@@ -9,9 +9,11 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
 #include "sta/MinMax.hh"
-#include "sta/StaState.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -27,18 +29,9 @@ class Pin;
 class PinSet;
 }  // namespace sta
 
-namespace utl {
-class Logger;
-}
-
 namespace rsz {
 
 class Resizer;
-
-using odb::dbModInst;
-using sta::Instance;
-using sta::Path;
-using utl::Logger;
 
 class SwapArithModules : public sta::dbStaState
 {
@@ -50,17 +43,19 @@ class SwapArithModules : public sta::dbStaState
                                    const std::string& target,
                                    float slack_threshold)
       = 0;
-  virtual void collectArithInstsOnPath(const Path* path,
-                                       std::set<dbModInst*>& arithInsts)
+  virtual void collectArithInstsOnPath(const sta::Path* path,
+                                       std::set<odb::dbModInst*>& arithInsts)
       = 0;
-  virtual bool isArithInstance(const Instance* inst, dbModInst*& mod_inst) = 0;
-  virtual bool hasArithOperatorProperty(const dbModInst* mod_inst) = 0;
+  virtual bool isArithInstance(const sta::Instance* inst,
+                               odb::dbModInst*& mod_inst)
+      = 0;
+  virtual bool hasArithOperatorProperty(const odb::dbModInst* mod_inst) = 0;
   virtual void findCriticalInstances(int path_count,
                                      const std::string& target,
                                      float slack_threshold,
-                                     std::set<dbModInst*>& insts)
+                                     std::set<odb::dbModInst*>& insts)
       = 0;
-  virtual bool doSwapInstances(std::set<dbModInst*>& insts,
+  virtual bool doSwapInstances(std::set<odb::dbModInst*>& insts,
                                const std::string& target)
       = 0;
 
@@ -73,10 +68,10 @@ class SwapArithModules : public sta::dbStaState
 
   // Member variables
   Resizer* resizer_;
-  dbNetwork* db_network_{nullptr};
-  Logger* logger_{nullptr};
-  const MinMax* min_ = MinMax::min();
-  const MinMax* max_ = MinMax::max();
+  sta::dbNetwork* db_network_{nullptr};
+  utl::Logger* logger_{nullptr};
+  const sta::MinMax* min_ = sta::MinMax::min();
+  const sta::MinMax* max_ = sta::MinMax::max();
 };
 
 }  // namespace rsz

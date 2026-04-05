@@ -12,7 +12,9 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "grt/GRoute.h"
 #include "odb/geom.h"
+#include "stt/SteinerTreeBuilder.h"
 #include "utl/Logger.h"
 
 namespace grt {
@@ -989,7 +991,7 @@ void FastRouteCore::reInitTree(const int netID)
   sttrees_[netID].nodes.clear();
   sttrees_[netID].edges.clear();
 
-  Tree rsmt;
+  stt::Tree rsmt;
   const float net_alpha = stt_builder_->getAlpha(nets_[netID]->getDbNet());
   // if failing tree was created with pd, fall back to flute with fluteNormal
   // first so the structs necessary for fluteCongest are filled
@@ -1274,7 +1276,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       // stop when the grid position been popped out from both src_heap and
       // dest_heap
-      while (pop_heap2[ind1] == false) {
+      while (!pop_heap2[ind1]) {
         // relax all the adjacent grids within the enlarged region for
         // source subtree
         const int curX = ind1 % x_range_;

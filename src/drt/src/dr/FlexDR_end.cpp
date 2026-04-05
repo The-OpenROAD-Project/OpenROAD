@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
@@ -15,6 +16,7 @@
 #include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
+#include "distributed/drUpdate.h"
 #include "dr/FlexDR.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
@@ -77,7 +79,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     }
     bool condition2 = (begin.y() <= routeBox.yMax());  // orthogonal to wire
     if (routeBox.xMin() <= begin.x() && begin.x() <= routeBox.xMax()
-        && !(begin.y() > routeBox.yMax() || end.y() < routeBox.yMin())) {
+        && begin.y() <= routeBox.yMax() && end.y() >= routeBox.yMin()) {
       // bottom seg to ext
       if (begin.y() < routeBox.yMin()) {
         auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
@@ -158,7 +160,7 @@ void FlexDRWorker::endRemoveNets_pathSeg(
     bool condition2 = /*isInitDR() ? (begin.x() < routeBox.xMax()):*/ (
         begin.x() <= routeBox.xMax());  // orthogonal to wire
     if (routeBox.yMin() <= begin.y() && begin.y() <= routeBox.yMax()
-        && !(begin.x() > routeBox.xMax() || end.x() < routeBox.xMin())) {
+        && begin.x() <= routeBox.xMax() && end.x() >= routeBox.xMin()) {
       // left seg to ext
       if (begin.x() < routeBox.xMin()) {
         auto uPathSeg = std::make_unique<frPathSeg>(*pathSeg);
@@ -679,7 +681,7 @@ void FlexDRWorker::cleanup()
 
 bool FlexDRWorker::end(frDesign* design)
 {
-  if (skipRouting_ == true) {
+  if (skipRouting_) {
     return false;
   }
   // skip if current clip does not have input DRCs

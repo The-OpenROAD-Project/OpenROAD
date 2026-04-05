@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <memory>
@@ -17,23 +18,27 @@
 #include "connect.h"
 #include "domain.h"
 #include "grid.h"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTransform.h"
+#include "odb/dbTypes.h"
 #include "power_cells.h"
 #include "renderer.h"
 #include "rings.h"
+#include "shape.h"
 #include "sroute.h"
 #include "straps.h"
 #include "techlayer.h"
 #include "utl/Logger.h"
+#include "via.h"
 #include "via_repair.h"
 
 namespace pdn {
 
 using utl::Logger;
 
-PdnGen::PdnGen(dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
+PdnGen::PdnGen(odb::dbDatabase* db, Logger* logger) : db_(db), logger_(logger)
 {
   sroute_ = std::make_unique<SRoute>(this, db, logger_);
 }
@@ -44,7 +49,7 @@ void PdnGen::reset()
 {
   core_domain_ = nullptr;
   domains_.clear();
-  updateRenderer();
+  updateRenderer(true);
 }
 
 void PdnGen::resetShapes()
@@ -52,7 +57,7 @@ void PdnGen::resetShapes()
   for (auto* grid : getGrids()) {
     grid->resetShapes();
   }
-  updateRenderer();
+  updateRenderer(true);
 }
 
 void PdnGen::buildGrids(bool trim)
@@ -99,6 +104,9 @@ void PdnGen::buildGrids(bool trim)
     block_obs[layer] = Shape::ObstructionTree(shapes.begin(), shapes.end());
   }
   block_obs_vec.clear();
+  if (debug_renderer_ != nullptr) {
+    debug_renderer_->setInitialObstructions(block_obs);
+  }
 
   Shape::ShapeTreeMap all_shapes;
   for (const auto& [layer, shapes] : all_shapes_vec) {
@@ -142,7 +150,7 @@ void PdnGen::buildGrids(bool trim)
     failed = true;
   }
 
-  updateRenderer();
+  updateRenderer(false);
 
   if (failed) {
     logger_->error(utl::PDN, 233, "Failed to generate full power grid.");
@@ -191,6 +199,8 @@ void PdnGen::trimShapes()
   debugPrint(logger_, utl::PDN, "Make", 2, "Trim shapes - start");
   auto grids = getGrids();
 
+  std::map<odb::dbTechLayer*, std::unique_ptr<TechLayer>> tech_layers;
+
   for (auto* grid : grids) {
     if (grid->type() == Grid::Existing) {
       // fixed shapes, so nothing to do
@@ -209,7 +219,28 @@ void PdnGen::trimShapes()
             = pin_layers.find(shape->getLayer()) != pin_layers.end();
 
         std::unique_ptr<Shape> new_shape = nullptr;
-        const odb::Rect new_rect = shape->getMinimumRect();
+        const odb::Rect min_rect = shape->getMinimumRect();
+        auto& layer = tech_layers[shape->getLayer()];
+        if (layer == nullptr) {
+          layer = std::make_unique<TechLayer>(shape->getLayer());
+        }
+        odb::Rect new_rect
+            = layer->adjustToMinArea(min_rect, shape->getLayerDirection());
+        if (!min_rect.isInverted() && !shape->getRect().contains(new_rect)) {
+          // shape sticks out of the original rect, need to move it so that it
+          // is contained
+          if (shape->getLayerDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            const int deltax0 = shape->getRect().xMin() - new_rect.xMin();
+            const int deltax1 = shape->getRect().xMax() - new_rect.xMax();
+            new_rect.moveDelta(
+                std::abs(deltax0) < std::abs(deltax1) ? deltax0 : deltax1, 0);
+          } else {
+            const int deltay0 = shape->getRect().yMin() - new_rect.yMin();
+            const int deltay1 = shape->getRect().yMax() - new_rect.yMax();
+            new_rect.moveDelta(
+                0, std::abs(deltay0) < std::abs(deltay1) ? deltay0 : deltay1);
+          }
+        }
         if (new_rect == shape->getRect()) {  // no change to shape
           continue;
         }
@@ -217,12 +248,13 @@ void PdnGen::trimShapes()
         // check if vias and shape form a stack without any other connections
         bool effectively_vias_stack = true;
         for (const auto& via : shape->getVias()) {
-          if (via->getArea() != new_rect) {
+          if (via->getArea() != min_rect) {
             effectively_vias_stack = false;
             break;
           }
         }
-        if (!effectively_vias_stack) {
+        if (!effectively_vias_stack && !new_rect.isInverted()
+            && shape->getRect().contains(new_rect)) {
           new_shape = shape->copy();
           new_shape->setRect(new_rect);
         }
@@ -691,9 +723,12 @@ void PdnGen::rendererRedraw()
   }
 }
 
-void PdnGen::updateRenderer() const
+void PdnGen::updateRenderer(bool reset) const
 {
   if (debug_renderer_ != nullptr) {
+    if (reset) {
+      debug_renderer_->setInitialObstructions({});
+    }
     debug_renderer_->update();
   }
 }
@@ -743,23 +778,6 @@ void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
 
   for (auto& [net, swire] : net_map) {
     net->setSpecial();
-
-    // determine if unique and set WildConnected
-    bool appear_in_all_grids = true;
-    for (auto* domain : domains) {
-      for (const auto& grid : domain->getGrids()) {
-        const auto nets = grid->getNets();
-        if (std::ranges::find(nets, net) == nets.end()) {
-          appear_in_all_grids = false;
-        }
-      }
-    }
-
-    if (appear_in_all_grids) {
-      // should this be based on the global connect?
-      net->setWildConnected();
-    }
-
     swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   }
 

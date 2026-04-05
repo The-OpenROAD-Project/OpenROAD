@@ -3,14 +3,18 @@
 
 #include "dbDescriptors.h"
 
+#ifdef ENABLE_QT
 #include <QInputDialog>
+#include <QMessageBox>
 #include <QString>
 #include <QStringList>
+#endif
 #include <algorithm>
 #include <any>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <limits>
 #include <map>
@@ -30,6 +34,9 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "gui/gui.h"
+#ifdef ENABLE_QT
+#include "insertBufferDialog.h"
+#endif
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
@@ -37,8 +44,12 @@
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
 #include "odb/geom.h"
+#ifdef ENABLE_QT
 #include "options.h"
+#endif
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
+#include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -227,6 +238,7 @@ static void addTimingActions(T obj,
                      }});
 }
 
+#ifdef ENABLE_QT
 // get list of tech layers as EditorOption list
 static void addLayersToOptions(odb::dbTech* tech,
                                std::vector<Descriptor::EditorOption>& options)
@@ -269,6 +281,7 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
   }
   return current;
 }
+#endif
 
 //////////////////////////////////////////////////
 
@@ -1694,7 +1707,11 @@ void DbNetDescriptor::highlight(const std::any& object, Painter& painter) const
 
   bool draw_flywires = true;
 
+#ifdef ENABLE_QT
   if (!painter.getOptions()->isFlywireHighlightOnly()) {
+#else
+  {
+#endif
     odb::dbWire* wire = net->getWire();
     if (wire) {
       draw_flywires = false;
@@ -1990,6 +2007,70 @@ Descriptor::Actions DbNetDescriptor::getActions(const std::any& object) const
                                            }});
     }
   }
+  int drivers = 0;
+  for (auto* iterm : net->getITerms()) {
+    const auto iotype = iterm->getIoType();
+    if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
+      drivers++;
+    }
+  }
+  for (auto* bterm : net->getBTerms()) {
+    const auto iotype = bterm->getIoType();
+    if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
+        || iotype == odb::dbIoType::FEEDTHRU) {
+      drivers++;
+    }
+  }
+
+#ifdef ENABLE_QT
+  if (drivers <= 1) {
+    actions.push_back(
+        {"Insert Buffer", [this, net]() {
+           InsertBufferDialog dialog(net, sta_, nullptr);
+           if (dialog.exec() == QDialog::Accepted) {
+             odb::dbMaster* master = dialog.getSelectedMaster();
+             odb::dbObject* driver = nullptr;
+             std::set<odb::dbObject*> loads;
+             dialog.getSelection(driver, loads);
+
+             std::string buf_name = dialog.getBufferName().toStdString();
+             std::string net_name = dialog.getNetName().toStdString();
+             const char* buf_p
+                 = buf_name.empty() ? kDefaultBufBaseName : buf_name.c_str();
+             const char* net_p
+                 = net_name.empty() ? kDefaultNetBaseName : net_name.c_str();
+
+             try {
+               odb::dbInst* buffer_inst = nullptr;
+               if (driver) {
+                 buffer_inst = net->insertBufferAfterDriver(
+                     driver,
+                     master,
+                     nullptr,
+                     buf_p,
+                     net_p,
+                     odb::dbNameUniquifyType::IF_NEEDED);
+               } else if (!loads.empty()) {
+                 buffer_inst = net->insertBufferBeforeLoads(
+                     loads,
+                     master,
+                     nullptr,
+                     buf_p,
+                     net_p,
+                     odb::dbNameUniquifyType::IF_NEEDED);
+               }
+               Gui::get()->redraw();
+               if (buffer_inst) {
+                 return Gui::get()->makeSelected(buffer_inst);
+               }
+             } catch (const std::exception& e) {
+               QMessageBox::critical(nullptr, "Error", e.what());
+             }
+           }
+           return makeSelected(net);
+         }});
+  }
+#endif
   return actions;
 }
 
@@ -2828,30 +2909,31 @@ Descriptor::Actions DbObstructionDescriptor::getActions(
     const std::any& object) const
 {
   auto obs = std::any_cast<odb::dbObstruction*>(object);
-  return Actions(
-      {{"Copy to layer",
-        [obs]() {
-          odb::dbBox* box = obs->getBBox();
-          odb::dbTechLayer* layer = getLayerSelection(
-              obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
-          auto gui = gui::Gui::get();
-          if (layer == nullptr) {
-            // select old layer again
-            return gui->makeSelected(obs);
-          }
-          auto new_obs = odb::dbObstruction::create(obs->getBlock(),
-                                                    layer,
-                                                    box->xMin(),
-                                                    box->yMin(),
-                                                    box->xMax(),
-                                                    box->yMax());
-          // does not copy other parameters
-          return gui->makeSelected(new_obs);
-        }},
-       {"Delete", [obs]() {
-          odb::dbObstruction::destroy(obs);
-          return Selected();  // unselect since this object is now gone
-        }}});
+  Actions actions;
+#ifdef ENABLE_QT
+  actions.push_back(
+      {"Copy to layer", [obs]() {
+         odb::dbBox* box = obs->getBBox();
+         odb::dbTechLayer* layer = getLayerSelection(
+             obs->getBlock()->getDataBase()->getTech(), box->getTechLayer());
+         auto gui = gui::Gui::get();
+         if (layer == nullptr) {
+           return gui->makeSelected(obs);
+         }
+         auto new_obs = odb::dbObstruction::create(obs->getBlock(),
+                                                   layer,
+                                                   box->xMin(),
+                                                   box->yMin(),
+                                                   box->xMax(),
+                                                   box->yMax());
+         return gui->makeSelected(new_obs);
+       }});
+#endif
+  actions.push_back({"Delete", [obs]() {
+                       odb::dbObstruction::destroy(obs);
+                       return Selected();
+                     }});
+  return actions;
 }
 
 void DbObstructionDescriptor::visitAllObjects(
@@ -2936,6 +3018,11 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
   if (layer->getMinWidth() != 0) {
     props.emplace_back("Minimum width",
                        Property::convert_dbu(layer->getMinWidth(), true));
+  }
+  if (layer->getWrongWayMinWidth() != 0) {
+    props.emplace_back(
+        "Wrong way minimum width",
+        Property::convert_dbu(layer->getWrongWayMinWidth(), true));
   }
   if (layer->hasMaxWidth()) {
     props.emplace_back("Max width",
@@ -3143,6 +3230,24 @@ Descriptor::Properties DbTechLayerDescriptor::getDBProperties(
       }
     }
     props.emplace_back("Tech vias", tech_vias);
+  }
+
+  for (auto* spacing_table : layer->getTechLayerVoltageSpacings()) {
+    std::string title = "Voltage spacing";
+    if (spacing_table->isTocutAbove() && spacing_table->isTocutBelow()) {
+      title += " - tocut";
+    } else if (spacing_table->isTocutAbove()) {
+      title += " - tocut above";
+    } else if (spacing_table->isTocutBelow()) {
+      title += " - tocut below";
+    }
+
+    PropertyList voltagetable;
+    for (const auto& [voltage, spacing] : spacing_table->getTable()) {
+      voltagetable.emplace_back(fmt::format("{:.3f}V", voltage),
+                                Property::convert_dbu(spacing, true));
+    }
+    props.emplace_back(std::move(title), voltagetable);
   }
 
   return props;
@@ -5068,8 +5173,12 @@ void DbMarkerDescriptor::paintMarker(odb::dbMarker* marker,
         painter.drawLine(line.pt0(), line.pt1());
       } else if (std::holds_alternative<odb::Rect>(shape)) {
         painter.drawRect(std::get<odb::Rect>(shape));
-      } else {
+      } else if (std::holds_alternative<odb::Polygon>(shape)) {
         painter.drawPolygon(std::get<odb::Polygon>(shape));
+      } else if (std::holds_alternative<odb::Cuboid>(shape)) {
+        const odb::Cuboid cuboid = std::get<odb::Cuboid>(shape);
+        const odb::Rect rect = cuboid.getEnclosingRect();
+        painter.drawRect(rect);
       }
     }
   }

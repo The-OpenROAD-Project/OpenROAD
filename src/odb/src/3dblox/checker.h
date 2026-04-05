@@ -1,32 +1,52 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2026, The OpenROAD Authors
+
 #pragma once
 
-#include <string>
-#include <vector>
+namespace utl {
+class Logger;
+}
 
-#include "odb/3dblox.h"
-#include "odb/geom.h"
+namespace sta {
+class Sta;
+}
+
 namespace odb {
-class dbChip;
+class dbDatabase;
+class UnfoldedModel;
 class dbMarkerCategory;
-class dbChipInst;
-struct UnfoldedChip
+
+struct MatingSurfaces
 {
-  std::string getName() const;
-  std::vector<dbChipInst*> chip_inst_path;
-  Cuboid cuboid;
+  bool valid;
+  int top_z;
+  int bot_z;
 };
+
 class Checker
 {
  public:
-  Checker(utl::Logger* logger);
+  Checker(utl::Logger* logger, dbDatabase* db);
   ~Checker() = default;
-  void check(odb::dbChip* chip);
+  void check();
 
  private:
-  void checkFloatingChips(odb::dbMarkerCategory* category);
-  void checkOverlappingChips(odb::dbMarkerCategory* category);
-  void unfoldChip(odb::dbChipInst* chip_inst, UnfoldedChip& unfolded_chip);
-  utl::Logger* logger_ = nullptr;
-  std::vector<UnfoldedChip> unfolded_chips_;
+  void checkLogicalConnectivity(dbMarkerCategory* top_cat,
+                                const UnfoldedModel* model);
+  void checkFloatingChips(dbMarkerCategory* top_cat,
+                          const UnfoldedModel* model);
+  void checkOverlappingChips(dbMarkerCategory* top_cat,
+                             const UnfoldedModel* model);
+  void checkInternalExtUsage(dbMarkerCategory* top_cat,
+                             const UnfoldedModel* model);
+  void checkConnectionRegions(dbMarkerCategory* top_cat,
+                              const UnfoldedModel* model);
+  void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
+                                  const UnfoldedModel* model);
+  void checkNetConnectivity(dbMarkerCategory* top_cat,
+                            const UnfoldedModel* model);
+  utl::Logger* logger_;
+  dbDatabase* db_;
 };
+
 }  // namespace odb

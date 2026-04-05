@@ -10,7 +10,7 @@
 
 namespace sta {
 class Sta;
-class Corner;
+class Scene;
 }  // namespace sta
 
 namespace psm {
@@ -21,10 +21,10 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
  public:
   IRDropDataSource(PDNSim* psm, sta::Sta* sta, utl::Logger* logger);
 
-  void setBlock(odb::dbBlock* block) override;
+  void setChip(odb::dbChip* chip) override;
 
   void setNet(odb::dbNet* net) { net_ = net; }
-  void setCorner(sta::Corner* corner) { corner_ = corner; }
+  void setCorner(sta::Scene* corner) { corner_ = corner; }
 
  protected:
   bool populateMap() override;
@@ -50,7 +50,7 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
   odb::dbTech* tech_ = nullptr;
   odb::dbTechLayer* layer_ = nullptr;
   odb::dbNet* net_ = nullptr;
-  sta::Corner* corner_ = nullptr;
+  sta::Scene* corner_ = nullptr;
 };
 
 }  // namespace psm

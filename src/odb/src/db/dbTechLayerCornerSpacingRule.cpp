@@ -8,17 +8,21 @@
 #include <cstring>
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <vector>
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCornerSpacingRule>;
 
 bool _dbTechLayerCornerSpacingRule::operator==(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.corner_type != rhs.flags_.corner_type) {
     return false;
   }
@@ -79,6 +83,7 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCornerSpacingRule::operator<(

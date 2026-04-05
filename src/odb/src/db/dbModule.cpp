@@ -8,6 +8,7 @@
 
 #include "dbBlock.h"
 #include "dbCommon.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.hpp"
 #include "dbInst.h"
@@ -16,7 +17,6 @@
 #include "dbModInst.h"
 #include "dbModulePortItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include <cassert>
@@ -35,6 +35,8 @@
 #include "dbModuleModInstItr.h"
 #include "dbModuleModNetItr.h"
 #include "odb/dbBlockCallBackObj.h"
+#include "odb/dbObject.h"
+#include "odb/dbSet.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -42,6 +44,7 @@ template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (name_ != rhs.name_) {
     return false;
   }
@@ -65,6 +68,7 @@ bool _dbModule::operator==(const _dbModule& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbModule::operator<(const _dbModule& rhs) const
@@ -211,7 +215,7 @@ void dbModule::addInst(dbInst* inst)
   _dbInst* _inst = (_dbInst*) inst;
   _dbBlock* block = (_dbBlock*) module->getOwner();
 
-  if (isTop() == false && _inst->flags_.physical_only) {
+  if (!isTop() && _inst->flags_.physical_only) {
     _inst->getLogger()->error(
         utl::ODB,
         297,
@@ -887,6 +891,12 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       }
 
       // Check if the flat net is an internal net within old_module
+      // - If the old net is an internal net, a new net should be created.
+      // - If the old net is an external net, a new net will be created later
+      //   by boundary IO handling logic.
+      // - Note that if old modnet is connected to a dbModBTerm and its
+      //   corresponding dbModITerm is unconnected (has_parent_modnet == false),
+      //   a new net should be created.
       // - If old_module is uninstantiated module, every net in the module is
       //   an internal net.
       //   e.g., No module instance.
@@ -899,7 +909,10 @@ void _dbModule::copyModuleInsts(dbModule* old_module,
       //         net_name = u0/_001_        <-- External net crossing module
       //                                        boundary.
       std::string old_net_name = old_net->getName();
-      if (old_net->isInternalTo(old_module) == false) {
+      dbModNet* old_mod_net = old_iterm->getModNet();
+      bool has_parent_modnet
+          = (old_mod_net && old_mod_net->getFirstParentModNet());
+      if (!old_net->isInternalTo(old_module) && has_parent_modnet) {
         // Skip external net crossing module boundary.
         // It will be connected later.
         debugPrint(logger,

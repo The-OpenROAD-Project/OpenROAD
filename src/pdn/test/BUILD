@@ -1,4 +1,5 @@
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -30,11 +31,13 @@ COMPULSORY_TESTS = [
     "core_grid_auto_domain",
     "core_grid_auto_domain_multiple_nets",
     "core_grid_bad_metal_specs",
+    "core_grid_bad_metal_specs_no_grid",
     "core_grid_check_connect_layers",
     "core_grid_check_connect_layers_at_setup",
     "core_grid_cut_pitch",
     "core_grid_dual_followpins",
     "core_grid_dual_followpins_error",
+    "core_grid_existing_ports",
     "core_grid_extend_to_boundary",
     "core_grid_extend_to_boundary_no_pins",
     "core_grid_failed_via_report",
@@ -80,6 +83,7 @@ COMPULSORY_TESTS = [
     "macros_cells",
     "macros_cells_dont_touch",
     "macros_cells_extend_boundary",
+    "macros_cells_halo_blocking",
     "macros_cells_no_grid",
     "macros_cells_not_fixed",
     "macros_cells_orient",
@@ -135,18 +139,25 @@ COMPULSORY_TESTS = [
     "widthtable",
 ]
 
-# Disabled in CMakeLists.txt
-MANUAL_TESTS = [
-    "pdn_man_tcl_check",
-    "pdn_readme_msgs_check",
-]
+ALL_TESTS = COMPULSORY_TESTS
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "pads_black_parrot_flipchip_connect_overpads",
+PY_TESTS = [
+    "asap7_taper",
+    "core_grid",
+    "core_grid_with_rings",
+    "core_grid_with_routing_obstructions",
+    "existing",
+    "macros",
+    "max_width",
+    "min_width",
+    "offgrid",
+    "power_switch",
+    "repair_vias",
+    "report",
+    "reset",
+    "ripup",
+    "widthtable",
 ]
-
-ALL_TESTS = COMPULSORY_TESTS + MANUAL_TESTS
 
 filegroup(
     name = "regression_resources",
@@ -201,6 +212,7 @@ filegroup(
         "gf180/gf180mcu_fd_io.lef",
         "gf180/gf180mcu_fd_sc_mcu7t5v0.lef",
         "gf180_data/floorplan.def",
+        "helpers.py",
         "helpers.tcl",
         "nangate_bsg_black_parrot/Nangate45_maxwidth.lef",
         "nangate_bsg_black_parrot/dummy_pads.lef",
@@ -217,12 +229,14 @@ filegroup(
         "nangate_macros/fakeram45_32x64.lef",
         "nangate_macros/fakeram45_64x32.lef",
         "nangate_macros/fakeram45_64x32_overlapping_ports.lef",
+        "nangate_macros/fakeram45_64x32_via_obs.lef",
         "nangate_macros/floorplan.def",
         "nangate_macros/floorplan_narrow.def",
         "nangate_macros/floorplan_orient.def",
         "nangate_macros/floorplan_partial_wire_on_macro.def",
         "nangate_macros/floorplan_very_narrow.def",
         "nangate_macros/floorplan_with_jog.def",
+        "pdn_aux.py",
         "repair_channel_inf_loop/floorplan.def",
         "repair_channel_inf_loop/tech_macro.lef",
         "sky130_gcd/floorplan.def",
@@ -301,9 +315,50 @@ filegroup(
     regression_test(
         name = test_name,
         data = [":" + test_name + "_resources"],
-        tags = ["manual"] if test_name in MANUAL_TESTS or
-                             test_name in MANUAL_FOR_BAZEL_TESTS else [],
+        tags = [],
         visibility = ["//visibility:public"],
     )
     for test_name in ALL_TESTS
 ]
+
+py_library(
+    name = "helpers",
+    srcs = [
+        "helpers.py",
+        "pdn_aux.py",
+    ],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+[
+    py_test(
+        name = test_name,
+        srcs = [test_name + ".py"],
+        data = [":" + test_name + "_resources"],
+        deps = [
+            ":helpers",
+            "//python/openroad:openroadpy",
+        ],
+    )
+    for test_name in PY_TESTS
+]
+
+py_test(
+    name = "pdn_man_tcl_check",
+    srcs = ["pdn_man_tcl_check.py"],
+    data = ["//src/pdn:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "pdn_readme_msgs_check",
+    data = [
+        "//src/pdn:doc_files",
+        "//src/pdn:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <queue>
 #include <set>
@@ -14,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
 #include "odb/geom.h"
 
@@ -61,7 +61,6 @@ struct ParamStruct
   std::string outputMazeFile;
   std::string outputDrcFile;
   std::optional<int> drcReportIterStep;
-  std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
@@ -207,7 +206,7 @@ class TritonRoute
   uint16_t dist_port_{0};
   std::string shared_volume_;
   std::vector<std::pair<int, std::string>> workers_results_;
-  std::mutex results_mutex_;
+  absl::Mutex results_mutex_;
   int results_sz_{0};
   unsigned int cloud_sz_{0};
   std::optional<boost::asio::thread_pool> dist_pool_;
@@ -216,7 +215,6 @@ class TritonRoute
 
   void initDesign();
   void initGraphics();
-  void gr();
   void ta();
   void dr();
   void applyUpdates(const std::vector<std::vector<drUpdate>>& updates);

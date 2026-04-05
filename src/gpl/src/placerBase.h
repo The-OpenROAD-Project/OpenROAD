@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "boost/unordered/unordered_flat_map.hpp"
 #include "odb/geom.h"
 
 namespace odb {
@@ -101,7 +102,7 @@ class Instance
   void addPin(Pin* pin);
   const std::vector<Pin*>& getPins() const { return pins_; }
   void snapOutward(const odb::Point& origin, int step_x, int step_y);
-  void extendSizeByScale(double scale, utl::Logger* logger);
+  int64_t extendSizeByScale(double scale, utl::Logger* logger);
 
  private:
   odb::dbInst* inst_ = nullptr;
@@ -275,6 +276,7 @@ struct PlacerBaseVars
   const int padLeft;
   const int padRight;
   const bool skipIoMode;
+  const bool disablePinDensityAdjust;
 };
 
 // Class includes everything from PlacerBase that is not region specific
@@ -334,10 +336,10 @@ class PlacerBaseCommon
 
   std::vector<Instance*> placeInsts_;
 
-  std::unordered_map<odb::dbInst*, Instance*> instMap_;
+  boost::unordered::unordered_flat_map<odb::dbInst*, Instance*> instMap_;
   // The key is a dbITerm or a dbBTerm
-  std::unordered_map<odb::dbObject*, Pin*> pinMap_;
-  std::unordered_map<odb::dbNet*, Net*> netMap_;
+  boost::unordered::unordered_flat_map<odb::dbObject*, Pin*> pinMap_;
+  boost::unordered::unordered_flat_map<odb::dbNet*, Net*> netMap_;
 
   int siteSizeX_ = 0;
   int siteSizeY_ = 0;
@@ -356,10 +358,11 @@ class PlacerBase
   PlacerBase(odb::dbDatabase* db,
              std::shared_ptr<PlacerBaseCommon> pbCommon,
              utl::Logger* log,
+             bool check_density,
              odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
-  const std::vector<Instance*>& getInsts() const { return insts_; }
+  const std::vector<Instance*>& getInsts() const { return pb_insts_; }
 
   //
   // placeInsts : a real instance that need to be placed
@@ -381,7 +384,7 @@ class PlacerBase
   int getSiteSizeY() const { return siteSizeY_; }
 
   int64_t getHpwl() const;
-  void printInfo() const;
+  void printInfo(bool check_density) const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
@@ -403,7 +406,7 @@ class PlacerBase
 
   std::vector<Instance> instStor_;
 
-  std::vector<Instance*> insts_;
+  std::vector<Instance*> pb_insts_;
 
   std::vector<Instance*> placeInsts_;
   std::vector<Instance*> fixedInsts_;
@@ -425,7 +428,7 @@ class PlacerBase
   std::shared_ptr<PlacerBaseCommon> pbCommon_;
   odb::dbGroup* group_ = nullptr;
 
-  void init();
+  void init(bool check_density);
   void initInstsForUnusableSites();
 
   void reset();

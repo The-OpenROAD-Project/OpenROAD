@@ -3,8 +3,6 @@
 
 #include "dbvWriter.h"
 
-#include <yaml-cpp/yaml.h>
-
 #include <filesystem>
 #include <string>
 #include <unordered_set>
@@ -13,6 +11,7 @@
 #include "odb/db.h"
 #include "odb/defout.h"
 #include "utl/Logger.h"
+#include "yaml-cpp/yaml.h"
 namespace odb {
 
 DbvWriter::DbvWriter(utl::Logger* logger, odb::dbDatabase* db)
@@ -164,6 +163,9 @@ void DbvWriter::writeRegion(YAML::Node& region_node, odb::dbChipRegion* region)
       region_node["side"] = "internal_ext";
       break;
   }
+  std::string bmap_file = std::string(region->getChip()->getName()) + "_"
+                          + region->getName() + ".bmap";
+  region_node["bmap"] = bmap_file;
   if (auto layer = region->getLayer(); layer != nullptr) {
     region_node["layer"] = layer->getName();
   }
@@ -177,6 +179,9 @@ void DbvWriter::writeExternal(YAML::Node& external_node, odb::dbChip* chiplet)
     writeLef(external_node, chiplet);
     if (chiplet->getBlock() != nullptr) {
       writeDef(external_node, chiplet);
+    }
+    if (auto prop = odb::dbStringProperty::find(chiplet, "verilog_file")) {
+      external_node["verilog_file"] = prop->getValue();
     }
   }
 }

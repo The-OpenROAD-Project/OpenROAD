@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "boost/polygon/polygon.hpp"
 #include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
@@ -34,6 +35,84 @@ using odb::dbOrientType;
 using odb::dbRegion;
 using odb::Rect;
 
+namespace {
+
+using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+using BoostRect = boost::polygon::rectangle_data<int>;
+
+// Build a polygon set representing the outer boundary of the row area
+// with interior holes (macro cutouts) filled in.
+Polygon90Set buildRowOuterShell(odb::dbBlock* block)
+{
+  using boost::polygon::operators::operator+=;
+  using boost::polygon::operators::operator-=;
+
+  Polygon90Set row_area;
+  for (odb::dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    const Rect row_rect = row->getBBox();
+    row_area += BoostRect{
+        row_rect.xMin(), row_rect.yMin(), row_rect.xMax(), row_rect.yMax()};
+  }
+
+  // Identify interior holes by computing voids within the bounding box.
+  // Voids whose extent doesn't touch the bbox edge are interior holes
+  // that should be filled (e.g. macro cutouts surrounded by rows).
+  BoostRect bbox;
+  boost::polygon::extents(bbox, row_area);
+
+  Polygon90Set voids;
+  voids += bbox;
+  voids -= row_area;
+
+  std::vector<Polygon90> void_polygons;
+  voids.get_polygons(void_polygons);
+
+  for (const Polygon90& void_poly : void_polygons) {
+    BoostRect void_ext;
+    boost::polygon::extents(void_ext, void_poly);
+    const bool touches_boundary
+        = boost::polygon::xl(void_ext) <= boost::polygon::xl(bbox)
+          || boost::polygon::xh(void_ext) >= boost::polygon::xh(bbox)
+          || boost::polygon::yl(void_ext) <= boost::polygon::yl(bbox)
+          || boost::polygon::yh(void_ext) >= boost::polygon::yh(bbox);
+    if (!touches_boundary) {
+      row_area += void_poly;
+    }
+  }
+
+  return row_area;
+}
+
+std::vector<Rect> getOuterShellRects(const Polygon90Set& outer_shell)
+{
+  std::vector<BoostRect> shell_rects;
+  outer_shell.get_rectangles(shell_rects);
+
+  std::vector<Rect> rects;
+  rects.reserve(shell_rects.size());
+  for (const BoostRect& rect : shell_rects) {
+    rects.emplace_back(boost::polygon::xl(rect),
+                       boost::polygon::yl(rect),
+                       boost::polygon::xh(rect),
+                       boost::polygon::yh(rect));
+  }
+  return rects;
+}
+
+bool bboxIntersectsOuterShell(const Rect& bbox,
+                              const std::vector<Rect>& outer_shell_rects)
+{
+  return std::ranges::any_of(outer_shell_rects, [&](const Rect& shell_rect) {
+    return bbox.intersects(shell_rect);
+  });
+}
+
+}  // namespace
+
 void Opendp::importDb()
 {
   block_ = db_->getChip()->getBlock();
@@ -41,6 +120,12 @@ void Opendp::importDb()
   grid_->setCore(core_);
   have_fillers_ = false;
   disallow_one_site_gaps_ = !odb::hasOneSiteMaster(db_);
+  debugPrint(logger_,
+             utl::DPL,
+             "one_site_gap",
+             1,
+             "one_site_gaps disallowed: {}",
+             disallow_one_site_gaps_ ? "true" : "false");
   importClear();
   grid_->examineRows(block_);
   initPlacementDRC();
@@ -52,7 +137,6 @@ void Opendp::importDb()
 void Opendp::importClear()
 {
   deleteGrid();
-  have_multi_row_cells_ = false;
   network_->clear();
   arch_->clear();
 }
@@ -103,6 +187,8 @@ void Opendp::createNetwork()
 {
   odb::dbBlock* block = db_->getChip()->getBlock();
   network_->setCore(core_);
+  const auto row_outer_shell_rects
+      = getOuterShellRects(buildRowOuterShell(block));
   ///////////////////////////////////
   auto min_row_height = std::numeric_limits<int>::max();
   for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
@@ -120,12 +206,13 @@ void Opendp::createNetwork()
     if (!inst->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
+    if (inst->isFixed()
+        && !bboxIntersectsOuterShell(inst->getBBox()->getBox(),
+                                     row_outer_shell_rects)) {
+      continue;
+    }
     network_->addMaster(inst->getMaster(), grid_.get(), drc_engine_.get());
     network_->addNode(inst);
-    if (inst->getMaster()->isCore()
-        && network_->getMaster(inst->getMaster())->isMultiRow()) {
-      have_multi_row_cells_ = true;
-    }
     if (isFiller(inst)) {
       have_fillers_ = true;
     }
@@ -134,6 +221,11 @@ void Opendp::createNetwork()
     // Skip supply nets.
     odb::dbNet* net = bterm->getNet();
     if (!net || net->getSigType().isSupply()) {
+      continue;
+    }
+    if (!bterm->getFirstPinPlacementStatus().isPlaced()) {
+      logger_->warn(utl::DPL, 387, "BTerm {} is unplaced.", bterm->getName());
+      // skip unplaced terminals
       continue;
     }
     if (bterm->getBBox().isInverted()) {
@@ -298,11 +390,9 @@ void Opendp::setUpPlacementGroups()
       for (auto db_inst : db_group->getInsts()) {
         Node* nd = network_->getNode(db_inst);
         if (nd != nullptr) {
-          if (true) {
-            nd->setGroupId(rptr->getId());
-            nd->setGroup(rptr);
-            rptr->addCell(nd);
-          }
+          nd->setGroupId(rptr->getId());
+          nd->setGroup(rptr);
+          rptr->addCell(nd);
         }
       }
     }

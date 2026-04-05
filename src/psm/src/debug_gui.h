@@ -16,6 +16,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "gui/gui.h"
 #include "ir_network.h"
+#include "node.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"

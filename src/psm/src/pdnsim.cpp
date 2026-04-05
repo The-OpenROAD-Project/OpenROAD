@@ -9,18 +9,17 @@
 #include <string>
 #include <vector>
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "debug_gui.h"
 #include "dpl/Opendp.h"
 #include "heatMap.h"
 #include "ir_network.h"
 #include "ir_solver.h"
+#include "node.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
 #include "shape.h"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
@@ -40,8 +39,10 @@ PDNSim::PDNSim(utl::Logger* logger,
   estimate_parasitics_ = estimate_parasitics;
   opendp_ = opendp;
   logger_ = logger;
-  heatmap_ = std::make_unique<IRDropDataSource>(this, sta, logger_);
-  heatmap_->registerHeatMap();
+  heatmap_source_ = gui::registerHeatMapSource(
+      "IR Drop", "IRDrop", "IRDrop", [this, sta, logger]() {
+        return std::make_shared<IRDropDataSource>(this, sta, logger);
+      });
 }
 
 PDNSim::~PDNSim() = default;
@@ -63,20 +64,20 @@ void PDNSim::setDebugGui(bool enable)
       new ConnectionDescriptor(solvers_));
 }
 
-void PDNSim::setNetVoltage(odb::dbNet* net, sta::Corner* corner, double voltage)
+void PDNSim::setNetVoltage(odb::dbNet* net, sta::Scene* corner, double voltage)
 {
   auto& voltages = user_voltages_[net];
   voltages[corner] = voltage;
 }
 
-void PDNSim::setInstPower(odb::dbInst* inst, sta::Corner* corner, float power)
+void PDNSim::setInstPower(odb::dbInst* inst, sta::Scene* corner, float power)
 {
   auto& powers = user_powers_[inst];
   powers[corner] = power;
 }
 
 void PDNSim::analyzePowerGrid(odb::dbNet* net,
-                              sta::Corner* corner,
+                              sta::Scene* corner,
                               GeneratedSourceType source_type,
                               const std::string& voltage_file,
                               bool use_prev_solution,
@@ -89,6 +90,7 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
     return;
   }
 
+  last_net_ = net;
   last_corner_ = corner;
   auto* solver = getIRSolver(net, false);
   if (!use_prev_solution || !solver->hasSolution(corner)) {
@@ -98,9 +100,9 @@ void PDNSim::analyzePowerGrid(odb::dbNet* net,
   }
   solver->report(corner);
 
-  heatmap_->setNet(net);
-  heatmap_->setCorner(corner);
-  heatmap_->update();
+  if (heatmap_source_) {
+    heatmap_source_->invalidateInstances();
+  }
 
   if (enable_em) {
     solver->reportEM(corner);
@@ -138,7 +140,7 @@ bool PDNSim::checkConnectivity(odb::dbNet* net,
 }
 
 void PDNSim::writeSpiceNetwork(odb::dbNet* net,
-                               sta::Corner* corner,
+                               sta::Scene* corner,
                                GeneratedSourceType source_type,
                                const std::string& spice_file,
                                const std::string& voltage_source_file)
@@ -177,7 +179,7 @@ void PDNSim::getIRDropForLayer(odb::dbNet* net,
 }
 
 void PDNSim::getIRDropForLayer(odb::dbNet* net,
-                               sta::Corner* corner,
+                               sta::Scene* corner,
                                odb::dbTechLayer* layer,
                                IRDropByPoint& ir_drop) const
 {

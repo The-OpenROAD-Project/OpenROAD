@@ -9,7 +9,6 @@
 #include <iterator>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <string>
 #include <thread>
@@ -19,33 +18,38 @@
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
 #include "PACallBack.h"
+#include "absl/synchronization/mutex.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
 #include "boost/geometry/geometry.hpp"
 #include "db/infra/frSegStyle.h"
+#include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "db/tech/frViaDef.h"
 #include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
+#include "distributed/RoutingJobDescription.h"
 #include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
 #include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frBaseTypes.h"
 #include "frDesign.h"
 #include "frProfileTask.h"
+#include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "global.h"
-#include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/db.h"
 #include "odb/dbId.h"
 #include "odb/dbShape.h"
 #include "odb/dbTypes.h"
+#include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
 #include "rp/FlexRP.h"
@@ -562,8 +566,6 @@ bool TritonRoute::initGuide()
       getDesign(), db_, logger_, router_cfg_.get());
   bool guideOk = guide_processor.readGuides();
   guide_processor.processGuides();
-  io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  parser.initRPin();
   return guideOk;
 }
 void TritonRoute::initDesign()
@@ -648,12 +650,6 @@ void TritonRoute::prep()
   rp.main();
 }
 
-void TritonRoute::gr()
-{
-  FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
-  gr.main(db_);
-}
-
 void TritonRoute::ta()
 {
   std::unique_ptr<FlexTA> ta = std::make_unique<FlexTA>(
@@ -696,19 +692,19 @@ void TritonRoute::stepDR(int size,
                          int ripupMode,
                          bool followGuide)
 {
-  dr_->searchRepair({size,
-                     offset,
-                     mazeEndIter,
-                     workerDRCCost,
-                     workerMarkerCost,
-                     workerFixedShapeCost,
-                     workerMarkerDecay,
-                     getMode(ripupMode),
-                     followGuide});
+  FlexDR::SearchRepairArgs args = {.size = size,
+                                   .offset = offset,
+                                   .mazeEndIter = mazeEndIter,
+                                   .workerDRCCost = workerDRCCost,
+                                   .workerMarkerCost = workerMarkerCost,
+                                   .workerFixedShapeCost = workerFixedShapeCost,
+                                   .workerMarkerDecay = workerMarkerDecay,
+                                   .ripupMode = getMode(ripupMode),
+                                   .followGuide = followGuide};
+  dr_->searchRepair(args);
   dr_->incIter();
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
 }
-
 void TritonRoute::endFR()
 {
   if (router_cfg_->SINGLE_STEP_DR) {
@@ -1054,12 +1050,7 @@ int TritonRoute::main()
                    .getStream());
   }
   if (!initGuide()) {
-    gr();
-    router_cfg_->ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(
-        getDesign(), db_, logger_, router_cfg_.get());
-    guide_processor.readGuides();
-    guide_processor.processGuides();
+    logger_->error(DRT, 626, "Guide loading failed.");
   }
   prep();
   ta();
@@ -1294,7 +1285,6 @@ void TritonRoute::setParams(const ParamStruct& params)
   router_cfg_->OUT_MAZE_FILE = params.outputMazeFile;
   router_cfg_->DRC_RPT_FILE = params.outputDrcFile;
   router_cfg_->DRC_RPT_ITER_STEP = params.drcReportIterStep;
-  router_cfg_->CMAP_FILE = params.outputCmapFile;
   router_cfg_->GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   router_cfg_->VERBOSE = params.verbose;
   router_cfg_->ENABLE_VIA_GEN = params.enableViaGen;
@@ -1330,7 +1320,7 @@ void TritonRoute::setParams(const ParamStruct& params)
 void TritonRoute::addWorkerResults(
     const std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   workers_results_.insert(
       workers_results_.end(), results.begin(), results.end());
   results_sz_ = workers_results_.size();
@@ -1339,7 +1329,7 @@ void TritonRoute::addWorkerResults(
 bool TritonRoute::getWorkerResults(
     std::vector<std::pair<int, std::string>>& results)
 {
-  std::unique_lock<std::mutex> lock(results_mutex_);
+  absl::MutexLock lock(&results_mutex_);
   if (workers_results_.empty()) {
     return false;
   }

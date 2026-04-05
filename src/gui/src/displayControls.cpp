@@ -38,9 +38,9 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
-#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
@@ -528,6 +528,8 @@ DisplayControls::DisplayControls(QWidget* parent)
       misc_.manufacturing_grid, "Manufacturing grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.gcell_grid, "GCell grid", misc, Qt::Unchecked);
   makeLeafItem(misc_.flywires_only, "Flywires only", misc, Qt::Unchecked);
+  makeLeafItem(
+      misc_.focused_nets_guides, "Focused nets guides", misc, Qt::Unchecked);
   makeLeafItem(misc_.labels, "Labels", misc, Qt::Checked, true);
   setNameItemDoubleClickAction(misc_.labels, [this]() {
     label_font_
@@ -936,7 +938,7 @@ void DisplayControls::toggleParent(ModelRow& row)
 
 void DisplayControls::itemChanged(QStandardItem* item)
 {
-  if (item->isCheckable() == false) {
+  if (!item->isCheckable()) {
     emit changed();
     return;
   }
@@ -1879,6 +1881,11 @@ bool DisplayControls::isFlywireHighlightOnly() const
   return isModelRowVisible(&misc_.flywires_only);
 }
 
+bool DisplayControls::areFocusedNetsGuidesVisible() const
+{
+  return isModelRowVisible(&misc_.focused_nets_guides);
+}
+
 bool DisplayControls::areIOPinsVisible() const
 {
   return isModelRowVisible(&shape_types_.pins);
@@ -2367,11 +2374,7 @@ bool DisplayControls::eventFilter(QObject* obj, QEvent* event)
   if (obj == view_->viewport()) {
     if (event->type() == QEvent::MouseButtonPress) {
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-      if (mouse_event->button() == Qt::RightButton) {
-        ignore_selection_ = true;
-      } else {
-        ignore_selection_ = false;
-      }
+      ignore_selection_ = mouse_event->button() == Qt::RightButton;
     } else if (event->type() == QEvent::MouseButtonRelease) {
       ignore_selection_ = false;
     } else if (event->type() == QEvent::ContextMenu) {

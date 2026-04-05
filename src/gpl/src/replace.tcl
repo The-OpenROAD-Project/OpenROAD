@@ -3,6 +3,7 @@
 
 sta::define_cmd_args "global_placement" {\
     [-skip_initial_place]\
+    [-force_center_initial_place]\
     [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
@@ -35,6 +36,7 @@ sta::define_cmd_args "global_placement" {\
     [-pad_left pad_left]\
     [-pad_right pad_right]\
     [-disable_revert_if_diverge]\
+    [-disable_pin_density_adjust]\
     [-enable_routing_congestion]
 }
 
@@ -57,6 +59,7 @@ proc global_placement { args } {
       -keep_resize_below_overflow \
       -pad_left -pad_right} \
     flags {-skip_initial_place \
+      -force_center_initial_place \
       -skip_nesterov_place \
       -timing_driven \
       -routability_driven \
@@ -64,6 +67,7 @@ proc global_placement { args } {
       -skip_io \
       -incremental \
       -disable_revert_if_diverge \
+      -disable_pin_density_adjust \
       -enable_routing_congestion}
 
   sta::check_argc_eq0 "global_placement" $args
@@ -120,11 +124,24 @@ proc cluster_flops { args } {
   gpl::replace_run_mbff_cmd $max_split_size $tray_weight $timing_weight $num_paths
 }
 
+sta::define_cmd_args "global_placement_debug" {
+  [-pause pause]
+  [-update update]
+  [-inst inst]
+  [-start_iter start_iter]
+  [-start_rudy start_rudy]
+  [-rudy_stride rudy_stride]
+  [-images_path images_path]
+  [-draw_bins]
+  [-initial]
+  [-generate_images]
+}
+
 proc global_placement_debug { args } {
   sta::parse_key_args "global_placement_debug" args \
     keys {-pause -update -inst -start_iter -images_path \
       -start_rudy -rudy_stride} \
-    flags {-draw_bins -initial -generate_images} ;# checker off
+    flags {-draw_bins -initial -generate_images}
 
   if { [ord::get_db_block] == "NULL" } {
     utl::error GPL 117 "No design block found."

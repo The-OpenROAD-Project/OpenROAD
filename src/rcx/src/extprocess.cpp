@@ -34,14 +34,14 @@ void printDouble(FILE* fp, const char* sep, const char* key, double v, bool pos)
 }
 void printString(FILE* fp, const char* sep, const char* key, char* v, bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
+  if (pos && (v != nullptr) && (strcmp("", v) != 0)) {
     return;
   }
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
 
-extConductor::extConductor(Logger* logger)
+extConductor::extConductor(utl::Logger* logger)
 {
   strcpy(_name, "");
   _height = 0;
@@ -72,7 +72,7 @@ void extConductor::printString(FILE* fp,
                                char* v,
                                bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
+  if (pos && (v != nullptr) && (strcmp("", v) != 0)) {
     return;
   }
 
@@ -295,7 +295,7 @@ bool extConductor::readConductor(Parser* parser)
   return false;
 }
 
-extDielectric::extDielectric(Logger* logger)
+extDielectric::extDielectric(utl::Logger* logger)
 {
   strcpy(_name, "");
   strcpy(_non_conformal_metal, "");
@@ -321,7 +321,7 @@ void extDielectric::printString(FILE* fp,
                                 char* v,
                                 bool pos)
 {
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
+  if (pos && (v != nullptr) && (strcmp("", v) != 0)) {
     return;
   }
 
@@ -1057,7 +1057,7 @@ bool extDielectric::readDielectric(Parser* parser)
 extMasterConductor::extMasterConductor(uint32_t condId,
                                        extConductor* cond,
                                        double prevHeight,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = condId;
   logger_ = logger;
@@ -1415,32 +1415,9 @@ void extMasterConductor::writeRaphaelPoly3D_w(FILE* fp,
   writeRaphaelPointXY(fp, X2, _hiRight[2]);
   writeRaphaelPointXY(fp, X, _hiLeft[2]);
 
-  if (false) {
-    fprintf(fp, "\nPOLY3D NAME=");
-    writeBoxName(fp, wireNum);
-
-    fprintf(fp, " COORD= ");
-    writeRaphaelPointXY(fp, X + _loLeft[0], _loLeft[2]);
-    writeRaphaelPointXY(fp, X + _loRight[0], _loRight[2]);
-    writeRaphaelPointXY(fp, X + _hiRight[0], _hiRight[2]);
-    writeRaphaelPointXY(fp, X + _hiLeft[0], _hiLeft[2]);
-  }
-
   fprintf(fp, "V1=0,0,0; HEIGHT=%g;", length);
 
   fprintf(fp, " VOLT=%g\n", volt);
-  if (false) {
-    printf("X= %g\n", X);
-    printf("%g  %g\n", _loLeft[0], _loLeft[2]);
-    printf("%g  %g\n", _loRight[0], _loRight[2]);
-    printf("%g  %g\n", _hiRight[0], _hiRight[2]);
-    printf("%g  %g\n", _hiLeft[0], _hiLeft[2]);
-
-    writeRaphaelPointXY(stdout, X + _loLeft[0], _loLeft[2]);
-    writeRaphaelPointXY(stdout, X + _loRight[0], _loRight[2]);
-    writeRaphaelPointXY(stdout, X + _hiRight[0], _hiRight[2]);
-    writeRaphaelPointXY(stdout, X + _hiLeft[0], _hiLeft[2]);
-  }
 }
 void extMasterConductor::writePointXY(FILE* fp,
                                       const char* suffix,
@@ -1501,18 +1478,6 @@ void extMasterConductor::writeRaphaelPoly3D(FILE* fp,
   fprintf(fp, "V1=0,0,0; HEIGHT=%g;", length);
 
   fprintf(fp, " VOLT=%g\n", volt);
-  if (false) {
-    printf("X= %g\n", X);
-    printf("%g  %g\n", _loLeft[0], _loLeft[2]);
-    printf("%g  %g\n", _loRight[0], _loRight[2]);
-    printf("%g  %g\n", _hiRight[0], _hiRight[2]);
-    printf("%g  %g\n", _hiLeft[0], _hiLeft[2]);
-
-    writeRaphaelPointXY(stdout, X + _loLeft[0], _loLeft[2]);
-    writeRaphaelPointXY(stdout, X + _loRight[0], _loRight[2]);
-    writeRaphaelPointXY(stdout, X + _hiRight[0], _hiRight[2]);
-    writeRaphaelPointXY(stdout, X + _hiLeft[0], _hiLeft[2]);
-  }
 }
 double extMasterConductor::writeRaphaelPoly(FILE* fp,
                                             uint32_t wireNum,
@@ -1575,7 +1540,7 @@ extMasterConductor::extMasterConductor(uint32_t dielId,
                                        double dx2,
                                        double h,
                                        double th,
-                                       Logger* logger)
+                                       utl::Logger* logger)
 {
   _condId = dielId;
   logger_ = logger;
@@ -2224,7 +2189,7 @@ uint32_t extProcess::readProcess(const char* name, char* filename)
 
   return 0;
 }
-extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, Logger* logger)
+extProcess::extProcess(uint32_t condCnt, uint32_t dielCnt, utl::Logger* logger)
 {
   logger_ = logger;
   _condTable = new Array1D<extConductor*>(condCnt);

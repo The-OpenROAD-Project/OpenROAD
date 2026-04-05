@@ -18,16 +18,18 @@ ChipletDef:
       108;101:
         type: design_area
     regions:
-      r1:
+      front_reg:
         side: front
-        bmap: example.bmap
-        pmap: Collateral/SoC/design/SoC_r1.pmap
-        layer: UBM
+      back_reg:
+        side: back
         coords:
           - [0, 0]
           - [955, 0]
           - [955, 1082]
           - [0, 1082]
+        bmap: example.bmap
+        pmap: Collateral/SoC/design/SoC_r1.pmap
+        layer: metal1
     external:
       APR_tech_file: [NG45_PATH/*_tech.lef]
       liberty_file: [NG45_PATH/fake_macros.lib]

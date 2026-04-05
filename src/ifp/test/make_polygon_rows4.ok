@@ -1,7 +1,14 @@
 [INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
 [INFO IFP-0005] Added 8 die polygon vertices to the list.
+[INFO IFP-0106] Initializing floorplan in polygon mode.
 [WARNING IFP-1003] Core polygon bounding box lower left (20.000, 20.000) snapped to (20.140, 21.000).
 [INFO IFP-1002] Added 328 polygon-aware rows for site FreePDK45_38x28_10R_NP_162NW_34O.
 [INFO ODB-0303] The initial 328 rows (169638 sites) were cut with 1 shapes for a total of 328 rows (169638 sites).
 [INFO IFP-0997] Completed polygon-aware row generation using 8 vertices
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 400.000 300.000 ) um
+[INFO IFP-0101] Core BBox: ( 20.140 21.000 ) ( 380.000 280.000 ) um
+[INFO IFP-0102] Core area:                        93203.740 um^2
+[INFO IFP-0103] Total instances area:                15.428 um^2
+[INFO IFP-0104] Effective utilization:                0.000
+[INFO IFP-0105] Number of instances:                      5
 No differences found.

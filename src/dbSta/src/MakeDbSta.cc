@@ -3,9 +3,9 @@
 
 #include "db_sta/MakeDbSta.hh"
 
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Sta.hh"
 #include "tcl.h"
 #include "utl/decode.h"
 

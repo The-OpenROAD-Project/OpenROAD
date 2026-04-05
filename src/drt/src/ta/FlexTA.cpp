@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "db/infra/frTime.h"
+#include "frBaseTypes.h"
+#include "frDesign.h"
 #include "frProfileTask.h"
 #include "global.h"
 #include "odb/dbTypes.h"
@@ -200,7 +202,7 @@ void FlexTA::initTA(int size)
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {
@@ -266,7 +268,7 @@ void FlexTA::searchRepair(int iter, int size, int offset)
     bottomLNum++;
     bottomLayer = getDesign()->getTech()->getLayer(bottomLNum);
   }
-  bool isBottomLayerH = (bottomLayer->getDir() == dbTechLayerDir::HORIZONTAL);
+  bool isBottomLayerH = (bottomLayer->isHorizontal());
 
   // H first
   if (isBottomLayerH) {

@@ -16,6 +16,9 @@
 #include <vector>
 
 #include "ScanCell.hh"
+#include "ScanChain.hh"
+#include "ScanPin.hh"
+#include "ScanStitchConfig.hh"
 #include "boost/algorithm/string.hpp"
 #include "odb/db.h"
 #include "odb/dbTypes.h"

@@ -5,15 +5,16 @@
 #include "dbChipRegionInst.h"
 
 #include "dbChipRegion.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbChip.h"
 #include "dbChipBumpInst.h"
 #include "dbChipBumpInstItr.h"
 #include "dbChipInst.h"
+#include "odb/dbSet.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
 // User Code End Includes
@@ -22,6 +23,7 @@ template class dbTable<_dbChipRegionInst>;
 
 bool _dbChipRegionInst::operator==(const _dbChipRegionInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (region_ != rhs.region_) {
     return false;
   }
@@ -36,6 +38,7 @@ bool _dbChipRegionInst::operator==(const _dbChipRegionInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipRegionInst::operator<(const _dbChipRegionInst& rhs) const

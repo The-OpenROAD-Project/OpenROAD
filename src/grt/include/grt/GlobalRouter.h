@@ -21,7 +21,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
-#include "sta/Liberty.hh"
 
 using AdjacencyList = std::vector<std::vector<int>>;
 
@@ -56,6 +55,11 @@ class dbNetwork;
 class SpefWriter;
 }  // namespace sta
 
+namespace gui {
+class HeatMapSourceRegistration;
+using HeatMapSourceHandle = std::shared_ptr<HeatMapSourceRegistration>;
+}  // namespace gui
+
 namespace grt {
 
 class FastRouteCore;
@@ -70,7 +74,6 @@ class RoutePt;
 class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class GlobalRouter;
-class AbstractRoutingCongestionDataSource;
 class GRouteDbCbk;
 class Rudy;
 
@@ -123,10 +126,8 @@ class GlobalRouter
                dpl::Opendp* opendp);
   ~GlobalRouter();
 
-  void initGui(std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source,
-               std::unique_ptr<AbstractRoutingCongestionDataSource>
-                   routing_congestion_data_source_rudy);
+  void initGui(gui::HeatMapSourceHandle routing_congestion_data_source,
+               gui::HeatMapSourceHandle routing_congestion_data_source_rudy);
 
   void clear();
 
@@ -161,11 +162,16 @@ class GlobalRouter
     skip_large_fanout_ = skip_large_fanout;
   };
 
+  void setInfiniteCapacity(bool infinite_capacity);
+
   // flow functions
   void readGuides(const char* file_name);
   void loadGuidesFromDB();
+  void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
+  bool updateUncoveredPinsPositions(odb::dbNet* db_net,
+                                    std::string& pins_not_covered);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -177,14 +183,16 @@ class GlobalRouter
   bool isConnected(odb::dbNet* net);
   bool segmentsConnect(const GSegment& segment1, const GSegment& segment2);
   bool isCoveringPin(Net* net, GSegment& segment);
-  std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
+  std::vector<Net*> initFastRoute(int min_routing_layer,
+                                  int max_routing_layer,
+                                  bool check_pin_placement = true);
   void initFastRouteIncr(std::vector<Net*>& nets);
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute(bool save_guides = false,
-                   bool start_incremental = false,
-                   bool end_incremental = false);
+  void startIncremental();
+  void endIncremental(bool save_guides = false);
+  void globalRoute(bool save_guides = false);
   void saveCongestion();
   NetRouteMap& getRoutes();
   NetRouteMap getPartialRoutes();
@@ -221,9 +229,11 @@ class GlobalRouter
   // Incremental global routing functions.
   // See class IncrementalGRoute.
   void addDirtyNet(odb::dbNet* net);
+  void updateCUGRNet(odb::dbNet* net);
   std::set<odb::dbNet*> getDirtyNets() { return dirty_nets_; }
   // check_antennas
   bool haveRoutes();
+  bool haveDbGuides();
   bool designIsPlaced();
   bool haveDetailedRoutes();
   bool haveDetailedRoutes(const std::vector<odb::dbNet*>& db_nets);
@@ -231,7 +241,7 @@ class GlobalRouter
   void addNetToRoute(odb::dbNet* db_net);
   std::vector<odb::dbNet*> getNetsToRoute();
   void mergeNetsRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
-  void connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
+  bool connectRouting(odb::dbNet* db_net1, odb::dbNet* db_net2);
   void findBufferPinPostions(Net* net1,
                              Net* net2,
                              odb::Point& pin_pos1,
@@ -326,9 +336,11 @@ class GlobalRouter
   void writePinLocations(const char* file_name);
 
  private:
+  void finishGlobalRouting(bool save_guides = false);
   // Net functions
   Net* addNet(odb::dbNet* db_net);
   void removeNet(odb::dbNet* db_net);
+  void updateNetPins(Net* net);
 
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void applyAdjustments(int min_routing_layer, int max_routing_layer);
@@ -347,7 +359,7 @@ class GlobalRouter
                            int track_count,
                            bool horizontal);
   odb::Rect getGCellRect(int x, int y);
-  void initNetlist(std::vector<Net*>& nets);
+  void initNetlist(std::vector<Net*>& nets, bool incremental = false);
   void makeFastrouteNet(Net* net);
   bool pinPositionsChanged(Net* net);
   bool newPinOnGrid(Net* net, std::multiset<RoutePt>& last_pos);
@@ -371,7 +383,7 @@ class GlobalRouter
   void savePositionWithReducedResources(const odb::Rect& rect,
                                         odb::dbTechLayer* tech_layer,
                                         odb::dbNet* db_net);
-  void addResourcesForPinAccess();
+  void addResourcesForPinAccess(const std::vector<Net*>& nets);
   bool isPinReachable(const Pin& pin, const odb::Point& pos_on_grid);
   int computeNetWirelength(odb::dbNet* db_net);
   void computeWirelength();
@@ -450,6 +462,7 @@ class GlobalRouter
   std::vector<Net*> updateDirtyRoutes(bool save_guides = false);
   void mergeResults(NetRouteMap& routes);
   void updateDirtyNets(std::vector<Net*>& dirty_nets);
+  bool loadRoutingFromDBGuides(odb::dbNet* db_net);
   void shrinkNetRoute(odb::dbNet* db_net);
   void deleteSegment(Net* net, GRoute& segments, int seg_id);
   void destroyNetWire(Net* net);
@@ -511,7 +524,7 @@ class GlobalRouter
   std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
-  bool is_incremental_;
+  bool infinite_capacity_;
   float adjustment_;
   int congestion_iterations_{50};
   int congestion_report_iter_step_;
@@ -525,6 +538,8 @@ class GlobalRouter
   bool is_congested_{false};
   bool use_cugr_{false};
   int skip_large_fanout_{std::numeric_limits<int>::max()};
+  bool has_macros_or_pads_{false};
+  bool check_pin_placement_{true};
 
   // Region adjustment variables
   std::vector<RegionAdjustment> region_adjustments_;
@@ -553,14 +568,15 @@ class GlobalRouter
 
   RepairAntennas* repair_antennas_;
   Rudy* rudy_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
-  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_rudy_;
+  gui::HeatMapSourceHandle heatmap_;
+  gui::HeatMapSourceHandle heatmap_rudy_;
 
   // variables congestion report file
   const char* congestion_file_name_;
 
   // incremental grt
   GRouteDbCbk* grouter_cbk_;
+  bool is_incremental_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;
@@ -579,8 +595,9 @@ class GRouteDbCbk : public odb::dbBlockCallBackObj
 
   void inDbNetDestroy(odb::dbNet* net) override;
   void inDbNetCreate(odb::dbNet* net) override;
-  void inDbNetPreMerge(odb::dbNet* preserved_net,
-                       odb::dbNet* removed_net) override;
+  void inDbNetPostMerge(odb::dbNet* preserved_net,
+                        odb::dbNet* removed_net) override;
+  void inDbNetPostGuideRestore(odb::dbNet* net) override;
 
   void inDbITermPreDisconnect(odb::dbITerm* iterm) override;
   void inDbITermPostConnect(odb::dbITerm* iterm) override;
@@ -603,7 +620,7 @@ class IncrementalGRoute
   // Saves global router state and enables db callbacks.
   IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block);
   // Update global routes for dirty nets.
-  std::vector<Net*> updateRoutes(bool save_guides = false);
+  std::vector<Net*> updateRoutes(bool save_guides = true);
   // Disables db callbacks.
   ~IncrementalGRoute();
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -135,7 +136,7 @@ class RDLRouter
                                       boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
-  const std::map<GridGraphVertex, odb::Point>& getVertexMap() const
+  const std::unordered_map<GridGraphVertex, odb::Point>& getVertexMap() const
   {
     return vertex_point_map_;
   }
@@ -149,6 +150,7 @@ class RDLRouter
 
   void setRDLGui(RDLGui* gui) { gui_ = gui; }
   void setRDLDebugNet(odb::dbNet* net) { debug_net_ = net; }
+  void setRDLDebugPin(odb::dbITerm* term) { debug_pin_ = term; }
 
   odb::Rect getPointObstruction(const odb::Point& pt) const;
   odb::Polygon getEdgeObstruction(const odb::Point& pt0,
@@ -205,11 +207,12 @@ class RDLRouter
   void buildIntialRouteSet();
   int reportFailedRoutes(
       const std::map<odb::dbITerm*, odb::dbITerm*>& routed_pairs) const;
-  std::set<odb::dbInst*> getRoutedInstances() const;
-  int getRoutingInstanceCount() const;
+  std::set<odb::dbITerm*> getRoutedTerms() const;
+  int getRoutingTermCount() const;
 
   int getBloatFactor() const;
   bool isDebugNet(odb::dbNet* net) const;
+  bool isDebugPin(odb::dbITerm* pin) const;
 
   utl::Logger* logger_;
   odb::dbBlock* block_;
@@ -230,9 +233,9 @@ class RDLRouter
   ObsTree obstructions_;
 
   // Lookup tables
-  std::map<odb::Point, GridGraphVertex> point_vertex_map_;
+  std::unordered_map<odb::Point, GridGraphVertex> point_vertex_map_;
   GridTree vertex_grid_tree_;
-  std::map<GridGraphVertex, odb::Point> vertex_point_map_;
+  std::unordered_map<GridGraphVertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
   // Routing grid
@@ -246,6 +249,7 @@ class RDLRouter
   // Debugging
   RDLGui* gui_;
   odb::dbNet* debug_net_{nullptr};
+  odb::dbITerm* debug_pin_{nullptr};
 
   // Consts
   static constexpr const char* kRouteProperty = "RDL_ROUTE";

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "DplObserver.h"
+#include "dpl/Opendp.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -19,8 +20,8 @@ class Graphics : public gui::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp,
-           float min_displacement,
-           const odb::dbInst* debug_instance);
+           const odb::dbInst* debug_instance,
+           bool paint_pixels = true);
   ~Graphics() override = default;
   void startPlacement(odb::dbBlock* block) override;
   void placeInstance(odb::dbInst* instance) override;
@@ -29,7 +30,7 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridY yl,
                  GridX xh,
                  GridY yh) override;
-  void endPlacement() override;
+  void redrawAndPause() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
@@ -40,7 +41,7 @@ class Graphics : public gui::Renderer, public DplObserver
   Opendp* dp_;
   const odb::dbInst* debug_instance_;
   odb::dbBlock* block_ = nullptr;
-  float min_displacement_;  // in row height
+  bool paint_pixels_;
   std::vector<odb::Rect> searched_;
 };
 

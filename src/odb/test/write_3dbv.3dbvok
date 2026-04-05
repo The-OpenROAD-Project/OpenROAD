@@ -17,10 +17,20 @@ ChipletDef:
       LEF_file: [fake_bumps_lib.lef, fake_macros_lib.lef]
       DEF_file: SoC.def
     regions:
-      r1:
-        side: front
+      back_reg:
+        side: back
+        bmap: SoC_back_reg.bmap
+        layer: metal1
         coords:
           - [0, 0]
           - [955, 0]
           - [955, 1082]
           - [0, 1082]
+      front_reg:
+        side: front
+        bmap: SoC_front_reg.bmap
+        coords:
+          - [1073741.8235, 1073741.8235]
+          - [-1073741.824, 1073741.8235]
+          - [-1073741.824, -1073741.824]
+          - [1073741.8235, -1073741.824]

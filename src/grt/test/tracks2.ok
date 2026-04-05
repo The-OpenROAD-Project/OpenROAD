@@ -4,7 +4,7 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 170 components and 1258 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 72 connections.
-[INFO GRT-0020] Min routing layer: li1
+[INFO GRT-0020] Min routing layer: met1
 [INFO GRT-0021] Max routing layer: met5
 [INFO GRT-0022] Global adjustment: 0%
 [INFO GRT-0023] Grid origin: (0, 0)

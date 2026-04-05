@@ -28,11 +28,8 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "par/PartitionMgr.h"
-#include "sta/ArcDelayCalc.hh"
 #include "sta/Bfs.hh"
 #include "sta/ConcreteNetwork.hh"
-#include "sta/Corner.hh"
-#include "sta/DcalcAnalysisPt.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
@@ -40,22 +37,23 @@
 #include "sta/Liberty.hh"
 #include "sta/MakeConcreteNetwork.hh"
 #include "sta/MinMax.hh"
+#include "sta/Mode.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/ParseBus.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PatternMatch.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
 #include "sta/Sta.hh"
-#include "sta/Units.hh"
+#include "sta/StringUtil.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
 
@@ -193,7 +191,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
   //              ExceptionThruSeq *thrus,
   //              ExceptionTo *to,
   //              bool unconstrained,
-  //              const Corner *corner,
+  //              const Scene *corner,
   //              const MinMaxAll *min_max,
   //              int group_count,
   //              int endpoint_count,
@@ -210,6 +208,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
+  sta::StringSeq group_names_empty;
   sta::PathEndSeq path_ends = sta_->search()->findPathEnds(  // from, thrus, to,
                                                              // unconstrained
       e_from,   // return paths from a list of clocks/instances/ports/register
@@ -218,7 +217,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       e_to,     // return paths to a list of clocks/instances/ports or pins
       include_unconstrained,  // return unconstrained paths
       // corner, min_max,
-      sta_->cmdCorner(),  // return paths for a process corner
+      sta_->cmdMode()->scenes(),  // return paths for a process corner
       get_max ? sta::MinMaxAll::max()
               : sta::MinMaxAll::min(),  // return max/min paths checks
       // group_count, endpoint_count, unique_pins
@@ -227,9 +226,9 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       true,            // unique pins
       true,            // unique edges
       -sta::INF,
-      sta::INF,  // slack_min, slack_max,
-      true,      // sort_by_slack
-      nullptr,   // group_names
+      sta::INF,           // slack_min, slack_max,
+      true,               // sort_by_slack
+      group_names_empty,  // group_names
       // setup, hold, recovery, removal,
       get_max,
       !get_max,
@@ -264,15 +263,15 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       }
       std::string name;
 
-      if (db_network_->isTopLevelPort(pin) == true) {
-        auto bterm = block->findBTerm(db_network_->pathName(pin));
+      if (db_network_->isTopLevelPort(pin)) {
+        auto bterm = block->findBTerm(db_network_->pathName(pin).c_str());
         name = bterm->getName();
         if (visitedBterms.insert(name).second) {
           depth++;
         }
       } else {
         auto inst = db_network_->instance(pin);
-        auto db_inst = block->findInst(db_network_->pathName(inst));
+        auto db_inst = block->findInst(db_network_->pathName(inst).c_str());
         name = db_inst->getName();
         if (visitedInstances.insert(name).second) {
           depth++;

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <fstream>
 #include <limits>
 #include <memory>
 #include <tuple>
@@ -36,6 +37,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       congestion_report_iter_step_(0),
       x_range_(0),
       y_range_(0),
+      worst_fanout_(0),
       num_adjust_(0),
       v_capacity_(0),
       h_capacity_(0),
@@ -65,7 +67,8 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       logger_(log),
       stt_builder_(stt_builder),
       sta_(sta),
-      debug_(new DebugSetting())
+      debug_(new DebugSetting()),
+      detour_penalty_(0)
 {
 }
 
@@ -128,6 +131,8 @@ void FastRouteCore::clear()
 
   vertical_blocked_intervals_.clear();
   horizontal_blocked_intervals_.clear();
+
+  detour_penalty_ = 0;
 }
 
 void FastRouteCore::clearNets()
@@ -203,6 +208,7 @@ void FastRouteCore::setGridsAndLayers(int x, int y, int nLayers)
 
   d1_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
   d2_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
+  path_len_3D_.resize(boost::extents[num_layers_][y_range_][x_range_]);
 }
 
 void FastRouteCore::addVCapacity(int16_t verticalCapacity, int layer)
@@ -242,7 +248,8 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
                              int min_layer,
                              int max_layer,
                              float slack,
-                             std::vector<int8_t>* edge_cost_per_layer)
+                             std::vector<int8_t>* edge_cost_per_layer,
+                             bool routed)
 {
   int netID;
   bool exists;
@@ -274,7 +281,7 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
              edge_cost_per_layer);
   // Don't add local nets to the list of ids that will be routed. It is only
   // necessary to add them to make mergeNet work with local nets.
-  if (!is_local) {
+  if (!is_local && !routed) {
     net_ids_.push_back(netID);
   }
 
@@ -820,16 +827,98 @@ void FastRouteCore::updateEdge2DAnd3DUsage(int x1,
   int8_t edge_cost = net->getEdgeCost();
 
   if (y1 == y2) {  // horizontal edge
-    graph2d_.updateUsageH({x1, x2}, y1, net, used * edge_cost);
     for (int x = x1; x < x2; x++) {
+      graph2d_.updateUsageH(x, y1, net, used * edge_cost);
       h_edges_3D_[k][y1][x].usage += used * layer_edge_cost;
     }
   } else if (x1 == x2) {  // vertical edge
-    graph2d_.updateUsageV(x1, {y1, y2}, net, used * edge_cost);
     for (int y = y1; y < y2; y++) {
+      graph2d_.updateUsageV(x1, y, net, used * edge_cost);
       v_edges_3D_[k][y][x1].usage += used * layer_edge_cost;
     }
   }
+}
+
+void FastRouteCore::addTreeEdge(int x1,
+                                int y1,
+                                int x2,
+                                int y2,
+                                int layer,
+                                odb::dbNet* db_net)
+{
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+  if (!exists) {
+    return;
+  }
+
+  FrNet* net = nets_[net_id];
+  const int k = layer - 1;
+  const int8_t layer_edge_cost = net->getLayerEdgeCost(k);
+  const int8_t edge_cost = net->getEdgeCost();
+
+  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
+  TreeEdge new_edge;
+  if (x1 == x2) {
+    for (int y = y1; y < y2; y++) {
+      graph2d_.addUsageV(x1, y, edge_cost);
+      v_edges_3D_[k][y][x1].usage += layer_edge_cost;
+      new_edge.route.grids.push_back(GPoint3D(x1, y, k));
+    }
+    new_edge.route.grids.push_back(GPoint3D(x2, y2, k));
+  } else if (y1 == y2) {
+    for (int x = x1; x < x2; x++) {
+      graph2d_.addUsageH(x, y1, edge_cost);
+      h_edges_3D_[k][y1][x].usage += layer_edge_cost;
+      new_edge.route.grids.push_back(GPoint3D(x, y1, k));
+    }
+    new_edge.route.grids.push_back(GPoint3D(x2, y1, k));
+  } else {
+    logger_->error(
+        GRT, 216, "Cannot add tree edge: edge is not vertical or horizontal.");
+  }
+
+  new_edge.route.routelen = new_edge.route.grids.size() - 1;
+
+  treeedges.push_back(std::move(new_edge));
+}
+
+bool FastRouteCore::hasAvailableResources(int x1,
+                                          int y1,
+                                          int x2,
+                                          int y2,
+                                          int layer,
+                                          odb::dbNet* db_net)
+{
+  const int k = layer - 1;
+
+  int net_id;
+  bool exists;
+  getNetId(db_net, net_id, exists);
+  const int8_t layer_edge_cost
+      = exists ? nets_[net_id]->getLayerEdgeCost(k) : 1;
+  const int8_t edge_cost = exists ? nets_[net_id]->getEdgeCost() : 1;
+
+  if (y1 == y2) {  // horizontal edge
+    for (int x = x1; x < x2; x++) {
+      if (h_edges_3D_[k][y1][x].cap - h_edges_3D_[k][y1][x].usage
+              < layer_edge_cost
+          || graph2d_.getCapH(x, y1) - graph2d_.getUsageH(x, y1) < edge_cost) {
+        return false;
+      }
+    }
+  } else if (x1 == x2) {  // vertical edge
+    for (int y = y1; y < y2; y++) {
+      if (v_edges_3D_[k][y][x1].cap - v_edges_3D_[k][y][x1].usage
+              < layer_edge_cost
+          || graph2d_.getCapV(x1, y) - graph2d_.getUsageV(x1, y) < edge_cost) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 void FastRouteCore::initAuxVar()
@@ -1050,10 +1139,9 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
       std::vector<GPoint3D> filled_grids;
 
       // Handle vias for node1_alias (start node)
-      if (treenodes[node1_alias].hID == edgeID
+      if (node1_alias < num_terminals || treenodes[node1_alias].hID == edgeID
           || (edgeID == treenodes[node1_alias].lID
-              && treenodes[node1_alias].hID == BIG_INT
-              && node1_alias < num_terminals)) {
+              && treenodes[node1_alias].hID == BIG_INT)) {
         int16_t bottom_layer = treenodes[node1_alias].botL;
         int16_t top_layer = treenodes[node1_alias].topL;
         int16_t edge_init_layer = grids[0].layer;
@@ -1083,10 +1171,9 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
       }
 
       // Handle vias for node2_alias (end node)
-      if (treenodes[node2_alias].hID == edgeID
+      if (node2_alias < num_terminals || treenodes[node2_alias].hID == edgeID
           || (edgeID == treenodes[node2_alias].lID
-              && treenodes[node2_alias].hID == BIG_INT
-              && node2_alias < num_terminals)) {
+              && treenodes[node2_alias].hID == BIG_INT)) {
         int16_t bottom_layer = treenodes[node2_alias].botL;
         int16_t top_layer = treenodes[node2_alias].topL;
         if (node2_alias < num_terminals) {
@@ -1329,6 +1416,11 @@ NetRouteMap FastRouteCore::run()
   }
 
   graph2d_.clearUsed();
+  // Rebuild used grids in graph2d during incremental GRT to account for
+  // segments created during merge nets.
+  if (is_incremental_grt_) {
+    graph2d_.rebuildUsedGrids();
+  }
   preProcessTechLayers();
 
   int tUsage;
@@ -1371,7 +1463,7 @@ NetRouteMap FastRouteCore::run()
   int slope;
   int max_adj;
   int long_edge_len = 40;
-  const int short_edge_len = 12;
+  int short_edge_len = 12;
   const int soft_ndr_overflow_th = 10000;
 
   // call FLUTE to generate RSMT and break the nets into segments (2-pin nets)
@@ -1471,6 +1563,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->rectilinearSTree) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("RST Tree before overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1759,9 +1852,9 @@ NetRouteMap FastRouteCore::run()
 
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn() && debug_->tree2D) {
-    logger_->report("Tree 2D after overflow iterations");
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 2D after overflow iterations");
         StTreeVisualization(sttrees_[netID], nets_[netID], false);
       }
     }
@@ -1812,6 +1905,7 @@ NetRouteMap FastRouteCore::run()
     // Increase ripup threshold if res-aware is enabled
     if (enable_resistance_aware_) {
       long_edge_len = BIG_INT;
+      short_edge_len = BIG_INT;
     }
 
     mazeRouteMSMDOrder3D(enlarge_, 0, long_edge_len);
@@ -1843,6 +1937,7 @@ NetRouteMap FastRouteCore::run()
   if (debug_->isOn() && debug_->tree3D) {
     for (const int& netID : net_ids_) {
       if (nets_[netID]->getDbNet() == debug_->net) {
+        logger_->report("Tree 3D after maze route 3D");
         StTreeVisualization(sttrees_[netID], nets_[netID], true);
       }
     }
@@ -2005,6 +2100,11 @@ void FastRouteCore::setGridMax(int x_max, int y_max)
   y_grid_max_ = y_max;
 }
 
+void FastRouteCore::setDetourPenalty(int penalty)
+{
+  detour_penalty_ = penalty;
+}
+
 std::vector<int> FastRouteCore::getOriginalResources()
 {
   std::vector<int> original_resources(num_layers_);
@@ -2148,6 +2248,32 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
   fastrouteRender()->setStTreeValues(stree);
   fastrouteRender()->setTreeStructure(TreeStructure::steinerTreeByFastroute);
   fastrouteRender()->redrawAndPause();
+}
+
+void FastRouteCore::writeCongestionMap(const std::string& filename)
+{
+  std::ofstream cong_file;
+  cong_file.open(filename);
+  cong_file << "x,y,l,capacity,reduction,usage,overflow\n";
+  int total_overflow = 0;
+  for (int l = 0; l < num_layers_; l++) {
+    for (int x = 0; x < x_grid_; x++) {
+      for (int y = 0; y < y_grid_; y++) {
+        const int cap
+            = h_edges_3D_[l][y][x].real_cap + v_edges_3D_[l][y][x].real_cap;
+        const int red = h_edges_3D_[l][y][x].red + v_edges_3D_[l][y][x].red;
+        const int usage
+            = h_edges_3D_[l][y][x].usage + v_edges_3D_[l][y][x].usage;
+        const int overflow = std::max(0, usage - (cap - red));
+        total_overflow += overflow;
+
+        cong_file << x << "," << y << "," << l << "," << (int) cap << ","
+                  << (int) red << "," << usage << "," << overflow << "\n";
+      }
+    }
+  }
+  cong_file << "Total overflow: " << total_overflow << "\n";
+  cong_file.close();
 }
 
 ////////////////////////////////////////////////////////////////

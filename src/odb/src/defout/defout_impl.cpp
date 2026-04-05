@@ -19,6 +19,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -45,6 +46,19 @@ std::string getPinName(dbBTerm* bterm)
 std::string getPinName(dbITerm* iterm)
 {
   return iterm->getMTerm()->getName();
+}
+
+// Format a scan chain start/stop pin for DEF output.
+// BTerm: "PIN <pinname>", ITerm: "<instname> <pinname>"
+std::string getScanPinDef(dbBTerm* bterm)
+{
+  return fmt::format("PIN {}", bterm->getName());
+}
+
+std::string getScanPinDef(dbITerm* iterm)
+{
+  return fmt::format(
+      "{} {}", iterm->getInst()->getName(), iterm->getMTerm()->getName());
 }
 
 static const int max_name_length = 256;
@@ -682,8 +696,8 @@ void DefOut::Impl::writeInst(dbInst* inst)
       int right = defdist(box->xMax());
       int top = defdist(box->yMax());
 
-      *_out << " + HALO " << left << " " << bottom << " " << right << " "
-            << top;
+      *_out << " + HALO " << (box->isSoft() ? "SOFT " : "") << left << " "
+            << bottom << " " << right << " " << top;
     }
   }
 
@@ -869,13 +883,15 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
                 ? scan_chain->getName()
                 : fmt::format("{}_{}", scan_chain->getName(), chain_suffix);
 
-      const std::string start_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanIn());
-      const std::string stop_pin_name = std::visit(
-          [](auto&& pin) { return pin->getName(); }, scan_chain->getScanOut());
+      const std::string start_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanIn());
+      const std::string stop_pin
+          = std::visit([](auto&& pin) { return getScanPinDef(pin); },
+                       scan_chain->getScanOut());
 
       *_out << "- " << chain_name << "\n";
-      *_out << "+ START PIN " << start_pin_name << "\n";
+      *_out << "+ START " << start_pin << "\n";
 
       for (dbScanList* scan_list : scan_partition->getScanLists()) {
         dbSet<dbScanInst> scan_insts = scan_list->getScanInsts();
@@ -900,7 +916,7 @@ void DefOut::Impl::writeScanChains(dbBlock* block)
         }
       }
       *_out << "+ PARTITION " << scan_partition->getName() << "\n";
-      *_out << "+ STOP PIN " << stop_pin_name << " ;\n\n";
+      *_out << "+ STOP " << stop_pin << " ;\n\n";
       ++chain_suffix;
     }
   }
@@ -1286,6 +1302,14 @@ void DefOut::Impl::writeNets(dbBlock* block)
 
   auto sorted_nets = sortedSet(nets);
 
+  // Build map of mterm names and associated nets
+  std::unordered_map<std::string, std::set<dbNet*>> snet_term_map;
+  for (auto* inst : block->getInsts()) {
+    for (auto* iterm : inst->getITerms()) {
+      snet_term_map[iterm->getMTerm()->getName()].insert(iterm->getNet());
+    }
+  }
+
   for (dbNet* net : sorted_nets) {
     if (_select_net_map) {
       if (!(*_select_net_map)[net]) {
@@ -1319,7 +1343,7 @@ void DefOut::Impl::writeNets(dbBlock* block)
         continue;
       }
       if (net->isSpecial()) {
-        writeSNet(net);
+        writeSNet(net, snet_term_map);
       }
     }
 
@@ -1341,7 +1365,9 @@ void DefOut::Impl::writeNets(dbBlock* block)
   *_out << "END NETS\n";
 }
 
-void DefOut::Impl::writeSNet(dbNet* net)
+void DefOut::Impl::writeSNet(
+    dbNet* net,
+    const std::unordered_map<std::string, std::set<dbNet*>>& snet_term_map)
 {
   std::string nname = net->getName();
   *_out << "    - " << nname;
@@ -1365,7 +1391,12 @@ void DefOut::Impl::writeSNet(dbNet* net)
     dbInst* inst = iterm->getInst();
     dbMTerm* mterm = iterm->getMTerm();
     char* mtname = mterm->getName(inst, &ttname[0]);
-    if (net->isWildConnected()) {
+    bool iswildcard = false;
+    if (snet_term_map.at(mterm->getName()).size() == 1) {
+      // mterm is unique to this net, so we can use wildcard
+      iswildcard = true;
+    }
+    if (iswildcard) {
       if (wild_names.find(mtname) == wild_names.end()) {
         *_out << " ( * " << mtname << " )";
         ++i;
@@ -1813,28 +1844,15 @@ void DefOut::Impl::writeSpecialPath(dbSBox* box)
 
   dbWireShapeType type = box->getWireShapeType();
 
-  if (mask != 0) {
-    if (type.getValue() == dbWireShapeType::NONE) {
-      *_out << " " << ln << " " << defdist(w) << " ( " << defdist(x1) << " "
-            << defdist(y1) << " ) MASK " << mask << " ( " << defdist(x2) << " "
-            << defdist(y2) << " )";
-    } else {
-      *_out << " " << ln << " " << defdist(w) << " + SHAPE " << type.getString()
-            << " + MASK " << mask << " + ( " << defdist(x1) << " "
-            << defdist(y1) << " ) ( " << defdist(x2) << " " << defdist(y2)
-            << " )";
-    }
-  } else {
-    if (type.getValue() == dbWireShapeType::NONE) {
-      *_out << " " << ln << " " << defdist(w) << " ( " << defdist(x1) << " "
-            << defdist(y1) << " ) ( " << defdist(x2) << " " << defdist(y2)
-            << " )";
-    } else {
-      *_out << " " << ln << " " << defdist(w) << " + SHAPE " << type.getString()
-            << " ( " << defdist(x1) << " " << defdist(y1) << " ) ( "
-            << defdist(x2) << " " << defdist(y2) << " )";
-    }
+  *_out << " " << ln << " " << defdist(w);
+  if (type.getValue() != dbWireShapeType::NONE) {
+    *_out << " + SHAPE " << type.getString();
   }
+  *_out << " ( " << defdist(x1) << " " << defdist(y1) << " )";
+  if (mask != 0) {
+    *_out << " MASK " << mask;
+  }
+  *_out << " ( " << defdist(x2) << " " << defdist(y2) << " )";
 }
 
 void DefOut::Impl::writeNet(dbNet* net)
@@ -2043,6 +2061,7 @@ void DefOut::Impl::writePropValue(dbProperty* prop)
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
       double v = p->getValue();
       *_out << fmt::format("{:g} ", v);
+      break;
     }
 
     default:

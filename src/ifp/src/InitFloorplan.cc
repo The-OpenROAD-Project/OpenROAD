@@ -24,7 +24,6 @@
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
 #include "sta/StringUtil.hh"
-#include "sta/Vector.hh"
 #include "upf/upf.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
@@ -36,8 +35,6 @@ using std::map;
 using std::round;
 using std::set;
 using std::string;
-
-using sta::StringVector;
 
 using utl::IFP;
 using utl::Logger;
@@ -162,6 +159,12 @@ void InitFloorplan::makeDieUtilization(double utilization,
                       core_space_left,
                       core_space_right);
   utilization /= 100;
+  logger_->info(
+      IFP,
+      107,
+      "Defining die area using utilization: {:.2f}\% and aspect ratio: {}.",
+      utilization * 100,
+      aspect_ratio);
   const double design_area = designArea();
   const double core_area = design_area / utilization;
   const int core_width = std::sqrt(core_area / aspect_ratio);
@@ -181,6 +184,16 @@ void InitFloorplan::makeDieUtilization(double utilization,
 
 void InitFloorplan::makeDie(const odb::Rect& die)
 {
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining die area: ({}, {}) to ({}, {}) DBU",
+             die.xMin(),
+             die.yMin(),
+             die.xMax(),
+             die.yMax());
+
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
@@ -193,6 +206,7 @@ void InitFloorplan::makeDie(const odb::Rect& die)
 void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 {
   auto points = polygon.getPoints();
+  logger_->info(IFP, 106, "Initializing floorplan in polygon mode.");
 
   if (points.empty()) {
     logger_->error(IFP, 987, "No polygon vertices provided.");
@@ -272,6 +286,16 @@ void InitFloorplan::makePolygonRows(
 
   checkInstanceDimensions(core_bbox);
 
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining core area: ({}, {}) to ({}, {}) DBU",
+             core_bbox.xMin(),
+             core_bbox.yMin(),
+             core_bbox.xMax(),
+             core_bbox.yMax());
+
   // Set up sites by name (same as original makeRows)
   SitesByName sites_by_name;
   sites_by_name[base_site->getName()] = base_site;
@@ -299,6 +323,7 @@ void InitFloorplan::makePolygonRows(
                 997,
                 "Completed polygon-aware row generation using {} vertices",
                 points.size() - 1);
+  reportAreas();
 }
 
 double InitFloorplan::designArea()
@@ -403,6 +428,16 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 {
   checkGap(gap);
 
+  debugPrint(logger_,
+             IFP,
+             "init",
+             1,
+             "Defining core area: ({}, {}) to ({}, {}) DBU",
+             core.xMin(),
+             core.yMin(),
+             core.xMax(),
+             core.yMax());
+
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 63, "Floorplan die area is 0. Cannot build rows.");
@@ -487,6 +522,7 @@ void InitFloorplan::makeRows(const odb::Rect& core,
                /* halo_x */ 0,
                /* halo_y */ 0,
                logger_);
+  reportAreas();
 }
 
 // this function is used to create regions ( split overlapped rows and create
@@ -682,7 +718,7 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
   const uint32_t site_dx = base_site->getWidth();
   const int rows_x = core_dx / site_dx;
 
-  auto make_rows = [&](dbSite* site) {
+  auto make_rows = [&](dbSite* site) -> int {
     const uint32_t site_dy = site->getHeight();
     int rows_y = core_dy / site_dy;
     bool flip = flipped_sites.find(site) != flipped_sites.end();
@@ -717,13 +753,20 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
                     site_dx);
       y += site_dy;
     }
-    logger_->info(IFP,
-                  1,
-                  "Added {} rows of {} site {}.",
-                  rows_y,
-                  rows_x,
-                  site->getName());
+    if (rows_y == 0) {
+      logger_->warn(IFP, 61, "No rows created for site {}.", site->getName());
+    } else {
+      logger_->info(IFP,
+                    1,
+                    "Added {} rows of {} site {}.",
+                    rows_y,
+                    rows_x,
+                    site->getName());
+    }
+    return rows_y;
   };
+
+  int total_rows = 0;
   for (const auto& [name, site] : sites_by_name) {
     if (site->getHeight() % base_site->getHeight() != 0) {
       logger_->error(
@@ -735,9 +778,13 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
           base_site->getName(),
           block_->dbuToMicrons(base_site->getHeight()));
     }
-    make_rows(site);
+    total_rows += make_rows(site);
   }
   block_->setCoreArea(block_->computeCoreArea());
+
+  if (total_rows == 0) {
+    logger_->error(IFP, 65, "No rows created in the core area.");
+  }
 }
 
 int InitFloorplan::getOffset(dbSite* base_hybrid_site,
@@ -905,8 +952,8 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
                    tie_term->getName());
   }
   auto func_operation = lib_port->function()->op();
-  const bool is_zero = func_operation == sta::FuncExpr::op_zero;
-  const bool is_one = func_operation == sta::FuncExpr::op_one;
+  const bool is_zero = func_operation == sta::FuncExpr::Op::zero;
+  const bool is_one = func_operation == sta::FuncExpr::Op::one;
 
   odb::dbSigType look_for;
   if (is_zero) {
@@ -1341,6 +1388,52 @@ void InitFloorplan::makeUniformRowsPolygon(
                 "Added {} polygon-aware rows for site {}.",
                 rows_created,
                 site->getName());
+}
+
+void InitFloorplan::reportAreas()
+{
+  odb::Rect die = block_->getDieArea();
+  odb::Rect core = block_->getCoreArea();
+  logger_->info(IFP,
+                100,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Die BBox:",
+                block_->dbuToMicrons(die.xMin()),
+                block_->dbuToMicrons(die.yMin()),
+                block_->dbuToMicrons(die.xMax()),
+                block_->dbuToMicrons(die.yMax()));
+  logger_->info(IFP,
+                101,
+                "{:10} ( {:6.3f} {:6.3f} ) ( {:6.3f} {:6.3f} ) um",
+                "Core BBox:",
+                block_->dbuToMicrons(core.xMin()),
+                block_->dbuToMicrons(core.yMin()),
+                block_->dbuToMicrons(core.xMax()),
+                block_->dbuToMicrons(core.yMax()));
+  logger_->info(IFP,
+                102,
+                "{:27} {:15.3f} um^2",
+                "Core area:",
+                block_->dbuAreaToMicrons(core.area()));
+  int64_t design_area = static_cast<int64_t>(designArea());
+  logger_->info(IFP,
+                103,
+                "{:27} {:15.3f} um^2",
+                "Total instances area:",
+                block_->dbuAreaToMicrons(design_area));
+  double core_area_um = block_->dbuAreaToMicrons(core.area());
+  if (core_area_um > 0) {
+    logger_->info(IFP,
+                  104,
+                  "{:27} {:15.3f}",
+                  "Effective utilization:",
+                  block_->dbuAreaToMicrons(design_area) / core_area_um);
+  }
+  logger_->info(IFP,
+                105,
+                "{:27} {:15d}",
+                "Number of instances:",
+                block_->getInsts().size());
 }
 
 }  // namespace ifp

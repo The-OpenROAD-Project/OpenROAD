@@ -15,6 +15,7 @@
 #include "odb/dbTypes.h"
 #include "rcx/array1.h"
 #include "rcx/dbUtil.h"
+#include "rcx/ext2dBox.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
@@ -471,7 +472,7 @@ uint32_t extMeasure::defineBox(CoupleOptions& options)
   }
   dbTechLayer* layer = _extMain->_tech->findRoutingLayer(_met);
   _minWidth = layer->getWidth();
-  _toHi = (options[11] > 0) ? true : false;
+  _toHi = options[11] > 0;
 
   return _len;
 }
@@ -1850,17 +1851,16 @@ double extMain::updateTotalCap(dbRSeg* rseg, double cap, uint32_t modelIndex)
 
   int extDbIndex, sci, scDbIndex;
   extDbIndex = getProcessCornerDbIndex(modelIndex);
-  double tot = rseg->getCapacitance(extDbIndex);
+  double tot = rseg->getGroundCapacitance(extDbIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, extDbIndex);
-  // return rseg->getCapacitance(extDbIndex);
   getScaledCornerDbIndex(modelIndex, sci, scDbIndex);
   if (sci == -1) {
     return tot;
   }
   getScaledGndC(sci, cap);
-  double tots = rseg->getCapacitance(scDbIndex);
+  double tots = rseg->getGroundCapacitance(scDbIndex);
   tots += cap;
   rseg->setCapacitance(tots, scDbIndex);
   return tot;
@@ -1907,11 +1907,7 @@ bool extMeasure::isConnectedToBterm(dbRSeg* rseg1)
     return true;
   }
   dbCapNode* node2 = rseg1->getSourceCapNode();
-  if (node2->isBTerm()) {
-    return true;
-  }
-
-  return false;
+  return node2->isBTerm();
 }
 
 dbCCSeg* extMeasure::makeCcap(dbRSeg* rseg1, dbRSeg* rseg2, double ccCap)
@@ -2268,7 +2264,7 @@ void extMeasure::OverSubRC(dbRSeg* rseg1,
 
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
 
-  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+  if ((lenOverSub <= 0) && (res_lenOverSub <= 0)) {
     return;
   }
 
@@ -2349,7 +2345,7 @@ void extMeasure::OverSubRC_dist(dbRSeg* rseg1,
   bool rvia1 = rseg1 != nullptr && isVia(rseg1->getId());
   bool rvia2 = rseg2 != nullptr && isVia(rseg2->getId());
 
-  if (!((lenOverSub > 0) || (res_lenOverSub > 0))) {
+  if ((lenOverSub <= 0) && (res_lenOverSub <= 0)) {
     return;
   }
   _underMet = 0;

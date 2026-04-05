@@ -1,58 +1,51 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2025-2025, The OpenROAD Authors
 
+#include <unordered_map>
 #include <vector>
 
 #include "BaseMove.hh"
+#include "sta/ArcDelayCalc.hh"
 #include "sta/Liberty.hh"
-#include "sta/UnorderedMap.hh"
+#include "sta/MinMax.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/Path.hh"
+#include "sta/Scene.hh"
 
 namespace rsz {
-
-using sta::ArcDelay;
-using sta::DcalcAnalysisPt;
-using sta::Instance;
-using sta::InstancePinIterator;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::LoadPinIndexMap;
-using sta::NetConnectedPinIterator;
-using sta::Path;
-using sta::PathExpanded;
-using sta::Slack;
-using sta::Slew;
 
 class SwapPinsMove : public BaseMove
 {
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const Path* drvr_path,
-              int drvr_index,
-              Slack drvr_slack,
-              PathExpanded* expanded,
-              float setup_slack_margin) override;
+  bool doMove(const sta::Path* drvr_path, float setup_slack_margin) override;
 
   const char* name() override { return "SwapPinsMove"; }
 
   void reportSwappablePins();
 
  private:
-  using LibertyPortVec = std::vector<LibertyPort*>;
-  void swapPins(Instance* inst, LibertyPort* port1, LibertyPort* port2);
-  void equivCellPins(const LibertyCell* cell,
-                     LibertyPort* input_port,
+  using LibertyPortVec = std::vector<sta::LibertyPort*>;
+  void swapPins(sta::Instance* inst,
+                sta::LibertyPort* port1,
+                sta::LibertyPort* port2);
+  void equivCellPins(const sta::LibertyCell* cell,
+                     sta::LibertyPort* input_port,
                      LibertyPortVec& ports);
-  void annotateInputSlews(Instance* inst, const DcalcAnalysisPt* dcalc_ap);
-  void findSwapPinCandidate(LibertyPort* input_port,
-                            LibertyPort* drvr_port,
+  void annotateInputSlews(sta::Instance* inst,
+                          const sta::Scene* scene,
+                          const sta::MinMax* min_max);
+  void findSwapPinCandidate(sta::LibertyPort* input_port,
+                            sta::LibertyPort* drvr_port,
                             const LibertyPortVec& equiv_ports,
                             float load_cap,
-                            const DcalcAnalysisPt* dcalc_ap,
-                            LibertyPort** swap_port);
+                            const sta::Scene* scene,
+                            const sta::MinMax* min_max,
+                            sta::LibertyPort** swap_port);
   void resetInputSlews();
 
-  sta::UnorderedMap<LibertyPort*, LibertyPortVec> equiv_pin_map_;
+  std::unordered_map<sta::LibertyPort*, LibertyPortVec> equiv_pin_map_;
 };
 
 }  // namespace rsz

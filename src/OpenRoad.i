@@ -199,6 +199,13 @@ getSteinerTreeBuilder()
   return openroad->getSteinerTreeBuilder();
 }
 
+ram::RamGen*
+getRamGen()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getRamGen();
+}
+
 } // namespace ord
 
 namespace sta {
@@ -242,13 +249,13 @@ using odb::dbTech;
 }
 
 %typemap(in) vector<const char*> * {
-  int argc;
+  Tcl_Size argc;
   Tcl_Obj **argv;
 
   if (Tcl_ListObjGetElements(interp, $input, &argc, &argv) == TCL_OK) {
     vector<const char*>* seq = new vector<const char*>;
-    for (int i = 0; i < argc; i++) {
-      int length;
+    for (Tcl_Size i = 0; i < argc; i++) {
+      Tcl_Size length;
       const char* str = Tcl_GetStringFromObj(argv[i], &length);
       seq->push_back(str);
     }
@@ -260,7 +267,7 @@ using odb::dbTech;
 }
 
 %typemap(in) utl::ToolId {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   $1 = utl::Logger::findToolId(arg);
 }

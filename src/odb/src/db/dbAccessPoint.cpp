@@ -10,13 +10,13 @@
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 // User Code Begin Includes
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "dbBPin.h"
@@ -30,6 +30,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
@@ -37,6 +38,7 @@ template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (point_ != rhs.point_) {
     return false;
   }
@@ -57,6 +59,7 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const

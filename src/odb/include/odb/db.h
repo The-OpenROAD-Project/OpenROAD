@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -173,6 +174,7 @@ class dbTechLayerMinStepRule;
 class dbTechLayerSpacingEolRule;
 class dbTechLayerSpacingTablePrlRule;
 class dbTechLayerTwoWiresForbiddenSpcRule;
+class dbTechLayerVoltageSpacing;
 class dbTechLayerWidthTableRule;
 class dbTechLayerWrongDirSpacingRule;
 // Generator Code End ClassDeclarations
@@ -182,6 +184,8 @@ class dbExtControl;
 
 // Custom iterators
 class dbModuleBusPortModBTermItr;
+
+class UnfoldedModel;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///
@@ -268,10 +272,10 @@ class dbBox : public dbObject
   uint32_t getDY() const;
 
   ///
-  /// Set temporary flag visited
+  /// Set the halo as soft
   ///
-  void setVisited(bool value);
-  bool isVisited() const;
+  void setSoft(bool value);
+  bool isSoft() const;
 
   ///
   /// Get the owner of this box
@@ -1305,22 +1309,21 @@ class dbBlock : public dbObject
   void getWireUpdatedNets(std::vector<dbNet*>& nets);
 
   ///
-  /// Make a unique net/instance name
+  /// Make a unique net name.
   /// If parent is nullptr, the net name will be unique in top module.
   /// If base_name is nullptr, the default net name will be used.
   /// If uniquify is IF_NEEDED*, unique suffix will be added when necessary.
   /// If uniquify is *_WITH_UNDERSCORE, an underscore will be added before the
   /// unique suffix.
+  /// If corresponding_flat_net is nullptr, any findNet() hit is a collision.
+  /// If corresponding_flat_net is non-null, only internal flat nets excluding
+  /// the corresponding one are collisions (lenient mode for ModNet creation).
   ///
-  std::string makeNewNetName(dbModInst* parent = nullptr,
+  std::string makeNewNetName(const dbModule* parent = nullptr,
                              const char* base_name = "net",
                              const dbNameUniquifyType& uniquify
-                             = dbNameUniquifyType::ALWAYS);
-
-  std::string makeNewModNetName(dbModule* parent,
-                                const char* base_name = "net",
-                                const dbNameUniquifyType& uniquify
-                                = dbNameUniquifyType::ALWAYS);
+                             = dbNameUniquifyType::ALWAYS,
+                             dbNet* corresponding_flat_net = nullptr);
   std::string makeNewInstName(dbModInst* parent = nullptr,
                               const char* base_name = "inst",
                               const dbNameUniquifyType& uniquify
@@ -1543,6 +1546,12 @@ class dbBTerm : public dbObject
   /// Get the block of this block-terminal.
   ///
   dbBlock* getBlock() const;
+
+  ///
+  /// Get the chip bump associated with this block-terminal.
+  /// Returns nullptr if no chip bump is associated.
+  ///
+  dbChipBump* getChipBump() const;
 
   ///
   /// Get the hierarchical parent iterm of this bterm.
@@ -2553,9 +2562,12 @@ class dbNet : public dbObject
   ///
   /// Check if this net is internal to the given module.
   /// A net is internal if all its iterms belong to instances within the module
-  /// and it has no bterms.
+  /// (excluding sub-modules) and it has no bterms.
+  /// - A dbNet is also considered internal if it has a corresponding modnet
+  /// connected to a module output port that is unconnected in its parent
+  /// module (isInternalTo == true).
   ///
-  bool isInternalTo(dbModule* module) const;
+  bool isInternalTo(const dbModule* module) const;
 
   ///
   /// Check issues such as multiple drivers, no driver, or dangling net
@@ -2574,6 +2586,12 @@ class dbNet : public dbObject
   /// are consistent
   //
   void checkSanityModNetConsistency() const;
+
+  ///
+  /// Check if this flat net's base name collides with a ModNet or ModBTerm
+  /// in its parent module scope without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
 
   ///
   /// Dump dbNet connectivity for debugging
@@ -3092,6 +3110,17 @@ class dbInst : public dbObject
   /// Returns nullptr if this instance has no halo.
   ///
   dbBox* getHalo();
+
+  ///
+  /// Returns a halo assigned to this instance with orientation applied.
+  /// Returns a empty box if this instance has no halo.
+  ///
+  Rect getTransformedHalo();
+
+  ///
+  /// Sets the halo to this instance.
+  ///
+  void setHalo(int left, int bottom, int right, int top, bool is_soft);
 
   ///
   /// Get the weight assigned to this instance.
@@ -3647,9 +3676,9 @@ class dbWire : public dbObject
   void append(dbWire* wire, bool singleSegmentWire = false);
 
   ///
-  /// Get junction id associated with the term
+  /// Get junction id of the wire shape connected to the terminal.
   ///
-  uint32_t getTermJid(int termid) const;
+  uint32_t getTermShapeJunctionId(int term_id) const;
 
   ///
   /// Get the shape of this shape-id.
@@ -4535,21 +4564,22 @@ class dbRSeg : public dbObject
   bool updatedCap();
 
   ///
-  /// Get the capacitance of this RC segment for this process corner. Returns
-  /// value in FF.
+  /// Get the ground capacitance of this RC segment for this process corner.
+  /// Returns value in FF.
   ///
-  double getCapacitance(int corner = 0);
+  double getGroundCapacitance(int corner = 0);
 
   ///
-  /// Get the capacitance of this RC segment for this process corner,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get the total capacitance (ground + coupling) of this RC segment for this
+  /// process corner. Returns value in FF.
   ///
-  double getSourceCapacitance(int corner = 0);
+  double getTotalCapacitance(int corner = 0);
 
   ///
-  /// Get the first capnode capacitance of this RC segment
-  /// for this process corner, if foreign,
-  /// plus coupling capacitance. Returns value in FF.
+  /// Get ground capacitance + coupling capacitance scaled by Miller effect
+  /// multiplier of this RC segment for this process corner. This function
+  /// should only be needed when a custom Miller effect multiplier is required.
+  /// Returns value in FF.
   ///
   double getCapacitance(int corner, double miller_mult);
 
@@ -7236,6 +7266,10 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
+  dbChipPath* findChipPath(const char* name) const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7412,6 +7446,34 @@ class dbChipNet : public dbObject
   // User Code End dbChipNet
 };
 
+class dbChipPath : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  // User Code Begin dbChipPath
+  struct Entry
+  {
+    std::vector<dbChipInst*> chip_inst_path;  // hierarchical path to the region
+    dbChipRegionInst* region;
+    bool negated;  // do not touch this region, i.e., the path must be connected
+                   // without crossing this region
+  };
+
+  dbChip* getChip() const;
+
+  std::vector<Entry> getEntries() const;
+
+  void addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                dbChipRegionInst* region,
+                bool negated);
+
+  static dbChipPath* create(dbChip* chip, const char* name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
+};
+
 class dbChipRegion : public dbObject
 {
  public:
@@ -7534,6 +7596,9 @@ class dbDatabase : public dbObject
   ///
   dbChip* getChip();
 
+  void constructUnfoldedModel();
+
+  UnfoldedModel* getUnfoldedModel() const;
   ////////////////////////
   /// DEPRECATED
   ////////////////////////
@@ -8268,7 +8333,7 @@ class dbMarker : public dbObject
 
   std::string getName() const;
 
-  using MarkerShape = std::variant<Point, Line, Rect, Polygon>;
+  using MarkerShape = std::variant<Point, Line, Rect, Polygon, Cuboid>;
 
   dbMarkerCategory* getCategory() const;
   std::vector<MarkerShape> getShapes() const;
@@ -8281,6 +8346,7 @@ class dbMarker : public dbObject
   void addShape(const Line& line);
   void addShape(const Rect& rect);
   void addShape(const Polygon& polygon);
+  void addShape(const Cuboid& cuboid);
 
   void setTechLayer(dbTechLayer* layer);
 
@@ -8586,6 +8652,12 @@ class dbModNet : public dbObject
   void checkSanity() const;
 
   ///
+  /// Check if any flat net in this module scope has a base name matching
+  /// this ModNet's name without being associated with it.
+  ///
+  void checkSanityNameCollision() const;
+
+  ///
   /// Merge the terminals of the in_modnet with this modnet
   ///
   void mergeModNet(dbModNet* in_modnet);
@@ -8618,6 +8690,11 @@ class dbModNet : public dbObject
   std::vector<dbModNet*> getNextModNetsInFanout() const;
 
   ///
+  /// Returns the first connected dbModNet in the parent module hierarchy.
+  ///
+  dbModNet* getFirstParentModNet() const;
+
+  ///
   /// Traverses the hierarchy in search of the first mod net that satisfies the
   /// given condition.
   ///
@@ -8628,7 +8705,8 @@ class dbModNet : public dbObject
   static dbModNet* create(dbModule* parent_module, const char* base_name);
   static dbModNet* create(dbModule* parent_module,
                           const char* base_name,
-                          const dbNameUniquifyType& uniquify);
+                          const dbNameUniquifyType& uniquify,
+                          dbNet* corresponding_flat_net = nullptr);
   static dbSet<dbModNet>::iterator destroy(dbSet<dbModNet>::iterator& itr);
   static void destroy(dbModNet*);
   // User Code End dbModNet
@@ -9069,6 +9147,10 @@ class dbTechLayer : public dbObject
 
   uint32_t getWrongWayWidth() const;
 
+  void setWrongWayMinWidth(uint32_t wrong_way_min_width);
+
+  uint32_t getWrongWayMinWidth() const;
+
   void setLayerAdjustment(float layer_adjustment);
 
   float getLayerAdjustment() const;
@@ -9122,6 +9204,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerTwoWiresForbiddenSpcRule>
   getTechLayerTwoWiresForbiddenSpcRules() const;
+
+  dbSet<dbTechLayerVoltageSpacing> getTechLayerVoltageSpacings() const;
 
   void setRectOnly(bool rect_only);
 
@@ -11154,6 +11238,27 @@ class dbTechLayerTwoWiresForbiddenSpcRule : public dbObject
 
   static void destroy(dbTechLayerTwoWiresForbiddenSpcRule* rule);
   // User Code End dbTechLayerTwoWiresForbiddenSpcRule
+};
+
+class dbTechLayerVoltageSpacing : public dbObject
+{
+ public:
+  void setTocutAbove(bool tocut_above);
+
+  bool isTocutAbove() const;
+
+  void setTocutBelow(bool tocut_below);
+
+  bool isTocutBelow() const;
+
+  // User Code Begin dbTechLayerVoltageSpacing
+  const std::map<float, int>& getTable() const;
+  void addEntry(float voltage, int spacing);
+
+  static dbTechLayerVoltageSpacing* create(dbTechLayer* layer);
+
+  static void destroy(dbTechLayerVoltageSpacing* rule);
+  // User Code End dbTechLayerVoltageSpacing
 };
 
 class dbTechLayerWidthTableRule : public dbObject

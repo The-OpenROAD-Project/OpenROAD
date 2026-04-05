@@ -27,18 +27,10 @@ swig_lib(NAME      drt
 )
 
 add_library(drt_lib
-  src/gr/FlexGRCMap.cpp
-  src/gr/FlexGR.cpp
-  src/gr/FlexGR_end.cpp
-  src/gr/FlexGRGridGraph.cpp
-  src/gr/FlexGRGridGraph_maze.cpp
-  src/gr/FlexGR_init.cpp
-  src/gr/FlexGR_maze.cpp
-  src/gr/FlexGR_rq.cpp
-  src/gr/FlexGR_topo.cpp
   src/dr/FlexDR_conn.cpp
   src/dr/FlexDR_init.cpp
   src/dr/FlexDR.cpp
+  src/dr/FlexDRFlow.cpp
   src/db/drObj/drNet.cpp
   src/dr/FlexDR_maze.cpp
   src/dr/FlexGridGraph_maze.cpp
@@ -70,8 +62,6 @@ add_library(drt_lib
   src/db/obj/frInst.cpp
   src/db/obj/frVia.cpp
   src/db/obj/frAccess.cpp
-  src/db/obj/frRPin.cpp
-  src/db/obj/frNode.cpp
   src/db/obj/frInstTerm.cpp
   src/db/obj/frNet.cpp
   src/db/tech/frConstraint.cc
@@ -109,6 +99,7 @@ target_include_directories(drt_lib
 
 target_link_libraries(drt_lib
   PUBLIC
+    absl::synchronization
     stt_lib
     utl_lib
     dst_lib

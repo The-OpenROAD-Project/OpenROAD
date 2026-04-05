@@ -1,5 +1,9 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("//test:regression.bzl", "regression_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+# Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
+# No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
+
+load("//test:regression.bzl", "doc_check_test", "regression_test")
 
 package(features = ["layering_check"])
 
@@ -32,6 +36,7 @@ TESTS = [
     "fanin_fanout1",
     "gain_buffering1",
     "gain_buffering1_hier",
+    "gain_buffering2",
     "gcd_resize",
     "insert_buffer",
     "insert_buffer_hier",
@@ -45,6 +50,7 @@ TESTS = [
     "remove_buffers_hier1",
     "remove_buffers1",
     "remove_buffers2",
+    "remove_buffers3",
     "remove_buffers4",
     "remove_buffers4_hier",
     "remove_buffers5",
@@ -145,6 +151,9 @@ TESTS = [
     "repair_tie8",
     "repair_tie9",
     "repair_tie10_hier",
+    "repair_tie11_hier",
+    "repair_tie12_hier",
+    "repair_tie13_hier",
     "repair_wire1",
     "repair_wire10",
     "repair_wire11",
@@ -158,12 +167,15 @@ TESTS = [
     "repair_wire9",
     "replace_arith_modules1",
     "replace_arith_modules2",
+    "replace_arith_modules3",
     "report_buffers_asap7",
+    "report_buffers_asap7_augmented",
     "report_buffers_gf180",
     "report_buffers_ihp",
     "report_buffers_nangate45",
     "report_buffers_sky130hd",
     "report_buffers_sky130hs",
+    "report_buffers_no_lef",
     "report_design_area",
     "report_dont_touch",
     "report_dont_use",
@@ -172,6 +184,7 @@ TESTS = [
     "report_floating_nets1",
     "report_floating_nets2",
     "report_floating_nets3",
+    "report_move_tracker",
     "report_overdriven_nets1",
     "report_overdriven_nets2",
     "report_overdriven_nets3",
@@ -193,6 +206,15 @@ TESTS = [
     "repair_setup_vt_swap2",
 ]
 
+# From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
+PASSFAIL_TESTS = [
+    # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
+    # build directory structure not compatible with Bazel
+    # "cpp_tests",
+]
+
+ALL_TESTS = TESTS + PASSFAIL_TESTS
+
 filegroup(
     name = "test_resources",
     # overly broad glob, could be refined later, but
@@ -202,7 +224,7 @@ filegroup(
         ["**/*"],
         exclude = [
             test + "." + ext
-            for test in TESTS
+            for test in ALL_TESTS
             for ext in [
                 "tcl",
                 "py",
@@ -230,34 +252,76 @@ BIG_TESTS = [
     "repair_fanout6",
 ]
 
-# TODO: Enable once difference between bazel and ctest is resolved.
-MANUAL_FOR_BAZEL_TESTS = [
-    "repair_tie11_hier",
-    "repair_tie12_hier",
-    "pinswap_flat",
-    "pinswap_hier",
-    "repair_fanout1_hier",
-    "repair_fanout2_hier",
-    "repair_fanout3_hier",
-    "repair_setup4_flat",
-    "repair_setup4_hier",
-    "split_load_hier",
-]
-
 [
     regression_test(
         name = test_name,
         size = "large" if test_name in BIG_TESTS else "medium",
+        check_passfail = True if test_name in PASSFAIL_TESTS else False,
         data = [":test_resources"] + extra_deps.get(test_name, []),
-        tags = ["manual"] if test_name in MANUAL_FOR_BAZEL_TESTS else [],
     )
-    for test_name in TESTS
+    for test_name in ALL_TESTS
 ]
 
 cc_test(
     name = "rsz_buffer_removal",
     srcs = [
         "cpp/TestBufferRemoval.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "TestBufRem1",
+    srcs = [
+        "cpp/TestBufferRemoval.cc",
+    ],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ],
+    deps = [
+        "//src/ant",
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/dpl",
+        "//src/est",
+        "//src/grt",
+        "//src/odb",
+        "//src/rsz",
+        "//src/sta:opensta_lib",
+        "//src/stt",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "rsz_buffer_removal2",
+    srcs = [
+        "cpp/TestBufferRemoval2.cc",
     ],
     data = [
         "Nangate45/Nangate45.lef",
@@ -282,7 +346,7 @@ cc_test(
 )
 
 cc_test(
-    name = "rsz_buffer_removal2",
+    name = "TestBufferRemoval2",
     srcs = [
         "cpp/TestBufferRemoval2.cc",
     ],
@@ -328,6 +392,25 @@ cc_test(
 )
 
 cc_test(
+    name = "TestBufferRemoval3",
+    srcs = ["cpp/TestBufferRemoval3.cc"],
+    data = [
+        "Nangate45/Nangate45.lef",
+        "Nangate45/Nangate45_typ.lib",
+    ] + glob(["cpp/TestBufferRemoval3*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "rsz_insert_buffer",
     srcs = ["cpp/TestInsertBuffer.cpp"],
     data = glob(["cpp/TestInsertBuffer*.v"]),
@@ -342,4 +425,68 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+cc_test(
+    name = "TestInsertBuffer",
+    srcs = ["cpp/TestInsertBuffer.cpp"],
+    data = glob(["cpp/TestInsertBuffer*.v"]),
+    deps = [
+        "//src/dbSta",
+        "//src/dbSta:dbNetwork",
+        "//src/odb",
+        "//src/sta:opensta_lib",
+        "//src/tst",
+        "//src/tst:integrated_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+py_library(
+    name = "helpers",
+    srcs = ["helpers.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_library(
+    name = "rsz_aux",
+    srcs = ["rsz_aux.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_test(
+    name = "gcd_resize_py",
+    srcs = ["gcd_resize.py"],
+    data = [":test_resources"],
+    main = "gcd_resize.py",
+    deps = [
+        ":helpers",
+        ":rsz_aux",
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_test(
+    name = "rsz_man_tcl_check",
+    srcs = ["rsz_man_tcl_check.py"],
+    data = ["//src/rsz:doc_files"],
+    tags = ["doc_check"],
+    deps = ["//docs/src/scripts:extract_utils"],
+)
+
+doc_check_test(
+    name = "rsz_readme_msgs_check",
+    data = [
+        "//src/rsz:doc_files",
+        "//src/rsz:messages_txt",
+    ],
+    visibility = ["//visibility:public"],
 )

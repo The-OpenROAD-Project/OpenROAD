@@ -16,6 +16,7 @@
 #include "db/gcObj/gcShape.h"
 #include "db/obj/frBlockObject.h"
 #include "db/obj/frMarker.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frLayer.h"
 #include "db/tech/frTechObject.h"
 #include "dr/FlexDR.h"
@@ -163,6 +164,7 @@ class FlexGCWorker::Impl
   FlexGCWorkerRegionQuery& getWorkerRegionQuery() { return rq_; }
 
   void modifyMarkers();
+  void normalizeMarkerOrder();
   // init
   gcNet* getNet(frBlockObject* obj);
   gcNet* getNet(frNet* net);

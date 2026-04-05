@@ -75,6 +75,8 @@ void Opendp::improvePlacement(const int seed,
   // A manager to track cells.
   DetailedMgr mgr(arch_.get(), network_.get(), grid_.get(), drc_engine_.get());
   mgr.setLogger(logger_);
+  mgr.setGlobalSwapParams(global_swap_params_);
+  mgr.setExtraDplEnabled(extra_dpl_enabled_);
   // Various settings.
   mgr.setSeed(seed);
   mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
@@ -113,12 +115,18 @@ void Opendp::improvePlacement(const int seed,
     dtParams.script += "disallow_one_site_gaps;";
   }
 
+  if (debug_observer_) {
+    logger_->report("Pause before improve placement.");
+    debug_observer_->redrawAndPause();
+  }
+
   // Run the script.
   Detailed dt(dtParams);
   dt.improve(mgr);
 
   if (debug_observer_) {
-    debug_observer_->endPlacement();
+    logger_->report("Pause after improve placement.");
+    debug_observer_->redrawAndPause();
   }
 
   // Write solution back.

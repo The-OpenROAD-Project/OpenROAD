@@ -23,7 +23,7 @@ using utl::RCX;
 
 namespace rcx {
 
-void extMain::init(odb::dbDatabase* db, Logger* logger)
+void extMain::init(odb::dbDatabase* db, utl::Logger* logger)
 {
   _db = db;
   _block = nullptr;
@@ -31,7 +31,7 @@ void extMain::init(odb::dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
-void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, Logger* logger)
+void extMain::addDummyCorners(dbBlock* block, uint32_t cnt, utl::Logger* logger)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == nullptr) {
@@ -73,13 +73,13 @@ void extMain::adjustRC(double resFactor, double ccFactor, double gndcFactor)
   }
   double res_factor = resFactor / _resFactor;
   _resFactor = resFactor;
-  _resModify = resFactor == 1.0 ? false : true;
+  _resModify = resFactor != 1.0;
   double cc_factor = ccFactor / _ccFactor;
   _ccFactor = ccFactor;
-  _ccModify = ccFactor == 1.0 ? false : true;
+  _ccModify = ccFactor != 1.0;
   double gndc_factor = gndcFactor / _gndcFactor;
   _gndcFactor = gndcFactor;
-  _gndcModify = gndcFactor == 1.0 ? false : true;
+  _gndcModify = gndcFactor != 1.0;
   _block->adjustRC(res_factor, cc_factor, gndc_factor);
 }
 
@@ -446,7 +446,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
 {
   double cap = frCap + ccCap - deltaFr;
 
-  double tot = rseg->getCapacitance(modelIndex);
+  double tot = rseg->getGroundCapacitance(modelIndex);
   tot += cap;
 
   rseg->setCapacitance(tot, modelIndex);
@@ -511,7 +511,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
     }
 
     extDbIndex = getProcessCornerDbIndex(modelIndex);
-    tot = rseg->getCapacitance(extDbIndex);
+    tot = rseg->getGroundCapacitance(extDbIndex);
     tot += cap;
 
     rseg->setCapacitance(tot, extDbIndex);
@@ -520,7 +520,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
       continue;
     }
     getScaledGndC(sci, cap);
-    tot = rseg->getCapacitance(scDbIdx);
+    tot = rseg->getGroundCapacitance(scDbIdx);
     tot += cap;
     rseg->setCapacitance(tot, scDbIdx);
   }

@@ -9,7 +9,9 @@
 #include "dbChip.h"
 #include "dbChipConn.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
+// User Code Begin Includes
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 

@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include <memory>
+
 #include "ScanArchitect.hh"
+#include "ScanArchitectConfig.hh"
 #include "utl/Logger.h"
 
 namespace dft {

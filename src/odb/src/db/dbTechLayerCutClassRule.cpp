@@ -8,10 +8,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbHashTable.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
 // User Code Begin Includes
@@ -24,6 +24,7 @@ template class dbTable<_dbTechLayerCutClassRule>;
 bool _dbTechLayerCutClassRule::operator==(
     const _dbTechLayerCutClassRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.length_valid != rhs.flags_.length_valid) {
     return false;
   }
@@ -47,6 +48,7 @@ bool _dbTechLayerCutClassRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerCutClassRule::operator<(

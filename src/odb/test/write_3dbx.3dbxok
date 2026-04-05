@@ -6,6 +6,8 @@ Header:
     - TopDesign.3dbv
 Design:
   name: TopDesign
+  external:
+    verilog_file: TopDesign.v
 ChipletInst:
   soc_inst_duplicate:
     reference: SoC
@@ -22,10 +24,10 @@ Stack:
     orient: R0
 Connection:
   soc_to_virtual:
-    top: soc_inst_duplicate.regions.r1
+    top: soc_inst.regions.back_reg
     bot: "~"
     thickness: 0
   soc_to_soc:
-    top: soc_inst_duplicate.regions.r1
-    bot: soc_inst.regions.r1
-    thickness: 2
+    top: soc_inst_duplicate.regions.front_reg
+    bot: soc_inst.regions.front_reg
+    thickness: 0

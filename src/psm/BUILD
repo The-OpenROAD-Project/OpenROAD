@@ -5,6 +5,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//bazel:python_wrap_cc.bzl", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
+load("//test:regression.bzl", "messages_txt")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -54,7 +55,7 @@ cc_library(
         "@boost.polygon",
         "@boost.stacktrace",
         "@eigen",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 
@@ -72,11 +73,13 @@ tcl_wrap_cc(
     srcs = [
         "src/pdnsim.i",
         "//:error_swig",
+        "//src/sta:sta_swig_files",
     ],
     module = "psm",
     namespace_prefix = "psm",
     root_swig_src = "src/pdnsim.i",
     swig_includes = [
+        "../sta",
         "src/psm/src",
     ],
     deps = [
@@ -99,4 +102,17 @@ python_wrap_cc(
     deps = [
         "//src/odb:swig-py",
     ],
+)
+
+filegroup(
+    name = "doc_files",
+    srcs = [
+        "README.md",
+        "src/pdnsim.tcl",
+    ],
+    visibility = ["//src/psm/test:__pkg__"],
+)
+
+messages_txt(
+    visibility = ["//src/psm/test:__pkg__"],
 )

@@ -3,6 +3,8 @@
 
 #include "cgt/ClockGating.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -29,18 +31,24 @@
 #include "cut/logic_extractor.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "map/mio/mio.h"
+#include "misc/util/abc_global.h"
+#include "misc/vec/vecInt.h"
+#include "misc/vec/vecPtr.h"
 #include "odb/db.h"
 #include "sta/Bfs.hh"
 #include "sta/ClkNetwork.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Graph.hh"
+#include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PortDirection.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/Sequential.hh"
-#include "sta/VerilogReader.hh"
+#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 
@@ -183,14 +191,14 @@ static sta::Pin* getRegOutPin(sta::dbNetwork* const network,
   if (!cell) {
     return nullptr;
   }
-  for (auto seq : cell->sequentials()) {
-    if (seq->isRegister() && seq->output()) {
+  for (auto& seq : cell->sequentials()) {
+    if (seq.isRegister() && seq.output()) {
       sta::LibertyCellPortIterator port_iter(cell);
       while (port_iter.hasNext()) {
         auto port = port_iter.next();
         if (port->direction()->isAnyOutput()) {
-          assert(port->function()->op() == sta::FuncExpr::op_port);
-          assert(port->function()->port() == seq->output());
+          assert(port->function()->op() == sta::FuncExpr::Op::port);
+          assert(port->function()->port() == seq.output());
           return network->findPin(inst, port);
         }
       }
@@ -207,9 +215,9 @@ static sta::FuncExpr* getRegDataFunction(sta::dbNetwork* const network,
   if (!cell) {
     return nullptr;
   }
-  for (auto seq : cell->sequentials()) {
-    if (seq->isRegister() && seq->data()) {
-      return seq->data();
+  for (auto& seq : cell->sequentials()) {
+    if (seq.isRegister() && seq.data()) {
+      return seq.data();
     }
   }
   return nullptr;
@@ -223,10 +231,10 @@ static sta::Pin* getClockPin(sta::dbNetwork* const network,
   if (!cell) {
     return nullptr;
   }
-  for (auto seq : cell->sequentials()) {
-    if (seq->isRegister() && seq->clock()) {
-      auto clock_expr = seq->clock();
-      assert(clock_expr->op() == sta::FuncExpr::op_port);
+  for (auto& seq : cell->sequentials()) {
+    if (seq.isRegister() && seq.clock()) {
+      auto clock_expr = seq.clock();
+      assert(clock_expr->op() == sta::FuncExpr::Op::port);
       return network->findPin(inst, clock_expr->port());
     }
   }
@@ -250,14 +258,26 @@ void ClockGating::Impl::setDumpDir(const char* const dir)
 static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
                                              sta::Instance* const instance)
 {
-  class SearchPred final : public sta::SearchPredNonReg2
+  class SearchPred final : public sta::SearchPred1
   {
    public:
-    SearchPred(sta::dbSta* const sta) : SearchPredNonReg2(sta) {}
-    bool searchFrom(const sta::Vertex* const from_vertex) final { return true; }
-    bool searchTo(const sta::Vertex* const to_vertex) final
+    SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
+    bool searchFrom(const sta::Vertex* const from_vertex,
+                    const sta::Mode* mode) const final
+    {
+      return true;
+    }
+    bool searchTo(const sta::Vertex* const to_vertex,
+                  const sta::Mode* mode) const final
     {
       return visited_.find(to_vertex) == visited_.end();
+    }
+    bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override
+    {
+      const sta::TimingRole* role = edge->role();
+      return sta::SearchPred1::searchThru(edge, mode)
+             && role->genericRole() != sta::TimingRole::regClkToQ()
+             && role->genericRole() != sta::TimingRole::latchDtoQ();
     }
 
     std::unordered_set<const sta::Vertex*> visited_;
@@ -296,15 +316,27 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
 static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
                                            std::vector<sta::Net*>& nets)
 {
-  class SearchPred final : public sta::SearchPredNonReg2
+  class SearchPred final : public sta::SearchPred1
   {
    public:
-    SearchPred(sta::dbSta* const sta) : SearchPredNonReg2(sta) {}
-    bool searchFrom(const sta::Vertex* const from_vertex) final
+    SearchPred(sta::dbSta* const sta) : sta::SearchPred1(sta) {}
+    bool searchFrom(const sta::Vertex* const from_vertex,
+                    const sta::Mode* mode) const final
     {
       return visited_.find(from_vertex) == visited_.end();
     }
-    bool searchTo(const sta::Vertex* const to_vertex) final { return true; }
+    bool searchTo(const sta::Vertex* const to_vertex,
+                  const sta::Mode* mode) const final
+    {
+      return true;
+    }
+    bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override
+    {
+      const sta::TimingRole* role = edge->role();
+      return sta::SearchPred1::searchThru(edge, mode)
+             && role->genericRole() != sta::TimingRole::regClkToQ()
+             && role->genericRole() != sta::TimingRole::latchDtoQ();
+    }
 
     std::unordered_set<const sta::Vertex*> visited_;
   };
@@ -419,7 +451,7 @@ void ClockGating::Impl::run()
       int num_regs
           = std::count_if(cell->sequentials().begin(),
                           cell->sequentials().end(),
-                          [](const auto* seq) { return seq->isRegister(); });
+                          [](const auto& seq) { return seq.isRegister(); });
       if (num_regs == 1) {
         instances.emplace_back(instance);
       } else if (num_regs > 1) {
@@ -835,8 +867,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
       continue;
     }
     auto& obj = port_to_obj[port];
-    obj = abc::Abc_NtkFindNet(abc_network,
-                              const_cast<char*>(network->name(net)));
+    std::string net_name = network->name(net);
+    obj = abc::Abc_NtkFindNet(abc_network, net_name.data());
   }
   delete pin_iter;
   std::vector<sta::FuncExpr*> expr_stack = {getRegDataFunction(network, inst)};
@@ -847,17 +879,17 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
     eval_stack.push_back(expr);
     expr_stack.pop_back();
     switch (expr->op()) {
-      case sta::FuncExpr::op_port:
-      case sta::FuncExpr::op_zero:
-      case sta::FuncExpr::op_one:
+      case sta::FuncExpr::Op::port:
+      case sta::FuncExpr::Op::zero:
+      case sta::FuncExpr::Op::one:
         break;
-      case sta::FuncExpr::op_and:
-      case sta::FuncExpr::op_or:
-      case sta::FuncExpr::op_xor:
+      case sta::FuncExpr::Op::and_:
+      case sta::FuncExpr::Op::or_:
+      case sta::FuncExpr::Op::xor_:
         expr_stack.push_back(expr->right());
         expr_stack.push_back(expr->left());
         break;
-      case sta::FuncExpr::op_not:
+      case sta::FuncExpr::Op::not_:
         expr_stack.push_back(expr->left());
         break;
     }
@@ -867,7 +899,7 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
     auto expr = eval_stack.back();
     eval_stack.pop_back();
     switch (expr->op()) {
-      case sta::FuncExpr::op_port: {
+      case sta::FuncExpr::Op::port: {
         auto port = expr->port();
         assert(port->direction()->isAnyInput());
         auto& obj = port_to_obj[port];
@@ -881,28 +913,32 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
           abc::Abc_ObjAddFanin(obj, pi);
         }
         obj_stack.emplace_back(obj);
-      } break;
-      case sta::FuncExpr::op_zero: {
+        break;
+      }
+      case sta::FuncExpr::Op::zero: {
         abc::Abc_Obj_t* zero_node = abc::Abc_NtkCreateNodeConst0(abc_network);
         abc::Abc_Obj_t* zero_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(zero_net, zero_node);
         obj_stack.emplace_back(zero_net);
+        break;
       }
-      case sta::FuncExpr::op_one: {
+      case sta::FuncExpr::Op::one: {
         abc::Abc_Obj_t* one_node = abc::Abc_NtkCreateNodeConst1(abc_network);
         abc::Abc_Obj_t* one_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(one_net, one_node);
         obj_stack.emplace_back(one_net);
-      } break;
-      case sta::FuncExpr::op_not: {
+        break;
+      }
+      case sta::FuncExpr::Op::not_: {
         auto obj = obj_stack.back();
         obj_stack.pop_back();
         abc::Abc_Obj_t* inv_node = abc::Abc_NtkCreateNodeInv(abc_network, obj);
         abc::Abc_Obj_t* inv_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(inv_net, inv_node);
         obj_stack.emplace_back(inv_net);
-      } break;
-      case sta::FuncExpr::op_and: {
+        break;
+      }
+      case sta::FuncExpr::Op::and_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
         obj_stack.pop_back();
@@ -913,8 +949,9 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* and_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(and_net, and_node);
         obj_stack.emplace_back(and_net);
-      } break;
-      case sta::FuncExpr::op_or: {
+        break;
+      }
+      case sta::FuncExpr::Op::or_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
         obj_stack.pop_back();
@@ -924,8 +961,9 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* or_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(or_net, or_node);
         obj_stack.emplace_back(or_net);
-      } break;
-      case sta::FuncExpr::op_xor: {
+        break;
+      }
+      case sta::FuncExpr::Op::xor_: {
         abc::Vec_PtrClear(fanins);
         abc::Vec_PtrPush(fanins, obj_stack.back());
         obj_stack.pop_back();
@@ -936,7 +974,8 @@ static abc::Abc_Obj_t* regDataFunctionToAbc(sta::dbNetwork* const network,
         abc::Abc_Obj_t* xor_net = abc::Abc_NtkCreateNet(abc_network);
         abc::Abc_ObjAddFanin(xor_net, xor_node);
         obj_stack.emplace_back(xor_net);
-      } break;
+        break;
+      }
     }
   }
   assert(obj_stack.size() == 1);
@@ -980,14 +1019,15 @@ utl::UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::makeTestNetwork(
   auto out_pin = getRegOutPin(network, instance);
   assert(out_pin);
   auto out_pin_name = network->name(out_pin);
-  auto out_net_name = network->name(network->net(out_pin));
+  std::string out_net_name = network->name(network->net(out_pin));
   for (const auto& output_name : {out_pin_name, out_net_name}) {
     abc::Abc_Obj_t* curr_state = abc::Abc_NtkFindNet(
-        abc_network.get(), const_cast<char*>(output_name));
+        abc_network.get(), const_cast<char*>(output_name.c_str()));
     if (!curr_state) {
       abc::Abc_Obj_t* pi = abc::Abc_NtkCreatePi(abc_network.get());
       abc::Abc_Obj_t* net = abc::Abc_NtkCreateNet(abc_network.get());
-      abc::Abc_ObjAssignName(net, const_cast<char*>(output_name), nullptr);
+      abc::Abc_ObjAssignName(
+          net, const_cast<char*>(output_name.c_str()), nullptr);
       abc::Abc_ObjAddFanin(net, pi);
       curr_state = net;
     } else {
@@ -1255,11 +1295,12 @@ void ClockGating::Impl::insertClockGate(
   auto clk_pin = getClockPin(network, instances[0]);
   assert(clk_pin);
   auto clk_net = network->net(clk_pin);
-  auto clocks = network->clkNetwork()->clocks(clk_pin);
+  auto clk_network = sta_->cmdMode()->clkNetwork();
+  auto clocks = clk_network->clocks(clk_pin);
   for (int i = 1; i < instances.size(); i++) {
     auto clk_pin = getClockPin(network, instances[i]);
     assert(clk_pin);
-    if (*sta_->clkNetwork()->clocks(clk_pin) != *clocks) {
+    if (*clk_network->clocks(clk_pin) != *clocks) {
       logger_->error(
           utl::CGT,
           12,
@@ -1350,7 +1391,7 @@ UniquePtrWithDeleter<abc::Abc_Ntk_t> ClockGating::Impl::exportToAbc(
       = cut.BuildMappedAbcNetwork(*abc_library_, network, logger_);
 
   auto top = network->topInstance();
-  abc::Abc_NtkSetName(abc_network.get(), strdup(network->name(top)));
+  abc::Abc_NtkSetName(abc_network.get(), strdup(network->name(top).c_str()));
 
   auto library = static_cast<abc::Mio_Library_t*>(abc_network->pManFunc);
   // Install library for NtkMap

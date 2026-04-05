@@ -25,7 +25,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <ranges>
 #include <set>
 #include <string>
@@ -33,22 +32,28 @@
 #include <variant>
 #include <vector>
 
+#include "absl/synchronization/mutex.h"
 #include "dbDescriptors.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "dropdownCheckboxes.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbShape.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"
-#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/PatternMatch.hh"
+#include "sta/Scene.hh"
 #include "sta/SdcClass.hh"
+#include "sta/Transition.hh"
 #include "sta/Units.hh"
+#include "staGuiInterface.h"
 
-Q_DECLARE_METATYPE(sta::Corner*);
+Q_DECLARE_METATYPE(sta::Scene*);
 
 namespace gui {
 
@@ -65,9 +70,11 @@ const Painter::Color TimingPathRenderer::kClockColor
 const Painter::Color TimingPathRenderer::kCaptureClockColor
     = Painter::Color(gui::Painter::kGreen, 100);
 
-static QString convertDelay(float time, sta::Unit* convert)
+static QString convertDelay(float time,
+                            sta::Unit* convert,
+                            const sta::StaState* sta)
 {
-  if (sta::delayInf(time)) {
+  if (sta::delayInf(time, sta)) {
     QString infinity = "∞";
 
     if (time < 0) {
@@ -75,7 +82,7 @@ static QString convertDelay(float time, sta::Unit* convert)
     }
     return infinity;
   }
-  return convert->asString(time);
+  return QString::fromStdString(convert->asString(time));
 }
 
 /////////
@@ -128,15 +135,19 @@ QVariant TimingPathsModel::data(const QModelIndex& index, int role) const
       case kClock:
         return QString::fromStdString(timing_path->getEndClock());
       case kRequired:
-        return convertDelay(timing_path->getPathRequiredTime(), time_units);
+        return convertDelay(
+            timing_path->getPathRequiredTime(), time_units, sta_->getSTA());
       case kArrival:
-        return convertDelay(timing_path->getPathArrivalTime(), time_units);
+        return convertDelay(
+            timing_path->getPathArrivalTime(), time_units, sta_->getSTA());
       case kSlack:
-        return convertDelay(timing_path->getSlack(), time_units);
+        return convertDelay(
+            timing_path->getSlack(), time_units, sta_->getSTA());
       case kSkew:
-        return convertDelay(timing_path->getSkew(), time_units);
+        return convertDelay(timing_path->getSkew(), time_units, sta_->getSTA());
       case kLogicDelay:
-        return convertDelay(timing_path->getLogicDelay(), time_units);
+        return convertDelay(
+            timing_path->getLogicDelay(), time_units, sta_->getSTA());
       case kLogicDepth:
         return timing_path->getLogicDepth();
       case kFanout:
@@ -364,6 +375,44 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
       case kRiseFall:
         return Qt::AlignCenter;
     }
+  } else if (role == Qt::ToolTipRole) {
+    if (col_index == kPin && index.row() != kClockSummaryRow) {
+      const auto* node = getNodeAt(index);
+      odb::dbInst* inst = node->getInstance();
+      if (inst != nullptr) {
+        // Show clock insertion latency tooltip on any pin of a macro
+        // whose liberty model defines max/min_clock_tree_path. This
+        // represents the delay through the macro's internal clock tree
+        // to its sequential elements — it can exceed the data path
+        // delay through the macro, which is normal.
+        auto* db_network = sta_->getDbNetwork();
+        for (odb::dbITerm* iterm : inst->getITerms()) {
+          const sta::Pin* iterm_pin = db_network->dbToSta(iterm);
+          if (iterm_pin == nullptr) {
+            continue;
+          }
+          sta::LibertyPort* lib_port = db_network->libertyPort(iterm_pin);
+          if (lib_port == nullptr || !lib_port->isClock()) {
+            continue;
+          }
+          const auto time_units = sta_->units()->timeUnit();
+          const sta::MinMax* min_max
+              = is_capture_ ? sta::MinMax::min() : sta::MinMax::max();
+          float clk_tree_delay
+              = lib_port->clkTreeDelay(0.0, sta::RiseFall::rise(), min_max);
+          if (clk_tree_delay != 0.0f) {
+            const char* path_type
+                = is_capture_ ? "min_clock_tree_path" : "max_clock_tree_path";
+            return QString(
+                       "Macro %1 liberty %2 (internal clock tree "
+                       "delay to sequential elements): %3")
+                .arg(inst->getMaster()->getName().c_str())
+                .arg(path_type)
+                .arg(convertDelay(clk_tree_delay, time_units, sta_));
+          }
+        }
+      }
+    }
   } else if (role == Qt::DisplayRole) {
     const auto time_units = sta_->units()->timeUnit();
 
@@ -376,10 +425,11 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case kPin:
           return "clock network delay";
         case kTime:
-          return convertDelay(node->getArrival(), time_units);
+          return convertDelay(node->getArrival(), time_units, sta_);
         case kDelay:
           return convertDelay(node->getArrival() - nodes_->at(0)->getArrival(),
-                              time_units);
+                              time_units,
+                              sta_);
         default:
           return QVariant();
       }
@@ -392,17 +442,17 @@ QVariant TimingPathDetailModel::data(const QModelIndex& index, int role) const
         case kRiseFall:
           return node->isRisingEdge() ? kUpArrow : kDownArrow;
         case kTime:
-          return convertDelay(node->getArrival(), time_units);
+          return convertDelay(node->getArrival(), time_units, sta_);
         case kDelay:
-          return convertDelay(node->getDelay(), time_units);
+          return convertDelay(node->getDelay(), time_units, sta_);
         case kSlew:
-          return convertDelay(node->getSlew(), time_units);
+          return convertDelay(node->getSlew(), time_units, sta_);
         case kLoad: {
           if (node->getLoad() == 0) {
             return "";
           }
           const auto cap_units = sta_->units()->capacitanceUnit();
-          return cap_units->asString(node->getLoad());
+          return QString::fromStdString(cap_units->asString(node->getLoad()));
         }
         case kFanout: {
           if (node->getFanout() == 0) {
@@ -485,12 +535,13 @@ TimingPathRenderer::TimingPathRenderer() : path_(nullptr)
   addDisplayControl(kDataPathLabel, true);
   addDisplayControl(kLaunchClockLabel, true);
   addDisplayControl(kCaptureClockLabel, true);
+  addDisplayControl(kLegendLabel, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
 {
   {
-    std::lock_guard guard(rendering_);
+    absl::MutexLock guard(&rendering_);
     path_ = path;
     highlight_stage_.clear();
   }
@@ -499,7 +550,7 @@ void TimingPathRenderer::highlight(TimingPath* path)
 
 void TimingPathRenderer::clearHighlightNodes()
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   highlight_stage_.clear();
 }
 
@@ -524,7 +575,7 @@ void TimingPathRenderer::highlightNode(const TimingPathNode* node)
     }
 
     if (net != nullptr || inst != nullptr) {
-      std::lock_guard guard(rendering_);
+      absl::MutexLock guard(&rendering_);
       highlight_stage_.push_back(
           std::make_unique<HighlightStage>(HighlightStage{net, inst, sink}));
     }
@@ -579,7 +630,7 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
 
 void TimingPathRenderer::drawObjects(gui::Painter& painter)
 {
-  std::lock_guard guard(rendering_);
+  absl::MutexLock guard(&rendering_);
   if (path_ == nullptr) {
     return;
   }
@@ -607,6 +658,16 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
                 checkDisplayControl(kDataPathLabel));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
+
+  if (checkDisplayControl(kLegendLabel)) {
+    DiscreteLegend legend;
+    legend.addLegendKey(kCaptureClockColor, "Capture");
+    legend.addLegendKey(kClockColor, "Launch");
+    legend.addLegendKey(kSignalColor, "Signal");
+    legend.addLegendKey(kPathInstColor, "Inst");
+    legend.addLegendKey(kTermColor, "Term");
+    legend.draw(painter);
+  }
 }
 
 void TimingPathRenderer::highlightStage(gui::Painter& painter,
@@ -702,7 +763,7 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   const int path_count = 1000;
 
   STAGuiInterface stagui(sta_);
-  stagui.setCorner(sta_->cmdCorner());
+  stagui.setScene(sta_->cmdScene());
   stagui.setUseMax(true);
   stagui.setIncludeUnconstrainedPaths(true);
   stagui.setMaxPathCount(path_count);
@@ -724,7 +785,7 @@ void TimingConeRenderer::setPin(const sta::Pin* pin, bool fanin, bool fanout)
   max_timing_ = std::numeric_limits<float>::lowest();
   for (const auto& [level, pin_list] : map_) {
     for (const auto& pin : pin_list) {
-      if (sta::delayInf(pin->getPathSlack()) || !pin->hasValues()) {
+      if (sta::delayInf(pin->getPathSlack(), sta_) || !pin->hasValues()) {
         continue;
       }
 
@@ -982,7 +1043,7 @@ void PinSetWidget::updatePins()
   if (!pins_.empty()) {
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
-      auto* item = new QListWidgetItem(network->name(pin));
+      auto* item = new QListWidgetItem(network->name(pin).c_str());
       item->setData(Qt::UserRole, QVariant::fromValue((void*) pin));
       box_->addItem(item);
     }
@@ -1124,7 +1185,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
       sta_(std::make_unique<STAGuiInterface>()),
       layout_(new QFormLayout),
       path_count_spin_box_(new QSpinBox(this)),
-      corner_box_(new QComboBox(this)),
+      scene_box_(new QComboBox(this)),
       clock_box_(new DropdownCheckboxes(QString("Select Clocks"),
                                         QString("All Clocks"),
                                         this)),
@@ -1142,7 +1203,7 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
 
   layout_->addRow("Paths:", path_count_spin_box_);
   layout_->addRow("Expand clock:", expand_clk_);
-  layout_->addRow("Corner:", corner_box_);
+  layout_->addRow("Scene:", scene_box_);
   layout_->addRow("Clock filter:", clock_box_);
 
   setupPinRow("From:", from_);
@@ -1167,14 +1228,14 @@ TimingControlsDialog::TimingControlsDialog(QWidget* parent)
                                 == Qt::Checked);
   });
 
-  connect(corner_box_,
+  connect(scene_box_,
           QOverload<int>::of(&QComboBox::currentIndexChanged),
           [this](int index) {
-            if (index < 0 || index >= corner_box_->count()) {
+            if (index < 0 || index >= scene_box_->count()) {
               return;
             }
-            auto* corner = corner_box_->itemData(index).value<sta::Corner*>();
-            sta_->setCorner(corner);
+            auto* scene = scene_box_->itemData(index).value<sta::Scene*>();
+            sta_->setScene(scene);
           });
 
   connect(expand_clk_,
@@ -1242,29 +1303,29 @@ void TimingControlsDialog::populate()
 {
   setPinSelections();
 
-  auto* current_corner = sta_->getCorner();
-  corner_box_->clear();
+  auto* current_scene = sta_->getScene();
+  scene_box_->clear();
   int selection = 0;
-  for (auto* corner : sta_->getSTA()->corners()->corners()) {
-    if (corner == current_corner) {
-      selection = corner_box_->count();
+  for (auto* scene : sta_->getSTA()->scenes()) {
+    if (scene == current_scene) {
+      selection = scene_box_->count();
     }
-    corner_box_->addItem(corner->name(), QVariant::fromValue(corner));
+    scene_box_->addItem(scene->name().c_str(), QVariant::fromValue(scene));
   }
 
-  if (corner_box_->count() > 1) {
+  if (scene_box_->count() > 1) {
     selection += 1;
-    corner_box_->insertItem(
-        0, "All", QVariant::fromValue(static_cast<sta::Corner*>(nullptr)));
-    if (current_corner == nullptr) {
+    scene_box_->insertItem(
+        0, "All", QVariant::fromValue(static_cast<sta::Scene*>(nullptr)));
+    if (current_scene == nullptr) {
       selection = 0;
     }
   }
 
-  corner_box_->setCurrentIndex(selection);
+  scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
-    QString clk_name = clk->name();
+    QString clk_name = clk->name().c_str();
 
     if (qstring_to_clk_.count(clk_name) != 1) {
       qstring_to_clk_[clk_name] = clk;

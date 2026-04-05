@@ -111,8 +111,7 @@ class NesterovPlace
                       float route_snapshot_WlCoefX,
                       float route_snapshot_WlCoefY,
                       int& routability_driven_count,
-                      float& curA,
-                      int64_t& end_routability_area);
+                      float& curA);
   bool isConverged(int gpl_iter_count, int routability_gpl_iter_count);
   std::string getReportsDir() const;
   void cleanReportsDirs(const std::string& timing_driven_dir,
@@ -120,7 +119,6 @@ class NesterovPlace
   void doBackTracking(float coeff);
   void reportResults(int nesterov_iter,
                      int64_t original_area,
-                     int64_t end_routability_area,
                      int64_t td_accumulated_delta_area);
 
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -185,7 +183,6 @@ class nesterovDbCbk : public odb::dbBlockCallBackObj
   nesterovDbCbk(NesterovPlace* nesterov_place_);
 
   void inDbInstCreate(odb::dbInst*) override;
-  void inDbInstCreate(odb::dbInst*, odb::dbRegion*) override;
   void inDbInstDestroy(odb::dbInst*) override;
 
   void inDbITermCreate(odb::dbITerm*) override;

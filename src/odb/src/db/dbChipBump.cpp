@@ -5,22 +5,24 @@
 #include "dbChipBump.h"
 
 #include "dbChip.h"
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbInst.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 // User Code Begin Includes
 #include "dbBTerm.h"
 #include "dbBlock.h"
 #include "dbChipRegion.h"
 #include "dbNet.h"
+#include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
 template class dbTable<_dbChipBump>;
 
 bool _dbChipBump::operator==(const _dbChipBump& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (inst_ != rhs.inst_) {
     return false;
   }
@@ -38,6 +40,7 @@ bool _dbChipBump::operator==(const _dbChipBump& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbChipBump::operator<(const _dbChipBump& rhs) const
@@ -137,6 +140,9 @@ void dbChipBump::setBTerm(dbBTerm* bterm)
 {
   _dbChipBump* obj = (_dbChipBump*) this;
   obj->bterm_ = bterm->getId();
+  _dbBTerm* _bterm = (_dbBTerm*) bterm;
+  _bterm->chip_region_ = obj->chip_region_;
+  _bterm->chip_bump_ = obj->getOID();
 }
 
 dbChipBump* dbChipBump::create(dbChipRegion* chip_region, dbInst* inst)

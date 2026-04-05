@@ -26,7 +26,9 @@
 #include <cstddef>
 #include <vector>
 
+#include "objective/detailed_objective.h"
 #include "optimization/detailed_orient.h"
+#include "util/journal.h"
 #include "utl/Logger.h"
 
 namespace dpl {

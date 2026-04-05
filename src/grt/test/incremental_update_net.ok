@@ -1,0 +1,40 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: top
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 4 components and 16 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 8 connections.
+[INFO ODB-0133]     Created 5 nets and 8 connections.
+[WARNING GRT-0300] Timing is not available, setting critical nets percentage to 0.
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal8
+[INFO GRT-0022] Global adjustment: 50%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 2
+Design statistics
+Nets:                5
+Special nets:        0
+Routing layers:      8
+Stage 1: Pattern routing.
+Nets with overflow: 0.
+Routing statistics
+Wire length:           709
+Total via count:       28
+Total wire overflow:   0
+Min resource:          1.5
+Bottleneck:            (6, 0, 0)
+[INFO GRT-0018] Total wirelength: 319 um
+[INFO GRT-0014] Routed nets: 5
+Summary 1 / 1 (100% pass)
+pass

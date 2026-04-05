@@ -27,11 +27,13 @@ or_integration_tests(
     core_grid_auto_domain
     core_grid_auto_domain_multiple_nets
     core_grid_bad_metal_specs
+    core_grid_bad_metal_specs_no_grid
     core_grid_check_connect_layers
     core_grid_check_connect_layers_at_setup
     core_grid_cut_pitch
     core_grid_dual_followpins
     core_grid_dual_followpins_error
+    core_grid_existing_ports
     core_grid_extend_to_boundary
     core_grid_extend_to_boundary_no_pins
     core_grid_failed_via_report
@@ -77,6 +79,7 @@ or_integration_tests(
     macros_cells
     macros_cells_dont_touch
     macros_cells_extend_boundary
+    macros_cells_halo_blocking
     macros_cells_no_grid
     macros_cells_not_fixed
     macros_cells_orient
@@ -132,6 +135,3 @@ or_integration_tests(
     widthtable
 )
 
-# Skipped
-#pdn_man_tcl_check
-#pdn_readme_msgs_check

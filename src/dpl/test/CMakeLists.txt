@@ -32,6 +32,8 @@ or_integration_tests(
     fillers9
     fillers9_verbose
     fillers10
+    fillers11
+    fillers12
     fragmented_row01
     fragmented_row02
     fragmented_row03
@@ -62,6 +64,7 @@ or_integration_tests(
     regions2
     regions3
     report_failures
+    row_boundary_filter
     simple01
     simple02
     simple03
@@ -77,6 +80,7 @@ or_integration_tests(
     blockage1-opt
     gcd-opt
     gcd_no_one_site_gaps-opt
+    gcd_no_one_site_sanity
     ibex-opt
     multi_height1-opt
     edge_spacing-opt
@@ -84,9 +88,6 @@ or_integration_tests(
     regions2-opt
 )
 
-# Skipped
-#dpl_man_tcl_check
-#dpl_readme_msgs_check
 add_executable(dpl_test dpl_test.cc)
 
 target_link_libraries(dpl_test

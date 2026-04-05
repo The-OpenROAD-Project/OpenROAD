@@ -66,7 +66,7 @@ if(USE_SYSTEM_OPENSTA)
     IMPORTED_LOCATION "${OPENSTA_LIBRARY}"
   )
   if(CUDD_LIB)
-    set_target_properties(OpenSTA PROPERTIES 
+    set_target_properties(OpenSTA PROPERTIES
       INTERFACE_LINK_LIBRARIES "${CUDD_LIB}"
     )
   endif()
@@ -146,6 +146,9 @@ include(UseSWIG)
 
 find_package(Boost CONFIG REQUIRED)
 message(STATUS "boost: ${Boost_VERSION}")
+
+find_package(absl REQUIRED)
+message(STATUS "absl: ${absl_VERSION}")
 
 if (ENABLE_TESTS)
   find_package(GTest REQUIRED)
@@ -285,6 +288,7 @@ add_subdirectory(dft)
 add_subdirectory(mpl)
 add_subdirectory(par)
 add_subdirectory(est)
+add_subdirectory(web)
 
 ################################################################
 
@@ -355,6 +359,8 @@ target_link_libraries(openroad
   mpl
   par
   est
+  web
+  absl::synchronization
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -431,8 +437,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
     stt_py
     psm_py
     pdn_py
+    rsz_py
     dft_py
     par_py
+    web_py
   )
 
 else()

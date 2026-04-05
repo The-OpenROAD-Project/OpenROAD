@@ -40,7 +40,7 @@ void extMeasure::printTraceNetInfo(const char* msg, uint32_t netId, int rsegId)
              shapeId,
              rsegId,
              msg,
-             rseg->getCapacitance(0, 1.0));
+             rseg->getTotalCapacitance(0));
 }
 
 double extMeasure::GetDBcoords(uint32_t coord)
@@ -176,7 +176,7 @@ void extMeasure::segInfo(const char* msg, uint32_t netId, int rsegId)
       netId,
       shapeId,
       rsegId,
-      rseg->getCapacitance(0, 1.0),
+      rseg->getTotalCapacitance(0),
       rseg->getResistance(0));
 }
 
@@ -255,10 +255,7 @@ bool extMeasure::isVia(uint32_t rsegId)
 
   bool rvia1
       = rseg1 != nullptr
-                && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId())
-                       > 0
-            ? true
-            : false;
+        && extMain::getShapeProperty_rc(rseg1->getNet(), rseg1->getId()) > 0;
   return rvia1;
 }
 
@@ -486,7 +483,7 @@ void extDistRC::printDebug(const char* from,
   }
 }
 
-void extDistRC::printDebugRC(const char* from, Logger* logger)
+void extDistRC::printDebugRC(const char* from, utl::Logger* logger)
 {
   debugPrint(logger,
              RCX,
@@ -516,7 +513,7 @@ void extDistRC::printDebugRC_diag(int met,
                                   int width,
                                   int dist,
                                   int dbUnit,
-                                  Logger* logger)
+                                  utl::Logger* logger)
 {
   char tmp[100];
 
@@ -554,7 +551,7 @@ void extDistRC::printDebugRC(int met,
                              int width,
                              int dist,
                              int dbUnit,
-                             Logger* logger)
+                             utl::Logger* logger)
 {
   char tmp[100];
   if (overMet > 0 && underMet > 0) {
@@ -595,7 +592,7 @@ void extDistRC::printDebugRC(int met,
              res_);
 }
 
-void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
+void extDistRC::printDebugRC_sum(int len, int dbUnit, utl::Logger* logger)
 {
   debugPrint(logger,
              RCX,

@@ -3,11 +3,14 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 294 components and 1656 component-terminals.
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
-[INFO GPL-0005] Execute conjugate gradient initial placement.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
 [INFO GPL-0002] DBU: 2000
 [INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
 [INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 30.970 30.800 ) um
-[INFO GPL-0032] Initializing region: Top-level
+[INFO GPL-0036] Movable instances area:        569.772 um^2
+[INFO GPL-0037] Total instances area:          569.772 um^2
+[INFO GPL-0035] Pin density area adjust:        49.963 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
 [INFO GPL-0006] Number of instances:               294
 [INFO GPL-0007] Movable instances:                 294
 [INFO GPL-0008] Fixed instances:                     0
@@ -24,12 +27,15 @@
 [INFO GPL-0019] Utilization:                    64.970 %
 [INFO GPL-0020] Standard cells area:           619.735 um^2
 [INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 294	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000006 HPWL: 5669740
 [InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000008 HPWL: 5069285
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000009 HPWL: 5054569
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000009 HPWL: 5061024
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 5058672
-[INFO GPL-0033] Initializing Nesterov region: Top-level
+[INFO GPL-0033] ---- Initialize Nesterov Region: Top-level
 [INFO GPL-0023] Placement target density:       0.7000
 [INFO GPL-0024] Movable insts average area:      2.108 um^2
 [INFO GPL-0025] Ideal bin area:                  3.011 um^2
@@ -38,7 +44,7 @@
 [INFO GPL-0028] Bin count (X, Y):          16 ,     16
 [INFO GPL-0029] Bin size (W * H):       1.936 *  1.925 um
 [INFO GPL-0030] Number of bins:                    256
-[INFO GPL-0007] Execute nesterov global placement.
+[INFO GPL-0007] ---- Execute Nesterov Global Placement.
 [INFO GPL-0031] HPWL: Half-Perimeter Wirelength
 Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 ---------------------------------------------------------------

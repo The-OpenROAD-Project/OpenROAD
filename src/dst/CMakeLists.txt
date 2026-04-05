@@ -9,7 +9,7 @@ project(dst
   LANGUAGES CXX
 )
 
-find_package(Boost CONFIG REQUIRED COMPONENTS serialization system thread)
+find_package(Boost CONFIG REQUIRED COMPONENTS serialization thread)
 swig_lib(NAME      dst
          NAMESPACE dst
          I_FILE    src/Distributed.i
@@ -32,11 +32,11 @@ target_include_directories(dst_lib
 
 target_link_libraries(dst_lib
   PUBLIC
+    absl::synchronization
     utl_lib
     ${TCL_LIBRARY}
     ${ZLIB_LIBRARIES}
     Boost::serialization
-    Boost::system
     Boost::thread
 )
 

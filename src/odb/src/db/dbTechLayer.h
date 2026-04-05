@@ -13,6 +13,10 @@
 #include "dbVector.h"
 #include "odb/dbMatrix.h"
 #include "odb/dbTypes.h"
+// User Code Begin Includes
+#include "odb/dbId.h"
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -38,6 +42,7 @@ class _dbTechLayerForbiddenSpacingRule;
 class _dbTechLayerKeepOutZoneRule;
 class _dbTechLayerWrongDirSpacingRule;
 class _dbTechLayerTwoWiresForbiddenSpcRule;
+class _dbTechLayerVoltageSpacing;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -88,6 +93,7 @@ class _dbTechLayer : public _dbObject
 
   dbTechLayerFlags flags_;
   uint32_t wrong_way_width_;
+  uint32_t wrong_way_min_width_;
   float layer_adjustment_;
   std::vector<std::pair<int, int>> orth_spacing_tbl_;
   dbTable<_dbTechLayerCutClassRule>* cut_class_rules_tbl_;
@@ -112,6 +118,7 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerWrongDirSpacingRule>* wrongdir_spacing_rules_tbl_;
   dbTable<_dbTechLayerTwoWiresForbiddenSpcRule>*
       two_wires_forbidden_spc_rules_tbl_;
+  dbTable<_dbTechLayerVoltageSpacing>* voltage_spacing_rules_tbl_;
 
   // User Code Begin Fields
 

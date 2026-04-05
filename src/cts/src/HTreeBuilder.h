@@ -11,8 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "Clock.h"
 #include "CtsObserver.h"
 #include "CtsOptions.h"
+#include "TechChar.h"
 #include "TreeBuilder.h"
 #include "Util.h"
 #include "odb/db.h"
@@ -132,12 +134,15 @@ class HTreeBuilder : public TreeBuilder
     unsigned getOutputCap() const { return outputCap_; }
     void setRemainingLength(unsigned length) { remainingLength_ = length; }
     unsigned getRemainingLength() const { return remainingLength_; }
+    void setCurrWl(int wl) { curr_Wl_ = wl; }
+    int getCurrWl() const { return curr_Wl_; }
 
    private:
     double length_;
     unsigned outputSlew_ = 0;
     unsigned outputCap_ = 0;
     unsigned remainingLength_ = 0;
+    int curr_Wl_ = 0;
     std::vector<unsigned> wireSegments_;
     std::vector<Point<double>> branchPointLoc_;
     std::vector<unsigned> parents_;
@@ -156,6 +161,8 @@ class HTreeBuilder : public TreeBuilder
   }
 
   void run() override;
+  Point<double> legalizeOneBuffer(Point<double> bufferLoc,
+                                  const std::string& bufferName) override;
   void findLegalLocations(const Point<double>& parentPoint,
                           const Point<double>& branchPoint,
                           double x1,
@@ -270,9 +277,11 @@ class HTreeBuilder : public TreeBuilder
                                   unsigned inputSlew,
                                   unsigned inputCap,
                                   unsigned slewThreshold,
+                                  int wirelengthThreshold,
                                   unsigned tolerance,
                                   unsigned& outputSlew,
-                                  unsigned& outputCap) const;
+                                  unsigned& outputCap,
+                                  int& currWl) const;
 
  private:
   void initSinkRegion();
@@ -362,6 +371,8 @@ class HTreeBuilder : public TreeBuilder
                               const Point<double>& parLoc);
   std::vector<unsigned> clusterDiameters() const { return clusterDiameters_; }
   std::vector<unsigned> clusterSizes() const { return clusterSizes_; }
+  Point<double> resolveLocationCollision(
+      const Point<double>& legalCenter) const;
 
  private:
   Box<double> sinkRegion_;

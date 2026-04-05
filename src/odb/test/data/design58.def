@@ -60,6 +60,7 @@ SPECIALNETS 2 ;
    + FIXED + SHAPE RING + MASK 2 + RECT metal3 ( 0 0 ) ( 10 10 )
    + ROUTED metal1 2000 ( 10 0 ) MASK 3 ( 10 20 ) M2_M1_via
      NEW metal2 1000 ( 10 10 ) ( 20 10 ) MASK 1 ( 20 20 ) MASK 031 M2_M1_via
+     NEW metal2 1000 + SHAPE DRCFILL ( 10 10 ) ( 20 10 ) MASK 1 ( 20 20 )
    + USE GROUND ;
 END SPECIALNETS
 

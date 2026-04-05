@@ -28,6 +28,7 @@
 #include "omp.h"
 #include "pa/AbstractPAGraphics.h"
 #include "pa/FlexPA.h"
+#include "pa/FlexPA_unique.h"
 #include "utl/Logger.h"
 #include "utl/exception.h"
 
@@ -250,7 +251,7 @@ void FlexPA::createSingleAccessPoint(
     // rectonly forbid wrongway planar access
     // rightway on grid only forbid off track rightway planar access
     // horz layer
-    if (lower_layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+    if (lower_layer->isHorizontal()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumVert, false);
       }
@@ -260,7 +261,7 @@ void FlexPA::createSingleAccessPoint(
       }
     }
     // vert layer
-    if (lower_layer->getDir() == dbTechLayerDir::VERTICAL) {
+    if (lower_layer->isVertical()) {
       if (lower_layer->isUnidirectional() || !router_cfg_->USENONPREFTRACKS) {
         ap->setMultipleAccesses(frDirEnumHorz, false);
       }
@@ -328,7 +329,7 @@ void FlexPA::createMultipleAccessPoints(
     const frAccessPointEnum upper_type)
 {
   auto layer = getDesign()->getTech()->getLayer(layer_num);
-  bool allow_via = !isIOTerm(inst_term);
+  bool allow_via = true;
   bool allow_planar = true;
   //  only VIA_ACCESS_LAYERNUM layer can have via access
   if (isStdCellTerm(inst_term)) {
@@ -476,11 +477,8 @@ bool FlexPA::OnlyAllowOnGridAccess(const frLayerNum layer_num,
       = (layer_num + 2 <= getDesign()->getTech()->getTopLayerNum())
             ? getDesign()->getTech()->getLayer(layer_num + 2)
             : nullptr;
-  if (!is_macro_cell_pin && upper_layer
-      && upper_layer->getLef58RightWayOnGridOnlyConstraint()) {
-    return true;
-  }
-  return false;
+  return !is_macro_cell_pin && upper_layer
+         && upper_layer->getLef58RightWayOnGridOnlyConstraint();
 }
 
 void FlexPA::genAPsFromLayerShapes(
@@ -664,9 +662,8 @@ bool FlexPA::filterPlanarAccess(
   auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool wrong_dir
-      = (layer->getDir() == dbTechLayerDir::HORIZONTAL && vert_dir)
-        || (layer->getDir() == dbTechLayerDir::VERTICAL && !vert_dir);
+  const bool wrong_dir = (layer->isHorizontal() && vert_dir)
+                         || (layer->isVertical() && !vert_dir);
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(end_point, begin_point);
     style.setEndStyle(frcTruncateEndStyle, 0);
@@ -893,21 +890,40 @@ void FlexPA::filterViaAccess(
   getViasFromMetalWidthMap(begin_point, layer_num, polyset, via_defs);
 
   if (via_defs.empty()) {  // no via map entry
-    const auto& via_map = layer_num_to_via_defs_[layer_num + 1];
-	int groups_used = 0;
-  
-    for (const auto& [cut_count, via_set] : via_map) {
-	  
-	  if (groups_used >= router_cfg_->VIA_MAX_CUT)
-	    break;
+	  auto collect_vias = [&](int adj_layer_num, int max_trial) {
+		  if (adj_layer_num > router_cfg_->TOP_ROUTING_LAYER) {
+			return;
+		  }
+		  if (layer_num_to_via_defs_.find(adj_layer_num)
+			  != layer_num_to_via_defs_.end()) {
 
-      for (const auto& [tup, via_def] : via_set) {
-        via_defs.emplace_back(via_defs.size(), via_def);
-	    if (via_defs.size() >= router_cfg_->VIA_CANDIDATE_PER_CUT*(groups_used+1) && !deep_search)
-	      break;
-	  }
+			int groups_used = 0;
+			for (const auto& [cut_count, via_set] : layer_num_to_via_defs_[adj_layer_num]) {
+			
+				if (groups_used >= router_cfg->VIA_MAX_CUT)
+					break;
 
-      groups_used++;
+				for (auto& [tup, via_def] : via_set) {
+				  if (inst_term && inst_term->isStubborn()
+					  && avoid_via_defs_.contains(via_def)) {
+					continue;
+				  }
+				  via_defs.emplace_back(via_defs.size(), via_def);
+				  if (via_defs.size() >= router_cfg_->VIA_CANDIDATE_PER_CUT*(groups_used+1)  && !deep_search) {
+					break;
+				  }
+				}
+				groups_used++;
+			}
+      	}
+    };
+
+    // UP Vias
+    collect_vias(layer_num + 1, max_num_via_trial);
+
+    // DOWN Vias
+    if (isIOTerm(inst_term)) {
+      collect_vias(layer_num - 1, max_num_via_trial);
     }
   }
 
@@ -933,7 +949,11 @@ void FlexPA::filterViaAccess(
     }
     if (checkViaPlanarAccess(ap, via.get(), pin, inst_term, layer_polys)) {
       ap->addViaDef(via_def);
-      ap->setAccess(frDirEnum::U);
+      if (via_def->getLayer1Num() == layer_num) {
+        ap->setAccess(frDirEnum::U);
+      } else {
+        ap->setAccess(frDirEnum::D);
+      }
       valid_via_count++;
       if (valid_via_count >= (router_cfg_->VIA_MAX_CUT)*(router_cfg_->VIA_CANDIDATE_PER_CUT)) {
         break;
@@ -982,28 +1002,31 @@ bool FlexPA::checkDirectionalViaAccess(
     const std::vector<gtl::polygon_90_data<frCoord>>& layer_polys,
     frDirEnum dir)
 {
-  auto upper_layer = getTech()->getLayer(via->getViaDef()->getLayer2Num());
+  frLayerNum target_layer_num;
+  if (via->getViaDef()->getLayer1Num() == ap->getLayerNum()) {
+    target_layer_num = via->getViaDef()->getLayer2Num();
+  } else {
+    target_layer_num = via->getViaDef()->getLayer1Num();
+  }
+  auto target_layer = getTech()->getLayer(target_layer_num);
   const bool vert_dir = (dir == frDirEnum::S || dir == frDirEnum::N);
-  const bool wrong_dir = (upper_layer->isHorizontal() && vert_dir)
-                         || (upper_layer->isVertical() && !vert_dir);
-  auto style = upper_layer->getDefaultSegStyle();
+  const bool wrong_dir = (target_layer->isHorizontal() && vert_dir)
+                         || (target_layer->isVertical() && !vert_dir);
+  auto style = target_layer->getDefaultSegStyle();
 
   if (wrong_dir) {
-    if (!router_cfg_->USENONPREFTRACKS || upper_layer->isUnidirectional()) {
+    if (!router_cfg_->USENONPREFTRACKS || target_layer->isUnidirectional()) {
       return false;
     }
-    style.setWidth(upper_layer->getWrongDirWidth());
+    style.setWidth(target_layer->getWrongDirWidth());
   }
 
   const odb::Point begin_point = ap->getPoint();
   const bool is_block
       = inst_term
         && inst_term->getInst()->getMaster()->getMasterType().isBlock();
-  const odb::Point end_point = genEndPoint(layer_polys,
-                                           begin_point,
-                                           via->getViaDef()->getLayer2Num(),
-                                           dir,
-                                           is_block);
+  const odb::Point end_point
+      = genEndPoint(layer_polys, begin_point, target_layer_num, dir, is_block);
 
   if (inst_term && inst_term->hasNet()) {
     via->addToNet(inst_term->getNet());
@@ -1019,7 +1042,7 @@ bool FlexPA::checkDirectionalViaAccess(
     ps->setPoints(begin_point, end_point);
     style.setBeginStyle(frcTruncateEndStyle, 0);
   }
-  ps->setLayerNum(upper_layer->getLayerNum());
+  ps->setLayerNum(target_layer->getLayerNum());
   ps->setStyle(style);
   if (inst_term && inst_term->hasNet()) {
     ps->addToNet(inst_term->getNet());
@@ -1102,6 +1125,14 @@ void FlexPA::filterMultipleAPAccesses(
     frInstTerm* inst_term,
     const bool& is_std_cell_pin)
 {
+  if (isIOTerm(inst_term)) {
+    // if the pin is an I/O pin, and there is planar access, return
+    for (auto& ap : aps) {
+      if (ap->hasPlanarAccess()) {
+        return;
+      }
+    }
+  }
   std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layer_polys(
       pin_shapes.size());
   for (int i = 0; i < (int) pin_shapes.size(); i++) {

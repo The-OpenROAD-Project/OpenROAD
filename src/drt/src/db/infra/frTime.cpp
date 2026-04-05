@@ -4,12 +4,14 @@
 #include "db/infra/frTime.h"
 
 #include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <ios>
 #include <iostream>
 #include <ostream>
 
 #include "boost/io/ios_state.hpp"
+#include "frBaseTypes.h"
 #include "utl/Logger.h"
 #include "utl/mem_stats.h"
 

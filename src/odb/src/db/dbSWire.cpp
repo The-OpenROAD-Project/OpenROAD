@@ -13,7 +13,6 @@
 #include "dbSBox.h"
 #include "dbSBoxItr.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
 #include "odb/dbSet.h"

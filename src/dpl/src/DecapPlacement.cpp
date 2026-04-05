@@ -2,12 +2,14 @@
 // Copyright (c) 2024-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "dpl/Opendp.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/DecapObjects.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"

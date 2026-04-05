@@ -11,13 +11,18 @@
 #include "dbScanPin.h"
 #include "dbVector.h"
 #include "odb/dbId.h"
+// User Code Begin Includes
+#include <variant>
+
+#include "odb/db.h"
+#include "odb/dbObject.h"
+// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbScanPartition;
-class dbScanPin;
 
 class _dbScanChain : public _dbObject
 {

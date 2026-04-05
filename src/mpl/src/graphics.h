@@ -44,7 +44,7 @@ class Graphics : public gui::Renderer, public MplObserver
   void setBoundaryPenalty(const PenaltyData& penalty) override;
   void setFencePenalty(const PenaltyData& penalty) override;
   void setGuidancePenalty(const PenaltyData& penalty) override;
-  void setMacroBlockagePenalty(const PenaltyData& penalty) override;
+  void setSoftBlockagePenalty(const PenaltyData& penalty) override;
   void setFixedMacrosPenalty(const PenaltyData& penalty) override;
   void setNotchPenalty(const PenaltyData& penalty) override;
   void setOutlinePenalty(const PenaltyData& penalty) override;
@@ -53,10 +53,7 @@ class Graphics : public gui::Renderer, public MplObserver
 
   void drawObjects(gui::Painter& painter) override;
 
-  void setMacroBlockages(
-      const std::vector<odb::Rect>& macro_blockages) override;
-  void setPlacementBlockages(
-      const std::vector<odb::Rect>& placement_blockages) override;
+  void setSoftBlockages(const std::vector<odb::Rect>& soft_blockages) override;
   void setNets(const BundledNetList& nets) override;
   void setShowBundledNets(bool show_bundled_nets) override;
   void setShowClustersIds(bool show_clusters_ids) override;
@@ -68,6 +65,8 @@ class Graphics : public gui::Renderer, public MplObserver
   void setCurrentCluster(Cluster* current_cluster) override;
   void setGuides(const std::map<int, odb::Rect>& guides) override;
   void setFences(const std::map<int, odb::Rect>& fences) override;
+  void addNotch(const odb::Rect& notch) override;
+  void clearNotches() override;
   void setIOConstraintsMap(
       const ClusterToBoundaryRegionMap& io_cluster_to_constraint) override;
   void setBlockedRegionsForPins(
@@ -82,12 +81,13 @@ class Graphics : public gui::Renderer, public MplObserver
   void resetPenalties();
   void drawCluster(Cluster* cluster, gui::Painter& painter);
   void drawBlockedRegionsIndication(gui::Painter& painter);
-  void drawAllBlockages(gui::Painter& painter);
+  void drawSoftBlockages(gui::Painter& painter);
   void drawOffsetRect(const odb::Rect& rect,
                       const std::string& center_text,
                       gui::Painter& painter);
   void drawFences(gui::Painter& painter);
   void drawGuides(gui::Painter& painter);
+  void drawNotches(gui::Painter& painter);
   template <typename T>
   void drawBundledNets(gui::Painter& painter, const std::vector<T>& macros);
   template <typename T>
@@ -115,8 +115,7 @@ class Graphics : public gui::Renderer, public MplObserver
 
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
-  std::vector<odb::Rect> macro_blockages_;
-  std::vector<odb::Rect> placement_blockages_;
+  std::vector<odb::Rect> soft_blockages_;
   BundledNetList nets_;
   odb::Rect outline_;
   int target_cluster_id_{-1};
@@ -131,6 +130,7 @@ class Graphics : public gui::Renderer, public MplObserver
   Cluster* current_cluster_{nullptr};
   std::map<int, odb::Rect> guides_;  // Id -> Guidance Region
   std::map<int, odb::Rect> fences_;  // Id -> Fence
+  std::vector<odb::Rect> notches_;
 
   int x_mark_size_{0};  // For blocked regions.
 
@@ -151,7 +151,7 @@ class Graphics : public gui::Renderer, public MplObserver
   std::optional<PenaltyData> wirelength_penalty_;
   std::optional<PenaltyData> guidance_penalty_;
   std::optional<PenaltyData> boundary_penalty_;
-  std::optional<PenaltyData> macro_blockage_penalty_;
+  std::optional<PenaltyData> soft_blockage_penalty_;
   std::optional<PenaltyData> fixed_macros_penalty_;
   std::optional<PenaltyData> notch_penalty_;
   std::optional<PenaltyData> area_penalty_;

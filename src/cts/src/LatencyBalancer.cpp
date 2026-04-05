@@ -28,9 +28,9 @@
 #include "sta/Graph.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/Mode.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathAnalysisPt.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Sdc.hh"
@@ -64,11 +64,15 @@ int LatencyBalancer::run()
 void LatencyBalancer::initSta()
 {
   openSta_->ensureGraph();
-  openSta_->ensureClkNetwork();
+  for (auto mode : openSta_->modes()) {
+    openSta_->ensureClkNetwork(mode);
+  }
   openSta_->updateTiming(false);
   timingGraph_ = openSta_->graph();
 }
 
+// This SHOULD return float. It would need to call LumpedCapDelayCalc::gateDelay
+// instead of accessing the models directly to get POCV parameters.
 sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
 {
   odb::dbMaster* bufferMaster
@@ -79,13 +83,13 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
 
   sta::LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
-  for (sta::Corner* corner : *openSta_->corners()) {
-    const sta::DcalcAnalysisPt* dcalc_ap
-        = corner->findDcalcAnalysisPt(sta::MinMax::max());
-    const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  for (sta::Scene* corner : openSta_->scenes()) {
+    const sta::Pvt* pvt
+        = openSta_->cmdMode()->sdc()->operatingConditions(sta::MinMax::max());
 
     for (sta::TimingArcSet* arc_set :
-         buffer_cell->timingArcSets(input, output)) {
+         buffer_cell->sceneCell(corner, sta::MinMax::max())
+             ->timingArcSets(input, output)) {
       for (sta::TimingArc* arc : arc_set->arcs()) {
         sta::GateTimingModel* model
             = dynamic_cast<sta::GateTimingModel*>(arc->model());
@@ -96,15 +100,16 @@ sta::ArcDelay LatencyBalancer::computeBufferDelay(double extra_out_cap)
             && out_rf == sta::RiseFall::rise()) {
           double in_cap = input->capacitance(in_rf, sta::MinMax::max());
           double load_cap = in_cap + extra_out_cap;
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
         }
       }
     }
@@ -197,7 +202,10 @@ void LatencyBalancer::buildGraph(odb::dbNet* clkInputNet)
                     0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
                 if (rise != 0 || fall != 0) {
-                  insDelay = (rise + fall) / 2.0;
+                  insDelay = (rise + fall);
+                  if (rise != 0 && fall != 0) {
+                    insDelay /= 2.0;
+                  }
                 }
               }
             }
@@ -249,7 +257,7 @@ float LatencyBalancer::getVertexClkArrival(sta::Vertex* sinkVertex,
       continue;
     }
 
-    if (path->dcalcAnalysisPt(openSta_)->delayMinMax() != sta::MinMax::max()) {
+    if (path->minMax(openSta_) != sta::MinMax::max()) {
       continue;
       // only populate with max delay
     }
@@ -339,7 +347,10 @@ void LatencyBalancer::computeSinkArrivalRecur(odb::dbNet* topClokcNet,
                   0.0, sta::RiseFall::fall(), sta::MinMax::max());
 
               if (rise != 0 || fall != 0) {
-                insDelay = (rise + fall) / 2.0;
+                insDelay = (rise + fall);
+                if (rise != 0 && fall != 0) {
+                  insDelay /= 2.0;
+                }
               }
             }
           }

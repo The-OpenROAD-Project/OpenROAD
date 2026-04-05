@@ -8,17 +8,28 @@
 #include <cstring>
 #include <tuple>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <algorithm>
+#include <iterator>
+#include <map>
+#include <ranges>
+#include <utility>
+#include <vector>
+
+#include "dbVector.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 
 bool _dbTechLayerSpacingTablePrlRule::operator==(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (flags_.wrong_direction != rhs.flags_.wrong_direction) {
     return false;
   }
@@ -33,6 +44,7 @@ bool _dbTechLayerSpacingTablePrlRule::operator==(
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbTechLayerSpacingTablePrlRule::operator<(

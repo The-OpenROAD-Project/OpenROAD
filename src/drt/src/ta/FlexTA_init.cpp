@@ -13,10 +13,15 @@
 #include "db/obj/frAccess.h"
 #include "db/obj/frBTerm.h"
 #include "db/obj/frBlockObject.h"
+#include "db/obj/frGuide.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
+#include "db/taObj/taFig.h"
+#include "db/taObj/taPin.h"
+#include "db/taObj/taVia.h"
+#include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "frBaseTypes.h"
 #include "odb/dbTransform.h"
@@ -83,10 +88,8 @@ void FlexTAWorker::initTracks()
       continue;
     }
     for (auto& tp : getDesign()->getTopBlock()->getTrackPatterns(lNum)) {
-      if ((getDir() == dbTechLayerDir::HORIZONTAL
-           && tp->isHorizontal() == false)
-          || (getDir() == dbTechLayerDir::VERTICAL
-              && tp->isHorizontal() == true)) {
+      if ((getDir() == dbTechLayerDir::HORIZONTAL && !tp->isHorizontal())
+          || (getDir() == dbTechLayerDir::VERTICAL && tp->isHorizontal())) {
         bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
         frCoord lowCoord = (isH ? getRouteBox().yMin() : getRouteBox().xMin());
         frCoord highCoord = (isH ? getRouteBox().yMax() : getRouteBox().xMax());

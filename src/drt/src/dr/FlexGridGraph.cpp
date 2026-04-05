@@ -11,6 +11,7 @@
 #include <map>
 #include <vector>
 
+#include "db/infra/frPoint.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/tech/frViaDef.h"
 #include "dr/FlexDR.h"

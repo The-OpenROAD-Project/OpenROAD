@@ -15,6 +15,7 @@
 #include <set>
 
 #include "boost/property_tree/json_parser.hpp"
+#include "odb/dbObject.h"
 // User Code End Includes
 
 namespace odb {

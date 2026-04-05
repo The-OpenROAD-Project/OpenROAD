@@ -41,14 +41,6 @@ module submodule (r1q,
  wire net2;
  wire net5;
 
- BUF_X4 rebuffer5 (.A(net2),
-    .Z(net5));
- BUF_X4 rebuffer2 (.A(r1q),
-    .Z(net2));
- BUF_X4 rebuffer1 (.A(net2),
-    .Z(net1));
- BUF_X8 split (.A(net2),
-    .Z(net));
  DFF_X1 r1 (.D(u6z),
     .CK(clk));
  DFF_X1 r10 (.D(u15z),
@@ -101,6 +93,14 @@ module submodule (r1q,
     .CK(clk));
  DFF_X1 r9 (.D(u14z),
     .CK(clk));
+ BUF_X4 rebuffer1 (.A(net2),
+    .Z(net1));
+ BUF_X4 rebuffer2 (.A(r1q),
+    .Z(net2));
+ BUF_X4 rebuffer5 (.A(net2),
+    .Z(net5));
+ BUF_X8 split (.A(net2),
+    .Z(net));
  BUF_X1 u1 (.A(net1),
     .Z(u6z));
  BUF_X1 u10 (.A(net5),

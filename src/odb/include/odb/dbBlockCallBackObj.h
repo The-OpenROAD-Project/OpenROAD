@@ -49,7 +49,6 @@ class dbBlockCallBackObj
 
   // dbInst Start
   virtual void inDbInstCreate(dbInst*) {}
-  virtual void inDbInstCreate(dbInst*, dbRegion*) {}
   virtual void inDbInstDestroy(dbInst*) {}
   virtual void inDbInstPlacementStatusBefore(dbInst*, const dbPlacementStatus&)
   {
@@ -73,7 +72,8 @@ class dbBlockCallBackObj
   // dbNet Start
   virtual void inDbNetCreate(dbNet*) {}
   virtual void inDbNetDestroy(dbNet*) {}
-  virtual void inDbNetPreMerge(dbNet*, dbNet*) {}
+  virtual void inDbNetPostMerge(dbNet*, dbNet*) {}
+  virtual void inDbNetPostGuideRestore(dbNet*) {}
   // dbNet End
 
   // dbModNet Start

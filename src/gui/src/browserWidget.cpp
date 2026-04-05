@@ -27,6 +27,8 @@
 #include "dbDescriptors.h"
 #include "db_sta/dbSta.hh"
 #include "displayControls.h"
+#include "gui/gui.h"
+#include "layoutViewer.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -662,11 +664,6 @@ void BrowserWidget::inDbInstCreate(odb::dbInst*)
   markModelModified();
 }
 
-void BrowserWidget::inDbInstCreate(odb::dbInst*, odb::dbRegion*)
-{
-  markModelModified();
-}
-
 void BrowserWidget::inDbInstDestroy(odb::dbInst*)
 {
   markModelModified();
@@ -774,11 +771,7 @@ bool BrowserWidget::eventFilter(QObject* obj, QEvent* event)
   if (obj == view_->viewport()) {
     if (event->type() == QEvent::MouseButtonPress) {
       QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
-      if (mouse_event->button() == Qt::RightButton) {
-        ignore_selection_ = true;
-      } else {
-        ignore_selection_ = false;
-      }
+      ignore_selection_ = mouse_event->button() == Qt::RightButton;
     } else if (event->type() == QEvent::MouseButtonRelease) {
       ignore_selection_ = false;
     } else if (event->type() == QEvent::ContextMenu) {

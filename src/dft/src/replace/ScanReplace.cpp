@@ -46,8 +46,7 @@ sta::LibertyPort* FindEquivalentPortInScanCell(
         && scan_cell_port->function() == nullptr) {
       // input ports do not have a function
       port_equiv
-          = port_equiv
-            && strcmp(non_scan_cell_port->name(), scan_cell_port->name()) == 0;
+          = port_equiv && non_scan_cell_port->name() == scan_cell_port->name();
     } else {
       port_equiv = port_equiv
                    && sta::FuncExpr::equiv(non_scan_cell_port->function(),
@@ -341,7 +340,7 @@ void ScanReplace::scanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   scanReplace(chip->getBlock());
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
 }
 
 // Recursive function that iterates over a block (and the blocks inside this
@@ -452,7 +451,7 @@ void ScanReplace::rollbackScanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   rollbackScanReplace(chip->getBlock());
-  sta_->networkChanged();
+  sta_->networkChangedNonSdc();
 }
 
 void ScanReplace::rollbackScanReplace(odb::dbBlock* block)

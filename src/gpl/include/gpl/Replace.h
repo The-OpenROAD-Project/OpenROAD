@@ -53,6 +53,7 @@ struct PlaceOptions
   float initialPlaceNetWeightScale = 800;
 
   bool skipIoMode = false;
+  bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
@@ -64,6 +65,7 @@ struct PlaceOptions
   float keepResizeBelowOverflow = 1.0;
   bool routabilityUseRudy = true;
   bool disableRevertIfDiverge = false;
+  bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
@@ -141,7 +143,9 @@ class Replace
                 const std::string& images_path);
 
  private:
-  bool initNesterovPlace(const PlaceOptions& options, int threads);
+  bool initNesterovPlace(const PlaceOptions& options,
+                         int threads,
+                         bool check_density);
   void checkHasCoreRows();
 
   odb::dbDatabase* db_ = nullptr;

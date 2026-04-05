@@ -13,9 +13,12 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
-#include "sta/Corner.hh"
+#include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
-#include "sta/Liberty.hh"
+#include "sta/GraphClass.hh"
+#include "sta/Network.hh"
+#include "sta/Path.hh"
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
@@ -25,9 +28,18 @@
 
 namespace rsz {
 
+using odb::dbBlock;
+using odb::dbInst;
 using odb::dbModInst;
 using odb::dbModule;
+using odb::dbStringProperty;
+using sta::Instance;
+using sta::Path;
 using sta::PathExpanded;
+using sta::Pin;
+using sta::Slack;
+using sta::Vertex;
+using sta::VertexSet;
 using std::pair;
 using std::vector;
 using utl::RSZ;
@@ -93,14 +105,20 @@ void ConcreteSwapArithModules::findCriticalInstances(
                 slack_threshold);
 
   // Find all violating endpoints and slacks
-  const VertexSet* endpoints = sta_->endpoints();
+  //
+  // Make sure timing is fully computed before we start iterating
+  // over the endpoint set. Otherwise the set can get modified
+  // mid iteration by the slack query.
+  sta_->updateTiming(false);
+  const VertexSet& endpoints = sta_->endpoints();
   vector<pair<Vertex*, Slack>> violating_ends;
-  for (Vertex* end : *endpoints) {
-    const Slack end_slack = sta_->vertexSlack(end, max_);
+  for (Vertex* end : endpoints) {
+    const Slack end_slack = sta_->slack(end, max_);
     if (end_slack < slack_threshold) {
       violating_ends.emplace_back(end, end_slack);
     }
   }
+
   std::ranges::stable_sort(violating_ends,
                            [](const auto& end_slack1, const auto& end_slack2) {
                              return end_slack1.second < end_slack2.second;
@@ -213,7 +231,7 @@ bool ConcreteSwapArithModules::hasArithOperatorProperty(
     return false;
   }
 
-  odb::dbStringProperty* prop = odb::dbStringProperty::find(
+  dbStringProperty* prop = dbStringProperty::find(
       const_cast<dbModInst*>(mod_inst), "implements_operator");
   if (prop) {
     debugRAPrint2(
@@ -238,8 +256,6 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                                                const std::string& target)
 {
   int swapped_count = 0;
-
-  // Create a new inst set since old insts are destroyed
   std::set<dbModInst*> swappedInsts;
 
   for (dbModInst* inst : insts) {
@@ -249,6 +265,7 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
           RSZ, 157, "Instance {} has no master module", inst->getName());
       continue;
     }
+
     std::string old_name(old_master->getName());
     std::string new_name;
     produceNewModuleName(old_name, new_name, target);
@@ -273,7 +290,6 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                     old_name,
                     new_name);
       dbModInst* new_inst = inst->swapMaster(new_master);
-
       if (new_inst) {
         swapped_count++;
         swappedInsts.insert(new_inst);
@@ -291,7 +307,12 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                 target);
   logger_->metric("design__instance__count__swapped_arithmetic_operator",
                   swapped_count);
-  return (swapped_count > 0);
+  bool swapped = swapped_count > 0;
+  if (swapped) {
+    // Invalidate vertex level ordering
+    resizer_->invalidateVertexOrdering();
+  }
+  return swapped;
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
@@ -309,7 +330,7 @@ void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,
     size_t pos;
     if (old_name.starts_with("ALU_")) {
       // Swap ALU to KOGGE_STONE for best timing
-      const vector<std::string> alu_types
+      const std::vector<std::string> alu_types
           = {"HAN_CARLSON", "BRENT_KUNG", "SKLANSKY"};
       for (const std::string& alu_type : alu_types) {
         pos = old_name.find(alu_type);

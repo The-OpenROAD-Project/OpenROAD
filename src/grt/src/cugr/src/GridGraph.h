@@ -14,6 +14,7 @@
 #include "Layers.h"
 #include "geo.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "robin_hood.h"
 
 namespace grt {
@@ -27,6 +28,10 @@ struct AccessPoint
 {
   PointT point;
   IntervalT layers;
+  bool operator==(const AccessPoint& ap) const
+  {
+    return point == ap.point && layers == ap.layers;
+  }
 };
 
 // Only hash and compare on the point, not the layers
@@ -109,8 +114,9 @@ class GridGraph
   // Misc
   AccessPointSet selectAccessPoints(GRNet* net) const;
 
-  // Methods for updating demands
-  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
+  // Methods for updating demands - Public API
+  void addTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
+  void removeTreeUsage(const std::shared_ptr<GRTreeNode>& tree);
 
   // Checks
   bool checkOverflow(int layer_index, int x, int y) const
@@ -151,12 +157,12 @@ class GridGraph
   {
     return unit_length_short_costs_[layer_index];
   }
-  void translateAccessPointsToGrid(
-      odb::dbAccessPoint* ap,
-      int x,
-      int y,
-      AccessPointSet& selected_access_points) const;
-  bool findODBAccessPoints(const GRNet* net,
+  std::vector<AccessPoint> translateAccessPointsToGrid(
+      const std::vector<odb::dbAccessPoint*>& ap,
+      const odb::Point& inst_location) const;
+  AccessPoint selectAccessPoint(
+      const std::vector<AccessPoint>& access_points) const;
+  bool findODBAccessPoints(GRNet* net,
                            AccessPointSet& selected_access_points) const;
 
   double logistic(const CapacityT& input, double slope) const;
@@ -164,10 +170,11 @@ class GridGraph
                     PointT lower,
                     CapacityT demand = 1.0) const;
 
-  // Methods for updating demands
+  // Methods for updating demands - Internal Implementation
   void commit(int layer_index, PointT lower, CapacityT demand);
   void commitWire(int layer_index, PointT lower, bool rip_up = false);
   void commitVia(int layer_index, PointT loc, bool rip_up = false);
+  void commitTree(const std::shared_ptr<GRTreeNode>& tree, bool rip_up = false);
 
   utl::Logger* logger_;
   const std::vector<std::vector<int>> gridlines_;

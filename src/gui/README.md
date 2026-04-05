@@ -91,30 +91,6 @@ gui::remove_menu_item
 | ---- | ---- |
 | `-name` | name of the item, used when deleting the item.|
 
-### Save Image
-
-This command can be both be used when the GUI is active and not active
-to save a screenshot with various options.
-
-```tcl
-save_image 
-    [-resolution microns_per_pixel]
-    [-area {x0 y0 x1 y1}]
-    [-width width]
-    [-display_option {option value}]
-    filename
-```
-
-#### Options
-
-| Switch Name | Description |
-| ---- | ---- |
-| `filename` | path to save the image to. |
-| `-area` | x0, y0 - first corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block. x1, y1 - second corner of the layout area (in microns) to be saved, default is to save what is visible on the screen unless called when gui is not active and then it selected the whole block.|
-| `-resolution`| resolution in microns per pixel to use when saving the image, default will match what the GUI has selected.|
-| `-width`| width of the output image in pixels, default will be computed from the resolution. Cannot be used with ``-resolution``.|
-| `-display_option`| specific setting for a display option to show or hide specific elements. For example, to hide metal1 ``-display_option {Layers/metal1 false}``, to show routing tracks ``-display_option {Tracks/Pref true}``, or to show everthing ``-display_option {* true}``.|
-
 ### Save Clocktree Image
 
 This command saves the screenshot of clocktree given options 
@@ -126,7 +102,7 @@ save_clocktree_image
     -clock clock_name
     [-width width]
     [-height height]
-    [-corner corner]
+    [-scene scene]
 ```
 
 #### Options
@@ -135,7 +111,7 @@ save_clocktree_image
 | ---- | ---- |
 |`filename`| path to save the image to. |
 |`-clock`| name of the clock to save the clocktree for. |
-|`-corner`| name of the timing corner to save the clocktree for, default to the first corner defined. |
+|`-scene`| name of the timing scene to save the clocktree for, default to the first scene defined. |
 |`-height`| height of the image in pixels, defaults to the height of the GUI widget. |
 |`-width`| width of the image in pixels, defaults to the width of the GUI widget. |
 
@@ -967,6 +943,22 @@ Clear the selected timing path in the Timing Report widget:
 
 ```tcl
 gui::clear_timing_path
+```
+
+## GUI Features
+
+#### Clock Insertion Latency in Timing Reports
+
+In the Data Path Details and Capture Path Details views, pins whose
+Liberty cell defines `max_clock_tree_path` / `min_clock_tree_path`
+timing groups display the internal clock latency inline:
+
+![Clock insertion annotation in Data Path Details](../../docs/images/timing_report_clk_insertion.png)
+
+To view this, run the MockArray example and look at reg2reg paths:
+
+```
+bazelisk run --//:platform=gui //test/orfs/mock-array:MockArray_4x4_base_synth gui_synth
 ```
 
 ## License

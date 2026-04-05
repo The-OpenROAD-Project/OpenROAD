@@ -3,6 +3,8 @@
 
 #include "cut/logic_cut.h"
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -18,6 +20,8 @@
 #include "db_sta/dbNetwork.hh"
 #include "map/mio/mio.h"
 #include "map/mio/mioInt.h"
+#include "map/scl/sclLib.h"
+#include "misc/vec/vecPtr.h"
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "utl/Logger.h"
@@ -211,8 +215,8 @@ void ConnectPinToDriver(
       || network->libertyCell(driver_instance)->hasSequentials()) {
     abc::Abc_Obj_t* abc_input = abc::Abc_NtkCreatePi(&abc_network);
     abc::Abc_ObjAddFanin(abc_net, abc_input);
-    abc::Abc_ObjAssignName(
-        abc_net, const_cast<char*>(network->name(driver)), nullptr);
+    std::string driver_name = network->name(driver);
+    abc::Abc_ObjAssignName(abc_net, driver_name.data(), nullptr);
   } else if (abc_instances.find(driver_instance) == abc_instances.end()) {
     logger->error(
         utl::CUT,

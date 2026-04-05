@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
-
 #include <cstdlib>
 #include <string>
+
+#include "gtest/gtest.h"
 
 // NOLINTNEXTLINE
 #include "Vram_8x7.h"

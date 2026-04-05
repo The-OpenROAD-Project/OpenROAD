@@ -67,7 +67,7 @@ TEST_F(BufRemTest3, RemoveBufferCase9)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -134,7 +134,7 @@ TEST_F(BufRemTest3, RemoveBufferCase8)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -202,7 +202,7 @@ TEST_F(BufRemTest3, RemoveBufferCase7)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -271,7 +271,7 @@ TEST_F(BufRemTest3, RemoveBufferCase6)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -348,7 +348,7 @@ TEST_F(BufRemTest3, RemoveBufferCase5)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -420,7 +420,7 @@ TEST_F(BufRemTest3, RemoveBufferCase4)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -547,7 +547,7 @@ TEST_F(BufRemTest3, RemoveBufferCase3)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -634,7 +634,7 @@ TEST_F(BufRemTest3, RemoveBufferCase2)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -713,7 +713,7 @@ TEST_F(BufRemTest3, RemoveBufferCase1)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -799,7 +799,7 @@ TEST_F(BufRemTest3, RemoveBufferCase0)
 
   // Write verilog and check the content after buffer removal
   const std::string after_vlog_path = test_name + "_after.v";
-  sta::writeVerilog(after_vlog_path.c_str(), true, false, {}, sta_->network());
+  sta::writeVerilog(after_vlog_path.c_str(), false, {}, sta_->network());
 
   std::ifstream file_after(after_vlog_path);
   std::string content_after((std::istreambuf_iterator<char>(file_after)),
@@ -849,6 +849,48 @@ endmodule
 
   // Clean up
   removeFile(after_vlog_path);
+}
+
+// Regression test for feedthrough buffer removal
+//
+// Design: top has a register driving child_mod's data_i (internal wire),
+//   and child_mod's data_o connects to a top-level output port.
+//   Inside child_mod, data_i -> BUF_X1 -> data_o (feedthrough buffer).
+//
+// When remove_buffers removes the feedthrough buffer, the fix in
+// UnbufferMove.cc detects the feedthrough and keeps the input ModNet
+// as the survivor.  This ensures VerilogWriter emits
+// "assign data_o = data_i;" correctly.
+TEST_F(BufRemTest3, FeedthroughAssign)
+{
+  std::string test_name = "TestBufferRemoval3_feedthrough";
+  readVerilogAndSetup(test_name + ".v", /*init_default_sdc=*/false);
+
+  // Verify the feedthrough buffer exists before removal
+  odb::dbModule* child_mod = block_->findModule("child_mod");
+  ASSERT_NE(child_mod, nullptr);
+  odb::dbInst* buf_inst = block_->findInst("u_child/u_ft");
+  ASSERT_NE(buf_inst, nullptr) << "Feedthrough buffer u_child/u_ft not found";
+
+  // Before remove_buffers: two separate ModNets
+  odb::dbModBTerm* bt_in = child_mod->findModBTerm("data_i");
+  odb::dbModBTerm* bt_out = child_mod->findModBTerm("data_o");
+  ASSERT_NE(bt_in, nullptr);
+  ASSERT_NE(bt_out, nullptr);
+  EXPECT_NE(bt_in->getModNet(), bt_out->getModNet())
+      << "ModNets should be separate before remove_buffers";
+
+  // Run remove_buffers — the fix in UnbufferMove.cc detects the
+  // feedthrough and forces the input ModNet to survive.
+  resizer_.removeBuffers({});
+
+  // After remove_buffers: buffer is gone
+  EXPECT_EQ(block_->findInst("u_child/u_ft"), nullptr)
+      << "Feedthrough buffer should be removed";
+
+  // write_verilog should emit "assign data_o = data_i;" for the
+  // feedthrough since port_name("data_o") != net_name("data_i").
+  writeAndCompareVerilogOutputFile(test_name, test_name + "_post.v");
 }
 
 }  // namespace rsz

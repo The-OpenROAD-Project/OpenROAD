@@ -15,10 +15,7 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "odb/geom.h"
 #include "ppl/IOPlacer.h"
-
-namespace utl {
-class Logger;
-}  // namespace utl
+#include "utl/Logger.h"
 
 namespace ppl {
 
@@ -28,8 +25,6 @@ struct DebugSettings
 
   bool isOn() const { return renderer != nullptr; }
 };
-
-using utl::Logger;
 
 using GroupLimits = std::pair<int, int>;
 
@@ -42,7 +37,7 @@ class SimulatedAnnealing
                      Core* core,
                      std::vector<Slot>& slots,
                      const std::vector<Constraint>& constraints,
-                     Logger* logger,
+                     utl::Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
   void run(float init_temperature,
@@ -70,10 +65,10 @@ class SimulatedAnnealing
   int randomAssignmentForGroups(std::set<int>& placed_pins,
                                 const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
-  int getDeltaCost(int prev_cost);
+  int64 getDeltaCost(int64 prev_cost);
   int getPinCost(int pin_idx);
   int64 getGroupCost(int group_idx);
-  void perturbAssignment(int& prev_cost);
+  void perturbAssignment(int64& prev_cost);
   int swapPins();
   int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
@@ -111,6 +106,8 @@ class SimulatedAnnealing
   int num_pins_;
   int num_groups_;
   int lone_pins_;
+  int swappable_pins_ = 0;
+  int unconstrained_swappable_pins_ = 0;
 
   std::vector<int> prev_slots_;
   std::vector<int> new_slots_;
@@ -130,7 +127,7 @@ class SimulatedAnnealing
   const float group_to_free_slots_ = 0.7;
   const float pins_per_slot_limit_ = 0.5;
 
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();
   const int seed_ = 42;

@@ -71,12 +71,12 @@ cc_library(
         "include/est/MakeEstimateParasitics.h",
     ],
     copts = [
-        "-Isrc/est/src",
         "-Wno-missing-braces",  # from TCL swigging
         "-fopenmp",
     ],
     includes = [
         "include",
+        "src",
     ],
     deps = [
         ":est",
@@ -94,7 +94,7 @@ cc_library(
         "@boost.multi_array",
         "@boost.stacktrace",
         "@spdlog",
-        "@tk_tcl//:tcl",
+        "@tcl_lang//:tcl",
     ],
 )
 

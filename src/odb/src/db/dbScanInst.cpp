@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 
+#include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbDft.h"
 #include "dbScanChain.h"
@@ -15,13 +16,19 @@
 #include "dbScanPartition.h"
 #include "dbScanPin.h"
 #include "dbTable.h"
-#include "dbTable.hpp"
 #include "odb/db.h"
+// User Code Begin Includes
+#include <string_view>
+#include <variant>
+
+#include "dbBlock.h"
+// User Code End Includes
 namespace odb {
 template class dbTable<_dbScanInst>;
 
 bool _dbScanInst::operator==(const _dbScanInst& rhs) const
 {
+  // NOLINTBEGIN(readability-simplify-boolean-expr)
   if (bits_ != rhs.bits_) {
     return false;
   }
@@ -45,6 +52,7 @@ bool _dbScanInst::operator==(const _dbScanInst& rhs) const
   }
 
   return true;
+  // NOLINTEND(readability-simplify-boolean-expr)
 }
 
 bool _dbScanInst::operator<(const _dbScanInst& rhs) const

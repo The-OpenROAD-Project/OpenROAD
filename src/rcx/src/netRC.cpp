@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -674,11 +676,11 @@ dbRSeg* extMain::addRSeg(dbNet* net,
     }
     logger_->warn(RCX,
                   111,
-                  "Net {} {} has a loop at x={} y={} {}.",
+                  "Net {} {} has a loop at x={:.2f}um y={:.2f}um {}.",
                   net->getId(),
                   net->getConstName(),
-                  pshape.point.getX(),
-                  pshape.point.getY(),
+                  _block->dbuToMicrons(pshape.point.getX()),
+                  _block->dbuToMicrons(pshape.point.getY()),
                   tname);
     return nullptr;
   }
@@ -725,7 +727,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
                rsid,
                srcId,
                dstId,
-               rc->getCapacitance(0));
+               rc->getGroundCapacitance(0));
   }
 
   srcId = dstId;
@@ -810,7 +812,7 @@ uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   }
 
   _netGndcCalibFactor = net->getGndcCalibFactor();
-  _netGndcCalibration = _netGndcCalibFactor == 1.0 ? false : true;
+  _netGndcCalibration = _netGndcCalibFactor != 1.0;
 
   _rsegJid.clear();
   _shortSrcJid.clear();
@@ -2247,7 +2249,7 @@ void extMain::writeSPEF(char* filename,
   }
   _spef->_termJxy = termJxy;
 
-  _writeNameMap = noNameMap ? false : true;
+  _writeNameMap = !noNameMap;
   _spef->_writeNameMap = _writeNameMap;
   _spef->setUseIdsFlag(false);
   int cntnet, cntrseg, cntcapn, cntcc;

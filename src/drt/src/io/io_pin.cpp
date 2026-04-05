@@ -5,6 +5,7 @@
 #include <tuple>
 #include <vector>
 
+#include "db/obj/frMaster.h"
 #include "frBaseTypes.h"
 #include "io/io.h"
 #include "odb/dbTypes.h"
@@ -24,8 +25,7 @@ void io::Parser::instAnalysis()
   for (auto& trackPattern : getBlock()->getTrackPatterns()) {
     auto isVerticalTrack
         = trackPattern->isHorizontal();  // yes = vertical track
-    if (getTech()->getLayer(trackPattern->getLayerNum())->getDir()
-        == dbTechLayerDir::HORIZONTAL) {
+    if (getTech()->getLayer(trackPattern->getLayerNum())->isHorizontal()) {
       if (!isVerticalTrack) {
         prefTrackPatterns_.push_back(trackPattern);
       }

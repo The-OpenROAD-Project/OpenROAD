@@ -26,7 +26,7 @@
 #include "sta/SdcClass.hh"
 
 namespace sta {
-class Corner;
+class Scene;
 class PathExpanded;
 }  // namespace sta
 
@@ -144,11 +144,19 @@ class TimingPathNode
 class TimingPath
 {
  public:
+  enum PathSection
+  {
+    kAll,
+    kLaunch,
+    kData,
+    kCapture
+  };
+
   TimingPath();
 
-  void setStartClock(const char* name) { start_clk_ = name; }
+  void setStartClock(const std::string& name) { start_clk_ = name; }
   const std::string& getStartClock() const { return start_clk_; }
-  void setEndClock(const char* name) { end_clk_ = name; }
+  void setEndClock(const std::string& name) { end_clk_ = name; }
   const std::string& getEndClock() const { return end_clk_; }
 
   float getPathArrivalTime() const { return arr_time_; }
@@ -180,15 +188,12 @@ class TimingPath
   const std::unique_ptr<TimingPathNode>& getStartStageNode() const;
   const std::unique_ptr<TimingPathNode>& getEndStageNode() const;
 
-  void populatePath(sta::Path* path,
-                    sta::dbSta* sta,
-                    sta::DcalcAnalysisPt* dcalc_ap,
-                    bool clock_expanded);
+  void populatePath(sta::Path* path, sta::dbSta* sta, bool clock_expanded);
   void populateCapturePath(sta::Path* path,
                            sta::dbSta* sta,
-                           sta::DcalcAnalysisPt* dcalc_ap,
                            float offset,
                            bool clock_expanded);
+  std::vector<odb::dbNet*> getNets(const PathSection& path_section) const;
 
  private:
   TimingNodeList path_nodes_;
@@ -208,7 +213,7 @@ class TimingPath
 
   void populateNodeList(sta::Path* path,
                         sta::dbSta* sta,
-                        sta::DcalcAnalysisPt* dcalc_ap,
+                        sta::Scene* scene,
                         float offset,
                         bool clock_expanded,
                         bool is_capture_path,
@@ -227,6 +232,10 @@ class TimingPath
                           float& prev_inst_delay,
                           bool& pin_belongs_to_inverter_pair_instance);
   void computeClkEndIndex(TimingNodeList& nodes, int& index);
+  void getNets(std::vector<odb::dbNet*>& nets,
+               const TimingNodeList& nodes,
+               bool only_clock,
+               bool only_data) const;
 };
 
 class ClockTree
@@ -317,13 +326,17 @@ class STAGuiInterface
  public:
   STAGuiInterface(sta::dbSta* sta = nullptr);
 
-  void setSTA(sta::dbSta* sta) { sta_ = sta; }
+  void setSTA(sta::dbSta* sta)
+  {
+    sta_ = sta;
+    scene_ = sta->cmdScene();
+  }
   sta::dbSta* getSTA() const { return sta_; }
 
   sta::dbNetwork* getNetwork() const { return sta_->getDbNetwork(); }
 
-  sta::Corner* getCorner() const { return corner_; }
-  void setCorner(sta::Corner* corner) { corner_ = corner; }
+  sta::Scene* getScene() const { return scene_; }
+  void setScene(sta::Scene* scene) { scene_ = scene; }
 
   bool isUseMax() const { return use_max_; }
   void setUseMax(bool use_max) { use_max_ = use_max; }
@@ -365,12 +378,11 @@ class STAGuiInterface
   ConeDepthMap buildConeConnectivity(const sta::Pin* pin,
                                      ConeDepthMapPinSet& depth_map) const;
 
-  sta::ClockSeq* getClocks() const;
+  const sta::ClockSeq* getClocks() const;
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;
   StaPins getEndPoints() const;
-  StaPins getStartPoints() const;
 
   float getPinSlack(const sta::Pin* pin) const;
   EndPointSlackMap getEndPointToSlackMap(const std::string& path_group_name,
@@ -383,7 +395,7 @@ class STAGuiInterface
  private:
   sta::dbSta* sta_;
 
-  sta::Corner* corner_;
+  sta::Scene* scene_;
   bool use_max_;
   bool one_path_per_endpoint_;
   int max_path_count_;

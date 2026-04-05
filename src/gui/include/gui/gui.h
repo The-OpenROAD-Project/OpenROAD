@@ -39,9 +39,6 @@ class Logger;
 
 namespace gui {
 class HeatMapDataSource;
-class PinDensityDataSource;
-class PlacementDensityDataSource;
-class PowerDensityDataSource;
 class Painter;
 class Selected;
 class Options;
@@ -292,7 +289,7 @@ class Painter
   }
 
   double getPixelsPerDBU() { return pixels_per_dbu_; }
-  Options* getOptions() { return options_; }
+  Options* getOptions();
   const odb::Rect& getBounds() { return bounds_; }
 
  protected:
@@ -651,6 +648,54 @@ class SpectrumGenerator
  private:
   static const unsigned char kSpectrum[256][3];
   double scale_;
+  static constexpr int kLegendColorIncrement = 2;
+};
+
+class Legend
+{
+ public:
+  virtual ~Legend() = default;
+
+  virtual void draw(Painter& painter) const = 0;
+
+ protected:
+  Legend() = default;
+};
+
+// A legend for a linear spectrum of colors
+// The colors are specified as continuous from low to high
+// For example, a heat map legend
+class LinearLegend : public Legend
+{
+ public:
+  LinearLegend(const std::vector<Painter::Color>& colors);
+
+  // Set the legend key as a vector of (color, text) pairs
+  void setLegendKey(
+      const std::vector<std::pair<Painter::Color, std::string>>& legend_key);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<Painter::Color> colors_;
+  std::vector<std::pair<Painter::Color, std::string>> legend_key_;
+};
+
+// A legend for discrete colors
+// Each color is associated with a text label
+// For example, a timing path legend
+class DiscreteLegend : public Legend
+{
+ public:
+  DiscreteLegend() = default;
+
+  // Add a (color, text) entry to the legend
+  void addLegendKey(const Painter::Color& color, const std::string& text);
+
+  void draw(Painter& painter) const override;
+
+ private:
+  std::vector<std::pair<Painter::Color, std::string>> color_key_;
 };
 
 // A chart with a single X axis and potentially multiple Y axes
@@ -761,6 +806,8 @@ class Gui
 
   // Zoom to the given rectangle
   void zoomTo(const odb::Rect& rect_dbu);
+  // zoom to the specified point
+  void zoomTo(const odb::Point& focus, int diameter);
   void zoomIn();
   void zoomIn(const odb::Point& focus_dbu);
   void zoomOut();
@@ -778,7 +825,7 @@ class Gui
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
                           const std::string& filename,
-                          const std::string& corner = "",
+                          const std::string& scene = "",
                           int width_px = 0,
                           int height_px = 0);
   void selectClockviewerClock(const std::string& clock_name,
@@ -983,44 +1030,15 @@ class Gui
   utl::Logger* logger_;
   odb::dbDatabase* db_;
 
-  // There are RTTI implementation differences between libstdc++ and libc++,
-  // where the latter seems to generate multiple typeids for classes including
-  // but not limited to sta::Instance* in different compile units. We have been
-  // unable to remedy this.
-  //
-  // These classes are a workaround such that unless __GLIBCXX__ is set, hashing
-  // and comparing are done on the type's name instead, which adds a negligible
-  // performance penalty but has the distinct advantage of not crashing when an
-  // Instance is clicked in the GUI.
-  //
-  // In the event the RTTI issue is ever resolved, the following two structs may
-  // be removed.
-  struct TypeInfoHasher
-  {
-    std::size_t operator()(const std::type_index& x) const;
-  };
-  struct TypeInfoComparator
-  {
-    bool operator()(const std::type_index& a, const std::type_index& b) const;
-  };
-
-  // Maps types to descriptors
-  std::unordered_map<std::type_index,
-                     std::unique_ptr<const Descriptor>,
-                     TypeInfoHasher,
-                     TypeInfoComparator>
-      descriptors_;
   // Heatmaps
   std::set<HeatMapDataSource*> heat_maps_;
+  std::map<HeatMapDataSource*, std::unique_ptr<Renderer>> heat_map_renderers_;
+  std::vector<std::shared_ptr<HeatMapDataSource>> owned_heat_maps_;
 
   // tcl commands needed to restore state
   std::vector<std::string> tcl_state_commands_;
 
   std::set<Renderer*> renderers_;
-
-  std::unique_ptr<PinDensityDataSource> pin_density_heat_map_;
-  std::unique_ptr<PlacementDensityDataSource> placement_density_heat_map_;
-  std::unique_ptr<PowerDensityDataSource> power_density_heat_map_;
 
   std::vector<std::unique_ptr<GIF>> gifs_;
   static constexpr int kDefaultGifDelay = 250;

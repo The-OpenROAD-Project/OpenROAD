@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+
 #include <array>
 #include <cstdint>
 #include <cstdlib>
@@ -37,7 +39,7 @@ class dbOStream
 
   dbOStream& operator<<(bool c)
   {
-    unsigned char b = (c == true ? 1 : 0);
+    unsigned char b = (c ? 1 : 0);
     return *this << b;
   }
 
@@ -280,7 +282,7 @@ class dbIStream
   {
     unsigned char b;
     *this >> b;
-    c = (b == 1 ? true : false);
+    c = (b == 1);
     return *this;
   }
 

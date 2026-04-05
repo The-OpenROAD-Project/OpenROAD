@@ -40,6 +40,3 @@ or_integration_tests(
     zerosoc_pads_check_only_disconnected
 )
 
-# Skipped
-#psm_man_tcl_check
-#psm_readme_msgs_check

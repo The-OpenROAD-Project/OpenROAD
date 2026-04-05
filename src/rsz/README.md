@@ -220,6 +220,7 @@ repair_timing
     [-libraries libs]
     [-allow_setup_violations]
     [-sequence]
+    [-phases]
     [-skip_pin_swap]
     [-skip_gate_cloning]
     [-skip_size_down]
@@ -248,7 +249,8 @@ repair_timing
 | `-setup_margin` | Add additional setup slack margin. |
 | `-hold_margin` | Add additional hold slack margin. |
 | `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-sequence` | Specify a particular order of setup timing optimizations. The default is "unbuffer,vt_swap,sizeup,swap,buffer,clone,split". Obeys skip flags also. |
+| `-sequence` | Specify a particular order of setup timing optimization moves. The default is "unbuffer vt_swap sizeup swap buffer clone split". Obeys skip flags also. |
+| `-phases` | Specify a particular order of setup timing optimization phases. The default is "LEGACY LAST_GASP". |
 | `-skip_pin_swap` | Flag to skip pin swap. The default is to perform pin swap transform during setup fixing. |
 | `-skip_gate_cloning` | Flag to skip gate cloning. The default is to perform gate cloning transform during setup fixing. |
 | `-skip_size_down` | Flag to skip gate down sizing. The default is to perform non-critical fanout gate down sizing transform during setup fixing. |
@@ -639,6 +641,53 @@ Simply run the following script:
 
 ## Limitations
 
+## Using the Python interface to rsz
+
+```{warning}
+The `Python` interface is currently in development and is subject to change.
+```
+
+The `Python` API tries to stay close to the API defined in the `C++` class
+`Resizer` that is located [here](./include/rsz/Resizer.hh).
+
+When initializing a design, a sequence of `Python` commands might look like
+the following:
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLiberty("my_lib.lib")
+tech.readLef("my_tech.lef")
+
+design = Design(tech)
+design.readDef("my_design.def")
+
+resizer = design.getResizer()
+```
+
+Here are some common operations on the `Resizer` object:
+
+```python
+resizer.setMaxUtilization(0.8)
+resizer.bufferInputs(None, False)
+resizer.bufferOutputs(None, False)
+resizer.repairDesign(0.0, 0.0, 0.0, 0.0, False, False)
+resizer.repairClkNets(0.0)
+resizer.repairClkInverters()
+resizer.repairHold(0.0, 0.0, False, 0.2, 10000, -1, False, False)
+resizer.eliminateDeadLogic(True)
+resizer.reportLongWires(10, 2)
+resizer.reportDontUse()
+resizer.reportDontTouch()
+```
+
+There are also some useful `Python` functions located in the
+[`rsz_aux.py`](./test/rsz_aux.py) file that provide Pythonic keyword-argument
+wrappers with unit conversions (microns → metres, nanoseconds → seconds,
+percentages → fractions), but these are not considered part of the *final*
+API and may be subject to change.
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)
@@ -646,4 +695,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

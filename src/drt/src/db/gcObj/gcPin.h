@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "boost/polygon/polygon.hpp"
+#include "db/gcObj/gcBlockObject.h"
 #include "db/gcObj/gcShape.h"
 #include "frBaseTypes.h"
 
