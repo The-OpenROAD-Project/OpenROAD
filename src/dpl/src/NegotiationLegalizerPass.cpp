@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstddef>
 #include <ranges>
+#include <ratio>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -50,6 +51,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace dpl {

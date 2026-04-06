@@ -6,6 +6,7 @@
 
 #include "dpl/Opendp.h"
 #include "infrastructure/Coordinates.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbTech;

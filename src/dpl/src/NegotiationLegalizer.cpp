@@ -36,11 +36,16 @@
 #include "NegotiationLegalizer.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <functional>
 #include <limits>
 #include <queue>
+#include <ratio>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>

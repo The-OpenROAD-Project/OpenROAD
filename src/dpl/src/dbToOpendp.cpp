@@ -26,8 +26,6 @@
 
 namespace dpl {
 
-using utl::DPL;
-
 using std::string;
 using std::vector;
 

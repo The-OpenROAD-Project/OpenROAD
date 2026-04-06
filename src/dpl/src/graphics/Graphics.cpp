@@ -6,8 +6,10 @@
 #include <any>
 #include <cstdlib>
 #include <set>
+#include <vector>
 
 #include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
 #include "gui/gui.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
