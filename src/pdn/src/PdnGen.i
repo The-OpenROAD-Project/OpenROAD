@@ -19,6 +19,9 @@ utl::Logger* getLogger();
 using std::regex;
 using utl::PDN;
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+ typedef int Tcl_Size;
+#endif
 %}
 
 %import <std_vector.i>
