@@ -19,7 +19,7 @@ You are reviewing PR **$ARGUMENTS**.
 
 ```bash
 gh pr view $ARGUMENTS --repo The-OpenROAD-Project/OpenROAD \
-  --json title,body,labels,files,additions,deletions,baseRefName
+  --json title,body,labels,files,additions,deletions,baseRefName,headRefOid
 
 gh pr diff $ARGUMENTS --repo The-OpenROAD-Project/OpenROAD
 ```
@@ -104,7 +104,7 @@ clear (e.g., "const", "unreachable after throw", "`int64_t` for area").
 ```bash
 # For individual comments on specific lines:
 gh api repos/The-OpenROAD-Project/OpenROAD/pulls/$ARGUMENTS/comments \
-  -f body="COMMENT" -f path="FILE" -f line=LINE -f commit_id="COMMIT"
+  -f body="COMMENT" -f path="FILE" -F line=LINE -f side="RIGHT" -f commit_id="COMMIT"
 
 # For a general review comment:
 gh pr review $ARGUMENTS --repo The-OpenROAD-Project/OpenROAD \
