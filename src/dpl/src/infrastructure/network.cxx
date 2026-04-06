@@ -85,18 +85,20 @@ Pin* Network::addPin(odb::dbITerm* term)
   pins_.emplace_back(std::move(upin));
 
   auto node = getNode(term->getInst());
-  for (auto pin : term->getMTerm()->getMPins()) {
-    for (auto box : pin->getGeometry()) {
-      auto layer = box->getTechLayer();
-      if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
-        continue;
+  if (node != nullptr) {
+    for (auto pin : term->getMTerm()->getMPins()) {
+      for (auto box : pin->getGeometry()) {
+        auto layer = box->getTechLayer();
+        if (layer->getType() != odb::dbTechLayerType::Value::ROUTING) {
+          continue;
+        }
+        if (layer->getRoutingLevel() > 3) {
+          continue;
+        }
+        node->addUsedLayer(layer->getRoutingLevel());
+        node->addUsedLayer(layer->getRoutingLevel()
+                           + 1);  // for via access from above
       }
-      if (layer->getRoutingLevel() > 3) {
-        continue;
-      }
-      node->addUsedLayer(layer->getRoutingLevel());
-      node->addUsedLayer(layer->getRoutingLevel()
-                         + 1);  // for via access from above
     }
   }
   return ptr;
@@ -137,8 +139,12 @@ void Network::addEdge(odb::dbNet* net)
     if (!iterm->getInst()->getMaster()->isCoreAutoPlaceable()) {
       continue;
     }
+    Node* node = getNode(iterm->getInst());
+    if (node == nullptr) {
+      continue;
+    }
     Pin* ptr = addPin(iterm);
-    connect(ptr, getNode(iterm->getInst()));
+    connect(ptr, node);
     connect(ptr, edge);
   }
   for (auto bterm : net->getBTerms()) {
