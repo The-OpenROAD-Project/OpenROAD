@@ -62,14 +62,14 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 {
   // Seed with illegal cells and all movable neighbors within the search
   // window so the loop can create space organically.
-  std::unordered_set<int> activeSet(illegalCells.begin(), illegalCells.end());
+  std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
   for (int idx : illegalCells) {
     const HLCell& seed = cells_[idx];
-    const int xlo = seed.x - horizWindow_;
-    const int xhi = seed.x + seed.width + horizWindow_;
-    const int ylo = seed.y - adjWindow_;
-    const int yhi = seed.y + seed.height + adjWindow_;
+    const int xlo = seed.x - horiz_window_;
+    const int xhi = seed.x + seed.width + horiz_window_;
+    const int ylo = seed.y - adj_window_;
+    const int yhi = seed.y + seed.height + adj_window_;
 
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (cells_[i].fixed) {
@@ -77,19 +77,19 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       }
       const HLCell& nb = cells_[i];
       if (nb.x >= xlo && nb.x <= xhi && nb.y >= ylo && nb.y <= yhi) {
-        activeSet.insert(i);
+        active_set.insert(i);
       }
     }
   }
 
-  std::vector<int> active(activeSet.begin(), activeSet.end());
+  std::vector<int> active(active_set.begin(), active_set.end());
 
   // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
-  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),maxIterNeg_);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),max_iter_neg_);
 
   int prev_overflows = -1;
   int stall_count = 0;
-  for (int iter = 0; iter < maxIterNeg_; ++iter) {
+  for (int iter = 0; iter < max_iter_neg_; ++iter) {
     debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
     const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
@@ -119,9 +119,9 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   prev_overflows = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, maxIterNeg_, active.size());
+    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, max_iter_neg_, active.size());
     const int phase_2_overflows
-        = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
+        = negotiationIter(active, iter + max_iter_neg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
       debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 2 converged at iteration {}.",    iter);
       logger_->metric("HL__converge__phase_2__iteration", iter);
@@ -159,21 +159,21 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   const auto t0 = Clock::now();
 
   // Reset findBestLocation profiling accumulators.
-  profInitSearchNs_ = 0;
-  profCurrSearchNs_ = 0;
-  profSnapNs_ = 0;
-  profFilterNs_ = 0;
-  profNegCostNs_ = 0;
-  profDrcNs_ = 0;
-  profCandidatesEvaluated_ = 0;
-  profCandidatesFiltered_ = 0;
+  prof_init_search_ns_ = 0;
+  prof_curr_search_ns_ = 0;
+  prof_snap_ns_ = 0;
+  prof_filter_ns_ = 0;
+  prof_neg_cost_ns_ = 0;
+  prof_drc_ns_ = 0;
+  prof_candidates_evaluated_ = 0;
+  prof_candidates_filtered_ = 0;
 
   int moves_count = 0;
   sortByNegotiationOrder(activeCells);
 
   const auto t1 = Clock::now();
 
-  double ripUpMs = 0, findBestMs = 0, placeMs = 0;
+  double rip_up_ms = 0, find_best_ms = 0, place_ms = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -189,11 +189,11 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     auto tc = Clock::now();
     place(idx, bx, by);
     auto td = Clock::now();
-    ripUpMs += std::chrono::duration<double, std::milli>(tb - ta).count();
-    findBestMs += std::chrono::duration<double, std::milli>(tc - tb).count();
-    placeMs += std::chrono::duration<double, std::milli>(td - tc).count();
+    rip_up_ms += std::chrono::duration<double, std::milli>(tb - ta).count();
+    find_best_ms += std::chrono::duration<double, std::milli>(tc - tb).count();
+    place_ms += std::chrono::duration<double, std::milli>(td - tc).count();
     moves_count++;
-    debugPrint(logger_, utl::DPL, "negotiation", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst_->getName(), moves_count, bx, by);
+    debugPrint(logger_, utl::DPL, "negotiation", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst->getName(), moves_count, bx, by);
   }
 
   const auto t2 = Clock::now();
@@ -213,7 +213,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // (e.g. a move created a one-site gap with a neighbor outside the
   // active set) and pull them in so the negotiation can fix them.
   int totalOverflow = 0;
-  std::unordered_set<int> activeSet(activeCells.begin(), activeCells.end());
+  std::unordered_set<int> active_set(activeCells.begin(), activeCells.end());
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -239,12 +239,12 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || activeSet.contains(i)) {
+    if (cells_[i].fixed || active_set.contains(i)) {
       continue;
     }
     if (!isCellLegal(i)) {
       activeCells.push_back(i);
-      activeSet.insert(i);
+      active_set.insert(i);
       ++totalOverflow;
     }
   }
@@ -271,13 +271,13 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     const double overflowMs = ms(t3, t4);
     const double bystanderMs = ms(t4, t5);
     const double historyMs = ms(t5, t6);
-    const double initSearchMs = profInitSearchNs_ / 1e6;
-    const double currSearchMs = profCurrSearchNs_ / 1e6;
-    const double snapMs = profSnapNs_ / 1e6;
-    const double filterMs = profFilterNs_ / 1e6;
-    const double negCostMs = profNegCostNs_ / 1e6;
-    const double drcMs = profDrcNs_ / 1e6;
-    const double overhead = findBestMs - filterMs - negCostMs - drcMs;  
+    const double initSearchMs = prof_init_search_ns_ / 1e6;
+    const double currSearchMs = prof_curr_search_ns_ / 1e6;
+    const double snapMs = prof_snap_ns_ / 1e6;
+    const double filterMs = prof_filter_ns_ / 1e6;
+    const double negCostMs = prof_neg_cost_ns_ / 1e6;
+    const double drcMs = prof_drc_ns_ / 1e6;
+    const double overhead = find_best_ms - filterMs - negCostMs - drcMs;
     logger_->report(
         "  negotiationIter {} ({:.1f}ms, {} moves): "
         "sort {:.1f}ms ({:.0f}%), "
@@ -286,14 +286,14 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
         "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
         iter, totalMs, moves_count,
         sortMs, pct(sortMs),
-        ripUpMs, pct(ripUpMs), findBestMs, pct(findBestMs), placeMs, pct(placeMs),
+        rip_up_ms, pct(rip_up_ms), find_best_ms, pct(find_best_ms), place_ms, pct(place_ms),
         syncMs, pct(syncMs), overflowMs, pct(overflowMs),
         bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
     logger_->report(
         "    findBest by region ({} candidates, {} filtered): "
         "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
         "snap {:.1f}ms ({:.0f}%)",
-        profCandidatesEvaluated_, profCandidatesFiltered_,
+        prof_candidates_evaluated_, prof_candidates_filtered_,
         initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs),
         snapMs, pct(snapMs));
     logger_->report(
@@ -332,10 +332,10 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
   syncCellToDplGrid(cellIdx);
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-    if (!debug_inst || cells_[cellIdx].db_inst_ == debug_inst) {
+    if (!debug_inst || cells_[cellIdx].db_inst == debug_inst) {
       pushNegotiationPixels();
-      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst_->getName());
-      debug_observer_->drawSelected(cells_[cellIdx].db_inst_);
+      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst->getName());
+      debug_observer_->drawSelected(cells_[cellIdx].db_inst);
     }
   }
 }
@@ -349,14 +349,14 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
 {
   const HLCell& cell = cells_[cellIdx];
 
-  auto bestCost = static_cast<double>(kInfCost);
-  int bestX = cell.x;
-  int bestY = cell.y;
+  auto best_cost = static_cast<double>(kInfCost);
+  int best_x = cell.x;
+  int best_y = cell.y;
 
   // Look up the DPL Node once for DRC checks (may be null if no
   // Opendp integration is available).
   Node* node = (opendp_ && opendp_->drc_engine_ && network_)
-                   ? network_->getNode(cell.db_inst_)
+                   ? network_->getNode(cell.db_inst)
                    : nullptr;
 
   // DRC penalty escalates with iteration count: early iterations are
@@ -365,33 +365,33 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
   const double kDrcPenalty = 1e3 * (1.0 + iter);
 
   using Clock = std::chrono::steady_clock;
-  Clock::duration localFilterTime{};
-  Clock::duration localNegCostTime{};
-  Clock::duration localDrcTime{};
+  Clock::duration local_filter_time{};
+  Clock::duration local_neg_cost_time{};
+  Clock::duration local_drc_time{};
 
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
-    const auto tFilter = Clock::now();
+    const auto t_filter = Clock::now();
     if (!inDie(tx, ty, cell.width, cell.height)
         || !isValidRow(ty, cell, tx)
         || !respectsFence(cellIdx, tx, ty)) {
-      localFilterTime += Clock::now() - tFilter;
-      ++profCandidatesFiltered_;
+      local_filter_time += Clock::now() - t_filter;
+      ++prof_candidates_filtered_;
       return;
     }
-    localFilterTime += Clock::now() - tFilter;
+    local_filter_time += Clock::now() - t_filter;
 
-    const auto tNeg = Clock::now();
+    const auto t_neg = Clock::now();
     double cost = negotiationCost(cellIdx, tx, ty);
-    localNegCostTime += Clock::now() - tNeg;
+    local_neg_cost_time += Clock::now() - t_neg;
 
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      const auto tDrc = Clock::now();
+      const auto t_drc = Clock::now();
       odb::dbOrientType targetOrient = node->getOrient();
-      odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
       if (site != nullptr) {
         auto orient = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
         if (orient.has_value()) {
@@ -401,64 +401,64 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node, GridX{tx}, GridY{ty}, targetOrient);
       cost += kDrcPenalty * drcCount;
-      localDrcTime += Clock::now() - tDrc;
+      local_drc_time += Clock::now() - t_drc;
     }
-    ++profCandidatesEvaluated_;
-    if (cost < bestCost) {
-      bestCost = cost;
-      bestX = tx;
-      bestY = ty;
+    ++prof_candidates_evaluated_;
+    if (cost < best_cost) {
+      best_cost = cost;
+      best_x = tx;
+      best_y = ty;
     }
   };
 
   // Search around the initial (GP) position.
   const auto tInitStart = Clock::now();
-  for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
-    for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
-      tryLocation(cell.initX + dx, cell.initY + dy);
+  for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
+    for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+      tryLocation(cell.init_x + dx, cell.init_y + dy);
     }
   }
   const auto tInitEnd = Clock::now();
 
   // Also search around the current position — critical when the cell has
-  // already been displaced far from initX and needs to explore its local
+  // already been displaced far from init_x and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
   const auto tCurrStart = Clock::now();
-  if (cell.x != cell.initX || cell.y != cell.initY) {
-    for (int dy = -adjWindow_; dy <= adjWindow_; ++dy) {
-      for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
+  if (cell.x != cell.init_x || cell.y != cell.init_y) {
+    for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
+      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
         tryLocation(cell.x + dx, cell.y + dy);
       }
     }
   }
   const auto tCurrEnd = Clock::now();
 
-  profInitSearchNs_ += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart).count();
-  profCurrSearchNs_ += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart).count();
-  profFilterNs_ += std::chrono::duration<double, std::nano>(localFilterTime).count();
-  profNegCostNs_ += std::chrono::duration<double, std::nano>(localNegCostTime).count();
-  profDrcNs_ += std::chrono::duration<double, std::nano>(localDrcTime).count();
+  prof_init_search_ns_ += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart).count();
+  prof_curr_search_ns_ += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart).count();
+  prof_filter_ns_ += std::chrono::duration<double, std::nano>(local_filter_time).count();
+  prof_neg_cost_ns_ += std::chrono::duration<double, std::nano>(local_neg_cost_time).count();
+  prof_drc_ns_ += std::chrono::duration<double, std::nano>(local_drc_time).count();
 
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-    if (cell.db_inst_ == debug_inst) {
-      logger_->report("  Best location for {} is ({}, {}) with cost {}.",         cell.db_inst_->getName(),         bestX,         bestY,         bestCost);
+    if (cell.db_inst == debug_inst) {
+      logger_->report("  Best location for {} is ({}, {}) with cost {}.",         cell.db_inst->getName(),         best_x,         best_y,         best_cost);
       if (node != nullptr) {
         odb::dbOrientType targetOrient = node->getOrient();
-        odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+        odb::dbSite* site = cell.db_inst->getMaster()->getSite();
         if (site != nullptr) {
-          auto orient = opendp_->grid_->getSiteOrientation(GridX{bestX}, GridY{bestY}, site);
+          auto orient = opendp_->grid_->getSiteOrientation(GridX{best_x}, GridY{best_y}, site);
           if (orient.has_value()) {
             targetOrient = orient.value();
           }
         }
         const int drcCount = opendp_->drc_engine_->countDRCViolations(
-            node, GridX{bestX}, GridY{bestY}, targetOrient);
+            node, GridX{best_x}, GridY{best_y}, targetOrient);
         logger_->report("  DRC violations at best location: {}.", drcCount);
       }
     }
   }
-  return {bestX, bestY};
+  return {best_x, best_y};
 }
 
 // ===========================================================================
@@ -471,8 +471,8 @@ double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
   const HLCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
 
-  const int xBegin = std::max(0, x - cell.padLeft);
-  const int xEnd = std::min(gridW_, x + cell.width + cell.padRight);
+  const int xBegin = std::max(0, x - cell.pad_left);
+  const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int gx = xBegin; gx < xEnd; ++gx) {
       const int gy = y + dy;
@@ -504,7 +504,7 @@ double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
 double NegotiationLegalizer::targetCost(int cellIdx, int x, int y) const
 {
   const HLCell& cell = cells_[cellIdx];
-  const int disp = std::abs(x - cell.initX) + std::abs(y - cell.initY);
+  const int disp = std::abs(x - cell.init_x) + std::abs(y - cell.init_y);
   return static_cast<double>(disp)
          + mf_ * static_cast<double>(std::max(0, disp - th_));
 }
@@ -526,8 +526,8 @@ double NegotiationLegalizer::adaptivePf(int iter) const
 
 void NegotiationLegalizer::updateHistoryCosts()
 {
-  for (int gy = 0; gy < gridH_; ++gy) {
-    for (int gx = 0; gx < gridW_; ++gx) {
+  for (int gy = 0; gy < grid_h_; ++gy) {
+    for (int gx = 0; gx < grid_w_; ++gx) {
       Pixel& g = gridAt(gx, gy);
       const int ov = g.overuse();
       if (ov > 0) {
@@ -554,12 +554,12 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
       continue;
     }
     const HLCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst_);
+    Node* node = network_->getNode(cell.db_inst);
     if (node == nullptr) {
       continue;
     }
     odb::dbOrientType orient = node->getOrient();
-    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
       auto o = opendp_->grid_->getSiteOrientation(
           GridX{cell.x}, GridY{cell.y}, site);
@@ -644,9 +644,9 @@ void NegotiationLegalizer::greedyImprove(int passes)
 
       ripUp(idx);
 
-      int bestX = cell.x;
-      int bestY = cell.y;
-      int bestDisp = curDisp;
+      int best_x = cell.x;
+      int best_y = cell.y;
+      int best_dist = curDisp;
 
       auto tryLoc = [&](int tx, int ty) {
         if (!inDie(tx, ty, cell.width, cell.height)) {
@@ -659,8 +659,8 @@ void NegotiationLegalizer::greedyImprove(int passes)
           return;
         }
         // Only accept if no new overlap or padding violation is introduced.
-        const int txBegin = std::max(0, tx - cell.padLeft);
-        const int txEnd = std::min(gridW_, tx + cell.width + cell.padRight);
+        const int txBegin = std::max(0, tx - cell.pad_left);
+        const int txEnd = std::min(grid_w_, tx + cell.width + cell.pad_right);
         for (int dy = 0; dy < cell.height; ++dy) {
           for (int gx = txBegin; gx < txEnd; ++gx) {
             if (gridAt(gx, ty + dy).overuse() > 0) {
@@ -668,22 +668,22 @@ void NegotiationLegalizer::greedyImprove(int passes)
             }
           }
         }
-        const int d = std::abs(tx - cell.initX) + std::abs(ty - cell.initY);
-        if (d < bestDisp) {
-          bestDisp = d;
-          bestX = tx;
-          bestY = ty;
+        const int d = std::abs(tx - cell.init_x) + std::abs(ty - cell.init_y);
+        if (d < best_dist) {
+          best_dist = d;
+          best_x = tx;
+          best_y = ty;
         }
       };
 
-      for (int dx = -horizWindow_; dx <= horizWindow_; ++dx) {
-        tryLoc(cell.initX + dx, cell.y);
-        tryLoc(cell.initX + dx, cell.y - cell.height);
-        tryLoc(cell.initX + dx, cell.y + cell.height);
+      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+        tryLoc(cell.init_x + dx, cell.y);
+        tryLoc(cell.init_x + dx, cell.y - cell.height);
+        tryLoc(cell.init_x + dx, cell.y + cell.height);
       }
 
-      place(idx, bestX, bestY);
-      if (bestDisp < curDisp) {
+      place(idx, best_x, best_y);
+      if (best_dist < curDisp) {
         ++improved;
       }
     }
@@ -703,7 +703,7 @@ void NegotiationLegalizer::cellSwap()
 {
   const int maxDisp = maxDisplacement();
 
-  // Group movable cells by (height, width, railType).
+  // Group movable cells by (height, width, rail_type).
   struct GroupKey
   {
     int height;
@@ -726,7 +726,7 @@ void NegotiationLegalizer::cellSwap()
   std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed) {
-      groups[{cells_[i].height, cells_[i].width, cells_[i].railType}].push_back(
+      groups[{cells_[i].height, cells_[i].width, cells_[i].rail_type}].push_back(
           i);
     }
   }
@@ -741,9 +741,9 @@ void NegotiationLegalizer::cellSwap()
 
         const int dispBefore = ca.displacement() + cb.displacement();
         const int newDispA
-            = std::abs(cb.x - ca.initX) + std::abs(cb.y - ca.initY);
+            = std::abs(cb.x - ca.init_x) + std::abs(cb.y - ca.init_y);
         const int newDispB
-            = std::abs(ca.x - cb.initX) + std::abs(ca.y - cb.initY);
+            = std::abs(ca.x - cb.init_x) + std::abs(ca.y - cb.init_y);
         const int dispAfter = newDispA + newDispB;
 
         if (dispAfter >= dispBefore) {
@@ -789,7 +789,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       continue;
     }
     const HLCell& cell = cells_[idx];
-    Node* node = network_->getNode(cell.db_inst_);
+    Node* node = network_->getNode(cell.db_inst);
     if (node == nullptr) {
       continue;
     }
@@ -799,7 +799,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     const PixelPt pt = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
-      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).", cell.db_inst_->getName(), pt.x.v, pt.y.v);
+      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).", cell.db_inst->getName(), pt.x.v, pt.y.v);
       ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation

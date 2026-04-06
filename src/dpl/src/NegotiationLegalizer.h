@@ -120,26 +120,26 @@ struct FenceRegion
 // ---------------------------------------------------------------------------
 struct HLCell
 {
-  odb::dbInst* db_inst_{nullptr};
+  odb::dbInst* db_inst{nullptr};
 
-  int initX{0};   // position after global placement (sites)
-  int initY{0};   // position after global placement (rows)
+  int init_x{0};   // position after global placement (sites)
+  int init_y{0};   // position after global placement (rows)
   int x{0};       // current legalised position (sites)
   int y{0};       // current legalised position (rows)
   int width{0};    // footprint width  (sites)
   int height{0};   // footprint height (row units: 1–4)
-  int padLeft{0};  // left padding (sites)
-  int padRight{0}; // right padding (sites)
+  int pad_left{0};  // left padding (sites)
+  int pad_right{0}; // right padding (sites)
 
   bool fixed{false};
-  NLPowerRailType railType{NLPowerRailType::kVss};
-  int fenceId{-1};       // -1 → default region
+  NLPowerRailType rail_type{NLPowerRailType::kVss};
+  int fence_id{-1};       // -1 → default region
   bool flippable{true};  // odd-height cells may flip vertically
   bool legal{false};     // updated each negotiation iteration
 
   [[nodiscard]] int displacement() const
   {
-    return std::abs(x - initX) + std::abs(y - initY);
+    return std::abs(x - init_x) + std::abs(y - init_y);
   }
 };
 
@@ -150,11 +150,11 @@ struct HLCell
 // ---------------------------------------------------------------------------
 struct AbacusCluster
 {
-  std::vector<int> cellIndices;  // ordered left-to-right within the row
-  double optX{0.0};              // solved optimal left-edge (fractional)
-  double totalWeight{0.0};
-  double totalQ{0.0};  // Σ w_i * x_i^0
-  int totalWidth{0};   // Σ cell widths (sites)
+  std::vector<int> cell_indices;  // ordered left-to-right within the row
+  double opt_x{0.0};              // solved optimal left-edge (fractional)
+  double total_weight{0.0};
+  double total_q{0.0};  // Σ w_i * x_i^0
+  int total_width{0};   // Σ cell widths (sites)
 };
 
 // ---------------------------------------------------------------------------
@@ -178,7 +178,7 @@ class NegotiationLegalizer
 
   // Main entry point – call instead of (or after) the existing opendp path.
   // May be called multiple times on the same object; internal state is reset
-  // at the start of each call (cells_, grid_, fences_, rowRail_ are cleared).
+  // at the start of each call (cells_, grid_, fences_, row_rail_ are cleared).
   void legalize();
 
   // Pass positions back to the DPL original structure.
@@ -188,10 +188,10 @@ class NegotiationLegalizer
   void setRunAbacus(bool run) { run_abacus_ = run; }
   void setMf(double mf) { mf_ = mf; }
   void setTh(int th) { th_ = th; }
-  void setMaxIterNeg(int n) { maxIterNeg_ = n; }
-  void setHorizWindow(int w) { horizWindow_ = w; }
-  void setAdjWindow(int w) { adjWindow_ = w; }
-  void setNumThreads(int n) { numThreads_ = n; }
+  void setMaxIterNeg(int n) { max_iter_neg_ = n; }
+  void setHorizWindow(int w) { horiz_window_ = w; }
+  void setAdjWindow(int w) { adj_window_ = w; }
+  void setNumThreads(int n) { num_threads_ = n; }
 
   // Metrics (valid after legalize())
   [[nodiscard]] double avgDisplacement() const;
@@ -259,18 +259,18 @@ class NegotiationLegalizer
   }
   [[nodiscard]] bool gridExists(int x, int y) const
   {
-    return x >= 0 && x < gridW_ && y >= 0 && y < gridH_;
+    return x >= 0 && x < grid_w_ && y >= 0 && y < grid_h_;
   }
   void addUsage(int cellIdx, int delta);
 
   // Effective padded footprint helpers (inclusive of padding zones).
   [[nodiscard]] int effXBegin(const HLCell& cell) const
   {
-    return std::max(0, cell.x - cell.padLeft);
+    return std::max(0, cell.x - cell.pad_left);
   }
   [[nodiscard]] int effXEnd(const HLCell& cell) const
   {
-    return std::min(gridW_, cell.x + cell.width + cell.padRight);
+    return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
   }
 
   // Data
@@ -281,37 +281,37 @@ class NegotiationLegalizer
   DplObserver* debug_observer_{nullptr};
   Network* network_{nullptr};
 
-  int siteWidth_{0};
-  int rowHeight_{0};
-  int dieXlo_{0};
-  int dieYlo_{0};
-  int dieXhi_{0};
-  int dieYhi_{0};
-  int gridW_{0};
-  int gridH_{0};
+  int site_width_{0};
+  int row_height_{0};
+  int die_xlo_{0};
+  int die_ylo_{0};
+  int die_xhi_{0};
+  int die_yhi_{0};
+  int grid_w_{0};
+  int grid_h_{0};
 
   std::vector<HLCell> cells_;
   std::vector<FenceRegion> fences_;
-  std::vector<NLPowerRailType> rowRail_;
-  std::vector<bool> rowHasSites_;  // true when at least one DB row exists at y
+  std::vector<NLPowerRailType> row_rail_;
+  std::vector<bool> row_has_sites_;  // true when at least one DB row exists at y
 
   double mf_{kMfDefault};
   int th_{kThDefault};
-  int maxIterNeg_{kMaxIterNeg};
-  int horizWindow_{kHorizWindow};
-  int adjWindow_{kAdjWindow};
-  int numThreads_{1};
+  int max_iter_neg_{kMaxIterNeg};
+  int horiz_window_{kHorizWindow};
+  int adj_window_{kAdjWindow};
+  int num_threads_{1};
   bool run_abacus_{false};
 
   // Mutable profiling accumulators for findBestLocation breakdown.
-  mutable double profInitSearchNs_{0};
-  mutable double profCurrSearchNs_{0};
-  mutable double profSnapNs_{0};
-  mutable double profFilterNs_{0};
-  mutable double profNegCostNs_{0};
-  mutable double profDrcNs_{0};
-  mutable int profCandidatesEvaluated_{0};
-  mutable int profCandidatesFiltered_{0};
+  mutable double prof_init_search_ns_{0};
+  mutable double prof_curr_search_ns_{0};
+  mutable double prof_snap_ns_{0};
+  mutable double prof_filter_ns_{0};
+  mutable double prof_neg_cost_ns_{0};
+  mutable double prof_drc_ns_{0};
+  mutable int prof_candidates_evaluated_{0};
+  mutable int prof_candidates_filtered_{0};
 };
 
 }  // namespace dpl

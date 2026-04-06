@@ -39,7 +39,6 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
-#include <cstddef>
 #include <limits>
 #include <queue>
 #include <unordered_map>
@@ -78,13 +77,13 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 {
   assert(!rects.empty());
   const FenceRect* best = rects.data();
-  int bestDist = std::numeric_limits<int>::max();
+  int best_dist = std::numeric_limits<int>::max();
   for (const auto& r : rects) {
     const int dx = std::max({0, r.xlo - cx, cx - r.xhi});
     const int dy = std::max({0, r.ylo - cy, cy - r.yhi});
     const int d = dx + dy;
-    if (d < bestDist) {
-      bestDist = d;
+    if (d < best_dist) {
+      best_dist = d;
       best = &r;
     }
   }
@@ -142,7 +141,7 @@ void NegotiationLegalizer::legalize()
   const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
   debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
 
-  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: {} cells, grid {}x{}.",cells_.size(),gridW_,gridH_);
+  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: {} cells, grid {}x{}.",cells_.size(),grid_w_,grid_h_);
 
   // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
@@ -245,16 +244,16 @@ void NegotiationLegalizer::legalize()
   const auto tOrientStart = Clock::now();
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.db_inst_ == nullptr) {
+    if (cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
     // Set orientation from the row so cells are properly flipped.
-    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
       auto orient = dplGrid->getSiteOrientation(
           GridX{cell.x}, GridY{cell.y}, site);
       if (orient.has_value()) {
-        cell.db_inst_->setOrient(orient.value());
+        cell.db_inst->setOrient(orient.value());
       }
     }
   }
@@ -297,13 +296,13 @@ void NegotiationLegalizer::flushToDb()
 {
   const Grid* dplGrid = opendp_->grid_.get();
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.db_inst_ == nullptr) {
+    if (cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
-    const int dbX = dieXlo_ + cell.x * siteWidth_;
-    const int dbY = dieYlo_ + dplGrid->gridYToDbu(GridY{cell.y}).v;
-    cell.db_inst_->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-    cell.db_inst_->setLocation(dbX, dbY);
+    const int db_x = die_xlo_ + cell.x * site_width_;
+    const int db_y = die_ylo_ + dplGrid->gridYToDbu(GridY{cell.y}).v;
+    cell.db_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
+    cell.db_inst->setLocation(db_x, db_y);
   }
 }
 
@@ -316,11 +315,12 @@ void NegotiationLegalizer::pushNegotiationPixels()
   if (!debug_observer_) {
     return;
   }
-  std::vector<NegotiationPixelState> pixels(gridW_ * gridH_);
-  for (int gy = 0; gy < gridH_; ++gy) {
-    for (int gx = 0; gx < gridW_; ++gx) {
+  std::vector<NegotiationPixelState> pixels(
+      static_cast<size_t>(grid_w_) * grid_h_);
+  for (int gy = 0; gy < grid_h_; ++gy) {
+    for (int gx = 0; gx < grid_w_; ++gx) {
       const Pixel& g = gridAt(gx, gy);
-      const int idx = gy * gridW_ + gx;
+      const int idx = gy * grid_w_ + gx;
       if (g.capacity == 0) {
         pixels[idx] = (g.usage > 0) ? NegotiationPixelState::kBlocked
                                     : NegotiationPixelState::kNoRow;
@@ -339,7 +339,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
       if (cell.fixed) {
         continue;
       }
-      Node* node = network_->getNode(cell.db_inst_);
+      Node* node = network_->getNode(cell.db_inst);
       if (node == nullptr) {
         continue;
       }
@@ -347,7 +347,7 @@ void NegotiationLegalizer::pushNegotiationPixels()
               node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
         for (int dy = 0; dy < cell.height; ++dy) {
           for (int gx = cell.x; gx < cell.x + cell.width; ++gx) {
-            const int pidx = (cell.y + dy) * gridW_ + gx;
+            const int pidx = (cell.y + dy) * grid_w_ + gx;
             if (pidx >= 0 && pidx < static_cast<int>(pixels.size())) {
               pixels[pidx] = NegotiationPixelState::kDrcViolation;
             }
@@ -358,12 +358,12 @@ void NegotiationLegalizer::pushNegotiationPixels()
   }
 
   const Grid* dplGrid = opendp_->grid_.get();
-  std::vector<int> row_y_dbu(gridH_ + 1);
-  for (int r = 0; r <= gridH_; ++r) {
+  std::vector<int> row_y_dbu(grid_h_ + 1);
+  for (int r = 0; r <= grid_h_; ++r) {
     row_y_dbu[r] = dplGrid->gridYToDbu(GridY{r}).v;
   }
   debug_observer_->setNegotiationPixels(
-      pixels, gridW_, gridH_, dieXlo_, dieYlo_, siteWidth_, row_y_dbu);
+      pixels, grid_w_, grid_h_, die_xlo_, die_ylo_, site_width_, row_y_dbu);
 }
 
 void NegotiationLegalizer::debugPause(const std::string& msg)
@@ -395,19 +395,19 @@ void NegotiationLegalizer::setDplPositions()
   }
 
   for (const auto& cell : cells_) {
-    if (cell.fixed || cell.db_inst_ == nullptr) {
+    if (cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
-    auto it = inst_to_node.find(cell.db_inst_);
+    auto it = inst_to_node.find(cell.db_inst);
     if (it != inst_to_node.end()) {
-      const int coreX = cell.x * siteWidth_;
+      const int coreX = cell.x * site_width_;
       const int coreY = opendp_->grid_->gridYToDbu(GridY{cell.y}).v;
       it->second->setLeft(DbuX(coreX));
       it->second->setBottom(DbuY(coreY));
       it->second->setPlaced(true);
 
       // Update orientation to match the row.
-      odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
       if (site != nullptr) {
         auto orient = opendp_->grid_->getSiteOrientation(
             GridX{cell.x}, GridY{cell.y}, site);
@@ -435,30 +435,30 @@ bool NegotiationLegalizer::initFromDb()
 
   const Grid* dpl_grid = opendp_->grid_.get();
 
-  const odb::Rect coreArea = dpl_grid->getCore();
-  dieXlo_ = coreArea.xMin();
-  dieYlo_ = coreArea.yMin();
-  dieXhi_ = coreArea.xMax();
-  dieYhi_ = coreArea.yMax();
+  const odb::Rect core_area = dpl_grid->getCore();
+  die_xlo_ = core_area.xMin();
+  die_ylo_ = core_area.yMin();
+  die_xhi_ = core_area.xMax();
+  die_yhi_ = core_area.yMax();
 
   // Site width from the DPL grid; row height from the first DB row.
-  siteWidth_ = dpl_grid->getSiteWidth().v;
+  site_width_ = dpl_grid->getSiteWidth().v;
   for (auto* row : block->getRows()) {
-    rowHeight_ = row->getSite()->getHeight();
+    row_height_ = row->getSite()->getHeight();
     break;
   }
-  assert(siteWidth_ > 0 && rowHeight_ > 0);
+  assert(site_width_ > 0 && row_height_ > 0);
 
   // Grid dimensions from the DPL grid (accounts for actual DB rows).
-  gridW_ = dpl_grid->getRowSiteCount().v;
-  gridH_ = dpl_grid->getRowCount().v;
+  grid_w_ = dpl_grid->getRowSiteCount().v;
+  grid_h_ = dpl_grid->getRowCount().v;
 
   // Assign power-rail types using row-index parity (VSS at even rows).
   // Replace with explicit LEF pg_pin parsing for advanced PDKs.
-  rowRail_.clear();
-  rowRail_.resize(gridH_);
-  for (int r = 0; r < gridH_; ++r) {
-    rowRail_[r] = (r % 2 == 0) ? NLPowerRailType::kVss : NLPowerRailType::kVdd;
+  row_rail_.clear();
+  row_rail_.resize(grid_h_);
+  for (int r = 0; r < grid_h_; ++r) {
+    row_rail_[r] = (r % 2 == 0) ? NLPowerRailType::kVss : NLPowerRailType::kVdd;
   }
 
   // Build HLCell records from all placed instances.
@@ -478,33 +478,33 @@ bool NegotiationLegalizer::initFromDb()
     }
 
     HLCell cell;
-    cell.db_inst_ = db_inst;
+    cell.db_inst = db_inst;
     cell.fixed = (status == odb::dbPlacementStatus::FIRM
                   || status == odb::dbPlacementStatus::LOCKED
                   || status == odb::dbPlacementStatus::COVER);
 
-    int dbX = 0;
-    int dbY = 0;
-    db_inst->getLocation(dbX, dbY);
+    int db_x = 0;
+    int db_y = 0;
+    db_inst->getLocation(db_x, db_y);
     // Snap to grid, findBestLocation() and snapToLegal() iterate over grid positions
-    cell.initX = dpl_grid->gridX(DbuX{dbX - dieXlo_}).v;
-    cell.initY = dpl_grid->gridRoundY(DbuY{dbY - dieYlo_}).v;
-    // Clamp to valid grid range – gridRoundY can return gridH_ when the
+    cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
+    cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
+    // Clamp to valid grid range – gridRoundY can return grid_h_ when the
     // instance is near the top edge.
-    cell.initX = std::max(0, std::min(cell.initX, gridW_ - 1));
-    cell.initY = std::max(0, std::min(cell.initY, gridH_ - 1));
-    cell.x = cell.initX;
-    cell.y = cell.initY;
+    cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - 1));
+    cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - 1));
+    cell.x = cell.init_x;
+    cell.y = cell.init_y;
 
     auto* master = db_inst->getMaster();
     cell.width = std::max(
         1,
         static_cast<int>(
-            std::round(static_cast<double>(master->getWidth()) / siteWidth_)));
+            std::round(static_cast<double>(master->getWidth()) / site_width_)));
     cell.height = std::max(
         1,
         static_cast<int>(
-            std::round(static_cast<double>(master->getHeight()) / rowHeight_)));
+            std::round(static_cast<double>(master->getHeight()) / row_height_)));
 
     // gridX() / gridRoundY() are purely arithmetic and don't check whether a
     // site actually exists at the computed position.  Instances near the chip
@@ -516,8 +516,8 @@ bool NegotiationLegalizer::initFromDb()
       odb::dbSite* site = master->getSite();
       // Check that the full cell footprint (width x height) fits on valid sites.
       auto isValidSite = [&](int gx, int gy) -> bool {
-        if (gx < 0 || gx + cell.width > gridW_
-            || gy < 0 || gy + cell.height > gridH_) {
+        if (gx < 0 || gx + cell.width > grid_w_
+            || gy < 0 || gy + cell.height > grid_h_) {
           return false;
         }
         // Site type check at the anchor row is representative for all rows.
@@ -538,48 +538,48 @@ bool NegotiationLegalizer::initFromDb()
 
       //The snapping here is actually quite similar to the "hopeless" approach in original DPL.
       // they achieve the same objective, and the previous is more simple, consider replacing this.
-      if (!isValidSite(cell.initX, cell.initY)) {
-        logger_->report(
+      if (!isValidSite(cell.init_x, cell.init_y)) {
+        debugPrint(logger_,utl::DPL,"negotiation",1,
             "Instance {} at ({}, {}) snaps to invalid site at "
             "({}, {}). Searching for nearest valid site.",
-            cell.db_inst_->getName(),
-            dbX,
-            dbY,
-            dieXlo_ + cell.initX * siteWidth_,
-            dieYlo_ + cell.initY * rowHeight_);
+            cell.db_inst->getName(),
+            db_x,
+            db_y,
+            die_xlo_ + cell.init_x * site_width_,
+            die_ylo_ + cell.init_y * row_height_);
 
         // Priority queue keyed on physical Manhattan distance (DBU) so the
         // search expands in true physical proximity, not grid-unit proximity.
-        // One step in X = siteWidth_ DBU; one step in Y = rowHeight_ DBU.
+        // One step in X = site_width_ DBU; one step in Y = row_height_ DBU.
         using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
         std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
         std::unordered_set<int> visited;
 
         auto tryEnqueue = [&](int gx, int gy) {
           // Leave room for the full cell footprint before enqueueing.
-          if (gx < 0 || gx + cell.width > gridW_
-              || gy < 0 || gy + cell.height > gridH_) {
+          if (gx < 0 || gx + cell.width > grid_w_
+              || gy < 0 || gy + cell.height > grid_h_) {
             return;
           }
-          if (!visited.insert(gy * gridW_ + gx).second) {
+          if (!visited.insert(gy * grid_w_ + gx).second) {
             return;
           }
-          const int dist = std::abs(gx - cell.initX) * siteWidth_
-                         + std::abs(gy - cell.initY) * rowHeight_;
+          const int dist = std::abs(gx - cell.init_x) * site_width_
+                         + std::abs(gy - cell.init_y) * row_height_;
           pq.emplace(dist, gx, gy);
         };
 
-        tryEnqueue(cell.initX, cell.initY);
+        tryEnqueue(cell.init_x, cell.init_y);
         constexpr std::array<std::pair<int, int>, 4> kNeighbors{
             {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
         while (!pq.empty()) {
           auto [dist, gx, gy] = pq.top();
           pq.pop();
           if (isValidSite(gx, gy)) {
-            cell.initX = gx;
-            cell.initY = gy;
-            cell.x = cell.initX;
-            cell.y = cell.initY;
+            cell.init_x = gx;
+            cell.init_y = gy;
+            cell.x = cell.init_x;
+            cell.y = cell.init_y;
             break;
           }
           for (auto [ox, oy] : kNeighbors) {
@@ -589,12 +589,12 @@ bool NegotiationLegalizer::initFromDb()
       }
     }
 
-    cell.railType = inferRailType(cell.initY);
+    cell.rail_type = inferRailType(cell.init_y);
     // If the instance is currently flipped relative to the row's standard orientation,
     // its internal rail design is opposite of the row's bottom rail.
-    auto siteOrient = dpl_grid->getSiteOrientation(GridX{cell.initX}, GridY{cell.initY}, master->getSite());
+    auto siteOrient = dpl_grid->getSiteOrientation(GridX{cell.init_x}, GridY{cell.init_y}, master->getSite());
     if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
-      cell.railType = (cell.railType == NLPowerRailType::kVss) ? NLPowerRailType::kVdd : NLPowerRailType::kVss;
+      cell.rail_type = (cell.rail_type == NLPowerRailType::kVss) ? NLPowerRailType::kVdd : NLPowerRailType::kVss;
     }
 
     cell.flippable = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
@@ -604,8 +604,8 @@ bool NegotiationLegalizer::initFromDb()
     }
 
     if (padding_ != nullptr) {
-      cell.padLeft = padding_->padLeft(db_inst).v;
-      cell.padRight = padding_->padRight(db_inst).v;
+      cell.pad_left = padding_->padLeft(db_inst).v;
+      cell.pad_right = padding_->padRight(db_inst).v;
     }
 
     cells_.push_back(cell);
@@ -616,8 +616,8 @@ bool NegotiationLegalizer::initFromDb()
 
 NLPowerRailType NegotiationLegalizer::inferRailType(int rowIdx) const
 {
-  if (rowIdx >= 0 && rowIdx < static_cast<int>(rowRail_.size())) {
-    return rowRail_[rowIdx];
+  if (rowIdx >= 0 && rowIdx < static_cast<int>(row_rail_.size())) {
+    return row_rail_[rowIdx];
   }
   return NLPowerRailType::kVss;
 }
@@ -627,8 +627,8 @@ void NegotiationLegalizer::buildGrid()
   Grid* dplGrid = opendp_->grid_.get();
 
   // Reset all pixels to default negotiation state.
-  for (int gy = 0; gy < gridH_; ++gy) {
-    for (int gx = 0; gx < gridW_; ++gx) {
+  for (int gy = 0; gy < grid_h_; ++gy) {
+    for (int gx = 0; gx < grid_w_; ++gx) {
       Pixel& pixel = dplGrid->pixel(GridY{gy}, GridX{gx});
       pixel.capacity = pixel.is_valid ? 1 : 0;
       pixel.usage = 0;
@@ -638,11 +638,11 @@ void NegotiationLegalizer::buildGrid()
 
   // Derive per-row existence: a row "has sites" if at least one site
   // on that row has capacity > 0.
-  rowHasSites_.assign(gridH_, false);
-  for (int gy = 0; gy < gridH_; ++gy) {
-    for (int gx = 0; gx < gridW_; ++gx) {
+  row_has_sites_.assign(grid_h_, false);
+  for (int gy = 0; gy < grid_h_; ++gy) {
+    for (int gx = 0; gx < grid_w_; ++gx) {
       if (gridAt(gx, gy).capacity > 0) {
-        rowHasSites_[gy] = true;
+        row_has_sites_[gy] = true;
         break;
       }
     }
@@ -684,10 +684,10 @@ void NegotiationLegalizer::initFenceRegions()
 
     for (auto* box : region->getBoundaries()) {
       FenceRect r;
-      r.xlo = (box->xMin() - dieXlo_) / siteWidth_;
-      r.ylo = (box->yMin() - dieYlo_) / rowHeight_;
-      r.xhi = (box->xMax() - dieXlo_) / siteWidth_;
-      r.yhi = (box->yMax() - dieYlo_) / rowHeight_;
+      r.xlo = (box->xMin() - die_xlo_) / site_width_;
+      r.ylo = (box->yMin() - die_ylo_) / row_height_;
+      r.xhi = (box->xMax() - die_xlo_) / site_width_;
+      r.yhi = (box->yMax() - die_ylo_) / row_height_;
       fr.rects.push_back(r);
     }
 
@@ -698,17 +698,17 @@ void NegotiationLegalizer::initFenceRegions()
 
   // Map each instance to its fence region (if any).
   for (auto& cell : cells_) {
-    if (cell.db_inst_ == nullptr) {
+    if (cell.db_inst == nullptr) {
       continue;
     }
-    auto* region = cell.db_inst_->getRegion();
+    auto* region = cell.db_inst->getRegion();
     if (region == nullptr) {
       continue;
     }
     const int rid = region->getId();
     for (int fi = 0; fi < static_cast<int>(fences_.size()); ++fi) {
       if (fences_[fi].id == rid) {
-        cell.fenceId = fi;
+        cell.fence_id = fi;
         break;
       }
     }
@@ -744,20 +744,20 @@ void NegotiationLegalizer::syncCellToDplGrid(int cellIdx)
     return;
   }
   const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.db_inst_ == nullptr) {
+  if (hlcell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.db_inst_);
+  Node* node = network_->getNode(hlcell.db_inst);
   if (node == nullptr) {
     return;
   }
   // Update the Node's position to match the HLCell so Grid operations
   // (which read Node left/bottom) see the current placement.
-  node->setLeft(DbuX(hlcell.x * siteWidth_));
+  node->setLeft(DbuX(hlcell.x * site_width_));
   node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
 
   // Update orientation to match the row.
-  odb::dbSite* site = hlcell.db_inst_->getMaster()->getSite();
+  odb::dbSite* site = hlcell.db_inst->getMaster()->getSite();
   if (site != nullptr) {
     auto orient = opendp_->grid_->getSiteOrientation(
         GridX{hlcell.x}, GridY{hlcell.y}, site);
@@ -775,16 +775,16 @@ void NegotiationLegalizer::eraseCellFromDplGrid(int cellIdx)
     return;
   }
   const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.db_inst_ == nullptr) {
+  if (hlcell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.db_inst_);
+  Node* node = network_->getNode(hlcell.db_inst);
   if (node == nullptr) {
     return;
   }
   // Ensure the Node's position matches the current HLCell position so
   // erasePixel clears the correct pixels (it reads gridCoveringPadded).
-  node->setLeft(DbuX(hlcell.x * siteWidth_));
+  node->setLeft(DbuX(hlcell.x * site_width_));
   node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
   opendp_->grid_->erasePixel(node);
 }
@@ -797,37 +797,37 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // Clear all movable cells from the DPL Grid first, then repaint at
   // their current positions.  Fixed cells were already painted during
   // Opendp::setFixedGridCells() and should not be touched.
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || cells_[i].db_inst_ == nullptr) {
+  for (const HLCell& hlcell : cells_) {
+    if (hlcell.fixed || hlcell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cells_[i].db_inst_);
+    Node* node = network_->getNode(hlcell.db_inst);
     if (node == nullptr) {
       continue;
     }
     // Update Node position then erase whatever was previously painted.
-    node->setLeft(DbuX(cells_[i].x * siteWidth_));
-    node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{cells_[i].y}).v));
+    node->setLeft(DbuX(hlcell.x * site_width_));
+    node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
     opendp_->grid_->erasePixel(node);
   }
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || cells_[i].db_inst_ == nullptr) {
+  for (const HLCell& hlcell : cells_) {
+    if (hlcell.fixed || hlcell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cells_[i].db_inst_);
+    Node* node = network_->getNode(hlcell.db_inst);
     if (node == nullptr) {
       continue;
     }
     // Set orientation to match the row, same as syncCellToDplGrid.
-    odb::dbSite* site = cells_[i].db_inst_->getMaster()->getSite();
+    odb::dbSite* site = hlcell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
       auto orient = opendp_->grid_->getSiteOrientation(
-          GridX{cells_[i].x}, GridY{cells_[i].y}, site);
+          GridX{hlcell.x}, GridY{hlcell.y}, site);
       if (orient.has_value()) {
         node->setOrient(orient.value());
       }
     }
-    opendp_->grid_->paintPixel(node, GridX{cells_[i].x}, GridY{cells_[i].y});
+    opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
   }
   // Re-paint fixed cells last so they always win over any movable cell that
   // may have been placed at an overlapping initial position.  Without this,
@@ -835,10 +835,10 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // the subsequent erasePixel call clears the endcap from the grid, making
   // checkOneSiteGap blind to it.
   for (const HLCell& cell : cells_) {
-    if (!cell.fixed || cell.db_inst_ == nullptr) {
+    if (!cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(cell.db_inst_);
+    Node* node = network_->getNode(cell.db_inst);
     if (node == nullptr) {
       continue;
     }
@@ -852,45 +852,45 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
 
 bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
 {
-  return x >= 0 && y >= 0 && x + w <= gridW_ && y + h <= gridH_;
+  return x >= 0 && y >= 0 && x + w <= grid_w_ && y + h <= grid_h_;
 }
 
 bool NegotiationLegalizer::isValidRow(int rowIdx,
                                  const HLCell& cell,
                                  int gridX) const
 {
-  if (rowIdx < 0 || rowIdx + cell.height > gridH_) {
+  if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
     return false;
   }
   // Every row the cell spans must have real sites.
   for (int dy = 0; dy < cell.height; ++dy) {
-    if (!rowHasSites_[rowIdx + dy]) {
+    if (!row_has_sites_[rowIdx + dy]) {
       return false;
     }
   }
   // Verify that the cell's site type is available on the target row.
-  if (cell.db_inst_ != nullptr && opendp_ && opendp_->grid_) {
-    odb::dbSite* site = cell.db_inst_->getMaster()->getSite();
+  if (cell.db_inst != nullptr && opendp_ && opendp_->grid_) {
+    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr
         && !opendp_->grid_->getSiteOrientation(
             GridX{gridX}, GridY{rowIdx}, site)) {
       return false;
     }
   }
-  const NLPowerRailType rowBot = rowRail_[rowIdx];
+  const NLPowerRailType rowBot = row_rail_[rowIdx];
   if (cell.height % 2 == 1) {
     // Odd-height: bottom rail must match, or cell can be vertically flipped.
-    return cell.flippable || (rowBot == cell.railType);
+    return cell.flippable || (rowBot == cell.rail_type);
   }
   // Even-height: bottom boundary must be the correct rail type, and the
   // cell may only move by an even number of rows.
-  return rowBot == cell.railType;
+  return rowBot == cell.rail_type;
 }
 
 bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
 {
   const HLCell& cell = cells_[cellIdx];
-  if (cell.fenceId < 0) {
+  if (cell.fence_id < 0) {
     // Default region: must not overlap any named fence.
     for (const auto& fence : fences_) {
       if (fence.contains(x, y, cell.width, cell.height)) {
@@ -899,7 +899,7 @@ bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
     }
     return true;
   }
-  return fences_[cell.fenceId].contains(x, y, cell.width, cell.height);
+  return fences_[cell.fence_id].contains(x, y, cell.width, cell.height);
 }
 
 std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
@@ -907,20 +907,20 @@ std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
                                                  int y) const
 {
   const HLCell& cell = cells_[cellIdx];
-  int bestX = std::max(0, std::min(x, gridW_ - cell.width));
-  int bestY = y;
-  double bestDistSq = 1e18;
+  int best_x = std::max(0, std::min(x, grid_w_ - cell.width));
+  int best_y = y;
+  double best_dist_sq = 1e18;
 
-  for (int r = 0; r + cell.height <= gridH_; ++r) {
+  for (int r = 0; r + cell.height <= grid_h_; ++r) {
     if (!isValidRow(r, cell, x)) {
       continue;
     }
 
     // Find nearest valid X region in this row.
-    int localBestX = -1;
-    int localBestDx = 1e9;
+    int local_best_x = -1;
+    int local_best_dx = 1e9;
 
-    for (int tx = 0; tx + cell.width <= gridW_; ++tx) {
+    for (int tx = 0; tx + cell.width <= grid_w_; ++tx) {
       bool ok = true;
       for (int dy = 0; dy < cell.height; ++dy) {
         for (int dx = 0; dx < cell.width; ++dx) {
@@ -936,26 +936,26 @@ std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
 
       if (ok) {
         const int dx = std::abs(tx - x);
-        if (dx < localBestDx) {
-          localBestDx = dx;
-          localBestX = tx;
+        if (dx < local_best_dx) {
+          local_best_dx = dx;
+          local_best_x = tx;
         }
       }
     }
 
-    if (localBestX != -1) {
+    if (local_best_x != -1) {
       const double dy = static_cast<double>(r - y);
-      const double dx = static_cast<double>(localBestDx);
+      const double dx = static_cast<double>(local_best_dx);
       const double distSq = dx * dx + dy * dy;
-      if (distSq < bestDistSq) {
-        bestDistSq = distSq;
-        bestX = localBestX;
-        bestY = r;
+      if (distSq < best_dist_sq) {
+        best_dist_sq = distSq;
+        best_x = local_best_x;
+        best_y = r;
       }
     }
   }
 
-  return {bestX, bestY};
+  return {best_x, best_y};
 }
 
 // ===========================================================================
@@ -985,18 +985,18 @@ std::vector<int> NegotiationLegalizer::runAbacus()
   }
 
   // Snap each cell to a legal row and group by that row.
-  std::vector<std::vector<int>> byRow(gridH_);
+  std::vector<std::vector<int>> byRow(grid_h_);
   for (int i : order) {
     auto [sx, sy] = snapToLegal(i, cells_[i].x, cells_[i].y);
     cells_[i].x = sx;
     cells_[i].y = sy;
-    if (sy >= 0 && sy < gridH_) {
+    if (sy >= 0 && sy < grid_h_) {
       byRow[sy].push_back(i);
     }
   }
 
   // Run the Abacus sweep row by row.
-  for (int r = 0; r < gridH_; ++r) {
+  for (int r = 0; r < grid_h_; ++r) {
     if (byRow[r].empty()) {
       continue;
     }
@@ -1038,17 +1038,17 @@ void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
     }
 
     AbacusCluster nc;
-    nc.cellIndices.push_back(idx);
-    const int effWidth = cell.width + cell.padLeft + cell.padRight;
-    // Target the padded-left position so that cell.initX lands correctly.
-    nc.optX = static_cast<double>(cell.initX - cell.padLeft);
-    nc.totalWeight = 1.0;
-    nc.totalQ = nc.optX;
-    nc.totalWidth = effWidth;
+    nc.cell_indices.push_back(idx);
+    const int eff_width = cell.width + cell.pad_left + cell.pad_right;
+    // Target the padded-left position so that cell.init_x lands correctly.
+    nc.opt_x = static_cast<double>(cell.init_x - cell.pad_left);
+    nc.total_weight = 1.0;
+    nc.total_q = nc.opt_x;
+    nc.total_width = eff_width;
 
     // Clamp to die boundary (padded width).
-    nc.optX = std::max(
-        0.0, std::min(nc.optX, static_cast<double>(gridW_ - effWidth)));
+    nc.opt_x = std::max(
+        0.0, std::min(nc.opt_x, static_cast<double>(grid_w_ - eff_width)));
     clusters.push_back(std::move(nc));
     collapseClusters(clusters, rowIdx);
   }
@@ -1067,23 +1067,23 @@ void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters
     AbacusCluster& prev = clusters[clusters.size() - 2];
 
     // Solve optimal position for the last cluster.
-    last.optX = last.totalQ / last.totalWeight;
-    last.optX = std::max(
+    last.opt_x = last.total_q / last.total_weight;
+    last.opt_x = std::max(
         0.0,
-        std::min(last.optX, static_cast<double>(gridW_ - last.totalWidth)));
+        std::min(last.opt_x, static_cast<double>(grid_w_ - last.total_width)));
 
     // If the last cluster overlaps the previous one, merge them.
-    if (prev.optX + prev.totalWidth > last.optX) {
-      prev.totalWeight += last.totalWeight;
-      prev.totalQ += last.totalQ;
-      prev.totalWidth += last.totalWidth;
-      for (int idx : last.cellIndices) {
-        prev.cellIndices.push_back(idx);
+    if (prev.opt_x + prev.total_width > last.opt_x) {
+      prev.total_weight += last.total_weight;
+      prev.total_q += last.total_q;
+      prev.total_width += last.total_width;
+      for (int idx : last.cell_indices) {
+        prev.cell_indices.push_back(idx);
       }
-      prev.optX = prev.totalQ / prev.totalWeight;
-      prev.optX = std::max(
+      prev.opt_x = prev.total_q / prev.total_weight;
+      prev.opt_x = std::max(
           0.0,
-          std::min(prev.optX, static_cast<double>(gridW_ - prev.totalWidth)));
+          std::min(prev.opt_x, static_cast<double>(grid_w_ - prev.total_width)));
       clusters.pop_back();
     } else {
       break;
@@ -1093,28 +1093,28 @@ void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters
   // Re-solve the top cluster after any merge.
   if (!clusters.empty()) {
     AbacusCluster& top = clusters.back();
-    top.optX = top.totalQ / top.totalWeight;
-    top.optX = std::max(
-        0.0, std::min(top.optX, static_cast<double>(gridW_ - top.totalWidth)));
+    top.opt_x = top.total_q / top.total_weight;
+    top.opt_x = std::max(
+        0.0, std::min(top.opt_x, static_cast<double>(grid_w_ - top.total_width)));
   }
 }
 
 void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
                                              int rowIdx)
 {
-  // cluster.optX is the padded-left edge of the cluster.
-  int paddedX = static_cast<int>(std::round(cluster.optX));
-  paddedX = std::max(0, std::min(paddedX, gridW_ - cluster.totalWidth));
+  // cluster.opt_x is the padded-left edge of the cluster.
+  int paddedX = static_cast<int>(std::round(cluster.opt_x));
+  paddedX = std::max(0, std::min(paddedX, grid_w_ - cluster.total_width));
 
-  for (int idx : cluster.cellIndices) {
-    const int effWidth
-        = cells_[idx].width + cells_[idx].padLeft + cells_[idx].padRight;
-    // Physical left edge = padded-left edge + padLeft of this cell.
-    cells_[idx].x = paddedX + cells_[idx].padLeft;
+  for (int idx : cluster.cell_indices) {
+    const int eff_width
+        = cells_[idx].width + cells_[idx].pad_left + cells_[idx].pad_right;
+    // Physical left edge = padded-left edge + pad_left of this cell.
+    cells_[idx].x = paddedX + cells_[idx].pad_left;
     cells_[idx].y = rowIdx;
-    paddedX += effWidth;
-    if (debug_observer_ && cells_[idx].db_inst_ != nullptr) {
-      debug_observer_->drawSelected(cells_[idx].db_inst_);
+    paddedX += eff_width;
+    if (debug_observer_ && cells_[idx].db_inst != nullptr) {
+      debug_observer_->drawSelected(cells_[idx].db_inst);
       if (opendp_->iterative_debug_) {
         pushNegotiationPixels();
         debug_observer_->redrawAndPause();
@@ -1139,7 +1139,7 @@ bool NegotiationLegalizer::isCellLegal(int cellIdx) const
   // Check placement DRCs (edge spacing, blocked layers, padding,
   // one-site gaps) against neighbours on the DPL Grid.
   if (opendp_ && opendp_->drc_engine_ && network_) {
-    Node* node = network_->getNode(cell.db_inst_);
+    Node* node = network_->getNode(cell.db_inst);
     if (node != nullptr
         && !opendp_->drc_engine_->checkDRC(
             node, GridX{cell.x}, GridY{cell.y}, node->getOrient())) {
