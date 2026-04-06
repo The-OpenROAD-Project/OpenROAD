@@ -90,7 +90,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   int prev_overflows = -1;
   int stall_count = 0;
   for (int iter = 0; iter < maxIterNeg_; ++iter) {
-    logger_->report("Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
+    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
     const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
       debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
@@ -103,6 +103,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       if (stall_count == 3) {
         logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.\nUsing old diamond search for remaining cells.", phase_1_overflows);
         diamondRecovery(active);
+        break;
       }
     } else {
       stall_count = 0;
@@ -118,7 +119,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   prev_overflows = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    logger_->report("Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, maxIterNeg_, active.size());
+    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, maxIterNeg_, active.size());
     const int phase_2_overflows
         = negotiationIter(active, iter + maxIterNeg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
@@ -132,6 +133,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       if (stall_count == 3) {
         logger_->warn(utl::DPL, 702, "Negotiation phase 2: overflow stuck at {} for 3 consecutive iterations.", phase_2_overflows);
         diamondRecovery(active);
+        break;
       }
     } else {
       stall_count = 0;
