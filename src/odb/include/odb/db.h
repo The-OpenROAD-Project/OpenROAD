@@ -5749,9 +5749,8 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
-  /// Returns true if all shapes of the terminal must be connected electrically.
-  /// For example if there's two shapes that make up the A terminal, they must
-  /// both be connected to the net.
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
   ///
   bool isMustJoinAllPorts();
 
