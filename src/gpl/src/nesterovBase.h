@@ -481,6 +481,9 @@ class GPin
   bool hasMinExpSumX() const { return hasMinExpSumX_; }
   bool hasMinExpSumY() const { return hasMinExpSumY_; }
 
+  void setGradient(FloatPoint grad) { gradient_ = grad; }
+  FloatPoint getGradient() const { return gradient_; }
+
   void setCenterLocation(int cx, int cy);
   void updateLocation(const GCell* gCell);
   void updateDensityLocation(const GCell* gCell);
@@ -497,6 +500,7 @@ class GPin
   int offsetCy_ = 0;
   int cx_ = 0;
   int cy_ = 0;
+  FloatPoint gradient_ = {0, 0};
 
   // weighted average WL vals stor for better indexing
   // Please check the equation (4) in the ePlace-MS paper.

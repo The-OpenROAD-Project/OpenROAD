@@ -450,6 +450,8 @@ void GPin::clearWaVars()
 
   maxExpSumX_ = maxExpSumY_ = 0;
   minExpSumX_ = minExpSumY_ = 0;
+
+  gradient_ = {0, 0};
 }
 
 void GPin::setMaxExpSumX(float maxExpSumX)
@@ -1229,14 +1231,9 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
 {
   assert(omp_get_thread_num() == 0);
-  // clear all WA variables.
-#pragma omp parallel for num_threads(num_threads_)
-  for (auto gPin = gPinStor_.begin(); gPin < gPinStor_.end(); ++gPin) {
-    // old-style loop for old OpenMP
-    gPin->clearWaVars();
-  }
 
-  // If checks are very expensive, so short circuit them if debug is not enabled
+  // If checks are very expensive, so short circuit them if debug is not
+  // enabled
   bool debug_enabled = log_->debugCheck(GPL, "wlUpdateWA", 1);
 #pragma omp parallel for num_threads(num_threads_)
   for (auto gNet = gNetStor_.begin(); gNet < gNetStor_.end(); ++gNet) {
@@ -1246,6 +1243,9 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
     gNet->updateBox();
 
     for (auto& gPin : gNet->getGPins()) {
+      // clear all WA variables.
+      gPin->clearWaVars();
+
       // The WA terms are shift invariant:
       //
       //   Sum(x_i * exp(x_i))    Sum(x_i * exp(x_i - C))
@@ -1326,6 +1326,10 @@ void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         }
       }
     }
+
+    for (auto& gPin : gNet->getGPins()) {
+      gPin->setGradient(getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY));
+    }
   }
 }
 
@@ -1354,7 +1358,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
   FloatPoint gradientPair;
 
   for (auto& gPin : gCell->gPins()) {
-    auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+    auto tmpPair = gPin->getGradient();
 
     debugPrint(log_,
                GPL,
@@ -2707,8 +2711,8 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   // TODO: This OpenMP parallel section is causing non-determinism. Consider
   // revisiting this in the future to restore determinism.
-  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) reduction(+ :
-  // wireLengthGradSum_, densityGradSum_, gradSum)
+  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
+  //  reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
   for (size_t i = 0; i < nb_gcells_.size(); i++) {
     GCell* gCell = nb_gcells_.at(i);
     wireLengthGrads[i]
