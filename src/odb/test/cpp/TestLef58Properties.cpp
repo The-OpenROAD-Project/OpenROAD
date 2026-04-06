@@ -620,4 +620,22 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(layer->getMinWidth(), 280);
   EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
+
+TEST_F(Fixture, lef58_mustjoinallports)
+{
+  const char* libname = "gscl45nm.lef";
+  loadTechAndLib("tech", libname, prefix + "data/gscl45nm.lef");
+
+  odb::dbLib* dbLib = db_->findLib(libname);
+
+  updateLib(dbLib, prefix + "data/lef58_mustjoinallports.lef");
+
+  odb::dbMaster* master = db_->findMaster("my_cell");
+  EXPECT_TRUE(master);
+  odb::dbMTerm* mterm = master->findMTerm("A");
+  EXPECT_TRUE(mterm);
+
+  EXPECT_TRUE(mterm->isMustJoinAllPorts());
+}
+
 }  // namespace odb

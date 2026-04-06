@@ -302,6 +302,7 @@ filegroup(
         "data/gscl45nm.lef.gz",
         "data/gscl45nm_ext_macros.lef",
         "data/gscl45nm_polygon.lef",
+        "data/lef58_mustjoinallports.lef",
         "data/lef58class_gscl45nm.lef",
         "data/mask.lef",
         "data/ndr.def",

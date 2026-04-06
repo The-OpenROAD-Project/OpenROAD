@@ -26,7 +26,8 @@ struct _dbMTermFlags
   dbSigType::Value sig_type : 4;
   dbMTermShapeType::Value shape_type : 2;
   uint32_t mark : 1;
-  uint32_t spare_bits : 21;
+  bool must_join_all_ports : 1;
+  uint32_t spare_bits : 20;
 };
 
 class _dbMTerm : public _dbObject
@@ -67,6 +68,7 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
   flags_.sig_type = dbSigType::SIGNAL;
   flags_.shape_type = dbMTermShapeType::NONE;
   flags_.mark = 0;
+  flags_.must_join_all_ports = false;
   flags_.spare_bits = 0;
   order_id_ = 0;
   name_ = nullptr;

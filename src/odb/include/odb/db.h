@@ -5749,6 +5749,17 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
+  /// Returns true if the router must connect to at least one shape of each port
+  /// of this terminal.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
+
+  ///
   /// Get the master this master-terminal belongs too.
   ///
   dbMaster* getMaster();
