@@ -2702,55 +2702,74 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
     return;
   }
 
-  wireLengthGradSum_ = 0;
-  densityGradSum_ = 0;
-
-  float gradSum = 0;
-
   debugPrint(
       log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
-  // TODO: This OpenMP parallel section is causing non-determinism. Consider
-  // revisiting this in the future to restore determinism.
-  // #pragma omp parallel for num_threads(nbc_->getNumThreads()) \
-  //  reduction(+ : wireLengthGradSum_, densityGradSum_, gradSum)
-  for (size_t i = 0; i < nb_gcells_.size(); i++) {
-    GCell* gCell = nb_gcells_.at(i);
-    wireLengthGrads[i]
-        = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
-    densityGrads[i] = getDensityGradient(gCell);
+  // Because of rounding errors, using the omp reduction causes non-determinism
+  // So the values are stored in a vector and later are accumulated
+  std::vector<float> wire_length_grad(nb_gcells_.size() * 2),
+      density_grad(nb_gcells_.size() * 2), grad_sum(nb_gcells_.size());
+  float gradSum;
+#pragma omp parallel num_threads(nbc_->getNumThreads())
+  {
+#pragma omp for
+    for (size_t i = 0; i < nb_gcells_.size(); i++) {
+      GCell* gCell = nb_gcells_.at(i);
+      wireLengthGrads[i]
+          = nbc_->getWireLengthGradientWA(gCell, wlCoeffX, wlCoeffY);
+      densityGrads[i] = getDensityGradient(gCell);
 
-    // Different compiler has different results on the following formula.
-    // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
-    //
-    // To prevent instability problem,
-    // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
-    //
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].x);
-    wireLengthGradSum_ += std::fabs(wireLengthGrads[i].y);
+      // Different compiler has different results on the following formula.
+      // e.g. wireLengthGradSum_ += fabs(~~.x) + fabs(~~.y);
+      //
+      // To prevent instability problem,
+      // I partitioned the fabs(~~.x) + fabs(~~.y) as two terms.
+      //
+      wire_length_grad[i * 2] = std::fabs(wireLengthGrads[i].x);
+      wire_length_grad[i * 2 + 1] = std::fabs(wireLengthGrads[i].y);
 
-    densityGradSum_ += std::fabs(densityGrads[i].x);
-    densityGradSum_ += std::fabs(densityGrads[i].y);
+      density_grad[i * 2] = std::fabs(densityGrads[i].x);
+      density_grad[i * 2 + 1] += std::fabs(densityGrads[i].y);
 
-    sumGrads[i].x = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
-    sumGrads[i].y = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
+      sumGrads[i].x
+          = wireLengthGrads[i].x + densityPenalty_ * densityGrads[i].x;
+      sumGrads[i].y
+          = wireLengthGrads[i].y + densityPenalty_ * densityGrads[i].y;
 
-    FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
-    FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
+      FloatPoint wireLengthPreCondi = nbc_->getWireLengthPreconditioner(gCell);
+      FloatPoint densityPrecondi = getDensityPreconditioner(gCell);
 
-    FloatPoint sumPrecondi(
-        wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
-        wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
+      FloatPoint sumPrecondi(
+          wireLengthPreCondi.x + (densityPenalty_ * densityPrecondi.x),
+          wireLengthPreCondi.y + (densityPenalty_ * densityPrecondi.y));
 
-    sumPrecondi.x
-        = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
-    sumPrecondi.y
-        = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
+      sumPrecondi.x
+          = std::max(sumPrecondi.x, NesterovPlaceVars::minPreconditioner);
+      sumPrecondi.y
+          = std::max(sumPrecondi.y, NesterovPlaceVars::minPreconditioner);
 
-    sumGrads[i].x /= sumPrecondi.x;
-    sumGrads[i].y /= sumPrecondi.y;
+      sumGrads[i].x /= sumPrecondi.x;
+      sumGrads[i].y /= sumPrecondi.y;
 
-    gradSum += std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
+      grad_sum[i] = std::fabs(sumGrads[i].x) + std::fabs(sumGrads[i].y);
+    }
+#pragma omp sections
+    {
+#pragma omp section
+      {
+        wireLengthGradSum_ = std::accumulate(
+            wire_length_grad.begin(), wire_length_grad.end(), 0.f);
+      }
+#pragma omp section
+      {
+        densityGradSum_
+            = std::accumulate(density_grad.begin(), density_grad.end(), 0.f);
+      }
+#pragma omp section
+      {
+        gradSum = std::accumulate(grad_sum.begin(), grad_sum.end(), 0.f);
+      }
+    }
   }
 
   debugPrint(log_,
