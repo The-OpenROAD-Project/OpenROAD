@@ -270,7 +270,7 @@ void dbMTerm::setMustJoinAllPorts(bool v)
 bool dbMTerm::isMustJoinAllPorts()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
-  return mterm->flags_.must_join_all_ports > 0;
+  return mterm->flags_.must_join_all_ports;
 }
 
 dbMaster* dbMTerm::getMaster()
