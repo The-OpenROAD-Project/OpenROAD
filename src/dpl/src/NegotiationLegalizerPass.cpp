@@ -85,15 +85,33 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   std::vector<int> active(active_set.begin(), active_set.end());
 
   // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
-  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 1: {} active cells, {} iterations.",active.size(),max_iter_neg_);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "Negotiation phase 1: {} active cells, {} iterations.",
+             active.size(),
+             max_iter_neg_);
 
   int prev_overflows = -1;
   int stall_count = 0;
   for (int iter = 0; iter < max_iter_neg_; ++iter) {
-    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 1 negotiation iteration {} ({} active cells)", iter, active.size());
-    const int phase_1_overflows = negotiationIter(active, iter, /*updateHistory=*/true);
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "Starting phase 1 negotiation iteration {} ({} active cells)",
+               iter,
+               active.size());
+    const int phase_1_overflows
+        = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
-      debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 1 converged at iteration {}.",    iter);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "Negotiation phase 1 converged at iteration {}.",
+                 iter);
       logger_->metric("HL__converge__phase_1__iteration", iter);
       debugPause("Pause after convergence at phase 1.");
       return;
@@ -101,7 +119,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_1_overflows == prev_overflows) {
       ++stall_count;
       if (stall_count == 3) {
-        logger_->warn(utl::DPL, 700, "Negotiation phase 1: overflow stuck at {} for 3 consecutive iterations.\nUsing old diamond search for remaining cells.", phase_1_overflows);
+        logger_->warn(
+            utl::DPL,
+            700,
+            "Negotiation phase 1: overflow stuck at {} for 3 consecutive "
+            "iterations.\nUsing old diamond search for remaining cells.",
+            phase_1_overflows);
         diamondRecovery(active);
         break;
       }
@@ -114,16 +137,34 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   debugPause("Pause before negotiation phase 2.");
 
   // Phase 2 – isolation point active: skip already-legal cells.
-  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation phase 2: isolation point active, {} iterations.",kMaxIterNeg2);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "Negotiation phase 2: isolation point active, {} iterations.",
+             kMaxIterNeg2);
 
   prev_overflows = -1;
   stall_count = 0;
   for (int iter = 0; iter < kMaxIterNeg2; ++iter) {
-    debugPrint(logger_,utl::DPL,"negotiation",1,"Starting phase 2 negotiation iteration {} (+{} phase 1 iterations) ({} active cells)", iter, max_iter_neg_, active.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "Starting phase 2 negotiation iteration {} (+{} phase 1 "
+               "iterations) ({} active cells)",
+               iter,
+               max_iter_neg_,
+               active.size());
     const int phase_2_overflows
         = negotiationIter(active, iter + max_iter_neg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
-      debugPrint(logger_,    utl::DPL,    "negotiation",    1,    "Negotiation phase 2 converged at iteration {}.",    iter);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "Negotiation phase 2 converged at iteration {}.",
+                 iter);
       logger_->metric("HL__converge__phase_2__iteration", iter);
       debugPause("Pause after convergence at phase 2.");
       return;
@@ -131,7 +172,11 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_2_overflows == prev_overflows) {
       ++stall_count;
       if (stall_count == 3) {
-        logger_->warn(utl::DPL, 702, "Negotiation phase 2: overflow stuck at {} for 3 consecutive iterations.", phase_2_overflows);
+        logger_->warn(utl::DPL,
+                      702,
+                      "Negotiation phase 2: overflow stuck at {} for 3 "
+                      "consecutive iterations.",
+                      phase_2_overflows);
         diamondRecovery(active);
         break;
       }
@@ -143,7 +188,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   // Non-convergence is reported by the caller (Opendp::detailedPlacement)
   // via numViolations(), which avoids registering a message ID in this file.
-  debugPrint(logger_,utl::DPL,"negotiation",1,"Negotiation did not fully converge. Remaining violations: {}.",numViolations());
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "Negotiation did not fully converge. Remaining violations: {}.",
+             numViolations());
   debugPause("Pause after non-convergence at negotiation phases 1 and 2.");
 }
 
@@ -152,8 +202,8 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 // ===========================================================================
 
 int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
-                                     int iter,
-                                     bool updateHistory)
+                                          int iter,
+                                          bool updateHistory)
 {
   using Clock = std::chrono::steady_clock;
   const auto t0 = Clock::now();
@@ -193,7 +243,16 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     find_best_ms += std::chrono::duration<double, std::milli>(tc - tb).count();
     place_ms += std::chrono::duration<double, std::milli>(td - tc).count();
     moves_count++;
-    debugPrint(logger_, utl::DPL, "negotiation", 2,  "Negotiation iter {}, cell {}, moves {}, best location {}, {}",   iter, cells_[idx].db_inst->getName(), moves_count, bx, by);
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               2,
+               "Negotiation iter {}, cell {}, moves {}, best location {}, {}",
+               iter,
+               cells_[idx].db_inst->getName(),
+               moves_count,
+               bx,
+               by);
   }
 
   const auto t2 = Clock::now();
@@ -263,9 +322,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     return std::chrono::duration<double, std::milli>(b - a).count();
   };
 
-  if(logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
+  if (logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
     const double totalMs = ms(t0, t6);
-    auto pct = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
+    auto pct
+        = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
     const double sortMs = ms(t0, t1);
     const double syncMs = ms(t2, t3);
     const double overflowMs = ms(t3, t4);
@@ -281,31 +341,58 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     logger_->report(
         "  negotiationIter {} ({:.1f}ms, {} moves): "
         "sort {:.1f}ms ({:.0f}%), "
-        "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms ({:.0f}%), "
+        "ripUp {:.1f}ms ({:.0f}%), findBest {:.1f}ms ({:.0f}%), place {:.1f}ms "
+        "({:.0f}%), "
         "syncGrid {:.1f}ms ({:.0f}%), overflowCount {:.1f}ms ({:.0f}%), "
         "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
-        iter, totalMs, moves_count,
-        sortMs, pct(sortMs),
-        rip_up_ms, pct(rip_up_ms), find_best_ms, pct(find_best_ms), place_ms, pct(place_ms),
-        syncMs, pct(syncMs), overflowMs, pct(overflowMs),
-        bystanderMs, pct(bystanderMs), historyMs, pct(historyMs));
+        iter,
+        totalMs,
+        moves_count,
+        sortMs,
+        pct(sortMs),
+        rip_up_ms,
+        pct(rip_up_ms),
+        find_best_ms,
+        pct(find_best_ms),
+        place_ms,
+        pct(place_ms),
+        syncMs,
+        pct(syncMs),
+        overflowMs,
+        pct(overflowMs),
+        bystanderMs,
+        pct(bystanderMs),
+        historyMs,
+        pct(historyMs));
     logger_->report(
         "    findBest by region ({} candidates, {} filtered): "
         "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
         "snap {:.1f}ms ({:.0f}%)",
-        prof_candidates_evaluated_, prof_candidates_filtered_,
-        initSearchMs, pct(initSearchMs), currSearchMs, pct(currSearchMs),
-        snapMs, pct(snapMs));
+        prof_candidates_evaluated_,
+        prof_candidates_filtered_,
+        initSearchMs,
+        pct(initSearchMs),
+        currSearchMs,
+        pct(currSearchMs),
+        snapMs,
+        pct(snapMs));
     logger_->report(
         "    findBest by function: "
         "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
         "drc {:.1f}ms ({:.0f}%), overhead {:.1f}ms ({:.0f}%)",
-        filterMs, pct(filterMs), negCostMs, pct(negCostMs),
-        drcMs, pct(drcMs), overhead, pct(overhead));
+        filterMs,
+        pct(filterMs),
+        negCostMs,
+        pct(negCostMs),
+        drcMs,
+        pct(drcMs),
+        overhead,
+        pct(overhead));
   }
 
-  logger_->report("Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
-  if(opendp_->iterative_debug_ && debug_observer_) {
+  logger_->report(
+      "Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
+  if (opendp_->iterative_debug_ && debug_observer_) {
     setDplPositions();
     pushNegotiationPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);
@@ -334,7 +421,8 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (!debug_inst || cells_[cellIdx].db_inst == debug_inst) {
       pushNegotiationPixels();
-      logger_->report("Pause at placing of cell {}.", cells_[cellIdx].db_inst->getName());
+      logger_->report("Pause at placing of cell {}.",
+                      cells_[cellIdx].db_inst->getName());
       debug_observer_->drawSelected(cells_[cellIdx].db_inst);
     }
   }
@@ -345,7 +433,7 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
 // ===========================================================================
 
 std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
-                                                      int iter) const
+                                                           int iter) const
 {
   const HLCell& cell = cells_[cellIdx];
 
@@ -372,8 +460,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
     const auto t_filter = Clock::now();
-    if (!inDie(tx, ty, cell.width, cell.height)
-        || !isValidRow(ty, cell, tx)
+    if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
         || !respectsFence(cellIdx, tx, ty)) {
       local_filter_time += Clock::now() - t_filter;
       ++prof_candidates_filtered_;
@@ -393,7 +480,8 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
       odb::dbOrientType targetOrient = node->getOrient();
       odb::dbSite* site = cell.db_inst->getMaster()->getSite();
       if (site != nullptr) {
-        auto orient = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
+        auto orient
+            = opendp_->grid_->getSiteOrientation(GridX{tx}, GridY{ty}, site);
         if (orient.has_value()) {
           targetOrient = orient.value();
         }
@@ -433,21 +521,33 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
   }
   const auto tCurrEnd = Clock::now();
 
-  prof_init_search_ns_ += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart).count();
-  prof_curr_search_ns_ += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart).count();
-  prof_filter_ns_ += std::chrono::duration<double, std::nano>(local_filter_time).count();
-  prof_neg_cost_ns_ += std::chrono::duration<double, std::nano>(local_neg_cost_time).count();
-  prof_drc_ns_ += std::chrono::duration<double, std::nano>(local_drc_time).count();
+  prof_init_search_ns_
+      += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart)
+             .count();
+  prof_curr_search_ns_
+      += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart)
+             .count();
+  prof_filter_ns_
+      += std::chrono::duration<double, std::nano>(local_filter_time).count();
+  prof_neg_cost_ns_
+      += std::chrono::duration<double, std::nano>(local_neg_cost_time).count();
+  prof_drc_ns_
+      += std::chrono::duration<double, std::nano>(local_drc_time).count();
 
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (cell.db_inst == debug_inst) {
-      logger_->report("  Best location for {} is ({}, {}) with cost {}.",         cell.db_inst->getName(),         best_x,         best_y,         best_cost);
+      logger_->report("  Best location for {} is ({}, {}) with cost {}.",
+                      cell.db_inst->getName(),
+                      best_x,
+                      best_y,
+                      best_cost);
       if (node != nullptr) {
         odb::dbOrientType targetOrient = node->getOrient();
         odb::dbSite* site = cell.db_inst->getMaster()->getSite();
         if (site != nullptr) {
-          auto orient = opendp_->grid_->getSiteOrientation(GridX{best_x}, GridY{best_y}, site);
+          auto orient = opendp_->grid_->getSiteOrientation(
+              GridX{best_x}, GridY{best_y}, site);
           if (orient.has_value()) {
             targetOrient = orient.value();
           }
@@ -590,7 +690,8 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
 //   Tertiary:  width ascending
 // ===========================================================================
 
-void NegotiationLegalizer::sortByNegotiationOrder(std::vector<int>& indices) const
+void NegotiationLegalizer::sortByNegotiationOrder(
+    std::vector<int>& indices) const
 {
   auto cellOveruse = [this](int idx) {
     const HLCell& cell = cells_[idx];
@@ -726,8 +827,8 @@ void NegotiationLegalizer::cellSwap()
   std::unordered_map<GroupKey, std::vector<int>, GroupKeyHash> groups;
   for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
     if (!cells_[i].fixed) {
-      groups[{cells_[i].height, cells_[i].width, cells_[i].rail_type}].push_back(
-          i);
+      groups[{cells_[i].height, cells_[i].width, cells_[i].rail_type}]
+          .push_back(i);
     }
   }
 
@@ -796,10 +897,14 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     // diamondSearch uses canBePlaced which reads the DPL pixel grid, so the
     // cell must be ripped up first to avoid blocking itself.
     ripUp(idx);
-    const PixelPt pt = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
+    const PixelPt pt
+        = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
-      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).", cell.db_inst->getName(), pt.x.v, pt.y.v);
+      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).",
+                      cell.db_inst->getName(),
+                      pt.x.v,
+                      pt.y.v);
       ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation
@@ -808,7 +913,8 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     }
   }
   logger_->report("diamondRecovery: recovered {}/{} stuck cells.",
-             recovered, activeCells.size());
+                  recovered,
+                  activeCells.size());
 }
 
 }  // namespace dpl

@@ -145,41 +145,42 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                      * static_cast<int64_t>(node->getHeight().v);
       }
     }
-    const double utilization
-        = core_area > 0 ? (static_cast<double>(inst_area)
-                           / static_cast<double>(core_area))
-                              * 100.0
-                        : 0.0;
+    const double utilization = core_area > 0
+                                   ? (static_cast<double>(inst_area)
+                                      / static_cast<double>(core_area))
+                                         * 100.0
+                                   : 0.0;
     logger_->info(DPL,
                   6,
                   "Core area: {:.2f} um^2, Instances area: {:.2f} um^2, "
-                    "Utilization: {:.1f}%",
-                    block_->dbuAreaToMicrons(core_area),
-                    block_->dbuAreaToMicrons(inst_area),
-                    utilization);
+                  "Utilization: {:.1f}%",
+                  block_->dbuAreaToMicrons(core_area),
+                  block_->dbuAreaToMicrons(inst_area),
+                  utilization);
     logger_->metric("utilizatin__before__dpl", utilization);
-    if(utilization > 100.0) {
-      logger_->error(DPL, 38, "Utilization greater than 100%, impossible to legalize");
+    if (utilization > 100.0) {
+      logger_->error(
+          DPL, 38, "Utilization greater than 100%, impossible to legalize");
     }
   }
 
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
 
-    if (max_displacement_x == 0 || max_displacement_y == 0) {
-      max_displacement_x_ = 500;
-      max_displacement_y_ = 100;
-    } else {
-      max_displacement_x_ = max_displacement_x;
-      max_displacement_y_ = max_displacement_y;
-    }
+  if (max_displacement_x == 0 || max_displacement_y == 0) {
+    max_displacement_x_ = 500;
+    max_displacement_y_ = 100;
+  } else {
+    max_displacement_x_ = max_displacement_x;
+    max_displacement_y_ = max_displacement_y;
+  }
 
-    logger_->info(
-        DPL,
-        5,
-        "Diamond search max displacement: +/- {} sites horizontally, +/- {} rows vertically.",
-        max_displacement_x_,
-        max_displacement_y_);
+  logger_->info(DPL,
+                5,
+                "Diamond search max displacement: +/- {} sites horizontally, "
+                "+/- {} rows vertically.",
+                max_displacement_x_,
+                max_displacement_y_);
 
   if (!use_negotiation) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
@@ -204,27 +205,31 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   } else {
     initGrid();
     setFixedGridCells();
-    logger_->info(DPL,
-                  1102,
-                  "Legalizing using negotiation legalizer.");
+    logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
 
-    NegotiationLegalizer negotiation(
-        this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
+    NegotiationLegalizer negotiation(this,
+                                     db_,
+                                     logger_,
+                                     padding_.get(),
+                                     debug_observer_.get(),
+                                     network_.get());
     negotiation.setRunAbacus(run_abacus);
     negotiation.legalize();
     negotiation.setDplPositions();
 
     if (negotiation.numViolations() > 0) {
-      logger_->warn(DPL, 701, "NegotiationLegalizer did not fully converge. "
-        "Violations remain: {}", negotiation.numViolations());
-      logger_->metric("NL__no__converge__final_violations", negotiation.numViolations());
+      logger_->warn(DPL,
+                    701,
+                    "NegotiationLegalizer did not fully converge. "
+                    "Violations remain: {}",
+                    negotiation.numViolations());
+      logger_->metric("NL__no__converge__final_violations",
+                      negotiation.numViolations());
     }
 
     findDisplacementStats();
     updateDbInstLocations();
   }
-
-
 }
 
 int Opendp::negotiationLegalize(bool run_abacus)
@@ -234,8 +239,12 @@ int Opendp::negotiationLegalize(bool run_abacus)
   initGrid();
   setFixedGridCells();
 
-  NegotiationLegalizer negotiation(
-      this, db_, logger_, padding_.get(), debug_observer_.get(), network_.get());
+  NegotiationLegalizer negotiation(this,
+                                   db_,
+                                   logger_,
+                                   padding_.get(),
+                                   debug_observer_.get(),
+                                   network_.get());
   if (run_abacus) {
     negotiation.setRunAbacus(true);
   }

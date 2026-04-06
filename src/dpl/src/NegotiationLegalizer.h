@@ -70,7 +70,7 @@ class Edge;
 // Constants  (defaults match the NBLG paper)
 // ---------------------------------------------------------------------------
 inline constexpr int kInfCost = std::numeric_limits<int>::max() / 2;
-inline constexpr int kHorizWindow = 20;     // search width, current row (sites)
+inline constexpr int kHorizWindow = 20;    // search width, current row (sites)
 inline constexpr int kAdjWindow = 5;       // search width, adjacent rows
 inline constexpr int kMaxIterNeg = 400;    // negotiation phase-1 limit
 inline constexpr int kMaxIterNeg2 = 1000;  // negotiation phase-2 limit
@@ -122,18 +122,18 @@ struct HLCell
 {
   odb::dbInst* db_inst{nullptr};
 
-  int init_x{0};   // position after global placement (sites)
-  int init_y{0};   // position after global placement (rows)
-  int x{0};       // current legalised position (sites)
-  int y{0};       // current legalised position (rows)
-  int width{0};    // footprint width  (sites)
-  int height{0};   // footprint height (row units: 1–4)
-  int pad_left{0};  // left padding (sites)
-  int pad_right{0}; // right padding (sites)
+  int init_x{0};     // position after global placement (sites)
+  int init_y{0};     // position after global placement (rows)
+  int x{0};          // current legalised position (sites)
+  int y{0};          // current legalised position (rows)
+  int width{0};      // footprint width  (sites)
+  int height{0};     // footprint height (row units: 1–4)
+  int pad_left{0};   // left padding (sites)
+  int pad_right{0};  // right padding (sites)
 
   bool fixed{false};
   NLPowerRailType rail_type{NLPowerRailType::kVss};
-  int fence_id{-1};       // -1 → default region
+  int fence_id{-1};      // -1 → default region
   bool flippable{true};  // odd-height cells may flip vertically
   bool legal{false};     // updated each negotiation iteration
 
@@ -164,11 +164,11 @@ class NegotiationLegalizer
 {
  public:
   NegotiationLegalizer(Opendp* opendp,
-                  odb::dbDatabase* db,
-                  utl::Logger* logger,
-                  const Padding* padding = nullptr,
-                  DplObserver* debug_observer = nullptr,
-                  Network* network = nullptr);
+                       odb::dbDatabase* db,
+                       utl::Logger* logger,
+                       const Padding* padding = nullptr,
+                       DplObserver* debug_observer = nullptr,
+                       Network* network = nullptr);
   ~NegotiationLegalizer() = default;
 
   NegotiationLegalizer(const NegotiationLegalizer&) = delete;
@@ -205,8 +205,11 @@ class NegotiationLegalizer
   void initFenceRegions();
   [[nodiscard]] NLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
-  void pushNegotiationPixels();  // Send grid state to debug observer for rendering
-  void debugPause(const std::string& msg);  // setDplPositions + pushNegotiationPixels + redrawAndPause
+  void
+  pushNegotiationPixels();  // Send grid state to debug observer for rendering
+  void debugPause(
+      const std::string&
+          msg);  // setDplPositions + pushNegotiationPixels + redrawAndPause
 
   // Abacus pass
   [[nodiscard]] std::vector<int> runAbacus();
@@ -223,7 +226,7 @@ class NegotiationLegalizer
   void ripUp(int cellIdx);
   void place(int cellIdx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cellIdx,
-                                                      int iter = 0) const;
+                                                     int iter = 0) const;
   [[nodiscard]] double negotiationCost(int cellIdx, int x, int y) const;
   [[nodiscard]] double targetCost(int cellIdx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
@@ -237,7 +240,9 @@ class NegotiationLegalizer
   void diamondRecovery(const std::vector<int>& activeCells);
 
   // Constraint helpers
-  [[nodiscard]] bool isValidRow(int rowIdx, const HLCell& cell, int gridX) const;
+  [[nodiscard]] bool isValidRow(int rowIdx,
+                                const HLCell& cell,
+                                int gridX) const;
   [[nodiscard]] bool respectsFence(int cellIdx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
   [[nodiscard]] std::pair<int, int> snapToLegal(int cellIdx,
@@ -252,7 +257,10 @@ class NegotiationLegalizer
   void syncAllCellsToDplGrid();
 
   // Pixel helpers – use the main DPL grid.
-  Pixel& gridAt(int x, int y) { return opendp_->grid_->pixel(GridY{y}, GridX{x}); }
+  Pixel& gridAt(int x, int y)
+  {
+    return opendp_->grid_->pixel(GridY{y}, GridX{x});
+  }
   [[nodiscard]] const Pixel& gridAt(int x, int y) const
   {
     return opendp_->grid_->pixel(GridY{y}, GridX{x});
@@ -293,7 +301,8 @@ class NegotiationLegalizer
   std::vector<HLCell> cells_;
   std::vector<FenceRegion> fences_;
   std::vector<NLPowerRailType> row_rail_;
-  std::vector<bool> row_has_sites_;  // true when at least one DB row exists at y
+  std::vector<bool>
+      row_has_sites_;  // true when at least one DB row exists at y
 
   double mf_{kMfDefault};
   int th_{kThDefault};

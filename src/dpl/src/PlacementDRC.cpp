@@ -16,7 +16,7 @@
 #include "odb/isotropy.h"
 
 namespace dpl {
- 
+
 using utl::DPL;
 
 namespace cell_edges {
@@ -203,17 +203,20 @@ bool PlacementDRC::checkDRC(const Node* cell,
   const bool all_ok = edge_ok && padding_ok && blocked_ok && gap_ok;
 
   if (!all_ok && logger_->debugCheck(DPL, "checkDRC", 1)) {
-    debugPrint(logger_,
-               DPL,
-               "checkDRC",
-               1,
-               "cell {} at ({}, {}): ok?={} edge={} padding={} blocked={} gap={}",
-               cell_name, x.v, y.v,
-               all_ok ? 1 : 0,
-               edge_ok ? 1 : 0,
-               padding_ok ? 1 : 0,
-               blocked_ok ? 1 : 0,
-               gap_ok ? 1 : 0);
+    debugPrint(
+        logger_,
+        DPL,
+        "checkDRC",
+        1,
+        "cell {} at ({}, {}): ok?={} edge={} padding={} blocked={} gap={}",
+        cell_name,
+        x.v,
+        y.v,
+        all_ok ? 1 : 0,
+        edge_ok ? 1 : 0,
+        padding_ok ? 1 : 0,
+        blocked_ok ? 1 : 0,
+        gap_ok ? 1 : 0);
   }
 
   return all_ok;

@@ -95,12 +95,17 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
 // ===========================================================================
 
 NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
-                                 odb::dbDatabase* db,
-                                 utl::Logger* logger,
-                                 const Padding* padding,
-                                 DplObserver* debug_observer,
-                                 Network* network)
-    : opendp_(opendp), db_(db), logger_(logger), padding_(padding), debug_observer_(debug_observer), network_(network)
+                                           odb::dbDatabase* db,
+                                           utl::Logger* logger,
+                                           const Padding* padding,
+                                           DplObserver* debug_observer,
+                                           Network* network)
+    : opendp_(opendp),
+      db_(db),
+      logger_(logger),
+      padding_(padding),
+      debug_observer_(debug_observer),
+      network_(network)
 {
 }
 
@@ -110,7 +115,11 @@ NegotiationLegalizer::NegotiationLegalizer(Opendp* opendp,
 
 void NegotiationLegalizer::legalize()
 {
-  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: starting legalization.");
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "NegotiationLegalizer: starting legalization.");
 
   using Clock = std::chrono::steady_clock;
   auto ms = [](auto a, auto b) {
@@ -124,7 +133,12 @@ void NegotiationLegalizer::legalize()
     return;
   }
   const double initFromDbMs = ms(tInitFromDbStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFromDb: {:.1f}ms", initFromDbMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "initFromDb: {:.1f}ms",
+             initFromDbMs);
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
@@ -134,28 +148,58 @@ void NegotiationLegalizer::legalize()
   const auto tBuildGridStart = Clock::now();
   buildGrid();
   const double buildGridMs = ms(tBuildGridStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "buildGrid: {:.1f}ms", buildGridMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "buildGrid: {:.1f}ms",
+             buildGridMs);
 
   const auto tFenceRegionsStart = Clock::now();
   initFenceRegions();
   const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "initFenceRegions: {:.1f}ms", fenceRegionsMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "initFenceRegions: {:.1f}ms",
+             fenceRegionsMs);
 
-  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: {} cells, grid {}x{}.",cells_.size(),grid_w_,grid_h_);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "NegotiationLegalizer: {} cells, grid {}x{}.",
+             cells_.size(),
+             grid_w_,
+             grid_h_);
 
   // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
   double abacusMs = 0.0;
   if (run_abacus_) {
-    debugPrint(logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: running Abacus pass.");
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "NegotiationLegalizer: running Abacus pass.");
     const auto tAbacusStart = Clock::now();
 
     illegal = runAbacus();
 
     abacusMs = ms(tAbacusStart, Clock::now());
-    debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: Abacus done, {} cells still illegal.",illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "NegotiationLegalizer: Abacus done, {} cells still illegal.",
+               illegal.size());
   } else {
-    debugPrint(logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: skipping Abacus pass.");
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "NegotiationLegalizer: skipping Abacus pass.");
 
     const auto tSkipAbacusStart = Clock::now();
 
@@ -166,14 +210,24 @@ void NegotiationLegalizer::legalize()
       }
     }
     const auto tSkipAbacusUsageEnd = Clock::now();
-    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus addUsage: {:.1f}ms",ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation_runtime",
+               1,
+               "skip-Abacus addUsage: {:.1f}ms",
+               ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
 
     // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
     // lookups see the correct placement state.
     syncAllCellsToDplGrid();
 
     const auto tSkipAbacusSyncEnd = Clock::now();
-    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation_runtime",
+               1,
+               "skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",
+               ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
 
     for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
       if (!cells_[i].fixed) {
@@ -184,13 +238,20 @@ void NegotiationLegalizer::legalize()
       }
     }
     const auto tSkipAbacusDrcEnd = Clock::now();
-    debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation_runtime",
+               1,
+               "skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",
+               ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),
+               illegal.size());
     abacusMs = ms(tSkipAbacusStart, tSkipAbacusDrcEnd);
   }
 
   if (debug_observer_) {
     setDplPositions();
-    // this flush may imply functional changes. It hides initial movements for clean debugging negotiation phase.
+    // this flush may imply functional changes. It hides initial movements for
+    // clean debugging negotiation phase.
     flushToDb();
     pushNegotiationPixels();
     logger_->report("Pause after Abacus pass.");
@@ -200,7 +261,12 @@ void NegotiationLegalizer::legalize()
   // --- Part 2: Negotiation (main legalization) -------------------
   double negotiationMs = 0.0;
   if (!illegal.empty()) {
-    debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: negotiation pass on {} cells.",illegal.size());
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "NegotiationLegalizer: negotiation pass on {} cells.",
+               illegal.size());
     const auto tNegStart = Clock::now();
 
     runNegotiation(illegal);
@@ -216,13 +282,21 @@ void NegotiationLegalizer::legalize()
   const auto tPostNegSyncStart = Clock::now();
   syncAllCellsToDplGrid();
   const double postNegSyncMs = ms(tPostNegSyncStart, Clock::now());
-  debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"post-negotiation syncAllCellsToDplGrid: {:.1f}ms",postNegSyncMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "post-negotiation syncAllCellsToDplGrid: {:.1f}ms",
+             postNegSyncMs);
 
   debugPause("Pause after negotiation pass");
 
   // --- Part 3: Post-optimisation ------------------------------------------
-  debugPrint(
-      logger_, utl::DPL, "negotiation", 1, "NegotiationLegalizer: post-optimisation.");
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
+             "NegotiationLegalizer: post-optimisation.");
   // greedyImprove(5);
   // cellSwap();
   // greedyImprove(1);
@@ -232,14 +306,32 @@ void NegotiationLegalizer::legalize()
   const int maxDisp = maxDisplacement();
   const int nViol = numViolations();
   const double metricsMs = ms(tMetricsStart, Clock::now());
-  debugPrint(logger_,utl::DPL,"negotiation_runtime",1,"metrics (avgDisp/maxDisp/violations): {:.1f}ms",metricsMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "metrics (avgDisp/maxDisp/violations): {:.1f}ms",
+             metricsMs);
 
-  debugPrint(logger_,utl::DPL,"negotiation",1,"NegotiationLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",avgDisp,maxDisp,nViol);
+  debugPrint(
+      logger_,
+      utl::DPL,
+      "negotiation",
+      1,
+      "NegotiationLegalizer: done. AvgDisp={:.2f} MaxDisp={} Violations={}.",
+      avgDisp,
+      maxDisp,
+      nViol);
 
   const auto tFlushStart = Clock::now();
   flushToDb();
   const double flushMs = ms(tFlushStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {:.1f}ms", flushMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "flushToDb: {:.1f}ms",
+             flushMs);
 
   const auto tOrientStart = Clock::now();
   const Grid* dplGrid = opendp_->grid_.get();
@@ -250,18 +342,24 @@ void NegotiationLegalizer::legalize()
     // Set orientation from the row so cells are properly flipped.
     odb::dbSite* site = cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
-      auto orient = dplGrid->getSiteOrientation(
-          GridX{cell.x}, GridY{cell.y}, site);
+      auto orient
+          = dplGrid->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
       if (orient.has_value()) {
         cell.db_inst->setOrient(orient.value());
       }
     }
   }
   const double orientMs = ms(tOrientStart, Clock::now());
-  debugPrint(logger_, utl::DPL, "negotiation_runtime", 1, "orientation update: {:.1f}ms", orientMs);
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation_runtime",
+             1,
+             "orientation update: {:.1f}ms",
+             orientMs);
 
   const double totalMs = ms(tLegalizeStart, Clock::now());
-  auto pct = [totalMs](double t) { return totalMs > 0 ? 100.0 * t / totalMs : 0.0; };
+  auto pct
+      = [totalMs](double t) { return totalMs > 0 ? 100.0 * t / totalMs : 0.0; };
   debugPrint(logger_,
              utl::DPL,
              "negotiation_runtime",
@@ -277,15 +375,24 @@ void NegotiationLegalizer::legalize()
              "flushToDb {:.1f}ms ({:.0f}%), "
              "orientUpdate {:.1f}ms ({:.0f}%)",
              totalMs,
-             initFromDbMs, pct(initFromDbMs),
-             buildGridMs, pct(buildGridMs),
-             fenceRegionsMs, pct(fenceRegionsMs),
-             abacusMs, pct(abacusMs),
-             negotiationMs, pct(negotiationMs),
-             postNegSyncMs, pct(postNegSyncMs),
-             metricsMs, pct(metricsMs),
-             flushMs, pct(flushMs),
-             orientMs, pct(orientMs));
+             initFromDbMs,
+             pct(initFromDbMs),
+             buildGridMs,
+             pct(buildGridMs),
+             fenceRegionsMs,
+             pct(fenceRegionsMs),
+             abacusMs,
+             pct(abacusMs),
+             negotiationMs,
+             pct(negotiationMs),
+             postNegSyncMs,
+             pct(postNegSyncMs),
+             metricsMs,
+             pct(metricsMs),
+             flushMs,
+             pct(flushMs),
+             orientMs,
+             pct(orientMs));
 }
 
 // ===========================================================================
@@ -315,8 +422,8 @@ void NegotiationLegalizer::pushNegotiationPixels()
   if (!debug_observer_) {
     return;
   }
-  std::vector<NegotiationPixelState> pixels(
-      static_cast<size_t>(grid_w_) * grid_h_);
+  std::vector<NegotiationPixelState> pixels(static_cast<size_t>(grid_w_)
+                                            * grid_h_);
   for (int gy = 0; gy < grid_h_; ++gy) {
     for (int gx = 0; gx < grid_w_; ++gx) {
       const Pixel& g = gridAt(gx, gy);
@@ -486,7 +593,8 @@ bool NegotiationLegalizer::initFromDb()
     int db_x = 0;
     int db_y = 0;
     db_inst->getLocation(db_x, db_y);
-    // Snap to grid, findBestLocation() and snapToLegal() iterate over grid positions
+    // Snap to grid, findBestLocation() and snapToLegal() iterate over grid
+    // positions
     cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
     cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
     // Clamp to valid grid range – gridRoundY can return grid_h_ when the
@@ -503,21 +611,22 @@ bool NegotiationLegalizer::initFromDb()
             std::round(static_cast<double>(master->getWidth()) / site_width_)));
     cell.height = std::max(
         1,
-        static_cast<int>(
-            std::round(static_cast<double>(master->getHeight()) / row_height_)));
+        static_cast<int>(std::round(static_cast<double>(master->getHeight())
+                                    / row_height_)));
 
     // gridX() / gridRoundY() are purely arithmetic and don't check whether a
     // site actually exists at the computed position.  Instances near the chip
-    // boundary or in sparse-row designs can land on invalid (is_valid=false) pixels
-    // pixels or on pixels that don't support this cell's site type.  Fix those
-    // with a diamond search from the initial position; we only check site
+    // boundary or in sparse-row designs can land on invalid (is_valid=false)
+    // pixels pixels or on pixels that don't support this cell's site type.  Fix
+    // those with a diamond search from the initial position; we only check site
     // validity here, not blockages — the negotiation part handles those.
     if (!cell.fixed) {
       odb::dbSite* site = master->getSite();
-      // Check that the full cell footprint (width x height) fits on valid sites.
+      // Check that the full cell footprint (width x height) fits on valid
+      // sites.
       auto isValidSite = [&](int gx, int gy) -> bool {
-        if (gx < 0 || gx + cell.width > grid_w_
-            || gy < 0 || gy + cell.height > grid_h_) {
+        if (gx < 0 || gx + cell.width > grid_w_ || gy < 0
+            || gy + cell.height > grid_h_) {
           return false;
         }
         // Site type check at the anchor row is representative for all rows.
@@ -536,36 +645,43 @@ bool NegotiationLegalizer::initFromDb()
         return true;
       };
 
-      //The snapping here is actually quite similar to the "hopeless" approach in original DPL.
-      // they achieve the same objective, and the previous is more simple, consider replacing this.
+      // The snapping here is actually quite similar to the "hopeless" approach
+      // in original DPL.
+      //  they achieve the same objective, and the previous is more simple,
+      //  consider replacing this.
       if (!isValidSite(cell.init_x, cell.init_y)) {
-        debugPrint(logger_,utl::DPL,"negotiation",1,
-            "Instance {} at ({}, {}) snaps to invalid site at "
-            "({}, {}). Searching for nearest valid site.",
-            cell.db_inst->getName(),
-            db_x,
-            db_y,
-            die_xlo_ + cell.init_x * site_width_,
-            die_ylo_ + cell.init_y * row_height_);
+        debugPrint(logger_,
+                   utl::DPL,
+                   "negotiation",
+                   1,
+                   "Instance {} at ({}, {}) snaps to invalid site at "
+                   "({}, {}). Searching for nearest valid site.",
+                   cell.db_inst->getName(),
+                   db_x,
+                   db_y,
+                   die_xlo_ + cell.init_x * site_width_,
+                   die_ylo_ + cell.init_y * row_height_);
 
         // Priority queue keyed on physical Manhattan distance (DBU) so the
         // search expands in true physical proximity, not grid-unit proximity.
         // One step in X = site_width_ DBU; one step in Y = row_height_ DBU.
         using PQEntry = std::tuple<int, int, int>;  // physDist, gx, gy
-        std::priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>> pq;
+        std::
+            priority_queue<PQEntry, std::vector<PQEntry>, std::greater<PQEntry>>
+                pq;
         std::unordered_set<int> visited;
 
         auto tryEnqueue = [&](int gx, int gy) {
           // Leave room for the full cell footprint before enqueueing.
-          if (gx < 0 || gx + cell.width > grid_w_
-              || gy < 0 || gy + cell.height > grid_h_) {
+          if (gx < 0 || gx + cell.width > grid_w_ || gy < 0
+              || gy + cell.height > grid_h_) {
             return;
           }
           if (!visited.insert(gy * grid_w_ + gx).second) {
             return;
           }
           const int dist = std::abs(gx - cell.init_x) * site_width_
-                         + std::abs(gy - cell.init_y) * row_height_;
+                           + std::abs(gy - cell.init_y) * row_height_;
           pq.emplace(dist, gx, gy);
         };
 
@@ -590,14 +706,19 @@ bool NegotiationLegalizer::initFromDb()
     }
 
     cell.rail_type = inferRailType(cell.init_y);
-    // If the instance is currently flipped relative to the row's standard orientation,
-    // its internal rail design is opposite of the row's bottom rail.
-    auto siteOrient = dpl_grid->getSiteOrientation(GridX{cell.init_x}, GridY{cell.init_y}, master->getSite());
+    // If the instance is currently flipped relative to the row's standard
+    // orientation, its internal rail design is opposite of the row's bottom
+    // rail.
+    auto siteOrient = dpl_grid->getSiteOrientation(
+        GridX{cell.init_x}, GridY{cell.init_y}, master->getSite());
     if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
-      cell.rail_type = (cell.rail_type == NLPowerRailType::kVss) ? NLPowerRailType::kVdd : NLPowerRailType::kVss;
+      cell.rail_type = (cell.rail_type == NLPowerRailType::kVss)
+                           ? NLPowerRailType::kVdd
+                           : NLPowerRailType::kVss;
     }
 
-    cell.flippable = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
+    cell.flippable
+        = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
     if (cell.height % 2 == 1) {
       // For 1-row cells, we usually assume they are flippable in most PDKs.
       cell.flippable = true;
@@ -856,8 +977,8 @@ bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
 }
 
 bool NegotiationLegalizer::isValidRow(int rowIdx,
-                                 const HLCell& cell,
-                                 int gridX) const
+                                      const HLCell& cell,
+                                      int gridX) const
 {
   if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
     return false;
@@ -903,8 +1024,8 @@ bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
 }
 
 std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
-                                                 int x,
-                                                 int y) const
+                                                      int x,
+                                                      int y) const
 {
   const HLCell& cell = cells_[cellIdx];
   int best_x = std::max(0, std::min(x, grid_w_ - cell.width));
@@ -1033,7 +1154,8 @@ void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
 
     // Skip cells that violate fence or row constraints – negotiation handles
     // them later.
-    if (!respectsFence(idx, cell.x, rowIdx) || !isValidRow(rowIdx, cell, cell.x)) {
+    if (!respectsFence(idx, cell.x, rowIdx)
+        || !isValidRow(rowIdx, cell, cell.x)) {
       continue;
     }
 
@@ -1059,8 +1181,9 @@ void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
   }
 }
 
-void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters,
-                                       int /*rowIdx*/)
+void NegotiationLegalizer::collapseClusters(
+    std::vector<AbacusCluster>& clusters,
+    int /*rowIdx*/)
 {
   while (clusters.size() >= 2) {
     AbacusCluster& last = clusters[clusters.size() - 1];
@@ -1081,9 +1204,10 @@ void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters
         prev.cell_indices.push_back(idx);
       }
       prev.opt_x = prev.total_q / prev.total_weight;
-      prev.opt_x = std::max(
-          0.0,
-          std::min(prev.opt_x, static_cast<double>(grid_w_ - prev.total_width)));
+      prev.opt_x
+          = std::max(0.0,
+                     std::min(prev.opt_x,
+                              static_cast<double>(grid_w_ - prev.total_width)));
       clusters.pop_back();
     } else {
       break;
@@ -1095,12 +1219,13 @@ void NegotiationLegalizer::collapseClusters(std::vector<AbacusCluster>& clusters
     AbacusCluster& top = clusters.back();
     top.opt_x = top.total_q / top.total_weight;
     top.opt_x = std::max(
-        0.0, std::min(top.opt_x, static_cast<double>(grid_w_ - top.total_width)));
+        0.0,
+        std::min(top.opt_x, static_cast<double>(grid_w_ - top.total_width)));
   }
 }
 
 void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
-                                             int rowIdx)
+                                                  int rowIdx)
 {
   // cluster.opt_x is the padded-left edge of the cluster.
   int paddedX = static_cast<int>(std::round(cluster.opt_x));
@@ -1154,7 +1279,8 @@ bool NegotiationLegalizer::isCellLegal(int cellIdx) const
   const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
     for (int gx = xBegin; gx < xEnd; ++gx) {
-      if (gridAt(gx, cell.y + dy).capacity == 0 || gridAt(gx, cell.y + dy).overuse() > 0) {
+      if (gridAt(gx, cell.y + dy).capacity == 0
+          || gridAt(gx, cell.y + dy).overuse() > 0) {
         return false;
       }
     }
