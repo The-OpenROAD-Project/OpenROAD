@@ -161,7 +161,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
   uint32_t* bit_field = (uint32_t*) &mterm.flags_;
   stream >> *bit_field;
   if (!stream.getDatabase()->isSchema(kSchemaMustJoinAllPorts)) {
-    mterm.flags_.must_join_all_ports = 0;
+    mterm.flags_.must_join_all_ports = false;
   }
   stream >> mterm.order_id_;
   stream >> mterm.name_;

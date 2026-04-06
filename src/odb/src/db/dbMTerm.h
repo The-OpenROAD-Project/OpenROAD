@@ -68,7 +68,7 @@ inline _dbMTerm::_dbMTerm(_dbDatabase*)
   flags_.sig_type = dbSigType::SIGNAL;
   flags_.shape_type = dbMTermShapeType::NONE;
   flags_.mark = 0;
-  flags_.must_join_all_ports = 0;
+  flags_.must_join_all_ports = false;
   flags_.spare_bits = 0;
   order_id_ = 0;
   name_ = nullptr;
