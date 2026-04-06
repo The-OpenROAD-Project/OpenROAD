@@ -1,14 +1,25 @@
 # Detailed Placement
 
-The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or 
+The detailed placement module in OpenROAD (`dpl`) is based on OpenDP, or
 Open-Source Detailed Placement Engine. Its key features are:
 
--   Fence region,
--   Fragmented ROWs,
--   Two-pass legalization (optional)
+-   Fence region support
+-   Fragmented row support
+-   Mixed-cell-height (1x–4x) legalization
+-   Two placement engines selectable at runtime
 
-Implements a two-pass NegotiationLegalizer targeting OpenROAD's `dpl` (detailed
-placement) module:
+## Placement Engines
+
+### Diamond Search (default)
+
+The default engine performs a BFS-style diamond search from each cell's
+global placement position, expanding outward in Manhattan order until a
+legal site is found.
+
+### NegotiationLegalizer (`-use_negotiation`)
+
+An optional two-pass legalizer based on the NBLG paper. Enabled with
+`-use_negotiation` on the `detailed_placement` command.
 
 ```
 Global Placement result
@@ -16,10 +27,11 @@ Global Placement result
         ▼
 ┌───────────────────┐
 │   Abacus Pass     │  Fast DP sweep, row-by-row.
-│                   │  Near-optimal for uncongested cells.
-│  Handles:         │  Mixed-cell-height via row assignment.
-│  - 1x/2x/3x/4x    │  Power-rail alignment enforced.
-│  - Fence regions  │  Fence violations → skipped (→ negotiation).
+│   (Skipped)       │  Near-optimal for uncongested cells.
+│                   │  Mixed-cell-height via row assignment.
+│  Handles:         │  Power-rail alignment enforced.
+│  - 1x/2x/3x/4x    │  Fence violations → skipped (→ negotiation).
+│  - Fence regions  │
 └────────┬──────────┘
          │ illegal cells (overlap / fence violated)
          ▼
@@ -29,14 +41,14 @@ Global Placement result
 │  NBLG components: │  grid resources.  History cost penalises
 │  - Adaptive pf    │  persistent congestion.  Isolation point skips
 │  - Isolation pt   │  already-legal cells in phase 2.
-│  - 5-component    │
-│    negotiation    │
+│  - History cost   │
 └────────┬──────────┘
          │
          ▼
 ┌───────────────────┐
 │ Post-optimisation │  Greedy displacement improvement (5 passes).
-│                   │  Cell swap via bipartite matching within groups.
+│     (Skipped)     │  Cell swap via bipartite matching within groups.
+│                   │  
 └────────┬──────────┘
          │
          ▼
@@ -71,22 +83,33 @@ detailed_placement
 | `-disallow_one_site_gaps` | Option is deprecated. |
 | `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-incremental` | By default DPL initiates with all instances unplaced. With this flag DPL will check for already legalized instances and set them as placed. |
+| `-report_file_name` | File name for saving the report to (e.g. `report.json`.) |
 | `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
-| `-abacus` | Enable the Abacus pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+| `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
+
+### Negotiation Legalize
+
+The `negotiation_legalize` command runs the NegotiationLegalizer directly,
+bypassing the standard `detailed_placement` flow. Intended for standalone
+use or scripting.
+
+```tcl
+negotiation_legalize
+```
 
 ### Set Placement Padding
 
 The `set_placement_padding` command sets left and right padding in multiples
 of the row site width. Use the `set_placement_padding` command before
 legalizing placement to leave room for routing. Use the `-global` flag
-for padding that applies to all instances. Use  `-instances`
+for padding that applies to all instances. Use `-instances`
 for instance-specific padding.  The instances `insts` can be a list of instance
 names, or an instance object returned by the SDC `get_cells` command. To
 specify padding for all instances of a common master, use the `-filter`
 "ref_name == <name>" option to `get_cells`.
 
 ```tcl
-set_placement_padding   
+set_placement_padding
     -global|-masters masters|-instances insts
     [-right site_count]
     [-left site_count]
@@ -99,7 +122,7 @@ Either one of these flags must be set: `-global | -masters | -instances`.
 The order of preference is `global > masters > instances`
 ```
 
-| Switch Name | Description | 
+| Switch Name | Description |
 | ----- | ----- |
 | `-global` | Set padding globally using `left` and `right` values. |
 | `-masters` |  Set padding only for these masters using `left` and `right` values. | 
@@ -117,7 +140,7 @@ is supported, so `FILL*` will match, e.g., `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2
 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.  To specify a different naming prefix
 from `FILLER_` use `-prefix <new prefix>`.
 
-```tcl 
+```tcl
 filler_placement
     [-prefix prefix]
     [-verbose]
@@ -130,14 +153,14 @@ filler_placement
 | ----- | ----- |
 | `-prefix` | Prefix to name the filler cells. The default value is `FILLER_`. |
 | `-verbose` | Print the filler cell usage. |
-| `filler_masters` | Filler master cells. | 
+| `filler_masters` | Filler master cells. |
 
 ### Remove Fillers
 
 This command removes all filler cells.
 
 ```tcl
-remove_fillers 
+remove_fillers
 ```
 
 ### Check Placement
@@ -168,6 +191,7 @@ a weak attempt to reduce the total half-perimeter wirelength (HPWL).
 ```tcl
 optimize_mirroring
 ```
+
 ### Improve Placement
 
 The `improve_placement` command optimizes a given placed design.
@@ -190,7 +214,7 @@ If you are a developer, you might find these useful. More details can be found i
 | `get_inst_bbox` | Get bounding box of an instance. |
 | `get_inst_grid_bbox` | Get grid bounding box of an instance. |
 | `format_grid` | Format grid (takes in length `x` and site width `w` as inputs). |
-| `get_row_site` | Get row site name.
+| `get_row_site` | Get row site name. |
 
 ## Example scripts
 
@@ -204,7 +228,7 @@ Examples scripts demonstrating how to run `dpl` on a sample design of `aes` as f
 
 There are a set of regression tests in `./test`. Refer to this [section](../../README.md#regression-tests) for more information.
 
-Simply run the following script: 
+Simply run the following script:
 
 ```shell
 ./test/regression
@@ -212,12 +236,14 @@ Simply run the following script:
 
 ## Limitations
 
+The following limitations apply when using the NegotiationLegalizer (`-use_negotiation`):
+
 1. **Abacus cluster chain**: The current Abacus implementation uses a
    simplified cluster structure. A production version should maintain an
    explicit doubly-linked list of cells within each cluster, as in the
    original Spindler et al. paper.
 
-2. **Multithreading**: The negotiation pass is single-threaded here.
+2. **Multithreading**: The negotiation pass is single-threaded.
    Extend with the inter-region parallelism from NBLG (Algorithm 2, dynamic
    region adjustment) using OpenMP or std::thread.
 
@@ -225,17 +251,7 @@ Simply run the following script:
    with a spatial index (Boost.Geometry rtree or OpenROAD's existing RTree)
    for large designs with many fence sub-rectangles.
 
-4. **Technology constraints** (pin short/access, edge spacing): Add penalty
-   terms to `targetCost()` as described in NBLG Section IV-D-2.
-
-5. **pf integration**: The `adaptivePf()` function is computed but not yet
-   wired into `negotiationCost()`. Wire it as:
-   ```cpp
-   double p = adaptivePf(iter) * (usg / cap);
-   ```
-   where `iter` is passed into `negotiationCost()`.
-
-6. **Row rail inference**: Currently uses row-index parity as a proxy for
+4. **Row rail inference**: Currently uses row-index parity as a proxy for
    VDD/VSS. Replace with actual LEF pg_pin parsing once available in the
    build context.
 
@@ -251,13 +267,11 @@ about this tool.
 -   Rewrite and port to OpenDB/OpenROAD by James Cherry, Parallax Software
 
 ## References
+
 1. Do, S., Woo, M., & Kang, S. (2019, May). Fence-region-aware mixed-height standard cell legalization. In Proceedings of the 2019 on Great Lakes Symposium on VLSI (pp. 259-262). [(.pdf)](https://dl.acm.org/doi/10.1145/3299874.3318012)
-2. P. Spindler et al., "Abacus: Fast legalization of standard cell circuits
-  with minimal movement," ISPD 2008.
-3 J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern
-  Design," IEEE TCAD, vol. 41, no. 11, 2022.
-4 L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based
-  performance-driven router for FPGAs," 1995.
+2. P. Spindler et al., "Abacus: Fast legalization of standard cell circuits with minimal movement," ISPD 2008.
+3. J. Chen et al., "NBLG: A Robust Legalizer for Mixed-Cell-Height Modern Design," IEEE TCAD, vol. 41, no. 11, 2022.
+4. L. McMurchie and C. Ebeling, "PathFinder: A negotiation-based performance-driven router for FPGAs," 1995.
 
 ## License
 
