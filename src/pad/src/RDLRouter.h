@@ -192,7 +192,13 @@ class RDLRouter
                         const odb::Point& pt1,
                         bool use_routes) const;
 
-  void populateTerminalAccessPoints(RouteTarget& target) const;
+  void populateTerminalAccessPoints(
+      RouteTarget& target,
+      std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const;
+  void cleanupTerminalAccessPoints(odb::dbITerm* iterm,
+                                   std::vector<RouteTarget>& targets) const;
+  void cleanupGraphEdges(
+      const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges);
   std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
                                                     bool do_x) const;
   TerminalAccess insertTerminalAccess(const RouteTarget& target,

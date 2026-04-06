@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -7268,6 +7269,10 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
+  dbChipPath* findChipPath(const char* name) const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7442,6 +7447,34 @@ class dbChipNet : public dbObject
 
   static void destroy(dbChipNet* net);
   // User Code End dbChipNet
+};
+
+class dbChipPath : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  // User Code Begin dbChipPath
+  struct Entry
+  {
+    std::vector<dbChipInst*> chip_inst_path;  // hierarchical path to the region
+    dbChipRegionInst* region;
+    bool negated;  // do not touch this region, i.e., the path must be connected
+                   // without crossing this region
+  };
+
+  dbChip* getChip() const;
+
+  std::vector<Entry> getEntries() const;
+
+  void addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                dbChipRegionInst* region,
+                bool negated);
+
+  static dbChipPath* create(dbChip* chip, const char* name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
 };
 
 class dbChipRegion : public dbObject
