@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
+%{
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+%}
+
 %import <std_vector.i>
 
 %template(vector_str) std::vector<std::string>;

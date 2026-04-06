@@ -166,9 +166,6 @@ cc_binary(
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
-    data = [
-        "@tclreadline//:tclreadline_scripts",
-    ],
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
@@ -180,13 +177,13 @@ cc_binary(
         ":openroad_version",
         ":opt_notification",
         ":ord",
-        "//bazel:runfiles",
+        "//bazel:tcl_library_init",
+        "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
-        "@rules_cc//cc/runfiles",
         "@tcl_lang//:tcl",
         # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
         # On systems without tclreadline these are empty stub targets (no-op).
