@@ -552,10 +552,15 @@ int FastRouteCore::getWireCost(const int layer, const int length, FrNet* net)
 
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
-  double default_resistance = default_layer->getResistance();
-  float final_resistance = getWireResistance(layer, length, net);
+  const double default_resistance = default_layer->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_resistance <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(final_resistance / default_resistance);
+  const float final_resistance = getWireResistance(layer, length, net);
+  const double cost = std::ceil(final_resistance / default_resistance);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 // Get via resistance in ohms going from layer A to layer B
@@ -588,10 +593,15 @@ int FastRouteCore::getViaCost(const int from_layer, const int to_layer)
   }
 
   // Calculate total resistance
-  float total_via_resistance = getViaResistance(from_layer, to_layer);
-  float default_res = getTechLayer(0, true)->getResistance();
+  const float default_res = getTechLayer(0, true)->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_res <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(total_via_resistance / default_res);
+  const float total_via_resistance = getViaResistance(from_layer, to_layer);
+  const double cost = std::ceil(total_via_resistance / default_res);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 void FastRouteCore::updateWorstMetrics(FrNet* net)
