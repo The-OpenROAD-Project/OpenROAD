@@ -6,6 +6,8 @@ Header:
     - TopDesign.3dbv
 Design:
   name: TopDesign
+  external:
+    verilog_file: TopDesign.v
 ChipletInst:
   soc_inst_duplicate:
     reference: SoC

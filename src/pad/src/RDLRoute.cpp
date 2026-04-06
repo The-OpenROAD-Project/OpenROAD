@@ -9,6 +9,7 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -95,7 +96,7 @@ bool RDLRoute::compare(const std::shared_ptr<RDLRoute>& other) const
 }
 
 void RDLRoute::setRoute(
-    const std::map<GridGraphVertex, odb::Point>& vertex_point_map,
+    const std::unordered_map<GridGraphVertex, odb::Point>& vertex_point_map,
     const std::vector<GridGraphVertex>& vertex,
     const std::vector<RDLRouter::GridEdge>& removed_edges,
     const RouteTarget* source,

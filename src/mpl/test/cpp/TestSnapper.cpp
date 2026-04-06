@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "../../src/hier_rtlmp.h"
+#include "../../src/snapper.h"
 #include "MplTest.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"

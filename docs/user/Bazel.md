@@ -227,7 +227,7 @@ Perhaps attach gdb and use ctrl-c from the command line? Use gdb with an IDE, em
     708	      if (pt.x() == x && pt.y() == y) {
     709	        return true;
 
-## Creating an ORFS issue with bazel-orfs targets using `_deps` targes
+## Creating an ORFS issue with bazel-orfs targets using `//:deps`
 
 Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can find if carefully searching the logs for `ERROR:` and looking for `target`:
 
@@ -242,10 +242,10 @@ Consider a failure in `//test/orfs/mock-array:MockArray_floorplan` as one can fi
 
 To create an ORFS `make issue`, follow these steps:
 
-    bazelisk run //test/orfs/mock-array:MockArray_floorplan_deps
+    bazelisk run //:deps -- //test/orfs/mock-array:MockArray_floorplan
 
 - In Bazel `//test/orfs/mock-array:MockArray_floorplan` failed and will leave behind no files, unless one uses `--sandbox_debug`
-- bazel-orfs adds a `//test/orfs/mock-array:MockArray_floorplan_deps` target that sets up all the dependencies for running `make do-floorplan`, similarly for `_synth/place/cts/grt/route/final`.
+- bazel-orfs provides a `//:deps` wrapper that builds only the `deps` output group (cheap config/template operations) and deploys the dependencies for running `make do-floorplan`. The same works for any stage: synth, place, cts, grt, route or final.
 - Files are placed in `tmp/test/orfs/mock-array/MockArray_floorplan_deps/` with a `make` script that is very nearly the same as `make DESIGN_CONFIG=...` with ORFS
 
 First run `do-floorplan` until the failure, notice that the `do-` prefix is used to disable the dependency checking in ORFS as bazel-orfs handles dependencies:
@@ -432,7 +432,7 @@ This will:
 
 First set up a local work folder with all dependencies for the step that you want to work on:
 
-    bazelisk run //test/orfs/gcd:gcd_floorplan_deps
+    bazelisk run //:deps -- //test/orfs/gcd:gcd_floorplan
 
 Now run make directly with the work folder, but be sure to use the `do-` targets that side-step ORFS make dependency checking:
 
@@ -448,7 +448,7 @@ Consider an error such as:
 
 First set up a folder with all the dependencies to run global placement:
 
-    bazelisk run //test/orfs/gcd:gcd_place_deps
+    bazelisk run //:deps -- //test/orfs/gcd:gcd_place
 
 Drop into a shell that has the build environment set up:
 
@@ -461,7 +461,7 @@ Run up to the failing stage and stop with ctrl-c on the step that you want to ru
 
 Now run the whittler with stock `python3` — no extra packages needed beyond
 the standard library. You are responsible for having `openroad` on your
-`PATH` first (e.g. after `bazelisk run //:install` and `source env.sh` in
+`PATH` first (e.g. after `bazelisk run //packaging:install` and `source env.sh` in
 an ORFS checkout):
 
     python3 etc/whittle.py --error_string GPL-0305 --base_db_path 3_2_place_iop.odb --use_stdout --exit_early_on_error --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
