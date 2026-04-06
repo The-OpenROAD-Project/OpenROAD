@@ -166,8 +166,6 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   odb::WireLengthEvaluator eval(block_);
   hpwl_before_ = eval.hpwl();
 
-  initGrid();
-  setFixedGridCells();
     if (max_displacement_x == 0 || max_displacement_y == 0) {
       max_displacement_x_ = 500;
       max_displacement_y_ = 100;
@@ -186,7 +184,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   if (!use_negotiation) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
-
+    findDisplacementStats();
+    updateDbInstLocations();
     if (!placement_failures_.empty()) {
       logger_->info(DPL,
                     34,
@@ -203,6 +202,8 @@ void Opendp::detailedPlacement(const int max_displacement_x,
       logger_->error(DPL, 36, "Detailed placement failed inside DPL.");
     }
   } else {
+    initGrid();
+    setFixedGridCells();
     logger_->info(DPL,
                   1102,
                   "Legalizing using negotiation legalizer.");
@@ -218,11 +219,12 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         "Violations remain: {}", negotiation.numViolations());
       logger_->metric("NL__no__converge__final_violations", negotiation.numViolations());
     }
+
+    findDisplacementStats();
+    updateDbInstLocations();
   }
 
-  // Save displacement stats before updating instance DB locations.
-  findDisplacementStats();
-  updateDbInstLocations();
+
 }
 
 int Opendp::negotiationLegalize(bool run_abacus)

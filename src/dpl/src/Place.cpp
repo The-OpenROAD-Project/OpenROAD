@@ -65,7 +65,10 @@ void Opendp::diamondDPL()
   }
 
   placement_failures_.clear();
-  // Paint initially placed cells (respecting already legalized ones).
+  initGrid();
+  // Paint fixed cells.
+  setFixedGridCells();
+  // Paint initially place2d cells (respecting already legalized ones).
   if (incremental_) {
     logger_->report("setInitialGridCells()");
     setInitialGridCells();
@@ -393,7 +396,7 @@ void Opendp::place()
     if (!diamond_move) {
       // TODO: this is non-deteministic due to std::set<Node*>, 
       // and experiments show no legalization for failed diamond searches.
-      // rip_up_move = ripUpAndReplace(cell);      
+      rip_up_move = ripUpAndReplace(cell);      
       if (!rip_up_move) {
         failed_rip_up++;
       }
