@@ -226,6 +226,9 @@ class ClusteringEngine
 
   bool isValidNet(odb::dbNet* net);
 
+  HardMacro::Halo buildMacroHalo(odb::dbInst* inst, int minimum_spacing) const;
+  int getMinimumSpacing() const;
+
   odb::dbBlock* block_;
   utl::Logger* logger_;
   par::PartitionMgr* triton_part_;
