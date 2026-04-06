@@ -2060,6 +2060,7 @@ std::string ClusteringEngine::generateMacroAndCoreDimensionsTable(
 void ClusteringEngine::createHardMacros()
 {
   const odb::Rect& core = block_->getCoreArea();
+  int minimum_spacing = getMinimumSpacing();
 
   for (odb::dbInst* inst : block_->getInsts()) {
     if (inst->isBlock()) {
@@ -2079,63 +2080,8 @@ void ClusteringEngine::createHardMacros()
         tree_->has_fixed_macros = true;
       }
 
-      odb::dbMaster* master = inst->getMaster();
-      HardMacro::Halo halo_mask;
-
-      for (odb::dbMTerm* mterm : master->getMTerms()) {
-        if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
-          continue;
-        }
-
-        for (odb::dbMPin* mpin : mterm->getMPins()) {
-          auto direction = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
-          for (odb::dbBox* box : mpin->getGeometry()) {
-            odb::Rect pin_rect = box->getBox();
-
-            if (direction == odb::dbTechLayerDir::HORIZONTAL) {
-              int dist_L = pin_rect.xMin();
-              int dist_R = master->getWidth() - pin_rect.xMax();
-              
-              if (dist_L < dist_R) {
-                halo_mask.left = 1;
-              } else {
-                halo_mask.right = 1;
-              }
-            } else {
-              int dist_B = pin_rect.yMin();
-              int dist_T = master->getHeight() - pin_rect.yMax();
-              
-              if (dist_B < dist_T) {
-                halo_mask.bottom = 1;
-              } else {
-                halo_mask.top = 1;
-              }
-            }
-          }
-        }
-      }
-
-      HardMacro::Halo halo;
-      if (macro_to_halo_.contains(inst)) {
-        halo = macro_to_halo_.at(inst);
-      } else if (inst->getHalo() != nullptr) {
-        const HardMacro::Halo inst_halo(inst->getHalo());
-        halo = inst_halo;
-        if (!inst->getHalo()->isSoft()) {
-          halo = inst_halo.floorTo(base_halo_);
-        }
-      } else {
-        halo = base_halo_;
-      }
-
-      halo.left *= halo_mask.left;
-      halo.bottom *= halo_mask.bottom;
-      halo.right *= halo_mask.right;
-      halo.top *= halo_mask.top;
-
-      logger_->report("{} ({} {} {} {})", inst->getName(), halo.left, halo.bottom, halo.right, halo.top);
-
-      auto macro = std::make_unique<HardMacro>(inst, halo);
+      auto macro = std::make_unique<HardMacro>(
+          inst, buildMacroHalo(inst, minimum_spacing));
 
       if (macro->getWidth() > core.dx() || macro->getHeight() > core.dy()) {
         logger_->error(
@@ -2201,6 +2147,91 @@ int ClusteringEngine::getNumberOfIOs(Cluster* target) const
     }
   }
   return number_of_ios;
+}
+
+HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
+                                                 int minimum_spacing) const
+{
+  if (macro_to_halo_.contains(inst)) {
+    return macro_to_halo_.at(inst);
+  }
+
+  HardMacro::Halo full_halo;
+  if (inst->getHalo() != nullptr) {
+    odb::Rect inst_halo = inst->getHalo()->getBox();
+    if (inst->getHalo()->isSoft()) {
+      full_halo = HardMacro::Halo(inst->getHalo());
+    } else {
+      full_halo = {std::max(inst_halo.xMin(), base_halo_.left),
+                   std::max(inst_halo.yMin(), base_halo_.bottom),
+                   std::max(inst_halo.xMax(), base_halo_.right),
+                   std::max(inst_halo.yMax(), base_halo_.top)};
+    }
+  } else {
+    full_halo = base_halo_;
+  }
+
+  int spacing = (minimum_spacing / 2) + (minimum_spacing % 2);
+  HardMacro::Halo halo(spacing);
+
+  odb::dbMaster* master = inst->getMaster();
+
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() != odb::dbSigType::SIGNAL) {
+      continue;
+    }
+
+    for (odb::dbMPin* mpin : mterm->getMPins()) {
+      auto direction
+          = (mpin->getGeometry().begin())->getTechLayer()->getDirection();
+      for (odb::dbBox* box : mpin->getGeometry()) {
+        odb::Rect pin_rect = box->getBox();
+
+        if (direction == odb::dbTechLayerDir::HORIZONTAL) {
+          int dist_L = pin_rect.xMin();
+          int dist_R = master->getWidth() - pin_rect.xMax();
+
+          if (dist_L < dist_R) {
+            halo.left = full_halo.left;
+          } else {
+            halo.right = full_halo.right;
+          }
+        } else {
+          int dist_B = pin_rect.yMin();
+          int dist_T = master->getHeight() - pin_rect.yMax();
+
+          if (dist_B < dist_T) {
+            halo.bottom = full_halo.bottom;
+          } else {
+            halo.top = full_halo.top;
+          }
+        }
+      }
+    }
+  }
+
+  logger_->report("{} ({} {} {} {})",
+                  inst->getName(),
+                  halo.left,
+                  halo.bottom,
+                  halo.right,
+                  halo.top);
+
+  return halo;
+}
+
+int ClusteringEngine::getMinimumSpacing() const
+{
+  int spacing = 0;
+  for (auto entry : block_->getTech()->getCellEdgeSpacingTable()) {
+    spacing = std::max(spacing, entry->getSpacing());
+  }
+
+  for (auto layer : block_->getTech()->getLayers()) {
+    spacing = std::max(spacing, layer->getSpacing());
+  }
+
+  return spacing;
 }
 
 ///////////////////////////////////////////////
