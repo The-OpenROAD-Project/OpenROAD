@@ -2224,6 +2224,7 @@ void NesterovBase::updateGCellCenterLocation(
 void NesterovBase::updateGCellDensityCenterLocation(
     const std::vector<FloatPoint>& coordis)
 {
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (int idx = 0; idx < coordis.size(); ++idx) {
     nb_gcells_[idx]->setDensityCenterLocation(coordis[idx].x, coordis[idx].y);
   }
