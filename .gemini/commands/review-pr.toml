@@ -1,0 +1,2 @@
+description = "Review an OpenROAD pull request following the project's review priority order: correctness > QoR impact > testing > architecture > style > process."
+prompt = "Activate the review-pr skill and review the following PR: {{args}}"
