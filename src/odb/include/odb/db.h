@@ -5749,6 +5749,18 @@ class dbMTerm : public dbObject
   bool isSetMark();
 
   ///
+  /// Returns true if all shapes of the terminal must be connected electrically.
+  /// For example if there's two shapes that make up the A terminal, they must
+  /// both be connected to the net.
+  ///
+  bool isMustJoinAllPorts();
+
+  ///
+  /// Set the must-join-all-ports flag.
+  ///
+  void setMustJoinAllPorts(bool v);
+
+  ///
   /// Get the master this master-terminal belongs too.
   ///
   dbMaster* getMaster();

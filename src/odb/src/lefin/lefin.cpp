@@ -1749,6 +1749,15 @@ void lefinReader::pin(LefParser::lefiPin* pin)
       pins.reverse();
     }
   }
+
+  for (i = 0; i < pin->LefParser::lefiPin::numProperties(); i++) {
+    if (!strcmp(pin->LefParser::lefiPin::propName(i),
+                "LEF58_MUSTJOINALLPORTS")) {
+      if (strstr(pin->LefParser::lefiPin::propValue(i), "MUSTJOINALLPORTS")) {
+        term->setMustJoinAllPorts(true);
+      }
+    }
+  }
 }
 
 void lefinReader::propDefBegin(void* /* unused: ptr */)

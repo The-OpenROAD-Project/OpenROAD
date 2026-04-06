@@ -45,6 +45,10 @@ bool _dbMTerm::operator==(const _dbMTerm& rhs) const
     return false;
   }
 
+  if (flags_.must_join_all_ports != rhs.flags_.must_join_all_ports) {
+    return false;
+  }
+
   if (order_id_ != rhs.order_id_) {
     return false;
   }
@@ -156,6 +160,9 @@ dbIStream& operator>>(dbIStream& stream, _dbMTerm& mterm)
 {
   uint32_t* bit_field = (uint32_t*) &mterm.flags_;
   stream >> *bit_field;
+  if (!stream.getDatabase()->isSchema(kSchemaMustJoinAllPorts)) {
+    mterm.flags_.must_join_all_ports = 0;
+  }
   stream >> mterm.order_id_;
   stream >> mterm.name_;
   stream >> mterm.next_entry_;
@@ -252,6 +259,18 @@ bool dbMTerm::isSetMark()
 {
   _dbMTerm* mterm = (_dbMTerm*) this;
   return mterm->flags_.mark > 0;
+}
+
+void dbMTerm::setMustJoinAllPorts(bool v)
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  mterm->flags_.must_join_all_ports = v;
+}
+
+bool dbMTerm::isMustJoinAllPorts()
+{
+  _dbMTerm* mterm = (_dbMTerm*) this;
+  return mterm->flags_.must_join_all_ports > 0;
 }
 
 dbMaster* dbMTerm::getMaster()
