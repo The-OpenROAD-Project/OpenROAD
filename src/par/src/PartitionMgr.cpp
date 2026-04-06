@@ -13,6 +13,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "TritonPart.h"
@@ -491,7 +492,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     std::map<Net*, Port*>* port_map)
 {
   // build cell
-  Cell* cell = network->makeCell(library, name, false, nullptr);
+  Cell* cell = network->makeCell(library, name, false, "");
 
   // add global ports
   auto pin_iter = db_network_->pinIterator(db_network_->topInstance());
@@ -514,7 +515,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     }
 
     if (add_port) {
-      const char* portname = db_network_->name(pin);
+      std::string portname = db_network_->name(pin);
 
       Port* port = network->makePort(cell, portname);
       // copy exactly the parent port direction
@@ -636,7 +637,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
     }
   }
 
-  network->groupBusPorts(cell, [](const char*) { return true; });
+  network->groupBusPorts(cell, [](std::string_view) { return true; });
 
   // build instance
   std::string instname = name;
@@ -689,20 +690,20 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
                                                     sta::NetworkReader* network)
 {
   // build cell
-  Cell* cell = network->makeCell(library, name, false, nullptr);
+  Cell* cell = network->makeCell(library, name, false, "");
 
   // add global ports
   auto pin_iter = db_network_->pinIterator(db_network_->topInstance());
   while (pin_iter->hasNext()) {
     const Pin* pin = pin_iter->next();
 
-    const char* portname = db_network_->name(pin);
+    std::string portname = db_network_->name(pin);
     Port* port = network->makePort(cell, portname);
     network->setDirection(port, db_network_->direction(pin));
   }
   delete pin_iter;
 
-  network->groupBusPorts(cell, [](const char*) { return true; });
+  network->groupBusPorts(cell, [](std::string_view) { return true; });
 
   // build instance
   std::string instname = name;
@@ -712,7 +713,7 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   CellPortBitIterator* port_iter = network->portBitIterator(cell);
   while (port_iter->hasNext()) {
     Port* port = port_iter->next();
-    const char* port_name = network->name(port);
+    std::string port_name = network->name(port);
     Net* net = network->makeNet(port_name, inst);
     Pin* pin = network->makePin(inst, port, nullptr);
     network->makeTerm(pin, net);
@@ -765,7 +766,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
 
   // create new network and library
   NetworkReader* network = sta::makeConcreteNetwork();
-  Library* library = network->makeLibrary("Partitions", nullptr);
+  Library* library = network->makeLibrary("Partitions", "");
 
   // new top module
   Instance* top_inst
@@ -790,7 +791,7 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
   // connect submodule partitions in new top module
   for (auto& [partition, instance] : sta_instance_map) {
     for (auto& [portnet, port] : sta_port_map[partition]) {
-      const char* net_name = network->name(port);
+      std::string net_name = network->name(port);
 
       Net* net = network->findNet(top_inst, net_name);
       if (net == nullptr) {

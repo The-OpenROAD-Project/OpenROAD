@@ -399,8 +399,8 @@ sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
-    const char* in_port_name = in_port->name();
-    const char* drvr_port_name = drvr_port->name();
+    const std::string& in_port_name = in_port->name();
+    const std::string& drvr_port_name = drvr_port->name();
     sta::sort(
         &swappable_cells,
         [=, this](const sta::LibertyCell* cell1,

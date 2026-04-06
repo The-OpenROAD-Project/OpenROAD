@@ -504,6 +504,15 @@
       "tbl_name":"chip_net_tbl_",
       "schema":"kSchemaChipRegion",
       "flags": ["no-serial"]
+    },
+    {
+      "parent":"dbChip",
+      "child":"dbChipPath",
+      "type":"1_n",
+      "tbl_name":"chip_path_tbl_",
+      "schema":"kSchemaChipPath",
+      "hash": true,
+      "flags": ["no-serial"]
     }
   ]
 }

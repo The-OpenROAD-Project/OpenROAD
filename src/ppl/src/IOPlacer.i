@@ -20,6 +20,10 @@ using ppl::PinList;
 using std::vector;
 using std::set;
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 template <class TYPE>
 vector<TYPE> *
 tclListStdSeq(Tcl_Obj *const source,

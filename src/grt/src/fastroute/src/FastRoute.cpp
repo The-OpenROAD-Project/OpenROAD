@@ -1115,6 +1115,40 @@ void FastRouteCore::getPlanarRoute(odb::dbNet* db_net, GRoute& route)
   }
 }
 
+void FastRouteCore::convertGridsToSegments(
+    const std::vector<GPoint3D>& grids,
+    int grid_count,
+    std::unordered_set<GSegment, GSegmentHash>& net_segs,
+    GRoute& route)
+{
+  int lastX = (tile_size_ * (grids[0].x + 0.5)) + x_corner_;
+  int lastY = (tile_size_ * (grids[0].y + 0.5)) + y_corner_;
+  int lastL = grids[0].layer;
+
+  for (int i = 1; i <= grid_count; i++) {
+    const int xreal = (tile_size_ * (grids[i].x + 0.5)) + x_corner_;
+    const int yreal = (tile_size_ * (grids[i].y + 0.5)) + y_corner_;
+    const int currentL = grids[i].layer;
+
+    if (lastX == xreal && lastY == yreal && lastL == currentL) {
+      continue;
+    }
+
+    GSegment segment
+        = GSegment(lastX, lastY, lastL + 1, xreal, yreal, currentL + 1);
+    segment.setIs3DRoute(true);
+
+    if (net_segs.find(segment) == net_segs.end()) {
+      net_segs.insert(segment);
+      route.push_back(segment);
+    }
+
+    lastX = xreal;
+    lastY = yreal;
+    lastL = currentL;
+  }
+}
+
 void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
 {
   int netID;
@@ -1206,39 +1240,23 @@ void FastRouteCore::get3DRoute(odb::dbNet* db_net, GRoute& route)
         }
       }
 
-      int lastX = (tile_size_ * (filled_grids[0].x + 0.5)) + x_corner_;
-      int lastY = (tile_size_ * (filled_grids[0].y + 0.5)) + y_corner_;
-      int lastL = filled_grids[0].layer;
-
-      for (int i = 1; i < filled_grids.size(); i++) {
-        const int xreal = (tile_size_ * (filled_grids[i].x + 0.5)) + x_corner_;
-        const int yreal = (tile_size_ * (filled_grids[i].y + 0.5)) + y_corner_;
-        const int currentL = filled_grids[i].layer;
-
-        // Prevent adding segments that are effectively zero-length vias on the
-        // same layer
-        if (lastX == xreal && lastY == yreal && lastL == currentL) {
-          // Skip this segment as it's a redundant via on the same layer
-          lastX = xreal;
-          lastY = yreal;
-          lastL = currentL;
-          continue;
-        }
-
-        GSegment segment
-            = GSegment(lastX, lastY, lastL + 1, xreal, yreal, currentL + 1);
-        segment.setIs3DRoute(true);
-
-        // Only add segment if it's not a duplicate
-        if (net_segs.find(segment) == net_segs.end()) {
-          net_segs.insert(segment);
-          route.push_back(segment);
-        }
-
-        lastX = xreal;
-        lastY = yreal;
-        lastL = currentL;
-      }
+      convertGridsToSegments(
+          filled_grids, filled_grids.size() - 1, net_segs, route);
+    } else if (treeedge->route.routelen > 0) {
+      // Handle zero-length edges (len == 0) that carry via route grids.
+      // These arise in two situations:
+      //   (a) fillVIA created a via stack for co-located terminal pins on
+      //       different layers (e.g. two pins in the same gcell on layers 2
+      //       and 3).
+      //   (b) ensurePinCoverage appended a new TreeEdge with a via route to
+      //       reach an uncovered pin.
+      // In both cases len is 0 and n1a/n2a are not set by layerAssignment
+      // (which only processes len>0 edges), so the grids are converted
+      // directly to GSegments without the pin-via-stack logic used above.
+      // Without this branch the via is silently dropped, leaving RSZ unable
+      // to build a connected tree (RSZ-0074).
+      convertGridsToSegments(
+          treeedge->route.grids, treeedge->route.routelen, net_segs, route);
     }
   }
 }

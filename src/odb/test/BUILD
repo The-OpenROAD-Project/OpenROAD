@@ -306,6 +306,7 @@ filegroup(
         "data/mask.lef",
         "data/ndr.def",
         "data/parser_test.def",
+        "data/path_assertions.3dbx",
         "data/rounding.def",
         "data/sky130_fd_sc_hd__inv_1.gds",
         "data/sky130hd_multi_patterned.def",

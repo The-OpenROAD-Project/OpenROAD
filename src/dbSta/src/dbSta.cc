@@ -131,9 +131,9 @@ class dbStaReport : public sta::ReportTcl
   size_t printString(const char* buffer, size_t length) override;
 
   // Redirect output to filename until redirectFileEnd is called.
-  void redirectFileBegin(std::string filename) override;
+  void redirectFileBegin(std::string_view filename) override;
   // Redirect append output to filename until redirectFileEnd is called.
-  void redirectFileAppendBegin(std::string filename) override;
+  void redirectFileAppendBegin(std::string_view filename) override;
   void redirectFileEnd() override;
   // Redirect output to a string until redirectStringEnd is called.
   void redirectStringBegin() override;
@@ -1051,16 +1051,16 @@ void dbStaReport::fileCriticalMsg(int id,
   logger_->critical(STA, id, "{} line {}, {}", filename, line, formatted_msg);
 }
 
-void dbStaReport::redirectFileBegin(std::string filename)
+void dbStaReport::redirectFileBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileBegin(filename);
+  logger_->redirectFileBegin(std::string(filename));
 }
 
-void dbStaReport::redirectFileAppendBegin(std::string filename)
+void dbStaReport::redirectFileAppendBegin(std::string_view filename)
 {
   flush();
-  logger_->redirectFileAppendBegin(filename);
+  logger_->redirectFileAppendBegin(std::string(filename));
 }
 
 void dbStaReport::redirectFileEnd()

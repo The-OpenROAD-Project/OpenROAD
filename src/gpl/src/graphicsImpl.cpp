@@ -223,7 +223,7 @@ void GraphicsImpl::drawInitial(gui::Painter& painter)
   }
 }
 
-void GraphicsImpl::drawForce(gui::Painter& painter)
+void GraphicsImpl::drawField(gui::Painter& painter)
 {
   for (size_t nb_idx = 0; nb_idx < nbVec_.size(); ++nb_idx) {
     const auto& nb = nbVec_[nb_idx];
@@ -240,13 +240,13 @@ void GraphicsImpl::drawForce(gui::Painter& painter)
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : bins) {
       efMax = std::max(efMax,
-                       std::hypot(bin.electroForceX(), bin.electroForceY()));
+                       std::hypot(bin.electroFieldX(), bin.electroFieldY()));
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
     for (auto& bin : bins) {
-      float fx = bin.electroForceX();
-      float fy = bin.electroForceY();
+      float fx = bin.electroFieldX();
+      float fy = bin.electroFieldY();
       float f = std::hypot(fx, fy);
       float ratio = f / efMax;
       float dx = fx / f * max_len * ratio;
@@ -417,7 +417,7 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     }
 
     // Draw gradient direction lines in the GUI from the GCell center.
-    // We scale vectors to fit nicely within the cell (similar to drawForce()).
+    // We scale vectors to fit nicely within the cell (similar to drawField()).
     const GCell* gcell = nbc_->getGCellByIndex(selected_);
     auto wlCoeffX = np_->getWireLengthCoefX();
     auto wlCoeffY = np_->getWireLengthCoefY();
@@ -486,9 +486,9 @@ void GraphicsImpl::drawNesterov(gui::Painter& painter)
     }
   }
 
-  // Draw force direction lines
+  // Draw field lines
   if (draw_bins_) {
-    drawForce(painter);
+    drawField(painter);
   }
 }
 

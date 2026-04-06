@@ -123,7 +123,7 @@ void IntegratedFixture::initStaDefaultSdc()
                     /*add_to_pins=*/false,
                     /*period=*/period,
                     waveform,
-                    /*comment=*/nullptr,
+                    /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 
     sta::Sdc* sdc = sta_->cmdMode()->sdc();

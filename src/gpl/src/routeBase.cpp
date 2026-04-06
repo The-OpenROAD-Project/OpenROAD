@@ -822,8 +822,8 @@ void RouteBase::updateRudyAverage(bool verbose)
 
   for (auto& tile : tg_->tiles()) {
     float ratio = rudy->getTile(tile->x(), tile->y()).getRudy() / 100.0;
-    // Escape the case when blockage ratio is too huge
-    if (ratio >= 0.0f) {
+    // Escape the case when blockage ratio is too huge or non-finite
+    if (std::isfinite(ratio) && ratio >= 0.0f) {
       total_route_overflow_ += std::fmax(0.0, -1 + ratio);
       edge_cong_array.push_back(ratio);
 

@@ -168,10 +168,10 @@ void FlexPA::updateDirtyInsts()
     initSkipInstTerm(unique_class);
     auto candidate_inst = unique_class->getFirstInst();
     genInstAccessPoints(candidate_inst);
+    revertAccessPoints(candidate_inst);
     if (isStdCell(candidate_inst)) {
       prepPatternInst(candidate_inst);
     }
-    revertAccessPoints(candidate_inst);
   }
   for (auto& inst : dirty_insts_) {
     addToInstsSet(inst);

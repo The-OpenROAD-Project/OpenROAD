@@ -641,6 +641,53 @@ Simply run the following script:
 
 ## Limitations
 
+## Using the Python interface to rsz
+
+```{warning}
+The `Python` interface is currently in development and is subject to change.
+```
+
+The `Python` API tries to stay close to the API defined in the `C++` class
+`Resizer` that is located [here](./include/rsz/Resizer.hh).
+
+When initializing a design, a sequence of `Python` commands might look like
+the following:
+
+```python
+from openroad import Design, Tech
+
+tech = Tech()
+tech.readLiberty("my_lib.lib")
+tech.readLef("my_tech.lef")
+
+design = Design(tech)
+design.readDef("my_design.def")
+
+resizer = design.getResizer()
+```
+
+Here are some common operations on the `Resizer` object:
+
+```python
+resizer.setMaxUtilization(0.8)
+resizer.bufferInputs(None, False)
+resizer.bufferOutputs(None, False)
+resizer.repairDesign(0.0, 0.0, 0.0, 0.0, False, False)
+resizer.repairClkNets(0.0)
+resizer.repairClkInverters()
+resizer.repairHold(0.0, 0.0, False, 0.2, 10000, -1, False, False)
+resizer.eliminateDeadLogic(True)
+resizer.reportLongWires(10, 2)
+resizer.reportDontUse()
+resizer.reportDontTouch()
+```
+
+There are also some useful `Python` functions located in the
+[`rsz_aux.py`](./test/rsz_aux.py) file that provide Pythonic keyword-argument
+wrappers with unit conversions (microns → metres, nanoseconds → seconds,
+percentages → fractions), but these are not considered part of the *final*
+API and may be subject to change.
+
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+resizer)

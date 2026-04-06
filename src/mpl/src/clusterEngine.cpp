@@ -88,11 +88,6 @@ void ClusteringEngine::setHalos(
   macro_to_halo_ = macro_to_halo;
 }
 
-void ClusteringEngine::setUseDefHalo(bool use_def_halo)
-{
-  use_def_halo_ = use_def_halo;
-}
-
 // Check if macro placement is both needed and feasible.
 // Also report some design data relevant for the user and
 // initialize the tree with data from the design.
@@ -2082,11 +2077,18 @@ void ClusteringEngine::createHardMacros()
       }
 
       HardMacro::Halo halo;
-
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
-      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
-        halo = HardMacro::Halo(inst->getHalo());
+      } else if (inst->getHalo() != nullptr) {
+        odb::Rect inst_halo = inst->getHalo()->getBox();
+        if (inst->getHalo()->isSoft()) {
+          halo = HardMacro::Halo(inst->getHalo());
+        } else {
+          halo = {std::max(inst_halo.xMin(), tree_->default_halo.left),
+                  std::max(inst_halo.yMin(), tree_->default_halo.bottom),
+                  std::max(inst_halo.xMax(), tree_->default_halo.right),
+                  std::max(inst_halo.yMax(), tree_->default_halo.top)};
+        }
       } else {
         halo = tree_->default_halo;
       }

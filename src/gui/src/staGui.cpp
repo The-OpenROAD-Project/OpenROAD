@@ -1043,7 +1043,7 @@ void PinSetWidget::updatePins()
   if (!pins_.empty()) {
     auto* network = sta_->getDbNetwork();
     for (const auto* pin : pins_) {
-      auto* item = new QListWidgetItem(network->name(pin));
+      auto* item = new QListWidgetItem(network->name(pin).c_str());
       item->setData(Qt::UserRole, QVariant::fromValue((void*) pin));
       box_->addItem(item);
     }
@@ -1325,7 +1325,7 @@ void TimingControlsDialog::populate()
   scene_box_->setCurrentIndex(selection);
 
   for (auto clk : *sta_->getClocks()) {
-    QString clk_name = clk->name();
+    QString clk_name = clk->name().c_str();
 
     if (qstring_to_clk_.count(clk_name) != 1) {
       qstring_to_clk_[clk_name] = clk;

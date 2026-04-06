@@ -17,6 +17,10 @@
 #include <thread>
 #include <vector>
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 ////////////////////////////////////////////////////////////////
 //
 // C++ helper functions used by the interface functions.

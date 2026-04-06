@@ -186,13 +186,13 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
 
     // port pointers may change after sizing
     // if (port == port1) {
-    if (std::strcmp(port->name(), port1->name()) == 0) {
+    if (port->name() == port1->name()) {
       found_pin1 = pin;
       net1 = net;
       flat_net_pin1 = db_network_->flatNet(found_pin1);
       mod_net_pin1 = db_network_->hierNet(found_pin1);
     }
-    if (std::strcmp(port->name(), port2->name()) == 0) {
+    if (port->name() == port2->name()) {
       found_pin2 = pin;
       net2 = net;
       flat_net_pin2 = db_network_->flatNet(found_pin2);

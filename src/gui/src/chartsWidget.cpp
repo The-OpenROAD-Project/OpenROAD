@@ -380,7 +380,7 @@ void ChartsWidget::updatePathGroupMenuIndexes()
 
   filter_index = 1;
   for (sta::Clock* clock : *stagui_->getClocks()) {
-    clock_menu_->addItem(clock->name());
+    clock_menu_->addItem(clock->name().c_str());
     clock_index_to_clock_[filter_index] = clock;
     all_clocks_.insert(clock);
     ++filter_index;

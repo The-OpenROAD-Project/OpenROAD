@@ -141,7 +141,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
       gui::Painter::kDarkYellow,
   };
 
-  // These are used for bin forces, fillers, and dummies (lighter) for each
+  // These are used for bin field, fillers, and dummies (lighter) for each
   // region.
   std::vector<gui::Painter::Color> region_colors_ = {
       gui::Painter::kDarkMagenta,
@@ -151,7 +151,7 @@ class GraphicsImpl : public gpl::AbstractGraphics,
 
   };
 
-  void drawForce(gui::Painter& painter);
+  void drawField(gui::Painter& painter);
   void drawCells(const std::vector<GCell*>& cells, gui::Painter& painter);
   void drawCells(const std::vector<GCellHandle>& cells,
                  gui::Painter& painter,

@@ -13,7 +13,7 @@ automatically)::
         --error_string "GPL-0305" \\
         --step "make --file=$FLOW_HOME/Makefile do-3_3_place_gp"
 
-With ``openroad`` on ``PATH`` (e.g. after ``bazelisk run //:install`` and
+With ``openroad`` on ``PATH`` (e.g. after ``bazelisk run //packaging:install`` and
 ``source env.sh`` in ORFS) you can also invoke whittle directly with the
 system Python interpreter.  If ``openroad`` is not on ``PATH``, place it
 (or a symlink) next to ``whittle.py`` and it will be found automatically::

@@ -326,8 +326,7 @@ bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
 
     bool footprint_matches = true;
     if (match_footprint) {
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      const std::string& footprint = buffer->footprint();
       footprint_matches = !lib_has_footprints || isDelayCell(footprint);
     }
 
@@ -737,11 +736,11 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
   buffer = resizer_->insertBufferBeforeLoads(
       drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
   if (buffer == nullptr) {
-    const char* drvr_pin_name = db_network_->pathName(drvr_pin);
+    std::string drvr_pin_name = db_network_->pathName(drvr_pin);
     logger_->error(RSZ,
                    3009,
                    "insert_buffer failed on drvr_pin '{}'.",
-                   drvr_pin_name ? drvr_pin_name : "<unknown>");
+                   drvr_pin_name.empty() ? "<unknown>" : drvr_pin_name);
     return;
   }
 

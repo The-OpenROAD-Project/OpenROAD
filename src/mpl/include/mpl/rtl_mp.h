@@ -60,12 +60,11 @@ class MacroPlacer
              float fence_weight,
              float boundary_weight,
              float notch_weight,
-             float macro_blockage_weight,
+             float soft_blockage_weight,
              float target_util,
              float min_ar,
              const char* report_directory,
-             bool keep_clustering_data,
-             bool use_def_halo);
+             bool keep_clustering_data);
 
   void placeMacro(odb::dbInst* inst,
                   const float& x_origin,
