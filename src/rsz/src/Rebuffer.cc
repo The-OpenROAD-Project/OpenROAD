@@ -453,6 +453,68 @@ int Rebuffer::wireLengthLimitImpliedByMaxCap(sta::LibertyCell* cell)
   return std::numeric_limits<int>::max();
 }
 
+int Rebuffer::wireLengthStepForLayer(int layer)
+{
+  if (layer == BufferedNet::null_layer) {
+    return wire_length_step_;
+  }
+  auto it = layer_wire_length_step_.find(layer);
+  if (it != layer_wire_length_step_.end()) {
+    return it->second;
+  }
+
+  odb::dbTech* tech = resizer_->db_->getTech();
+  odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer);
+  if (!tech_layer) {
+    layer_wire_length_step_[layer] = wire_length_step_;
+    return wire_length_step_;
+  }
+
+  double layer_res, layer_cap;
+  estimate_parasitics_->layerRC(tech_layer, corner_, layer_res, layer_cap);
+  if (layer_cap <= 0.0 || layer_res <= 0.0) {
+    layer_wire_length_step_[layer] = wire_length_step_;
+    return wire_length_step_;
+  }
+
+  // Recompute limits using layer-specific RC (same formulas as
+  // wireLengthLimitImpliedByLoadSlew/MaxCap but with layer RC).
+  sta::LibertyCell* cell = buffer_sizes_.front().cell;
+  sta::LibertyPort *in, *out;
+  cell->bufferPorts(in, out);
+
+  // Cap limit: max wire length before buffer output exceeds cap limit.
+  int cap_limit_wl = std::numeric_limits<int>::max();
+  bool cap_limit_exists;
+  float cap_limit;
+  out->capacitanceLimit(max_, cap_limit, cap_limit_exists);
+  if (cap_limit_exists) {
+    double slack = maxCapMargined(cap_limit) - in->capacitance();
+    cap_limit_wl = std::max(0, resizer_->metersToDbu(slack / layer_cap));
+  }
+
+  // Slew limit: Elmore delay quadratic with layer-specific RC.
+  const float r_drvr = out->driveResistance();
+  const float max_slew = maxSlewMargined(resizer_->maxInputSlew(in, corner_));
+  const double a = layer_res * layer_cap;
+  const double b = layer_res * in->capacitance() + r_drvr * layer_cap;
+  const double c = r_drvr * in->capacitance() - max_slew / elmore_skew_factor_;
+  const double D = b * b - 4 * a * c;
+  int slew_limit_wl = std::numeric_limits<int>::max();
+  if (D >= 0) {
+    const double meters = (-b + std::sqrt(D)) / (2 * a);
+    if (meters > 0 && meters <= 1) {
+      slew_limit_wl = resizer_->metersToDbu(meters);
+    }
+  }
+
+  int result
+      = std::min({resizer_max_wire_length_, slew_limit_wl, cap_limit_wl});
+  result = std::max(result, 1);
+  layer_wire_length_step_[layer] = result;
+  return result;
+}
+
 BnetPtr Rebuffer::attemptTopologyRewrite(const BnetPtr& node,
                                          const BnetPtr& left,
                                          const BnetPtr& right,
@@ -592,7 +654,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
 
             const int full_wl
                 = odb::Point::manhattanDistance(node->location(), location);
-            if (full_wl > wire_length_step_ / 2) {
+            const int layer_step = wireLengthStepForLayer(layer);
+            if (full_wl > layer_step / 2) {
               debugPrint(logger_,
                          RSZ,
                          "rebuffer",
@@ -602,8 +665,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                          level);
               // This is a long wire, allow for insertion of buffers at the
               // farther end
-              insertBufferOptions(
-                  opts, level, std::min(full_wl, wire_length_step_));
+              insertBufferOptions(opts, level, std::min(full_wl, layer_step));
             } else {
               BnetSeq opts1 = opts;
               for (BnetPtr& opt : opts1) {
@@ -635,6 +697,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
 
             utl::DebugScopedTimer timer(long_wire_stepping_runtime_);
             int round = 0;
+            BnetSeq last_valid_opts;
             while (location != node->location()) {
               debugPrint(logger_,
                          RSZ,
@@ -646,7 +709,8 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                          round,
                          opts.size());
 
-              const int step = wire_length_step_;
+              last_valid_opts = opts;
+              const int step = layer_step;
 
               // move `location` towards `node->location()` by `step`
               int dx = node->location().x() - location.x();
@@ -673,10 +737,14 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               insertBufferOptions(opts, level, std::min(remaining_wl, step));
 
               if (opts.empty()) {
-                logger_->critical(RSZ,
-                                  2007,
-                                  "buffering pin {}: wire step options empty",
-                                  network_->name(pin_));
+                logger_->warn(RSZ,
+                              2007,
+                              "buffering pin {}: wire step options empty at "
+                              "round {}, falling back to last valid options",
+                              network_->name(pin_),
+                              round);
+                opts = last_valid_opts;
+                break;
               }
               round++;
             }
@@ -1439,6 +1507,7 @@ void Rebuffer::init()
 void Rebuffer::initOnCorner(sta::Scene* corner)
 {
   corner_ = corner;
+  layer_wire_length_step_.clear();
   wire_length_step_
       = std::min({resizer_max_wire_length_,
                   wireLengthLimitImpliedByLoadSlew(buffer_sizes_.front().cell),
