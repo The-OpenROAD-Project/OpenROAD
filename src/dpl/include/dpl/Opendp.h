@@ -108,7 +108,7 @@ class Opendp
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
                          bool incremental = false,
-                         bool use_diamond = false,
+                         bool use_negotiation = false,
                          bool run_abacus = false);
   int negotiationLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;

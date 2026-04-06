@@ -117,7 +117,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_diamond,
+                               const bool use_negotiation,
                                const bool run_abacus)
 {
   incremental_ = incremental;
@@ -183,7 +183,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
         max_displacement_x_,
         max_displacement_y_);
 
-  if (use_diamond) {
+  if (!use_negotiation) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
 

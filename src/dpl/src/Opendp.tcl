@@ -6,13 +6,13 @@ sta::define_cmd_args "detailed_placement" { \
                            [-disallow_one_site_gaps] \
                            [-incremental] \
                            [-report_file_name file_name] \
-                           [-use_diamond] \
+                           [-use_negotiation] \
                            [-abacus]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement -report_file_name} \
-    flags {-disallow_one_site_gaps -incremental -use_diamond -abacus}
+    flags {-disallow_one_site_gaps -incremental -use_negotiation -abacus}
 
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
@@ -52,7 +52,7 @@ proc detailed_placement { args } {
       / [$site getHeight]]
     dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
       $file_name [info exists flags(-incremental)] \
-      [info exists flags(-use_diamond)] \
+      [info exists flags(-use_negotiation)] \
       [info exists flags(-abacus)]
     dpl::report_legalization_stats
   } else {
