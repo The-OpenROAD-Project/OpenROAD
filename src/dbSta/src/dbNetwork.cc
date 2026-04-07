@@ -704,6 +704,8 @@ void dbNetwork::clear()
 {
   ConcreteNetwork::clear();
   db_ = nullptr;
+  block_ = nullptr;
+  top_cell_ = nullptr;
 }
 
 Instance* dbNetwork::topInstance() const

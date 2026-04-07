@@ -323,6 +323,18 @@ void dbSta::postReadDb(odb::dbDatabase* db)
   }
 }
 
+void dbSta::preDbClear(odb::dbDatabase* db)
+{
+  db_cbk_->removeOwner();
+  // Delete scenes before clearing the network, since scenes hold
+  // LibertyLibrary pointers that ConcreteNetwork::clear() will free.
+  deleteScenes();
+  clear();
+  db_network_->clear();
+  // Restore db_ since dbNetwork::clear() nulls it, but we need it for reload
+  db_network_->init(db_, logger_);
+}
+
 float dbSta::slack(const odb::dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
