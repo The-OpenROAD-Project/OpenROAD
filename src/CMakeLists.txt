@@ -32,6 +32,7 @@ set(OPENROAD_SOURCE
   Design.cc
   Timing.cc
   Tech.cc
+  tcl_readline_setup.cc
   OpenRoad.cc
   Main.cc
   )

@@ -95,7 +95,7 @@ bool _dbTechLayerAntennaRule::operator==(
     return false;
   }
 
-  if (gate_plus_diff_factor_ != rhs.gate_plus_diff_factor_) {
+  if (gate_plus_diff_val_ != rhs.gate_plus_diff_val_) {
     return false;
   }
 
@@ -239,7 +239,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAntennaRule& inrule)
   stream << inrule.par_sidearea_val_;
   stream << inrule.cum_sidearea_val_;
   stream << inrule.area_diff_reduce_val_;
-  stream << inrule.gate_plus_diff_factor_;
+  stream << inrule.gate_plus_diff_val_;
   stream << inrule.area_minus_diff_factor_;
   stream << inrule.has_antenna_cumroutingpluscut_;
   return stream;
@@ -255,7 +255,13 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAntennaRule& inrule)
   stream >> inrule.par_sidearea_val_;
   stream >> inrule.cum_sidearea_val_;
   stream >> inrule.area_diff_reduce_val_;
-  stream >> inrule.gate_plus_diff_factor_;
+  if (inrule.getDatabase()->isSchema(kSchemaLef58AntennaGatePlusDiff)) {
+    stream >> inrule.gate_plus_diff_val_;
+  } else {
+    double factor;
+    stream >> factor;
+    inrule.gate_plus_diff_val_.ratio_ = factor;
+  }
   stream >> inrule.area_minus_diff_factor_;
   stream >> inrule.has_antenna_cumroutingpluscut_;
   return stream;
@@ -292,10 +298,22 @@ void dbTechLayerAntennaRule::writeLef(lefout& writer) const
     fmt::print(writer.out(), "    ANTENNACUMROUTINGPLUSCUT ;\n");
   }
 
-  if (ant_rule->gate_plus_diff_factor_ > 0.0) {
+  if (ant_rule->gate_plus_diff_val_.diff_ratio_.size() > 1) {
+    fmt::print(writer.out(), "    ANTENNAGATEPLUSDIFF  PWL ( ");
+    dbVector<double>::const_iterator diffdx_itr;
+    dbVector<double>::const_iterator ratio_itr;
+    for (diffdx_itr = ant_rule->gate_plus_diff_val_.diff_idx_.begin(),
+        ratio_itr = ant_rule->gate_plus_diff_val_.diff_ratio_.begin();
+         diffdx_itr != ant_rule->gate_plus_diff_val_.diff_idx_.end()
+         && ratio_itr != ant_rule->gate_plus_diff_val_.diff_ratio_.end();
+         diffdx_itr++, ratio_itr++) {
+      fmt::print(writer.out(), "( {:g} {:g} ) ", *diffdx_itr, *ratio_itr);
+    }
+    fmt::print(writer.out(), ") ;\n");
+  } else if (ant_rule->gate_plus_diff_val_.ratio_ > 0.0) {
     fmt::print(writer.out(),
                "    ANTENNAGATEPLUSDIFF {:g} ;\n",
-               ant_rule->gate_plus_diff_factor_);
+               ant_rule->gate_plus_diff_val_.ratio_);
   }
 
   if (ant_rule->area_minus_diff_factor_ > 0.0) {
@@ -639,13 +657,29 @@ void dbTechLayerAntennaRule::setAntennaCumRoutingPlusCut(bool value)
 double dbTechLayerAntennaRule::getGatePlusDiffFactor() const
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
-  return ant_rule->gate_plus_diff_factor_;
+  return ant_rule->gate_plus_diff_val_.ratio_;
 }
 
 void dbTechLayerAntennaRule::setGatePlusDiffFactor(double factor)
 {
   _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
-  ant_rule->gate_plus_diff_factor_ = factor;
+  ant_rule->gate_plus_diff_val_.ratio_ = factor;
+}
+
+dbTechLayerAntennaRule::pwl_pair dbTechLayerAntennaRule::getGatePlusDiffPWL()
+    const
+{
+  _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
+  auto& rule = ant_rule->gate_plus_diff_val_;
+  return {.indices = rule.diff_idx_, .ratios = rule.diff_ratio_};
+}
+
+void dbTechLayerAntennaRule::setGatePlusDiffPWL(
+    const std::vector<double>& diff_idx,
+    const std::vector<double>& ratios)
+{
+  _dbTechLayerAntennaRule* ant_rule = (_dbTechLayerAntennaRule*) this;
+  ant_rule->gate_plus_diff_val_.setDiff(diff_idx, ratios);
 }
 
 double dbTechLayerAntennaRule::getAreaMinusDiffFactor() const
