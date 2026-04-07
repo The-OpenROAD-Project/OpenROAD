@@ -649,6 +649,7 @@ inline void Bin::setFillerArea(int64_t area)
 
 inline void Bin::addNonPlaceArea(int64_t area)
 {
+#pragma omp atomic
   nonPlaceArea_ += area;
 }
 
@@ -659,16 +660,19 @@ inline void Bin::addInstPlacedArea(int64_t area)
 
 inline void Bin::addNonPlaceAreaUnscaled(int64_t area)
 {
+#pragma omp atomic
   nonPlaceAreaUnscaled_ += area;
 }
 
 inline void Bin::addInstPlacedAreaUnscaled(int64_t area)
 {
+#pragma omp atomic
   instPlacedAreaUnscaled_ += area;
 }
 
 inline void Bin::addFillerArea(int64_t area)
 {
+#pragma omp atomic
   fillerArea_ += area;
 }
 

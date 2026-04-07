@@ -800,7 +800,7 @@ void BinGrid::initBins()
 
   // initialize bins_ vector
   bins_.resize(binCntX_ * (size_t) binCntY_);
-#pragma omp parallel for num_threads(num_threads_)
+#pragma omp parallel for num_threads(num_threads_) collapse(2)
   for (int idxY = 0; idxY < binCntY_; ++idxY) {
     for (int idxX = 0; idxX < binCntX_; ++idxX) {
       const int bin_lx = lx_ + std::lround(idxX * binSizeX_);
@@ -832,30 +832,35 @@ void BinGrid::initBins()
 
 void BinGrid::updateBinsNonPlaceArea()
 {
-  for (auto& bin : bins_) {
-    bin.setNonPlaceArea(0);
-    bin.setNonPlaceAreaUnscaled(0);
-  }
+#pragma omp parallel num_threads(num_threads_)
+  {
+#pragma omp for
+    for (auto& bin : bins_) {
+      bin.setNonPlaceArea(0);
+      bin.setNonPlaceAreaUnscaled(0);
+    }
 
-  for (auto& inst : pb_->nonPlaceInsts()) {
-    std::pair<int, int> pairX = getMinMaxIdxX(inst);
-    std::pair<int, int> pairY = getMinMaxIdxY(inst);
-    for (int y = pairY.first; y < pairY.second; y++) {
-      for (int x = pairX.first; x < pairX.second; x++) {
-        Bin& bin = bins_[y * binCntX_ + x];
+#pragma omp for
+    for (auto& inst : pb_->nonPlaceInsts()) {
+      std::pair<int, int> pairX = getMinMaxIdxX(inst);
+      std::pair<int, int> pairY = getMinMaxIdxY(inst);
+      for (int y = pairY.first; y < pairY.second; y++) {
+        for (int x = pairX.first; x < pairX.second; x++) {
+          Bin& bin = bins_[y * binCntX_ + x];
 
-        // Note that nonPlaceArea should have scale-down with
-        // target density.
-        // See MS-replace paper
-        //
-        bin.addNonPlaceArea(
-            getOverlapArea(
-                &bin,
-                inst,
-                pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron())
-            * bin.getTargetDensity());
-        bin.addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(&bin, inst)
-                                    * bin.getTargetDensity());
+          // Note that nonPlaceArea should have scale-down with
+          // target density.
+          // See MS-replace paper
+          //
+          bin.addNonPlaceArea(
+              getOverlapArea(
+                  &bin,
+                  inst,
+                  pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron())
+              * bin.getTargetDensity());
+          bin.addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(&bin, inst)
+                                      * bin.getTargetDensity());
+        }
       }
     }
   }
@@ -864,114 +869,127 @@ void BinGrid::updateBinsNonPlaceArea()
 // Core Part
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 {
-  // clear the Bin-area info
-  for (Bin& bin : bins_) {
-    bin.setInstPlacedAreaUnscaled(0);
-    bin.setFillerArea(0);
-  }
-
-  for (auto& cell : cells) {
-    std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
-    std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
-
-    // The following function is critical runtime hotspot
-    // for global placer.
-    //
-    if (cell->isInstance()) {
-      // macro should have
-      // scale-down with target-density
-      if (cell->isMacroInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-
-            const float scaledAvea = getOverlapDensityArea(bin, cell)
-                                     * cell->getDensityScale()
-                                     * bin.getTargetDensity();
-            bin.addInstPlacedAreaUnscaled(scaledAvea);
-          }
-        }
-      }
-      // normal cells
-      else if (cell->isStdInstance()) {
-        for (int y = pairY.first; y < pairY.second; y++) {
-          for (int x = pairX.first; x < pairX.second; x++) {
-            Bin& bin = bins_[y * binCntX_ + x];
-            const float scaledArea
-                = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
-            bin.addInstPlacedAreaUnscaled(scaledArea);
-          }
-        }
-      }
-    } else if (cell->isFiller()) {
-      for (int y = pairY.first; y < pairY.second; y++) {
-        for (int x = pairX.first; x < pairX.second; x++) {
-          Bin& bin = bins_[y * binCntX_ + x];
-          bin.addFillerArea(getOverlapDensityArea(bin, cell)
-                            * cell->getDensityScale());
-        }
-      }
-    }
-  }
-
   odb::dbBlock* block = pb_->db()->getChip()->getBlock();
   sumOverflowArea_ = 0;
   sumOverflowAreaUnscaled_ = 0;
-  // update density and overflowArea
-  // for nesterov use and FFT library
-#pragma omp parallel for num_threads(num_threads_) \
-    reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
-  for (auto it = bins_.begin(); it < bins_.end(); ++it) {
-    Bin& bin = *it;  // old-style loop for old OpenMP
+  std::vector<float> overflow_area_vec(bins_.size());
 
-    // Copy unscaled to scaled
-    bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
-
-    int64_t binArea = bin.getBinArea();
-    const float scaledBinArea
-        = static_cast<float>(binArea * bin.getTargetDensity());
-    bin.setDensity((static_cast<float>(bin.instPlacedArea())
-                    + static_cast<float>(bin.getFillerArea())
-                    + static_cast<float>(bin.getNonPlaceArea()))
-                   / scaledBinArea);
-
-    const float overflowArea = std::max(
-        0.0f,
-        static_cast<float>(bin.instPlacedArea())
-            + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
-    sumOverflowArea_ += overflowArea;  // NOLINT
-
-    const float overflowAreaUnscaled
-        = std::max(0.0f,
-                   static_cast<float>(bin.getInstPlacedAreaUnscaled())
-                       + static_cast<float>(bin.getNonPlaceAreaUnscaled())
-                       - scaledBinArea);
-    sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
-    if (overflowAreaUnscaled > 0) {
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "overflow:{}, bin:{},{}",
-                 block->dbuAreaToMicrons(overflowAreaUnscaled),
-                 block->dbuToMicrons(bin.lx()),
-                 block->dbuToMicrons(bin.ly()));
-      debugPrint(log_,
-                 GPL,
-                 "overflow",
-                 1,
-                 "binArea:{}, scaledBinArea:{}",
-                 block->dbuAreaToMicrons(binArea),
-                 block->dbuAreaToMicrons(scaledBinArea));
-      debugPrint(
-          log_,
-          GPL,
-          "overflow",
-          1,
-          "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
-          block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
-          block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+#pragma omp parallel num_threads(num_threads_)
+  {
+    // clear the Bin-area info
+#pragma omp for
+    for (Bin& bin : bins_) {
+      bin.setInstPlacedAreaUnscaled(0);
+      bin.setFillerArea(0);
     }
+
+#pragma omp for
+    for (auto& cell : cells) {
+      std::pair<int, int> pairX = getDensityMinMaxIdxX(cell);
+      std::pair<int, int> pairY = getDensityMinMaxIdxY(cell);
+
+      // The following function is critical runtime hotspot
+      // for global placer.
+      //
+      if (cell->isInstance()) {
+        // macro should have
+        // scale-down with target-density
+        if (cell->isMacroInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+
+              const float scaledAvea = getOverlapDensityArea(bin, cell)
+                                       * cell->getDensityScale()
+                                       * bin.getTargetDensity();
+              bin.addInstPlacedAreaUnscaled(scaledAvea);
+            }
+          }
+        }
+        // normal cells
+        else if (cell->isStdInstance()) {
+          for (int y = pairY.first; y < pairY.second; y++) {
+            for (int x = pairX.first; x < pairX.second; x++) {
+              Bin& bin = bins_[y * binCntX_ + x];
+              const float scaledArea
+                  = getOverlapDensityArea(bin, cell) * cell->getDensityScale();
+              bin.addInstPlacedAreaUnscaled(scaledArea);
+            }
+          }
+        }
+      } else if (cell->isFiller()) {
+        for (int y = pairY.first; y < pairY.second; y++) {
+          for (int x = pairX.first; x < pairX.second; x++) {
+            Bin& bin = bins_[y * binCntX_ + x];
+            bin.addFillerArea(getOverlapDensityArea(bin, cell)
+                              * cell->getDensityScale());
+          }
+        }
+      }
+    }
+
+    // update density and overflowArea
+    // for nesterov use and FFT library
+#pragma omp for reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
+    for (int i = 0; i < bins_.size(); ++i) {
+      Bin& bin = bins_[i];  // old-style loop for old OpenMP
+
+      // Copy unscaled to scaled
+      bin.setInstPlacedArea(bin.getInstPlacedAreaUnscaled());
+
+      int64_t binArea = bin.getBinArea();
+      const float scaledBinArea
+          = static_cast<float>(binArea * bin.getTargetDensity());
+      bin.setDensity((static_cast<float>(bin.instPlacedArea())
+                      + static_cast<float>(bin.getFillerArea())
+                      + static_cast<float>(bin.getNonPlaceArea()))
+                     / scaledBinArea);
+
+      const float overflowArea = std::max(
+          0.0f,
+          static_cast<float>(bin.instPlacedArea())
+              + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
+      overflow_area_vec[i] = overflowArea;
+
+      const int64_t overflowAreaUnscaled
+          = std::max(0.0f,
+                     static_cast<float>(bin.getInstPlacedAreaUnscaled())
+                         + static_cast<float>(bin.getNonPlaceAreaUnscaled())
+                         - scaledBinArea);
+      sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+      if (overflowAreaUnscaled > 0) {
+        debugPrint(log_,
+                   GPL,
+                   "overflow",
+                   1,
+                   "overflow:{}, bin:{},{}",
+                   block->dbuAreaToMicrons(overflowAreaUnscaled),
+                   block->dbuToMicrons(bin.lx()),
+                   block->dbuToMicrons(bin.ly()));
+        debugPrint(log_,
+                   GPL,
+                   "overflow",
+                   1,
+                   "binArea:{}, scaledBinArea:{}",
+                   block->dbuAreaToMicrons(binArea),
+                   block->dbuAreaToMicrons(scaledBinArea));
+        debugPrint(
+            log_,
+            GPL,
+            "overflow",
+            1,
+            "bin.instPlacedAreaUnscaled():{}, bin.nonPlaceAreaUnscaled():{}",
+            block->dbuAreaToMicrons(bin.getInstPlacedAreaUnscaled()),
+            block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
+      }
+    }
+  }
+  // This is required because the overflowArea is calculated in float.
+  // So, sumOverflowArea_ is converted to float, added to the overflowArea
+  // and then converted back.
+  // We should change overflowArea to int64_t in the future.
+  for (auto overflowArea : overflow_area_vec) {
+    sumOverflowArea_ += overflowArea;
   }
 }
 
@@ -1978,6 +1996,7 @@ NesterovBase::NesterovBase(
                       region_bbox.xMax(),
                       region_bbox.yMax());
   bg_.setBinTargetDensity(targetDensity_);
+  bg_.setNumThreads(nbc_->getNumThreads());
 
   // update binGrid info
   bg_.initBins();
@@ -3097,6 +3116,7 @@ void NesterovBase::nesterovUpdateCoordinates(float coeff)
   }
 
   // fill in nextCoordinates with given stepLength_
+#pragma omp parallel for num_threads(nbc_->getNumThreads())
   for (size_t k = 0; k < nb_gcells_.size(); k++) {
     GCell* curGCell = nb_gcells_[k];
     if (curGCell->isLocked()) {
