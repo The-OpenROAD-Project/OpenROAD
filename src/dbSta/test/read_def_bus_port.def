@@ -1,0 +1,32 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test_bus_port ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 100000 100000 ) ;
+
+PINS 9 ;
+    - kv_write[3][write_en] + NET kv_write\[3\]\[write_en\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_entry][4] + NET kv_write\[3\]\[write_entry\]\[4\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_entry][3] + NET kv_write\[3\]\[write_entry\]\[3\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_entry][2] + NET kv_write\[3\]\[write_entry\]\[2\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_entry][1] + NET kv_write\[3\]\[write_entry\]\[1\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_entry][0] + NET kv_write\[3\]\[write_entry\]\[0\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_offset][3] + NET kv_write\[3\]\[write_offset\]\[3\] + DIRECTION INPUT + USE SIGNAL ;
+    - kv_write[3][write_offset][2] + NET kv_write\[3\]\[write_offset\]\[2\] + DIRECTION INPUT + USE SIGNAL ;
+    - clk + NET clk + DIRECTION INPUT + USE CLOCK ;
+END PINS
+
+NETS 9 ;
+    - kv_write\[3\]\[write_en\] ( PIN kv_write[3][write_en] ) ;
+    - kv_write\[3\]\[write_entry\]\[4\] ( PIN kv_write[3][write_entry][4] ) ;
+    - kv_write\[3\]\[write_entry\]\[3\] ( PIN kv_write[3][write_entry][3] ) ;
+    - kv_write\[3\]\[write_entry\]\[2\] ( PIN kv_write[3][write_entry][2] ) ;
+    - kv_write\[3\]\[write_entry\]\[1\] ( PIN kv_write[3][write_entry][1] ) ;
+    - kv_write\[3\]\[write_entry\]\[0\] ( PIN kv_write[3][write_entry][0] ) ;
+    - kv_write\[3\]\[write_offset\]\[3\] ( PIN kv_write[3][write_offset][3] ) ;
+    - kv_write\[3\]\[write_offset\]\[2\] ( PIN kv_write[3][write_offset][2] ) ;
+    - clk ( PIN clk ) ;
+END NETS
+
+END DESIGN
