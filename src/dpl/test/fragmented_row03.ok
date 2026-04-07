@@ -3,7 +3,9 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 4.79 um^2, Instances area: 1.86 um^2, Utilization: 38.9%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                       1
@@ -13,19 +15,14 @@ Rip-up and replace Success:        0 (  0.00% of diamond failures)
 Rip-up and replace Failure:        1
 Total Placement Failures:          1
 ---------------------------------------
-[INFO DPL-1100] Standard placer failed on 1 instance(s); retrying with NegotiationLegalizer.
-Placement Analysis
----------------------------------
-total displacement          0.0 u
-average displacement        0.0 u
-max displacement            0.0 u
-original HPWL              61.5 u
-legalized HPWL             61.3 u
-delta HPWL                    0 %
-
-
-[WARNING DPL-0004] Placed in rows check failed (1).
+[INFO DPL-0034] Detailed placement failed on the following 1 instances:
+[INFO DPL-0035]  _277_
+[ERROR DPL-0036] Detailed placement failed inside DPL.
+DPL-0036
+[WARNING DPL-0006] Site aligned check failed (1).
  _277_
-[ERROR DPL-0033] detailed placement checks failed.
+[ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
-No differences found.
+Differences found at line 30.
+    - _277_ BUF_X4 + PLACED ( 31230 28000 ) N ;
+    - _277_ BUF_X4 + PLACED ( 31040 28000 ) N ;
