@@ -64,10 +64,6 @@ class Node
   std::string getName() const;
   std::string getTypeName() const;
 
-  using CompareInformation = std::tuple<int, int, int, NodeType, int>;
-  CompareInformation compareTuple() const;
-  static CompareInformation dummyCompareTuple();
-
  protected:
   virtual NodeType getType() const { return NodeType::kNode; }
 
