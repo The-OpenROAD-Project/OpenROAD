@@ -43,8 +43,8 @@ class Checker
                               const UnfoldedModel* model);
   void checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
                                   const UnfoldedModel* model);
-  void checkNetConnectivity(dbMarkerCategory* top_cat,
-                            const UnfoldedModel* model);
+  void checkPathAssertions(dbMarkerCategory* top_cat,
+                           const UnfoldedModel* model);
   utl::Logger* logger_;
   dbDatabase* db_;
 };

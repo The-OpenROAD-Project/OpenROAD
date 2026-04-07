@@ -3,6 +3,10 @@
 
 #include "dbxParser.h"
 
+#include <yaml-cpp/exceptions.h>
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/node/parse.h>
+
 #include <exception>
 #include <fstream>
 #include <map>
@@ -13,7 +17,6 @@
 #include "objects.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "yaml-cpp/yaml.h"
 
 namespace odb {
 

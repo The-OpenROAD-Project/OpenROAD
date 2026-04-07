@@ -33,7 +33,6 @@ struct Connection;
 struct DesignDef;
 struct BumpMapEntry;
 struct DbxData;
-
 class ThreeDBlox
 {
  public:

@@ -117,6 +117,7 @@ UnfoldedChip* UnfoldedModel::buildUnfoldedChip(dbChipInst* inst,
   uf_chip.chip_inst_path = path;
   uf_chip.transform = total;
   uf_chip.cuboid = master->getCuboid();
+  uf_chip.is_blackbox = master->isBlackbox();
 
   // Transform cuboid to global space
   uf_chip.transform.apply(uf_chip.cuboid);
