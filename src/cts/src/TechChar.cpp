@@ -837,7 +837,7 @@ void TechChar::createDelayBufList()
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       // Filter by library name if provided.
-      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+      if (lib_name != nullptr && strcmp(lib->name().c_str(), lib_name) != 0) {
         continue;
       }
 
@@ -846,8 +846,7 @@ void TechChar::createDelayBufList()
             || buffer->isIsolationCell() || buffer->isLevelShifter()) {
           continue;
         }
-        const char* footprint_cstr = buffer->footprint();
-        std::string footprint = footprint_cstr ? footprint_cstr : "";
+        const std::string footprint = buffer->footprint();
         if (isClkDlyCell(footprint)) {
           footprintClkDly.push_back(std::string(buffer->name()));
         }
