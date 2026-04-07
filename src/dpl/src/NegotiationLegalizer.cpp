@@ -6,13 +6,11 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <functional>
 #include <limits>
 #include <queue>
-#include <ratio>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -29,6 +27,7 @@
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -94,49 +93,47 @@ void NegotiationLegalizer::legalize()
              1,
              "NegotiationLegalizer: starting legalization.");
 
-  using Clock = std::chrono::steady_clock;
-  auto ms = [](auto a, auto b) {
-    return std::chrono::duration<double, std::milli>(b - a).count();
-  };
+  double init_from_db_s{0}, build_grid_s{0}, fence_regions_s{0}, abacus_s{0};
+  double negotiation_s{0}, post_neg_sync_s{0}, metrics_s{0}, flush_s{0},
+      orient_s{0};
+  const utl::Timer total_timer;
 
-  const auto tLegalizeStart = Clock::now();
-
-  const auto tInitFromDbStart = Clock::now();
-  if (!initFromDb()) {
-    return;
+  {
+    utl::DebugScopedTimer t(init_from_db_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "initFromDb: {}");
+    if (!initFromDb()) {
+      return;
+    }
   }
-  const double initFromDbMs = ms(tInitFromDbStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "initFromDb: {:.1f}ms",
-             initFromDbMs);
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
     debugPause("Pause after initFromDb.");
   }
 
-  const auto tBuildGridStart = Clock::now();
-  buildGrid();
-  const double buildGridMs = ms(tBuildGridStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "buildGrid: {:.1f}ms",
-             buildGridMs);
+  {
+    utl::DebugScopedTimer t(build_grid_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "buildGrid: {}");
+    buildGrid();
+  }
 
-  const auto tFenceRegionsStart = Clock::now();
-  initFenceRegions();
-  const double fenceRegionsMs = ms(tFenceRegionsStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "initFenceRegions: {:.1f}ms",
-             fenceRegionsMs);
+  {
+    utl::DebugScopedTimer t(fence_regions_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "initFenceRegions: {}");
+    initFenceRegions();
+  }
 
   debugPrint(logger_,
              utl::DPL,
@@ -149,18 +146,21 @@ void NegotiationLegalizer::legalize()
 
   // --- Part 1: Abacus (handles the majority of cells cheaply) -------------
   std::vector<int> illegal;
-  double abacusMs = 0.0;
   if (run_abacus_) {
     debugPrint(logger_,
                utl::DPL,
                "negotiation",
                1,
                "NegotiationLegalizer: running Abacus pass.");
-    const auto tAbacusStart = Clock::now();
-
-    illegal = runAbacus();
-
-    abacusMs = ms(tAbacusStart, Clock::now());
+    {
+      utl::DebugScopedTimer t(abacus_s,
+                              logger_,
+                              utl::DPL,
+                              "negotiation_runtime",
+                              1,
+                              "runAbacus: {}");
+      illegal = runAbacus();
+    }
     debugPrint(logger_,
                utl::DPL,
                "negotiation",
@@ -173,52 +173,53 @@ void NegotiationLegalizer::legalize()
                "negotiation",
                1,
                "NegotiationLegalizer: skipping Abacus pass.");
-
-    const auto tSkipAbacusStart = Clock::now();
-
-    // Populate usage from initial coordinates
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (!cells_[i].fixed) {
-        addUsage(i, 1);
-      }
-    }
-    const auto tSkipAbacusUsageEnd = Clock::now();
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation_runtime",
-               1,
-               "skip-Abacus addUsage: {:.1f}ms",
-               ms(tSkipAbacusStart, tSkipAbacusUsageEnd));
-
-    // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
-    // lookups see the correct placement state.
-    syncAllCellsToDplGrid();
-
-    const auto tSkipAbacusSyncEnd = Clock::now();
-    debugPrint(logger_,
-               utl::DPL,
-               "negotiation_runtime",
-               1,
-               "skip-Abacus syncAllCellsToDplGrid: {:.1f}ms",
-               ms(tSkipAbacusUsageEnd, tSkipAbacusSyncEnd));
-
-    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-      if (!cells_[i].fixed) {
-        cells_[i].legal = isCellLegal(i);
-        if (!cells_[i].legal) {
-          illegal.push_back(i);
+    {
+      utl::DebugScopedTimer t(abacus_s,
+                              logger_,
+                              utl::DPL,
+                              "negotiation_runtime",
+                              1,
+                              "skip-Abacus addUsage: {}");
+      // Populate usage from initial coordinates
+      for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+        if (!cells_[i].fixed) {
+          addUsage(i, 1);
         }
       }
     }
-    const auto tSkipAbacusDrcEnd = Clock::now();
+    {
+      utl::DebugScopedTimer t(abacus_s,
+                              logger_,
+                              utl::DPL,
+                              "negotiation_runtime",
+                              1,
+                              "skip-Abacus syncAllCellsToDplGrid: {}");
+      // Sync all movable cells to the DPL Grid so PlacementDRC neighbour
+      // lookups see the correct placement state.
+      syncAllCellsToDplGrid();
+    }
+    {
+      utl::DebugScopedTimer t(abacus_s,
+                              logger_,
+                              utl::DPL,
+                              "negotiation_runtime",
+                              1,
+                              "skip-Abacus isCellLegal scan: {}");
+      for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+        if (!cells_[i].fixed) {
+          cells_[i].legal = isCellLegal(i);
+          if (!cells_[i].legal) {
+            illegal.push_back(i);
+          }
+        }
+      }
+    }
     debugPrint(logger_,
                utl::DPL,
                "negotiation_runtime",
                1,
-               "skip-Abacus isCellLegal scan: {:.1f}ms, {} illegal cells",
-               ms(tSkipAbacusSyncEnd, tSkipAbacusDrcEnd),
+               "{} illegal cells",
                illegal.size());
-    abacusMs = ms(tSkipAbacusStart, tSkipAbacusDrcEnd);
   }
 
   if (debug_observer_) {
@@ -232,7 +233,6 @@ void NegotiationLegalizer::legalize()
   }
 
   // --- Part 2: Negotiation (main legalization) -------------------
-  double negotiationMs = 0.0;
   if (!illegal.empty()) {
     debugPrint(logger_,
                utl::DPL,
@@ -240,11 +240,13 @@ void NegotiationLegalizer::legalize()
                1,
                "NegotiationLegalizer: negotiation pass on {} cells.",
                illegal.size());
-    const auto tNegStart = Clock::now();
-
+    utl::DebugScopedTimer t(negotiation_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "runNegotiation: {}");
     runNegotiation(illegal);
-
-    negotiationMs = ms(tNegStart, Clock::now());
   }
 
   // Re-sync the DPL pixel grid after negotiation.  During negotiation,
@@ -252,15 +254,15 @@ void NegotiationLegalizer::legalize()
   // up, the other's presence is lost.  A full re-sync ensures every cell
   // is correctly painted so subsequent DRC checks (numViolations, etc.)
   // see the true placement state.
-  const auto tPostNegSyncStart = Clock::now();
-  syncAllCellsToDplGrid();
-  const double postNegSyncMs = ms(tPostNegSyncStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "post-negotiation syncAllCellsToDplGrid: {:.1f}ms",
-             postNegSyncMs);
+  {
+    utl::DebugScopedTimer t(post_neg_sync_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "post-negotiation syncAllCellsToDplGrid: {}");
+    syncAllCellsToDplGrid();
+  }
 
   debugPause("Pause after negotiation pass");
 
@@ -274,17 +276,19 @@ void NegotiationLegalizer::legalize()
   // cellSwap();
   // greedyImprove(1);
 
-  const auto tMetricsStart = Clock::now();
-  const double avgDisp = avgDisplacement();
-  const int maxDisp = maxDisplacement();
-  const int nViol = numViolations();
-  const double metricsMs = ms(tMetricsStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "metrics (avgDisp/maxDisp/violations): {:.1f}ms",
-             metricsMs);
+  double avgDisp{0};
+  int maxDisp{0}, nViol{0};
+  {
+    utl::DebugScopedTimer t(metrics_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "metrics (avgDisp/maxDisp/violations): {}");
+    avgDisp = avgDisplacement();
+    maxDisp = maxDisplacement();
+    nViol = numViolations();
+  }
 
   debugPrint(
       logger_,
@@ -296,43 +300,45 @@ void NegotiationLegalizer::legalize()
       maxDisp,
       nViol);
 
-  const auto tFlushStart = Clock::now();
-  flushToDb();
-  const double flushMs = ms(tFlushStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "flushToDb: {:.1f}ms",
-             flushMs);
+  {
+    utl::DebugScopedTimer t(flush_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "flushToDb: {}");
+    flushToDb();
+  }
 
-  const auto tOrientStart = Clock::now();
-  const Grid* dplGrid = opendp_->grid_.get();
-  for (const auto& cell : cells_) {
-    if (cell.fixed || cell.db_inst == nullptr) {
-      continue;
-    }
-    // Set orientation from the row so cells are properly flipped.
-    odb::dbSite* site = cell.db_inst->getMaster()->getSite();
-    if (site != nullptr) {
-      auto orient
-          = dplGrid->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
-      if (orient.has_value()) {
-        cell.db_inst->setOrient(orient.value());
+  {
+    utl::DebugScopedTimer t(orient_s,
+                            logger_,
+                            utl::DPL,
+                            "negotiation_runtime",
+                            1,
+                            "orientation update: {}");
+    const Grid* dplGrid = opendp_->grid_.get();
+    for (const auto& cell : cells_) {
+      if (cell.fixed || cell.db_inst == nullptr) {
+        continue;
+      }
+      // Set orientation from the row so cells are properly flipped.
+      odb::dbSite* site = cell.db_inst->getMaster()->getSite();
+      if (site != nullptr) {
+        auto orient
+            = dplGrid->getSiteOrientation(GridX{cell.x}, GridY{cell.y}, site);
+        if (orient.has_value()) {
+          cell.db_inst->setOrient(orient.value());
+        }
       }
     }
   }
-  const double orientMs = ms(tOrientStart, Clock::now());
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation_runtime",
-             1,
-             "orientation update: {:.1f}ms",
-             orientMs);
 
-  const double totalMs = ms(tLegalizeStart, Clock::now());
-  auto pct
-      = [totalMs](double t) { return totalMs > 0 ? 100.0 * t / totalMs : 0.0; };
+  const double total_s = total_timer.elapsed();
+  auto pct = [total_s](double t) {
+    return total_s > 0 ? 100.0 * t / total_s : 0.0;
+  };
+  auto to_ms = [](double s) { return s * 1e3; };
   debugPrint(logger_,
              utl::DPL,
              "negotiation_runtime",
@@ -347,25 +353,25 @@ void NegotiationLegalizer::legalize()
              "metrics {:.1f}ms ({:.0f}%), "
              "flushToDb {:.1f}ms ({:.0f}%), "
              "orientUpdate {:.1f}ms ({:.0f}%)",
-             totalMs,
-             initFromDbMs,
-             pct(initFromDbMs),
-             buildGridMs,
-             pct(buildGridMs),
-             fenceRegionsMs,
-             pct(fenceRegionsMs),
-             abacusMs,
-             pct(abacusMs),
-             negotiationMs,
-             pct(negotiationMs),
-             postNegSyncMs,
-             pct(postNegSyncMs),
-             metricsMs,
-             pct(metricsMs),
-             flushMs,
-             pct(flushMs),
-             orientMs,
-             pct(orientMs));
+             to_ms(total_s),
+             to_ms(init_from_db_s),
+             pct(init_from_db_s),
+             to_ms(build_grid_s),
+             pct(build_grid_s),
+             to_ms(fence_regions_s),
+             pct(fence_regions_s),
+             to_ms(abacus_s),
+             pct(abacus_s),
+             to_ms(negotiation_s),
+             pct(negotiation_s),
+             to_ms(post_neg_sync_s),
+             pct(post_neg_sync_s),
+             to_ms(metrics_s),
+             pct(metrics_s),
+             to_ms(flush_s),
+             pct(flush_s),
+             to_ms(orient_s),
+             pct(orient_s));
 }
 
 // ===========================================================================

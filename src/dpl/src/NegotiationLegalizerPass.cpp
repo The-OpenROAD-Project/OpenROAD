@@ -6,7 +6,6 @@
 #include <cmath>
 #include <cstddef>
 #include <ranges>
-#include <ratio>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -21,6 +20,7 @@
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 namespace dpl {
 
@@ -175,9 +175,6 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                                           int iter,
                                           bool updateHistory)
 {
-  using Clock = std::chrono::steady_clock;
-  const auto t0 = Clock::now();
-
   // Reset findBestLocation profiling accumulators.
   prof_init_search_ns_ = 0;
   prof_curr_search_ns_ = 0;
@@ -188,12 +185,16 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   prof_candidates_evaluated_ = 0;
   prof_candidates_filtered_ = 0;
 
+  double sort_s{0}, rip_up_s{0}, find_best_s{0}, place_s{0};
+  double sync_s{0}, overflow_s{0}, bystander_s{0}, history_s{0};
+  const utl::Timer total_iter_timer;
+
   int moves_count = 0;
-  sortByNegotiationOrder(activeCells);
+  {
+    utl::DebugScopedTimer t(sort_s);
+    sortByNegotiationOrder(activeCells);
+  }
 
-  const auto t1 = Clock::now();
-
-  double rip_up_ms = 0, find_best_ms = 0, place_ms = 0;
   for (int idx : activeCells) {
     if (cells_[idx].fixed) {
       continue;
@@ -202,16 +203,19 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     if (iter >= kIsolationPt && isCellLegal(idx)) {
       continue;
     }
-    auto ta = Clock::now();
-    ripUp(idx);
-    auto tb = Clock::now();
-    const auto [bx, by] = findBestLocation(idx, iter);
-    auto tc = Clock::now();
-    place(idx, bx, by);
-    auto td = Clock::now();
-    rip_up_ms += std::chrono::duration<double, std::milli>(tb - ta).count();
-    find_best_ms += std::chrono::duration<double, std::milli>(tc - tb).count();
-    place_ms += std::chrono::duration<double, std::milli>(td - tc).count();
+    int bx, by;
+    {
+      utl::DebugScopedTimer t(rip_up_s);
+      ripUp(idx);
+    }
+    {
+      utl::DebugScopedTimer t(find_best_s);
+      std::tie(bx, by) = findBestLocation(idx, iter);
+    }
+    {
+      utl::DebugScopedTimer t(place_s);
+      place(idx, bx, by);
+    }
     moves_count++;
     debugPrint(logger_,
                utl::DPL,
@@ -225,16 +229,15 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                by);
   }
 
-  const auto t2 = Clock::now();
-
   // Re-sync the DPL pixel grid before checking violations.  During the
   // rip-up/place loop above, overlapping cells can lose their pixel->cell
   // entry when a co-located cell is ripped up, leaving bystander cells
   // invisible to DRC checks.  A full re-sync restores every cell so the
   // violation scan below is accurate.
-  syncAllCellsToDplGrid();
-
-  const auto t3 = Clock::now();
+  {
+    utl::DebugScopedTimer t(sync_s);
+    syncAllCellsToDplGrid();
+  }
 
   // Count remaining overflows (grid overuse) AND DRC violations.
   // Both must reach zero for the negotiation to converge.
@@ -243,64 +246,66 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
   // active set) and pull them in so the negotiation can fix them.
   int totalOverflow = 0;
   std::unordered_set<int> active_set(activeCells.begin(), activeCells.end());
-  for (int idx : activeCells) {
-    if (cells_[idx].fixed) {
-      continue;
-    }
-    const HLCell& cell = cells_[idx];
-    const int xBegin = effXBegin(cell);
-    const int xEnd = effXEnd(cell);
-    for (int dy = 0; dy < cell.height; ++dy) {
-      for (int gx = xBegin; gx < xEnd; ++gx) {
-        if (gridExists(gx, cell.y + dy)) {
-          totalOverflow += gridAt(gx, cell.y + dy).overuse();
+  {
+    utl::DebugScopedTimer t(overflow_s);
+    for (int idx : activeCells) {
+      if (cells_[idx].fixed) {
+        continue;
+      }
+      const HLCell& cell = cells_[idx];
+      const int xBegin = effXBegin(cell);
+      const int xEnd = effXEnd(cell);
+      for (int dy = 0; dy < cell.height; ++dy) {
+        for (int gx = xBegin; gx < xEnd; ++gx) {
+          if (gridExists(gx, cell.y + dy)) {
+            totalOverflow += gridAt(gx, cell.y + dy).overuse();
+          }
         }
       }
-    }
-    if (!isCellLegal(idx)) {
-      ++totalOverflow;
+      if (!isCellLegal(idx)) {
+        ++totalOverflow;
+      }
     }
   }
-
-  const auto t4 = Clock::now();
 
   // Scan all movable cells for newly-created DRC violations outside the
   // current active set.  This handles cases where a move in the active
   // set created a one-site gap (or other DRC issue) with a bystander.
-  for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
-    if (cells_[i].fixed || active_set.contains(i)) {
-      continue;
-    }
-    if (!isCellLegal(i)) {
-      activeCells.push_back(i);
-      active_set.insert(i);
-      ++totalOverflow;
+  {
+    utl::DebugScopedTimer t(bystander_s);
+    for (int i = 0; i < static_cast<int>(cells_.size()); ++i) {
+      if (cells_[i].fixed || active_set.contains(i)) {
+        continue;
+      }
+      if (!isCellLegal(i)) {
+        activeCells.push_back(i);
+        active_set.insert(i);
+        ++totalOverflow;
+      }
     }
   }
 
-  const auto t5 = Clock::now();
-
   if (totalOverflow > 0 && updateHistory) {
+    utl::DebugScopedTimer t(history_s);
     updateHistoryCosts();
     updateDrcHistoryCosts(activeCells);
     sortByNegotiationOrder(activeCells);
   }
 
-  const auto t6 = Clock::now();
-
-  auto ms = [](auto a, auto b) {
-    return std::chrono::duration<double, std::milli>(b - a).count();
-  };
-
   if (logger_->debugCheck(utl::DPL, "negotiation_runtime", 1)) {
-    const double totalMs = ms(t0, t6);
-    auto pct
-        = [&](double v) { return totalMs > 0 ? 100.0 * v / totalMs : 0.0; };
-    const double sortMs = ms(t0, t1);
-    const double syncMs = ms(t2, t3);
-    const double overflowMs = ms(t3, t4);
-    const double bystanderMs = ms(t4, t5);
-    const double historyMs = ms(t5, t6);
+    const double total_ms = total_iter_timer.elapsed() * 1e3;
+    auto pct = [total_ms](double ms_val) {
+      return total_ms > 0 ? 100.0 * ms_val / total_ms : 0.0;
+    };
+    auto to_ms = [](double s) { return s * 1e3; };
+    const double rip_up_ms = to_ms(rip_up_s);
+    const double find_best_ms = to_ms(find_best_s);
+    const double place_ms = to_ms(place_s);
+    const double sort_ms = to_ms(sort_s);
+    const double sync_ms = to_ms(sync_s);
+    const double overflow_ms = to_ms(overflow_s);
+    const double bystander_ms = to_ms(bystander_s);
+    const double history_ms = to_ms(history_s);
     const double initSearchMs = prof_init_search_ns_ / 1e6;
     const double currSearchMs = prof_curr_search_ns_ / 1e6;
     const double snapMs = prof_snap_ns_ / 1e6;
@@ -316,24 +321,24 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
         "syncGrid {:.1f}ms ({:.0f}%), overflowCount {:.1f}ms ({:.0f}%), "
         "bystanderScan {:.1f}ms ({:.0f}%), historyUpdate {:.1f}ms ({:.0f}%)",
         iter,
-        totalMs,
+        total_ms,
         moves_count,
-        sortMs,
-        pct(sortMs),
+        sort_ms,
+        pct(sort_ms),
         rip_up_ms,
         pct(rip_up_ms),
         find_best_ms,
         pct(find_best_ms),
         place_ms,
         pct(place_ms),
-        syncMs,
-        pct(syncMs),
-        overflowMs,
-        pct(overflowMs),
-        bystanderMs,
-        pct(bystanderMs),
-        historyMs,
-        pct(historyMs));
+        sync_ms,
+        pct(sync_ms),
+        overflow_ms,
+        pct(overflow_ms),
+        bystander_ms,
+        pct(bystander_ms),
+        history_ms,
+        pct(history_ms));
     logger_->report(
         "    findBest by region ({} candidates, {} filtered): "
         "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
