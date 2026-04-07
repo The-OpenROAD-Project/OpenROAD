@@ -110,7 +110,6 @@ class Opendp
                          bool incremental = false,
                          bool use_negotiation = false,
                          bool run_abacus = false);
-  int negotiationLegalize(bool run_abacus = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);

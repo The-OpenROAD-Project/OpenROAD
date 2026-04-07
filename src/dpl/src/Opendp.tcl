@@ -401,10 +401,3 @@ proc get_row_site { } {
 }
 }
 
-sta::define_cmd_args "negotiation_legalize" {}
-
-proc negotiation_legalize { args } {
-  sta::parse_key_args "negotiation_legalize" args keys {} flags {}
-  sta::check_argc_eq0 "negotiation_legalize" $args
-  return [dpl::negotiation_legalize_cmd 0]
-}

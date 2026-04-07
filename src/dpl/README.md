@@ -87,16 +87,6 @@ detailed_placement
 | `-use_negotiation` | Use the NegotiationLegalizer instead of the default diamond search engine. |
 | `-abacus` | Enable the Abacus pre-pass within the NegotiationLegalizer. Only effective when `-use_negotiation` is set. |
 
-### Negotiation Legalize
-
-The `negotiation_legalize` command runs the NegotiationLegalizer directly,
-bypassing the standard `detailed_placement` flow. Intended for standalone
-use or scripting.
-
-```tcl
-negotiation_legalize
-```
-
 ### Set Placement Padding
 
 The `set_placement_padding` command sets left and right padding in multiples

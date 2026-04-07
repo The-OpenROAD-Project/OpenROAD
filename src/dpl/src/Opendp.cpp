@@ -232,26 +232,6 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   }
 }
 
-int Opendp::negotiationLegalize(bool run_abacus)
-{
-  importDb();
-  adjustNodesOrient();
-  initGrid();
-  setFixedGridCells();
-
-  NegotiationLegalizer negotiation(this,
-                                   db_,
-                                   logger_,
-                                   padding_.get(),
-                                   debug_observer_.get(),
-                                   network_.get());
-  if (run_abacus) {
-    negotiation.setRunAbacus(true);
-  }
-  negotiation.legalize();
-  negotiation.setDplPositions();
-  return negotiation.numViolations();
-}
 
 void Opendp::updateDbInstLocations()
 {

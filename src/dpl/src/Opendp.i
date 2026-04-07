@@ -173,12 +173,6 @@ void set_extra_dpl_cmd(bool enable)
   opendp->setExtraDplEnabled(enable);
 }
 
-int negotiation_legalize_cmd(bool run_abacus)
-{
-  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
-  return opendp->negotiationLegalize(run_abacus);
-}
-
 } // namespace
 
 %} // inline
