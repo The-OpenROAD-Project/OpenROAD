@@ -2732,16 +2732,12 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       switch (obj->typeId()) {
         case frcBTerm: {  // term no bloat
           auto* net = static_cast<frBTerm*>(obj)->getNet();
-          if (net != nullptr) {
-            frNet2Terms[net].insert(obj);
-          }
+          frNet2Terms[net].insert(obj);
           break;
         }
         case frcInstTerm: {
           auto* net = static_cast<frInstTerm*>(obj)->getNet();
-          if (net != nullptr) {
-            frNet2Terms[net].insert(obj);
-          }
+          frNet2Terms[net].insert(obj);
           if (isRoutingLayer) {
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access
