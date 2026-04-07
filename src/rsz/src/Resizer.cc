@@ -3030,8 +3030,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
   }
 
   if (run_repair_timing) {
-    // Re-estimate parasitics with placement-based RC after repair_design
-    estimate_parasitics_->estimateParasitics(parasitics_src);
+    // Run repair_setup using the pre-repair_design parasitic view.
     ensureLevelDrvrVertices();
 
     // Conservative repair_timing: only fix worst setup violations.
