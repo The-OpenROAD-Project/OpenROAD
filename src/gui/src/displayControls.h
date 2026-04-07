@@ -272,6 +272,9 @@ class DisplayControls : public QDockWidget,
   // options displayed need to match
   void blockLoaded(odb::dbBlock* block);
 
+  // Clears all ODB-derived display state (layers, sites) for DB reload
+  void clearTechData();
+
   void setCurrentChip(odb::dbChip* chip);
 
   // This is called by the check boxes to update the state

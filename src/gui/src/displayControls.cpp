@@ -2163,6 +2163,36 @@ void DisplayControls::techInit(odb::dbTech* tech)
   techs_.insert(tech);
 }
 
+void DisplayControls::clearTechData()
+{
+  // Remove layer leaf rows but preserve sub-group items (implant, other)
+  // by clearing children of each sub-group first, then removing only
+  // direct layer rows from the layers group.
+  layers_.implant.name->removeRows(0, layers_.implant.name->rowCount());
+  layers_.other.name->removeRows(0, layers_.other.name->rowCount());
+
+  // Remove direct children (routing/cut layers) from layers_group_, but
+  // keep the implant and other sub-group rows. Walk in reverse to avoid
+  // index shifting.
+  for (int i = layers_group_.name->rowCount() - 1; i >= 0; --i) {
+    QStandardItem* child = layers_group_.name->child(i);
+    if (child != layers_.implant.name && child != layers_.other.name) {
+      layers_group_.name->removeRow(i);
+    }
+  }
+
+  site_group_.name->removeRows(0, site_group_.name->rowCount());
+
+  // Clear ODB-keyed maps
+  layer_controls_.clear();
+  site_controls_.clear();
+  layer_color_.clear();
+  layer_pattern_.clear();
+  site_color_.clear();
+  techs_.clear();
+  layers_menu_layer_ = nullptr;
+}
+
 void DisplayControls::blockLoaded(odb::dbBlock* block)
 {
   addTech(block->getTech());

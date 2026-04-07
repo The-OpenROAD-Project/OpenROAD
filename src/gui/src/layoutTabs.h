@@ -91,6 +91,7 @@ class LayoutTabs : public QTabWidget
   void tabChange(int index);
   void updateBackgroundColors();
   void updateBackgroundColor(LayoutViewer* viewer);
+  void clearViewers();
 
   // These are just forwarding to the current LayoutViewer
   void zoomIn();

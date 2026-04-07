@@ -1662,6 +1662,17 @@ void MainWindow::postRead3Dbx(odb::dbChip* chip)
   emit chipLoaded(chip);
 }
 
+void MainWindow::preDbClear(odb::dbDatabase* db)
+{
+  selected_.clear();
+  for (auto& highlighted_set : highlighted_) {
+    highlighted_set.clear();
+  }
+  viewers_->clearViewers();
+  controls_->clearTechData();
+  setBlock(nullptr);
+}
+
 void MainWindow::postReadDb(odb::dbDatabase* db)
 {
   auto chip = db->getChip();
