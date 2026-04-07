@@ -28,6 +28,7 @@ export function createMenuBar(app) {
         ]},
         { label: 'Windows', items: [
             { label: 'Layout Viewer', action: () => app.focusComponent('LayoutViewer') },
+            { label: '3D Viewer', action: () => app.focusComponent('3DViewer') },
             { label: 'Display Controls', action: () => app.focusComponent('DisplayControls') },
             { label: 'Inspector', action: () => app.focusComponent('Inspector') },
             { label: 'Tcl Console', action: () => app.focusComponent('TclConsole') },
@@ -143,28 +144,57 @@ function showPathDialog(app, title, tclCmd) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
 
-    overlay.innerHTML = `
-        <div class="modal-dialog file-browser-dialog">
-            <h3>${title}</h3>
-            <div class="fb-breadcrumb"></div>
-            <div class="fb-file-list"></div>
-            <input type="text" class="fb-path-input"
-                   placeholder="Server-side file path (e.g. /path/to/design.odb)">
-            <div class="modal-error" style="display:none"></div>
-            <div class="modal-buttons">
-                <button class="cancel">Cancel</button>
-                <button class="primary ok" disabled>${isSave ? 'Save' : 'Open'}</button>
-            </div>
-        </div>`;
+    const dialog = document.createElement('div');
+    dialog.className = 'modal-dialog file-browser-dialog';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    dialog.appendChild(heading);
+
+    const breadcrumbDiv = document.createElement('div');
+    breadcrumbDiv.className = 'fb-breadcrumb';
+    dialog.appendChild(breadcrumbDiv);
+
+    const fileListDiv = document.createElement('div');
+    fileListDiv.className = 'fb-file-list';
+    dialog.appendChild(fileListDiv);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'fb-path-input';
+    input.placeholder = 'Server-side file path (e.g. /path/to/design.odb)';
+    dialog.appendChild(input);
+
+    const errorBlock = document.createElement('div');
+    errorBlock.className = 'modal-error';
+    errorBlock.style.display = 'none';
+    dialog.appendChild(errorBlock);
+
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'modal-buttons';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.className = 'cancel';
+    cancelButton.textContent = 'Cancel';
+    buttonsDiv.appendChild(cancelButton);
+
+    const okButton = document.createElement('button');
+    okButton.className = 'primary ok';
+    okButton.disabled = true;
+    okButton.textContent = isSave ? 'Save' : 'Open';
+    buttonsDiv.appendChild(okButton);
+
+    dialog.appendChild(buttonsDiv);
+    overlay.appendChild(dialog);
 
     document.body.appendChild(overlay);
 
-    const breadcrumb = overlay.querySelector('.fb-breadcrumb');
-    const fileList = overlay.querySelector('.fb-file-list');
-    const pathInput = overlay.querySelector('.fb-path-input');
-    const errorDiv = overlay.querySelector('.modal-error');
-    const okBtn = overlay.querySelector('.ok');
-    const cancelBtn = overlay.querySelector('.cancel');
+    const breadcrumb = breadcrumbDiv;
+    const fileList = fileListDiv;
+    const pathInput = input;
+    const errorDiv = errorBlock;
+    const okBtn = okButton;
+    const cancelBtn = cancelButton;
     let currentPath = '';
     let selectedEntry = null;
 
@@ -178,7 +208,7 @@ function showPathDialog(app, title, tclCmd) {
     }
 
     function renderBreadcrumb(dirPath) {
-        breadcrumb.innerHTML = '';
+        breadcrumb.replaceChildren();
         const parts = dirPath.split('/').filter(Boolean);
         // Root
         const rootSpan = document.createElement('span');
@@ -205,7 +235,7 @@ function showPathDialog(app, title, tclCmd) {
     }
 
     function renderEntries(entries) {
-        fileList.innerHTML = '';
+        fileList.replaceChildren();
         selectedEntry = null;
 
         if (!entries || entries.length === 0) {
@@ -290,7 +320,7 @@ function showPathDialog(app, title, tclCmd) {
             }
             updateOkState();
         } catch (err) {
-            fileList.innerHTML = '';
+            fileList.replaceChildren();
             errorDiv.textContent = err.message || String(err);
             errorDiv.style.display = '';
         }

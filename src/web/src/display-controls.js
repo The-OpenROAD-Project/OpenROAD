@@ -33,7 +33,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
                                          techData, redrawAllLayers,
                                          HeatMapTileLayer) {
     if (!app.displayControlsEl) return;
-    app.displayControlsEl.innerHTML = '';
+    app.displayControlsEl.replaceChildren();
     app.allLayers = [];
 
     // Instance borders layer (always below routing layers)
@@ -67,7 +67,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
     const layerSpec = {
         id: 'layers_parent',
-        children: techData.layers.map((name, index) => {
+        children: techData.layers.map((entry, index) => {
+            const name = typeof entry === 'string' ? entry : entry.name;
             const layer = new WebSocketTileLayer(app.websocketManager, name, {
                 opacity: 0.7,
                 zIndex: index + 3,
@@ -79,7 +80,8 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
             const id = `layer_${index}`;
             layerIds.push(id);
-            return { id, data: { name, layer, colorIndex: index }, checked: true };
+            const color = (typeof entry === 'object' && entry.color) ? entry.color : null;
+            return { id, data: { name, layer, colorIndex: index, color }, checked: true };
         }),
     };
 
@@ -129,7 +131,9 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     const layerChildren = document.createElement('div');
     layerChildren.className = 'vis-group-children';
 
-    techData.layers.forEach((name, index) => {
+    techData.layers.forEach((entry, index) => {
+        const name = typeof entry === 'string' ? entry : entry.name;
+        const serverColor = (typeof entry === 'object' && entry.color) ? entry.color : null;
         const id = layerIds[index];
         const modelNode = layerModel.get(id);
 
@@ -146,7 +150,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
 
         const colorSwatch = document.createElement('span');
         colorSwatch.className = 'layer-color';
-        const c = layerPalette[index % layerPalette.length];
+        const c = serverColor || layerPalette[index % layerPalette.length];
         colorSwatch.style.backgroundColor = `rgb(${c[0]},${c[1]},${c[2]})`;
         label.appendChild(colorSwatch);
 
@@ -186,7 +190,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         label.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            contextMenu.innerHTML = '';
+            contextMenu.replaceChildren();
             for (const item of menuItems) {
                 const div = document.createElement('div');
                 div.className = 'context-menu-item';
@@ -267,7 +271,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'net_scan', label: 'Scan' },
         { key: 'net_analog', label: 'Analog' },
     ]});
-    visTree.add({ label: 'Shapes', children: [
+    visTree.add({ label: 'Shape Types', children: [
         { key: 'routing', label: 'Routing' },
         { key: 'special_nets', label: 'Special Nets' },
         { key: 'pins', label: 'Pins' },
@@ -289,9 +293,14 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         { key: 'tracks_pref', label: 'Pref' },
         { key: 'tracks_non_pref', label: 'Non Pref' },
     ]});
-    visTree.add({ key: 'module_view', label: 'Module view' });
-    visTree.add({ key: 'debug', label: 'Debug tiles' });
-    visTree.render(app.displayControlsEl);
+    visTree.add({ key: 'rulers', label: 'Rulers' });
+    visTree.add({ label: 'Misc', children: [
+        { key: 'module_view', label: 'Module view' },
+        { key: 'debug', label: 'Debug tiles' },
+    ]});
+    const visTreeContainer = document.createElement('div');
+    app.displayControlsEl.appendChild(visTreeContainer);
+    visTree.render(visTreeContainer);
 
     if (!app.heatMapLayer) {
         app.heatMapLayer = new HeatMapTileLayer(app.websocketManager, app, {
@@ -386,7 +395,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
         }
 
         const legend = app.heatMapLegendEl;
-        legend.innerHTML = '';
+        legend.replaceChildren();
 
         if (!active || !active.show_legend || !active.legend || active.legend.length === 0) {
             legend.classList.add('hidden');
@@ -427,7 +436,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
     }
 
     app.renderHeatMapControls = (data) => {
-        heatMapContainer.innerHTML = '';
+        heatMapContainer.replaceChildren();
 
         const list = document.createElement('div');
         list.className = 'heatmap-list';

@@ -5,6 +5,7 @@
 
 #include <netinet/in.h>
 
+#include <charconv>
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
@@ -19,6 +20,7 @@
 #include <memory>
 #include <mutex>
 #include <regex>
+#include <set>
 #include <string>
 #include <thread>
 #include <utility>
@@ -32,8 +34,10 @@
 #include "boost/beast/http.hpp"
 #include "boost/beast/websocket.hpp"
 #include "clock_tree_report.h"
+#include "drc_report.h"
 #include "gui/heatMap.h"
 #include "odb/db.h"
+#include "odb/dbDatabaseObserver.h"
 #include "request_handler.h"
 #include "tcl.h"
 #include "timing_report.h"
@@ -131,6 +135,8 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "schematic_inspect") {
     req.type = WebSocketRequest::SCHEMATIC_INSPECT;
     req.schematic_inst_name = extract_string(msg, "inst_name");
+  } else if (type_str == "get_3d_data") {
+    req.type = WebSocketRequest::GET_3D_DATA;
   } else if (type_str == "select") {
     req.type = WebSocketRequest::SELECT;
     req.select_x = extract_int(msg, "dbu_x");
@@ -167,6 +173,28 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "list_dir") {
     req.type = WebSocketRequest::LIST_DIR;
     req.dir_path = extract_string(msg, "path");
+  } else if (type_str == "drc_report") {
+    req.type = WebSocketRequest::DRC_REPORT;
+  } else if (type_str == "drc_highlight") {
+    req.type = WebSocketRequest::DRC_HIGHLIGHT;
+    req.drc_violation_index = extract_int_or(msg, "index", -1);
+  } else if (type_str == "drc_set_visible") {
+    req.type = WebSocketRequest::DRC_SET_VISIBLE;
+    for (const std::string& str_index : extract_string_array(msg, "indexes")) {
+      try {
+        req.drc_visible_indexes.insert(std::stoi(str_index));
+      } catch (...) {
+        // Skip unparseable indexes; the client may send invalid data.
+      }
+    }
+  } else if (type_str == "drc_mark_visited") {
+    req.type = WebSocketRequest::DRC_MARK_VISITED;
+    req.drc_violation_index = extract_int_or(msg, "index", -1);
+  } else if (type_str == "drc_load") {
+    req.type = WebSocketRequest::DRC_LOAD;
+    req.drc_file_path = extract_string(msg, "path");
+  } else if (type_str == "drc_3dblox_check") {
+    req.type = WebSocketRequest::DRC_3DBLOX_CHECK;
   } else {
     req.type = WebSocketRequest::UNKNOWN;
   }
@@ -228,7 +256,7 @@ static http::response<http::string_body> handle_request(
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
 
-  std::regex tile_regex(R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
+  static const std::regex tile_regex(R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
   std::smatch match_pieces;
   std::string target_path(req.target());
 
@@ -253,9 +281,14 @@ static http::response<http::string_body> handle_request(
     WebSocketRequest websocket_req;
     websocket_req.type = WebSocketRequest::TILE;
     websocket_req.layer = match_pieces[1].str();
-    websocket_req.z = std::stoi(match_pieces[2].str());
-    websocket_req.x = std::stoi(match_pieces[3].str());
-    websocket_req.y = std::stoi(match_pieces[4].str());
+    auto parse_int = [](const std::string& s) {
+      int val = 0;
+      std::from_chars(s.data(), s.data() + s.size(), val);
+      return val;
+    };
+    websocket_req.z = parse_int(match_pieces[2].str());
+    websocket_req.x = parse_int(match_pieces[3].str());
+    websocket_req.y = parse_int(match_pieces[4].str());
     WebSocketResponse websocket_resp
         = dispatch_request(websocket_req, generator);
 
@@ -269,7 +302,7 @@ static http::response<http::string_body> handle_request(
     if (file_path == "/") {
       file_path = "/index.html";
     }
-    // Reject paths with ".." to preventd irectory traversal
+    // Reject paths with ".." to prevent directory traversal
     if (file_path.find("..") == std::string::npos) {
       auto full_path = std::filesystem::path(doc_root) / file_path.substr(1);
       std::ifstream file(full_path, std::ios::binary);
@@ -277,6 +310,7 @@ static http::response<http::string_body> handle_request(
         std::string content((std::istreambuf_iterator<char>(file)),
                             std::istreambuf_iterator<char>());
         res.set(http::field::content_type, content_type_for(file_path));
+        res.set(http::field::cache_control, "no-cache");
         res.body() = std::move(content);
       } else {
         res.result(http::status::not_found);
@@ -299,6 +333,10 @@ static http::response<http::string_body> handle_request(
 // WebSocket session - multiplexes many requests over a single connection
 //------------------------------------------------------------------------------
 
+class WebSocketSession;
+static std::mutex active_sessions_mutex;
+static std::set<WebSocketSession*> active_sessions;
+
 class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
 {
   websocket::stream<beast::tcp_stream> websocket_;
@@ -312,6 +350,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   TimingHandler timing_handler_;
   ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
+  DRCHandler drc_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
   net::strand<net::any_io_executor> strand_;
@@ -328,16 +367,18 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
+                   std::shared_ptr<DRCReport> drc_report,
                    utl::Logger* logger);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
+  static void broadcast(const std::string& msg);
+  void queue_response(const WebSocketResponse& resp);
 
  private:
   void on_accept(beast::error_code ec);
   void do_read();
   void on_read(beast::error_code ec);
-  void queue_response(const WebSocketResponse& resp);
   void do_write();
 };
 
@@ -349,6 +390,7 @@ WebSocketSession::WebSocketSession(
     // NOLINTEND(performance-unnecessary-value-param)
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
+    std::shared_ptr<DRCReport> drc_report,
     utl::Logger* logger)
     : websocket_(std::move(socket)),
       logger_(logger),
@@ -357,9 +399,15 @@ WebSocketSession::WebSocketSession(
       timing_handler_(generator, std::move(timing_report), tcl_eval),
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
+      drc_handler_(generator, std::move(drc_report)),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator))
 {
+  {
+    std::lock_guard<std::mutex> lock(active_sessions_mutex);
+    active_sessions.insert(this);
+  }
+
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
   }
@@ -367,6 +415,11 @@ WebSocketSession::WebSocketSession(
 
 WebSocketSession::~WebSocketSession()
 {
+  {
+    std::lock_guard<std::mutex> lock(active_sessions_mutex);
+    active_sessions.erase(this);
+  }
+
   if (init_thread_.joinable()) {
     init_thread_.join();
   }
@@ -395,8 +448,24 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
     // Only send refresh if there's actually a design to render.
     // Without this guard, eagerInit returns instantly when no block is
     // loaded and the push races with async_accept (Beast soft_mutex crash).
-    if (!self->generator_->getBlock()) {
+    const bool has_block = self->generator_->getBlock() != nullptr;
+    const bool has_chip_insts
+        = self->generator_->getChip() != nullptr
+          && !self->generator_->getChip()->getChipInsts().empty();
+    if (!has_block && !has_chip_insts) {
       return;
+    }
+    // For 3D designs loaded before the web server started the observer was
+    // not yet registered, so chipLoaded was never broadcast.  Send it now
+    // to this session so the frontend rebuilds the Chiplets layer and 3D
+    // viewer exactly as it would after a live read_3dbx call.
+    if (!has_block && has_chip_insts) {
+      WebSocketResponse chip_resp;
+      chip_resp.id = 0;
+      chip_resp.type = 0;
+      const std::string chip_json = R"({"type":"chipLoaded"})";
+      chip_resp.payload.assign(chip_json.begin(), chip_json.end());
+      self->queue_response(chip_resp);
     }
     // Send server-push refresh notification (id=0)
     WebSocketResponse resp;
@@ -505,6 +574,11 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(), [self, req]() {
         self->queue_response(
             self->select_handler_.handleSchematicInspect(req, self->state_));
+      });
+      break;
+    case WebSocketRequest::GET_3D_DATA:
+      net::post(websocket_.get_executor(), [self, req]() {
+        self->queue_response(self->select_handler_.handleGet3DData(req));
       });
       break;
     case WebSocketRequest::TCL_EVAL:
@@ -629,6 +703,49 @@ void WebSocketSession::on_read(beast::error_code ec)
                   self->queue_response(handleListDir(req));
                 });
       break;
+    case WebSocketRequest::DRC_REPORT:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCReport(req));
+                });
+      break;
+    case WebSocketRequest::DRC_HIGHLIGHT:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCHighlight(req,
+                                                            self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_SET_VISIBLE:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCSetVisible(req,
+                                                             self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_MARK_VISITED:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCMarkVisited(req));
+                });
+      break;
+    case WebSocketRequest::DRC_LOAD:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->drc_handler_.handleDRCLoad(req));
+                });
+      break;
+    case WebSocketRequest::DRC_3DBLOX_CHECK:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRC3DBloxCheck(req));
+                });
+      break;
     default:
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
@@ -681,6 +798,46 @@ void WebSocketSession::do_write()
         });
       });
 }
+
+void WebSocketSession::broadcast(const std::string& msg)
+{
+  std::lock_guard<std::mutex> lock(active_sessions_mutex);
+  for (auto* session : active_sessions) {
+    WebSocketResponse resp;
+    resp.id = 0;
+    resp.type = 0;  // JSON
+    resp.payload.assign(msg.begin(), msg.end());
+    session->queue_response(resp);
+  }
+}
+
+//------------------------------------------------------------------------------
+// Database Observer - notifies connected clients when the DB reloads
+//------------------------------------------------------------------------------
+
+class WebDatabaseObserver : public odb::dbDatabaseObserver
+{
+  WebServer* server_;
+ public:
+  WebDatabaseObserver(WebServer* server) : server_(server) {}
+
+  void postReadLef(odb::dbTech* tech, odb::dbLib* library) override {}
+  void postReadDef(odb::dbBlock* block) override {}
+  void postReadDb(odb::dbDatabase* db) override { notify(); }
+  void postRead3Dbx(odb::dbChip* chip) override { notify(); }
+  void postMarkersChanged() override
+  {
+    WebSocketSession::broadcast(R"({"type":"drcUpdated"})");
+  }
+
+ private:
+  void notify()
+  {
+    if (server_) {
+      server_->reloadDesign();
+    }
+  }
+};
 
 //------------------------------------------------------------------------------
 // HTTP session - handles traditional HTTP connections
@@ -809,6 +966,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
+  std::shared_ptr<DRCReport> drc_report_;
   http::request<http::string_body> req_;
   std::string doc_root_;
   utl::Logger* logger_;
@@ -819,6 +977,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TclEvaluator> tcl_eval,
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
+                std::shared_ptr<DRCReport> drc_report,
                 std::string doc_root,
                 utl::Logger* logger);
 
@@ -833,6 +992,7 @@ DetectSession::DetectSession(tcp::socket&& socket,
                              std::shared_ptr<TclEvaluator> tcl_eval,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
+                             std::shared_ptr<DRCReport> drc_report,
                              std::string doc_root,
                              utl::Logger* logger)
     : stream_(std::move(socket)),
@@ -840,6 +1000,7 @@ DetectSession::DetectSession(tcp::socket&& socket,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
+      drc_report_(std::move(drc_report)),
       doc_root_(std::move(doc_root)),
       logger_(logger)
 {
@@ -872,6 +1033,7 @@ void DetectSession::on_read(beast::error_code ec)
                                              tcl_eval_,
                                              timing_report_,
                                              clock_report_,
+                                             drc_report_,
                                              logger_);
     websocket_session->run(std::move(req_));
   } else {
@@ -894,6 +1056,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<TclEvaluator> tcl_eval_;
   std::shared_ptr<TimingReport> timing_report_;
   std::shared_ptr<ClockTreeReport> clock_report_;
+  std::shared_ptr<DRCReport> drc_report_;
   std::string doc_root_;
   utl::Logger* logger_;
 
@@ -904,6 +1067,7 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TclEvaluator> tcl_eval,
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
+           std::shared_ptr<DRCReport> drc_report,
            std::string doc_root,
            utl::Logger* logger);
 
@@ -920,6 +1084,7 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
+                   std::shared_ptr<DRCReport> drc_report,
                    std::string doc_root,
                    utl::Logger* logger)
     : ioc_(ioc),
@@ -928,6 +1093,7 @@ Listener::Listener(net::io_context& ioc,
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
+      drc_report_(std::move(drc_report)),
       doc_root_(std::move(doc_root)),
       logger_(logger)
 {
@@ -979,6 +1145,7 @@ void Listener::on_accept(beast::error_code ec, tcp::socket socket)
                                     tcl_eval_,
                                     timing_report_,
                                     clock_report_,
+                                    drc_report_,
                                     doc_root_,
                                     logger_)
         ->run();
@@ -996,9 +1163,32 @@ WebServer::WebServer(odb::dbDatabase* db,
                      Tcl_Interp* interp)
     : db_(db), sta_(sta), logger_(logger), interp_(interp)
 {
+  if (db_) {
+    observer_ = std::make_unique<WebDatabaseObserver>(this);
+    db_->addObserver(observer_.get());
+  }
 }
 
-WebServer::~WebServer() = default;
+WebServer::~WebServer()
+{
+  if (db_ && observer_) {
+    db_->removeObserver(observer_.get());
+  }
+}
+
+void WebServer::reloadDesign()
+{
+  if (generator_) {
+    std::thread([generator = generator_]() {
+      generator->eagerInit();
+      if (!generator->getBlock() && (!generator->getChip() || generator->getChip()->getChipInsts().empty())) {
+        return;
+      }
+      WebSocketSession::broadcast(R"({"type":"chipLoaded"})");
+      WebSocketSession::broadcast(R"({"type":"refresh"})");
+    }).detach();
+  }
+}
 
 void WebServer::saveImage(const std::string& filename,
                           const int x0,
@@ -1029,13 +1219,15 @@ void WebServer::serve(int port, const std::string& doc_root)
     generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
     auto timing_report = std::make_shared<TimingReport>(sta_);
     auto clock_report = std::make_shared<ClockTreeReport>(sta_);
+    auto drc_report = std::make_shared<DRCReport>(generator_.get());
 
     // Create Tcl evaluator with logger sink for output capture
     auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
 
     auto const address = net::ip::make_address("127.0.0.1");
     uint16_t const u_port = port;
-    int const num_threads = 32;
+    unsigned int hardware_threads = std::thread::hardware_concurrency();
+    int const num_threads = hardware_threads > 0 ? hardware_threads : 1;
 
     if (!doc_root.empty()) {
       logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
@@ -1066,6 +1258,7 @@ void WebServer::serve(int port, const std::string& doc_root)
                                tcl_eval,
                                timing_report,
                                clock_report,
+                               drc_report,
                                doc_root,
                                logger_)
         ->run();

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace web {
 
@@ -204,24 +205,28 @@ class JsonBuilder
   std::string&& take() { return std::move(buf_); }
 
  private:
-  static constexpr int kMaxDepth = 16;
-  bool need_comma_[kMaxDepth];
+  std::vector<bool> need_comma_;
   int depth_ = 0;
 
   std::string buf_;
 
   void pushContext()
   {
-    assert(depth_ < kMaxDepth);
-    need_comma_[depth_] = false;
+    if (depth_ >= need_comma_.size()) {
+      need_comma_.push_back(false);
+    } else {
+      need_comma_[depth_] = false;
+    }
     depth_++;
   }
 
   void popContext()
   {
-    depth_--;
     if (depth_ > 0) {
-      need_comma_[depth_ - 1] = true;
+      depth_--;
+      if (depth_ > 0) {
+        need_comma_[depth_ - 1] = true;
+      }
     }
   }
 

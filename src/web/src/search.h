@@ -150,6 +150,15 @@ class Search : public odb::dbBlockCallBackObj
   // Returns true once shape R-trees are built.
   bool shapesReady() const { return top_block_data_.shapes_init.load(); }
 
+  void setTopBlockReady() {
+    top_block_data_.shapes_init = true;
+    top_block_data_.fills_init = true;
+    top_block_data_.insts_init = true;
+    top_block_data_.blockages_init = true;
+    top_block_data_.obstructions_init = true;
+    top_block_data_.rows_init = true;
+  }
+
   // Build the structure for the given chip.
   void setTopChip(odb::dbChip* chip);
 
@@ -274,20 +283,13 @@ class Search : public odb::dbBlockCallBackObj
   void inDbSWireAddSBox(odb::dbSBox* box) override;
   void inDbSWireRemoveSBox(odb::dbSBox* box) override;
   void inDbBlockSetDieArea(odb::dbBlock* block) override;
-  void inDbBlockSetCoreArea(odb::dbBlock* block) override;
   void inDbBlockageCreate(odb::dbBlockage* blockage) override;
   void inDbBlockageDestroy(odb::dbBlockage* blockage) override;
   void inDbObstructionCreate(odb::dbObstruction* obs) override;
   void inDbObstructionDestroy(odb::dbObstruction* obs) override;
-  void inDbRegionAddBox(odb::dbRegion*, odb::dbBox*) override;
-  void inDbRegionDestroy(odb::dbRegion* region) override;
   void inDbRowCreate(odb::dbRow* row) override;
   void inDbRowDestroy(odb::dbRow* row) override;
   void inDbWirePostModify(odb::dbWire* wire) override;
-
-  // signals:
-  //  void modified();
-  //  void newChip(odb::dbChip* chip);
 
  private:
   struct BlockData;

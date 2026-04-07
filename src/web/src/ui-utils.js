@@ -23,19 +23,26 @@ export function makeResizableHeaders(table) {
         th.appendChild(grip);
 
         let startX, startW;
+        let abortController;
         const onMouseMove = (e) => {
             th.style.width = Math.max(30, startW + e.clientX - startX) + 'px';
         };
         const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
         };
         grip.addEventListener('mousedown', (e) => {
             e.preventDefault();
+            if (abortController) {
+                abortController.abort();
+            }
+            abortController = new AbortController();
             startX = e.clientX;
             startW = th.offsetWidth;
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onMouseMove, { signal: abortController.signal });
+            document.addEventListener('mouseup', onMouseUp, { signal: abortController.signal });
         });
     });
 }

@@ -24,6 +24,7 @@ namespace web {
 
 class TimingReport;
 class ClockTreeReport;
+class DRCReport;
 
 // Thread-safe Tcl command evaluation with output capture.
 struct TclEvaluator
@@ -89,6 +90,13 @@ struct WebSocketRequest
     SCHEMATIC_CONE,
     SCHEMATIC_FULL,
     SCHEMATIC_INSPECT,
+    GET_3D_DATA,
+    DRC_REPORT,
+    DRC_HIGHLIGHT,
+    DRC_SET_VISIBLE,
+    DRC_MARK_VISITED,
+    DRC_LOAD,
+    DRC_3DBLOX_CHECK,
     UNKNOWN
   };
 
@@ -158,6 +166,11 @@ struct WebSocketRequest
   bool snap_horizontal = true;
   bool snap_vertical = true;
 
+  // DRC fields
+  int drc_violation_index = -1;  // -1 = clear highlight
+  std::set<int> drc_visible_indexes;
+  std::string drc_file_path;     // for DRC_LOAD
+
   // Heat map fields
   std::string heatmap_name;
   std::string heatmap_option;
@@ -201,6 +214,9 @@ struct SessionState
 
   std::mutex route_guides_mutex;
   std::set<uint32_t> route_guide_net_ids;  // dbNet ODB IDs
+
+  std::mutex drc_mutex;
+  std::vector<ColoredRect> drc_rects;  // highlighted DRC violation shapes
 
   std::mutex heatmap_mutex;
   std::map<std::string, std::shared_ptr<gui::HeatMapDataSource>> heatmaps;
@@ -255,6 +271,7 @@ class SelectHandler
   WebSocketResponse handleSchematicFull(const WebSocketRequest& req);
   WebSocketResponse handleSchematicInspect(const WebSocketRequest& req,
                                            SessionState& state);
+  WebSocketResponse handleGet3DData(const WebSocketRequest& req);
 
  private:
   std::shared_ptr<TileGenerator> gen_;
@@ -335,6 +352,27 @@ class TileHandler
 
  private:
   std::shared_ptr<TileGenerator> gen_;
+};
+
+// Handles DRC_REPORT and DRC_HIGHLIGHT requests.
+class DRCHandler
+{
+ public:
+  DRCHandler(std::shared_ptr<TileGenerator> gen,
+             std::shared_ptr<DRCReport> drc_report);
+
+  WebSocketResponse handleDRCReport(const WebSocketRequest& req);
+  WebSocketResponse handleDRCHighlight(const WebSocketRequest& req,
+                                       SessionState& state);
+  WebSocketResponse handleDRCSetVisible(const WebSocketRequest& req,
+                                        SessionState& state);
+  WebSocketResponse handleDRCMarkVisited(const WebSocketRequest& req);
+  WebSocketResponse handleDRCLoad(const WebSocketRequest& req);
+  WebSocketResponse handleDRC3DBloxCheck(const WebSocketRequest& req);
+
+ private:
+  std::shared_ptr<TileGenerator> gen_;
+  std::shared_ptr<DRCReport> drc_report_;
 };
 
 // Handles LIST_DIR requests (server-side file browsing).

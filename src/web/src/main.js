@@ -14,8 +14,15 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { DRCWidget } from './drc-widget.js';
+import { ThreeDViewerWidget } from './3d-viewer-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import './theme.js';
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const TILE_SIZE = 256;
+const DEFAULT_WS_HOST = 'localhost:8080';
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
@@ -68,6 +75,7 @@ const app = {
     heatMapLegendEl: null,
     renderHeatMapControls: null,
     rulerManager: null,
+    loadError: false,
 };
 
 const visibility = {
@@ -125,6 +133,8 @@ const visibility = {
     module_view: false,
     // Debug
     debug: false,
+    // Rulers
+    rulers: true,
 };
 
 const WebSocketTileLayer = createWebSocketTileLayer(visibility);
@@ -229,6 +239,34 @@ function updateHeatMaps(data) {
 }
 app.updateHeatMaps = updateHeatMaps;
 
+function rebuildLayersAndControls() {
+    if (!app.techData || !app.displayControlsEl) return;
+    if (!app.map) return;  // map not ready yet
+
+    // Remove old tile layers from the map before rebuilding.
+    for (const layer of app.allLayers) {
+        if (app.map.hasLayer(layer)) {
+            app.map.removeLayer(layer);
+        }
+    }
+    app.allLayers = [];
+    app.visibleLayers.clear();
+
+    try {
+        populateDisplayControls(app, visibility, WebSocketTileLayer,
+                                app.techData, redrawAllLayers, HeatMapTileLayer);
+    } catch (err) {
+        console.error('populateDisplayControls failed:', err);
+        app.displayControlsEl.innerHTML =
+            '<div class="stub-panel"><div class="stub-desc">Error building display controls: '
+            + err.message + '</div></div>';
+        return;
+    }
+    if (app.heatMapData) {
+        updateHeatMaps(app.heatMapData);
+    }
+}
+
 function redrawAllLayers() {
     // Show/hide modules layer based on module_view visibility
     if (app.modulesLayer) {
@@ -236,6 +274,14 @@ function redrawAllLayers() {
             app.modulesLayer.addTo(app.map);
         } else if (!visibility.module_view && app.map.hasLayer(app.modulesLayer)) {
             app.map.removeLayer(app.modulesLayer);
+        }
+    }
+    // Show/hide rulers layer
+    if (app.rulerManager && app.rulerManager._rulerLayerGroup) {
+        if (visibility.rulers && !app.map.hasLayer(app.rulerManager._rulerLayerGroup)) {
+            app.rulerManager._rulerLayerGroup.addTo(app.map);
+        } else if (!visibility.rulers && app.map.hasLayer(app.rulerManager._rulerLayerGroup)) {
+            app.map.removeLayer(app.rulerManager._rulerLayerGroup);
         }
     }
     // Show/hide pin markers layer
@@ -254,6 +300,60 @@ function redrawAllLayers() {
     }
 }
 
+// ─── Shared Design Data Helpers ────────────────────────────────────────────
+
+function applyDesignData(techData, boundsData, heatMapData) {
+    app.loadError = false;
+    app.hasLiberty = techData.has_liberty;
+    app.techData = techData;
+
+    const designBounds = boundsData.bounds;
+    const minY = designBounds[0][0];
+    const minX = designBounds[0][1];
+    const maxY = designBounds[1][0];
+    const maxX = designBounds[1][1];
+
+    const designWidth = maxX - minX;
+    const designHeight = maxY - minY;
+    const hasDesign = designWidth > 0 && designHeight > 0;
+
+    if (hasDesign) {
+        const maxDXDY = Math.max(designWidth, designHeight);
+        const scale = TILE_SIZE / maxDXDY;
+        app.designScale = scale;
+        app.designMaxDXDY = maxDXDY;
+        app.designOriginX = minX;
+        app.designOriginY = minY;
+
+        app.fitBounds = [
+            [-maxDXDY * scale, 0],
+            [(designHeight - maxDXDY) * scale, designWidth * scale]
+        ];
+        app.map.fitBounds(app.fitBounds);
+    }
+
+    app.heatMapData = heatMapData;
+    rebuildLayersAndControls();
+
+    if (hasDesign && !boundsData.shapes_ready) {
+        document.getElementById('loading-overlay').style.display = 'flex';
+    }
+}
+
+function handleDesignLoadError(err, context) {
+    console.error(context, err);
+    app.loadError = true;
+    app.techData = null;
+    app.allLayers = [];
+    app.heatMapData = null;
+    if (app.displayControlsEl) {
+        const detail = err.message || String(err);
+        app.displayControlsEl.innerHTML =
+            '<div class="stub-panel"><div class="stub-desc">Failed to load design data. '
+            + detail + '</div></div>';
+    }
+    document.getElementById('loading-overlay').style.display = 'none';
+}
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -274,7 +374,55 @@ function createLayoutViewer(container) {
         zoomSnap: 0,
         fadeAnimation: false,
         attributionControl: false,
+        dragging: false, // Disable default left-click pan
     });
+
+    // Implement middle-button pan to match Qt GUI
+    let isMiddleDragging = false;
+    let middleDragStart = null;
+
+    const abortController = new AbortController();
+    if (container && container.on) {
+        container.on('destroy', () => abortController.abort());
+    }
+
+    mapDiv.addEventListener('mousedown', (e) => {
+        if (e.button === 1) { // Middle button
+            e.preventDefault();
+            isMiddleDragging = true;
+            middleDragStart = { x: e.clientX, y: e.clientY };
+            mapDiv.style.cursor = 'grabbing';
+        }
+    });
+
+    let mouseMovePending = false;
+    window.addEventListener('mousemove', (e) => {
+        if (isMiddleDragging && middleDragStart) {
+            e.preventDefault();
+            if (mouseMovePending) return;
+            mouseMovePending = true;
+            requestAnimationFrame(() => {
+                if (!middleDragStart) {
+                    mouseMovePending = false;
+                    return;
+                }
+                const dx = e.clientX - middleDragStart.x;
+                const dy = e.clientY - middleDragStart.y;
+                app.map.panBy([-dx, -dy], { animate: false });
+                middleDragStart = { x: e.clientX, y: e.clientY };
+                mouseMovePending = false;
+            });
+        }
+    }, { signal: abortController.signal });
+
+    window.addEventListener('mouseup', (e) => {
+        if (e.button === 1 && isMiddleDragging) {
+            isMiddleDragging = false;
+            middleDragStart = null;
+            mapDiv.style.cursor = '';
+        }
+    }, { signal: abortController.signal });
+
     const hoverPane = app.map.createPane(app.hoverHighlightPane);
     hoverPane.style.zIndex = '650';
     hoverPane.style.pointerEvents = 'none';
@@ -308,9 +456,14 @@ function createLayoutViewer(container) {
 function createDisplayControls(container) {
     const el = document.createElement('div');
     el.className = 'display-controls';
-    el.innerHTML = '<div class="loading">Loading layers...</div>';
+    if (app.loadError) {
+        el.innerHTML = '<div class="stub-panel"><div class="stub-desc">No top level block found, probably reading a block-less design (e.g., 3dbx). Please load a design to view layers.</div></div>';
+    } else {
+        el.innerHTML = '<div class="loading">Loading layers...</div>';
+    }
     container.element.appendChild(el);
     app.displayControlsEl = el;
+    rebuildLayersAndControls();
 }
 
 function tclAppend(text, className) {
@@ -361,6 +514,8 @@ function createTclConsole(container) {
                 .catch(err => tclAppend(`Error: ${err}\n`, 'tcl-error'));
         }
     });
+
+    container.on('destroy', () => completer.destroy());
 }
 
 // ─── Inspector Panel ────────────────────────────────────────────────────────
@@ -380,8 +535,7 @@ function createTimingWidget(container) {
 }
 
 function createDRCWidget(container) {
-    createStubPanel(container, 'DRC',
-        'Design rule check violations viewer.');
+    app.drcWidget = new DRCWidget(container, app, redrawAllLayers);
 }
 
 function createClockWidget(container) {
@@ -390,6 +544,10 @@ function createClockWidget(container) {
 
 function createChartsWidget(container) {
     app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
+}
+
+function create3DViewerWidget(container) {
+    app.threeDViewerWidget = new ThreeDViewerWidget(container, app);
 }
 
 function createHelpWidget(container) {
@@ -409,22 +567,8 @@ function createHelpWidget(container) {
     container.element.appendChild(el);
 }
 
-function createSelectHighlight(container) {
-    createStubPanel(container, 'Selection',
-        'Selection and highlight browser.');
-}
-
 function createSchematicWidget(container) {
     new SchematicWidget(container, app);
-}
-
-function createStubPanel(container, title, description) {
-    const el = document.createElement('div');
-    el.className = 'stub-panel';
-    el.innerHTML =
-        `<div class="stub-title">${title}</div>` +
-        `<div class="stub-desc">${description}</div>`;
-    container.element.appendChild(el);
 }
 
 // ─── Layout Configuration ───────────────────────────────────────────────────
@@ -526,9 +670,9 @@ app.goldenLayout.registerComponentFactoryFunction('TimingWidget', createTimingWi
 app.goldenLayout.registerComponentFactoryFunction('DRCWidget', createDRCWidget);
 app.goldenLayout.registerComponentFactoryFunction('ClockWidget', createClockWidget);
 app.goldenLayout.registerComponentFactoryFunction('ChartsWidget', createChartsWidget);
+app.goldenLayout.registerComponentFactoryFunction('3DViewer', create3DViewerWidget);
 app.goldenLayout.registerComponentFactoryFunction('SchematicWidget', createSchematicWidget);
 app.goldenLayout.registerComponentFactoryFunction('HelpWidget', createHelpWidget);
-app.goldenLayout.registerComponentFactoryFunction('SelectHighlight', createSelectHighlight);
 
 // Layout version — bump this to force a layout reset when components change.
 const LAYOUT_VERSION = 3;
@@ -537,7 +681,7 @@ const LAYOUT_VERSION = 3;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+const websocketUrl = `ws://${window.location.host || DEFAULT_WS_HOST}/ws`;
 app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 
 // Restore saved layout or use default
@@ -577,9 +721,9 @@ const componentTitles = {
     DRCWidget: 'DRC',
     ClockWidget: 'Clock Tree',
     ChartsWidget: 'Charts',
+    '3DViewer': '3D Viewer',
     SchematicWidget: 'Schematic',
     HelpWidget: 'Help',
-    SelectHighlight: 'Select Highlight',
 };
 
 // Focus a Golden Layout component tab, or re-create it if it was closed.
@@ -623,6 +767,42 @@ app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+        if (app.threeDViewerWidget) {
+            app.threeDViewerWidget.loadData();
+        }
+    } else if (msg.type === 'drcUpdated') {
+        if (app.drcWidget) {
+            app.drcWidget.update();
+        }
+    } else if (msg.type === 'chipLoaded') {
+        if (app.drcWidget) app.drcWidget.update();
+        // Clear selection
+        app.selectedInstanceName = null;
+        updateInspector(null);
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+
+        // Re-fetch bounds, tech, and heatmaps so display controls and tile
+        // layers are rebuilt (critical for read_3dbx which adds a "Chiplets"
+        // layer that did not exist at initial page load).
+        Promise.all([
+            app.websocketManager.request({ type: 'tech' }),
+            app.websocketManager.request({ type: 'bounds' }),
+            app.websocketManager.request({ type: 'heatmaps' }),
+        ]).then(([techData, boundsData, heatMapData]) => {
+            if (app.drcWidget) {
+                app.drcWidget.setHasChipInsts(!!techData.has_chip_insts);
+            }
+            applyDesignData(techData, boundsData, heatMapData);
+        }).catch(err => {
+            handleDesignLoadError(err, 'Failed to reload design on chipLoaded:');
+        });
+
+        if (app.threeDViewerWidget) {
+            app.threeDViewerWidget.loadData();
+        }
     }
 };
 
@@ -633,37 +813,7 @@ app.websocketManager.readyPromise.then(async () => {
             app.websocketManager.request({ type: 'bounds' }),
             app.websocketManager.request({ type: 'heatmaps' }),
         ]);
-        app.hasLiberty = techData.has_liberty;
-        app.techData = techData;
-
-        // --- Set Bounds ---
-        const designBounds = boundsData.bounds;
-
-        const minY = designBounds[0][0];
-        const minX = designBounds[0][1];
-        const maxY = designBounds[1][0];
-        const maxX = designBounds[1][1];
-
-        const designWidth = maxX - minX;
-        const designHeight = maxY - minY;
-
-        // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = designWidth > 0 && designHeight > 0;
-        if (hasDesign) {
-            const tileSize = 256;
-            const maxDXDY = Math.max(designWidth, designHeight);
-            const scale = tileSize / maxDXDY;
-            app.designScale = scale;
-            app.designMaxDXDY = maxDXDY;
-            app.designOriginX = minX;
-            app.designOriginY = minY;
-
-            app.fitBounds = [
-                [-maxDXDY * scale, 0],
-                [(designHeight - maxDXDY) * scale, designWidth * scale]
-            ];
-            app.map.fitBounds(app.fitBounds);
-        }
+        applyDesignData(techData, boundsData, heatMapData);
 
         // Click-to-select: convert click position to DBU and query server
         app.map.on('click', (e) => {
@@ -679,7 +829,6 @@ app.websocketManager.readyPromise.then(async () => {
             }
             app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), visible_layers: [...app.visibleLayers], ...vf })
                 .then(data => {
-                    console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
                     app.map.closePopup();
                     if (data.selected && data.selected.length > 0) {
                         const inst = data.selected[0];
@@ -726,6 +875,8 @@ app.websocketManager.readyPromise.then(async () => {
                 app.map.dragging.disable();
             });
 
+            const abortController = new AbortController();
+
             window.addEventListener('mousemove', (e) => {
                 if (!rbStart) return;
                 const dx = e.clientX - rbStart.x;
@@ -743,7 +894,7 @@ app.websocketManager.readyPromise.then(async () => {
                     rbDiv.style.width = Math.abs(dx) + 'px';
                     rbDiv.style.height = Math.abs(dy) + 'px';
                 }
-            });
+            }, { signal: abortController.signal });
 
             window.addEventListener('mouseup', (e) => {
                 if (!rbStart) return;
@@ -768,21 +919,10 @@ app.websocketManager.readyPromise.then(async () => {
                     [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
                     [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
                 ]);
-            });
-        }
-
-        populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                techData, redrawAllLayers, HeatMapTileLayer);
-        updateHeatMaps(heatMapData);
-
-        // Only show the loading overlay if a design is loaded but shapes
-        // aren't ready yet.  On browser reload (without server restart),
-        // shapes are already built so we skip the overlay.
-        if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            }, { signal: abortController.signal });
         }
     } catch (err) {
-        console.error('Failed to load initial data from server:', err);
+        handleDesignLoadError(err, 'Failed to load initial data from server:');
     }
 });
 

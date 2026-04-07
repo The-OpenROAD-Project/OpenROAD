@@ -86,38 +86,29 @@ export class TimingWidget {
         return btn;
     }
 
+    _switchTab(tabName) {
+        this._currentTab = tabName;
+        this._setupTab.classList.toggle('active', tabName === 'setup');
+        this._holdTab.classList.toggle('active', tabName === 'hold');
+        this._selectedPathIndex = -1;
+        this._renderPathTable();
+        this._renderDetailTable();
+        this._clearTimingHighlight();
+    }
+
+    _switchDetailTab(tabName) {
+        this._detailTab = tabName;
+        this._dataTab.classList.toggle('active', tabName === 'data');
+        this._captureTab.classList.toggle('active', tabName === 'capture');
+        this._renderDetailTable();
+    }
+
     _bindEvents() {
         // Tab switching
-        this._setupTab.addEventListener('click', () => {
-            this._currentTab = 'setup';
-            this._setupTab.classList.add('active');
-            this._holdTab.classList.remove('active');
-            this._selectedPathIndex = -1;
-            this._renderPathTable();
-            this._renderDetailTable();
-            this._clearTimingHighlight();
-        });
-        this._holdTab.addEventListener('click', () => {
-            this._currentTab = 'hold';
-            this._holdTab.classList.add('active');
-            this._setupTab.classList.remove('active');
-            this._selectedPathIndex = -1;
-            this._renderPathTable();
-            this._renderDetailTable();
-            this._clearTimingHighlight();
-        });
-        this._dataTab.addEventListener('click', () => {
-            this._detailTab = 'data';
-            this._dataTab.classList.add('active');
-            this._captureTab.classList.remove('active');
-            this._renderDetailTable();
-        });
-        this._captureTab.addEventListener('click', () => {
-            this._detailTab = 'capture';
-            this._captureTab.classList.add('active');
-            this._dataTab.classList.remove('active');
-            this._renderDetailTable();
-        });
+        this._setupTab.addEventListener('click', () => this._switchTab('setup'));
+        this._holdTab.addEventListener('click', () => this._switchTab('hold'));
+        this._dataTab.addEventListener('click', () => this._switchDetailTab('data'));
+        this._captureTab.addEventListener('click', () => this._switchDetailTab('capture'));
 
         // Fetch paths
         this._updateBtn.addEventListener('click', () => this.update());
@@ -223,7 +214,7 @@ export class TimingWidget {
     _renderPathTable() {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
-        this._pathTable.innerHTML = '';
+        this._pathTable.replaceChildren();
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');
@@ -288,7 +279,7 @@ export class TimingWidget {
     }
 
     _renderDetailTable() {
-        this._detailTable.innerHTML = '';
+        this._detailTable.replaceChildren();
         this._selectedDetailIndex = -1;
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         if (this._selectedPathIndex < 0 || this._selectedPathIndex >= paths.length) return;

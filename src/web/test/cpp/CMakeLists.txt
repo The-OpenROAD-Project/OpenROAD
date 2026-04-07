@@ -36,7 +36,25 @@ gtest_discover_tests(TestRequestHandler
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestClockTreeReport TestClockTreeReport.cpp)
+target_link_libraries(TestClockTreeReport ${TEST_LIBS})
+target_include_directories(TestClockTreeReport PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+gtest_discover_tests(TestClockTreeReport WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(TestSaveImage TestSaveImage.cpp)
+target_link_libraries(TestSaveImage ${TEST_LIBS})
+target_include_directories(TestSaveImage PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+gtest_discover_tests(TestSaveImage WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(TestSnap TestSnap.cpp)
+target_link_libraries(TestSnap ${TEST_LIBS})
+target_include_directories(TestSnap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+gtest_discover_tests(TestSnap WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
+  TestClockTreeReport
+  TestSaveImage
+  TestSnap
 )

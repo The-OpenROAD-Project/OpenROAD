@@ -264,7 +264,7 @@ export class HierarchyBrowser {
     }
 
     _render() {
-        this._table.innerHTML = '';
+        this._table.replaceChildren();
 
         // Header
         const thead = document.createElement('thead');

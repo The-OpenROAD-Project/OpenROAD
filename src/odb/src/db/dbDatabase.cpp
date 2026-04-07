@@ -1029,6 +1029,14 @@ void dbDatabase::triggerPostReadDb()
   }
 }
 
+void dbDatabase::triggerPostMarkersChanged()
+{
+  _dbDatabase* db = (_dbDatabase*) this;
+  for (dbDatabaseObserver* observer : db->observers_) {
+    observer->postMarkersChanged();
+  }
+}
+
 // User Code End dbDatabasePublicMethods
 }  // namespace odb
 // Generator Code End Cpp

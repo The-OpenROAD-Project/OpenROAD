@@ -109,6 +109,7 @@ void Checker::check()
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
   checkBumpPhysicalAlignment(top_cat, model);
+  db_->triggerPostMarkersChanged();
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,

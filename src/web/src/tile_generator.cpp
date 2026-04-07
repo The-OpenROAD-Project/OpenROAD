@@ -408,12 +408,19 @@ void TileGenerator::eagerInit()
   odb::dbBlock* block = getBlock();
   if (block) {
     search_->eagerInit(block);
+  } else if (chip && !chip->getChipInsts().empty()) {
+    search_->setTopBlockReady();
   }
 }
 
 bool TileGenerator::shapesReady() const
 {
   return search_->shapesReady();
+}
+
+int TileGenerator::getDbuPerMicron() const
+{
+  return db_ ? db_->getDbuPerMicron() : 1000;
 }
 
 /* static */
@@ -518,6 +525,35 @@ odb::Rect TileGenerator::getBounds() const
       bounds.set_xhi(bounds.xMax() + margin);
       bounds.set_yhi(bounds.yMax() + margin);
     }
+  } else if (odb::dbChip* chip = getChip()) {
+    int w = chip->getWidth();
+    int h = chip->getHeight();
+    if (w > 0 && h > 0) {
+      int x0 = chip->getOffset().x();
+      int y0 = chip->getOffset().y();
+      bounds.init(x0, y0, x0 + w, y0 + h);
+    } else {
+      // Fallback: compute bounds from chipInst bboxes when chip has no
+      // explicit dimensions (e.g. leaf chiplets with only a DEF block).
+      odb::Rect union_bbox;
+      union_bbox.mergeInit();
+      for (odb::dbChipInst* inst : chip->getChipInsts()) {
+        odb::Rect ib = inst->getBBox();
+        if (ib.dx() == 0 || ib.dy() == 0) {
+          odb::dbChip* master = inst->getMasterChip();
+          if (master && master->getBlock()) {
+            ib = master->getBlock()->getBBox()->getBox();
+            inst->getTransform().apply(ib);
+          }
+        }
+        if (ib.dx() > 0 && ib.dy() > 0) {
+          union_bbox.merge(ib);
+        }
+      }
+      if (!union_bbox.isInverted()) {
+        bounds = union_bbox;
+      }
+    }
   }
   return bounds;
 }
@@ -539,13 +575,21 @@ std::vector<std::string> TileGenerator::getLayers() const
   std::vector<std::string> layers;
   odb::dbTech* tech = db_->getTech();
   if (!tech) {
+    if (getChip() && !getChip()->getChipInsts().empty()) {
+      layers.push_back("Chiplets");
+    }
     return layers;
   }
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     if (layer->getRoutingLevel() > 0
-        || layer->getType() == odb::dbTechLayerType::CUT) {
+        || layer->getType() == odb::dbTechLayerType::CUT
+        || layer->getType() == odb::dbTechLayerType::MASTERSLICE
+        || layer->getType() == odb::dbTechLayerType::OVERLAP) {
       layers.push_back(layer->getName());
     }
+  }
+  if (getChip() && !getChip()->getChipInsts().empty()) {
+    layers.push_back("Chiplets");
   }
   return layers;
 }
@@ -648,7 +692,9 @@ std::vector<SelectionResult> TileGenerator::selectAt(
   odb::dbTech* tech = db_->getTech();
   for (odb::dbTechLayer* layer : tech->getLayers()) {
     if (layer->getRoutingLevel() <= 0
-        && layer->getType() != odb::dbTechLayerType::CUT) {
+        && layer->getType() != odb::dbTechLayerType::CUT
+        && layer->getType() != odb::dbTechLayerType::MASTERSLICE
+        && layer->getType() != odb::dbTechLayerType::OVERLAP) {
       continue;
     }
     if (!visible_layers.empty() && !visible_layers.contains(layer->getName())) {
@@ -785,11 +831,59 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image_buffer(buffer_size, 0);
 
-  // No design loaded — return blank tile.
+  // Draw chiplets if requested
+  if (layer == "Chiplets" && getChip()) {
+    const double num_tiles_at_zoom = static_cast<double>(1LL << z);
+    if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
+      int flipped_y = num_tiles_at_zoom - 1 - y;
+      const odb::Rect full_bounds = getBounds();
+      const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+      const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+      const int dbu_y_min = full_bounds.yMin() + flipped_y * tile_dbu_size;
+      const int dbu_x_max = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+      const int dbu_y_max = full_bounds.yMin() + std::ceil((flipped_y + 1) * tile_dbu_size);
+      const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
+      const double scale = kTileSizeInPixel / tile_dbu_size;
+
+      for (odb::dbChipInst* inst : getChip()->getChipInsts()) {
+        odb::Rect inst_bbox = inst->getBBox();
+        // Fallback: if master chip has no explicit dimensions but has a block
+        if (inst_bbox.dx() == 0 || inst_bbox.dy() == 0) {
+          odb::dbChip* master = inst->getMasterChip();
+          if (master && master->getBlock()) {
+            inst_bbox = master->getBlock()->getBBox()->getBox();
+            inst->getTransform().apply(inst_bbox);
+          }
+        }
+        if (inst_bbox.dx() == 0 || inst_bbox.dy() == 0) {
+          continue;
+        }
+        if (inst_bbox.overlaps(dbu_tile)) {
+          const odb::Rect overlap = inst_bbox.intersect(dbu_tile);
+          const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+          Color chiplet_color{.r = 100, .g = 150, .b = 200, .a = 150};
+          drawFilledRect(image_buffer, draw, chiplet_color);
+          if (draw.xMin() >= 0 && draw.xMin() < kTileSizeInPixel) {
+            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMin(), draw.xMin() + 1, draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+          }
+          if (draw.xMax() >= 0 && draw.xMax() < kTileSizeInPixel) {
+            drawFilledRect(image_buffer, odb::Rect(draw.xMax() - 1, draw.yMin(), draw.xMax(), draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+          }
+          if (draw.yMin() >= 0 && draw.yMin() < kTileSizeInPixel) {
+            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMin(), draw.xMax(), draw.yMin() + 1), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+          }
+          if (draw.yMax() >= 0 && draw.yMax() < kTileSizeInPixel) {
+            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMax() - 1, draw.xMax(), draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+          }
+        }
+      }
+    }
+    return image_buffer;
+  }
+
+  // No block loaded — return blank tile
   if (!getBlock()) {
-    std::vector<unsigned char> png_data;
-    lodepng::encode(png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
-    return png_data;
+    return image_buffer;
   }
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
@@ -824,7 +918,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
-  const double num_tiles_at_zoom = pow(2, z);
+  const double num_tiles_at_zoom = static_cast<double>(1LL << z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
     y = num_tiles_at_zoom - 1 - y;  // flip
     const odb::Rect full_bounds = getBounds();
@@ -1581,7 +1675,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
   std::vector<unsigned char> image_buffer(buffer_size, 0);
 
-  const double num_tiles_at_zoom = pow(2, z);
+  const double num_tiles_at_zoom = static_cast<double>(1LL << z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
     return {};
   }
@@ -1748,7 +1842,7 @@ void TileGenerator::saveImage(const std::string& filename,
   const int z = std::max(0,
                          static_cast<int>(std::ceil(
                              std::log2(scale * max_dxdy / kTileSizeInPixel))));
-  const int num_tiles = static_cast<int>(std::pow(2, z));
+  const int num_tiles = static_cast<int>(1LL << z);
   const double tile_dbu_size = max_dxdy / num_tiles;
   const double tile_scale = kTileSizeInPixel / tile_dbu_size;
 
@@ -2125,21 +2219,31 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
     const odb::Rect overlap = cr.rect.intersect(dbu_tile);
     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-    // Draw a fixed-width centerline through the shape (cosmetic pen style,
-    // matching the GUI's 2px cosmetic pen approach from dbDescriptors.cpp).
-    // This ensures consistent visibility regardless of zoom level.
-    const int cx = (draw.xMin() + draw.xMax()) / 2;
-    const int cy = (draw.yMin() + draw.yMax()) / 2;
-
-    Color line_color = cr.color;
-    line_color.a = 255;
-
-    if (draw.dx() >= draw.dy()) {
-      // Horizontal shape: draw horizontal centerline
-      drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+    if (cr.is_drc) {
+      // Draw a hatch pattern (diagonal) for DRC
+      for (int x = draw.xMin(); x < draw.xMax(); x++) {
+        for (int y = draw.yMin(); y < draw.yMax(); y++) {
+          // Hatch condition: x + y is a multiple of some spacing
+          if ((x + y) % 6 < 2) {
+            blendPixel(image, x, 255 - y, cr.color);
+          }
+        }
+      }
     } else {
-      // Vertical shape: draw vertical centerline
-      drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      // Draw a fixed-width centerline through the shape
+      const int cx = (draw.xMin() + draw.xMax()) / 2;
+      const int cy = (draw.yMin() + draw.yMax()) / 2;
+
+      Color line_color = cr.color;
+      line_color.a = 255;
+
+      if (draw.dx() >= draw.dy()) {
+        // Horizontal shape: draw horizontal centerline
+        drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+      } else {
+        // Vertical shape: draw vertical centerline
+        drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      }
     }
   }
 }

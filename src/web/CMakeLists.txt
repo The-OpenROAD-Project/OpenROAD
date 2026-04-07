@@ -16,6 +16,7 @@ target_sources(web
   PRIVATE
     src/clock_tree_report.cpp
     src/color.cpp
+    src/drc_report.cpp
     src/hierarchy_report.cpp
     src/request_handler.cpp
     src/search.cpp

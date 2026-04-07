@@ -139,7 +139,6 @@ OpenRoad::~OpenRoad()
   delete finale_;
   delete ram_gen_;
   delete antenna_checker_;
-  odb::dbDatabase::destroy(db_);
   delete partitionMgr_;
   delete pdngen_;
   delete icewall_;
@@ -148,6 +147,7 @@ OpenRoad::~OpenRoad()
   delete dft_;
   delete estimate_parasitics_;
   delete web_server_;
+  odb::dbDatabase::destroy(db_);
   delete logger_;
   delete verilog_reader_;
   delete callback_handler_;

@@ -31,6 +31,15 @@ export class TclCompleter {
         this._input.addEventListener('blur', this._onBlurBound);
     }
 
+    destroy() {
+        this._input.removeEventListener('input', this._onInputBound);
+        this._input.removeEventListener('blur', this._onBlurBound);
+        clearTimeout(this._debounceTimer);
+        if (this._popup && this._popup.parentElement) {
+            this._popup.remove();
+        }
+    }
+
     _createPopup() {
         this._popup = document.createElement('div');
         this._popup.className = 'tcl-complete-popup';
@@ -192,7 +201,7 @@ export class TclCompleter {
                     if (fullData.mode === 'commands') {
                         this._commandCache = fullData.completions;
                     }
-                }).catch(() => {});
+                }).catch(err => console.warn('Command cache prefetch failed:', err));
             }
             this._showPopup(
                 data.completions,
@@ -221,7 +230,7 @@ export class TclCompleter {
         this._replaceStart = replaceStart;
         this._replaceEnd = replaceEnd;
 
-        this._popup.innerHTML = '';
+        this._popup.replaceChildren();
         const shown = completions.slice(0, kMaxVisible);
         shown.forEach((text, i) => {
             const item = document.createElement('div');

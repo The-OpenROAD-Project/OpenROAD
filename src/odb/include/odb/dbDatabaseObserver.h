@@ -30,6 +30,7 @@ class dbDatabaseObserver
   virtual void postReadFloorplanDef(odb::dbBlock*) {}
   virtual void postReadDb(odb::dbDatabase* db) = 0;
   virtual void postRead3Dbx(odb::dbChip* chip) = 0;
+  virtual void postMarkersChanged() {}
 
   void setUnregisterObserver(std::function<void()> unregister_observer)
   {

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <any>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -24,12 +25,15 @@
 
 #include "clock_tree_report.h"
 #include "color.h"
+#include "drc_report.h"
+#include "odb/3dblox.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
@@ -58,6 +62,10 @@ class ShapeCollector : public gui::Painter
   {
     polys.push_back(polygon);
   }
+  void drawPolygon(const std::vector<odb::Point>& points) override
+  {
+    polys.emplace_back(points);
+  }
   void drawOctagon(const odb::Oct& oct) override { polys.emplace_back(oct); }
 
   // No-ops
@@ -73,7 +81,6 @@ class ShapeCollector : public gui::Painter
   void drawLine(const odb::Point&, const odb::Point&) override {}
   void drawCircle(int, int, int) override {}
   void drawX(int, int, int) override {}
-  void drawPolygon(const std::vector<odb::Point>&) override {}
   void drawString(int, int, Anchor, const std::string&, bool) override {}
   odb::Rect stringBoundaries(int, int, Anchor, const std::string&) override
   {
@@ -184,11 +191,12 @@ int extract_int(const std::string& json, const std::string& key)
   while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
     pos++;
   }
-  try {
-    return std::stoi(json.substr(pos));
-  } catch (...) {
-    return 0;
+  int result = 0;
+  auto [p, ec] = std::from_chars(json.data() + pos, json.data() + json.size(), result);
+  if (ec == std::errc()) {
+    return result;
   }
+  return 0;
 }
 
 int extract_int_or(const std::string& json,
@@ -219,11 +227,13 @@ float extract_float_or(const std::string& json,
   while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
     pos++;
   }
-  try {
-    return std::stof(json.substr(pos));
-  } catch (...) {
-    return default_val;
+  float result = default_val;
+  auto [p, ec] = std::from_chars(
+      json.data() + pos, json.data() + json.size(), result);
+  if (ec == std::errc()) {
+    return result;
   }
+  return default_val;
 }
 
 // Store a Selected in the clickables vector and return its index.
@@ -372,7 +382,26 @@ static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
 
 static double extract_double_value(const std::string& json)
 {
-  return extract_float_or(json, "value", 0.0F);
+  const std::string needle = "\"value\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
+    return 0.0;
+  }
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return 0.0;
+  }
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  double result = 0.0;
+  auto [p, ec] = std::from_chars(
+      json.data() + pos, json.data() + json.size(), result);
+  if (ec == std::errc()) {
+    return result;
+  }
+  return 0.0;
 }
 
 static bool extract_bool_value(const std::string& json)
@@ -532,7 +561,10 @@ WebSocketResponse dispatch_request(
   switch (req.type) {
     case WebSocketRequest::BOUNDS: {
       resp.type = 0;
-      const odb::Rect bounds = gen.getBounds();
+      odb::Rect bounds = gen.getBounds();
+      if (!gen.getBlock() && bounds.dx() == 0 && bounds.dy() == 0) {
+        bounds.init(0, 0, 1000, 1000);
+      }
       JsonBuilder builder;
       builder.beginObject();
       builder.beginArray("bounds");
@@ -553,12 +585,42 @@ WebSocketResponse dispatch_request(
       break;
     }
     case WebSocketRequest::TECH: {
+      bool has_block = gen.getBlock() != nullptr;
+      bool has_chip_insts = gen.getChip() != nullptr && !gen.getChip()->getChipInsts().empty();
+      if (!has_block && !has_chip_insts) {
+        resp.type = 2;
+        const std::string err = "No block or chip with instances is loaded.";
+        resp.payload.assign(err.begin(), err.end());
+        break;
+      }
       resp.type = 0;
       JsonBuilder builder;
       builder.beginObject();
       builder.beginArray("layers");
-      for (const auto& name : gen.getLayers()) {
-        builder.value(name);
+      {
+        static const int palette[][3] = {
+            { 70, 130, 210},  // moderate blue
+            {200,  50,  50},  // red
+            { 50, 180,  80},  // green
+            {200, 160,  40},  // amber
+            {160,  60, 200},  // purple
+            { 40, 190, 190},  // teal
+            {220, 120,  50},  // orange
+            {180,  70, 150},  // magenta
+        };
+        static constexpr int palette_size = 8;
+        int idx = 0;
+        for (const auto& name : gen.getLayers()) {
+          builder.beginObject();
+          builder.field("name", name);
+          builder.beginArray("color");
+          builder.value(palette[idx % palette_size][0]);
+          builder.value(palette[idx % palette_size][1]);
+          builder.value(palette[idx % palette_size][2]);
+          builder.endArray();
+          builder.endObject();
+          ++idx;
+        }
       }
       builder.endArray();
       builder.beginArray("sites");
@@ -567,9 +629,8 @@ WebSocketResponse dispatch_request(
       }
       builder.endArray();
       builder.field("has_liberty", gen.hasSta());
-      if (gen.getBlock()) {
-        builder.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
-      }
+      builder.field("has_chip_insts", has_chip_insts);
+      builder.field("dbu_per_micron", gen.getDbuPerMicron());
       builder.endObject();
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
@@ -1203,6 +1264,90 @@ WebSocketResponse SelectHandler::handleSchematicCone(
   return resp;
 }
 
+WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    odb::dbChip* chip = gen_->getChip();
+    if (!chip) {
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.field("info",
+                    "No 3D chip data available. Load a multi-die design to "
+                    "use this view.");
+      builder.endObject();
+      const std::string msg = builder.str();
+      resp.payload.assign(msg.begin(), msg.end());
+      return resp;
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("chiplets");
+
+    auto processInst = [&](auto& self, odb::dbChipInst* inst, int offset_x, int offset_y, int offset_z, const std::string& parent_name) -> void {
+      odb::dbChip* master_chip = inst->getMasterChip();
+      if (master_chip && !master_chip->getChipInsts().empty()) {
+        for (odb::dbChipInst* child : master_chip->getChipInsts()) {
+          odb::Point3D loc = inst->getLoc();
+          self(self, child, offset_x + loc.x(), offset_y + loc.y(), offset_z + loc.z(), parent_name + std::string(inst->getName()) + "/");
+        }
+      } else {
+        builder.beginObject();
+        builder.field("name", parent_name + std::string(inst->getName()));
+
+        odb::Point3D loc = inst->getLoc();
+        builder.field("x", offset_x + loc.x());
+        builder.field("y", offset_y + loc.y());
+        builder.field("z", offset_z + loc.z());
+
+        int w = 0;
+        int h = 0;
+        int thickness = 0;
+        if (master_chip) {
+          w = master_chip->getWidth();
+          h = master_chip->getHeight();
+          thickness = master_chip->getThickness();
+          // Fallback: use block bbox if chip has no explicit dimensions
+          if ((w == 0 || h == 0) && master_chip->getBlock()) {
+            odb::Rect bbox = master_chip->getBlock()->getBBox()->getBox();
+            if (w == 0) {
+              w = bbox.dx();
+            }
+            if (h == 0) {
+              h = bbox.dy();
+            }
+          }
+        }
+        builder.field("width", w > 0 ? w : 100000);
+        builder.field("height", h > 0 ? h : 100000);
+        builder.field("thickness", thickness > 0 ? thickness : 10000);
+        builder.endObject();
+      }
+    };
+
+    for (odb::dbChipInst* inst : chip->getChipInsts()) {
+      processInst(processInst, inst, 0, 0, 0, "");
+    }
+    builder.endArray();
+    builder.endObject();
+
+    const std::string json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("error", e.what());
+    builder.endObject();
+    const std::string err = builder.str();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
 WebSocketResponse SelectHandler::handleSchematicFull(
     const WebSocketRequest& req)
 {
@@ -1383,7 +1528,11 @@ WebSocketResponse TclHandler::handleTclEval(const WebSocketRequest& req)
   resp.id = req.id;
   resp.type = 0;
   try {
-    auto result = tcl_eval_->eval(req.tcl_cmd);
+    std::string cmd = req.tcl_cmd;
+    if (cmd.find("read_3dbx") != std::string::npos) {
+      cmd += "\ncheck_3dbx";
+    }
+    auto result = tcl_eval_->eval(cmd);
     JsonBuilder builder;
     builder.beginObject();
     builder.field("output", result.output);
@@ -1931,6 +2080,13 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     lines = state.timing_lines;
   }
 
+  // Merge DRC violation highlights
+  {
+    std::lock_guard<std::mutex> lock(state.drc_mutex);
+    colored.insert(
+        colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+  }
+
   // Snapshot module colors for _modules layer
   std::map<uint32_t, Color> mod_colors;
   {
@@ -2034,8 +2190,8 @@ WebSocketResponse TileHandler::handleSetModuleColors(
       if (colon == std::string::npos) {
         break;
       }
-      const uint32_t mod_id
-          = static_cast<uint32_t>(std::stoul(data.substr(pos, colon - pos)));
+      uint32_t mod_id = 0;
+      std::from_chars(data.data() + pos, data.data() + colon, mod_id);
       pos = colon + 1;
 
       auto next_num = [&]() -> int {
@@ -2043,7 +2199,8 @@ WebSocketResponse TileHandler::handleSetModuleColors(
         if (end == std::string::npos) {
           end = data.size();
         }
-        const int val = std::stoi(data.substr(pos, end - pos));
+        int val = 0;
+        std::from_chars(data.data() + pos, data.data() + end, val);
         pos = end + 1;
         return val;
       };
@@ -2073,6 +2230,13 @@ WebSocketResponse TileHandler::handleHeatMaps(const WebSocketRequest& req,
   WebSocketResponse resp;
   resp.id = req.id;
   resp.type = 0;
+
+  if (gen_ && !gen_->getBlock()) {
+    const std::string json = R"({"active":"","heatmaps":[]})";
+    resp.payload.assign(json.begin(), json.end());
+    return resp;
+  }
+
   try {
     const std::string json = buildHeatMapsPayloadLocked(state);
     resp.payload.assign(json.begin(), json.end());
@@ -2189,6 +2353,305 @@ WebSocketResponse TileHandler::handleHeatMapTile(const WebSocketRequest& req,
   } catch (const std::exception& e) {
     resp.type = 2;
     const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+DRCHandler::DRCHandler(std::shared_ptr<TileGenerator> gen,
+                       std::shared_ptr<DRCReport> drc_report)
+    : gen_(std::move(gen)), drc_report_(std::move(drc_report))
+{
+}
+
+WebSocketResponse DRCHandler::handleDRCReport(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    const DRCReportResult result = drc_report_->getReport();
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("total", result.total_count);
+    builder.beginArray("categories");
+    for (const auto& cat : result.categories) {
+      builder.beginObject();
+      builder.field("name", cat.name);
+      builder.field("count", cat.count);
+      builder.beginArray("violations");
+      for (const auto& v : cat.violations) {
+        builder.beginObject();
+        builder.field("index", v.index);
+        builder.field("rule", v.rule);
+        builder.field("layer", v.layer);
+        builder.field("comment", v.comment);
+        builder.field("is_visited", v.is_visited);
+        builder.beginArray("bbox");
+        builder.value(v.bbox.xMin());
+        builder.value(v.bbox.yMin());
+        builder.value(v.bbox.xMax());
+        builder.value(v.bbox.yMax());
+        builder.endArray();
+        builder.beginArray("rects");
+        for (const auto& rect : v.rects) {
+          builder.beginArray();
+          builder.value(rect.xMin());
+          builder.value(rect.yMin());
+          builder.value(rect.xMax());
+          builder.value(rect.yMax());
+          builder.endArray();
+        }
+        for (const auto& poly : v.polys) {
+          const odb::Rect encl = poly.getEnclosingRect();
+          builder.beginArray();
+          builder.value(encl.xMin());
+          builder.value(encl.yMin());
+          builder.value(encl.xMax());
+          builder.value(encl.yMax());
+          builder.endArray();
+        }
+        for (const auto& cuboid : v.cuboids) {
+          builder.beginArray();
+          builder.value(cuboid.xMin());
+          builder.value(cuboid.yMin());
+          builder.value(cuboid.xMax());
+          builder.value(cuboid.yMax());
+          builder.value(cuboid.zMin());
+          builder.value(cuboid.zMax());
+          builder.endArray();
+        }
+        builder.endArray();
+        builder.endObject();
+      }
+      builder.endArray();
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    std::lock_guard<std::mutex> lock(state.drc_mutex);
+    state.drc_rects.clear();
+
+    if (req.drc_violation_index >= 0) {
+      const DRCReportResult result = drc_report_->getReport();
+      // Find violation by flat index across all categories
+      const DRCViolation* found = nullptr;
+      for (const auto& cat : result.categories) {
+        for (const auto& v : cat.violations) {
+          if (v.index == req.drc_violation_index) {
+            found = &v;
+            break;
+          }
+        }
+        if (found) {
+          break;
+        }
+      }
+      if (found) {
+        const Color red{255, 50, 50, 200};
+        for (const auto& rect : found->rects) {
+          state.drc_rects.push_back({rect, red, found->layer});
+        }
+        for (const auto& poly : found->polys) {
+          state.drc_rects.push_back(
+              {poly.getEnclosingRect(), red, found->layer});
+        }
+        for (const auto& cuboid : found->cuboids) {
+          state.drc_rects.push_back(
+              {cuboid.getEnclosingRect(), red, found->layer});
+        }
+      }
+    }
+
+    const std::string json = R"({"ok": true})";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCSetVisible(const WebSocketRequest& req,
+                                                  SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    std::lock_guard<std::mutex> lock(state.drc_mutex);
+    state.drc_rects.clear();
+
+    if (!req.drc_visible_indexes.empty()) {
+      const DRCReportResult result = drc_report_->getReport();
+      const Color red{255, 50, 50, 200};
+      
+      for (const auto& cat : result.categories) {
+        for (const auto& v : cat.violations) {
+          if (req.drc_visible_indexes.count(v.index) > 0) {
+            for (const auto& rect : v.rects) {
+              state.drc_rects.push_back({rect, red, v.layer, true}); // true for is_drc if we need to differentiate later
+            }
+            for (const auto& poly : v.polys) {
+              state.drc_rects.push_back(
+                  {poly.getEnclosingRect(), red, v.layer, true});
+            }
+          }
+        }
+      }
+    }
+
+    const std::string json = R"({"ok": true})";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCMarkVisited(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    if (req.drc_violation_index >= 0) {
+      odb::dbChip* chip = gen_->getChip();
+      if (chip) {
+        int index = 0;
+        odb::dbMarker* found_marker = nullptr;
+        // Find marker by flat index (this matches drc_report.cpp logic)
+        std::function<void(odb::dbMarkerCategory*)> search = [&](odb::dbMarkerCategory* cat) {
+          for (odb::dbMarker* marker : cat->getMarkers()) {
+            if (index == req.drc_violation_index) {
+              found_marker = marker;
+              return;
+            }
+            index++;
+          }
+          for (odb::dbMarkerCategory* sub : cat->getMarkerCategories()) {
+            if (found_marker) return;
+            search(sub);
+          }
+        };
+        for (odb::dbMarkerCategory* cat : chip->getMarkerCategories()) {
+          if (found_marker) break;
+          search(cat);
+        }
+        
+        if (found_marker) {
+          found_marker->setVisited(true);
+        }
+      }
+    }
+    const std::string json = R"({"ok": true})";
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("server error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCLoad(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    odb::dbChip* chip = gen_->getChip();
+    if (!chip) {
+      throw std::runtime_error("no design loaded");
+    }
+
+    const std::string& path = req.drc_file_path;
+    if (path.empty()) {
+      throw std::runtime_error("no file path specified");
+    }
+
+    odb::dbMarkerCategory* cat = nullptr;
+    const std::string ext = path.size() >= 5
+        ? path.substr(path.size() - std::min(path.size(), size_t(5)))
+        : path;
+
+    // Determine format by extension (.json → JSON, else TritonRoute report)
+    if (path.size() >= 5
+        && path.compare(path.size() - 5, 5, ".json") == 0) {
+      auto cats = odb::dbMarkerCategory::fromJSON(chip, path);
+      if (!cats.empty()) {
+        cat = *cats.begin();
+      }
+    } else {
+      cat = odb::dbMarkerCategory::fromTR(chip, "DRC", path);
+    }
+
+    if (!cat) {
+      throw std::runtime_error("failed to load DRC report: " + path);
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("ok", true);
+    builder.field("category", cat->getName());
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("drc_load error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRC3DBloxCheck(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+  try {
+    odb::dbChip* chip = gen_->getChip();
+    if (!chip) {
+      throw std::runtime_error("no design loaded");
+    }
+    odb::ThreeDBlox checker(gen_->getLogger(), gen_->getDb());
+    checker.check();
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("ok", true);
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    const std::string err = std::string("check_3dblox error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;

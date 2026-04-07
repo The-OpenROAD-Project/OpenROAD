@@ -3,12 +3,14 @@
 
 // WebSocket manager with request/response tracking and auto-reconnect.
 
+const REQUEST_TIMEOUT_MS = 30000;
+
 export class WebSocketManager {
     constructor(url, onStatusChange) {
         this.url = url;
         this.socket = null;
         this.nextId = 1;
-        this.pending = new Map(); // id -> {resolve, reject}
+        this.pending = new Map(); // id -> {resolve, reject, timer}
         this.reconnectDelay = 1000;
         this.readyPromise = null;
         this.readyResolve = null;
@@ -37,7 +39,8 @@ export class WebSocketManager {
 
         this.socket.onclose = () => {
             console.log('WebSocket closed, reconnecting...');
-            for (const [id, handler] of this.pending) {
+            for (const handler of this.pending.values()) {
+                clearTimeout(handler.timer);
                 handler.reject(new Error('WebSocket closed'));
             }
             this.pending.clear();
@@ -70,6 +73,7 @@ export class WebSocketManager {
         if (!handler) {
             return; // stale response (e.g. tile scrolled away)
         }
+        clearTimeout(handler.timer);
         this.pending.delete(id);
         this.onStatusChange();
 
@@ -96,7 +100,12 @@ export class WebSocketManager {
                 reject(new Error('WebSocket not connected'));
                 return;
             }
-            this.pending.set(id, { resolve, reject });
+            const timer = setTimeout(() => {
+                this.pending.delete(id);
+                this.onStatusChange();
+                reject(new Error('Request timed out'));
+            }, REQUEST_TIMEOUT_MS);
+            this.pending.set(id, { resolve, reject, timer });
             this.socket.send(JSON.stringify(msg));
             this.onStatusChange();
         });
@@ -105,6 +114,8 @@ export class WebSocketManager {
     }
 
     cancel(id) {
+        const handler = this.pending.get(id);
+        if (handler) clearTimeout(handler.timer);
         this.pending.delete(id);
         this.onStatusChange();
     }

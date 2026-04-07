@@ -211,6 +211,7 @@ proc read_3dbx { args } {
     utl::error "ORD" 73 "$filename is not readable."
   }
   ord::read_3dbx_cmd $filename
+  check_3dblox
 }
 
 sta::define_cmd_args "read_3dblox_bmap" {filename}

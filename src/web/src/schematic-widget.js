@@ -71,6 +71,16 @@ export class SchematicWidget {
         this._setupPanZoom();
         this._netlistsvgReady = false;
         this.initNetlistSVG();
+
+        if (container && container.on) {
+            container.on('destroy', () => this.destroy());
+        }
+    }
+
+    destroy() {
+        if (this._abortController) {
+            this._abortController.abort();
+        }
     }
 
     // ── Pan / zoom ───────────────────────────────────────────────────────────
@@ -106,19 +116,27 @@ export class SchematicWidget {
             e.preventDefault();
         });
 
+        this._abortController = new AbortController();
+
+        let mouseMovePending = false;
         window.addEventListener('mousemove', (e) => {
             if (!dragging) return;
-            this._panX = startPanX + (e.clientX - startX);
-            this._panY = startPanY + (e.clientY - startY);
-            this._applyTransform();
-        });
+            if (mouseMovePending) return;
+            mouseMovePending = true;
+            requestAnimationFrame(() => {
+                this._panX = startPanX + (e.clientX - startX);
+                this._panY = startPanY + (e.clientY - startY);
+                this._applyTransform();
+                mouseMovePending = false;
+            });
+        }, { signal: this._abortController.signal });
 
         window.addEventListener('mouseup', () => {
             if (dragging) {
                 dragging = false;
                 c.style.cursor = this._selectMode ? 'default' : 'grab';
             }
-        });
+        }, { signal: this._abortController.signal });
     }
 
     _zoomStep(factor) {

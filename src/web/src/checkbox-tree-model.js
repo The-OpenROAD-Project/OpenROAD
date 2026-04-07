@@ -17,17 +17,33 @@ export class CheckboxTreeModel {
     // Build from a declarative spec.
     // Spec: { id, label?, checked?, hasCheckbox?, data?, children?: [...] }
     // Returns the root node.
-    addFromSpec(spec, parent = null) {
-        const node = this._makeNode(spec.id, parent, spec);
+    addFromSpec(spec, parent = null, _visited = new Set()) {
+        if (!spec || typeof spec !== 'object') return null;
+
+        const id = spec.id !== undefined ? spec.id : Symbol('generated-id');
+
+        if (_visited.has(spec) || _visited.has(id)) {
+            console.warn(`Circular reference detected in spec for id: ${id}`);
+            return null;
+        }
+        _visited.add(spec);
+        _visited.add(id);
+
+        const node = this._makeNode(id, parent, spec);
         node.checked = spec.checked !== false;
-        if (spec.children) {
+
+        if (Array.isArray(spec.children)) {
             for (const child of spec.children) {
-                node.children.push(this.addFromSpec(child, node));
+                const childNode = this.addFromSpec(child, node, _visited);
+                if (childNode) {
+                    node.children.push(childNode);
+                }
             }
             if (node.hasCheckbox) {
                 this._computeParent(node);
             }
         }
+
         if (!parent) {
             this.roots.push(node);
         }
@@ -91,6 +107,8 @@ export class CheckboxTreeModel {
     // Bulk check/uncheck.  Single onChange call at the end.
     // idToChecked: object { id: boolean, ... }
     checkSet(idToChecked) {
+        if (!idToChecked || typeof idToChecked !== 'object') return;
+
         for (const [id, checked] of Object.entries(idToChecked)) {
             const node = this._nodeMap.get(id);
             if (!node) continue;

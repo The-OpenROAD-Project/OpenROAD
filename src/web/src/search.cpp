@@ -167,21 +167,6 @@ void Search::inDbBlockSetDieArea(odb::dbBlock* block)
   setTopChip(block->getChip());
 }
 
-void Search::inDbBlockSetCoreArea(odb::dbBlock* block)
-{
-  // emit modified();
-}
-
-void Search::inDbRegionAddBox(odb::dbRegion*, odb::dbBox*)
-{
-  // emit modified();
-}
-
-void Search::inDbRegionDestroy(odb::dbRegion* region)
-{
-  // emit modified();
-}
-
 void Search::inDbRowCreate(odb::dbRow* row)
 {
   clearRows();

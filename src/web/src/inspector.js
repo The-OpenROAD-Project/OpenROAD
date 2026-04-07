@@ -3,7 +3,7 @@
 
 // Inspector panel — property tree, hover highlights, bbox display.
 
-import { dbuToLatLng, dbuRectToBounds } from './coordinates.js';
+import { dbuRectToBounds } from './coordinates.js';
 
 // SVG icons — distinct shapes so they're easy to tell apart at a glance.
 // Zoom to: magnifying glass with "+" (Material "zoom_in")
@@ -57,7 +57,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
     function showLoading() {
         if (!app.inspectorEl) return;
-        app.inspectorEl.innerHTML = '';
+        app.inspectorEl.replaceChildren();
         const loading = document.createElement('div');
         loading.className = 'stub-panel';
         loading.innerHTML =
@@ -120,7 +120,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         clearClientHoverHighlight();
         app.websocketManager.request({ type: 'hover', select_id: -1 })
             .then(() => {})
-            .catch(() => {});
+            .catch(err => console.warn('Failed to clear hover highlight:', err));
     }
 
     function boundsWithMinimumScreenSize(x1, y1, x2, y2) {
@@ -195,7 +195,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     renderHoverRects(data.rects || []);
                     redrawAllLayers();
                 })
-                .catch(() => {});
+                .catch(err => console.warn('Hover highlight request failed:', err));
         });
         el.addEventListener('mouseleave', () => {
             clearHoverHighlight();
@@ -379,7 +379,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
     function updateInspector(data) {
         if (!app.inspectorEl) return;
         lastInspectData = data;
-        app.inspectorEl.innerHTML = '';
+        app.inspectorEl.replaceChildren();
 
         if (!data || !data.properties || data.properties.length === 0) {
             const placeholder = document.createElement('div');

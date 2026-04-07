@@ -8,7 +8,7 @@ import { CheckboxTreeModel } from './checkbox-tree-model.js';
 
 export class VisTree {
     constructor(visibility, onChange) {
-        this.visibility = visibility;
+        this.visibility = visibility || {};
         this.onChange = onChange;
         this.model = new CheckboxTreeModel(() => {
             this._syncAll();
@@ -26,6 +26,8 @@ export class VisTree {
     }
 
     render(container) {
+        if (!container) return;
+        container.replaceChildren();
         for (const r of this.model.roots) container.appendChild(this._dom(r));
         this._syncAll();
     }
@@ -77,7 +79,7 @@ export class VisTree {
             spacer.textContent = '\u25B6';
             label.appendChild(spacer);
             label.appendChild(cb);
-            label.appendChild(document.createTextNode(spec.label));
+            label.appendChild(document.createTextNode(spec.label || 'Unnamed'));
             return label;
         }
 
@@ -91,7 +93,7 @@ export class VisTree {
         arrow.textContent = '▶';
         header.appendChild(arrow);
         header.appendChild(cb);
-        header.appendChild(document.createTextNode(spec.label));
+        header.appendChild(document.createTextNode(spec.label || 'Unnamed'));
         div.appendChild(header);
 
         const kids = document.createElement('div');

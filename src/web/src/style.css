@@ -966,6 +966,126 @@ html, body {
     overflow-wrap: break-word;
 }
 
+/* ─── DRC Viewer ─────────────────────────────────────────────────────── */
+
+.drc-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-size: 13px;
+    font-family: monospace;
+    overflow: hidden;
+}
+
+/* Top bar: [category dropdown]  [Load...] */
+.drc-topbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+}
+
+.drc-category-select {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-input, var(--bg-header));
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    padding: 3px 6px;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.drc-btn {
+    background: var(--border-subtle);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--fg-primary);
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.drc-btn:hover { background: var(--border); color: var(--fg-bright); }
+.drc-btn:disabled { opacity: 0.5; cursor: default; }
+
+.drc-table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 80px;
+}
+
+.drc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed;
+}
+
+/* "Type" column width */
+.drc-table col:first-child { width: 52px; }
+
+.drc-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-context);
+    color: var(--fg-secondary);
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Category header row */
+.drc-table tbody tr.drc-category-row {
+    background: var(--bg-context);
+    cursor: pointer;
+    user-select: none;
+}
+.drc-table tbody tr.drc-category-row td {
+    padding: 4px 8px;
+    color: var(--fg-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.drc-table tbody tr.drc-category-row:hover {
+    background: var(--bg-header);
+}
+.drc-table tbody tr.drc-category-row .drc-category-arrow {
+    color: var(--fg-muted);
+    width: 20px;
+    text-align: center;
+    padding: 4px 2px;
+}
+
+/* Violation rows */
+.drc-table tbody tr.drc-violation-row td {
+    padding: 3px 8px;
+    border-bottom: 1px solid var(--bg-context);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--fg-primary);
+}
+.drc-table tbody tr.drc-violation-row .drc-index-cell {
+    color: var(--fg-muted);
+    text-align: right;
+    padding-right: 12px;
+    font-size: 11px;
+}
+.drc-table tbody tr.drc-violation-row:hover {
+    background: var(--bg-header);
+}
+.drc-table tbody tr.drc-violation-row.selected {
+    background: var(--bg-selected-row);
+}
+
 /* ─── Hierarchy Browser ──────────────────────────────────────────────── */
 
 .hierarchy-widget {

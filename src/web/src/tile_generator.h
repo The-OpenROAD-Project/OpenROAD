@@ -38,6 +38,7 @@ struct ColoredRect
   odb::Rect rect;
   Color color;
   std::string layer;  // empty = draw on all layers
+  bool is_drc = false;
 };
 
 struct FlightLine
@@ -138,6 +139,9 @@ class TileGenerator
 
   bool hasSta() const { return sta_ != nullptr; }
   sta::dbSta* getSta() const { return sta_; }
+  odb::dbDatabase* getDb() const { return db_; }
+  utl::Logger* getLogger() const { return logger_; }
+  int getDbuPerMicron() const;
 
   odb::Rect getBounds() const;
   int getPinMaxSize() const;

@@ -164,6 +164,19 @@ export class ClockTreeWidget {
         this._dragStartTy = 0;
 
         this._build(container);
+
+        if (container && container.on) {
+            container.on('destroy', () => this.destroy());
+        }
+    }
+
+    destroy() {
+        if (this._abortController) {
+            this._abortController.abort();
+        }
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+        }
     }
 
     // ---- DOM construction ----
@@ -250,22 +263,30 @@ export class ClockTreeWidget {
             this._canvas.style.cursor = 'grabbing';
         });
 
+        this._abortController = new AbortController();
+
+        let mouseMovePending = false;
         window.addEventListener('mousemove', (e) => {
-            if (this._dragging) {
-                this._tx = this._dragStartTx + (e.clientX - this._dragStartX);
-                this._ty = this._dragStartTy + (e.clientY - this._dragStartY);
-                this._render();
-            } else {
-                this._handleHover(e);
-            }
-        });
+            if (mouseMovePending) return;
+            mouseMovePending = true;
+            requestAnimationFrame(() => {
+                if (this._dragging) {
+                    this._tx = this._dragStartTx + (e.clientX - this._dragStartX);
+                    this._ty = this._dragStartTy + (e.clientY - this._dragStartY);
+                    this._render();
+                } else {
+                    this._handleHover(e);
+                }
+                mouseMovePending = false;
+            });
+        }, { signal: this._abortController.signal });
 
         window.addEventListener('mouseup', () => {
             if (this._dragging) {
                 this._dragging = false;
                 this._canvas.style.cursor = 'grab';
             }
-        });
+        }, { signal: this._abortController.signal });
 
         this._canvas.addEventListener('click', (e) => this._handleClick(e));
 
@@ -305,7 +326,7 @@ export class ClockTreeWidget {
     }
 
     _buildTabs() {
-        this._tabBar.innerHTML = '';
+        this._tabBar.replaceChildren();
         this._clockData.forEach((clk, idx) => {
             const btn = document.createElement('button');
             btn.className = 'timing-tab' +

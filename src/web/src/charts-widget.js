@@ -213,7 +213,15 @@ export class ChartsWidget {
         this._pathGroupSelect.addEventListener('change', () => this._fetchHistogram());
         this._clockSelect.addEventListener('change', () => this._fetchHistogram());
 
-        this._canvas.addEventListener('mousemove', (e) => this._handleHover(e));
+        let mouseMovePending = false;
+        this._canvas.addEventListener('mousemove', (e) => {
+            if (mouseMovePending) return;
+            mouseMovePending = true;
+            requestAnimationFrame(() => {
+                this._handleHover(e);
+                mouseMovePending = false;
+            });
+        });
         this._canvas.addEventListener('mouseleave', () => {
             this._hoveredBar = null;
             this._tooltip.style.display = 'none';

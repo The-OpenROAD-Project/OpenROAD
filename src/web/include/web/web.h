@@ -12,6 +12,10 @@ namespace sta {
 class dbSta;
 }
 
+namespace odb {
+class dbDatabaseObserver;
+}
+
 namespace web {
 
 struct Color;
@@ -42,12 +46,15 @@ class WebServer
                  double dbu_per_pixel,
                  const std::string& vis_json);
 
+  void reloadDesign();
+
  private:
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   Tcl_Interp* interp_ = nullptr;
   std::shared_ptr<TileGenerator> generator_;
+  std::unique_ptr<odb::dbDatabaseObserver> observer_;
 };
 
 }  // namespace web

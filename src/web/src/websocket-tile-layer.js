@@ -77,17 +77,17 @@ export function createWebSocketTileLayer(visibility) {
                     this._websocketManager.cancel(tile._websocketRequestId);
                 }
 
-                const requestId = this._websocketManager.nextId;
-                tile._websocketRequestId = requestId;
-
-                this._websocketManager.request({
+                const promise = this._websocketManager.request({
                     type: 'tile',
                     layer: this._layerName,
                     z: coords.z,
                     x: coords.x,
                     y: coords.y,
                     ...vf,
-                }).then(blob => {
+                });
+                tile._websocketRequestId = promise.requestId;
+
+                promise.then(blob => {
                     if (tile.src && tile.src.startsWith('blob:')) {
                         URL.revokeObjectURL(tile.src);
                     }
