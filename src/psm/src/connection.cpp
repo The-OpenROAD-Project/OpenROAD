@@ -20,7 +20,7 @@ Connection::Connection(Node* node0, Node* node1) : node0_(node0), node1_(node1)
 
 void Connection::ensureNodeOrder()
 {
-  if (node0_ && !node0_->compare(node1_)) {
+  if (node0_ && node0_->compare(node1_) > 0) {
     std::swap(node0_, node1_);
   }
 }
@@ -82,11 +82,9 @@ bool Connection::compare(const Connection* other) const
     return false;
   }
   if (node0_ != nullptr && other->node0_ != nullptr) {
-    if (node0_->compare(other->node0_)) {
-      return true;
-    }
-    if (other->node0_->compare(node0_)) {
-      return false;
+    const int cmp0 = node0_->compare(other->node0_);
+    if (cmp0 != 0) {
+      return cmp0 < 0;
     }
   }
 
@@ -98,7 +96,8 @@ bool Connection::compare(const Connection* other) const
     return false;
   }
   if (node1_ != nullptr && other->node1_ != nullptr) {
-    return node1_->compare(other->node1_);
+    const int cmp1 = node1_->compare(other->node1_);
+    return cmp1 < 0;
   }
 
   return false;

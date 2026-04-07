@@ -18,47 +18,47 @@ Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
 {
 }
 
-bool Node::compare(const Node* other) const
+int Node::compare(const Node* other) const
 {
   if (other == nullptr) {
-    return true;
+    return 1;
   }
 
   // Compare layer
   const int layer1 = layer_->getNumber();
   const int layer2 = other->layer_->getNumber();
   if (layer1 != layer2) {
-    return layer1 < layer2;
+    return layer1 < layer2 ? -1 : 1;
   }
 
   // Compare x coordinate
   const int x1 = pt_.getX();
   const int x2 = other->pt_.getX();
   if (x1 != x2) {
-    return x1 < x2;
+    return x1 < x2 ? -1 : 1;
   }
 
   // Compare y coordinate
   const int y1 = pt_.getY();
   const int y2 = other->pt_.getY();
   if (y1 != y2) {
-    return y1 < y2;
+    return y1 < y2 ? -1 : 1;
   }
 
   // Compare node type
   const NodeType type1 = getType();
   const NodeType type2 = other->getType();
   if (type1 != type2) {
-    return type1 < type2;
+    return type1 < type2 ? -1 : 1;
   }
 
   // Compare type-specific info
   const int info1 = getTypeCompareInfo();
   const int info2 = other->getTypeCompareInfo();
-  return info1 < info2;
+  return info1 == info2 ? 0 : (info1 < info2 ? -1 : 1);
 }
 
-bool Node::compare(const std::unique_ptr<Node>& other) const
+int Node::compare(const std::unique_ptr<Node>& other) const
 {
   return compare(other.get());
 }

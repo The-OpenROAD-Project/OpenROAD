@@ -43,7 +43,7 @@ class Node
   {
     bool operator()(const Node* lhs, const Node* rhs) const
     {
-      return lhs->compare(rhs);
+      return lhs->compare(rhs) < 0;
     }
   };
 
@@ -52,8 +52,9 @@ class Node
   Node(const odb::Point& pt, odb::dbTechLayer* layer);
   virtual ~Node() = default;
 
-  bool compare(const Node* other) const;
-  bool compare(const std::unique_ptr<Node>& other) const;
+  // Returns -1 if this < other, 0 if equal, +1 if this > other
+  int compare(const Node* other) const;
+  int compare(const std::unique_ptr<Node>& other) const;
 
   const odb::Point& getPoint() const { return pt_; };
   odb::dbTechLayer* getLayer() const { return layer_; };

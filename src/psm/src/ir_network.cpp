@@ -804,7 +804,7 @@ void IRNetwork::sortNodes()
 
   for (auto& [layer, nodes] : nodes_) {
     std::ranges::stable_sort(nodes, [](const auto& lhs, const auto& rhs) {
-      return lhs->compare(rhs);
+      return lhs->compare(rhs) < 0;
     });
   }
 }
@@ -813,10 +813,9 @@ void IRNetwork::sortConnections()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Sorting connections: {}");
-  std::ranges::stable_sort(
-      connections_,
-
-      [](const auto& lhs, const auto& rhs) { return lhs->compare(rhs); });
+  std::ranges::stable_sort(connections_, [](const auto& lhs, const auto& rhs) {
+    return lhs->compare(rhs);
+  });
 }
 
 int IRNetwork::getEffectiveNumberOfCuts(const odb::dbShape& shape) const
