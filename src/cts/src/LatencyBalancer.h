@@ -47,8 +47,8 @@ struct GraphNode
 };
 
 struct DPResult {
-  std::vector<int> elements;  // dp_elements
-  std::vector<int64_t> values;    // dp
+  std::vector<std::string> buffers;  // selected buffers, left → right
+  int64_t achievedDelay = 0;
 };
 
 class LatencyBalancer
@@ -95,9 +95,8 @@ class LatencyBalancer
                                float& sumArrivals,
                                unsigned& numSinks);
 
-  DPResult solveDP(int64_t target, const std::vector<int>& bufDelays, int64_t wireDly, const std::vector<odb::dbITerm*>& sinks, const std::vector<std::string>& dlyBuffers, double extraOutCap, double loadPinsHwpl);
-  static int backtrackCount(const DPResult& dp, const std::vector<int>& bufDelays, int64_t target);
-  static std::vector<std::string> backtrackNames(const DPResult& dp, const std::vector<int>& bufDelays, const std::vector<std::string>& dlyBuffers, int64_t target);
+  static int backtrackCount(const std::vector<int>& dp_elements, const std::vector<int>& bufDelays, int64_t target);                      
+  DPResult solveDP(int64_t target, int64_t wireDly, const std::vector<odb::dbITerm*>& sinks, const std::vector<std::string>& dlyBuffers, double extraOutCap, double loadPinsHwpl);
   std::vector<std::string> computeNumberOfDelayBuffers(
       double delayNeeded,
       int srcX,
@@ -130,6 +129,7 @@ class LatencyBalancer
   float bufferDelay_;
   double capPerDBU_;
   double resPerDBU_;
+  double dpUnit_ = std::pow(10, 14); //fento seconds
   float worseDelay_;
   int delayBufIndex_{0};
   std::vector<int> buffersDelay_;
