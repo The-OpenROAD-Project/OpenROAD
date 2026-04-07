@@ -20,7 +20,5 @@ Total Placement Failures:          3
 [INFO DPL-0035]  f2/_289_
 [INFO DPL-0035]  f2/_293_
 [ERROR DPL-0036] Detailed placement failed inside DPL.
-Differences found at line 36.
-    - f0/_283_ INV_X1 + PLACED ( 31420 28000 ) FS ;
-    - f0/_283_ INV_X1 + PLACED ( 33320 28000 ) FS ;
+No differences found.
 No differences found.

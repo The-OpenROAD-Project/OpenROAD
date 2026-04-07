@@ -23,6 +23,4 @@ DPL-0036
  _277_
 [ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
-Differences found at line 30.
-    - _277_ BUF_X4 + PLACED ( 31230 28000 ) N ;
-    - _277_ BUF_X4 + PLACED ( 31040 28000 ) N ;
+No differences found.
