@@ -709,9 +709,9 @@ std::set<Node*> IRNetwork::getSharedShapeNodes() const
     const auto layer_shapes = getShapeTree(layer);
 
     for (const auto& node : nodes) {
-      const Point pt(node->getPoint().x(), node->getPoint().y());
       const auto shapes = std::distance(
-          layer_shapes.qbegin(boost::geometry::index::intersects(pt)),
+          layer_shapes.qbegin(
+              boost::geometry::index::intersects(node->getPoint())),
           layer_shapes.qend());
       if (shapes > 1) {
         shared_nodes.insert(node.get());
