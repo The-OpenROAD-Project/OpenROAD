@@ -19,25 +19,20 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: |
             Welcome to OpenROAD! Thanks for opening your first issue.
-
             To get started:
-            - QuickStart Guide: https://openroad.readthedocs.io/en/latest/main/README.html
             - Build Instructions: https://openroad.readthedocs.io/en/latest/contrib/BuildWithCMake.html
-            - Join our Discord: https://discord.gg/x8Wz6kM4Qe
+            - Contribution Guide: https://openroad.readthedocs.io/en/latest/contrib/contributing.html
 
             Please search existing issues before submitting to avoid duplicates.
             A maintainer will get back to you soon!
           pr-message: |
             Welcome to OpenROAD! Thanks for opening your first PR.
-
             Before we review:
             - Contribution Guide: https://openroad.readthedocs.io/en/latest/contrib/contributing.html
             - Build Instructions: https://openroad.readthedocs.io/en/latest/contrib/BuildWithCMake.html
-            - Join our Discord: https://discord.gg/x8Wz6kM4Qe
 
             Please ensure:
             - CI passes
             - Code is properly formatted
             - Tests are included where applicable
-
             A maintainer will review shortly!
