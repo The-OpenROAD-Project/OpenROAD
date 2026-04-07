@@ -28,4 +28,4 @@ diff_files make_8x8_mux2.lefok $lef_file
 set def_file [make_result_file make_8x8_mux2.def]
 write_def $def_file
 diff_files make_8x8_mux2.defok $def_file
-diff_files make_8x8_mux2_behavioral.vok $behavioral_file
+diff_files make_8x8_behavioral.vok $behavioral_file

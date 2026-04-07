@@ -20,7 +20,7 @@ generate_ram \
   -ground_pin VGND \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 10} \
-  -hor_layer {met3 0.48 7} \
+  -hor_layer {met3 0.48 8} \
   -filler_cells {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
     sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8} \
   -tapcell sky130_fd_sc_hd__tap_1 \
@@ -35,4 +35,4 @@ set def_file [make_result_file make_8x8_mux4.def]
 write_def $def_file
 diff_files make_8x8_mux4.defok $def_file
 
-diff_files make_8x8_mux4_behavioral.vok $behavioral_file
+diff_files make_8x8_behavioral.vok $behavioral_file
