@@ -33,6 +33,7 @@ or_integration_tests(
     fillers9_verbose
     fillers10
     fillers11
+    fillers12
     fragmented_row01
     fragmented_row02
     fragmented_row03

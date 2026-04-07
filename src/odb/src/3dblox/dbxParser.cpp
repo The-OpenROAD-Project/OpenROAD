@@ -63,6 +63,9 @@ void DbxParser::parseYamlContent(DbxData& data, const std::string& content)
     if (root["Connection"]) {
       parseConnections(data.connections, root["Connection"]);
     }
+    if (root["Path"]) {
+      parsePaths(data.path_assertions, root["Path"]);
+    }
 
   } catch (const YAML::Exception& e) {
     logError("DBX YAML parsing error: " + std::string(e.what()));
@@ -230,6 +233,67 @@ void DbxParser::parseConnection(Connection& connection,
 
   if (connection_node["thickness"]) {
     extractValue(connection_node, "thickness", connection.thickness);
+  }
+}
+
+void DbxParser::parsePaths(std::map<std::string, PathAssertion>& paths,
+                           const YAML::Node& paths_node)
+{
+  paths.clear();
+  const std::string prefix = "Path";
+  for (const auto& path_pair : paths_node) {
+    PathAssertion path;
+    extractValue(path_pair.first, path.name);
+
+    // Validate name format: must be "PathN" where N is a positive integer.
+    if (path.name.size() <= prefix.size() || !path.name.starts_with(prefix)
+        || path.name.find_first_not_of("0123456789", prefix.size())
+               != std::string::npos
+        || path.name[prefix.size()] == '0') {
+      logError("DBX Path assertion name '" + path.name
+               + "' must follow the format 'PathN' (e.g. Path1, Path2)");
+      continue;
+    }
+
+    const YAML::Node& path_node = path_pair.second;
+    parsePath(path, path_node);
+    paths[path.name] = path;
+  }
+}
+
+void DbxParser::parsePath(PathAssertion& path, const YAML::Node& path_node)
+{
+  if (!path_node.IsSequence()) {
+    logError("DBX Path assertion '" + path.name + "' must be a YAML sequence");
+  }
+
+  const std::string prefix = "NOT ";
+  for (const auto& entry_node : path_node) {
+    std::string raw;
+    extractValue(entry_node, raw);
+
+    raw = trim(raw);
+    if (raw.empty()) {
+      continue;
+    }
+
+    PathAssertionEntry entry;
+    if (raw.substr(0, prefix.size()) == prefix) {
+      entry.negated = true;
+      raw = trim(raw.substr(prefix.size()));
+    }
+
+    if (raw.find(".regions.") == std::string::npos) {
+      logError("DBX Path assertion entry '" + raw + "' in '" + path.name
+               + "' must contain '.regions.' (e.g. HBM_1.regions.r1)");
+    }
+
+    entry.region = raw;
+    path.entries.push_back(entry);
+  }
+
+  if (path.entries.empty()) {
+    logError("DBX Path assertion '" + path.name + "' has no valid entries");
   }
 }
 
