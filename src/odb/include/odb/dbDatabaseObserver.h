@@ -32,7 +32,7 @@ class dbDatabaseObserver
   virtual void postRead3Dbx(odb::dbChip* chip) = 0;
 
   // Called before the database is cleared for a reload
-  virtual void preDbClear(odb::dbDatabase* db) {}
+  virtual void preDbClear(odb::dbDatabase* /*db*/) {}
 
   void setUnregisterObserver(std::function<void()> unregister_observer)
   {
