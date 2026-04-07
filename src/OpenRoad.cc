@@ -566,8 +566,8 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 void OpenRoad::readDb(std::istream& stream)
 {
   if (db_->getChip() && db_->getChip()->getBlock()) {
-    logger_->error(
-        ORD, 47, "You can't load a new db file as the db is already populated");
+    db_->triggerPreDbClear();
+    db_->clear();
   }
 
   stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
