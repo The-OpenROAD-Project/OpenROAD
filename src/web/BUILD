@@ -19,10 +19,10 @@ cc_library(
     srcs = [
         "src/clock_tree_report.cpp",
         "src/clock_tree_report.h",
-        "src/drc_report.cpp",
-        "src/drc_report.h",
         "src/color.cpp",
         "src/color.h",
+        "src/drc_report.cpp",
+        "src/drc_report.h",
         "src/hierarchy_report.cpp",
         "src/hierarchy_report.h",
         "src/json_builder.h",

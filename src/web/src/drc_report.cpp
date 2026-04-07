@@ -4,6 +4,7 @@
 #include "drc_report.h"
 
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -47,7 +48,8 @@ void DRCReport::collectViolations(odb::dbMarkerCategory* category,
     }
 
     // Ensure at least one shape for rendering
-    if (v.rects.empty() && v.polys.empty() && v.cuboids.empty() && !v.bbox.isInverted()) {
+    if (v.rects.empty() && v.polys.empty() && v.cuboids.empty()
+        && !v.bbox.isInverted()) {
       v.rects.push_back(v.bbox);
     }
 

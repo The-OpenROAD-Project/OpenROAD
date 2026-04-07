@@ -576,7 +576,7 @@ std::vector<std::string> TileGenerator::getLayers() const
   odb::dbTech* tech = db_->getTech();
   if (!tech) {
     if (getChip() && !getChip()->getChipInsts().empty()) {
-      layers.push_back("Chiplets");
+      layers.emplace_back("Chiplets");
     }
     return layers;
   }
@@ -589,7 +589,7 @@ std::vector<std::string> TileGenerator::getLayers() const
     }
   }
   if (getChip() && !getChip()->getChipInsts().empty()) {
-    layers.push_back("Chiplets");
+    layers.emplace_back("Chiplets");
   }
   return layers;
 }
@@ -840,8 +840,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
       const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
       const int dbu_y_min = full_bounds.yMin() + flipped_y * tile_dbu_size;
-      const int dbu_x_max = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
-      const int dbu_y_max = full_bounds.yMin() + std::ceil((flipped_y + 1) * tile_dbu_size);
+      const int dbu_x_max
+          = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+      const int dbu_y_max
+          = full_bounds.yMin() + std::ceil((flipped_y + 1) * tile_dbu_size);
       const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
       const double scale = kTileSizeInPixel / tile_dbu_size;
 
@@ -864,16 +866,32 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           Color chiplet_color{.r = 100, .g = 150, .b = 200, .a = 150};
           drawFilledRect(image_buffer, draw, chiplet_color);
           if (draw.xMin() >= 0 && draw.xMin() < kTileSizeInPixel) {
-            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMin(), draw.xMin() + 1, draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+            drawFilledRect(
+                image_buffer,
+                odb::Rect(
+                    draw.xMin(), draw.yMin(), draw.xMin() + 1, draw.yMax()),
+                Color{.r = 50, .g = 100, .b = 150, .a = 255});
           }
           if (draw.xMax() >= 0 && draw.xMax() < kTileSizeInPixel) {
-            drawFilledRect(image_buffer, odb::Rect(draw.xMax() - 1, draw.yMin(), draw.xMax(), draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+            drawFilledRect(
+                image_buffer,
+                odb::Rect(
+                    draw.xMax() - 1, draw.yMin(), draw.xMax(), draw.yMax()),
+                Color{.r = 50, .g = 100, .b = 150, .a = 255});
           }
           if (draw.yMin() >= 0 && draw.yMin() < kTileSizeInPixel) {
-            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMin(), draw.xMax(), draw.yMin() + 1), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+            drawFilledRect(
+                image_buffer,
+                odb::Rect(
+                    draw.xMin(), draw.yMin(), draw.xMax(), draw.yMin() + 1),
+                Color{.r = 50, .g = 100, .b = 150, .a = 255});
           }
           if (draw.yMax() >= 0 && draw.yMax() < kTileSizeInPixel) {
-            drawFilledRect(image_buffer, odb::Rect(draw.xMin(), draw.yMax() - 1, draw.xMax(), draw.yMax()), Color{.r = 50, .g = 100, .b = 150, .a = 255});
+            drawFilledRect(
+                image_buffer,
+                odb::Rect(
+                    draw.xMin(), draw.yMax() - 1, draw.xMax(), draw.yMax()),
+                Color{.r = 50, .g = 100, .b = 150, .a = 255});
           }
         }
       }
@@ -2239,10 +2257,12 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
 
       if (draw.dx() >= draw.dy()) {
         // Horizontal shape: draw horizontal centerline
-        drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+        drawLine(
+            image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
       } else {
         // Vertical shape: draw vertical centerline
-        drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+        drawLine(
+            image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
       }
     }
   }

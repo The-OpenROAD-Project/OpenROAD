@@ -185,6 +185,7 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
         req.drc_visible_indexes.insert(std::stoi(str_index));
       } catch (...) {
         // Skip unparseable indexes; the client may send invalid data.
+        continue;
       }
     }
   } else if (type_str == "drc_mark_visited") {
@@ -256,7 +257,8 @@ static http::response<http::string_body> handle_request(
   res.keep_alive(req.keep_alive());
   res.set(http::field::access_control_allow_origin, "*");
 
-  static const std::regex tile_regex(R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
+  static const std::regex tile_regex(
+      R"(/tile/(\w+)/(\d+)/(-?\d+)/(-?\d+)\.png)");
   std::smatch match_pieces;
   std::string target_path(req.target());
 
@@ -706,32 +708,29 @@ void WebSocketSession::on_read(beast::error_code ec)
     case WebSocketRequest::DRC_REPORT:
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCReport(req));
+                  self->queue_response(self->drc_handler_.handleDRCReport(req));
                 });
       break;
     case WebSocketRequest::DRC_HIGHLIGHT:
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
                   self->queue_response(
-                      self->drc_handler_.handleDRCHighlight(req,
-                                                            self->state_));
+                      self->drc_handler_.handleDRCHighlight(req, self->state_));
                 });
       break;
     case WebSocketRequest::DRC_SET_VISIBLE:
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCSetVisible(req,
-                                                             self->state_));
+                  self->queue_response(self->drc_handler_.handleDRCSetVisible(
+                      req, self->state_));
                 });
       break;
     case WebSocketRequest::DRC_MARK_VISITED:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRCMarkVisited(req));
-                });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->drc_handler_.handleDRCMarkVisited(req));
+          });
       break;
     case WebSocketRequest::DRC_LOAD:
       net::post(websocket_.get_executor(),
@@ -740,11 +739,11 @@ void WebSocketSession::on_read(beast::error_code ec)
                 });
       break;
     case WebSocketRequest::DRC_3DBLOX_CHECK:
-      net::post(websocket_.get_executor(),
-                [self = std::move(self), req = std::move(req)]() {
-                  self->queue_response(
-                      self->drc_handler_.handleDRC3DBloxCheck(req));
-                });
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->drc_handler_.handleDRC3DBloxCheck(req));
+          });
       break;
     default:
       net::post(websocket_.get_executor(),
@@ -818,6 +817,7 @@ void WebSocketSession::broadcast(const std::string& msg)
 class WebDatabaseObserver : public odb::dbDatabaseObserver
 {
   WebServer* server_;
+
  public:
   WebDatabaseObserver(WebServer* server) : server_(server) {}
 
@@ -1181,7 +1181,9 @@ void WebServer::reloadDesign()
   if (generator_) {
     std::thread([generator = generator_]() {
       generator->eagerInit();
-      if (!generator->getBlock() && (!generator->getChip() || generator->getChip()->getChipInsts().empty())) {
+      if (!generator->getBlock()
+          && (!generator->getChip()
+              || generator->getChip()->getChipInsts().empty())) {
         return;
       }
       WebSocketSession::broadcast(R"({"type":"chipLoaded"})");

@@ -150,7 +150,8 @@ class Search : public odb::dbBlockCallBackObj
   // Returns true once shape R-trees are built.
   bool shapesReady() const { return top_block_data_.shapes_init.load(); }
 
-  void setTopBlockReady() {
+  void setTopBlockReady()
+  {
     top_block_data_.shapes_init = true;
     top_block_data_.fills_init = true;
     top_block_data_.insts_init = true;

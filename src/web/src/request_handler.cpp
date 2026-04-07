@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <exception>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -26,12 +27,12 @@
 #include "clock_tree_report.h"
 #include "color.h"
 #include "drc_report.h"
-#include "odb/3dblox.h"
 #include "gui/descriptor_registry.h"
 #include "gui/gui.h"
 #include "gui/heatMap.h"
 #include "hierarchy_report.h"
 #include "json_builder.h"
+#include "odb/3dblox.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/dbTypes.h"
@@ -192,7 +193,8 @@ int extract_int(const std::string& json, const std::string& key)
     pos++;
   }
   int result = 0;
-  auto [p, ec] = std::from_chars(json.data() + pos, json.data() + json.size(), result);
+  auto [p, ec]
+      = std::from_chars(json.data() + pos, json.data() + json.size(), result);
   if (ec == std::errc()) {
     return result;
   }
@@ -228,8 +230,8 @@ float extract_float_or(const std::string& json,
     pos++;
   }
   float result = default_val;
-  auto [p, ec] = std::from_chars(
-      json.data() + pos, json.data() + json.size(), result);
+  auto [p, ec]
+      = std::from_chars(json.data() + pos, json.data() + json.size(), result);
   if (ec == std::errc()) {
     return result;
   }
@@ -396,8 +398,8 @@ static double extract_double_value(const std::string& json)
     pos++;
   }
   double result = 0.0;
-  auto [p, ec] = std::from_chars(
-      json.data() + pos, json.data() + json.size(), result);
+  auto [p, ec]
+      = std::from_chars(json.data() + pos, json.data() + json.size(), result);
   if (ec == std::errc()) {
     return result;
   }
@@ -586,7 +588,8 @@ WebSocketResponse dispatch_request(
     }
     case WebSocketRequest::TECH: {
       bool has_block = gen.getBlock() != nullptr;
-      bool has_chip_insts = gen.getChip() != nullptr && !gen.getChip()->getChipInsts().empty();
+      bool has_chip_insts
+          = gen.getChip() != nullptr && !gen.getChip()->getChipInsts().empty();
       if (!has_block && !has_chip_insts) {
         resp.type = 2;
         const std::string err = "No block or chip with instances is loaded.";
@@ -599,14 +602,14 @@ WebSocketResponse dispatch_request(
       builder.beginArray("layers");
       {
         static const int palette[][3] = {
-            { 70, 130, 210},  // moderate blue
-            {200,  50,  50},  // red
-            { 50, 180,  80},  // green
-            {200, 160,  40},  // amber
-            {160,  60, 200},  // purple
-            { 40, 190, 190},  // teal
-            {220, 120,  50},  // orange
-            {180,  70, 150},  // magenta
+            {70, 130, 210},  // moderate blue
+            {200, 50, 50},   // red
+            {50, 180, 80},   // green
+            {200, 160, 40},  // amber
+            {160, 60, 200},  // purple
+            {40, 190, 190},  // teal
+            {220, 120, 50},  // orange
+            {180, 70, 150},  // magenta
         };
         static constexpr int palette_size = 8;
         int idx = 0;
@@ -1288,12 +1291,22 @@ WebSocketResponse SelectHandler::handleGet3DData(const WebSocketRequest& req)
     builder.beginObject();
     builder.beginArray("chiplets");
 
-    auto processInst = [&](auto& self, odb::dbChipInst* inst, int offset_x, int offset_y, int offset_z, const std::string& parent_name) -> void {
+    auto processInst = [&](auto& self,
+                           odb::dbChipInst* inst,
+                           int offset_x,
+                           int offset_y,
+                           int offset_z,
+                           const std::string& parent_name) -> void {
       odb::dbChip* master_chip = inst->getMasterChip();
       if (master_chip && !master_chip->getChipInsts().empty()) {
         for (odb::dbChipInst* child : master_chip->getChipInsts()) {
           odb::Point3D loc = inst->getLoc();
-          self(self, child, offset_x + loc.x(), offset_y + loc.y(), offset_z + loc.z(), parent_name + std::string(inst->getName()) + "/");
+          self(self,
+               child,
+               offset_x + loc.x(),
+               offset_y + loc.y(),
+               offset_z + loc.z(),
+               parent_name + std::string(inst->getName()) + "/");
         }
       } else {
         builder.beginObject();
@@ -2468,7 +2481,7 @@ WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
         }
       }
       if (found) {
-        const Color red{255, 50, 50, 200};
+        const Color red{.r = 255, .g = 50, .b = 50, .a = 200};
         for (const auto& rect : found->rects) {
           state.drc_rects.push_back({rect, red, found->layer});
         }
@@ -2506,13 +2519,17 @@ WebSocketResponse DRCHandler::handleDRCSetVisible(const WebSocketRequest& req,
 
     if (!req.drc_visible_indexes.empty()) {
       const DRCReportResult result = drc_report_->getReport();
-      const Color red{255, 50, 50, 200};
-      
+      const Color red{.r = 255, .g = 50, .b = 50, .a = 200};
+
       for (const auto& cat : result.categories) {
         for (const auto& v : cat.violations) {
-          if (req.drc_visible_indexes.count(v.index) > 0) {
+          if (req.drc_visible_indexes.contains(v.index)) {
             for (const auto& rect : v.rects) {
-              state.drc_rects.push_back({rect, red, v.layer, true}); // true for is_drc if we need to differentiate later
+              state.drc_rects.push_back(
+                  {rect,
+                   red,
+                   v.layer,
+                   true});  // true for is_drc if we need to differentiate later
             }
             for (const auto& poly : v.polys) {
               state.drc_rects.push_back(
@@ -2546,24 +2563,29 @@ WebSocketResponse DRCHandler::handleDRCMarkVisited(const WebSocketRequest& req)
         int index = 0;
         odb::dbMarker* found_marker = nullptr;
         // Find marker by flat index (this matches drc_report.cpp logic)
-        std::function<void(odb::dbMarkerCategory*)> search = [&](odb::dbMarkerCategory* cat) {
-          for (odb::dbMarker* marker : cat->getMarkers()) {
-            if (index == req.drc_violation_index) {
-              found_marker = marker;
-              return;
-            }
-            index++;
-          }
-          for (odb::dbMarkerCategory* sub : cat->getMarkerCategories()) {
-            if (found_marker) return;
-            search(sub);
-          }
-        };
+        std::function<void(odb::dbMarkerCategory*)> search
+            = [&](odb::dbMarkerCategory* cat) {
+                for (odb::dbMarker* marker : cat->getMarkers()) {
+                  if (index == req.drc_violation_index) {
+                    found_marker = marker;
+                    return;
+                  }
+                  index++;
+                }
+                for (odb::dbMarkerCategory* sub : cat->getMarkerCategories()) {
+                  if (found_marker) {
+                    return;
+                  }
+                  search(sub);
+                }
+              };
         for (odb::dbMarkerCategory* cat : chip->getMarkerCategories()) {
-          if (found_marker) break;
+          if (found_marker) {
+            break;
+          }
           search(cat);
         }
-        
+
         if (found_marker) {
           found_marker->setVisited(true);
         }
@@ -2596,13 +2618,9 @@ WebSocketResponse DRCHandler::handleDRCLoad(const WebSocketRequest& req)
     }
 
     odb::dbMarkerCategory* cat = nullptr;
-    const std::string ext = path.size() >= 5
-        ? path.substr(path.size() - std::min(path.size(), size_t(5)))
-        : path;
 
     // Determine format by extension (.json → JSON, else TritonRoute report)
-    if (path.size() >= 5
-        && path.compare(path.size() - 5, 5, ".json") == 0) {
+    if (path.size() >= 5 && path.compare(path.size() - 5, 5, ".json") == 0) {
       auto cats = odb::dbMarkerCategory::fromJSON(chip, path);
       if (!cats.empty()) {
         cat = *cats.begin();

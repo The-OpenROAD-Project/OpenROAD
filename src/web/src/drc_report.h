@@ -18,15 +18,15 @@ class TileGenerator;
 
 struct DRCViolation
 {
-  int index = 0;        // flat global index (for highlight lookup)
-  std::string rule;     // sub-category / marker rule name
-  std::string layer;    // tech layer name (empty if none)
-  odb::Rect bbox;       // bounding box in DBU (for zoom)
+  int index = 0;      // flat global index (for highlight lookup)
+  std::string rule;   // sub-category / marker rule name
+  std::string layer;  // tech layer name (empty if none)
+  odb::Rect bbox;     // bounding box in DBU (for zoom)
   std::string comment;
   bool is_visited = false;
-  std::vector<odb::Rect> rects;     // shape rects for highlight rendering
-  std::vector<odb::Polygon> polys;  // shape polys for highlight rendering
-  std::vector<odb::Cuboid> cuboids; // shape cuboids for 3D highlight rendering
+  std::vector<odb::Rect> rects;      // shape rects for highlight rendering
+  std::vector<odb::Polygon> polys;   // shape polys for highlight rendering
+  std::vector<odb::Cuboid> cuboids;  // shape cuboids for 3D highlight rendering
 };
 
 struct DRCCategoryResult

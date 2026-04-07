@@ -169,7 +169,7 @@ struct WebSocketRequest
   // DRC fields
   int drc_violation_index = -1;  // -1 = clear highlight
   std::set<int> drc_visible_indexes;
-  std::string drc_file_path;     // for DRC_LOAD
+  std::string drc_file_path;  // for DRC_LOAD
 
   // Heat map fields
   std::string heatmap_name;
