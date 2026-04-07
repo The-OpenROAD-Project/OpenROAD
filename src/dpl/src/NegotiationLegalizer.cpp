@@ -51,9 +51,8 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
   const FenceRect* best = rects.data();
   int best_dist = std::numeric_limits<int>::max();
   for (const auto& r : rects) {
-    const int dx = std::max({0, r.xlo - cx, cx - r.xhi});
-    const int dy = std::max({0, r.ylo - cy, cy - r.yhi});
-    const int d = dx + dy;
+    const int d = odb::manhattanDistance(
+        odb::Rect(r.xlo, r.ylo, r.xhi, r.yhi), odb::Point(cx, cy));
     if (d < best_dist) {
       best_dist = d;
       best = &r;
