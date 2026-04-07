@@ -13,7 +13,6 @@
 #include "boost/polygon/polygon.hpp"
 #include "db/obj/frAccess.h"
 #include "db/obj/frFig.h"
-#include "db/obj/frRPin.h"
 #include "db/obj/frVia.h"
 #include "db/tech/frConstraint.h"
 #include "frBaseTypes.h"
@@ -947,81 +946,4 @@ void io::Parser::postProcess()
   getDesign()->getRegionQuery()->initDRObj();  // second init from FlexDR.cpp
 }
 
-// instantiate RPin and region query for RPin
-void io::Parser::initRPin()
-{
-  if (router_cfg_->VERBOSE > 0) {
-    logger_->info(DRT, 185, "Post process initialize RPin region query.");
-  }
-  initRPin_rpin();
-  initRPin_rq();
-}
-
-void io::Parser::initRPin_rpin()
-{
-  for (auto& net : getBlock()->getNets()) {
-    if (net->isConnectedByAbutment()) {
-      continue;
-    }
-    // instTerm
-    for (auto& instTerm : net->getInstTerms()) {
-      auto inst = instTerm->getInst();
-      int pinIdx = 0;
-      auto trueTerm = instTerm->getTerm();
-      for (auto& pin : trueTerm->getPins()) {
-        auto rpin = std::make_unique<frRPin>();
-        rpin->setFrTerm(instTerm);
-        rpin->addToNet(net.get());
-        frAccessPoint* prefAp = (instTerm->getAccessPoints())[pinIdx];
-
-        // MACRO does not go through PA
-        if (prefAp == nullptr) {
-          odb::dbMasterType masterType = inst->getMaster()->getMasterType();
-          if (masterType.isBlock() || masterType.isPad()
-              || masterType == odb::dbMasterType::RING) {
-            prefAp = (pin->getPinAccess(inst->getPinAccessIdx())
-                          ->getAccessPoints())[0]
-                         .get();
-          } else {
-            continue;
-          }
-        }
-
-        if (prefAp == nullptr) {
-          logger_->warn(DRT,
-                        246,
-                        "{}/{} from {} has nullptr as prefAP.",
-                        instTerm->getInst()->getName(),
-                        trueTerm->getName(),
-                        net->getName());
-        }
-
-        rpin->setAccessPoint(prefAp);
-
-        net->addRPin(rpin);
-
-        pinIdx++;
-      }
-    }
-    // term
-    for (auto& term : net->getBTerms()) {
-      auto trueTerm = term;
-      for (auto& pin : trueTerm->getPins()) {
-        auto rpin = std::make_unique<frRPin>();
-        rpin->setFrTerm(term);
-        rpin->addToNet(net.get());
-        frAccessPoint* prefAp
-            = (pin->getPinAccess(0)->getAccessPoints())[0].get();
-        rpin->setAccessPoint(prefAp);
-
-        net->addRPin(rpin);
-      }
-    }
-  }
-}
-
-void io::Parser::initRPin_rq()
-{
-  getDesign()->getRegionQuery()->initRPin();
-}
 }  // namespace drt

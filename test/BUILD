@@ -50,28 +50,6 @@ py_test(
 )
 
 py_test(
-    name = "rules_shell_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=rules_shell",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
-)
-
-py_test(
-    name = "rules_pkg_dev_dep_test",
-    srcs = ["check_dev_dep.py"],
-    args = [
-        "--module-file=$(location //:MODULE.bazel)",
-        "--dep=rules_pkg",
-    ],
-    data = ["//:MODULE.bazel"],
-    main = "check_dev_dep.py",
-)
-
-py_test(
     name = "rules_verilator_dev_dep_test",
     srcs = ["check_dev_dep.py"],
     args = [

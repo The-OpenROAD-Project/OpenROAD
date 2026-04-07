@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="155" height="365"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_N"
+      xlink:title="K_N">
+      <rect x="51" y="23" width="44" height="32"/>
+      <rect x="49" y="21" width="44" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="41">K_N</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_W"
+      xlink:title="K_W">
+      <rect x="51" y="67" width="48" height="32"/>
+      <rect x="49" y="65" width="48" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="85">K_W</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_S"
+      xlink:title="K_S">
+      <rect x="51" y="111" width="44" height="32"/>
+      <rect x="49" y="109" width="44" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="129">K_S</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_E"
+      xlink:title="K_E">
+      <rect x="51" y="155" width="44" height="32"/>
+      <rect x="49" y="153" width="44" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="173">K_E</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FN"
+      xlink:title="K_FN">
+      <rect x="51" y="199" width="52" height="32"/>
+      <rect x="49" y="197" width="52" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="217">K_FN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FW"
+      xlink:title="K_FW">
+      <rect x="51" y="243" width="56" height="32"/>
+      <rect x="49" y="241" width="56" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="261">K_FW</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FS"
+      xlink:title="K_FS">
+      <rect x="51" y="287" width="50" height="32"/>
+      <rect x="49" y="285" width="50" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="305">K_FS</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_FE"
+      xlink:title="K_FE">
+      <rect x="51" y="331" width="50" height="32"/>
+      <rect x="49" y="329" width="50" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="349">K_FE</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m20 0 h10 m0 0 h66 m-96 0 h20 m76 0 h20 m-116 0 q10 0 10 10 m96 0 q0 -10 10 -10 m-106 10 v12 m96 0 v-12 m-96 12 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m44 0 h10 m0 0 h12 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m48 0 h10 m0 0 h8 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m44 0 h10 m0 0 h12 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m44 0 h10 m0 0 h12 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m52 0 h10 m0 0 h4 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m56 0 h10 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m50 0 h10 m0 0 h6 m-86 -10 v20 m96 0 v-20 m-96 20 v24 m96 0 v-24 m-96 24 q0 10 10 10 m76 0 q10 0 10 -10 m-86 10 h10 m50 0 h10 m0 0 h6 m23 -340 h-3"/>
+   <polygon points="145 5 153 1 153 9"/>
+   <polygon points="145 5 137 1 137 9"/>
+</svg>

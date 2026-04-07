@@ -288,29 +288,48 @@ void FastRouteCore::fillVIA()
           treeedge.route.type = RouteType::MazeRoute;
           treeedge.route.routelen = newCNT - 1;
         }
-      } else if ((treenodes[treeedge.n1].hID == BIG_INT
-                  && treenodes[treeedge.n1].lID == BIG_INT)
-                 || (treenodes[treeedge.n2].hID == BIG_INT
-                     && treenodes[treeedge.n2].lID == BIG_INT)) {
+      } else {
+        // Handle zero-length edges (len == 0) that may need via grids.
+        // These arise when two pins share the same gcell (x,y) but sit on
+        // different layers.  STT creates zero-length Steiner edges between
+        // them (directly or through a Steiner node at the same position).
+        //
+        // For Steiner nodes co-located with terminals, layerAssignment
+        // updates botL/topL on the stackAlias (a terminal), not on the
+        // Steiner node itself.  Resolve through stackAlias to obtain
+        // meaningful layer information.
         int node1 = treeedge.n1;
         int node2 = treeedge.n2;
-        if ((treenodes[node1].botL == num_layers_
-             && treenodes[node1].topL == -1)
-            || (treenodes[node2].botL == num_layers_
-                && treenodes[node2].topL == -1)) {
+        int effective_node1 = (treenodes[node1].botL == num_layers_
+                               && treenodes[node1].topL == -1)
+                                  ? treenodes[node1].stackAlias
+                                  : node1;
+        int effective_node2 = (treenodes[node2].botL == num_layers_
+                               && treenodes[node2].topL == -1)
+                                  ? treenodes[node2].stackAlias
+                                  : node2;
+
+        // Skip if both resolved nodes still lack layer information.
+        if ((treenodes[effective_node1].botL == num_layers_
+             && treenodes[effective_node1].topL == -1)
+            && (treenodes[effective_node2].botL == num_layers_
+                && treenodes[effective_node2].topL == -1)) {
           continue;
         }
 
-        int16_t l1 = treenodes[node1].botL;
-        int16_t l2 = treenodes[node2].botL;
-        int16_t bottom_layer = std::min(l1, l2);
-        int16_t top_layer = std::max(l1, l2);
-        if (node1 < num_terminals) {
-          extendLayerRange(node1, bottom_layer, top_layer);
+        int16_t bottom_layer = std::min(treenodes[effective_node1].botL,
+                                        treenodes[effective_node2].botL);
+        int16_t top_layer = std::max(treenodes[effective_node1].botL,
+                                     treenodes[effective_node2].botL);
+        if (effective_node1 < num_terminals) {
+          extendLayerRange(effective_node1, bottom_layer, top_layer);
+        }
+        if (effective_node2 < num_terminals) {
+          extendLayerRange(effective_node2, bottom_layer, top_layer);
         }
 
-        if (node2 < num_terminals) {
-          extendLayerRange(node2, bottom_layer, top_layer);
+        if (top_layer <= bottom_layer) {
+          continue;
         }
 
         treeedge.route.grids.resize(top_layer - bottom_layer + 1);
@@ -533,10 +552,15 @@ int FastRouteCore::getWireCost(const int layer, const int length, FrNet* net)
 
   odb::dbTechLayer* default_layer = getTechLayer(0, false);
 
-  double default_resistance = default_layer->getResistance();
-  float final_resistance = getWireResistance(layer, length, net);
+  const double default_resistance = default_layer->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_resistance <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(final_resistance / default_resistance);
+  const float final_resistance = getWireResistance(layer, length, net);
+  const double cost = std::ceil(final_resistance / default_resistance);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 // Get via resistance in ohms going from layer A to layer B
@@ -569,10 +593,15 @@ int FastRouteCore::getViaCost(const int from_layer, const int to_layer)
   }
 
   // Calculate total resistance
-  float total_via_resistance = getViaResistance(from_layer, to_layer);
-  float default_res = getTechLayer(0, true)->getResistance();
+  const float default_res = getTechLayer(0, true)->getResistance();
+  // Prevent division by zero when layer resistance is not defined.
+  if (default_res <= 0.0) {
+    return 0;
+  }
 
-  return std::ceil(total_via_resistance / default_res);
+  const float total_via_resistance = getViaResistance(from_layer, to_layer);
+  const double cost = std::ceil(total_via_resistance / default_res);
+  return static_cast<int>(std::min<double>(cost, BIG_INT));
 }
 
 void FastRouteCore::updateWorstMetrics(FrNet* net)
@@ -1580,10 +1609,7 @@ float FastRouteCore::CalculatePartialSlack()
 
 float FastRouteCore::getNetSlack(odb::dbNet* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net);
-  float slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net, sta::MinMax::max());
 }
 
 void FastRouteCore::recoverEdge(const int netID, const int edgeID)

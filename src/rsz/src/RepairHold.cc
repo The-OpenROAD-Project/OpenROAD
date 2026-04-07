@@ -326,8 +326,7 @@ bool RepairHold::addMatchingBuffers(const sta::LibertyCellSeq& buffer_list,
 
     bool footprint_matches = true;
     if (match_footprint) {
-      const char* footprint_cstr = buffer->footprint();
-      std::string footprint = footprint_cstr ? footprint_cstr : "";
+      const std::string& footprint = buffer->footprint();
       footprint_matches = !lib_has_footprints || isDelayCell(footprint);
     }
 
@@ -416,8 +415,8 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
                  1,
                  "pass {} hold slack {} setup slack {}",
                  pass,
-                 delayAsString(worst_slack, sta_, 3),
-                 delayAsString(sta_->worstSlack(max_), sta_, 3));
+                 delayAsString(worst_slack, 3, sta_),
+                 delayAsString(sta_->worstSlack(max_), 3, sta_));
       int hold_buffer_count_before = inserted_buffer_count_;
       repairHoldPass(hold_failures,
                      buffer_cell,
@@ -737,11 +736,11 @@ void RepairHold::makeHoldDelay(sta::Vertex* drvr,
   buffer = resizer_->insertBufferBeforeLoads(
       drvr_net, &load_pins_set, buffer_cell, &loc, "hold");
   if (buffer == nullptr) {
-    const char* drvr_pin_name = db_network_->pathName(drvr_pin);
+    std::string drvr_pin_name = db_network_->pathName(drvr_pin);
     logger_->error(RSZ,
                    3009,
                    "insert_buffer failed on drvr_pin '{}'.",
-                   drvr_pin_name ? drvr_pin_name : "<unknown>");
+                   drvr_pin_name.empty() ? "<unknown>" : drvr_pin_name);
     return;
   }
 
@@ -834,8 +833,8 @@ void RepairHold::printProgress(int iteration, bool force, bool end) const
         inserted_buffer_count_,
         cloned_gate_count_,
         area_growth / initial_design_area_ * 1e2,
-        delayAsString(wns, sta_, 3),
-        delayAsString(tns, sta_, 3),
+        delayAsString(wns, 3, sta_),
+        delayAsString(tns, 3, sta_),
         worst_vertex->name(network_));
 
     debugPrint(logger_, RSZ, "memory", 1, "RSS = {}", utl::getCurrentRSS());

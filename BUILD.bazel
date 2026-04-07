@@ -5,6 +5,8 @@ load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -158,15 +160,27 @@ OPENROAD_DEFINES = [
     "ABC_NAMESPACE=abc",
 ]
 
+cc_library(
+    name = "tcl_readline_setup",
+    srcs = ["src/tcl_readline_setup.cc"],
+    hdrs = ["src/tcl_readline_setup.h"],
+    visibility = ["//src/sta:__pkg__"],
+    deps = [
+        "@tcl_lang//:tcl",
+        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
+        # On systems without tclreadline these are empty stub targets (no-op).
+        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+        "@tclreadline",
+        "@tclreadline//:tclreadline_defs",
+    ],
+)
+
 cc_binary(
     name = "openroad",
     srcs = [
         "src/Main.cc",
     ],
     copts = OPENROAD_COPTS,
-    data = [
-        "@tclreadline//:tclreadline_scripts",
-    ],
     features = ["-use_header_modules"],
     malloc = select({
         "@platforms//os:linux": "@tcmalloc//tcmalloc",
@@ -178,19 +192,15 @@ cc_binary(
         ":openroad_version",
         ":opt_notification",
         ":ord",
-        "//bazel:runfiles",
+        ":tcl_readline_setup",
+        "//bazel:tcl_library_init",
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
-        "@rules_cc//cc/runfiles",
+        "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
-        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
-        # On systems without tclreadline these are empty stub targets (no-op).
-        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
-        "@tclreadline",
-        "@tclreadline//:tclreadline_defs",
     ],
 )
 
@@ -325,6 +335,7 @@ cc_binary(
         "//src/ppl",
         "//src/psm",
         "//src/rcx",
+        "//src/rsz",
         "//src/stt",
         "//src/tap",
         "//src/utl",
@@ -382,6 +393,7 @@ python_wrap_cc(
         "//src/ppl:swig-py",
         "//src/psm:swig-py",
         "//src/rcx:swig-py",
+        "//src/rsz:swig-py",
         "//src/stt:swig-py",
         "//src/tap:swig-py",
         "//src/utl:swig-py",

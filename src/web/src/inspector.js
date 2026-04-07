@@ -125,7 +125,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
     function boundsWithMinimumScreenSize(x1, y1, x2, y2) {
         const baseBounds = L.latLngBounds(
-            dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY)
+            dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY)
         );
         if (!app.map) {
             return baseBounds;
@@ -291,7 +291,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
         if (app.highlightRect) {
             app.map.removeLayer(app.highlightRect);
         }
-        const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY);
+        const bounds = dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY);
         app.highlightRect = L.rectangle(bounds, {
             color: '#ff0', weight: 2, fill: false, dashArray: '6,4',
         }).addTo(app.map);
@@ -372,7 +372,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
     function zoomToBBox(bbox) {
         if (!bbox || !app.map || !app.designScale) return;
         const [x1, y1, x2, y2] = bbox;
-        app.map.fitBounds(dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY),
+        app.map.fitBounds(dbuRectToBounds(x1, y1, x2, y2, app.designScale, app.designMaxDXDY, app.designOriginX, app.designOriginY),
                           { padding: [20, 20] });
     }
 

@@ -1406,8 +1406,16 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
 
   std::map<Point3D, frBlockObjectSet> gcell_pin_map;
   frBlockObjectMap<std::set<Point3D>> pin_gcell_map;
+  std::vector<frBlockObject*> pins;
   initGCellPinMap(net, gcell_pin_map);
   initPinGCellMap(net, pin_gcell_map);
+  pins.reserve(net->getInstTerms().size() + net->getBTerms().size());
+  for (auto& inst_term : net->getInstTerms()) {
+    pins.push_back(inst_term);
+  }
+  for (auto& bterm : net->getBTerms()) {
+    pins.push_back(bterm);
+  }
 
   // Run for 3 iterations max
   for (int i = 0; i < 4; i++) {
@@ -1463,6 +1471,7 @@ std::vector<std::pair<frBlockObject*, odb::Point>> GuideProcessor::genGuides(
                                 net,
                                 force_pin_feed_through,
                                 rects,
+                                pins,
                                 pin_gcell_map);
     path_finder.setAllowWarnings(i != 0);
     if (path_finder.traverseGraph()) {
@@ -1484,12 +1493,14 @@ GuidePathFinder::GuidePathFinder(
     frNet* net,
     const bool force_feed_through,
     const std::vector<frRect>& rects,
+    const std::vector<frBlockObject*>& pins,
     const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
     : design_(design),
       logger_(logger),
       router_cfg_(router_cfg),
       net_(net),
       force_feed_through_(force_feed_through),
+      pins_(pins),
       pin_gcell_map_(pin_gcell_map),
       rects_(rects)
 {
@@ -1513,8 +1524,12 @@ void GuidePathFinder::buildNodeMap(
   }
   guide_count_ = rects.size();  // total guide cnt
   int node_idx = rects.size();
-  for (const auto& [obj, gcells] : pin_gcell_map) {
-    for (const auto& gcell : gcells) {
+  for (auto* pin : pins_) {
+    const auto it = pin_gcell_map.find(pin);
+    if (it == pin_gcell_map.end()) {
+      continue;
+    }
+    for (const auto& gcell : it->second) {
       node_map_[gcell].insert(node_idx);
     }
     ++node_idx;
@@ -1686,41 +1701,42 @@ GuidePathFinder::commitPathToGuides(
     std::vector<frRect>& rects,
     const frBlockObjectMap<std::set<Point3D>>& pin_gcell_map)
 {
-  std::vector<frBlockObject*> pins;
-  pins.reserve(getPinCount());
-  for (const auto& [pin, _] : pin_gcell_map) {
-    pins.emplace_back(pin);
-  }
   // find pin in which guide
   std::vector<std::vector<Point3D>> pin_to_gcell
-      = getPinToGCellList(rects, pin_gcell_map, pins);
+      = getPinToGCellList(rects, pin_gcell_map, pins_);
   int pin_idx = 0;
   for (auto& guides : pin_to_gcell) {
     if (guides.empty()) {
       logger_->error(DRT,
                      222,
                      "Pin {} is not visited by any guide",
-                     getPinName(pins[pin_idx]));
+                     getPinName(pins_[pin_idx]));
     }
     ++pin_idx;
   }
   updateNodeMap(rects, pin_to_gcell);
   std::vector<std::pair<frBlockObject*, odb::Point>> gr_pins
-      = getGRPins(pins, pin_to_gcell);
+      = getGRPins(pins_, pin_to_gcell);
   clipGuides(rects);
   mergeGuides(rects);
+  std::vector<std::pair<frLayerNum, odb::Rect>> final_guides;
+  final_guides.reserve(getGuideCount());
   for (int i = 0; i < getGuideCount(); i++) {
     if (!visited_[i]) {
       continue;
     }
-    auto& rect = rects[i];
-    odb::Rect box = rect.getBBox();
+    final_guides.emplace_back(rects[i].getLayerNum(), rects[i].getBBox());
+  }
+  std::sort(final_guides.begin(), final_guides.end());
+  final_guides.erase(std::unique(final_guides.begin(), final_guides.end()),
+                     final_guides.end());
+  for (const auto& [layer_num, box] : final_guides) {
     auto guide = std::make_unique<frGuide>();
     odb::Point begin = getDesign()->getTopBlock()->getGCellCenter(box.ll());
     odb::Point end = getDesign()->getTopBlock()->getGCellCenter(box.ur());
     guide->setPoints(begin, end);
-    guide->setBeginLayerNum(rect.getLayerNum());
-    guide->setEndLayerNum(rect.getLayerNum());
+    guide->setBeginLayerNum(layer_num);
+    guide->setEndLayerNum(layer_num);
     guide->addToNet(net_);
     net_->addGuide(std::move(guide));
   }

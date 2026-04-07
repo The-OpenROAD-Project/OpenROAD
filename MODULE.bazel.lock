@@ -455,6 +455,8 @@
     "https://bcr.bazel.build/modules/opencensus-cpp/0.0.0-20230502-50eb5de/source.json": "f50efc07822f5425bd1d3e40e977484f9c0142463052717d40ec85cd6744243e",
     "https://bcr.bazel.build/modules/opencensus-proto/0.4.1/MODULE.bazel": "4a2e8b4d0b544002502474d611a5a183aa282251e14f6a01afe841c0c1b10372",
     "https://bcr.bazel.build/modules/opencensus-proto/0.4.1/source.json": "a7d956700a85b833c43fc61455c0e111ab75bab40768ed17a206ee18a2bbe38f",
+    "https://bcr.bazel.build/modules/openmp/21.1.5/MODULE.bazel": "3ae594cd95d79ac96178e4d4b1fa04c19e3cfc516d34de0f6cc50223ddec310f",
+    "https://bcr.bazel.build/modules/openmp/21.1.5/source.json": "1b6bdcd2de941afee50b0eea0069e404ac70289cf97afacd26a421d5f163bd63",
     "https://bcr.bazel.build/modules/openssl/3.3.1.bcr.9/MODULE.bazel": "bf9dd8479c65bfec1c82773a5cc6ae06eda4c663c2731cfcfcb8b6b46ac8d365",
     "https://bcr.bazel.build/modules/openssl/3.3.1.bcr.9/source.json": "c72e6b4db6b18e47a3050fbb3315ddf3353f55c81c2be7cba775856259edb7c5",
     "https://bcr.bazel.build/modules/opentelemetry-cpp/1.14.2/MODULE.bazel": "089a5613c2a159c7dfde098dabfc61e966889c7d6a81a98422a84c51535ed17d",
@@ -724,6 +726,9 @@
     "https://bcr.bazel.build/modules/tar.bzl/0.6.0/source.json": "4a620381df075a16cb3a7ed57bd1d05f7480222394c64a20fa51bdb636fda658",
     "https://bcr.bazel.build/modules/tcl_lang/8.6.16.bcr.1/MODULE.bazel": "1fc27ececc903378b88ad5a0b92d2675b54fe3add9bcc27d612195bd823c2f2d",
     "https://bcr.bazel.build/modules/tcl_lang/8.6.16.bcr.1/source.json": "f755e3b14f4d08e68f03ef0e1a7ac1aebe993b73ff05ee55f69ceb4e1c36b7e6",
+    "https://bcr.bazel.build/modules/tcl_lang/8.6.16/MODULE.bazel": "c24c205f44580229621f6d9db4b4264df3e3482a0d9e9811b938c0436acfc943",
+    "https://bcr.bazel.build/modules/tclreadline/2.4.1/MODULE.bazel": "fb5586797c394a91541afdbf8b98d7e7969302d72d8099c93ba71561ceaaec81",
+    "https://bcr.bazel.build/modules/tclreadline/2.4.1/source.json": "36e0abf75efecbb2cd24d31a9b68ee9641df2bac986ea049c878ea0cea649e3e",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250927-12f2552/MODULE.bazel": "b702a6b6806b1041d84918c5098b765b204261647f8cb3e75e0f439106b65ddd",
     "https://bcr.bazel.build/modules/tcmalloc/0.0.0-20250927-12f2552/source.json": "a6f5da61dd65e3f2f7380b4f52dd4b0f771a5b6ba9db7b46be7c28c52bc7af58",
     "https://bcr.bazel.build/modules/toolchains_llvm/1.5.0/MODULE.bazel": "31c7077ef64bafdf2dfb46d4bca321b4e8f143b00ac68b2c31f5ff0c91044b60",
@@ -815,27 +820,17 @@
     },
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
-        "bzlTransitiveDigest": "QYKsLwaOfoRUMu1KyupRbCxEnHtHuIAr4YE3u1WzHko=",
-        "usagesDigest": "BhZI+OrcUkb7soBeutxT7x0sm8NDpQeQP42Wtbw+1XQ=",
+        "bzlTransitiveDigest": "1T9b1AS979F7qaxyw/OjMC5ZMrWRH/7sYB76ydIETxQ=",
+        "usagesDigest": "XBFQgDjQPrBrrmKJmJEV3y0UmOjGg925SInSvHhAgIA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
-          "com_github_nixos_patchelf_download": {
-            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
-            "attributes": {
-              "build_file_content": "\n    export_files(\n      [\"bin/patchelf\"],\n      visibility = [\"//visibility:public\"],\n    )\n    ",
-              "sha256": "ce84f2447fb7a8679e58bc54a20dc2b01b37b5802e12c57eece772a6f14bf3f0",
-              "urls": [
-                "https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0-x86_64.tar.gz"
-              ]
-            }
-          },
           "docker_orfs": {
             "repoRuleId": "@@bazel-orfs+//:docker.bzl%docker_pkg",
             "attributes": {
-              "image": "docker.io/openroad/orfs:26Q1-696-gaf26ce3b6",
-              "sha256": "471ba9028897f542d9ed98e584e04bb728ef0b4742915913ae4143e2597aedd4",
+              "image": "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
+              "sha256": "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
               "build_file": "@@bazel-orfs+//:docker.BUILD.bazel",
               "timeout": 3600,
               "patch_cmds": [
@@ -853,12 +848,20 @@
             "repoRuleId": "@@bazel-orfs+//:config.bzl%global_config",
             "attributes": {
               "klayout": "@@bazel-orfs++orfs_repositories+docker_orfs//:klayout",
+              "make": "@@bazel-orfs++orfs_repositories+docker_orfs//:make",
               "makefile": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile",
-              "pdk": "@@bazel-orfs++orfs_repositories+docker_orfs//:asap7",
               "makefile_yosys": "@@bazel-orfs++orfs_repositories+docker_orfs//:makefile_yosys",
               "openroad": "@@//:openroad",
+              "opensta": "@@bazel-orfs++orfs_repositories+docker_orfs//:sta",
+              "pdk": "@@bazel-orfs++orfs_repositories+docker_orfs//:asap7",
               "yosys": "@@bazel-orfs++orfs_repositories+docker_orfs//:yosys",
               "yosys_abc": "@@bazel-orfs++orfs_repositories+docker_orfs//:yosys-abc"
+            }
+          },
+          "orfs_variable_metadata": {
+            "repoRuleId": "@@bazel-orfs+//:load_json_file.bzl%load_json_file",
+            "attributes": {
+              "src": "@@bazel-orfs++orfs_repositories+docker_orfs//:OpenROAD-flow-scripts/flow/scripts/variables.yaml"
             }
           }
         },
@@ -867,11 +870,6 @@
             "bazel-orfs+",
             "bazel_tools",
             "bazel_tools"
-          ],
-          [
-            "bazel-orfs+",
-            "com_github_nixos_patchelf_download",
-            "bazel-orfs++orfs_repositories+com_github_nixos_patchelf_download"
           ],
           [
             "bazel-orfs+",

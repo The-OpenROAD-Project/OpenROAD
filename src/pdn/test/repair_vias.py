@@ -3,6 +3,9 @@ from openroad import Design, Tech
 import pdn_aux
 import helpers
 
+bazel_working_dir = "/_main/src/pdn/test/"
+helpers.if_bazel_change_working_dir_to(bazel_working_dir)
+
 tech = Tech()
 tech.readLef("asap7_vias/asap7_tech_1x_noviarules.lef")
 tech.readLef("asap7_vias/asap7sc7p5t_27_R_1x.lef")

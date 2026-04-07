@@ -411,9 +411,8 @@ std::vector<AccessPoint> GridGraph::translateAccessPointsToGrid(
                           ? y_size_ - 1
                           : ap_position.getY() / amount_per_y);
     const PointT selected_point = PointT(ap_x, ap_y);
-    const int num_layer = ((layer->getNumber() - 2) > (getNumLayers() - 1))
-                              ? getNumLayers() - 1
-                              : layer->getNumber() - 2;
+    const int num_layer
+        = std::clamp(layer->getRoutingLevel() - 1, 0, getNumLayers() - 1);
     const IntervalT selected_layer = IntervalT(num_layer);
     aps_on_grid.emplace_back(selected_point, selected_layer);
   }

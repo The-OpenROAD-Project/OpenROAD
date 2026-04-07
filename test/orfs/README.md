@@ -49,7 +49,7 @@ Debugging using the Bazel `--sandbox_debug` is possible, but not terribly conven
 
 First set up a folder with the necessary dependencies:
 
-    bazelisk run //test/orfs/mock-array:Element_place_deps
+    bazelisk run //:deps -- //test/orfs/mock-array:Element_place
 
 This sets up a `tmp/test/orfs/mock-array/Element_place_deps/make` script that calls `make` on the ORFS setup. Since the place stage failed, build all place sub-stages up to the failing stage:
 
@@ -68,7 +68,7 @@ The `WORK_HOME` is in `tmp/test/orfs/mock-array/Element_place_deps/_main`:
 
 bazel-orfs can set up ORFS design files locally for debugging purposes, leaving bazel-orfs entirely out of the equation when chasing down issues. Such a setup is most often a lot more convenient than using `--sandbox_debug`.
 
-NOTE! keep in mind that these local ORFS design files have the depndencies `_deps` to run a particular stage only. Hence, use the `do-` prefix for doing `do-place`, `do-2_1_floorplan`, etc. so that `make` dependency checking is not used. If you use `make floorplan`, this will try to run synthesis first and not find the prequisite files, nor variables in config.mk, for synthesis and it will fail with bogus and confusing error messages.
+NOTE! keep in mind that the `//:deps` wrapper deploys dependencies for a particular stage only. Hence, use the `do-` prefix for doing `do-place`, `do-2_1_floorplan`, etc. so that `make` dependency checking is not used. If you use `make floorplan`, this will try to run synthesis first and not find the prerequisite files, nor variables in config.mk, for synthesis and it will fail with bogus and confusing error messages.
 
 If you're interested in some other stage, replace `place` with `synth`, `floorplan`, `cts`, `grt`, `route` or `final` below.
 

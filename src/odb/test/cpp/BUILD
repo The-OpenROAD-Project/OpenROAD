@@ -294,6 +294,25 @@ cc_test(
 )
 
 cc_test(
+    name = "Test3DBloxVerilogWriter",
+    srcs = [
+        "Test3DBloxVerilogWriter.cpp",
+    ],
+    data = [
+        "//src/odb/test:regression_resources",
+    ],
+    deps = [
+        "//src/odb",
+        "//src/odb/test/cpp/helper",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "TestWriteReadDbHier",
     srcs = [
         "TestWriteReadDbHier.cpp",

@@ -35,6 +35,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -727,15 +728,16 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
         // Only look at rise-rise arcs
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
         }
       }
     }
@@ -780,15 +782,16 @@ sta::ArcDelay TechChar::computeBufferDelay(
         // Only look at rise-rise arcs
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
         }
       }
     }

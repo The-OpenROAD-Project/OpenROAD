@@ -187,7 +187,9 @@ void Opendp::placeRowFillers(GridY row,
       if (pixel->cell && pixel->cell->getDbInst()) {
         implant = getImplant(pixel->cell->getDbInst()->getMaster());
       }
-    } else {  // totally empty row - use anything
+    }
+
+    if (!implant) {  // empty row or cell has no implant - use anything
       implant = filler_masters_by_implant.begin()->first;
     }
 

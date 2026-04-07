@@ -1,4 +1,4 @@
-import drt
+import os
 import utl
 import openroad
 
@@ -35,7 +35,12 @@ def detailed_route(
     save_guide_updates=False
 ):
     router = design.getTritonRoute()
-    params = drt.ParamStruct()
+    if os.environ.get("TEST_SRCDIR"):
+        params = openroad.ParamStruct()
+    else:
+        import drt
+
+        params = drt.ParamStruct()
     params.outputMazeFile = output_maze
     params.outputDrcFile = output_drc
     params.outputCmapFile = output_cmap
@@ -53,7 +58,9 @@ def detailed_route(
     params.singleStepDR = single_step_dr
     params.minAccessPoints = min_access_points
     params.saveGuideUpdates = save_guide_updates
-    params.num_threads = openroad.thread_count()
+    # The standalone Bazel Python binding does not initialize the global
+    # thread-count helper used by the embedded openroad -python path.
+    params.num_threads = 1 if os.environ.get("TEST_SRCDIR") else openroad.thread_count()
 
     router.setParams(params)
     router.main()

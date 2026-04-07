@@ -39,7 +39,19 @@ struct frBlockObjectComp
 {
   bool operator()(const frBlockObject* lhs, const frBlockObject* rhs) const
   {
-    return *lhs < *rhs;
+    if (lhs == rhs) {
+      return false;
+    }
+    if (lhs == nullptr || rhs == nullptr) {
+      return lhs < rhs;
+    }
+    if (lhs->typeId() != rhs->typeId()) {
+      return lhs->typeId() < rhs->typeId();
+    }
+    if (lhs->getId() != rhs->getId()) {
+      return lhs->getId() < rhs->getId();
+    }
+    return lhs < rhs;
   }
 };
 }  // namespace internal

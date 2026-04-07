@@ -152,7 +152,6 @@ cc_test(
     ],
     deps = [
         "//:openroad_lib",
-        "//bazel:runfiles",
         "//src/ant",
         "//src/dbSta",
         "//src/dbSta:dbReadVerilog",

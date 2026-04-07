@@ -71,7 +71,7 @@ void Straps::checkLayerSpecifications() const
         layer_->getName());
   }
 
-  const TechLayer layer(layer_);
+  TechLayer layer(layer_);
 
   checkLayerWidth(layer_, width_, direction_);
   checkLayerSpacing(layer_, width_, spacing_, direction_);
@@ -79,6 +79,17 @@ void Straps::checkLayerSpecifications() const
   layer.checkIfManufacturingGrid(spacing_, getLogger(), "Spacing");
   layer.checkIfManufacturingGrid(pitch_, getLogger(), "Pitch");
   layer.checkIfManufacturingGrid(offset_, getLogger(), "Offset");
+
+  if (snap_) {
+    layer.populateGrid(getBlock(), direction_);
+    if (!layer.hasGrid()) {
+      getLogger()->error(utl::PDN,
+                         215,
+                         "Unable to snap strap on {} to grid, no routing grid "
+                         "defined for layer.",
+                         layer_->getName());
+    }
+  }
 
   const int strap_width = getStrapGroupWidth();
   if (pitch_ != 0) {

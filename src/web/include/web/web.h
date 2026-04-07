@@ -33,6 +33,15 @@ class WebServer
 
   void serve(int port, const std::string& doc_root);
 
+  void saveImage(const std::string& filename,
+                 int x0,
+                 int y0,
+                 int x1,
+                 int y1,
+                 int width_px,
+                 double dbu_per_pixel,
+                 const std::string& vis_json);
+
  private:
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;

@@ -3,6 +3,9 @@ import pdn_aux
 import helpers
 from collections import defaultdict
 
+bazel_working_dir = "/_main/src/pdn/test/"
+helpers.if_bazel_change_working_dir_to(bazel_working_dir)
+
 tech = Tech()
 tech.readLef("Nangate45/Nangate45.lef")
 tech.readLef("nangate_macros/fakeram45_64x32.lef")

@@ -1215,6 +1215,21 @@ bool dbTechLayer::isRectOnlyExceptNonCorePins() const
 
 // User Code Begin dbTechLayerPublicMethods
 
+dbTechLayerAntennaRule* dbTechLayer::getOrCreateAntennaModel(int oxide_idx)
+{
+  if (oxide_idx == 2) {
+    auto rule = getOxide2AntennaRule();
+    return rule ? rule : createOxide2AntennaRule();
+  }
+  if (oxide_idx == 1) {
+    auto rule = getDefaultAntennaRule();
+    return rule ? rule : createDefaultAntennaRule();
+  }
+  getImpl()->getLogger()->warn(
+      utl::ODB, 1118, "Unsupported oxide index: {}", oxide_idx);
+  return nullptr;
+}
+
 void dbTechLayer::setLef58Type(LEF58_TYPE type)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;

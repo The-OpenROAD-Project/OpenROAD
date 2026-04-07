@@ -79,7 +79,6 @@
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"

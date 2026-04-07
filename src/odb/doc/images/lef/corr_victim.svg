@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="729" height="53"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 33 1 29 1 37"/>
+   <polygon points="17 33 9 29 9 37"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_VICTIMLENGTH"
+      xlink:title="K_VICTIMLENGTH">
+      <rect x="31" y="19" width="130" height="32"/>
+      <rect x="29" y="17" width="130" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="37">K_VICTIMLENGTH</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="181" y="19" width="92" height="32"/>
+      <rect x="179" y="17" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="189" y="37">int_number</text>
+   </a>
+   <rect x="293" y="19" width="24" height="32" rx="10"/>
+   <rect x="291"
+         y="17"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="301" y="37">;</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_CORRECTIONFACTOR"
+      xlink:title="K_CORRECTIONFACTOR">
+      <rect x="337" y="19" width="168" height="32"/>
+      <rect x="335" y="17" width="168" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="345" y="37">K_CORRECTIONFACTOR</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="545" y="19" width="92" height="32"/>
+      <rect x="543" y="17" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="553" y="37">int_number</text>
+   </a>
+   <rect x="677" y="19" width="24" height="32" rx="10"/>
+   <rect x="675"
+         y="17"
+         width="24"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="685" y="37">;</text>
+   <path class="line"
+         d="m17 33 h2 m0 0 h10 m130 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m24 0 h10 m0 0 h10 m168 0 h10 m20 0 h10 m92 0 h10 m-132 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -12 q0 -10 10 -10 m112 32 l20 0 m-20 0 q10 0 10 -10 l0 -12 q0 -10 -10 -10 m-112 0 h10 m0 0 h102 m20 32 h10 m24 0 h10 m3 0 h-3"/>
+   <polygon points="719 33 727 29 727 37"/>
+   <polygon points="719 33 711 29 711 37"/>
+</svg>

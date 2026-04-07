@@ -1,0 +1,25 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO ODB-0128] Design: row_boundary_filter
+[INFO ODB-0130]     Created 2 pins.
+[INFO ODB-0131]     Created 2 components and 8 component-terminals.
+[INFO ODB-0133]     Created 2 nets and 3 connections.
+[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+Movements Summary
+---------------------------------------
+Total cells:                       1
+Diamond Move Success:              1 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          1.6 u
+average displacement        1.6 u
+max displacement            1.6 u
+original HPWL              17.5 u
+legalized HPWL             18.0 u
+delta HPWL                    3 %
+
+No differences found.

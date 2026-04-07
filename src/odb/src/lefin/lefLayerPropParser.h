@@ -386,15 +386,14 @@ class lefTechLayerVoltageSpacing
 class AntennaGatePlusDiffParser
 {
  public:
-  AntennaGatePlusDiffParser(LefParser::lefiLayer* layer,
-                            lefinReader* lefinReader)
+  AntennaGatePlusDiffParser(dbTechLayer* layer, lefinReader* lefinReader)
       : layer_(layer), lefin_(lefinReader)
   {
   }
   void parse(const std::string&);
 
  private:
-  LefParser::lefiLayer* layer_;
+  dbTechLayer* layer_;
   lefinReader* lefin_;
 };
 

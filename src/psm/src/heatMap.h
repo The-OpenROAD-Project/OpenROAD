@@ -21,7 +21,7 @@ class IRDropDataSource : public gui::RealValueHeatMapDataSource
  public:
   IRDropDataSource(PDNSim* psm, sta::Sta* sta, utl::Logger* logger);
 
-  void setBlock(odb::dbBlock* block) override;
+  void setChip(odb::dbChip* chip) override;
 
   void setNet(odb::dbNet* net) { net_ = net; }
   void setCorner(sta::Scene* corner) { corner_ = corner; }

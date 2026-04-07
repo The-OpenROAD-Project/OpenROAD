@@ -27,7 +27,6 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
-#include "db/obj/frNode.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
@@ -592,13 +591,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
     auto frbterm = getBlock()->name2term_[term->getName()];  // frBTerm*
     frbterm->addToNet(netIn);
     netIn->addBTerm(frbterm);
-    if (!net->isSpecial()) {
-      // graph enablement
-      auto termNode = std::make_unique<frNode>();
-      termNode->setPin(frbterm);
-      termNode->setType(frNodeTypeEnum::frcPin);
-      netIn->addNode(termNode);
-    }
   }
   for (auto term : net->getITerms()) {
     if (term->getSigType().isSupply() && !net->getSigType().isSupply()) {
@@ -629,13 +621,6 @@ void io::Parser::updateNetRouting(frNet* netIn, odb::dbNet* net)
 
     instTerm->addToNet(netIn);
     netIn->addInstTerm(instTerm);
-    if (!net->isSpecial()) {
-      // graph enablement
-      auto instTermNode = std::make_unique<frNode>();
-      instTermNode->setPin(instTerm);
-      instTermNode->setType(frNodeTypeEnum::frcPin);
-      netIn->addNode(instTermNode);
-    }
   }
   if (!net->isSpecial() && net->getTermCount() > LARGE_NET_FANOUT_THRESHOLD) {
     logger_->warn(
@@ -1111,7 +1096,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     auto uTermIn = std::make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setType(term->getSigType());
-    termIn->setDirection(term->getIoType());
     auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
 
@@ -2667,7 +2651,6 @@ void io::Parser::setMasters(odb::dbDatabase* db)
         tmpMaster->addTerm(std::move(uTerm));
 
         term->setType(_term->getSigType());
-        term->setDirection(_term->getIoType());
 
         int i = 0;
         for (auto mpin : _term->getMPins()) {
@@ -3153,7 +3136,6 @@ void io::Parser::updateDesign()
       netIn = addNet(db_net);
     }
     netIn->clearConns();
-    netIn->clearRPins();
     netIn->clearGuides();
     netIn->clearOrigGuides();
     updateNetRouting(netIn, db_net);

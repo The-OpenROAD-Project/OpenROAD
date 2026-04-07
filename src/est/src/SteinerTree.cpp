@@ -27,7 +27,6 @@ using std::string;
 using utl::EST;
 
 using sta::NetConnectedPinIterator;
-using sta::stringPrintTmp;
 
 void SteinerTree::setTree(const stt::Tree& tree)
 {
@@ -132,7 +131,7 @@ void SteinerTree::report(utl::Logger* logger, const sta::Network* network)
   }
 }
 
-const char* SteinerTree::name(const SteinerPt pt, const sta::Network* network)
+std::string SteinerTree::name(const SteinerPt pt, const sta::Network* network)
 {
   if (pt == null_pt) {
     return "NULL";
@@ -148,9 +147,10 @@ const char* SteinerTree::name(const SteinerPt pt, const sta::Network* network)
       pin_names += network->pathName(pin);
       first = false;
     }
-    return stringPrintTmp("%s", pin_names.c_str());
+    return pin_names;
   }
-  return stringPrintTmp("S%d", pt);
+  std::string pt_name = "S" + std::to_string(pt);
+  return pt_name;
 }
 
 const sta::PinSeq* SteinerTree::pins(const SteinerPt pt) const

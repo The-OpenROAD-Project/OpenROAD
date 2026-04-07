@@ -264,14 +264,14 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       std::string name;
 
       if (db_network_->isTopLevelPort(pin)) {
-        auto bterm = block->findBTerm(db_network_->pathName(pin));
+        auto bterm = block->findBTerm(db_network_->pathName(pin).c_str());
         name = bterm->getName();
         if (visitedBterms.insert(name).second) {
           depth++;
         }
       } else {
         auto inst = db_network_->instance(pin);
-        auto db_inst = block->findInst(db_network_->pathName(inst));
+        auto db_inst = block->findInst(db_network_->pathName(inst).c_str());
         name = db_inst->getName();
         if (visitedInstances.insert(name).second) {
           depth++;

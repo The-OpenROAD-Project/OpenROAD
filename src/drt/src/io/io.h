@@ -73,7 +73,6 @@ class Parser
    *
    */
   void initSecondaryVias();
-  void initRPin();
   auto& getTrackOffsetMap() { return trackOffsetMap_; }
   std::vector<frTrackPattern*>& computePrefTrackPatterns()
   {
@@ -139,9 +138,6 @@ class Parser
   // instance analysis
   void instAnalysis();
 
-  // temp init functions
-  void initRPin_rpin();
-  void initRPin_rq();
   // misc
   void addFakeNets();
 

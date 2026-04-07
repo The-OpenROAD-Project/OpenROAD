@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="639" height="169"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <rect x="31" y="3" width="30" height="32" rx="10"/>
+   <rect x="29"
+         y="1"
+         width="30"
+         height="32"
+         class="terminal"
+         rx="10"/>
+   <text class="terminal" x="39" y="21">+</text>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ROWCOL"
+      xlink:title="K_ROWCOL">
+      <rect x="121" y="3" width="92" height="32"/>
+      <rect x="119" y="1" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="129" y="21">K_ROWCOL</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_ORIGIN"
+      xlink:title="K_ORIGIN">
+      <rect x="121" y="47" width="82" height="32"/>
+      <rect x="119" y="45" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="129" y="65">K_ORIGIN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OFFSET"
+      xlink:title="K_OFFSET">
+      <rect x="121" y="91" width="82" height="32"/>
+      <rect x="119" y="89" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="129" y="109">K_OFFSET</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="223" y="91" width="72" height="32"/>
+      <rect x="221" y="89" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="231" y="109">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="315" y="91" width="72" height="32"/>
+      <rect x="313" y="89" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="323" y="109">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="427" y="3" width="72" height="32"/>
+      <rect x="425" y="1" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="435" y="21">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="519" y="3" width="72" height="32"/>
+      <rect x="517" y="1" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="527" y="21">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_PATTERN"
+      xlink:title="K_PATTERN">
+      <rect x="101" y="135" width="92" height="32"/>
+      <rect x="99" y="133" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="109" y="153">K_PATTERN</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#T_STRING"
+      xlink:title="T_STRING">
+      <rect x="213" y="135" width="82" height="32"/>
+      <rect x="211" y="133" width="82" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="221" y="153">T_STRING</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m0 0 h10 m30 0 h10 m40 0 h10 m92 0 h10 m0 0 h174 m-306 0 h20 m286 0 h20 m-326 0 q10 0 10 10 m306 0 q0 -10 10 -10 m-316 10 v24 m306 0 v-24 m-306 24 q0 10 10 10 m286 0 q10 0 10 -10 m-296 10 h10 m82 0 h10 m0 0 h184 m-296 -10 v20 m306 0 v-20 m-306 20 v24 m306 0 v-24 m-306 24 q0 10 10 10 m286 0 q10 0 10 -10 m-296 10 h10 m82 0 h10 m0 0 h10 m72 0 h10 m0 0 h10 m72 0 h10 m20 -88 h10 m72 0 h10 m0 0 h10 m72 0 h10 m-530 0 h20 m510 0 h20 m-550 0 q10 0 10 10 m530 0 q0 -10 10 -10 m-540 10 v112 m530 0 v-112 m-530 112 q0 10 10 10 m510 0 q10 0 10 -10 m-520 10 h10 m92 0 h10 m0 0 h10 m82 0 h10 m0 0 h296 m23 -132 h-3"/>
+   <polygon points="629 17 637 13 637 21"/>
+   <polygon points="629 17 621 13 621 21"/>
+</svg>

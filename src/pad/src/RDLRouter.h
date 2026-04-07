@@ -8,6 +8,7 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -135,7 +136,7 @@ class RDLRouter
                                       boost::geometry::index::quadratic<16>>;
 
   const GridGraph& getGraph() const { return graph_; };
-  const std::map<GridGraphVertex, odb::Point>& getVertexMap() const
+  const std::unordered_map<GridGraphVertex, odb::Point>& getVertexMap() const
   {
     return vertex_point_map_;
   }
@@ -191,7 +192,13 @@ class RDLRouter
                         const odb::Point& pt1,
                         bool use_routes) const;
 
-  void populateTerminalAccessPoints(RouteTarget& target) const;
+  void populateTerminalAccessPoints(
+      RouteTarget& target,
+      std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const;
+  void cleanupTerminalAccessPoints(odb::dbITerm* iterm,
+                                   std::vector<RouteTarget>& targets) const;
+  void cleanupGraphEdges(
+      const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges);
   std::set<odb::Point> generateTerminalAccessPoints(const odb::Point& pt,
                                                     bool do_x) const;
   TerminalAccess insertTerminalAccess(const RouteTarget& target,
@@ -232,9 +239,9 @@ class RDLRouter
   ObsTree obstructions_;
 
   // Lookup tables
-  std::map<odb::Point, GridGraphVertex> point_vertex_map_;
+  std::unordered_map<odb::Point, GridGraphVertex> point_vertex_map_;
   GridTree vertex_grid_tree_;
-  std::map<GridGraphVertex, odb::Point> vertex_point_map_;
+  std::unordered_map<GridGraphVertex, odb::Point> vertex_point_map_;
   std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
 
   // Routing grid

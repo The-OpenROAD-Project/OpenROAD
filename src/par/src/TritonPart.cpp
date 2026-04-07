@@ -1611,7 +1611,7 @@ void TritonPart::BuildTimingPaths()
         continue;  // check if the net exists
       }
       if (network_->isTopLevelPort(pin)) {
-        auto bterm = block_->findBTerm(network_->pathName(pin));
+        auto bterm = block_->findBTerm(network_->pathName(pin).c_str());
         const int vertex_id
             = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
         if (vertex_id == -1) {
@@ -1622,7 +1622,7 @@ void TritonPart::BuildTimingPaths()
         }
       } else {
         auto inst = network_->instance(pin);
-        auto db_inst = block_->findInst(network_->pathName(inst));
+        auto db_inst = block_->findInst(network_->pathName(inst).c_str());
         const int vertex_id
             = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
         if (vertex_id == -1) {
@@ -1633,7 +1633,7 @@ void TritonPart::BuildTimingPaths()
         }
       }
       auto db_net = block_->findNet(
-          network_->pathName(net));  // convert sta::Net* to dbNet*
+          network_->pathName(net).c_str());  // convert sta::Net* to dbNet*
       const int hyperedge_id
           = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
       if (hyperedge_id == -1) {

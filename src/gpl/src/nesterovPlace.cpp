@@ -207,7 +207,7 @@ void NesterovPlace::init()
 
     // bin, FFT, wlen update with prevSLPCoordi.
     nb->updateDensityCenterPrevSLP();
-    nb->updateDensityForceBin();
+    nb->updateDensityFieldBin();
   }
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
@@ -276,9 +276,11 @@ void NesterovPlace::updateIterGraphics(
     int timing_driven_count,
     bool& final_routability_image_saved)
 {
-  if (!graphics_ || !graphics_->enabled()) {
+  if (!graphics_ || !graphics_->enabled() || !npVars_.debug) {
     return;
   }
+
+  graphics_->addIter(iter, average_overflow_unscaled_);
 
   // For JPEG Saving
   updateDb();
@@ -292,11 +294,6 @@ void NesterovPlace::updateIterGraphics(
     rb_->updateRudyAverage(/*verbose=*/false);
   }
 
-  graphics_->addIter(iter, average_overflow_unscaled_);
-
-  if (!npVars_.debug) {
-    return;
-  }
   int debug_start_iter = npVars_.debug_start_iter;
   if (debug_start_iter == 0 || iter + 1 >= debug_start_iter) {
     bool update

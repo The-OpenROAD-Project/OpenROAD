@@ -117,6 +117,7 @@ class dbChipBumpInst;
 class dbChipConn;
 class dbChipInst;
 class dbChipNet;
+class dbChipPath;
 class dbChipRegion;
 class dbChipRegionInst;
 class dbDatabase;
@@ -6669,6 +6670,7 @@ class dbTechLayerAntennaRule : public dbObject
   pwl_pair getDiffPSR() const;
   pwl_pair getDiffCSR() const;
   pwl_pair getAreaDiffReduce() const;
+  pwl_pair getGatePlusDiffPWL() const;
 
   // PWL
   void setDiffPAR(const std::vector<double>& diff_idx,
@@ -6679,6 +6681,8 @@ class dbTechLayerAntennaRule : public dbObject
                   const std::vector<double>& ratios);
   void setDiffCSR(const std::vector<double>& diff_idx,
                   const std::vector<double>& ratios);
+  void setGatePlusDiffPWL(const std::vector<double>& diff_idx,
+                          const std::vector<double>& ratios);
 
   // Single value
   void setDiffPAR(double ratio);
@@ -7265,6 +7269,10 @@ class dbChip : public dbObject
 
   dbSet<dbMarkerCategory> getMarkerCategories() const;
 
+  dbSet<dbChipPath> getChipPaths() const;
+
+  dbChipPath* findChipPath(const char* name) const;
+
   // User Code Begin dbChip
 
   ChipType getChipType() const;
@@ -7439,6 +7447,34 @@ class dbChipNet : public dbObject
 
   static void destroy(dbChipNet* net);
   // User Code End dbChipNet
+};
+
+class dbChipPath : public dbObject
+{
+ public:
+  const char* getName() const;
+
+  // User Code Begin dbChipPath
+  struct Entry
+  {
+    std::vector<dbChipInst*> chip_inst_path;  // hierarchical path to the region
+    dbChipRegionInst* region;
+    bool negated;  // do not touch this region, i.e., the path must be connected
+                   // without crossing this region
+  };
+
+  dbChip* getChip() const;
+
+  std::vector<Entry> getEntries() const;
+
+  void addEntry(const std::vector<dbChipInst*>& chip_inst_path,
+                dbChipRegionInst* region,
+                bool negated);
+
+  static dbChipPath* create(dbChip* chip, const char* name);
+
+  static void destroy(dbChipPath* path);
+  // User Code End dbChipPath
 };
 
 class dbChipRegion : public dbObject
@@ -9310,6 +9346,7 @@ class dbTechLayer : public dbObject
   ///
   dbTechLayerAntennaRule* createDefaultAntennaRule();
   dbTechLayerAntennaRule* createOxide2AntennaRule();
+  dbTechLayerAntennaRule* getOrCreateAntennaModel(int oxide_idx);
 
   ///
   /// Access and write antenna rule models -- get functions will return nullptr

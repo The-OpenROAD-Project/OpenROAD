@@ -1,0 +1,2 @@
+description = "Triage an OpenROAD GitHub issue by reproducing the bug and minimizing the test case with whittle.py. Use when an issue has an attached tarball artifact (.tar.gz) from `make *_issue`."
+prompt = "Activate the triage-issue skill and triage the following issue: {{args}}"

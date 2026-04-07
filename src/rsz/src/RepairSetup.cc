@@ -638,7 +638,7 @@ bool RepairSetup::repairPins(
       "repair_setup",
       3,
       "Path slack: {}, repairs: {}, load_delays: {}",
-      delayAsString(violator_collector_->getCurrentEndpointSlack(), sta_, 3),
+      delayAsString(violator_collector_->getCurrentEndpointSlack(), 3, sta_),
       repairs_per_pass,
       pins.size());
   for (const auto& drvr_pin : pins) {
@@ -793,8 +793,8 @@ bool RepairSetup::repairEndpoint(sta::Pin* end_pin,
                    3,
                    "{} load_delay = {} intrinsic_delay = {}",
                    path_vertex->name(network_),
-                   delayAsString(load_delay, sta_, 3),
-                   delayAsString(corner_arc->intrinsicDelay(), sta_, 3));
+                   delayAsString(load_delay, 3, sta_),
+                   delayAsString(corner_arc->intrinsicDelay(), 3, sta_));
       }
     }
 
@@ -820,7 +820,7 @@ bool RepairSetup::repairEndpoint(sta::Pin* end_pin,
                "repair_setup",
                3,
                "Path slack: {}, repairs: {}, load_delays: {}",
-               delayAsString(path_slack, sta_, 3),
+               delayAsString(path_slack, 3, sta_),
                repairs_per_pass,
                load_delays.size());
     for (const auto& [drvr_index, ignored] : load_delays) {
@@ -947,9 +947,9 @@ void RepairSetup::printProgress(const int iteration,
         resizer_->clone_move_->numMoves(),
         resizer_->swap_pins_move_->numMoves(),
         area_growth_percent,
-        delayAsString(wns, sta_, 3),
-        delayAsString(st_tns, sta_, 1),
-        delayAsString(en_tns, sta_, 1),
+        delayAsString(wns, 3, sta_),
+        delayAsString(st_tns, 1, sta_),
+        delayAsString(en_tns, 1, sta_),
         max(0, violator_collector_->getNumViolatingEndpoints()),
         worst_pin != nullptr ? network_->pathName(worst_pin) : "");
 
@@ -1100,9 +1100,9 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                end->name(network_),
                end_index,
                max_end_repairs_,
-               delayAsString(worst_slack, sta_, digits),
-               delayAsString(end_slack, sta_, digits),
-               delayAsString(prev_tns, sta_, 1));
+               delayAsString(worst_slack, digits, sta_),
+               delayAsString(end_slack, digits, sta_),
+               delayAsString(prev_tns, 1, sta_));
     if (end_index > max_end_repairs_) {
       debugPrint(logger_,
                  RSZ,
@@ -1147,8 +1147,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                    "LEGACY{} Phase: Restoring best slack; "
                    "endpoint slack = {}, WNS = {}",
                    phase_marker,
-                   delayAsString(prev_end_slack, sta_, digits),
-                   delayAsString(prev_worst_slack, sta_, digits));
+                   delayAsString(prev_end_slack, digits, sta_),
+                   delayAsString(prev_worst_slack, digits, sta_));
         resizer_->journalRestore();
         journal_open = false;
         break;
@@ -1166,8 +1166,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                      "LEGACY{} Phase: Restoring best slack; "
                      "endpoint slack = {}, WNS = {}",
                      phase_marker,
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
         } else {
           resizer_->journalEnd();
@@ -1180,8 +1180,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                    "LEGACY{} Phase: Endpoint slack {} meets "
                    "slack margin {}, done",
                    phase_marker,
-                   delayAsString(worst_slack, sta_, digits),
-                   delayAsString(setup_slack_margin, sta_, digits));
+                   delayAsString(worst_slack, digits, sta_),
+                   delayAsString(setup_slack_margin, digits, sta_));
         break;
       }
 
@@ -1207,8 +1207,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                      "LEGACY{} Phase: Restoring best slack; "
                      "endpoint slack = {}, WNS = {}",
                      phase_marker,
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
         } else {
           resizer_->journalEnd();
@@ -1245,12 +1245,12 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                  "Endpoint slack ({} -> {})",
                  phase_marker,
                  better ? "Improved" : "Worsened",
-                 delayAsString(prev_worst_slack, sta_, digits),
-                 delayAsString(worst_slack, sta_, digits),
-                 delayAsString(prev_tns_local, sta_, 1),
-                 delayAsString(new_tns, sta_, 1),
-                 delayAsString(prev_end_slack, sta_, digits),
-                 delayAsString(end_slack, sta_, digits));
+                 delayAsString(prev_worst_slack, digits, sta_),
+                 delayAsString(worst_slack, digits, sta_),
+                 delayAsString(prev_tns_local, 1, sta_),
+                 delayAsString(new_tns, 1, sta_),
+                 delayAsString(prev_end_slack, digits, sta_),
+                 delayAsString(end_slack, digits, sta_));
 
       if (better) {
         prev_end_slack = end_slack;
@@ -1288,8 +1288,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
                      "LEGACY{} Phase: Restoring best slack; "
                      "endpoint slack = {}, WNS = {}",
                      phase_marker,
-                     delayAsString(prev_end_slack, sta_, digits),
-                     delayAsString(prev_worst_slack, sta_, digits));
+                     delayAsString(prev_end_slack, digits, sta_),
+                     delayAsString(prev_worst_slack, digits, sta_));
           resizer_->journalRestore();
           journal_open = false;
           break;
@@ -1358,8 +1358,8 @@ void RepairSetup::repairSetup_Legacy(const float setup_slack_margin,
              1,
              "LEGACY{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
-             delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1));
+             delayAsString(final_wns, digits, sta_),
+             delayAsString(final_tns, 1, sta_));
 }
 
 // WNS Phase: WNS-Focused Repair
@@ -1631,8 +1631,8 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                  1,
                  "WNS{} Phase: WNS {} meets slack margin {}, done",
                  phase_marker,
-                 delayAsString(worst_slack, sta_, digits),
-                 delayAsString(setup_slack_margin, sta_, digits));
+                 delayAsString(worst_slack, digits, sta_),
+                 delayAsString(setup_slack_margin, digits, sta_));
       printProgress(opto_iteration, true, false, phase_marker);
       break;
     }
@@ -1711,7 +1711,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
         for (size_t i = 0; i < std::min(viol_pins.size(), size_t(20)); i++) {
           sta::Vertex* pin_vertex = graph_->pinDrvrVertex(viol_pins[i]);
           sta::Slack pin_slack
-              = pin_vertex ? sta_->slack(pin_vertex, max_) : 0.0;
+              = pin_vertex ? sta_->slack(pin_vertex, max_) : sta::Slack(0.0);
           debugPrint(logger_,
                      RSZ,
                      "repair_setup",
@@ -1719,7 +1719,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                      "  [{}] {} slack={}",
                      i,
                      network_->pathName(viol_pins[i]),
-                     delayAsString(pin_slack, sta_, digits));
+                     delayAsString(pin_slack, digits, sta_));
         }
         if (viol_pins.size() > 20) {
           debugPrint(logger_,
@@ -1740,7 +1740,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
         for (size_t i = 0; i < std::min(viol_pins.size(), size_t(20)); i++) {
           sta::Vertex* pin_vertex = graph_->pinDrvrVertex(viol_pins[i]);
           sta::Slack pin_slack
-              = pin_vertex ? sta_->slack(pin_vertex, max_) : 0.0;
+              = pin_vertex ? sta_->slack(pin_vertex, max_) : sta::Slack(0.0);
           debugPrint(logger_,
                      RSZ,
                      "repair_setup",
@@ -1748,7 +1748,7 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                      "  [{}] {} slack={}",
                      i,
                      network_->pathName(viol_pins[i]),
-                     delayAsString(pin_slack, sta_, digits));
+                     delayAsString(pin_slack, digits, sta_));
         }
         if (viol_pins.size() > 20) {
           debugPrint(logger_,
@@ -1806,8 +1806,8 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                    "WNS{} Phase: Restoring best slack, "
                    "end slack {} worst slack {}",
                    phase_marker,
-                   delayAsString(prev_end_slack, sta_, digits),
-                   delayAsString(prev_worst_slack, sta_, digits));
+                   delayAsString(prev_end_slack, digits, sta_),
+                   delayAsString(prev_worst_slack, digits, sta_));
         total_decreasing_slack_passes = 0;
         for (auto endpoint : decreasing_slack_endpoints) {
           decreasing_slack_counts[endpoint] = 0;
@@ -1865,12 +1865,12 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                  "TNS ({} -> {}) "
                  "Endpoint slack ({} -> {})",
                  phase_marker,
-                 delayAsString(prev_worst_slack, sta_, digits),
-                 delayAsString(new_wns, sta_, digits),
-                 delayAsString(prev_tns_local, sta_, 1),
-                 delayAsString(new_tns, sta_, 1),
-                 delayAsString(prev_end_slack, sta_, digits),
-                 delayAsString(end_slack, sta_, digits));
+                 delayAsString(prev_worst_slack, digits, sta_),
+                 delayAsString(new_wns, digits, sta_),
+                 delayAsString(prev_tns_local, 1, sta_),
+                 delayAsString(new_tns, 1, sta_),
+                 delayAsString(prev_end_slack, digits, sta_),
+                 delayAsString(end_slack, digits, sta_));
 
       any_improvement_this_round = true;
       total_decreasing_slack_passes = 0;
@@ -1920,12 +1920,12 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
                  "TNS ({} -> {}) "
                  "Endpoint slack ({} -> {})",
                  phase_marker,
-                 delayAsString(prev_worst_slack, sta_, digits),
-                 delayAsString(new_wns, sta_, digits),
-                 delayAsString(prev_tns_local, sta_, 1),
-                 delayAsString(new_tns, sta_, 1),
-                 delayAsString(prev_end_slack, sta_, digits),
-                 delayAsString(end_slack, sta_, digits));
+                 delayAsString(prev_worst_slack, digits, sta_),
+                 delayAsString(new_wns, digits, sta_),
+                 delayAsString(prev_tns_local, 1, sta_),
+                 delayAsString(new_tns, 1, sta_),
+                 delayAsString(prev_end_slack, digits, sta_),
+                 delayAsString(end_slack, digits, sta_));
 
       fallback_ = true;
       if (total_decreasing_slack_passes == 0) {
@@ -2008,8 +2008,8 @@ void RepairSetup::repairSetup_Wns(const float setup_slack_margin,
              1,
              "WNS{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
-             delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1));
+             delayAsString(final_wns, digits, sta_),
+             delayAsString(final_tns, 1, sta_));
 }
 
 // TNS Phase: TNS-Focused Repair
@@ -2157,7 +2157,7 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                phase_marker,
                network_->pathName(endpoint_pin),
                endpoint_index,
-               delayAsString(endpoint_slack, sta_, digits));
+               delayAsString(endpoint_slack, digits, sta_));
 
     // Initialize adaptive pass limit for this endpoint
     if (!endpoint_pass_limits.contains(endpoint_pin)) {
@@ -2210,7 +2210,7 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                      2,
                      "TNS{} Phase: Restoring best end slack {}",
                      phase_marker,
-                     delayAsString(prev_endpoint_slack, sta_, digits));
+                     delayAsString(prev_endpoint_slack, digits, sta_));
           resizer_->journalRestore();
         } else {
           resizer_->journalEnd();
@@ -2255,12 +2255,12 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                    "TNS ({} -> {}) "
                    "Endpoint slack ({} -> {})",
                    phase_marker,
-                   delayAsString(prev_global_wns, sta_, digits),
-                   delayAsString(global_wns, sta_, digits),
-                   delayAsString(prev_tns_local, sta_, 1),
-                   delayAsString(new_tns, sta_, 1),
-                   delayAsString(prev_endpoint_slack, sta_, digits),
-                   delayAsString(endpoint_slack, sta_, digits));
+                   delayAsString(prev_global_wns, digits, sta_),
+                   delayAsString(global_wns, digits, sta_),
+                   delayAsString(prev_tns_local, 1, sta_),
+                   delayAsString(new_tns, 1, sta_),
+                   delayAsString(prev_endpoint_slack, digits, sta_),
+                   delayAsString(endpoint_slack, digits, sta_));
         prev_global_wns = global_wns;
         prev_tns_local = new_tns;
         if (sta::fuzzyGreaterEqual(endpoint_slack, setup_slack_margin)) {
@@ -2312,12 +2312,12 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
                    "TNS ({} -> {}) "
                    "Endpoint slack ({} -> {})",
                    phase_marker,
-                   delayAsString(prev_global_wns, sta_, digits),
-                   delayAsString(global_wns, sta_, digits),
-                   delayAsString(prev_tns_local, sta_, 1),
-                   delayAsString(new_tns, sta_, 1),
-                   delayAsString(prev_endpoint_slack, sta_, digits),
-                   delayAsString(endpoint_slack, sta_, digits));
+                   delayAsString(prev_global_wns, digits, sta_),
+                   delayAsString(global_wns, digits, sta_),
+                   delayAsString(prev_tns_local, 1, sta_),
+                   delayAsString(new_tns, 1, sta_),
+                   delayAsString(prev_endpoint_slack, digits, sta_),
+                   delayAsString(endpoint_slack, digits, sta_));
 
         // Rejected move - restore and try again
         fallback_ = true;
@@ -2388,8 +2388,8 @@ void RepairSetup::repairSetup_Tns(const float setup_slack_margin,
              1,
              "TNS{} Phase complete. WNS: {}, TNS: {}",
              phase_marker,
-             delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1));
+             delayAsString(final_wns, digits, sta_),
+             delayAsString(final_tns, 1, sta_));
 }
 
 // ENDPOINT_FANIN Phase: Iteratively refine threshold from 0 to endpoint slack
@@ -2461,7 +2461,7 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
 
   // Diminishing returns threshold: stop if improvement < 10ps
   // Increased from 1ps to 10ps to reduce iterations with minimal improvement
-  constexpr sta::Slack diminishing_returns_threshold = 1e-11;  // 10 picoseconds
+  constexpr float diminishing_returns_threshold = 1e-11;  // 10 picoseconds
 
   debugPrint(logger_,
              RSZ,
@@ -2554,7 +2554,7 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                point_type,
                network_->pathName(point_pin),
                point_index,
-               delayAsString(point_slack, sta_, digits));
+               delayAsString(point_slack, digits, sta_));
 
     // Clear rejected moves for this point
     rejected_pin_moves_current_endpoint_.clear();
@@ -2614,7 +2614,7 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                  threshold_idx + 1,
                  num_thresholds,
                  margin_pct * 100.0,
-                 delayAsString(threshold, sta_, digits));
+                 delayAsString(threshold, digits, sta_));
 
       // Save state before repair attempt
       sta::Slack prev_wns = violator_collector_->getWns();
@@ -2648,7 +2648,7 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                  phase_name,
                  phase_marker,
                  viol_pins.size(),
-                 delayAsString(threshold, sta_, digits));
+                 delayAsString(threshold, digits, sta_));
 
       if (viol_pins.empty()) {
         debugPrint(logger_,
@@ -2759,15 +2759,15 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                  threshold_idx + 1,
                  num_thresholds,
                  point_type,
-                 delayAsString(prev_point_slack, sta_, digits),
-                 delayAsString(new_point_slack, sta_, digits),
-                 delayAsString(improvement, sta_, digits),
-                 delayAsString(prev_wns, sta_, digits),
-                 delayAsString(new_wns, sta_, digits),
-                 delayAsString(prev_endpoint_tns, sta_, 1),
-                 delayAsString(new_endpoint_tns, sta_, 1),
-                 delayAsString(prev_startpoint_tns, sta_, 1),
-                 delayAsString(new_startpoint_tns, sta_, 1),
+                 delayAsString(prev_point_slack, digits, sta_),
+                 delayAsString(new_point_slack, digits, sta_),
+                 delayAsString(improvement, digits, sta_),
+                 delayAsString(prev_wns, digits, sta_),
+                 delayAsString(new_wns, digits, sta_),
+                 delayAsString(prev_endpoint_tns, 1, sta_),
+                 delayAsString(new_endpoint_tns, 1, sta_),
+                 delayAsString(prev_startpoint_tns, 1, sta_),
+                 delayAsString(new_startpoint_tns, 1, sta_),
                  better ? " [ACCEPT]" : " [REJECT]");
 
       if (better) {
@@ -2788,8 +2788,8 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
                      "moving to next {}",
                      phase_name,
                      phase_marker,
-                     delayAsString(improvement, sta_, digits),
-                     delayAsString(diminishing_returns_threshold, sta_, digits),
+                     delayAsString(improvement, digits, sta_),
+                     delayAsString(diminishing_returns_threshold, digits, sta_),
                      point_type);
           break;  // Move to next point
         }
@@ -2834,8 +2834,8 @@ void RepairSetup::repairSetup_Directional(const bool use_startpoints,
              phase_marker,
              point_type_cap,
              points_processed,
-             delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1));
+             delayAsString(final_wns, digits, sta_),
+             delayAsString(final_tns, 1, sta_));
 }
 
 // Perform some last fixing based on sizing only.
@@ -2873,7 +2873,7 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                1,
                "LAST_GASP{} Phase: TNS is {}, exiting",
                phase_marker,
-               delayAsString(curr_tns, sta_, 1));
+               delayAsString(curr_tns, 1, sta_));
     return;
   }
 
@@ -2929,8 +2929,8 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                end->name(network_),
                end_index,
                max_end_count,
-               delayAsString(end_slack, sta_, digits),
-               delayAsString(worst_slack, sta_, digits));
+               delayAsString(end_slack, digits, sta_),
+               delayAsString(worst_slack, digits, sta_));
     if (end_index > max_end_count) {
       debugPrint(logger_,
                  RSZ,
@@ -3010,10 +3010,10 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                    phase_marker,
                    end_index,
                    pass,
-                   delayAsString(prev_worst_slack, sta_, digits),
-                   delayAsString(curr_worst_slack, sta_, digits),
-                   delayAsString(prev_tns, sta_, 1),
-                   delayAsString(curr_tns, sta_, 1));
+                   delayAsString(prev_worst_slack, digits, sta_),
+                   delayAsString(curr_worst_slack, digits, sta_),
+                   delayAsString(prev_tns, 1, sta_),
+                   delayAsString(curr_tns, 1, sta_));
         prev_worst_slack = curr_worst_slack;
         prev_tns = curr_tns;
         if (sta::fuzzyGreaterEqual(end_slack, params.setup_slack_margin)) {
@@ -3036,11 +3036,11 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
                    end_index,
                    pass,
                    wns_improved ? "improved" : "worsened",
-                   delayAsString(prev_worst_slack, sta_, digits),
-                   delayAsString(curr_worst_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, digits, sta_),
+                   delayAsString(curr_worst_slack, digits, sta_),
                    tns_improved ? "improved" : "worsened",
-                   delayAsString(prev_tns, sta_, 1),
-                   delayAsString(curr_tns, sta_, 1));
+                   delayAsString(prev_tns, 1, sta_),
+                   delayAsString(curr_tns, 1, sta_));
         fallback_ = true;
         resizer_->journalRestore();
         journal_open = false;
@@ -3091,8 +3091,8 @@ void RepairSetup::repairSetup_LastGasp(const OptoParams& params,
              1,
              "LAST_GASP{} Phase complete. WNS: {}, TNS: {}, Time: {:.2f}s",
              phase_marker,
-             delayAsString(final_wns, sta_, digits),
-             delayAsString(final_tns, sta_, 1),
+             delayAsString(final_wns, digits, sta_),
+             delayAsString(final_tns, 1, sta_),
              timer.elapsed());
 }
 
@@ -3217,7 +3217,7 @@ void RepairSetup::traverseFaninCone(
                        1,
                        "swapVTCritCells: found crit inst {}: slack {}",
                        network_->name(inst),
-                       inst_slack);
+                       float(inst_slack));
           }
         }
       }

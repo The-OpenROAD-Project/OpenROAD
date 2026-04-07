@@ -19,8 +19,6 @@ namespace odb {
 class dbIStream;
 class dbOStream;
 class _dbDatabase;
-class dbScanPin;
-class dbInst;
 
 class _dbScanInst : public _dbObject
 {

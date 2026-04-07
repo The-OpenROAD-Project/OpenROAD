@@ -104,9 +104,9 @@ void BufferMove::debugCheckMultipleBuffers(sta::Path* path,
           && !network_->isTopLevelPort(path_pin)) {
         const sta::TimingArc* prev_arc = path->prevArc(sta_);
         printf("repair_setup %s: %s ---> %s \n",
-               prev_arc->from()->libertyCell()->name(),
-               prev_arc->from()->name(),
-               prev_arc->to()->name());
+               prev_arc->from()->libertyCell()->name().c_str(),
+               prev_arc->from()->name().c_str(),
+               prev_arc->to()->name().c_str());
       }
     }
   }

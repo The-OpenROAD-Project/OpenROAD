@@ -20,6 +20,7 @@
 #include "db/infra/frPoint.h"
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frAccess.h"
+#include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
 #include "global.h"
 
@@ -59,7 +60,10 @@ class drNet : public drBlockObject
   void clearRouteConnFigs() { routeConnFigs_.clear(); }
   frNet* getFrNet() const { return fNet_; }
   void setFrNet(frNet* net) { fNet_ = net; }
-  const std::set<frBlockObject*>& getFrNetTerms() const { return fNetTerms_; }
+  const frOrderedIdSet<frBlockObject*>& getFrNetTerms() const
+  {
+    return fNetTerms_;
+  }
   bool isModified() const { return modified_; }
   int getNumMarkers() const { return numMarkers_; }
   int getNumPinsIn() const { return numPinsIn_; }
@@ -117,7 +121,10 @@ class drNet : public drBlockObject
     // TODO;
     return false;
   }
-  void setFrNetTerms(const std::set<frBlockObject*>& in) { fNetTerms_ = in; }
+  void setFrNetTerms(const frOrderedIdSet<frBlockObject*>& in)
+  {
+    fNetTerms_ = in;
+  }
   void addFrNetTerm(frBlockObject* in) { fNetTerms_.insert(in); }
   void setModified(bool in) { modified_ = in; }
 
@@ -207,7 +214,7 @@ class drNet : public drBlockObject
   std::vector<std::unique_ptr<drConnFig>> extConnFigs_;
   std::vector<std::unique_ptr<drConnFig>> routeConnFigs_;
   std::vector<std::unique_ptr<drConnFig>> bestRouteConnFigs_;
-  std::set<frBlockObject*> fNetTerms_;
+  frOrderedIdSet<frBlockObject*> fNetTerms_;
   frNet* fNet_{nullptr};
   // old
   bool modified_{false};

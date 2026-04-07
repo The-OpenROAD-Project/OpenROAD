@@ -37,6 +37,7 @@
 #include "sta/VerilogReader.hh"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "verilogWriter.h"
 namespace odb {
 
 static std::map<std::string, std::string> dup_orient_map
@@ -119,7 +120,7 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
       temp_network.netIterator(top_inst));
   while (net_iter->hasNext()) {
     auto* net = net_iter->next();
-    const char* net_name = temp_network.name(net);
+    const std::string net_name = temp_network.name(net);
     auto* chip_net = dbChipNet::create(chip, net_name);
 
     debugPrint(logger_,
@@ -145,10 +146,10 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
         continue;
       }
 
-      const char* port_name = temp_network.name(temp_network.port(pin));
+      const std::string port_name = temp_network.name(temp_network.port(pin));
       dbChip* master = chip_inst->getMasterChip();
 
-      dbBTerm* bterm = master->getBlock()->findBTerm(port_name);
+      dbBTerm* bterm = master->getBlock()->findBTerm(port_name.c_str());
       if (!bterm) {
         continue;
       }
@@ -188,6 +189,15 @@ void ThreeDBlox::readDbx(const std::string& dbx_file)
     createConnection(connection);
   }
   calculateSize(chip);
+  for (const auto& [_, assertion] : data.path_assertions) {
+    dbChipPath* chip_path = dbChipPath::create(chip, assertion.name.c_str());
+    for (const auto& entry : assertion.entries) {
+      // Resolve the dotted path string to a live DB object
+      std::vector<dbChipInst*> path_insts;
+      dbChipRegionInst* region_inst = resolvePath(entry.region, path_insts);
+      chip_path->addEntry(path_insts, region_inst, entry.negated);
+    }
+  }
 }
 
 void ThreeDBlox::check()
@@ -301,8 +311,21 @@ void ThreeDBlox::writeDbx(const std::string& dbx_file, odb::dbChip* chip)
 
   writeDbv(current_dir_path + chip->getName() + ".3dbv", chip);
 
+  // Write the Verilog connectivity file for this HIER chiplet.
+  writeVerilog(current_dir_path + chip->getName() + ".v", chip);
+
   DbxWriter writer(logger_, db_);
   writer.writeChiplet(dbx_file, chip);
+}
+
+void ThreeDBlox::writeVerilog(const std::string& verilog_file,
+                              odb::dbChip* chip)
+{
+  if (chip == nullptr) {
+    return;
+  }
+  VerilogWriter writer(logger_);
+  writer.writeChiplet(verilog_file, chip);
 }
 
 void ThreeDBlox::writeBMap(const std::string& bmap_file,

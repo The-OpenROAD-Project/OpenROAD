@@ -9,6 +9,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -294,6 +295,11 @@ class FastRouteCore
   void writeCongestionMap(const std::string& filename);
 
  private:
+  void convertGridsToSegments(
+      const std::vector<GPoint3D>& grids,
+      int grid_count,
+      std::unordered_set<GSegment, GSegmentHash>& net_segs,
+      GRoute& route);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);

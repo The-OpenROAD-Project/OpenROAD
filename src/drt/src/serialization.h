@@ -750,7 +750,6 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->DBPROCESSNODE;
   (ar) & router_cfg->OUT_MAZE_FILE;
   (ar) & router_cfg->DRC_RPT_FILE;
-  (ar) & router_cfg->CMAP_FILE;
   (ar) & router_cfg->OR_SEED;
   (ar) & router_cfg->OR_K;
   (ar) & router_cfg->MAX_THREADS;
@@ -794,8 +793,6 @@ void serializeGlobals(Archive& ar, RouterConfiguration* router_cfg)
   (ar) & router_cfg->BLOCKCOST;
   (ar) & router_cfg->GUIDECOST;
   (ar) & router_cfg->SHAPEBLOATWIDTH;
-  (ar) & router_cfg->HISTCOST;
-  (ar) & router_cfg->CONGCOST;
 }
 
 }  // namespace drt

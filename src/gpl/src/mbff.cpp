@@ -869,13 +869,15 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
 
         // standard pins
         if (IsDPin(iterm)) {
-          tray_inst[tray_idx]->findITerm(d_pin->name())->connect(net);
+          tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
         }
         if (IsQPin(iterm)) {
           if (IsInvertingQPin(iterm)) {
-            tray_inst[tray_idx]->findITerm(qn_pin->name())->connect(net);
+            tray_inst[tray_idx]
+                ->findITerm(qn_pin->name().c_str())
+                ->connect(net);
           } else {
-            tray_inst[tray_idx]->findITerm(q_pin->name())->connect(net);
+            tray_inst[tray_idx]->findITerm(q_pin->name().c_str())->connect(net);
           }
         }
         if (IsSupplyPin(iterm)) {
@@ -2362,7 +2364,7 @@ void MBFF::ReadLibs()
 
       const float cur_area = (master->getHeight() / multiplier_)
                              * (master->getWidth() / multiplier_);
-      const float leakage = getLeakage(tmp_tray->getMaster());
+      const float cur_leakage = getLeakage(tmp_tray->getMaster());
 
       debugPrint(log_,
                  GPL,
@@ -2372,11 +2374,12 @@ void MBFF::ReadLibs()
                  master->getName(),
                  array_mask.to_string(),
                  cur_area,
-                 leakage);
+                 cur_leakage);
 
-      if (tray_area_[array_mask][idx] > cur_area) {
+      if (std::tie(tray_power_[array_mask][idx], tray_area_[array_mask][idx])
+          > std::tie(cur_leakage, cur_area)) {
         tray_area_[array_mask][idx] = cur_area;
-        tray_power_[array_mask][idx] = leakage;
+        tray_power_[array_mask][idx] = cur_leakage;
         best_master_[array_mask][idx] = master;
         pin_mappings_[array_mask][idx] = GetPinMapping(tmp_tray);
         tray_width_[array_mask][idx] = master->getWidth() / multiplier_;
@@ -2393,11 +2396,12 @@ void MBFF::ReadLibs()
         std::vector<Point> qn;
 
         for (const auto& p : pin_mappings_[array_mask][idx]) {
-          dbITerm* d_pin = tmp_tray->findITerm(p.first->name());
-          dbITerm* q_pin = (p.second.q ? tmp_tray->findITerm(p.second.q->name())
-                                       : nullptr);
+          dbITerm* d_pin = tmp_tray->findITerm(p.first->name().c_str());
+          dbITerm* q_pin
+              = (p.second.q ? tmp_tray->findITerm(p.second.q->name().c_str())
+                            : nullptr);
           dbITerm* qn_pin
-              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name())
+              = (p.second.qn ? tmp_tray->findITerm(p.second.qn->name().c_str())
                              : nullptr);
 
           d.push_back(Point{

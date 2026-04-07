@@ -17,6 +17,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 namespace ord {
 // Defined in OpenRoad.i
 est::EstimateParasitics* getEstimateParasitics();
@@ -83,7 +87,7 @@ using est::ParasiticsSrc;
 }
 
 %typemap(in) ParasiticsSrc {
-  int length;
+  Tcl_Size length;
   const char *arg = Tcl_GetStringFromObj($input, &length);
   if (stringEq(arg, "placement"))
     $1 = ParasiticsSrc::placement;

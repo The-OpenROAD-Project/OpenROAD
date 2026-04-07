@@ -114,10 +114,7 @@ float CUGR::calculatePartialSlack()
 
 float CUGR::getNetSlack(odb::dbNet* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net);
-  float slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net, sta::MinMax::max());
 }
 
 void CUGR::setInitialNetSlacks()

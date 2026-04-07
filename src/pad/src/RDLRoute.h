@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "RDLRouter.h"
@@ -23,13 +24,14 @@ class RDLRoute
  public:
   RDLRoute(odb::dbITerm* source, const std::vector<odb::dbITerm*>& dests);
 
-  void setRoute(const std::map<GridGraphVertex, odb::Point>& vertex_point_map,
-                const std::vector<GridGraphVertex>& vertex,
-                const std::vector<RDLRouter::GridEdge>& removed_edges,
-                const RouteTarget* source,
-                const RouteTarget* target,
-                const RDLRouter::TerminalAccess& access_source,
-                const RDLRouter::TerminalAccess& access_dest);
+  void setRoute(
+      const std::unordered_map<GridGraphVertex, odb::Point>& vertex_point_map,
+      const std::vector<GridGraphVertex>& vertex,
+      const std::vector<RDLRouter::GridEdge>& removed_edges,
+      const RouteTarget* source,
+      const RouteTarget* target,
+      const RDLRouter::TerminalAccess& access_source,
+      const RDLRouter::TerminalAccess& access_dest);
   void resetRoute();
 
   bool isRouted() const { return routed_; }

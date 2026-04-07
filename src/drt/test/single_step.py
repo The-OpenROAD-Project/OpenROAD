@@ -2,6 +2,9 @@ from openroad import Design, Tech
 import helpers
 import drt_aux
 
+bazel_working_dir = "/_main/src/drt/test/"
+helpers.if_bazel_change_working_dir_to(bazel_working_dir)
+
 tech = Tech()
 tech.readLef("testcase/ispd18_sample/ispd18_sample.input.lef")
 design = helpers.make_design(tech)
@@ -10,10 +13,13 @@ design.readDef("testcase/ispd18_sample/ispd18_sample.input.def")
 gr = design.getGlobalRouter()
 gr.readGuides("testcase/ispd18_sample/ispd18_sample.input.guide")
 
+drc_file = helpers.make_result_file("single_step.output.drc.rpt")
+maze_file = helpers.make_result_file("single_step.output.maze.log")
+
 drt_aux.detailed_route(
     design,
-    output_drc="results/single_step.output.drc.rpt",
-    output_maze="results/single_step.output.maze.log",
+    output_drc=drc_file,
+    output_maze=maze_file,
     verbose=0,
     single_step_dr=True,
 )

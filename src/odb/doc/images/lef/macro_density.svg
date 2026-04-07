@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="397" height="53"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 33 1 29 1 37"/>
+   <polygon points="17 33 9 29 9 37"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_DENSITY"
+      xlink:title="K_DENSITY">
+      <rect x="31" y="19" width="90" height="32"/>
+      <rect x="29" y="17" width="90" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="39" y="37">K_DENSITY</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#density_layer"
+      xlink:title="density_layer">
+      <rect x="161" y="19" width="106" height="32"/>
+      <rect x="159" y="17" width="106" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="169" y="37">density_layer</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_END"
+      xlink:title="K_END">
+      <rect x="307" y="19" width="62" height="32"/>
+      <rect x="305" y="17" width="62" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="315" y="37">K_END</text>
+   </a>
+   <path class="line"
+         d="m17 33 h2 m0 0 h10 m90 0 h10 m20 0 h10 m106 0 h10 m-146 0 l20 0 m-1 0 q-9 0 -9 -10 l0 -12 q0 -10 10 -10 m126 32 l20 0 m-20 0 q10 0 10 -10 l0 -12 q0 -10 -10 -10 m-126 0 h10 m0 0 h116 m20 32 h10 m62 0 h10 m3 0 h-3"/>
+   <polygon points="387 33 395 29 395 37"/>
+   <polygon points="387 33 379 29 379 37"/>
+</svg>
