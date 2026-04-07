@@ -14,7 +14,7 @@
 namespace psm {
 
 Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
-    : pt_(pt), layer_(layer)
+    : pt_(pt), layer_(layer), visited_(false)
 {
 }
 

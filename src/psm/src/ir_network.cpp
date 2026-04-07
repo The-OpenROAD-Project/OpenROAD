@@ -1298,4 +1298,19 @@ Node::NodeSet IRNetwork::getBPinShapeNodes() const
   return pin_nodes;
 }
 
+void IRNetwork::clearVisitedNodes()
+{
+  for (const auto& [layer, nodes] : nodes_) {
+    for (const auto& node : nodes) {
+      node->setVisited(false);
+    }
+  }
+  for (const auto& node : iterm_nodes_) {
+    node->setVisited(false);
+  }
+  for (const auto& node : bpin_nodes_) {
+    node->setVisited(false);
+  }
+}
+
 }  // namespace psm

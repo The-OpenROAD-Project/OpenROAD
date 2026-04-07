@@ -59,6 +59,9 @@ class Node
   const odb::Point& getPoint() const { return pt_; };
   odb::dbTechLayer* getLayer() const { return layer_; };
 
+  bool isVisited() const { return visited_; }
+  void setVisited(bool visited) { visited_ = visited; }
+
   void print(utl::Logger* logger, const std::string& prefix = "") const;
   virtual std::string describe(const std::string& prefix) const;
 
@@ -75,6 +78,7 @@ class Node
 
   odb::Point pt_;
   odb::dbTechLayer* layer_;
+  bool visited_ = false;
 };
 
 class SourceNode : public Node

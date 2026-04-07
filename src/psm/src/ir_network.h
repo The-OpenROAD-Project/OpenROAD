@@ -106,6 +106,8 @@ class IRNetwork
 
   std::size_t getNodeCount(bool include_iterms = false) const;
 
+  void clearVisitedNodes();
+
   const Connections& getConnections() const { return connections_; }
   NodePtrMap<Connection> getConnectionMap() const;
 
