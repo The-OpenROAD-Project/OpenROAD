@@ -2980,7 +2980,7 @@ void Resizer::resizeSlackPreamble()
 
 // Run repair_design to repair long wires and max slew, capacitance and fanout
 // violations. Find the slacks, and then undo all changes to the netlist.
-void Resizer::findResizeSlacks(bool run_journal_restore)
+void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
 {
   initBlock();
 
@@ -3027,6 +3027,35 @@ void Resizer::findResizeSlacks(bool run_journal_restore)
     // TODO: fix the function to understand the parasitics from the global
     // routing.
     fullyRebuffer(nullptr);
+  }
+
+  if (run_repair_timing) {
+    // Re-estimate parasitics with placement-based RC after repair_design
+    estimate_parasitics_->estimateParasitics(parasitics_src);
+    ensureLevelDrvrVertices();
+
+    // Conservative repair_timing: only fix worst setup violations.
+    repair_setup_->repairSetup(
+        /*setup_slack_margin=*/0.0,
+        /*repair_tns_end_percent=*/0.0,  // TODO: Change value
+        /*max_passes=*/1,
+        /*max_iterations=*/1,
+        /*max_repairs_per_pass=*/1,
+        /*verbose=*/false,
+        /*sequence=*/parseMoveSequence(""),
+        /*phases=*/"",
+        /*skip_pin_swap=*/true,    // avoid changing connectivity during placement
+        /*skip_gate_cloning=*/true,  // cloning adds instances, complicates density
+        /*skip_size_down=*/false,
+        /*skip_buffering=*/false,
+        /*skip_buffer_removal=*/false,
+        /*skip_last_gasp=*/true,   // skip aggressive last-resort passes
+        /*skip_vt_swap=*/true,     // post-placement optimization
+        /*skip_crit_vt_swap=*/true);
+
+    // Re-estimate parasitics after repair_setup
+    estimate_parasitics_->estimateParasitics(parasitics_src);
+    ensureLevelDrvrVertices();
   }
 
   findResizeSlacks1();

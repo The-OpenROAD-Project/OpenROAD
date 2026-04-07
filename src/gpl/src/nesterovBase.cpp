@@ -1096,6 +1096,7 @@ NesterovPlaceVars::NesterovPlaceVars(const PlaceOptions& options)
       routability_snapshot_overflow(options.routabilitySnapshotOverflow),
       keepResizeBelowOverflow(options.keepResizeBelowOverflow),
       timingDrivenMode(options.timingDrivenMode),
+      timingDrivenRepairTiming(options.timingDrivenRepairTiming),
       routability_driven_mode(options.routabilityDrivenMode),
       disableRevertIfDiverge(options.disableRevertIfDiverge)
 {

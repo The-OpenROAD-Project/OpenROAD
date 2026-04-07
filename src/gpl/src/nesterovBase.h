@@ -779,6 +779,7 @@ struct NesterovPlaceVars
   static constexpr int maxRecursionInitSLPCoef = 10;
 
   bool timingDrivenMode;
+  bool timingDrivenRepairTiming;
   int timingDrivenIterCounter = 0;
   const bool routability_driven_mode;
   const bool disableRevertIfDiverge;

@@ -24,6 +24,7 @@ static gpl::PlaceOptions getOptions(
 
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
+  checkFlag(flags, "-timing_driven_repair_timing", options.timingDrivenRepairTiming);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
   checkFlag(

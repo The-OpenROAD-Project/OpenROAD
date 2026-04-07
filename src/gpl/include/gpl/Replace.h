@@ -55,6 +55,7 @@ struct PlaceOptions
   bool skipIoMode = false;
   bool forceCenterInitialPlace = false;
   bool timingDrivenMode = false;
+  bool timingDrivenRepairTiming = false;
   bool routabilityDrivenMode = false;
   bool uniformTargetDensityMode = false;
   std::vector<int> timingNetWeightOverflows{64, 20};
