@@ -565,9 +565,7 @@ bool NegotiationLegalizer::initFromDb()
 
     HLCell cell;
     cell.db_inst = db_inst;
-    cell.fixed = (status == odb::dbPlacementStatus::FIRM
-                  || status == odb::dbPlacementStatus::LOCKED
-                  || status == odb::dbPlacementStatus::COVER);
+    cell.fixed = status.isFixed();
 
     int db_x = 0;
     int db_y = 0;
@@ -758,8 +756,8 @@ void NegotiationLegalizer::buildGrid()
     const int xBegin = effXBegin(cell);
     const int xEnd = effXEnd(cell);
     for (int dy = 0; dy < cell.height; ++dy) {
+      const int gy = cell.y + dy;
       for (int gx = xBegin; gx < xEnd; ++gx) {
-        const int gy = cell.y + dy;
         if (gridExists(gx, gy)) {
           gridAt(gx, gy).capacity = 0;
           // Physical footprint carries usage=1; padding slots do not.
@@ -825,8 +823,8 @@ void NegotiationLegalizer::addUsage(int cellIdx, int delta)
   const int xBegin = effXBegin(cell);
   const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
-    for (int gx = xBegin; gx < xEnd; ++gx) {
-      const int gy = cell.y + dy;
+    const int gy = cell.y + dy;
+    for (int gx = xBegin; gx < xEnd; ++gx) {      
       if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
       }
