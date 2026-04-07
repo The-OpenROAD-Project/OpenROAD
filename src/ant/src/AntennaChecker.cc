@@ -56,6 +56,8 @@ struct AntennaModel
 
   double minus_diff_factor;
   double plus_diff_factor;
+  std::vector<double> gate_plus_diff_idx;
+  std::vector<double> gate_plus_diff_ratios;
   double diff_metal_reduce_factor;
 };
 
@@ -138,6 +140,8 @@ void AntennaChecker::Impl::initAntennaRules()
 
     double minus_diff_factor = 0.0;
     double plus_diff_factor = 0.0;
+    std::vector<double> gate_plus_diff_idx;
+    std::vector<double> gate_plus_diff_ratios;
     double diff_metal_reduce_factor = 1.0;
 
     if (tech_layer->hasDefaultAntennaRule()) {
@@ -164,6 +168,9 @@ void AntennaChecker::Impl::initAntennaRules()
 
       minus_diff_factor = antenna_rule->getAreaMinusDiffFactor();
       plus_diff_factor = antenna_rule->getGatePlusDiffFactor();
+      auto pwl = antenna_rule->getGatePlusDiffPWL();
+      gate_plus_diff_idx = pwl.indices;
+      gate_plus_diff_ratios = pwl.ratios;
 
       const double PSR_ratio = antenna_rule->getPSR();
       const odb::dbTechLayerAntennaRule::pwl_pair diffPSR
@@ -195,6 +202,8 @@ void AntennaChecker::Impl::initAntennaRules()
                                   diff_side_metal_factor,
                                   minus_diff_factor,
                                   plus_diff_factor,
+                                  gate_plus_diff_idx,
+                                  gate_plus_diff_ratios,
                                   diff_metal_reduce_factor};
     layer_info_[tech_layer] = layer_antenna;
   }
@@ -405,15 +414,22 @@ void AntennaChecker::Impl::calculateWirePar(odb::dbTechLayer* tech_layer,
     info.PAR = (diff_metal_factor * info.area) / info.iterm_gate_area;
     info.PSR = (diff_side_metal_factor * info.side_area) / info.iterm_gate_area;
 
+    double plus_diff_protect = plus_diff_factor * info.iterm_diff_area;
+    if (!layer_info_[tech_layer].gate_plus_diff_idx.empty()) {
+      odb::dbTechLayerAntennaRule::pwl_pair pwl
+          = {.indices = layer_info_[tech_layer].gate_plus_diff_idx,
+             .ratios = layer_info_[tech_layer].gate_plus_diff_ratios};
+      plus_diff_protect = getPwlFactor(pwl, info.iterm_diff_area, 0.0);
+    }
+
     // Calculate PSR
-    info.diff_PAR
-        = (diff_metal_factor * info.area * diff_metal_reduce_factor
-           - minus_diff_factor * info.iterm_diff_area)
-          / (info.iterm_gate_area + plus_diff_factor * info.iterm_diff_area);
+    info.diff_PAR = (diff_metal_factor * info.area * diff_metal_reduce_factor
+                     - minus_diff_factor * info.iterm_diff_area)
+                    / (info.iterm_gate_area + plus_diff_protect);
     info.diff_PSR
         = (diff_side_metal_factor * info.side_area * diff_metal_reduce_factor
            - minus_diff_factor * info.iterm_diff_area)
-          / (info.iterm_gate_area + plus_diff_factor * info.iterm_diff_area);
+          / (info.iterm_gate_area + plus_diff_protect);
   } else {
     // Calculate PAR
     info.PAR = (metal_factor * info.area) / info.iterm_gate_area;
@@ -448,11 +464,19 @@ void AntennaChecker::Impl::calculateViaPar(odb::dbTechLayer* tech_layer,
   if (info.iterm_diff_area != 0) {
     // Calculate PAR
     info.PAR = (diff_cut_factor * info.area) / info.iterm_gate_area;
+
+    double plus_diff_protect = plus_diff_factor * info.iterm_diff_area;
+    if (!layer_info_[tech_layer].gate_plus_diff_idx.empty()) {
+      odb::dbTechLayerAntennaRule::pwl_pair pwl
+          = {.indices = layer_info_[tech_layer].gate_plus_diff_idx,
+             .ratios = layer_info_[tech_layer].gate_plus_diff_ratios};
+      plus_diff_protect = getPwlFactor(pwl, info.iterm_diff_area, 0.0);
+    }
+
     // Calculate diff_PAR
-    info.diff_PAR
-        = (diff_cut_factor * info.area * diff_metal_reduce_factor
-           - minus_diff_factor * info.iterm_diff_area)
-          / (info.iterm_gate_area + plus_diff_factor * info.iterm_diff_area);
+    info.diff_PAR = (diff_cut_factor * info.area * diff_metal_reduce_factor
+                     - minus_diff_factor * info.iterm_diff_area)
+                    / (info.iterm_gate_area + plus_diff_protect);
   } else {
     // Calculate PAR
     info.PAR = (cut_factor * info.area) / info.iterm_gate_area;
