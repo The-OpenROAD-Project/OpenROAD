@@ -581,7 +581,7 @@ double NegotiationLegalizer::targetCost(int cellIdx, int x, int y) const
   const HLCell& cell = cells_[cellIdx];
   const int disp = std::abs(x - cell.init_x) + std::abs(y - cell.init_y);
   return static_cast<double>(disp)
-         + mf_ * static_cast<double>(std::max(0, disp - th_));
+         + max_disp_multiplier_ * static_cast<double>(std::max(0, disp - max_disp_threshold_));
 }
 
 // ===========================================================================

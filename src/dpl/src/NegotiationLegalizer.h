@@ -145,8 +145,8 @@ class NegotiationLegalizer
 
   // Tuning knobs (all have paper-default values)
   void setRunAbacus(bool run) { run_abacus_ = run; }
-  void setMf(double mf) { mf_ = mf; }
-  void setTh(int th) { th_ = th; }
+  void setMf(double mf) { max_disp_multiplier_ = mf; }
+  void setTh(int th) { max_disp_threshold_ = th; }
   void setMaxIterNeg(int n) { max_iter_neg_ = n; }
   void setHorizWindow(int w) { horiz_window_ = w; }
   void setAdjWindow(int w) { adj_window_ = w; }
@@ -262,8 +262,8 @@ class NegotiationLegalizer
   std::vector<bool>
       row_has_sites_;  // true when at least one DB row exists at y
 
-  double mf_{kMfDefault};
-  int th_{kThDefault};
+  double max_disp_multiplier_{kMfDefault}; // mf on the paper
+  int max_disp_threshold_{kThDefault}; // th on the paper
   int max_iter_neg_{kMaxIterNeg};
   int horiz_window_{kHorizWindow};
   int adj_window_{kAdjWindow};
