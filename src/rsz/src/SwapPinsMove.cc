@@ -202,20 +202,50 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
 
   if (net1 != nullptr && net2 != nullptr) {
     // Swap the ports and nets
-    // Support for hierarchy, swap modnets as well as dbnets
+    // Support for hierarchy by swapping the local dbNet/dbModNet
+    // associations on the iterms themselves.
+    //
+    // Do not use dbNetwork::connectPin(flat, hier) here because it
+    // globally reassociates the hierarchical net to the flat net.
+    // Feed-through structures can legitimately have mixed modnet names
+    // on a single flat net, and a local pin swap must not propagate one
+    // leg's modnet across every iterm on that flat net.
 
-    // Simultaneously connect both flat and hier net so
-    // they are reassociated.
+    odb::dbITerm* db_iterm1 = nullptr;
+    odb::dbBTerm* db_bterm1 = nullptr;
+    odb::dbModITerm* db_moditerm1 = nullptr;
+    db_network_->staToDb(found_pin1, db_iterm1, db_bterm1, db_moditerm1);
+
+    odb::dbITerm* db_iterm2 = nullptr;
+    odb::dbBTerm* db_bterm2 = nullptr;
+    odb::dbModITerm* db_moditerm2 = nullptr;
+    db_network_->staToDb(found_pin2, db_iterm2, db_bterm2, db_moditerm2);
+
+    if (db_iterm1 == nullptr || db_iterm2 == nullptr) {
+      logger_->error(
+          RSZ,
+          203,
+          "SwapPinsMove expects dbITerm-backed pins for instance {}.",
+          network_->pathName(inst));
+    }
+
+    auto reconnect_iterm =
+        [](odb::dbITerm* iterm, odb::dbNet* flat_net, odb::dbModNet* mod_net) {
+          if (flat_net != nullptr && mod_net != nullptr) {
+            iterm->connect(flat_net, mod_net);
+          } else if (flat_net != nullptr) {
+            iterm->connect(flat_net);
+          } else if (mod_net != nullptr) {
+            iterm->connect(mod_net);
+          }
+        };
 
     // disconnect everything connected to found_pin1
     sta_->disconnectPin(found_pin1);
-    // new api call which keeps association
-    db_network_->connectPin(
-        found_pin1, (sta::Net*) flat_net_pin2, (sta::Net*) mod_net_pin2);
+    reconnect_iterm(db_iterm1, flat_net_pin2, mod_net_pin2);
 
     sta_->disconnectPin(found_pin2);
-    db_network_->connectPin(
-        found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
+    reconnect_iterm(db_iterm2, flat_net_pin1, mod_net_pin1);
   }
 }
 
