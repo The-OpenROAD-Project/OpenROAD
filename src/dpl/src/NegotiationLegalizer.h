@@ -110,7 +110,7 @@ struct HLCell
 struct AbacusCluster
 {
   std::vector<int> cell_indices;  // ordered left-to-right within the row
-  double opt_x{0.0};              // solved optimal left-edge (fractional)
+  double optimal_x{0.0};              // solved optimal left-edge (fractional)
   double total_weight{0.0};
   double total_q{0.0};  // Σ w_i * x_i^0
   int total_width{0};   // Σ cell widths (sites)
@@ -164,11 +164,10 @@ class NegotiationLegalizer
   void initFenceRegions();
   [[nodiscard]] NLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
-  void
-  pushNegotiationPixels();  // Send grid state to debug observer for rendering
+  void  pushNegotiationPixels();
   void debugPause(
       const std::string&
-          msg);  // setDplPositions + pushNegotiationPixels + redrawAndPause
+          msg);
 
   // Abacus pass
   [[nodiscard]] std::vector<int> runAbacus();

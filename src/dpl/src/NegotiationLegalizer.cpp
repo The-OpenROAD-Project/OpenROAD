@@ -1136,14 +1136,14 @@ void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
     nc.cell_indices.push_back(idx);
     const int eff_width = cell.width + cell.pad_left + cell.pad_right;
     // Target the padded-left position so that cell.init_x lands correctly.
-    nc.opt_x = static_cast<double>(cell.init_x - cell.pad_left);
+    nc.optimal_x = static_cast<double>(cell.init_x - cell.pad_left);
     nc.total_weight = 1.0;
-    nc.total_q = nc.opt_x;
+    nc.total_q = nc.optimal_x;
     nc.total_width = eff_width;
 
     // Clamp to die boundary (padded width).
-    nc.opt_x = std::max(
-        0.0, std::min(nc.opt_x, static_cast<double>(grid_w_ - eff_width)));
+    nc.optimal_x = std::max(
+        0.0, std::min(nc.optimal_x, static_cast<double>(grid_w_ - eff_width)));
     clusters.push_back(std::move(nc));
     collapseClusters(clusters, rowIdx);
   }
@@ -1163,23 +1163,23 @@ void NegotiationLegalizer::collapseClusters(
     AbacusCluster& prev = clusters[clusters.size() - 2];
 
     // Solve optimal position for the last cluster.
-    last.opt_x = last.total_q / last.total_weight;
-    last.opt_x = std::max(
+    last.optimal_x = last.total_q / last.total_weight;
+    last.optimal_x = std::max(
         0.0,
-        std::min(last.opt_x, static_cast<double>(grid_w_ - last.total_width)));
+        std::min(last.optimal_x, static_cast<double>(grid_w_ - last.total_width)));
 
     // If the last cluster overlaps the previous one, merge them.
-    if (prev.opt_x + prev.total_width > last.opt_x) {
+    if (prev.optimal_x + prev.total_width > last.optimal_x) {
       prev.total_weight += last.total_weight;
       prev.total_q += last.total_q;
       prev.total_width += last.total_width;
       for (int idx : last.cell_indices) {
         prev.cell_indices.push_back(idx);
       }
-      prev.opt_x = prev.total_q / prev.total_weight;
-      prev.opt_x
+      prev.optimal_x = prev.total_q / prev.total_weight;
+      prev.optimal_x
           = std::max(0.0,
-                     std::min(prev.opt_x,
+                     std::min(prev.optimal_x,
                               static_cast<double>(grid_w_ - prev.total_width)));
       clusters.pop_back();
     } else {
@@ -1190,18 +1190,18 @@ void NegotiationLegalizer::collapseClusters(
   // Re-solve the top cluster after any merge.
   if (!clusters.empty()) {
     AbacusCluster& top = clusters.back();
-    top.opt_x = top.total_q / top.total_weight;
-    top.opt_x = std::max(
+    top.optimal_x = top.total_q / top.total_weight;
+    top.optimal_x = std::max(
         0.0,
-        std::min(top.opt_x, static_cast<double>(grid_w_ - top.total_width)));
+        std::min(top.optimal_x, static_cast<double>(grid_w_ - top.total_width)));
   }
 }
 
 void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
                                                   int rowIdx)
 {
-  // cluster.opt_x is the padded-left edge of the cluster.
-  int paddedX = static_cast<int>(std::round(cluster.opt_x));
+  // cluster.optimal_x is the padded-left edge of the cluster.
+  int paddedX = static_cast<int>(std::round(cluster.optimal_x));
   paddedX = std::max(0, std::min(paddedX, grid_w_ - cluster.total_width));
 
   for (int idx : cluster.cell_indices) {
