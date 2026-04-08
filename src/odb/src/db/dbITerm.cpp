@@ -800,7 +800,9 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   if (ap != nullptr) {
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
     _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-    _ap->iterms_.push_back(iterm->getOID());
+    auto& iterms = _ap->iterms_;
+    auto pos = std::lower_bound(iterms.begin(), iterms.end(), iterm->getOID());
+    iterms.insert(pos, iterm->getOID());
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
   }

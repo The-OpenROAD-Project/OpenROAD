@@ -126,11 +126,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
   stream << obj.mpin_;
   stream << obj.bpin_;
   stream << obj.accesses_;
-  // Sort iterms_ for deterministic serialization since the push_back order
-  // depends on the order instances are processed during pin access updates.
-  auto sorted_iterms = obj.iterms_;
-  std::sort(sorted_iterms.begin(), sorted_iterms.end());
-  stream << sorted_iterms;
+  stream << obj.iterms_;
   stream << obj.vias_;
   stream << obj.path_segs_;
   // User Code Begin <<
