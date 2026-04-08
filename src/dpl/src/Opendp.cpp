@@ -232,7 +232,6 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   }
 }
 
-
 void Opendp::updateDbInstLocations()
 {
   for (auto& cell : network_->getNodes()) {

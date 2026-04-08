@@ -51,8 +51,8 @@ FenceRect FenceRegion::nearestRect(int cx, int cy) const
   const FenceRect* best = rects.data();
   int best_dist = std::numeric_limits<int>::max();
   for (const auto& r : rects) {
-    const int d = odb::manhattanDistance(
-        odb::Rect(r.xlo, r.ylo, r.xhi, r.yhi), odb::Point(cx, cy));
+    const int d = odb::manhattanDistance(odb::Rect(r.xlo, r.ylo, r.xhi, r.yhi),
+                                         odb::Point(cx, cy));
     if (d < best_dist) {
       best_dist = d;
       best = &r;
@@ -300,12 +300,8 @@ void NegotiationLegalizer::legalize()
       nViol);
 
   {
-    utl::DebugScopedTimer t(flush_s,
-                            logger_,
-                            utl::DPL,
-                            "negotiation_runtime",
-                            1,
-                            "flushToDb: {}");
+    utl::DebugScopedTimer t(
+        flush_s, logger_, utl::DPL, "negotiation_runtime", 1, "flushToDb: {}");
     flushToDb();
   }
 
@@ -334,9 +330,8 @@ void NegotiationLegalizer::legalize()
   }
 
   const double total_s = total_timer.elapsed();
-  auto pct = [total_s](double t) {
-    return total_s > 0 ? 100.0 * t / total_s : 0.0;
-  };
+  auto pct
+      = [total_s](double t) { return total_s > 0 ? 100.0 * t / total_s : 0.0; };
   auto to_ms = [](double s) { return s * 1e3; };
   debugPrint(logger_,
              utl::DPL,
@@ -823,7 +818,7 @@ void NegotiationLegalizer::addUsage(int cellIdx, int delta)
   const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
     const int gy = cell.y + dy;
-    for (int gx = xBegin; gx < xEnd; ++gx) {      
+    for (int gx = xBegin; gx < xEnd; ++gx) {
       if (gridExists(gx, gy)) {
         gridAt(gx, gy).usage += delta;
       }
@@ -1167,9 +1162,10 @@ void NegotiationLegalizer::collapseClusters(
 
     // Solve optimal position for the last cluster.
     last.optimal_x = last.total_q / last.total_weight;
-    last.optimal_x = std::max(
-        0.0,
-        std::min(last.optimal_x, static_cast<double>(grid_w_ - last.total_width)));
+    last.optimal_x
+        = std::max(0.0,
+                   std::min(last.optimal_x,
+                            static_cast<double>(grid_w_ - last.total_width)));
 
     // If the last cluster overlaps the previous one, merge them.
     if (prev.optimal_x + prev.total_width > last.optimal_x) {
@@ -1194,9 +1190,10 @@ void NegotiationLegalizer::collapseClusters(
   if (!clusters.empty()) {
     AbacusCluster& top = clusters.back();
     top.optimal_x = top.total_q / top.total_weight;
-    top.optimal_x = std::max(
-        0.0,
-        std::min(top.optimal_x, static_cast<double>(grid_w_ - top.total_width)));
+    top.optimal_x
+        = std::max(0.0,
+                   std::min(top.optimal_x,
+                            static_cast<double>(grid_w_ - top.total_width)));
   }
 }
 
