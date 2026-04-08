@@ -270,13 +270,12 @@ class NegotiationLegalizer
   int num_threads_{1};
   bool run_abacus_{false};
 
-  // Mutable profiling accumulators for findBestLocation breakdown.
-  mutable double prof_init_search_ns_{0};
-  mutable double prof_curr_search_ns_{0};
-  mutable double prof_snap_ns_{0};
-  mutable double prof_filter_ns_{0};
-  mutable double prof_neg_cost_ns_{0};
-  mutable double prof_drc_ns_{0};
+  // Mutable profiling accumulators for findBestLocation breakdown (seconds).
+  mutable double prof_init_search_s_{0};
+  mutable double prof_curr_search_s_{0};
+  mutable double prof_filter_s_{0};
+  mutable double prof_neg_cost_s_{0};
+  mutable double prof_drc_s_{0};
   mutable int prof_candidates_evaluated_{0};
   mutable int prof_candidates_filtered_{0};
 };

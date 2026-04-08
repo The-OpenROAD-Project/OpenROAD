@@ -2,10 +2,10 @@
 // Copyright (c) 2018-2025, The OpenROAD Authors
 
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <ranges>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -176,12 +176,11 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                                           bool updateHistory)
 {
   // Reset findBestLocation profiling accumulators.
-  prof_init_search_ns_ = 0;
-  prof_curr_search_ns_ = 0;
-  prof_snap_ns_ = 0;
-  prof_filter_ns_ = 0;
-  prof_neg_cost_ns_ = 0;
-  prof_drc_ns_ = 0;
+  prof_init_search_s_ = 0;
+  prof_curr_search_s_ = 0;
+  prof_filter_s_ = 0;
+  prof_neg_cost_s_ = 0;
+  prof_drc_s_ = 0;
   prof_candidates_evaluated_ = 0;
   prof_candidates_filtered_ = 0;
 
@@ -306,12 +305,11 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
     const double overflow_ms = to_ms(overflow_s);
     const double bystander_ms = to_ms(bystander_s);
     const double history_ms = to_ms(history_s);
-    const double initSearchMs = prof_init_search_ns_ / 1e6;
-    const double currSearchMs = prof_curr_search_ns_ / 1e6;
-    const double snapMs = prof_snap_ns_ / 1e6;
-    const double filterMs = prof_filter_ns_ / 1e6;
-    const double negCostMs = prof_neg_cost_ns_ / 1e6;
-    const double drcMs = prof_drc_ns_ / 1e6;
+    const double initSearchMs = prof_init_search_s_ * 1e3;
+    const double currSearchMs = prof_curr_search_s_ * 1e3;
+    const double filterMs = prof_filter_s_ * 1e3;
+    const double negCostMs = prof_neg_cost_s_ * 1e3;
+    const double drcMs = prof_drc_s_ * 1e3;
     const double overhead = find_best_ms - filterMs - negCostMs - drcMs;
     logger_->report(
         "  negotiationIter {} ({:.1f}ms, {} moves): "
@@ -341,16 +339,13 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
         pct(history_ms));
     logger_->report(
         "    findBest by region ({} candidates, {} filtered): "
-        "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%), "
-        "snap {:.1f}ms ({:.0f}%)",
+        "initSearch {:.1f}ms ({:.0f}%), currSearch {:.1f}ms ({:.0f}%)",
         prof_candidates_evaluated_,
         prof_candidates_filtered_,
         initSearchMs,
         pct(initSearchMs),
         currSearchMs,
-        pct(currSearchMs),
-        snapMs,
-        pct(snapMs));
+        pct(currSearchMs));
     logger_->report(
         "    findBest by function: "
         "filter {:.1f}ms ({:.0f}%), negCost {:.1f}ms ({:.0f}%), "
@@ -427,31 +422,28 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
   // later iterations strongly penalise DRC violations to force resolution.
   const double kDrcPenalty = 1e3 * (1.0 + iter);
 
-  using Clock = std::chrono::steady_clock;
-  Clock::duration local_filter_time{};
-  Clock::duration local_neg_cost_time{};
-  Clock::duration local_drc_time{};
-
   // Helper: evaluate one candidate position.
   auto tryLocation = [&](int tx, int ty) {
-    const auto t_filter = Clock::now();
-    if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
-        || !respectsFence(cellIdx, tx, ty)) {
-      local_filter_time += Clock::now() - t_filter;
-      ++prof_candidates_filtered_;
-      return;
+    {
+      utl::DebugScopedTimer t(prof_filter_s_);
+      if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
+          || !respectsFence(cellIdx, tx, ty)) {
+        ++prof_candidates_filtered_;
+        return;
+      }
     }
-    local_filter_time += Clock::now() - t_filter;
 
-    const auto t_neg = Clock::now();
-    double cost = negotiationCost(cellIdx, tx, ty);
-    local_neg_cost_time += Clock::now() - t_neg;
+    double cost;
+    {
+      utl::DebugScopedTimer t(prof_neg_cost_s_);
+      cost = negotiationCost(cellIdx, tx, ty);
+    }
 
     // Add a DRC penalty so clean positions are strongly preferred,
     // but a DRC-violating position can still be chosen if nothing
     // better is available (avoids infinite non-convergence).
     if (node != nullptr) {
-      const auto t_drc = Clock::now();
+      utl::DebugScopedTimer t(prof_drc_s_);
       odb::dbOrientType targetOrient = node->getOrient();
       odb::dbSite* site = cell.db_inst->getMaster()->getSite();
       if (site != nullptr) {
@@ -464,7 +456,6 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
       const int drcCount = opendp_->drc_engine_->countDRCViolations(
           node, GridX{tx}, GridY{ty}, targetOrient);
       cost += kDrcPenalty * drcCount;
-      local_drc_time += Clock::now() - t_drc;
     }
     ++prof_candidates_evaluated_;
     if (cost < best_cost) {
@@ -475,39 +466,26 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
   };
 
   // Search around the initial (GP) position.
-  const auto tInitStart = Clock::now();
-  for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
-    for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
-      tryLocation(cell.init_x + dx, cell.init_y + dy);
+  {
+    utl::DebugScopedTimer t(prof_init_search_s_);
+    for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
+      for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
+        tryLocation(cell.init_x + dx, cell.init_y + dy);
+      }
     }
   }
-  const auto tInitEnd = Clock::now();
 
   // Also search around the current position — critical when the cell has
   // already been displaced far from init_x and needs to explore its local
   // neighbourhood to resolve DRC violations (e.g. one-site gaps).
-  const auto tCurrStart = Clock::now();
   if (cell.x != cell.init_x || cell.y != cell.init_y) {
+    utl::DebugScopedTimer t(prof_curr_search_s_);
     for (int dy = -adj_window_; dy <= adj_window_; ++dy) {
       for (int dx = -horiz_window_; dx <= horiz_window_; ++dx) {
         tryLocation(cell.x + dx, cell.y + dy);
       }
     }
   }
-  const auto tCurrEnd = Clock::now();
-
-  prof_init_search_ns_
-      += std::chrono::duration<double, std::nano>(tInitEnd - tInitStart)
-             .count();
-  prof_curr_search_ns_
-      += std::chrono::duration<double, std::nano>(tCurrEnd - tCurrStart)
-             .count();
-  prof_filter_ns_
-      += std::chrono::duration<double, std::nano>(local_filter_time).count();
-  prof_neg_cost_ns_
-      += std::chrono::duration<double, std::nano>(local_neg_cost_time).count();
-  prof_drc_ns_
-      += std::chrono::duration<double, std::nano>(local_drc_time).count();
 
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
