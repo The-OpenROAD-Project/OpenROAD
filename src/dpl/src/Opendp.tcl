@@ -400,4 +400,3 @@ proc get_row_site { } {
   return [[lindex [[ord::get_db_block] getRows] 0] getSite]
 }
 }
-
