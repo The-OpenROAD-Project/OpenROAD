@@ -246,13 +246,14 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
-void Graphics::setNegotiationPixels(const std::vector<NegotiationPixelState>& pixels,
-                               int grid_w,
-                               int grid_h,
-                               int die_xlo,
-                               int die_ylo,
-                               int site_width,
-                               const std::vector<int>& row_y_dbu)
+void Graphics::setNegotiationPixels(
+    const std::vector<NegotiationPixelState>& pixels,
+    int grid_w,
+    int grid_h,
+    int die_xlo,
+    int die_ylo,
+    int site_width,
+    const std::vector<int>& row_y_dbu)
 {
   negotiation_pixels_ = pixels;
   negotiation_grid_w_ = grid_w;

@@ -17,12 +17,12 @@ class Node;
 // Pixel state values passed from NegotiationLegalizer to the observer.
 enum class NegotiationPixelState : int8_t
 {
-  kNoRow = 0,    // no row exists here (capacity == 0, not a blockage)
-  kFree = 1,     // valid site, unused
-  kOccupied = 2, // valid site, usage == capacity
-  kOveruse = 3,  // valid site, usage > capacity
-  kBlocked = 4,  // blockage (fixed cell / capacity forced to 0)
-  kInvalid = 5,  // pixel is outside of core or in a hole (is_valid == false)
+  kNoRow = 0,     // no row exists here (capacity == 0, not a blockage)
+  kFree = 1,      // valid site, unused
+  kOccupied = 2,  // valid site, usage == capacity
+  kOveruse = 3,   // valid site, usage > capacity
+  kBlocked = 4,   // blockage (fixed cell / capacity forced to 0)
+  kInvalid = 5,   // pixel is outside of core or in a hole (is_valid == false)
   kDrcViolation = 6  // cell at this site fails a PlacementDRC check
 };
 
@@ -43,13 +43,14 @@ class DplObserver
   virtual const odb::dbInst* getDebugInstance() const { return nullptr; }
 
   // Negotiation-legalizer grid visualisation support (default no-ops).
-  virtual void setNegotiationPixels(const std::vector<NegotiationPixelState>& pixels,
-                               int grid_w,
-                               int grid_h,
-                               int die_xlo,
-                               int die_ylo,
-                               int site_width,
-                               const std::vector<int>& row_y_dbu)
+  virtual void setNegotiationPixels(
+      const std::vector<NegotiationPixelState>& pixels,
+      int grid_w,
+      int grid_h,
+      int die_xlo,
+      int die_ylo,
+      int site_width,
+      const std::vector<int>& row_y_dbu)
   {
   }
   virtual void clearNegotiationPixels() {}

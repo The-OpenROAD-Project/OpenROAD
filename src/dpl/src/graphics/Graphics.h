@@ -32,16 +32,19 @@ class Graphics : public gui::Renderer, public DplObserver
                  GridX xh,
                  GridY yh) override;
   void redrawAndPause() override;
-  const odb::dbInst* getDebugInstance() const override { return debug_instance_; }
+  const odb::dbInst* getDebugInstance() const override
+  {
+    return debug_instance_;
+  }
 
   // NegotiationLegalizer grid visualisation
   void setNegotiationPixels(const std::vector<NegotiationPixelState>& pixels,
-                       int grid_w,
-                       int grid_h,
-                       int die_xlo,
-                       int die_ylo,
-                       int site_width,
-                       const std::vector<int>& row_y_dbu) override;
+                            int grid_w,
+                            int grid_h,
+                            int die_xlo,
+                            int die_ylo,
+                            int site_width,
+                            const std::vector<int>& row_y_dbu) override;
   void clearNegotiationPixels() override;
 
   // From Renderer API
