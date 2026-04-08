@@ -183,7 +183,7 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     for (const std::string& str_index : extract_string_array(msg, "indexes")) {
       try {
         req.drc_visible_indexes.insert(std::stoi(str_index));
-      } catch (...) {
+      } catch (const std::exception&) {
         // Skip unparseable indexes; the client may send invalid data.
         continue;
       }
