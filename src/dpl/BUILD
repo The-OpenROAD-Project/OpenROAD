@@ -24,6 +24,8 @@ cc_library(
         "src/Place.cpp",
         "src/PlacementDRC.cpp",
         "src/PlacementDRC.h",
+        "src/NegotiationLegalizer.cpp",
+        "src/NegotiationLegalizerPass.cpp",
         "src/dbToOpendp.cpp",
         "src/graphics/DplObserver.h",
         "src/infrastructure/Coordinates.h",
