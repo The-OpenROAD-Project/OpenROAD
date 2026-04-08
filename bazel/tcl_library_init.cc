@@ -15,9 +15,7 @@
 #if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
 #include "bazel/tcl_resources_zip_data.h"
 #else
-#include <climits>
 #include <memory>
-#include <unistd.h>
 
 #include "rules_cc/cc/runfiles/runfiles.h"
 #endif
@@ -41,6 +39,8 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 
   // Use /proc/self/exe to resolve the real binary path, as argv[0] may
   // point into a sandbox where the .runfiles tree does not exist.
+#include <linux/limits.h>
+#include <unistd.h>
   char buf[PATH_MAX + 1];
   ssize_t len = readlink("/proc/self/exe", buf, PATH_MAX);
   std::string exe_path = (len > 0) ? std::string(buf, len)
