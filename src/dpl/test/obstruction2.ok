@@ -7,4 +7,4 @@
 [INFO ODB-0133]     Created 384 nets and 137 connections.
 [INFO DPL-0006] Core area: 1851.36 um^2, Instances area: 3069.11 um^2, Utilization: 165.8%
 [ERROR DPL-0038] Utilization greater than 100%, impossible to legalize
-Error: obstruction2.tcl, 6 DPL-0038
+DPL-0038
