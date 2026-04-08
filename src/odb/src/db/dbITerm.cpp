@@ -860,8 +860,16 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 void dbITerm::clearPrefAccessPoints()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
-  // destroying APs of other iterms.
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  // Remove this iterm from each AP's back-reference list before clearing.
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
+    if (ap_id.isValid()) {
+      auto* ap = block->ap_tbl_->getPtr(ap_id);
+      auto& iterms = ap->iterms_;
+      iterms.erase(std::remove(iterms.begin(), iterms.end(), iterm->getOID()),
+                   iterms.end());
+    }
+  }
   iterm->aps_.clear();
 }
 
