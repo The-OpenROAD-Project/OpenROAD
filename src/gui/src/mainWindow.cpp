@@ -1629,6 +1629,10 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
 
 void MainWindow::saveSettings()
 {
+  // Stop render threads before saving settings to avoid races
+  // between the render thread and the main thread.
+  viewers_->exit();
+
   QSettings settings("OpenRoad Project", "openroad");
   settings.beginGroup("main");
   settings.setValue("geometry", saveGeometry());

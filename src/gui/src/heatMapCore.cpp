@@ -397,7 +397,6 @@ Renderer::Settings HeatMapDataSource::getSettings() const
       settings[set.name] = set.getter();
     }
   }
-
   return settings;
 }
 
