@@ -15,6 +15,9 @@
 #if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
 #include "bazel/tcl_resources_zip_data.h"
 #else
+#include <linux/limits.h>
+#include <unistd.h>
+
 #include <memory>
 
 #include "rules_cc/cc/runfiles/runfiles.h"
@@ -36,8 +39,14 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 #else
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
-      Tcl_GetNameOfExecutable(), BAZEL_CURRENT_REPOSITORY, &error));
+  // Use /proc/self/exe to resolve the real binary path, as argv[0] may
+  // point into a sandbox where the .runfiles tree does not exist.
+  char buf[PATH_MAX + 1];
+  ssize_t len = readlink("/proc/self/exe", buf, PATH_MAX);
+  std::string exe_path = (len > 0) ? std::string(buf, len)
+                                   : std::string(Tcl_GetNameOfExecutable());
+  std::unique_ptr<Runfiles> runfiles(
+      Runfiles::Create(exe_path, BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << "[Warning] Failed to create bazel runfiles: " << error << "\n";
     return std::nullopt;
