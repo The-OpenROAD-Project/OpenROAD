@@ -23,6 +23,3 @@ set offset_ports [get_ports {kv_write[3][write_offset][*]}]
 puts "write_offset_count: [llength $offset_ports]"
 
 puts "clk: [get_name [get_ports clk]]"
-
-puts "pass"
-exit 0
