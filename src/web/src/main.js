@@ -376,7 +376,8 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(container, app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers);
+    container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
@@ -389,7 +390,8 @@ function createClockWidget(container) {
 }
 
 function createChartsWidget(container) {
-    app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
+    app.chartsWidget = new ChartsWidget(app, redrawAllLayers);
+    container.element.appendChild(app.chartsWidget.element);
 }
 
 function createHelpWidget(container) {
@@ -537,8 +539,13 @@ const LAYOUT_VERSION = 3;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+const staticCache = window.__STATIC_CACHE__ || null;
+if (staticCache) {
+    app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
+} else {
+    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+}
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -663,10 +670,39 @@ app.websocketManager.readyPromise.then(async () => {
                 [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
             app.map.fitBounds(app.fitBounds);
+
+            if (staticCache) {
+                // Lock to the pre-rendered tile zoom level and fit.
+                const cacheZoom = staticCache.zoom;
+                app.map.setMinZoom(cacheZoom);
+                app.map.setMaxZoom(cacheZoom);
+                app.map.fitBounds(app.fitBounds);
+                app.map.scrollWheelZoom.disable();
+                app.map.touchZoom.disable();
+                app.map.boxZoom.disable();
+                app.map.doubleClickZoom.disable();
+
+                // Path highlight overlay image.
+                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
+                    opacity: 1, interactive: false, zIndex: 1000,
+                });
+                staticCache.setPathOverlay = (src) => {
+                    if (src) {
+                        app.pathOverlay.setUrl(src);
+                        app.pathOverlay.addTo(app.map);
+                    } else {
+                        app.map.removeLayer(app.pathOverlay);
+                    }
+                };
+            }
         }
 
         // Click-to-select: convert click position to DBU and query server
-        app.map.on('click', (e) => {
+        if (staticCache) {
+            // Hide loading overlay — shapes are always ready in static mode.
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        if (!staticCache) app.map.on('click', (e) => {
             if (!app.designScale) return;
             if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
@@ -711,7 +747,7 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
-        {
+        if (!staticCache) {
             const container = app.map.getContainer();
             let rbStart = null;   // {x, y} in client coords
             let rbDiv = null;     // overlay element

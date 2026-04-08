@@ -110,3 +110,122 @@ describe('WebSocketManager', () => {
         });
     });
 });
+
+describe('WebSocketManager.fromCache', () => {
+    function makeCache(overrides = {}) {
+        return {
+            zoom: 1,
+            json: {
+                tech: { layers: ['M1'], sites: [], has_liberty: false, dbu_per_micron: 1000 },
+                bounds: { bounds: [[0, 0], [100, 100]], shapes_ready: true },
+                heatmaps: { active: '', heatmaps: [] },
+                'timing_report:setup': { paths: [{ slack: -0.1 }] },
+                'timing_report:hold': { paths: [{ slack: 0.2 }] },
+                'slack_histogram:setup': { bins: [], total_endpoints: 0 },
+                chart_filters: { path_groups: [], clocks: [] },
+            },
+            tiles: {
+                'M1/1/0/0': 'iVBORw0KGgo=',
+            },
+            overlays: {
+                setup: ['base64data'],
+                hold: [null],
+            },
+            setPathOverlay: null,
+            ...overrides,
+        };
+    }
+
+    it('creates instance without WebSocket', () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        assert.equal(mgr.isStaticMode, true);
+        assert.equal(mgr.socket, null);
+    });
+
+    it('readyPromise resolves immediately', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        await mgr.readyPromise; // Should not hang.
+    });
+
+    it('returns cached JSON for tech', async () => {
+        const cache = makeCache();
+        const mgr = WebSocketManager.fromCache(cache);
+        const result = await mgr.request({ type: 'tech' });
+        assert.deepEqual(result.layers, ['M1']);
+    });
+
+    it('returns cached JSON for bounds', async () => {
+        const cache = makeCache();
+        const mgr = WebSocketManager.fromCache(cache);
+        const result = await mgr.request({ type: 'bounds' });
+        assert.equal(result.shapes_ready, true);
+    });
+
+    it('returns setup timing report when is_setup=1', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        const result = await mgr.request({ type: 'timing_report', is_setup: 1 });
+        assert.equal(result.paths[0].slack, -0.1);
+    });
+
+    it('returns hold timing report when is_setup=0', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        const result = await mgr.request({ type: 'timing_report', is_setup: 0 });
+        assert.equal(result.paths[0].slack, 0.2);
+    });
+
+    it('returns setup histogram', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        const result = await mgr.request({ type: 'slack_histogram', is_setup: 1 });
+        assert.equal(result.total_endpoints, 0);
+    });
+
+    it('returns chart_filters', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        const result = await mgr.request({ type: 'chart_filters' });
+        assert.ok(Array.isArray(result.path_groups));
+    });
+
+    it('rejects uncached request types', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        await assert.rejects(
+            mgr.request({ type: 'select' }),
+            { message: /Not available in static mode/ }
+        );
+    });
+
+    it('returns data URI string for cached tile', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        const result = await mgr.request({
+            type: 'tile', layer: 'M1', z: 1, x: 0, y: 0
+        });
+        assert.equal(typeof result, 'string');
+        assert.ok(result.startsWith('data:image/png;base64,'));
+    });
+
+    it('rejects uncached tile', async () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        await assert.rejects(
+            mgr.request({ type: 'tile', layer: 'M1', z: 1, x: 9, y: 9 }),
+            { message: /Tile not cached/ }
+        );
+    });
+
+    it('timing_highlight calls setPathOverlay with data URI', async () => {
+        let called = null;
+        const cache = makeCache();
+        cache.setPathOverlay = (v) => { called = v; };
+        const mgr = WebSocketManager.fromCache(cache);
+        await mgr.request({ type: 'timing_highlight', path_index: 0, is_setup: 1 });
+        assert.ok(called !== null);
+        assert.ok(called.startsWith('data:image/png;base64,'));
+    });
+
+    it('timing_highlight with index -1 clears overlay', async () => {
+        let called = 'not_called';
+        const cache = makeCache();
+        cache.setPathOverlay = (v) => { called = v; };
+        const mgr = WebSocketManager.fromCache(cache);
+        await mgr.request({ type: 'timing_highlight', path_index: -1 });
+        assert.equal(called, null);
+    });
+});

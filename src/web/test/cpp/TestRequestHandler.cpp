@@ -382,9 +382,11 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_ = {"current", "FakeCurrent", odb::Rect(0, 0, 100, 100)};
-    fake_previous_
-        = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
+    fake_current_
+        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_previous_ = {.name = "previous",
+                      .type = "FakePrevious",
+                      .bbox = {100, 100, 200, 200}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());

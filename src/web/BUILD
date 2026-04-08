@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
 load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 
@@ -10,6 +12,61 @@ package(
     features = ["layering_check"],
 )
 
+npm_link_all_packages(name = "node_modules")
+
+py_binary(
+    name = "embed_report_assets",
+    srcs = ["src/embed_report_assets.py"],
+    main = "src/embed_report_assets.py",
+)
+
+genrule(
+    name = "report_assets",
+    srcs = [
+        "src/style.css",
+        "src/theme.js",
+        "src/coordinates.js",
+        "src/ui-utils.js",
+        "src/checkbox-tree-model.js",
+        "src/vis-tree.js",
+        "src/websocket-manager.js",
+        "src/websocket-tile-layer.js",
+        "src/display-controls.js",
+        "src/inspector.js",
+        "src/ruler.js",
+        "src/tcl-completer.js",
+        "src/hierarchy-browser.js",
+        "src/menu-bar.js",
+        "src/clock-tree-widget.js",
+        "src/schematic-widget.js",
+        "src/charts-widget.js",
+        "src/timing-widget.js",
+        "src/main.js",
+    ],
+    outs = ["src/report_assets.cpp"],
+    cmd = "$(execpath :embed_report_assets)" +
+          " --output $@" +
+          " --css $(location src/style.css)" +
+          " --js $(location src/theme.js)" +
+          " $(location src/coordinates.js)" +
+          " $(location src/ui-utils.js)" +
+          " $(location src/checkbox-tree-model.js)" +
+          " $(location src/vis-tree.js)" +
+          " $(location src/websocket-manager.js)" +
+          " $(location src/websocket-tile-layer.js)" +
+          " $(location src/display-controls.js)" +
+          " $(location src/inspector.js)" +
+          " $(location src/ruler.js)" +
+          " $(location src/tcl-completer.js)" +
+          " $(location src/hierarchy-browser.js)" +
+          " $(location src/menu-bar.js)" +
+          " $(location src/clock-tree-widget.js)" +
+          " $(location src/schematic-widget.js)" +
+          " $(location src/charts-widget.js)" +
+          " $(location src/timing-widget.js)" +
+          " $(location src/main.js)",
+    tools = [":embed_report_assets"],
+)
 cc_library(
     name = "web",
     srcs = [
@@ -29,6 +86,7 @@ cc_library(
         "src/timing_report.cpp",
         "src/timing_report.h",
         "src/web.cpp",
+        ":report_assets",
     ],
     hdrs = [
         "include/web/web.h",
