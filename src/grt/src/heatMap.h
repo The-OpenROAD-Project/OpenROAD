@@ -15,6 +15,12 @@ class RoutingCongestionDataSource : public gui::GlobalRoutingDataSource
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
 
+  void setChip(odb::dbChip* chip) override
+  {
+    layer_ = nullptr;
+    HeatMapDataSource::setChip(chip);
+  }
+
  protected:
   bool populateMap() override;
   void combineMapData(bool base_has_value,

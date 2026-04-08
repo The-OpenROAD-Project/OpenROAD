@@ -156,6 +156,17 @@ bool RUDYDataSource::populateMap()
   return true;
 }
 
+void RUDYDataSource::setChip(odb::dbChip* chip)
+{
+  grouter_->clearRudy();
+  rudy_ = nullptr;
+  removeOwner();
+  HeatMapDataSource::setChip(chip);
+  if (chip && chip->getBlock()) {
+    addOwner(chip->getBlock());
+  }
+}
+
 void RUDYDataSource::onShow()
 {
   HeatMapDataSource::onShow();

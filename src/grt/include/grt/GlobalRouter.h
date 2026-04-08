@@ -333,6 +333,7 @@ class GlobalRouter
   odb::dbDatabase* db() const { return db_; }
   FastRouteCore* fastroute() const { return fastroute_; }
   Rudy* getRudy();
+  void clearRudy();
 
   void writePinLocations(const char* file_name);
 

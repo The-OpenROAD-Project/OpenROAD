@@ -1139,6 +1139,12 @@ Rudy* GlobalRouter::getRudy()
   return rudy_;
 }
 
+void GlobalRouter::clearRudy()
+{
+  delete rudy_;
+  rudy_ = nullptr;
+}
+
 bool GlobalRouter::findPinAccessPointPositions(
     const Pin& pin,
     std::map<int, std::vector<PointPair>>& ap_positions,
