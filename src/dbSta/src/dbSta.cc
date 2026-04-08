@@ -326,9 +326,18 @@ void dbSta::postReadDb(odb::dbDatabase* db)
 void dbSta::preDbClear(odb::dbDatabase* db)
 {
   db_cbk_->removeOwner();
+  // Clear staCell pointers on all masters before freeing the network.
+  // The GUI render thread may still be accessing these concurrently.
+  for (odb::dbLib* lib : db->getLibs()) {
+    for (odb::dbMaster* master : lib->getMasters()) {
+      master->staSetCell(nullptr);
+    }
+  }
   // Delete scenes before clearing the network, since scenes hold
   // LibertyLibrary pointers that ConcreteNetwork::clear() will free.
+  // Recreate the default scene so cmd_scene_ remains valid.
   deleteScenes();
+  makeDefaultScene();
   clear();
   db_network_->clear();
   // Restore db_ since dbNetwork::clear() nulls it, but we need it for reload
