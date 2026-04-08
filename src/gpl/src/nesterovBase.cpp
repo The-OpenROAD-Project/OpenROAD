@@ -930,7 +930,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 
     // update density and overflowArea
     // for nesterov use and FFT library
-#pragma omp for reduction(+ : sumOverflowArea_, sumOverflowAreaUnscaled_)
+#pragma omp for reduction(+ : sumOverflowAreaUnscaled_)
     for (int i = 0; i < bins_.size(); ++i) {
       Bin& bin = bins_[i];  // old-style loop for old OpenMP
 
