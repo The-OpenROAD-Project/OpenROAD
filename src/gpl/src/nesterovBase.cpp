@@ -873,7 +873,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
   sumOverflowArea_ = 0;
   sumOverflowAreaUnscaled_ = 0;
   std::vector<float> overflow_area_vec(bins_.size());
-
+  std::vector<float> overflow_area_unscaled_vec(bins_.size());
 #pragma omp parallel num_threads(num_threads_)
   {
     // clear the Bin-area info
@@ -930,7 +930,7 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
 
     // update density and overflowArea
     // for nesterov use and FFT library
-#pragma omp for reduction(+ : sumOverflowAreaUnscaled_)
+#pragma omp for
     for (int i = 0; i < bins_.size(); ++i) {
       Bin& bin = bins_[i];  // old-style loop for old OpenMP
 
@@ -951,12 +951,12 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
               + static_cast<float>(bin.getNonPlaceArea()) - scaledBinArea);
       overflow_area_vec[i] = overflowArea;
 
-      const int64_t overflowAreaUnscaled
+      const float overflowAreaUnscaled
           = std::max(0.0f,
                      static_cast<float>(bin.getInstPlacedAreaUnscaled())
                          + static_cast<float>(bin.getNonPlaceAreaUnscaled())
                          - scaledBinArea);
-      sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+      overflow_area_unscaled_vec[i] = overflowAreaUnscaled;
       if (overflowAreaUnscaled > 0) {
         debugPrint(log_,
                    GPL,
@@ -983,13 +983,25 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCellHandle>& cells)
             block->dbuAreaToMicrons(bin.getNonPlaceAreaUnscaled()));
       }
     }
-  }
-  // This is required because the overflowArea is calculated in float.
-  // So, sumOverflowArea_ is converted to float, added to the overflowArea
-  // and then converted back.
-  // We should change overflowArea to int64_t in the future.
-  for (auto overflowArea : overflow_area_vec) {
-    sumOverflowArea_ += overflowArea;
+#pragma omp sections
+    {
+      // This is required because the overflowArea is calculated in float.
+      // So, sumOverflowArea_ is converted to float, added to the overflowArea
+      // and then converted back.
+      // We should change overflowArea to int64_t in the future.
+#pragma omp section
+      {
+        for (auto overflowArea : overflow_area_vec) {
+          sumOverflowArea_ += overflowArea;
+        }
+      }
+#pragma omp section
+      {
+        for (auto overflowAreaUnscaled : overflow_area_unscaled_vec) {
+          sumOverflowAreaUnscaled_ += overflowAreaUnscaled;
+        }
+      }
+    }
   }
 }
 
