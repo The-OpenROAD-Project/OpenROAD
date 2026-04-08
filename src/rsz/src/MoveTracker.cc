@@ -9,10 +9,12 @@
 #include <iomanip>
 #include <ios>
 #include <limits>
+#include <map>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
