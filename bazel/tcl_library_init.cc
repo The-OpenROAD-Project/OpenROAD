@@ -3,9 +3,6 @@
 
 #include "bazel/tcl_library_init.h"
 
-#include <unistd.h>
-
-#include <climits>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -18,7 +15,9 @@
 #if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
 #include "bazel/tcl_resources_zip_data.h"
 #else
+#include <climits>
 #include <memory>
+#include <unistd.h>
 
 #include "rules_cc/cc/runfiles/runfiles.h"
 #endif
