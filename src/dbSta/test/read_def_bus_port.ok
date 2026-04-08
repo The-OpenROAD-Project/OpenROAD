@@ -7,4 +7,3 @@ scalar: kv_write[3][write_en]
 write_entry_count: 5
 write_offset_count: 2
 clk: clk
-pass
