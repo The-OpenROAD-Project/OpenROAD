@@ -22,8 +22,6 @@ or_integration_tests(
     orientation_improve2
     orientation_improve3
     boundary_push1
-    boundary_push2
-    boundary_push3
     centralization1
     clocked_macro
     keep_clustering_data
@@ -32,6 +30,7 @@ or_integration_tests(
     fixed_covers
     macros_without_pins1
     unfixed_cells_dont_fit_in_core
+    placement_blockages1
     halos1
     halos2
 )

@@ -33,6 +33,7 @@ or_integration_tests(
     fillers9_verbose
     fillers10
     fillers11
+    fillers12
     fragmented_row01
     fragmented_row02
     fragmented_row03
@@ -63,6 +64,7 @@ or_integration_tests(
     regions2
     regions3
     report_failures
+    row_boundary_filter
     simple01
     simple02
     simple03

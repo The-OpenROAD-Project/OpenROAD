@@ -67,6 +67,7 @@ enum dbObjectType
   dbChipConnObj,
   dbChipInstObj,
   dbChipNetObj,
+  dbChipPathObj,
   dbChipRegionObj,
   dbChipRegionInstObj,
   dbDatabaseObj,

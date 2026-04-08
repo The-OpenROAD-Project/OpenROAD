@@ -620,4 +620,28 @@ TEST_F(Fixture, test_default)
   EXPECT_EQ(layer->getMinWidth(), 280);
   EXPECT_EQ(layer->getWrongWayMinWidth(), 560);
 }
+TEST_F(Fixture, TestLef58AntennaGatePlusDiff)
+{
+  const char* libname = "lef58_antennagateplusdiff.lef";
+  loadTechAndLib(
+      "tech", libname, prefix + "data/lef58_antennagateplusdiff.lef");
+
+  dbTech* tech = db_->getTech();
+  auto layer = tech->findLayer("metal1");
+  EXPECT_TRUE(layer);
+
+  auto rule1 = layer->getDefaultAntennaRule();
+  EXPECT_TRUE(rule1);
+  EXPECT_EQ(rule1->getGatePlusDiffFactor(), 0.5);
+
+  auto rule2 = layer->getOxide2AntennaRule();
+  EXPECT_TRUE(rule2);
+  auto pwl = rule2->getGatePlusDiffPWL();
+  EXPECT_EQ(pwl.indices.size(), 2);
+  EXPECT_EQ(pwl.indices[0], 1.0);
+  EXPECT_EQ(pwl.ratios[0], 2.0);
+  EXPECT_EQ(pwl.indices[1], 3.0);
+  EXPECT_EQ(pwl.ratios[1], 4.0);
+}
+
 }  // namespace odb

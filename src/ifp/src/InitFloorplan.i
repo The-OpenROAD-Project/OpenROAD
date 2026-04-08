@@ -10,6 +10,10 @@
 #include "utl/Logger.h"
 #include "odb/geom.h"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 // Defined by OpenRoad.i
 namespace ord {
 

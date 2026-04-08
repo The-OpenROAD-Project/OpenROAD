@@ -1,11 +1,19 @@
-#include <unistd.h>
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2026, The OpenROAD Authors
+
+// This file to go away as soon as we use the tcl_library_init initialization
+// in OpenSTA.
+
+#include <unistd.h>  // readlink()
 
 #include <climits>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
+#include <system_error>
 
 #if defined(__APPLE__)
 #include <mach-o/dyld.h>
@@ -14,9 +22,10 @@
 
 #include "rules_cc/cc/runfiles/runfiles.h"
 
+namespace {
 // Avoid adding any dependencies like boost.filesystem
 // Returns path to running binary if possible, otherwise nullopt.
-static std::optional<std::string> getProgramLocation()
+static std::optional<std::string> GetProgramLocation()
 {
 #if defined(_WIN32)
   char result[MAX_PATH + 1] = {'\0'};
@@ -37,41 +46,41 @@ static std::optional<std::string> getProgramLocation()
   return std::nullopt;
 }
 
-// Global constructor class to initialize Bazel runfiles and environment
-// variables
+std::string GetTclLibraryBaseLocation()
+{
+  using rules_cc::cc::runfiles::Runfiles;
+  std::string error;
+  std::unique_ptr<Runfiles> runfiles(Runfiles::Create(
+      *GetProgramLocation(), BAZEL_CURRENT_REPOSITORY, &error));
+  if (!runfiles) {
+    std::cerr << "[Warning] Failed to create bazel runfiles: " << error << "\n";
+    return "";
+  }
+
+  std::error_code ec;
+  for (const std::string loc : {"openroad", "opensta", "_main"}) {
+    const std::string check_loc = loc + "/bazel/tcl_resources_dir";
+    const std::string path = runfiles->Rlocation(check_loc);
+    if (!path.empty() && std::filesystem::exists(path, ec)) {
+      return path;
+    }
+  }
+  return "";
+}
+
 class BazelInitializer
 {
  public:
   BazelInitializer()
   {
-    using rules_cc::cc::runfiles::Runfiles;
-
-    std::string error;
-    std::string program_location = getProgramLocation().value();
-    std::unique_ptr<Runfiles> runfiles(
-        Runfiles::Create(program_location, BAZEL_CURRENT_REPOSITORY, &error));
-    if (!runfiles) {
-      std::cerr << "Error initializing Bazel runfiles: " << error << std::endl;
-      std::exit(1);
-    }
-
-    // Set the TCL_LIBRARY environment variable
-    const std::string tcl_path = runfiles->Rlocation("tcl_lang/library/");
-    if (!tcl_path.empty()) {
+    const std::string lib_mount_point = GetTclLibraryBaseLocation();
+    if (!lib_mount_point.empty()) {
+      const std::string tcl_path = lib_mount_point + "/library";
       setenv("TCL_LIBRARY", tcl_path.c_str(), true);
-    } else {
-      std::cerr << "Error: Could not locate 'tcl_lang/library/' in runfiles."
-                << std::endl;
-      std::exit(1);
     }
-
-    // Setup env variables for any other libraries that use runfiles
-    std::string manifest = program_location + ".runfiles/MANIFEST";
-    std::string runfiles_dir = program_location + ".runfiles";
-    setenv("RUNFILES_MANIFEST_FILE", manifest.c_str(), /*__replace=*/true);
-    setenv("RUNFILES_DIR", runfiles_dir.c_str(), /*__replace=*/true);
   }
 };
 
-// Instantiate the global constructor
+// Provide via global constructor.
 static BazelInitializer bazel_initializer;
+}  // namespace

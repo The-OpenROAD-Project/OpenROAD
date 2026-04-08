@@ -162,16 +162,36 @@ def is_template_type(type_name: str) -> bool:
     return closed_bracket >= open_bracket
 
 
-def _is_comma_divided(type_name: str) -> bool:
-    return "," in type_name
+def _split_top_level_commas(type_name: str) -> List[str]:
+    """Split by commas at angle-bracket depth 0."""
+    parts = []
+    depth = 0
+    start = 0
+    for i, ch in enumerate(type_name):
+        if ch == "<":
+            depth += 1
+        elif ch == ">":
+            depth -= 1
+        elif ch == "," and depth == 0:
+            parts.append(type_name[start:i].strip())
+            start = i + 1
+    parts.append(type_name[start:].strip())
+    return [p for p in parts if p]
 
 
 def get_template_types(type_name: str) -> List[str]:
+    # Check for top-level commas first (bracket-aware)
+    parts = _split_top_level_commas(type_name)
+    if len(parts) > 1:
+        result = []
+        for part in parts:
+            if part.isdigit() or part in {"true", "false"}:
+                continue
+            result.extend(get_template_types(part))
+        return result
+    # Single type — if it is a template, peel the outer layer
     if is_template_type(type_name):
         return get_template_types(get_template_type(type_name))
-    if _is_comma_divided(type_name):
-        types = [t.strip() for t in type_name.split(",")]
-        return [t for t in types if not (t.isdigit() or t in {"true", "false"})]
     return [type_name]
 
 

@@ -349,13 +349,18 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   makeGraph();
 
   // Determine access points
+  std::unordered_map<odb::Point, std::set<GridGraphEdge>> remove_edges;
   for (auto& [net, iterm_targets] : routing_targets_) {
     for (auto& [iterm, targets] : iterm_targets) {
       for (auto& target : targets) {
-        populateTerminalAccessPoints(target);
+        populateTerminalAccessPoints(target, remove_edges);
       }
+      cleanupTerminalAccessPoints(iterm, targets);
     }
   }
+  // Remove edges that would cause a violation with terminal access
+  cleanupGraphEdges(remove_edges);
+  remove_edges.clear();
 
   if (gui_ != nullptr) {
     gui_->pause(false);
@@ -745,7 +750,35 @@ static odb::Point getValidGridPoint(
   return snap;
 }
 
-void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
+void RDLRouter::cleanupGraphEdges(
+    const std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges)
+{
+  if (edges.empty()) {
+    return;
+  }
+
+  std::set<odb::Point> remove_pts;
+  for (auto& [net, iterm_targets] : routing_targets_) {
+    for (auto& [iterm, targets] : iterm_targets) {
+      for (auto& target : targets) {
+        remove_pts.insert(target.grid_access.begin(), target.grid_access.end());
+      }
+    }
+  }
+
+  for (const auto& pt : remove_pts) {
+    auto find_pt = edges.find(pt);
+    if (find_pt != edges.end()) {
+      for (const auto& edge : find_pt->second) {
+        boost::remove_edge(edge, graph_);
+      }
+    }
+  }
+}
+
+void RDLRouter::populateTerminalAccessPoints(
+    RouteTarget& target,
+    std::unordered_map<odb::Point, std::set<GridGraphEdge>>& edges) const
 {
   // determine new access point in graph
   std::set<odb::Point> snap_pts;
@@ -772,9 +805,18 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
         return pt.y() > target.center.y();
       }));
 
+  if (logger_->debugCheck(utl::PAD, "Terminal", 1) && gui_ != nullptr) {
+    for (const auto& snap : snap_pts) {
+      gui_->addSnap(target.center, snap);
+    }
+    gui_->zoomToSnap(true);
+    gui_->pause(false);
+    gui_->clearSnap();
+  }
+
   // Remove snap points that would cause a violation
-  //   insersects an obstruction
-  //   insersects another edge
+  //   intersects an obstruction
+  //   intersects another edge
   for (auto snap_itr = snap_pts.begin(); snap_itr != snap_pts.end();) {
     const odb::Line line(target.center, *snap_itr);
     bool erase = obstructions_.qbegin(boost::geometry::index::intersects(line)
@@ -809,8 +851,13 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
           const odb::Line edge_line(pt0, pt1);
 
           if (boost::geometry::intersects(line, edge_line)) {
-            erase = true;
-            break;
+            // if edge is 45degree mark is for removal and keep snap point
+            if (is45DegreeEdge(pt0, pt1)) {
+              edges[*snap_itr].insert(edge);
+            } else {
+              erase = true;
+              break;
+            }
           }
         }
       }
@@ -859,11 +906,8 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
       }
     }
 
-    // check if points can be removed
-    if (poly_intersect.size() < snap_pts.size()) {
-      for (const odb::Point& pt : poly_intersect) {
-        snap_pts.erase(pt);
-      }
+    for (const odb::Point& pt : poly_intersect) {
+      snap_pts.erase(pt);
     }
   }
 
@@ -878,6 +922,46 @@ void RDLRouter::populateTerminalAccessPoints(RouteTarget& target) const
   }
 
   target.grid_access = std::move(snap_pts);
+}
+
+void RDLRouter::cleanupTerminalAccessPoints(
+    odb::dbITerm* iterm,
+    std::vector<RouteTarget>& targets) const
+{
+  // map snapping points
+  std::map<odb::Point, std::vector<RouteTarget*>> access_map;
+  for (auto& target : targets) {
+    for (const auto& snap : target.grid_access) {
+      access_map[snap].push_back(&target);
+    }
+  }
+
+  // check for overlapping points and remove from all but closest
+  for (auto& [snap, target_ptrs] : access_map) {
+    if (target_ptrs.size() < 2) {
+      continue;
+    }
+
+    std::ranges::stable_sort(
+        target_ptrs, [&snap](const RouteTarget* lhs, const RouteTarget* rhs) {
+          return distance(snap, lhs->center) < distance(snap, rhs->center);
+        });
+
+    // keep closest, remove rest
+    for (size_t i = 1; i < target_ptrs.size(); i++) {
+      auto& access = target_ptrs[i]->grid_access;
+      access.erase(snap);
+    }
+  }
+
+  // remove empty targets
+  for (auto target_itr = targets.begin(); target_itr != targets.end();) {
+    if (target_itr->grid_access.empty()) {
+      target_itr = targets.erase(target_itr);
+    } else {
+      target_itr++;
+    }
+  }
 }
 
 RDLRouter::TerminalAccess RDLRouter::insertTerminalAccess(
