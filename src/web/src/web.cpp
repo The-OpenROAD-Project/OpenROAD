@@ -1050,6 +1050,12 @@ void WebServer::saveReport(const std::string& filename,
     return;
   }
 
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 31, "Cannot open file: {}", filename);
+    return;
+  }
+
   // ── Serialize JSON cache responses ──
 
   std::string setup_json, hold_json, hist_setup, hist_hold, filters;
@@ -1156,12 +1162,6 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  std::ofstream out(filename);
-  if (!out) {
-    logger_->error(utl::WEB, 31, "Cannot open file: {}", filename);
-    return;
-  }
-
   // HTML head — same CDN deps as index.html.
   out << R"(<!DOCTYPE html>
 <html>
@@ -1216,7 +1216,7 @@ window.__STATIC_CACHE__ = {
     if (i > 0) {
       out << ",";
     }
-    out << "\n    \"" << tile_entries[i].first << "\":\""
+    out << "\n    \"" << json_escape(tile_entries[i].first) << "\":\""
         << tile_entries[i].second << "\"";
   }
 

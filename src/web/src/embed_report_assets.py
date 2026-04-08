@@ -104,17 +104,17 @@ def main():
     # Read and process JS files.
     js_parts = []
     for path in args.js:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
         js_parts.append(f'// ── {path.split("/")[-1]} ──')
         js_parts.append(process_js_file(content))
     combined_js = "\n".join(js_parts)
 
     # Read CSS.
-    with open(args.css) as f:
+    with open(args.css, encoding="utf-8") as f:
         css_content = f.read()
 
-    with open(args.output, "w") as out:
+    with open(args.output, "w", encoding="utf-8") as out:
         out.write("// Auto-generated — do not edit.\n")
         out.write("#include <string_view>\n")
         out.write("namespace web {\n")
