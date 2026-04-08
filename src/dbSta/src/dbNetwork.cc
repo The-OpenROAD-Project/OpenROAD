@@ -2540,7 +2540,10 @@ It also checks the legallity of the pin/net combination.
 
 */
 
-void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
+void dbNetwork::connectPin(Pin* pin,
+                           Net* flat_net,
+                           Net* hier_net,
+                           bool reassociate_hier_flat)
 {
   // get the type of the pin
   odb::dbITerm* iterm = nullptr;
@@ -2599,9 +2602,9 @@ void dbNetwork::connectPin(Pin* pin, Net* flat_net, Net* hier_net)
                        "Illegal net combination. hier net expected to be "
                        "hooked to one of iterm, bterm, moditerm, modbterm");
       }
-      // do the house keeping. Mod net must always have the flat net associated
-      // with it.
-      if (flat_net_db) {
+      // Do the house keeping. A mod net must have the correct flat-net
+      // association when the caller is performing a hierarchy edit.
+      if (flat_net_db && reassociate_hier_flat) {
         reassociateHierFlatNet(hier_net_db, flat_net_db, nullptr);
       }
     }
