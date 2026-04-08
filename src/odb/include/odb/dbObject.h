@@ -32,7 +32,6 @@ class _dbObject;
 ///
 enum dbObjectType
 {
-
   // Design Objects
   dbGdsLibObj,
   dbBlockObj,

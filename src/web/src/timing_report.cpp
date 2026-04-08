@@ -31,6 +31,7 @@
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
 #include "sta/Sta.hh"
+#include "sta/StringUtil.hh"
 #include "sta/Units.hh"
 #include "sta/VisitPathEnds.hh"
 

@@ -160,6 +160,21 @@ OPENROAD_DEFINES = [
     "ABC_NAMESPACE=abc",
 ]
 
+cc_library(
+    name = "tcl_readline_setup",
+    srcs = ["src/tcl_readline_setup.cc"],
+    hdrs = ["src/tcl_readline_setup.h"],
+    visibility = ["//src/sta:__pkg__"],
+    deps = [
+        "@tcl_lang//:tcl",
+        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
+        # On systems without tclreadline these are empty stub targets (no-op).
+        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
+        "@tclreadline",
+        "@tclreadline//:tclreadline_defs",
+    ],
+)
+
 cc_binary(
     name = "openroad",
     srcs = [
@@ -177,19 +192,15 @@ cc_binary(
         ":openroad_version",
         ":opt_notification",
         ":ord",
+        ":tcl_readline_setup",
         "//bazel:tcl_library_init",
-        "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "//src/cut",
         "//src/gui",
         "//src/sta:opensta_lib",
         "//src/utl",
         "@boost.stacktrace",
+        "@rules_cc//cc/runfiles",  # sets BAZEL_CURRENT_REPOSITORY
         "@tcl_lang//:tcl",
-        # tclreadline: provides ENABLE_READLINE define + links libtclreadline.
-        # On systems without tclreadline these are empty stub targets (no-op).
-        # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/7115
-        "@tclreadline",
-        "@tclreadline//:tclreadline_defs",
     ],
 )
 
