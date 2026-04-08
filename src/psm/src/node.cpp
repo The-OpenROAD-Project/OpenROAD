@@ -14,7 +14,7 @@
 namespace psm {
 
 Node::Node(const odb::Point& pt, odb::dbTechLayer* layer)
-    : pt_(pt), layer_(layer), visited_(false)
+    : pt_(pt), layer_(layer)
 {
 }
 
@@ -55,7 +55,10 @@ int Node::compare(const Node* other) const
   // Compare type-specific info
   const int info1 = getTypeCompareInfo();
   const int info2 = other->getTypeCompareInfo();
-  return info1 == info2 ? 0 : (info1 < info2 ? -1 : 1);
+  if (info1 == info2) {
+    return 0;
+  }
+  return info1 < info2 ? -1 : 1;
 }
 
 int Node::compare(const std::unique_ptr<Node>& other) const

@@ -71,7 +71,7 @@ int Connection::getDBUs() const
 bool Connection::compare(const Connection* other) const
 {
   if (other == nullptr) {
-    return true;
+    return false;
   }
 
   // Compare node0_ with null handling
