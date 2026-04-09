@@ -46,8 +46,13 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 #ifdef __linux__
   char buf[PATH_MAX + 1];
   ssize_t len = readlink("/proc/self/exe", buf, PATH_MAX);
-  std::string exe_path = (len > 0) ? std::string(buf, len)
-                                   : std::string(Tcl_GetNameOfExecutable());
+  if (len >= PATH_MAX) {
+    std::cerr << "[Error] /proc/self/exe path too long (>= PATH_MAX); "
+                 "falling back to Tcl_GetNameOfExecutable()\n";
+  }
+  std::string exe_path = (len > 0 && len < PATH_MAX)
+                             ? std::string(buf, len)
+                             : std::string(Tcl_GetNameOfExecutable());
 #else
   std::string exe_path(Tcl_GetNameOfExecutable());
 #endif
