@@ -18,7 +18,7 @@
 
 namespace odb::lefTechLayerCutSpacingTable {
 
-void createOrthongonalSubRule(
+void createOrthogonalSubRule(
     const std::vector<boost::fusion::vector<double, double>>& params,
     odb::lefTechLayerCutSpacingTableParser* parser,
     odb::lefinReader* lefinReader)
@@ -366,7 +366,7 @@ bool parse(
       = (lit("SPACINGTABLE") >> lit("ORTHOGONAL")
          >> +(lit("WITHIN") >> double_ >> lit("SPACING") >> double_)
          >> lit(";"))[boost::bind(
-          &createOrthongonalSubRule, _1, parser, lefinReader)];
+          &createOrthogonalSubRule, _1, parser, lefinReader)];
 
   qi::rule<std::string::const_iterator, space_type> layer_rule
       = (lit("LAYER") >> _string[boost::bind(
