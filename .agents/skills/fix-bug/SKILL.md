@@ -56,13 +56,9 @@ instead of patching it.
 
 ## 3. Implement the fix
 
-- Follow Google C++ Style Guide and OpenROAD coding practices
-- Use modern C++20 features where appropriate
-- Use `{...}` braces even for single-line statements
-- Keep functions under 100 lines
-- Use `int64_t` for area calculations to prevent integer overflow
-- Add `const` qualifiers where possible
-- Remove any unreachable code after `error()` or `throw`
+Follow the coding practices in `docs/agents/coding.md`. Pay special
+attention to `int64_t` for area calculations and removing unreachable
+code after `error()` or `throw`.
 
 ## 4. Create regression test
 
