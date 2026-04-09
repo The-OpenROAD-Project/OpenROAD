@@ -3,7 +3,7 @@ set -e
 
 # Install binary and runfiles from bazel build
 
-TARFILE=$(cd $BUILD_WORKSPACE_DIRECTORY; bazelisk info bazel-bin)/openroad.tar
+TARFILE=$(cd $BUILD_WORKSPACE_DIRECTORY; bazelisk info bazel-bin)/packaging/openroad.tar
 
 DEST_DIR=${1:-${BUILD_WORKSPACE_DIRECTORY}/../install/OpenROAD/bin}
 

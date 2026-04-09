@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "db/obj/frMarker.h"
-#include "db/obj/frNode.h"
+#include "db/obj/frNet.h"
 #include "db/tech/frConstraint.h"
 #include "db/tech/frViaDef.h"
 #include "fixture.h"
@@ -120,10 +120,6 @@ TEST_F(GCFixture, metal_short_obs)
   instTerm->addToNet(n1);
 
   n1->addInstTerm(instTerm);
-  auto instTermNode = std::make_unique<frNode>();
-  instTermNode->setPin(instTerm);
-  instTermNode->setType(frNodeTypeEnum::frcPin);
-  n1->addNode(instTermNode);
   runGC();
 
   // Test the results

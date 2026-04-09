@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="719" height="101"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_INFLUENCE"
+      xlink:title="K_INFLUENCE">
+      <rect x="71" y="23" width="106" height="32"/>
+      <rect x="69" y="21" width="106" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="79" y="41">K_INFLUENCE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="197" y="23" width="92" height="32"/>
+      <rect x="195" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="205" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_RANGE"
+      xlink:title="K_RANGE">
+      <rect x="349" y="23" width="78" height="32"/>
+      <rect x="347" y="21" width="78" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="357" y="41">K_RANGE</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="447" y="23" width="92" height="32"/>
+      <rect x="445" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="455" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#int_number"
+      xlink:title="int_number">
+      <rect x="559" y="23" width="92" height="32"/>
+      <rect x="557" y="21" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="567" y="41">int_number</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_USELENGTHTHRESHOLD"
+      xlink:title="K_USELENGTHTHRESHOLD">
+      <rect x="51" y="67" width="186" height="32"/>
+      <rect x="49" y="65" width="186" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="85">K_USELENGTHTHRESHOLD</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m40 0 h10 m0 0 h228 m-258 0 h20 m238 0 h20 m-278 0 q10 0 10 10 m258 0 q0 -10 10 -10 m-268 10 v12 m258 0 v-12 m-258 12 q0 10 10 10 m238 0 q10 0 10 -10 m-248 10 h10 m106 0 h10 m0 0 h10 m92 0 h10 m40 -32 h10 m0 0 h312 m-342 0 h20 m322 0 h20 m-362 0 q10 0 10 10 m342 0 q0 -10 10 -10 m-352 10 v12 m342 0 v-12 m-342 12 q0 10 10 10 m322 0 q10 0 10 -10 m-332 10 h10 m78 0 h10 m0 0 h10 m92 0 h10 m0 0 h10 m92 0 h10 m-640 -32 h20 m640 0 h20 m-680 0 q10 0 10 10 m660 0 q0 -10 10 -10 m-670 10 v56 m660 0 v-56 m-660 56 q0 10 10 10 m640 0 q10 0 10 -10 m-650 10 h10 m186 0 h10 m0 0 h434 m23 -76 h-3"/>
+   <polygon points="709 5 717 1 717 9"/>
+   <polygon points="709 5 701 1 701 9"/>
+</svg>
