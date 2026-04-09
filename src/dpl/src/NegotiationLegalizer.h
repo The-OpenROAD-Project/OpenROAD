@@ -93,7 +93,7 @@ struct HLCell
   bool fixed{false};
   NLPowerRailType rail_type{NLPowerRailType::kVss};
   int fence_id{-1};      // -1 → default region
-  bool flippable{true};  // odd-height cells may flip vertically
+  bool flippable{true};  // odd-height cells may require fliping for moving
   bool legal{false};     // updated each negotiation iteration
 
   [[nodiscard]] int displacement() const
