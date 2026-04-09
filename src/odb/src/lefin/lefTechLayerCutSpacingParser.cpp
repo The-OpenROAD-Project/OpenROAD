@@ -114,9 +114,10 @@ void addAdjacentCutsSubRule(
   }
   if (class_name.is_initialized()) {
     const auto& cut_class_name = class_name.value();
-    auto cut_class = layer->findTechLayerCutClassRule(cut_class_name.c_str());
-    if (cut_class != nullptr) {
-      parser->rule->setCutClass(cut_class);
+    auto cut_class_rule
+        = layer->findTechLayerCutClassRule(cut_class_name.c_str());
+    if (cut_class_rule != nullptr) {
+      parser->rule->setCutClass(cut_class_rule);
     }
   }
   if (side_parallel_no_prl.is_initialized()) {
@@ -176,18 +177,19 @@ void addSameMetalSharedEdgeSubRule(
       odb::dbTechLayerCutSpacingRule::CutSpacingType::SAMEMETALSHAREDEDGE);
   auto within = at_c<0>(params);
   auto above = at_c<1>(params);
-  auto cutclass = at_c<2>(params);
+  auto cut_class = at_c<2>(params);
   auto except_two_edges = at_c<3>(params);
   auto except_same_via = at_c<4>(params);
   parser->rule->setWithin(lefinReader->dbdist(within));
   if (above.is_initialized()) {
     parser->rule->setAbove(true);
   }
-  if (cutclass.is_initialized()) {
-    const auto& cut_class_name = cutclass.value();
-    auto cut_class = layer->findTechLayerCutClassRule(cut_class_name.c_str());
-    if (cut_class != nullptr) {
-      parser->rule->setCutClass(cut_class);
+  if (cut_class.is_initialized()) {
+    const auto& cut_class_name = cut_class.value();
+    auto cut_class_rule
+        = layer->findTechLayerCutClassRule(cut_class_name.c_str());
+    if (cut_class_rule != nullptr) {
+      parser->rule->setCutClass(cut_class_rule);
     }
   }
   if (except_two_edges.is_initialized()) {
@@ -310,9 +312,9 @@ void setCutClass(const std::string& value,
                  odb::lefTechLayerCutSpacingParser* parser,
                  odb::dbTechLayer* layer)
 {
-  auto cut_class = layer->findTechLayerCutClassRule(value.c_str());
-  if (cut_class != nullptr) {
-    parser->rule->setCutClass(cut_class);
+  auto cut_class_rule = layer->findTechLayerCutClassRule(value.c_str());
+  if (cut_class_rule != nullptr) {
+    parser->rule->setCutClass(cut_class_rule);
   }
 }
 template <typename Iterator>
