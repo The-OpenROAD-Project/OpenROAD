@@ -4,6 +4,11 @@
 %{
 #include <map>
 #include <string>
+
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 %}
 
 %include "std_string.i"
