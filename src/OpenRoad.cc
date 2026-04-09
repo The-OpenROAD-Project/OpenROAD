@@ -566,7 +566,22 @@ void OpenRoad::readDb(const char* filename, bool hierarchy)
 void OpenRoad::readDb(std::istream& stream)
 {
   if (db_->getChip() && db_->getChip()->getBlock()) {
+    // Notify observers (STA, GUI) to clean up before clearing
     db_->triggerPreDbClear();
+
+    // Clear tool-specific cached state to ensure reproducibility
+    global_router_->clear();
+    opendp_->importClear();
+    detailed_router_->clearDesign();
+    replace_->reset();
+    tritonCts_->clear();
+    macro_placer_->clear();
+    tapcell_->reset();
+    ioPlacer_->clear();
+    pdngen_->reset();
+    pdnsim_->clearSolvers();
+    antenna_checker_->clear();
+
     db_->clear();
   }
 
