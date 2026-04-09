@@ -19,6 +19,7 @@ cc_library(
         "src/DecapPlacement.cpp",
         "src/FillerPlacement.cpp",
         "src/NegotiationLegalizer.cpp",
+        "src/NegotiationLegalizer.h",
         "src/NegotiationLegalizerPass.cpp",
         "src/Opendp.cpp",
         "src/OptMirror.cpp",
