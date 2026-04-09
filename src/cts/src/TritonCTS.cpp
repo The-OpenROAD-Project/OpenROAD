@@ -82,6 +82,23 @@ TritonCTS::~TritonCTS()
   delete options_;
 }
 
+void TritonCTS::clear()
+{
+  builders_.clear();
+  staClockNets_.clear();
+  visitedClockNets_.clear();
+  inst2clkbuf_.clear();
+  driver2subnet_.clear();
+  net2builder_.clear();
+  block_ = nullptr;
+  numberOfClocks_ = 0;
+  numClkNets_ = 0;
+  numFixedNets_ = 0;
+  dummyLoadIndex_ = 0;
+  regTreeRootBufIndex_ = 0;
+  delayBufIndex_ = 0;
+}
+
 void TritonCTS::runTritonCts()
 {
   odb::dbChip* chip = db_->getChip();
