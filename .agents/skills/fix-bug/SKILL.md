@@ -69,46 +69,18 @@ Read `docs/contrib/CodingPractices.md` if unfamiliar with project idioms.
 ## 4. Create regression test
 
 Every bug fix needs a test that reproduces the original bug and verifies
-the fix. See `docs/agents/testing.md` for full details.
+the fix. The test must be registered in **both CMake and Bazel** --
+forgetting Bazel is the #1 mistake -- it silently passes locally but
+fails in CI.
 
-### Integration test (Tcl)
+For the full workflow (writing the Tcl test, generating golden files,
+dual registration, running with `./regression -R`), read:
+- `docs/agents/testing.md` -- the project's testing guide
+- `.agents/skills/add-test/SKILL.md` -- step-by-step add/register/verify procedure
 
-1. Create `src/MODULE/test/TEST_NAME.tcl`:
-   ```tcl
-   # Test description: verify fix for ISSUE
-   set test_name TEST_NAME
-   source "helpers.tcl"
-   # ... test body ...
-   ```
-
-2. Generate golden file `TEST_NAME.ok` by running the test and capturing
-   stdout (remove the openroad banner).
-
-3. **Register in BOTH build systems** (forgetting Bazel is the #1 mistake):
-
-   **CMake** -- `src/MODULE/test/CMakeLists.txt`:
-   ```cmake
-   or_integration_tests(
-     TESTS
-       ...existing tests...
-       TEST_NAME
-   )
-   ```
-
-   **Bazel** -- `src/MODULE/test/BUILD`:
-   ```python
-   regression_test(
-       name = "TEST_NAME",
-       ...
-   )
-   ```
-
-### Run the test
-
-```bash
-cd src/MODULE/test
-./regression TEST_NAME
-```
+The bug fix's test should reproduce the exact failure mode from the
+issue (same error code, same stack frame, same condition) so a future
+regression is caught immediately.
 
 ## 5. Format and commit
 
@@ -125,7 +97,7 @@ Fixes #ISSUE_NUMBER"
 
 ## 6. Verify
 
-- [ ] Test passes: `cd src/MODULE/test && ./regression TEST_NAME`
+- [ ] Test passes: `cd src/MODULE/test && ./regression -R TEST_NAME`
 - [ ] No unintended changes: `git diff HEAD`
 - [ ] Test registered in both CMake and Bazel
 - [ ] No `src/sta/` files modified

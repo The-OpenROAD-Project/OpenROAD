@@ -96,27 +96,51 @@ Bazel CI.
 
 ### CMake -- `src/MODULE/test/CMakeLists.txt`
 
-Find the `or_integration_tests()` call and add the test name:
+Find the `or_integration_tests()` call. The first positional argument
+is the **module name**, followed by the `TESTS` keyword and the list:
+
 ```cmake
 or_integration_tests(
+  "MODULE"           # <-- module name (e.g. "rsz")
   TESTS
     existing_test1
     existing_test2
-    TEST_NAME          # <-- add here
+    TEST_NAME        # <-- add here
 )
 ```
+
+Some modules also have a `PASSFAIL_TESTS` section after `TESTS` -- add
+to the appropriate list. Look at the module's existing `CMakeLists.txt`
+before editing.
 
 ### Bazel -- `src/MODULE/test/BUILD`
 
-Find the existing `regression_test()` entries and add:
+The typical pattern is a `TESTS` list consumed by a list comprehension
+that calls `regression_test()` for each name:
+
 ```python
-regression_test(
-    name = "TEST_NAME",
-)
+TESTS = [
+    "buffer_ports1",
+    "buffer_ports10",
+    "buffer_ports11",
+    "TEST_NAME",     # <-- add here, in the existing sort order
+    # (other tests omitted)
+]
+
+[
+    regression_test(
+        name = test_name,
+    )
+    for test_name in TESTS
+]
 ```
 
-Match the pattern used by neighboring tests in the same BUILD file --
-some modules use additional attributes like `data` or `tags`.
+Some modules split tests across multiple lists (`TESTS`,
+`PASSFAIL_TESTS`, `BIG_TESTS`, etc.) and define a combined
+`ALL_TESTS = TESTS + PASSFAIL_TESTS + ...` that the comprehension
+iterates over. Read the existing `BUILD` to find which list to
+extend, and insert the new test name in whatever sort order that
+file already uses (most modules are alphabetical).
 
 ## 5. Write unit tests (C++, if applicable)
 
@@ -139,9 +163,12 @@ Register in:
 
 ## 6. Run and verify
 
+`./regression` is a thin ctest wrapper that filters by module label, so
+the standard ctest flags apply. Use `-R` to match a single test by name:
+
 ```bash
 cd src/MODULE/test
-./regression TEST_NAME
+./regression -R TEST_NAME
 
 # Verify test is discoverable in both systems
 cd ../../../build
@@ -165,7 +192,7 @@ Test for DESCRIPTION."
 
 ## Checklist
 
-- [ ] Test runs successfully: `./regression TEST_NAME`
+- [ ] Test runs successfully: `./regression -R TEST_NAME`
 - [ ] Golden file generated and committed
 - [ ] Registered in CMake `CMakeLists.txt`
 - [ ] Registered in Bazel `BUILD`

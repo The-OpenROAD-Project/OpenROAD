@@ -28,4 +28,4 @@ Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claud
 | `triage-issue` | Reproduce bug and minimize test case with whittle.py | `/triage-issue <issue#>` |
 | `fix-bug` | Trace root cause, implement fix, create tests, prepare commit | `/fix-bug <issue#-or-error-code>` |
 | `add-test` | Add integration/unit tests with dual CMake+Bazel registration | `/add-test <module> [description]` |
-| `review-pr` | Review PR following correctness > QoR > testing priority order | `/review-pr <pr#>` |
+| `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |
