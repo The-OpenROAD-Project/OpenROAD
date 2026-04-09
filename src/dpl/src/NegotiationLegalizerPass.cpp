@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <ranges>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
@@ -15,10 +16,12 @@
 #include "PlacementDRC.h"
 #include "dpl/Opendp.h"
 #include "graphics/DplObserver.h"
+#include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 #include "utl/Logger.h"
 #include "utl/timer.h"
 

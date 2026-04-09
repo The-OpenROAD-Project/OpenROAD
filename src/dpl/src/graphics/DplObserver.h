@@ -8,6 +8,7 @@
 
 #include "dpl/Opendp.h"
 #include "odb/db.h"
+#include "odb/geom.h"
 
 namespace dpl {
 
