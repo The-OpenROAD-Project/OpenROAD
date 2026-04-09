@@ -495,26 +495,25 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
     const odb::Rect core = opendp_->grid_->getCore();
     const DbuX sw = opendp_->grid_->getSiteWidth();
     const auto toX = [&](int gx) {
-      return core.xMin()
-             + gridToDbu(GridX{std::clamp(gx, 0, grid_w_)}, sw).v;
+      return core.xMin() + gridToDbu(GridX{std::clamp(gx, 0, grid_w_)}, sw).v;
     };
     const auto toY = [&](int gy) {
       return core.yMin()
-             + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)})
-                   .v;
+             + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)}).v;
     };
     const odb::Rect init_win(toX(cell.init_x - horiz_window_),
                              toY(cell.init_y - adj_window_),
                              toX(cell.init_x + horiz_window_ + 1),
                              toY(cell.init_y + adj_window_ + 1));
     const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
-    const odb::Rect curr_win
-        = displaced ? odb::Rect(toX(cell.x - horiz_window_),
-                                toY(cell.y - adj_window_),
-                                toX(cell.x + horiz_window_ + 1),
-                                toY(cell.y + adj_window_ + 1))
-                    : odb::Rect();
-    debug_observer_->setNegotiationSearchWindow(cell.db_inst, init_win, curr_win);
+    const odb::Rect curr_win = displaced
+                                   ? odb::Rect(toX(cell.x - horiz_window_),
+                                               toY(cell.y - adj_window_),
+                                               toX(cell.x + horiz_window_ + 1),
+                                               toY(cell.y + adj_window_ + 1))
+                                   : odb::Rect();
+    debug_observer_->setNegotiationSearchWindow(
+        cell.db_inst, init_win, curr_win);
   }
 
   if (opendp_->deep_iterative_debug_ && debug_observer_) {

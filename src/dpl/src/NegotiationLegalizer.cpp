@@ -584,10 +584,8 @@ bool NegotiationLegalizer::initFromDb()
     // Clamp to valid grid range – gridRoundY can return grid_h_ when the
     // instance is near the top edge.  Use (grid_w_ - width) so the full
     // footprint stays within the grid (matches Opendp::legalPt behaviour).
-    cell.init_x
-        = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
-    cell.init_y
-        = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
+    cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
     cell.x = cell.init_x;
     cell.y = cell.init_y;
 

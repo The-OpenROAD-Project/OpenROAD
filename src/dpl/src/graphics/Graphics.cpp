@@ -39,7 +39,7 @@ void Graphics::startPlacement(odb::dbBlock* block)
 
 void Graphics::drawSelected(odb::dbInst* instance, bool force)
 {
-  // When force is true always select and pause 
+  // When force is true always select and pause
   if (!instance || (!force && instance != debug_instance_)) {
     return;
   }
