@@ -568,13 +568,9 @@ bool NegotiationLegalizer::initFromDb()
     // positions
     cell.init_x = dpl_grid->gridX(DbuX{db_x - die_xlo_}).v;
     cell.init_y = dpl_grid->gridRoundY(DbuY{db_y - die_ylo_}).v;
-    // Clamp to valid grid range – gridRoundY can return grid_h_ when the
-    // instance is near the top edge.
-    cell.init_x = std::max(0, std::min(cell.init_x, grid_w_ - 1));
-    cell.init_y = std::max(0, std::min(cell.init_y, grid_h_ - 1));
-    cell.x = cell.init_x;
-    cell.y = cell.init_y;
 
+    // Width/height must be computed before clamping so the upper bounds
+    // account for the full cell footprint (x + width <= grid_w_, etc.).
     auto* master = db_inst->getMaster();
     cell.width = std::max(
         1,
@@ -584,6 +580,16 @@ bool NegotiationLegalizer::initFromDb()
         1,
         static_cast<int>(std::round(static_cast<double>(master->getHeight())
                                     / row_height_)));
+
+    // Clamp to valid grid range – gridRoundY can return grid_h_ when the
+    // instance is near the top edge.  Use (grid_w_ - width) so the full
+    // footprint stays within the grid (matches Opendp::legalPt behaviour).
+    cell.init_x
+        = std::max(0, std::min(cell.init_x, grid_w_ - cell.width));
+    cell.init_y
+        = std::max(0, std::min(cell.init_y, grid_h_ - cell.height));
+    cell.x = cell.init_x;
+    cell.y = cell.init_y;
 
     // gridX() / gridRoundY() are purely arithmetic and don't check whether a
     // site actually exists at the computed position.  Instances near the chip
@@ -1212,7 +1218,7 @@ void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
     cells_[idx].y = rowIdx;
     paddedX += eff_width;
     if (debug_observer_ && cells_[idx].db_inst != nullptr) {
-      debug_observer_->drawSelected(cells_[idx].db_inst);
+      debug_observer_->drawSelected(cells_[idx].db_inst, false);
       if (opendp_->iterative_debug_) {
         pushNegotiationPixels();
         debug_observer_->redrawAndPause();
