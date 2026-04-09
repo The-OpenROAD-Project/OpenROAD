@@ -10,13 +10,13 @@ Open-Source Detailed Placement Engine. Its key features are:
 
 ## Placement Engines
 
-### Diamond Search (default)
+#### Diamond Search
 
 The default engine performs a BFS-style diamond search from each cell's
 global placement position, expanding outward in Manhattan order until a
 legal site is found.
 
-### NegotiationLegalizer (`-use_negotiation`)
+#### NegotiationLegalizer
 
 An optional two-pass legalizer based on the NBLG paper. Enabled with
 `-use_negotiation` on the `detailed_placement` command.
