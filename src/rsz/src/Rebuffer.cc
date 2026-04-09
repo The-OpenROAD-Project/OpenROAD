@@ -687,10 +687,11 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 // of the algorithm (wire_length_step_ should have been chosen
                 // to always allow a minimal size buffer to drive itself without
                 // ERC)
-                logger_->critical(RSZ,
-                                  2008,
-                                  "buffering pin {}: wire step options empty",
-                                  network_->name(pin_));
+                logger_->warn(RSZ,
+                              2008,
+                              "Skipping net buffering because no buffer can "
+                              "drive the wire load on net connected to pin {}.",
+                              network_->name(pin_));
               }
               return opts1;
             }
@@ -737,13 +738,14 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
               insertBufferOptions(opts, level, std::min(remaining_wl, step));
 
               if (opts.empty()) {
-                logger_->warn(RSZ,
-                              2007,
-                              "buffering pin {}: wire step options empty at "
-                              "round {}, falling back to last valid options",
-                              network_->name(pin_),
-                              round);
-                opts = last_valid_opts;
+                logger_->warn(
+                    RSZ,
+                    2007,
+                    "Skipping buffer insertion along long wire "
+                    "segment on net connected to pin {} at round {} because no "
+                    "buffer can drive the wire load.",
+                    network_->name(pin_),
+                    round);
                 break;
               }
               round++;
@@ -843,7 +845,13 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
       tree);
 
   if (top_opts.empty()) {
-    logger_->critical(RSZ, 2009, "buffering pin {}: no options produced");
+    logger_->warn(
+        RSZ,
+        2009,
+        "Skipping buffering because no valid buffering solution satisfying the "
+        "design rules can be found for net connected to pin {}.",
+        network_->name(pin_));
+    return nullptr;
   }
 
   FixedDelay best_slack = -FixedDelay::INF;
