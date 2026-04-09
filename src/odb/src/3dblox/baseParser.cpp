@@ -174,12 +174,8 @@ void BaseParser::resolvePaths(const std::string& path,
 
 void BaseParser::logError(const std::string& message)
 {
-  if (!current_file_path_.empty()) {
-    logger_->error(
-        utl::ODB, 521, "Parser Error in {}: {}", current_file_path_, message);
-  } else {
-    logger_->error(utl::ODB, 521, "Parser Error: {}", message);
-  }
+  logger_->error(
+      utl::ODB, 521, "Parser Error in {}: {}", current_file_path_, message);
 }
 
 std::string BaseParser::trim(const std::string& str)
