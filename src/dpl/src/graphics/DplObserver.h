@@ -32,7 +32,7 @@ class DplObserver
   virtual ~DplObserver() = default;
 
   virtual void startPlacement(odb::dbBlock* block) = 0;
-  virtual void drawSelected(odb::dbInst* instance) = 0;
+  virtual void drawSelected(odb::dbInst* instance, bool force) = 0;
   virtual void binSearch(const Node* cell,
                          GridX xl,
                          GridY yl,
@@ -54,6 +54,17 @@ class DplObserver
   {
   }
   virtual void clearNegotiationPixels() {}
+
+  // Store the search window for |inst| so it can be drawn when that instance
+  // is selected in the GUI.  |curr_window| is the window around the current
+  // (displaced) position; pass an empty Rect when the cell has not moved.
+  virtual void setNegotiationSearchWindow(odb::dbInst* inst,
+                                          const odb::Rect& init_window,
+                                          const odb::Rect& curr_window)
+  {
+  }
+  // Clear all stored search windows (call at the start of each iteration).
+  virtual void clearNegotiationSearchWindows() {}
 };
 
 }  // namespace dpl

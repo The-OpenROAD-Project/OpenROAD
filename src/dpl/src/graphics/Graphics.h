@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 
 #include "DplObserver.h"
@@ -25,7 +26,7 @@ class Graphics : public gui::Renderer, public DplObserver
            bool paint_negotiation_pixels = false);
   ~Graphics() override = default;
   void startPlacement(odb::dbBlock* block) override;
-  void drawSelected(odb::dbInst* instance) override;
+  void drawSelected(odb::dbInst* instance, bool force) override;
   void binSearch(const Node* cell,
                  GridX xl,
                  GridY yl,
@@ -46,6 +47,10 @@ class Graphics : public gui::Renderer, public DplObserver
                             int site_width,
                             const std::vector<int>& row_y_dbu) override;
   void clearNegotiationPixels() override;
+  void setNegotiationSearchWindow(odb::dbInst* inst,
+                                  const odb::Rect& init_window,
+                                  const odb::Rect& curr_window) override;
+  void clearNegotiationSearchWindows() override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
@@ -68,6 +73,12 @@ class Graphics : public gui::Renderer, public DplObserver
   int negotiation_die_ylo_{0};
   int negotiation_site_width_{0};
   std::vector<int> negotiation_row_y_dbu_;
+
+  // Per-cell search windows: init window + current-position window (may be
+  // empty if the cell is not displaced).  Keyed by dbInst* so drawObjects()
+  // can look up whichever instance the user has selected in the GUI.
+  std::unordered_map<odb::dbInst*, std::pair<odb::Rect, odb::Rect>>
+      negotiation_search_windows_;
 };
 
 }  // namespace dpl

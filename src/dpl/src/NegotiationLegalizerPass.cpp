@@ -175,6 +175,10 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
                                           int iter,
                                           bool updateHistory)
 {
+  if (debug_observer_) {
+    debug_observer_->clearNegotiationSearchWindows();
+  }
+
   // Reset findBestLocation profiling accumulators.
   prof_init_search_s_ = 0;
   prof_curr_search_s_ = 0;
@@ -393,7 +397,7 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
       pushNegotiationPixels();
       logger_->report("Pause at placing of cell {}.",
                       cells_[cellIdx].db_inst->getName());
-      debug_observer_->drawSelected(cells_[cellIdx].db_inst);
+      debug_observer_->drawSelected(cells_[cellIdx].db_inst, !debug_inst);
     }
   }
 }
@@ -487,14 +491,43 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
     }
   }
 
+  if (debug_observer_) {
+    const odb::Rect core = opendp_->grid_->getCore();
+    const DbuX sw = opendp_->grid_->getSiteWidth();
+    const auto toX = [&](int gx) {
+      return core.xMin()
+             + gridToDbu(GridX{std::clamp(gx, 0, grid_w_)}, sw).v;
+    };
+    const auto toY = [&](int gy) {
+      return core.yMin()
+             + opendp_->grid_->gridYToDbu(GridY{std::clamp(gy, 0, grid_h_)})
+                   .v;
+    };
+    const odb::Rect init_win(toX(cell.init_x - horiz_window_),
+                             toY(cell.init_y - adj_window_),
+                             toX(cell.init_x + horiz_window_ + 1),
+                             toY(cell.init_y + adj_window_ + 1));
+    const bool displaced = (cell.x != cell.init_x || cell.y != cell.init_y);
+    const odb::Rect curr_win
+        = displaced ? odb::Rect(toX(cell.x - horiz_window_),
+                                toY(cell.y - adj_window_),
+                                toX(cell.x + horiz_window_ + 1),
+                                toY(cell.y + adj_window_ + 1))
+                    : odb::Rect();
+    debug_observer_->setNegotiationSearchWindow(cell.db_inst, init_win, curr_win);
+  }
+
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (cell.db_inst == debug_inst) {
+      const DbuX site_width = opendp_->grid_->getSiteWidth();
       logger_->report("  Best location for {} is ({}, {}) with cost {}.",
                       cell.db_inst->getName(),
-                      best_x,
-                      best_y,
-                      best_cost);
+                      gridToDbu(GridX{best_x}, site_width).v,
+                      opendp_->grid_->gridYToDbu(GridY{best_y}).v,
+                      best_cost == static_cast<double>(kInfCost)
+                          ? "inf"
+                          : std::to_string(best_cost));
       if (node != nullptr) {
         odb::dbOrientType targetOrient = node->getOrient();
         odb::dbSite* site = cell.db_inst->getMaster()->getSite();

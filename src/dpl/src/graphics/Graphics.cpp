@@ -37,9 +37,10 @@ void Graphics::startPlacement(odb::dbBlock* block)
   block_ = block;
 }
 
-void Graphics::drawSelected(odb::dbInst* instance)
+void Graphics::drawSelected(odb::dbInst* instance, bool force)
 {
-  if (!instance || instance != debug_instance_) {
+  // When force is true always select and pause 
+  if (!instance || (!force && instance != debug_instance_)) {
     return;
   }
 
@@ -138,7 +139,7 @@ void Graphics::drawObjects(gui::Painter& painter)
                             final_location.y(),
                             final_location.x() + width,
                             final_location.y() + height);
-      auto outline_color = gui::Painter::kWhite;
+      auto outline_color = gui::Painter::kCyan;
       // outline_color.a = 150;
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
@@ -158,6 +159,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
+  // Diamond search range
   auto color = gui::Painter::kCyan;
   color.a = 100;
   painter.setPen(color);
@@ -244,6 +246,34 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  if (!negotiation_search_windows_.empty()) {
+    painter.setBrush(gui::Painter::kTransparent);
+    for (const auto& sel : selection) {
+      if (!sel.isInst()) {
+        continue;
+      }
+      auto* inst = std::any_cast<odb::dbInst*>(sel.getObject());
+      auto it = negotiation_search_windows_.find(inst);
+      if (it == negotiation_search_windows_.end()) {
+        continue;
+      }
+      const auto& [init_win, curr_win] = it->second;
+
+      // Init-position search window
+      auto init_color = gui::Painter::kCyan;
+      painter.setPen(init_color, /* cosmetic */ true);
+      painter.drawRect(init_win);
+
+      // Current-position window (only when the cell is displaced).
+      if (!curr_win.isInverted() && curr_win.area() > 0) {
+        auto curr_color = gui::Painter::kWhite;
+        curr_color.a = 200;
+        painter.setPen(curr_color, /* cosmetic */ true);
+        painter.drawRect(curr_win);
+      }
+    }
+  }
 }
 
 void Graphics::setNegotiationPixels(
@@ -270,6 +300,19 @@ void Graphics::clearNegotiationPixels()
   negotiation_row_y_dbu_.clear();
   negotiation_grid_w_ = 0;
   negotiation_grid_h_ = 0;
+  negotiation_search_windows_.clear();
+}
+
+void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
+                                          const odb::Rect& init_window,
+                                          const odb::Rect& curr_window)
+{
+  negotiation_search_windows_[inst] = {init_window, curr_window};
+}
+
+void Graphics::clearNegotiationSearchWindows()
+{
+  negotiation_search_windows_.clear();
 }
 
 /* static */

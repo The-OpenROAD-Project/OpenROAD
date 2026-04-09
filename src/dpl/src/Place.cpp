@@ -661,7 +661,7 @@ bool Opendp::diamondMove(Node* cell, const GridPt& grid_pt)
   if (pixel_pt.pixel) {
     placeCell(cell, pixel_pt.x, pixel_pt.y);
     if (debug_observer_) {
-      debug_observer_->drawSelected(cell->getDbInst());
+      debug_observer_->drawSelected(cell->getDbInst(), false);
     }
     return true;
   }
