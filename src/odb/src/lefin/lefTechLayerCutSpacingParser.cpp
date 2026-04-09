@@ -304,7 +304,7 @@ void setOrthogonalSpacing(double value,
                           odb::lefinReader* lefinReader)
 {
   parser->rule->setOrthogonalSpacingValid(true);
-  parser->rule->setOrthogonalSpacingValid(lefinReader->dbdist(value));
+  parser->rule->setOrthogonalSpacing(lefinReader->dbdist(value));
 }
 void setCutClass(const std::string& value,
                  odb::lefTechLayerCutSpacingParser* parser,
