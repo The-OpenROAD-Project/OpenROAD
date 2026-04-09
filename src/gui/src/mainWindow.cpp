@@ -1672,6 +1672,7 @@ void MainWindow::preDbClear(odb::dbDatabase* db)
   for (auto& highlighted_set : highlighted_) {
     highlighted_set.clear();
   }
+  inspector_->inspect(Selected());
   viewers_->clearViewers();
   controls_->clearTechData();
   setBlock(nullptr);
