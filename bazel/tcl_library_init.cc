@@ -43,18 +43,21 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
   std::string error;
   // Use /proc/self/exe to resolve the real binary path, as argv[0] may
   // point into a sandbox where the .runfiles tree does not exist.
+  std::string exe_path;
 #ifdef __linux__
   char buf[PATH_MAX + 1];
   ssize_t len = readlink("/proc/self/exe", buf, PATH_MAX);
-  if (len >= PATH_MAX) {
-    std::cerr << "[Error] /proc/self/exe path too long (>= PATH_MAX); "
-                 "falling back to Tcl_GetNameOfExecutable()\n";
+  if (len > 0 && len < PATH_MAX) {
+    exe_path.assign(buf, len);
+  } else {
+    if (len >= PATH_MAX) {
+      std::cerr << "[Error] /proc/self/exe path too long (>= PATH_MAX); "
+                   "falling back to Tcl_GetNameOfExecutable()\n";
+    }
+    exe_path = Tcl_GetNameOfExecutable();
   }
-  std::string exe_path = (len > 0 && len < PATH_MAX)
-                             ? std::string(buf, len)
-                             : std::string(Tcl_GetNameOfExecutable());
 #else
-  std::string exe_path(Tcl_GetNameOfExecutable());
+  exe_path = Tcl_GetNameOfExecutable();
 #endif
   std::unique_ptr<Runfiles> runfiles(
       Runfiles::Create(exe_path, BAZEL_CURRENT_REPOSITORY, &error));
