@@ -1,0 +1,52 @@
+name: Quarterly Release Tag
+
+on:
+  schedule:
+    # Midnight UTC on the first day of each quarter (Jan, Apr, Jul, Oct)
+    - cron: '0 0 1 1,4,7,10 *'
+  workflow_dispatch:
+
+concurrency:
+  group: quarterly-tag
+  cancel-in-progress: false
+
+jobs:
+  create-tag:
+    name: Create quarterly tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine tag name
+        id: tag
+        run: |
+          month=$(date -u +%-m)
+          year=$(date -u +%y)
+          case $month in
+          1|2|3)   quarter=1 ;;
+          4|5|6)   quarter=2 ;;
+          7|8|9)   quarter=3 ;;
+          10|11|12) quarter=4 ;;
+          esac
+          tag="${year}Q${quarter}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Quarterly tag: $tag"
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if git ls-remote --tags origin "refs/tags/$TAG" | grep -q .; then
+          echo "Tag $TAG already exists, skipping."
+          exit 0
+          fi
+          git tag --annotate "$TAG" -m "Quarterly release $TAG"
+          git push origin "$TAG"

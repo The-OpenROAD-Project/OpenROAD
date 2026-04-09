@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "PlacementDRC.h"
+#include "dpl/Opendp.h"
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/architecture.h"

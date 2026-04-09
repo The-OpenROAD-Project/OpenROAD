@@ -12,6 +12,8 @@
 
 #include "db/obj/frAccess.h"
 #include "db/obj/frInst.h"
+#include "db/obj/frMPin.h"
+#include "db/obj/frTrackPattern.h"
 #include "db/tech/frLayer.h"
 #include "distributed/frArchive.h"
 #include "frBaseTypes.h"
