@@ -64,23 +64,15 @@ instead of patching it.
 - Add `const` qualifiers where possible
 - Remove any unreachable code after `error()` or `throw`
 
-Read `docs/contrib/CodingPractices.md` if unfamiliar with project idioms.
-
 ## 4. Create regression test
 
-Every bug fix needs a test that reproduces the original bug and verifies
-the fix. The test must be registered in **both CMake and Bazel** --
-forgetting Bazel is the #1 mistake -- it silently passes locally but
-fails in CI.
+Every bug fix needs a test that reproduces the exact failure mode from
+the issue (same error code, same stack frame, same condition) so a
+future regression is caught immediately.
 
-For the full workflow (writing the Tcl test, generating golden files,
-dual registration, running with `./regression -R`), read:
-- `docs/agents/testing.md` -- the project's testing guide
-- `.agents/skills/add-test/SKILL.md` -- step-by-step add/register/verify procedure
-
-The bug fix's test should reproduce the exact failure mode from the
-issue (same error code, same stack frame, same condition) so a future
-regression is caught immediately.
+Use the **add-test** skill (`.agents/skills/add-test/SKILL.md`) for the
+full workflow: writing the test, generating golden files, and
+registering in both CMake and Bazel.
 
 ## 5. Format and commit
 

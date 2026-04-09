@@ -144,22 +144,96 @@ file already uses (most modules are alphabetical).
 
 ## 5. Write unit tests (C++, if applicable)
 
-For testing internal logic (not command-level behavior), add C++ unit
-tests in `src/MODULE/test/cpp/`:
+Prefer C++ unit tests over Tcl for testing internal logic, algorithms,
+and data structure operations. Use Tcl integration tests for
+command-level behavior and end-to-end flows.
+
+### Test file
+
+Create `src/MODULE/test/cpp/TestName.cpp`:
 
 ```cpp
-#include <gtest/gtest.h>
-#include "MODULE/src/ClassName.h"
+#include "gtest/gtest.h"
+#include "odb/db.h"
+
+// Simple test (no fixture)
+namespace module {
+namespace {
 
 TEST(ModuleTest, TestDescription) {
-  // ...
+  // ARRANGE - ACT - ASSERT
   EXPECT_EQ(expected, actual);
+}
+
+}  // namespace
+}  // namespace module
+```
+
+### Using test fixtures
+
+OpenROAD provides a fixture hierarchy for tests that need database
+or tool setup. Choose the simplest one that covers your needs:
+
+| Fixture | Use when |
+|---------|----------|
+| `tst::Fixture` | Need bare `dbDatabase` + STA, load LEFs manually |
+| `tst::Nangate45Fixture` | Need pre-loaded Nangate45 tech/lib |
+| `tst::Sky130Fixture` | Need pre-loaded Sky130 tech/lib |
+| `tst::IntegratedFixture` | Need full tool integration (STA, DPL, GRT, RSZ) |
+
+```cpp
+#include "gtest/gtest.h"
+#include "tst/nangate45_fixture.h"
+
+class TestFeature : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override { /* additional setup */ }
+};
+
+TEST_F(TestFeature, HandlesEdgeCase) {
+  // block_, lib_ are available from the fixture
+  EXPECT_TRUE(condition);
 }
 ```
 
-Register in:
-- `src/MODULE/test/CMakeLists.txt` -- as a C++ test target
-- `src/MODULE/test/cpp/BUILD` -- as a Bazel `cc_test`
+### CMake registration -- `src/MODULE/test/cpp/CMakeLists.txt`
+
+```cmake
+add_executable(TestName TestName.cpp)
+target_link_libraries(TestName
+    MODULE_lib
+    GTest::gtest
+    GTest::gtest_main
+    tst
+    odb
+)
+gtest_discover_tests(TestName
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+add_dependencies(build_and_test TestName)
+```
+
+### Bazel registration -- `src/MODULE/test/BUILD`
+
+Add the `cc_test` target alongside the existing `regression_test`
+entries. Most modules keep C++ tests in the same BUILD file:
+
+```python
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+cc_test(
+    name = "TestName",
+    srcs = ["cpp/TestName.cpp"],
+    deps = [
+        "//src/MODULE",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",  # if using Nangate45Fixture
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+```
 
 ## 6. Run and verify
 

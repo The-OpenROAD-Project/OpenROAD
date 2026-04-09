@@ -97,7 +97,6 @@ Only flag:
 
 ### Priority 6: Process
 
-- DCO sign-off present?
 - PR focused on one bug or feature?
 - Style fixes in separate commits?
 - References an open issue for non-trivial changes?
