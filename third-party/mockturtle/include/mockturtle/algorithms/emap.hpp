@@ -760,7 +760,7 @@ private:
   };
 
 public:
-  static constexpr float epsilon = 0.0005;
+  static constexpr float epsilon = 0.005;
   static constexpr uint32_t max_cut_num = 20;
   using cut_t = cut<CutSize, cut_enumeration_emap_cut<NInputs>>;
   using cut_set_t = emap_cut_set<cut_t, max_cut_num>;
