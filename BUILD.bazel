@@ -227,7 +227,7 @@ cc_library(
     includes = [
         "include",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//src/sta:opensta_lib",
         "@abseil-cpp//absl/base:core_headers",
@@ -251,7 +251,7 @@ cc_library(
         "include",
         "include/ord",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = ["@abseil-cpp//absl/synchronization"],
 )
 
@@ -405,7 +405,7 @@ filegroup(
     srcs = [
         "src/Exception.i",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -413,7 +413,7 @@ filegroup(
     srcs = [
         "src/Exception-py.i",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
@@ -428,7 +428,7 @@ filegroup(
     srcs = [
         "src/options.i",
     ],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 # Lightweight test suites that run without building OpenROAD.
