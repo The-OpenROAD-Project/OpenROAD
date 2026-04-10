@@ -20,7 +20,7 @@ generate_ram \
   -ground_pin VGND \
   -routing_layer {met1 0.48} \
   -ver_layer {met2 0.48 10} \
-  -hor_layer {met3 0.48 8} \
+  -hor_layer {met3 0.48 7} \
   -filler_cells {sky130_fd_sc_hd__fill_1 sky130_fd_sc_hd__fill_2 \
     sky130_fd_sc_hd__fill_4 sky130_fd_sc_hd__fill_8} \
   -tapcell sky130_fd_sc_hd__tap_1 \
