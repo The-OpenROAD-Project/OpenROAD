@@ -67,6 +67,11 @@ void DbxWriter::writeChipletInst(YAML::Node& instance_node,
 {
   auto master_name = inst->getMasterChip()->getName();
   instance_node["reference"] = master_name;
+  auto* chip = inst->getMasterChip();
+  if (odb::dbProperty::find(chip, "def_file_read") != nullptr) {
+    YAML::Node external_node = instance_node["external"];
+    external_node["def_file"] = std::string(chip->getName()) + ".def";
+  }
 }
 
 void DbxWriter::writeStack(YAML::Node& stack_node, odb::dbChip* chiplet)

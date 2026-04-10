@@ -465,6 +465,12 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
                         chip,
                         /*issue_callback*/ false);
     odb::dbBoolProperty::create(chip, "def_file_read", true);
+    if (auto* prop = odb::dbStringProperty::find(chip, "def_file_path")) {
+      prop->setValue(chiplet.external.def_file.c_str());
+    } else {
+      odb::dbStringProperty::create(
+          chip, "def_file_path", chiplet.external.def_file.c_str());
+    }
   }
   const int dbu_per_micron = db_->getDbuPerMicron();
   if (chiplet.design_width != -1.0) {
@@ -680,18 +686,22 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   }
 
   if (!chip_inst.external.def_file.empty()) {
-    if (odb::dbProperty::find(chip, "def_file_read") == nullptr) {
-      if (chip->getBlock() != nullptr) {
-        odb::dbBlock::destroy(chip->getBlock());
-      }
-      odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
-      std::vector<odb::dbLib*> search_libs;
-      for (odb::dbLib* lib : db_->getLibs()) {
-        search_libs.push_back(lib);
-      }
-      def_reader.readChip(
-          search_libs, chip_inst.external.def_file.c_str(), chip, false);
-      odb::dbBoolProperty::create(chip, "def_file_read", true);
+    if (chip->getBlock() != nullptr) {
+      odb::dbBlock::destroy(chip->getBlock());
+    }
+    odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
+    std::vector<odb::dbLib*> search_libs;
+    for (odb::dbLib* lib : db_->getLibs()) {
+      search_libs.push_back(lib);
+    }
+    def_reader.readChip(
+        search_libs, chip_inst.external.def_file.c_str(), chip, false);
+    odb::dbBoolProperty::create(chip, "def_file_read", true);
+    if (auto* prop = odb::dbStringProperty::find(chip, "def_file_path")) {
+      prop->setValue(chip_inst.external.def_file.c_str());
+    } else {
+      odb::dbStringProperty::create(
+          chip, "def_file_path", chip_inst.external.def_file.c_str());
     }
   }
 
