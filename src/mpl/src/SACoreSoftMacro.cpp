@@ -498,7 +498,9 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
   for (const odb::Rect& blockage : soft_blockages_) {
     for (const int macro_id : pos_seq_) {
       const SoftMacro& soft_macro = macros_[macro_id];
-      if (soft_macro.getNumMacro() > 0) {
+      Cluster* cluster = soft_macro.getCluster();
+
+      if (soft_macro.getNumMacro() > 0 && cluster->getArea() > 0) {
         odb::Rect overlap;
         blockage.intersection(soft_macro.getBBox(), overlap);
 
@@ -507,7 +509,6 @@ void SACoreSoftMacro::calSoftBlockagePenalty()
           continue;
         }
 
-        Cluster* cluster = soft_macro.getCluster();
         const float macro_dominance
             = cluster->getMacroArea() / static_cast<float>(cluster->getArea());
 

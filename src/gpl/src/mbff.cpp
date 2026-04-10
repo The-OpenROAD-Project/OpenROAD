@@ -861,18 +861,27 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
       }
     }
 
-    // disconnect / reconnect iterms
+    // Classify each original iterm and record its tray-port mapping
+    // *before* disconnecting, then disconnect/reconnect and store the
+    // original pin name as a property on the tray instance.
+    const std::string orig_inst_name(insts_[flops[i].idx]->getName());
     for (dbITerm* iterm : insts_[flops[i].idx]->getITerms()) {
+      // Classify while the iterm is still connected.
+      const bool is_d = IsDPin(iterm);
+      const bool is_q = !is_d && IsQPin(iterm);
+      const bool is_qn_inv = is_q && IsInvertingQPin(iterm);
+      const std::string orig_port_name = iterm->getMTerm()->getName();
+
       dbNet* net = iterm->getNet();
       while (net) {
         iterm->disconnect();
 
         // standard pins
-        if (IsDPin(iterm)) {
+        if (is_d) {
           tray_inst[tray_idx]->findITerm(d_pin->name().c_str())->connect(net);
         }
-        if (IsQPin(iterm)) {
-          if (IsInvertingQPin(iterm)) {
+        if (is_q) {
+          if (is_qn_inv) {
             tray_inst[tray_idx]
                 ->findITerm(qn_pin->name().c_str())
                 ->connect(net);
@@ -913,6 +922,31 @@ void MBFF::ModifyPinConnections(const std::vector<Flop>& flops,
         }
 
         net = iterm->getNet();
+      }
+
+      // Store original FF→tray pin mapping as a property on the tray
+      // instance so timing reports can display the original pin name.
+      std::string tray_port;
+      if (is_d && d_pin) {
+        tray_port = d_pin->name();
+      } else if (is_q) {
+        if (is_qn_inv && qn_pin) {
+          tray_port = qn_pin->name();
+        } else if (q_pin) {
+          tray_port = q_pin->name();
+        }
+      }
+      if (!tray_port.empty()) {
+        const std::string key = "orig_name_" + tray_port;
+        const std::string val = orig_inst_name + "/" + orig_port_name;
+        odb::dbStringProperty* prop
+            = odb::dbStringProperty::find(tray_inst[tray_idx], key.c_str());
+        if (prop) {
+          prop->setValue(val.c_str());
+        } else {
+          odb::dbStringProperty::create(
+              tray_inst[tray_idx], key.c_str(), val.c_str());
+        }
       }
     }
   }

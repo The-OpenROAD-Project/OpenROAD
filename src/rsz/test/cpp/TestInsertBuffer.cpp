@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbObject.h"
+#include "odb/dbTypes.h"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 

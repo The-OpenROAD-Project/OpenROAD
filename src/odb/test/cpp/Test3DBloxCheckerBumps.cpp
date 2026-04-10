@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 #include "odb/3dblox.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/dbWireCodec.h"
 
 namespace odb {
