@@ -47,8 +47,13 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
   // runfiles tree.  Runfiles::Create() checks env vars first, so it
   // would resolve paths in the wrong tree.  Unsetting forces it to
   // fall back to the exe path, which is always correct.
+#ifdef _WIN32
+  _putenv_s("RUNFILES_DIR", "");
+  _putenv_s("RUNFILES_MANIFEST_FILE", "");
+#else
   unsetenv("RUNFILES_DIR");
   unsetenv("RUNFILES_MANIFEST_FILE");
+#endif
 
   std::string error;
   // Use /proc/self/exe to resolve the real binary path, as argv[0] may
