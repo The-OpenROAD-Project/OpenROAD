@@ -40,6 +40,21 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
   return Tcl_GetStringResult(interp);
 #else
   using rules_cc::cc::runfiles::Runfiles;
+
+  // Clear inherited RUNFILES_* env vars: when OpenROAD is invoked by
+  // a build system that previously ran another Bazel binary (e.g. a
+  // Python wrapper), those variables point to the *other* binary's
+  // runfiles tree.  Runfiles::Create() checks env vars first, so it
+  // would resolve paths in the wrong tree.  Unsetting forces it to
+  // fall back to the exe path, which is always correct.
+#ifdef _WIN32
+  _putenv_s("RUNFILES_DIR", "");
+  _putenv_s("RUNFILES_MANIFEST_FILE", "");
+#else
+  unsetenv("RUNFILES_DIR");
+  unsetenv("RUNFILES_MANIFEST_FILE");
+#endif
+
   std::string error;
   // Use /proc/self/exe to resolve the real binary path, as argv[0] may
   // point into a sandbox where the .runfiles tree does not exist.
