@@ -36,86 +36,81 @@ filegroup(
     data = [":test_resources"],
 ) for test_name in TESTS]
 
+JS_FILES = ["//src/web:js_files"]
+
+DOM_TEST_DATA = [
+    "js/setup-dom.js",
+    ":node_modules/jsdom",
+] + JS_FILES
+
 js_test(
     name = "coordinates_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-coordinates.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "vis_tree_test",
-    data = [
-        "js/setup-dom.js",
-        ":node_modules/jsdom",
-        "//src/web:js_files",
-    ],
+    data = DOM_TEST_DATA,
     entry_point = "js/test-vis-tree.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "websocket_manager_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-websocket-manager.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "checkbox_tree_model_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-checkbox-tree-model.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "display_controls_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-display-controls.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "clock_tree_widget_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-clock-tree-widget.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "charts_widget_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-charts-widget.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "inspector_test",
-    data = [
-        "js/setup-dom.js",
-        ":node_modules/jsdom",
-        "//src/web:js_files",
-    ],
+    data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "ruler_test",
-    data = ["//src/web:js_files"],
+    data = JS_FILES,
     entry_point = "js/test-ruler.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 js_test(
     name = "tcl_completer_test",
-    data = [
-        "js/setup-dom.js",
-        ":node_modules/jsdom",
-        "//src/web:js_files",
-    ],
+    data = DOM_TEST_DATA,
     entry_point = "js/test-tcl-completer.js",
-    no_copy_to_bin = ["//src/web:js_files"],
+    no_copy_to_bin = JS_FILES,
 )
 
 cc_test(
