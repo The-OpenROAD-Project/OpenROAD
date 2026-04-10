@@ -20,7 +20,7 @@ bazel_dep(name = "rules_python", version = "1.8.5")
 bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "swig", version = "4.3.0.bcr.2")
 
-BOOST_VERSION = "1.89.0.bcr.2"
+BOOST_VERSION = "1.90.0.bcr.1"
 
 bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
 bazel_dep(name = "boost.asio", version = BOOST_VERSION)
