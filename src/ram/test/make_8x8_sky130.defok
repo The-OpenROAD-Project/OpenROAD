@@ -427,42 +427,42 @@ PINS 23 ;
       + PORT
         + LAYER met3 ( -15 -24 ) ( 15 24 )
         + LAYER met3 ( -11025 -24 ) ( -10995 24 )
-        + LAYER met2 ( -1049 1210 ) ( -1001 1224 )
-        + LAYER met2 ( -1049 -1224 ) ( -1001 -1210 )
-        + LAYER met2 ( -5049 1210 ) ( -5001 1224 )
-        + LAYER met2 ( -5049 -1224 ) ( -5001 -1210 )
-        + LAYER met2 ( -9049 1210 ) ( -9001 1224 )
-        + LAYER met2 ( -9049 -1224 ) ( -9001 -1210 )
-        + LAYER met1 ( 1 1200 ) ( 15 1248 )
-        + LAYER met1 ( -11025 1200 ) ( -11011 1248 )
-        + LAYER met1 ( 1 656 ) ( 15 704 )
-        + LAYER met1 ( -11025 656 ) ( -11011 704 )
-        + LAYER met1 ( 1 112 ) ( 15 160 )
-        + LAYER met1 ( -11025 112 ) ( -11011 160 )
-        + LAYER met1 ( 1 -432 ) ( 15 -384 )
-        + LAYER met1 ( -11025 -432 ) ( -11011 -384 )
-        + LAYER met1 ( 1 -976 ) ( 15 -928 )
-        + LAYER met1 ( -11025 -976 ) ( -11011 -928 )
-        + FIXED ( 11025 1224 ) N ;
+        + LAYER met2 ( -1049 1434 ) ( -1001 1448 )
+        + LAYER met2 ( -1049 -1000 ) ( -1001 -986 )
+        + LAYER met2 ( -5049 1434 ) ( -5001 1448 )
+        + LAYER met2 ( -5049 -1000 ) ( -5001 -986 )
+        + LAYER met2 ( -9049 1434 ) ( -9001 1448 )
+        + LAYER met2 ( -9049 -1000 ) ( -9001 -986 )
+        + LAYER met1 ( 1 1424 ) ( 15 1472 )
+        + LAYER met1 ( -11025 1424 ) ( -11011 1472 )
+        + LAYER met1 ( 1 880 ) ( 15 928 )
+        + LAYER met1 ( -11025 880 ) ( -11011 928 )
+        + LAYER met1 ( 1 336 ) ( 15 384 )
+        + LAYER met1 ( -11025 336 ) ( -11011 384 )
+        + LAYER met1 ( 1 -208 ) ( 15 -160 )
+        + LAYER met1 ( -11025 -208 ) ( -11011 -160 )
+        + LAYER met1 ( 1 -752 ) ( 15 -704 )
+        + LAYER met1 ( -11025 -752 ) ( -11011 -704 )
+        + FIXED ( 11025 1000 ) N ;
     - VSS + NET VSS + SPECIAL + DIRECTION INOUT + USE GROUND
       + PORT
         + LAYER met3 ( -15 -24 ) ( 15 24 )
         + LAYER met3 ( -11025 -24 ) ( -10995 24 )
-        + LAYER met2 ( -3049 1856 ) ( -3001 1870 )
-        + LAYER met2 ( -3049 -578 ) ( -3001 -564 )
-        + LAYER met2 ( -7049 1856 ) ( -7001 1870 )
-        + LAYER met2 ( -7049 -578 ) ( -7001 -564 )
-        + LAYER met1 ( 1 1574 ) ( 15 1622 )
-        + LAYER met1 ( -11025 1574 ) ( -11011 1622 )
-        + LAYER met1 ( 1 1030 ) ( 15 1078 )
-        + LAYER met1 ( -11025 1030 ) ( -11011 1078 )
-        + LAYER met1 ( 1 486 ) ( 15 534 )
-        + LAYER met1 ( -11025 486 ) ( -11011 534 )
-        + LAYER met1 ( 1 -58 ) ( 15 -10 )
-        + LAYER met1 ( -11025 -58 ) ( -11011 -10 )
-        + LAYER met1 ( 1 -602 ) ( 15 -554 )
-        + LAYER met1 ( -11025 -602 ) ( -11011 -554 )
-        + FIXED ( 11025 578 ) N ;
+        + LAYER met2 ( -3049 434 ) ( -3001 448 )
+        + LAYER met2 ( -3049 -2000 ) ( -3001 -1986 )
+        + LAYER met2 ( -7049 434 ) ( -7001 448 )
+        + LAYER met2 ( -7049 -2000 ) ( -7001 -1986 )
+        + LAYER met1 ( 1 152 ) ( 15 200 )
+        + LAYER met1 ( -11025 152 ) ( -11011 200 )
+        + LAYER met1 ( 1 -392 ) ( 15 -344 )
+        + LAYER met1 ( -11025 -392 ) ( -11011 -344 )
+        + LAYER met1 ( 1 -936 ) ( 15 -888 )
+        + LAYER met1 ( -11025 -936 ) ( -11011 -888 )
+        + LAYER met1 ( 1 -1480 ) ( 15 -1432 )
+        + LAYER met1 ( -11025 -1480 ) ( -11011 -1432 )
+        + LAYER met1 ( 1 -2024 ) ( 15 -1976 )
+        + LAYER met1 ( -11025 -2024 ) ( -11011 -1976 )
+        + FIXED ( 11025 2000 ) N ;
     - addr_rw[0] + NET addr_rw[0] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
@@ -474,7 +474,7 @@ PINS 23 ;
     - addr_rw[2] + NET addr_rw[2] + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
-        + PLACED ( 11000 850 ) N ;
+        + PLACED ( 11000 578 ) N ;
     - clk + NET clk + DIRECTION INPUT + USE SIGNAL
       + PORT
         + LAYER met3 ( -40 -15 ) ( 40 15 )
@@ -520,7 +520,7 @@ SPECIALNETS 2 ;
       ( decoder_7.and_layer1 VPWR ) ( decoder_7.and_layer0 VPWR ) ( decoder_6.buf_port0 VPWR ) ( decoder_6.and_layer1 VPWR ) ( decoder_6.and_layer0 VPWR ) ( decoder_5.buf_port0 VPWR ) ( decoder_5.and_layer1 VPWR ) ( decoder_5.and_layer0 VPWR )
       ( decoder_4.buf_port0 VPWR ) ( decoder_4.and_layer1 VPWR ) ( decoder_4.and_layer0 VPWR ) ( decoder_3.buf_port0 VPWR ) ( decoder_3.and_layer1 VPWR ) ( decoder_3.and_layer0 VPWR ) ( decoder_2.buf_port0 VPWR ) ( decoder_2.and_layer1 VPWR )
       ( decoder_2.and_layer0 VPWR ) ( decoder_1.buf_port0 VPWR ) ( decoder_1.and_layer1 VPWR ) ( decoder_1.and_layer0 VPWR ) ( decoder_0.buf_port0 VPWR ) ( decoder_0.and_layer1 VPWR ) ( decoder_0.and_layer0 VPWR ) + USE POWER
-      + ROUTED met3 48 + SHAPE STRIPE ( 0 1224 ) ( 11040 1224 )
+      + ROUTED met3 48 + SHAPE STRIPE ( 0 1000 ) ( 11040 1000 )
       NEW met2 48 + SHAPE STRIPE ( 10000 0 ) ( 10000 2472 )
       NEW met2 48 + SHAPE STRIPE ( 6000 0 ) ( 6000 2472 )
       NEW met2 48 + SHAPE STRIPE ( 2000 0 ) ( 2000 2472 )
@@ -529,9 +529,9 @@ SPECIALNETS 2 ;
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 1360 ) ( 11040 1360 )
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 816 ) ( 11040 816 )
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 272 ) ( 11040 272 )
-      NEW met2 0 + SHAPE STRIPE ( 10000 1224 ) via3_4_480_480_1_1_400_400
-      NEW met2 0 + SHAPE STRIPE ( 6000 1224 ) via3_4_480_480_1_1_400_400
-      NEW met2 0 + SHAPE STRIPE ( 2000 1224 ) via3_4_480_480_1_1_400_400
+      NEW met2 0 + SHAPE STRIPE ( 10000 1000 ) via3_4_480_480_1_1_400_400
+      NEW met2 0 + SHAPE STRIPE ( 6000 1000 ) via3_4_480_480_1_1_400_400
+      NEW met2 0 + SHAPE STRIPE ( 2000 1000 ) via3_4_480_480_1_1_400_400
       NEW met1 0 + SHAPE STRIPE ( 10000 2448 ) via2_3_480_480_1_1_320_320
       NEW met1 0 + SHAPE STRIPE ( 10000 1904 ) via2_3_480_480_1_1_320_320
       NEW met1 0 + SHAPE STRIPE ( 10000 1360 ) via2_3_480_480_1_1_320_320
@@ -582,7 +582,7 @@ SPECIALNETS 2 ;
       ( decoder_7.and_layer1 VGND ) ( decoder_7.and_layer0 VGND ) ( decoder_6.buf_port0 VGND ) ( decoder_6.and_layer1 VGND ) ( decoder_6.and_layer0 VGND ) ( decoder_5.buf_port0 VGND ) ( decoder_5.and_layer1 VGND ) ( decoder_5.and_layer0 VGND )
       ( decoder_4.buf_port0 VGND ) ( decoder_4.and_layer1 VGND ) ( decoder_4.and_layer0 VGND ) ( decoder_3.buf_port0 VGND ) ( decoder_3.and_layer1 VGND ) ( decoder_3.and_layer0 VGND ) ( decoder_2.buf_port0 VGND ) ( decoder_2.and_layer1 VGND )
       ( decoder_2.and_layer0 VGND ) ( decoder_1.buf_port0 VGND ) ( decoder_1.and_layer1 VGND ) ( decoder_1.and_layer0 VGND ) ( decoder_0.buf_port0 VGND ) ( decoder_0.and_layer1 VGND ) ( decoder_0.and_layer0 VGND ) + USE GROUND
-      + ROUTED met3 48 + SHAPE STRIPE ( 0 578 ) ( 11040 578 )
+      + ROUTED met3 48 + SHAPE STRIPE ( 0 2000 ) ( 11040 2000 )
       NEW met2 48 + SHAPE STRIPE ( 8000 -24 ) ( 8000 2448 )
       NEW met2 48 + SHAPE STRIPE ( 4000 -24 ) ( 4000 2448 )
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 2176 ) ( 11040 2176 )
@@ -590,8 +590,8 @@ SPECIALNETS 2 ;
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 1088 ) ( 11040 1088 )
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 544 ) ( 11040 544 )
       NEW met1 48 + SHAPE FOLLOWPIN ( 0 0 ) ( 11040 0 )
-      NEW met2 0 + SHAPE STRIPE ( 8000 578 ) via3_4_480_480_1_1_400_400
-      NEW met2 0 + SHAPE STRIPE ( 4000 578 ) via3_4_480_480_1_1_400_400
+      NEW met2 0 + SHAPE STRIPE ( 8000 2000 ) via3_4_480_480_1_1_400_400
+      NEW met2 0 + SHAPE STRIPE ( 4000 2000 ) via3_4_480_480_1_1_400_400
       NEW met1 0 + SHAPE STRIPE ( 8000 2176 ) via2_3_480_480_1_1_320_320
       NEW met1 0 + SHAPE STRIPE ( 8000 1632 ) via2_3_480_480_1_1_320_320
       NEW met1 0 + SHAPE STRIPE ( 8000 1088 ) via2_3_480_480_1_1_320_320
