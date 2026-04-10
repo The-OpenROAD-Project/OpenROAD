@@ -382,25 +382,25 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 // ripUp / place
 // ===========================================================================
 
-void NegotiationLegalizer::ripUp(int cellIdx)
+void NegotiationLegalizer::ripUp(int cell_idx)
 {
-  eraseCellFromDplGrid(cellIdx);
-  addUsage(cellIdx, -1);
+  eraseCellFromDplGrid(cell_idx);
+  addUsage(cell_idx, -1);
 }
 
-void NegotiationLegalizer::place(int cellIdx, int x, int y)
+void NegotiationLegalizer::place(int cell_idx, int x, int y)
 {
-  cells_[cellIdx].x = x;
-  cells_[cellIdx].y = y;
-  addUsage(cellIdx, 1);
-  syncCellToDplGrid(cellIdx);
+  cells_[cell_idx].x = x;
+  cells_[cell_idx].y = y;
+  addUsage(cell_idx, 1);
+  syncCellToDplGrid(cell_idx);
   if (opendp_->deep_iterative_debug_ && debug_observer_) {
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
-    if (!debug_inst || cells_[cellIdx].db_inst == debug_inst) {
+    if (!debug_inst || cells_[cell_idx].db_inst == debug_inst) {
       pushNegotiationPixels();
       logger_->report("Pause at placing of cell {}.",
-                      cells_[cellIdx].db_inst->getName());
-      debug_observer_->drawSelected(cells_[cellIdx].db_inst, !debug_inst);
+                      cells_[cell_idx].db_inst->getName());
+      debug_observer_->drawSelected(cells_[cell_idx].db_inst, !debug_inst);
     }
   }
 }
@@ -409,10 +409,10 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
 // findBestLocation – enumerate candidates within the search window
 // ===========================================================================
 
-std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
+std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
                                                            int iter) const
 {
-  const NegCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
 
   auto best_cost = static_cast<double>(kInfCost);
   int best_x = cell.x;
@@ -434,7 +434,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
     {
       utl::DebugScopedTimer t(prof_filter_s_);
       if (!inDie(tx, ty, cell.width, cell.height) || !isValidRow(ty, cell, tx)
-          || !respectsFence(cellIdx, tx, ty)) {
+          || !respectsFence(cell_idx, tx, ty)) {
         ++prof_candidates_filtered_;
         return;
       }
@@ -443,7 +443,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
     double cost;
     {
       utl::DebugScopedTimer t(prof_neg_cost_s_);
-      cost = negotiationCost(cellIdx, tx, ty);
+      cost = negotiationCost(cell_idx, tx, ty);
     }
 
     // Add a DRC penalty so clean positions are strongly preferred,
@@ -554,10 +554,10 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
 //   Cost(x,y) = b(x,y) + Σ_grids h(g) * p(g)
 // ===========================================================================
 
-double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
+double NegotiationLegalizer::negotiationCost(int cell_idx, int x, int y) const
 {
-  const NegCell& cell = cells_[cellIdx];
-  double cost = targetCost(cellIdx, x, y);
+  const NegCell& cell = cells_[cell_idx];
+  double cost = targetCost(cell_idx, x, y);
 
   const int xBegin = std::max(0, x - cell.pad_left);
   const int xEnd = std::min(grid_w_, x + cell.width + cell.pad_right);
@@ -589,9 +589,9 @@ double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
 //   b(x,y) = δ + mf * max(δ − th, 0)
 // ===========================================================================
 
-double NegotiationLegalizer::targetCost(int cellIdx, int x, int y) const
+double NegotiationLegalizer::targetCost(int cell_idx, int x, int y) const
 {
-  const NegCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
   const int disp = std::abs(x - cell.init_x) + std::abs(y - cell.init_y);
   return static_cast<double>(disp)
          + max_disp_multiplier_

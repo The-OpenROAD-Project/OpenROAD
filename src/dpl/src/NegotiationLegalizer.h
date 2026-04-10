@@ -170,19 +170,19 @@ class NegotiationLegalizer
   void abacusRow(int rowIdx, std::vector<int>& cellsInRow);
   void collapseClusters(std::vector<AbacusCluster>& clusters, int rowIdx);
   void assignClusterPositions(const AbacusCluster& cluster, int rowIdx);
-  [[nodiscard]] bool isCellLegal(int cellIdx) const;
+  [[nodiscard]] bool isCellLegal(int cell_idx) const;
 
   // Negotiation pass
   void runNegotiation(const std::vector<int>& illegalCells);
   int negotiationIter(std::vector<int>& activeCells,
                       int iter,
                       bool updateHistory);
-  void ripUp(int cellIdx);
-  void place(int cellIdx, int x, int y);
-  [[nodiscard]] std::pair<int, int> findBestLocation(int cellIdx,
+  void ripUp(int cell_idx);
+  void place(int cell_idx, int x, int y);
+  [[nodiscard]] std::pair<int, int> findBestLocation(int cell_idx,
                                                      int iter = 0) const;
-  [[nodiscard]] double negotiationCost(int cellIdx, int x, int y) const;
-  [[nodiscard]] double targetCost(int cellIdx, int x, int y) const;
+  [[nodiscard]] double negotiationCost(int cell_idx, int x, int y) const;
+  [[nodiscard]] double targetCost(int cell_idx, int x, int y) const;
   [[nodiscard]] double adaptivePf(int iter) const;
   void updateHistoryCosts();
   void updateDrcHistoryCosts(const std::vector<int>& activeCells);
@@ -197,17 +197,17 @@ class NegotiationLegalizer
   [[nodiscard]] bool isValidRow(int rowIdx,
                                 const NegCell& cell,
                                 int gridX) const;
-  [[nodiscard]] bool respectsFence(int cellIdx, int x, int y) const;
+  [[nodiscard]] bool respectsFence(int cell_idx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
-  [[nodiscard]] std::pair<int, int> snapToLegal(int cellIdx,
+  [[nodiscard]] std::pair<int, int> snapToLegal(int cell_idx,
                                                 int x,
                                                 int y) const;
 
   // DPL Grid synchronisation helpers – keep the Opendp pixel grid in sync
   // with NegotiationLegalizer cell positions so that PlacementDRC neighbour
   // lookups (edge spacing, padding, one-site gaps) see correct data.
-  void syncCellToDplGrid(int cellIdx);
-  void eraseCellFromDplGrid(int cellIdx);
+  void syncCellToDplGrid(int cell_idx);
+  void eraseCellFromDplGrid(int cell_idx);
   void syncAllCellsToDplGrid();
 
   // Pixel helpers – use the main DPL grid.
@@ -223,7 +223,7 @@ class NegotiationLegalizer
   {
     return x >= 0 && x < grid_w_ && y >= 0 && y < grid_h_;
   }
-  void addUsage(int cellIdx, int delta);
+  void addUsage(int cell_idx, int delta);
 
   // Effective padded footprint helpers (inclusive of padding zones).
   [[nodiscard]] int effXBegin(const NegCell& cell) const
