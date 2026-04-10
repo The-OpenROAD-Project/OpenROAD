@@ -38,7 +38,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
   std::unordered_set<int> active_set(illegalCells.begin(), illegalCells.end());
 
   for (int idx : illegalCells) {
-    const HLCell& seed = cells_[idx];
+    const NegCell& seed = cells_[idx];
     const int xlo = seed.x - horiz_window_;
     const int xhi = seed.x + seed.width + horiz_window_;
     const int ylo = seed.y - adj_window_;
@@ -48,7 +48,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
       if (cells_[i].fixed) {
         continue;
       }
-      const HLCell& nb = cells_[i];
+      const NegCell& nb = cells_[i];
       if (nb.x >= xlo && nb.x <= xhi && nb.y >= ylo && nb.y <= yhi) {
         active_set.insert(i);
       }
@@ -85,7 +85,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 1 converged at iteration {}.",
                  iter);
-      logger_->metric("HL__converge__phase_1__iteration", iter);
+      logger_->metric("negotiation__converge__phase_1__iteration", iter);
       debugPause("Pause after convergence at phase 1.");
       return;
     }
@@ -138,7 +138,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
                  1,
                  "Negotiation phase 2 converged at iteration {}.",
                  iter);
-      logger_->metric("HL__converge__phase_2__iteration", iter);
+      logger_->metric("negotiation__converge__phase_2__iteration", iter);
       debugPause("Pause after convergence at phase 2.");
       return;
     }
@@ -258,7 +258,7 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
       if (cells_[idx].fixed) {
         continue;
       }
-      const HLCell& cell = cells_[idx];
+      const NegCell& cell = cells_[idx];
       const int xBegin = effXBegin(cell);
       const int xEnd = effXEnd(cell);
       for (int dy = 0; dy < cell.height; ++dy) {
@@ -412,7 +412,7 @@ void NegotiationLegalizer::place(int cellIdx, int x, int y)
 std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
                                                            int iter) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cellIdx];
 
   auto best_cost = static_cast<double>(kInfCost);
   int best_x = cell.x;
@@ -556,7 +556,7 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cellIdx,
 
 double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cellIdx];
   double cost = targetCost(cellIdx, x, y);
 
   const int xBegin = std::max(0, x - cell.pad_left);
@@ -591,7 +591,7 @@ double NegotiationLegalizer::negotiationCost(int cellIdx, int x, int y) const
 
 double NegotiationLegalizer::targetCost(int cellIdx, int x, int y) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cellIdx];
   const int disp = std::abs(x - cell.init_x) + std::abs(y - cell.init_y);
   return static_cast<double>(disp)
          + max_disp_multiplier_
@@ -642,7 +642,7 @@ void NegotiationLegalizer::updateDrcHistoryCosts(
     if (cells_[idx].fixed) {
       continue;
     }
-    const HLCell& cell = cells_[idx];
+    const NegCell& cell = cells_[idx];
     Node* node = network_->getNode(cell.db_inst);
     if (node == nullptr) {
       continue;
@@ -683,7 +683,7 @@ void NegotiationLegalizer::sortByNegotiationOrder(
     std::vector<int>& indices) const
 {
   auto cellOveruse = [this](int idx) {
-    const HLCell& cell = cells_[idx];
+    const NegCell& cell = cells_[idx];
     int ov = 0;
     const int xBegin = effXBegin(cell);
     const int xEnd = effXEnd(cell);
@@ -729,7 +729,7 @@ void NegotiationLegalizer::greedyImprove(int passes)
     int improved = 0;
 
     for (int idx : order) {
-      HLCell& cell = cells_[idx];
+      NegCell& cell = cells_[idx];
       const int curDisp = cell.displacement();
 
       ripUp(idx);
@@ -826,8 +826,8 @@ void NegotiationLegalizer::cellSwap()
       for (int jj = ii + 1; jj < static_cast<int>(grp.size()); ++jj) {
         const int a = grp[ii];
         const int b = grp[jj];
-        HLCell& ca = cells_[a];
-        HLCell& cb = cells_[b];
+        NegCell& ca = cells_[a];
+        NegCell& cb = cells_[b];
 
         const int dispBefore = ca.displacement() + cb.displacement();
         const int newDispA
@@ -878,7 +878,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
     if (cells_[idx].fixed || isCellLegal(idx)) {
       continue;
     }
-    const HLCell& cell = cells_[idx];
+    const NegCell& cell = cells_[idx];
     Node* node = network_->getNode(cell.db_inst);
     if (node == nullptr) {
       continue;

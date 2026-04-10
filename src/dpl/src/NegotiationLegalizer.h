@@ -75,9 +75,9 @@ struct FenceRegion
 };
 
 // ---------------------------------------------------------------------------
-// HLCell – per-instance legalisation state
+// NegCell – per-instance legalisation state
 // ---------------------------------------------------------------------------
-struct HLCell
+struct NegCell
 {
   odb::dbInst* db_inst{nullptr};
 
@@ -101,8 +101,6 @@ struct HLCell
     return std::abs(x - init_x) + std::abs(y - init_y);
   }
 };
-
-// Removed HLGrid struct - using dpl::Pixel instead.
 
 // ---------------------------------------------------------------------------
 // AbacusCluster – transient state during the Abacus row sweep
@@ -197,7 +195,7 @@ class NegotiationLegalizer
 
   // Constraint helpers
   [[nodiscard]] bool isValidRow(int rowIdx,
-                                const HLCell& cell,
+                                const NegCell& cell,
                                 int gridX) const;
   [[nodiscard]] bool respectsFence(int cellIdx, int x, int y) const;
   [[nodiscard]] bool inDie(int x, int y, int w, int h) const;
@@ -228,11 +226,11 @@ class NegotiationLegalizer
   void addUsage(int cellIdx, int delta);
 
   // Effective padded footprint helpers (inclusive of padding zones).
-  [[nodiscard]] int effXBegin(const HLCell& cell) const
+  [[nodiscard]] int effXBegin(const NegCell& cell) const
   {
     return std::max(0, cell.x - cell.pad_left);
   }
-  [[nodiscard]] int effXEnd(const HLCell& cell) const
+  [[nodiscard]] int effXEnd(const NegCell& cell) const
   {
     return std::min(grid_w_, cell.x + cell.width + cell.pad_right);
   }
@@ -254,7 +252,7 @@ class NegotiationLegalizer
   int grid_w_{0};
   int grid_h_{0};
 
-  std::vector<HLCell> cells_;
+  std::vector<NegCell> cells_;
   std::vector<FenceRegion> fences_;
   std::vector<NLPowerRailType> row_rail_;
   std::vector<bool>

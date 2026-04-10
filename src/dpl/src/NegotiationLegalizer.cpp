@@ -541,7 +541,7 @@ bool NegotiationLegalizer::initFromDb()
     row_rail_[r] = (r % 2 == 0) ? NLPowerRailType::kVss : NLPowerRailType::kVdd;
   }
 
-  // Build HLCell records from all placed instances.
+  // Build NegCell records from all placed instances.
   cells_.clear();
   cells_.reserve(block->getInsts().size());
 
@@ -557,7 +557,7 @@ bool NegotiationLegalizer::initFromDb()
       continue;
     }
 
-    HLCell cell;
+    NegCell cell;
     cell.db_inst = db_inst;
     cell.fixed = status.isFixed();
 
@@ -747,7 +747,7 @@ void NegotiationLegalizer::buildGrid()
   // Mark blockages and record fixed-cell usage in one pass.
   // The padded range of fixed cells is also blocked so movable cells
   // cannot violate padding constraints relative to fixed instances.
-  for (const HLCell& cell : cells_) {
+  for (const NegCell& cell : cells_) {
     if (!cell.fixed) {
       continue;
     }
@@ -812,12 +812,12 @@ void NegotiationLegalizer::initFenceRegions()
 }
 
 // ===========================================================================
-// HLGrid helpers
+// Grid helpers for Negotiation Legalizer
 // ===========================================================================
 
-void NegotiationLegalizer::addUsage(int cellIdx, int delta)
+void NegotiationLegalizer::addUsage(int cell_idx, int delta)
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
   const int xBegin = effXBegin(cell);
   const int xEnd = effXEnd(cell);
   for (int dy = 0; dy < cell.height; ++dy) {
@@ -834,54 +834,54 @@ void NegotiationLegalizer::addUsage(int cellIdx, int delta)
 // DPL Grid synchronisation
 // ===========================================================================
 
-void NegotiationLegalizer::syncCellToDplGrid(int cellIdx)
+void NegotiationLegalizer::syncCellToDplGrid(int cell_idx)
 {
   if (!opendp_ || !opendp_->grid_ || !network_) {
     return;
   }
-  const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.db_inst == nullptr) {
+  const NegCell& neg_cell = cells_[cell_idx];
+  if (neg_cell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.db_inst);
+  Node* node = network_->getNode(neg_cell.db_inst);
   if (node == nullptr) {
     return;
   }
-  // Update the Node's position to match the HLCell so Grid operations
+  // Update the Node's position to match the NegCell so Grid operations
   // (which read Node left/bottom) see the current placement.
-  node->setLeft(DbuX(hlcell.x * site_width_));
-  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
+  node->setLeft(DbuX(neg_cell.x * site_width_));
+  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
 
   // Update orientation to match the row.
-  odb::dbSite* site = hlcell.db_inst->getMaster()->getSite();
+  odb::dbSite* site = neg_cell.db_inst->getMaster()->getSite();
   if (site != nullptr) {
     auto orient = opendp_->grid_->getSiteOrientation(
-        GridX{hlcell.x}, GridY{hlcell.y}, site);
+        GridX{neg_cell.x}, GridY{neg_cell.y}, site);
     if (orient.has_value()) {
       node->setOrient(orient.value());
     }
   }
 
-  opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
+  opendp_->grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
 }
 
-void NegotiationLegalizer::eraseCellFromDplGrid(int cellIdx)
+void NegotiationLegalizer::eraseCellFromDplGrid(int cell_idx)
 {
   if (!opendp_ || !opendp_->grid_ || !network_) {
     return;
   }
-  const HLCell& hlcell = cells_[cellIdx];
-  if (hlcell.db_inst == nullptr) {
+  const NegCell& neg_cell = cells_[cell_idx];
+  if (neg_cell.db_inst == nullptr) {
     return;
   }
-  Node* node = network_->getNode(hlcell.db_inst);
+  Node* node = network_->getNode(neg_cell.db_inst);
   if (node == nullptr) {
     return;
   }
-  // Ensure the Node's position matches the current HLCell position so
+  // Ensure the Node's position matches the current NegCell position so
   // erasePixel clears the correct pixels (it reads gridCoveringPadded).
-  node->setLeft(DbuX(hlcell.x * site_width_));
-  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
+  node->setLeft(DbuX(neg_cell.x * site_width_));
+  node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
   opendp_->grid_->erasePixel(node);
 }
 
@@ -893,44 +893,44 @@ void NegotiationLegalizer::syncAllCellsToDplGrid()
   // Clear all movable cells from the DPL Grid first, then repaint at
   // their current positions.  Fixed cells were already painted during
   // Opendp::setFixedGridCells() and should not be touched.
-  for (const HLCell& hlcell : cells_) {
-    if (hlcell.fixed || hlcell.db_inst == nullptr) {
+  for (const NegCell& neg_cell : cells_) {
+    if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(hlcell.db_inst);
+    Node* node = network_->getNode(neg_cell.db_inst);
     if (node == nullptr) {
       continue;
     }
     // Update Node position then erase whatever was previously painted.
-    node->setLeft(DbuX(hlcell.x * site_width_));
-    node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{hlcell.y}).v));
+    node->setLeft(DbuX(neg_cell.x * site_width_));
+    node->setBottom(DbuY(opendp_->grid_->gridYToDbu(GridY{neg_cell.y}).v));
     opendp_->grid_->erasePixel(node);
   }
-  for (const HLCell& hlcell : cells_) {
-    if (hlcell.fixed || hlcell.db_inst == nullptr) {
+  for (const NegCell& neg_cell : cells_) {
+    if (neg_cell.fixed || neg_cell.db_inst == nullptr) {
       continue;
     }
-    Node* node = network_->getNode(hlcell.db_inst);
+    Node* node = network_->getNode(neg_cell.db_inst);
     if (node == nullptr) {
       continue;
     }
     // Set orientation to match the row, same as syncCellToDplGrid.
-    odb::dbSite* site = hlcell.db_inst->getMaster()->getSite();
+    odb::dbSite* site = neg_cell.db_inst->getMaster()->getSite();
     if (site != nullptr) {
       auto orient = opendp_->grid_->getSiteOrientation(
-          GridX{hlcell.x}, GridY{hlcell.y}, site);
+          GridX{neg_cell.x}, GridY{neg_cell.y}, site);
       if (orient.has_value()) {
         node->setOrient(orient.value());
       }
     }
-    opendp_->grid_->paintPixel(node, GridX{hlcell.x}, GridY{hlcell.y});
+    opendp_->grid_->paintPixel(node, GridX{neg_cell.x}, GridY{neg_cell.y});
   }
   // Re-paint fixed cells last so they always win over any movable cell that
   // may have been placed at an overlapping initial position.  Without this,
   // a movable cell painted on top of an endcap overwrites pixel->cell, and
   // the subsequent erasePixel call clears the endcap from the grid, making
   // checkOneSiteGap blind to it.
-  for (const HLCell& cell : cells_) {
+  for (const NegCell& cell : cells_) {
     if (!cell.fixed || cell.db_inst == nullptr) {
       continue;
     }
@@ -952,7 +952,7 @@ bool NegotiationLegalizer::inDie(int x, int y, int w, int h) const
 }
 
 bool NegotiationLegalizer::isValidRow(int rowIdx,
-                                      const HLCell& cell,
+                                      const NegCell& cell,
                                       int gridX) const
 {
   if (rowIdx < 0 || rowIdx + cell.height > grid_h_) {
@@ -983,9 +983,9 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   return rowBot == cell.rail_type;
 }
 
-bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
+bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
   if (cell.fence_id < 0) {
     // Default region: must not overlap any named fence.
     for (const auto& fence : fences_) {
@@ -998,11 +998,11 @@ bool NegotiationLegalizer::respectsFence(int cellIdx, int x, int y) const
   return fences_[cell.fence_id].contains(x, y, cell.width, cell.height);
 }
 
-std::pair<int, int> NegotiationLegalizer::snapToLegal(int cellIdx,
+std::pair<int, int> NegotiationLegalizer::snapToLegal(int cell_idx,
                                                       int x,
                                                       int y) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
   int best_x = std::max(0, std::min(x, grid_w_ - cell.width));
   int best_y = y;
   double best_dist_sq = 1e18;
@@ -1125,7 +1125,7 @@ void NegotiationLegalizer::abacusRow(int rowIdx, std::vector<int>& cellsInRow)
   std::vector<AbacusCluster> clusters;
 
   for (int idx : cellsInRow) {
-    const HLCell& cell = cells_[idx];
+    const NegCell& cell = cells_[idx];
 
     // Skip cells that violate fence or row constraints – negotiation handles
     // them later.
@@ -1225,16 +1225,16 @@ void NegotiationLegalizer::assignClusterPositions(const AbacusCluster& cluster,
   }
 }
 
-bool NegotiationLegalizer::isCellLegal(int cellIdx) const
+bool NegotiationLegalizer::isCellLegal(int cell_idx) const
 {
-  const HLCell& cell = cells_[cellIdx];
+  const NegCell& cell = cells_[cell_idx];
   if (!inDie(cell.x, cell.y, cell.width, cell.height)) {
     return false;
   }
   if (!isValidRow(cell.y, cell, cell.x)) {
     return false;
   }
-  if (!respectsFence(cellIdx, cell.x, cell.y)) {
+  if (!respectsFence(cell_idx, cell.x, cell.y)) {
     return false;
   }
 
