@@ -9,29 +9,35 @@
 # Runfiles::Create() resolves paths in the wrong tree and OpenROAD
 # fails to find its TCL library.
 #
-# Because this test is itself a Bazel sh_test, its RUNFILES_DIR points
-# to this test's runfiles — NOT OpenROAD's.  Running OpenROAD here
-# reproduces the cross-binary runfiles leak.
+# We simulate this by pointing RUNFILES_DIR at an empty directory
+# before invoking OpenROAD.
 
 set -euo pipefail
 
 OPENROAD="$1"
 
-# Verify precondition: RUNFILES_DIR is set by the Bazel test runner,
-# pointing to *this test's* runfiles tree (not OpenROAD's).
-if [[ -z "${RUNFILES_DIR:-}" ]]; then
-    echo "SKIP: RUNFILES_DIR not set — not running under Bazel"
-    exit 0
-fi
-echo "RUNFILES_DIR=$RUNFILES_DIR"
+# Simulate cross-binary env leak: point RUNFILES_DIR at an empty
+# directory that does NOT contain OpenROAD's tcl resources.
+FAKE_RUNFILES=$(mktemp -d)
+trap 'rm -rf "$FAKE_RUNFILES"' EXIT
+export RUNFILES_DIR="$FAKE_RUNFILES"
+export RUNFILES_MANIFEST_FILE=""
+echo "Fake RUNFILES_DIR=$RUNFILES_DIR"
 
-# Run OpenROAD -version.  This exercises tcl_library_init.cc:
-# if RUNFILES_DIR is not cleared, Runfiles::Create() looks for
-# tcl_resources_dir inside this test's runfiles and fails.
-output=$("$OPENROAD" -version 2>&1) || {
-    echo "FAIL: openroad -version exited with $?"
+# Run OpenROAD with a real Tcl command (not -version, which exits
+# before Tcl init).  Capture both stdout and stderr.
+output=$("$OPENROAD" -no_splash -exit <<< 'puts "TCL_OK"' 2>&1) || {
+    echo "FAIL: openroad exited with $?"
     echo "$output"
     exit 1
 }
+
+# Check for Tcl initialization failure
+if echo "$output" | grep -q "application-specific initialization failed"; then
+    echo "FAIL: Tcl library initialization failed despite exe-path fallback"
+    echo "$output"
+    exit 1
+fi
+
 echo "$output"
-echo "PASS: OpenROAD started successfully despite inherited RUNFILES_DIR"
+echo "PASS: OpenROAD initialized Tcl correctly despite misleading RUNFILES_DIR"
