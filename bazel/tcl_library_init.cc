@@ -15,9 +15,13 @@
 #if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
 #include "bazel/tcl_resources_zip_data.h"
 #else
-#ifdef __linux__
-#include <linux/limits.h>
+
+#include <limits.h>
 #include <unistd.h>
+
+#if defined(__APPLE__)
+#include <mach-o/dyld.h>
+#include <sys/param.h>
 #endif
 
 #include <memory>
@@ -26,6 +30,30 @@
 #endif
 
 namespace in_bazel {
+
+// Avoid adding any dependencies like boost.filesystem
+// Returns path to running binary if possible.
+static std::string GetProgramLocation()
+{
+#if defined(_WIN32)
+  char result[MAX_PATH + 1] = {'\0'};
+  auto path_len = GetModuleFileNameA(NULL, result, MAX_PATH);
+#elif defined(__APPLE__)
+  char result[MAXPATHLEN + 1] = {'\0'};
+  uint32_t path_len = MAXPATHLEN;
+  if (_NSGetExecutablePath(result, &path_len) != 0) {
+    path_len = readlink(result, result, MAXPATHLEN);
+  }
+#else
+  char result[PATH_MAX + 1] = {'\0'};
+  ssize_t path_len = readlink("/proc/self/exe", result, PATH_MAX);
+#endif
+  if (path_len > 0) {
+    return result;
+  }
+  return Tcl_GetNameOfExecutable();
+}
+
 static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 {
   // In tcl9, we can use //zipfs:/ otherwise we need to point to the
@@ -41,26 +69,8 @@ static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 #else
   using rules_cc::cc::runfiles::Runfiles;
   std::string error;
-  // Use /proc/self/exe to resolve the real binary path, as argv[0] may
-  // point into a sandbox where the .runfiles tree does not exist.
-  std::string exe_path;
-#ifdef __linux__
-  char buf[PATH_MAX + 1];
-  ssize_t len = readlink("/proc/self/exe", buf, PATH_MAX);
-  if (len > 0 && len < PATH_MAX) {
-    exe_path.assign(buf, len);
-  } else {
-    if (len >= PATH_MAX) {
-      std::cerr << "[Error] /proc/self/exe path too long (>= PATH_MAX); "
-                   "falling back to Tcl_GetNameOfExecutable()\n";
-    }
-    exe_path = Tcl_GetNameOfExecutable();
-  }
-#else
-  exe_path = Tcl_GetNameOfExecutable();
-#endif
   std::unique_ptr<Runfiles> runfiles(
-      Runfiles::Create(exe_path, BAZEL_CURRENT_REPOSITORY, &error));
+      Runfiles::Create(GetProgramLocation(), BAZEL_CURRENT_REPOSITORY, &error));
   if (!runfiles) {
     std::cerr << "[Warning] Failed to create bazel runfiles: " << error << "\n";
     return std::nullopt;
