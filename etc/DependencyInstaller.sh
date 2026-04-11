@@ -17,7 +17,7 @@ PREFIX=""
 CI="no"
 SAVE_DEPS_PREFIXES=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    numThreads=$(sysctl -n hw.logicalcpu)
+    NUM_THREADS=$(sysctl -n hw.logicalcpu)
 else
     NUM_THREADS=$(nproc)
 fi
