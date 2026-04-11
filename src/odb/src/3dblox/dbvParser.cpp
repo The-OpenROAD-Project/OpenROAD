@@ -180,16 +180,22 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
       }
     }
     if (chiplet_node["external"]["DEF_file"]) {
-      extractValue(
-          chiplet_node["external"], "DEF_file", chiplet.external.def_file);
-      chiplet.external.def_file = resolvePath(chiplet.external.def_file);
+      std::vector<std::string> def_files;
+      extractValue(chiplet_node["external"], "DEF_file", def_files);
+      if (def_files.size() > 1) {
+        logError(
+            "Multiple DEF_file entries for a single chiplet are currently "
+            "unsupported.");
+      } else if (!def_files.empty()) {
+        chiplet.external.def_file = resolvePath(def_files[0]);
+      }
     }
     if (chiplet_node["external"]["verilog_file"]) {
-      extractValue(chiplet_node["external"],
-                   "verilog_file",
-                   chiplet.external.verilog_file);
-      chiplet.external.verilog_file
-          = resolvePath(chiplet.external.verilog_file);
+      std::vector<std::string> verilog_files;
+      extractValue(chiplet_node["external"], "verilog_file", verilog_files);
+      if (!verilog_files.empty()) {
+        chiplet.external.verilog_file = resolvePath(verilog_files[0]);
+      }
     }
   }
 }
