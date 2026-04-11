@@ -414,7 +414,8 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
   // needed since there is no tristate enable flag
   std::string tri_enable_name;
 
-  auto port_iter = liberty->portIterator();
+  auto port_iter
+      = std::unique_ptr<sta::ConcreteCellPortIterator>(liberty->portIterator());
   while (port_iter->hasNext()) {
     auto concrete = port_iter->next();
     auto lib_port = concrete->libertyPort();
@@ -485,7 +486,6 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
                    master->getName(),
                    ground_count);
   }
-  delete port_iter;
   return pin_map;
 }
 
