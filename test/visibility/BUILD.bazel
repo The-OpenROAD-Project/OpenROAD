@@ -12,7 +12,4 @@
 ) for t in [
     "openroad_lib",
     "ord",
-    "error_swig",
-    "error_swig-py",
-    "options_swig",
 ]]

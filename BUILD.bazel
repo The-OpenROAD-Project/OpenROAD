@@ -405,7 +405,7 @@ filegroup(
     srcs = [
         "src/Exception.i",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -413,7 +413,7 @@ filegroup(
     srcs = [
         "src/Exception-py.i",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 filegroup(
@@ -428,7 +428,7 @@ filegroup(
     srcs = [
         "src/options.i",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//:__subpackages__"],
 )
 
 # Lightweight test suites that run without building OpenROAD.
