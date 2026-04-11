@@ -240,7 +240,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CPPFLAGS="-I$_icu/include" 
     export PKG_CONFIG_PATH="$_icu/lib/pkgconfig"
 
-    _extra_lib_paths=("/opt/homebrew/lib")
+    _extra_lib_paths=("$(brew --prefix)/lib")
 
     _joined_paths="$(IFS=:; echo "${_extra_lib_paths[*]}")"
 
