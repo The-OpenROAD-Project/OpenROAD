@@ -16,7 +16,11 @@ set -euo pipefail
 PREFIX=""
 CI="no"
 SAVE_DEPS_PREFIXES=""
-NUM_THREADS=$(nproc)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    numThreads=$(sysctl -n hw.logicalcpu)
+else
+    NUM_THREADS=$(nproc)
+fi
 SKIP_SYSTEM_OR_TOOLS="false"
 BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 CMAKE_PACKAGE_ROOT_ARGS=""
@@ -953,9 +957,9 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk zlib swig yaml-cpp
-    _execute "Installing pipx..." brew install pipx
-    _execute "Installing Python click..." pipx install click
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk@8 zlib swig yaml-cpp
+    # _execute "Installing pipx..." brew install pipx
+    _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }
@@ -1220,7 +1224,7 @@ main() {
             cat <<EOF
 
 To install or run OpenROAD, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 EOF
             ;;
