@@ -88,12 +88,8 @@ git_override(
 )
 
 ## Lock the compiler version and avoid any local compiler.
-## The bazel_dep stays non-dev because llvm_prebuilt's build_file
-## references @toolchains_llvm//toolchain:BUILD.llvm_repo.
-## The extension and toolchain registration are dev_dependency because
-## toolchains_llvm enforces root-module-only extension usage.
 ## Downstream consumers must configure their own C++ toolchain.
-bazel_dep(name = "toolchains_llvm", version = "1.5.0")
+bazel_dep(name = "toolchains_llvm", version = "1.5.0", dev_dependency = True)
 
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
