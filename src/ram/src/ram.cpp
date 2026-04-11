@@ -369,7 +369,7 @@ dbMaster* RamGen::findMaster(
         continue;
       }
 
-      auto port_iter = liberty->portIterator();
+      std::unique_ptr port_iter = liberty->portIterator();
 
       sta::ConcretePort* out = nullptr;
       while (port_iter->hasNext()) {
@@ -385,7 +385,6 @@ dbMaster* RamGen::findMaster(
         }
       }
 
-      delete port_iter;
       if (!out || !match(out->libertyPort())) {
         continue;
       }
@@ -411,6 +410,7 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
   std::map<PortRole, std::string> pin_map;
   int in_idx = 0;
 
+  // needed since there is no tristate enable flag
   std::string tri_enable_name;
 
   auto port_iter = liberty->portIterator();
@@ -432,18 +432,22 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
     } else if (dir->isTristate()) {
       pin_map[{PortRoleType::DataOut, 0}] = lib_port->name();
       auto tri_expr = lib_port->tristateEnable();
+      // can only get the name of enable once the output is found to be a
+      // tristate
       if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::port) {
         tri_enable_name = tri_expr->port()->name();
       } else if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::not_) {
         tri_enable_name = tri_expr->left()->port()->name();
       }
-    } else if (dir->isAnyOutput()) {  // catches isOutput() and isTristate()
+    } else if (dir->isAnyOutput()) {  // catches isOutput()
       pin_map[{PortRoleType::DataOut, 0}] = lib_port->name();
     } else if (dir->isInput()) {
       pin_map[{PortRoleType::DataIn, in_idx++}] = lib_port->name();
     }
   }
 
+  // second pass for to assign tristate enable correct role
+  // first pass can not classify without a dedicated tristate flag
   if (!tri_enable_name.empty()) {
     // find and remove it from DataIn
     for (auto it = pin_map.begin(); it != pin_map.end(); ++it) {

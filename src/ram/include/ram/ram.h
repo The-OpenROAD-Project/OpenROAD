@@ -70,10 +70,7 @@ struct PortRole
   int index;
 
   // for map so that keys are comparable
-  bool operator<(const PortRole& other) const
-  {
-    return std::tie(type, index) < std::tie(other.type, other.index);
-  }
+  auto operator<=>(const PortRole&) const = default;
 };
 
 class RamGen
