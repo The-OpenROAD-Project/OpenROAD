@@ -1,0 +1,12 @@
+"""Minimal downstream consumer that tests Bazel visibility of OpenROAD targets."""
+
+module(
+    name = "visibility-test",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "openroad")
+local_path_override(
+    module_name = "openroad",
+    path = "../..",
+)
