@@ -369,7 +369,8 @@ dbMaster* RamGen::findMaster(
         continue;
       }
 
-      std::unique_ptr port_iter = liberty->portIterator();
+      auto port_iter = std::unique_ptr<sta::ConcreteCellPortIterator>(
+          liberty->portIterator());
 
       sta::ConcretePort* out = nullptr;
       while (port_iter->hasNext()) {
