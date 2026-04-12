@@ -3,6 +3,8 @@
 
 include("openroad")
 
+find_package(Boost CONFIG REQUIRED COMPONENTS json)
+
 add_library(dbSta_lib
   dbSta.cc
   dbNetwork.cc
@@ -26,6 +28,7 @@ target_link_libraries(dbSta_lib
     OpenSTA
   PRIVATE
     utl_lib
+    Boost::json
 )
 
 swig_lib(NAME          dbSta
