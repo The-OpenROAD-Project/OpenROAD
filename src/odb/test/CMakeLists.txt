@@ -42,6 +42,7 @@ or_integration_tests(
     read_abstract_lef
     read_3dbv
     read_3dbx
+    read_3dbx-fail
     read_db
     read_def
     read_def58

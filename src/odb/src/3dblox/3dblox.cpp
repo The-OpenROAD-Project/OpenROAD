@@ -57,6 +57,10 @@ ThreeDBlox::ThreeDBlox(utl::Logger* logger, odb::dbDatabase* db, sta::Sta* sta)
 
 void ThreeDBlox::readDbv(const std::string& dbv_file)
 {
+  if (!std::filesystem::exists(dbv_file)) {
+    logger_->error(
+        utl::ODB, 541, "3DBV file does not exist: {}", dbv_file);
+  }
   read_files_.insert(std::filesystem::absolute(dbv_file).string());
   DbvParser parser(logger_);
   DbvData data = parser.parseFile(dbv_file);
@@ -174,6 +178,10 @@ void ThreeDBlox::buildChipNetsFromVerilog(dbChip* chip, const DbxData& data)
 
 void ThreeDBlox::readDbx(const std::string& dbx_file)
 {
+  if (!std::filesystem::exists(dbx_file)) {
+    logger_->error(
+        utl::ODB, 542, "3DBX file does not exist: {}", dbx_file);
+  }
   read_files_.insert(std::filesystem::absolute(dbx_file).string());
   DbxParser parser(logger_);
   DbxData data = parser.parseFile(dbx_file);
