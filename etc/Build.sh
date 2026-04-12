@@ -217,6 +217,14 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="$_bison/bin:$_flex/bin:$PATH"
     export CMAKE_PREFIX_PATH="${_ortools}"
 
+    _qt5=$(brew --prefix qt@5 2>/dev/null || true)
+    if [[ -z "$_qt5" || ! -d "$_qt5/lib" ]]; then
+        echo "[ERROR] qt@5 not found or broken. Run: brew install qt@5" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DQt5_DIR=$_qt5/lib/cmake/Qt5"
+
     _tcl8=$(brew --prefix tcl-tk@8 2>/dev/null || true)     
     if [[ -z "$_tcl8" || ! -d "$_tcl8/lib" || ! -d "$_tcl8/include" ]]; then
         echo "[ERROR] tcl-tk@8 not found or broken. Run: brew install tcl-tk@8" >&2

@@ -957,7 +957,7 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk@8 zlib swig yaml-cpp
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
     # _execute "Installing pipx..." brew install pipx
     _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
