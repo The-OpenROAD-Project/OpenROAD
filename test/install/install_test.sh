@@ -19,7 +19,7 @@ rm -f openroad.tar
 # Remove repo_mapping (same as install.sh)
 if [ -e openroad.repo_mapping ]; then
     chmod u+w openroad.repo_mapping
-    rm -f openroad.repo_mapping
+    rm -rf openroad.repo_mapping
 fi
 
 # Clear Bazel runfiles env vars so the installed binary resolves its own
