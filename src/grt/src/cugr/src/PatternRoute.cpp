@@ -79,6 +79,8 @@ std::string PatternRoutingNode::getPythonString(
 
 void PatternRoute::constructSteinerTree()
 {
+  stt_tree_valid_ = false;
+
   auto selected_access_points = grid_graph_->selectAccessPoints(net_);
 
   const int degree = selected_access_points.size();
@@ -86,6 +88,7 @@ void PatternRoute::constructSteinerTree()
     const auto& access_point = *selected_access_points.begin();
     steiner_tree_ = std::make_shared<SteinerTreeNode>(access_point.point,
                                                       access_point.layers);
+    stt_tree_valid_ = true;
     return;
   }
 
@@ -108,6 +111,8 @@ void PatternRoute::constructSteinerTree()
   }
 
   stt::Tree flute_tree = stt_builder_->flute(xs, ys, flute_accuracy_);
+  stt_tree_ = flute_tree;
+  stt_tree_valid_ = true;
   const int num_branches = degree + degree - 2;
   std::vector<PointT> steiner_points;
   steiner_points.reserve(num_branches);

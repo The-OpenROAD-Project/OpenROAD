@@ -269,6 +269,12 @@ class GlobalRouter
   void initDebugFastRoute(std::unique_ptr<AbstractFastRouteRenderer> renderer);
   AbstractFastRouteRenderer* getDebugFastRoute() const;
 
+  void initDebugCUGR(std::unique_ptr<AbstractFastRouteRenderer> renderer);
+  AbstractFastRouteRenderer* getDebugCUGR() const;
+  
+  bool hasCUGR() const { return cugr_ != nullptr; }
+  bool hasFastRoute() const { return fastroute_ != nullptr; }
+
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectilinearSTree);

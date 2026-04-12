@@ -22,7 +22,9 @@ using sta::LibertyPort;
 
 %ignore grt::GlobalRouter::init;
 %ignore grt::GlobalRouter::initDebugFastRoute;
+%ignore grt::GlobalRouter::initDebugCUGR;
 %ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::getDebugCUGR;
 %ignore grt::GlobalRouter::setRenderer;
 
 %import <stl.i>
@@ -232,9 +234,18 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
   }
 
   GlobalRouter* global_router = getGlobalRouter();
-  if (global_router->getDebugFastRoute() == nullptr) {
-    global_router->initDebugFastRoute(std::make_unique<FastRouteRenderer>(
-      global_router->db()->getTech()));
+
+  if (global_router->hasFastRoute()) {
+    if (global_router->getDebugFastRoute() == nullptr) {
+      global_router->initDebugFastRoute(
+          std::make_unique<FastRouteRenderer>(global_router->db()->getTech()));
+    }
+  }
+  if (global_router->hasCUGR()) {
+    if (global_router->getDebugCUGR() == nullptr) {
+      global_router->initDebugCUGR(
+          std::make_unique<FastRouteRenderer>(global_router->db()->getTech()));
+    }
   }
   getGlobalRouter()->setDebugNet(net);
   getGlobalRouter()->setDebugSteinerTree(steinerTree);
