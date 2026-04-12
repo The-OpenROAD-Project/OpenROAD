@@ -96,6 +96,7 @@ bazel_dep(name = "toolchains_llvm", version = "1.5.0")
 # --- Dev dependencies (not propagated to downstream consumers) ---
 
 bazel_dep(name = "bant", version = "0.2.4", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.2", dev_dependency = True)
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2", dev_dependency = True)
 bazel_dep(name = "rules_pkg", version = "1.2.0", dev_dependency = True)
 bazel_dep(name = "rules_verilator", version = "0.1.0", dev_dependency = True)
