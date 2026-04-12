@@ -285,6 +285,7 @@ filegroup(
         "data/example.3dbv",
         "data/example.3dbx",
         "data/fail.3dbx",
+        "data/fail_def.3dbv",
         "data/example.bmap",
         "data/example1.bmap",
         "data/example2.bmap",

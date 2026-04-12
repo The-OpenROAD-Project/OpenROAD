@@ -464,6 +464,13 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
+    std::error_code ec;
+    if (!std::filesystem::exists(chiplet.external.def_file, ec) || ec) {
+      logger_->error(utl::ODB,
+                     557,
+                     "DEF file does not exist: {}",
+                     chiplet.external.def_file);
+    }
     odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
     std::vector<odb::dbLib*> search_libs;
     for (odb::dbLib* lib : db_->getLibs()) {

@@ -1,3 +1,4 @@
 Caught expected error: main file not found
 Caught expected error: include file not found
+Caught expected error: DEF file not found
 pass

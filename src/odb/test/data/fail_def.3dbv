@@ -1,0 +1,10 @@
+Header:
+  version: "1.0"
+  unit: "micron"
+  precision: 2000
+
+ChipletDef:
+  TestChiplet:
+    type: die
+    external:
+      DEF_file: nonexistent.def

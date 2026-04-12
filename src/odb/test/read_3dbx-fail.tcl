@@ -27,4 +27,16 @@ if { [catch {read_3dbx "data/fail.3dbx"} err_msg] } {
   exit 1
 }
 
+# Test 3: 3DBV chiplet references a non-existent DEF file
+if { [catch {read_3dbv "data/fail_def.3dbv"} err_msg] } {
+  if { [string first "does not exist" $err_msg] < 0 } {
+    puts "FAIL: Wrong error for missing DEF file: $err_msg"
+    exit 1
+  }
+  puts "Caught expected error: DEF file not found"
+} else {
+  puts "FAIL: Expected an error for non-existent DEF file"
+  exit 1
+}
+
 puts "pass"
