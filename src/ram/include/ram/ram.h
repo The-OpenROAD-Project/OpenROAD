@@ -68,8 +68,15 @@ struct PortRole
   PortRoleType type;
   int index;
 
-  // for map so that keys are comparable
+// for map so that keys are comparable
+#ifndef SWIG
   auto operator<=>(const PortRole&) const = default;
+#else
+  bool operator<(const PortRole& other) const
+  {
+    return std::tie(type, index) < std::tie(other.type, other.index);
+  }
+#endif
 };
 
 class RamGen
