@@ -37,6 +37,8 @@ PadPlacer::PadPlacer(utl::Logger* logger,
 {
   populateInstWidths();
   populateObstructions();
+
+  addInstsOverlapCache(insts);
 }
 
 void PadPlacer::populateInstWidths()
@@ -413,11 +415,11 @@ void PadPlacer::populateObstructions()
   }
 }
 
-std::optional<odb::Polygon> PadPlacer::getInstanceOutline(
-    odb::dbInst* inst) const
+std::optional<odb::Polygon> PadPlacer::getMasterOutline(
+    odb::dbMaster* master) const
 {
   std::vector<odb::Rect> master_obs;
-  for (auto* obs : inst->getMaster()->getObstructions()) {
+  for (auto* obs : master->getObstructions()) {
     auto* layer = obs->getTechLayer();
     if (layer != nullptr) {
       if (layer->getType() != odb::dbTechLayerType::OVERLAP) {
@@ -433,13 +435,53 @@ std::optional<odb::Polygon> PadPlacer::getInstanceOutline(
 
   const auto overlaps = odb::Polygon::merge(master_obs);
   if (overlaps.size() == 1) {
-    odb::Polygon poly = overlaps.front();
+    return overlaps.front();
+  }
+
+  return std::nullopt;
+}
+
+std::optional<odb::Polygon> PadPlacer::getInstanceOutline(
+    odb::dbInst* inst) const
+{
+  const auto checker = master_overlap_cache_.find(inst->getMaster());
+  if (checker != master_overlap_cache_.end()) {
+    if (!checker->second) {
+      return std::nullopt;
+    }
+
+    odb::Polygon poly = checker->second.value();
     const odb::dbTransform xform = inst->getTransform();
     xform.apply(poly);
     return poly;
   }
 
-  return std::nullopt;
+  const auto master_outline = getMasterOutline(inst->getMaster());
+  if (!master_outline) {
+    return std::nullopt;
+  }
+
+  const odb::dbTransform xform = inst->getTransform();
+  odb::Polygon poly = master_outline.value();
+  xform.apply(poly);
+  return poly;
+}
+
+void PadPlacer::addInstsOverlapCache(const std::vector<odb::dbInst*>& insts)
+{
+  for (auto* inst : insts) {
+    addInstOverlapCache(inst);
+  }
+}
+
+void PadPlacer::addInstOverlapCache(odb::dbInst* inst)
+{
+  if (master_overlap_cache_.find(inst->getMaster())
+      != master_overlap_cache_.end()) {
+    return;
+  }
+  master_overlap_cache_[inst->getMaster()]
+      = getMasterOutline(inst->getMaster());
 }
 
 void PadPlacer::addInstanceObstructions(odb::dbInst* inst)
@@ -622,10 +664,12 @@ void UniformPadPlacer::place()
 
 ///////////////////////////////////////////
 
-CheckerOnlyPadPlacer::CheckerOnlyPadPlacer(utl::Logger* logger,
-                                           odb::dbBlock* block,
-                                           odb::dbRow* row)
-    : PadPlacer(logger, block, {}, odb::Direction2D::North, row)
+CheckerOnlyPadPlacer::CheckerOnlyPadPlacer(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    odb::dbRow* row,
+    const std::vector<odb::dbInst*>& insts)
+    : PadPlacer(logger, block, insts, odb::Direction2D::North, row)
 {
 }
 

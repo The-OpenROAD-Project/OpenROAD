@@ -527,7 +527,7 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    const CheckerOnlyPadPlacer checker(logger_, block, row);
+    const CheckerOnlyPadPlacer checker(logger_, block, row, {inst});
     if (!checker.check(inst)) {
       if (create_inst) {
         logger_->warn(utl::PAD,
