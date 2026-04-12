@@ -28,12 +28,10 @@ unset RUNFILES_DIR RUNFILES_MANIFEST_FILE TEST_SRCDIR
 
 # Verify the binary starts and can evaluate a trivial Tcl expression.
 echo 'puts "install_test_ok"' > test_script.tcl
-OUTPUT=$(./openroad -no_init -no_splash -exit test_script.tcl 2>&1)
-
-if echo "$OUTPUT" | grep -q "install_test_ok"; then
+if OUTPUT=$(./openroad -no_init -no_splash -exit test_script.tcl 2>&1) && echo "$OUTPUT" | grep -q "install_test_ok"; then
     echo "PASS: installed binary started successfully"
 else
-    echo "FAIL: installed binary did not produce expected output"
+    echo "FAIL: installed binary failed to start or produced unexpected output"
     echo "Output was: $OUTPUT"
     exit 1
 fi
