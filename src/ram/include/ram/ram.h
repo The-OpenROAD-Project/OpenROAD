@@ -71,11 +71,6 @@ struct PortRole
 // for map so that keys are comparable
 #ifndef SWIG
   auto operator<=>(const PortRole&) const = default;
-#else
-  bool operator<(const PortRole& other) const
-  {
-    return std::tie(type, index) < std::tie(other.type, other.index);
-  }
 #endif
 };
 
