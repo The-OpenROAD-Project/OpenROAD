@@ -433,6 +433,10 @@ std::optional<odb::Polygon> PadPlacer::getMasterOutline(
     return std::nullopt;
   }
 
+  if (master_obs.size() == 1) {
+    return odb::Polygon(master_obs.front());
+  }
+
   const auto overlaps = odb::Polygon::merge(master_obs);
   if (overlaps.size() == 1) {
     return overlaps.front();
