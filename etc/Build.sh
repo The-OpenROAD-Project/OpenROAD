@@ -18,10 +18,12 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=""
+cmakeOptions=()
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
+useBazel=no
+noGui=no
 
 _help() {
     cat <<EOF
@@ -53,6 +55,7 @@ OPTIONS:
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
+  -bazel                                        Use Bazel instead of CMake to build
   -deps-prefixes-file=FILE                      File with CMake packages roots,
                                                  its content extends -cmake argument.
                                                  By default, "openroad_deps_prefixes.txt"
@@ -79,30 +82,36 @@ while [ "$#" -gt 0 ]; do
             _help 0
             ;;
         -no-gui)
-            cmakeOptions+=" -DBUILD_GUI=OFF"
+            cmakeOptions+=("-DBUILD_GUI=OFF")
+            noGui=yes
             ;;
         -no-tests)
-            cmakeOptions+=" -DENABLE_TESTS=OFF"
+            cmakeOptions+=("-DENABLE_TESTS=OFF")
             ;;
         -cpp20)
-            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
             ;;
         -build-man)
-            cmakeOptions+=" -DBUILD_MAN=ON"
+            cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
+            cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
-            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
-            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            cmakeOptions+=" ${1#*=}"
+            # Use xargs to safely parse the quoted string into array elements without eval
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(echo "${1#*=}" | xargs printf '%s\n')
             ;;
         -clean )
             cleanBefore=yes
@@ -129,7 +138,10 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=" -DGPU=ON"
+            cmakeOptions+=("-DGPU=ON")
+            ;;
+        -bazel)
+            useBazel=yes
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -147,7 +159,11 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+            while IFS= read -r arg; do
+                if [[ -n "$arg" ]]; then
+                    cmakeOptions+=("$arg")
+                fi
+            done < <(xargs printf '%s\n' < "$depsPrefixesFile")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -252,5 +268,26 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+if [[ "$useBazel" == "yes" ]]; then
+    echo "[INFO] Building with Bazel."
+    bazel_cmd="bazel"
+    if command -v bazelisk &> /dev/null; then
+        bazel_cmd="bazelisk"
+    fi
+    bazelArgs=("--config=opt" "--jobs=${numThreads}")
+    if [[ "$noGui" == "yes" ]]; then
+        bazelArgs+=("--//:platform=cli")
+    else
+        bazelArgs+=("--//:platform=gui")
+    fi
+    "${bazel_cmd}" build "${bazelArgs[@]}" //:openroad
+    exit 0
+fi
+if [[ "$isNinja" == "yes" ]]; then
+    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+    cd "${buildDir}"
+    CLICOLOR_FORCE=1 ninja build_and_test
+    exit 0
+fi
+cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"
