@@ -64,7 +64,8 @@ class PadPlacer
   int getTotalInstWidths() const;
 
  protected:
-  using InstObsValue = std::pair<odb::Rect, odb::dbInst*>;
+  using InstObsValue
+      = std::tuple<odb::Rect, std::optional<odb::Polygon>, odb::dbInst*>;
   using TermObsValue = std::tuple<odb::Rect, odb::dbNet*, odb::dbInst*>;
   using BlockageObsTree
       = boost::geometry::index::rtree<odb::Rect,
@@ -95,6 +96,7 @@ class PadPlacer
   }
   LayerTermObsTree getInstanceObstructions(odb::dbInst* inst,
                                            bool bloat = false) const;
+  std::optional<odb::Polygon> getInstanceOutline(odb::dbInst* inst) const;
   void addInstanceObstructions(odb::dbInst* inst);
 
  private:
