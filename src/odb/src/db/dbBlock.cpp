@@ -3000,6 +3000,8 @@ dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimiter_)
   chip->top_ = top->getOID();
   if (chip_->getTech() != nullptr) {
     top->dbu_per_micron_ = chip_->getTech()->getDbUnitsPerMicron();
+  } else if (top->dbu_per_micron_ <= 0) {
+    top->dbu_per_micron_ = 1;
   }
   return (dbBlock*) top;
 }
