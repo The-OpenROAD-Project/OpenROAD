@@ -26,4 +26,4 @@ cluster_flops -tray_weight 40.0 \
 
 # Report timing to verify original FF names appear in the path report.
 # After clustering the tray pin descriptions should show in the Orig Name column.
-report_checks -path_delay max -fields {orig_name} -through [get_pins _tray_size2_7/D1]
+report_checks -path_delay max -fields {orig_name} -through [get_pins _tray_size4_7/D1]
