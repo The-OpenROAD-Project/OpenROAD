@@ -55,10 +55,11 @@ target_include_directories(rmp_lib
 )
 
 target_link_libraries(rmp_lib
+  PRIVATE
+    mockturtle
   PUBLIC
     odb
     dbSta_lib
-    mockturtle
     OpenSTA
     rsz_lib
     utl_lib

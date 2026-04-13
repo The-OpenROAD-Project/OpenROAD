@@ -59,15 +59,13 @@ endif()
 
 add_library(mockturtle INTERFACE)
 
-find_package(absl REQUIRED)
 find_package(spdlog REQUIRED)
 
+# Mockturtle uses abseil random, but we don't add it here to avoid conflicts
+# with or-tools vendored version.
 target_link_libraries(mockturtle
   INTERFACE
     spdlog::spdlog
-    absl::city
-    absl::core_headers
-    absl::random_random
 )
 
 target_include_directories(mockturtle

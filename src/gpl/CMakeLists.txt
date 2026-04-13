@@ -62,8 +62,6 @@ target_include_directories(gpl_lib
 )
 
 target_link_libraries(gpl_lib
-  PRIVATE
-    ortools::ortools
   PUBLIC
     utl_lib
     Eigen3::Eigen
@@ -71,6 +69,7 @@ target_link_libraries(gpl_lib
     OpenSTA
     rsz_lib
     grt_lib
+    ortools::ortools
     Threads::Threads
     OpenMP::OpenMP_CXX
 )

@@ -38,14 +38,13 @@ target_include_directories(mpl_lib
 )
 
 target_link_libraries(mpl_lib
-  PRIVATE
-    ortools::ortools
   PUBLIC
     mpl_snapper
     utl_lib
     dbSta_lib
     OpenSTA
     odb
+    ortools::ortools
     dl
     par_lib
 )
