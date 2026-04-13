@@ -14,6 +14,30 @@ package(
     features = ["layering_check"],
 )
 
+cc_library(
+    name = "headers",
+    hdrs = glob(
+        include = ["include/odb/*.h"],
+        exclude = ["include/odb/MakeOdb.h"],
+    ) + [
+        "include/odb/dbCompare.inc",
+        "include/odb/dbMap.inc",
+    ],
+    features = [
+        "-use_header_modules",
+    ],
+    includes = ["include"],
+    deps = [
+        "//src/utl",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/synchronization",
+        "@boost.container",
+        "@boost.geometry",
+        "@boost.multi_array",
+        "@boost.polygon",
+    ],
+)
+
 filegroup(
     name = "swig_imports",
     srcs = glob([
@@ -30,72 +54,51 @@ filegroup(
     ]),
 )
 
+# Umbrella target that aggregates every per-subdirectory odb library and the
+# shared SWIG glue (swig_common). Downstream BUILD files depend on
+# //src/odb:odb to keep working unchanged after the split of the old
+# monolith into per-subdirectory targets.
 cc_library(
     name = "odb",
-    srcs = glob([
-        "src/cdl/*.cpp",
-        "src/db/*.cpp",
-        "src/db/*.h",
-        "src/db/*.hpp",
-        "src/db/*.inc",
-        "src/zutil/*.cpp",
-        "src/defout/*.cpp",
-        "src/defout/*.h",
-        "src/defin/*.cpp",
-        "src/defin/*.h",
-        "src/gdsin/*.cpp",
-        "src/gdsout/*.cpp",
-        "src/lefin/*.cpp",
-        "src/lefin/*.h",
-        "src/lefout/*.cpp",
-        "src/3dblox/*.cpp",
-        "src/3dblox/*.h",
+    srcs = ["src/swig/common/swig_common.cpp"],
+    # The umbrella target republishes the public odb/*.h headers so that
+    # downstream targets that depend on //src/odb (and use
+    # layering_check) continue to see odb/*.h through a direct dep.
+    # The per-subdir libraries depend on //src/odb:headers directly.
+    hdrs = glob(
+        include = ["include/odb/*.h"],
+        exclude = ["include/odb/MakeOdb.h"],
+    ) + [
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
-    ] + [
-        "src/swig/common/swig_common.cpp",
-    ]),
-    hdrs = glob(
-        include = [
-            "include/odb/*.h",
-        ],
-        exclude = ["include/odb/MakeOdb.h"],
-    ) + ["src/swig/common/swig_common.h"],
+        "src/swig/common/swig_common.h",
+    ],
     features = [
         "-use_header_modules",
     ],
-    includes = [
-        "include",
-    ],
+    includes = ["include"],
     deps = [
+        "//src/odb/src/3dblox",
+        "//src/odb/src/cdl",
+        "//src/odb/src/db",
         "//src/odb/src/def",
         "//src/odb/src/def:defzlib",
+        "//src/odb/src/defin",
+        "//src/odb/src/defout",
+        "//src/odb/src/gdsin",
+        "//src/odb/src/gdsout",
         "//src/odb/src/lef",
         "//src/odb/src/lef:lefzlib",
-        "//src/sta:opensta_lib",
+        "//src/odb/src/lefin",
+        "//src/odb/src/lefout",
+        "//src/odb/src/zutil",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
-        "@boost.algorithm",
-        "@boost.bind",
-        "@boost.config",
         "@boost.container",
-        "@boost.fusion",
         "@boost.geometry",
-        "@boost.integer",
-        "@boost.iostreams",
-        "@boost.lambda",
         "@boost.multi_array",
-        "@boost.optional",
-        "@boost.phoenix",
         "@boost.polygon",
-        "@boost.property_tree",
-        "@boost.regex",
-        "@boost.spirit",
-        "@spdlog",
-        "@tcl_lang//:tcl",
-        "@yaml-cpp",
-        "@zlib",
     ],
 )
 

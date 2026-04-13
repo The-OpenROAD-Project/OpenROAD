@@ -126,7 +126,6 @@
 #include "odb/dbShape.h"
 #include "odb/dbStream.h"
 #include "odb/dbTypes.h"
-#include "odb/defout.h"
 #include "odb/geom.h"
 #include "odb/geom_boost.h"
 #include "odb/isotropy.h"
