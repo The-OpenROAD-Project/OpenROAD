@@ -12,6 +12,7 @@
 #include <queue>
 #include <set>
 #include <stack>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -26,6 +27,7 @@
 #include "db/obj/frGuide.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"

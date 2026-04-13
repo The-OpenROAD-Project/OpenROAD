@@ -138,7 +138,7 @@ bool NodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<Node*>(l);
   auto r_node = std::any_cast<Node*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void NodeDescriptor::highlight(const std::any& object,
@@ -195,7 +195,7 @@ bool ITermNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<ITermNode*>(l);
   auto r_node = std::any_cast<ITermNode*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void ITermNodeDescriptor::highlight(const std::any& object,
@@ -251,7 +251,7 @@ bool BPinNodeDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_node = std::any_cast<BPinNode*>(l);
   auto r_node = std::any_cast<BPinNode*>(r);
-  return l_node->compare(r_node);
+  return l_node->compare(r_node) < 0;
 }
 
 void BPinNodeDescriptor::highlight(const std::any& object,
