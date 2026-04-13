@@ -3038,7 +3038,7 @@ void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
         /*setup_slack_margin=*/0.0,
         /*repair_tns_end_percent=*/0.0,  // TODO: Change value
         /*max_passes=*/1,
-        /*max_iterations=*/1,
+        /*max_iterations=*/0,
         /*max_repairs_per_pass=*/1,
         /*verbose=*/false,
         /*sequence=*/parseMoveSequence(""),
