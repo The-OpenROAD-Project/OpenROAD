@@ -64,6 +64,7 @@ genrule(
           " $(location src/main.js)",
     tools = [":embed_report_assets"],
 )
+
 cc_library(
     name = "web",
     srcs = [
