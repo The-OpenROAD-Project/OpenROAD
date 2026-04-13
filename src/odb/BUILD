@@ -68,7 +68,7 @@ exports_files(
         "include/odb/poly_decomp.h",
         "include/odb/util.h",
     ],
-    visibility = ["//src/odb/src/zutil:__pkg__"],
+    visibility = ["//src/odb/src/db:__pkg__"],
 )
 
 cc_library(
@@ -163,7 +163,6 @@ cc_library(
         "//src/odb/src/lef:lefzlib",
         "//src/odb/src/lefin",
         "//src/odb/src/lefout",
-        "//src/odb/src/zutil",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",

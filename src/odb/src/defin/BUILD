@@ -23,7 +23,6 @@ cc_library(
         "//src/odb/src/db",
         "//src/odb/src/def",
         "//src/odb/src/def:defzlib",
-        "//src/odb/src/zutil",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",

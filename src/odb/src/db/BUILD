@@ -16,6 +16,10 @@ cc_library(
         "*.hpp",
         "*.inc",
     ]),
+    hdrs = [
+        "//src/odb:include/odb/poly_decomp.h",
+        "//src/odb:include/odb/util.h",
+    ],
     features = [
         "-use_header_modules",
     ],
@@ -25,7 +29,6 @@ cc_library(
         # overloads that only call inline methods. Depending on the
         # headers-only sub-target avoids a link cycle with :lefout.
         "//src/odb/src/lefout:lefout_headers",
-        "//src/odb/src/zutil",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.container",
