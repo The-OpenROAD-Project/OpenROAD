@@ -16,6 +16,7 @@ namespace odb {
 
 class _dbDatabase;
 class _dbMTerm;
+class _dbTech;
 class _dbTechLayer;
 class dbTech;
 class dbTechLayer;
@@ -176,7 +177,7 @@ class _dbTechAntennaPinModel : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   static void getAntennaValues(
-      _dbDatabase* db,
+      _dbTech* tech,
       const dbVector<_dbTechAntennaAreaElement*>& elements,
       std::vector<std::pair<double, dbTechLayer*>>& result);
 

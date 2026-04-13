@@ -5790,6 +5790,16 @@ class dbMTerm : public dbObject
   // From LEF's ANTENNADIFFAREA on the MACRO's PIN
   void getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data);
 
+  // From LEF's ANTENNAPARTIALMETALAREA on the MACRO's PIN
+  void getPartialMetalArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALMETALSIDEAREA on the MACRO's PIN
+  void getPartialMetalSideArea(
+      std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALCUTAREA on the MACRO's PIN
+  void getPartialCutArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
   void* staPort();
   void staSetPort(void* port);
 
