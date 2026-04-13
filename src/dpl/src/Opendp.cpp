@@ -228,9 +228,11 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                       negotiation.numViolations());
     }
 
+    total_moves_ = negotiation.totalMoves();
     findDisplacementStats();
     updateDbInstLocations();
   }
+  reportLegalizationStats();
 }
 
 void Opendp::updateDbInstLocations()
@@ -257,17 +259,23 @@ void Opendp::reportLegalizationStats() const
 {
   logger_->report("Placement Analysis");
   logger_->report("---------------------------------");
+  const std::string legalizer_name
+      = use_negotiation_ ? "negotiation" : "diamond search";
+  logger_->report("legalizer            {}", legalizer_name);
+  logger_->metric("dpl__legalizer__type", legalizer_name);
+  logger_->report("total moves          {:10d}", total_moves_);
+  logger_->metric("dpl__total__moves", total_moves_);
   logger_->report("total displacement   {:10.1f} u",
                   block_->dbuToMicrons(displacement_sum_));
-  logger_->metric("design__instance__displacement__total",
+  logger_->metric("dpl__instance__displacement__total",
                   block_->dbuToMicrons(displacement_sum_));
   logger_->report("average displacement {:10.1f} u",
                   block_->dbuToMicrons(displacement_avg_));
-  logger_->metric("design__instance__displacement__mean",
+  logger_->metric("dpl__instance__displacement__mean",
                   block_->dbuToMicrons(displacement_avg_));
   logger_->report("max displacement     {:10.1f} u",
                   block_->dbuToMicrons(displacement_max_));
-  logger_->metric("design__instance__displacement__max",
+  logger_->metric("dpl__instance__displacement__max",
                   block_->dbuToMicrons(displacement_max_));
   logger_->report("original HPWL        {:10.1f} u",
                   block_->dbuToMicrons(hpwl_before_));
@@ -275,14 +283,14 @@ void Opendp::reportLegalizationStats() const
   const double hpwl_legal = eval.hpwl();
   logger_->report("legalized HPWL       {:10.1f} u",
                   block_->dbuToMicrons(hpwl_legal));
-  logger_->metric("route__wirelength__estimated",
-                  block_->dbuToMicrons(hpwl_legal));
   const int hpwl_delta
       = (hpwl_before_ == 0.0)
             ? 0.0
             : round((hpwl_legal - hpwl_before_) / hpwl_before_ * 100);
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
+  logger_->metric("route__wirelength__estimated",
+                block_->dbuToMicrons(hpwl_legal));
   logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
   logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }

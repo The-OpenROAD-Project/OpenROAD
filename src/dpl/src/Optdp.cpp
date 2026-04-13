@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
+#include <algorithm>
 #include <cstdint>
+#include <cstdlib>
+#include <unordered_map>
 
 #include "dpl/Opendp.h"
 #include "odb/util.h"
@@ -14,38 +17,6 @@
 #include "optimization/detailed_manager.h"
 
 namespace dpl {
-namespace {
-void reportHPWL(utl::Logger* logger,
-                const double dbu_micron,
-                const int64_t hpwlBefore,
-                const int64_t hpwlAfter,
-                const int64_t hpwlBefore_x,
-                const int64_t hpwlAfter_x,
-                const int64_t hpwlBefore_y,
-                const int64_t hpwlAfter_y)
-{
-  logger->report("Detailed Improvement Results");
-  logger->report("------------------------------------------");
-  logger->report("Original HPWL         {:10.1f} u ({:10.1f}, {:10.1f})",
-                 hpwlBefore / dbu_micron,
-                 hpwlBefore_x / dbu_micron,
-                 hpwlBefore_y / dbu_micron);
-  logger->report("Final HPWL            {:10.1f} u ({:10.1f}, {:10.1f})",
-                 hpwlAfter / dbu_micron,
-                 hpwlAfter_x / dbu_micron,
-                 hpwlAfter_y / dbu_micron);
-  const double hpwl_delta = (hpwlAfter - hpwlBefore) / (double) hpwlBefore;
-  const double hpwl_delta_x
-      = (hpwlAfter_x - hpwlBefore_x) / (double) hpwlBefore_x;
-  const double hpwl_delta_y
-      = (hpwlAfter_y - hpwlBefore_y) / (double) hpwlBefore_y;
-  logger->report("Delta HPWL            {:10.1f} % ({:10.1f}, {:10.1f})",
-                 hpwl_delta * 100.0,
-                 hpwl_delta_x * 100.0,
-                 hpwl_delta_y * 100.0);
-  logger->report("");
-}
-}  // namespace
 
 ////////////////////////////////////////////////////////////////
 void Opendp::improvePlacement(const int seed,
@@ -120,6 +91,17 @@ void Opendp::improvePlacement(const int seed,
     debug_observer_->redrawAndPause();
   }
 
+  // Snapshot positions before improvement for displacement tracking.
+  odb::dbBlock* block = db_->getChip()->getBlock();
+  std::unordered_map<odb::dbInst*, odb::Point> pos_before;
+  for (odb::dbInst* inst : block->getInsts()) {
+    if (!inst->isFixed()) {
+      int x, y;
+      inst->getLocation(x, y);
+      pos_before[inst] = {x, y};
+    }
+  }
+
   // Run the script.
   Detailed dt(dtParams);
   dt.improve(mgr);
@@ -132,19 +114,55 @@ void Opendp::improvePlacement(const int seed,
   // Write solution back.
   updateDbInstLocations();
 
+  // Compute displacement stats.
+  int64_t disp_sum = 0;
+  int64_t disp_max = 0;
+  int moved = 0;
+  for (auto& [inst, before] : pos_before) {
+    int x, y;
+    inst->getLocation(x, y);
+    const int64_t disp
+        = std::abs(x - before.x()) + std::abs(y - before.y());
+    if (disp > 0) {
+      disp_sum += disp;
+      disp_max = std::max(disp_max, disp);
+      moved++;
+    }
+  }
+  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
+  const double disp_total_um = disp_sum / dbu_micron;
+  const double disp_avg_um = moved > 0 ? disp_sum / (dbu_micron * moved) : 0.0;
+  const double disp_max_um = disp_max / dbu_micron;
+
   // Get final hpwl.
   int64_t hpwlAfter_x = 0;
   int64_t hpwlAfter_y = 0;
   const int64_t hpwlAfter = eval.hpwl(hpwlAfter_x, hpwlAfter_y);
-  const double dbu_micron = db_->getTech()->getDbUnitsPerMicron();
-  reportHPWL(logger_,
-             dbu_micron,
-             hpwlBefore,
-             hpwlAfter,
-             hpwlBefore_x,
-             hpwlAfter_x,
-             hpwlBefore_y,
-             hpwlAfter_y);
+  const int hpwl_delta_pct
+      = (hpwlBefore == 0)
+            ? 0
+            : round((hpwlAfter - hpwlBefore) / (double) hpwlBefore * 100);
+
+  const int total_attempts = mgr.getTotalAttempts();
+  logger_->report("Placement Analysis");
+  logger_->report("---------------------------------");
+  logger_->report("total attempts       {:10d}", total_attempts);
+  logger_->report("relocated cells      {:10d}", moved);
+  logger_->report("total displacement   {:10.1f} u", disp_total_um);
+  logger_->report("average displacement {:10.1f} u", disp_avg_um);
+  logger_->report("max displacement     {:10.1f} u", disp_max_um);
+  logger_->report("original HPWL        {:10.1f} u",
+                  hpwlBefore / dbu_micron);
+  logger_->report("improved HPWL        {:10.1f} u",
+                  hpwlAfter / dbu_micron);
+  logger_->report("delta HPWL           {:10} %", hpwl_delta_pct);
+  logger_->report("");
+  logger_->metric("dpo__total__attempts", total_attempts);
+  logger_->metric("dpo__relocated__cells", moved);
+  logger_->metric("dpo__design__instance__displacement__total", disp_total_um);
+  logger_->metric("dpo__design__instance__displacement__mean", disp_avg_um);
+  logger_->metric("dpo__design__instance__displacement__max", disp_max_um);
+  logger_->metric("dpo__hpwl__delta__percent", hpwl_delta_pct);
 }
 
 ////////////////////////////////////////////////////////////////

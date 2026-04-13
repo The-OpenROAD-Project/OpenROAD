@@ -398,6 +398,7 @@ class Opendp
   bool deep_iterative_debug_ = false;
   bool incremental_ = false;
   bool use_negotiation_ = false;
+  int total_moves_ = 0;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

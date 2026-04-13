@@ -154,6 +154,7 @@ class NegotiationLegalizer
   [[nodiscard]] double avgDisplacement() const;
   [[nodiscard]] int maxDisplacement() const;
   [[nodiscard]] int numViolations() const;
+  [[nodiscard]] int totalMoves() const { return total_moves_; }
 
  private:
   // Initialisation
@@ -265,6 +266,7 @@ class NegotiationLegalizer
   int adj_window_{kAdjWindow};
   int num_threads_{1};
   bool run_abacus_{false};
+  int total_moves_{0};
 
   // Mutable profiling accumulators for findBestLocation breakdown (seconds).
   mutable double prof_init_search_s_{0};
