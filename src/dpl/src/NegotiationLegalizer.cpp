@@ -215,7 +215,7 @@ void NegotiationLegalizer::legalize()
     }
     debugPrint(logger_,
                utl::DPL,
-               "negotiation_runtime",
+               "negotiation",
                1,
                "{} illegal cells",
                illegal.size());
