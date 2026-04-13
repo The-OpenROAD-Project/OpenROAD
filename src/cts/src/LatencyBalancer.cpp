@@ -415,19 +415,18 @@ DPResult LatencyBalancer::solveDP(
     }
   }
 
+  // max weight = target delay + some overdelay that could be benefitial
   const int64_t maxW = target + maxBufDelay;
   constexpr int64_t UNSET = -1;
-  std::vector<std::vector<int64_t>> dp (maxW + 1, std::vector<int64_t>(nBuffers, UNSET));
+  std::vector<std::vector<int>> dp (maxW + 1, std::vector<int>(nBuffers, UNSET));
   std::vector<std::vector<int>> nxt(maxW + 1, std::vector<int>    (nBuffers, -2));
-  std::vector<std::vector<int>> length(maxW + 1, std::vector<int>    (nBuffers, 0));
 
   // Base case: single buffer driving the sinks
   for (size_t j = 0; j < nBuffers; j++) {
     int64_t bufDelay = sinkDelay[j];
     if (bufDelay <= maxW) {
-      dp[bufDelay][j] = bufDelay;
+      dp[bufDelay][j] = 1;
       nxt[bufDelay][j] = -1;  // -1 → drives sinks
-      length[bufDelay][j] = 1;
     }
   }
 
@@ -445,12 +444,10 @@ DPResult LatencyBalancer::solveDP(
           continue;
         }
 
-        int64_t new_total = dp[w][j] + bufDelay;
         if (dp[newWeight][i] == UNSET
-            || length[w][j] + 1 < length[newWeight][i]) {
-          dp[newWeight][i] = new_total;
+            || dp[w][j] + 1 < dp[newWeight][i]) {
+          dp[newWeight][i] = dp[w][j] + 1;
           nxt[newWeight][i] = static_cast<int>(j);
-          length[newWeight][j] = length[w][j] + 1;
         }
       }
     }
@@ -470,7 +467,7 @@ DPResult LatencyBalancer::solveDP(
                                      : std::abs(bestW - target);
 
       if (dist < bestDist
-        || (dist == bestDist && length[w][j] < length[bestW][bestJ])) {
+        || (dist == bestDist && dp[w][j] < dp[bestW][bestJ])) {
         bestW = w;
         bestJ = static_cast<int>(j);
       }
