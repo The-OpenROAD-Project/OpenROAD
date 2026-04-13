@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <unistd.h>
+
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
@@ -59,8 +61,9 @@ class SaveReportTest : public tst::Nangate45Fixture
 
   std::string tempHtml(const std::string& label)
   {
-    std::string path = std::filesystem::temp_directory_path()
-                       / ("web_test_" + label + ".html");
+    std::string path
+        = std::filesystem::temp_directory_path()
+          / ("web_test_" + label + "_" + std::to_string(::getpid()) + ".html");
     output_files_.push_back(path);
     return path;
   }
