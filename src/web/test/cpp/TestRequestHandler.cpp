@@ -127,6 +127,24 @@ TEST(JsonEscapeTest, ControlChars)
 }
 
 //------------------------------------------------------------------------------
+// JsonBuilder overload tests
+//------------------------------------------------------------------------------
+
+// Verify that field(std::string, const char*) writes a JSON string, not a bool.
+// Without an explicit overload, C++ prefers the standard pointer-to-bool
+// conversion over the user-defined const char*-to-std::string conversion,
+// silently writing "true" instead of the intended string value.
+TEST(JsonBuilderTest, FieldStringKeyCharPtrValueWritesString)
+{
+  JsonBuilder b;
+  b.beginObject();
+  b.field(std::string("dir"), "input");
+  b.endObject();
+  EXPECT_NE(b.str().find("\"input\""), std::string::npos);
+  EXPECT_EQ(b.str().find("true"), std::string::npos);
+}
+
+//------------------------------------------------------------------------------
 // dispatch_request tests (BOUNDS, LAYERS, INFO)
 //------------------------------------------------------------------------------
 
