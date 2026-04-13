@@ -9,6 +9,7 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <unordered_set>
 #include <utility>

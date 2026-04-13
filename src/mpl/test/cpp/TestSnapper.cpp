@@ -9,6 +9,7 @@
 #include "MplTest.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 
 namespace mpl {
 namespace {

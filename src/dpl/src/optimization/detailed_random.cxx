@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "boost/tokenizer.hpp"
+#include "optimization/detailed_generator.h"
 #include "util/utility.h"
 #include "utl/Logger.h"
 // For detailed improvement.

@@ -13,8 +13,6 @@ jobs:
           fetch-depth: 0
       - name: Check ok files
         run: |
-          set +e
-          grep --include="*.ok" -Rn "Differences found "
-          if [[ "$?" == "0" ]]; then
+          if git ls-files '*.ok' | xargs grep -n "Differences found "; then
             exit 1
           fi

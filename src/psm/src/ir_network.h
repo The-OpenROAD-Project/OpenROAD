@@ -45,10 +45,6 @@ class IRNetwork
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
 
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
-
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
                                       boost::geometry::index::quadratic<16>,
@@ -105,6 +101,8 @@ class IRNetwork
   std::set<odb::dbTechLayer*> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
+
+  void clearVisitedNodes();
 
   const Connections& getConnections() const { return connections_; }
   NodePtrMap<Connection> getConnectionMap() const;

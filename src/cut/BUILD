@@ -26,7 +26,6 @@ cc_library(
         "include/cut/logic_extractor.h",
     ],
     defines = [
-        "_GLIBCXX_ASSERTIONS",
         "ABC_NAMESPACE=abc",
     ],
     includes = ["include"],

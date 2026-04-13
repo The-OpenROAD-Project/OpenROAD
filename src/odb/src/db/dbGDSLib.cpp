@@ -3,6 +3,7 @@
 
 #include "dbGDSLib.h"
 
+#include <string>
 #include <utility>
 
 #include "dbCore.h"

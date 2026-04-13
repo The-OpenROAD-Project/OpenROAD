@@ -124,20 +124,6 @@ cc_library(
     }),
 )
 
-# shim old library as it is still referenced in src/sta, implementing the
-# old behavior.
-cc_library(
-    name = "runfiles",
-    srcs = ["InitRunFiles.cpp"],
-    data = [":tcl_resources_dir"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@rules_cc//cc/runfiles",
-        "@tcl_lang//:tcl",
-    ],
-    alwayslink = True,
-)
-
 # small build test to check if "bazel build //src/sta:StaTclInitVar" works
 # Run with "bazel test //bazel:sta_tcl_encode_test"
 # Tests the tcl_encode_sta.bzl rule

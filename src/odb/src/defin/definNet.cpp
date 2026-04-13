@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#include <string>
 
 #include "odb/db.h"
 #include "odb/dbSet.h"

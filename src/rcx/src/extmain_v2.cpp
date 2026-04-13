@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <limits>
 #include <list>
+#include <string>
 #include <vector>
 
 #include "find_some_net.h"

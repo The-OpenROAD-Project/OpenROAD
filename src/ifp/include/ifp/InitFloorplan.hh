@@ -133,6 +133,9 @@ class InitFloorplan
   using SitesByName = std::map<std::string, odb::dbSite*>;
 
   double designArea();
+  SitesByName prepareSitesAndClearRows(
+      odb::dbSite* base_site,
+      const std::vector<odb::dbSite*>& additional_sites);
   void checkInstanceDimensions(const odb::Rect& core) const;
   void makeUniformRows(odb::dbSite* base_site,
                        const SitesByName& sites_by_name,

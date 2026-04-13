@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -27,6 +28,7 @@
 #include "db/obj/frBoundary.h"
 #include "db/obj/frFig.h"
 #include "db/obj/frInstBlockage.h"
+#include "db/obj/frMPin.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frTrackPattern.h"
 #include "db/obj/frVia.h"
