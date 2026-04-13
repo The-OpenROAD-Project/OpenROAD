@@ -40,8 +40,12 @@ RUN apt-get update \
         ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
-# VS Code CLI (code-tunnel for remote editing)
-RUN curl -fsSL "https://code.visualstudio.com/sha/download?build=stable&os=cli-linux-x64" \
+# VS Code CLI (code-tunnel for remote editing).
+# Use the glibc build to match the Ubuntu base image. (The cli-alpine-x64
+# variant on code.visualstudio.com is statically linked and also works,
+# but the linux-x64 build from update.code.visualstudio.com is the
+# canonical match for glibc distros.)
+RUN curl -fsSL "https://update.code.visualstudio.com/latest/cli-linux-x64/stable" \
         -o /tmp/vscode-cli.tar.gz \
     && tar -xzf /tmp/vscode-cli.tar.gz -C /usr/local/bin \
     && rm /tmp/vscode-cli.tar.gz

@@ -86,13 +86,25 @@ CONTAINER_HOME="/home/claude-user"
 
 # --- Assemble docker run arguments ---
 DOCKER_RUN_ARGS=(
-    --rm -it
+    --rm
     --name "${CONTAINER_NAME}"
     -v "${SCRIPT_DIR}:/workspace"
     -e "HOST_UID=$(id -u)"
     -e "HOST_GID=$(id -g)"
     -w /workspace
 )
+
+# TTY/stdin handling for interactive, CI, and piped-input cases:
+#   * terminal in + terminal out → -it   (normal interactive use)
+#   * anything else              → -i    (pass stdin through; no TTY)
+# Forcing -it unconditionally breaks non-interactive use
+# ("cannot attach stdin to a TTY-enabled container"), and dropping -i
+# would silently discard piped input like `cat prompt.txt | claude.sh ...`.
+if [[ -t 0 && -t 1 ]]; then
+    DOCKER_RUN_ARGS+=(-it)
+else
+    DOCKER_RUN_ARGS+=(-i)
+fi
 
 # Pass through optional environment variables
 for var in ANTHROPIC_API_KEY ANTHROPIC_MODEL CLAUDE_CODE_MAX_TURNS \
