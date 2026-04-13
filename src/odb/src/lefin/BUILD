@@ -14,6 +14,7 @@ cc_library(
         "*.cpp",
         "*.h",
     ]),
+    hdrs = ["//src/odb:include/odb/lefin.h"],
     features = [
         "-use_header_modules",
     ],

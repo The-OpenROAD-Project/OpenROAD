@@ -11,6 +11,10 @@ package(
 cc_library(
     name = "zutil",
     srcs = glob(["*.cpp"]),
+    hdrs = [
+        "//src/odb:include/odb/poly_decomp.h",
+        "//src/odb:include/odb/util.h",
+    ],
     features = [
         "-use_header_modules",
     ],

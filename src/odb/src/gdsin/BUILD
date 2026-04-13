@@ -11,6 +11,10 @@ package(
 cc_library(
     name = "gdsin",
     srcs = glob(["*.cpp"]),
+    hdrs = [
+        "//src/odb:include/odb/gdsUtil.h",
+        "//src/odb:include/odb/gdsin.h",
+    ],
     features = [
         "-use_header_modules",
     ],

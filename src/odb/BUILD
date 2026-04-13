@@ -14,11 +14,83 @@ package(
     features = ["layering_check"],
 )
 
+# Module-specific public headers whose implementation lives in a single
+# src/<module>/ subdirectory. These are exposed to the matching subpackage
+# via exports_files so each subdir cc_library can republish its own public
+# header as hdrs, making //src/odb:<module> the canonical owner of
+# odb/<module>.h. Kept exported (not moved) so the CMake build, which
+# expects all public headers under src/odb/include/odb/, continues to work.
+exports_files(
+    ["include/odb/3dblox.h"],
+    visibility = ["//src/odb/src/3dblox:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/cdl.h"],
+    visibility = ["//src/odb/src/cdl:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/defin.h"],
+    visibility = ["//src/odb/src/defin:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/defout.h"],
+    visibility = ["//src/odb/src/defout:__pkg__"],
+)
+
+exports_files(
+    [
+        "include/odb/gdsUtil.h",
+        "include/odb/gdsin.h",
+    ],
+    visibility = ["//src/odb/src/gdsin:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/gdsout.h"],
+    visibility = ["//src/odb/src/gdsout:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/lefin.h"],
+    visibility = ["//src/odb/src/lefin:__pkg__"],
+)
+
+exports_files(
+    ["include/odb/lefout.h"],
+    visibility = ["//src/odb/src/lefout:__pkg__"],
+)
+
+exports_files(
+    [
+        "include/odb/poly_decomp.h",
+        "include/odb/util.h",
+    ],
+    visibility = ["//src/odb/src/zutil:__pkg__"],
+)
+
 cc_library(
     name = "headers",
     hdrs = glob(
         include = ["include/odb/*.h"],
-        exclude = ["include/odb/MakeOdb.h"],
+        exclude = [
+            # Not part of any library target; built into //:ord separately.
+            "include/odb/MakeOdb.h",
+            # Module-specific headers owned by their subdir library.
+            "include/odb/3dblox.h",
+            "include/odb/cdl.h",
+            "include/odb/defin.h",
+            "include/odb/defout.h",
+            "include/odb/gdsUtil.h",
+            "include/odb/gdsin.h",
+            "include/odb/gdsout.h",
+            "include/odb/lefin.h",
+            "include/odb/lefout.h",
+            "include/odb/poly_decomp.h",
+            "include/odb/util.h",
+        ],
     ) + [
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
