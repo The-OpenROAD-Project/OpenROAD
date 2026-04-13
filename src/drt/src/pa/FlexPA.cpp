@@ -121,7 +121,8 @@ void FlexPA::removeDirtyInst(frInst* inst)
 
 void FlexPA::updateDirtyInsts()
 {
-  std::set<UniqueClass*> dirty_unique_classes;
+  auto cmp = [](UniqueClass* a, UniqueClass* b) { return a->key() < b->key(); };
+  std::set<UniqueClass*, decltype(cmp)> dirty_unique_classes(cmp);
   frOrderedIdSet<frInst*>
       pattern_insts;  // list of insts that need row pattern generation
   for (const auto& inst : dirty_insts_) {

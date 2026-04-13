@@ -10,7 +10,7 @@ buildDir="build"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  numThreads=$(sysctl -n hw.ncpu)
+  numThreads=$(sysctl -n hw.logicalcpu)
 else
   cat << EOF
 WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
@@ -196,8 +196,64 @@ mkdir -p "${buildDir}"
 __logging
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
-    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
+
+    _bison=$(brew --prefix bison 2>/dev/null || true)
+    _flex=$(brew --prefix flex 2>/dev/null || true)
+    _ortools=$(brew --prefix or-tools 2>/dev/null || true)
+
+    if [[ -z "$_bison" || ! -d "$_bison/bin" ]]; then
+        echo "[ERROR] bison not found or broken. Run: brew install bison" >&2
+        exit 1
+    fi
+    if [[ -z "$_flex" || ! -d "$_flex/bin" ]]; then
+        echo "[ERROR] flex not found or broken. Run: brew install flex" >&2
+        exit 1
+    fi
+    if [[ -z "$_ortools" || ! -d "$_ortools/lib" || ! -d "$_ortools/include" ]]; then
+        echo "[ERROR] or-tools not found or broken. Run: brew install or-tools" >&2
+        exit 1
+    fi
+
+    export PATH="$_bison/bin:$_flex/bin:$PATH"
+    export CMAKE_PREFIX_PATH="${_ortools}"
+
+    _qt5=$(brew --prefix qt@5 2>/dev/null || true)
+    if [[ -z "$_qt5" || ! -d "$_qt5/lib" ]]; then
+        echo "[ERROR] qt@5 not found or broken. Run: brew install qt@5" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DQt5_DIR=$_qt5/lib/cmake/Qt5"
+
+    _tcl8=$(brew --prefix tcl-tk@8 2>/dev/null || true)     
+    if [[ -z "$_tcl8" || ! -d "$_tcl8/lib" || ! -d "$_tcl8/include" ]]; then
+        echo "[ERROR] tcl-tk@8 not found or broken. Run: brew install tcl-tk@8" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DTCL_LIBRARY=$_tcl8/lib/libtcl8.6.dylib"
+
+    cmakeOptions+=" -DTCL_INCLUDE_PATH=$_tcl8/include"
+    cmakeOptions+=" -DFLEX_INCLUDE_DIR=$_flex/include"
+
+    cmakeOptions+=" -DCMAKE_CXX_FLAGS=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED"
+
+    _icu="$(brew --prefix icu4c 2>/dev/null || true)"
+    if [[ -z "$_icu" || ! -d "$_icu/lib" ]]; then
+        echo "[ERROR] icu4c not found or broken. Run: brew install icu4c" >&2
+        exit 1
+    fi
+
+    export LDFLAGS="-L$_icu/lib"
+    export CPPFLAGS="-I$_icu/include" 
+    export PKG_CONFIG_PATH="$_icu/lib/pkgconfig"
+
+    _extra_lib_paths=("$(brew --prefix)/lib")
+
+    _joined_paths="$(IFS=:; echo "${_extra_lib_paths[*]}")"
+
+    export LIBRARY_PATH="${_joined_paths}${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    echo "[INFO] General LIBRARY_PATH=$LIBRARY_PATH"
 fi
 
 # ==============================================================================
