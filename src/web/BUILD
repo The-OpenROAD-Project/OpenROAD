@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026, The OpenROAD Authors
 
-load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -11,8 +10,6 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = ["layering_check"],
 )
-
-npm_link_all_packages(name = "node_modules")
 
 py_binary(
     name = "embed_report_assets",
