@@ -4,7 +4,9 @@
 [INFO ODB-0130]     Created 65 pins.
 [INFO ODB-0131]     Created 1768 components and 3775 component-terminals.
 [INFO ODB-0133]     Created 130 nets and 195 connections.
-[INFO DPL-0005] Max displacement: +/- 1473 sites horizontally, +/- 35 rows vertically.
+[INFO DPL-0006] Core area: 396162.58 um^2, Instances area: 504.60 um^2, Utilization: 0.1%
+[INFO DPL-0005] Diamond search max displacement: +/- 1473 sites horizontally, +/- 35 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                      65

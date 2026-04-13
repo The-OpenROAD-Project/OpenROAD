@@ -58,7 +58,7 @@ std::string Opendp::printBgBox(
                      queryBox.max_corner().y());
 }
 
-void Opendp::detailedPlacement()
+void Opendp::diamondDPL()
 {
   if (debug_observer_) {
     debug_observer_->startPlacement(block_);
@@ -392,7 +392,10 @@ void Opendp::place()
 
     bool diamond_move = diamondMove(cell);
     bool rip_up_move = false;
+
     if (!diamond_move) {
+      // TODO: this is non-deteministic due to std::set<Node*>,
+      // and experiments show no legalization for failed diamond searches.
       rip_up_move = ripUpAndReplace(cell);
       if (!rip_up_move) {
         failed_rip_up++;
@@ -658,7 +661,7 @@ bool Opendp::diamondMove(Node* cell, const GridPt& grid_pt)
   if (pixel_pt.pixel) {
     placeCell(cell, pixel_pt.x, pixel_pt.y);
     if (debug_observer_) {
-      debug_observer_->placeInstance(cell->getDbInst());
+      debug_observer_->drawSelected(cell->getDbInst(), false);
     }
     return true;
   }
