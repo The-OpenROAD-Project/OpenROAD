@@ -16,7 +16,6 @@ cc_library(
         "-use_header_modules",
     ],
     deps = [
-        "//src/odb:headers",
         "//src/odb/src/db",
         "//src/utl",
         "@boost.polygon",

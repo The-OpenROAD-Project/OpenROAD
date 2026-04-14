@@ -14,99 +14,16 @@ package(
     features = ["layering_check"],
 )
 
-# Module-specific public headers whose implementation lives in a single
-# src/<module>/ subdirectory. These are exposed to the matching subpackage
-# via exports_files so each subdir cc_library can republish its own public
-# header as hdrs, making //src/odb:<module> the canonical owner of
-# odb/<module>.h. Kept exported (not moved) so the CMake build, which
-# expects all public headers under src/odb/include/odb/, continues to work.
+# Public headers live physically in src/odb/include/odb/ (preserving the
+# CMake layout). They are exported so each per-subdir Bazel package can
+# reference the headers it owns via cross-package labels.
 exports_files(
-    ["include/odb/3dblox.h"],
-    visibility = ["//src/odb/src/3dblox:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/cdl.h"],
-    visibility = ["//src/odb/src/cdl:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/defin.h"],
-    visibility = ["//src/odb/src/defin:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/defout.h"],
-    visibility = ["//src/odb/src/defout:__pkg__"],
-)
-
-exports_files(
-    [
-        "include/odb/gdsUtil.h",
-        "include/odb/gdsin.h",
-    ],
-    visibility = ["//src/odb/src/gdsin:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/gdsout.h"],
-    visibility = ["//src/odb/src/gdsout:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/lefin.h"],
-    visibility = ["//src/odb/src/lefin:__pkg__"],
-)
-
-exports_files(
-    ["include/odb/lefout.h"],
-    visibility = ["//src/odb/src/lefout:__pkg__"],
-)
-
-exports_files(
-    [
-        "include/odb/poly_decomp.h",
-        "include/odb/util.h",
-    ],
-    visibility = ["//src/odb/src/db:__pkg__"],
-)
-
-cc_library(
-    name = "headers",
-    hdrs = glob(
+    glob(
         include = ["include/odb/*.h"],
-        exclude = [
-            # Not part of any library target; built into //:ord separately.
-            "include/odb/MakeOdb.h",
-            # Module-specific headers owned by their subdir library.
-            "include/odb/3dblox.h",
-            "include/odb/cdl.h",
-            "include/odb/defin.h",
-            "include/odb/defout.h",
-            "include/odb/gdsUtil.h",
-            "include/odb/gdsin.h",
-            "include/odb/gdsout.h",
-            "include/odb/lefin.h",
-            "include/odb/lefout.h",
-            "include/odb/poly_decomp.h",
-            "include/odb/util.h",
-        ],
+        exclude = ["include/odb/MakeOdb.h"],
     ) + [
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
-    ],
-    features = [
-        "-use_header_modules",
-    ],
-    includes = ["include"],
-    deps = [
-        "//src/utl",
-        "@abseil-cpp//absl/base:core_headers",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.container",
-        "@boost.geometry",
-        "@boost.multi_array",
-        "@boost.polygon",
     ],
 )
 
@@ -136,7 +53,6 @@ cc_library(
     # The umbrella target republishes the public odb/*.h headers so that
     # downstream targets that depend on //src/odb (and use
     # layering_check) continue to see odb/*.h through a direct dep.
-    # The per-subdir libraries depend on //src/odb:headers directly.
     hdrs = glob(
         include = ["include/odb/*.h"],
         exclude = ["include/odb/MakeOdb.h"],
