@@ -117,7 +117,7 @@ register_toolchains("@llvm_toolchain//:all")
 The following are `dev_dependency` in OpenROAD and will not be forced
 on downstream projects via MVS:
 
-- `rules_pkg` — only needed for `//packaging:install`
+- rules_pkg — only needed for //:install
 - `rules_verilator`, `verilator` — only needed for test/orfs simulation
 - `toolchains_llvm` extension and toolchain registration
 
