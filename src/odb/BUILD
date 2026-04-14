@@ -5,8 +5,6 @@ load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
-load("//bazel:tcl_encode_or.bzl", "tcl_encode")
-load("//bazel:tcl_wrap_cc.bzl", "tcl_wrap_cc")
 load("//test:regression.bzl", "messages_txt")
 
 package(
@@ -20,36 +18,25 @@ package(
 exports_files(
     glob(
         include = ["include/odb/*.h"],
-        exclude = ["include/odb/MakeOdb.h"],
     ) + [
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
     ],
 )
 
+# Filegroup for SWIG rules that need the full set of public headers as
+# input (they cannot glob across package boundaries).
 filegroup(
-    name = "swig_imports",
-    srcs = glob([
-        "src/swig/tcl/*.i",
-        "src/swig/common/*.i",
-    ]),
+    name = "odb_public_headers",
+    srcs = glob(["include/odb/*.h"]),
 )
 
-filegroup(
-    name = "swig_imports_py",
-    srcs = glob([
-        "src/swig/python/*.i",
-        "src/swig/common/*.i",
-    ]),
-)
-
-# Umbrella target that aggregates every per-subdirectory odb library and the
-# shared SWIG glue (swig_common). Downstream BUILD files depend on
-# //src/odb:odb to keep working unchanged after the split of the old
-# monolith into per-subdirectory targets.
+# Umbrella target that aggregates every per-subdirectory odb library.
+# Downstream BUILD files depend on //src/odb:odb to keep working
+# unchanged after the split of the old monolith into per-subdirectory
+# targets.
 cc_library(
     name = "odb",
-    srcs = ["src/swig/common/swig_common.cpp"],
     # The umbrella target republishes the public odb/*.h headers so that
     # downstream targets that depend on //src/odb (and use
     # layering_check) continue to see odb/*.h through a direct dep.
@@ -59,7 +46,6 @@ cc_library(
     ) + [
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
-        "src/swig/common/swig_common.h",
     ],
     features = [
         "-use_header_modules",
@@ -79,6 +65,7 @@ cc_library(
         "//src/odb/src/lef:lefzlib",
         "//src/odb/src/lefin",
         "//src/odb/src/lefout",
+        "//src/odb/src/swig:swig_common",
         "//src/utl",
         "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/synchronization",
@@ -89,8 +76,35 @@ cc_library(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
+# ---- SWIG / Python bindings ----
+#
+# The Python targets (swig-py, _odb.so, odb_py) stay in this package
+# because the generated odb.py import path encodes the Bazel package
+# path (src.odb.odb); moving them would break every downstream Python
+# consumer. The TCL SWIG, tcl_encode, swig_common, and ui targets
+# live in //src/odb/src/swig.
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = glob([
+        "include/odb/*.h",
+    ]) + [
+        "//src/odb/src/swig:swig_imports_py",
+        "//:src/Design.i",
+        "//:src/Exception.i",
+    ],
+    module = "odb",
+    root_swig_src = "//src/odb/src/swig:common/odb.i",
+    swig_includes = [
+        "include",
+        "src/swig/common",
+        "src/swig/python",
+    ],
+    swig_options = [
+        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
+    ],
+)
+
 cc_binary(
     name = "_odb.so",
     srcs = [":swig-py"],
@@ -99,133 +113,49 @@ cc_binary(
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
-        ":odb",  # Depends on the core odb C++ library
+        ":odb",
+        "//src/odb/src/swig:swig_common",
         "@rules_python//python/cc:current_py_cc_headers",
     ],
 )
 
-# This packages the SWIG-generated Python wrapper (odb.py) and the
-# compiled C++ extension (_odb.so) together.
 py_library(
     name = "odb_py",
-    srcs = [":swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
+    srcs = [":swig-py"],
     data = [":_odb.so"],
-    # This allows imports relative to the workspace root.
     imports = ["."],
     visibility = ["//visibility:public"],
 )
 
-cc_library(
-    name = "ui",
-    srcs = [
-        "include/odb/geom.h",
-        "src/swig/common/swig_common.h",
-        "src/swig/tcl/MakeOdb.cpp",
-        ":swig",
-        ":tcl",
-    ],
-    hdrs = ["include/odb/MakeOdb.h"],
-    copts = [
-        "-Wno-missing-braces",  # from TCL swigging
-    ],
-    features = [
-        "-use_header_modules",
-    ],
-    includes = [
-        "include",
-        "src/swig/common",
-    ],
-    deps = [
-        ":odb",
-        "//:ord",
-        "//src/utl",
-        "@abseil-cpp//absl/synchronization",
-        "@boost.container",
-        "@boost.geometry",
-        "@boost.multi_array",
-        "@boost.polygon",
-        "@boost.stacktrace",
-        "@tcl_lang//:tcl",
-    ],
-)
+# ---- Aliases for targets that moved to //src/odb/src/swig ----
 
-tcl_wrap_cc(
+alias(
     name = "swig",
-    srcs = glob([
-        "include/odb/*.h",
-    ]) + [
-        ":swig_imports",
-        "//:src/Design.i",
-        "//:src/Exception.i",
-    ],
-    module = "odbtcl",
-    namespace_prefix = "odb",
-    root_swig_src = "src/swig/common/odb.i",
-    swig_includes = [
-        "include",
-        "src/swig/common",
-        "src/swig/tcl",
-    ],
-    swig_options = [
-        # These values are derived from the CMakeList.txt and represent the "rules" this swig file
-        # breaks. Swig refuses to compile our swig files unless we acknowledge we are ignoring the
-        # following warnings. They can be derived by attemtpting to compile without them and fixing
-        # the warnings one by one.
-        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
-    ],
+    actual = "//src/odb/src/swig",
 )
 
-tcl_encode(
+alias(
+    name = "ui",
+    actual = "//src/odb/src/swig:ui",
+)
+
+alias(
     name = "tcl",
-    srcs = [
-        "src/swig/tcl/odb.tcl",
-    ],
-    char_array_name = "odbtcl_tcl_inits",
-    namespace = "odb",
-)
-
-python_wrap_cc(
-    name = "swig-py",
-    srcs = glob([
-        "include/odb/*.h",
-    ]) + [
-        ":swig_imports_py",
-        "//:src/Design.i",
-        "//:src/Exception.i",
-    ],
-    module = "odb",
-    root_swig_src = "src/swig/common/odb.i",
-    swig_includes = [
-        "include",
-        "src/swig/common",
-        "src/swig/python",
-    ],
-    swig_options = [
-        # These values are derived from the CMakeList.txt and represent the "rules" this swig file
-        # breaks. Swig refuses to compile our swig files unless we acknowledge we are ignoring the
-        # following warnings. They can be derived by attemtpting to compile without them and fixing
-        # the warnings one by one.
-        "-w509,503,501,472,467,402,401,317,325,378,383,389,365,362,314,258,240,203,201",
-    ],
+    actual = "//src/odb/src/swig:tcl",
 )
 
 filegroup(
     name = "doc_files",
     srcs = [
         "README.md",
-        "src/swig/tcl/odb.tcl",
+        "//src/odb/src/swig:tcl/odb.tcl",
     ],
     visibility = ["//src/odb/test:__pkg__"],
 )
 
 messages_txt(
     src_patterns = [
-        "src/**/*.cc",
-        "src/**/*.cpp",
-        "src/**/*.h",
-        "src/**/*.hh",
-        "src/**/*.tcl",
+        "include/odb/*.h",
     ],
     visibility = ["//src/odb/test:__pkg__"],
 )
