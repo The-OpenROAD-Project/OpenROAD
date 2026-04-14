@@ -1599,9 +1599,11 @@ GCell* NesterovBaseCommon::getGCellByIndex(size_t idx)
 //
 void NesterovBaseCommon::fixPointers()
 {
-  nbc_gcells_.clear();
+  // Reconstruct pointers
+  // Reconstruct cell pointers
   gCellMap_.clear();
   db_inst_to_nbc_index_map_.clear();
+  nbc_gcells_.clear();
   nbc_gcells_.reserve(gCellStor_.size());
   for (auto& gCell : gCellStor_) {
     if (!gCell.isInstance()) {
@@ -1614,10 +1616,11 @@ void NesterovBaseCommon::fixPointers()
     }
   }
 
-  gPins_.clear();
+  // Reconstruct pin pointers
   gPinMap_.clear();
   db_iterm_to_index_map_.clear();
   db_bterm_to_index_map_.clear();
+  gPins_.clear();
   gPins_.reserve(gPinStor_.size());
   for (size_t i = 0; i < gPinStor_.size(); ++i) {
     GPin& gPin = gPinStor_[i];
@@ -1632,9 +1635,10 @@ void NesterovBaseCommon::fixPointers()
     }
   }
 
-  gNets_.clear();
+  // Reconstruct net pointers
   gNetMap_.clear();
   db_net_to_index_map_.clear();
+  gNets_.clear();
   gNets_.reserve(gNetStor_.size());
   for (size_t i = 0; i < gNetStor_.size(); ++i) {
     GNet& gNet = gNetStor_[i];
@@ -1643,11 +1647,12 @@ void NesterovBaseCommon::fixPointers()
     db_net_to_index_map_[gNet.getPbNet()->getDbNet()] = i;
   }
 
+  // Update pointers inside the objects
+  // Update cell pins
   for (auto& gCell : gCellStor_) {
     if (gCell.isFiller()) {
       continue;
     }
-
     gCell.clearGPins();
     for (Instance* inst : gCell.insts()) {
       for (odb::dbITerm* iterm : inst->dbInst()->getITerms()) {
@@ -1669,59 +1674,82 @@ void NesterovBaseCommon::fixPointers()
       }
     }
   }
-
+  // Update pin nets and cells
   for (auto& gPin : gPinStor_) {
-    auto iterm = gPin.getPbPin()->getDbITerm();
-    if (iterm != nullptr) {
-      if (isValidSigType(iterm->getSigType())) {
-        auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
-        auto net_it = db_net_to_index_map_.find(iterm->getNet());
-
-        if (inst_it != db_inst_to_nbc_index_map_.end()) {
-          gPin.setGCell(&gCellStor_[inst_it->second]);
-        }
-
-        if (net_it != db_net_to_index_map_.end()) {
-          gPin.setGNet(&gNetStor_[net_it->second]);
-        } else {
-          debugPrint(
-              log_,
-              GPL,
-              "callbacks",
-              1,
-              "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
-              iterm->getNet()->getName(),
-              iterm->getName());
-        }
-      } else {
-        debugPrint(log_,
-                   GPL,
-                   "callbacks",
-                   1,
-                   "warning: invalid type itermType: {}",
-                   iterm->getSigType().getString());
+    auto pin = gPin.getPbPin();
+    odb::dbSigType signal_type;
+    odb::dbITerm* iterm = nullptr;
+    odb::dbBTerm* bterm = nullptr;
+    if (pin->isITerm()) {
+      iterm = pin->getDbITerm();
+      signal_type = iterm->getSigType();
+    } else if (pin->isBTerm()) {
+      bterm = pin->getDbBTerm();
+      signal_type = bterm->getSigType();
+    } else {
+      debugPrint(log_, GPL, "callbacks", 1, "gPin neither bterm or iterm!");
+      continue;
+    }
+    if (!isValidSigType(signal_type)) {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "warning: invalid type itermType: {}",
+                 iterm->getSigType().getString());
+      continue;
+    }
+    // set cell
+    if (pin->isITerm()) {
+      auto inst_it = db_inst_to_nbc_index_map_.find(iterm->getInst());
+      if (inst_it != db_inst_to_nbc_index_map_.end()) {
+        gPin.setGCell(&gCellStor_[inst_it->second]);
       }
+    }
+    // set net
+    auto net_it
+        = db_net_to_index_map_.find(iterm ? iterm->getNet() : bterm->getNet());
+    if (net_it != db_net_to_index_map_.end()) {
+      gPin.setGNet(&gNetStor_[net_it->second]);
+    } else {
+      debugPrint(log_,
+                 GPL,
+                 "callbacks",
+                 1,
+                 "warning: Net not found in db_net_map_ for ITerm: {} -> {}",
+                 iterm->getNet()->getName(),
+                 iterm->getName());
     }
   }
 
+  // Update net pins
   for (auto& gNet : gNetStor_) {
     gNet.clearGPins();
+    // iterm
     for (odb::dbITerm* iterm : gNet.getPbNet()->getDbNet()->getITerms()) {
       if (isValidSigType(iterm->getSigType())) {
         auto it = db_iterm_to_index_map_.find(iterm);
         if (it != db_iterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
+        } else {
+          debugPrint(log_,
+                     GPL,
+                     "callbacks",
+                     1,
+                     "warning: gpin not found for ITerm: {}",
+                     iterm->getName());
         }
       }
     }
-
+    // bterm
     for (odb::dbBTerm* bterm : gNet.getPbNet()->getDbNet()->getBTerms()) {
       if (isValidSigType(bterm->getSigType())) {
         auto it = db_bterm_to_index_map_.find(bterm);
         if (it != db_bterm_to_index_map_.end()) {
           size_t gpin_index = it->second;
           gNet.addGPin(&gPinStor_[gpin_index]);
+          // Usually, cells shouldn't have bterms (is this necessary?)
           if (gPinStor_[gpin_index].getGCell()) {
             gPinStor_[gpin_index].getGCell()->addGPin(&gPinStor_[gpin_index]);
           }
