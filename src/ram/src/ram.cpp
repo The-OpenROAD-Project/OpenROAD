@@ -458,7 +458,7 @@ std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
         break;
       }
     }
-    pin_map[{PortRoleType::TriEnable, 0}] = tri_enable_name;
+    pin_map[{PortRoleType::TriEnable, 0}] = std::move(tri_enable_name);
   }
 
   // validate power/ground after classification is complete
