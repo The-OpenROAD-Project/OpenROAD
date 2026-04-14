@@ -17,6 +17,7 @@
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/db.h"
+#include "odb/dbChipletCallBackObj.h"
 // User Code Begin Includes
 #include "utl/Logger.h"
 // User Code End Includes
@@ -85,6 +86,30 @@ std::string dbChipNet::getName() const
   return obj->name_;
 }
 
+void _dbChipNet::notifyCreate()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipNetCreate((dbChipNet*) this);
+    }
+  }
+}
+
+void _dbChipNet::notifyDestroy()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipNetDestroy((dbChipNet*) this);
+    }
+  }
+}
+
 // User Code Begin dbChipNetPublicMethods
 dbChip* dbChipNet::getChip() const
 {
@@ -143,6 +168,15 @@ void dbChipNet::addBumpInst(dbChipBumpInst* bump_inst,
 
   obj->bump_insts_paths_.emplace_back(std::move(path_ids),
                                       bump_inst->getImpl()->getOID());
+
+  _dbDatabase* db = (_dbDatabase*) obj->getOwner();
+  // Copy callback pointers to protect against iterator invalidation
+  // if a callback calls removeOwner() mid-loop.
+  std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                         db->chiplet_callbacks_.end());
+  for (auto* cb : cbs) {
+    cb->inDbChipNetAddBumpInst((dbChipNet*) this, bump_inst, path);
+  }
 }
 
 dbChipNet* dbChipNet::create(dbChip* chip, const std::string& name)
@@ -158,6 +192,7 @@ dbChipNet* dbChipNet::create(dbChip* chip, const std::string& name)
   chip_net->chip_net_next_ = _chip->nets_;
   _chip->nets_ = chip_net->getOID();
 
+  chip_net->notifyCreate();
   return (dbChipNet*) chip_net;
 }
 
@@ -183,6 +218,7 @@ void dbChipNet::destroy(dbChipNet* net)
     }
   }
 
+  _net->notifyDestroy();
   // Destroy the chip net object
   db->chip_net_tbl_->destroy(_net);
 }

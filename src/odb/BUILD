@@ -80,6 +80,7 @@ cc_library(
         "@boost.bind",
         "@boost.config",
         "@boost.container",
+        "@boost.container_hash",
         "@boost.fusion",
         "@boost.geometry",
         "@boost.integer",

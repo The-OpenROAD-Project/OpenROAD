@@ -55,6 +55,10 @@ namespace odb {
     dbObjectTable* getObjectTable(dbObjectType type);
     {% endif %}
     void collectMemInfo(MemInfo& info);
+    {% if klass.lifecycle_notify %}
+    void notifyCreate();
+    void notifyDestroy();
+    {% endif %}
     // User Code Begin Methods
     // User Code End Methods
 

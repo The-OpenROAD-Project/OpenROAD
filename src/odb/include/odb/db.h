@@ -7393,6 +7393,10 @@ class dbChipInst : public dbObject
  public:
   std::string getName() const;
 
+  void setOrigin(Point3D origin);
+
+  void setOrient(dbOrientType3D orient);
+
   dbOrientType3D getOrient() const;
 
   dbChip* getMasterChip() const;
@@ -7402,8 +7406,6 @@ class dbChipInst : public dbObject
   // User Code Begin dbChipInst
 
   dbTransform getTransform() const;
-
-  void setOrient(dbOrientType3D orient);
 
   void setLoc(const Point3D& loc);
 

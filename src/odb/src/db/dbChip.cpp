@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dbBlock.h"
 #include "dbBlockItr.h"
@@ -30,6 +31,7 @@
 #include "dbTech.h"
 #include "odb/db.h"
 #include "odb/dbChipCallBackObj.h"
+#include "odb/dbChipletCallBackObj.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
@@ -399,7 +401,26 @@ void dbChip::setOffset(Point offset)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->offset_ = offset;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 Point dbChip::getOffset() const
@@ -412,7 +433,26 @@ void dbChip::setWidth(int width)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->width_ = width;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getWidth() const
@@ -425,7 +465,26 @@ void dbChip::setHeight(int height)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->height_ = height;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getHeight() const
@@ -438,7 +497,26 @@ void dbChip::setThickness(int thickness)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->thickness_ = thickness;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getThickness() const
@@ -464,7 +542,26 @@ void dbChip::setSealRingEast(int seal_ring_east)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->seal_ring_east_ = seal_ring_east;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getSealRingEast() const
@@ -477,7 +574,26 @@ void dbChip::setSealRingWest(int seal_ring_west)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->seal_ring_west_ = seal_ring_west;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getSealRingWest() const
@@ -490,7 +606,26 @@ void dbChip::setSealRingNorth(int seal_ring_north)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->seal_ring_north_ = seal_ring_north;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getSealRingNorth() const
@@ -503,7 +638,26 @@ void dbChip::setSealRingSouth(int seal_ring_south)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->seal_ring_south_ = seal_ring_south;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getSealRingSouth() const
@@ -516,7 +670,26 @@ void dbChip::setScribeLineEast(int scribe_line_east)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->scribe_line_east_ = scribe_line_east;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getScribeLineEast() const
@@ -529,7 +702,26 @@ void dbChip::setScribeLineWest(int scribe_line_west)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->scribe_line_west_ = scribe_line_west;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getScribeLineWest() const
@@ -542,7 +734,26 @@ void dbChip::setScribeLineNorth(int scribe_line_north)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->scribe_line_north_ = scribe_line_north;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getScribeLineNorth() const
@@ -555,7 +766,26 @@ void dbChip::setScribeLineSouth(int scribe_line_south)
 {
   _dbChip* obj = (_dbChip*) this;
 
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPreModify((dbChip*) this);
+    }
+  }
+
   obj->scribe_line_south_ = scribe_line_south;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipPostModify((dbChip*) this);
+    }
+  }
 }
 
 int dbChip::getScribeLineSouth() const

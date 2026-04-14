@@ -1,6 +1,7 @@
 {
     "name": "dbChipNet",
     "type": "dbObject",
+    "lifecycle_notify": true,
     "fields": [
         {
             "name": "name_",

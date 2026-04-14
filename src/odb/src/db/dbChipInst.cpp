@@ -6,11 +6,13 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dbCore.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
 #include "odb/db.h"
+#include "odb/dbChipletCallBackObj.h"
 // User Code Begin Includes
 #include <cstdint>
 
@@ -112,6 +114,58 @@ std::string dbChipInst::getName() const
   return obj->name_;
 }
 
+void dbChipInst::setOrigin(Point3D origin)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipInstPreModify((dbChipInst*) this);
+    }
+  }
+
+  obj->origin_ = origin;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipInstPostModify((dbChipInst*) this);
+    }
+  }
+}
+
+void dbChipInst::setOrient(dbOrientType3D orient)
+{
+  _dbChipInst* obj = (_dbChipInst*) this;
+
+  _dbDatabase* _notifyDb = obj->getDatabase();
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipInstPreModify((dbChipInst*) this);
+    }
+  }
+
+  obj->orient_ = orient;
+
+  if (_notifyDb != nullptr) {
+    std::vector<dbChipletCallBackObj*> _cbs(
+        _notifyDb->chiplet_callbacks_.begin(),
+        _notifyDb->chiplet_callbacks_.end());
+    for (auto* _notifyCb : _cbs) {
+      _notifyCb->inDbChipInstPostModify((dbChipInst*) this);
+    }
+  }
+}
+
 dbOrientType3D dbChipInst::getOrient() const
 {
   _dbChipInst* obj = (_dbChipInst*) this;
@@ -138,6 +192,30 @@ dbChip* dbChipInst::getParentChip() const
   return (dbChip*) par->chip_tbl_->getPtr(obj->parent_chip_);
 }
 
+void _dbChipInst::notifyCreate()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipInstCreate((dbChipInst*) this);
+    }
+  }
+}
+
+void _dbChipInst::notifyDestroy()
+{
+  _dbDatabase* db = getDatabase();
+  if (db != nullptr) {
+    std::vector<dbChipletCallBackObj*> cbs(db->chiplet_callbacks_.begin(),
+                                           db->chiplet_callbacks_.end());
+    for (auto* cb : cbs) {
+      cb->inDbChipInstDestroy((dbChipInst*) this);
+    }
+  }
+}
+
 // User Code Begin dbChipInstPublicMethods
 
 dbTransform dbChipInst::getTransform() const
@@ -146,25 +224,16 @@ dbTransform dbChipInst::getTransform() const
   return dbTransform(obj->orient_, obj->origin_);
 }
 
-void dbChipInst::setOrient(dbOrientType3D orient)
-{
-  _dbChipInst* obj = (_dbChipInst*) this;
-
-  obj->orient_ = orient;
-}
-
 void dbChipInst::setLoc(const Point3D& loc)
 {
-  _dbChipInst* obj = (_dbChipInst*) this;
   dbChip* chip = getMasterChip();
   Cuboid cuboid = chip->getCuboid();
   dbTransform t(getOrient());
   t.apply(cuboid);
-  const int dx = loc.x() - cuboid.lll().x();
-  const int dy = loc.y() - cuboid.lll().y();
-  const int dz = loc.z() - cuboid.lll().z();
-  cuboid.moveDelta(dx, dy, dz);
-  obj->origin_ = Point3D(dx, dy, dz);
+  // setOrigin() triggers chiplet callbacks via generated notify code
+  setOrigin(Point3D(loc.x() - cuboid.lll().x(),
+                    loc.y() - cuboid.lll().y(),
+                    loc.z() - cuboid.lll().z()));
 }
 
 Point3D dbChipInst::getLoc() const
@@ -278,6 +347,7 @@ dbChipInst* dbChipInst::create(dbChip* parent_chip,
   }
   // reverse the chip_region_insts_ list
   ((dbChipInst*) chipinst)->getRegions().reverse();
+  chipinst->notifyCreate();
   return (dbChipInst*) chipinst;
 }
 
@@ -326,6 +396,8 @@ void dbChipInst::destroy(dbChipInst* chipInst)
       prev_id = prev->chipinst_next_;
     }
   }
+  // Notify before destroy
+  inst->notifyDestroy();
   // Destroy the chip instance
   db->chip_inst_tbl_->destroy(inst);
 }

@@ -77,6 +77,8 @@ void Chiplet3DWidget::buildGeometries()
   if (!model) {
     return;
   }
+  // Hold a shared read lock for the duration of geometry building
+  odb::UnfoldedModel::ReadGuard guard(model);
   const odb::dbTransform center_transform
       = odb::dbTransform(odb::Point3D(-global_cuboid.xCenter(),
                                       -global_cuboid.yCenter(),

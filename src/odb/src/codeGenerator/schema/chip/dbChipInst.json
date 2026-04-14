@@ -1,6 +1,7 @@
 {
   "name": "dbChipInst",
   "type": "dbObject",
+  "lifecycle_notify": true,
   "fields": [
     {
       "name": "name_",
@@ -10,12 +11,12 @@
     {
       "name": "origin_",
       "type": "Point3D",
-      "flags":["cmpgt", "private"]
+      "flags":["cmpgt", "no-get", "notify"]
     },
     {
       "name": "orient_",
       "type": "dbOrientType3D",
-      "flags": ["no-set"]
+      "flags": ["notify"]
     },
     {
       "name": "master_chip_",

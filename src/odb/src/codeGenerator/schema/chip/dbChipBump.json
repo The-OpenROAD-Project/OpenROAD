@@ -1,6 +1,7 @@
 {
   "name": "dbChipBump",
   "type": "dbObject",
+  "lifecycle_notify": true,
   "fields": [
     { "name": "inst_", "type":"dbId<_dbInst>", "flags": ["private"] },
     { "name": "chip_", "type":"dbId<_dbChip>", "flags": ["private"] },

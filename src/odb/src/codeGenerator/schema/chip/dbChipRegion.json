@@ -1,6 +1,7 @@
 {
   "name": "dbChipRegion",
   "type": "dbObject",
+  "lifecycle_notify": true,
   "enums": [
     {
       "name": "Side",
@@ -13,7 +14,7 @@
     { "name": "name_", "type": "std::string", "flags": ["no-set"]},
     { "name": "side_", "type": "uint8_t", "flags": ["private"] , "default": "static_cast<uint8_t>(dbChipRegion::Side::FRONT)"},
     { "name": "layer_", "type": "dbId<_dbTechLayer>", "flags": ["private"] },
-    { "name": "box_", "type": "Rect", "flags": ["set-const-ref"]},
+    { "name": "box_", "type": "Rect", "flags": ["set-const-ref", "notify"]},
     { "name": "z_min_", "type": "int", "flags": ["private"] , "default": "0"},
     { "name": "z_max_", "type": "int", "flags": ["private"] , "default": "0"}
   ],

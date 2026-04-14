@@ -62,8 +62,10 @@ add_library(db
     dbJournal.cpp 
     dbJournalLog.cpp 
     dbBlockCallBackObj.cpp 
-    dbChipCallBackObj.cpp 
-    dbRegion.cpp 
+    dbChipCallBackObj.cpp
+    dbChipletCallBackObj.cpp
+    unfoldedModelUpdater.cpp
+    dbRegion.cpp
     dbRegionInstItr.cpp 
     dbExtControl.cpp 
     dbNullIterator.cpp 
