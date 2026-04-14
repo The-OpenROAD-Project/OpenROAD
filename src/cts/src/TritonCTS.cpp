@@ -365,8 +365,11 @@ void TritonCTS::countSinksPostDbWrite(
     const std::unordered_set<odb::dbInst*>& dummies,
     std::unordered_set<odb::dbNet*>& visitedNets)
 {
-  if(net->getSigType() != odb::dbSigType::CLOCK) {
-    logger_->error(CTS, 369, "Count sinks recursion leaked into data net {}", net->getName());
+  if (net->getSigType() != odb::dbSigType::CLOCK) {
+    logger_->error(CTS,
+                   369,
+                   "Count sinks recursion leaked into data net {}",
+                   net->getName());
     return;
   }
   if (!visitedNets.insert(net).second) {
@@ -415,7 +418,7 @@ void TritonCTS::countSinksPostDbWrite(
 
       // Macro tree top net also drives the register tree top buffer,
       // avoid the recursion going into the register tree.
-      if(builder->getTreeType() != TreeType::RegisterTree) {
+      if (builder->getTreeType() != TreeType::RegisterTree) {
         if (!depth && builder->getTopBufferName() != inst->getName()) {
           terminate = true;
           trueSink = false;
