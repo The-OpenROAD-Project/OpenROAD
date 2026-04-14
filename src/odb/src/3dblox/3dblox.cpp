@@ -684,7 +684,7 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   }
 
   if (!chip_inst.external.def_file.empty()) {
-    if (insts_with_def_.count(chip) > 0) {
+    if (insts_with_def_.contains(chip)) {
       logger_->error(utl::ODB,
                      546,
                      "3DBX Parser Error: There can't be 2 instances of the "
