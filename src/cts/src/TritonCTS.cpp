@@ -370,7 +370,6 @@ void TritonCTS::countSinksPostDbWrite(
                    369,
                    "Count sinks recursion leaked into data net {}",
                    net->getName());
-    return;
   }
   if (!visitedNets.insert(net).second) {
     return;  // cycle detected: this net was already visited on this path
