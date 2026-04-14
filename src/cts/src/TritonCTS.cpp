@@ -362,8 +362,16 @@ void TritonCTS::countSinksPostDbWrite(
     int depth,
     bool fullTree,
     const std::unordered_set<odb::dbITerm*>& sinks,
-    const std::unordered_set<odb::dbInst*>& dummies)
+    const std::unordered_set<odb::dbInst*>& dummies,
+    std::unordered_set<odb::dbNet*>& visitedNets)
 {
+  if(net->getSigType() != odb::dbSigType::CLOCK) {
+    logger_->error(CTS, 369, "Count sinks recursion leaked into data net {}", net->getName());
+    return;
+  }
+  if (!visitedNets.insert(net).second) {
+    return;  // cycle detected: this net was already visited on this path
+  }
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   int driverX = 0;
   int driverY = 0;
@@ -403,8 +411,18 @@ void TritonCTS::countSinksPostDbWrite(
       bool terminate = fullTree
                            ? (sinks.find(iterm) != sinks.end())
                            : !builder->isAnyTreeBuffer(getClockFromInst(inst));
-      odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
       bool trueSink = true;
+
+      // Macro tree top net also drives the register tree top buffer,
+      // avoid the recursion going into the register tree.
+      if(builder->getTreeType() != TreeType::RegisterTree) {
+        if (!depth && builder->getTopBufferName() != inst->getName()) {
+          terminate = true;
+          trueSink = false;
+        }
+      }
+
+      odb::dbITerm* outputPin = iterm->getInst()->getFirstOutput();
       if (outputPin && outputPin->getNet() == net) {
         // Skip feedback loop.  When input pin and output pin are
         // connected to the same net this can lead to infinite recursion. For
@@ -447,7 +465,8 @@ void TritonCTS::countSinksPostDbWrite(
                                 depth + 1,
                                 fullTree,
                                 sinks,
-                                dummies);
+                                dummies,
+                                visitedNets);
         } else {
           std::string cellType = "Complex cell";
           odb::dbInst* inst = iterm->getInst();
@@ -529,6 +548,7 @@ void TritonCTS::writeDataToDb()
           CTS, 124, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 125, " Sinks {}", sinks.size());
     } else {
+      std::unordered_set<odb::dbNet*> visitedNets;
       countSinksPostDbWrite(builder.get(),
                             topClockNet,
                             sinkCount,
@@ -540,7 +560,8 @@ void TritonCTS::writeDataToDb()
                             0,
                             reportFullTree,
                             sinks,
-                            clkDummies);
+                            clkDummies,
+                            visitedNets);
       logger_->info(CTS, 98, "Clock net \"{}\"", builder->getClock().getName());
       logger_->info(CTS, 99, " Sinks {}", sinkCount);
       logger_->info(CTS, 100, " Leaf buffers {}", leafSinks);
