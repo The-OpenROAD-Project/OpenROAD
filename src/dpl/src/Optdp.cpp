@@ -144,7 +144,7 @@ void Opendp::improvePlacement(const int seed,
             : round((hpwlAfter - hpwlBefore) / (double) hpwlBefore * 100);
 
   const int total_attempts = mgr.getTotalAttempts();
-  logger_->report("Placement Analysis");
+  logger_->report("Place Optimization Analysis");
   logger_->report("---------------------------------");
   logger_->report("total attempts       {:10d}", total_attempts);
   logger_->report("relocated cells      {:10d}", moved);

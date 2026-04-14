@@ -257,7 +257,7 @@ void Opendp::updateDbInstLocations()
 
 void Opendp::reportLegalizationStats() const
 {
-  logger_->report("Placement Analysis");
+  logger_->report("Detailed Placement Analysis");
   logger_->report("---------------------------------");
   const std::string legalizer_name
       = use_negotiation_ ? "negotiation" : "diamond search";
