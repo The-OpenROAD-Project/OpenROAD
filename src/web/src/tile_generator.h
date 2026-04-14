@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "color.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -197,6 +198,12 @@ class TileGenerator
                  double dbu_per_pixel,
                  const TileVisibility& vis) const;
 
+  // Render timing path overlay (colored rects + flight lines) to PNG bytes.
+  std::vector<unsigned char> renderOverlayPng(
+      int width_px,
+      const std::vector<ColoredRect>& rects,
+      const std::vector<FlightLine>& lines) const;
+
  private:
   // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
   // Same signature as generateTile but returns raw pixels.
@@ -316,5 +323,12 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// ── JSON serialization helpers for TileGenerator responses ──
+
+void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen);
+void serializeBoundsResponse(JsonBuilder& b,
+                             const TileGenerator& gen,
+                             bool shapes_ready);
 
 }  // namespace web
