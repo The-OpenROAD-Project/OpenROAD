@@ -47,9 +47,6 @@ cc_library(
         "include/odb/dbCompare.inc",
         "include/odb/dbMap.inc",
     ],
-    features = [
-        "-use_header_modules",
-    ],
     includes = ["include"],
     deps = [
         "//src/odb/src/3dblox",

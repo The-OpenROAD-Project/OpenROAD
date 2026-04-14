@@ -29,9 +29,6 @@ cc_library(
     name = "swig_common",
     srcs = ["common/swig_common.cpp"],
     hdrs = ["common/swig_common.h"],
-    features = [
-        "-use_header_modules",
-    ],
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/defin",
@@ -83,9 +80,6 @@ cc_library(
     hdrs = ["//src/odb:include/odb/MakeOdb.h"],
     copts = [
         "-Wno-missing-braces",  # from TCL swigging
-    ],
-    features = [
-        "-use_header_modules",
     ],
     includes = [
         "../../include",

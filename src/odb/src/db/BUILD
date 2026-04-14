@@ -50,9 +50,6 @@ cc_library(
         "//src/odb:include/odb/util.h",
         "//src/odb:include/odb/wOrder.h",
     ],
-    features = [
-        "-use_header_modules",
-    ],
     includes = ["../../include"],
     deps = [
         "//src/utl",

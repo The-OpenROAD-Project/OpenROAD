@@ -12,9 +12,6 @@ cc_library(
     name = "gdsout",
     srcs = glob(["*.cpp"]),
     hdrs = ["//src/odb:include/odb/gdsout.h"],
-    features = [
-        "-use_header_modules",
-    ],
     deps = [
         "//src/odb/src/db",
         "//src/odb/src/gdsin",

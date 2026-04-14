@@ -15,9 +15,6 @@ cc_library(
         "//src/odb:include/odb/gdsUtil.h",
         "//src/odb:include/odb/gdsin.h",
     ],
-    features = [
-        "-use_header_modules",
-    ],
     deps = [
         "//src/odb/src/db",
         "//src/utl",
