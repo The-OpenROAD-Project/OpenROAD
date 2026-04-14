@@ -106,6 +106,51 @@ save_image -web -display_option {routing false} \
                 layout.png
 ```
 
+### Save Report
+
+Generate a self-contained HTML timing report. The report uses the same
+JavaScript frontend as the live web viewer but serves all data from a cache
+embedded in the HTML file. No running server is required to view the report.
+
+```tcl
+web_save_report
+    [-setup_paths count]
+    [-hold_paths count]
+    path
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-setup_paths` | Maximum number of setup timing paths to include. Default: `100`. |
+| `-hold_paths` | Maximum number of hold timing paths to include. Default: `100`. |
+| `path` | Output HTML file path. |
+
+The report includes:
+
+- **Layout view** with pre-rendered tiles at a fixed zoom level. Layer
+  visibility can be toggled using the same display controls as the live viewer.
+  Zoom is disabled; pan is allowed.
+- **Timing table** with setup and hold paths. Clicking a path highlights it
+  on the layout via a pre-rendered overlay image.
+- **Slack histogram** with setup/hold tabs.
+- **Display controls**, hierarchy browser, clock tree, and other panels from
+  the live viewer (features that require server interaction show empty states).
+
+The report requires an internet connection to load Leaflet and GoldenLayout
+CSS/JS from CDN.
+
+#### Examples
+
+```tcl
+# Generate a report with default settings
+web_save_report timing.html
+
+# Include more paths
+web_save_report -setup_paths 200 -hold_paths 200 timing.html
+```
+
 ## Features
 
 - **Tile-based rendering** — The server renders 256x256 PNG tiles on demand,

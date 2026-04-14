@@ -355,21 +355,6 @@ static void writeInspectPayload(JsonBuilder& builder,
   }
 }
 
-// Serialize a TimingNode to JSON.
-static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
-{
-  builder.beginObject();
-  builder.field("pin", n.pin_name);
-  builder.field("fanout", n.fanout);
-  builder.field("rise", n.is_rising);
-  builder.field("clk", n.is_clock);
-  builder.field("time", n.time);
-  builder.field("delay", n.delay);
-  builder.field("slew", n.slew);
-  builder.field("load", n.load);
-  builder.endObject();
-}
-
 static double extract_double_value(const std::string& json)
 {
   return extract_float_or(json, "value", 0.0F);
@@ -532,22 +517,8 @@ WebSocketResponse dispatch_request(
   switch (req.type) {
     case WebSocketRequest::BOUNDS: {
       resp.type = 0;
-      const odb::Rect bounds = gen.getBounds();
       JsonBuilder builder;
-      builder.beginObject();
-      builder.beginArray("bounds");
-      builder.beginArray();
-      builder.value(bounds.yMin());
-      builder.value(bounds.xMin());
-      builder.endArray();
-      builder.beginArray();
-      builder.value(bounds.yMax());
-      builder.value(bounds.xMax());
-      builder.endArray();
-      builder.endArray();
-      builder.field("shapes_ready", gen.shapesReady());
-      builder.field("pin_max_size", gen.getPinMaxSize());
-      builder.endObject();
+      serializeBoundsResponse(builder, gen, gen.shapesReady());
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
@@ -555,22 +526,7 @@ WebSocketResponse dispatch_request(
     case WebSocketRequest::TECH: {
       resp.type = 0;
       JsonBuilder builder;
-      builder.beginObject();
-      builder.beginArray("layers");
-      for (const auto& name : gen.getLayers()) {
-        builder.value(name);
-      }
-      builder.endArray();
-      builder.beginArray("sites");
-      for (const auto& name : gen.getSites()) {
-        builder.value(name);
-      }
-      builder.endArray();
-      builder.field("has_liberty", gen.hasSta());
-      if (gen.getBlock()) {
-        builder.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
-      }
-      builder.endObject();
+      serializeTechResponse(builder, gen);
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
@@ -1629,35 +1585,7 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
                                            req.timing_slack_min,
                                            req.timing_slack_max);
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("paths");
-    for (const auto& p : paths) {
-      builder.beginObject();
-      builder.field("start_clk", p.start_clk);
-      builder.field("end_clk", p.end_clk);
-      builder.field("required", p.required);
-      builder.field("arrival", p.arrival);
-      builder.field("slack", p.slack);
-      builder.field("skew", p.skew);
-      builder.field("path_delay", p.path_delay);
-      builder.field("logic_depth", p.logic_depth);
-      builder.field("fanout", p.fanout);
-      builder.field("start_pin", p.start_pin);
-      builder.field("end_pin", p.end_pin);
-      builder.beginArray("data_nodes");
-      for (const auto& n : p.data_nodes) {
-        serializeTimingNode(builder, n);
-      }
-      builder.endArray();
-      builder.beginArray("capture_nodes");
-      for (const auto& n : p.capture_nodes) {
-        serializeTimingNode(builder, n);
-      }
-      builder.endArray();
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeTimingPaths(builder, paths);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -1741,21 +1669,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     auto histogram = timing_report_->getSlackHistogram(
         req.histogram_is_setup, req.histogram_path_group, req.histogram_clock);
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("bins");
-    for (const auto& bin : histogram.bins) {
-      builder.beginObject();
-      builder.field("lower", bin.lower);
-      builder.field("upper", bin.upper);
-      builder.field("count", bin.count);
-      builder.field("negative", bin.is_negative);
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.field("unconstrained_count", histogram.unconstrained_count);
-    builder.field("total_endpoints", histogram.total_endpoints);
-    builder.field("time_unit", histogram.time_unit);
-    builder.endObject();
+    serializeSlackHistogram(builder, histogram);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -1775,18 +1689,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto filters = timing_report_->getChartFilters();
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("path_groups");
-    for (const auto& name : filters.path_groups) {
-      builder.value(name);
-    }
-    builder.endArray();
-    builder.beginArray("clocks");
-    for (const auto& name : filters.clocks) {
-      builder.value(name);
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeChartFilters(builder, filters);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {

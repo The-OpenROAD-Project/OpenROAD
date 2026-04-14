@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -48,6 +49,13 @@ struct Pixel
   uint8_t blocked_layers = 0;
   // Cell that reserved this pixel for padding
   Node* padding_reserved_by = nullptr;
+
+  // Hybrid negotiation data
+  int capacity = 0;  // 1 if site exists, 0 if blockage
+  int usage = 0;
+  double hist_cost = 1.0;
+
+  [[nodiscard]] int overuse() const { return std::max(usage - capacity, 0); }
 };
 
 // Return value for grid searches.

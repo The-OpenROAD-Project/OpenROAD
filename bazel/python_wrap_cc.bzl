@@ -8,6 +8,14 @@ cc_library or cc_binary rules. See below for expected usage.
 cc_library(srcs=[":python_foo"])
 python_wrap_cc(name = "python_foo", srcs=["exception.i"],...)
 """
+
+load(
+    "//bazel:swig_common.bzl",
+    "get_transitive_includes",
+    "get_transitive_options",
+    "get_transitive_srcs",
+)
+
 PythonSwigInfo = provider(
     "PythonSwigInfo for taking dependencies on other swig info rules",
     fields = [
@@ -26,24 +34,6 @@ PYTHON_EXTENSION_LINKOPTS = select({
     ],
     "//conditions:default": [],
 })
-
-def _get_transitive_srcs(srcs, deps):
-    return depset(
-        srcs,
-        transitive = [dep[PythonSwigInfo].transitive_srcs for dep in deps],
-    )
-
-def _get_transitive_includes(local_includes, deps):
-    return depset(
-        local_includes,
-        transitive = [dep[PythonSwigInfo].includes for dep in deps],
-    )
-
-def _get_transitive_options(options, deps):
-    return depset(
-        options,
-        transitive = [dep[PythonSwigInfo].swig_options for dep in deps],
-    )
 
 def _python_wrap_cc_impl(ctx):
     """Generates a single C++ file from the provided srcs in a DefaultInfo."""
@@ -65,12 +55,17 @@ def _python_wrap_cc_impl(ctx):
     if ctx.label.package:
         include_root_directory += ctx.label.package + "/"
 
-    src_inputs = _get_transitive_srcs(ctx.files.srcs + ctx.files.root_swig_src, ctx.attr.deps)
-    includes_paths = _get_transitive_includes(
+    src_inputs = get_transitive_srcs(
+        PythonSwigInfo,
+        ctx.files.srcs + ctx.files.root_swig_src,
+        ctx.attr.deps,
+    )
+    includes_paths = get_transitive_includes(
+        PythonSwigInfo,
         ["{}{}".format(include_root_directory, include) for include in ctx.attr.swig_includes],
         ctx.attr.deps,
     )
-    swig_options = _get_transitive_options(ctx.attr.swig_options, ctx.attr.deps)
+    swig_options = get_transitive_options(PythonSwigInfo, ctx.attr.swig_options, ctx.attr.deps)
 
     args = ctx.actions.args()
     args.add("-DBAZEL=1")

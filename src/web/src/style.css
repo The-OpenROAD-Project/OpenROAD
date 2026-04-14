@@ -1214,3 +1214,10 @@ html, body {
     flex-direction: column;
     gap: 4px;
 }
+
+/* ─── Schematic Widget ────────────────────────────────────────────────────── */
+
+/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
+html[data-theme="dark"] .schematic-widget svg {
+    filter: invert(1) hue-rotate(180deg);
+}

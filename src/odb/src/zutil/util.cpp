@@ -376,6 +376,121 @@ bool hasOneSiteMaster(dbDatabase* db)
   return false;
 }
 
+void blockMetrics(dbBlock* block, utl::Logger* logger)
+{
+  if (block == nullptr) {
+    return;
+  }
+
+  const double dbu_per_uu = block->getDbUnitsPerMicron();
+
+  const odb::Rect die_bbox = block->getDieArea();
+  const auto die_area = die_bbox.area();
+
+  const odb::Rect core_bbox = block->getCoreArea();
+  const auto core_area = core_bbox.area();
+
+  const int num_ios = block->getBTerms().size();
+
+  const int num_insts = block->getInsts().size();
+  int num_stdcells = 0;
+  int num_macros = 0;
+  int num_padcells = 0;
+  int num_cover = 0;
+
+  double stdcell_area = 0.0;
+  double macro_area = 0.0;
+  double padcell_area = 0.0;
+  double cover_area = 0.0;
+
+  for (odb::dbInst* inst : block->getInsts()) {
+    odb::dbMaster* inst_master = inst->getMaster();
+    if (inst_master->isFiller()) {
+      continue;
+    }
+
+    const int wid = inst_master->getWidth();
+    const int ht = inst_master->getHeight();
+    const double inst_area = static_cast<double>(wid) * ht;
+
+    if (inst_master->isBlock()) {
+      num_macros++;
+      macro_area += inst_area;
+    } else if (inst_master->isCover()) {
+      num_cover++;
+      cover_area += inst_area;
+    } else if (inst_master->isPad()) {
+      num_padcells++;
+      padcell_area += inst_area;
+    } else {
+      num_stdcells++;
+      stdcell_area += inst_area;
+    }
+  }
+
+  const double die_area_um = die_area / (dbu_per_uu * dbu_per_uu);
+  const double core_area_um = core_area / (dbu_per_uu * dbu_per_uu);
+  stdcell_area /= (dbu_per_uu * dbu_per_uu);
+  macro_area /= (dbu_per_uu * dbu_per_uu);
+  padcell_area /= (dbu_per_uu * dbu_per_uu);
+  cover_area /= (dbu_per_uu * dbu_per_uu);
+
+  const double total_active_area = stdcell_area + macro_area;
+
+  logger->metric("design__io", num_ios);
+  logger->metric("design__nets", block->getNets().size());
+  logger->metric("design__die__area", die_area_um);
+  logger->metric("design__core__area", core_area_um);
+  logger->metric("design__instance__count", num_insts);
+  logger->metric("design__instance__area", total_active_area);
+  logger->metric("design__instance__count__stdcell", num_stdcells);
+  logger->metric("design__instance__area__stdcell", stdcell_area);
+  logger->metric("design__instance__count__macros", num_macros);
+  logger->metric("design__instance__area__macros", macro_area);
+  logger->metric("design__instance__count__padcells", num_padcells);
+  logger->metric("design__instance__area__padcells", padcell_area);
+  logger->metric("design__instance__count__cover", num_cover);
+  logger->metric("design__instance__area__cover", cover_area);
+
+  if (core_area_um > 0) {
+    logger->metric("design__instance__utilization",
+                   total_active_area / core_area_um);
+    double stdcell_util = 0.0;
+    if (core_area_um > macro_area) {
+      stdcell_util = stdcell_area / (core_area_um - macro_area);
+    }
+    logger->metric("design__instance__utilization__stdcell", stdcell_util);
+  }
+
+  int std_rows = 0;
+  int64_t std_sites = 0;
+  std::map<std::string, int> rows;
+  std::map<std::string, int64_t> sites;
+
+  for (odb::dbRow* row : block->getRows()) {
+    odb::dbSite* site = row->getSite();
+
+    if (site->getClass() == odb::dbSiteClass::NONE
+        || site->getClass() == odb::dbSiteClass::CORE) {
+      std_rows++;
+      std_sites += row->getSiteCount();
+    }
+
+    rows[site->getName()]++;
+    sites[site->getName()] += row->getSiteCount();
+  }
+
+  logger->metric("design__rows", std_rows);
+  for (const auto& [site_name, count] : rows) {
+    logger->metric("design__rows:" + site_name, count);
+  }
+
+  logger->metric("design__sites", std_sites);
+  for (const auto& [site_name, count] : sites) {
+    logger->metric("design__sites:" + site_name, count);
+  }
+}
+
 int64_t WireLengthEvaluator::hpwl() const
 {
   int64_t hpwl_sum = 0;

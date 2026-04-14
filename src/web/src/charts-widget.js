@@ -96,7 +96,7 @@ function computeYAxis(maxCount) {
 }
 
 export class ChartsWidget {
-    constructor(container, app, redrawAllLayers) {
+    constructor(app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
         this._currentTab = 'setup';
@@ -107,12 +107,12 @@ export class ChartsWidget {
         this._chartArea = null;
         this._hoveredBar = null;
 
-        this._build(container);
+        this._build();
     }
 
     // ---- DOM construction ----
 
-    _build(container) {
+    _build() {
         const el = document.createElement('div');
         el.className = 'charts-widget';
 
@@ -184,8 +184,7 @@ export class ChartsWidget {
         this._tooltip.style.display = 'none';
         el.appendChild(this._tooltip);
 
-        container.element.appendChild(el);
-        this._el = el;
+        this.element = el;
 
         this._ctx = this._canvas.getContext('2d');
         this._bindEvents();
@@ -482,7 +481,7 @@ export class ChartsWidget {
                 `Slack: [${bar.lower.toFixed(precision)}, ${bar.upper.toFixed(precision)}) ${unit}`;
             this._tooltip.style.display = 'block';
 
-            const rect = this._el.getBoundingClientRect();
+            const rect = this.element.getBoundingClientRect();
             const tx = e.clientX - rect.left + 12;
             const ty = e.clientY - rect.top - 10;
             this._tooltip.style.left = tx + 'px';

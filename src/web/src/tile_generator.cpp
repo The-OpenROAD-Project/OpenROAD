@@ -20,6 +20,7 @@
 #include "color.h"
 #include "db_sta/dbSta.hh"
 #include "gui/heatMap.h"
+#include "json_builder.h"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -1853,6 +1854,144 @@ void TileGenerator::saveImage(const std::string& filename,
       utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
 }
 
+std::vector<unsigned char> TileGenerator::renderOverlayPng(
+    int width_px,
+    const std::vector<ColoredRect>& rects,
+    const std::vector<FlightLine>& lines) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block || (rects.empty() && lines.empty())) {
+    return {};
+  }
+
+  // Same area computation as renderLayerPng.
+  odb::Rect area = block->getDieArea();
+  if (area.dx() == 0 || area.dy() == 0) {
+    area = block->getBBox()->getBox();
+  }
+  const int margin = area.maxDXDY() * 5 / 100;
+  area.bloat(margin, area);
+
+  if (width_px <= 0) {
+    width_px = 1024;
+  }
+  const double scale = static_cast<double>(width_px) / area.dx();
+  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+  if (final_w <= 0 || final_h <= 0) {
+    return {};
+  }
+
+  const odb::Rect bounds = getBounds();
+  const double max_dxdy = bounds.maxDXDY();
+  const int z = std::max(0,
+                         static_cast<int>(std::ceil(
+                             std::log2(scale * max_dxdy / kTileSizeInPixel))));
+  const int num_tiles = static_cast<int>(std::pow(2, z));
+  const double tile_dbu_size = max_dxdy / num_tiles;
+  const double tile_scale = kTileSizeInPixel / tile_dbu_size;
+
+  const int tx_min = std::max(
+      0, static_cast<int>((area.xMin() - bounds.xMin()) / tile_dbu_size));
+  const int ty_min = std::max(
+      0, static_cast<int>((area.yMin() - bounds.yMin()) / tile_dbu_size));
+  const int tx_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.xMax() - bounds.xMin()) / tile_dbu_size)));
+  const int ty_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
+
+  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
+  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
+
+  // Render on _instances layer with all visibility off so only overlays draw.
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.macros = false;
+  vis.pad_input = false;
+  vis.pad_output = false;
+  vis.pad_inout = false;
+  vis.pad_power = false;
+  vis.pad_spacer = false;
+  vis.pad_areaio = false;
+  vis.pad_other = false;
+  vis.phys_fill = false;
+  vis.phys_endcap = false;
+  vis.phys_welltap = false;
+  vis.phys_tie = false;
+  vis.phys_antenna = false;
+  vis.phys_cover = false;
+  vis.phys_bump = false;
+  vis.phys_other = false;
+  vis.std_bufinv = false;
+  vis.std_bufinv_timing = false;
+  vis.std_clock_bufinv = false;
+  vis.std_clock_gate = false;
+  vis.std_level_shift = false;
+  vis.std_sequential = false;
+  vis.std_combinational = false;
+  vis.routing = false;
+  vis.special_nets = false;
+  vis.pins = false;
+  vis.pin_markers = false;
+  vis.blockages = false;
+  vis.placement_blockages = false;
+  vis.routing_obstructions = false;
+
+  for (int ty = ty_min; ty <= ty_max; ++ty) {
+    for (int tx = tx_min; tx <= tx_max; ++tx) {
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+      const int leaflet_y = num_tiles - 1 - ty;
+
+      auto tile_buf = renderTileBuffer(
+          "_instances", z, tx, leaflet_y, vis, {}, {}, rects, lines);
+
+      for (int py = 0; py < kTileSizeInPixel; ++py) {
+        for (int px = 0; px < kTileSizeInPixel; ++px) {
+          const int src_idx = (py * kTileSizeInPixel + px) * 4;
+          const int dst_x = out_ox + px;
+          const int dst_y = out_oy + py;
+          if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+            continue;
+          }
+          const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+          compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+        }
+      }
+    }
+  }
+
+  // Crop and resample.
+  const int crop_x = static_cast<int>(
+      (area.xMin() - bounds.xMin() - tx_min * tile_dbu_size) * tile_scale);
+  const int crop_y_bottom = static_cast<int>(
+      (area.yMin() - bounds.yMin() - ty_min * tile_dbu_size) * tile_scale);
+  const int crop_y
+      = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
+
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
+  for (int fy = 0; fy < final_h; ++fy) {
+    for (int fx = 0; fx < final_w; ++fx) {
+      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
+      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
+        const int src_idx = (sy * tile_span_w + sx) * 4;
+        const int dst_idx = (fy * final_w + fx) * 4;
+        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      }
+    }
+  }
+
+  std::vector<unsigned char> png_data;
+  lodepng::encode(png_data, final_buf, final_w, final_h);
+  return png_data;
+}
+
 void TileGenerator::drawDebugOverlay(std::vector<unsigned char>& image,
                                      const int z,
                                      const int x,
@@ -2394,6 +2533,47 @@ void collectTimingPathShapes(odb::dbBlock* block,
 
   // capture_nodes: capture clock path
   processNodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
+}
+
+void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
+{
+  b.beginObject();
+  b.beginArray("layers");
+  for (const auto& name : gen.getLayers()) {
+    b.value(name);
+  }
+  b.endArray();
+  b.beginArray("sites");
+  for (const auto& name : gen.getSites()) {
+    b.value(name);
+  }
+  b.endArray();
+  b.field("has_liberty", gen.hasSta());
+  if (gen.getBlock()) {
+    b.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+  }
+  b.endObject();
+}
+
+void serializeBoundsResponse(JsonBuilder& b,
+                             const TileGenerator& gen,
+                             bool shapes_ready)
+{
+  const odb::Rect bounds = gen.getBounds();
+  b.beginObject();
+  b.beginArray("bounds");
+  b.beginArray();
+  b.value(bounds.yMin());
+  b.value(bounds.xMin());
+  b.endArray();
+  b.beginArray();
+  b.value(bounds.yMax());
+  b.value(bounds.xMax());
+  b.endArray();
+  b.endArray();
+  b.field("shapes_ready", shapes_ready);
+  b.field("pin_max_size", gen.getPinMaxSize());
+  b.endObject();
 }
 
 }  // namespace web

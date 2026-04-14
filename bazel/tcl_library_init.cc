@@ -12,7 +12,15 @@
 
 #include "tcl.h"
 
+// In tcl 9, we can use the //zipfs:/ virtual file system (unless
+// we specifically disabled with the --//bazel:use_zipfs=False flag)
 #if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
+#define USE_ZIPFS_INIT 1
+#else
+#define USE_ZIPFS_INIT 0
+#endif
+
+#if USE_ZIPFS_INIT
 #include "bazel/tcl_resources_zip_data.h"
 #else
 
@@ -31,6 +39,7 @@
 
 namespace in_bazel {
 
+#if !USE_ZIPFS_INIT
 // Avoid adding any dependencies like boost.filesystem
 // Returns path to running binary if possible.
 static std::string GetProgramLocation()
@@ -53,12 +62,13 @@ static std::string GetProgramLocation()
   }
   return Tcl_GetNameOfExecutable();
 }
+#endif
 
 static std::optional<std::string> TclLibraryMountPoint(Tcl_Interp* interp)
 {
   // In tcl9, we can use //zipfs:/ otherwise we need to point to the
   // directory where the tcl library files are extracted.
-#if TCL_MAJOR_VERSION >= 9 && !defined(USE_TCL_RUNFILE_INIT)
+#if USE_ZIPFS_INIT
   if (TclZipfs_MountBuffer(
           interp, kTclResourceZip, sizeof(kTclResourceZip), "/app", 0)
       != TCL_OK) {

@@ -6,7 +6,7 @@
 import { makeResizableHeaders } from './ui-utils.js';
 
 export class TimingWidget {
-    constructor(container, app, redrawAllLayers) {
+    constructor(app, redrawAllLayers) {
         this._app = app;
         this._redrawAllLayers = redrawAllLayers;
 
@@ -17,10 +17,10 @@ export class TimingWidget {
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
 
-        this._build(container);
+        this._build();
     }
 
-    _build(container) {
+    _build() {
         const el = document.createElement('div');
         el.className = 'timing-widget';
 
@@ -74,7 +74,7 @@ export class TimingWidget {
         this._detailTableContainer.appendChild(this._detailTable);
         el.appendChild(this._detailTableContainer);
 
-        container.element.appendChild(el);
+        this.element = el;
 
         this._bindEvents();
     }
@@ -223,6 +223,11 @@ export class TimingWidget {
     _renderPathTable() {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         this._pathCountLabel.textContent = paths.length + ' paths';
+
+        // Preserve column widths across re-renders.
+        const oldHeaders = this._pathTable.querySelectorAll('thead th');
+        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+
         this._pathTable.innerHTML = '';
 
         const thead = document.createElement('thead');
@@ -262,7 +267,17 @@ export class TimingWidget {
             tbody.appendChild(tr);
         });
         this._pathTable.appendChild(tbody);
-        makeResizableHeaders(this._pathTable);
+
+        // Restore previous widths if available, otherwise compute fresh.
+        if (savedWidths.length > 0 && savedWidths[0]) {
+            const newHeaders = this._pathTable.querySelectorAll('thead th');
+            this._pathTable.style.tableLayout = 'fixed';
+            newHeaders.forEach((th, i) => {
+                if (i < savedWidths.length) th.style.width = savedWidths[i];
+            });
+        } else {
+            makeResizableHeaders(this._pathTable);
+        }
     }
 
     _selectDetailRow(idx) {
@@ -288,6 +303,10 @@ export class TimingWidget {
     }
 
     _renderDetailTable() {
+        // Preserve column widths across re-renders.
+        const oldHeaders = this._detailTable.querySelectorAll('thead th');
+        const savedWidths = Array.from(oldHeaders, th => th.style.width);
+
         this._detailTable.innerHTML = '';
         this._selectedDetailIndex = -1;
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
@@ -329,11 +348,20 @@ export class TimingWidget {
             tbody.appendChild(tr);
         });
         this._detailTable.appendChild(tbody);
-        makeResizableHeaders(this._detailTable);
-        // Pin column: set initial width to 30 characters
-        const pinTh = this._detailTable.querySelector('thead th');
-        if (pinTh) {
-            pinTh.style.width = '30ch';
+
+        if (savedWidths.length > 0 && savedWidths[0]) {
+            const newHeaders = this._detailTable.querySelectorAll('thead th');
+            this._detailTable.style.tableLayout = 'fixed';
+            newHeaders.forEach((th, i) => {
+                if (i < savedWidths.length) th.style.width = savedWidths[i];
+            });
+        } else {
+            makeResizableHeaders(this._detailTable);
+            // Pin column: set initial width to 30 characters
+            const pinTh = this._detailTable.querySelector('thead th');
+            if (pinTh) {
+                pinTh.style.width = '30ch';
+            }
         }
     }
 

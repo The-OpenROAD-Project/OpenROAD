@@ -1,0 +1,190 @@
+TEST: set_logic_zero
+[ERROR STA-1570] No network has been linked.
+TEST: write_spef
+[ERROR STA-0565] write_spef requires one positional argument.
+[ERROR RCX-0497] No design is loaded.
+[ERROR STA-0565] write_spef requires one positional argument.
+[ERROR STA-0565] write_spef requires one positional argument.
+TEST: set_max_dynamic_power
+TEST: set_max_time_borrow
+[ERROR STA-0572] borrow_limit '/workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl' is not a positive float.
+TEST: draw_route_segments
+[ERROR STA-0565] draw_route_segments requires one positional argument.
+[ERROR GRT-0223] Missing dbBlock.
+[ERROR STA-0565] draw_route_segments requires one positional argument.
+[ERROR STA-0565] draw_route_segments requires one positional argument.
+TEST: balance_row_usage
+[ERROR STA-0564] balance_row_usage positional arguments not supported.
+[ERROR STA-0564] balance_row_usage positional arguments not supported.
+[ERROR STA-0564] balance_row_usage positional arguments not supported.
+TEST: subst
+TEST: set_ndr_rules
+TEST: generate_ram
+[ERROR STA-0564] generate_ram positional arguments not supported.
+[ERROR STA-0564] generate_ram positional arguments not supported.
+[ERROR STA-0564] generate_ram positional arguments not supported.
+TEST: read_def
+[ERROR STA-0565] read_def requires one positional argument.
+[ERROR ORD-0003] /workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl does not exist.
+[ERROR STA-0565] read_def requires one positional argument.
+[ERROR STA-0565] read_def requires one positional argument.
+TEST: pwd
+TEST: write_abstract_lef
+[ERROR STA-0565] write_abstract_lef requires one positional argument.
+[ERROR ORD-0053] No block is loaded.
+[ERROR STA-0565] write_abstract_lef requires one positional argument.
+[ERROR STA-0565] write_abstract_lef requires one positional argument.
+TEST: read_saif
+[ERROR STA-0565] read_saif requires one positional argument.
+[ERROR STA-1571] No network has been linked.
+[ERROR STA-0565] read_saif requires one positional argument.
+[ERROR STA-0565] read_saif requires one positional argument.
+TEST: set_dft_config
+[ERROR STA-0564] set_dft_config positional arguments not supported.
+[ERROR STA-0564] set_dft_config positional arguments not supported.
+[ERROR STA-0564] set_dft_config positional arguments not supported.
+TEST: adjust_rc
+[ERROR RCX-0004] Design not loaded.
+[ERROR RCX-0004] Design not loaded.
+[ERROR RCX-0004] Design not loaded.
+[ERROR RCX-0004] Design not loaded.
+TEST: report_path
+[ERROR STA-0567] report_path requires two positional arguments.
+[ERROR STA-0567] report_path requires two positional arguments.
+[ERROR STA-0567] report_path requires two positional arguments.
+TEST: report_timing_histogram
+[ERROR STA-1570] No network has been linked.
+[ERROR STA-0564] report_timing_histogram positional arguments not supported.
+[ERROR STA-0564] report_timing_histogram positional arguments not supported.
+[ERROR STA-0564] report_timing_histogram positional arguments not supported.
+TEST: example_instance
+[INFO EXA-0001] Making an example instance named example
+[ERROR EXA-0002] No chip exists.
+[ERROR STA-0564] example_instance positional arguments not supported.
+[ERROR STA-0564] example_instance positional arguments not supported.
+[ERROR STA-0564] example_instance positional arguments not supported.
+TEST: unknown
+TEST: set_sense
+TEST: lrange
+TEST: read_partitioning
+[ERROR PAR-0051] Missing mandatory argument -read_file
+[ERROR PAR-0051] Missing mandatory argument -read_file
+[ERROR PAR-0051] Missing mandatory argument -read_file
+[ERROR PAR-0051] Missing mandatory argument -read_file
+TEST: auto_import
+TEST: case
+TEST: analyze_power_grid
+[ERROR PSM-0058] Argument -net not specified.
+[ERROR PSM-0058] Argument -net not specified.
+[ERROR PSM-0058] Argument -net not specified.
+[ERROR PSM-0058] Argument -net not specified.
+TEST: cluster_flops
+[ERROR GPL-0113] No design block found.
+[ERROR GPL-0113] No design block found.
+[ERROR GPL-0113] No design block found.
+[ERROR GPL-0113] No design block found.
+TEST: break
+TEST: set_macro_guidance_region
+[ERROR MPL-0043] -macro_name is required.
+[ERROR STA-0564] set_macro_guidance_region positional arguments not supported.
+[ERROR STA-0564] set_macro_guidance_region positional arguments not supported.
+[ERROR STA-0564] set_macro_guidance_region positional arguments not supported.
+TEST: auto_execok
+TEST: make_rows
+[ERROR IFP-0035] use -site to add placement rows.
+[ERROR IFP-0035] use -site to add placement rows.
+[ERROR IFP-0035] use -site to add placement rows.
+[ERROR IFP-0035] use -site to add placement rows.
+TEST: user_run_time
+TEST: linsert
+TEST: create_toolbar_button
+[ERROR GUI-0020] The -text argument must be specified.
+[ERROR GUI-0020] The -text argument must be specified.
+[ERROR GUI-0020] The -text argument must be specified.
+[ERROR GUI-0020] The -text argument must be specified.
+TEST: make_result_dir
+TEST: set_multicycle_path
+[ERROR STA-0444] missing path multiplier argument.
+[ERROR STA-0573] path multiplier '/workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl' is not an integer.
+[WARNING STA-0445] '/workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl /workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl' ignored.
+[WARNING STA-0445] '/workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl /workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl /workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl' ignored.
+TEST: set_logic_one
+[ERROR STA-1570] No network has been linked.
+TEST: report_design_area_metrics
+TEST: catch
+TEST: delete_voltage_domain
+[ERROR STA-0565] delete_voltage_domain requires one positional argument.
+[ERROR ODB-0323] please load the design before trying to use this command
+[ERROR STA-0565] delete_voltage_domain requires one positional argument.
+[ERROR STA-0565] delete_voltage_domain requires one positional argument.
+TEST: unset_clock_transition
+[ERROR STA-0565] unset_clock_transition requires one positional argument.
+[WARNING STA-0351] clock '/workspace/9ORFS/tools/OpenROAD/test/results/commands_without_load-tcl' not found.
+[ERROR STA-0565] unset_clock_transition requires one positional argument.
+[ERROR STA-0565] unset_clock_transition requires one positional argument.
+TEST: set_nets_to_route
+[ERROR STA-0565] set_nets_to_route requires one positional argument.
+[ERROR GRT-0252] Missing dbBlock.
+[ERROR STA-0565] set_nets_to_route requires one positional argument.
+[ERROR STA-0565] set_nets_to_route requires one positional argument.
+TEST: write_verilog_for_eqy
+[ERROR STA-1570] No network has been linked.
+TEST: check_placement
+[ERROR DPL-0103] No design block found.
+[ERROR DPL-0103] No design block found.
+[ERROR DPL-0103] No design block found.
+[ERROR DPL-0103] No design block found.
+TEST: set_logic_dc
+[ERROR STA-1570] No network has been linked.
+TEST: get_modes
+TEST: if
+TEST: all_registers
+[ERROR STA-1571] No network has been linked.
+[ERROR STA-0564] all_registers positional arguments not supported.
+[ERROR STA-0564] all_registers positional arguments not supported.
+[ERROR STA-0564] all_registers positional arguments not supported.
+TEST: join
+TEST: define_pdn_grid
+[ERROR PDN-1022] Design must be loaded before calling define_pdn_grid.
+[ERROR STA-0564] define_pdn_grid positional arguments not supported.
+[ERROR STA-0564] define_pdn_grid positional arguments not supported.
+[ERROR STA-0564] define_pdn_grid positional arguments not supported.
+TEST: get_cells
+[ERROR STA-1570] No network has been linked.
+[ERROR STA-1570] No network has been linked.
+[ERROR STA-0566] get_cells requires zero or one positional arguments.
+[ERROR STA-0566] get_cells requires zero or one positional arguments.
+TEST: write_timing_model
+[ERROR STA-0565] write_timing_model requires one positional argument.
+[ERROR STA-1570] No network has been linked.
+[ERROR STA-0565] write_timing_model requires one positional argument.
+[ERROR STA-0565] write_timing_model requires one positional argument.
+TEST: get_fanin
+[ERROR STA-0161] Usage: get_fanin -to sink_list [-flat] [-only_cells] [-startpoints_only] [-levels level_count] [-pin_levels pin_count] [-trace_arcs timing|enabled|all]
+[ERROR STA-0161] Usage: get_fanin -to sink_list [-flat] [-only_cells] [-startpoints_only] [-levels level_count] [-pin_levels pin_count] [-trace_arcs timing|enabled|all]
+[ERROR STA-0161] Usage: get_fanin -to sink_list [-flat] [-only_cells] [-startpoints_only] [-levels level_count] [-pin_levels pin_count] [-trace_arcs timing|enabled|all]
+[ERROR STA-0161] Usage: get_fanin -to sink_list [-flat] [-only_cells] [-startpoints_only] [-levels level_count] [-pin_levels pin_count] [-trace_arcs timing|enabled|all]
+TEST: report_dont_use
+[ERROR STA-0564] report_dont_use positional arguments not supported.
+[ERROR STA-0564] report_dont_use positional arguments not supported.
+[ERROR STA-0564] report_dont_use positional arguments not supported.
+TEST: negotiation_legalize
+Signal 11 received
+Stack trace:
+ 0# 0x0000000000D7F906 in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+ 1# 0x0000000000045330 in /lib/x86_64-linux-gnu/libc.so.6
+ 2# odb::dbChip::getBlock() in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+ 3# dpl::Opendp::importDb() in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+ 4# dpl::Opendp::negotiationLegalize(bool) in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+ 5# 0x0000000000E4DF40 in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+ 6# TclNRRunCallbacks in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 7# 0x000000000003F6BC in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 8# Tcl_EvalEx in /lib/x86_64-linux-gnu/libtcl8.6.so
+ 9# Tcl_Eval in /lib/x86_64-linux-gnu/libtcl8.6.so
+10# sta::sourceTclFile(char const*, bool, bool, Tcl_Interp*) in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+11# 0x0000000003567A31 in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+12# Tcl_MainEx in /lib/x86_64-linux-gnu/libtcl8.6.so
+13# main in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad
+14# 0x000000000002A1CA in /lib/x86_64-linux-gnu/libc.so.6
+15# __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
+16# _start in /workspace/9ORFS/tools/OpenROAD/build/bin/openroad

@@ -216,3 +216,24 @@ cc_test(
         "@googletest//:gtest_main",
     ],
 )
+
+cc_test(
+    name = "save_report_test",
+    srcs = ["cpp/TestSaveReport.cpp"],
+    copts = ["-Isrc/web/src"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web",
+        "//third-party/lodepng",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)

@@ -6,9 +6,11 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [WARNING DPL-0004] Placed in rows check failed (1).
  _277_
-[ERROR DPL-0033] detailed placement checks failed.
+[ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 34.05 um^2, Instances area: 1.86 um^2, Utilization: 5.5%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                       1

@@ -132,7 +132,9 @@ Dummys used:
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 40 long wires.
 [INFO RSZ-0048] Inserted 88 buffers in 40 nets.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261654.79 um^2, Utilization: 83.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                    2902

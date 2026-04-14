@@ -138,17 +138,16 @@ OPENROAD_LIBRARY_DEPS = [
     },
 )
 
+# Flags applied to top-level OpenROAD targets only. Flags that apply
+# globally to every cc_* target (-Wall, -Wextra, -Wno-sign-compare,
+# -Wno-unused-parameter, etc.) live in .bazelrc — do not repeat them here.
 OPENROAD_COPTS = [
     "-Wno-error",
-    "-Wall",
-    "-Wextra",
     "-pedantic",
     "-Wno-cast-qual",  # typically from TCL swigging
     "-Wno-missing-braces",  # typically from TCL swigging
     "-Wredundant-decls",
     "-Wformat-security",
-    "-Wno-sign-compare",
-    "-Wno-unused-parameter",
     "-Wmismatched-tags",
     "-fopenmp",
 ]
@@ -307,8 +306,6 @@ tcl_wrap_cc(
     ],
 )
 
-# This target compiles the SWIG C++ wrapper into a shared library (.so)
-# that Python can load dynamically.
 cc_binary(
     name = "_openroadpy.so",
     srcs = [":openroad_swig-py"],
@@ -316,7 +313,7 @@ cc_binary(
     linkopts = PYTHON_EXTENSION_LINKOPTS,
     linkshared = True,
     deps = [
-        ":openroad_lib",  # Depends on the core odb C++ library
+        ":openroad_lib",
         ":ord",
         "//src/ant",
         "//src/cgt",
@@ -344,14 +341,10 @@ cc_binary(
     ],
 )
 
-# This packages the SWIG-generated Python wrapper (odb.py) and the
-# compiled C++ extension (_odb.so) together.
 py_library(
     name = "openroad_py",
-    srcs = [":openroad_swig-py"],  # Use the .py output from the swig-py rule
-    # The data attribute makes the .so file available at runtime.
+    srcs = [":openroad_swig-py"],
     data = [":_openroadpy.so"],
-    # This allows imports relative to the workspace root.
     imports = ["."],
     visibility = ["//visibility:public"],
     deps = [

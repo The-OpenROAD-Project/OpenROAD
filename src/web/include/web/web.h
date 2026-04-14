@@ -33,6 +33,10 @@ class WebServer
 
   void serve(int port, const std::string& doc_root);
 
+  void saveReport(const std::string& filename,
+                  int max_setup_paths,
+                  int max_hold_paths);
+
   void saveImage(const std::string& filename,
                  int x0,
                  int y0,

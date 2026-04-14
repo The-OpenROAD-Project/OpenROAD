@@ -19,17 +19,9 @@ def _tcl_encode_or_impl(ctx):
     args.add("--varname", ctx.attr.char_array_name)
     args.add("--namespace", ctx.attr.namespace)
 
-    # Only keep .tcl and .py files.
-    allowed_extensions = (".tcl", ".py")
-    filtered_sources = [
-        f
-        for f in ctx.files.srcs
-        if f.basename.endswith(allowed_extensions)
-    ]
-
     ctx.actions.run(
         outputs = [output_file],
-        inputs = filtered_sources,
+        inputs = ctx.files.srcs,
         arguments = [args],
         tools = [ctx.executable._encode_script],
         executable = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter,

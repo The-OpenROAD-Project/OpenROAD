@@ -2,6 +2,8 @@
 // Copyright (c) 2026, The OpenROAD Authors
 
 // WebSocket manager with request/response tracking and auto-reconnect.
+// Supports a cache mode for static reports where pre-computed responses
+// are served from window.__STATIC_CACHE__ without a WebSocket connection.
 
 export class WebSocketManager {
     constructor(url, onStatusChange) {
@@ -14,7 +16,28 @@ export class WebSocketManager {
         this.readyResolve = null;
         this.onStatusChange = onStatusChange || (() => {});
         this.onPush = null; // callback for server-push notifications
+        this._cache = null;
         this.connect();
+    }
+
+    // Create a cache-backed instance (no WebSocket connection).
+    static fromCache(cache, onStatusChange) {
+        const mgr = Object.create(WebSocketManager.prototype);
+        mgr.url = null;
+        mgr.socket = null;
+        mgr.nextId = 1;
+        mgr.pending = new Map();
+        mgr.reconnectDelay = 0;
+        mgr.onStatusChange = onStatusChange || (() => {});
+        mgr.onPush = null;
+        mgr._cache = cache;
+        mgr.readyPromise = Promise.resolve();
+        mgr.readyResolve = null;
+        return mgr;
+    }
+
+    get isStaticMode() {
+        return !!this._cache;
     }
 
     connect() {
@@ -89,6 +112,9 @@ export class WebSocketManager {
     }
 
     request(msg) {
+        if (this._cache) {
+            return this._cacheRequest(msg);
+        }
         const id = this.nextId++;
         msg.id = id;
         const promise = new Promise((resolve, reject) => {
@@ -107,5 +133,50 @@ export class WebSocketManager {
     cancel(id) {
         this.pending.delete(id);
         this.onStatusChange();
+    }
+
+    // Serve a request from the embedded cache.
+    _cacheRequest(msg) {
+        const type = msg.type;
+
+        // Tile requests — return a data URI string.
+        if (type === 'tile') {
+            const key = msg.layer + '/' + msg.z + '/' + msg.x + '/' + msg.y;
+            const b64 = this._cache.tiles && this._cache.tiles[key];
+            if (b64) {
+                return Promise.resolve('data:image/png;base64,' + b64);
+            }
+            return Promise.reject(new Error('Tile not cached: ' + key));
+        }
+
+        // Timing highlight — drive the overlay image.
+        if (type === 'timing_highlight') {
+            const idx = msg.path_index;
+            if (idx >= 0 && this._cache.overlays) {
+                const side = msg.is_setup ? 'setup' : 'hold';
+                const b64 = this._cache.overlays[side]?.[idx];
+                if (this._cache.setPathOverlay) {
+                    this._cache.setPathOverlay(
+                        b64 ? 'data:image/png;base64,' + b64 : null);
+                }
+            } else if (this._cache.setPathOverlay) {
+                this._cache.setPathOverlay(null);
+            }
+            return Promise.resolve({});
+        }
+
+        // Parameterized JSON lookups.
+        let key = type;
+        if (type === 'timing_report') {
+            key = 'timing_report:' + (msg.is_setup ? 'setup' : 'hold');
+        } else if (type === 'slack_histogram') {
+            key = 'slack_histogram:' + (msg.is_setup ? 'setup' : 'hold');
+        }
+        const json = this._cache.json && this._cache.json[key];
+        if (json !== undefined) {
+            return Promise.resolve(json);
+        }
+
+        return Promise.reject(new Error('Not available in static mode: ' + type));
     }
 }

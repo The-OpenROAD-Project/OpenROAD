@@ -20,6 +20,7 @@
 #include <mutex>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -33,9 +34,11 @@
 #include "boost/beast/websocket.hpp"
 #include "clock_tree_report.h"
 #include "gui/heatMap.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tcl.h"
+#include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
 
@@ -999,6 +1002,266 @@ WebServer::WebServer(odb::dbDatabase* db,
 }
 
 WebServer::~WebServer() = default;
+
+// Embedded JS/CSS for standalone timing report (generated at build time
+// by embed_report_assets.py → report_assets.cpp).
+extern const std::string_view kReportCSS;
+extern const std::string_view kReportJS;
+
+static std::string serializeToJson(auto serialize_fn)
+{
+  JsonBuilder b;
+  serialize_fn(b);
+  return b.str();
+}
+
+static std::string base64Encode(const std::vector<unsigned char>& data)
+{
+  static const char kChars[]
+      = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string result;
+  result.reserve((data.size() + 2) / 3 * 4);
+  for (size_t i = 0; i < data.size(); i += 3) {
+    const unsigned b0 = data[i];
+    const unsigned b1 = (i + 1 < data.size()) ? data[i + 1] : 0;
+    const unsigned b2 = (i + 2 < data.size()) ? data[i + 2] : 0;
+    result += kChars[b0 >> 2];
+    result += kChars[((b0 & 3) << 4) | (b1 >> 4)];
+    result
+        += (i + 1 < data.size()) ? kChars[((b1 & 0xF) << 2) | (b2 >> 6)] : '=';
+    result += (i + 2 < data.size()) ? kChars[b2 & 0x3F] : '=';
+  }
+  return result;
+}
+
+void WebServer::saveReport(const std::string& filename,
+                           const int max_setup,
+                           const int max_hold)
+{
+  // Create/init the tile generator.
+  if (!generator_) {
+    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
+  }
+  generator_->eagerInit();
+
+  odb::dbBlock* block = generator_->getBlock();
+  if (!block) {
+    logger_->error(utl::WEB, 35, "No design loaded.");
+    return;
+  }
+
+  std::ofstream out(filename);
+  if (!out) {
+    logger_->error(utl::WEB, 31, "Cannot open file: {}", filename);
+    return;
+  }
+
+  // ── Serialize JSON cache responses ──
+
+  std::string setup_json, hold_json, hist_setup, hist_hold, filters;
+  std::vector<TimingPathSummary> setup_paths, hold_paths;
+  if (sta_) {
+    TimingReport report(sta_);
+    setup_paths = report.getReport(true, max_setup);
+    hold_paths = report.getReport(false, max_hold);
+    setup_json = serializeToJson(
+        [&](JsonBuilder& b) { serializeTimingPaths(b, setup_paths); });
+    hold_json = serializeToJson(
+        [&](JsonBuilder& b) { serializeTimingPaths(b, hold_paths); });
+    hist_setup = serializeToJson([&](JsonBuilder& b) {
+      serializeSlackHistogram(b, report.getSlackHistogram(true));
+    });
+    hist_hold = serializeToJson([&](JsonBuilder& b) {
+      serializeSlackHistogram(b, report.getSlackHistogram(false));
+    });
+    filters = serializeToJson([&](JsonBuilder& b) {
+      serializeChartFilters(b, report.getChartFilters());
+    });
+  } else {
+    logger_->warn(utl::WEB, 30, "No STA data — timing sections will be empty.");
+    setup_json
+        = serializeToJson([](JsonBuilder& b) { serializeTimingPaths(b, {}); });
+    hold_json = setup_json;
+    hist_setup = serializeToJson(
+        [](JsonBuilder& b) { serializeSlackHistogram(b, {}); });
+    hist_hold = hist_setup;
+    filters
+        = serializeToJson([](JsonBuilder& b) { serializeChartFilters(b, {}); });
+  }
+  const std::string tech_json = serializeToJson(
+      [&](JsonBuilder& b) { serializeTechResponse(b, *generator_); });
+  const std::string bounds_json = serializeToJson(
+      [&](JsonBuilder& b) { serializeBoundsResponse(b, *generator_, true); });
+  const auto tech_layers = generator_->getLayers();
+
+  // ── Render tiles at a fixed zoom level ──
+
+  // Pick z so the design fits in a typical panel (~500px).
+  // In Leaflet CRS.Simple, the design spans 256 units = 256*2^z pixels.
+  // z=1 → 512px, a good fit for most panel sizes.
+  constexpr int z = 1;
+  const int num_tiles = 1 << z;
+
+  TileVisibility vis;
+  // A 256x256 fully-transparent RGBA PNG is exactly 102 bytes with lodepng.
+  // Any tile with visible content will be larger.
+  constexpr size_t kEmptyPngSize = 102;
+
+  // All layers to cache tiles for.
+  std::vector<std::string> all_layers;
+  all_layers.emplace_back("_instances");
+  for (const auto& name : tech_layers) {
+    all_layers.push_back(name);
+  }
+  all_layers.emplace_back("_pins");
+
+  // Collect non-empty tiles as "layer/z/x/y" -> base64.
+  std::vector<std::pair<std::string, std::string>> tile_entries;
+  for (const auto& layer : all_layers) {
+    for (int ty = 0; ty < num_tiles; ++ty) {
+      for (int tx = 0; tx < num_tiles; ++tx) {
+        auto png = generator_->generateTile(layer, z, tx, ty, vis);
+        if (png.size() > kEmptyPngSize) {
+          std::string key = layer + "/" + std::to_string(z) + "/"
+                            + std::to_string(tx) + "/" + std::to_string(ty);
+          tile_entries.emplace_back(std::move(key), base64Encode(png));
+        }
+      }
+    }
+  }
+
+  logger_->info(
+      utl::WEB, 33, "Cached {} tiles at zoom {}.", tile_entries.size(), z);
+
+  // ── Render per-path overlay images ──
+
+  auto renderPathOverlays = [&](const std::vector<TimingPathSummary>& paths) {
+    std::vector<std::string> overlays;
+    for (const auto& path : paths) {
+      std::vector<ColoredRect> rects;
+      std::vector<FlightLine> lines;
+      collectTimingPathShapes(block, path, rects, lines);
+      const int overlay_px = 256 * (1 << z);
+      auto png = generator_->renderOverlayPng(overlay_px, rects, lines);
+      if (png.size() > kEmptyPngSize) {
+        overlays.push_back(base64Encode(png));
+      } else {
+        overlays.emplace_back();
+      }
+    }
+    return overlays;
+  };
+  const auto setup_overlays = renderPathOverlays(setup_paths);
+  const auto hold_overlays = renderPathOverlays(hold_paths);
+
+  logger_->info(utl::WEB,
+                34,
+                "Rendered {} setup + {} hold path overlays.",
+                setup_overlays.size(),
+                hold_overlays.size());
+
+  // ── Write the HTML ──
+
+  // HTML head — same CDN deps as index.html.
+  out << R"(<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenROAD Timing Report</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<style>
+)" << kReportCSS
+      << R"(
+</style>
+</head>
+<body>
+<div id="menu-bar"></div>
+<div id="gl-container"></div>
+<div id="websocket-status"></div>
+<div id="loading-overlay" style="display:none">
+  <div class="loading-overlay-content">
+    <div class="spinner"></div>
+    <span>Loading shapes…</span>
+  </div>
+</div>
+<script>
+window.__STATIC_CACHE__ = {
+  zoom: )"
+      << z << R"(,
+  json: {
+    "tech": )"
+      << tech_json << R"(,
+    "bounds": )"
+      << bounds_json << R"(,
+    "heatmaps": {"active":"","heatmaps":[]},
+    "timing_report:setup": )"
+      << setup_json << R"(,
+    "timing_report:hold": )"
+      << hold_json << R"(,
+    "slack_histogram:setup": )"
+      << hist_setup << R"(,
+    "slack_histogram:hold": )"
+      << hist_hold << R"(,
+    "chart_filters": )"
+      << filters << R"(
+  },
+  tiles: {)";
+
+  // Emit tile entries.
+  for (size_t i = 0; i < tile_entries.size(); ++i) {
+    if (i > 0) {
+      out << ",";
+    }
+    out << "\n    \"" << json_escape(tile_entries[i].first) << "\":\""
+        << tile_entries[i].second << "\"";
+  }
+
+  out << R"(
+  },
+  overlays: {
+    setup: [)";
+  for (size_t i = 0; i < setup_overlays.size(); ++i) {
+    if (i > 0) {
+      out << ",";
+    }
+    if (setup_overlays[i].empty()) {
+      out << "null";
+    } else {
+      out << "\"" << setup_overlays[i] << "\"";
+    }
+  }
+  out << R"(],
+    hold: [)";
+  for (size_t i = 0; i < hold_overlays.size(); ++i) {
+    if (i > 0) {
+      out << ",";
+    }
+    if (hold_overlays[i].empty()) {
+      out << "null";
+    } else {
+      out << "\"" << hold_overlays[i] << "\"";
+    }
+  }
+  out << R"(]
+  }
+};
+</script>
+<script type="module">
+import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
+)" << kReportJS
+      << R"(
+</script>
+</body>
+</html>
+)";
+
+  out.close();
+  logger_->info(utl::WEB, 32, "Saved timing report to {}", filename);
+}
 
 void WebServer::saveImage(const std::string& filename,
                           const int x0,

@@ -14,6 +14,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "sta/Clock.hh"
 #include "sta/ExceptionPath.hh"
@@ -540,6 +541,96 @@ ChartFilters TimingReport::getChartFilters() const
   }
 
   return filters;
+}
+
+// ── JSON serialization helpers ──
+
+void serializeTimingNode(JsonBuilder& b, const TimingNode& n)
+{
+  b.beginObject();
+  b.field("pin", n.pin_name);
+  b.field("fanout", n.fanout);
+  b.field("rise", n.is_rising);
+  b.field("clk", n.is_clock);
+  b.field("time", n.time);
+  b.field("delay", n.delay);
+  b.field("slew", n.slew);
+  b.field("load", n.load);
+  b.endObject();
+}
+
+void serializeTimingPath(JsonBuilder& b, const TimingPathSummary& p)
+{
+  b.beginObject();
+  b.field("start_clk", p.start_clk);
+  b.field("end_clk", p.end_clk);
+  b.field("required", p.required);
+  b.field("arrival", p.arrival);
+  b.field("slack", p.slack);
+  b.field("skew", p.skew);
+  b.field("path_delay", p.path_delay);
+  b.field("logic_depth", p.logic_depth);
+  b.field("fanout", p.fanout);
+  b.field("start_pin", p.start_pin);
+  b.field("end_pin", p.end_pin);
+  b.beginArray("data_nodes");
+  for (const auto& n : p.data_nodes) {
+    serializeTimingNode(b, n);
+  }
+  b.endArray();
+  b.beginArray("capture_nodes");
+  for (const auto& n : p.capture_nodes) {
+    serializeTimingNode(b, n);
+  }
+  b.endArray();
+  b.endObject();
+}
+
+void serializeTimingPaths(JsonBuilder& b,
+                          const std::vector<TimingPathSummary>& paths)
+{
+  b.beginObject();
+  b.beginArray("paths");
+  for (const auto& p : paths) {
+    serializeTimingPath(b, p);
+  }
+  b.endArray();
+  b.endObject();
+}
+
+void serializeSlackHistogram(JsonBuilder& b, const SlackHistogramResult& h)
+{
+  b.beginObject();
+  b.beginArray("bins");
+  for (const auto& bin : h.bins) {
+    b.beginObject();
+    b.field("lower", bin.lower);
+    b.field("upper", bin.upper);
+    b.field("count", bin.count);
+    b.field("negative", bin.is_negative);
+    b.endObject();
+  }
+  b.endArray();
+  b.field("unconstrained_count", h.unconstrained_count);
+  b.field("total_endpoints", h.total_endpoints);
+  b.field("time_unit", h.time_unit);
+  b.endObject();
+}
+
+void serializeChartFilters(JsonBuilder& b, const ChartFilters& f)
+{
+  b.beginObject();
+  b.beginArray("path_groups");
+  for (const auto& name : f.path_groups) {
+    b.value(name);
+  }
+  b.endArray();
+  b.beginArray("clocks");
+  for (const auto& name : f.clocks) {
+    b.value(name);
+  }
+  b.endArray();
+  b.endObject();
 }
 
 }  // namespace web

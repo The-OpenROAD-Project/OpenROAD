@@ -6,8 +6,10 @@
 #include <any>
 #include <cstdlib>
 #include <set>
+#include <vector>
 
 #include "dpl/Opendp.h"
+#include "graphics/DplObserver.h"
 #include "gui/gui.h"
 #include "infrastructure/Coordinates.h"
 #include "infrastructure/Grid.h"
@@ -20,8 +22,12 @@ namespace dpl {
 
 Graphics::Graphics(Opendp* dp,
                    const odb::dbInst* debug_instance,
-                   bool paint_pixels)
-    : dp_(dp), debug_instance_(debug_instance), paint_pixels_(paint_pixels)
+                   bool paint_pixels,
+                   bool paint_negotiation_pixels)
+    : dp_(dp),
+      debug_instance_(debug_instance),
+      paint_pixels_(paint_pixels),
+      paint_negotiation_pixels_(paint_negotiation_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -31,9 +37,10 @@ void Graphics::startPlacement(odb::dbBlock* block)
   block_ = block;
 }
 
-void Graphics::placeInstance(odb::dbInst* instance)
+void Graphics::drawSelected(odb::dbInst* instance, bool force)
 {
-  if (!instance || instance != debug_instance_) {
+  // When force is true always select and pause
+  if (!instance || (!force && instance != debug_instance_)) {
     return;
   }
 
@@ -123,6 +130,20 @@ void Graphics::drawObjects(gui::Painter& painter)
     // Check if the instance is selected
     if (selected_insts.contains(cell->getDbInst())) {
       line_color = gui::Painter::kYellow;
+
+      // Draw outline of instance at target location
+      odb::Rect bbox = cell->getDbInst()->getBBox()->getBox();
+      int width = bbox.dx();
+      int height = bbox.dy();
+      odb::Rect target_bbox(final_location.x(),
+                            final_location.y(),
+                            final_location.x() + width,
+                            final_location.y() + height);
+      auto outline_color = gui::Painter::kCyan;
+      // outline_color.a = 150;
+      painter.setPen(outline_color, /* cosmetic */ true);
+      painter.setBrush(gui::Painter::kTransparent);
+      painter.drawRect(target_bbox);
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {
@@ -138,6 +159,7 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawCircle(final_location.x(), final_location.y(), 100);
   }
 
+  // Diamond search range
   auto color = gui::Painter::kCyan;
   color.a = 100;
   painter.setPen(color);
@@ -176,6 +198,121 @@ void Graphics::drawObjects(gui::Painter& painter)
       }
     }
   }
+
+  if (paint_negotiation_pixels_ && !negotiation_pixels_.empty()) {
+    const int sw = negotiation_site_width_;
+    for (int gy = 0; gy < negotiation_grid_h_; ++gy) {
+      const int y_lo = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy];
+      const int y_hi = negotiation_die_ylo_ + negotiation_row_y_dbu_[gy + 1];
+      for (int gx = 0; gx < negotiation_grid_w_; ++gx) {
+        const auto state = negotiation_pixels_[gy * negotiation_grid_w_ + gx];
+        gui::Painter::Color c;
+        switch (state) {
+          case NegotiationPixelState::kNoRow:
+            c = gui::Painter::kDarkGray;
+            c.a = 60;
+            break;
+          case NegotiationPixelState::kFree:
+            c = gui::Painter::kGreen;
+            c.a = 100;
+            break;
+          case NegotiationPixelState::kOccupied:
+            c = gui::Painter::kWhite;
+            c.a = 100;
+            break;
+          case NegotiationPixelState::kOveruse:
+            c = gui::Painter::kRed;
+            c.a = 150;
+            break;
+          case NegotiationPixelState::kBlocked:
+            c = gui::Painter::kYellow;
+            c.a = 80;
+            break;
+          case NegotiationPixelState::kInvalid:
+            c = gui::Painter::kBlack;
+            c.a = 200;
+            break;
+          case NegotiationPixelState::kDrcViolation:
+            c = gui::Painter::Color{255, 140, 0, 200};  // orange
+            break;
+        }
+        painter.setPen(c);
+        painter.setBrush(c);
+        odb::Rect rect(negotiation_die_xlo_ + gx * sw,
+                       y_lo,
+                       negotiation_die_xlo_ + (gx + 1) * sw,
+                       y_hi);
+        painter.drawRect(rect);
+      }
+    }
+  }
+
+  if (!negotiation_search_windows_.empty()) {
+    painter.setBrush(gui::Painter::kTransparent);
+    for (const auto& sel : selection) {
+      if (!sel.isInst()) {
+        continue;
+      }
+      auto* inst = std::any_cast<odb::dbInst*>(sel.getObject());
+      auto it = negotiation_search_windows_.find(inst);
+      if (it == negotiation_search_windows_.end()) {
+        continue;
+      }
+      const auto& [init_win, curr_win] = it->second;
+
+      // Init-position search window
+      auto init_color = gui::Painter::kCyan;
+      painter.setPen(init_color, /* cosmetic */ true);
+      painter.drawRect(init_win);
+
+      // Current-position window (only when the cell is displaced).
+      if (!curr_win.isInverted() && curr_win.area() > 0) {
+        auto curr_color = gui::Painter::kWhite;
+        curr_color.a = 200;
+        painter.setPen(curr_color, /* cosmetic */ true);
+        painter.drawRect(curr_win);
+      }
+    }
+  }
+}
+
+void Graphics::setNegotiationPixels(
+    const std::vector<NegotiationPixelState>& pixels,
+    int grid_w,
+    int grid_h,
+    int die_xlo,
+    int die_ylo,
+    int site_width,
+    const std::vector<int>& row_y_dbu)
+{
+  negotiation_pixels_ = pixels;
+  negotiation_grid_w_ = grid_w;
+  negotiation_grid_h_ = grid_h;
+  negotiation_die_xlo_ = die_xlo;
+  negotiation_die_ylo_ = die_ylo;
+  negotiation_site_width_ = site_width;
+  negotiation_row_y_dbu_ = row_y_dbu;
+}
+
+void Graphics::clearNegotiationPixels()
+{
+  negotiation_pixels_.clear();
+  negotiation_row_y_dbu_.clear();
+  negotiation_grid_w_ = 0;
+  negotiation_grid_h_ = 0;
+  negotiation_search_windows_.clear();
+}
+
+void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
+                                          const odb::Rect& init_window,
+                                          const odb::Rect& curr_window)
+{
+  negotiation_search_windows_[inst] = {init_window, curr_window};
+}
+
+void Graphics::clearNegotiationSearchWindows()
+{
+  negotiation_search_windows_.clear();
 }
 
 /* static */

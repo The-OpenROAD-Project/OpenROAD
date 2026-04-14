@@ -1,0 +1,61 @@
+# Docker image for running Claude Code with --dangerously-skip-permissions
+# inside a container that can build/test OpenROAD (CMake + Bazel).
+#
+# Usage: see claude.sh at the repo root.
+
+ARG fromImage=openroad/ubuntu22.04-dev:latest
+
+FROM ${fromImage}
+
+# --- Bazel support ---
+
+# Java 21 (required by Bazel 8.x)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openjdk-21-jre-headless \
+    && rm -rf /var/lib/apt/lists/*
+
+# Bazelisk (respects .bazelversion to download the correct Bazel release)
+RUN curl -Lo /usr/local/bin/bazelisk \
+        https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 \
+    && chmod +x /usr/local/bin/bazelisk \
+    && ln -sf /usr/local/bin/bazelisk /usr/local/bin/bazel
+
+# --- Claude Code support ---
+
+# Node.js 22 LTS (Claude Code requires Node 18+)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Claude Code CLI
+RUN npm install -g @anthropic-ai/claude-code
+
+# --- Convenience ---
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        sudo \
+        less \
+        jq \
+        ripgrep \
+    && rm -rf /var/lib/apt/lists/*
+
+# VS Code CLI (code-tunnel for remote editing).
+# Use the glibc build to match the Ubuntu base image. (The cli-alpine-x64
+# variant on code.visualstudio.com is statically linked and also works,
+# but the linux-x64 build from update.code.visualstudio.com is the
+# canonical match for glibc distros.)
+RUN curl -fsSL "https://update.code.visualstudio.com/latest/cli-linux-x64/stable" \
+        -o /tmp/vscode-cli.tar.gz \
+    && tar -xzf /tmp/vscode-cli.tar.gz -C /usr/local/bin \
+    && rm /tmp/vscode-cli.tar.gz
+
+# Trust all directories (safe inside container; the container IS the boundary)
+RUN git config --system safe.directory '*'
+
+# Entrypoint that maps host UID/GID then drops privileges
+COPY claude-entrypoint.sh /usr/local/bin/claude-entrypoint.sh
+RUN chmod +x /usr/local/bin/claude-entrypoint.sh
+
+WORKDIR /workspace
+ENTRYPOINT ["claude-entrypoint.sh"]

@@ -49,6 +49,8 @@ void set_bterm_top_layer_grid(dbBlock* block,
 
 bool dbHasCoreRows(dbDatabase* db);
 
+void blockMetrics(dbBlock* block, utl::Logger* logger);
+
 class WireLengthEvaluator
 {
  public:

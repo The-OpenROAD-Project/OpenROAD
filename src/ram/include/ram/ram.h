@@ -5,6 +5,7 @@
 
 #include <array>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -49,6 +50,29 @@ class TritonRoute;
 }
 
 namespace ram {
+
+enum class PortRoleType
+{
+  Clock,
+  DataIn,
+  DataOut,
+  WriteEnable,
+  TriEnable,
+  Select,  // for mux support in future
+  Power,
+  Ground
+};
+
+struct PortRole
+{
+  PortRoleType type;
+  int index;
+
+// for map so that keys are comparable
+#ifndef SWIG
+  auto operator<=>(const PortRole&) const = default;
+#endif
+};
 
 class RamGen
 {
@@ -96,15 +120,10 @@ class RamGen
 
  private:
   void findMasters();
+  std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
                             const char* name);
   odb::dbNet* makeNet(const std::string& prefix, const std::string& name);
-  odb::dbInst* makeInst(
-      Layout* layout,
-      const std::string& prefix,
-      const std::string& name,
-      odb::dbMaster* master,
-      const std::vector<std::pair<std::string, odb::dbNet*>>& connections);
   odb::dbInst* makeInst(
       Cell* cell,
       const std::string& prefix,
@@ -167,6 +186,13 @@ class RamGen
   odb::dbMaster* clock_gate_cell_{nullptr};
   odb::dbMaster* buffer_cell_{nullptr};
   odb::dbMaster* tapcell_{nullptr};
+
+  std::map<PortRole, std::string> storage_ports_;
+  std::map<PortRole, std::string> tristate_ports_;
+  std::map<PortRole, std::string> inv_ports_;
+  std::map<PortRole, std::string> and2_ports_;
+  std::map<PortRole, std::string> clock_gate_ports_;
+  std::map<PortRole, std::string> buffer_ports_;
 
   std::vector<odb::dbBTerm*> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;

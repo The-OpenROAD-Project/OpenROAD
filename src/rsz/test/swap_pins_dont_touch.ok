@@ -1,0 +1,109 @@
+[INFO ODB-0227] LEF file: Nangate45/Nangate45.lef, created 22 layers, 27 vias, 135 library cells
+[INFO IFP-0001] Added 857 rows of 210 site FreePDK45_38x28_10R_NP_162NW_34O.
+[INFO IFP-0100] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO IFP-0101] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO IFP-0102] Core area:                        47872.020 um^2
+[INFO IFP-0103] Total instances area:                 6.916 um^2
+[INFO IFP-0104] Effective utilization:                0.000
+[INFO IFP-0105] Number of instances:                      4
+Found 0 macro blocks.
+Using 2 tracks default min distance between IO pins.
+[INFO PPL-0001] Number of available slots 8754
+[INFO PPL-0002] Number of I/O             9
+[INFO PPL-0003] Number of I/O w/sink      8
+[INFO PPL-0004] Number of I/O w/o sink    1
+[INFO PPL-0005] Slots per section         200
+[INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0012] I/O nets HPWL: 164.48 um.
+[INFO GPL-0001] ---- Initialize GPL Main Data Structures
+[INFO GPL-0002] DBU: 2000
+[INFO GPL-0003] SiteSize: (  0.190  1.400 ) um
+[INFO GPL-0004] CoreBBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0036] Movable instances area:          6.916 um^2
+[INFO GPL-0037] Total instances area:            6.916 um^2
+[INFO GPL-0035] Pin density area adjust:         1.522 um^2
+[INFO GPL-0032] ---- Initialize Region: Top-level
+[INFO GPL-0006] Number of instances:                 4
+[INFO GPL-0007] Movable instances:                   4
+[INFO GPL-0008] Fixed instances:                     0
+[INFO GPL-0009] Dummy instances:                     0
+[INFO GPL-0010] Number of nets:                     11
+[INFO GPL-0011] Number of pins:                     22
+[INFO GPL-0012] Die BBox:  (  0.000  0.000 ) ( 40.000 1200.000 ) um
+[INFO GPL-0013] Core BBox: (  0.000  0.000 ) ( 39.900 1199.800 ) um
+[INFO GPL-0016] Core area:                   47872.020 um^2
+[INFO GPL-0014] Region name: top-level.
+[INFO GPL-0015] Region area:                 47872.020 um^2
+[INFO GPL-0017] Fixed instances area:            0.000 um^2
+[INFO GPL-0018] Movable instances area:          8.438 um^2
+[INFO GPL-0019] Utilization:                     0.018 %
+[INFO GPL-0020] Standard cells area:             8.438 um^2
+[INFO GPL-0021] Large instances area:            0.000 um^2
+[INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
+[INFO GPL-0051] Source of initial instance position counters:
+	Odb location = 0	Core center = 4	Region center = 0
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000008 HPWL: 9630280
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000007 HPWL: 55526
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000000 HPWL: 54697
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000003 HPWL: 54468
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54373
+[INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 6.92 um^2, Utilization: 0.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                       4
+Diamond Move Success:              4 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
+Placement Analysis
+---------------------------------
+total displacement          7.7 u
+average displacement        1.9 u
+max displacement            2.8 u
+original HPWL               9.2 u
+legalized HPWL             22.1 u
+delta HPWL                  140 %
+
+worst slack max -0.04
+Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------------------
+        0 |     +0.0% |       0 |       0 |             0 |        11
+    final |     +0.0% |       0 |       0 |             0 |         0
+---------------------------------------------------------------------
+[INFO RSZ-0100] Repair move sequence: UnbufferMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0094] Found 2 endpoints with setup violations.
+[INFO RSZ-0099] Repairing 2 out of 2 (100.00%) violating endpoints...
+   Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
+          | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
+------------------------------------------------------------------------------------------------------------------------------
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U5/ZN: Cell AND2_X4, pins A1 <-> A2
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U4/ZN: Cell AND4_X4, pins A4 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U4: Net net1 is "don't touch"
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U3/ZN: Cell NAND2_X4, pins A2 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+[DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U4/ZN: Cell AND4_X4, pins A4 <-> A1
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U4: Net net1 is "don't touch"
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U3/ZN: Already swapped U3
+       9* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10* |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      2 | y2
+      10+ |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+[DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
+      11+ |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+    final |       0 |       5 |        0 |      0 |     1 |   +46.2% |   -0.019 |       -0.0 |       -0.0 |      1 | y2
+------------------------------------------------------------------------------------------------------------------------------
+[INFO RSZ-0051] Resized 5 instances: 5 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0043] Swapped pins on 1 instances.
+[WARNING RSZ-0062] Unable to repair all setup violations.
+No differences found.
