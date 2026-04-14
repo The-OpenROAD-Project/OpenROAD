@@ -17,6 +17,10 @@
 #include "db_sta/dbNetwork.hh"
 #include "ord/OpenRoad.hh"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 namespace ord {
 // Defined in OpenRoad.i
 est::EstimateParasitics* getEstimateParasitics();

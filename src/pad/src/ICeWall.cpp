@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -517,33 +518,6 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
 
     const odb::Rect row_bbox = row->getBBox();
 
-    // Check for instances overlapping the corner site
-    bool place_inst = true;
-    for (auto* check_inst : block->getInsts()) {
-      if (check_inst == inst) {
-        continue;
-      }
-      if (!check_inst->isFixed()) {
-        continue;
-      }
-      if (check_inst->getMaster()->isCover()) {
-        continue;
-      }
-      const odb::Rect check_rect = check_inst->getBBox()->getBox();
-      if (row_bbox.overlaps(check_rect)) {
-        place_inst = false;
-        break;
-      }
-    }
-    if (!place_inst) {
-      logger_->warn(
-          utl::PAD,
-          44,
-          "Skipping corner cell placement in {} due to overlapping instances",
-          row->getName());
-      continue;
-    }
-
     const bool create_inst = inst == nullptr;
     if (create_inst) {
       inst = odb::dbInst::create(block, master, corner_name.c_str());
@@ -553,20 +527,20 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
     inst->setLocation(row_bbox.xMin(), row_bbox.yMin());
     inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    const CheckerOnlyPadPlacer checker(logger_, block, row);
+    const CheckerOnlyPadPlacer checker(logger_, block, row, {inst});
     if (!checker.check(inst)) {
       if (create_inst) {
         logger_->warn(utl::PAD,
                       45,
                       "Skipping corner cell generation for {} due to "
-                      "overlapping bump cell",
+                      "overlapping instances",
                       inst->getName());
         odb::dbInst::destroy(inst);
       } else {
         logger_->warn(utl::PAD,
                       46,
                       "Skipping corner cell placement for {} due to "
-                      "overlapping bump cell",
+                      "overlapping instances",
                       inst->getName());
         inst->setPlacementStatus(odb::dbPlacementStatus::UNPLACED);
       }

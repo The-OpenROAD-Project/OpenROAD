@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+#include <unistd.h>
+
 #include <cstddef>
 #include <cstring>
 #include <filesystem>
@@ -12,6 +14,7 @@
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
+#include "odb/geom.h"
 #include "tile_generator.h"
 #include "tst/nangate45_fixture.h"
 
@@ -78,8 +81,9 @@ class SaveImageTest : public tst::Nangate45Fixture
   // Save to a temp file and register for cleanup.
   std::string tempPng(const std::string& label)
   {
-    std::string path = std::filesystem::temp_directory_path()
-                       / ("web_test_" + label + ".png");
+    std::string path
+        = std::filesystem::temp_directory_path()
+          / ("web_test_" + label + "_" + std::to_string(::getpid()) + ".png");
     output_files_.push_back(path);
     return path;
   }

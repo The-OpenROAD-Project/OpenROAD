@@ -47,12 +47,11 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float fence_weight,
                           const float boundary_weight,
                           const float notch_weight,
-                          const float macro_blockage_weight,
+                          const float soft_blockage_weight,
                           const float target_util,
                           const float min_ar,
                           const char* report_directory,
-                          const bool keep_clustering_data,
-                          const bool use_def_halo) {
+                          const bool keep_clustering_data) {
 
   auto macro_placer = getMacroPlacer();
   const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
@@ -80,12 +79,11 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              fence_weight,
                              boundary_weight,
                              notch_weight,
-                             macro_blockage_weight,
+                             soft_blockage_weight,
                              target_util,
                              min_ar,
                              report_directory,
-                             keep_clustering_data,
-                             use_def_halo);
+                             keep_clustering_data);
 }
 
 void set_debug_cmd(odb::dbBlock* block,

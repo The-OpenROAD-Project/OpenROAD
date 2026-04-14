@@ -5,7 +5,9 @@
 [INFO ODB-0130]     Created 201 pins.
 [INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
 [INFO ODB-0133]     Created 31790 nets and 67032 connections.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 8048318.98 um^2, Instances area: 52327.69 um^2, Utilization: 0.7%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                    2916
@@ -18,7 +20,7 @@ Total Placement Failures:          0
 Placement Analysis
 ---------------------------------
 total displacement     291565.6 u
-average displacement       24.5 u
+average displacement       24.8 u
 max displacement         1411.8 u
 original HPWL         1353118.6 u
 legalized HPWL        1391680.1 u
