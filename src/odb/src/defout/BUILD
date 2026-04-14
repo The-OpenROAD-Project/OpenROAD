@@ -20,3 +20,12 @@ cc_library(
         "//src/utl",
     ],
 )
+
+filegroup(
+    name = "message_srcs",
+    srcs = glob([
+        "*.cpp",
+        "*.h",
+    ]),
+    visibility = ["//src/odb:__pkg__"],
+)

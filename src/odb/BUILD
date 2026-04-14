@@ -151,6 +151,18 @@ filegroup(
 )
 
 messages_txt(
+    extra_srcs = [
+        "//src/odb/src/3dblox:message_srcs",
+        "//src/odb/src/cdl:message_srcs",
+        "//src/odb/src/db:message_srcs",
+        "//src/odb/src/defin:message_srcs",
+        "//src/odb/src/defout:message_srcs",
+        "//src/odb/src/gdsin:message_srcs",
+        "//src/odb/src/gdsout:message_srcs",
+        "//src/odb/src/lefin:message_srcs",
+        "//src/odb/src/lefout:message_srcs",
+        "//src/odb/src/swig:message_srcs",
+    ],
     src_patterns = [
         "include/odb/*.h",
     ],

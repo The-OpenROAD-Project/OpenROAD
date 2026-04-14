@@ -32,3 +32,12 @@ cc_library(
         "@boost.spirit",
     ],
 )
+
+filegroup(
+    name = "message_srcs",
+    srcs = glob([
+        "*.cpp",
+        "*.h",
+    ]),
+    visibility = ["//src/odb:__pkg__"],
+)

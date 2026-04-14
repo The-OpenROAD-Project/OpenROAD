@@ -26,3 +26,12 @@ cc_library(
         "@yaml-cpp",
     ],
 )
+
+filegroup(
+    name = "message_srcs",
+    srcs = glob([
+        "*.cpp",
+        "*.h",
+    ]),
+    visibility = ["//src/odb:__pkg__"],
+)

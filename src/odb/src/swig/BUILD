@@ -68,6 +68,16 @@ tcl_encode(
     namespace = "odb",
 )
 
+filegroup(
+    name = "message_srcs",
+    srcs = glob([
+        "**/*.cpp",
+        "**/*.h",
+        "**/*.tcl",
+    ]),
+    visibility = ["//src/odb:__pkg__"],
+)
+
 cc_library(
     name = "ui",
     srcs = [
