@@ -1265,6 +1265,10 @@ void GuideProcessor::genGuides_split(
                                 is_horizontal,
                                 rects);
             auto prev_idx_it = curr_idx_it++;
+            const bool via_only
+                = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
+                  || (via_access_only
+                      && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
             while (curr_idx_it != split_indices.end()) {
               split::addSplitRect(track_idx,
                                   *curr_idx_it,
@@ -1272,12 +1276,14 @@ void GuideProcessor::genGuides_split(
                                   layer_num,
                                   is_horizontal,
                                   rects);
-              split::addSplitRect(track_idx,
-                                  *prev_idx_it,
-                                  *curr_idx_it,
-                                  layer_num,
-                                  is_horizontal,
-                                  rects);
+              if (!via_only) {
+                split::addSplitRect(track_idx,
+                                    *prev_idx_it,
+                                    *curr_idx_it,
+                                    layer_num,
+                                    is_horizontal,
+                                    rects);
+              }
               prev_idx_it = curr_idx_it++;
             }
           }
