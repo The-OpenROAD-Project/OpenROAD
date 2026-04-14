@@ -424,6 +424,23 @@ filegroup(
     visibility = ["//:__subpackages__"],
 )
 
+# ---------------------------------------------------------------------------
+# Packaging aliases
+#
+# The implementation lives in //packaging/ to isolate @rules_pkg loads from
+# downstream consumers, but the user-facing targets stay at the top level.
+# ---------------------------------------------------------------------------
+
+alias(
+    name = "install",
+    actual = "//packaging:install",
+)
+
+alias(
+    name = "tarfile",
+    actual = "//packaging:tarfile",
+)
+
 # Lightweight test suites that run without building OpenROAD.
 # Usage:
 #   bazelisk test --test_tag_filters=doc_check //src/... # all documentation checks
