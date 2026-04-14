@@ -59,17 +59,6 @@ namespace par {
 
 namespace {
 
-template <typename T>
-bool compareDbObjectsByNameAndId(T* lhs, T* rhs)
-{
-  const std::string lhs_name = lhs->getName();
-  const std::string rhs_name = rhs->getName();
-  if (lhs_name != rhs_name) {
-    return lhs_name < rhs_name;
-  }
-  return lhs->getId() < rhs->getId();
-}
-
 struct PartitionPortRecord
 {
   Net* net;

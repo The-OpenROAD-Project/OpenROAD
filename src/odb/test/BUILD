@@ -418,6 +418,7 @@ test_suite(
     tests = [
         "//src/odb/test/cpp:Test3DBloxChecker",
         "//src/odb/test/cpp:Test3DBloxParser",
+        "//src/odb/test/cpp:Test3DBloxVerilogWriter",
         "//src/odb/test/cpp:TestAbstractLef",
         "//src/odb/test/cpp:TestAccessPoint",
         "//src/odb/test/cpp:TestCallBacks",

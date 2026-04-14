@@ -8,6 +8,7 @@
 #pragma once
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <map>
 #include <string>
@@ -105,6 +106,19 @@ std::vector<float> abs(const std::vector<float>& a);
 float norm2(const std::vector<float>& a);
 
 float norm2(const std::vector<float>& a, const std::vector<float>& factor);
+
+// Stable comparator for ODB objects ordered first by name, then by id. Uses
+// getConstName() to avoid std::string allocation. The id tiebreaker ensures a
+// strict weak ordering when two objects share a name.
+template <typename T>
+bool compareDbObjectsByNameAndId(T* lhs, T* rhs)
+{
+  const int name_cmp = std::strcmp(lhs->getConstName(), rhs->getConstName());
+  if (name_cmp != 0) {
+    return name_cmp < 0;
+  }
+  return lhs->getId() < rhs->getId();
+}
 
 // A fully specified Fisher-Yates shuffle so Bazel and CMake do not depend on
 // implementation-defined std::shuffle behavior across standard libraries.

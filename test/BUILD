@@ -183,6 +183,9 @@ BIG_TESTS = [
     "tinyRocket_nangate45",
 ]
 
+# upf_aes does its own diff internally (regions-only under BAZEL_TEST) since
+# the full DEF output is not bit-stable across Bazel/CMake; the Tcl script
+# fails the test on mismatch, so the log diff against .ok is suppressed.
 [
     regression_test(
         name = test_name,
