@@ -22,7 +22,6 @@ class dbTech;
 class dbTechLayer;
 class dbIStream;
 class dbOStream;
-class lefout;
 
 //
 // An antenna multiplier factor is applied to metal. A separate factor may
@@ -135,7 +134,6 @@ class _dbTechAntennaAreaElement
       double inarea,
       dbTechLayer* inly
       = nullptr);  // Allocate a new element and add to container.
-  void writeLef(const char* header, dbTech* tech, lefout& writer) const;
 
   friend dbOStream& operator<<(dbOStream& stream,
                                const _dbTechAntennaAreaElement* aae);

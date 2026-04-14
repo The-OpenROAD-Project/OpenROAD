@@ -24,7 +24,6 @@
 #include "odb/dbSet.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
-#include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {
@@ -443,40 +442,6 @@ void dbMTerm::getPartialCutArea(
   _dbMTerm* mterm = (_dbMTerm*) this;
   _dbTechAntennaPinModel::getAntennaValues(
       getMTermTech(mterm), mterm->par_cut_area_, data);
-}
-
-void dbMTerm::writeAntennaLef(lefout& writer) const
-{
-  _dbMTerm* mterm = (_dbMTerm*) this;
-
-  dbMaster* tpmtr = (dbMaster*) mterm->getOwner();
-  dbLib* tplib = (dbLib*) tpmtr->getImpl()->getOwner();
-  dbTech* tech = tplib->getTech();
-
-  for (auto ant : mterm->par_met_area_) {
-    ant->writeLef("ANTENNAPARTIALMETALAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->par_met_sidearea_) {
-    ant->writeLef("ANTENNAPARTIALMETALSIDEAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->par_cut_area_) {
-    ant->writeLef("ANTENNAPARTIALCUTAREA", tech, writer);
-  }
-
-  for (auto ant : mterm->diffarea_) {
-    ant->writeLef("ANTENNADIFFAREA", tech, writer);
-  }
-
-  if (hasDefaultAntennaModel()) {
-    getDefaultAntennaModel()->writeLef(tech, writer);
-  }
-
-  if (hasOxide2AntennaModel()) {
-    fmt::print(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
-    getOxide2AntennaModel()->writeLef(tech, writer);
-  }
 }
 
 dbMTerm* dbMTerm::create(dbMaster* master,

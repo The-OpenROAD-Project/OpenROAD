@@ -25,10 +25,6 @@ cc_library(
     ],
     deps = [
         "//src/odb:headers",
-        # db source files include odb/lefout.h to implement writeLef()
-        # overloads that only call inline methods. Depending on the
-        # headers-only sub-target avoids a link cycle with :lefout.
-        "//src/odb/src/lefout:lefout_headers",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.container",
