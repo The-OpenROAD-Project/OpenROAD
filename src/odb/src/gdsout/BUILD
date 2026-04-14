@@ -14,7 +14,7 @@ cc_library(
     hdrs = ["//src/odb:include/odb/gdsout.h"],
     deps = [
         "//src/odb/src/db",
-        "//src/odb/src/gdsin",
+        "//src/odb/src/gdsin",  # for gdsUtil.h
         "//src/utl",
     ],
 )
