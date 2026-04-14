@@ -704,6 +704,7 @@ void _dbTechAntennaPinModel::getAntennaValues(
     const dbVector<_dbTechAntennaAreaElement*>& elements,
     std::vector<std::pair<double, dbTechLayer*>>& result)
 {
+  result.clear();
   for (auto elem : elements) {
     dbTechLayer* layer = nullptr;
     dbId<_dbTechLayer> layerId = elem->getLayerId();
