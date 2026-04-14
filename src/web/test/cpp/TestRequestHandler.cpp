@@ -127,6 +127,24 @@ TEST(JsonEscapeTest, ControlChars)
 }
 
 //------------------------------------------------------------------------------
+// JsonBuilder overload tests
+//------------------------------------------------------------------------------
+
+// Verify that field(std::string, const char*) writes a JSON string, not a bool.
+// Without an explicit overload, C++ prefers the standard pointer-to-bool
+// conversion over the user-defined const char*-to-std::string conversion,
+// silently writing "true" instead of the intended string value.
+TEST(JsonBuilderTest, FieldStringKeyCharPtrValueWritesString)
+{
+  JsonBuilder b;
+  b.beginObject();
+  b.field(std::string("dir"), "input");
+  b.endObject();
+  EXPECT_NE(b.str().find("\"input\""), std::string::npos);
+  EXPECT_EQ(b.str().find("true"), std::string::npos);
+}
+
+//------------------------------------------------------------------------------
 // dispatch_request tests (BOUNDS, LAYERS, INFO)
 //------------------------------------------------------------------------------
 
@@ -382,9 +400,11 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_ = {"current", "FakeCurrent", odb::Rect(0, 0, 100, 100)};
-    fake_previous_
-        = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
+    fake_current_
+        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_previous_ = {.name = "previous",
+                      .type = "FakePrevious",
+                      .bbox = {100, 100, 200, 200}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
