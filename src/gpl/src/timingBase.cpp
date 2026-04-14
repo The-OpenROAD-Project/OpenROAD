@@ -23,14 +23,21 @@ namespace gpl {
 
 using utl::GPL;
 
-// TimingBase
-TimingBase::TimingBase() = default;
+// TimingBaseVars
+TimingBaseVars::TimingBaseVars(const PlaceOptions& options)
+    : negativeSlackAreaTradeoff(options.timingNegativeSlackAreaTradeoff)
+{
+}
 
-TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
+// TimingBase
+// TimingBase::TimingBase() = default;
+
+TimingBase::TimingBase(TimingBaseVars tbVars,
+                       std::shared_ptr<NesterovBaseCommon> nbc,
                        grt::GlobalRouter* grt,
                        rsz::Resizer* rs,
                        utl::Logger* log)
-    : TimingBase()
+    : tbVars_(tbVars)
 {
   grt_ = grt;
   rs_ = rs;
@@ -119,7 +126,7 @@ void TimingBase::setTimingNetWeightMax(float max)
 
 bool TimingBase::executeTimingDriven(bool run_journal_restore)
 {
-  rs_->findResizeSlacks(run_journal_restore);
+  rs_->findResizeSlacks(run_journal_restore, tbVars_.negativeSlackAreaTradeoff);
 
   if (!run_journal_restore) {
     nbc_->fixPointers();

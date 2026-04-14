@@ -66,6 +66,7 @@ static gpl::PlaceOptions getOptions(
            options.timingNetWeightOverflows);
   checkKey(keys, "-overflow", options.overflow);
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
+  checkKey(keys, "-timing_driven_negative_slack_area_tradeoff", options.timingNegativeSlackAreaTradeoff);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);

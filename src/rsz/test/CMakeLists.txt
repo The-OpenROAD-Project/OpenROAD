@@ -18,7 +18,8 @@ or_integration_tests(
     buffer_ports11_hier
     buffer_ports12
     buffer_ports12_hier
-    buffer_varying_lengths
+    buffer_varying_lengths1
+    buffer_varying_lengths2
     clone_flat
     clone_hier
     eliminate_dead_logic1

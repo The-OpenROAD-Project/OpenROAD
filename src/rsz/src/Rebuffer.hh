@@ -42,7 +42,8 @@ class Rebuffer : public sta::dbStaState
 {
  public:
   Rebuffer(Resizer* resizer);
-  void fullyRebuffer(sta::Pin* user_pin = nullptr);
+  void fullyRebuffer(sta::Pin* user_pin = nullptr,
+                     float ns_area_tradeoff = 0.05f);
 
  protected:
   void init();
