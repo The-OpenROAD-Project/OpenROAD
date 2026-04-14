@@ -434,11 +434,13 @@ filegroup(
 alias(
     name = "install",
     actual = "//packaging:install",
+    visibility = ["//visibility:public"],
 )
 
 alias(
     name = "tarfile",
     actual = "//packaging:tarfile",
+    visibility = ["//visibility:public"],
 )
 
 # Lightweight test suites that run without building OpenROAD.
