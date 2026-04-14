@@ -21,6 +21,7 @@ DbxWriter::DbxWriter(utl::Logger* logger, odb::dbDatabase* db)
 
 void DbxWriter::writeChiplet(const std::string& filename, odb::dbChip* chiplet)
 {
+  written_def_chips_.clear();
   YAML::Node root;
   writeYamlContent(root, chiplet);
   writeYamlToFile(filename, root);
@@ -65,12 +66,14 @@ void DbxWriter::writeChipletInsts(YAML::Node& instances_node,
 void DbxWriter::writeChipletInst(YAML::Node& instance_node,
                                  odb::dbChipInst* inst)
 {
-  auto master_name = inst->getMasterChip()->getName();
+  auto chip = inst->getMasterChip();
+  auto master_name = chip->getName();
   instance_node["reference"] = master_name;
-  auto* chip = inst->getMasterChip();
-  if (odb::dbProperty::find(chip, "def_file_read") != nullptr) {
+
+  if (written_def_chips_.find(chip) == written_def_chips_.end()) {
     YAML::Node external_node = instance_node["external"];
-    external_node["def_file"] = std::string(chip->getName()) + ".def";
+    external_node["def_file"] = std::string(master_name) + ".def";
+    written_def_chips_.insert(chip);
   }
 }
 

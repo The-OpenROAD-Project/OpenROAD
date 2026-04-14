@@ -398,6 +398,20 @@ static std::string getFileName(const std::string& tech_file_path)
   return tech_file_path_fs.stem().string();
 }
 
+static inline void readDefForChip(odb::dbDatabase* db,
+                                  utl::Logger* logger,
+                                  odb::dbChip* chip,
+                                  const std::string& def_file)
+{
+  odb::defin def_reader(db, logger, odb::defin::DEFAULT);
+  std::vector<odb::dbLib*> search_libs;
+  for (odb::dbLib* lib : db->getLibs()) {
+    search_libs.push_back(lib);
+  }
+  // No callbacks here as we are going to give one postRead3Dbx later
+  def_reader.readChip(search_libs, def_file.c_str(), chip, false);
+}
+
 void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 {
   dbTech* tech = nullptr;
@@ -454,23 +468,7 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
 
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
-    odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
-    std::vector<odb::dbLib*> search_libs;
-    for (odb::dbLib* lib : db_->getLibs()) {
-      search_libs.push_back(lib);
-    }
-    // No callbacks here as we are going to give one postRead3Dbx later
-    def_reader.readChip(search_libs,
-                        chiplet.external.def_file.c_str(),
-                        chip,
-                        /*issue_callback*/ false);
-    odb::dbBoolProperty::create(chip, "def_file_read", true);
-    if (auto* prop = odb::dbStringProperty::find(chip, "def_file_path")) {
-      prop->setValue(chiplet.external.def_file.c_str());
-    } else {
-      odb::dbStringProperty::create(
-          chip, "def_file_path", chiplet.external.def_file.c_str());
-    }
+    readDefForChip(db_, logger_, chip, chiplet.external.def_file);
   }
   const int dbu_per_micron = db_->getDbuPerMicron();
   if (chiplet.design_width != -1.0) {
@@ -686,23 +684,18 @@ void ThreeDBlox::createChipInst(const ChipletInst& chip_inst)
   }
 
   if (!chip_inst.external.def_file.empty()) {
+    if (insts_with_def_.count(chip) > 0) {
+      logger_->error(utl::ODB,
+                     546,
+                     "3DBX Parser Error: There can't be 2 instances of the "
+                     "same chiplet {} with a def file each",
+                     chip->getName());
+    }
+    insts_with_def_.insert(chip);
     if (chip->getBlock() != nullptr) {
       odb::dbBlock::destroy(chip->getBlock());
     }
-    odb::defin def_reader(db_, logger_, odb::defin::DEFAULT);
-    std::vector<odb::dbLib*> search_libs;
-    for (odb::dbLib* lib : db_->getLibs()) {
-      search_libs.push_back(lib);
-    }
-    def_reader.readChip(
-        search_libs, chip_inst.external.def_file.c_str(), chip, false);
-    odb::dbBoolProperty::create(chip, "def_file_read", true);
-    if (auto* prop = odb::dbStringProperty::find(chip, "def_file_path")) {
-      prop->setValue(chip_inst.external.def_file.c_str());
-    } else {
-      odb::dbStringProperty::create(
-          chip, "def_file_path", chip_inst.external.def_file.c_str());
-    }
+    readDefForChip(db_, logger_, chip, chip_inst.external.def_file);
   }
 
   dbChipInst* inst = dbChipInst::create(db_->getChip(), chip, chip_inst.name);

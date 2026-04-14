@@ -69,5 +69,6 @@ class ThreeDBlox
   std::unordered_set<odb::dbTech*> written_techs_;
   std::unordered_set<odb::dbLib*> written_libs_;
   std::unordered_set<std::string> read_files_;
+  std::unordered_set<odb::dbChip*> insts_with_def_;
 };
 }  // namespace odb
