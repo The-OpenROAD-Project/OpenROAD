@@ -86,9 +86,9 @@ python_wrap_cc(
     srcs = glob([
         "include/odb/*.h",
     ]) + [
-        "//src/odb/src/swig:swig_imports_py",
         "//:src/Design.i",
         "//:src/Exception.i",
+        "//src/odb/src/swig:swig_imports_py",
     ],
     module = "odb",
     root_swig_src = "//src/odb/src/swig:common/odb.i",

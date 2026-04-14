@@ -43,9 +43,9 @@ cc_library(
 tcl_wrap_cc(
     name = "swig",
     srcs = [
-        "//src/odb:odb_public_headers",
         "//:src/Design.i",
         "//:src/Exception.i",
+        "//src/odb:odb_public_headers",
     ] + glob([
         "tcl/*.i",
         "common/*.i",
@@ -71,11 +71,11 @@ tcl_encode(
 cc_library(
     name = "ui",
     srcs = [
-        "//src/odb:include/odb/geom.h",
         "common/swig_common.h",
         "tcl/MakeOdb.cpp",
         ":swig",
         ":tcl",
+        "//src/odb:include/odb/geom.h",
     ],
     hdrs = ["//src/odb:include/odb/MakeOdb.h"],
     copts = [
@@ -86,8 +86,8 @@ cc_library(
         "common",
     ],
     deps = [
-        "//src/odb",
         "//:ord",
+        "//src/odb",
         "//src/utl",
         "@abseil-cpp//absl/synchronization",
         "@boost.container",
