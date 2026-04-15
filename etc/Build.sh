@@ -18,7 +18,8 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=""
+cmakeOptions=()
+isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
@@ -58,6 +59,8 @@ OPTIONS:
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
                                                  or from system "/etc".
+  -local                                        Install OpenROAD in \${HOME}/.local.
+  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
 
 EOF
     exit "${1:-1}"
@@ -78,31 +81,52 @@ while [ "$#" -gt 0 ]; do
         -h|-help)
             _help 0
             ;;
+        -local)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${HOME}/.local")
+            INSTALL_PREFIX_SET=1
+            ;;
+        -prefix=*)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
+            INSTALL_PREFIX_SET=1
+            ;;
         -no-gui)
-            cmakeOptions+=" -DBUILD_GUI=OFF"
+            cmakeOptions+=("-DBUILD_GUI=OFF")
             ;;
         -no-tests)
-            cmakeOptions+=" -DENABLE_TESTS=OFF"
+            cmakeOptions+=("-DENABLE_TESTS=OFF")
+            ;;
+        -ninja)
+            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-GNinja")
+            isNinja=yes
             ;;
         -cpp20)
-            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
             ;;
         -build-man)
-            cmakeOptions+=" -DBUILD_MAN=ON"
+            cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
+            cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
-            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
-            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            cmakeOptions+=" ${1#*=}"
+            read -ra temp_arr <<< "${1#*=}"
+            cmakeOptions+=("${temp_arr[@]}")
             ;;
         -clean )
             cleanBefore=yes
@@ -129,7 +153,7 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=" -DGPU=ON"
+            cmakeOptions+=("-DGPU=ON")
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -147,7 +171,8 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+    read -ra newOpts <<< "$(cat "$depsPrefixesFile")"
+    cmakeOptions+=("${newOpts[@]}")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -308,5 +333,11 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+if [[ "$isNinja" == "yes" ]]; then
+    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+    cd "${buildDir}"
+    CLICOLOR_FORCE=1 ninja build_and_test
+    exit 0
+fi
+cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"

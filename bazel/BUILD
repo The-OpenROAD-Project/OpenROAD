@@ -12,10 +12,13 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "bzl_fmt_test.sh",
+        "bzl_lint_test.sh",
+        "bzl_tidy.sh",
         "fix_lint.sh",
         "install.sh",
-        "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
+        "tcl_lint_test.sh",
         "tcl_tidy.sh",
     ],
     visibility = ["//visibility:public"],
