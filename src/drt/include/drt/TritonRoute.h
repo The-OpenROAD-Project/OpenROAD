@@ -60,7 +60,7 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
-  std::optional<int> drcReportIterStep;
+  int drcReportIterStep = 0;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
   bool enableViaGen = false;
@@ -77,7 +77,7 @@ struct ParamStruct
   int minAccessPoints = -1;
   bool saveGuideUpdates = false;
   std::string repairPDNLayerName;
-  int num_threads;
+  int num_threads = 1;
 };
 
 class TritonRoute
