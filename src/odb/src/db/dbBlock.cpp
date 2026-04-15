@@ -2998,11 +2998,7 @@ dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimiter_)
   _dbBlock* top = chip->block_tbl_->create();
   top->initialize(chip, nullptr, name_, hier_delimiter_);
   chip->top_ = top->getOID();
-  if (chip_->getTech() != nullptr) {
-    top->dbu_per_micron_ = chip_->getTech()->getDbUnitsPerMicron();
-  } else {
-    top->dbu_per_micron_ = chip_->getDatabase()->getDbuPerMicron();
-  }
+  top->dbu_per_micron_ = chip_->getDb()->getDbuPerMicron();
   return (dbBlock*) top;
 }
 
