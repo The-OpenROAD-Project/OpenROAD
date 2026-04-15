@@ -126,6 +126,7 @@ cc_test(
     srcs = ["cpp/TestScanOptimizer.cpp"],
     features = ["-layering_check"],  # TODO: includes private headers
     deps = [
+        "//src/dft/src/optimizer",  # must precede //src/dft to resolve Opt.hh correctly
         "//src/dft",
         "//src/dft/src/utils",
         "//src/odb",

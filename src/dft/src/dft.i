@@ -119,9 +119,14 @@ void report_dft_config() {
   getDft()->reportDftConfig();
 }
 
-void scan_opt()
+void scan_opt(bool spatial_cluster, bool cluster_only)
 {
-  getDft()->scanOpt();
+  getDft()->scanOpt(spatial_cluster, cluster_only);
+}
+
+void report_chain_metrics()
+{
+  getDft()->reportChainMetrics();
 }
 
 %}  // inline

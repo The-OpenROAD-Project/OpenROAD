@@ -15,6 +15,7 @@ cc_library(
         "Opt.cpp",
     ],
     hdrs = [
+        "KMeans.hh",
         "OdbScanCellAdapter.hh",
         "Opt.hh",
     ],
