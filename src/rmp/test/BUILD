@@ -37,10 +37,6 @@ COMPULSORY_TESTS = [
 
 ALL_TESTS = COMPULSORY_TESTS
 
-MEDIUM_TESTS = [
-    "aes_genetic",
-]
-
 filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
@@ -125,10 +121,20 @@ filegroup(
     for test_name in ALL_TESTS
 ]
 
+# Genetic/annealing tests run significantly longer than the "small" 300s
+# default; bump their size under concurrent load.
+LONG_RUNNING_TESTS = [
+    "aes_genetic",
+    "gcd_genetic",
+    "aes_annealing",
+    "gcd_annealing1",
+    "gcd_annealing2",
+]
+
 [
     regression_test(
         name = test_name,
-        size = "medium" if test_name in MEDIUM_TESTS else "small",
+        size = "medium" if test_name in LONG_RUNNING_TESTS else "small",
         data = [
             ":" + test_name + "_resources",
             "//src/rmp:rmp_py",
