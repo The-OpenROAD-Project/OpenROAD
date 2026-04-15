@@ -371,7 +371,8 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
         const Point<double>& p = points_[idx];
         float min_dist = maxInternalDiameter_;
         unsigned min_sink_idx, min_cluster_idx = -1;
-        bool is_adopted = false;
+        float min_dist_to_merge = maxInternalDiameter_;
+        unsigned cluster_idx_to_merge = -1;
       	// Find cluster to add one sink
 	      for (unsigned k = 0; k < cluster_num; ++k) {
 	        if (k == c) continue;
@@ -394,33 +395,34 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
             distanceCost = std::max(cost, distanceCost);
           }
 
-          if (!isLimitExceeded(solutionPoints[j][k].size(),
+          if (!isLimitExceeded(solutionPoints[j][k].size() + 1,
                         distanceCost,
                         capCost,
-                        groupSize)) {
-            solved_cluster++;
-            logger_->report("For solution {} cluster {} has one sink, cluster {} could adopt it, size {} dia {:.3}", j, c, k, solutionPoints[j][k].size(), distanceCost);
-	          //Add sink to found cluster
-	          solutionPoints[j][k].push_back(p);
-	          solutionPointsIdx[j][k].push_back(idx);
-            solutions[j][k].push_back(idx);
-	          //costs[j] += distanceCost;
-            // delete cluster
-            swap(solutionPoints[j][c], solutionPoints[j][cluster_num - 1]);
-            solutionPoints[j].pop_back();
-            swap(solutionPointsIdx[j][c], solutionPointsIdx[j][cluster_num - 1]);
-            solutionPointsIdx[j].pop_back();
-            swap(solutions[j][c], solutions[j][cluster_num - 1]);
-            solutions[j].pop_back();
-            //costs[j] -= maxInternalDiameter_;
-            cluster_num--;
-            is_adopted = true;
-            if (c < cluster_num && solutionPoints[j][c].size() == 1) c--;
-            break;
-	        }
+                        groupSize) && distanceCost < min_dist_to_merge) {
+            cluster_idx_to_merge = k;
+          }
 	      }
+        if (cluster_idx_to_merge != -1) {
+          solved_cluster++;
+          logger_->report("For solution {} cluster {} has one sink, cluster {} could adopt it, size {} dia {:.3}", j, c, cluster_idx_to_merge, solutionPoints[j][cluster_idx_to_merge].size(), min_dist_to_merge);
+          //Add sink to found cluster
+          solutionPoints[j][cluster_idx_to_merge].push_back(p);
+          solutionPointsIdx[j][cluster_idx_to_merge].push_back(idx);
+          solutions[j][cluster_idx_to_merge].push_back(idx);
+          //costs[j] += distanceCost;
+          // delete cluster
+          swap(solutionPoints[j][c], solutionPoints[j][cluster_num - 1]);
+          solutionPoints[j].pop_back();
+          swap(solutionPointsIdx[j][c], solutionPointsIdx[j][cluster_num - 1]);
+          solutionPointsIdx[j].pop_back();
+          swap(solutions[j][c], solutions[j][cluster_num - 1]);
+          solutions[j].pop_back();
+          //costs[j] -= maxInternalDiameter_;
+          cluster_num--;
+          if (c < cluster_num && solutionPoints[j][c].size() == 1) c--;
+        }
         // if it can not be added on cluster near and there is a sink near, then add the sink on cluster
-        if (!is_adopted && min_cluster_idx != -1) {
+        else if (min_cluster_idx != -1) {
           solved_cluster++;
           logger_->report("For solution {} cluster {} has one sink, cluster {} could give a sink", j, c, min_cluster_idx );
           // add the more nearby sink on cluster
