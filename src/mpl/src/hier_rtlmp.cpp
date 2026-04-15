@@ -191,6 +191,11 @@ void HierRTLMP::setKeepClusteringData(bool keep_clustering_data)
   keep_clustering_data_ = keep_clustering_data;
 }
 
+void HierRTLMP::setUseFullHalo(bool use_full_halo)
+{
+  use_full_halo_ = use_full_halo;
+}
+
 // Top Level Function
 // The flow of our MacroPlacer is divided into 6 stages.
 // 1) Multilevel Autoclustering:
