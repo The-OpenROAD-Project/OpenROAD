@@ -105,6 +105,7 @@ class ClusteringEngine
 
   void setTree(PhysicalHierarchy* tree);
   void setHalos(const HardMacro::Halo& base_halo,
+                bool use_full_halo,
                 const odb::PtrMap<odb::dbInst, HardMacro::Halo>& macro_to_halo);
 
   // Methods to update the tree as the hierarchical
@@ -257,6 +258,7 @@ class ClusteringEngine
   std::unordered_set<odb::dbInst*> ignorable_macros_;
 
   HardMacro::Halo base_halo_;
+  bool use_full_halo_{false};
   odb::PtrMap<odb::dbInst, HardMacro::Halo> macro_to_halo_;
 };
 
