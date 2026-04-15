@@ -479,7 +479,7 @@ void OptimizeScanWirelength(std::vector<std::unique_ptr<ScanCell>>& cells,
   // Or-Opt (single-cell relocation) catches remaining improvements.
   TwoOptScanChain(cells, candidates, wv);
   ThreeOptScanChain(cells, candidates, wv);
-  OrOptScanChain(cells, wv);
+  // OrOptScanChain(cells, wv);
 }
 
 }  // namespace dft

@@ -87,8 +87,20 @@ class Dft
   // Prints to stdout
   void reportDftConfig() const;
 
-  // Performs scan optimizations on the netlist
-  void scanOpt();
+  // Performs scan optimizations on the netlist.
+  // spatial_cluster: when true (default), runs k-means pre-clustering to
+  // reassign cells across chains before per-chain wirelength optimization.
+  // Pass false to skip pre-clustering (useful for A/B comparison).
+  // cluster_only: when true, runs spatial pre-clustering and stops before
+  // per-chain wirelength optimization. Used to evaluate clustering quality
+  // in isolation.
+  void scanOpt(bool spatial_cluster = true, bool cluster_only = false);
+
+  // Reports order-independent spatial metrics per scan chain (HPWL, MST,
+  // sum of pairwise Manhattan distances).  Output is CSV-formatted to
+  // stdout for sweep collectors.  These metrics measure clustering
+  // quality without depending on intra-chain ordering.
+  void reportChainMetrics();
 
  private:
   // If we need to run pre_dft to create the internal state

@@ -12,6 +12,7 @@
 
 #include "ClockDomain.hh"
 #include "ScanArchitect.hh"
+#include "Opt.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCell.hh"
 #include "utl/Logger.h"

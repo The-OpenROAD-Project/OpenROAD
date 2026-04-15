@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "ClockDomain.hh"
+#include "KMeans.hh"
 #include "Opt.hh"
 #include "ScanCell.hh"
 #include "ScanPin.hh"
@@ -506,6 +507,145 @@ TEST(TestScanOptimizer, SmallChainHandledCorrectly)
   ASSERT_EQ(cells.size(), 4u);
   // Optimal wirelength = 3 * 10 = 30.
   EXPECT_EQ(chainWirelength(cells), 30);
+}
+
+// ---------------------------------------------------------------------------
+// KMeansClusters tests
+// ---------------------------------------------------------------------------
+
+// Helper: build a PlacedScanCellMock at the given point (SI == SO == origin).
+std::unique_ptr<PlacedScanCellMock> MakeCell(const std::string& name,
+                                              odb::Point p,
+                                              utl::Logger* logger)
+{
+  return std::make_unique<PlacedScanCellMock>(name, p, p, p, logger);
+}
+
+// k=1: every cell lands in cluster 0 regardless of position.
+TEST(TestKMeans, KEqualsOne)
+{
+  utl::Logger logger;
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+  for (int i = 0; i < 5; i++) {
+    owned.push_back(MakeCell("c" + std::to_string(i), {i * 100, 0}, &logger));
+    cells.push_back(owned.back().get());
+  }
+
+  const std::vector<int> assignments = KMeansClusters(cells, 1);
+
+  ASSERT_EQ(assignments.size(), 5u);
+  for (int a : assignments) {
+    EXPECT_EQ(a, 0);
+  }
+}
+
+// n < k: degenerate case must not crash and all cells fall in cluster 0.
+TEST(TestKMeans, CellsFewerThanK)
+{
+  utl::Logger logger;
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+  for (int i = 0; i < 3; i++) {
+    owned.push_back(MakeCell("c" + std::to_string(i), {i * 100, 0}, &logger));
+    cells.push_back(owned.back().get());
+  }
+
+  const std::vector<int> assignments = KMeansClusters(cells, 5);
+
+  ASSERT_EQ(assignments.size(), 3u);
+  for (int a : assignments) {
+    EXPECT_EQ(a, 0);
+  }
+}
+
+// 16 cells in 4 tight, well-separated quadrants — k=4 must recover them.
+// Intra-cluster max Manhattan distance: 200.  Inter-cluster min: ~800.
+TEST(TestKMeans, QuadrantRecovery)
+{
+  utl::Logger logger;
+  // Each quadrant has 4 cells in a 100×100 box; quadrant corners are at
+  // (0,0), (1000,0), (0,1000), (1000,1000).
+  const odb::Point qoffsets[4] = {{0, 0}, {1000, 0}, {0, 1000}, {1000, 1000}};
+  const odb::Point within[4] = {{0, 0}, {100, 0}, {0, 100}, {100, 100}};
+
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+  for (int q = 0; q < 4; q++) {
+    for (int w = 0; w < 4; w++) {
+      odb::Point p(qoffsets[q].x() + within[w].x(),
+                   qoffsets[q].y() + within[w].y());
+      owned.push_back(
+          MakeCell("c" + std::to_string(q * 4 + w), p, &logger));
+      cells.push_back(owned.back().get());
+    }
+  }
+
+  const std::vector<int> assignments = KMeansClusters(cells, 4);
+
+  ASSERT_EQ(assignments.size(), 16u);
+
+  // All four cells in each quadrant must share the same cluster label.
+  for (int q = 0; q < 4; q++) {
+    const int base = q * 4;
+    EXPECT_EQ(assignments[base + 1], assignments[base]) << "quadrant " << q;
+    EXPECT_EQ(assignments[base + 2], assignments[base]) << "quadrant " << q;
+    EXPECT_EQ(assignments[base + 3], assignments[base]) << "quadrant " << q;
+  }
+
+  // All four quadrants must have distinct cluster labels.
+  EXPECT_NE(assignments[0], assignments[4]);
+  EXPECT_NE(assignments[0], assignments[8]);
+  EXPECT_NE(assignments[0], assignments[12]);
+  EXPECT_NE(assignments[4], assignments[8]);
+  EXPECT_NE(assignments[4], assignments[12]);
+  EXPECT_NE(assignments[8], assignments[12]);
+}
+
+// Two calls with identical input must produce identical output.
+TEST(TestKMeans, Deterministic)
+{
+  utl::Logger logger;
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+  // 20 cells at pseudo-scattered positions.
+  for (int i = 0; i < 20; i++) {
+    odb::Point p(i * 37, (i * 53) % 200);
+    owned.push_back(MakeCell("c" + std::to_string(i), p, &logger));
+    cells.push_back(owned.back().get());
+  }
+
+  const std::vector<int> a1 = KMeansClusters(cells, 4);
+  const std::vector<int> a2 = KMeansClusters(cells, 4);
+
+  EXPECT_EQ(a1, a2);
+}
+
+// n=1000 cells: algorithm must terminate and return valid assignments.
+TEST(TestKMeans, ConvergesOnLargeInput)
+{
+  utl::Logger logger;
+  const int N = 1000;
+  std::vector<std::unique_ptr<PlacedScanCellMock>> owned;
+  std::vector<ScanCell*> cells;
+
+  // Deterministic pseudo-random positions via a simple LCG.
+  int rx = 12345, ry = 67890;
+  for (int i = 0; i < N; i++) {
+    rx = (rx * 1103515245 + 12345) & 0x7fffffff;
+    ry = (ry * 1103515245 + 12345) & 0x7fffffff;
+    odb::Point p(rx % 100000, ry % 100000);
+    owned.push_back(MakeCell("c" + std::to_string(i), p, &logger));
+    cells.push_back(owned.back().get());
+  }
+
+  const std::vector<int> assignments = KMeansClusters(cells, 4);
+
+  ASSERT_EQ(assignments.size(), static_cast<size_t>(N));
+  for (int a : assignments) {
+    EXPECT_GE(a, 0);
+    EXPECT_LT(a, 4);
+  }
 }
 
 }  // namespace
