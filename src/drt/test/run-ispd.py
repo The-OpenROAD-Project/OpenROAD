@@ -78,6 +78,7 @@ def gen_files(work_dir, ispd_year, design, drv_min, drv_max):
             read_guides {bench_dir}/{design}/{design}.input.guide 
             detailed_route -output_maze {design_dir}/{design}.output.maze.log \\
                            -output_drc {design_dir}/{design}.output.drc.rpt \\
+                           -db_process_node ISPD \\
                            -verbose {verbose}
             write_def {design_dir}/{design}.output.def
             set drv_count [detailed_route_num_drvs]

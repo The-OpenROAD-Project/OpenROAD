@@ -652,9 +652,8 @@ bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
       const bool one_gcell_guide
           = getDesign()->getTopBlock()->getGCellIdx(guide_rect.ll())
             == getDesign()->getTopBlock()->getGCellIdx(guide_rect.ur());
-      if (!one_gcell_guide) {
-        // TODO: uncomment this when GRT issue is solved
-        // error = true;  // not a valid via access guide
+      if (!one_gcell_guide && router_cfg_->DBPROCESSNODE != "ISPD") {
+        error = true;  // not a valid via access guide
       }
     }
     // else I don't know how many gcells the guide spans
@@ -1265,10 +1264,10 @@ void GuideProcessor::genGuides_split(
                                 is_horizontal,
                                 rects);
             auto prev_idx_it = curr_idx_it++;
-            const bool via_only
-                = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
-                  || (via_access_only
-                      && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
+            const bool via_only = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
+                                  && router_cfg_->DBPROCESSNODE != "ISPD";
+            || (via_access_only
+                && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
             while (curr_idx_it != split_indices.end()) {
               split::addSplitRect(track_idx,
                                   *curr_idx_it,
