@@ -27,9 +27,13 @@ void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
                        const char* report_file_name,
-                       bool incremental){
+                       bool incremental,
+                       bool use_negotiation,
+                       bool run_abacus){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), incremental);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y,
+                            std::string(report_file_name),
+                            incremental, use_negotiation, run_abacus);
 }
 
 void
@@ -102,7 +106,8 @@ set_debug_cmd(float min_displacement,
               int jump_moves,
               bool iterative_placement,
               bool deep_iterative_placement,
-              bool paint_pixels)
+              bool paint_pixels,
+              bool paint_negotiation_pixels)
 {
   dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
   opendp->setJumpMoves(jump_moves);
@@ -110,7 +115,7 @@ set_debug_cmd(float min_displacement,
   opendp->setDeepIterativePlacement(deep_iterative_placement);
   if (dpl::Graphics::guiActive()) {
       std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
-          opendp, debug_instance, paint_pixels);
+          opendp, debug_instance, paint_pixels, paint_negotiation_pixels);
       opendp->setDebug(graphics);
   }
 }

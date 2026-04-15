@@ -1,0 +1,2 @@
+description = "Add integration or unit tests to an OpenROAD module. Handles test creation, golden file generation, and dual CMake/Bazel registration."
+prompt = "Activate the add-test skill and add tests for: {{args}}"

@@ -30,6 +30,14 @@ save_image_cmd(const char* filename,
                     vis_json ? vis_json : "");
 }
 
+void
+save_report_cmd(const char* filename,
+                int max_setup, int max_hold)
+{
+  web::WebServer *server = ord::OpenRoad::openRoad()->getWebServer();
+  server->saveReport(filename, max_setup, max_hold);
+}
+
 } // namespace web
 
 %} // inline
