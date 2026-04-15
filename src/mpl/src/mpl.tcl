@@ -9,6 +9,8 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -max_num_level  max_num_level \
                                           -coarsening_ratio coarsening_ratio \
                                           -large_net_threshold large_net_threshold \
+                                          -halo_width halo_width \
+                                          -halo_height halo_height \
                                           -fence_lx   fence_lx \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
@@ -32,6 +34,7 @@ proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
     keys {-max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
          -max_num_level  -coarsening_ratio -large_net_threshold \
+         -halo_width -halo_height \
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
@@ -102,6 +105,27 @@ proc rtl_macro_placer { args } {
   }
   if { [info exists keys(-large_net_threshold)] } {
     set large_net_threshold $keys(-large_net_threshold)
+  }
+
+  if { [info exists keys(-halo_width)] || [info exists keys(-halo_height)] } {
+    utl::warn MPL 74 "-halo_width/-halo_height are deprecated, use\
+                      the set_macro_default_halo command instead."
+    set halo_width 0.0
+    set halo_height 0.0
+
+    if { [info exists keys(-halo_width)] } {
+      set halo_width $keys(-halo_width)
+      set halo_height $halo_width
+    }
+
+    if { [info exists keys(-halo_height)] } {
+      set halo_height $keys(-halo_height)
+      if { ![info exists keys(-halo_width)] } {
+        set halo_width $halo_height
+      }
+    }
+
+    mpl::set_default_halo $halo_width $halo_height $halo_width $halo_height
   }
 
   if { [info exists keys(-fence_lx)] } {
