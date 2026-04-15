@@ -82,7 +82,7 @@ jobs:
 
       - name: Open PR if diagrams changed
         if: steps.diagram-changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "odb: regenerate LEF/DEF railroad diagram SVGs"
           branch: auto/grammar-railroad-diagrams
