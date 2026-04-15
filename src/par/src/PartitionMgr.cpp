@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "TritonPart.h"
+#include "Utilities.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/ConcreteNetwork.hh"
