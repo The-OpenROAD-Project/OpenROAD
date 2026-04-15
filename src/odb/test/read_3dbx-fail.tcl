@@ -5,7 +5,7 @@ source "helpers.tcl"
 
 # Test 1: Main file does not exist
 if { [catch {read_3dbx "nonexistent_file.3dbx"} err_msg] } {
-  if { [string first "does not exist" $err_msg] < 0 } {
+  if { [string first "Cannot open file" $err_msg] < 0 } {
     puts "FAIL: Wrong error for missing main file: $err_msg"
     exit 1
   }
@@ -17,7 +17,7 @@ if { [catch {read_3dbx "nonexistent_file.3dbx"} err_msg] } {
 
 # Test 2: Main file exists but references a non-existent include
 if { [catch {read_3dbx "data/fail.3dbx"} err_msg] } {
-  if { [string first "does not exist" $err_msg] < 0 } {
+  if { [string first "Cannot open file" $err_msg] < 0 } {
     puts "FAIL: Wrong error for missing include file: $err_msg"
     exit 1
   }
