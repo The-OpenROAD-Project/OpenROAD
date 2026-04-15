@@ -1,0 +1,200 @@
+[INFO ODB-0227] LEF file: sky130/sky130hd.tlef, created 13 layers, 25 vias
+[INFO ODB-0227] LEF file: sky130/sky130hd_std_cell.lef, created 437 library cells
+[WARNING STA-0441] set_input_delay relative to a clock defined on the same port/pin not allowed.
+-- Before --
+
+Cell type report:                       Count       Area
+  Buffer                                 1301    5303.84
+  Inverter                                161     604.33
+  Sequential cell                        1932   46980.06
+  Multi-Input combinational cell        12301   74458.91
+  Total                                 15695  127347.14
+[-402.860, -362.908): * (32)
+[-362.908, -322.956):  (0)
+[-322.956, -283.004):  (0)
+[-283.004, -243.052):  (0)
+[-243.052, -203.100): * (98)
+[-203.100, -163.148): ************************************************** (3410)
+[-163.148, -123.196):  (0)
+[-123.196,  -83.244):  (0)
+[ -83.244,  -43.292):  (0)
+[ -43.292,   -3.340]: ** (150)
+Startpoint: rst_ni (input port clocked by core_clock)
+Endpoint: _27379_ (recovery check against rising-edge clock core_clock)
+Path Group: asynchronous
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 200.00  200.00 ^ input external delay
+   0.00  200.00 ^ rst_ni (in)
+   0.00  200.00 ^ _27379_/SET_B (sky130_fd_sc_hd__dfstp_2)
+         200.00   data arrival time
+
+  15.15   15.15   clock core_clock (rise edge)
+   0.00   15.15   clock network delay (ideal)
+   0.00   15.15   clock reconvergence pessimism
+          15.15 ^ _27379_/CLK (sky130_fd_sc_hd__dfstp_2)
+   0.44   15.60   library recovery time
+          15.60   data required time
+---------------------------------------------------------
+          15.60   data required time
+        -200.00   data arrival time
+---------------------------------------------------------
+        -184.40   slack (VIOLATED)
+
+
+Startpoint: irq_fast_i[8] (input port clocked by core_clock)
+Endpoint: instr_addr_o[28] (output port clocked by core_clock)
+Path Group: core_clock
+Path Type: max
+
+  Delay    Time   Description
+---------------------------------------------------------
+   0.00    0.00   clock core_clock (rise edge)
+   0.00    0.00   clock network delay (ideal)
+ 200.00  200.00 v input external delay
+   0.00  200.00 v irq_fast_i[8] (in)
+   0.84  200.84 v _16813_/X (sky130_fd_sc_hd__a22o_1)
+   1.23  202.07 v _16814_/X (sky130_fd_sc_hd__a221o_1)
+   0.55  202.62 ^ _16815_/Y (sky130_fd_sc_hd__nor2_1)
+   0.44  203.06 v _16823_/Y (sky130_fd_sc_hd__nand3_1)
+   1.13  204.19 ^ _16824_/Y (sky130_fd_sc_hd__a221oi_1)
+   0.57  204.76 v _16825_/Y (sky130_fd_sc_hd__nand2_1)
+   0.57  205.33 ^ _16826_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.27  205.60 v _16827_/Y (sky130_fd_sc_hd__nor3_1)
+   0.29  205.89 ^ _16828_/Y (sky130_fd_sc_hd__nand2b_1)
+   0.35  206.24 v _16832_/Y (sky130_fd_sc_hd__nand2_1)
+   1.01  207.25 ^ _16852_/Y (sky130_fd_sc_hd__nor3_1)
+   0.80  208.04 ^ _16853_/X (sky130_fd_sc_hd__o21a_1)
+   1.01  209.06 ^ _16879_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.20  210.26 ^ _16935_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.16  211.42 ^ _16973_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.18  212.60 ^ _17012_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.22  213.82 ^ _17029_/X (sky130_fd_sc_hd__clkbuf_1)
+   1.20  215.03 ^ _17080_/X (sky130_fd_sc_hd__clkbuf_1)
+   0.41  215.43 v _17099_/Y (sky130_fd_sc_hd__a21oi_1)
+   0.50  215.94 ^ _17100_/Y (sky130_fd_sc_hd__a21oi_1)
+   1.40  217.34 ^ _17101_/Y (sky130_fd_sc_hd__a21boi_0)
+   0.67  218.01 v _17103_/Y (sky130_fd_sc_hd__o21ai_0)
+   0.00  218.01 v instr_addr_o[28] (out)
+         218.01   data arrival time
+
+  15.15   15.15   clock core_clock (rise edge)
+   0.00   15.15   clock network delay (ideal)
+   0.00   15.15   clock reconvergence pessimism
+-200.00 -184.85   output external delay
+        -184.85   data required time
+---------------------------------------------------------
+        -184.85   data required time
+        -218.01   data arrival time
+---------------------------------------------------------
+        -402.86   slack (VIOLATED)
+
+
+wns max -402.86
+tns max -680906.62
+-- After --
+
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fa_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fa_2
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fa_4
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fah_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 0 of multi-output cell sky130_fd_sc_hd__fahcin_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fahcin_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 0 of multi-output cell sky130_fd_sc_hd__fahcon_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__fahcon_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_1
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_2
+[i] WARNING: library does not contain cells that could match the delay of output pin 1 of multi-output cell sky130_fd_sc_hd__ha_4
+[i] WARNING: technology mapping using multi-output cells with warnings might generate required time violations or circuits with dangling pins
+Extended technology mapping stats:
+	area: 86538.611
+	delay: 31627.210
+	power: 0.000
+	inverters: 0
+	multioutput gates: 167
+
+[i] Report cells usage:
+[i] sky130_fd_sc_hd__a2111o_1	 Instance =          1	 Area =        11.26     0.01 %
+[i] sky130_fd_sc_hd__a2111oi_0	 Instance =          9	 Area =        78.84     0.09 %
+[i] sky130_fd_sc_hd__a211o_1 	 Instance =         32	 Area =       280.32     0.32 %
+[i] sky130_fd_sc_hd__a211oi_1	 Instance =        215	 Area =      1614.65     1.87 %
+[i] sky130_fd_sc_hd__a21bo_1 	 Instance =          8	 Area =        80.08     0.09 %
+[i] sky130_fd_sc_hd__a21boi_0	 Instance =         43	 Area =       322.93     0.37 %
+[i] sky130_fd_sc_hd__a21o_1  	 Instance =        150	 Area =      1126.50     1.30 %
+[i] sky130_fd_sc_hd__a21oi_1 	 Instance =       2697	 Area =     13485.00    15.58 %
+[i] sky130_fd_sc_hd__a221o_1 	 Instance =         19	 Area =       190.19     0.22 %
+[i] sky130_fd_sc_hd__a221oi_1	 Instance =         43	 Area =       376.68     0.44 %
+[i] sky130_fd_sc_hd__a22o_1  	 Instance =        132	 Area =      1156.32     1.34 %
+[i] sky130_fd_sc_hd__a22oi_1 	 Instance =        321	 Area =      2410.71     2.79 %
+[i] sky130_fd_sc_hd__a2bb2oi_1	 Instance =         23	 Area =       201.48     0.23 %
+[i] sky130_fd_sc_hd__a311o_1 	 Instance =          9	 Area =        90.09     0.10 %
+[i] sky130_fd_sc_hd__a311oi_1	 Instance =         19	 Area =       166.44     0.19 %
+[i] sky130_fd_sc_hd__a31o_1  	 Instance =         18	 Area =       157.68     0.18 %
+[i] sky130_fd_sc_hd__a31oi_1 	 Instance =        254	 Area =      1590.04     1.84 %
+[i] sky130_fd_sc_hd__a32o_1  	 Instance =         47	 Area =       470.47     0.54 %
+[i] sky130_fd_sc_hd__a32oi_1 	 Instance =         11	 Area =        96.36     0.11 %
+[i] sky130_fd_sc_hd__a41o_1  	 Instance =          2	 Area =        20.02     0.02 %
+[i] sky130_fd_sc_hd__a41oi_1 	 Instance =         19	 Area =       166.44     0.19 %
+[i] sky130_fd_sc_hd__and2_0  	 Instance =         52	 Area =       325.52     0.38 %
+[i] sky130_fd_sc_hd__and3_1  	 Instance =         64	 Area =       400.64     0.46 %
+[i] sky130_fd_sc_hd__and3b_1 	 Instance =          1	 Area =         8.76     0.01 %
+[i] sky130_fd_sc_hd__and4_1  	 Instance =         13	 Area =       113.88     0.13 %
+[i] sky130_fd_sc_hd__buf_1   	 Instance =          1	 Area =         3.75     0.00 %
+[i] sky130_fd_sc_hd__clkinv_1	 Instance =        597	 Area =      2238.75     2.59 %
+[i] sky130_fd_sc_hd__fa_1    	 Instance =        123	 Area =      2462.46     2.85 %
+[i] sky130_fd_sc_hd__fa_2    	 Instance =         28	 Area =       630.56     0.73 %
+[i] sky130_fd_sc_hd__fahcon_1	 Instance =          1	 Area =        33.78     0.04 %
+[i] sky130_fd_sc_hd__ha_1    	 Instance =         15	 Area =       187.65     0.22 %
+[i] sky130_fd_sc_hd__maj3_1  	 Instance =          5	 Area =        50.05     0.06 %
+[i] sky130_fd_sc_hd__mux2_1  	 Instance =        343	 Area =      3862.18     4.46 %
+[i] sky130_fd_sc_hd__mux2i_1 	 Instance =        467	 Area =      4674.67     5.40 %
+[i] sky130_fd_sc_hd__mux4_2  	 Instance =        143	 Area =      3220.36     3.72 %
+[i] sky130_fd_sc_hd__nand2_1 	 Instance =       1945	 Area =      7293.75     8.43 %
+[i] sky130_fd_sc_hd__nand2b_1	 Instance =         64	 Area =       400.64     0.46 %
+[i] sky130_fd_sc_hd__nand3_1 	 Instance =        225	 Area =      1125.00     1.30 %
+[i] sky130_fd_sc_hd__nand3b_1	 Instance =         10	 Area =        75.10     0.09 %
+[i] sky130_fd_sc_hd__nand4_1 	 Instance =         67	 Area =       419.42     0.48 %
+[i] sky130_fd_sc_hd__nand4b_1	 Instance =          9	 Area =        78.84     0.09 %
+[i] sky130_fd_sc_hd__nor2_1  	 Instance =       1756	 Area =      6585.00     7.61 %
+[i] sky130_fd_sc_hd__nor2b_1 	 Instance =         39	 Area =       244.14     0.28 %
+[i] sky130_fd_sc_hd__nor3_1  	 Instance =        233	 Area =      1165.00     1.35 %
+[i] sky130_fd_sc_hd__nor3b_1 	 Instance =         12	 Area =        90.12     0.10 %
+[i] sky130_fd_sc_hd__nor4_1  	 Instance =         55	 Area =       344.30     0.40 %
+[i] sky130_fd_sc_hd__nor4b_1 	 Instance =          9	 Area =        78.84     0.09 %
+[i] sky130_fd_sc_hd__nor4bb_1	 Instance =          2	 Area =        20.02     0.02 %
+[i] sky130_fd_sc_hd__o2111a_1	 Instance =          2	 Area =        22.52     0.03 %
+[i] sky130_fd_sc_hd__o2111ai_1	 Instance =         13	 Area =       113.88     0.13 %
+[i] sky130_fd_sc_hd__o211a_1 	 Instance =          8	 Area =        80.08     0.09 %
+[i] sky130_fd_sc_hd__o211ai_1	 Instance =        149	 Area =      1118.99     1.29 %
+[i] sky130_fd_sc_hd__o21a_1  	 Instance =        170	 Area =      1276.70     1.48 %
+[i] sky130_fd_sc_hd__o21ai_0 	 Instance =       2774	 Area =     13870.00    16.03 %
+[i] sky130_fd_sc_hd__o21ba_1 	 Instance =          1	 Area =        10.01     0.01 %
+[i] sky130_fd_sc_hd__o21bai_1	 Instance =         34	 Area =       255.34     0.30 %
+[i] sky130_fd_sc_hd__o221a_1 	 Instance =          4	 Area =        45.04     0.05 %
+[i] sky130_fd_sc_hd__o221ai_1	 Instance =        202	 Area =      1769.52     2.04 %
+[i] sky130_fd_sc_hd__o22a_1  	 Instance =         13	 Area =       113.88     0.13 %
+[i] sky130_fd_sc_hd__o22ai_1 	 Instance =        579	 Area =      3624.54     4.19 %
+[i] sky130_fd_sc_hd__o2bb2ai_1	 Instance =         34	 Area =       297.84     0.34 %
+[i] sky130_fd_sc_hd__o311a_1 	 Instance =         10	 Area =       100.10     0.12 %
+[i] sky130_fd_sc_hd__o311ai_0	 Instance =         18	 Area =       157.68     0.18 %
+[i] sky130_fd_sc_hd__o31a_1  	 Instance =         22	 Area =       192.72     0.22 %
+[i] sky130_fd_sc_hd__o31ai_1 	 Instance =         75	 Area =       563.25     0.65 %
+[i] sky130_fd_sc_hd__o32a_1  	 Instance =          3	 Area =        30.03     0.03 %
+[i] sky130_fd_sc_hd__o32ai_1 	 Instance =         26	 Area =       227.76     0.26 %
+[i] sky130_fd_sc_hd__o41a_1  	 Instance =          1	 Area =        11.26     0.01 %
+[i] sky130_fd_sc_hd__o41ai_1 	 Instance =         14	 Area =       122.64     0.14 %
+[i] sky130_fd_sc_hd__or2_0   	 Instance =         43	 Area =       269.18     0.31 %
+[i] sky130_fd_sc_hd__or3_1   	 Instance =         41	 Area =       256.66     0.30 %
+[i] sky130_fd_sc_hd__or3b_1  	 Instance =          1	 Area =         8.76     0.01 %
+[i] sky130_fd_sc_hd__or4_1   	 Instance =         18	 Area =       135.18     0.16 %
+[i] sky130_fd_sc_hd__or4b_1  	 Instance =          1	 Area =        10.01     0.01 %
+[i] sky130_fd_sc_hd__xnor2_1 	 Instance =        121	 Area =      1059.96     1.22 %
+[i] sky130_fd_sc_hd__xor2_1  	 Instance =         65	 Area =       569.40     0.66 %
+[i] TOTAL                    	 Instance =      14793	 Area =     86538.61   100.00 %
+[i] Report stats: area = 86538.61; delay = 31817.42;
+[WARNING EST-0027] no estimated parasitics. Using wire load models.
+

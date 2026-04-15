@@ -48,7 +48,6 @@ puts "-- After --\n"
 write_verilog ./aes_before_emap.v
 
 resynth_emap -scene fast \
-  -target area \
   -map_multioutput
 
 write_verilog ./aes_after_emap.v

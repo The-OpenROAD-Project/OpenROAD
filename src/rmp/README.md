@@ -146,7 +146,6 @@ Currently, multioutput gates are supported with up to 9 inputs.
 ```tcl
 resynth_emap
     [-scene scene]
-    [-target area|timing]
     [-map_multioutput]
     [-verbose]
     [-work_dir workdir_name]
@@ -157,7 +156,6 @@ resynth_emap
 | Switch Name | Description |
 | ----- | ----- |
 | `-scene` | Process scene to use. |
-| `-target` | Either `area` or `timing`. In area mode, the focus is area reduction, and timing may degrade. In timing mode, delay is likely reduced, but the area may increase. The default value is `area`. |
 | `-map_multioutput` | Map multioutput cells. |
 | `-verbose` | Print mapping statistics from mockturtle. |
 | `-work_dir` | Name of the working directory for temporary files. If not provided, `run` directory would be used. |

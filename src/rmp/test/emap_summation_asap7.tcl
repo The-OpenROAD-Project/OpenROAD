@@ -47,7 +47,6 @@ write_verilog_for_eqy $test_name before "None"
 puts "-- After --\n"
 
 resynth_emap -scene fast \
-  -target area \
   -map_multioutput
 
 suppress_message RSZ 75

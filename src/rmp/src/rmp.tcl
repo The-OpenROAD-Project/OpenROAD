@@ -155,7 +155,6 @@ proc resynth_annealing { args } {
 
 sta::define_cmd_args "resynth_emap" {
                                       [-scene scene]
-                                      [-target area|timing]
                                       [-map_multioutput]
                                       [-verbose]
                                       [-work_dir workdir_name]
@@ -163,7 +162,7 @@ sta::define_cmd_args "resynth_emap" {
 
 proc resynth_emap { args } {
   sta::parse_key_args "resynth_emap" args \
-    keys {-scene -target -work_dir} \
+    keys {-scene -work_dir} \
     flags {-map_multioutput -verbose}
 
   set scene [sta::parse_scene keys]
@@ -171,10 +170,6 @@ proc resynth_emap { args } {
   set map_multioutput [info exists flags(-map_multioutput)]
   set verbose [info exists flags(-verbose)]
   set workdir_name "."
-
-  if { [info exists keys(-target)] } {
-    set target $keys(-target)
-  }
 
   if { [info exists keys(-work_dir)] } {
     set workdir_name $keys(-work_dir)

@@ -729,10 +729,7 @@ void Restructure::resynthEmap(sta::Scene* scene,
                               bool verbose,
                               char* workdir_name)
 {
-  bool area_oriented_mapping = opt_mode_ == Mode::AREA_1;
-
-  auto emap = ExtendedTechnologyMapping(
-      scene, map_multioutput, area_oriented_mapping, verbose);
+  auto emap = ExtendedTechnologyMapping(scene, map_multioutput, verbose);
 
   emap.map(open_sta_, db_, resizer_, logger_);
 }

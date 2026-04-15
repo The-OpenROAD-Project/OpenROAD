@@ -22,12 +22,8 @@ class ExtendedTechnologyMapping
  public:
   explicit ExtendedTechnologyMapping(sta::Scene* scene,
                                      bool map_multioutput,
-                                     bool area_oriented_mapping,
                                      bool verbose)
-      : scene_(scene),
-        map_multioutput_(map_multioutput),
-        area_oriented_mapping_(area_oriented_mapping),
-        verbose_(verbose)
+      : scene_(scene), map_multioutput_(map_multioutput), verbose_(verbose)
   {
   }
   ~ExtendedTechnologyMapping() = default;
@@ -95,7 +91,6 @@ class ExtendedTechnologyMapping
 
   sta::Scene* scene_;
   bool map_multioutput_;
-  bool area_oriented_mapping_;
   bool verbose_;
 
   // Cached const networks for mapped network import

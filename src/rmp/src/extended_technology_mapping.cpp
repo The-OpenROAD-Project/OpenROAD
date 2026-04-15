@@ -473,10 +473,8 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     odb::dbNet* db_net = db_network->staToDb(sta_net);
     std::string net_name = db_network->name(sta_net);
     if (!db_net) {
-      logger->error(utl::RMP,
-                    83,
-                    "cut primary output net {} has no dbNet",
-                    net_name);
+      logger->error(
+          utl::RMP, 83, "cut primary output net {} has no dbNet", net_name);
     }
     boundary_po_dbnets.emplace(net_name, db_net);
   }
@@ -488,7 +486,8 @@ void ExtendedTechnologyMapping::importMockturtleMappedNetwork(
     if (it == boundary_po_dbnets.end()) {
       logger->error(utl::RMP, 84, "Missing boundary net for PO {}", po_name);
     }
-    odb::dbNet* boundary_net = it->second;;
+    odb::dbNet* boundary_net = it->second;
+    ;
     odb::dbNet* driver_net
         = getDriverNet(topo_ntk, block, libs, sta, logger, node_out_nets, f);
     if (driver_net && boundary_net && driver_net != boundary_net) {
@@ -561,13 +560,7 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
 
   ps.map_multioutput = map_multioutput_;
   ps.verbose = verbose_;
-
-  if (area_oriented_mapping_) {
-    ps.area_oriented_mapping = true;
-  } else {
-    ps.area_oriented_mapping = false;
-    ps.relax_required = 0.0;
-  }
+  ps.area_oriented_mapping = true;
 
   // Read genlib
   std::vector<mockturtle::gate> gates;
