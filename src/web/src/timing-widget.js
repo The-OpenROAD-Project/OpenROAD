@@ -298,9 +298,12 @@ export class TimingWidget {
         const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
         const path = paths[this._selectedPathIndex];
         const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        // Use _originalIndex when paths were filtered (e.g. by histogram
+        // column click in static mode) so the overlay lookup matches.
+        const highlightIdx = path._originalIndex ?? this._selectedPathIndex;
         this._app.websocketManager.request({
             type: 'timing_highlight',
-            path_index: this._selectedPathIndex,
+            path_index: highlightIdx,
             is_setup: this._currentTab === 'setup' ? 1 : 0,
             pin_name: nodes[idx].pin,
         }).then(() => this._redrawAllLayers());

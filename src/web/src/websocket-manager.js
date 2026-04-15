@@ -180,10 +180,12 @@ export class WebSocketManager {
             if (type === 'timing_report'
                 && msg.slack_min != null && msg.slack_max != null
                 && json.paths) {
-                const filtered = json.paths
-                    .map((p, i) => ({ ...p, _originalIndex: i }))
-                    .filter(
-                        p => p.slack >= msg.slack_min && p.slack < msg.slack_max);
+                const filtered = [];
+                json.paths.forEach((p, i) => {
+                    if (p.slack >= msg.slack_min && p.slack < msg.slack_max) {
+                        filtered.push({ ...p, _originalIndex: i });
+                    }
+                });
                 return Promise.resolve({ ...json, paths: filtered });
             }
             return Promise.resolve(json);
