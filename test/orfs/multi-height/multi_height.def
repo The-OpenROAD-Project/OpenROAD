@@ -1,0 +1,61 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN multi_height ;
+UNITS DISTANCE MICRONS 2000 ;
+
+DIEAREA ( 0 0 ) ( 13000 16800 ) ;
+
+ROW ROW_0 CoreSite 0 0 N DO 34 BY 1 STEP 380 0 ;
+ROW ROW_1 CoreSite 0 2800 FS DO 34 BY 1 STEP 380 0 ;
+ROW ROW_2 CoreSite 0 5600 N DO 34 BY 1 STEP 380 0 ;
+ROW ROW_3 CoreSite 0 8400 FS DO 34 BY 1 STEP 380 0 ;
+ROW ROW_4 CoreSite 0 11200 N DO 34 BY 1 STEP 380 0 ;
+ROW ROW_5 CoreSite 0 14000 FS DO 34 BY 1 STEP 380 0 ;
+
+ROW ROW_D0 DoubleSite 0 0 N DO 34 BY 1 STEP 380 0 ;
+ROW ROW_D1 DoubleSite 0 5600 N DO 34 BY 1 STEP 380 0 ;
+ROW ROW_D2 DoubleSite 0 11200 N DO 34 BY 1 STEP 380 0 ;
+
+ROW ROW_Q0 QuadSite 0 0 N DO 34 BY 1 STEP 380 0 ;
+
+COMPONENTS 5 ;
+    - s1 SINGLE_BUF + PLACED ( 6840 14000 ) FS ;
+    - s2 SINGLE_BUF + PLACED ( 5320 14000 ) FS ;
+    - d1 DOUBLE_BUF + PLACED ( 9880 11200 ) N ;
+    - d2 DOUBLE_BUF + PLACED ( 8360 11200 ) N ;
+    - q1 QUAD_BUF   + PLACED ( 11400 8400 ) FS ;
+END COMPONENTS
+
+PINS 5 ;
+    - in1 + NET in1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 2470 70 ) N ;
+    - in2 + NET in2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3230 70 ) N ;
+    - in3 + NET in3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 3990 70 ) N ;
+    - in4 + NET in4 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 4750 70 ) N ;
+    - in5 + NET in5 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal2 ( -70 -70 ) ( 70 70 )
+        + PLACED ( 5510 70 ) N ;
+END PINS
+
+NETS 5 ;
+    - in1 ( PIN in1 ) ( s1 A ) + USE SIGNAL ;
+    - in2 ( PIN in2 ) ( s2 A ) + USE SIGNAL ;
+    - in3 ( PIN in3 ) ( d1 A ) + USE SIGNAL ;
+    - in4 ( PIN in4 ) ( d2 A ) + USE SIGNAL ;
+    - in5 ( PIN in5 ) ( q1 A ) + USE SIGNAL ;
+END NETS
+
+END DESIGN

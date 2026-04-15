@@ -1,0 +1,21 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(features = ["layering_check"])
+
+sh_test(
+    name = "multi_height_test",
+    srcs = ["test_multi_height.sh"],
+    args = [
+        "$(rootpath //:openroad)",
+        "$(rootpath :multi_height.lef)",
+        "$(rootpath :multi_height.def)",
+        "$(rootpath :multi_height.tcl)",
+    ],
+    data = [
+        ":multi_height.def",
+        ":multi_height.lef",
+        ":multi_height.tcl",
+        "//:openroad",
+    ],
+    tags = ["orfs"],
+)

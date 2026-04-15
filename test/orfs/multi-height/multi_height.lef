@@ -1,0 +1,140 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+
+# Synthetic minimal PDK for multi-height placement testing.
+# Row height: 1.4 um, site width: 0.19 um (matches Nangate45 geometry).
+# See src/dpl/test/Nangate45_data/fake_macros.lef for the original pattern.
+
+UNITS
+  DATABASE MICRONS 2000 ;
+END UNITS
+
+LAYER metal1
+  TYPE ROUTING ;
+  DIRECTION HORIZONTAL ;
+  PITCH 0.28 ;
+  WIDTH 0.065 ;
+END metal1
+
+LAYER metal2
+  TYPE ROUTING ;
+  DIRECTION VERTICAL ;
+  PITCH 0.28 ;
+  WIDTH 0.07 ;
+END metal2
+
+SITE CoreSite
+  CLASS CORE ;
+  SIZE 0.19 BY 1.4 ;
+  SYMMETRY Y ;
+END CoreSite
+
+SITE DoubleSite
+  SYMMETRY X Y ;
+  CLASS CORE ;
+  SIZE 0.19 BY 2.8 ;
+END DoubleSite
+
+SITE QuadSite
+  CLASS CORE ;
+  SIZE 0.19 BY 5.6 ;
+END QuadSite
+
+MACRO SINGLE_BUF
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.76 BY 1.4 ;
+  SYMMETRY X Y ;
+  SITE CoreSite ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.100 0.200 0.170 0.700 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.500 0.200 0.570 0.700 ;
+    END
+  END Y
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+  END VSS
+END SINGLE_BUF
+
+MACRO DOUBLE_BUF
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.76 BY 2.8 ;
+  SYMMETRY X Y ;
+  SITE DoubleSite ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.100 0.200 0.170 1.400 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.500 0.200 0.570 1.400 ;
+    END
+  END Y
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+  END VSS
+END DOUBLE_BUF
+
+MACRO QUAD_BUF
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  SIZE 0.76 BY 5.6 ;
+  SYMMETRY X Y ;
+  SITE QuadSite ;
+  PIN A
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.100 0.200 0.170 2.800 ;
+    END
+  END A
+  PIN Y
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal1 ;
+      RECT 0.500 0.200 0.570 2.800 ;
+    END
+  END Y
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+  END VDD
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+  END VSS
+END QUAD_BUF
+
+END LIBRARY
