@@ -415,7 +415,7 @@ bool SinkClustering::findBestMatching(const unsigned groupSize)
             //costs[j] -= maxInternalDiameter_;
             cluster_num--;
             is_adopted = true;
-            if (solutionPoints[j][c].size() == 1) c--;
+            if (c < cluster_num && solutionPoints[j][c].size() == 1) c--;
             break;
 	        }
 	      }
