@@ -38,7 +38,9 @@ struct ColoredRect
 {
   odb::Rect rect;
   Color color;
-  std::string layer;  // empty = draw on all layers
+  std::string layer;    // empty = draw on all layers
+  bool filled = false;  // true = filled rect + outline (DRC markers)
+                        // false = centerline (timing paths)
 };
 
 struct FlightLine
