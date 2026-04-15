@@ -174,6 +174,18 @@ export class WebSocketManager {
         }
         const json = this._cache.json && this._cache.json[key];
         if (json !== undefined) {
+            // Filter timing paths by slack range when histogram column clicked.
+            // Tag each path with its original index so overlay lookup still
+            // works after the array is narrowed down.
+            if (type === 'timing_report'
+                && msg.slack_min != null && msg.slack_max != null
+                && json.paths) {
+                const filtered = json.paths
+                    .map((p, i) => ({ ...p, _originalIndex: i }))
+                    .filter(
+                        p => p.slack >= msg.slack_min && p.slack < msg.slack_max);
+                return Promise.resolve({ ...json, paths: filtered });
+            }
             return Promise.resolve(json);
         }
 
