@@ -167,6 +167,26 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
     req.z = extract_int(msg, "z");
     req.x = extract_int(msg, "x");
     req.y = extract_int(msg, "y");
+  } else if (type_str == "drc_categories") {
+    req.type = WebSocketRequest::DRC_CATEGORIES;
+  } else if (type_str == "drc_markers") {
+    req.type = WebSocketRequest::DRC_MARKERS;
+    req.drc_category_name = extract_string(msg, "category");
+  } else if (type_str == "drc_load_report") {
+    req.type = WebSocketRequest::DRC_LOAD_REPORT;
+    req.drc_file_path = extract_string(msg, "path");
+  } else if (type_str == "drc_update_marker") {
+    req.type = WebSocketRequest::DRC_UPDATE_MARKER;
+    req.drc_marker_id = extract_int(msg, "marker_id");
+    req.drc_field = extract_string(msg, "field");
+    req.drc_field_value = extract_int_or(msg, "value", 0) != 0;
+  } else if (type_str == "drc_update_category_visibility") {
+    req.type = WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY;
+    req.drc_category_name = extract_string(msg, "category");
+    req.drc_field_value = extract_int_or(msg, "visible", 1) != 0;
+  } else if (type_str == "drc_highlight") {
+    req.type = WebSocketRequest::DRC_HIGHLIGHT;
+    req.drc_marker_id = extract_int_or(msg, "marker_id", -1);
   } else if (type_str == "list_dir") {
     req.type = WebSocketRequest::LIST_DIR;
     req.dir_path = extract_string(msg, "path");
@@ -315,6 +335,7 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   TimingHandler timing_handler_;
   ClockTreeHandler clock_tree_handler_;
   TileHandler tile_handler_;
+  DRCHandler drc_handler_;
 
   // Write serialization: strand + queue ensures one async_write at a time
   net::strand<net::any_io_executor> strand_;
@@ -360,6 +381,7 @@ WebSocketSession::WebSocketSession(
       timing_handler_(generator, std::move(timing_report), tcl_eval),
       clock_tree_handler_(generator, std::move(clock_report), tcl_eval),
       tile_handler_(generator),
+      drc_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor())),
       generator_(std::move(generator))
 {
@@ -630,6 +652,49 @@ void WebSocketSession::on_read(beast::error_code ec)
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
                   self->queue_response(handleListDir(req));
+                });
+      break;
+    case WebSocketRequest::DRC_CATEGORIES:
+      net::post(
+          websocket_.get_executor(),
+          [self = std::move(self), req = std::move(req)]() {
+            self->queue_response(self->drc_handler_.handleDRCCategories(req));
+          });
+      break;
+    case WebSocketRequest::DRC_MARKERS:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCMarkers(req, self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_LOAD_REPORT:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->drc_handler_.handleDRCLoadReport(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_UPDATE_MARKER:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(self->drc_handler_.handleDRCUpdateMarker(
+                      req, self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCUpdateCategoryVisibility(
+                          req, self->state_));
+                });
+      break;
+    case WebSocketRequest::DRC_HIGHLIGHT:
+      net::post(websocket_.get_executor(),
+                [self = std::move(self), req = std::move(req)]() {
+                  self->queue_response(
+                      self->drc_handler_.handleDRCHighlight(req, self->state_));
                 });
       break;
     default:

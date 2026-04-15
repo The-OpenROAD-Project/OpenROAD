@@ -22,6 +22,12 @@ namespace odb {
 
 class dbTech;
 class dbTechLayer;
+class dbTechLayerAntennaRule;
+class dbTechLayerSpacingRule;
+class dbTechMinCutRule;
+class dbTechMinEncRule;
+class dbTechV55InfluenceEntry;
+class dbTechAntennaPinModel;
 class dbTechVia;
 class dbLib;
 class dbMaster;
@@ -76,6 +82,16 @@ class lefout
 
   void writeTechBody(std::ostream& out, dbTech* tech);
   void writeLayer(std::ostream& out, dbTechLayer* layer);
+  void writeSpacingRuleLef(std::ostream& out, dbTechLayerSpacingRule* rule);
+  void writeV55SpacingRules(std::ostream& out, dbTechLayer* layer);
+  void writeV55InfluenceEntryLef(std::ostream& out,
+                                 dbTechV55InfluenceEntry* entry);
+  void writeMinCutRuleLef(std::ostream& out, dbTechMinCutRule* rule);
+  void writeMinEncRuleLef(std::ostream& out, dbTechMinEncRule* rule);
+  void writeAntennaRulesLef(std::ostream& out, dbTechLayer* layer);
+  void writeAntennaRuleLef(std::ostream& out, dbTechLayerAntennaRule* rule);
+  void writeAntennaPinModelLef(std::ostream& out, dbTechAntennaPinModel* model);
+  void writeMTermAntennaLef(std::ostream& out, dbMTerm* mterm);
   void writeVia(std::ostream& out, dbTechVia* via);
   void writeBlockVia(std::ostream& out, dbBlock* db_block, dbVia* via);
   void writeHeader(std::ostream& out, dbLib* lib);

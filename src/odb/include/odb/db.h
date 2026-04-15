@@ -42,7 +42,6 @@ class Logger;
 namespace odb {
 
 class dbShape;
-class lefout;
 class dbViaParams;
 class dbTransform;
 
@@ -5785,10 +5784,19 @@ class dbMTerm : public dbObject
   bool hasOxide2AntennaModel() const;
   dbTechAntennaPinModel* getDefaultAntennaModel() const;
   dbTechAntennaPinModel* getOxide2AntennaModel() const;
-  void writeAntennaLef(lefout& writer) const;
 
   // From LEF's ANTENNADIFFAREA on the MACRO's PIN
   void getDiffArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALMETALAREA on the MACRO's PIN
+  void getPartialMetalArea(std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALMETALSIDEAREA on the MACRO's PIN
+  void getPartialMetalSideArea(
+      std::vector<std::pair<double, dbTechLayer*>>& data);
+
+  // From LEF's ANTENNAPARTIALCUTAREA on the MACRO's PIN
+  void getPartialCutArea(std::vector<std::pair<double, dbTechLayer*>>& data);
 
   void* staPort();
   void staSetPort(void* port);
@@ -6493,7 +6501,6 @@ class dbTechLayerSpacingRule : public dbObject
   bool getCutSameNet() const;
   bool getCutParallelOverlap() const;
   uint32_t getCutArea() const;
-  void writeLef(lefout& writer) const;
 
   void setSameNetPgOnly(bool pgonly);
   bool getSameNetPgOnly();
@@ -6561,7 +6568,6 @@ class dbTechMinCutRule : public dbObject
   void setLengthForCuts(uint32_t length, uint32_t distance);
   bool isAboveOnly() const;
   bool isBelowOnly() const;
-  void writeLef(lefout& writer) const;
   static dbTechMinCutRule* create(dbTechLayer* inly);
   static dbTechMinCutRule* getMinCutRule(dbTechLayer* inly, uint32_t dbid);
 };
@@ -6582,7 +6588,6 @@ class dbTechMinEncRule : public dbObject
   void setEnclosure(uint32_t area);
   bool getEnclosureWidth(uint32_t& width) const;
   void setEnclosureWidth(uint32_t width);
-  void writeLef(lefout& writer) const;
 
   static dbTechMinEncRule* create(dbTechLayer* inly);
   static dbTechMinEncRule* getMinEncRule(dbTechLayer* inly, uint32_t dbid);
@@ -6607,7 +6612,6 @@ class dbTechV55InfluenceEntry : public dbObject
   void setV55InfluenceEntry(const uint32_t& width,
                             const uint32_t& within,
                             const uint32_t& spacing);
-  void writeLef(lefout& writer) const;
 
   static dbTechV55InfluenceEntry* create(dbTechLayer* inly);
   static dbTechV55InfluenceEntry* getV55InfluenceEntry(dbTechLayer* inly,
@@ -6624,7 +6628,6 @@ class dbTechLayerAntennaRule : public dbObject
 {
  public:
   bool isValid() const;
-  void writeLef(lefout& writer) const;
 
   void setGatePlusDiffFactor(double factor);
   void setAreaMinusDiffFactor(double factor);
@@ -6714,8 +6717,6 @@ class dbTechAntennaPinModel : public dbObject
   void getMaxAreaCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
   void getMaxSideAreaCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
   void getMaxCutCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
-
-  void writeLef(dbTech* tech, lefout& writer) const;
 
   static dbTechAntennaPinModel* getAntennaPinModel(dbMaster* master,
                                                    uint32_t dbid);
@@ -9307,7 +9308,6 @@ class dbTechLayer : public dbObject
   bool hasV55SpacingRules() const;
   bool getV55SpacingWidthsAndLengths(std::vector<uint32_t>& width_idx,
                                      std::vector<uint32_t>& length_idx) const;
-  void printV55SpacingRules(lefout& writer) const;
   bool getV55SpacingTable(std::vector<std::vector<uint32_t>>& sptbl) const;
 
   void initV55LengthIndex(uint32_t numelems);
@@ -9326,7 +9326,6 @@ class dbTechLayer : public dbObject
   /// with index tables
   ///
   bool hasTwoWidthsSpacingRules() const;
-  void printTwoWidthsSpacingRules(lefout& writer) const;
   bool getTwoWidthsSpacingTable(
       std::vector<std::vector<uint32_t>>& sptbl) const;
   uint32_t getTwoWidthsSpacingTableNumWidths() const;
@@ -9356,7 +9355,6 @@ class dbTechLayer : public dbObject
   bool hasOxide2AntennaRule() const;
   dbTechLayerAntennaRule* getDefaultAntennaRule() const;
   dbTechLayerAntennaRule* getOxide2AntennaRule() const;
-  void writeAntennaRulesLef(lefout& writer) const;
 
   ///
   /// Get collection of minimum cuts, minimum enclosure rules, if exist

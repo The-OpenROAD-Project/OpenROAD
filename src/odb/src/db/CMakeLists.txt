@@ -87,6 +87,8 @@ add_library(db
     dbGDSLib.cpp
     dbSwapMasterSanityChecker.cpp
     unfoldedModel.cpp
+    util.cpp
+    poly_decomp.cpp
     # Generator Code Begin cpp
     dbAccessPoint.cpp
     dbBusPort.cpp
@@ -199,7 +201,6 @@ set_target_properties(db
 
 target_link_libraries(db
     PUBLIC
-        zutil
         utl_lib
         ${TCL_LIBRARY}
 

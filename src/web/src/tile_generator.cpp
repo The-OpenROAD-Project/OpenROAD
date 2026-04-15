@@ -2264,21 +2264,55 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
     const odb::Rect overlap = cr.rect.intersect(dbu_tile);
     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-    // Draw a fixed-width centerline through the shape (cosmetic pen style,
-    // matching the GUI's 2px cosmetic pen approach from dbDescriptors.cpp).
-    // This ensures consistent visibility regardless of zoom level.
-    const int cx = (draw.xMin() + draw.xMax()) / 2;
-    const int cy = (draw.yMin() + draw.yMax()) / 2;
+    if (cr.filled) {
+      // DRC marker style: semi-transparent filled rect with solid outline.
+      // Matches the Qt GUI's DRCRenderer (white pen + white-alpha brush).
 
-    Color line_color = cr.color;
-    line_color.a = 255;
+      // Fill interior
+      const int pxl = std::max(0, draw.xMin());
+      const int pyl = std::max(0, draw.yMin());
+      const int pxh = std::min(255, draw.xMax());
+      const int pyh = std::min(255, draw.yMax());
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        for (int ix = pxl; ix <= pxh; ++ix) {
+          blendPixel(image, ix, 255 - iy, cr.color);
+        }
+      }
 
-    if (draw.dx() >= draw.dy()) {
-      // Horizontal shape: draw horizontal centerline
-      drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+      // Solid outline
+      Color outline = cr.color;
+      outline.a = 255;
+      // Bottom edge
+      for (int ix = pxl; ix <= pxh; ++ix) {
+        blendPixel(image, ix, 255 - pyl, outline);
+      }
+      // Top edge
+      for (int ix = pxl; ix <= pxh; ++ix) {
+        blendPixel(image, ix, 255 - pyh, outline);
+      }
+      // Left edge
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        blendPixel(image, pxl, 255 - iy, outline);
+      }
+      // Right edge
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        blendPixel(image, pxh, 255 - iy, outline);
+      }
     } else {
-      // Vertical shape: draw vertical centerline
-      drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      // Timing path style: centerline through the shape.
+      const int cx = (draw.xMin() + draw.xMax()) / 2;
+      const int cy = (draw.yMin() + draw.yMax()) / 2;
+
+      Color line_color = cr.color;
+      line_color.a = 255;
+
+      if (draw.dx() >= draw.dy()) {
+        drawLine(
+            image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+      } else {
+        drawLine(
+            image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      }
     }
   }
 }

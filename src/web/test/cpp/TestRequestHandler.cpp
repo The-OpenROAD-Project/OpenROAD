@@ -798,5 +798,345 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   EXPECT_FALSE(resp.payload.empty());
 }
 
+//------------------------------------------------------------------------------
+// DRCHandler tests
+//------------------------------------------------------------------------------
+
+class DRCHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    handler_ = std::make_unique<DRCHandler>(gen_);
+  }
+
+  // Create a simple DRC category with markers for testing.
+  odb::dbMarkerCategory* createTestCategory(const char* name, int num_markers)
+  {
+    auto* top = odb::dbMarkerCategory::create(chip_, name);
+    auto* sub = odb::dbMarkerCategory::create(top, "MinSpacing");
+    for (int i = 0; i < num_markers; ++i) {
+      auto* marker = odb::dbMarker::create(sub);
+      marker->addShape(odb::Rect(i * 1000, 0, i * 1000 + 500, 500));
+    }
+    return top;
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::unique_ptr<DRCHandler> handler_;
+  SessionState state_;
+};
+
+TEST_F(DRCHandlerTest, CategoriesEmpty)
+{
+  WebSocketRequest req;
+  req.id = 100;
+  req.type = WebSocketRequest::DRC_CATEGORIES;
+
+  auto resp = handler_->handleDRCCategories(req);
+  EXPECT_EQ(resp.id, 100u);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"categories\""), std::string::npos);
+  // Should be an empty array
+  EXPECT_NE(json.find("\"categories\": []"), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, CategoriesWithMarkers)
+{
+  createTestCategory("DRC", 3);
+  createTestCategory("LVS", 2);
+
+  WebSocketRequest req;
+  req.id = 101;
+  req.type = WebSocketRequest::DRC_CATEGORIES;
+
+  auto resp = handler_->handleDRCCategories(req);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"DRC\""), std::string::npos);
+  EXPECT_NE(json.find("\"LVS\""), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, MarkersForCategory)
+{
+  createTestCategory("DRC", 3);
+
+  WebSocketRequest req;
+  req.id = 102;
+  req.type = WebSocketRequest::DRC_MARKERS;
+  req.drc_category_name = "DRC";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"MinSpacing\""), std::string::npos);
+  EXPECT_NE(json.find("\"markers\""), std::string::npos);
+  // Should have set active category
+  EXPECT_EQ(state_.active_drc_category, "DRC");
+}
+
+TEST_F(DRCHandlerTest, MarkersForEmptyCategory)
+{
+  WebSocketRequest req;
+  req.id = 103;
+  req.type = WebSocketRequest::DRC_MARKERS;
+  req.drc_category_name = "";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"subcategories\": []"), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, MarkersForNonExistentCategory)
+{
+  WebSocketRequest req;
+  req.id = 104;
+  req.type = WebSocketRequest::DRC_MARKERS;
+  req.drc_category_name = "NonExistent";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, UpdateMarkerVisited)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  ASSERT_EQ(all_markers.size(), 1u);
+  odb::dbMarker* marker = *all_markers.begin();
+  EXPECT_FALSE(marker->isVisited());
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::DRC_MARKERS;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 105;
+  req.type = WebSocketRequest::DRC_UPDATE_MARKER;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+  req.drc_field = "visited";
+  req.drc_field_value = true;
+
+  auto resp = handler_->handleDRCUpdateMarker(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_TRUE(marker->isVisited());
+}
+
+TEST_F(DRCHandlerTest, UpdateMarkerVisible)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  odb::dbMarker* marker = *all_markers.begin();
+  EXPECT_TRUE(marker->isVisible());  // default is visible
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::DRC_MARKERS;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 106;
+  req.type = WebSocketRequest::DRC_UPDATE_MARKER;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+  req.drc_field = "visible";
+  req.drc_field_value = false;
+
+  auto resp = handler_->handleDRCUpdateMarker(req, state_);
+  EXPECT_EQ(resp.type, 0);
+  EXPECT_FALSE(marker->isVisible());
+
+  // DRC overlay should now be empty since the only marker is hidden
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_TRUE(state_.drc_rects.empty());
+}
+
+TEST_F(DRCHandlerTest, HighlightMarker)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  odb::dbMarker* marker = *all_markers.begin();
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::DRC_MARKERS;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 107;
+  req.type = WebSocketRequest::DRC_HIGHLIGHT;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+
+  auto resp = handler_->handleDRCHighlight(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_NE(json.find("\"bbox\""), std::string::npos);
+
+  // Marker should now be visited
+  EXPECT_TRUE(marker->isVisited());
+
+  // Highlight rects should contain the marker bbox
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_rects.size(), 1u);
+}
+
+TEST_F(DRCHandlerTest, HighlightClear)
+{
+  // Put some existing highlights
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 100, 100);
+  }
+
+  WebSocketRequest req;
+  req.id = 108;
+  req.type = WebSocketRequest::DRC_HIGHLIGHT;
+  req.drc_marker_id = -1;  // clear
+
+  auto resp = handler_->handleDRCHighlight(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 0"), std::string::npos);
+
+  // Highlights should be cleared
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(DRCHandlerTest, DRCOverlayIncludesVisibleMarkers)
+{
+  createTestCategory("DRC", 3);
+
+  WebSocketRequest req;
+  req.type = WebSocketRequest::DRC_MARKERS;
+  req.drc_category_name = "DRC";
+  handler_->handleDRCMarkers(req, state_);
+
+  // All 3 markers should appear in the DRC overlay
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 3u);
+}
+
+TEST_F(DRCHandlerTest, SelectEmptyCategoryClearsOverlay)
+{
+  createTestCategory("DRC", 3);
+
+  // Select category first
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::DRC_MARKERS;
+    req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  // Now deselect
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::DRC_MARKERS;
+    req.drc_category_name = "";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_TRUE(state_.drc_rects.empty());
+  EXPECT_TRUE(state_.active_drc_category.empty());
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
+{
+  auto* top = createTestCategory("DRC", 3);
+
+  // Select category to populate overlay
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::DRC_MARKERS;
+    req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  // All 3 markers should be in overlay
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_EQ(state_.drc_rects.size(), 3u);
+  }
+
+  // Hide all markers in one batch request
+  {
+    WebSocketRequest req;
+    req.id = 200;
+    req.type = WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY;
+    req.drc_category_name = "DRC";
+    req.drc_field_value = false;
+
+    auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+    EXPECT_EQ(resp.type, 0);
+
+    std::string json = payloadStr(resp);
+    EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+    EXPECT_NE(json.find("\"count\": 3"), std::string::npos);
+  }
+
+  // All markers should now be hidden
+  auto all_markers = top->getAllMarkers();
+  for (odb::dbMarker* m : all_markers) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  // Overlay should be empty
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_TRUE(state_.drc_rects.empty());
+  }
+
+  // Show them again
+  {
+    WebSocketRequest req;
+    req.id = 201;
+    req.type = WebSocketRequest::DRC_UPDATE_CATEGORY_VISIBILITY;
+    req.drc_category_name = "DRC";
+    req.drc_field_value = true;
+
+    auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+    EXPECT_EQ(resp.type, 0);
+  }
+
+  for (odb::dbMarker* m : top->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_EQ(state_.drc_rects.size(), 3u);
+  }
+}
+
 }  // namespace
 }  // namespace web

@@ -35,6 +35,11 @@ def parse_args():
         action="store_true",
         help="Look only at the local files and don't recurse",
     )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Explicit file paths to scan (alternative to -d directory walking)",
+    )
     args = parser.parse_args()
 
     return args
@@ -113,7 +118,15 @@ def main():
     # "tool id" -> "file:line message"
     msgs = defaultdict(set)
 
-    if args.local:  # no recursion
+    if args.files:
+        # Scan explicitly listed files (used by Bazel where sandbox
+        # visibility is determined by the declared srcs).
+        for f in args.files:
+            path = os.path.dirname(f) or "."
+            name = os.path.basename(f)
+            if re.search(r"\.(c|cc|cpp|cxx|h|hh|yy|ll|i|tcl)$", name):
+                scan_file(path, name, msgs)
+    elif args.local:  # no recursion
         files = [
             os.path.basename(file) for file in glob.glob(os.path.join(args.dir, "*"))
         ]

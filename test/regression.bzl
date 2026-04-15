@@ -220,7 +220,7 @@ def doc_check_test(name, **kwargs):
         **kwargs
     )
 
-def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
+def messages_txt(name = "messages_txt", src_patterns = None, extra_srcs = None, visibility = None):
     """Generate messages.txt from source files using find_messages.py.
 
     Replaces per-module genrule boilerplate with a single macro call.
@@ -230,6 +230,9 @@ def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
         src_patterns: Glob patterns for source files. Defaults to all
             common C++/Tcl extensions. Override for modules with
             non-standard layouts (e.g., recursive globs for odb).
+        extra_srcs: Additional source labels from other packages (e.g.,
+            filegroups in sub-packages). When provided, files are passed
+            directly to find_messages.py instead of directory walking.
         visibility: Bazel visibility.
     """
     if src_patterns == None:
@@ -241,11 +244,23 @@ def messages_txt(name = "messages_txt", src_patterns = None, visibility = None):
             "src/*.tcl",
         ]
 
+    srcs = native.glob(src_patterns, allow_empty = True)
+    if extra_srcs:
+        srcs = srcs + extra_srcs
+
+    # When extra_srcs are present, sources span multiple directories so
+    # the dirname-of-first-src trick doesn't work.  Pass every file
+    # path as a positional arg to find_messages.py instead.
+    if extra_srcs:
+        cmd = "$(PYTHON3) $(location //etc:find_messages.py) $(SRCS) > $@"
+    else:
+        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@"
+
     native.genrule(
         name = name,
-        srcs = native.glob(src_patterns, allow_empty = True),
+        srcs = srcs,
         outs = ["messages.txt"],
-        cmd = "$(PYTHON3) $(location //etc:find_messages.py) -d $$(dirname $$(echo $(SRCS) | tr ' ' '\\n' | head -1)) > $@",
+        cmd = cmd,
         toolchains = ["@rules_python//python:current_py_toolchain"],
         tools = ["//etc:find_messages.py"],
         visibility = visibility,

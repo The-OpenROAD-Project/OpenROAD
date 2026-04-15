@@ -16,12 +16,12 @@ namespace odb {
 
 class _dbDatabase;
 class _dbMTerm;
+class _dbTech;
 class _dbTechLayer;
 class dbTech;
 class dbTechLayer;
 class dbIStream;
 class dbOStream;
-class lefout;
 
 //
 // An antenna multiplier factor is applied to metal. A separate factor may
@@ -134,7 +134,6 @@ class _dbTechAntennaAreaElement
       double inarea,
       dbTechLayer* inly
       = nullptr);  // Allocate a new element and add to container.
-  void writeLef(const char* header, dbTech* tech, lefout& writer) const;
 
   friend dbOStream& operator<<(dbOStream& stream,
                                const _dbTechAntennaAreaElement* aae);
@@ -176,7 +175,7 @@ class _dbTechAntennaPinModel : public _dbObject
   void collectMemInfo(MemInfo& info);
 
   static void getAntennaValues(
-      _dbDatabase* db,
+      _dbTech* tech,
       const dbVector<_dbTechAntennaAreaElement*>& elements,
       std::vector<std::pair<double, dbTechLayer*>>& result);
 

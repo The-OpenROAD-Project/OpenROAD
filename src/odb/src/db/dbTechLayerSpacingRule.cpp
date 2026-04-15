@@ -12,7 +12,6 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
-#include "odb/lefout.h"
 #include "spdlog/fmt/ostr.h"
 
 namespace odb {
@@ -658,102 +657,6 @@ dbTechLayerSpacingRule* dbTechLayerSpacingRule::getTechLayerSpacingRule(
   return (dbTechLayerSpacingRule*) layer->spacing_rules_tbl_->getPtr(dbid);
 }
 
-void dbTechLayerSpacingRule::writeLef(lefout& writer) const
-{
-  uint32_t rmin, rmax, length_or_influence, cut_spacing, numcuts;
-  bool except_same_pgnet;
-  dbTechLayer* rulely;
-
-  fmt::print(writer.out(), "    SPACING {:g} ", writer.lefdist(getSpacing()));
-
-  if (getCutCenterToCenter()) {
-    fmt::print(writer.out(), "    CENTERTOCENTER ");
-  }
-
-  if (getCutSameNet()) {
-    fmt::print(writer.out(), "    SAMENET ");
-  }
-
-  if (getCutParallelOverlap()) {
-    fmt::print(writer.out(), "    PARALLELOVERLAP ");
-  }
-
-  if (getCutArea() > 0) {
-    fmt::print(writer.out(), "    AREA {:g} ", writer.lefdist(getCutArea()));
-  }
-
-  if (getRange(rmin, rmax)) {
-    fmt::print(writer.out(),
-               "RANGE {:g} {:g} ",
-               writer.lefdist(rmin),
-               writer.lefdist(rmax));
-    if (hasUseLengthThreshold()) {
-      fmt::print(writer.out(), "USELENGTHTHRESHOLD ");
-    } else if (getInfluence(length_or_influence)) {
-      fmt::print(
-          writer.out(), "INFLUENCE {:g} ", writer.lefdist(length_or_influence));
-      if (getInfluenceRange(rmin, rmax)) {
-        fmt::print(writer.out(),
-                   "RANGE {:g} {:g} ",
-                   writer.lefdist(rmin),
-                   writer.lefdist(rmax));
-      }
-    } else if (getRangeRange(rmin, rmax)) {
-      fmt::print(writer.out(),
-                 "RANGE {:g} {:g} ",
-                 writer.lefdist(rmin),
-                 writer.lefdist(rmax));
-    }
-  } else if (getLengthThreshold(length_or_influence)) {
-    fmt::print(writer.out(),
-               "LENGTHTHRESHOLD {:g} ",
-               writer.lefdist(length_or_influence));
-    if (getLengthThresholdRange(rmin, rmax)) {
-      fmt::print(writer.out(),
-                 "RANGE {:g} {:g} ",
-                 writer.lefdist(rmin),
-                 writer.lefdist(rmax));
-    }
-  } else if (getCutLayer4Spacing(rulely)) {
-    fmt::print(writer.out(), "LAYER {} ", rulely->getName().c_str());
-  } else if (getAdjacentCuts(numcuts,
-                             length_or_influence,
-                             cut_spacing,
-                             except_same_pgnet)) {
-    fmt::print(writer.out(),
-               "ADJACENTCUTS {} WITHIN {:g} ",
-               numcuts,
-               writer.lefdist(length_or_influence));
-    if (except_same_pgnet) {
-      fmt::print(writer.out(), "EXCEPTSAMEPGNET ");
-    }
-  } else {
-    uint32_t width, within, parallelSpace, parallelWithin;
-    bool parallelEdge, twoEdges;
-    if (getEol(width,
-               within,
-               parallelEdge,
-               parallelSpace,
-               parallelWithin,
-               twoEdges)) {
-      fmt::print(writer.out(),
-                 "ENDOFLINE {:g} WITHIN {:g} ",
-                 writer.lefdist(width),
-                 writer.lefdist(within));
-      if (parallelEdge) {
-        fmt::print(writer.out(),
-                   "PARALLELEDGE {:g} WITHIN {:g} ",
-                   writer.lefdist(parallelSpace),
-                   writer.lefdist(parallelWithin));
-        if (twoEdges) {
-          fmt::print(writer.out(), " TWOEDGES ");
-        }
-      }
-    }
-  }
-  fmt::print(writer.out(), " ;\n");
-}
-
 ////////////////////////////////////////////////////////////////////
 //
 // dbTechV55InfluenceEntry - Methods
@@ -779,18 +682,6 @@ void dbTechV55InfluenceEntry::setV55InfluenceEntry(const uint32_t& width,
   _v55ie->width_ = width;
   _v55ie->within_ = within;
   _v55ie->spacing_ = spacing;
-}
-
-void dbTechV55InfluenceEntry::writeLef(lefout& writer) const
-{
-  uint32_t inf_width, inf_within, inf_spacing;
-
-  getV55InfluenceEntry(inf_width, inf_within, inf_spacing);
-  fmt::print(writer.out(),
-             "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
-             writer.lefdist(inf_width),
-             writer.lefdist(inf_within),
-             writer.lefdist(inf_spacing));
 }
 
 dbTechV55InfluenceEntry* dbTechV55InfluenceEntry::create(dbTechLayer* inly)

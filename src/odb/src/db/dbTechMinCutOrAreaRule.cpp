@@ -12,7 +12,6 @@
 #include "dbTech.h"
 #include "dbTechLayer.h"
 #include "odb/db.h"
-#include "odb/lefout.h"
 
 namespace odb {
 
@@ -239,37 +238,6 @@ void dbTechMinCutRule::setLengthForCuts(uint32_t length, uint32_t distance)
   _lsm->distance_ = distance;
 }
 
-void dbTechMinCutRule::writeLef(lefout& writer) const
-{
-  uint32_t numcuts = 0;
-  uint32_t cut_width = 0;
-  getMinimumCuts(numcuts, cut_width);
-  fmt::print(writer.out(),
-             "    MINIMUMCUT {}  WIDTH {:g} ",
-             numcuts,
-             writer.lefdist(cut_width));
-
-  uint32_t cut_distance;
-  if (getCutDistance(cut_distance)) {
-    fmt::print(writer.out(), "WITHIN {:g} ", writer.lefdist(cut_distance));
-  }
-
-  if (isAboveOnly()) {
-    fmt::print(writer.out(), "{}", "FROMABOVE ");
-  } else if (isBelowOnly()) {
-    fmt::print(writer.out(), "{}", "FROMBELOW ");
-  }
-
-  uint32_t length, distance;
-  if (getLengthForCuts(length, distance)) {
-    fmt::print(writer.out(),
-               "LENGTH {:g}  WITHIN {:g} ",
-               writer.lefdist(length),
-               writer.lefdist(distance));
-  }
-  fmt::print(writer.out(), ";\n");
-}
-
 dbTechMinCutRule* dbTechMinCutRule::create(dbTechLayer* inly)
 {
   _dbTechLayer* layer = (_dbTechLayer*) inly;
@@ -323,18 +291,6 @@ void dbTechMinEncRule::setEnclosureWidth(uint32_t width)
 
   _lsm->flags_.has_width = 1;
   _lsm->width_ = width;
-}
-
-void dbTechMinEncRule::writeLef(lefout& writer) const
-{
-  uint32_t enc_area, enc_width;
-  getEnclosure(enc_area);
-  fmt::print(
-      writer.out(), "    MINENCLOSEDAREA {:g} ", writer.lefarea(enc_area));
-  if (getEnclosureWidth(enc_width)) {
-    fmt::print(writer.out(), "WIDTH {:g} ", writer.lefdist(enc_width));
-  }
-  fmt::print(writer.out(), "{}", ";\n");
 }
 
 dbTechMinEncRule* dbTechMinEncRule::create(dbTechLayer* inly)

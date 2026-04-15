@@ -319,9 +319,9 @@ TEST_F(SaveReportTest, SerializeTimingPathsRoundTrip)
   node.delay = 0.1f;
   node.slew = 0.02f;
   node.load = 0.01f;
-  p.data_nodes.push_back(node);
+  p.data_nodes.push_back(std::move(node));
 
-  std::vector<TimingPathSummary> paths = {p};
+  std::vector<TimingPathSummary> paths = {std::move(p)};
   JsonBuilder b;
   serializeTimingPaths(b, paths);
   const std::string json = b.str();

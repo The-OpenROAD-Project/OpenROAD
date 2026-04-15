@@ -14,6 +14,7 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import './theme.js';
 
@@ -381,8 +382,8 @@ function createTimingWidget(container) {
 }
 
 function createDRCWidget(container) {
-    createStubPanel(container, 'DRC',
-        'Design rule check violations viewer.');
+    app.drcWidget = new DrcWidget(app, redrawAllLayers);
+    container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
