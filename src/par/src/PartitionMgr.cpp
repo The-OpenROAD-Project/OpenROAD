@@ -549,7 +549,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
            < std::tie(rhs.port_name, rhs_net_name);
   });
   for (const auto& global_port : global_ports) {
-    Port* port = network->makePort(cell, global_port.port_name.c_str());
+    Port* port = network->makePort(cell, global_port.port_name);
     network->setDirection(port, global_port.direction);
     port_map->insert({global_port.net, port});
   }
@@ -591,7 +591,7 @@ Instance* PartitionMgr::buildPartitionedInstance(
            < std::tie(rhs.port_name, rhs_net_name);
   });
   for (const auto& internal_port : internal_ports) {
-    Port* port = network->makePort(cell, internal_port.port_name.c_str());
+    Port* port = network->makePort(cell, internal_port.port_name);
     network->setDirection(port, internal_port.direction);
     port_map->insert({internal_port.net, port});
   }
@@ -743,7 +743,7 @@ Instance* PartitionMgr::buildPartitionedTopInstance(const char* name,
   delete pin_iter;
   std::ranges::sort(ports);
   for (const auto& [portname, direction] : ports) {
-    Port* port = network->makePort(cell, portname.c_str());
+    Port* port = network->makePort(cell, portname);
     network->setDirection(port, direction);
   }
 
