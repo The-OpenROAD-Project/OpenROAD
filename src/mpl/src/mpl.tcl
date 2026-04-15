@@ -9,8 +9,6 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -max_num_level  max_num_level \
                                           -coarsening_ratio coarsening_ratio \
                                           -large_net_threshold large_net_threshold \
-                                          -halo_width halo_width \
-                                          -halo_height halo_height \
                                           -fence_lx   fence_lx \
                                           -fence_ly   fence_ly \
                                           -fence_ux   fence_ux \
@@ -34,7 +32,6 @@ proc rtl_macro_placer { args } {
   sta::parse_key_args "rtl_macro_placer" args \
     keys {-max_num_macro  -min_num_macro -max_num_inst  -min_num_inst  -tolerance   \
          -max_num_level  -coarsening_ratio -large_net_threshold \
-         -halo_width -halo_height \
          -fence_lx   -fence_ly  -fence_ux   -fence_uy  \
          -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
          -boundary_weight -notch_weight \
@@ -63,8 +60,6 @@ proc rtl_macro_placer { args } {
   set max_num_level 2
   set coarsening_ratio 10.0
   set large_net_threshold 50
-  set halo_width 0.0
-  set halo_height 0.0
   set fence_lx 0.0
   set fence_ly 0.0
   set fence_ux 0.0
@@ -107,17 +102,6 @@ proc rtl_macro_placer { args } {
   }
   if { [info exists keys(-large_net_threshold)] } {
     set large_net_threshold $keys(-large_net_threshold)
-  }
-
-  if { [info exists keys(-halo_width)] && [info exists keys(-halo_height)] } {
-    set halo_width $keys(-halo_width)
-    set halo_height $keys(-halo_height)
-  } elseif { [info exists keys(-halo_width)] } {
-    set halo_width $keys(-halo_width)
-    set halo_height $keys(-halo_width)
-  } elseif { [info exists keys(-halo_height)] } {
-    set halo_width $keys(-halo_height)
-    set halo_height $keys(-halo_height)
   }
 
   if { [info exists keys(-fence_lx)] } {
@@ -191,8 +175,6 @@ proc rtl_macro_placer { args } {
       $max_num_level \
       $coarsening_ratio \
       $large_net_threshold \
-      $halo_width \
-      $halo_height \
       $fence_lx $fence_ly $fence_ux $fence_uy \
       $area_weight $outline_weight $wirelength_weight \
       $guidance_weight $fence_weight $boundary_weight \
@@ -292,6 +274,15 @@ proc set_macro_guidance_region { args } {
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
+sta::define_cmd_args "set_macro_default_halo" { halo }
+proc set_macro_default_halo { args } {
+  sta::parse_key_args "set_macro_default_halo" args \
+    keys {} flags {}
+
+  lassign [mpl::parse_halo $args] left bottom right top
+  mpl::set_default_halo $left $bottom $right $top
+}
+
 sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
                                         -halo halo }
 proc set_macro_halo { args } {
@@ -314,10 +305,16 @@ proc set_macro_halo { args } {
     utl::error MPL 38 "-halo is required."
   }
 
+  lassign [mpl::parse_halo $halo] left bottom right top
+  mpl::set_macro_halo $macro $left $bottom $right $top
+}
+
+namespace eval mpl {
+proc parse_halo { halo } {
   set length [llength $halo]
 
   if { $length != 2 && $length != 4 } {
-    utl::error MPL 54 "-halo must be a list of 2 or 4 values."
+    utl::error MPL 72 "Halo must have 2 or 4 values."
   }
 
   if { $length == 2 } {
@@ -330,10 +327,15 @@ proc set_macro_halo { args } {
     lassign $halo left bottom right top
   }
 
-  mpl::set_macro_halo $macro $left $bottom $right $top
+  foreach value [list $left $bottom $right $top] {
+    if { $value < 0 } {
+      utl::error MPL 73 "Halo values must be non-negative."
+    }
+  }
+
+  return [list $left $bottom $right $top]
 }
 
-namespace eval mpl {
 proc parse_macro_name { cmd macro_name } {
   set block [ord::get_db_block]
   set inst [$block findInst "$macro_name"]
