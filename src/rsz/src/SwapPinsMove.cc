@@ -157,12 +157,14 @@ bool SwapPinsMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
              drvr_cell->name(),
              input_port->name(),
              swap_port->name());
-  swapPins(drvr, input_port, swap_port);
+  if (!swapPins(drvr, input_port, swap_port)) {
+    return false;
+  }
   countMove(drvr);
   return true;
 }
 
-void SwapPinsMove::swapPins(sta::Instance* inst,
+bool SwapPinsMove::swapPins(sta::Instance* inst,
                             sta::LibertyPort* port1,
                             sta::LibertyPort* port2)
 {
@@ -201,6 +203,28 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
   }
 
   if (net1 != nullptr && net2 != nullptr) {
+    // Honor net dont-touch
+    if (flat_net_pin1 && flat_net_pin1->isDoNotTouch()) {
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_pins_move",
+                 2,
+                 "REJECT SwapPinsMove {}: Net {} is \"don't touch\"",
+                 network_->pathName(inst),
+                 network_->pathName(net1));
+      return false;
+    }
+    if (flat_net_pin2 && flat_net_pin2->isDoNotTouch()) {
+      debugPrint(logger_,
+                 RSZ,
+                 "swap_pins_move",
+                 2,
+                 "REJECT SwapPinsMove {}: Net {} is \"don't touch\"",
+                 network_->pathName(inst),
+                 network_->pathName(net2));
+      return false;
+    }
+
     // Swap the ports and nets
     // Support for hierarchy, swap modnets as well as dbnets
 
@@ -217,6 +241,7 @@ void SwapPinsMove::swapPins(sta::Instance* inst,
     db_network_->connectPin(
         found_pin2, (sta::Net*) flat_net_pin1, (sta::Net*) mod_net_pin1);
   }
+  return true;
 }
 
 // Lets just look at the first list for now.

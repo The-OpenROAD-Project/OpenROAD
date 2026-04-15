@@ -113,6 +113,13 @@ js_test(
     no_copy_to_bin = JS_FILES,
 )
 
+js_test(
+    name = "drc_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-drc-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],
@@ -212,6 +219,27 @@ cc_test(
         "//src/tst:nangate45_fixture",
         "//src/utl",
         "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "save_report_test",
+    srcs = ["cpp/TestSaveReport.cpp"],
+    copts = ["-Isrc/web/src"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/tst",
+        "//src/tst:nangate45_fixture",
+        "//src/utl",
+        "//src/web",
+        "//third-party/lodepng",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],

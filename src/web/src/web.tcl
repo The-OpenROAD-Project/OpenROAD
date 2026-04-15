@@ -126,3 +126,30 @@ proc save_image { args } {
     rename $options ""
   }
 }
+
+sta::define_cmd_args "web_save_report" {[-setup_paths count] \
+                                        [-hold_paths count] \
+                                        path
+}
+
+proc web_save_report { args } {
+  sta::parse_key_args "web_save_report" args \
+    keys {-setup_paths -hold_paths} flags {}
+
+  set max_setup 100
+  if { [info exists keys(-setup_paths)] } {
+    sta::check_positive_int "-setup_paths" $keys(-setup_paths)
+    set max_setup $keys(-setup_paths)
+  }
+
+  set max_hold 100
+  if { [info exists keys(-hold_paths)] } {
+    sta::check_positive_int "-hold_paths" $keys(-hold_paths)
+    set max_hold $keys(-hold_paths)
+  }
+
+  sta::check_argc_eq1 "web_save_report" $args
+  set path [lindex $args 0]
+
+  web::save_report_cmd $path $max_setup $max_hold
+}
