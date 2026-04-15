@@ -1264,10 +1264,11 @@ void GuideProcessor::genGuides_split(
                                 is_horizontal,
                                 rects);
             auto prev_idx_it = curr_idx_it++;
-            const bool via_only = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
-                                  && router_cfg_->DBPROCESSNODE != "ISPD";
-            || (via_access_only
-                && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
+            const bool via_only
+                = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
+                      && router_cfg_->DBPROCESSNODE != "ISPD"
+                  || (via_access_only
+                      && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
             while (curr_idx_it != split_indices.end()) {
               split::addSplitRect(track_idx,
                                   *curr_idx_it,
