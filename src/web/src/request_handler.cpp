@@ -363,13 +363,32 @@ static double extract_double_value(const std::string& json)
 
 static bool extract_bool_value(const std::string& json)
 {
-  if (json.find("\"value\":true") != std::string::npos) {
-    return true;
-  }
-  if (json.find("\"value\":false") != std::string::npos) {
+  const std::string needle = "\"value\"";
+  auto pos = json.find(needle);
+  if (pos == std::string::npos) {
     return false;
   }
-  return extract_int_or(json, "value", 0) != 0;
+  pos = json.find(':', pos + needle.size());
+  if (pos == std::string::npos) {
+    return false;
+  }
+  // Skip whitespace after colon
+  pos++;
+  while (pos < json.size() && (json[pos] == ' ' || json[pos] == '\t')) {
+    pos++;
+  }
+  if (pos < json.size() && json[pos] == 't') {
+    return true;
+  }
+  if (pos < json.size() && json[pos] == 'f') {
+    return false;
+  }
+  // Fall back to integer interpretation (0/1)
+  try {
+    return std::stoi(json.substr(pos)) != 0;
+  } catch (...) {
+    return false;
+  }
 }
 
 static void writeColorArray(JsonBuilder& builder,
