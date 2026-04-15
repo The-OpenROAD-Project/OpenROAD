@@ -120,10 +120,18 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   outgoing_.resize(size);
   for (size_t i = 0; i < mgr.getNumSegments(); i++) {
     const int segId = mgr.getSegment(i)->getSegId();
+    const int rowId = mgr.getSegment(i)->getRowId();
+    const DbuY rowBottom{arch_->getRow(rowId)->getBottom()};
     for (size_t j = 1; j < mgr.getNumCellsInSeg(segId); j++) {
       const Node* prev = mgr.getCellsInSeg(segId)[j - 1];
       const Node* curr = mgr.getCellsInSeg(segId)[j];
 
+      // Only add edges from a cell's bottom (primary) row to avoid
+      // cycles in the topological sort caused by multi-height cells
+      // appearing in multiple row segments with conflicting orderings.
+      if (prev->getBottom() != rowBottom || curr->getBottom() != rowBottom) {
+        continue;
+      }
       incoming_[curr->getId()].push_back(prev->getId());
       outgoing_[prev->getId()].push_back(curr->getId());
     }
