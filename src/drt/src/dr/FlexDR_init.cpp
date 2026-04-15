@@ -12,6 +12,7 @@
 #include <queue>
 #include <set>
 #include <stack>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -26,6 +27,7 @@
 #include "db/obj/frGuide.h"
 #include "db/obj/frInst.h"
 #include "db/obj/frInstTerm.h"
+#include "db/obj/frMarker.h"
 #include "db/obj/frShape.h"
 #include "db/obj/frVia.h"
 #include "dr/FlexDR.h"
@@ -2732,16 +2734,12 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
       switch (obj->typeId()) {
         case frcBTerm: {  // term no bloat
           auto* net = static_cast<frBTerm*>(obj)->getNet();
-          if (net != nullptr) {
-            frNet2Terms[net].insert(obj);
-          }
+          frNet2Terms[net].insert(obj);
           break;
         }
         case frcInstTerm: {
           auto* net = static_cast<frInstTerm*>(obj)->getNet();
-          if (net != nullptr) {
-            frNet2Terms[net].insert(obj);
-          }
+          frNet2Terms[net].insert(obj);
           if (isRoutingLayer) {
             // unblock planar edge for obs over pin, ap will unblock via edge
             // for legal pin access

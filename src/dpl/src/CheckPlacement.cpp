@@ -133,7 +133,8 @@ void Opendp::checkPlacement(const bool verbose,
           + region_placement_failures.size() + edge_spacing_failures.size()
           + blocked_layers_failures.size()
       > 0) {
-    logger_->error(DPL, 33, "detailed placement checks failed.");
+    logger_->error(
+        DPL, 33, "detailed placement checks failed during check placement.");
   }
 }
 

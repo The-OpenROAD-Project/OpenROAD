@@ -107,7 +107,9 @@ class Opendp
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
                          const std::string& report_file_name = std::string(""),
-                         bool incremental = false);
+                         bool incremental = false,
+                         bool use_negotiation = false,
+                         bool run_abacus = false);
   void reportLegalizationStats() const;
 
   void setPaddingGlobal(int left, int right);
@@ -192,6 +194,7 @@ class Opendp
   friend class OpendpTest_IsPlaced_Test;
   friend class Graphics;
   friend class CellPlaceOrderLess;
+  friend class NegotiationLegalizer;
   void findDisplacementStats();
   DbuPt pointOffMacro(const Node& cell);
   void convertDbToCell(odb::dbInst* db_inst, Node& cell);
@@ -214,7 +217,7 @@ class Opendp
   void initPlacementDRC();
 
   std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
-  void detailedPlacement();
+  void diamondDPL();
   DbuPt nearestPt(const Node* cell, const DbuRect& rect) const;
   int distToRect(const Node* cell, const odb::Rect& rect) const;
   static bool checkOverlap(const odb::Rect& cell, const odb::Rect& box);
@@ -394,6 +397,7 @@ class Opendp
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
   bool incremental_ = false;
+  bool use_negotiation_ = false;
 
   // Magic numbers
   static constexpr double group_refine_percent_ = .05;

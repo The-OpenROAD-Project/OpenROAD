@@ -210,7 +210,6 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
 
   if (points.empty()) {
     logger_->error(IFP, 987, "No polygon vertices provided.");
-    return;
   }
 
   if (points.size() < 4) {
@@ -218,7 +217,6 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
                    988,
                    "Polygon must have at least 4 vertices. Got {} vertices.",
                    points.size());
-    return;
   }
 
   // Snap all coordinates to manufacturing grid
@@ -228,10 +226,35 @@ void InitFloorplan::makePolygonDie(const odb::Polygon& polygon)
     mfg_pts.emplace_back(snapToMfgGrid(p.x()), snapToMfgGrid(p.y()));
   }
 
-  // Set the die area using the polygon
-  block_->setDieArea(polygon);
+  // Set the die area using the snapped polygon
+  odb::Polygon snapped_polygon(mfg_pts);
+  block_->setDieArea(snapped_polygon);
 
   resetTracks();
+}
+
+InitFloorplan::SitesByName InitFloorplan::prepareSitesAndClearRows(
+    odb::dbSite* base_site,
+    const std::vector<odb::dbSite*>& additional_sites)
+{
+  SitesByName sites_by_name;
+  sites_by_name[base_site->getName()] = base_site;
+  if (base_site->hasRowPattern()) {
+    for (const auto& [site, orient] : base_site->getRowPattern()) {
+      sites_by_name[site->getName()] = site;
+    }
+  }
+  for (auto site : additional_sites) {
+    sites_by_name[site->getName()] = site;
+  }
+  addUsedSites(sites_by_name);
+
+  auto rows = block_->getRows();
+  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
+    row_itr = dbRow::destroy(row_itr);
+  }
+
+  return sites_by_name;
 }
 
 void InitFloorplan::makePolygonRows(
@@ -248,7 +271,6 @@ void InitFloorplan::makePolygonRows(
 
   if (points.empty()) {
     logger_->error(IFP, 991, "No core polygon vertices provided.");
-    return;
   }
 
   if (points.size() < 4) {
@@ -257,7 +279,6 @@ void InitFloorplan::makePolygonRows(
         992,
         "Core polygon must have at least 4 vertices. Got {} vertices.",
         points.size());
-    return;
   }
 
   // Snap all coordinates to manufacturing grid
@@ -271,7 +292,6 @@ void InitFloorplan::makePolygonRows(
   odb::Rect block_die_area = block_->getDieArea();
   if (block_die_area.area() == 0) {
     logger_->error(IFP, 1005, "Floorplan die area is 0. Cannot build rows.");
-    return;
   }
 
   // Create a polygon from the core vertices and get bounding box
@@ -281,7 +301,6 @@ void InitFloorplan::makePolygonRows(
   if (!block_die_area.contains(core_bbox)) {
     logger_->error(
         IFP, 1004, "Die area must contain the core polygon bounding box.");
-    return;
   }
 
   checkInstanceDimensions(core_bbox);
@@ -296,24 +315,8 @@ void InitFloorplan::makePolygonRows(
              core_bbox.xMax(),
              core_bbox.yMax());
 
-  // Set up sites by name (same as original makeRows)
-  SitesByName sites_by_name;
-  sites_by_name[base_site->getName()] = base_site;
-  if (base_site->hasRowPattern()) {
-    for (const auto& [site, orient] : base_site->getRowPattern()) {
-      sites_by_name[site->getName()] = site;
-    }
-  }
-  for (auto site : additional_sites) {
-    sites_by_name[site->getName()] = site;
-  }
-  addUsedSites(sites_by_name);
-
-  // Remove all existing rows
-  auto rows = block_->getRows();
-  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
-    row_itr = dbRow::destroy(row_itr);
-  }
+  SitesByName sites_by_name
+      = prepareSitesAndClearRows(base_site, additional_sites);
 
   // Use the new scanline-based approach
   makePolygonRowsScanline(
@@ -374,6 +377,23 @@ void InitFloorplan::checkInstanceDimensions(const odb::Rect& core) const
 static int divCeil(int dividend, int divisor)
 {
   return ceil(static_cast<double>(dividend) / divisor);
+}
+
+static int applyRowParity(int rows_y, const RowParity row_parity)
+{
+  switch (row_parity) {
+    case RowParity::NONE:
+      break;
+    case RowParity::EVEN:
+      rows_y = (rows_y / 2) * 2;
+      break;
+    case RowParity::ODD:
+      if (rows_y > 0 && rows_y % 2 == 0) {
+        rows_y--;
+      }
+      break;
+  }
+  return rows_y;
 }
 
 void InitFloorplan::makeRowsWithSpacing(
@@ -449,26 +469,8 @@ void InitFloorplan::makeRows(const odb::Rect& core,
 
   checkInstanceDimensions(core);
 
-  // The same site can appear in more than one LEF file and therefore
-  // in more than one dbLib.  We merge them by name to avoid duplicate
-  // rows.
-  SitesByName sites_by_name;
-  sites_by_name[base_site->getName()] = base_site;
-  if (base_site->hasRowPattern()) {
-    for (const auto& [site, orient] : base_site->getRowPattern()) {
-      sites_by_name[site->getName()] = site;
-    }
-  }
-  for (auto site : additional_sites) {
-    sites_by_name[site->getName()] = site;
-  }
-  addUsedSites(sites_by_name);
-
-  // remove all rows
-  auto rows = block_->getRows();
-  for (auto row_itr = rows.begin(); row_itr != rows.end();) {
-    row_itr = dbRow::destroy(row_itr);
-  }
+  SitesByName sites_by_name
+      = prepareSitesAndClearRows(base_site, additional_sites);
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     eval_upf(network_, logger_, block_);
@@ -565,22 +567,23 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
       // gap calculation
       int min_site_dx = std::numeric_limits<int>::max();
       int min_site_dy = std::numeric_limits<int>::max();
-      std::vector<dbRow*>::iterator row_itr = rows.begin();
-      for (int row_processed = 0; row_processed < total_row_count;
-           row_processed++) {
-        dbRow* row = *row_itr;
+      for (dbRow* row : rows) {
         auto site = row->getSite();
-        int site_dy = site->getHeight();
-        min_site_dy = std::min(site_dy, min_site_dy);
-        int site_dx = site->getWidth();
-        min_site_dx = std::min(site_dx, min_site_dx);
+        min_site_dy = std::min(site->getHeight(), min_site_dy);
+        min_site_dx = std::min(site->getWidth(), min_site_dx);
       }
       // Default space is 6 times the minimum site height
       const int power_domain_y_space
           = (gap == std::numeric_limits<int32_t>::min()) ? 6 * min_site_dy
                                                          : gap;
 
-      row_itr = rows.begin();
+      // snap inward to site grid
+      domain_x_min = odb::makeSiteLoc(domain_x_min, min_site_dx, false, 0);
+      domain_x_max = odb::makeSiteLoc(domain_x_max, min_site_dx, true, 0);
+      domain_y_min = odb::makeSiteLoc(domain_y_min, min_site_dy, false, 0);
+      domain_y_max = odb::makeSiteLoc(domain_y_max, min_site_dy, true, 0);
+
+      auto row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
@@ -590,12 +593,6 @@ void InitFloorplan::updateVoltageDomain(const int core_lx,
         auto site = row->getSite();
 
         int site_dx = site->getWidth();
-
-        // snap inward to site grid
-        domain_x_min = odb::makeSiteLoc(domain_x_min, min_site_dx, false, 0);
-        domain_x_max = odb::makeSiteLoc(domain_x_max, min_site_dx, true, 0);
-        domain_y_min = odb::makeSiteLoc(domain_y_min, min_site_dy, false, 0);
-        domain_y_max = odb::makeSiteLoc(domain_y_max, min_site_dy, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
@@ -692,7 +689,7 @@ void InitFloorplan::addUsedSites(
       auto site = master->getSite();
       if (site) {
         // Avoid adding a site with the same name (ie from two LEF files)
-        if (sites_by_name.find(site->getName()) == sites_by_name.end()) {
+        if (!sites_by_name.contains(site->getName())) {
           sites_by_name[site->getName()] = site;
         }
       } else {
@@ -720,22 +717,8 @@ void InitFloorplan::makeUniformRows(odb::dbSite* base_site,
 
   auto make_rows = [&](dbSite* site) -> int {
     const uint32_t site_dy = site->getHeight();
-    int rows_y = core_dy / site_dy;
-    bool flip = flipped_sites.find(site) != flipped_sites.end();
-    switch (row_parity) {
-      case RowParity::NONE:
-        break;
-      case RowParity::EVEN:
-        rows_y = (rows_y / 2) * 2;
-        break;
-      case RowParity::ODD:
-        if (rows_y > 0) {
-          rows_y = (rows_y % 2 == 0) ? rows_y - 1 : rows_y;
-        } else {
-          rows_y = 0;
-        }
-        break;
-    }
+    const int rows_y = applyRowParity(core_dy / site_dy, row_parity);
+    const bool flip = flipped_sites.contains(site);
 
     int y = core.yMin();
     for (int row = 0; row < rows_y; row++) {
@@ -1310,26 +1293,8 @@ void InitFloorplan::makeUniformRowsPolygon(
   const uint32_t site_dy = site->getHeight();
   const int core_dy = core_bbox.dy();
 
-  // Calculate number of rows
-  int total_rows_y = core_dy / site_dy;
-  bool flip = flipped_sites.find(site) != flipped_sites.end();
-
-  // Apply row parity constraints
-  switch (row_parity) {
-    case RowParity::NONE:
-      break;
-    case RowParity::EVEN:
-      total_rows_y = (total_rows_y / 2) * 2;
-      break;
-    case RowParity::ODD:
-      if (total_rows_y > 0) {
-        total_rows_y
-            = (total_rows_y % 2 == 0) ? total_rows_y - 1 : total_rows_y;
-      } else {
-        total_rows_y = 0;
-      }
-      break;
-  }
+  const int total_rows_y = applyRowParity(core_dy / site_dy, row_parity);
+  const bool flip = flipped_sites.contains(site);
 
   int rows_created = 0;
   int y = core_bbox.yMin();
