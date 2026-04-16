@@ -504,12 +504,52 @@ sh_binary(
     ],
 )
 
+# --- Bazel linting (buildifier -lint=warn) --------------------------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "lint_bzl_test",
+    srcs = ["//bazel:bzl_lint_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "@buildifier_prebuilt//:buildifier",
+    ],
+    tags = ["local"],
+)
+
+# --- Bazel formatting check (buildifier -mode=check -lint=off) ------------
+
+# buildifier: disable=native-sh-test
+sh_test(
+    name = "fmt_bzl_test",
+    srcs = ["//bazel:bzl_fmt_test.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "@buildifier_prebuilt//:buildifier",
+    ],
+    tags = ["local"],
+)
+
+# --- Bazel auto-format only (buildifier -mode=fix) ------------------------
+
+# buildifier: disable=native-sh-binary
+sh_binary(
+    name = "tidy_bzl",
+    srcs = ["//bazel:bzl_tidy.sh"],
+    args = ["$(rootpath @buildifier_prebuilt//:buildifier)"],
+    data = [
+        "@buildifier_prebuilt//:buildifier",
+    ],
+)
+
 # --- Umbrella targets ------------------------------------------------------
 
 test_suite(
     name = "lint_test",
     tests = [
+        ":fmt_bzl_test",
         ":fmt_tcl_test",
+        ":lint_bzl_test",
         ":lint_tcl_test",
     ],
 )
@@ -525,12 +565,19 @@ sh_binary(
         "$(rootpath //bazel:tclfmt)",
         "$(rootpath //bazel:tcl_lint_test.sh)",
         "$(rootpath //bazel:tclint)",
+        "$(rootpath //bazel:bzl_tidy.sh)",
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
+        "$(rootpath //bazel:bzl_lint_test.sh)",
+        "$(rootpath @buildifier_prebuilt//:buildifier)",
     ],
     data = [
         "tclint.toml",
+        "//bazel:bzl_lint_test.sh",
+        "//bazel:bzl_tidy.sh",
         "//bazel:tcl_lint_test.sh",
         "//bazel:tcl_tidy.sh",
         "//bazel:tclfmt",
         "//bazel:tclint",
+        "@buildifier_prebuilt//:buildifier",
     ],
 )

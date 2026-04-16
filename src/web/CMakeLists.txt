@@ -35,6 +35,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/schematic-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/charts-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/timing-widget.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/drc-widget.js
         ${CMAKE_CURRENT_SOURCE_DIR}/src/main.js
   DEPENDS
     src/embed_report_assets.py
@@ -56,6 +57,7 @@ add_custom_command(
     src/schematic-widget.js
     src/charts-widget.js
     src/timing-widget.js
+    src/drc-widget.js
     src/main.js
   COMMENT "Generating report_assets.cpp"
 )

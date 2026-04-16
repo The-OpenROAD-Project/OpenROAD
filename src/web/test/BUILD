@@ -93,6 +93,13 @@ js_test(
 )
 
 js_test(
+    name = "timing_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-timing-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
     name = "inspector_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-inspector.js",
@@ -110,6 +117,13 @@ js_test(
     name = "tcl_completer_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-tcl-completer.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "drc_widget_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-drc-widget.js",
     no_copy_to_bin = JS_FILES,
 )
 
