@@ -1200,7 +1200,11 @@ void GuideProcessor::genGuides_split(
         auto end_idx = intv.upper();
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (via_access_only && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
+        const bool via_only
+            = (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER)
+              || (via_access_only
+                  && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
+        if (via_only) {
           // split by pin
           split::splitByPins(pin_helper,
                              layer_num,
@@ -1264,11 +1268,6 @@ void GuideProcessor::genGuides_split(
                                 is_horizontal,
                                 rects);
             auto prev_idx_it = curr_idx_it++;
-            const bool via_only
-                = (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
-                   && router_cfg_->DBPROCESSNODE != "ISPD")
-                  || (via_access_only
-                      && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
             while (curr_idx_it != split_indices.end()) {
               split::addSplitRect(track_idx,
                                   *curr_idx_it,
@@ -1276,14 +1275,12 @@ void GuideProcessor::genGuides_split(
                                   layer_num,
                                   is_horizontal,
                                   rects);
-              if (!via_only) {
-                split::addSplitRect(track_idx,
-                                    *prev_idx_it,
-                                    *curr_idx_it,
-                                    layer_num,
-                                    is_horizontal,
-                                    rects);
-              }
+              split::addSplitRect(track_idx,
+                                  *prev_idx_it,
+                                  *curr_idx_it,
+                                  layer_num,
+                                  is_horizontal,
+                                  rects);
               prev_idx_it = curr_idx_it++;
             }
           }
