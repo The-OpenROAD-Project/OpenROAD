@@ -1277,7 +1277,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  router_cfg_->unidirectional_layers_.insert(dbLayer);
+  router_cfg_->unidirectional_layer_names_.insert(layerName);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)
