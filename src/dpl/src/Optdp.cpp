@@ -121,8 +121,7 @@ void Opendp::improvePlacement(const int seed,
   for (auto& [inst, before] : pos_before) {
     int x, y;
     inst->getLocation(x, y);
-    const int64_t disp
-        = std::abs(x - before.x()) + std::abs(y - before.y());
+    const int64_t disp = std::abs(x - before.x()) + std::abs(y - before.y());
     if (disp > 0) {
       disp_sum += disp;
       disp_max = std::max(disp_max, disp);
@@ -151,10 +150,8 @@ void Opendp::improvePlacement(const int seed,
   logger_->report("total displacement   {:10.1f} u", disp_total_um);
   logger_->report("average displacement {:10.1f} u", disp_avg_um);
   logger_->report("max displacement     {:10.1f} u", disp_max_um);
-  logger_->report("original HPWL        {:10.1f} u",
-                  hpwlBefore / dbu_micron);
-  logger_->report("improved HPWL        {:10.1f} u",
-                  hpwlAfter / dbu_micron);
+  logger_->report("original HPWL        {:10.1f} u", hpwlBefore / dbu_micron);
+  logger_->report("improved HPWL        {:10.1f} u", hpwlAfter / dbu_micron);
   logger_->report("delta HPWL           {:10} %", hpwl_delta_pct);
   logger_->report("");
   logger_->metric("dpo__total__attempts", total_attempts);

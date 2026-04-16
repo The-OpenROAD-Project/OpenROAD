@@ -290,7 +290,7 @@ void Opendp::reportLegalizationStats() const
   logger_->report("delta HPWL           {:10} %", hpwl_delta);
   logger_->report("");
   logger_->metric("route__wirelength__estimated",
-                block_->dbuToMicrons(hpwl_legal));
+                  block_->dbuToMicrons(hpwl_legal));
   logger_->metric("dpl__hpwl__delta", hpwl_legal - hpwl_before_);
   logger_->metric("dpl__hpwl__delta__percent", hpwl_delta);
 }
