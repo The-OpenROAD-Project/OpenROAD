@@ -35,7 +35,6 @@
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/Levelize.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/Mode.hh"
@@ -2051,7 +2050,7 @@ void Rebuffer::fullyRebuffer(sta::Pin* user_pin)
   init();
 
   std::vector<sta::Pin*> filtered_pins;
-  const sta::VertexSeq drvrs = sta_->levelize()->levelizedDrvrVertices();
+  const sta::VertexSeq drvrs = sta_->levelizedDrvrVertices();
   for (auto drvr : drvrs) {
     sta::Pin* drvr_pin = drvr->pin();
     sta::Net* net = nullptr;

@@ -35,7 +35,6 @@
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/GraphDelayCalc.hh"
-#include "sta/Levelize.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -175,7 +174,7 @@ void RepairDesign::performEarlySizingRound(int& repaired_net_count)
   std::set<std::pair<sta::Vertex*, int>> slew_user_annotated;
 
   // We need to override slews in order to get good required time estimates.
-  const sta::VertexSeq drvrs = sta_->levelize()->levelizedDrvrVertices();
+  const sta::VertexSeq drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
     debugPrint(logger_,
@@ -379,8 +378,7 @@ void RepairDesign::repairDesign(
   {
     // Fix violations from outputs to inputs
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-    const sta::VertexSeq driver_vertices
-        = sta_->levelize()->levelizedDrvrVertices();
+    const sta::VertexSeq driver_vertices = sta_->levelizedDrvrVertices();
     if (driver_vertices.size() > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
     } else {
@@ -2285,8 +2283,7 @@ void RepairDesign::printProgress(int iteration,
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    const int nets_left
-      = num_drvr_vertices_ - iteration;
+    const int nets_left = num_drvr_vertices_ - iteration;
 
     std::string itr_field = fmt::format("{}", iteration);
     if (end) {

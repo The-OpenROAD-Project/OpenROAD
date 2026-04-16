@@ -66,7 +66,6 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/InputDrive.hh"
 #include "sta/LeakagePower.hh"
-#include "sta/Levelize.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
@@ -2558,7 +2557,7 @@ void Resizer::findResizeSlacks1()
   // Use driver pin slacks rather than Sta::netSlack to save visiting
   // the net pins and min'ing the slack.
   net_slack_map_.clear();
-  const sta::VertexSeq& drvrs = sta_->levelize()->levelizedDrvrVertices();
+  const sta::VertexSeq& drvrs = sta_->levelizedDrvrVertices();
   for (int i = drvrs.size() - 1; i >= 0; i--) {
     sta::Vertex* drvr = drvrs[i];
     sta::Pin* drvr_pin = drvr->pin();
