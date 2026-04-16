@@ -1070,7 +1070,10 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
     return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
   };
   bool ret = (bottom_rail == cell.rail_type) || cell.flippable;
-  logger_->report(
+  debugPrint(logger_,
+             utl::DPL,
+             "negotiation",
+             1,
       "rowIdx: {}, bottom_rail: {}, cell.rail_type: {}, flippable: {}, "
       "rail match: {}, is_valid: {}",
       rowIdx,

@@ -183,7 +183,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                 max_displacement_x_,
                 max_displacement_y_);
 
-  if (!use_negotiation_) {
+  if (use_negotiation_) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
     findDisplacementStats();
