@@ -162,6 +162,7 @@ void Opendp::improvePlacement(const int seed,
   logger_->metric("dpo__design__instance__displacement__total", disp_total_um);
   logger_->metric("dpo__design__instance__displacement__mean", disp_avg_um);
   logger_->metric("dpo__design__instance__displacement__max", disp_max_um);
+  logger_->metric("dpo__hpwl__delta", hpwlAfter - hpwlBefore);
   logger_->metric("dpo__hpwl__delta__percent", hpwl_delta_pct);
 }
 

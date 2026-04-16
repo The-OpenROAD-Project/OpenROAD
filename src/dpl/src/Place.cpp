@@ -391,7 +391,7 @@ void Opendp::place()
                       100.0 * count / sorted_cells.size());
     }
 
-    const odb::Point pos_before = getOdbLocation(cell);
+    const odb::Point pos_before = getDplLocation(cell);
     bool diamond_move = diamondMove(cell);
     bool rip_up_move = false;
 
@@ -405,7 +405,7 @@ void Opendp::place()
     }
     diamond_move == 1 ? success_diamond_move++ : failed_diamond_move++;
 
-    if (getOdbLocation(cell) != pos_before) {
+    if (getDplLocation(cell) != pos_before) {
       moves++;
     }
 
