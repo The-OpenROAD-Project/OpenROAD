@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026, The OpenROAD Authors
+
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+sh_test(
+    name = "install_test",
+    srcs = ["install_test.sh"],
+    args = ["$(rootpath //packaging:tarfile)"],
+    data = ["//packaging:tarfile"],
+    tags = ["local"],
+)
