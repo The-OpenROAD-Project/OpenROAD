@@ -70,5 +70,9 @@ class ThreeDBlox
   std::unordered_set<odb::dbLib*> written_libs_;
   std::unordered_set<std::string> read_files_;
   std::unordered_set<odb::dbChip*> insts_with_def_;
+
+  int call_depth_ = 0;
+  std::vector<std::pair<odb::dbChipRegion*, std::string>> pending_bmaps_;
+  void processPendingBmaps();
 };
 }  // namespace odb
