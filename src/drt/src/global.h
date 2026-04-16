@@ -98,7 +98,7 @@ struct RouterConfiguration
   std::set<std::string> unidirectional_layer_names_;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version);
+  void serialize(Archive& ar, unsigned int version);
 };
 
 constexpr int DIRBITSIZE = 3;
