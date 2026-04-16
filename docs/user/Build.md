@@ -117,7 +117,9 @@ source .venv/bin/activate
 
 ### Install Dependencies
 
-You may follow our helper script to install dependencies as follows:
+We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
+
+Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
 sudo ./etc/DependencyInstaller.sh -base
 ./etc/DependencyInstaller.sh -common -local
