@@ -1201,7 +1201,8 @@ void GuideProcessor::genGuides_split(
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
         const bool via_only
-            = (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER)
+            = (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
+               && router_cfg_->DBPROCESSNODE != "ISPD")
               || (via_access_only
                   && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
         if (via_only) {
