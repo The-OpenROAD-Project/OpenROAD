@@ -178,9 +178,6 @@ bool SplitLoadMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   sta::Net* out_net = network_->net(buffer_out_pin);
   estimate_parasitics_->parasiticsInvalid(out_net);
 
-  // Invalidate vertex level ordering
-  resizer_->invalidateVertexOrdering();
-
   debugPrint(logger_,
              RSZ,
              "split_load_move",

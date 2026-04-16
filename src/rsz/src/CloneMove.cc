@@ -299,9 +299,6 @@ bool CloneMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
     }
   }
 
-  // Invalidate vertex level ordering
-  resizer_->invalidateVertexOrdering();
-
   return true;
 }
 

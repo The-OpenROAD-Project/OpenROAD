@@ -111,9 +111,13 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
+void HierRTLMP::setDefaultHalo(int left, int bottom, int right, int top)
 {
-  default_halo_ = {halo_width, halo_height, halo_width, halo_height};
+  if (!default_halo_.isZero()) {
+    logger_->warn(MPL, 71, "Overwriting default macro halo.");
+  }
+
+  default_halo_ = {left, bottom, right, top};
 }
 
 void HierRTLMP::setGuidanceRegions(
