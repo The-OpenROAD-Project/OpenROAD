@@ -456,7 +456,16 @@ void ThreeDBlox::createChiplet(const ChipletDef& chiplet)
   // Read DEF file
   if (!chiplet.external.def_file.empty()) {
     std::error_code ec;
-    if (!std::filesystem::exists(chiplet.external.def_file, ec) || ec) {
+    const bool def_exists
+        = std::filesystem::exists(chiplet.external.def_file, ec);
+    if (ec) {
+      logger_->error(utl::ODB,
+                     558,
+                     "Cannot access DEF file {}: {}",
+                     chiplet.external.def_file,
+                     ec.message());
+    }
+    if (!def_exists) {
       logger_->error(utl::ODB,
                      557,
                      "DEF file does not exist: {}",
