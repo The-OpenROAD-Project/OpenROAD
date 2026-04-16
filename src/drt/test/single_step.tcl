@@ -7,6 +7,7 @@ read_guides testcase/ispd18_sample/ispd18_sample.input.guide
 detailed_route -output_drc [make_result_file single_step.output.drc.rpt] \
   -output_maze [make_result_file single_step.output.maze.log] \
   -verbose 0 \
+  -db_process_node ISPD \
   -single_step_dr
 
 drt::step_dr 7 0 3 8 0 8 0.95 1 true
