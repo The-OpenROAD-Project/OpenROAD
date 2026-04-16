@@ -3,7 +3,9 @@
 #
 # Usage: see claude.sh at the repo root.
 
-ARG fromImage=openroad/ubuntu22.04-dev:latest
+# Ubuntu 24.04 provides glibc 2.39, required by the LLVM 20 toolchain
+# that Bazel downloads (needs __isoc23_* symbols from glibc >= 2.38).
+ARG fromImage=openroad/ubuntu24.04-dev:latest
 
 FROM ${fromImage}
 
