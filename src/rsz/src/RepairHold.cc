@@ -541,8 +541,8 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
                                const bool allow_setup_violations)
 {
   sta::Path* end_path = sta_->vertexWorstSlackPath(end_vertex, min_);
-  sta::Mode* mode = end_path->mode(sta_);
   if (end_path) {
+    sta::Mode* mode = end_path->mode(sta_);
     debugPrint(logger_,
                RSZ,
                "repair_hold",
