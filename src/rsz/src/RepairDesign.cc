@@ -375,23 +375,29 @@ void RepairDesign::repairDesign(
              annotations_to_clean_up.size());
 
   int print_iteration = 0;
+  const sta::VertexSeq driver_vertices = sta_->levelizedDrvrVertices();
   {
     // Fix violations from outputs to inputs
     est::IncrementalParasiticsGuard guard(estimate_parasitics_);
-    const sta::VertexSeq driver_vertices = sta_->levelizedDrvrVertices();
     if (driver_vertices.size() > size_t(5) * max_print_interval_) {
       print_interval_ = max_print_interval_;
     } else {
       print_interval_ = min_print_interval_;
     }
-    // Needed for printProgress bookkeeping
-    num_drvr_vertices_ = driver_vertices.size();
-    printProgress(print_iteration, false, false, repaired_net_count);
+    printProgress(print_iteration,
+                  false,
+                  false,
+                  repaired_net_count,
+                  static_cast<int>(driver_vertices.size()));
     int max_length = resizer_->metersToDbu(max_wire_length);
     for (int i = driver_vertices.size() - 1; i >= 0; i--) {
       print_iteration++;
       if (verbose || (print_iteration == 1)) {
-        printProgress(print_iteration, false, false, repaired_net_count);
+        printProgress(print_iteration,
+                      false,
+                      false,
+                      repaired_net_count,
+                      static_cast<int>(driver_vertices.size()));
       }
       sta::Vertex* drvr = driver_vertices[i];
       repairDriver(drvr,
@@ -424,7 +430,11 @@ void RepairDesign::repairDesign(
     sta_->delaysInvalid();
   }
 
-  printProgress(print_iteration, true, true, repaired_net_count);
+  printProgress(print_iteration,
+                true,
+                true,
+                repaired_net_count,
+                static_cast<int>(driver_vertices.size()));
   db_network_->removeUnusedPortsAndPinsOnModuleInstances();
 }
 
@@ -2269,7 +2279,8 @@ int RepairDesign::metersToDbu(double dist) const
 void RepairDesign::printProgress(int iteration,
                                  bool force,
                                  bool end,
-                                 int repaired_net_count) const
+                                 int repaired_net_count,
+                                 int total_vertices) const
 {
   const bool start = iteration == 0;
 
@@ -2283,7 +2294,7 @@ void RepairDesign::printProgress(int iteration,
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
-    const int nets_left = num_drvr_vertices_ - iteration;
+    const int nets_left = total_vertices - iteration;
 
     std::string itr_field = fmt::format("{}", iteration);
     if (end) {

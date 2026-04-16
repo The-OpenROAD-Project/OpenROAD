@@ -239,7 +239,8 @@ class RepairDesign : sta::dbStaState
   void printProgress(int iteration,
                      bool force,
                      bool end,
-                     int repaired_net_count) const;
+                     int repaired_net_count,
+                     int total_vertices) const;
 
   void computeSlewRCFactor();
 
@@ -279,9 +280,6 @@ class RepairDesign : sta::dbStaState
 
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 1000;
-
-  // Needed for printProgress bookkeeping
-  int num_drvr_vertices_ = 0;
 
   friend class Resizer;
 };
