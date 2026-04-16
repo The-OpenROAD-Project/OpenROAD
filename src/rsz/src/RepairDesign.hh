@@ -239,7 +239,8 @@ class RepairDesign : sta::dbStaState
   void printProgress(int iteration,
                      bool force,
                      bool end,
-                     int repaired_net_count) const;
+                     int repaired_net_count,
+                     int total_vertices) const;
 
   void computeSlewRCFactor();
 
