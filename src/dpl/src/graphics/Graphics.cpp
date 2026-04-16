@@ -144,6 +144,20 @@ void Graphics::drawObjects(gui::Painter& painter)
       painter.setPen(outline_color, /* cosmetic */ true);
       painter.setBrush(gui::Painter::kTransparent);
       painter.drawRect(target_bbox);
+
+      // Indicate orientation change at the target location with a corner notch
+      // (mirroring the ODB orientation marker style)
+      const odb::dbOrientType orig_orient = cell->getDbInst()->getOrient();
+      const odb::dbOrientType target_orient = cell->getOrient();
+      // if (orig_orient != target_orient) 
+      {
+        painter.setPen(outline_color, /* cosmetic */ true);
+        const int tag_size = std::min(width / 4, height / 8);
+        painter.drawLine(target_bbox.xMin() + tag_size,
+                         target_bbox.yMin(),
+                         target_bbox.xMin(),
+                         target_bbox.yMin() + tag_size * 2);
+      }
     } else if (std::abs(dx) > std::abs(dy)) {
       line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
     } else {
