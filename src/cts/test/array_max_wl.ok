@@ -572,7 +572,9 @@ TritonCTS forced slew degradation on these wires.
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 41 long wires.
 [INFO RSZ-0048] Inserted 87 buffers in 41 nets.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261996.33 um^2, Utilization: 83.0%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                    3088

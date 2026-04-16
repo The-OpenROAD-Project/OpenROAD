@@ -20,7 +20,7 @@ Connection::Connection(Node* node0, Node* node1) : node0_(node0), node1_(node1)
 
 void Connection::ensureNodeOrder()
 {
-  if (node0_ && !node0_->compare(node1_)) {
+  if (node0_ && node0_->compare(node1_) > 0) {
     std::swap(node0_, node1_);
   }
 }
@@ -70,31 +70,42 @@ int Connection::getDBUs() const
 
 bool Connection::compare(const Connection* other) const
 {
-  return compareTuple() < other->compareTuple();
+  if (other == nullptr) {
+    return false;
+  }
+
+  // Compare node0_ with null handling
+  if (node0_ == nullptr && other->node0_ != nullptr) {
+    return true;
+  }
+  if (node0_ != nullptr && other->node0_ == nullptr) {
+    return false;
+  }
+  if (node0_ != nullptr && other->node0_ != nullptr) {
+    const int cmp0 = node0_->compare(other->node0_);
+    if (cmp0 != 0) {
+      return cmp0 < 0;
+    }
+  }
+
+  // Compare node1_ with null handling
+  if (node1_ == nullptr && other->node1_ != nullptr) {
+    return true;
+  }
+  if (node1_ != nullptr && other->node1_ == nullptr) {
+    return false;
+  }
+  if (node1_ != nullptr && other->node1_ != nullptr) {
+    const int cmp1 = node1_->compare(other->node1_);
+    return cmp1 < 0;
+  }
+
+  return false;
 }
 
 bool Connection::compare(const std::unique_ptr<Connection>& other) const
 {
   return compare(other.get());
-}
-
-Connection::CompareInformation Connection::compareTuple() const
-{
-  Node::CompareInformation node0_info;
-  if (node0_ != nullptr) {
-    node0_info = node0_->compareTuple();
-  } else {
-    node0_info = Node::dummyCompareTuple();
-  }
-
-  Node::CompareInformation node1_info;
-  if (node1_ != nullptr) {
-    node1_info = node1_->compareTuple();
-  } else {
-    node1_info = Node::dummyCompareTuple();
-  }
-
-  return {node0_info, node1_info};
 }
 
 std::string Connection::describeWithNodes() const
