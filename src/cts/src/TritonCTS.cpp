@@ -368,7 +368,7 @@ void TritonCTS::countSinksPostDbWrite(
   if (net->getSigType() != odb::dbSigType::CLOCK) {
     logger_->error(CTS,
                    369,
-                   "Count sinks recursion leaked into data net {}",
+                   "Unexpected data net '{}' found during clock tree traversal",
                    net->getName());
   }
   if (!visitedNets.insert(net).second) {
