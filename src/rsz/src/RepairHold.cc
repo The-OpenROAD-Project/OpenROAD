@@ -447,7 +447,6 @@ bool RepairHold::repairHold(sta::VertexSeq& ends,
       repaired = true;
       logger_->info(
           RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
-      resizer_->invalidateVertexOrdering();
     }
     if (inserted_buffer_count_ > max_buffer_count) {
       logger_->error(RSZ, 60, "Max buffer count reached.");
