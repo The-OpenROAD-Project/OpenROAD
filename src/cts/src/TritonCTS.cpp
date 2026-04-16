@@ -856,8 +856,13 @@ std::string TritonCTS::selectBestMaxCapBuffer(
 // db functions
 
 void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
-                                 std::set<odb::Point>& occupiedPositions)
+                                 std::set<odb::Point>& occupiedPositions,
+                                 std::unordered_set<odb::dbNet*>& visitedNets)
 {
+  if (!visitedNets.insert(clkNet).second) {
+    return;  // cycle detected: this net was already visited
+  }
+
   odb::dbITerm* driver = clkNet->getFirstOutput();
   std::vector<int> xs;
   std::vector<int> ys;
@@ -889,7 +894,7 @@ void TritonCTS::cloneClockGaters(odb::dbNet* clkNet,
       if (libertyCell->isInverter() || libertyCell->isBuffer()) {
         continue;
       }
-      cloneClockGaters(outputNet, occupiedPositions);
+      cloneClockGaters(outputNet, occupiedPositions, visitedNets);
     }
   }
   if (!driver) {
@@ -1238,13 +1243,14 @@ void TritonCTS::populateTritonCTS()
     occupiedPositions.emplace(x, y);
   }
 
+  std::unordered_set<odb::dbNet*> clkGateCloneVisitedNets;
   // Iterate over all the nets found by the user-input and dbSta
   for (const auto& clockInfo : clockNetsInfo) {
     std::set<odb::dbNet*> clockNets = clockInfo.first;
     std::string clkName = clockInfo.second;
     for (odb::dbNet* net : clockNets) {
       if (net != nullptr) {
-        cloneClockGaters(net, occupiedPositions);
+        cloneClockGaters(net, occupiedPositions, clkGateCloneVisitedNets);
         if (clkName.empty()) {
           logger_->info(CTS, 95, "Net \"{}\" found.", net->getName());
         } else {

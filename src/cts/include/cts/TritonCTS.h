@@ -121,7 +121,8 @@ class TritonCTS
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
   void cloneClockGaters(odb::dbNet* clkNet,
-                        std::set<odb::Point>& occupiedPositions);
+                        std::set<odb::Point>& occupiedPositions,
+                        std::unordered_set<odb::dbNet*>& visitedNets);
   void findLongEdges(
       stt::Tree& clkSteiner,
       odb::Point driverPt,
