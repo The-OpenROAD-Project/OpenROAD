@@ -1214,3 +1214,168 @@ html, body {
     flex-direction: column;
     gap: 4px;
 }
+
+/* ─── Schematic Widget ────────────────────────────────────────────────────── */
+
+/* netlistsvg renders dark strokes/text on white fills — invert for dark mode */
+html[data-theme="dark"] .schematic-widget svg {
+    filter: invert(1) hue-rotate(180deg);
+}
+
+/* ─── DRC Widget ─────────────────────────────────────────────────────────── */
+
+.drc-widget {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: 12px;
+}
+
+.drc-toolbar {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+}
+
+.drc-category-select {
+    flex: 1;
+    background: var(--bg-input);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 4px;
+    font-size: 12px;
+}
+
+.drc-btn {
+    background: var(--bg-input);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.drc-btn:hover { background: var(--border); color: var(--fg-bright); }
+
+.drc-info-bar {
+    padding: 2px 6px;
+    color: var(--fg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    min-height: 16px;
+}
+
+.drc-tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 2px;
+}
+
+.drc-tree {
+    user-select: none;
+}
+
+.drc-tree-node {
+    margin-left: 4px;
+}
+
+.drc-tree-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+.drc-tree-header:hover {
+    background: var(--bg-hover);
+}
+
+.drc-toggle {
+    width: 12px;
+    font-size: 10px;
+    color: var(--fg-secondary);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.drc-visibility-check {
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.drc-category-label {
+    color: var(--fg-primary);
+    font-weight: 600;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drc-count {
+    color: var(--fg-secondary);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.drc-tree-children {
+    margin-left: 12px;
+}
+
+.drc-marker-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 2px;
+    cursor: pointer;
+}
+.drc-marker-row:hover {
+    background: var(--bg-hover);
+}
+
+.drc-marker-row.drc-unvisited .drc-marker-index,
+.drc-marker-row.drc-unvisited .drc-marker-name {
+    font-weight: 700;
+}
+
+.drc-marker-index {
+    width: 28px;
+    text-align: right;
+    color: var(--fg-secondary);
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+.drc-marker-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fg-primary);
+}
+
+.drc-layer-badge {
+    background: var(--bg-input);
+    color: var(--fg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 0 4px;
+    font-size: 10px;
+    flex-shrink: 0;
+}
+
+.drc-loading, .drc-error, .drc-empty {
+    padding: 12px;
+    color: var(--fg-secondary);
+    text-align: center;
+}
+.drc-error {
+    color: var(--error);
+}
