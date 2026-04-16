@@ -1791,14 +1791,6 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
               layer->getName());
           break;
         }
-        if (rule->isExceptSamePgnet()) {
-          logger_->warn(DRT,
-                        46,
-                        "Unsupported branch EXCEPTSAMEPGNET in LEF58_SPACING "
-                        "ADJACENTCUTS for layer {}, skipping rule.",
-                        layer->getName());
-          break;
-        }
         if (rule->isCutClassToAll()) {
           logger_->warn(
               DRT,
