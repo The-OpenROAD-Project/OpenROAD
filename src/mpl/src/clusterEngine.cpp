@@ -83,8 +83,10 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 }
 
 void ClusteringEngine::setHalos(
-    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+    const HardMacro::Halo& default_halo,
+    const std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
 {
+  default_halo_ = default_halo;
   macro_to_halo_ = macro_to_halo;
 }
 
@@ -315,10 +317,10 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->default_halo.left),
-      block_->dbuToMicrons(tree_->default_halo.bottom),
-      block_->dbuToMicrons(tree_->default_halo.right),
-      block_->dbuToMicrons(tree_->default_halo.top),
+      block_->dbuToMicrons(default_halo_.left),
+      block_->dbuToMicrons(default_halo_.bottom),
+      block_->dbuToMicrons(default_halo_.right),
+      block_->dbuToMicrons(default_halo_.top),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2084,13 +2086,13 @@ void ClusteringEngine::createHardMacros()
         if (inst->getHalo()->isSoft()) {
           halo = HardMacro::Halo(inst->getHalo());
         } else {
-          halo = {std::max(inst_halo.xMin(), tree_->default_halo.left),
-                  std::max(inst_halo.yMin(), tree_->default_halo.bottom),
-                  std::max(inst_halo.xMax(), tree_->default_halo.right),
-                  std::max(inst_halo.yMax(), tree_->default_halo.top)};
+          halo = {std::max(inst_halo.xMin(), default_halo_.left),
+                  std::max(inst_halo.yMin(), default_halo_.bottom),
+                  std::max(inst_halo.xMax(), default_halo_.right),
+                  std::max(inst_halo.yMax(), default_halo_.top)};
         }
       } else {
-        halo = tree_->default_halo;
+        halo = default_halo_;
       }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);
