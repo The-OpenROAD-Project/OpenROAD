@@ -2101,87 +2101,48 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
   }
 
   auto poly = pin->getPolygon();
-  auto layer_idx = poly->getLayerNum();
+  const auto layer_idx = poly->getLayerNum();
   auto layer = getTech()->getLayer(layer_idx);
 
   if (!layer->hasLef58AreaConstraint()) {
     return;
   }
 
-  auto constraints = layer->getLef58AreaConstraints();
-
-  auto sort_cmp
-      = [](const frLef58AreaConstraint* a, const frLef58AreaConstraint* b) {
-          auto a_rule = a->getODBRule();
-          auto b_rule = b->getODBRule();
-
-          return a_rule->getRectWidth() < b_rule->getRectWidth();
-        };
-
-  // sort constraints to ensure the smallest rect width will have
-  // preference above other rect width statements
-  std::ranges::sort(constraints, sort_cmp);
-
-  bool check_rect_width = true;
-
-  for (auto con : constraints) {
+  gtl::rectangle_data<frCoord> bbox;
+  gtl::extents(bbox, *pin->getPolygon());
+  const odb::Rect bbox2(
+      gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
+  if (!drWorker_->getDrcBox().contains(bbox2)) {
+    return;
+  }
+  const frCoord width = bbox2.minDXDY();
+  const auto curr_area = gtl::area(*poly);
+  // iterate through rectwidth constraints first
+  for (auto con : layer->getLef58AreaConstraintsRectWidth()) {
+    odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
+    if (width < db_rule->getRectWidth()) {
+      auto min_area = db_rule->getArea();
+      if (curr_area < min_area
+          && checkMetalShape_lef58Area_rectWidth(poly, db_rule)) {
+        checkMetalShape_addPatch(pin, min_area);
+      }
+      // if any rectwidth constraint is satisfied, return
+      return;
+    }
+  }
+  // Iterate through area constraints which are sorted by area in a descending
+  // order
+  for (auto con : layer->getLef58AreaConstraints()) {
     odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
     auto min_area = db_rule->getArea();
-    auto curr_area = gtl::area(*poly);
 
     if (curr_area >= min_area) {
-      continue;
+      break;
     }
-
-    gtl::rectangle_data<frCoord> bbox;
-    gtl::extents(bbox, *pin->getPolygon());
-    odb::Rect bbox2(gtl::xl(bbox), gtl::yl(bbox), gtl::xh(bbox), gtl::yh(bbox));
-    if (!drWorker_->getDrcBox().contains(bbox2)) {
-      continue;
-    }
-    for (auto& edges : pin->getPolygonEdges()) {
-      for (auto& edge : edges) {
-        if (edge->isFixed()) {
-          continue;
-        }
-      }
-    }
-
-    if (checkMetalShape_lef58Area_exceptRectangle(poly, db_rule)) {
-      // add patch only when the poly is not a rect
+    if (!db_rule->isExceptRectangle()
+        || checkMetalShape_lef58Area_exceptRectangle(poly, db_rule)) {
       checkMetalShape_addPatch(pin, min_area);
-    } else if (check_rect_width
-               && checkMetalShape_lef58Area_rectWidth(
-                   poly, db_rule, check_rect_width)) {
-      // add patch only if poly is rect and its width is less than or equal to
-      // rectWidth value on constraint
-      checkMetalShape_addPatch(pin, min_area);
-    } else if (db_rule->getExceptMinWidth() != 0) {
-      logger_->warn(
-          DRT,
-          311,
-          "Unsupported branch EXCEPTMINWIDTH in PROPERTY LEF58_AREA.");
-    } else if (db_rule->getExceptEdgeLength() != 0
-               || db_rule->getExceptEdgeLengths()
-                      != std::pair<int, int>(0, 0)) {
-      logger_->warn(
-          DRT,
-          312,
-          "Unsupported branch EXCEPTEDGELENGTH in PROPERTY LEF58_AREA.");
-    } else if (db_rule->getExceptMinSize() != std::pair<int, int>(0, 0)) {
-      logger_->warn(
-          DRT, 313, "Unsupported branch EXCEPTMINSIZE in PROPERTY LEF58_AREA.");
-    } else if (db_rule->getExceptStep() != std::pair<int, int>(0, 0)) {
-      logger_->warn(
-          DRT, 314, "Unsupported branch EXCEPTSTEP in PROPERTY LEF58_AREA.");
-    } else if (db_rule->getMask() != 0) {
-      logger_->warn(
-          DRT, 315, "Unsupported branch MASK in PROPERTY LEF58_AREA.");
-    } else if (db_rule->getTrimLayer() != nullptr) {
-      logger_->warn(
-          DRT, 316, "Unsupported branch LAYER in PROPERTY LEF58_AREA.");
-    } else {
-      checkMetalShape_addPatch(pin, min_area);
+      break;
     }
   }
 }
@@ -2207,8 +2168,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_exceptRectangle(
 
 bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
     gcPolygon* poly,
-    odb::dbTechLayerAreaRule* db_rule,
-    bool& check_rect_width)
+    odb::dbTechLayerAreaRule* db_rule)
 {
   if (db_rule->getRectWidth() > 0) {
     std::vector<gtl::rectangle_data<frCoord>> rects;
@@ -2223,10 +2183,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
       const auto& rect = rects.back();
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
-      bool apply_rect_width_area = false;
-      apply_rect_width_area = std::min(xLen, yLen) <= min_width;
-      check_rect_width = !apply_rect_width_area;
-      return apply_rect_width_area;
+      return std::min(xLen, yLen) < min_width;
     }
     return false;
   }
@@ -2952,76 +2909,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_adjCut(
     return;
   }
 
-  if (con->hasExactAligned()) {
-    logger_->warn(
-        DRT,
-        45,
-        " Unsupported branch EXACTALIGNED in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isExceptSamePGNet()) {
-    logger_->warn(DRT,
-                  46,
-                  " Unsupported branch EXCEPTSAMEPGNET in "
-                  "checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->hasExceptAllWithin()) {
-    logger_->warn(DRT,
-                  47,
-                  " Unsupported branch EXCEPTALLWITHIN in "
-                  "checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isToAll()) {
-    logger_->warn(
-        DRT,
-        48,
-        " Unsupported branch TO ALL in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->hasEnclosure()) {
-    logger_->warn(
-        DRT,
-        50,
-        " Unsupported branch ENCLOSURE in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isSideParallelOverlap()) {
-    logger_->warn(DRT,
-                  51,
-                  " Unsupported branch SIDEPARALLELOVERLAP in "
-                  "checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-  if (con->isSameMask()) {
-    logger_->warn(
-        DRT,
-        52,
-        " Unsupported branch SAMEMASK in checkLef58CutSpacing_spc_adjCut.");
-    return;
-  }
-
-  // start checking
-  if (con->hasExactAligned()) {
-    ;
-  }
-  if (con->isExceptSamePGNet()) {
-    ;
-  }
-  if (con->hasExceptAllWithin()) {
-    ;
-  }
-  if (con->hasEnclosure()) {
-    ;
-  }
-  if (con->isNoPrl()) {
-    ;
-  }
-  if (con->isSameMask()) {
-    ;
-  }
-
   frSquaredDistance reqSpcValSquare = con->getCutSpacing();
   reqSpcValSquare *= reqSpcValSquare;
 
@@ -3083,75 +2970,8 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
   auto reqSpcVal = con->getCutSpacing();
   frSquaredDistance reqSpcValSquare = (frSquaredDistance) reqSpcVal * reqSpcVal;
 
-  // skip unsupported rule branch
-  if (con->isStack()) {
-    logger_->warn(
-        DRT, 54, "Unsupported branch STACK in checkLef58CutSpacing_spc_layer.");
-    return;
-  }
-  if (con->hasOrthogonalSpacing()) {
-    logger_->warn(DRT,
-                  55,
-                  "Unsupported branch ORTHOGONALSPACING in "
-                  "checkLef58CutSpacing_spc_layer.");
-    return;
-  }
-  if (con->hasCutClass()) {
-    if (con->isShortEdgeOnly()) {
-      logger_->warn(DRT,
-                    56,
-                    "Unsupported branch SHORTEDGEONLY in "
-                    "checkLef58CutSpacing_spc_layer.");
-      return;
-    }
-    if (con->isConcaveCorner()) {
-      if (con->hasWidth()) {
-        logger_->warn(
-            DRT,
-            57,
-            "Unsupported branch WIDTH in checkLef58CutSpacing_spc_layer.");
-      } else if (con->hasParallel()) {
-        logger_->warn(
-            DRT,
-            58,
-            "Unsupported branch PARALLEL in checkLef58CutSpacing_spc_layer.");
-      } else if (con->hasEdgeLength()) {
-        logger_->warn(
-            DRT,
-            59,
-            "Unsupported branch EDGELENGTH in checkLef58CutSpacing_spc_layer.");
-      }
-    } else if (con->hasExtension()) {
-      logger_->warn(
-          DRT,
-          60,
-          "Unsupported branch EXTENSION in checkLef58CutSpacing_spc_layer.");
-    } else if (con->hasNonEolConvexCorner()) {
-      ;
-    } else if (con->hasAboveWidth()) {
-      logger_->warn(
-          DRT,
-          61,
-          "Unsupported branch ABOVEWIDTH in checkLef58CutSpacing_spc_layer.");
-    } else if (con->isMaskOverlap()) {
-      logger_->warn(
-          DRT,
-          62,
-          "Unsupported branch MASKOVERLAP in checkLef58CutSpacing_spc_layer.");
-    } else if (con->isWrongDirection()) {
-      logger_->warn(DRT,
-                    63,
-                    "Unsupported branch WRONGDIRECTION in "
-                    "checkLef58CutSpacing_spc_layer.");
-    }
-  }
-
   // start checking
-  if (con->isStack()) {
-    ;
-  } else if (con->hasOrthogonalSpacing()) {
-    ;
-  } else if (con->hasCutClass()) {
+  if (con->hasCutClass()) {
     auto conCutClassIdx = con->getCutClassIdx();
     auto cutClassIdx = getTech()->getLayer(layerNum)->getCutClassIdx(
         rect1->width(), rect1->length());
@@ -3159,9 +2979,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
       return;
     }
 
-    if (con->isShortEdgeOnly()) {
-      ;
-    } else if (con->isConcaveCorner()) {
+    if (con->isConcaveCorner()) {
       // skip if rect2 does not contains rect1
       if (!gtl::contains(*rect2, *rect1)) {
         return;
@@ -3230,8 +3048,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
                 corner->isFixed()));
         addMarker(std::move(marker));
       }
-    } else if (con->hasExtension()) {
-      ;
     } else if (con->hasNonEolConvexCorner()) {
       // skip if rect2 does not contains rect1
       if (!gtl::contains(*rect2, *rect1)) {
@@ -3344,12 +3160,6 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
                 corner->isFixed()));
         addMarker(std::move(marker));
       }
-    } else if (con->hasAboveWidth()) {
-      ;
-    } else if (con->isMaskOverlap()) {
-      ;
-    } else if (con->isWrongDirection()) {
-      ;
     }
   }
 }
