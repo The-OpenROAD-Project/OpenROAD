@@ -193,6 +193,11 @@ void DbvParser::parseChiplet(ChipletDef& chiplet,
     if (chiplet_node["external"]["verilog_file"]) {
       std::vector<std::string> verilog_files;
       extractValue(chiplet_node["external"], "verilog_file", verilog_files);
+      if (verilog_files.size() > 1) {
+        logError(
+            "Multiple verilog_file entries for a single chiplet are currently "
+            "unsupported.");
+      }
       if (!verilog_files.empty()) {
         chiplet.external.verilog_file = resolvePath(verilog_files[0]);
       }
