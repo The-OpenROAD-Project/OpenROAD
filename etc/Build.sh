@@ -10,7 +10,7 @@ buildDir="build"
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   numThreads=$(nproc --all)
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  numThreads=$(sysctl -n hw.ncpu)
+  numThreads=$(sysctl -n hw.logicalcpu)
 else
   cat << EOF
 WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
@@ -18,7 +18,8 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=""
+cmakeOptions=()
+isNinja=no
 cleanBefore=no
 depsPrefixesFile=""
 compiler=gcc
@@ -58,6 +59,8 @@ OPTIONS:
                                                  By default, "openroad_deps_prefixes.txt"
                                                  file from OpenROAD's "etc" directory
                                                  or from system "/etc".
+  -local                                        Install OpenROAD in \${HOME}/.local.
+  -prefix=DIR                                   Install OpenROAD in a user-specified directory.
 
 EOF
     exit "${1:-1}"
@@ -78,31 +81,52 @@ while [ "$#" -gt 0 ]; do
         -h|-help)
             _help 0
             ;;
+        -local)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${HOME}/.local")
+            INSTALL_PREFIX_SET=1
+            ;;
+        -prefix=*)
+            if [[ -n "${INSTALL_PREFIX_SET:-}" ]]; then
+                echo "[WARNING] Previous -prefix or -local argument will be overwritten." >&2
+            fi
+            cmakeOptions+=("-DCMAKE_INSTALL_PREFIX=${1#*=}")
+            INSTALL_PREFIX_SET=1
+            ;;
         -no-gui)
-            cmakeOptions+=" -DBUILD_GUI=OFF"
+            cmakeOptions+=("-DBUILD_GUI=OFF")
             ;;
         -no-tests)
-            cmakeOptions+=" -DENABLE_TESTS=OFF"
+            cmakeOptions+=("-DENABLE_TESTS=OFF")
+            ;;
+        -ninja)
+            cmakeOptions+=("-DCMAKE_C_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
+            cmakeOptions+=("-GNinja")
+            isNinja=yes
             ;;
         -cpp20)
-            cmakeOptions+=" -DCMAKE_CXX_STANDARD=20"
+            cmakeOptions+=("-DCMAKE_CXX_STANDARD=20")
             ;;
         -build-man)
-            cmakeOptions+=" -DBUILD_MAN=ON"
+            cmakeOptions+=("-DBUILD_MAN=ON")
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
+            cmakeOptions+=("-DALLOW_WARNINGS=OFF")
             ;;
         -coverage )
-            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
-            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
-            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
+            cmakeOptions+=("-DCMAKE_BUILD_TYPE=Debug")
+            cmakeOptions+=("-DCMAKE_CXX_FLAGS=-fprofile-arcs -ftest-coverage")
+            cmakeOptions+=("-DCMAKE_EXE_LINKER_FLAGS=-lgcov")
             ;;
         -cmake=*)
-            cmakeOptions+=" ${1#*=}"
+            read -ra temp_arr <<< "${1#*=}"
+            cmakeOptions+=("${temp_arr[@]}")
             ;;
         -clean )
             cleanBefore=yes
@@ -129,7 +153,7 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=" -DGPU=ON"
+            cmakeOptions+=("-DGPU=ON")
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -147,7 +171,8 @@ if [[ -z "$depsPrefixesFile" ]]; then
     fi
 fi
 if [[ -f "$depsPrefixesFile" ]]; then
-    cmakeOptions+=" $(cat "$depsPrefixesFile")"
+    read -ra newOpts <<< "$(cat "$depsPrefixesFile")"
+    cmakeOptions+=("${newOpts[@]}")
     echo "[INFO] Using additional CMake parameters from $depsPrefixesFile"
 else
     echo "[INFO] Auto-generated prefix file does not exist - CMake will choose the dependencies automatically"
@@ -196,8 +221,64 @@ mkdir -p "${buildDir}"
 __logging
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
-    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
+
+    _bison=$(brew --prefix bison 2>/dev/null || true)
+    _flex=$(brew --prefix flex 2>/dev/null || true)
+    _ortools=$(brew --prefix or-tools 2>/dev/null || true)
+
+    if [[ -z "$_bison" || ! -d "$_bison/bin" ]]; then
+        echo "[ERROR] bison not found or broken. Run: brew install bison" >&2
+        exit 1
+    fi
+    if [[ -z "$_flex" || ! -d "$_flex/bin" ]]; then
+        echo "[ERROR] flex not found or broken. Run: brew install flex" >&2
+        exit 1
+    fi
+    if [[ -z "$_ortools" || ! -d "$_ortools/lib" || ! -d "$_ortools/include" ]]; then
+        echo "[ERROR] or-tools not found or broken. Run: brew install or-tools" >&2
+        exit 1
+    fi
+
+    export PATH="$_bison/bin:$_flex/bin:$PATH"
+    export CMAKE_PREFIX_PATH="${_ortools}"
+
+    _qt5=$(brew --prefix qt@5 2>/dev/null || true)
+    if [[ -z "$_qt5" || ! -d "$_qt5/lib" ]]; then
+        echo "[ERROR] qt@5 not found or broken. Run: brew install qt@5" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DQt5_DIR=$_qt5/lib/cmake/Qt5"
+
+    _tcl8=$(brew --prefix tcl-tk@8 2>/dev/null || true)     
+    if [[ -z "$_tcl8" || ! -d "$_tcl8/lib" || ! -d "$_tcl8/include" ]]; then
+        echo "[ERROR] tcl-tk@8 not found or broken. Run: brew install tcl-tk@8" >&2
+        exit 1
+    fi
+    
+    cmakeOptions+=" -DTCL_LIBRARY=$_tcl8/lib/libtcl8.6.dylib"
+
+    cmakeOptions+=" -DTCL_INCLUDE_PATH=$_tcl8/include"
+    cmakeOptions+=" -DFLEX_INCLUDE_DIR=$_flex/include"
+
+    cmakeOptions+=" -DCMAKE_CXX_FLAGS=-DBOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED"
+
+    _icu="$(brew --prefix icu4c 2>/dev/null || true)"
+    if [[ -z "$_icu" || ! -d "$_icu/lib" ]]; then
+        echo "[ERROR] icu4c not found or broken. Run: brew install icu4c" >&2
+        exit 1
+    fi
+
+    export LDFLAGS="-L$_icu/lib"
+    export CPPFLAGS="-I$_icu/include" 
+    export PKG_CONFIG_PATH="$_icu/lib/pkgconfig"
+
+    _extra_lib_paths=("$(brew --prefix)/lib")
+
+    _joined_paths="$(IFS=:; echo "${_extra_lib_paths[*]}")"
+
+    export LIBRARY_PATH="${_joined_paths}${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    echo "[INFO] General LIBRARY_PATH=$LIBRARY_PATH"
 fi
 
 # ==============================================================================
@@ -252,5 +333,11 @@ echo -e "${GREEN}All pre-compilation checks passed! Proceeding...${NC}\n"
 # ==============================================================================
 
 echo "[INFO] Using ${numThreads} threads."
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
-eval time cmake --build "${buildDir}" -j "${numThreads}"
+if [[ "$isNinja" == "yes" ]]; then
+    cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+    cd "${buildDir}"
+    CLICOLOR_FORCE=1 ninja build_and_test
+    exit 0
+fi
+cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+time cmake --build "${buildDir}" -j "${numThreads}"

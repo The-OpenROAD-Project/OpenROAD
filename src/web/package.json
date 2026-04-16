@@ -1,10 +1,5 @@
 {
-  "private": true,
-  "type": "module",
-  "pnpm": {
-    "onlyBuiltDependencies": []
-  },
-  "devDependencies": {
-    "jsdom": "^26.1.0"
+  "dependencies": {
+    "jsdom": "^29.0.2"
   }
 }
