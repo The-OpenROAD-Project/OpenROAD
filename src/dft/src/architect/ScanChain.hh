@@ -46,11 +46,13 @@ class ScanChain
 
   // Sorts the scan cells of this chain.  This function has 3 arguments: falling
   // cells, rising cells and the output vector with the sorted cells
-  void sortScanCells(
-      const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
-                               std::vector<std::unique_ptr<ScanCell>>&,
-                               std::vector<std::unique_ptr<ScanCell>>&)>&
+  int64_t sortScanCells(
+      const std::function<int64_t(std::vector<std::unique_ptr<ScanCell>>&,
+                                  std::vector<std::unique_ptr<ScanCell>>&,
+                                  std::vector<std::unique_ptr<ScanCell>>&)>&
           sort_fn);
+
+  int64_t estimateInternalTWL();
 
   // Returns a reference to a vector containing all the scan cells of the chain
   const std::vector<std::unique_ptr<ScanCell>>& getScanCells() const;

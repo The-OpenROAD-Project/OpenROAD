@@ -7744,6 +7744,8 @@ class dbDft : public dbObject
   bool isScanInserted() const;
 
   dbSet<dbScanChain> getScanChains() const;
+
+  void reset();
 };
 
 class dbGCellGrid : public dbObject
