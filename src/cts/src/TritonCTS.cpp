@@ -433,26 +433,6 @@ void TritonCTS::countSinksPostDbWrite(
         trueSink = false;
       }
 
-      if (!terminate && inst) {
-        if (inst->isBlock()) {
-          // Skip non-sink macro blocks
-          terminate = true;
-          trueSink = false;
-        } else {
-          sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
-          if (masterCell) {
-            sta::LibertyCell* libCell = network_->libertyCell(masterCell);
-            if (libCell) {
-              if (libCell->hasSequentials()) {
-                // Skip non-sink registers
-                terminate = true;
-                trueSink = false;
-              }
-            }
-          }
-        }
-      }
-
       if (!terminate) {
         // ignore dummy buffer and inverters added to balance loads
         if (outputPin && outputPin->getNet() != nullptr) {
