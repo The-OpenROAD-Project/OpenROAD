@@ -313,7 +313,7 @@ def mock_array(name, config):
             "SDC_FILE": [":mock-array-constraints"],
         },
         tags = ["manual"],
-        variant = "netlist",
+        variant = "{name}_netlist".format(name = name),
         verilog_files = [":{name}_rtl".format(name = name)],
     )
 
