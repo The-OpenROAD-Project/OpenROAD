@@ -17,6 +17,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsEstimator.h"
 #include "est/SteinerTree.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
@@ -33,7 +34,6 @@
 #include "utl/Logger.h"
 
 namespace utl {
-class CallBackHandler;
 class ServiceRegistry;
 }  // namespace utl
 
@@ -69,19 +69,19 @@ struct ParasiticsCapacitance
 
 class AbstractSteinerRenderer;
 class OdbCallBack;
-class EstimateParasiticsCallBack;
 
-class EstimateParasitics : public sta::dbStaState
+class EstimateParasitics : public sta::dbStaState, public ParasiticsEstimator
 {
  public:
   EstimateParasitics(utl::Logger* logger,
-                     utl::CallBackHandler* callback_handler,
                      utl::ServiceRegistry* service_registry,
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
                      stt::SteinerTreeBuilder* stt_builder,
                      grt::GlobalRouter* global_router);
   ~EstimateParasitics() override;
+
+  void estimateAllGlobalRouteParasitics() override;
   void initSteinerRenderer(
       std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(odb::dbTechLayer* layer,
@@ -241,7 +241,6 @@ class EstimateParasitics : public sta::dbStaState
 
   utl::Logger* logger_ = nullptr;
   utl::ServiceRegistry* service_registry_ = nullptr;
-  std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;
   grt::IncrementalGRoute* incr_groute_ = nullptr;

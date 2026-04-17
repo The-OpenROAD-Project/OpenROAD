@@ -58,7 +58,6 @@ class MBFFTestFixture : public tst::Fixture
                                               opendp_.get());
     estimate_parasitics_
         = std::make_unique<est::EstimateParasitics>(logger_,
-                                                    callback_handler_.get(),
                                                     service_registry_.get(),
                                                     getDb(),
                                                     getSta(),

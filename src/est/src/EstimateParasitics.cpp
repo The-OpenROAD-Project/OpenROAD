@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "AbstractSteinerRenderer.h"
-#include "EstimateParasiticsCallBack.h"
 #include "MakeWireParasitics.h"
 #include "OdbCallBack.h"
 #include "db_sta/SpefWriter.hh"
@@ -43,8 +42,8 @@
 #include "sta/Transition.hh"
 #include "sta/Units.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 
 namespace est {
 
@@ -63,7 +62,6 @@ using odb::dbMasterType;
 using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(utl::Logger* logger,
-                                       utl::CallBackHandler* callback_handler,
                                        utl::ServiceRegistry* service_registry,
                                        odb::dbDatabase* db,
                                        sta::dbSta* sta,
@@ -71,8 +69,6 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        grt::GlobalRouter* global_router)
     : logger_(logger),
       service_registry_(service_registry),
-      estimate_parasitics_cbk_(
-          std::make_unique<EstimateParasiticsCallBack>(this)),
       stt_builder_(stt_builder),
       global_router_(global_router),
       db_network_(sta->getDbNetwork()),
@@ -83,12 +79,23 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
       wire_clk_res_(0.0),
       wire_clk_cap_(0.0)
 {
-  estimate_parasitics_cbk_->setOwner(callback_handler);
+  service_registry_->provide<ParasiticsEstimator>(this);
   dbStaState::init(sta);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
 }
 
-EstimateParasitics::~EstimateParasitics() = default;
+EstimateParasitics::~EstimateParasitics()
+{
+  service_registry_->withdraw<ParasiticsEstimator>(this);
+}
+
+void EstimateParasitics::estimateAllGlobalRouteParasitics()
+{
+  clearParasitics();
+  for (auto& [db_net, route] : global_router_->getPartialRoutes()) {
+    estimateGlobalRouteParasitics(db_net, route);
+  }
+}
 
 void EstimateParasitics::initSteinerRenderer(
     std::unique_ptr<est::AbstractSteinerRenderer> steiner_renderer)

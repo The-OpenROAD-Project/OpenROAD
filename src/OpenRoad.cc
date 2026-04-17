@@ -216,13 +216,8 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                                          opendp_);
   grt::initGui(global_router_, db_, logger_);
 
-  estimate_parasitics_ = new est::EstimateParasitics(logger_,
-                                                     callback_handler_,
-                                                     service_registry_,
-                                                     db_,
-                                                     sta_,
-                                                     stt_builder_,
-                                                     global_router_);
+  estimate_parasitics_ = new est::EstimateParasitics(
+      logger_, service_registry_, db_, sta_, stt_builder_, global_router_);
   est::initGui(estimate_parasitics_);
 
   resizer_ = new rsz::Resizer(logger_,
