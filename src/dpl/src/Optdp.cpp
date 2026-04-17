@@ -2,11 +2,14 @@
 // Copyright (c) 2021-2025, The OpenROAD Authors
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <unordered_map>
 
 #include "dpl/Opendp.h"
+#include "odb/db.h"
+#include "odb/geom.h"
 #include "odb/util.h"
 #include "utl/Logger.h"
 
@@ -140,7 +143,7 @@ void Opendp::improvePlacement(const int seed,
   const int hpwl_delta_pct
       = (hpwlBefore == 0)
             ? 0
-            : round((hpwlAfter - hpwlBefore) / (double) hpwlBefore * 100);
+            : std::round((hpwlAfter - hpwlBefore) / (double) hpwlBefore * 100);
 
   const int total_attempts = mgr.getTotalAttempts();
   logger_->report("Place Optimization Analysis");
@@ -156,9 +159,9 @@ void Opendp::improvePlacement(const int seed,
   logger_->report("");
   logger_->metric("dpo__total__attempts", total_attempts);
   logger_->metric("dpo__relocated__cells", moved);
-  logger_->metric("dpo__design__instance__displacement__total", disp_total_um);
-  logger_->metric("dpo__design__instance__displacement__mean", disp_avg_um);
-  logger_->metric("dpo__design__instance__displacement__max", disp_max_um);
+  logger_->metric("dpo__instance__displacement__total", disp_total_um);
+  logger_->metric("dpo__instance__displacement__mean", disp_avg_um);
+  logger_->metric("dpo__instance__displacement__max", disp_max_um);
   logger_->metric("dpo__hpwl__delta", hpwlAfter - hpwlBefore);
   logger_->metric("dpo__hpwl__delta__percent", hpwl_delta_pct);
 }
