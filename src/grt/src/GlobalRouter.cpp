@@ -38,6 +38,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "drt/PinAccessProvider.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
@@ -56,8 +57,8 @@
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -66,7 +67,6 @@ using boost::icl::interval;
 using utl::GRT;
 
 GlobalRouter::GlobalRouter(utl::Logger* logger,
-                           utl::CallBackHandler* callback_handler,
                            utl::ServiceRegistry* service_registry,
                            stt::SteinerTreeBuilder* stt_builder,
                            odb::dbDatabase* db,
@@ -74,7 +74,6 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
                            ant::AntennaChecker* antenna_checker,
                            dpl::Opendp* opendp)
     : logger_(logger),
-      callback_handler_(callback_handler),
       service_registry_(service_registry),
       stt_builder_(stt_builder),
       antenna_checker_(antenna_checker),
@@ -106,10 +105,9 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grouter_cbk_(nullptr),
       is_incremental_(false)
 {
-  fastroute_ = new FastRouteCore(
-      db_, logger_, callback_handler_, service_registry_, stt_builder_, sta_);
-  cugr_ = new CUGR(
-      db_, logger_, callback_handler_, service_registry_, stt_builder_, sta_);
+  fastroute_
+      = new FastRouteCore(db_, logger_, service_registry_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, service_registry_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(
@@ -5905,7 +5903,9 @@ void GlobalRouter::updateCUGRNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
-  callback_handler_->triggerOnPinAccessUpdateRequired();
+  if (auto* pa = service_registry_->find<drt::PinAccessProvider>()) {
+    pa->updateDirtyPinAccess();
+  }
   std::vector<Net*> dirty_nets;
 
   if (!initialized_) {

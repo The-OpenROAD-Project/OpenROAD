@@ -21,8 +21,6 @@ cc_library(
     name = "utl",
     srcs = [
         "src/CFileUtils.cpp",
-        "src/CallBack.cpp",
-        "src/CallBackHandler.cpp",
         "src/CommandLineProgress.cpp",
         "src/CommandLineProgress.h",
         "src/Logger.cpp",
@@ -40,8 +38,6 @@ cc_library(
     ],
     hdrs = [
         "include/utl/CFileUtils.h",
-        "include/utl/CallBack.h",
-        "include/utl/CallBackHandler.h",
         "include/utl/Logger.h",
         "include/utl/Metrics.h",
         "include/utl/Progress.h",

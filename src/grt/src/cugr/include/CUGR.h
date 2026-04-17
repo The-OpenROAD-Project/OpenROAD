@@ -29,7 +29,6 @@ class SteinerTreeBuilder;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
 class ServiceRegistry;
 }  // namespace utl
 
@@ -71,7 +70,6 @@ class CUGR
  public:
   CUGR(odb::dbDatabase* db,
        utl::Logger* log,
-       utl::CallBackHandler* callback_handler,
        utl::ServiceRegistry* service_registry,
        stt::SteinerTreeBuilder* stt_builder,
        sta::dbSta* sta);
@@ -118,7 +116,6 @@ class CUGR
 
   odb::dbDatabase* db_;
   utl::Logger* logger_;
-  utl::CallBackHandler* callback_handler_;
   utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;

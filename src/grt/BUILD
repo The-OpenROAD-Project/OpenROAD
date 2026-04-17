@@ -152,6 +152,7 @@ cc_library(
         "//src/dbSta:SpefWriter",
         "//src/dbSta:dbNetwork",
         "//src/dpl",
+        "//src/drt:pin_access_provider",
         "//src/gui",
         "//src/odb",
         "//src/sta:opensta_lib",

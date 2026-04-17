@@ -32,12 +32,10 @@ namespace tst {
 IntegratedFixture::IntegratedFixture(Technology tech,
                                      const std::string& test_root_path)
     : stt_(db_.get(), &logger_),
-      callback_handler_(&logger_),
       service_registry_(&logger_),
       dp_(db_.get(), &logger_),
       ant_(db_.get(), &logger_),
       grt_(&logger_,
-           &callback_handler_,
            &service_registry_,
            &stt_,
            db_.get(),

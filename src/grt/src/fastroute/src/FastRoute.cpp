@@ -29,7 +29,6 @@ using utl::GRT;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
-                             utl::CallBackHandler* callback_handler,
                              utl::ServiceRegistry* service_registry,
                              stt::SteinerTreeBuilder* stt_builder,
                              sta::dbSta* sta)
@@ -65,7 +64,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       h_capacity_lb_(0),
       regular_x_(false),
       regular_y_(false),
-      callback_handler_(callback_handler),
       service_registry_(service_registry),
       logger_(log),
       stt_builder_(stt_builder),

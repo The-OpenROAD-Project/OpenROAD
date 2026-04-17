@@ -30,7 +30,6 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
 #include "tst/nangate45_fixture.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
 #include "utl/deleter.h"
@@ -45,12 +44,10 @@ class BufRemTest : public tst::Nangate45Fixture
   BufRemTest()
       :  // initializer resizer
         stt_(db_.get(), &logger_),
-        callback_handler_(&logger_),
         service_registry_(&logger_),
         dp_(db_.get(), &logger_),
         ant_(db_.get(), &logger_),
         grt_(&logger_,
-             &callback_handler_,
              &service_registry_,
              &stt_,
              db_.get(),
@@ -114,7 +111,6 @@ class BufRemTest : public tst::Nangate45Fixture
   }
 
   stt::SteinerTreeBuilder stt_;
-  utl::CallBackHandler callback_handler_;
   utl::ServiceRegistry service_registry_;
   dpl::Opendp dp_;
   ant::AntennaChecker ant_;
