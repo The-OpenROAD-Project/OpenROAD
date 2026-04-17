@@ -42,6 +42,4 @@ Hierarchical pins
 0.0 0.0
 0.0 0.1
 No differences found.
-Differences found at line 9.
-    - alu0_1 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + PLACED ( 0 0 ) N ;
-    - alu0_1 TIEHIx1_ASAP7_75t_R + SOURCE TIMING + UNPLACED ;
+No differences found.
