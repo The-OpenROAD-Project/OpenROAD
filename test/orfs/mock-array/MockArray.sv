@@ -122,9 +122,15 @@ module ElementInner #(
   end
 endmodule
 
-// Element - concrete wrapper with fixed parameters for synthesis.
-// Avoids parameterized instantiation in the netlist which OpenROAD
-// cannot read.
+// Element - concrete wrapper for synthesis as a standalone macro.
+// Uses `define to set COLS per config since OpenROAD cannot read
+// parameterized Verilog instantiations.
+//
+// ELEMENT_COLS must be defined at synthesis time via -D flag, e.g.:
+//   SYNTH_SLANG_ARGS: "-DELEMENT_COLS=4"
+`ifndef ELEMENT_COLS
+`define ELEMENT_COLS 8
+`endif
 module Element(
   input  logic        clock,
   input  logic [63:0] io_ins_left,
@@ -135,10 +141,10 @@ module Element(
   output logic [63:0] io_outs_up,
   output logic [63:0] io_outs_right,
   output logic [63:0] io_outs_down,
-  input  logic [7:0]  io_lsbIns,
-  output logic [7:0]  io_lsbOuts
+  input  logic [`ELEMENT_COLS-1:0] io_lsbIns,
+  output logic [`ELEMENT_COLS-1:0] io_lsbOuts
 );
-  ElementInner #(.DATA_WIDTH(64), .COLS(8)) inner(.*);
+  ElementInner #(.DATA_WIDTH(64), .COLS(`ELEMENT_COLS)) inner(.*);
 endmodule
 
 // MockArray - parameterized 2D array of Elements
@@ -176,6 +182,9 @@ module MockArray #(
   // IO constraints and power scripts)
   for (genvar r = 0; r < HEIGHT; r++) begin : ces
     for (genvar c = 0; c < WIDTH; c++) begin : ces
+      // Element parameters (DATA_WIDTH, COLS) are set via
+      // VERILOG_TOP_PARAMS at synthesis time - do not override here
+      // as OpenROAD cannot read parameterized instantiations.
       Element ces(
         .clock       (clock),
         .io_ins_left (e_ins_left  [r][c]),
@@ -246,3 +255,4 @@ module MockArray #(
   end
 
 endmodule
+

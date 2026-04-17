@@ -8,15 +8,15 @@
 
 std::vector<std::string_view> arguments(int argc, char* argv[])
 {
-  std::vector<std::string_view> x = {};
+  std::vector<std::string_view> filtered_args = {};
   for (int i = 1; i < argc; ++i) {
     auto arg = std::string_view(argv[i]);
     if (arg.starts_with("+verilator")) {
       continue;
     }
-    x.push_back(arg);
+    filtered_args.push_back(arg);
   }
-  return x;
+  return filtered_args;
 }
 
 // Write a 64-bit value into a specific 64-bit slot of a wide bus.
@@ -54,13 +54,14 @@ int main(int argc, char** argv)
   int tick = 0;
 
   // Stimulate column buses (down/up), then row buses (left/right)
-  struct {
+  struct
+  {
     WData* bus1;
     WData* bus2;
     int count;
   } stimuli[] = {
-    {top->io_ins_down.data(), top->io_ins_up.data(), ARRAY_COLS},
-    {top->io_ins_left.data(), top->io_ins_right.data(), ARRAY_ROWS},
+      {top->io_ins_down.data(), top->io_ins_up.data(), ARRAY_COLS},
+      {top->io_ins_left.data(), top->io_ins_right.data(), ARRAY_ROWS},
   };
 
   for (auto& s : stimuli) {
@@ -88,6 +89,7 @@ done:
   vcd->close();
 
   top->final();
+  delete vcd;
   delete top;
   return 0;
 }
