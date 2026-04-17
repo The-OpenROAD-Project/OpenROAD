@@ -11,16 +11,6 @@
 [WARNING ODB-1003] (met3) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.3
 [WARNING ODB-1003] (met4) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 0.3
 [WARNING ODB-1003] (met5) layer's width from (NDR_3W_3S) NDR is not defined. Using the default value 1.6
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer mcon
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via2
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via3
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
-[WARNING DRT-0349] LEF58_ENCLOSURE with no CUTCLASS is not supported. Skipping for layer via4
 [INFO DRT-0167] List of default vias:
   Layer via
     default via: M1M2_PR
