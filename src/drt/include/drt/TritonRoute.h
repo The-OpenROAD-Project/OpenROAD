@@ -15,6 +15,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
+#include "drt/PinAccessService.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -27,7 +28,7 @@ class dbWire;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace stt {
@@ -43,7 +44,6 @@ namespace drt {
 class frDesign;
 class frInst;
 class DesignCallBack;
-class PACallBack;
 class FlexDR;
 class FlexPA;
 class FlexTA;
@@ -80,15 +80,17 @@ struct ParamStruct
   int num_threads = 1;
 };
 
-class TritonRoute
+class TritonRoute : public PinAccessService
 {
  public:
   TritonRoute(odb::dbDatabase* db,
               utl::Logger* logger,
-              utl::CallBackHandler* callback_handler,
+              utl::ServiceRegistry* service_registry,
               dst::Distributed* dist,
               stt::SteinerTreeBuilder* stt_builder);
-  ~TritonRoute();
+  ~TritonRoute() override;
+
+  void updateDirtyPinAccess() override;
 
   void initGraphics(std::unique_ptr<AbstractGraphicsFactory> graphics_factory);
 
@@ -191,10 +193,10 @@ class TritonRoute
   std::unique_ptr<frDesign> design_;
   std::unique_ptr<frDebugSettings> debug_;
   std::unique_ptr<DesignCallBack> db_callback_;
-  std::unique_ptr<PACallBack> pa_callback_;
   std::unique_ptr<RouterConfiguration> router_cfg_;
   odb::dbDatabase* db_{nullptr};
   utl::Logger* logger_{nullptr};
+  utl::ServiceRegistry* service_registry_{nullptr};
   std::unique_ptr<FlexDR> dr_;  // kept for single stepping
   stt::SteinerTreeBuilder* stt_builder_{nullptr};
   int num_drvs_{-1};

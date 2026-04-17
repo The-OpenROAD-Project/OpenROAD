@@ -20,13 +20,14 @@
 #include "FastRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -672,7 +673,9 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
-    callback_handler_->triggerOnEstimateParasiticsRequired();
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+      estimator->estimateAllGlobalRouteParasitics();
+    }
   }
 
   resetWorstMetrics();
@@ -1576,7 +1579,9 @@ float FastRouteCore::CalculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  callback_handler_->triggerOnEstimateParasiticsRequired();
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    estimator->estimateAllGlobalRouteParasitics();
+  }
   for (const int& netID : net_ids_) {
     auto fr_net = nets_[netID];
     odb::dbNet* db_net = fr_net->getDbNet();
