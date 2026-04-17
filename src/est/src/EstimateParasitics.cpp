@@ -80,9 +80,9 @@ EstimateParasitics::EstimateParasitics(utl::Logger* logger,
       wire_clk_res_(0.0),
       wire_clk_cap_(0.0)
 {
-  service_registry_->provide<ParasiticsService>(this);
   dbStaState::init(sta);
   db_cbk_ = std::make_unique<OdbCallBack>(this, network_, db_network_);
+  service_registry_->provide<ParasiticsService>(this);
 }
 
 EstimateParasitics::~EstimateParasitics()
