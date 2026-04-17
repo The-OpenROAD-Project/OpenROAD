@@ -109,6 +109,7 @@ class ICeWall;
 namespace utl {
 class Logger;
 class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace dst {
@@ -152,6 +153,7 @@ class OpenRoad
   Tcl_Interp* tclInterp() { return tcl_interp_; }
   utl::Logger* getLogger() { return logger_; }
   utl::CallBackHandler* getCallBackHandler() { return callback_handler_; }
+  utl::ServiceRegistry* getServiceRegistry() { return service_registry_; }
   odb::dbDatabase* getDb() { return db_; }
   sta::dbSta* getSta() { return sta_; }
   sta::dbNetwork* getDbNetwork();
@@ -289,6 +291,7 @@ class OpenRoad
   est::EstimateParasitics* estimate_parasitics_ = nullptr;
   web::WebServer* web_server_ = nullptr;
   utl::CallBackHandler* callback_handler_ = nullptr;
+  utl::ServiceRegistry* service_registry_ = nullptr;
 
   int threads_ = 1;
 

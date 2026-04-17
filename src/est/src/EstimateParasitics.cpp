@@ -64,11 +64,13 @@ using odb::dbModInst;
 
 EstimateParasitics::EstimateParasitics(utl::Logger* logger,
                                        utl::CallBackHandler* callback_handler,
+                                       utl::ServiceRegistry* service_registry,
                                        odb::dbDatabase* db,
                                        sta::dbSta* sta,
                                        stt::SteinerTreeBuilder* stt_builder,
                                        grt::GlobalRouter* global_router)
     : logger_(logger),
+      service_registry_(service_registry),
       estimate_parasitics_cbk_(
           std::make_unique<EstimateParasiticsCallBack>(this)),
       stt_builder_(stt_builder),

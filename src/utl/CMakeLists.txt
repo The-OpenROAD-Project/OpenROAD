@@ -41,6 +41,7 @@ add_library(utl_lib
   src/Metrics.cpp
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp
+  src/ServiceRegistry.cpp
   src/SuppressStdout.cpp
   src/Logger.cpp
   src/Progress.cpp

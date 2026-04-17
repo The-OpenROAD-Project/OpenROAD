@@ -26,6 +26,7 @@
 namespace utl {
 class CallBackHandler;
 class Logger;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace odb {
@@ -91,6 +92,7 @@ class FastRouteCore
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
                 utl::CallBackHandler* callback_handler,
+                utl::ServiceRegistry* service_registry,
                 stt::SteinerTreeBuilder* stt_builder,
                 sta::dbSta* sta);
   ~FastRouteCore();
@@ -730,6 +732,7 @@ class FastRouteCore
   std::vector<StTree> sttrees_bk_;
 
   utl::CallBackHandler* callback_handler_;
+  utl::ServiceRegistry* service_registry_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;

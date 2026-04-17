@@ -88,6 +88,7 @@
 #include "utl/MakeLogger.h"
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/decode.h"
 #include "web/MakeWeb.h"
 #include "web/web.h"
@@ -151,6 +152,7 @@ OpenRoad::~OpenRoad()
   delete logger_;
   delete verilog_reader_;
   delete callback_handler_;
+  delete service_registry_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -196,6 +198,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   utl::Progress::setBatchMode(batch_mode);
   logger_ = new utl::Logger(log_filename, metrics_filename);
   callback_handler_ = new utl::CallBackHandler(logger_);
+  service_registry_ = new utl::ServiceRegistry(logger_);
   db_->setLogger(logger_);
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
@@ -205,6 +208,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,
                                          callback_handler_,
+                                         service_registry_,
                                          stt_builder_,
                                          db_,
                                          sta_,
@@ -212,8 +216,13 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
                                          opendp_);
   grt::initGui(global_router_, db_, logger_);
 
-  estimate_parasitics_ = new est::EstimateParasitics(
-      logger_, callback_handler_, db_, sta_, stt_builder_, global_router_);
+  estimate_parasitics_ = new est::EstimateParasitics(logger_,
+                                                     callback_handler_,
+                                                     service_registry_,
+                                                     db_,
+                                                     sta_,
+                                                     stt_builder_,
+                                                     global_router_);
   est::initGui(estimate_parasitics_);
 
   resizer_ = new rsz::Resizer(logger_,
@@ -239,8 +248,12 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   macro_placer_ = new mpl::MacroPlacer(db_, sta_, logger_, partitionMgr_);
   extractor_ = new rcx::Ext(db_, logger_, getVersion());
   distributer_ = new dst::Distributed(logger_);
-  detailed_router_ = new drt::TritonRoute(
-      db_, logger_, callback_handler_, distributer_, stt_builder_);
+  detailed_router_ = new drt::TritonRoute(db_,
+                                          logger_,
+                                          callback_handler_,
+                                          service_registry_,
+                                          distributer_,
+                                          stt_builder_);
   drt::initGui(detailed_router_);
 
   replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);

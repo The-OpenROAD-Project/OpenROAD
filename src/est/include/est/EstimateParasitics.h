@@ -34,6 +34,7 @@
 
 namespace utl {
 class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace est {
@@ -75,6 +76,7 @@ class EstimateParasitics : public sta::dbStaState
  public:
   EstimateParasitics(utl::Logger* logger,
                      utl::CallBackHandler* callback_handler,
+                     utl::ServiceRegistry* service_registry,
                      odb::dbDatabase* db,
                      sta::dbSta* sta,
                      stt::SteinerTreeBuilder* stt_builder,
@@ -238,6 +240,7 @@ class EstimateParasitics : public sta::dbStaState
   double dbuToMeters(int dist) const;
 
   utl::Logger* logger_ = nullptr;
+  utl::ServiceRegistry* service_registry_ = nullptr;
   std::unique_ptr<EstimateParasiticsCallBack> estimate_parasitics_cbk_;
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   grt::GlobalRouter* global_router_ = nullptr;

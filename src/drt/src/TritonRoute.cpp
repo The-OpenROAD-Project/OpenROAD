@@ -67,6 +67,7 @@ namespace drt {
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
                          utl::CallBackHandler* callback_handler,
+                         utl::ServiceRegistry* service_registry,
                          dst::Distributed* dist,
                          stt::SteinerTreeBuilder* stt_builder)
     : debug_(std::make_unique<frDebugSettings>()),
@@ -79,6 +80,7 @@ TritonRoute::TritonRoute(odb::dbDatabase* db,
   }
   db_ = db;
   logger_ = logger;
+  service_registry_ = service_registry;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());

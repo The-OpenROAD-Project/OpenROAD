@@ -20,6 +20,7 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
 #include "utl/CallBackHandler.h"
+#include "utl/ServiceRegistry.h"
 
 namespace gpl {
 
@@ -41,6 +42,7 @@ class MBFFTestFixture : public tst::Fixture
   {
     logger_ = getLogger();
     callback_handler_ = std::make_unique<utl::CallBackHandler>(logger_);
+    service_registry_ = std::make_unique<utl::ServiceRegistry>(logger_);
     verilog_network_ = std::make_unique<ord::dbVerilogNetwork>(getSta());
     stt_builder_ = std::make_unique<stt::SteinerTreeBuilder>(getDb(), logger_);
     antenna_checker_ = std::make_unique<ant::AntennaChecker>(getDb(), logger_);
@@ -48,6 +50,7 @@ class MBFFTestFixture : public tst::Fixture
     global_router_
         = std::make_unique<grt::GlobalRouter>(logger_,
                                               callback_handler_.get(),
+                                              service_registry_.get(),
                                               stt_builder_.get(),
                                               getDb(),
                                               getSta(),
@@ -56,6 +59,7 @@ class MBFFTestFixture : public tst::Fixture
     estimate_parasitics_
         = std::make_unique<est::EstimateParasitics>(logger_,
                                                     callback_handler_.get(),
+                                                    service_registry_.get(),
                                                     getDb(),
                                                     getSta(),
                                                     stt_builder_.get(),
@@ -111,6 +115,7 @@ class MBFFTestFixture : public tst::Fixture
 
   utl::Logger* logger_;
   std::unique_ptr<utl::CallBackHandler> callback_handler_;
+  std::unique_ptr<utl::ServiceRegistry> service_registry_;
   std::unique_ptr<ord::dbVerilogNetwork> verilog_network_;
   std::unique_ptr<stt::SteinerTreeBuilder> stt_builder_;
   std::unique_ptr<ant::AntennaChecker> antenna_checker_;

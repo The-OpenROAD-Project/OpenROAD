@@ -67,6 +67,7 @@ using utl::GRT;
 
 GlobalRouter::GlobalRouter(utl::Logger* logger,
                            utl::CallBackHandler* callback_handler,
+                           utl::ServiceRegistry* service_registry,
                            stt::SteinerTreeBuilder* stt_builder,
                            odb::dbDatabase* db,
                            sta::dbSta* sta,
@@ -74,6 +75,7 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
                            dpl::Opendp* opendp)
     : logger_(logger),
       callback_handler_(callback_handler),
+      service_registry_(service_registry),
       stt_builder_(stt_builder),
       antenna_checker_(antenna_checker),
       opendp_(opendp),
@@ -104,9 +106,10 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       grouter_cbk_(nullptr),
       is_incremental_(false)
 {
-  fastroute_
-      = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
+  fastroute_ = new FastRouteCore(
+      db_, logger_, callback_handler_, service_registry_, stt_builder_, sta_);
+  cugr_ = new CUGR(
+      db_, logger_, callback_handler_, service_registry_, stt_builder_, sta_);
 }
 
 void GlobalRouter::initGui(
