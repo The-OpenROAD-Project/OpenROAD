@@ -275,7 +275,7 @@ export class SchematicWidget {
     async initNetlistSVG() {
         try {
             if (!window.netlistsvg) {
-                throw new Error('netlistsvg not loaded — check the <script> tags in index.html');
+                return;  // Not available (e.g. static report).
             }
             this.netlistsvg = window.netlistsvg;
 

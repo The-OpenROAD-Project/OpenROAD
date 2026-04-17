@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <string>
 
 #include "odb/db.h"
 #include "odb/dbTypes.h"

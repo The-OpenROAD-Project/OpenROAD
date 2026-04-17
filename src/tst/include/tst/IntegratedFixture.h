@@ -13,7 +13,7 @@
 #include "rsz/Resizer.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/fixture.h"
-#include "utl/CallBackHandler.h"
+#include "utl/ServiceRegistry.h"
 
 namespace tst {
 
@@ -54,7 +54,7 @@ class IntegratedFixture : public tst::Fixture
   sta::dbNetwork* db_network_{nullptr};
 
   stt::SteinerTreeBuilder stt_;
-  utl::CallBackHandler callback_handler_;
+  utl::ServiceRegistry service_registry_;
   dpl::Opendp dp_;
   ant::AntennaChecker ant_;
   grt::GlobalRouter grt_;

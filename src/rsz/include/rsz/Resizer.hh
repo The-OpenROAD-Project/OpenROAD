@@ -550,14 +550,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                            const BufferedNetPtr& tree,
                            const sta::Scene* corner,
                            std::map<const sta::Pin*, float>& load_pin_slew);
-  // Any cell insertion or deletion should invalidate vertex ordering
-  void invalidateVertexOrdering() { level_drvr_vertices_valid_ = false; }
 
  protected:
   void init();
   double computeDesignArea();
   void initDesignArea();
-  void ensureLevelDrvrVertices();
   sta::Instance* bufferInput(const sta::Pin* top_pin,
                              sta::LibertyCell* buffer_cell,
                              bool verbose);
@@ -883,8 +880,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
-  sta::VertexSeq level_drvr_vertices_;
-  bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
   sta::Scene* tgt_slew_corner_ = nullptr;
   // Instances with multiple output ports that have been resized.

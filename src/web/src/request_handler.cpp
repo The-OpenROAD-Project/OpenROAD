@@ -30,6 +30,7 @@
 #include "hierarchy_report.h"
 #include "json_builder.h"
 #include "odb/db.h"
+#include "odb/dbObject.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "tile_generator.h"
@@ -355,21 +356,6 @@ static void writeInspectPayload(JsonBuilder& builder,
   }
 }
 
-// Serialize a TimingNode to JSON.
-static void serializeTimingNode(JsonBuilder& builder, const TimingNode& n)
-{
-  builder.beginObject();
-  builder.field("pin", n.pin_name);
-  builder.field("fanout", n.fanout);
-  builder.field("rise", n.is_rising);
-  builder.field("clk", n.is_clock);
-  builder.field("time", n.time);
-  builder.field("delay", n.delay);
-  builder.field("slew", n.slew);
-  builder.field("load", n.load);
-  builder.endObject();
-}
-
 static double extract_double_value(const std::string& json)
 {
   return extract_float_or(json, "value", 0.0F);
@@ -532,22 +518,8 @@ WebSocketResponse dispatch_request(
   switch (req.type) {
     case WebSocketRequest::BOUNDS: {
       resp.type = 0;
-      const odb::Rect bounds = gen.getBounds();
       JsonBuilder builder;
-      builder.beginObject();
-      builder.beginArray("bounds");
-      builder.beginArray();
-      builder.value(bounds.yMin());
-      builder.value(bounds.xMin());
-      builder.endArray();
-      builder.beginArray();
-      builder.value(bounds.yMax());
-      builder.value(bounds.xMax());
-      builder.endArray();
-      builder.endArray();
-      builder.field("shapes_ready", gen.shapesReady());
-      builder.field("pin_max_size", gen.getPinMaxSize());
-      builder.endObject();
+      serializeBoundsResponse(builder, gen, gen.shapesReady());
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
@@ -555,22 +527,7 @@ WebSocketResponse dispatch_request(
     case WebSocketRequest::TECH: {
       resp.type = 0;
       JsonBuilder builder;
-      builder.beginObject();
-      builder.beginArray("layers");
-      for (const auto& name : gen.getLayers()) {
-        builder.value(name);
-      }
-      builder.endArray();
-      builder.beginArray("sites");
-      for (const auto& name : gen.getSites()) {
-        builder.value(name);
-      }
-      builder.endArray();
-      builder.field("has_liberty", gen.hasSta());
-      if (gen.getBlock()) {
-        builder.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
-      }
-      builder.endObject();
+      serializeTechResponse(builder, gen);
       const std::string& json = builder.str();
       resp.payload.assign(json.begin(), json.end());
       break;
@@ -1629,35 +1586,7 @@ WebSocketResponse TimingHandler::handleTimingReport(const WebSocketRequest& req)
                                            req.timing_slack_min,
                                            req.timing_slack_max);
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("paths");
-    for (const auto& p : paths) {
-      builder.beginObject();
-      builder.field("start_clk", p.start_clk);
-      builder.field("end_clk", p.end_clk);
-      builder.field("required", p.required);
-      builder.field("arrival", p.arrival);
-      builder.field("slack", p.slack);
-      builder.field("skew", p.skew);
-      builder.field("path_delay", p.path_delay);
-      builder.field("logic_depth", p.logic_depth);
-      builder.field("fanout", p.fanout);
-      builder.field("start_pin", p.start_pin);
-      builder.field("end_pin", p.end_pin);
-      builder.beginArray("data_nodes");
-      for (const auto& n : p.data_nodes) {
-        serializeTimingNode(builder, n);
-      }
-      builder.endArray();
-      builder.beginArray("capture_nodes");
-      for (const auto& n : p.capture_nodes) {
-        serializeTimingNode(builder, n);
-      }
-      builder.endArray();
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeTimingPaths(builder, paths);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -1741,21 +1670,7 @@ WebSocketResponse TimingHandler::handleSlackHistogram(
     auto histogram = timing_report_->getSlackHistogram(
         req.histogram_is_setup, req.histogram_path_group, req.histogram_clock);
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("bins");
-    for (const auto& bin : histogram.bins) {
-      builder.beginObject();
-      builder.field("lower", bin.lower);
-      builder.field("upper", bin.upper);
-      builder.field("count", bin.count);
-      builder.field("negative", bin.is_negative);
-      builder.endObject();
-    }
-    builder.endArray();
-    builder.field("unconstrained_count", histogram.unconstrained_count);
-    builder.field("total_endpoints", histogram.total_endpoints);
-    builder.field("time_unit", histogram.time_unit);
-    builder.endObject();
+    serializeSlackHistogram(builder, histogram);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -1775,18 +1690,7 @@ WebSocketResponse TimingHandler::handleChartFilters(const WebSocketRequest& req)
     std::lock_guard<std::mutex> lock(tcl_eval_->mutex);
     auto filters = timing_report_->getChartFilters();
     JsonBuilder builder;
-    builder.beginObject();
-    builder.beginArray("path_groups");
-    for (const auto& name : filters.path_groups) {
-      builder.value(name);
-    }
-    builder.endArray();
-    builder.beginArray("clocks");
-    for (const auto& name : filters.clocks) {
-      builder.value(name);
-    }
-    builder.endArray();
-    builder.endObject();
+    serializeChartFilters(builder, filters);
     const std::string& json = builder.str();
     resp.payload.assign(json.begin(), json.end());
   } catch (const std::exception& e) {
@@ -1929,6 +1833,14 @@ WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
     polys = state.highlight_polys;
     colored = state.timing_rects;
     lines = state.timing_lines;
+  }
+
+  // Merge DRC overlay shapes
+  {
+    std::lock_guard<std::mutex> lock(state.drc_mutex);
+    colored.insert(
+        colored.end(), state.drc_rects.begin(), state.drc_rects.end());
+    lines.insert(lines.end(), state.drc_lines.begin(), state.drc_lines.end());
   }
 
   // Snapshot module colors for _modules layer
@@ -2264,6 +2176,547 @@ WebSocketResponse handleListDir(const WebSocketRequest& req)
   } catch (const std::exception& e) {
     resp.type = 2;
     std::string err = std::string("list_dir error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+//------------------------------------------------------------------------------
+// DRCHandler
+//------------------------------------------------------------------------------
+
+DRCHandler::DRCHandler(std::shared_ptr<TileGenerator> gen)
+    : gen_(std::move(gen))
+{
+}
+
+std::pair<odb::dbBlock*, odb::dbChip*> DRCHandler::getBlockAndChip()
+{
+  odb::dbBlock* block = gen_->getBlock();
+  if (!block) {
+    throw std::runtime_error("No block loaded");
+  }
+  odb::dbChip* chip = block->getChip();
+  if (!chip) {
+    throw std::runtime_error("No chip loaded");
+  }
+  return {block, chip};
+}
+
+odb::dbMarker* DRCHandler::findMarkerById(SessionState& state,
+                                          odb::dbChip* chip,
+                                          int marker_id)
+{
+  std::lock_guard<std::mutex> lock(state.drc_mutex);
+  if (state.active_drc_category.empty()) {
+    return nullptr;
+  }
+  odb::dbMarkerCategory* category
+      = chip->findMarkerCategory(state.active_drc_category.c_str());
+  if (!category) {
+    return nullptr;
+  }
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    if (static_cast<int>(marker->getId()) == marker_id) {
+      return marker;
+    }
+  }
+  return nullptr;
+}
+
+void DRCHandler::refreshDRCOverlay(SessionState& state)
+{
+  // Must be called with drc_mutex already held.
+  state.drc_rects.clear();
+  state.drc_lines.clear();
+
+  odb::dbBlock* block = gen_->getBlock();
+  if (!block) {
+    return;
+  }
+  odb::dbChip* chip = block->getChip();
+  if (!chip || state.active_drc_category.empty()) {
+    return;
+  }
+
+  odb::dbMarkerCategory* category
+      = chip->findMarkerCategory(state.active_drc_category.c_str());
+  if (!category) {
+    return;
+  }
+
+  // Match the Qt GUI rendering style (dbDescriptors.cpp paintMarker +
+  // drcWidget.cpp DRCRenderer::drawObjects):
+  //   pen = white (solid), brush = white alpha 50 diagonal cross-hatch.
+  // We approximate: Rect/Polygon/Cuboid → filled semi-transparent rect
+  // with solid outline.  Line → drawn as a line.  Point → drawn as X.
+  // When the marker bbox is too small (< min_box DBU), draw an X at
+  // the center instead, matching the GUI's min_box fallback.
+  const Color white_fill{.r = 255, .g = 255, .b = 255, .a = 50};
+  const Color white_line{.r = 255, .g = 255, .b = 255, .a = 255};
+
+  // min_box: cached tech pitch as "minimum visible size" threshold.
+  // Default to 200 DBU (0.2um at 1000 dbu/um) if no routing layer available.
+  if (min_box_ < 0) {
+    min_box_ = 200;
+    odb::dbTech* tech = block->getDb()->getTech();
+    if (tech) {
+      for (odb::dbTechLayer* layer : tech->getLayers()) {
+        if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+          const int pitch = layer->getPitch();
+          if (pitch > 0) {
+            min_box_ = pitch;
+            break;
+          }
+        }
+      }
+    }
+  }
+  const int min_box = min_box_;
+
+  auto emitX = [&](int cx, int cy, int half) {
+    // Two diagonal lines forming an X, matching GUI's painter.drawX().
+    state.drc_lines.push_back({odb::Point(cx - half, cy - half),
+                               odb::Point(cx + half, cy + half),
+                               white_line});
+    state.drc_lines.push_back({odb::Point(cx - half, cy + half),
+                               odb::Point(cx + half, cy - half),
+                               white_line});
+  };
+
+  for (odb::dbMarker* marker : category->getAllMarkers()) {
+    if (!marker->isVisible()) {
+      continue;
+    }
+
+    const odb::Rect bbox = marker->getBBox();
+
+    // GUI fallback: if bbox is too small, draw X at center instead of
+    // individual shapes (dbDescriptors.cpp paintMarker, min_box check).
+    if (bbox.maxDXDY() < min_box) {
+      const int cx = bbox.xMin() + bbox.dx() / 2;
+      const int cy = bbox.yMin() + bbox.dy() / 2;
+      emitX(cx, cy, min_box / 2);
+      continue;
+    }
+
+    const auto& shapes = marker->getShapes();
+
+    // Fallback: if no shapes, use the bounding box.
+    if (shapes.empty()) {
+      if (bbox.area() > 0) {
+        state.drc_rects.push_back({bbox, white_fill, "", /*filled=*/true});
+      }
+      continue;
+    }
+
+    for (const auto& shape : shapes) {
+      if (std::holds_alternative<odb::Rect>(shape)) {
+        state.drc_rects.push_back(
+            {std::get<odb::Rect>(shape), white_fill, "", /*filled=*/true});
+      } else if (std::holds_alternative<odb::Line>(shape)) {
+        const odb::Line& line = std::get<odb::Line>(shape);
+        state.drc_lines.push_back({line.pt0(), line.pt1(), white_line});
+      } else if (std::holds_alternative<odb::Point>(shape)) {
+        const odb::Point& pt = std::get<odb::Point>(shape);
+        emitX(pt.x(), pt.y(), min_box / 2);
+      } else if (std::holds_alternative<odb::Polygon>(shape)) {
+        const odb::Polygon& poly = std::get<odb::Polygon>(shape);
+        state.drc_rects.push_back(
+            {poly.getEnclosingRect(), white_fill, "", /*filled=*/true});
+      } else if (std::holds_alternative<odb::Cuboid>(shape)) {
+        state.drc_rects.push_back(
+            {std::get<odb::Cuboid>(shape).getEnclosingRect(),
+             white_fill,
+             "",
+             /*filled=*/true});
+      }
+    }
+  }
+}
+
+WebSocketResponse DRCHandler::handleDRCCategories(const WebSocketRequest& req)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.beginArray("categories");
+    for (odb::dbMarkerCategory* category : chip->getMarkerCategories()) {
+      builder.beginObject();
+      builder.field("name", std::string(category->getName()));
+      builder.field("count", category->getMarkerCount());
+      const std::string desc = category->getDescription();
+      if (!desc.empty()) {
+        builder.field("description", desc);
+      }
+      const std::string source = category->getSource();
+      if (!source.empty()) {
+        builder.field("source", source);
+      }
+      builder.endObject();
+    }
+    builder.endArray();
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("drc_categories error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+// Recursive helper to serialize a marker category tree.
+static void serializeMarkerCategory(JsonBuilder& builder,
+                                    odb::dbMarkerCategory* category)
+{
+  builder.beginObject();
+  builder.field("name", std::string(category->getName()));
+  builder.field("count", category->getMarkerCount());
+
+  // Subcategories
+  auto subcats = category->getMarkerCategories();
+  if (subcats.begin() != subcats.end()) {
+    builder.beginArray("subcategories");
+    for (odb::dbMarkerCategory* sub : subcats) {
+      serializeMarkerCategory(builder, sub);
+    }
+    builder.endArray();
+  }
+
+  // Markers directly in this category
+  auto markers = category->getMarkers();
+  if (markers.begin() != markers.end()) {
+    builder.beginArray("markers");
+    int idx = 1;
+    for (odb::dbMarker* marker : markers) {
+      builder.beginObject();
+      builder.field("id", static_cast<int>(marker->getId()));
+      builder.field("index", idx++);
+      builder.field("name", marker->getName());
+      builder.field("visited", marker->isVisited());
+      builder.field("visible", marker->isVisible());
+      builder.field("waived", marker->isWaived());
+
+      odb::Rect bbox = marker->getBBox();
+      writeBBox(builder, "bbox", bbox);
+
+      odb::dbTechLayer* layer = marker->getTechLayer();
+      if (layer) {
+        builder.field("layer", std::string(layer->getName()));
+      }
+
+      const std::string comment = marker->getComment();
+      if (!comment.empty()) {
+        builder.field("comment", comment);
+      }
+
+      // Sources
+      auto sources = marker->getSources();
+      if (!sources.empty()) {
+        builder.beginArray("sources");
+        for (odb::dbObject* src : sources) {
+          builder.beginObject();
+          switch (src->getObjectType()) {
+            case odb::dbNetObj: {
+              auto* net = static_cast<odb::dbNet*>(src);
+              builder.field("type", "Net");
+              builder.field("name", std::string(net->getName()));
+              break;
+            }
+            case odb::dbInstObj: {
+              auto* inst = static_cast<odb::dbInst*>(src);
+              builder.field("type", "Inst");
+              builder.field("name", std::string(inst->getName()));
+              break;
+            }
+            case odb::dbITermObj: {
+              auto* iterm = static_cast<odb::dbITerm*>(src);
+              builder.field("type", "ITerm");
+              builder.field("name", std::string(iterm->getName()));
+              break;
+            }
+            case odb::dbBTermObj: {
+              auto* bterm = static_cast<odb::dbBTerm*>(src);
+              builder.field("type", "BTerm");
+              builder.field("name", std::string(bterm->getName()));
+              break;
+            }
+            default:
+              builder.field("type", "Object");
+              builder.field("name", "unknown");
+              break;
+          }
+          builder.endObject();
+        }
+        builder.endArray();
+      }
+
+      builder.endObject();
+    }
+    builder.endArray();
+  }
+
+  builder.endObject();
+}
+
+WebSocketResponse DRCHandler::handleDRCMarkers(const WebSocketRequest& req,
+                                               SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    const std::string& cat_name = req.drc_category_name;
+
+    // Update active category and overlay
+    {
+      std::lock_guard<std::mutex> lock(state.drc_mutex);
+      state.active_drc_category = cat_name;
+      refreshDRCOverlay(state);
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+
+    if (cat_name.empty()) {
+      builder.beginArray("subcategories");
+      builder.endArray();
+    } else {
+      odb::dbMarkerCategory* category
+          = chip->findMarkerCategory(cat_name.c_str());
+      if (!category) {
+        builder.field("error", "Category not found: " + cat_name);
+      } else {
+        builder.field("name", std::string(category->getName()));
+        builder.field("total_count", category->getMarkerCount());
+        builder.beginArray("subcategories");
+        for (odb::dbMarkerCategory* sub : category->getMarkerCategories()) {
+          serializeMarkerCategory(builder, sub);
+        }
+        builder.endArray();
+      }
+    }
+
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("drc_markers error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCLoadReport(const WebSocketRequest& req,
+                                                  SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    const std::string& path = req.drc_file_path;
+    if (path.empty()) {
+      throw std::runtime_error("No file path provided");
+    }
+
+    odb::dbMarkerCategory* category = nullptr;
+    if (path.ends_with(".rpt") || path.ends_with(".drc")) {
+      category = odb::dbMarkerCategory::fromTR(chip, "DRC", path);
+    } else if (path.ends_with(".json")) {
+      auto categories = odb::dbMarkerCategory::fromJSON(chip, path);
+      if (!categories.empty()) {
+        category = *categories.begin();
+      }
+    } else {
+      throw std::runtime_error("Unsupported file format: " + path);
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    if (category) {
+      const std::string name = category->getName();
+      builder.field("ok", 1);
+      builder.field("category", name);
+      builder.field("count", category->getMarkerCount());
+
+      // Auto-select the loaded category
+      {
+        std::lock_guard<std::mutex> lock(state.drc_mutex);
+        state.active_drc_category = name;
+        refreshDRCOverlay(state);
+      }
+    } else {
+      builder.field("ok", 0);
+      builder.field("error", "No violations found in report");
+    }
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("drc_load_report error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCUpdateMarker(const WebSocketRequest& req,
+                                                    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    odb::dbMarker* target = findMarkerById(state, chip, req.drc_marker_id);
+    if (!target) {
+      throw std::runtime_error("Marker not found with id "
+                               + std::to_string(req.drc_marker_id));
+    }
+
+    if (req.drc_field == "visited") {
+      target->setVisited(req.drc_field_value);
+    } else if (req.drc_field == "visible") {
+      target->setVisible(req.drc_field_value);
+      std::lock_guard<std::mutex> lock(state.drc_mutex);
+      refreshDRCOverlay(state);
+    } else {
+      throw std::runtime_error("Unknown field: " + req.drc_field);
+    }
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("ok", 1);
+    builder.field("id", req.drc_marker_id);
+    builder.field("field", req.drc_field);
+    builder.field("value", req.drc_field_value);
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("drc_update_marker error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCUpdateCategoryVisibility(
+    const WebSocketRequest& req,
+    SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    std::lock_guard<std::mutex> lock(state.drc_mutex);
+    odb::dbMarkerCategory* category
+        = chip->findMarkerCategory(req.drc_category_name.c_str());
+    if (!category) {
+      throw std::runtime_error("Category not found: " + req.drc_category_name);
+    }
+
+    int count = 0;
+    for (odb::dbMarker* marker : category->getAllMarkers()) {
+      marker->setVisible(req.drc_field_value);
+      ++count;
+    }
+    refreshDRCOverlay(state);
+
+    JsonBuilder builder;
+    builder.beginObject();
+    builder.field("ok", 1);
+    builder.field("category", req.drc_category_name);
+    builder.field("visible", req.drc_field_value);
+    builder.field("count", count);
+    builder.endObject();
+
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err
+        = std::string("drc_update_category_visibility error: ") + e.what();
+    resp.payload.assign(err.begin(), err.end());
+  }
+  return resp;
+}
+
+WebSocketResponse DRCHandler::handleDRCHighlight(const WebSocketRequest& req,
+                                                 SessionState& state)
+{
+  WebSocketResponse resp;
+  resp.id = req.id;
+  resp.type = 0;
+
+  try {
+    auto [block, chip] = getBlockAndChip();
+
+    odb::dbMarker* target = findMarkerById(state, chip, req.drc_marker_id);
+
+    JsonBuilder builder;
+    builder.beginObject();
+
+    if (target) {
+      target->setVisited(true);
+      odb::Rect bbox = target->getBBox();
+
+      // Set highlight to the marker's bbox
+      {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        state.highlight_rects.clear();
+        state.highlight_polys.clear();
+        state.highlight_rects.push_back(bbox);
+      }
+
+      builder.field("ok", 1);
+      writeBBox(builder, "bbox", bbox);
+      builder.field("name", target->getName());
+      builder.field("visited", true);
+
+      odb::dbTechLayer* layer = target->getTechLayer();
+      if (layer) {
+        builder.field("layer", std::string(layer->getName()));
+      }
+    } else {
+      // Clear highlight if marker_id is -1 (deselect)
+      if (req.drc_marker_id == -1) {
+        std::lock_guard<std::mutex> lock(state.selection_mutex);
+        state.highlight_rects.clear();
+        state.highlight_polys.clear();
+      }
+      builder.field("ok", 0);
+    }
+
+    builder.endObject();
+    const std::string& json = builder.str();
+    resp.payload.assign(json.begin(), json.end());
+  } catch (const std::exception& e) {
+    resp.type = 2;
+    std::string err = std::string("drc_highlight error: ") + e.what();
     resp.payload.assign(err.begin(), err.end());
   }
   return resp;

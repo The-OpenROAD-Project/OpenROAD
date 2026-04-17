@@ -33,6 +33,8 @@ or_integration_tests(
     placement_blockages1
     halos1
     halos2
+    halos3
+    halos4
 )
 
 

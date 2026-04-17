@@ -18,3 +18,14 @@ Detailed guides are in `docs/agents/` subdirectory:
 3. **Always use `git commit -s`** for DCO compliance.
 4. When amending submodule commits, parent repo submodule reference must also be updated via `git submodule update --init --recursive`. It is needed after any merge/pull.
 5. **Trace bugs upstream** -- when a bug appears in output (e.g., Verilog), find the data creation point (e.g., `buffer_ports`, `remove_buffers`), not the serialization point (e.g., `VerilogWriter`).
+
+## AI Agent Skills
+
+Skills are located in `.agents/skills/` (with `.claude/skills` symlink for Claude Code).
+
+| Skill | Purpose | Invocation |
+|-------|---------|------------|
+| `triage-issue` | Reproduce bug and minimize test case with whittle.py | `/triage-issue <issue#>` |
+| `fix-bug` | Trace root cause, implement fix, create tests, prepare commit | `/fix-bug <issue#-or-error-code>` |
+| `add-test` | Add integration/unit tests with dual CMake+Bazel registration | `/add-test <module> [description]` |
+| `review-pr` | Draft local PR review notes (correctness > QoR > testing); human posts | `/review-pr <pr#-or-url>` |

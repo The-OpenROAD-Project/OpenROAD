@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "db/drObj/drPin.h"
+#include "db/tech/frLayer.h"
 #include "dr/FlexDR.h"
 #include "dr/FlexGridGraph.h"
 #include "dr/FlexMazeTypes.h"

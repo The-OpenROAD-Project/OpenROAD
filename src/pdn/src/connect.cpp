@@ -10,6 +10,7 @@
 #include <memory>
 #include <regex>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>

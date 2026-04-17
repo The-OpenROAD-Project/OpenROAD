@@ -11,6 +11,7 @@
 #include "domain.h"
 #include "grid.h"
 #include "gui/gui.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "pdn/PdnGen.hh"
 #include "shape.h"

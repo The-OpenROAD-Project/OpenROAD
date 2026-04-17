@@ -265,6 +265,11 @@ class HardMacro
       right = halo->xMax();
       top = halo->yMax();
     }
+
+    bool isZero() const
+    {
+      return left == 0 && bottom == 0 && right == 0 && top == 0;
+    }
   };
 
   HardMacro(const odb::Point& location,

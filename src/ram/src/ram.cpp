@@ -8,6 +8,7 @@
 #include <fstream>
 #include <functional>
 #include <limits>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -120,18 +121,20 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
            prefix,
            "bit",
            storage_cell_,
-           {{storage_cell_->findMTerm("CLK") ? "CLK" : "GATE", clock},
-            {"D", data_input},
-            {"Q", storage_net}});
+           {{storage_ports_[{PortRoleType::Clock, 0}], clock},
+            {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
+            {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
-    makeInst(bit_cell.get(),
-             prefix,
-             fmt::format("obuf{}", read_port),
-             tristate_cell_,
-             {{"A", storage_net},
-              {"TE_B", select[read_port]},
-              {"Z", data_output[read_port]}});
+    makeInst(
+        bit_cell.get(),
+        prefix,
+        fmt::format("obuf{}", read_port),
+        tristate_cell_,
+        {{tristate_ports_[{PortRoleType::DataIn, 0}], storage_net},
+         {tristate_ports_[{PortRoleType::TriEnable, 0}], select[read_port]},
+         {tristate_ports_[{PortRoleType::DataOut, 0}],
+          data_output[read_port]}});
   }
 
   return bit_cell;
@@ -178,7 +181,9 @@ void RamGen::makeSlice(const int slice_idx,
            prefix,
            "cg",
            clock_gate_cell_,
-           {{"CLK", clock}, {"GATE", we0_net}, {"GCLK", gclock_net}});
+           {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
+            {clock_gate_ports_[{PortRoleType::DataIn, 0}], we0_net},
+            {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}});
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
@@ -187,7 +192,9 @@ void RamGen::makeSlice(const int slice_idx,
            prefix,
            "gcand",
            and2_cell_,
-           {{"A", selects[0]}, {"B", write_enable}, {"X", we0_net}});
+           {{and2_ports_[{PortRoleType::DataIn, 0}], selects[0]},
+            {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
+            {and2_ports_[{PortRoleType::DataOut, 0}], we0_net}});
 
   // Make select inverters
   for (int i = 0; i < selects.size(); ++i) {
@@ -195,7 +202,8 @@ void RamGen::makeSlice(const int slice_idx,
              prefix,
              fmt::format("select_inv_{}", i),
              inv_cell_,
-             {{"A", selects[i]}, {"Y", select_b_nets[i]}});
+             {{inv_ports_[{PortRoleType::DataIn, 0}], selects[i]},
+              {inv_ports_[{PortRoleType::DataOut, 0}], select_b_nets[i]}});
   }
 
   ram_grid_.addCell(std::move(sel_cell), start_bit_idx + mask_size + slice_idx);
@@ -278,30 +286,36 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]},
-                {"B", addr_nets[i + 1]},
-                {"X", decoder_out_net}});
+               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], addr_nets[i + 1]},
+                {and2_ports_[{PortRoleType::DataOut, 0}], decoder_out_net}});
       prev_net = input_net;
     } else if (i == 0) {
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", input_net}, {"X", decoder_out_net}});
+               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
+                {and2_ports_[{PortRoleType::DataOut, 0}], decoder_out_net}});
       prev_net = input_net;
     } else if (i == layers - 1) {  // last AND gate layer
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", addr_nets[i + 1]}, {"X", prev_net}});
+               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], addr_nets[i + 1]},
+                {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
       prev_net = input_net;
     } else {  // middle AND gate layers
       makeInst(word_cell.get(),
                prefix,
                fmt::format("and_layer{}", i),
                and2_cell_,
-               {{"A", addr_nets[i]}, {"B", input_net}, {"X", prev_net}});
+               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[i]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
+                {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
       prev_net = input_net;
     }
   }
@@ -311,7 +325,8 @@ std::unique_ptr<Cell> RamGen::makeDecoder(
              prefix,
              fmt::format("buf_port{}", port),
              buffer_cell_,
-             {{"A", decoder_out_net}, {"X", selects[port]}});
+             {{buffer_ports_[{PortRoleType::DataIn, 0}], decoder_out_net},
+              {buffer_ports_[{PortRoleType::DataOut, 0}], selects[port]}});
   }
 
   return word_cell;
@@ -353,7 +368,8 @@ dbMaster* RamGen::findMaster(
         continue;
       }
 
-      auto port_iter = liberty->portIterator();
+      auto port_iter = std::unique_ptr<sta::ConcreteCellPortIterator>(
+          liberty->portIterator());
 
       sta::ConcretePort* out = nullptr;
       while (port_iter->hasNext()) {
@@ -369,7 +385,6 @@ dbMaster* RamGen::findMaster(
         }
       }
 
-      delete port_iter;
       if (!out || !match(out->libertyPort())) {
         continue;
       }
@@ -388,6 +403,91 @@ dbMaster* RamGen::findMaster(
   return best;
 }
 
+std::map<PortRole, std::string> RamGen::buildPortMap(dbMaster* master)
+{
+  auto sta_cell = network_->dbToSta(master);
+  auto liberty = network_->libertyCell(sta_cell);
+  std::map<PortRole, std::string> pin_map;
+  int in_idx = 0;
+
+  // needed since there is no tristate enable flag
+  std::string tri_enable_name;
+
+  auto port_iter
+      = std::unique_ptr<sta::ConcreteCellPortIterator>(liberty->portIterator());
+  while (port_iter->hasNext()) {
+    auto concrete = port_iter->next();
+    auto lib_port = concrete->libertyPort();
+    auto dir = concrete->direction();
+
+    if (lib_port->isPwrGnd()) {
+      auto pwr_gnd_type = lib_port->pwrGndType();
+      if (pwr_gnd_type == sta::PwrGndType::primary_power) {
+        pin_map[{PortRoleType::Power, 0}] = lib_port->name();
+      } else if (pwr_gnd_type == sta::PwrGndType::primary_ground) {
+        pin_map[{PortRoleType::Ground, 0}] = lib_port->name();
+      }
+    } else if (lib_port->isClock() || lib_port->isRegClk()
+               || lib_port->isClockGateClock()) {
+      pin_map[{PortRoleType::Clock, 0}] = lib_port->name();
+    } else if (dir->isTristate()) {
+      pin_map[{PortRoleType::DataOut, 0}] = lib_port->name();
+      auto tri_expr = lib_port->tristateEnable();
+      // can only get the name of enable once the output is found to be a
+      // tristate
+      if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::port) {
+        tri_enable_name = tri_expr->port()->name();
+      } else if (tri_expr && tri_expr->op() == sta::FuncExpr::Op::not_) {
+        tri_enable_name = tri_expr->left()->port()->name();
+      }
+    } else if (dir->isAnyOutput()) {  // catches isOutput()
+      pin_map[{PortRoleType::DataOut, 0}] = lib_port->name();
+    } else if (dir->isInput()) {
+      pin_map[{PortRoleType::DataIn, in_idx++}] = lib_port->name();
+    }
+  }
+
+  // second pass for to assign tristate enable correct role
+  // first pass can not classify without a dedicated tristate flag
+  if (!tri_enable_name.empty()) {
+    // find and remove it from DataIn
+    for (auto it = pin_map.begin(); it != pin_map.end(); ++it) {
+      if (it->second == tri_enable_name
+          && it->first.type == PortRoleType::DataIn) {
+        pin_map.erase(it);
+        break;
+      }
+    }
+    pin_map[{PortRoleType::TriEnable, 0}] = std::move(tri_enable_name);
+  }
+
+  // validate power/ground after classification is complete
+  int power_count = 0, ground_count = 0;
+  for (auto& [role, name] : pin_map) {
+    if (role.type == PortRoleType::Power) {
+      ++power_count;
+    }
+    if (role.type == PortRoleType::Ground) {
+      ++ground_count;
+    }
+  }
+  if (power_count != 1) {
+    logger_->error(RAM,
+                   28,
+                   "Cell {} must have exactly 1 primary power pin, found {}",
+                   master->getName(),
+                   power_count);
+  }
+  if (ground_count != 1) {
+    logger_->error(RAM,
+                   29,
+                   "Cell {} must have exactly 1 primary ground pin, found {}",
+                   master->getName(),
+                   ground_count);
+  }
+  return pin_map;
+}
+
 void RamGen::findMasters()
 {
   if (!inv_cell_) {
@@ -397,6 +497,7 @@ void RamGen::findMasters()
         },
         "inverter");
   }
+  inv_ports_ = buildPortMap(inv_cell_);
 
   if (!tristate_cell_) {
     tristate_cell_ = findMaster(
@@ -409,6 +510,7 @@ void RamGen::findMasters()
         },
         "tristate");
   }
+  tristate_ports_ = buildPortMap(tristate_cell_);
 
   if (!and2_cell_) {
     and2_cell_ = findMaster(
@@ -423,21 +525,33 @@ void RamGen::findMasters()
         },
         "and2");
   }
+  and2_ports_ = buildPortMap(and2_cell_);
 
   if (!storage_cell_) {
     // FIXME
+    // Still needs changes to get right type of flip-flop
     storage_cell_ = findMaster(
         [](sta::LibertyPort* port) {
-          if (!port->direction()->isOutput()) {
+          if (!port->isRegOutput()) {
             return false;
           }
-          auto function = port->function();
-          return function && function->op() == sta::FuncExpr::Op::and_
-                 && function->left()->op() == sta::FuncExpr::Op::port
-                 && function->right()->op() == sta::FuncExpr::Op::port;
+          // looking for DFF specifically
+          auto cell = port->libertyCell();
+          auto port_iter = cell->portIterator();
+          while (port_iter->hasNext()) {
+            auto p = port_iter->next()->libertyPort();
+            // check to filter out latches
+            if (p && p->isLatchData()) {
+              delete port_iter;
+              return false;
+            }
+          }
+          delete port_iter;
+          return true;
         },
         "storage");
   }
+  storage_ports_ = buildPortMap(storage_cell_);
 
   if (!clock_gate_cell_) {
     clock_gate_cell_ = findMaster(
@@ -446,12 +560,15 @@ void RamGen::findMasters()
         },
         "clock gate");
   }
+  clock_gate_ports_ = buildPortMap(clock_gate_cell_);
+
   // for input buffers
   if (!buffer_cell_) {
     buffer_cell_ = findMaster(
         [](sta::LibertyPort* port) { return port->libertyCell()->isBuffer(); },
         "buffer");
   }
+  buffer_ports_ = buildPortMap(buffer_cell_);
 }
 
 void RamGen::ramPdngen(const char* power_pin,
@@ -496,7 +613,6 @@ void RamGen::ramPdngen(const char* power_pin,
   ground_net->setSpecial();
   ground_net->setSigType(odb::dbSigType::GROUND);
 
-  // find a way to get the power and ground net names associated with cells used
   block_->addGlobalConnect(nullptr, ".*", power_pin, power_net, true);
   block_->addGlobalConnect(nullptr, ".*", ground_pin, ground_net, true);
 
@@ -775,12 +891,13 @@ void RamGen::generate(const int mask_size,
     for (int bit = 0; bit < mask_size; ++bit) {
       int bit_idx = bit + slice * mask_size;
       auto buffer_grid_cell = std::make_unique<Cell>();
-      makeInst(
-          buffer_grid_cell.get(),
-          "buffer",
-          fmt::format("in[{}]", bit_idx),
-          buffer_cell_,
-          {{"A", data_inputs_[bit_idx]->getNet()}, {"X", D_nets[bit_idx]}});
+      makeInst(buffer_grid_cell.get(),
+               "buffer",
+               fmt::format("in[{}]", bit_idx),
+               buffer_cell_,
+               {{buffer_ports_[{PortRoleType::DataIn, 0}],
+                 data_inputs_[bit_idx]->getNet()},
+                {buffer_ports_[{PortRoleType::DataOut, 0}], D_nets[bit_idx]}});
       ram_grid_.addCell(std::move(buffer_grid_cell), bit_idx + slice);
     }
   }
@@ -790,11 +907,13 @@ void RamGen::generate(const int mask_size,
   if (num_inputs > 1) {
     for (int i = num_inputs - 1; i >= 0; --i) {
       auto inv_grid_cell = std::make_unique<Cell>();
-      makeInst(inv_grid_cell.get(),
-               "decoder",
-               fmt::format("inv_{}", i),
-               inv_cell_,
-               {{"A", addr_inputs_[i]->getNet()}, {"Y", inv_addr[i]}});
+      makeInst(
+          inv_grid_cell.get(),
+          "decoder",
+          fmt::format("inv_{}", i),
+          inv_cell_,
+          {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[i]->getNet()},
+           {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr[i]}});
       cell_inv_layout->addCell(std::move(inv_grid_cell));
       for (int filler_count = 0; filler_count < num_inputs - 1;
            ++filler_count) {
@@ -803,11 +922,13 @@ void RamGen::generate(const int mask_size,
     }
   } else {
     auto inv_grid_cell = std::make_unique<Cell>();
-    makeInst(inv_grid_cell.get(),
-             "decoder",
-             fmt::format("inv_{}", 0),
-             inv_cell_,
-             {{"A", addr_inputs_[0]->getNet()}, {"Y", inv_addr[0]}});
+    makeInst(
+        inv_grid_cell.get(),
+        "decoder",
+        fmt::format("inv_{}", 0),
+        inv_cell_,
+        {{inv_ports_[{PortRoleType::DataIn, 0}], addr_inputs_[0]->getNet()},
+         {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr[0]}});
     cell_inv_layout->addCell(std::move(inv_grid_cell));
   }
 

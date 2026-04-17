@@ -7,6 +7,7 @@ or_integration_tests(
     clust02
     clust03
     cluster_place01
+    mbff_orig_name
     convergence01
     core01
     density01

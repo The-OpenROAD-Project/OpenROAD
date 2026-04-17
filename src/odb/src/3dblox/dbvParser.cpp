@@ -27,7 +27,7 @@ DbvData DbvParser::parseFile(const std::string& filename)
   current_file_path_ = filename;
   std::ifstream file(filename);
   if (!file.is_open()) {
-    logError("3DBV Parser Error: Cannot open file: " + filename);
+    logError("Cannot open file");
   }
 
   std::stringstream buffer;

@@ -30,6 +30,9 @@ target_include_directories(grt_lib
     include
   PRIVATE
     src
+    # Header-only abstract interface published by drt; avoid linking
+    # drt_lib to keep grt's dependency surface small.
+    ../drt/include
 )
 
 target_link_libraries(grt_lib

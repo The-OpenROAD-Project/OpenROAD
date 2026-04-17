@@ -12,10 +12,13 @@ package(features = ["layering_check"])
 
 exports_files(
     [
+        "bzl_fmt_test.sh",
+        "bzl_lint_test.sh",
+        "bzl_tidy.sh",
         "fix_lint.sh",
         "install.sh",
-        "tcl_lint_test.sh",
         "tcl_fmt_test.sh",
+        "tcl_lint_test.sh",
         "tcl_tidy.sh",
     ],
     visibility = ["//visibility:public"],
@@ -122,20 +125,6 @@ cc_library(
         ":zipfs_config": [],
         "//conditions:default": ["@rules_cc//cc/runfiles"],
     }),
-)
-
-# shim old library as it is still referenced in src/sta, implementing the
-# old behavior.
-cc_library(
-    name = "runfiles",
-    srcs = ["InitRunFiles.cpp"],
-    data = [":tcl_resources_dir"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@rules_cc//cc/runfiles",
-        "@tcl_lang//:tcl",
-    ],
-    alwayslink = True,
 )
 
 # small build test to check if "bazel build //src/sta:StaTclInitVar" works

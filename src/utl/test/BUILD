@@ -139,6 +139,16 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "TestServiceRegistry",
+    srcs = ["cpp/TestServiceRegistry.cpp"],
+    deps = [
+        "//src/utl",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
 py_test(
     name = "utl_man_tcl_check",
     srcs = ["utl_man_tcl_check.py"],

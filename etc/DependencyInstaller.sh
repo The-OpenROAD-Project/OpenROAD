@@ -16,13 +16,18 @@ set -euo pipefail
 PREFIX=""
 CI="no"
 SAVE_DEPS_PREFIXES=""
-NUM_THREADS=$(nproc)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    NUM_THREADS=$(sysctl -n hw.logicalcpu)
+else
+    NUM_THREADS=$(nproc)
+fi
 SKIP_SYSTEM_OR_TOOLS="false"
 BASE_DIR=$(mktemp -d /tmp/DependencyInstaller-XXXXXX)
 CMAKE_PACKAGE_ROOT_ARGS=""
 OR_TOOLS_PATH=""
 INSTALL_SUMMARY=()
 VERBOSE_MODE="no"
+OPT_NOCERT=""
 
 # Colors
 if [[ -t 1 ]]; then
@@ -256,7 +261,7 @@ _execute() {
         return
     fi
 
-    echo -n "${BLUE}${BOLD}[INFO]${NC} ${description}..."
+    echo -n "${BLUE}${BOLD}[INFO]${NC} ${description}"
     local log_file
     log_file=$(mktemp)
     if ! "$@" &> "${log_file}"; then
@@ -294,7 +299,7 @@ _install_cmake() {
             else
                 cmake_checksum=${CMAKE_CHECKSUM_X86_64}
             fi
-            _execute "Downloading CMake..." wget "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_SMALL}/cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
+            _execute "Downloading CMake..." wget $OPT_NOCERT "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_SMALL}/cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
             _verify_checksum "${cmake_checksum}" "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" || error "CMake checksum failed."
             chmod +x "cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh"
             _execute "Installing CMake..." "./cmake-${CMAKE_VERSION_SMALL}-linux-${arch}.sh" --skip-license --prefix="${cmake_prefix}"
@@ -333,7 +338,7 @@ _install_bison() {
             for mirror in "${mirrors[@]}"; do
                 local url="${mirror}/bison-${BISON_VERSION}.tar.gz"
                 log "Trying to download bison from: $url"
-                if wget "$url"; then
+                if wget $OPT_NOCERT "$url"; then
                     success=1
                     break
                 else
@@ -373,7 +378,7 @@ _install_flex() {
     if [[ "${flex_installed_version}" != "${FLEX_VERSION}" ]]; then
         (
             cd "${BASE_DIR}"
-            _execute "Downloading Flex..." wget https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz
+            _execute "Downloading Flex..." wget $OPT_NOCERT https://github.com/westes/flex/releases/download/v${FLEX_VERSION}/flex-${FLEX_VERSION}.tar.gz
             _verify_checksum "${FLEX_CHECKSUM}" "flex-${FLEX_VERSION}.tar.gz" || error "Flex checksum failed."
             _execute "Extracting Flex..." tar xf "flex-${FLEX_VERSION}.tar.gz"
             cd "flex-${FLEX_VERSION}"
@@ -405,7 +410,7 @@ _install_swig() {
         (
             cd "${BASE_DIR}"
             local tar_name="v${SWIG_VERSION}.tar.gz"
-            _execute "Downloading SWIG..." wget "https://github.com/swig/swig/archive/${tar_name}"
+            _execute "Downloading SWIG..." wget $OPT_NOCERT "https://github.com/swig/swig/archive/${tar_name}"
             _verify_checksum "${SWIG_CHECKSUM}" "${tar_name}" || error "SWIG checksum failed."
             _execute "Extracting SWIG..." tar xfz "${tar_name}"
             cd swig-*
@@ -446,7 +451,7 @@ _install_pcre() {
     (
         cd "${BASE_DIR}"
         local pcre_tar_name="pcre2-${PCRE_VERSION}.tar.gz"
-        _execute "Downloading PCRE..." wget "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
+        _execute "Downloading PCRE..." wget $OPT_NOCERT "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE_VERSION}/${pcre_tar_name}"
         _verify_checksum "${PCRE_CHECKSUM}" "${pcre_tar_name}" || error "PCRE checksum failed."
         _execute "Extracting PCRE..." tar xf "${pcre_tar_name}"
         cd "pcre2-${PCRE_VERSION}"
@@ -474,7 +479,7 @@ _install_boost() {
         (
             cd "${BASE_DIR}"
             local boost_version_underscore=${BOOST_VERSION_SMALL//./_}
-            _execute "Downloading Boost..." wget "https://archives.boost.io/release/${BOOST_VERSION_SMALL}/source/boost_${boost_version_underscore}.tar.gz"
+            _execute "Downloading Boost..." wget $OPT_NOCERT "https://archives.boost.io/release/${BOOST_VERSION_SMALL}/source/boost_${boost_version_underscore}.tar.gz"
             _verify_checksum "${BOOST_CHECKSUM}" "boost_${boost_version_underscore}.tar.gz" || error "Boost checksum failed."
             _execute "Extracting Boost..." tar -xf "boost_${boost_version_underscore}.tar.gz"
             cd "boost_${boost_version_underscore}"
@@ -636,7 +641,7 @@ _install_gtest() {
     if [[ ! -d ${gtest_prefix}/include/gtest ]]; then
         (
             cd "${BASE_DIR}"
-            _execute "Downloading gtest..." wget "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip"
+            _execute "Downloading gtest..." wget $OPT_NOCERT "https://github.com/google/googletest/archive/refs/tags/v${GTEST_VERSION}.zip"
             _verify_checksum "${GTEST_CHECKSUM}" "v${GTEST_VERSION}.zip" || error "gtest checksum failed."
             _execute "Extracting gtest..." unzip "v${GTEST_VERSION}.zip"
             cd "googletest-${GTEST_VERSION}"
@@ -685,7 +690,7 @@ _install_abseil() {
     if [[ "${absl_installed_version}" != "${required_version}" ]]; then
         (
             cd "${BASE_DIR}"
-            _execute "Downloading Abseil..." wget "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
+            _execute "Downloading Abseil..." wget $OPT_NOCERT "https://github.com/abseil/abseil-cpp/releases/download/${ABSL_VERSION}/abseil-cpp-${ABSL_VERSION}.tar.gz"
             _verify_checksum "${ABSL_CHECKSUM}" "abseil-cpp-${ABSL_VERSION}.tar.gz" || error "Abseil checksum failed."
             _execute "Extracting Abseil..." tar xf "abseil-cpp-${ABSL_VERSION}.tar.gz"
             cd "abseil-cpp-${ABSL_VERSION}"
@@ -763,7 +768,7 @@ _install_or_tools() {
                 os_version=11
             fi
             local or_tools_file="or-tools_${arch}_${os}-${os_version}_cpp_v${OR_TOOLS_VERSION_SMALL}.tar.gz"
-            _execute "Downloading or-tools..." wget "https://github.com/google/or-tools/releases/download/v${OR_TOOLS_VERSION_BIG}/${or_tools_file}"
+            _execute "Downloading or-tools..." wget $OPT_NOCERT "https://github.com/google/or-tools/releases/download/v${OR_TOOLS_VERSION_BIG}/${or_tools_file}"
             mkdir -p "${OR_TOOLS_PATH}"
             _execute "Extracting or-tools..." tar --strip 1 --dir "${OR_TOOLS_PATH}" -xf "${or_tools_file}"
         )
@@ -908,7 +913,7 @@ _install_rhel_packages() {
 
     local arch=amd64
     local pandoc_version="3.1.11.1"
-    _execute "Downloading pandoc..." wget "https://github.com/jgm/pandoc/releases/download/${pandoc_version}/pandoc-${pandoc_version}-linux-${arch}.tar.gz"
+    _execute "Downloading pandoc..." wget $OPT_NOCERT "https://github.com/jgm/pandoc/releases/download/${pandoc_version}/pandoc-${pandoc_version}-linux-${arch}.tar.gz"
     _execute "Installing pandoc..." tar xvzf "pandoc-${pandoc_version}-linux-${arch}.tar.gz" --strip-components 1 -C /usr/local/
     rm -rf "pandoc-${pandoc_version}-linux-${arch}.tar.gz"
     _execute "Cleaning up yum cache..." yum clean -y all
@@ -953,9 +958,9 @@ EOF
         exit 1
     fi
     log "Install darwin base packages using homebrew (-base or -all)"
-    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest libomp or-tools pandoc pkg-config pyqt python spdlog tcl-tk zlib swig yaml-cpp
-    _execute "Installing pipx..." brew install pipx
-    _execute "Installing Python click..." pipx install click
+    _execute "Installing Homebrew packages..." brew install bison boost bzip2 cmake eigen flex fmt groff googletest icu4c libomp or-tools pandoc pkg-config qt@5 python spdlog tcl-tk@8 zlib swig yaml-cpp
+    # _execute "Installing pipx..." brew install pipx
+    _execute "Installing Python click..." pip install click
     _execute "Linking libomp..." brew link --force libomp
     _execute "Installing lemon-graph..." brew install The-OpenROAD-Project/lemon-graph/lemon-graph
 }
@@ -1023,7 +1028,7 @@ _install_ci_packages() {
     _execute "Installing Docker..." apt-get -y install --no-install-recommends docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 
     if _version_compare "${1}" -lt "24.04"; then
-        _execute "Downloading LLVM install script..." wget https://apt.llvm.org/llvm.sh
+        _execute "Downloading LLVM install script..." wget $OPT_NOCERT https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         _execute "Installing LLVM 16..." ./llvm.sh 16 all
     fi
@@ -1093,8 +1098,7 @@ main() {
                 ;;
             -nocert)
                 warn "Security certificates for downloaded packages will not be checked."
-                shopt -s expand_aliases
-                alias wget="wget --no-check-certificate"
+                OPT_NOCERT="--no-check-certificate"
                 export GIT_SSL_NO_VERIFY=true
                 ;;
             -skip-system-or-tools) SKIP_SYSTEM_OR_TOOLS="true" ;;
@@ -1220,7 +1224,7 @@ main() {
             cat <<EOF
 
 To install or run OpenROAD, update your path with:
-    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
+    export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk@8)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
 EOF
             ;;

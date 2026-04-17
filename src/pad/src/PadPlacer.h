@@ -64,7 +64,8 @@ class PadPlacer
   int getTotalInstWidths() const;
 
  protected:
-  using InstObsValue = std::pair<odb::Rect, odb::dbInst*>;
+  using InstObsValue
+      = std::tuple<odb::Rect, std::optional<odb::Polygon>, odb::dbInst*>;
   using TermObsValue = std::tuple<odb::Rect, odb::dbNet*, odb::dbInst*>;
   using BlockageObsTree
       = boost::geometry::index::rtree<odb::Rect,
@@ -95,10 +96,14 @@ class PadPlacer
   }
   LayerTermObsTree getInstanceObstructions(odb::dbInst* inst,
                                            bool bloat = false) const;
+  std::optional<odb::Polygon> getInstanceOutline(odb::dbInst* inst) const;
   void addInstanceObstructions(odb::dbInst* inst);
 
  private:
   void populateInstWidths();
+  void addInstOverlapCache(odb::dbInst* inst);
+  void addInstsOverlapCache(const std::vector<odb::dbInst*>& inst);
+  std::optional<odb::Polygon> getMasterOutline(odb::dbMaster* master) const;
 
   utl::Logger* logger_;
   odb::dbBlock* block_;
@@ -113,6 +118,9 @@ class PadPlacer
   BlockageObsTree blockage_obstructions_;
   InstObsTree instance_obstructions_;
   LayerTermObsTree term_obstructions_;
+
+  // overlap cache
+  std::map<odb::dbMaster*, std::optional<odb::Polygon>> master_overlap_cache_;
 };
 
 class CheckerOnlyPadPlacer : public PadPlacer
@@ -120,7 +128,8 @@ class CheckerOnlyPadPlacer : public PadPlacer
  public:
   CheckerOnlyPadPlacer(utl::Logger* logger,
                        odb::dbBlock* block,
-                       odb::dbRow* row);
+                       odb::dbRow* row,
+                       const std::vector<odb::dbInst*>& insts);
   ~CheckerOnlyPadPlacer() override = default;
 
   void place() override {};

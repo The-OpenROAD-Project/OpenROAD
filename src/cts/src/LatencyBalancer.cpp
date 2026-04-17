@@ -24,6 +24,7 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/dbSet.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "sta/Clock.hh"
 #include "sta/Delay.hh"

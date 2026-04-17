@@ -833,7 +833,7 @@ uint32_t extMain::makeNetRCsegs(dbNet* net, bool skipStartWarning)
   uint32_t srcJid;
   dbWire* wire = net->getWire();
   dbWirePathItr pitr;
-  if (_mergeResBound != 0.0 || _mergeViaRes) {
+  {
     dbWirePath path;
     for (pitr.begin(wire); pitr.getNextPath(path);) {
       if (!path.bterm && !path.iterm && path.is_branch && path.junction_id) {

@@ -18,6 +18,7 @@
 #include "db/obj/frInstBlockage.h"
 #include "db/obj/frInstTerm.h"
 #include "db/obj/frShape.h"
+#include "db/obj/frVia.h"
 #include "db/taObj/taFig.h"
 #include "db/taObj/taPin.h"
 #include "db/taObj/taVia.h"

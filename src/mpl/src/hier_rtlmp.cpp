@@ -111,9 +111,13 @@ void HierRTLMP::setGlobalFence(odb::Rect global_fence)
   }
 }
 
-void HierRTLMP::setDefaultHalo(int halo_width, int halo_height)
+void HierRTLMP::setDefaultHalo(int left, int bottom, int right, int top)
 {
-  tree_->default_halo = {halo_width, halo_height, halo_width, halo_height};
+  if (!default_halo_.isZero()) {
+    logger_->warn(MPL, 71, "Overwriting default macro halo.");
+  }
+
+  default_halo_ = {left, bottom, right, top};
 }
 
 void HierRTLMP::setGuidanceRegions(
@@ -270,7 +274,7 @@ void HierRTLMP::runMultilevelAutoclustering()
 
   // Set target structure
   clustering_engine_->setTree(tree_.get());
-  clustering_engine_->setHalos(macro_to_halo_);
+  clustering_engine_->setHalos(default_halo_, macro_to_halo_);
   clustering_engine_->run();
 
   if (!tree_->has_unfixed_macros) {

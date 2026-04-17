@@ -19,6 +19,7 @@ COMPULSORY_TESTS = [
     "names",
     "net_name_consistency",
     "coordinates",
+    "no_merging",
 ]
 
 # From CMakeLists.txt or_integration_tests(PASSFAIL_TESTS
@@ -104,6 +105,10 @@ filegroup(
         ) + {
             "ext_pattern": ["generate_pattern.defok"],
             "gcd": ["ext_pattern.rules"],
+            "no_merging": [
+                "ext_pattern.rules",
+                "gcd.def",
+            ],
         }.get(test_name, []),
     )
     for test_name in ALL_TESTS
