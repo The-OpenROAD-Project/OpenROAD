@@ -23,6 +23,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -737,27 +738,37 @@ bool NegotiationLegalizer::initFromDb()
       }
     }
 
-    cell.rail_type = inferRailType(cell.init_y);
-    // If the instance is currently flipped relative to the row's standard
-    // orientation, its internal rail design is opposite of the row's bottom
-    // rail.
-    auto siteOrient = dpl_grid->getSiteOrientation(
-        GridX{cell.init_x}, GridY{cell.init_y}, master->getSite());
-    if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
-      cell.rail_type = (cell.rail_type == NLPowerRailType::kVss)
-                           ? NLPowerRailType::kVdd
-                           : NLPowerRailType::kVss;
-      debugPrint(logger_,
-                  utl::DPL,
-                  "negotiation",
-                  1,
-          "DEBUG rail_type flip: cell {} orient={} siteOrient={} "
-          "init_y={} -> rail_type={}",
-          db_inst->getName(),
-          db_inst->getOrient().getString(),
-          siteOrient.value().getString(),
-          cell.init_y,
-          cell.rail_type == NLPowerRailType::kVss ? "kVss" : "kVdd");
+    // Derive power-rail types directly from the LEF geometry stored by the
+    // Network — never infer from the cell's current row or orientation.
+    //
+    // rail_type         = bottom rail in R0 (unflipped) orientation.
+    //                     For most CORE cells this is kVss (VSS at bottom).
+    // rail_type_flipped = bottom rail in MX (flipped) orientation, which
+    //                     equals the TOP rail in R0.  For most cells: kVdd.
+    //                     For symmetric multi-height cells whose VSS appears
+    //                     at both top and bottom (e.g. some double-height
+    //                     flops): kVss — meaning a flip cannot resolve a
+    //                     VDD-bottom row mismatch.
+    {
+      int bot_pwr = Architecture::Row::Power_UNK;
+      int top_pwr = Architecture::Row::Power_UNK;
+      if (network_ != nullptr) {
+        if (Master* dpl_master = network_->getMaster(master)) {
+          bot_pwr = dpl_master->getBottomPowerType();
+          top_pwr = dpl_master->getTopPowerType();
+        }
+      }
+      auto toRailType = [](int pwr, NLPowerRailType fallback) {
+        if (pwr == Architecture::Row::Power_VSS) {
+          return NLPowerRailType::kVss;
+        }
+        if (pwr == Architecture::Row::Power_VDD) {
+          return NLPowerRailType::kVdd;
+        }
+        return fallback;
+      };
+      cell.rail_type = toRailType(bot_pwr, NLPowerRailType::kVss);
+      cell.rail_type_flipped = toRailType(top_pwr, NLPowerRailType::kVdd);
     }
 
     cell.flippable
@@ -766,15 +777,17 @@ bool NegotiationLegalizer::initFromDb()
       // Consider all single height cells flippable
       cell.flippable = true;
     }
-        debugPrint(logger_,
+
+    debugPrint(logger_,
                    utl::DPL,
                    "negotiation",
                    1,
-        "DEBUG cell init: {} height={} flippable={} rail_type={}",
+        "DEBUG cell init: {} height={} flippable={} rail_type={} rail_type_flipped={}",
         db_inst->getName(),
         cell.height,
         cell.flippable,
-        cell.rail_type == NLPowerRailType::kVss ? "kVss" : "kVdd");
+        cell.rail_type == NLPowerRailType::kVss ? "kVss" : "kVdd",
+        cell.rail_type_flipped == NLPowerRailType::kVss ? "kVss" : "kVdd");
 
     if (padding_ != nullptr) {
       cell.pad_left = padding_->padLeft(db_inst).v;
@@ -787,13 +800,6 @@ bool NegotiationLegalizer::initFromDb()
   return true;
 }
 
-NLPowerRailType NegotiationLegalizer::inferRailType(int rowIdx) const
-{
-  if (rowIdx >= 0 && rowIdx < static_cast<int>(row_rail_.size())) {
-    return row_rail_[rowIdx];
-  }
-  return NLPowerRailType::kVss;
-}
 
 void NegotiationLegalizer::buildGrid()
 {
@@ -1064,23 +1070,26 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  const NLPowerRailType bottom_rail = row_rail_[rowIdx];
+  const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
   // row and cell rail must match, or cell can be flipped.
   auto railStr = [](NLPowerRailType r) {
     return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
   };
-  bool ret = (bottom_rail == cell.rail_type) || cell.flippable;
+  bool ret = (row_bottom_rail == cell.rail_type)
+             || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
   debugPrint(logger_,
              utl::DPL,
              "negotiation",
              1,
-      "rowIdx: {}, bottom_rail: {}, cell.rail_type: {}, flippable: {}, "
-      "rail match: {}, is_valid: {}",
+      "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
+      "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
       rowIdx,
-      railStr(bottom_rail),
+      railStr(row_bottom_rail),
+      cell.db_inst ? cell.db_inst->getName() : "?",
       railStr(cell.rail_type),
+      railStr(cell.rail_type_flipped),
       cell.flippable,
-      (bottom_rail == cell.rail_type),
+      (row_bottom_rail == cell.rail_type),
       ret);
   return ret;
 }
