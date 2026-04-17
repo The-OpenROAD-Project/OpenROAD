@@ -12,6 +12,7 @@
 #include <memory>
 #include <ostream>
 #include <set>
+#include <typeindex>
 #include <utility>
 #include <vector>
 
@@ -21,6 +22,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "est/SteinerTree.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"

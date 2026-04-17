@@ -34,6 +34,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
+#include "drt/PinAccessService.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
