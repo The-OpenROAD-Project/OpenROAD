@@ -46,6 +46,38 @@ proc create_power_domain { args } {
   }
 }
 
+sta::define_cmd_args "create_power_domain" { [-elements elements] [-supply supply] name }
+proc create_power_domain { args } {
+  upf::check_block_exists
+
+  sta::parse_key_args "create_power_domain" args \
+    keys {-elements -supply} flags {}
+
+  sta::check_argc_eq1 "create_power_domain" $args
+
+  set domain_name [lindex $args 0]
+  set elements {}
+  set supply ""
+
+  if { [info exists keys(-elements)] } {
+    set elements $keys(-elements)
+  }
+
+  if { [info exists keys(-supply)] } {
+    set supply $keys(-supply)
+  }
+
+  upf::create_power_domain_cmd $domain_name
+
+  foreach {el} $elements {
+    upf::update_power_domain_cmd $domain_name $el
+  }
+
+  if { $supply ne "" } {
+    upf::update_power_domain_supply_cmd $domain_name $supply
+  }
+}
+
 # Create a logic port to be used within defined domains
 #
 # Arguments:
