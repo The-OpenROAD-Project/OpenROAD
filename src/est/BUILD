@@ -29,8 +29,8 @@ cc_library(
 # Consumers depend only on this target, not on //src/est, which keeps
 # them free of the full est implementation surface.
 cc_library(
-    name = "parasitics_estimator",
-    hdrs = ["include/est/ParasiticsEstimator.h"],
+    name = "parasitics_service",
+    hdrs = ["include/est/ParasiticsService.h"],
     includes = ["include"],
 )
 
@@ -50,7 +50,7 @@ cc_library(
         "include",
     ],
     deps = [
-        ":parasitics_estimator",
+        ":parasitics_service",
         ":private_hdrs",
         "//src/dbSta",
         "//src/dbSta:SpefWriter",

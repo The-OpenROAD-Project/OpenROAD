@@ -15,7 +15,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "boost/asio/thread_pool.hpp"
-#include "drt/PinAccessProvider.h"
+#include "drt/PinAccessService.h"
 #include "odb/geom.h"
 
 namespace odb {
@@ -80,7 +80,7 @@ struct ParamStruct
   int num_threads = 1;
 };
 
-class TritonRoute : public PinAccessProvider
+class TritonRoute : public PinAccessService
 {
  public:
   TritonRoute(odb::dbDatabase* db,

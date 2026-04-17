@@ -38,7 +38,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "drt/PinAccessProvider.h"
+#include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
@@ -5903,7 +5903,7 @@ void GlobalRouter::updateCUGRNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
-  if (auto* pa = service_registry_->find<drt::PinAccessProvider>()) {
+  if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
     pa->updateDirtyPinAccess();
   }
   std::vector<Net*> dirty_nets;

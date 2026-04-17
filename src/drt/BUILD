@@ -16,8 +16,8 @@ package(
 # Consumers depend only on this target, not on //src/drt, which keeps
 # them free of the full drt implementation surface.
 cc_library(
-    name = "pin_access_provider",
-    hdrs = ["include/drt/PinAccessProvider.h"],
+    name = "pin_access_service",
+    hdrs = ["include/drt/PinAccessService.h"],
     includes = ["include"],
 )
 
@@ -189,7 +189,7 @@ cc_library(
     ],
     deps = [
         ":db_hdrs",
-        ":pin_access_provider",
+        ":pin_access_service",
         "//src/dst",
         "//src/odb",
         "//src/stt",
@@ -254,7 +254,7 @@ cc_library(
     deps = [
         ":db_hdrs",
         ":drt",
-        ":pin_access_provider",
+        ":pin_access_service",
         "//:ord",
         "//src/dst",
         "//src/gui",

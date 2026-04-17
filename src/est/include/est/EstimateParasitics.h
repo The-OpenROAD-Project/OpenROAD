@@ -17,7 +17,7 @@
 #include "db_sta/SpefWriter.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/ParasiticsEstimator.h"
+#include "est/ParasiticsService.h"
 #include "est/SteinerTree.h"
 #include "grt/GRoute.h"
 #include "grt/GlobalRouter.h"
@@ -70,7 +70,7 @@ struct ParasiticsCapacitance
 class AbstractSteinerRenderer;
 class OdbCallBack;
 
-class EstimateParasitics : public sta::dbStaState, public ParasiticsEstimator
+class EstimateParasitics : public sta::dbStaState, public ParasiticsService
 {
  public:
   EstimateParasitics(utl::Logger* logger,

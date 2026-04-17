@@ -20,7 +20,7 @@
 #include "FastRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/ParasiticsEstimator.h"
+#include "est/ParasiticsService.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -673,7 +673,7 @@ void FastRouteCore::updateSlacks(float percentage)
   }
 
   if (en_estimate_parasitics_ && !is_incremental_grt_) {
-    if (auto* estimator = service_registry_->find<est::ParasiticsEstimator>()) {
+    if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
       estimator->estimateAllGlobalRouteParasitics();
     }
   }
@@ -1579,7 +1579,7 @@ float FastRouteCore::CalculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(netCount());
-  if (auto* estimator = service_registry_->find<est::ParasiticsEstimator>()) {
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
     estimator->estimateAllGlobalRouteParasitics();
   }
   for (const int& netID : net_ids_) {

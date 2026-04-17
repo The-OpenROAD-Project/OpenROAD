@@ -28,7 +28,7 @@
 #include "PatternRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-#include "est/ParasiticsEstimator.h"
+#include "est/ParasiticsService.h"
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
@@ -84,7 +84,7 @@ float CUGR::calculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
-  if (auto* estimator = service_registry_->find<est::ParasiticsEstimator>()) {
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
     estimator->estimateAllGlobalRouteParasitics();
   }
   for (const auto& net : gr_nets_) {

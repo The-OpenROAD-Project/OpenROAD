@@ -82,12 +82,12 @@ TritonRoute::TritonRoute(odb::dbDatabase* db,
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  service_registry_->provide<PinAccessProvider>(this);
+  service_registry_->provide<PinAccessService>(this);
 }
 
 TritonRoute::~TritonRoute()
 {
-  service_registry_->withdraw<PinAccessProvider>(this);
+  service_registry_->withdraw<PinAccessService>(this);
 }
 
 void TritonRoute::updateDirtyPinAccess()

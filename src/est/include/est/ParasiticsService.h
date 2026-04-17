@@ -8,10 +8,10 @@ namespace est {
 // Service interface published by the parasitics estimator. Consumers
 // look it up through utl::ServiceRegistry and do not depend on the
 // concrete est::EstimateParasitics type.
-class ParasiticsEstimator
+class ParasiticsService
 {
  public:
-  virtual ~ParasiticsEstimator() = default;
+  virtual ~ParasiticsService() = default;
 
   // Clear all existing parasitics and re-estimate them from the
   // current global routing state (partial routes).

@@ -8,10 +8,10 @@ namespace drt {
 // Service interface published by the detailed router. Consumers look
 // it up through utl::ServiceRegistry and do not depend on the concrete
 // drt::TritonRoute type.
-class PinAccessProvider
+class PinAccessService
 {
  public:
-  virtual ~PinAccessProvider() = default;
+  virtual ~PinAccessService() = default;
 
   // Recompute pin access for any instances that have become dirty.
   virtual void updateDirtyPinAccess() = 0;
