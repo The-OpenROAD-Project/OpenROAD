@@ -153,6 +153,7 @@ messages(
 else()
   if(BUILD_GUI)
     message(STATUS "QT5 not found. GUI is disabled")
+    set(BUILD_GUI OFF CACHE BOOL "Build the GUI" FORCE)
   else()
     message(STATUS "GUI is not enabled")
   endif()
