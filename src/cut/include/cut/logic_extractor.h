@@ -96,6 +96,8 @@ class LogicExtractorFactory
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,
       T& library);
+  std::vector<sta::Vertex*> AddMisingPrimaryIO(
+      std::vector<sta::Vertex*>& cut_vertices);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;
@@ -183,6 +185,8 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   std::vector<sta::Vertex*> cut_vertices = GetCutVertices(supported_cells);
   // Dealing with constant cells 1/0 and disabled timing paths.
   cut_vertices = AddMissingVertices(cut_vertices, library);
+  // calling this here will again result in "[ERROR CUT-0052] Driver pin not
+  // found: ibex_core" cut_vertices = AddMisingPrimaryIO(cut_vertices);
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);

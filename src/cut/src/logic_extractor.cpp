@@ -106,8 +106,8 @@ std::vector<sta::Vertex*> LogicExtractorFactory::GetCutVertices(
 
   // For those instances, add all output pins vertices to the cut
   for (const sta::Instance* inst : insts) {
-    auto pin_it = std::unique_ptr<sta::InstancePinIterator>(
-        network->pinIterator(inst));
+    auto pin_it
+        = std::unique_ptr<sta::InstancePinIterator>(network->pinIterator(inst));
 
     while (pin_it->hasNext()) {
       sta::Pin* p = pin_it->next();
@@ -154,6 +154,18 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   }
 
   std::vector<sta::Pin*> primary_inputs;
+
+  // Add top's inputs
+  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
+      open_sta_->getDbNetwork()->pinIterator(
+          open_sta_->getDbNetwork()->topInstance()));
+  while (pin_iterator->hasNext()) {
+    sta::Pin* pin = pin_iterator->next();
+    if (open_sta_->getDbNetwork()->direction(pin)->isAnyInput()) {
+      primary_inputs.push_back(pin);
+    }
+  }
+
   for (sta::Vertex* vertex : cut_vertices) {
     // If the pins in the cutset are primary outputs don't call it
     // a primary input
@@ -325,6 +337,29 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   std::vector<sta::Net*> result;
   result.insert(
       result.end(), primary_input_nets.begin(), primary_input_nets.end());
+  return result;
+}
+
+std::vector<sta::Vertex*> LogicExtractorFactory::AddMisingPrimaryIO(
+    std::vector<sta::Vertex*>& cut_vertices)
+{
+  std::vector<sta::Vertex*> result(cut_vertices.begin(), cut_vertices.end());
+  std::unordered_set<sta::Vertex*> used_vertices(cut_vertices.begin(),
+                                                 cut_vertices.end());
+  auto network = open_sta_->getDbNetwork();
+
+  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
+      network->pinIterator(network->topInstance()));
+  while (pin_iterator->hasNext()) {
+    sta::Pin* pin = pin_iterator->next();
+    sta::VertexId vertex_id = network->vertexId(pin);
+    sta::Vertex* vertex = network->graph()->vertex(vertex_id);
+    if (!used_vertices.contains(vertex)) {
+      result.push_back(vertex);
+      used_vertices.insert(vertex);
+    }
+  }
+
   return result;
 }
 
