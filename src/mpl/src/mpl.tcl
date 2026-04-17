@@ -307,6 +307,12 @@ proc set_macro_base_halo { args } {
   mpl::set_base_halo $left $bottom $right $top
 }
 
+proc set_macro_default_halo { args } {
+  utl::warn MPL 75 "set_macro_default_halo is deprecated, use\
+                    set_macro_base_halo instead."
+  set_macro_base_halo {*}$args
+}
+
 sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
                                         -halo halo }
 proc set_macro_halo { args } {
