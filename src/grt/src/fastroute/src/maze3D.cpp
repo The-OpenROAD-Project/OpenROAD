@@ -1231,10 +1231,6 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
         grids.push_back({crossX, crossY, crossL});
         cnt++;
 
-        curX = crossX;
-        curY = crossY;
-        curL = crossL;
-
         const int cnt_n1n2 = cnt;
 
         const int E1x = grids[0].x;
@@ -1625,8 +1621,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
       }  // edges loop
 
       // Deduplicate the retry set.
-      std::sort(next_retry.begin(), next_retry.end());
-      next_retry.erase(std::unique(next_retry.begin(), next_retry.end()),
+      std::ranges::sort(next_retry);
+      next_retry.erase(std::ranges::unique(next_retry).begin(),
                        next_retry.end());
 
       // Stop if nothing shifted, or the iteration cap is reached.
