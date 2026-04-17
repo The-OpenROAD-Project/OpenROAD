@@ -27,6 +27,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
@@ -1089,7 +1090,24 @@ bool Opendp::checkPixels(const Node* cell,
     return false;
   }
 
+  // For multi-row cells, the bottom-row site/orient check above only covers
+  // the bottom row; it doesn't ensure the master's power pin stack lines up
+  // with the PDN rail stack across the span.  Reject wrong-parity landings.
+  if (cell->getMaster()->isMultiRow() && !checkRowPowerCompatible(cell, y)) {
+    return false;
+  }
+
   return drc_engine_->checkDRC(cell, x, y, orient);
+}
+
+bool Opendp::checkRowPowerCompatible(const Node* cell, const GridY y) const
+{
+  const int row_idx = arch_->find_closest_row(grid_->gridYToDbu(y));
+  if (row_idx >= arch_->getNumRows()) {
+    return false;
+  }
+  bool flip = false;
+  return arch_->powerCompatible(cell, arch_->getRow(row_idx), flip);
 }
 
 bool Opendp::checkMasterSym(unsigned masterSym, unsigned cellOri) const
