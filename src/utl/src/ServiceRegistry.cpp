@@ -3,6 +3,8 @@
 
 #include "utl/ServiceRegistry.h"
 
+#include <typeindex>
+
 #include "utl/Logger.h"
 
 namespace utl {

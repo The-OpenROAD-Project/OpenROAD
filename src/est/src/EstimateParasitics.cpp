@@ -12,7 +12,6 @@
 #include <memory>
 #include <ostream>
 #include <set>
-#include <typeindex>
 #include <utility>
 #include <vector>
 
