@@ -258,7 +258,7 @@ void Resizer::initBlock()
   if (area_prop) {
     if (sizing_area_limit_
         && !rszFuzzyEqual(*sizing_area_limit_, area_prop->getValue())) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_area_limit_ = area_prop->getValue();
     default_sizing_area_limit_set_ = false;
@@ -268,7 +268,7 @@ void Resizer::initBlock()
           block_, "limit_sizing_area", *sizing_area_limit_);
     } else {
       if (sizing_area_limit_) {
-        swappable_cells_cache_.clear();
+        clearSwappableCellsCache();
       }
       sizing_area_limit_.reset();
     }
@@ -278,7 +278,7 @@ void Resizer::initBlock()
   if (leakage_prop) {
     if (sizing_leakage_limit_
         && !rszFuzzyEqual(*sizing_leakage_limit_, leakage_prop->getValue())) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_leakage_limit_ = leakage_prop->getValue();
     default_sizing_leakage_limit_set_ = false;
@@ -288,7 +288,7 @@ void Resizer::initBlock()
           block_, "limit_sizing_leakage", *sizing_leakage_limit_);
     } else {
       if (sizing_leakage_limit_) {
-        swappable_cells_cache_.clear();
+        clearSwappableCellsCache();
       }
       sizing_leakage_limit_.reset();
     }
@@ -296,24 +296,24 @@ void Resizer::initBlock()
   dbBoolProperty* site_prop = dbBoolProperty::find(block_, "keep_sizing_site");
   if (site_prop) {
     if (sizing_keep_site_ != site_prop->getValue()) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_keep_site_ = site_prop->getValue();
   } else {
     if (sizing_keep_site_) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_keep_site_ = false;
   }
   dbBoolProperty* vt_prop = dbBoolProperty::find(block_, "keep_sizing_vt");
   if (vt_prop) {
     if (sizing_keep_vt_ != vt_prop->getValue()) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_keep_vt_ = vt_prop->getValue();
   } else {
     if (sizing_keep_vt_) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
     }
     sizing_keep_vt_ = false;
   }
@@ -338,13 +338,13 @@ void Resizer::initBlock()
       = dbBoolProperty::find(block_, "disable_buffer_pruning");
   if (disable_pruning_prop) {
     if (disable_buffer_pruning_ != disable_pruning_prop->getValue()) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = disable_pruning_prop->getValue();
   } else {
     if (disable_buffer_pruning_) {
-      swappable_cells_cache_.clear();
+      clearSwappableCellsCache();
       buffer_cells_.clear();
     }
     disable_buffer_pruning_ = false;
@@ -356,7 +356,7 @@ void Resizer::init()
   initDesignArea();
   sta_->ensureLevelized();
   graph_ = sta_->graph();
-  swappable_cells_cache_.clear();
+  clearSwappableCellsCache();
 }
 
 // remove all buffers if no buffers are specified
@@ -1496,7 +1496,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
   sta::LibertyCellSeq equiv_cells;
 
   if (report_all_cells) {
-    swappable_cells_cache_.clear();
+    clearSwappableCellsCache();
     bool restrict = false;
     std::optional<double> no_limit = std::nullopt;
     utl::SetAndRestore relax_footprint(match_cell_footprint_, restrict);
@@ -1506,7 +1506,7 @@ void Resizer::reportEquivalentCells(sta::LibertyCell* base_cell,
     utl::SetAndRestore relax_keep_site(sizing_keep_site_, restrict);
     utl::SetAndRestore relax_keep_vt(sizing_keep_vt_, restrict);
     equiv_cells = getSwappableCells(base_cell);
-    swappable_cells_cache_.clear();  // SetAndRestore invalidates cache.
+    clearSwappableCellsCache();  // SetAndRestore invalidates cache.
   } else if (report_vt_equiv) {
     equiv_cells = getVTEquivCells(base_cell);
   } else {
@@ -1839,6 +1839,12 @@ void Resizer::getBufferList(sta::LibertyCellSeq& buffer_list)
     // Sort VT categories by average leakage
     lib_data_->sort_vt_categories();
   }
+}
+
+void Resizer::clearSwappableCellsCache()
+{
+  swappable_cells_cache_.clear();
+  repair_design_->clearDriverCellsCache();
 }
 
 // Filter equivalent cells based on the following liberty attributes:
@@ -2814,7 +2820,7 @@ void Resizer::setDontUse(sta::LibertyCell* cell, bool dont_use)
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
-  swappable_cells_cache_.clear();
+  clearSwappableCellsCache();
 }
 
 void Resizer::resetDontUse()
@@ -2825,7 +2831,7 @@ void Resizer::resetDontUse()
   buffer_cells_.clear();
   buffer_fast_sizes_.clear();
   buffer_lowest_drive_ = nullptr;
-  swappable_cells_cache_.clear();
+  clearSwappableCellsCache();
 
   // recopy in liberty cell dont uses
   copyDontUseFromLiberty();
@@ -5423,7 +5429,7 @@ void Resizer::eliminateDeadLogic(bool clean_nets)
 void Resizer::postReadLiberty()
 {
   copyDontUseFromLiberty();
-  swappable_cells_cache_.clear();
+  clearSwappableCellsCache();
   equiv_cells_made_ = false;
 }
 

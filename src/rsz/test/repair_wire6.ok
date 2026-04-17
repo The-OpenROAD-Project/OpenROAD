@@ -37,9 +37,9 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 [INFO RSZ-0037] Found 1 long wires.
 [INFO RSZ-0038] Inserted 2 buffers in 1 nets.
 Driver    length delay
-wire1/Z manhtn 569.8 steiner 569.8 0.04
+wire_cap1/Z manhtn 569.8 steiner 569.8 0.04
 u2/Z manhtn 488.7 steiner 488.7 0.03
-wire2/Z manhtn 441.2 steiner 441.2 0.03
+wire_slew2/Z manhtn 441.2 steiner 441.2 0.03
 in1 manhtn 0.7 steiner 0.7 0.00
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
@@ -54,10 +54,10 @@ Path Type: max
    1.008    0.006    0.016    0.016 ^ u1/Z (BUF_X1)
             0.006    0.000    0.016 ^ u2/A (BUF_X1)
   40.130    0.084    0.098    0.115 ^ u2/Z (BUF_X1)
-            0.094    0.036    0.151 ^ wire2/A (BUF_X4)
-  36.564    0.019    0.042    0.193 ^ wire2/Z (BUF_X4)
-            0.036    0.026    0.219 ^ wire1/A (BUF_X4)
-  42.829    0.020    0.040    0.259 ^ wire1/Z (BUF_X4)
+            0.094    0.036    0.151 ^ wire_slew2/A (BUF_X4)
+  36.564    0.019    0.042    0.193 ^ wire_slew2/Z (BUF_X4)
+            0.036    0.026    0.219 ^ wire_cap1/A (BUF_X4)
+  42.829    0.020    0.040    0.259 ^ wire_cap1/Z (BUF_X4)
             0.047    0.036    0.295 ^ out1 (out)
                               0.295   data arrival time
 ---------------------------------------------------------------------------

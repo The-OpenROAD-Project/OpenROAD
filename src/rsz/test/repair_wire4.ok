@@ -23,8 +23,8 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
 Driver    length delay
 u2/Z manhtn 788.5 steiner 788.5 0.08
 max_length3/Z manhtn 788.3 steiner 788.3 0.08
-wire1/Z manhtn 714.0 steiner 714.0 0.07
-wire2/Z manhtn 712.7 steiner 712.7 0.07
+wire_slew1/Z manhtn 714.0 steiner 714.0 0.07
+wire_slew2/Z manhtn 712.7 steiner 712.7 0.07
 u3/Z manhtn 1.1 steiner 1.1 0.00
 u4/Z manhtn 1.1 steiner 1.1 0.00
 in1 manhtn 0.7 steiner 0.7 0.00

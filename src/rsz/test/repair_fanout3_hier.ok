@@ -43,8 +43,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 71	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 3620250
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 32596
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000005 HPWL: 3620250
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000005 HPWL: 32594
 [InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 31300
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000005 HPWL: 31350
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000004 HPWL: 30416

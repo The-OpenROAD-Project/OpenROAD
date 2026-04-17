@@ -34,7 +34,7 @@ max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-wire1/Z                                60.65   32.51   28.14 (MET)
+wire_slew1/Z                           60.65   32.51   28.14 (MET)
 
 Net in1
  Pin capacitance: 0.88-0.97
@@ -48,5 +48,5 @@ Driver pins
  in1 input port (0, 0)
 
 Load pins
- wire4/A input (BUF_X1) 0.88-0.97 (322, 1)
+ wire_slew4/A input (BUF_X1) 0.88-0.97 (322, 1)
 

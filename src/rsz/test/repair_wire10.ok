@@ -80,10 +80,10 @@ Path Type: max
    1.91    0.01    0.02    0.02 v u1/Z (BUF_X1)
            0.01    0.00    0.02 v u2/A (BUF_X2)
   52.03    0.02    0.04    0.07 v u2/Z (BUF_X2)
-           0.07    0.05    0.12 v wire2/A (BUF_X4)
-  47.33    0.01    0.06    0.17 v wire2/Z (BUF_X4)
-           0.05    0.04    0.21 v wire1/A (BUF_X4)
-  58.05    0.01    0.05    0.27 v wire1/Z (BUF_X4)
+           0.07    0.05    0.12 v wire_slew2/A (BUF_X4)
+  47.33    0.01    0.06    0.17 v wire_slew2/Z (BUF_X4)
+           0.05    0.04    0.21 v wire_slew1/A (BUF_X4)
+  58.05    0.01    0.05    0.27 v wire_slew1/Z (BUF_X4)
            0.07    0.06    0.33 v u3/A (BUF_X1)
    0.29    0.01    0.05    0.38 v u3/Z (BUF_X1)
            0.01    0.00    0.38 v out1 (out)
@@ -93,6 +93,6 @@ Path Type: max
 
 
 Driver    length delay
-wire1/Z manhtn 760.4 steiner 760.4 0.00
+wire_slew1/Z manhtn 760.4 steiner 760.4 0.00
 u2/Z manhtn 651.7 steiner 651.7 0.00
-wire2/Z manhtn 587.4 steiner 587.4 0.00
+wire_slew2/Z manhtn 587.4 steiner 587.4 0.00

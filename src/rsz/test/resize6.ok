@@ -23,7 +23,7 @@ Net out
  Number of pins: 2
 
 Driver pins
- wire2/Z output (BUF_X4) (34, 101)
+ wire_cap2/Z output (BUF_X4) (34, 101)
 
 Load pins
  out output port pin 2000.00 (33, 100)
@@ -32,11 +32,11 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-wire2/Z                                 0.20    1.11   -0.91 (VIOLATED)
+wire_cap2/Z                             0.20    1.11   -0.91 (VIOLATED)
 
 max capacitance
 
 Pin                                    Limit     Cap   Slack
 ------------------------------------------------------------
-wire2/Z                               242.31 2000.11 -1757.80 (VIOLATED)
+wire_cap2/Z                           242.31 2000.11 -1757.80 (VIOLATED)
 
