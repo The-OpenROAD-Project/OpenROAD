@@ -51,6 +51,12 @@ class TritonRoute;
 
 namespace ram {
 
+enum class StorageType
+{
+  FLIP_FLOP,
+  LATCH
+};
+
 enum class PortRoleType
 {
   Clock,
@@ -119,6 +125,7 @@ class RamGen
                               int read_ports);
 
  private:
+  StorageType detectStorageType(odb::dbMaster* master) const;
   void findMasters();
   std::map<PortRole, std::string> buildPortMap(odb::dbMaster*);
   odb::dbMaster* findMaster(const std::function<bool(sta::LibertyPort*)>& match,
@@ -133,6 +140,7 @@ class RamGen
   std::unique_ptr<Cell> makeBit(const std::string& prefix,
                                 int read_ports,
                                 odb::dbNet* clock,
+                                odb::dbNet* write_clock,
                                 std::vector<odb::dbNet*>& select,
                                 odb::dbNet* data_input,
                                 std::vector<odb::dbNet*>& data_output);
@@ -179,7 +187,9 @@ class RamGen
   grt::GlobalRouter* global_router_{nullptr};
   drt::TritonRoute* detailed_router_{nullptr};
 
+  StorageType storage_type_{StorageType::FLIP_FLOP};
   odb::dbMaster* storage_cell_{nullptr};
+  odb::dbMaster* write_latch_cell_{nullptr};
   odb::dbMaster* tristate_cell_{nullptr};
   odb::dbMaster* inv_cell_{nullptr};
   odb::dbMaster* and2_cell_{nullptr};
@@ -188,6 +198,7 @@ class RamGen
   odb::dbMaster* tapcell_{nullptr};
 
   std::map<PortRole, std::string> storage_ports_;
+  std::map<PortRole, std::string> write_latch_ports_;
   std::map<PortRole, std::string> tristate_ports_;
   std::map<PortRole, std::string> inv_ports_;
   std::map<PortRole, std::string> and2_ports_;

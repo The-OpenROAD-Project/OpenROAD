@@ -29,6 +29,7 @@
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sequential.hh"
 #include "utl/Logger.h"
 
 namespace ram {
@@ -66,6 +67,24 @@ RamGen::RamGen(sta::dbNetwork* network,
       detailed_router_(detailed_router),
       ram_grid_(odb::horizontal)
 {
+}
+
+StorageType RamGen::detectStorageType(dbMaster* master) const
+{
+  auto cell = network_->dbToSta(master);
+  if (!cell) {
+    return StorageType::FLIP_FLOP;
+  }
+  auto liberty = network_->libertyCell(cell);
+  if (!liberty || !liberty->hasSequentials()) {
+    return StorageType::FLIP_FLOP;
+  }
+  for (const auto& seq : liberty->sequentials()) {
+    if (seq.isLatch()) {
+      return StorageType::LATCH;
+    }
+  }
+  return StorageType::FLIP_FLOP;
 }
 
 dbInst* RamGen::makeInst(
@@ -109,6 +128,7 @@ dbBTerm* RamGen::makeBTerm(const std::string& name, dbIoType io_type)
 std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
                                       const int read_ports,
                                       dbNet* clock,
+                                      dbNet* write_clock,
                                       vector<odb::dbNet*>& select,
                                       dbNet* data_input,
                                       vector<odb::dbNet*>& data_output)
@@ -117,13 +137,41 @@ std::unique_ptr<Cell> RamGen::makeBit(const std::string& prefix,
 
   auto storage_net = makeNet(prefix, "storage");
 
-  makeInst(bit_cell.get(),
-           prefix,
-           "bit",
-           storage_cell_,
-           {{storage_ports_[{PortRoleType::Clock, 0}], clock},
-            {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
-            {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  if (storage_type_ == StorageType::LATCH) {
+    // Latch-based: data routes through a negative (active-low) write latch
+    // before reaching the positive bitcell latch.
+    // write_clock is the inverted gated clock (shared at slice level),
+    // clock is the regular gated clock for the bitcell.
+    auto write_latch_net = makeNet(prefix, "write_latch");
+
+    // Negative latch: transparent when gated clock is LOW
+    makeInst(
+        bit_cell.get(),
+        prefix,
+        "wlatch",
+        write_latch_cell_,
+        {{write_latch_ports_[{PortRoleType::Clock, 0}], write_clock},
+         {write_latch_ports_[{PortRoleType::DataIn, 0}], data_input},
+         {write_latch_ports_[{PortRoleType::DataOut, 0}], write_latch_net}});
+
+    // Positive latch (bitcell): transparent when gated clock is HIGH
+    makeInst(bit_cell.get(),
+             prefix,
+             "bit",
+             storage_cell_,
+             {{storage_ports_[{PortRoleType::Clock, 0}], clock},
+              {storage_ports_[{PortRoleType::DataIn, 0}], write_latch_net},
+              {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  } else {
+    // Flip-flop-based: data connects directly to storage cell
+    makeInst(bit_cell.get(),
+             prefix,
+             "bit",
+             storage_cell_,
+             {{storage_ports_[{PortRoleType::Clock, 0}], clock},
+              {storage_ports_[{PortRoleType::DataIn, 0}], data_input},
+              {storage_ports_[{PortRoleType::DataOut, 0}], storage_net}});
+  }
 
   for (int read_port = 0; read_port < read_ports; ++read_port) {
     makeInst(
@@ -160,6 +208,13 @@ void RamGen::makeSlice(const int slice_idx,
   auto gclock_net = makeNet(prefix, "gclock");
   auto we0_net = makeNet(prefix, "we0");
 
+  // For latch-based memories, create a single shared inverted clock at slice
+  // level instead of per-bit inverters.
+  dbNet* inv_gclock_net = nullptr;
+  if (storage_type_ == StorageType::LATCH) {
+    inv_gclock_net = makeNet(prefix, "inv_gclock");
+  }
+
   for (int local_bit = 0; local_bit < mask_size; ++local_bit) {
     auto name = fmt::format("{}.bit{}", prefix, start_bit_idx + local_bit);
     vector<dbNet*> outs(read_ports);
@@ -169,6 +224,7 @@ void RamGen::makeSlice(const int slice_idx,
     ram_grid_.addCell(makeBit(name,
                               read_ports,
                               gclock_net,
+                              inv_gclock_net,
                               select_b_nets,
                               data_input[local_bit],
                               outs),
@@ -184,6 +240,16 @@ void RamGen::makeSlice(const int slice_idx,
            {{clock_gate_ports_[{PortRoleType::Clock, 0}], clock},
             {clock_gate_ports_[{PortRoleType::DataIn, 0}], we0_net},
             {clock_gate_ports_[{PortRoleType::DataOut, 0}], gclock_net}});
+
+  // For latch mode, create one shared clock inverter per slice
+  if (storage_type_ == StorageType::LATCH) {
+    makeInst(sel_cell.get(),
+             prefix,
+             "gclock_inv",
+             inv_cell_,
+             {{inv_ports_[{PortRoleType::DataIn, 0}], gclock_net},
+              {inv_ports_[{PortRoleType::DataOut, 0}], inv_gclock_net}});
+  }
 
   // Make clock and
   // this AND gate needs to be fed a net created by a decoder
@@ -553,6 +619,19 @@ void RamGen::findMasters()
   }
   storage_ports_ = buildPortMap(storage_cell_);
 
+  // For latch-based memories, auto-select a write data latch cell.
+  // Uses the same cell master since both the write latch and bitcell are
+  // positive-transparent latches — the write latch is made negative by
+  // inverting the clock fed to its enable pin.
+  if (storage_type_ == StorageType::LATCH && !write_latch_cell_) {
+    write_latch_cell_ = storage_cell_;
+    write_latch_ports_ = storage_ports_;
+    logger_->info(RAM,
+                  23,
+                  "Latch-based memory: using {} as write data latch",
+                  write_latch_cell_->getName());
+  }
+
   if (!clock_gate_cell_) {
     clock_gate_cell_ = findMaster(
         [](sta::LibertyPort* port) {
@@ -774,6 +853,17 @@ void RamGen::generate(const int mask_size,
   and2_cell_ = nullptr;
   clock_gate_cell_ = nullptr;
   buffer_cell_ = nullptr;
+  write_latch_cell_ = nullptr;
+
+  // Detect storage type before findMasters so that write_latch_cell_
+  // selection can happen in a single pass.
+  storage_type_ = detectStorageType(storage_cell_);
+  if (storage_type_ == StorageType::LATCH) {
+    logger_->info(RAM,
+                  24,
+                  "Detected latch-based storage cell: {}",
+                  storage_cell_->getName());
+  }
   findMasters();
 
   auto chip = db_->getChip();
