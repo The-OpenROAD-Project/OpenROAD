@@ -17,6 +17,7 @@
 #include "dbMaster.h"
 #include "dbPolygonItr.h"
 #include "dbTable.h"
+#include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
@@ -156,8 +157,8 @@ void dbMPin::clearPinAccess(const int pin_access_idx)
   }
   dbVector<dbId<_dbAccessPoint>> aps;
   aps.swap(pin->aps_[pin_access_idx]);
-  std::sort(aps.begin(), aps.end());
-  aps.erase(std::unique(aps.begin(), aps.end()), aps.end());
+  std::ranges::sort(aps);
+  aps.erase(std::ranges::unique(aps).begin(), aps.end());
   for (const dbId<_dbAccessPoint>& ap : aps) {
     odb::dbAccessPoint::destroy(
         (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));
