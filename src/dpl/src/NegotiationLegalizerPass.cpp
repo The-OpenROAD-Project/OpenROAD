@@ -563,13 +563,15 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
     // Every candidate in the search window was filtered out (out-of-die,
     // invalid row, or fence violation).  The cell falls back to its current
     // position, which may already be illegal — a likely stuck-cell scenario.
-    logger_->warn(utl::DPL,
-                  703,
-                  "findBestLocation: no valid candidate found for cell '{}' "
-                  "(iter {}) — all {} candidates filtered, cell may be stuck.",
-                  cell.db_inst->getName(),
-                  iter,
-                  prof_candidates_filtered_);
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "findBestLocation: no valid candidate found for cell '{}' "
+               "(iter {}) — all {} candidates filtered, cell may be stuck.",
+               cell.db_inst->getName(),
+               iter,
+               prof_candidates_filtered_);
   }
 
   return {best_x, best_y};

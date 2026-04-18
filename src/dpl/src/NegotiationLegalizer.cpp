@@ -559,6 +559,14 @@ bool NegotiationLegalizer::initFromDb()
   cells_.clear();
   cells_.reserve(block->getInsts().size());
 
+  // Cache region boundaries converted to grid coordinates, keyed by dbRegion*.
+  struct RegionRectInline
+  {
+    int xlo, ylo, xhi, yhi;
+  };
+  std::unordered_map<odb::dbRegion*, std::vector<RegionRectInline>>
+      region_rect_cache;
+
   for (auto* db_inst : block->getInsts()) {
     const auto status = db_inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::NONE) {
@@ -650,29 +658,32 @@ bool NegotiationLegalizer::initFromDb()
           odb_region = grp->getRegion();
         }
       }
-      struct RegionRectInline
-      {
-        int xlo, ylo, xhi, yhi;
-      };
-      std::vector<RegionRectInline> region_rects_inline;
+      // Look up (or populate) the cache for this region.
+      const std::vector<RegionRectInline>* region_rects_ptr = nullptr;
       if (odb_region != nullptr) {
-        for (auto* box : odb_region->getBoundaries()) {
-          RegionRectInline r;
-          r.xlo = (box->xMin() - die_xlo_) / site_width_;
-          r.ylo = (box->yMin() - die_ylo_) / row_height_;
-          r.xhi = (box->xMax() - die_xlo_) / site_width_;
-          r.yhi = (box->yMax() - die_ylo_) / row_height_;
-          region_rects_inline.push_back(r);
+        auto it = region_rect_cache.find(odb_region);
+        if (it == region_rect_cache.end()) {
+          std::vector<RegionRectInline> rects;
+          for (auto* box : odb_region->getBoundaries()) {
+            RegionRectInline r;
+            r.xlo = (box->xMin() - die_xlo_) / site_width_;
+            r.ylo = (box->yMin() - die_ylo_) / row_height_;
+            r.xhi = (box->xMax() - die_xlo_) / site_width_;
+            r.yhi = (box->yMax() - die_ylo_) / row_height_;
+            rects.push_back(r);
+          }
+          it = region_rect_cache.emplace(odb_region, std::move(rects)).first;
         }
+        region_rects_ptr = &it->second;
       }
       // Returns true when (gx,gy) satisfies the region constraint:
       // region-constrained cells must land inside their region;
       // unconstrained cells have no restriction here (negotiation handles it).
       auto isInRegionOk = [&](int gx, int gy) -> bool {
-        if (region_rects_inline.empty()) {
+        if (region_rects_ptr == nullptr) {
           return true;
         }
-        for (const auto& r : region_rects_inline) {
+        for (const auto& r : *region_rects_ptr) {
           if (gx >= r.xlo && gy >= r.ylo && gx + cell.width <= r.xhi
               && gy + cell.height <= r.yhi) {
             return true;
