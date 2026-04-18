@@ -623,12 +623,14 @@ class frLayer
   {
     // This vector should be sorted by area in a descending order
     auto area = in->getODBRule()->getArea();
-    auto it = std::lower_bound(lef58AreaConstraints_.begin(),
-                               lef58AreaConstraints_.end(),
-                               area,
-                               [](const frLef58AreaConstraint* a, frCoord b) {
-                                 return a->getODBRule()->getArea() > b;
-                               });
+    auto it = std::ranges::lower_bound(
+        lef58AreaConstraints_.begin(),
+        lef58AreaConstraints_.end(),
+        area,
+        std::ranges::greater{},
+        [](const frLef58AreaConstraint* a) {
+          return a->getODBRule()->getArea();
+        });
     lef58AreaConstraints_.insert(it, in);
   }
 
@@ -647,12 +649,14 @@ class frLayer
   {
     // This vector should be sorted by rectwidth in an ascending order
     auto rectwidth = in->getODBRule()->getRectWidth();
-    auto it = std::lower_bound(lef58AreaConstraintsRectWidth_.begin(),
-                               lef58AreaConstraintsRectWidth_.end(),
-                               rectwidth,
-                               [](const frLef58AreaConstraint* a, frCoord b) {
-                                 return a->getODBRule()->getRectWidth() < b;
-                               });
+    auto it = std::ranges::lower_bound(
+        lef58AreaConstraintsRectWidth_.begin(),
+        lef58AreaConstraintsRectWidth_.end(),
+        rectwidth,
+        std::ranges::less{},
+        [](const frLef58AreaConstraint* a) {
+          return a->getODBRule()->getRectWidth();
+        });
     lef58AreaConstraintsRectWidth_.insert(it, in);
   }
 

@@ -25,6 +25,7 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 #include "gc/FlexGC_impl.h"
+#include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
 #include "odb/isotropy.h"
