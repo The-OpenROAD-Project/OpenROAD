@@ -265,8 +265,9 @@ class DetailedMgr
     // Needs cell centers.
     bool operator()(Node* p, Node* q) const
     {
-      if (p->getCenterX() != q->getCenterX())
+      if (p->getCenterX() != q->getCenterX()) {
         return p->getCenterX() < q->getCenterX();
+      }
       return p->getId() < q->getId();
     }
     bool operator()(Node*& s, DbuX i) const { return s->getCenterX() < i; }
