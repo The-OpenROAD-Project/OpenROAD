@@ -1501,16 +1501,7 @@ void dbInst::destroy(dbInst* inst_)
     _dbITerm* _iterm = block->iterm_tbl_->getPtr(id);
     dbITerm* iterm = (dbITerm*) _iterm;
     iterm->disconnect();
-    if (inst_->getPinAccessIdx() >= 0) {
-      for (const auto& [pin, aps] : iterm->getAccessPoints()) {
-        for (auto ap : aps) {
-          _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-          auto [first, last] = std::ranges::remove_if(
-              _ap->iterms_, [id](const auto& id_in) { return id_in == id; });
-          _ap->iterms_.erase(first, last);
-        }
-      }
-    }
+    iterm->clearPrefAccessPoints();
 
     // Notify when pins are deleted (assumption: pins are destroyed only when
     // the related instance is destroyed)
