@@ -17,7 +17,6 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
-#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace dpl {
