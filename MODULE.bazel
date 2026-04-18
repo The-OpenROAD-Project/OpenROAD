@@ -111,6 +111,7 @@ single_version_override(
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
+bazel_dep(name = "orfs", dev_dependency = True)
 
 BAZEL_ORFS_COMMIT = "6711937fea45554aba260c5e0cc544a6e8088d3d"
 
@@ -128,6 +129,21 @@ git_override(
     commit = BAZEL_ORFS_COMMIT,
     remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "verilog",
+)
+
+# Mirrors the override in bazel-orfs/MODULE.bazel. Needed at root because
+# overrides declared in non-root modules are ignored by Bazel. Patches are
+# copied from bazel-orfs/patches/ because git_override only accepts patches
+# from the main repository.
+git_override(
+    module_name = "orfs",
+    commit = "3adda8b9d7cfc3f186e1a7748f0a230094e42805",
+    patch_strip = 1,
+    patches = [
+        "//:orfs-remove-non-root-overrides.patch",
+        "//:orfs-preserve-tool-exe-env.patch",
+    ],
+    remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
 )
 
 # --- Extensions ---
@@ -184,16 +200,10 @@ npm.npm_translate_lock(
 use_repo(npm, "npm")
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
-    # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q2-132-g8ecb57a0a",
     # Use OpenROAD of this repo instead of from the docker image
     openroad = "//:openroad",
-    sha256 = "623e07f748131404bf4e4ba8c4ed170f1bd4931a7de76accf431fd8bb37235a8",
 )
-use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.17"
 
