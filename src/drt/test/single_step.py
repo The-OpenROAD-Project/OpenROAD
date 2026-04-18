@@ -21,7 +21,6 @@ drt_aux.detailed_route(
     output_drc=drc_file,
     output_maze=maze_file,
     verbose=0,
-    db_process_node="ISPD",
     single_step_dr=True,
 )
 

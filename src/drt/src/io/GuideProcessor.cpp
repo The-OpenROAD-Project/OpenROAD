@@ -652,7 +652,7 @@ bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
       const bool one_gcell_guide
           = getDesign()->getTopBlock()->getGCellIdx(guide_rect.ll())
             == getDesign()->getTopBlock()->getGCellIdx(guide_rect.ur());
-      if (!one_gcell_guide && router_cfg_->DBPROCESSNODE != "ISPD") {
+      if (!one_gcell_guide) {
         error = true;  // not a valid via access guide
       }
     }
@@ -1201,8 +1201,7 @@ void GuideProcessor::genGuides_split(
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
         const bool via_only
-            = (layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
-               && router_cfg_->DBPROCESSNODE != "ISPD")
+            = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
               || (via_access_only
                   && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
         if (via_only) {
