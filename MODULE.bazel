@@ -135,8 +135,8 @@ git_override(
 bazel_dep(name = "mock-klayout", dev_dependency = True)
 git_override(
     module_name = "mock-klayout",
-    commit = "6711937fea45554aba260c5e0cc544a6e8088d3d",
-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs",
+    commit = BAZEL_ORFS_COMMIT,
+    remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "mock/klayout",
 )
 
