@@ -2116,26 +2116,26 @@ void FlexGCWorker::Impl::checkMetalShape_lef58Area(gcPin* pin)
   if (!drWorker_->getDrcBox().contains(bbox2)) {
     return;
   }
-  const frCoord width = bbox2.minDXDY();
+  const bool is_rect = poly->size() == 4;
   const auto curr_area = gtl::area(*poly);
-  // iterate through rectwidth constraints first
-  for (auto con : layer->getLef58AreaConstraintsRectWidth()) {
-    odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
-    if (width < db_rule->getRectWidth()) {
-      auto min_area = db_rule->getArea();
-      if (curr_area < min_area
-          && checkMetalShape_lef58Area_rectWidth(poly, db_rule)) {
-        checkMetalShape_addPatch(pin, min_area);
+  if (is_rect) {  // iterate through rectwidth constraints first
+    for (auto con : layer->getLef58AreaConstraintsRectWidth()) {
+      odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
+      if (checkMetalShape_lef58Area_rectWidth(poly, db_rule)) {
+        // we found a rectwidth constraint that is satisfied
+        const auto min_area = db_rule->getArea();
+        if (curr_area < min_area) {
+          checkMetalShape_addPatch(pin, min_area);
+        }
+        return;
       }
-      // if any rectwidth constraint is satisfied, return
-      return;
     }
   }
   // Iterate through area constraints which are sorted by area in a descending
   // order
   for (auto con : layer->getLef58AreaConstraints()) {
     odb::dbTechLayerAreaRule* db_rule = con->getODBRule();
-    auto min_area = db_rule->getArea();
+    const auto min_area = db_rule->getArea();
 
     if (curr_area >= min_area) {
       break;
@@ -2184,7 +2184,7 @@ bool FlexGCWorker::Impl::checkMetalShape_lef58Area_rectWidth(
       const auto& rect = rects.back();
       auto xLen = gtl::delta(rect, gtl::HORIZONTAL);
       auto yLen = gtl::delta(rect, gtl::VERTICAL);
-      return std::min(xLen, yLen) < min_width;
+      return std::min(xLen, yLen) <= min_width;
     }
     return false;
   }
