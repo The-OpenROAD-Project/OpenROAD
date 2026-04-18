@@ -72,7 +72,7 @@ class ClockBase
   struct VirtualInsert
   {
     const sta::Clock* clk;
-    const sta::Pin* pin;  // nullptr = whole-clock insertion
+    const sta::Pin* pin;
   };
   std::vector<VirtualInsert> virtual_inserts_;
 

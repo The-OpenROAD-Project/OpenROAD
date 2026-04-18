@@ -277,13 +277,16 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
 
   for (int i = 0; i < n; ++i) {
     const float delay = static_cast<float>(tree_dist[i] * scale);
-    sta_->setClockInsertion(clk,
-                            sinks[i].pin,
-                            sta::RiseFallBoth::riseFall(),
-                            sta::MinMaxAll::all(),
-                            sta::EarlyLateAll::all(),
-                            delay,
-                            sdc);
+    // Use setClockLatency (network latency) rather than setClockInsertion
+    // (source latency).  During global placement the clock is ideal
+    // (non-propagated), and OpenSTA only honours per-pin network latency
+    // for ideal clocks; per-pin source latency is silently ignored.
+    sta_->setClockLatency(const_cast<sta::Clock*>(clk),
+                          const_cast<sta::Pin*>(sinks[i].pin),
+                          sta::RiseFallBoth::riseFall(),
+                          sta::MinMaxAll::all(),
+                          delay,
+                          sdc);
     virtual_inserts_.push_back({clk, sinks[i].pin});
   }
 }
@@ -296,7 +299,7 @@ void ClockBase::removeVirtualCts()
 
   sta::Sdc* sdc = sta_->cmdSdc();
   for (const auto& vi : virtual_inserts_) {
-    sta_->removeClockInsertion(vi.clk, vi.pin, sdc);
+    sta_->removeClockLatency(vi.clk, vi.pin, sdc);
   }
   virtual_inserts_.clear();
 
