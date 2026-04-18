@@ -66,11 +66,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       150 |   0.7115 |  2.054013e+03 |   +0.26% |  1.03e-10 |      
       160 |   0.7043 |  2.062230e+03 |   +0.40% |  1.68e-10 |      
       170 |   0.6948 |  2.073365e+03 |   +0.54% |  2.74e-10 |      
+[INFO GPL-0164] Virtual CTS iteration 1/2, overflow: 0.695.
+[INFO GPL-0162] Virtual CTS: set 34 virtual clock insertion delays.
       180 |   0.6842 |  2.089633e+03 |   +0.78% |  4.47e-10 |      
       190 |   0.6686 |  2.111814e+03 |   +1.06% |  7.28e-10 |      
       200 |   0.6478 |  2.138892e+03 |   +1.28% |  1.19e-09 |      
-[INFO GPL-0164] Virtual CTS iteration 1/2, overflow: 0.643.
-[INFO GPL-0162] Virtual CTS: set 34 virtual clock insertion delays.
 [INFO GPL-0100] Timing-driven iteration 1/2, virtual: false.
 [INFO GPL-0101]    Iter: 206, overflow: 0.634, keep resizer changes at: 1, HPWL: 4312728
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -108,11 +108,11 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
       260 |   0.4376 |  2.415136e+03 |   +1.03% |  2.22e-08 |      
       270 |   0.3758 |  2.432201e+03 |   +0.71% |  3.61e-08 |      
       280 |   0.3094 |  2.448718e+03 |   +0.68% |  5.59e-08 |      
-      290 |   0.2720 |  2.454265e+03 |   +0.23% |  8.23e-08 |      
-      300 |   0.2429 |  2.484706e+03 |   +1.24% |  1.21e-07 |      
-[INFO GPL-0164] Virtual CTS iteration 2/2, overflow: 0.243.
+[INFO GPL-0164] Virtual CTS iteration 2/2, overflow: 0.290.
 [INFO GPL-0163] Virtual CTS: removed virtual clock insertion delays.
 [INFO GPL-0162] Virtual CTS: set 34 virtual clock insertion delays.
+      290 |   0.2720 |  2.454265e+03 |   +0.23% |  8.23e-08 |      
+      300 |   0.2429 |  2.484706e+03 |   +1.24% |  1.21e-07 |      
       310 |   0.2242 |  2.483735e+03 |   -0.04% |  1.79e-07 |      
 [INFO GPL-0100] Timing-driven iteration 2/2, virtual: false.
 [INFO GPL-0101]    Iter: 318, overflow: 0.192, keep resizer changes at: 1, HPWL: 4999603

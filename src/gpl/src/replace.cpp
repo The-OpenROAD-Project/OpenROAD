@@ -279,7 +279,7 @@ bool Replace::initNesterovPlace(const PlaceOptions& options,
   if (!cb_ && options.virtualCtsMode) {
     cb_ = std::make_shared<ClockBase>(sta_, db_, log_);
     cb_->setVirtualCtsOverflows(options.virtualCtsOverflows);
-    cb_->setWireRcPerUnit(options.virtualCtsWireRcPerUnit);
+    cb_->setMaxSkewFraction(options.virtualCtsMaxSkewFraction);
   }
 
   if (!np_) {

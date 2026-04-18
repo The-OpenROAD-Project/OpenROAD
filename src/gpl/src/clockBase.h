@@ -47,10 +47,12 @@ class ClockBase
 
   void setVirtualCtsOverflows(const std::vector<int>& overflows);
 
-  // Wire RC per DBU unit (seconds per DBU).
-  // Default: 1.5e-16 s/dbu (~0.15 ps/um for typical clock routing).
-  void setWireRcPerUnit(float rc) { wire_rc_per_unit_ = rc; }
-  float getWireRcPerUnit() const { return wire_rc_per_unit_; }
+  // Maximum clock insertion delay as a fraction of the clock period.
+  // The MST leaf farthest from the virtual root gets this much insertion
+  // delay; all others are scaled proportionally.
+  // Default: 0.05 (5% of the clock period).
+  void setMaxSkewFraction(float f) { max_skew_fraction_ = f; }
+  float getMaxSkewFraction() const { return max_skew_fraction_; }
 
   size_t getVirtualCtsOverflowSize() const;
 
@@ -59,8 +61,8 @@ class ClockBase
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* log_ = nullptr;
 
-  // Wire RC coefficient: seconds per DBU of wire length.
-  float wire_rc_per_unit_ = 1.5e-16f;
+  // Max insertion delay expressed as a fraction of the clock period.
+  float max_skew_fraction_ = 0.05f;
 
   // Overflow thresholds at which to trigger virtual CTS.
   std::vector<int> overflows_;

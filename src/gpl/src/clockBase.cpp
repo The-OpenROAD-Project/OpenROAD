@@ -6,6 +6,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <limits>
+#include <queue>
+#include <utility>
 #include <vector>
 
 #include "db_sta/dbNetwork.hh"
@@ -118,6 +121,13 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
     return;
   }
 
+  // Skip clocks with invalid or infinite periods (e.g. generated clocks
+  // before propagation).
+  const float period = static_cast<float>(clk->period());
+  if (period <= 0.0f || std::isinf(period)) {
+    return;
+  }
+
   // Build a one-element ClockSet for the query.
   sta::ClockSet clk_set;
   clk_set.insert(const_cast<sta::Clock*>(clk));
@@ -156,37 +166,125 @@ void ClockBase::buildVirtualTreeForClock(const sta::Clock* clk)
     return;
   }
 
-  // Compute centroid of all sink positions.  In a balanced clock tree the
-  // driver aims for the geometric center, so we use the centroid as a proxy
-  // for the virtual clock tree root.
+  // With a single sink, there is no meaningful skew to assign.
+  if (sinks.size() == 1) {
+    return;
+  }
+
+  const int n = static_cast<int>(sinks.size());
+
+  // -----------------------------------------------------------------------
+  // Build a minimum spanning tree (Prim's, O(n^2)) using Manhattan distance.
+  // This approximates the topology a balanced CTS would produce: sinks
+  // connected by short branches get low relative skew; those on long
+  // branches get higher skew.
+  // -----------------------------------------------------------------------
+  std::vector<int> mst_parent(n, -1);
+  std::vector<double> mst_edge_dist(n, 0.0);
+  std::vector<bool> in_mst(n, false);
+  std::vector<double> key(n, std::numeric_limits<double>::max());
+  key[0] = 0.0;
+
+  for (int step = 0; step < n; ++step) {
+    // Pick the minimum-key vertex not yet in the MST.
+    int u = -1;
+    for (int i = 0; i < n; ++i) {
+      if (!in_mst[i] && (u == -1 || key[i] < key[u])) {
+        u = i;
+      }
+    }
+    in_mst[u] = true;
+
+    // Update keys for remaining vertices.
+    for (int v = 0; v < n; ++v) {
+      if (!in_mst[v]) {
+        const double d = std::abs(sinks[u].x - sinks[v].x)
+                         + std::abs(sinks[u].y - sinks[v].y);
+        if (d < key[v]) {
+          key[v] = d;
+          mst_parent[v] = u;
+          mst_edge_dist[v] = d;
+        }
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Root the MST at the node geometrically closest to the centroid of all
+  // sinks.  This acts as the virtual clock source (H-tree hub).
+  // -----------------------------------------------------------------------
   double sum_x = 0.0;
   double sum_y = 0.0;
   for (const auto& s : sinks) {
     sum_x += s.x;
     sum_y += s.y;
   }
-  const double centroid_x = sum_x / sinks.size();
-  const double centroid_y = sum_y / sinks.size();
+  const double cx = sum_x / n;
+  const double cy = sum_y / n;
 
-  // Estimate insertion delay for each sink as the Manhattan distance from the
-  // centroid scaled by the wire RC coefficient.  This models a balanced
-  // H-tree where sinks close to the center get lower insertion delay and
-  // sinks far away get higher delay – capturing relative clock skew without
-  // introducing a large uniform offset.
+  int root = 0;
+  double best_centroid_dist = std::numeric_limits<double>::max();
+  for (int i = 0; i < n; ++i) {
+    const double d = std::abs(sinks[i].x - cx) + std::abs(sinks[i].y - cy);
+    if (d < best_centroid_dist) {
+      best_centroid_dist = d;
+      root = i;
+    }
+  }
+
+  // Build an undirected adjacency list from the MST edges.
+  std::vector<std::vector<std::pair<int, double>>> adj(n);
+  for (int i = 0; i < n; ++i) {
+    if (mst_parent[i] != -1) {
+      adj[mst_parent[i]].emplace_back(i, mst_edge_dist[i]);
+      adj[i].emplace_back(mst_parent[i], mst_edge_dist[i]);
+    }
+  }
+
+  // BFS from the root to compute each sink's path distance through the tree.
+  std::vector<double> tree_dist(n, -1.0);
+  std::queue<int> bfs;
+  tree_dist[root] = 0.0;
+  bfs.push(root);
+  while (!bfs.empty()) {
+    const int u = bfs.front();
+    bfs.pop();
+    for (auto& [v, w] : adj[u]) {
+      if (tree_dist[v] < 0.0) {
+        tree_dist[v] = tree_dist[u] + w;
+        bfs.push(v);
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Normalize so the farthest sink in the tree gets exactly
+  // max_skew_fraction_ * period of insertion delay.  All others scale
+  // proportionally, preserving the relative skew structure.
+  // -----------------------------------------------------------------------
+  const double max_tree_dist
+      = *std::max_element(tree_dist.begin(), tree_dist.end());
+
+  if (max_tree_dist < 1.0) {
+    // All sinks are co-located; no meaningful skew to assign.
+    return;
+  }
+
+  const double scale
+      = static_cast<double>(max_skew_fraction_) * period / max_tree_dist;
+
   sta::Sdc* sdc = sta_->cmdSdc();
 
-  for (const auto& s : sinks) {
-    const double dist = std::abs(s.x - centroid_x) + std::abs(s.y - centroid_y);
-    const float delay = static_cast<float>(dist * wire_rc_per_unit_);
-
+  for (int i = 0; i < n; ++i) {
+    const float delay = static_cast<float>(tree_dist[i] * scale);
     sta_->setClockInsertion(clk,
-                            s.pin,
+                            sinks[i].pin,
                             sta::RiseFallBoth::riseFall(),
                             sta::MinMaxAll::all(),
                             sta::EarlyLateAll::all(),
                             delay,
                             sdc);
-    virtual_inserts_.push_back({clk, s.pin});
+    virtual_inserts_.push_back({clk, sinks[i].pin});
   }
 }
 

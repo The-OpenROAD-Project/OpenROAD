@@ -69,11 +69,14 @@ struct PlaceOptions
   bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
   bool virtualCtsMode = false;
-  // Overflow thresholds (integer %, e.g. {65, 25}) at which to trigger
-  // virtual CTS. Defaults match one step ahead of timing-driven thresholds.
-  std::vector<int> virtualCtsOverflows{65, 25};
-  // Wire RC per DBU (seconds/DBU); default ~0.15 ps/um for clock routing.
-  float virtualCtsWireRcPerUnit = 1.5e-16f;
+  // Overflow thresholds (integer %, e.g. {70, 30}) at which to trigger
+  // virtual CTS. Lead the timing-driven thresholds {64, 20} by several
+  // percent so the placer has time to respond before net reweighting runs.
+  std::vector<int> virtualCtsOverflows{70, 30};
+  // Maximum clock insertion delay as a fraction of the clock period.
+  // The MST leaf farthest from the virtual clock root gets this delay;
+  // all others are scaled proportionally.  Default: 5% of the period.
+  float virtualCtsMaxSkewFraction = 0.05f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;

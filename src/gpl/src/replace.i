@@ -73,8 +73,8 @@ static gpl::PlaceOptions getOptions(
            "-virtual_cts_overflow",
            options.virtualCtsOverflows);
   checkKey(keys,
-           "-virtual_cts_wire_rc_per_unit",
-           options.virtualCtsWireRcPerUnit);
+           "-virtual_cts_max_skew_fraction",
+           options.virtualCtsMaxSkewFraction);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);
