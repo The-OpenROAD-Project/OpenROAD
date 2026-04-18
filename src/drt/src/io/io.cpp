@@ -1565,7 +1565,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     getTech()->addUConstraint(std::move(uCon));
     tmpLayer->addLef58SpacingWrongDirConstraint(rptr);
   }
-  if (router_cfg_->unidirectional_layers_.contains(layer)) {
+  if (router_cfg_->unidirectional_layer_names_.find(layer->getName())
+      != router_cfg_->unidirectional_layer_names_.end()) {
     tmpLayer->setUnidirectional(true);
   }
   if (layer->isRectOnly()) {
