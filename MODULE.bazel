@@ -83,7 +83,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    commit = "886104974c2fd72439f2c33b5deebf0fe4649df7",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -122,6 +122,22 @@ git_override(
     module_name = "bazel-orfs",
     commit = BAZEL_ORFS_COMMIT,
     remote = BAZEL_ORFS_REMOTE,
+)
+
+bazel_dep(name = "bazel-orfs-sby")
+git_override(
+    module_name = "bazel-orfs-sby",
+    commit = "6711937fea45554aba260c5e0cc544a6e8088d3d",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs",
+    strip_prefix = "sby",
+)
+
+bazel_dep(name = "mock-klayout")
+git_override(
+    module_name = "mock-klayout",
+    commit = "6711937fea45554aba260c5e0cc544a6e8088d3d",
+    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs",
+    strip_prefix = "mock/klayout",
 )
 
 git_override(
