@@ -132,7 +132,7 @@ git_override(
     strip_prefix = "sby",
 )
 
-bazel_dep(name = "mock-klayout")
+bazel_dep(name = "mock-klayout", dev_dependency = True)
 git_override(
     module_name = "mock-klayout",
     commit = "6711937fea45554aba260c5e0cc544a6e8088d3d",
