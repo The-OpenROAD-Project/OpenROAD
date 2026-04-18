@@ -75,8 +75,8 @@ struct PlaceOptions
   std::vector<int> virtualCtsOverflows{70, 30};
   // Maximum clock insertion delay as a fraction of the clock period.
   // The MST leaf farthest from the virtual clock root gets this delay;
-  // all others are scaled proportionally.  Default: 5% of the period.
-  float virtualCtsMaxSkewFraction = 0.05f;
+  // all others are scaled proportionally.  Default: 10% of the period.
+  float virtualCtsMaxSkewFraction = 0.10f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;

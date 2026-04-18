@@ -62,7 +62,7 @@ class ClockBase
   utl::Logger* log_ = nullptr;
 
   // Max insertion delay expressed as a fraction of the clock period.
-  float max_skew_fraction_ = 0.05f;
+  float max_skew_fraction_ = 0.10f;
 
   // Overflow thresholds at which to trigger virtual CTS.
   std::vector<int> overflows_;
