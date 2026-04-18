@@ -167,7 +167,9 @@ class Logger
                                        const std::string& message,
                                        const Args&... args)
   {
+    #if SPDLOG_VERSION >= 10600
     logger_->dump_backtrace();
+    #endif
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
     // Exception should be caught by swig error handler.
@@ -180,7 +182,9 @@ class Logger
                                           const std::string& message,
                                           const Args&... args)
   {
+    #if SPDLOG_VERSION >= 10600
     logger_->dump_backtrace();
+    #endif
     log(tool, spdlog::level::level_enum::critical, id, message, args...);
     exit(EXIT_FAILURE);
   }
