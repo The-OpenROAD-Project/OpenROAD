@@ -30,7 +30,7 @@ cc_test(
     srcs = [
         "TestAccessPoint.cpp",
     ],
-    features = ["-layering_check"],  # TODO: includes private headers
+    features = ["-layering_check"],
     deps = [
         "//src/odb",
         "//src/odb/test/cpp/helper",
