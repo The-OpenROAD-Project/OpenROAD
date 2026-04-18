@@ -3,6 +3,7 @@
 
 #include "Graphics.h"
 
+#include <algorithm>
 #include <any>
 #include <cstdlib>
 #include <set>
@@ -16,6 +17,7 @@
 #include "infrastructure/Objects.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "odb/geom.h"
 
 namespace dpl {
