@@ -167,6 +167,7 @@ class Logger
                                        const std::string& message,
                                        const Args&... args)
   {
+    logger_->dump_backtrace();
     error_count_++;
     log(tool, spdlog::level::err, id, message, args...);
     // Exception should be caught by swig error handler.
@@ -179,6 +180,7 @@ class Logger
                                           const std::string& message,
                                           const Args&... args)
   {
+    logger_->dump_backtrace();
     log(tool, spdlog::level::level_enum::critical, id, message, args...);
     exit(EXIT_FAILURE);
   }
@@ -348,6 +350,8 @@ class Logger
 
   // Stop issuing messages of a given tool/id when this limit is hit.
   static constexpr int max_message_print = 1000;
+
+  static constexpr int kLogMessageBackTraceLimit = 128;
 
   std::vector<spdlog::sink_ptr> sinks_;
   std::shared_ptr<spdlog::logger> logger_;
