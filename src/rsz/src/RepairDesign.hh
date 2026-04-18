@@ -5,6 +5,8 @@
 
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -176,7 +178,7 @@ class RepairDesign : sta::dbStaState
                      sta::PinSeq& load_pins);
   void clearDriverCellsCache();
   sta::LibertyCellSeq getDriverCells(sta::LibertyCell* driver_cell,
-                                     std::string driver_port_name);
+                                     const std::string& driver_port_name);
   bool tryUpsizeDriver(int level,
                        double ref_cap,
                        double c_wire,

@@ -1403,9 +1403,8 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
   bnet->setCapacitance(bnet->ref()->cap());
   bnet->setFanout(bnet->ref()->fanout());
   float r_via = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
-  assert(slew_rc_factor_.has_value());
   bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - (r_via * bnet->ref()->cap() * (*slew_rc_factor_)));
+                       - (r_via * bnet->ref()->cap() * getSlewRCFactor()));
 }
 
 void RepairDesign::repairNetWire(
@@ -1465,10 +1464,9 @@ void RepairDesign::repairNetWire(
   double r_wire = length1 * wire_res;
   double c_wire = length1 * wire_cap;
 
-  assert(slew_rc_factor_.has_value());
   double load_slew
       = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap + r_wire * c_wire / 2)
-        * (*slew_rc_factor_);
+        * getSlewRCFactor();
 
   debugPrint(logger_,
              RSZ,
@@ -1491,9 +1489,8 @@ void RepairDesign::repairNetWire(
 
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-  bnet->setMaxLoadSlew(
-      bnet->ref()->maxLoadSlew()
-      - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+  bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
+                       - (r_wire * (c_wire / 2 + ref_cap) * getSlewRCFactor()));
 
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
@@ -1566,8 +1563,8 @@ void RepairDesign::repairNetWire(
         // We solve a quadratic eq. to find the maximum conforming length.
         float a = wire_res * wire_cap / 2;
         float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
-        float c = (r_drvr * ref_cap)
-                  - (max_load_slew_margined / (*slew_rc_factor_));
+        float c
+            = (r_drvr * ref_cap) - (max_load_slew_margined / getSlewRCFactor());
         float l = 0.0;
         if (a > 1e-12) {  // Quadratic case
           const float discriminant = b * b - 4 * a * c;
@@ -1644,7 +1641,7 @@ void RepairDesign::repairNetWire(
       c_wire = length1 * wire_cap;
       load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
                    + r_wire * c_wire / 2)
-                  * (*slew_rc_factor_);
+                  * getSlewRCFactor();
       buffer_cell = resizer_->findTargetCell(
           resizer_->buffer_lowest_drive_, load_cap, false);
 
@@ -1652,7 +1649,7 @@ void RepairDesign::repairNetWire(
       bnet->setFanout(repeater_fanout);
       bnet->setMaxLoadSlew(
           max_load_slew
-          - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+          - (r_wire * (c_wire / 2 + ref_cap) * getSlewRCFactor()));
 
       debugPrint(logger_,
                  RSZ,
@@ -1680,8 +1677,9 @@ void RepairDesign::clearDriverCellsCache()
 }
 
 // Returns swappable drivers sorted by drive resistance (low to high)
-sta::LibertyCellSeq RepairDesign::getDriverCells(sta::LibertyCell* driver_cell,
-                                                 std::string driver_port_name)
+sta::LibertyCellSeq RepairDesign::getDriverCells(
+    sta::LibertyCell* driver_cell,
+    const std::string& driver_port_name)
 {
   if (driver_cells_cache_.find(driver_cell) != driver_cells_cache_.end()) {
     if (driver_cells_cache_[driver_cell].find(driver_port_name)
@@ -1774,11 +1772,10 @@ bool RepairDesign::tryUpsizeDriver(const int level,
                  candidate_cell->name(),
                  units_->resistanceUnit()->asString(candidate_r_drvr, 3));
 
-      assert(slew_rc_factor_.has_value());
       const double candidate_load_slew
           = (candidate_r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
              + r_wire * c_wire / 2)
-            * (*slew_rc_factor_);
+            * getSlewRCFactor();
 
       // Check that we do not violate the max output slew of the driver.
       float candidate_max_output_slew = sta::INF;
@@ -1911,8 +1908,7 @@ void RepairDesign::repairNetJunc(
 
   // Calculate estimated slew based on RC
   float r_drvr = resizer_->driveResistance(drvr_pin_);
-  assert(slew_rc_factor_.has_value());
-  float load_slew = r_drvr * load_cap * (*slew_rc_factor_);
+  float load_slew = r_drvr * load_cap * getSlewRCFactor();
   bool load_slew_violation = load_slew > max_load_slew_margined;
 
   const char* repeater_reason = nullptr;
@@ -1927,9 +1923,9 @@ void RepairDesign::repairNetJunc(
                level,
                delayAsString(load_slew, 3, this),
                delayAsString(max_load_slew_margined, 3, this));
-    double slew_left = r_drvr * cap_left * (*slew_rc_factor_);
+    double slew_left = r_drvr * cap_left * getSlewRCFactor();
     double slew_slack_left = maxSlewMargined(max_load_slew_left) - slew_left;
-    double slew_right = r_drvr * cap_right * (*slew_rc_factor_);
+    double slew_right = r_drvr * cap_right * getSlewRCFactor();
     double slew_slack_right = maxSlewMargined(max_load_slew_right) - slew_right;
     debugPrint(logger_,
                RSZ,
