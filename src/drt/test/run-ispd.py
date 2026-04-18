@@ -78,14 +78,14 @@ def gen_files(work_dir, ispd_year, design, drv_min, drv_max):
             read_guides {bench_dir}/{design}/{design}.input.guide 
             set bottom_layer ""
             set top_layer ""
-            foreach layer [[ord::get_db_tech] getLayers] {
-                if { [$layer getType] == "ROUTING" } {
-                    if { $bottom_layer == "" } {
+            foreach layer [[ord::get_db_tech] getLayers] {{
+                if {{ [$layer getType] == "ROUTING" }} {{
+                    if {{ $bottom_layer == "" }} {{
                         set bottom_layer [$layer getName]
-                    }
+                    }}
                     set top_layer [$layer getName]
-                }
-            }
+                }}
+            }}
             set_routing_layers -signal $bottom_layer-$top_layer
             detailed_route -output_maze {design_dir}/{design}.output.maze.log \\
                            -output_drc {design_dir}/{design}.output.drc.rpt \\
