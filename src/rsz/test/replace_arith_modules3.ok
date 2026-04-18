@@ -58,26 +58,26 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0005] ---- Execute Conjugate Gradient Initial Placement.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 39109	Region center = 0
-[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00367869 HPWL: 2176639240
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00576580 HPWL: 2048663837
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00276028 HPWL: 2074432156
-[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00037520 HPWL: 2089565600
-[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00040099 HPWL: 2095519083
-[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00030645 HPWL: 2103532663
-[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00031439 HPWL: 2107559854
-[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00048704 HPWL: 2110961275
-[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00047056 HPWL: 2112535635
-[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00038691 HPWL: 2114655625
-[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00044023 HPWL: 2115159382
-[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00039108 HPWL: 2116445299
-[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00052808 HPWL: 2116280791
-[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00039466 HPWL: 2116990823
-[InitialPlace]  Iter: 15 conjugate gradient residual: 0.01255498 HPWL: 2116428084
-[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00169194 HPWL: 2175499252
-[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00193836 HPWL: 2163860363
-[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00195519 HPWL: 2151991100
-[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00167887 HPWL: 2141272261
-[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00144723 HPWL: 2135927651
+[InitialPlace]  Iter: 1 conjugate gradient residual: 0.00348564 HPWL: 2176639240
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00646186 HPWL: 2048471250
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00263091 HPWL: 2074467989
+[InitialPlace]  Iter: 4 conjugate gradient residual: 0.00037565 HPWL: 2089430273
+[InitialPlace]  Iter: 5 conjugate gradient residual: 0.00031989 HPWL: 2095443593
+[InitialPlace]  Iter: 6 conjugate gradient residual: 0.00031966 HPWL: 2103629503
+[InitialPlace]  Iter: 7 conjugate gradient residual: 0.00028756 HPWL: 2107529200
+[InitialPlace]  Iter: 8 conjugate gradient residual: 0.00047894 HPWL: 2111078807
+[InitialPlace]  Iter: 9 conjugate gradient residual: 0.00042393 HPWL: 2112683404
+[InitialPlace]  Iter: 10 conjugate gradient residual: 0.00038011 HPWL: 2114817118
+[InitialPlace]  Iter: 11 conjugate gradient residual: 0.00034675 HPWL: 2115256278
+[InitialPlace]  Iter: 12 conjugate gradient residual: 0.00053985 HPWL: 2116421899
+[InitialPlace]  Iter: 13 conjugate gradient residual: 0.00041260 HPWL: 2116242085
+[InitialPlace]  Iter: 14 conjugate gradient residual: 0.00043734 HPWL: 2117068031
+[InitialPlace]  Iter: 15 conjugate gradient residual: 0.00037490 HPWL: 2116696633
+[InitialPlace]  Iter: 16 conjugate gradient residual: 0.00053397 HPWL: 2117262641
+[InitialPlace]  Iter: 17 conjugate gradient residual: 0.00063165 HPWL: 2116240984
+[InitialPlace]  Iter: 18 conjugate gradient residual: 0.00050783 HPWL: 2116052882
+[InitialPlace]  Iter: 19 conjugate gradient residual: 0.00038458 HPWL: 2115331484
+[InitialPlace]  Iter: 20 conjugate gradient residual: 0.00047263 HPWL: 2115620073
 number instances in verilog is 39260
 wns max -85.02
 tns max -174582.05
@@ -151,7 +151,7 @@ replace_arith_modules -path_count 100 -target setup -slack_threshold 0.0
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO ODB-0496] swapMaster sanity check passed (0 failures)
 [INFO RSZ-0160] 64 arithmetic instances have swapped to improve 'setup' target
-wns max -51.44
-tns max -111409.35
-wns max -51.44
-tns max -111409.35
+wns max -51.38
+tns max -111292.37
+wns max -51.38
+tns max -111292.37

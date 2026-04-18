@@ -44,8 +44,8 @@ Using 2 tracks default min distance between IO pins.
 [INFO GPL-0051] Source of initial instance position counters:
 	Odb location = 0	Core center = 36	Region center = 0
 [InitialPlace]  Iter: 1 conjugate gradient residual: 0.00000000 HPWL: 2422200
-[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000001 HPWL: 33592
-[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000002 HPWL: 33512
+[InitialPlace]  Iter: 2 conjugate gradient residual: 0.00000002 HPWL: 33592
+[InitialPlace]  Iter: 3 conjugate gradient residual: 0.00000004 HPWL: 33512
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34116
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34042
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 162.79 um^2, Utilization: 0.3%
