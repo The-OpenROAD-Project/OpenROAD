@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "AbstractGraphics.h"
+#include "clockBase.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
@@ -34,6 +35,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              std::shared_ptr<RouteBase> rb,
                              std::shared_ptr<TimingBase> tb,
+                             std::shared_ptr<ClockBase> cb,
                              std::unique_ptr<gpl::AbstractGraphics> graphics,
                              utl::Logger* log)
     : npVars_(npVars)
@@ -44,6 +46,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   nbVec_ = nbVec;
   rb_ = std::move(rb);
   tb_ = std::move(tb);
+  cb_ = std::move(cb);
   log_ = log;
 
   db_cbk_ = std::make_unique<nesterovDbCbk>(this);
@@ -366,6 +369,29 @@ void NesterovPlace::updateIterGraphics(
     }
     final_routability_image_saved = true;
   }
+}
+
+void NesterovPlace::runVirtualCts(int iter, int& virtual_cts_count)
+{
+  if (!cb_) {
+    return;
+  }
+
+  if (!cb_->isVirtualCtsOverflow(average_overflow_unscaled_)) {
+    return;
+  }
+
+  // Update DB placement so pin locations reflect current iteration.
+  updateDb();
+
+  log_->info(GPL,
+             164,
+             "Virtual CTS iteration {}/{}, overflow: {:.3f}.",
+             ++virtual_cts_count,
+             cb_->getVirtualCtsOverflowSize(),
+             average_overflow_unscaled_);
+
+  cb_->executeVirtualCts();
 }
 
 void NesterovPlace::runTimingDriven(int iter,
@@ -1016,6 +1042,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   int routability_driven_revert_count = 0;
   int routability_gpl_iter_count_ = 0;
   int timing_driven_count = 0;
+  int virtual_cts_count = 0;
   bool final_routability_image_saved = false;
   int64_t original_area = 0;
   int64_t td_accumulated_delta_area = 0;
@@ -1097,6 +1124,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       ++npVars_.maxNesterovIter;
     }
 
+    runVirtualCts(nesterov_iter, virtual_cts_count);
+
     runTimingDriven(nesterov_iter,
                     timing_driven_dir,
                     routability_driven_revert_count,
@@ -1132,6 +1161,11 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (isConverged(nesterov_iter, routability_gpl_iter_count_)) {
       break;
     }
+  }
+
+  // Remove virtual clock tree insertions before final timing analysis.
+  if (cb_) {
+    cb_->removeVirtualCts();
   }
 
   reportResults(nesterov_iter, original_area, td_accumulated_delta_area);

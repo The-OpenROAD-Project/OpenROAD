@@ -25,6 +25,7 @@ static gpl::PlaceOptions getOptions(
   gpl::PlaceOptions options;
   checkFlag(flags, "-timing_driven", options.timingDrivenMode);
   checkFlag(flags, "-routability_driven", options.routabilityDrivenMode);
+  checkFlag(flags, "-virtual_cts", options.virtualCtsMode);
   checkFlag(flags, "-routability_use_grt", options.routabilityUseRudy, false);
   checkFlag(
       flags, "-disable_revert_if_diverge", options.disableRevertIfDiverge);
@@ -68,6 +69,12 @@ static gpl::PlaceOptions getOptions(
   checkKey(keys, "-timing_driven_net_weight_max", options.timingNetWeightMax);
   checkKey(
       keys, "-keep_resize_below_overflow", options.keepResizeBelowOverflow);
+  checkKey(keys,
+           "-virtual_cts_overflow",
+           options.virtualCtsOverflows);
+  checkKey(keys,
+           "-virtual_cts_wire_rc_per_unit",
+           options.virtualCtsWireRcPerUnit);
   checkKey(keys, "-min_phi_coef", options.minPhiCoef);
   checkKey(keys, "-max_phi_coef", options.maxPhiCoef);
   checkKey(keys, "-init_density_penalty", options.initDensityPenaltyFactor);

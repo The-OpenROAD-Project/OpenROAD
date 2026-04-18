@@ -37,6 +37,7 @@ class NesterovBaseCommon;
 class NesterovBase;
 class RouteBase;
 class TimingBase;
+class ClockBase;
 
 class InitialPlace;
 class NesterovPlace;
@@ -67,6 +68,12 @@ struct PlaceOptions
   bool disableRevertIfDiverge = false;
   bool disablePinDensityAdjust = false;
   bool enable_routing_congestion = false;
+  bool virtualCtsMode = false;
+  // Overflow thresholds (integer %, e.g. {65, 25}) at which to trigger
+  // virtual CTS. Defaults match one step ahead of timing-driven thresholds.
+  std::vector<int> virtualCtsOverflows{65, 25};
+  // Wire RC per DBU (seconds/DBU); default ~0.15 ps/um for clock routing.
+  float virtualCtsWireRcPerUnit = 1.5e-16f;
   float minPhiCoef = 0.95;
   float maxPhiCoef = 1.05;
   float initDensityPenaltyFactor = 0.00008;
@@ -162,6 +169,7 @@ class Replace
   std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   std::shared_ptr<RouteBase> rb_;
   std::shared_ptr<TimingBase> tb_;
+  std::shared_ptr<ClockBase> cb_;
 
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;
