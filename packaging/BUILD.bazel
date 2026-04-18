@@ -8,6 +8,7 @@ sh_binary(
     name = "install",
     srcs = ["//bazel:install.sh"],
     data = [":tarfile"],
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
