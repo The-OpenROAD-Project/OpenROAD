@@ -778,11 +778,13 @@ bool NegotiationLegalizer::initFromDb()
       cell.flippable = true;
     }
 
-    debugPrint(logger_,
-                   utl::DPL,
-                   "negotiation",
-                   1,
-        "DEBUG cell init: {} height={} flippable={} rail_type={} rail_type_flipped={}",
+    debugPrint(
+        logger_,
+        utl::DPL,
+        "negotiation",
+        1,
+        "DEBUG cell init: {} height={} flippable={} rail_type={} "
+        "rail_type_flipped={}",
         db_inst->getName(),
         cell.height,
         cell.flippable,
@@ -799,7 +801,6 @@ bool NegotiationLegalizer::initFromDb()
 
   return true;
 }
-
 
 void NegotiationLegalizer::buildGrid()
 {
@@ -1077,10 +1078,11 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   };
   bool ret = (row_bottom_rail == cell.rail_type)
              || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation",
-             1,
+  debugPrint(
+      logger_,
+      utl::DPL,
+      "negotiation",
+      1,
       "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
       "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
       rowIdx,

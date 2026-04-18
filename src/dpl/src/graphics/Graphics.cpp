@@ -149,7 +149,7 @@ void Graphics::drawObjects(gui::Painter& painter)
       // (mirroring the ODB orientation marker style)
       const odb::dbOrientType orig_orient = cell->getDbInst()->getOrient();
       const odb::dbOrientType target_orient = cell->getOrient();
-      // if (orig_orient != target_orient) 
+      // if (orig_orient != target_orient)
       {
         painter.setPen(outline_color, /* cosmetic */ true);
         const int tag_size = std::min(width / 4, height / 8);
