@@ -60,6 +60,7 @@ using utl::UniquePtrWithDeleter;
 // a forward one to get at this function without angering
 // gcc.
 namespace abc {
+// NOLINTBEGIN(readability-identifier-naming)
 extern Abc_Ntk_t* Abc_NtkMulti(Abc_Ntk_t* pNtk,
                                int nThresh,
                                int nFaninMax,
@@ -68,6 +69,7 @@ extern Abc_Ntk_t* Abc_NtkMulti(Abc_Ntk_t* pNtk,
                                int fSimple,
                                int fFactor);
 extern void Abc_FrameSetLibGen(void* pLib);
+// NOLINTEND(readability-identifier-naming)
 }  // namespace abc
 
 namespace cgt {
@@ -270,7 +272,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
     bool searchTo(const sta::Vertex* const to_vertex,
                   const sta::Mode* mode) const final
     {
-      return visited_.find(to_vertex) == visited_.end();
+      return visited.find(to_vertex) == visited.end();
     }
     bool searchThru(sta::Edge* edge, const sta::Mode* mode) const override
     {
@@ -280,7 +282,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
              && role->genericRole() != sta::TimingRole::latchDtoQ();
     }
 
-    std::unordered_set<const sta::Vertex*> visited_;
+    std::unordered_set<const sta::Vertex*> visited;
   };
 
   auto network = sta->getDbNetwork();
@@ -305,7 +307,7 @@ static std::vector<sta::Net*> downstreamNets(sta::dbSta* const sta,
         visited_nets.insert(net);
         nets.push_back(net);
       }
-      pred.visited_.insert(vertex);
+      pred.visited.insert(vertex);
       iter.enqueueAdjacentVertices(vertex);
     }
   }
@@ -323,7 +325,7 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
     bool searchFrom(const sta::Vertex* const from_vertex,
                     const sta::Mode* mode) const final
     {
-      return visited_.find(from_vertex) == visited_.end();
+      return visited.find(from_vertex) == visited.end();
     }
     bool searchTo(const sta::Vertex* const to_vertex,
                   const sta::Mode* mode) const final
@@ -338,7 +340,7 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
              && role->genericRole() != sta::TimingRole::latchDtoQ();
     }
 
-    std::unordered_set<const sta::Vertex*> visited_;
+    std::unordered_set<const sta::Vertex*> visited;
   };
 
   auto network = sta->getDbNetwork();
@@ -364,7 +366,7 @@ static std::vector<sta::Net*> upstreamNets(sta::dbSta* const sta,
         visited_nets.insert(net);
         nets.push_back(net);
       }
-      pred.visited_.insert(vertex);
+      pred.visited.insert(vertex);
       iter.enqueueAdjacentVertices(vertex);
     }
   }
