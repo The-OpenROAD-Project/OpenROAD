@@ -65,7 +65,7 @@ class Straps : public GridComponent
   }
 
   void report() const override;
-  Type type() const override { return GridComponent::Strap; }
+  Type type() const override { return GridComponent::kStrap; }
 
   void checkLayerSpecifications() const override;
 
@@ -86,7 +86,7 @@ class Straps : public GridComponent
   int number_of_straps_;
   odb::dbTechLayerDir direction_;
   bool snap_ = false;
-  ExtensionMode extend_mode_ = ExtensionMode::CORE;
+  ExtensionMode extend_mode_ = ExtensionMode::kCore;
   int strap_start_ = 0;
   int strap_end_ = 0;
   bool allow_out_of_core_ = false;
@@ -109,7 +109,7 @@ class FollowPins : public Straps
 
   void makeShapes(const Shape::ShapeTreeMap& other_shapes) override;
 
-  Type type() const override { return GridComponent::Followpin; }
+  Type type() const override { return GridComponent::kFollowpin; }
 
   void checkLayerSpecifications() const override;
 
@@ -137,7 +137,7 @@ class PadDirectConnectionStraps : public Straps
                     Shape::ObstructionTreeMap& all_obstructions) override;
 
   void report() const override;
-  Type type() const override { return GridComponent::PadConnect; }
+  Type type() const override { return GridComponent::kPadConnect; }
 
   // disable layer spec checks
   void checkLayerSpecifications() const override {}
@@ -155,9 +155,9 @@ class PadDirectConnectionStraps : public Straps
  private:
   enum class ConnectionType
   {
-    None,
-    Edge,
-    OverPads
+    kNone,
+    kEdge,
+    kOverPads
   };
 
   odb::dbITerm* iterm_;
@@ -165,7 +165,7 @@ class PadDirectConnectionStraps : public Straps
   std::map<Shape*, Shape*> target_shapes_;
   std::map<Shape*, odb::Rect> target_pin_shape_;
   odb::dbDirection pad_edge_;
-  ConnectionType type_ = ConnectionType::None;
+  ConnectionType type_ = ConnectionType::kNone;
   std::vector<odb::dbTechLayer*> layers_;
 
   std::vector<odb::dbBox*> pins_;
@@ -221,7 +221,7 @@ class RepairChannelStraps : public Straps
                       const odb::Rect& available_area,
                       const odb::Rect& obs_check_area);
 
-  Type type() const override { return GridComponent::RepairChannel; }
+  Type type() const override { return GridComponent::kRepairChannel; }
 
   void report() const override;
 

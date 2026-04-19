@@ -150,7 +150,7 @@ class GridSwitchedPower
   void updateControlNetworkSTAR();
   void updateControlNetworkDAISY(bool order_by_x);
 
-  static constexpr const char* inst_prefix_ = "PSW_";
+  static constexpr const char* kInstPrefix = "PSW_";
 };
 
 }  // namespace pdn

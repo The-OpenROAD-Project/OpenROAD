@@ -20,31 +20,31 @@
 
 namespace pdn {
 
-const gui::Painter::Color PDNRenderer::ring_color_
+const gui::Painter::Color PDNRenderer::kRingColor
     = gui::Painter::Color(gui::Painter::kRed, 100);
-const gui::Painter::Color PDNRenderer::strap_color_
+const gui::Painter::Color PDNRenderer::kStrapColor
     = gui::Painter::Color(gui::Painter::kCyan, 100);
-const gui::Painter::Color PDNRenderer::followpin_color_
+const gui::Painter::Color PDNRenderer::kFollowpinColor
     = gui::Painter::Color(gui::Painter::kGreen, 100);
-const gui::Painter::Color PDNRenderer::via_color_
+const gui::Painter::Color PDNRenderer::kViaColor
     = gui::Painter::Color(gui::Painter::kBlue, 100);
-const gui::Painter::Color PDNRenderer::obstruction_color_
+const gui::Painter::Color PDNRenderer::kObstructionColor
     = gui::Painter::Color(gui::Painter::kGray, 100);
-const gui::Painter::Color PDNRenderer::repair_color_
+const gui::Painter::Color PDNRenderer::kRepairColor
     = gui::Painter::Color(gui::Painter::kLightGray, 100);
-const gui::Painter::Color PDNRenderer::repair_outline_color_
+const gui::Painter::Color PDNRenderer::kRepairOutlineColor
     = gui::Painter::Color(gui::Painter::kYellow, 100);
 
 PDNRenderer::PDNRenderer(PdnGen* pdn) : pdn_(pdn)
 {
-  addDisplayControl(grid_obs_text_, false);
-  addDisplayControl(initial_obs_text_, false);
-  addDisplayControl(obs_text_, false);
-  addDisplayControl(vias_text_, true);
-  addDisplayControl(followpins_text_, true);
-  addDisplayControl(rings_text_, true);
-  addDisplayControl(straps_text_, true);
-  addDisplayControl(repair_text_, true);
+  addDisplayControl(kGridObsText, false);
+  addDisplayControl(kInitialObsText, false);
+  addDisplayControl(kObsText, false);
+  addDisplayControl(kViasText, true);
+  addDisplayControl(kFollowpinsText, true);
+  addDisplayControl(kRingsText, true);
+  addDisplayControl(kStrapsText, true);
+  addDisplayControl(kRepairText, true);
 
   update();
 
@@ -116,7 +116,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 
   const odb::Rect paint_rect = painter.getBounds();
 
-  if (checkDisplayControl(initial_obs_text_)) {
+  if (checkDisplayControl(kInitialObsText)) {
     painter.setPen(gui::Painter::kHighlight, true);
     painter.setBrush(gui::Painter::kTransparent);
     auto& shapes = initial_obstructions_[layer];
@@ -128,7 +128,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(grid_obs_text_)) {
+  if (checkDisplayControl(kGridObsText)) {
     painter.setPen(gui::Painter::kHighlight, true);
     painter.setBrush(gui::Painter::kTransparent);
     auto& shapes = grid_obstructions_[layer];
@@ -140,10 +140,10 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  const bool show_rings = checkDisplayControl(rings_text_);
-  const bool show_followpins = checkDisplayControl(followpins_text_);
-  const bool show_straps = checkDisplayControl(straps_text_);
-  const bool show_obs = checkDisplayControl(obs_text_);
+  const bool show_rings = checkDisplayControl(kRingsText);
+  const bool show_followpins = checkDisplayControl(kFollowpinsText);
+  const bool show_straps = checkDisplayControl(kStrapsText);
+  const bool show_obs = checkDisplayControl(kObsText);
   auto& shapes = shapes_[layer];
   if (show_rings || show_followpins || show_straps) {
     for (auto it = shapes.qbegin(bgi::intersects(paint_rect));
@@ -160,19 +160,19 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
           if (!show_rings) {
             continue;
           }
-          painter.setPenAndBrush(ring_color_, true);
+          painter.setPenAndBrush(kRingColor, true);
           break;
         case odb::dbWireShapeType::STRIPE:
           if (!show_straps) {
             continue;
           }
-          painter.setPenAndBrush(strap_color_, true);
+          painter.setPenAndBrush(kStrapColor, true);
           break;
         case odb::dbWireShapeType::FOLLOWPIN:
           if (!show_followpins) {
             continue;
           }
-          painter.setPenAndBrush(followpin_color_, true);
+          painter.setPenAndBrush(kFollowpinColor, true);
           break;
         default:
           painter.setPenAndBrush(gui::Painter::kHighlight, true);
@@ -225,7 +225,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(vias_text_)) {
+  if (checkDisplayControl(kViasText)) {
     for (auto it = vias_.qbegin(bgi::intersects(paint_rect));
          it != vias_.qend();
          it++) {
@@ -240,7 +240,7 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
         continue;
       }
 
-      painter.setPenAndBrush(via_color_, true);
+      painter.setPenAndBrush(kViaColor, true);
       painter.drawRect(area);
 
       const std::string via_name = via->getDisplayText();
@@ -256,13 +256,12 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(repair_text_)) {
+  if (checkDisplayControl(kRepairText)) {
     for (const auto& repair : repair_) {
       if (layer == repair.source || layer == repair.target) {
-        painter.setPenAndBrush(repair_color_, true);
+        painter.setPenAndBrush(kRepairColor, true);
         painter.drawRect(repair.rect);
-        painter.setPenAndBrush(
-            repair_outline_color_, true, gui::Painter::kNone);
+        painter.setPenAndBrush(kRepairOutlineColor, true, gui::Painter::kNone);
         painter.drawRect(repair.available_rect);
 
         const odb::Rect name_box = painter.stringBoundaries(
@@ -282,13 +281,13 @@ void PDNRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 void PDNRenderer::drawObjects(gui::Painter& painter)
 {
   gui::DiscreteLegend legend;
-  legend.addLegendKey(ring_color_, "Ring");
-  legend.addLegendKey(strap_color_, "Strap");
-  legend.addLegendKey(followpin_color_, "Followpin");
-  legend.addLegendKey(via_color_, "Via");
-  legend.addLegendKey(obstruction_color_, "Obstruction");
-  legend.addLegendKey(repair_color_, "Repair Area");
-  legend.addLegendKey(repair_outline_color_, "Repair Area Outline");
+  legend.addLegendKey(kRingColor, "Ring");
+  legend.addLegendKey(kStrapColor, "Strap");
+  legend.addLegendKey(kFollowpinColor, "Followpin");
+  legend.addLegendKey(kViaColor, "Via");
+  legend.addLegendKey(kObstructionColor, "Obstruction");
+  legend.addLegendKey(kRepairColor, "Repair Area");
+  legend.addLegendKey(kRepairOutlineColor, "Repair Area Outline");
   legend.draw(painter);
 }
 

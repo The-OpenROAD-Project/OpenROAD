@@ -51,12 +51,12 @@ class Shape
   };
   enum ShapeType
   {
-    SHAPE,
-    GRID_OBS,
-    BLOCK_OBS,
-    MACRO_OBS,
-    OBS,
-    FIXED
+    kShape,
+    kGridObs,
+    kBlockObs,
+    kMacroObs,
+    kObs,
+    kFixed
   };
   struct RectIndexableGetter
   {
