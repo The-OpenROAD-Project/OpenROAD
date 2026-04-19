@@ -3,7 +3,6 @@
 
 #include "dbMPin.h"
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -159,9 +158,6 @@ void dbMPin::clearPinAccess(const int pin_access_idx)
   }
   dbVector<dbId<_dbAccessPoint>> aps;
   aps.swap(pin->aps_[pin_access_idx]);
-  std::ranges::sort(aps);
-  const auto duplicate_aps = std::ranges::unique(aps);
-  aps.erase(duplicate_aps.begin(), duplicate_aps.end());
   for (const dbId<_dbAccessPoint>& ap : aps) {
     odb::dbAccessPoint::destroy(
         (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));

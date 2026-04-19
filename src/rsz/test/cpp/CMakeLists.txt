@@ -68,6 +68,8 @@ target_link_libraries(TestBufferRemoval3
         utl_lib
         rsz_lib
         grt_lib
+        drt_lib
+        dst_lib
         dpl_lib
         stt_lib
         odb
@@ -78,6 +80,7 @@ target_link_libraries(TestBufferRemoval3
 target_include_directories(TestBufferRemoval3
     PRIVATE
       ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/drt/src
 )
 
 gtest_discover_tests(TestBufferRemoval3
