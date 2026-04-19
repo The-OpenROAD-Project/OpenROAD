@@ -1215,6 +1215,12 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     return false;
   }
 
+  // Clear preferred APs before the ITerms are remapped to the new master.
+  for (const uint32_t iterm_id : inst->iterms_) {
+    dbITerm* iterm = (dbITerm*) block->iterm_tbl_->getPtr(iterm_id);
+    iterm->clearPrefAccessPoints();
+  }
+
   // remove reference to inst_hdr
   _dbInstHdr* old_inst_hdr
       = block->inst_hdr_hash_.find(((_dbMaster*) old_master_)->id_);
