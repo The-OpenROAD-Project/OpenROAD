@@ -80,6 +80,7 @@ exclude_patterns = [
     "main/src/odb/src/def/doc/README.md",
     "main/src/odb/src/lef/README.md",
     "main/docs",
+    "main/bazel-*",
     "md",  # manpage dir
     "man",  # manpage dir
     "cat",  # manpage dir

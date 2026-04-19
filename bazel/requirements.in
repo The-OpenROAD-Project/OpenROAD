@@ -1,1 +1,14 @@
 tclint==0.7.0
+
+# Sphinx documentation build (replicates ReadTheDocs CI check)
+# See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
+sphinx
+sphinx-book-theme
+sphinx-copybutton
+sphinx-external-toc==0.3.1
+sphinx-tabs
+sphinxcontrib-mermaid
+myst-parser
+# imghdr was removed from the Python 3.13 stdlib; sphinx.builders.epub3 still
+# imports it. The standard-imghdr backport restores the module.
+standard-imghdr
