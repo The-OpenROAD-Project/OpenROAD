@@ -324,15 +324,17 @@ def mock_array(name, config):
         tags = ["manual"],
     )
 
-    native.genrule(
-        name = "MockArray_{name}_combined_netlist".format(name = name),
-        srcs = [
-            ":MockArray_{name}_slang_netlist".format(name = name),
-            ":Element_{name}_slang_netlist".format(name = name),
-            ":multiplier_{name}_netlist".format(name = name),
-        ],
-        outs = ["MockArray_{name}_combined_netlist.v".format(name = name)],
-        cmd = "cat $(SRCS) > $@",
+    # Element is supplied as a LEF/LIB macro abstract via the `macros`
+    # attribute, so the netlist must leave Element (and its inner
+    # multiplier) as unresolved references. If the full Element body is
+    # concatenated here, OpenROAD links against the Verilog hierarchy
+    # instead of the macro abstract and the N x N grid of Element macros
+    # collapses into flattened std cells at floorplan time. The same
+    # netlist is used for both variants; base vs flat differ only in
+    # OPENROAD_HIERARCHICAL.
+    native.alias(
+        name = "MockArray_{name}_netlist".format(name = name),
+        actual = ":MockArray_{name}_slang_netlist".format(name = name),
         tags = ["manual"],
     )
 
@@ -340,6 +342,8 @@ def mock_array(name, config):
         orfs_flow(
             name = "MockArray",
             arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
                 "CORE_AREA": "{} {} {} {}".format(
                     array_spacing_x,
                     array_spacing_y,
@@ -375,12 +379,12 @@ def mock_array(name, config):
             macros = ["Element_{name}_base_generate_abstract".format(name = name)],
             sources = {
                 "IO_CONSTRAINTS": [":mock-array-io"],
+                "MACRO_PLACEMENT_TCL": [":place_mock_array.tcl"],
                 "RULES_JSON": [":rules-{variant}.json".format(variant = variant)],
                 "SDC_FILE": [":mock-array-constraints"],
-                "SYNTH_NETLIST_FILES": [":MockArray_{name}_combined_netlist".format(name = name)],
+                "SYNTH_NETLIST_FILES": [":MockArray_{name}_netlist".format(name = name)],
             } | ({
                 "IO_CONSTRAINTS": [":write_pin_placement"],
-                "MACRO_PLACEMENT_TCL": [":write_macro_placement"],
             } if variant == "4x4_flat" else {}),
             tags = ["manual"],
             test_kwargs = {
@@ -627,6 +631,27 @@ def mock_array(name, config):
                         ),
                     ],
                 )
+
+        orfs_run(
+            name = "MockArray_{variant}_macro_layout".format(variant = variant),
+            src = ":MockArray_{variant}_floorplan".format(variant = variant),
+            outs = ["{variant}_macro_layout.txt".format(variant = variant)],
+            arguments = {
+                "ARRAY_COLS": str(config["cols"]),
+                "ARRAY_ROWS": str(config["rows"]),
+                "OUTPUT": "$(location :{variant}_macro_layout.txt)".format(variant = variant),
+            },
+            script = ":check_macro_layout.tcl",
+            tags = ["manual"],
+            visibility = ["//visibility:public"],
+        )
+
+        sh_test(
+            name = "MockArray_{variant}_macro_layout_test".format(variant = variant),
+            srcs = ["ok.sh"],
+            args = ["$(location :MockArray_{variant}_macro_layout)".format(variant = variant)],
+            data = [":MockArray_{variant}_macro_layout".format(variant = variant)],
+        )
 
         for power_test in ELEMENT_POWER_TESTS:
             if v != "base":
