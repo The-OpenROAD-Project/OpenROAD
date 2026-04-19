@@ -757,13 +757,13 @@ void RamGen::generate(const int mask_size,
   const int slices_per_word = word_size / mask_size;
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
 
-  // error checking for read ports != 1 for current version of RamGen, edit
-  // later for future changes
-  if (read_ports != 1) {
-    logger_->error(
-        RAM, 25, "The ram generator currently only supports 1 read port.");
-    return;
-  }
+  // // error checking for read ports != 1 for current version of RamGen, edit
+  // // later for future changes
+  // if (read_ports != 1) {
+  //   logger_->error(
+  //       RAM, 25, "The ram generator currently only supports 1 read port.");
+  //   return;
+  // }
 
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
