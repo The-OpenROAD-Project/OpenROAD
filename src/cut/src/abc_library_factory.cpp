@@ -273,15 +273,15 @@ std::vector<abc::SC_Pin*> AbcLibraryFactory::CreateAbcOutputPins(
     }
 
     // Set standard cell function
-    abc::Vec_Wrd_t* vFunc;
+    abc::Vec_Wrd_t* v_func;
     abc::Vec_WrdErase(&output_pin->vFunc);
-    vFunc = abc::Mio_ParseFormulaTruth(
+    v_func = abc::Mio_ParseFormulaTruth(
         output_pin->func_text,
         (char**) (abc::Vec_PtrArray(input_names_abc)),
         input_names.size());
 
-    output_pin->vFunc = *vFunc;
-    ABC_FREE(vFunc);
+    output_pin->vFunc = *v_func;
+    ABC_FREE(v_func);
     abc::Vec_PtrFree(input_names_abc);
 
     // ABC has a limit of one timing arc per input pin. Keep track
