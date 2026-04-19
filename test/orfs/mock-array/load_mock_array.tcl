@@ -56,7 +56,7 @@ if { [string match "*_base" $::env(FLOW_VARIANT)] } {
   puts "read_spef for Element macros"
   for { set r 0 } { $r < $::env(ARRAY_ROWS) } { incr r } {
     for { set c 0 } { $c < $::env(ARRAY_COLS) } { incr c } {
-      log_cmd read_spef -path "ces\[${r}\].ces\[${c}\].ces" \
+      log_cmd read_spef -path "ces_row\[${r}\].ces_col\[${c}\].ces" \
         $::env(RESULTS_DIR)/../../Element/${name}_base/$::env(POWER_STAGE_STEM).spef > log.txt
       check_log_for_warning log.txt
     }

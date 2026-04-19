@@ -545,7 +545,7 @@ def mock_array(name, config):
             # VCD-based power tests need Verilator simulation:
             #  - base: Verilator can't handle uniquified post-P&R modules
             #  - flat: VCD hierarchical names don't map to flat netlist
-            #          escaped wire names (e.g. \ces[0].ces[0].ces/...)
+            #          escaped wire names (e.g. \ces_row[0].ces_col[0].ces/...)
             # Only path_groups (timing-only, no VCD) works for both.
             needs_vcd = power_test in ("openroad", "power", "power_instances")
             if needs_vcd:

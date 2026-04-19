@@ -178,10 +178,11 @@ module MockArray #(
   logic [WIDTH-1:0]      e_lsbIns     [HEIGHT][WIDTH];
   logic [WIDTH-1:0]      e_lsbOuts    [HEIGHT][WIDTH];
 
-  // Instantiate Element grid (ces_ naming for compatibility with
-  // IO constraints and power scripts)
-  for (genvar r = 0; r < HEIGHT; r++) begin : ces
-    for (genvar c = 0; c < WIDTH; c++) begin : ces
+  // Instantiate Element grid. Generate labels must be unique within
+  // their enclosing scope; the instance name ces keeps the leaf
+  // identifier matching the power/parasitics scripts.
+  for (genvar r = 0; r < HEIGHT; r++) begin : ces_row
+    for (genvar c = 0; c < WIDTH; c++) begin : ces_col
       // Element parameters (DATA_WIDTH, COLS) are set via
       // VERILOG_TOP_PARAMS at synthesis time - do not override here
       // as OpenROAD cannot read parameterized instantiations.
