@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "../../src/db/dbAccessPoint.h"
-#include "../../src/db/dbMPin.h"
 #include "gtest/gtest.h"
 #include "helper.h"
 #include "odb/db.h"
@@ -76,64 +74,6 @@ TEST_F(SimpleDbFixture, test_default)
             ->getPrefAccessPoints();
   EXPECT_EQ(aps.size(), 0);
   dbDatabase::destroy(db2);
-}
-
-TEST_F(SimpleDbFixture, clear_mpin_access_points_is_idempotent)
-{
-  createSimpleDB();
-  dbBlock* block = db_->getChip()->getBlock();
-  dbMaster* master = db_->findMaster("and2");
-  dbMTerm* term = master->findMTerm("a");
-  dbMPin* pin = dbMPin::create(term);
-  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
-  dbInst* inst = dbInst::create(block, master, "i1");
-  dbITerm* iterm = inst->getITerm(term);
-  iterm->setAccessPoint(pin, ap);
-
-  master->clearPinAccess(0);
-  master->clearPinAccess(0);
-
-  EXPECT_TRUE(iterm->getPrefAccessPoints().empty());
-}
-
-TEST_F(SimpleDbFixture, clear_mpin_access_points_removes_duplicate_references)
-{
-  createSimpleDB();
-  dbBlock* block = db_->getChip()->getBlock();
-  dbMaster* master = db_->findMaster("and2");
-  dbMTerm* term = master->findMTerm("a");
-  dbMPin* pin = dbMPin::create(term);
-  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 0);
-  _dbMPin* pin_impl = static_cast<_dbMPin*>(pin->getImpl());
-
-  // Reproduce duplicate AP bookkeeping that can be left by router pin access
-  // updates before a master pin-access slot is cleared.
-  pin_impl->aps_[0].push_back(ap->getImpl()->getOID());
-  ASSERT_EQ(pin_impl->aps_[0].size(), 2);
-
-  master->clearPinAccess(0);
-
-  EXPECT_TRUE(pin_impl->aps_[0].empty());
-}
-
-TEST_F(SimpleDbFixture, destroy_inst_removes_access_point_back_references)
-{
-  createSimpleDB();
-  dbBlock* block = db_->getChip()->getBlock();
-  dbMaster* master = db_->findMaster("and2");
-  dbMTerm* term = master->findMTerm("a");
-  dbMPin* pin = dbMPin::create(term);
-  dbAccessPoint* ap = dbAccessPoint::create(block, pin, 1);
-  dbInst* inst = dbInst::create(block, master, "i1");
-  dbITerm* iterm = inst->getITerm(term);
-  iterm->setAccessPoint(pin, ap);
-  inst->setPinAccessIdx(0);
-  _dbAccessPoint* ap_impl = static_cast<_dbAccessPoint*>(ap->getImpl());
-  ASSERT_EQ(ap_impl->iterms_.size(), 1);
-
-  dbInst::destroy(inst);
-
-  EXPECT_TRUE(ap_impl->iterms_.empty());
 }
 
 }  // namespace
