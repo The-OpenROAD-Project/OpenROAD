@@ -40,14 +40,14 @@ using ViaReport = std::map<std::string, int>;
 class Grid;
 class TechLayer;
 
-enum class failedViaReason
+enum class FailedViaReason
 {
-  OBSTRUCTED,
-  OVERLAPPING,
-  BUILD,
-  RIPUP,
-  RECHECK,
-  OTHER
+  kObstructed,
+  kOverlapping,
+  kBuild,
+  kRipup,
+  kRecheck,
+  kOther
 };
 
 class Enclosure
@@ -757,7 +757,7 @@ class Via
 
   Via* copy() const;
 
-  void markFailed(failedViaReason reason);
+  void markFailed(FailedViaReason reason);
   bool isFailed() const { return failed_; }
 
   static ViaTree convertVectorToTree(std::vector<ViaPtr>& vec);
