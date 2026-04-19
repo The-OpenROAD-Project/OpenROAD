@@ -7,10 +7,10 @@
 # for clock routing.
 
 set block [ord::get_db_block]
-set core  [$block getCoreArea]
+set core [$block getCoreArea]
 
 set element [lindex [find_macros] 0]
-set bbox    [$element getBBox]
+set bbox [$element getBBox]
 
 set x_pitch [$bbox getDX]
 set y_pitch [expr { [$bbox getDY] + 4 / [ord::dbu_to_microns 1] }]
@@ -18,10 +18,14 @@ set y_pitch [expr { [$bbox getDY] + 4 / [ord::dbu_to_microns 1] }]
 set rows $::env(ARRAY_ROWS)
 set cols $::env(ARRAY_COLS)
 
-set x_offset [expr { [$core xMin] + \
-                     ([$core dx] - ($cols - 1) * $x_pitch - [$bbox getDX]) / 2 }]
-set y_offset [expr { [$core yMin] + \
-                     ([$core dy] - ($rows - 1) * $y_pitch - [$bbox getDY]) / 2 }]
+set x_offset [expr {
+  [$core xMin] +
+  ([$core dx] - ($cols - 1) * $x_pitch - [$bbox getDX]) / 2
+}]
+set y_offset [expr {
+  [$core yMin] +
+  ([$core dy] - ($rows - 1) * $y_pitch - [$bbox getDY]) / 2
+}]
 
 for { set r 0 } { $r < $rows } { incr r } {
   for { set c 0 } { $c < $cols } { incr c } {
@@ -32,7 +36,7 @@ for { set r 0 } { $r < $rows } { incr r } {
     set y [expr { $r * $y_pitch + $y_offset }]
     place_macro -macro_name $macro_name \
       -location [list [expr { [ord::dbu_to_microns 1] * $x }] \
-                      [expr { [ord::dbu_to_microns 1] * $y }]] \
+        [expr { [ord::dbu_to_microns 1] * $y }]] \
       -orientation R0
   }
 }
