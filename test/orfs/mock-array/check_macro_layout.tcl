@@ -46,7 +46,8 @@ foreach inst $elements {
     set macro_width $w
     set macro_height $h
   } elseif { $orient ne $first_orient } {
-    puts "ERROR: Element [$inst getName] has orientation $orient, expected $first_orient (all macros must share orientation)"
+    puts "ERROR: Element [$inst getName] has orientation $orient,\
+      expected $first_orient (all macros must share orientation)"
     exit 1
   }
   lappend entries [list $x $y $orient [$inst getName] $w $h]
