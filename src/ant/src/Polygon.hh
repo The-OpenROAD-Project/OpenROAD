@@ -26,16 +26,14 @@ using Point = gtl::polygon_traits<Polygon>::point_type;
 struct GraphNode
 {
   int id;
-  bool isVia;
+  bool is_via;
   Polygon pol;
   std::vector<int> low_adj;
   std::set<PinType, PinTypeCmp> gates;
   GraphNode() = default;
-  GraphNode(int id_, bool isVia_, const Polygon& pol_)
+  GraphNode(int id, bool is_via, const Polygon& pol)
+      : id(id), is_via(is_via), pol(pol)
   {
-    id = id_;
-    isVia = isVia_;
-    pol = pol_;
   }
 };
 
