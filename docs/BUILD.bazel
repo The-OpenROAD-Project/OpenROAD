@@ -2,6 +2,8 @@
 # Copyright (c) 2026, The OpenROAD Authors
 
 load("//bazel:man_pages.bzl", "man_pages")
+load("@openroad-pip//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
 
 man_pages(
     name = "man_pages",
@@ -68,4 +70,40 @@ man_pages(
         "//docs/src/scripts:extract_utils.py",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Replicates the ReadTheDocs Sphinx build locally (hermetic Python deps).
+# See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
+#
+# Usage:
+#   bazelisk test //docs:sphinx_build_test
+#   bazelisk test --test_tag_filters=doc_check //docs/...
+py_test(
+    name = "sphinx_build_test",
+    srcs = ["sphinx_build_test.py"],
+    data = glob(
+        ["**/*"],
+        exclude = [
+            "BUILD.bazel",
+            "sphinx_build_test.py",
+            "_build/**",
+            "_readthedocs/**",
+            "main/**",
+        ],
+    ),
+    tags = [
+        "doc_check",
+        "local",
+        "no-sandbox",
+    ],
+    deps = [
+        requirement("sphinx"),
+        requirement("sphinx-book-theme"),
+        requirement("sphinx-copybutton"),
+        requirement("sphinx-external-toc"),
+        requirement("sphinx-tabs"),
+        requirement("sphinxcontrib-mermaid"),
+        requirement("myst-parser"),
+        requirement("standard-imghdr"),
+    ],
 )
