@@ -119,10 +119,10 @@ void IntegratedFixture::initStaDefaultSdc()
     waveform->push_back(period / 2.0);
 
     sta_->makeClock("clk",
-                    clk_pins,
+                    *clk_pins,
                     /*add_to_pins=*/false,
                     /*period=*/period,
-                    waveform,
+                    *waveform,
                     /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 

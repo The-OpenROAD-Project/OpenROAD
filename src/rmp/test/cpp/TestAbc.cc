@@ -101,10 +101,10 @@ class AbcTest : public tst::Fixture
     waveform->push_back(period / 2.0);
 
     sta_->makeClock("core_clock",
-                    pinset,
+                    *pinset,
                     /*add_to_pins=*/false,
                     /*period=*/period,
-                    waveform,
+                    *waveform,
                     /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 
