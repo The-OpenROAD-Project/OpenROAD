@@ -92,6 +92,12 @@ struct NegCell
 
   bool fixed{false};
   NLPowerRailType rail_type{NLPowerRailType::kVss};
+  // Bottom rail type of the cell when it is MX-flipped (= the top rail in
+  // the natural R0 orientation).  For most cells this is kVdd (VDD↔VSS swap
+  // at the bottom edge after flip).  For multi-height cells whose power is
+  // symmetric (VSS at both top and bottom, e.g. some double-height flops),
+  // this equals rail_type — flipping cannot fix a power-rail mismatch.
+  NLPowerRailType rail_type_flipped{NLPowerRailType::kVdd};
   int fence_id{-1};      // -1 → default region
   bool flippable{true};  // odd-height cells may require fliping for moving
   bool legal{false};     // updated each negotiation iteration
@@ -160,7 +166,6 @@ class NegotiationLegalizer
   bool initFromDb();
   void buildGrid();
   void initFenceRegions();
-  [[nodiscard]] NLPowerRailType inferRailType(int rowIdx) const;
   void flushToDb();  // Write current cell positions to ODB (for GUI updates)
   void pushNegotiationPixels();
   void debugPause(const std::string& msg);

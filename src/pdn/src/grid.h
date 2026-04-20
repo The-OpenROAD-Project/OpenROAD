@@ -36,9 +36,9 @@ class Grid
  public:
   enum Type
   {
-    Core,
-    Instance,
-    Existing
+    kCore,
+    kInstance,
+    kExisting
   };
 
   Grid(VoltageDomain* domain,
@@ -205,7 +205,7 @@ class CoreGrid : public Grid
            bool start_with_power,
            const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
-  Type type() const override { return Grid::Core; }
+  Type type() const override { return Grid::kCore; }
 
   odb::Rect getDomainBoundary() const override;
 
@@ -231,7 +231,7 @@ class InstanceGrid : public Grid
   std::string getLongName() const override;
 
   void report() const override;
-  Type type() const override { return Grid::Instance; }
+  Type type() const override { return Grid::kInstance; }
 
   odb::dbInst* getInstance() const { return inst_; }
   std::set<odb::dbInst*> getInstances() const override { return {inst_}; }
@@ -304,7 +304,7 @@ class ExistingGrid : public Grid
                const std::string& name,
                const std::vector<odb::dbTechLayer*>& generate_obstructions);
 
-  Type type() const override { return Grid::Existing; }
+  Type type() const override { return Grid::kExisting; }
 
   Shape::ShapeTreeMap getShapes() const override { return shapes_; };
 

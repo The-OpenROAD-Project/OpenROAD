@@ -47,6 +47,7 @@ or_integration_tests(
     mirror2
     mirror3
     multi_height_one_site_gap_disallow
+    multi_height_power_align
     multi_height_rows
     obstruction1
     obstruction2

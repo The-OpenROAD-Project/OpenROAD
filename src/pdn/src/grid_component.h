@@ -29,11 +29,11 @@ class GridComponent
  public:
   enum Type
   {
-    Ring,
-    Strap,
-    Followpin,
-    PadConnect,
-    RepairChannel
+    kRing,
+    kStrap,
+    kFollowpin,
+    kPadConnect,
+    kRepairChannel
   };
 
   explicit GridComponent(Grid* grid);

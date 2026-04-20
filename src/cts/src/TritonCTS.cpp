@@ -2578,7 +2578,7 @@ void TritonCTS::setAllClocksPropagated()
     }
   }
 
-  estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::placement);
+  estimate_parasitics_->estimateParasitics(est::ParasiticsSrc::kPlacement);
 }
 
 void TritonCTS::repairClockNets()
