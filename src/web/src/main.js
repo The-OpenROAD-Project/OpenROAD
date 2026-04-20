@@ -304,6 +304,43 @@ function createLayoutViewer(container) {
     app.map.on('mouseout', () => { app.lastMouseLatLng = null; });
 
     app.rulerManager = new RulerManager(app, visibility, updateInspector, focusComponent);
+
+    // Golden Layout may instantiate this factory after the bounds/tech data
+    // has already arrived (e.g. SchematicWidget is the saved-state active tab
+    // in LayoutViewer's stack). Run the deferred map-dependent init now if
+    // the `.then(initialDataLoaded)` callback has already set app.fitBounds.
+    applyMapFitAndOverlayIfReady();
+}
+
+// Map-dependent init that the initial `.then` block and createLayoutViewer
+// both race to run. Whichever fires last (with both app.map and app.fitBounds
+// available) completes the setup. Guarded against double-apply.
+function applyMapFitAndOverlayIfReady() {
+    if (!app.map || !app.fitBounds || app.mapFitApplied) return;
+    app.mapFitApplied = true;
+    app.map.fitBounds(app.fitBounds);
+    if (!staticCache) return;
+    // Static report: lock zoom to the pre-rendered tile level and wire the
+    // path-highlight overlay image.
+    const cacheZoom = staticCache.zoom;
+    app.map.setMinZoom(cacheZoom);
+    app.map.setMaxZoom(cacheZoom);
+    app.map.fitBounds(app.fitBounds);
+    app.map.scrollWheelZoom.disable();
+    app.map.touchZoom.disable();
+    app.map.boxZoom.disable();
+    app.map.doubleClickZoom.disable();
+    app.pathOverlay = L.imageOverlay('', app.fitBounds, {
+        opacity: 1, interactive: false, zIndex: 1000,
+    });
+    staticCache.setPathOverlay = (src) => {
+        if (src) {
+            app.pathOverlay.setUrl(src);
+            app.pathOverlay.addTo(app.map);
+        } else {
+            app.map.removeLayer(app.pathOverlay);
+        }
+    };
 }
 
 function createDisplayControls(container) {
@@ -592,7 +629,15 @@ const componentTitles = {
 
 // Focus a Golden Layout component tab, or re-create it if it was closed.
 function focusComponent(componentType) {
+    // Menu clicks before loadLayout (or after a failed load) would
+    // otherwise dereference undefined inside find(). GL's rootItem getter
+    // itself throws before init(), and returns undefined after init but
+    // before a layout is loaded — guard against both.
+    if (!app.goldenLayout?.isInitialised) return;
+    const root = app.goldenLayout.rootItem;
+    if (!root) return;
     function find(item) {
+        if (!item) return null;
         if (item.isComponent && item.componentType === componentType) return item;
         if (item.contentItems) {
             for (const child of item.contentItems) {
@@ -602,7 +647,7 @@ function focusComponent(componentType) {
         }
         return null;
     }
-    const item = find(app.goldenLayout.rootItem);
+    const item = find(root);
     if (item) {
         item.focus();
     } else {
@@ -670,32 +715,7 @@ app.websocketManager.readyPromise.then(async () => {
                 [-maxDXDY * scale, 0],
                 [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
-            app.map.fitBounds(app.fitBounds);
-
-            if (staticCache) {
-                // Lock to the pre-rendered tile zoom level and fit.
-                const cacheZoom = staticCache.zoom;
-                app.map.setMinZoom(cacheZoom);
-                app.map.setMaxZoom(cacheZoom);
-                app.map.fitBounds(app.fitBounds);
-                app.map.scrollWheelZoom.disable();
-                app.map.touchZoom.disable();
-                app.map.boxZoom.disable();
-                app.map.doubleClickZoom.disable();
-
-                // Path highlight overlay image.
-                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
-                    opacity: 1, interactive: false, zIndex: 1000,
-                });
-                staticCache.setPathOverlay = (src) => {
-                    if (src) {
-                        app.pathOverlay.setUrl(src);
-                        app.pathOverlay.addTo(app.map);
-                    } else {
-                        app.map.removeLayer(app.pathOverlay);
-                    }
-                };
-            }
+            applyMapFitAndOverlayIfReady();
         }
 
         // Click-to-select: convert click position to DBU and query server

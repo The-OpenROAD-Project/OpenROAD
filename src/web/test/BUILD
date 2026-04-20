@@ -287,3 +287,14 @@ js_test(
     entry_point = "js/test-save-report-static-cache.js",
     no_copy_to_bin = JS_FILES,
 )
+
+# jsdom-based end-to-end test: eval the fixture's application script and
+# assert it initializes the map and GoldenLayout without throwing. Guards
+# against the fitBounds null-deref and focusComponent rootItem-undefined
+# regressions seen after #10201.
+js_test(
+    name = "save_report_e2e_test",
+    data = DOM_TEST_DATA + [":save_report_fixture_html"],
+    entry_point = "js/test-save-report-e2e.js",
+    no_copy_to_bin = JS_FILES,
+)
