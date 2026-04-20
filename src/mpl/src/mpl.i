@@ -132,16 +132,16 @@ add_guidance_region(odb::dbInst* macro,
 }
 
 void
-set_default_halo(float left,
-                 float bottom,
-                 float right,
-                 float top)
+set_base_halo(float left,
+              float bottom,
+              float right,
+              float top)
 {
   odb::dbBlock* block = ord::OpenRoad::openRoad()->getDb()->getChip()->getBlock();
-  getMacroPlacer()->setDefaultHalo(block->micronsToDbu(left),
-                                   block->micronsToDbu(bottom),
-                                   block->micronsToDbu(right),
-                                   block->micronsToDbu(top));
+  getMacroPlacer()->setBaseHalo(block->micronsToDbu(left),
+                                block->micronsToDbu(bottom),
+                                block->micronsToDbu(right),
+                                block->micronsToDbu(top));
 }
 
 void
