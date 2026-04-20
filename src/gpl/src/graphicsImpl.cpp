@@ -606,7 +606,7 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
 
   if (routing_chart_) {
     values.clear();
-    if (!nbVec_.empty() && nbVec_[0]) {
+    if (!nbVec_.empty() && nbVec_[0] && rb_) {
       values.push_back(static_cast<double>(rb_->getRudyAverage()));
       values.push_back(
           block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
@@ -647,8 +647,10 @@ void GraphicsImpl::addRoutabilityIter(const int iter, const bool revert)
   gui::Painter::Color color
       = revert ? gui::Painter::kRed : gui::Painter::kGreen;
   main_chart_->addVerticalMarker(iter, color);
-  routing_chart_->addVerticalMarker(
-      iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
+  if (routing_chart_ && rb_) {
+    routing_chart_->addVerticalMarker(
+        iter, rb_->isMinRc() ? gui::Painter::kMagenta : gui::Painter::kBlack);
+  }
 }
 
 void GraphicsImpl::cellPlotImpl(bool pause)
