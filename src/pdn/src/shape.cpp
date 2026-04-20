@@ -36,7 +36,7 @@ Shape::Shape(odb::dbTechLayer* layer,
       net_(net),
       rect_(rect),
       type_(type),
-      shape_type_(SHAPE),
+      shape_type_(kShape),
       allow_non_preferred_change_(false),
       is_locked_(false),
       obs_(rect_),
@@ -212,7 +212,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
 {
   return cut(
       obstructions, replacements, [ignore_grid](const ShapePtr& other) -> bool {
-        if (other->shapeType() != GRID_OBS) {
+        if (other->shapeType() != kGridObs) {
           return true;
         }
         const GridObsShape* shape = static_cast<GridObsShape*>(other.get());
@@ -247,7 +247,7 @@ bool Shape::cut(const ObstructionTree& obstructions,
     const auto& other_shape = *it;
 
     if (other_shape->net_ != nullptr && net_ == other_shape->net_
-        && other_shape->shapeType() != ShapeType::SHAPE) {
+        && other_shape->shapeType() != ShapeType::kShape) {
       // obstruction is of the same net, so see if the violation is completely
       // inside the new strap and therefore is okay
       if (is_horizontal) {
@@ -504,7 +504,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
 
         ShapePtr shape = std::make_shared<Shape>(
             layer, net, rect, odb::dbWireShapeType::NONE);
-        shape->setShapeType(Shape::FIXED);
+        shape->setShapeType(Shape::kFixed);
         shape->generateObstruction();
         map[layer].push_back(std::move(shape));
       }
@@ -531,7 +531,7 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
           transform.apply(rect);
           ShapePtr shape = std::make_shared<Shape>(
               layer, net, rect, box->getWireShapeType());
-          shape->setShapeType(Shape::FIXED);
+          shape->setShapeType(Shape::kFixed);
           shape->generateObstruction();
           map[layer].push_back(std::move(shape));
         }
@@ -542,11 +542,11 @@ void Shape::populateMapFromDb(odb::dbNet* net, ShapeVectorMap& map)
 
         ShapePtr shape = std::make_shared<Shape>(
             layer, net, rect, box->getWireShapeType());
-        shape->setShapeType(Shape::FIXED);
+        shape->setShapeType(Shape::kFixed);
         if (box->getDirection() == odb::dbSBox::OCTILINEAR) {
           // cannot connect this this safely so make it an obstruction
           shape->setNet(nullptr);
-          shape->setShapeType(Shape::OBS);
+          shape->setShapeType(Shape::kObs);
         }
         shape->generateObstruction();
         map[layer].push_back(std::move(shape));
@@ -650,7 +650,7 @@ bool Shape::isModifiable() const
   if (is_locked_) {
     return false;
   }
-  return shape_type_ == SHAPE;
+  return shape_type_ == kShape;
 }
 
 std::string Shape::getReportText() const
@@ -853,7 +853,7 @@ bool FollowPinShape::cut(
         // grid level obstructions represent the other grids defined
         // followpins should only get cut from real obstructions and
         // not estimated obstructions
-        return other->shapeType() != GRID_OBS;
+        return other->shapeType() != kGridObs;
       });
 }
 
@@ -875,7 +875,7 @@ odb::dbTechLayerDir FollowPinShape::getLayerDirection() const
 GridObsShape::GridObsShape(odb::dbTechLayer* layer,
                            const odb::Rect& rect,
                            const Grid* grid)
-    : Shape(layer, rect, Shape::GRID_OBS), grid_(grid)
+    : Shape(layer, rect, Shape::kGridObs), grid_(grid)
 {
   setObstruction(rect);
 }

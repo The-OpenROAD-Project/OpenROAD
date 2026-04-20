@@ -516,7 +516,7 @@ WebSocketResponse dispatch_request(
   resp.id = req.id;
 
   switch (req.type) {
-    case WebSocketRequest::BOUNDS: {
+    case WebSocketRequest::kBounds: {
       resp.type = 0;
       JsonBuilder builder;
       serializeBoundsResponse(builder, gen, gen.shapesReady());
@@ -524,7 +524,7 @@ WebSocketResponse dispatch_request(
       resp.payload.assign(json.begin(), json.end());
       break;
     }
-    case WebSocketRequest::TECH: {
+    case WebSocketRequest::kTech: {
       resp.type = 0;
       JsonBuilder builder;
       serializeTechResponse(builder, gen);
@@ -532,7 +532,7 @@ WebSocketResponse dispatch_request(
       resp.payload.assign(json.begin(), json.end());
       break;
     }
-    case WebSocketRequest::TILE: {
+    case WebSocketRequest::kTile: {
       resp.type = 1;
       resp.payload = gen.generateTile(req.layer,
                                       req.z,
@@ -1908,10 +1908,10 @@ WebSocketResponse TileHandler::handleModuleHierarchy(
       builder.field("local_insts", n.local_insts);
       builder.field("local_macros", n.local_macros);
       builder.field("local_modules", n.local_modules);
-      if (n.node_kind != HierarchyNodeKind::MODULE) {
+      if (n.node_kind != HierarchyNodeKind::kModule) {
         builder.field("node_kind", static_cast<int>(n.node_kind));
       }
-      if (n.node_kind == HierarchyNodeKind::MODULE) {
+      if (n.node_kind == HierarchyNodeKind::kModule) {
         builder.field("odb_id", static_cast<int>(n.odb_id));
       }
       builder.endObject();
@@ -1938,7 +1938,7 @@ WebSocketResponse TileHandler::handleSetModuleColors(
 
   // Parse compact format: "id:r,g,b,a;id:r,g,b,a;..."
   std::map<uint32_t, Color> colors;
-  const std::string data = extract_string(req.vis.raw_json_, "colors");
+  const std::string data = extract_string(req.vis.raw_json, "colors");
   if (!data.empty()) {
     size_t pos = 0;
     while (pos < data.size()) {

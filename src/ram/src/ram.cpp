@@ -622,7 +622,7 @@ void RamGen::ramPdngen(const char* power_pin,
   pdngen_->setCoreDomain(power_net, nullptr, ground_net, {});
   pdngen_->makeCoreGrid(pdngen_->findDomain("Core"),
                         grid_name,
-                        pdn::StartsWith::GROUND,
+                        pdn::StartsWith::kGround,
                         {},
                         {},
                         nullptr,
@@ -639,7 +639,7 @@ void RamGen::ramPdngen(const char* power_pin,
   pdngen_->makeFollowpin(grid,
                          pdn_tech->findLayer(route_name),
                          route_width,
-                         pdn::ExtensionMode::BOUNDARY);
+                         pdn::ExtensionMode::kBoundary);
 
   // add_pdn_stripe
   pdngen_->makeStrap(grid,
@@ -650,8 +650,8 @@ void RamGen::ramPdngen(const char* power_pin,
                      0,
                      0,
                      false,
-                     pdn::StartsWith::GRID,
-                     pdn::ExtensionMode::BOUNDARY,
+                     pdn::StartsWith::kGrid,
+                     pdn::ExtensionMode::kBoundary,
                      {},
                      false);
   pdngen_->makeStrap(grid,
@@ -662,8 +662,8 @@ void RamGen::ramPdngen(const char* power_pin,
                      0,
                      0,
                      false,
-                     pdn::StartsWith::GRID,
-                     pdn::ExtensionMode::BOUNDARY,
+                     pdn::StartsWith::kGrid,
+                     pdn::ExtensionMode::kBoundary,
                      {},
                      false);
 

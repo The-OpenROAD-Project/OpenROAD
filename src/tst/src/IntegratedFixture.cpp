@@ -47,7 +47,7 @@ IntegratedFixture::IntegratedFixture(Technology tech,
       test_root_path_(test_root_path)
 {
   switch (tech) {
-    case Technology::Nangate45: {
+    case Technology::kNangate45: {
       const std::string nangate45_tech_path = "_main/test/Nangate45/";
       readLiberty(getFilePath(nangate45_tech_path + "Nangate45_typ.lib"));
       lib_ = loadTechAndLib("Nangate45",
@@ -56,7 +56,7 @@ IntegratedFixture::IntegratedFixture(Technology tech,
       break;
     }
 
-    case Technology::Sky130hd: {
+    case Technology::kSky130hd: {
       const std::string sky130hd_tech_path = "_main/test/sky130hd/";
       readLiberty(getFilePath(sky130hd_tech_path + "sky130_fd_sc_hd_tt.lib"));
       lib_ = loadTechAndLib(
