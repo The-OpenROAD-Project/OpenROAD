@@ -1095,8 +1095,8 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
   debugPrint(
       logger_,
       utl::DPL,
-      "negotiation",
-      2,
+      "rail_align",
+      1,
       "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
       "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
       rowIdx,
