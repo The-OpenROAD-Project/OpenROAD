@@ -6,12 +6,10 @@
 
 #include "BaseMove.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/Delay.hh"
 #include "sta/Liberty.hh"
 #include "sta/MinMax.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/Scene.hh"
 
 namespace rsz {
@@ -21,11 +19,7 @@ class SwapPinsMove : public BaseMove
  public:
   using BaseMove::BaseMove;
 
-  bool doMove(const sta::Path* drvr_path,
-              int drvr_index,
-              sta::Slack drvr_slack,
-              sta::PathExpanded* expanded,
-              float setup_slack_margin) override;
+  bool doMove(const sta::Path* drvr_path, float setup_slack_margin) override;
 
   const char* name() override { return "SwapPinsMove"; }
 
@@ -33,7 +27,7 @@ class SwapPinsMove : public BaseMove
 
  private:
   using LibertyPortVec = std::vector<sta::LibertyPort*>;
-  void swapPins(sta::Instance* inst,
+  bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
                 sta::LibertyPort* port2);
   void equivCellPins(const sta::LibertyCell* cell,

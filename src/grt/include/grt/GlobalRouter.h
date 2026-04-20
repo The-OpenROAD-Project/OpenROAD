@@ -26,7 +26,7 @@ using AdjacencyList = std::vector<std::vector<int>>;
 
 namespace utl {
 class Logger;
-class CallBackHandler;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace odb {
@@ -118,7 +118,7 @@ class GlobalRouter
 {
  public:
   GlobalRouter(utl::Logger* logger,
-               utl::CallBackHandler* callback_handler,
+               utl::ServiceRegistry* service_registry,
                stt::SteinerTreeBuilder* stt_builder,
                odb::dbDatabase* db,
                sta::dbSta* sta,
@@ -174,6 +174,8 @@ class GlobalRouter
   void updateNetResources(Net* net, bool release_resources);
   void ensurePinsPositions(odb::dbNet* db_net);
   bool findCoveredAccessPoint(const Net* net, Pin& pin);
+  bool updateUncoveredPinsPositions(odb::dbNet* db_net,
+                                    std::string& pins_not_covered);
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides(const std::vector<odb::dbNet*>& nets);
   void writeSegments(const char* file_name);
@@ -508,7 +510,7 @@ class GlobalRouter
   void configFastRoute();
 
   utl::Logger* logger_;
-  utl::CallBackHandler* callback_handler_;
+  utl::ServiceRegistry* service_registry_;
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;

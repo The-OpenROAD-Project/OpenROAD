@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -36,6 +37,8 @@ PadPlacer::PadPlacer(utl::Logger* logger,
 {
   populateInstWidths();
   populateObstructions();
+
+  addInstsOverlapCache(insts);
 }
 
 void PadPlacer::populateInstWidths()
@@ -397,8 +400,10 @@ void PadPlacer::populateObstructions()
           covers.insert(check_inst);
           continue;
         }
-        instance_obstructions_.insert(
-            {check_inst->getBBox()->getBox(), check_inst});
+
+        instance_obstructions_.insert({check_inst->getBBox()->getBox(),
+                                       getInstanceOutline(check_inst),
+                                       check_inst});
       }
     }
   }
@@ -410,9 +415,83 @@ void PadPlacer::populateObstructions()
   }
 }
 
+std::optional<odb::Polygon> PadPlacer::getMasterOutline(
+    odb::dbMaster* master) const
+{
+  std::vector<odb::Rect> master_obs;
+  for (auto* obs : master->getObstructions()) {
+    auto* layer = obs->getTechLayer();
+    if (layer != nullptr) {
+      if (layer->getType() != odb::dbTechLayerType::OVERLAP) {
+        continue;
+      }
+      master_obs.push_back(obs->getBox());
+    }
+  }
+
+  if (master_obs.empty()) {
+    return std::nullopt;
+  }
+
+  if (master_obs.size() == 1) {
+    return odb::Polygon(master_obs.front());
+  }
+
+  const auto overlaps = odb::Polygon::merge(master_obs);
+  if (overlaps.size() == 1) {
+    return overlaps.front();
+  }
+
+  return std::nullopt;
+}
+
+std::optional<odb::Polygon> PadPlacer::getInstanceOutline(
+    odb::dbInst* inst) const
+{
+  const auto checker = master_overlap_cache_.find(inst->getMaster());
+  if (checker != master_overlap_cache_.end()) {
+    if (!checker->second) {
+      return std::nullopt;
+    }
+
+    odb::Polygon poly = checker->second.value();
+    const odb::dbTransform xform = inst->getTransform();
+    xform.apply(poly);
+    return poly;
+  }
+
+  const auto master_outline = getMasterOutline(inst->getMaster());
+  if (!master_outline) {
+    return std::nullopt;
+  }
+
+  const odb::dbTransform xform = inst->getTransform();
+  odb::Polygon poly = master_outline.value();
+  xform.apply(poly);
+  return poly;
+}
+
+void PadPlacer::addInstsOverlapCache(const std::vector<odb::dbInst*>& insts)
+{
+  for (auto* inst : insts) {
+    addInstOverlapCache(inst);
+  }
+}
+
+void PadPlacer::addInstOverlapCache(odb::dbInst* inst)
+{
+  if (master_overlap_cache_.find(inst->getMaster())
+      != master_overlap_cache_.end()) {
+    return;
+  }
+  master_overlap_cache_[inst->getMaster()]
+      = getMasterOutline(inst->getMaster());
+}
+
 void PadPlacer::addInstanceObstructions(odb::dbInst* inst)
 {
-  instance_obstructions_.insert({inst->getBBox()->getBox(), inst});
+  instance_obstructions_.insert(
+      {inst->getBBox()->getBox(), getInstanceOutline(inst), inst});
   if (inst->getMaster()->isCover()) {
     for (const auto& [layer, shapes] : getInstanceObstructions(inst)) {
       term_obstructions_[layer].insert(shapes.begin(), shapes.end());
@@ -425,6 +504,8 @@ PadPlacer::checkInstancePlacement(odb::dbInst* inst,
                                   bool return_intersect) const
 {
   const odb::Rect inst_rect = inst->getBBox()->getBox();
+  const std::optional<odb::Polygon> inst_poly = getInstanceOutline(inst);
+
   for (auto itr = blockage_obstructions_.qbegin(
            boost::geometry::index::intersects(inst_rect));
        itr != blockage_obstructions_.qend();
@@ -445,10 +526,28 @@ PadPlacer::checkInstancePlacement(odb::dbInst* inst,
            boost::geometry::index::intersects(inst_rect));
        itr != instance_obstructions_.qend();
        itr++) {
-    const auto& [check_rect, check_inst] = *itr;
+    const auto& [check_rect, check_poly, check_inst] = *itr;
     if (check_rect.overlaps(inst_rect)) {
       if (check_inst == inst) {
         continue;
+      }
+      if (check_poly && inst_poly) {
+        // Both have overlap polygons, check them for a more accurate result
+        if (!boost::geometry::intersects(*check_poly, *inst_poly)) {
+          continue;
+        }
+      } else if (check_poly) {
+        // Only the obstruction has an overlap polygon, check it for a more
+        // accurate result
+        if (!boost::geometry::intersects(inst_rect, *check_poly)) {
+          continue;
+        }
+      } else if (inst_poly) {
+        // Only the instance has an overlap polygon, check it for a more
+        // accurate result
+        if (!boost::geometry::intersects(check_rect, *inst_poly)) {
+          continue;
+        }
       }
       debugPrint(getLogger(),
                  utl::PAD,
@@ -569,10 +668,12 @@ void UniformPadPlacer::place()
 
 ///////////////////////////////////////////
 
-CheckerOnlyPadPlacer::CheckerOnlyPadPlacer(utl::Logger* logger,
-                                           odb::dbBlock* block,
-                                           odb::dbRow* row)
-    : PadPlacer(logger, block, {}, odb::Direction2D::North, row)
+CheckerOnlyPadPlacer::CheckerOnlyPadPlacer(
+    utl::Logger* logger,
+    odb::dbBlock* block,
+    odb::dbRow* row,
+    const std::vector<odb::dbInst*>& insts)
+    : PadPlacer(logger, block, insts, odb::Direction2D::North, row)
 {
 }
 

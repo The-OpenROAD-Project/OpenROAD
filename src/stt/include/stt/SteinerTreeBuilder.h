@@ -89,7 +89,7 @@ class SteinerTreeBuilder
  private:
   int computeHPWL(odb::dbNet* net);
 
-  static constexpr int flute_accuracy = 3;
+  static constexpr int kFluteAccuracy = 3;
   float alpha_;
   std::map<const odb::dbNet*, float> net_alpha_map_;
   std::pair<int, float> min_fanout_alpha_;

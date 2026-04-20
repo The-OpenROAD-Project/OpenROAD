@@ -9,6 +9,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -23,8 +24,8 @@
 #include "stt/SteinerTreeBuilder.h"
 
 namespace utl {
-class CallBackHandler;
 class Logger;
+class ServiceRegistry;
 }  // namespace utl
 
 namespace odb {
@@ -89,7 +90,7 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                utl::CallBackHandler* callback_handler,
+                utl::ServiceRegistry* service_registry,
                 stt::SteinerTreeBuilder* stt_builder,
                 sta::dbSta* sta);
   ~FastRouteCore();
@@ -301,6 +302,11 @@ class FastRouteCore
   void writeCongestionMap(const std::string& filename);
 
  private:
+  void convertGridsToSegments(
+      const std::vector<GPoint3D>& grids,
+      int grid_count,
+      std::unordered_set<GSegment, GSegmentHash>& net_segs,
+      GRoute& route);
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
   void getNetId(odb::dbNet* db_net, int& net_id, bool& exists);
   void clearNetRoute(int netID);
@@ -769,7 +775,7 @@ class FastRouteCore
   std::vector<StTree> sttrees_;  // the Steiner trees
   std::vector<StTree> sttrees_bk_;
 
-  utl::CallBackHandler* callback_handler_;
+  utl::ServiceRegistry* service_registry_;
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
   sta::dbSta* sta_;

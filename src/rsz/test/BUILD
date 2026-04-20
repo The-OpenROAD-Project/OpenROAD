@@ -1,5 +1,5 @@
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 # Test Parity Note: All tests from CMakeLists.txt are included in this BUILD file.
 # No tests are intentionally excluded. See .kiro/specs/bazel-cmake-test-parity/intentional_exclusions.md
 
@@ -184,6 +184,7 @@ TESTS = [
     "report_floating_nets1",
     "report_floating_nets2",
     "report_floating_nets3",
+    "report_move_tracker",
     "report_overdriven_nets1",
     "report_overdriven_nets2",
     "report_overdriven_nets3",
@@ -440,6 +441,36 @@ cc_test(
         "//src/utl",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
+    ],
+)
+
+py_library(
+    name = "helpers",
+    srcs = ["helpers.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_library(
+    name = "rsz_aux",
+    srcs = ["rsz_aux.py"],
+    imports = ["."],
+    deps = [
+        "//python/openroad:openroadpy",
+    ],
+)
+
+py_test(
+    name = "gcd_resize_py",
+    srcs = ["gcd_resize.py"],
+    data = [":test_resources"],
+    main = "gcd_resize.py",
+    deps = [
+        ":helpers",
+        ":rsz_aux",
+        "//python/openroad:openroadpy",
     ],
 )
 

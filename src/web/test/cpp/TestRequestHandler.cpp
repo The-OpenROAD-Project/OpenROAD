@@ -127,6 +127,24 @@ TEST(JsonEscapeTest, ControlChars)
 }
 
 //------------------------------------------------------------------------------
+// JsonBuilder overload tests
+//------------------------------------------------------------------------------
+
+// Verify that field(std::string, const char*) writes a JSON string, not a bool.
+// Without an explicit overload, C++ prefers the standard pointer-to-bool
+// conversion over the user-defined const char*-to-std::string conversion,
+// silently writing "true" instead of the intended string value.
+TEST(JsonBuilderTest, FieldStringKeyCharPtrValueWritesString)
+{
+  JsonBuilder b;
+  b.beginObject();
+  b.field(std::string("dir"), "input");
+  b.endObject();
+  EXPECT_NE(b.str().find("\"input\""), std::string::npos);
+  EXPECT_EQ(b.str().find("true"), std::string::npos);
+}
+
+//------------------------------------------------------------------------------
 // dispatch_request tests (BOUNDS, LAYERS, INFO)
 //------------------------------------------------------------------------------
 
@@ -147,7 +165,7 @@ TEST_F(DispatchRequestTest, BoundsReturnsJson)
 {
   WebSocketRequest req;
   req.id = 42;
-  req.type = WebSocketRequest::BOUNDS;
+  req.type = WebSocketRequest::kBounds;
 
   auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.id, 42u);
@@ -161,7 +179,7 @@ TEST_F(DispatchRequestTest, TechReturnsJson)
 {
   WebSocketRequest req;
   req.id = 7;
-  req.type = WebSocketRequest::TECH;
+  req.type = WebSocketRequest::kTech;
 
   auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.id, 7u);
@@ -178,7 +196,7 @@ TEST_F(DispatchRequestTest, TileReturnsPng)
 {
   WebSocketRequest req;
   req.id = 99;
-  req.type = WebSocketRequest::TILE;
+  req.type = WebSocketRequest::kTile;
   req.layer = "metal1";
   req.z = 0;
   req.x = 0;
@@ -200,7 +218,7 @@ TEST_F(DispatchRequestTest, UnknownTypeReturnsError)
 {
   WebSocketRequest req;
   req.id = 5;
-  req.type = WebSocketRequest::UNKNOWN;
+  req.type = WebSocketRequest::kUnknown;
 
   auto resp = dispatch_request(req, *gen_);
   EXPECT_EQ(resp.type, 2);  // error
@@ -231,7 +249,7 @@ TEST_F(TileHandlerTest, EmptyTile)
 {
   WebSocketRequest req;
   req.id = 1;
-  req.type = WebSocketRequest::TILE;
+  req.type = WebSocketRequest::kTile;
   req.layer = "metal1";
   req.z = 0;
   req.x = 0;
@@ -252,7 +270,7 @@ TEST_F(TileHandlerTest, UsesHighlightState)
 
   WebSocketRequest req;
   req.id = 2;
-  req.type = WebSocketRequest::TILE;
+  req.type = WebSocketRequest::kTile;
   req.layer = "_instances";
   req.z = 0;
   req.x = 0;
@@ -271,7 +289,7 @@ TEST_F(TileHandlerTest, HeatMapsReturnsMetadata)
 
   WebSocketRequest req;
   req.id = 3;
-  req.type = WebSocketRequest::HEATMAPS;
+  req.type = WebSocketRequest::kHeatmaps;
 
   auto resp = handler_->handleHeatMaps(req, state_);
   EXPECT_EQ(resp.type, 0);
@@ -290,7 +308,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
   handler_->initializeHeatMaps(state2);
 
   WebSocketRequest active_req;
-  active_req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
+  active_req.type = WebSocketRequest::kSetActiveHeatmap;
   active_req.heatmap_name = "Pin";
 
   EXPECT_EQ(handler_->handleSetActiveHeatMap(active_req, state1).type, 0);
@@ -298,7 +316,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
   WebSocketRequest set_req;
   set_req.id = 4;
-  set_req.type = WebSocketRequest::SET_HEATMAP;
+  set_req.type = WebSocketRequest::kSetHeatmap;
   set_req.heatmap_name = "Pin";
   set_req.heatmap_option = "DisplayMin";
   set_req.raw_json = R"({"value":12.5})";
@@ -308,7 +326,7 @@ TEST_F(TileHandlerTest, HeatMapSettingsAreSessionLocal)
 
   WebSocketRequest meta_req;
   meta_req.id = 5;
-  meta_req.type = WebSocketRequest::HEATMAPS;
+  meta_req.type = WebSocketRequest::kHeatmaps;
 
   const std::string json1
       = payloadStr(handler_->handleHeatMaps(meta_req, state1));
@@ -325,7 +343,7 @@ TEST_F(TileHandlerTest, HeatMapShowNumbersCanBeUpdated)
 
   WebSocketRequest set_req;
   set_req.id = 8;
-  set_req.type = WebSocketRequest::SET_HEATMAP;
+  set_req.type = WebSocketRequest::kSetHeatmap;
   set_req.heatmap_name = "Pin";
   set_req.heatmap_option = "ShowNumbers";
   set_req.raw_json = R"({"value":true})";
@@ -354,7 +372,7 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 
   WebSocketRequest meta_req;
   meta_req.id = 6;
-  meta_req.type = WebSocketRequest::HEATMAPS;
+  meta_req.type = WebSocketRequest::kHeatmaps;
 
   auto meta_resp = handler_->handleHeatMaps(meta_req, state_);
   EXPECT_EQ(meta_resp.type, 0);
@@ -362,7 +380,7 @@ TEST_F(TileHandlerTest, HeatMapsMetadataIsLazyForInactiveSources)
 
   WebSocketRequest active_req;
   active_req.id = 7;
-  active_req.type = WebSocketRequest::SET_ACTIVE_HEATMAP;
+  active_req.type = WebSocketRequest::kSetActiveHeatmap;
   active_req.heatmap_name = "LazyMeta";
 
   auto active_resp = handler_->handleSetActiveHeatMap(active_req, state_);
@@ -382,9 +400,11 @@ class SelectHandlerTest : public tst::Nangate45Fixture
     block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
     block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
     placeInst("BUF_X16", "buf1", 0, 0);
-    fake_current_ = {"current", "FakeCurrent", odb::Rect(0, 0, 100, 100)};
-    fake_previous_
-        = {"previous", "FakePrevious", odb::Rect(100, 100, 200, 200)};
+    fake_current_
+        = {.name = "current", .type = "FakeCurrent", .bbox = {0, 0, 100, 100}};
+    fake_previous_ = {.name = "previous",
+                      .type = "FakePrevious",
+                      .bbox = {100, 100, 200, 200}};
     gen_ = std::make_shared<TileGenerator>(
         getDb(), /*sta=*/nullptr, getLogger());
     tcl_eval_ = std::make_shared<TclEvaluator>(/*interp=*/nullptr, getLogger());
@@ -422,7 +442,7 @@ TEST_F(SelectHandlerTest, SelectAtOriginFindsInstance)
 {
   WebSocketRequest req;
   req.id = 10;
-  req.type = WebSocketRequest::SELECT;
+  req.type = WebSocketRequest::kSelect;
   req.select_x = 1000;
   req.select_y = 1000;
   req.select_zoom = 0;
@@ -439,7 +459,7 @@ TEST_F(SelectHandlerTest, SelectAtEmptyAreaReturnsEmptyList)
 {
   WebSocketRequest req;
   req.id = 11;
-  req.type = WebSocketRequest::SELECT;
+  req.type = WebSocketRequest::kSelect;
   req.select_x = 99000;
   req.select_y = 99000;
   req.select_zoom = 10;  // high zoom = small area
@@ -455,7 +475,7 @@ TEST_F(SelectHandlerTest, InspectInvalidIdReturnsError)
 {
   WebSocketRequest req;
   req.id = 12;
-  req.type = WebSocketRequest::INSPECT;
+  req.type = WebSocketRequest::kInspect;
   req.select_id = 999;  // no selectables stored
 
   auto resp = handler_->handleInspect(req, state_);
@@ -469,7 +489,7 @@ TEST_F(SelectHandlerTest, HoverInvalidIdReturnsOkZeroCount)
 {
   WebSocketRequest req;
   req.id = 13;
-  req.type = WebSocketRequest::HOVER;
+  req.type = WebSocketRequest::kHover;
   req.select_id = 999;
 
   auto resp = handler_->handleHover(req, state_);
@@ -494,7 +514,7 @@ TEST_F(SelectHandlerTest, SelectClearsTimingState)
 
   WebSocketRequest req;
   req.id = 14;
-  req.type = WebSocketRequest::SELECT;
+  req.type = WebSocketRequest::kSelect;
   req.select_x = 1000;
   req.select_y = 1000;
   req.select_zoom = 0;
@@ -517,7 +537,7 @@ TEST_F(SelectHandlerTest, SelectClearsInspectorHistoryWhenNothingIsPicked)
 
   WebSocketRequest req;
   req.id = 15;
-  req.type = WebSocketRequest::SELECT;
+  req.type = WebSocketRequest::kSelect;
   req.select_x = 99000;
   req.select_y = 99000;
   req.select_zoom = 10;
@@ -552,7 +572,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
   WebSocketRequest inspect_req;
   inspect_req.id = 17;
-  inspect_req.type = WebSocketRequest::INSPECT;
+  inspect_req.type = WebSocketRequest::kInspect;
   inspect_req.select_id = 0;
 
   auto inspect_resp = handler_->handleInspect(inspect_req, state_);
@@ -570,7 +590,7 @@ TEST_F(SelectHandlerTest, InspectBackRestoresPreviousObject)
 
   WebSocketRequest back_req;
   back_req.id = 18;
-  back_req.type = WebSocketRequest::INSPECT_BACK;
+  back_req.type = WebSocketRequest::kInspectBack;
 
   auto back_resp = handler_->handleInspectBack(back_req, state_);
   EXPECT_EQ(back_resp.type, 0);
@@ -597,7 +617,7 @@ TEST_F(SelectHandlerTest, InspectBackWithoutHistoryKeepsCurrentObject)
 
   WebSocketRequest back_req;
   back_req.id = 20;
-  back_req.type = WebSocketRequest::INSPECT_BACK;
+  back_req.type = WebSocketRequest::kInspectBack;
 
   auto back_resp = handler_->handleInspectBack(back_req, state_);
   EXPECT_EQ(back_resp.type, 0);
@@ -624,7 +644,7 @@ TEST_F(SelectHandlerTest, FocusNetAddValid)
 
   WebSocketRequest req;
   req.id = 20;
-  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.type = WebSocketRequest::kSetFocusNets;
   req.focus_action = "add";
   req.focus_net_name = "clk";
 
@@ -644,7 +664,7 @@ TEST_F(SelectHandlerTest, FocusNetAddInvalidNetReturnsZeroCount)
 {
   WebSocketRequest req;
   req.id = 21;
-  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.type = WebSocketRequest::kSetFocusNets;
   req.focus_action = "add";
   req.focus_net_name = "nonexistent_net";
 
@@ -670,7 +690,7 @@ TEST_F(SelectHandlerTest, FocusNetRemove)
 
   WebSocketRequest req;
   req.id = 22;
-  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.type = WebSocketRequest::kSetFocusNets;
   req.focus_action = "remove";
   req.focus_net_name = "data";
 
@@ -697,7 +717,7 @@ TEST_F(SelectHandlerTest, FocusNetClear)
 
   WebSocketRequest req;
   req.id = 23;
-  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.type = WebSocketRequest::kSetFocusNets;
   req.focus_action = "clear";
   req.focus_net_name = "";
 
@@ -718,14 +738,14 @@ TEST_F(SelectHandlerTest, FocusNetAddMultiple)
 
   WebSocketRequest req1;
   req1.id = 24;
-  req1.type = WebSocketRequest::SET_FOCUS_NETS;
+  req1.type = WebSocketRequest::kSetFocusNets;
   req1.focus_action = "add";
   req1.focus_net_name = "clk";
   handler_->handleSetFocusNets(req1, state_);
 
   WebSocketRequest req2;
   req2.id = 25;
-  req2.type = WebSocketRequest::SET_FOCUS_NETS;
+  req2.type = WebSocketRequest::kSetFocusNets;
   req2.focus_action = "add";
   req2.focus_net_name = "reset";
   auto resp = handler_->handleSetFocusNets(req2, state_);
@@ -743,7 +763,7 @@ TEST_F(SelectHandlerTest, FocusNetAddDuplicateNoop)
 
   WebSocketRequest req;
   req.id = 26;
-  req.type = WebSocketRequest::SET_FOCUS_NETS;
+  req.type = WebSocketRequest::kSetFocusNets;
   req.focus_action = "add";
   req.focus_net_name = "clk";
 
@@ -766,7 +786,7 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   auto tile_handler = std::make_unique<TileHandler>(gen_);
   WebSocketRequest req;
   req.id = 27;
-  req.type = WebSocketRequest::TILE;
+  req.type = WebSocketRequest::kTile;
   req.layer = "metal1";
   req.z = 0;
   req.x = 0;
@@ -776,6 +796,346 @@ TEST_F(SelectHandlerTest, TileHandlerSnapshotsFocusNets)
   auto resp = tile_handler->handleTile(req, state_);
   EXPECT_EQ(resp.type, 1);  // PNG
   EXPECT_FALSE(resp.payload.empty());
+}
+
+//------------------------------------------------------------------------------
+// DRCHandler tests
+//------------------------------------------------------------------------------
+
+class DRCHandlerTest : public tst::Nangate45Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    block_->setDieArea(odb::Rect(0, 0, 100000, 100000));
+    block_->setCoreArea(odb::Rect(0, 0, 100000, 100000));
+    gen_ = std::make_shared<TileGenerator>(
+        getDb(), /*sta=*/nullptr, getLogger());
+    handler_ = std::make_unique<DRCHandler>(gen_);
+  }
+
+  // Create a simple DRC category with markers for testing.
+  odb::dbMarkerCategory* createTestCategory(const char* name, int num_markers)
+  {
+    auto* top = odb::dbMarkerCategory::create(chip_, name);
+    auto* sub = odb::dbMarkerCategory::create(top, "MinSpacing");
+    for (int i = 0; i < num_markers; ++i) {
+      auto* marker = odb::dbMarker::create(sub);
+      marker->addShape(odb::Rect(i * 1000, 0, i * 1000 + 500, 500));
+    }
+    return top;
+  }
+
+  std::shared_ptr<TileGenerator> gen_;
+  std::unique_ptr<DRCHandler> handler_;
+  SessionState state_;
+};
+
+TEST_F(DRCHandlerTest, CategoriesEmpty)
+{
+  WebSocketRequest req;
+  req.id = 100;
+  req.type = WebSocketRequest::kDrcCategories;
+
+  auto resp = handler_->handleDRCCategories(req);
+  EXPECT_EQ(resp.id, 100u);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"categories\""), std::string::npos);
+  // Should be an empty array
+  EXPECT_NE(json.find("\"categories\": []"), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, CategoriesWithMarkers)
+{
+  createTestCategory("DRC", 3);
+  createTestCategory("LVS", 2);
+
+  WebSocketRequest req;
+  req.id = 101;
+  req.type = WebSocketRequest::kDrcCategories;
+
+  auto resp = handler_->handleDRCCategories(req);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"DRC\""), std::string::npos);
+  EXPECT_NE(json.find("\"LVS\""), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, MarkersForCategory)
+{
+  createTestCategory("DRC", 3);
+
+  WebSocketRequest req;
+  req.id = 102;
+  req.type = WebSocketRequest::kDrcMarkers;
+  req.drc_category_name = "DRC";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"MinSpacing\""), std::string::npos);
+  EXPECT_NE(json.find("\"markers\""), std::string::npos);
+  // Should have set active category
+  EXPECT_EQ(state_.active_drc_category, "DRC");
+}
+
+TEST_F(DRCHandlerTest, MarkersForEmptyCategory)
+{
+  WebSocketRequest req;
+  req.id = 103;
+  req.type = WebSocketRequest::kDrcMarkers;
+  req.drc_category_name = "";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"subcategories\": []"), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, MarkersForNonExistentCategory)
+{
+  WebSocketRequest req;
+  req.id = 104;
+  req.type = WebSocketRequest::kDrcMarkers;
+  req.drc_category_name = "NonExistent";
+
+  auto resp = handler_->handleDRCMarkers(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"error\""), std::string::npos);
+}
+
+TEST_F(DRCHandlerTest, UpdateMarkerVisited)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  ASSERT_EQ(all_markers.size(), 1u);
+  odb::dbMarker* marker = *all_markers.begin();
+  EXPECT_FALSE(marker->isVisited());
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::kDrcMarkers;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 105;
+  req.type = WebSocketRequest::kDrcUpdateMarker;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+  req.drc_field = "visited";
+  req.drc_field_value = true;
+
+  auto resp = handler_->handleDRCUpdateMarker(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_TRUE(marker->isVisited());
+}
+
+TEST_F(DRCHandlerTest, UpdateMarkerVisible)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  odb::dbMarker* marker = *all_markers.begin();
+  EXPECT_TRUE(marker->isVisible());  // default is visible
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::kDrcMarkers;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 106;
+  req.type = WebSocketRequest::kDrcUpdateMarker;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+  req.drc_field = "visible";
+  req.drc_field_value = false;
+
+  auto resp = handler_->handleDRCUpdateMarker(req, state_);
+  EXPECT_EQ(resp.type, 0);
+  EXPECT_FALSE(marker->isVisible());
+
+  // DRC overlay should now be empty since the only marker is hidden
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_TRUE(state_.drc_rects.empty());
+}
+
+TEST_F(DRCHandlerTest, HighlightMarker)
+{
+  auto* top = createTestCategory("DRC", 1);
+  auto all_markers = top->getAllMarkers();
+  odb::dbMarker* marker = *all_markers.begin();
+
+  // First select the category
+  {
+    WebSocketRequest cat_req;
+    cat_req.type = WebSocketRequest::kDrcMarkers;
+    cat_req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(cat_req, state_);
+  }
+
+  WebSocketRequest req;
+  req.id = 107;
+  req.type = WebSocketRequest::kDrcHighlight;
+  req.drc_marker_id = static_cast<int>(marker->getId());
+
+  auto resp = handler_->handleDRCHighlight(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+  EXPECT_NE(json.find("\"bbox\""), std::string::npos);
+
+  // Marker should now be visited
+  EXPECT_TRUE(marker->isVisited());
+
+  // Highlight rects should contain the marker bbox
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_EQ(state_.highlight_rects.size(), 1u);
+}
+
+TEST_F(DRCHandlerTest, HighlightClear)
+{
+  // Put some existing highlights
+  {
+    std::lock_guard<std::mutex> lock(state_.selection_mutex);
+    state_.highlight_rects.emplace_back(0, 0, 100, 100);
+  }
+
+  WebSocketRequest req;
+  req.id = 108;
+  req.type = WebSocketRequest::kDrcHighlight;
+  req.drc_marker_id = -1;  // clear
+
+  auto resp = handler_->handleDRCHighlight(req, state_);
+  EXPECT_EQ(resp.type, 0);
+
+  std::string json = payloadStr(resp);
+  EXPECT_NE(json.find("\"ok\": 0"), std::string::npos);
+
+  // Highlights should be cleared
+  std::lock_guard<std::mutex> lock(state_.selection_mutex);
+  EXPECT_TRUE(state_.highlight_rects.empty());
+}
+
+TEST_F(DRCHandlerTest, DRCOverlayIncludesVisibleMarkers)
+{
+  createTestCategory("DRC", 3);
+
+  WebSocketRequest req;
+  req.type = WebSocketRequest::kDrcMarkers;
+  req.drc_category_name = "DRC";
+  handler_->handleDRCMarkers(req, state_);
+
+  // All 3 markers should appear in the DRC overlay
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_EQ(state_.drc_rects.size(), 3u);
+}
+
+TEST_F(DRCHandlerTest, SelectEmptyCategoryClearsOverlay)
+{
+  createTestCategory("DRC", 3);
+
+  // Select category first
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  // Now deselect
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.drc_category_name = "";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  std::lock_guard<std::mutex> lock(state_.drc_mutex);
+  EXPECT_TRUE(state_.drc_rects.empty());
+  EXPECT_TRUE(state_.active_drc_category.empty());
+}
+
+TEST_F(DRCHandlerTest, UpdateCategoryVisibilityBatch)
+{
+  auto* top = createTestCategory("DRC", 3);
+
+  // Select category to populate overlay
+  {
+    WebSocketRequest req;
+    req.type = WebSocketRequest::kDrcMarkers;
+    req.drc_category_name = "DRC";
+    handler_->handleDRCMarkers(req, state_);
+  }
+
+  // All 3 markers should be in overlay
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_EQ(state_.drc_rects.size(), 3u);
+  }
+
+  // Hide all markers in one batch request
+  {
+    WebSocketRequest req;
+    req.id = 200;
+    req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+    req.drc_category_name = "DRC";
+    req.drc_field_value = false;
+
+    auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+    EXPECT_EQ(resp.type, 0);
+
+    std::string json = payloadStr(resp);
+    EXPECT_NE(json.find("\"ok\": 1"), std::string::npos);
+    EXPECT_NE(json.find("\"count\": 3"), std::string::npos);
+  }
+
+  // All markers should now be hidden
+  auto all_markers = top->getAllMarkers();
+  for (odb::dbMarker* m : all_markers) {
+    EXPECT_FALSE(m->isVisible());
+  }
+
+  // Overlay should be empty
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_TRUE(state_.drc_rects.empty());
+  }
+
+  // Show them again
+  {
+    WebSocketRequest req;
+    req.id = 201;
+    req.type = WebSocketRequest::kDrcUpdateCategoryVisibility;
+    req.drc_category_name = "DRC";
+    req.drc_field_value = true;
+
+    auto resp = handler_->handleDRCUpdateCategoryVisibility(req, state_);
+    EXPECT_EQ(resp.type, 0);
+  }
+
+  for (odb::dbMarker* m : top->getAllMarkers()) {
+    EXPECT_TRUE(m->isVisible());
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state_.drc_mutex);
+    EXPECT_EQ(state_.drc_rects.size(), 3u);
+  }
 }
 
 }  // namespace

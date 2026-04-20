@@ -10,6 +10,10 @@
 #include "utl/Logger.h"
 #include "odb/geom.h"
 
+#if TCL_MAJOR_VERSION < 9 && !defined(Tcl_Size)
+  typedef int Tcl_Size;
+#endif
+
 // Defined by OpenRoad.i
 namespace ord {
 
@@ -44,20 +48,20 @@ static utl::Logger* getLogger() {
 %typemap(in) ifp::RowParity {
   char *str = Tcl_GetStringFromObj($input, 0);
   if (strcasecmp(str, "NONE") == 0) {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   } else if (strcasecmp(str, "EVEN") == 0) {
-    $1 = ifp::RowParity::EVEN;
+    $1 = ifp::RowParity::kEven;
   } else if (strcasecmp(str, "ODD") == 0) {
-    $1 = ifp::RowParity::ODD;
+    $1 = ifp::RowParity::kOdd;
   } else {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   }
 }
 
 // Typemap to convert TCL list of coordinates to std::vector<odb::Point>
 %typemap(in) std::vector<odb::Point>& (std::vector<odb::Point> temp_vector) {
   Tcl_Obj **listobjv;
-  int nitems;
+  Tcl_Size nitems;
   
   if (Tcl_ListObjGetElements(interp, $input, &nitems, &listobjv) == TCL_ERROR) {
     return TCL_ERROR;
@@ -66,7 +70,7 @@ static utl::Logger* getLogger() {
   temp_vector.clear();
   temp_vector.reserve(nitems / 2);
   
-  for (int i = 0; i < nitems; i += 2) {
+  for (Tcl_Size i = 0; i < nitems; i += 2) {
     double x, y;
     if (Tcl_GetDoubleFromObj(interp, listobjv[i], &x) != TCL_OK) {
       return TCL_ERROR;

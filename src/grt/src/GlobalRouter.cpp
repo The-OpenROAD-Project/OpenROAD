@@ -38,6 +38,7 @@
 #include "boost/polygon/polygon.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "drt/PinAccessService.h"
 #include "grt/GRoute.h"
 #include "grt/PinGridLocation.h"
 #include "grt/Rudy.h"
@@ -56,8 +57,8 @@
 #include "sta/MinMax.hh"
 #include "sta/Parasitics.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/algorithms.h"
 
 namespace grt {
@@ -66,14 +67,14 @@ using boost::icl::interval;
 using utl::GRT;
 
 GlobalRouter::GlobalRouter(utl::Logger* logger,
-                           utl::CallBackHandler* callback_handler,
+                           utl::ServiceRegistry* service_registry,
                            stt::SteinerTreeBuilder* stt_builder,
                            odb::dbDatabase* db,
                            sta::dbSta* sta,
                            ant::AntennaChecker* antenna_checker,
                            dpl::Opendp* opendp)
     : logger_(logger),
-      callback_handler_(callback_handler),
+      service_registry_(service_registry),
       stt_builder_(stt_builder),
       antenna_checker_(antenna_checker),
       opendp_(opendp),
@@ -106,8 +107,8 @@ GlobalRouter::GlobalRouter(utl::Logger* logger,
       is_incremental_(false)
 {
   fastroute_
-      = new FastRouteCore(db_, logger_, callback_handler_, stt_builder_, sta_);
-  cugr_ = new CUGR(db_, logger_, callback_handler_, stt_builder_, sta_);
+      = new FastRouteCore(db_, logger_, service_registry_, stt_builder_, sta_);
+  cugr_ = new CUGR(db_, logger_, service_registry_, stt_builder_, sta_);
 }
 
 void GlobalRouter::setNumThreads(int num_threads)
@@ -941,10 +942,7 @@ bool GlobalRouter::loadRoutingFromDBGuides(odb::dbNet* db_net)
   }
 
   std::string pins_not_covered;
-  if (!netIsCovered(db_net, pins_not_covered)) {
-    // Restored nets can be uncovered due to preferred access points changes
-    // after the restoration. In this case, allow GRT to reroute these nets.
-    // TODO: investigate and fix the cause of the preferred AP change.
+  if (!updateUncoveredPinsPositions(db_net, pins_not_covered)) {
     logger_->warn(GRT,
                   304,
                   "Fail to restore routing segments from guides for net {}. "
@@ -1396,10 +1394,7 @@ void GlobalRouter::findFastRoutePins(Net* net,
 
 float GlobalRouter::getNetSlack(Net* net)
 {
-  sta::dbNetwork* network = sta_->getDbNetwork();
-  sta::Net* sta_net = network->dbToSta(net->getDbNet());
-  sta::Slack slack = sta_->slack(sta_net, sta::MinMax::max());
-  return slack;
+  return sta_->slack(net->getDbNet(), sta::MinMax::max());
 }
 
 void GlobalRouter::initNetlist(std::vector<Net*>& nets, bool incremental)
@@ -2551,6 +2546,35 @@ bool GlobalRouter::findCoveredAccessPoint(const Net* net, Pin& pin)
   return false;
 }
 
+// For each pin not covered by the restored guide segments, search all access
+// points to find one that is covered. Returns true if all pins are covered
+// after the update, false if any pin remains uncovered (triggering a reroute).
+// pins_not_covered is populated with the names of pins that could not be fixed.
+bool GlobalRouter::updateUncoveredPinsPositions(odb::dbNet* db_net,
+                                                std::string& pins_not_covered)
+{
+  Net* net = db_net_map_[db_net];
+  const GRoute& segments = routes_[db_net];
+  bool all_covered = true;
+  pins_not_covered = "";
+
+  for (Pin& pin : net->getPins()) {
+    bool pin_is_covered = false;
+    for (const GSegment& seg : segments) {
+      if (segmentCoversPin(seg, pin)) {
+        pin_is_covered = true;
+        break;
+      }
+    }
+    if (!pin_is_covered && !findCoveredAccessPoint(net, pin)) {
+      pins_not_covered += pin.getName() + " ";
+      all_covered = false;
+    }
+  }
+
+  return all_covered;
+}
+
 void GlobalRouter::updateVias()
 {
   for (auto& net_route : routes_) {
@@ -3182,8 +3206,7 @@ bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
     int seg_x = segment.final_x;
     int seg_y = segment.final_y;
     if (pin.getConnectionLayer() == seg_top_layer
-        && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)
-        && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
+        && pin.getOnGridPosition() == odb::Point(seg_x, seg_y)) {
       return true;
     }
   }
@@ -3208,6 +3231,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
 {
   std::vector<Pin>& pins = db_net_map_[db_net]->getPins();
   int last_layer = -1;
+  int min_pin_layer = std::numeric_limits<int>::max();
   for (size_t p = 0; p < pins.size(); p++) {
     if (p > 0) {
       odb::Point pin_pos0 = pins[p - 1].getOnGridPosition();
@@ -3221,6 +3245,7 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       }
     }
 
+    min_pin_layer = std::min(min_pin_layer, pins[p].getConnectionLayer());
     last_layer = std::max(pins[p].getConnectionLayer(), last_layer);
   }
 
@@ -3230,7 +3255,8 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
     last_layer--;
   }
 
-  for (int l = 1; l <= last_layer; l++) {
+  const int min_layer = std::min(min_pin_layer, min_routing_layer);
+  for (int l = min_layer; l <= last_layer; l++) {
     odb::Point pin_pos = pins[0].getOnGridPosition();
     GSegment segment = GSegment(
         pin_pos.x(), pin_pos.y(), l, pin_pos.x(), pin_pos.y(), l + 1);
@@ -5908,7 +5934,9 @@ void GlobalRouter::updateCUGRNet(odb::dbNet* net)
 
 std::vector<Net*> GlobalRouter::updateDirtyRoutes(bool save_guides)
 {
-  callback_handler_->triggerOnPinAccessUpdateRequired();
+  if (auto* pa = service_registry_->find<drt::PinAccessService>()) {
+    pa->updateDirtyPinAccess();
+  }
   std::vector<Net*> dirty_nets;
 
   if (!initialized_) {

@@ -22,6 +22,7 @@ class Cluster;
 
 using ClusterToBoundaryRegionMap = std::map<Cluster*, BoundaryRegion>;
 using BoundaryRegionList = std::vector<BoundaryRegion>;
+using RectList = std::vector<odb::Rect>;
 
 // One of the edges of the die area.
 enum class Boundary
@@ -76,7 +77,7 @@ struct SASoftWeights
 {
   float boundary{0.0f};
   float notch{0.0f};
-  float macro_blockage{0.0f};
+  float soft_blockage{0.0f};
 };
 
 // The cost of a certain penalty is:

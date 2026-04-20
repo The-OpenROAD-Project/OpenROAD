@@ -693,8 +693,8 @@ void FlexDR::reportIterationViolations() const
       }
     }
   }
-  if ((router_cfg_->DRC_RPT_ITER_STEP && iter_ > 0
-       && iter_ % router_cfg_->DRC_RPT_ITER_STEP.value() == 0)
+  if ((router_cfg_->DRC_RPT_ITER_STEP > 0 && iter_ > 0
+       && iter_ % router_cfg_->DRC_RPT_ITER_STEP == 0)
       || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(

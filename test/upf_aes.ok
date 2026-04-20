@@ -1123,7 +1123,9 @@ Divergence occured in 2 regions.
 [INFO GPL-1012] Total routability artificial inflation: 6798.17 (+1.62%)
 [INFO GPL-1013] Total timing-driven delta area: -27509.56 (-6.55%)
 [INFO GPL-1014] Final placement area: 399199.60 (-4.93%)
-[INFO DPL-0005] Max displacement: +/- 1413 sites horizontally, +/- 238 rows vertically.
+[INFO DPL-0006] Core area: 878902.94 um^2, Instances area: 341319.85 um^2, Utilization: 38.8%
+[INFO DPL-0005] Diamond search max displacement: +/- 1413 sites horizontally, +/- 238 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                   16901

@@ -229,22 +229,20 @@ NETS 8 ;
       NEW met1 ( 131100 118490 ) ( * 118830 )
       NEW met1 ( 131100 118830 ) ( 151570 * )
       NEW met1 TAPER ( 130870 172890 ) ( 131100 * )
-      NEW met1 ( 151110 169830 ) ( 167900 * )
+      NEW met1 ( 151570 169830 ) ( 167900 * )
       NEW met1 TAPER ( 167900 169830 ) ( 169510 * )
-      NEW met2 ( 151110 169830 ) ( * 172890 )
-      NEW met1 ( 131100 172890 ) ( 151110 * )
+      NEW met2 ( 151570 169830 ) ( * 172890 )
+      NEW met1 ( 131100 172890 ) ( 151570 * )
       NEW met1 TAPER ( 151570 150450 ) ( 152030 * )
-      NEW met2 ( 151570 150450 ) ( * 150620 )
-      NEW met2 ( 151110 150620 ) ( 151570 * )
-      NEW met2 ( 151110 150620 ) ( * 169830 )
+      NEW met2 ( 151570 150450 ) ( * 169830 )
       NEW met2 ( 151570 118830 ) ( * 150450 )
       NEW li1 TAPER ( 116610 118490 ) L1M1_PR_R
       NEW li1 TAPER ( 130870 172890 ) L1M1_PR_R
       NEW met1 ( 151570 118830 ) M1M2_PR_R
       NEW li1 TAPER ( 169510 118830 ) L1M1_PR_R
       NEW li1 TAPER ( 169510 169830 ) L1M1_PR_R
-      NEW met1 ( 151110 169830 ) M1M2_PR_R
-      NEW met1 ( 151110 172890 ) M1M2_PR_R
+      NEW met1 ( 151570 169830 ) M1M2_PR_R
+      NEW met1 ( 151570 172890 ) M1M2_PR_R
       NEW li1 TAPER ( 152030 150450 ) L1M1_PR_R
       NEW met1 TAPER ( 151570 150450 ) M1M2_PR_R ;
     - clknet_2_0__leaf_clk ( _414_ CLK ) ( _418_ CLK ) ( _428_ CLK ) ( _429_ CLK ) ( _432_ CLK ) ( _434_ CLK ) ( _444_ CLK )
@@ -292,26 +290,27 @@ NETS 8 ;
       NEW li1 TAPER ( 136850 148070 ) L1M1_PR_R ;
     - clknet_2_1__leaf_clk ( _423_ CLK ) ( _424_ CLK ) ( _425_ CLK ) ( _426_ CLK ) ( _427_ CLK ) ( _440_ CLK ) ( _441_ CLK )
       ( _442_ CLK ) ( _443_ CLK ) ( clkbuf_2_1__f_clk X ) + USE CLOCK + NONDEFAULTRULE NDR_3W_3S
-      + ROUTED met1 ( 199410 96390 ) ( 204010 * )
+      + ROUTED met1 ( 199870 96390 ) ( 204010 * )
       NEW met1 TAPER ( 204010 96390 ) ( 205850 * )
-      NEW met2 ( 199410 91290 ) ( * 96390 )
-      NEW met1 ( 199410 112710 ) ( 204700 * )
+      NEW met2 ( 199870 91290 ) ( * 96390 )
+      NEW met1 ( 199870 112710 ) ( 204700 * )
       NEW met1 TAPER ( 204700 112710 ) ( 206310 * )
-      NEW met2 ( 199410 96390 ) ( * 112710 )
-      NEW met1 ( 199410 129030 ) ( 204700 * )
+      NEW met2 ( 199870 96390 ) ( * 112710 )
+      NEW met1 ( 199870 129030 ) ( 204700 * )
       NEW met1 TAPER ( 204700 129030 ) ( 206310 * )
-      NEW met2 ( 199410 112710 ) ( * 129030 )
-      NEW met2 ( 199410 129030 ) ( * 137190 )
-      NEW met1 ( 179400 91290 ) ( 199410 * )
+      NEW met2 ( 199870 112710 ) ( * 129030 )
+      NEW met1 TAPER ( 199410 137190 ) ( 199870 * )
+      NEW met2 ( 199870 129030 ) ( * 137190 )
+      NEW met1 ( 179400 91290 ) ( 199870 * )
       NEW met1 ( 156170 117810 ) ( 168130 * )
       NEW met1 TAPER ( 168130 117810 ) ( 170430 * )
       NEW met2 ( 156170 117810 ) ( * 129370 )
       NEW met2 ( 158010 102170 ) ( * 117810 )
       NEW met1 ( 158930 88570 ) ( 162610 * )
       NEW met1 TAPER ( 162610 88570 ) ( 164450 * )
-      NEW met2 ( 158930 88570 ) ( * 94860 )
-      NEW met2 ( 158010 94860 ) ( 158930 * )
-      NEW met2 ( 158010 94860 ) ( * 102170 )
+      NEW met2 ( 158930 88570 ) ( * 90100 )
+      NEW met2 ( 158010 90100 ) ( 158930 * )
+      NEW met2 ( 158010 90100 ) ( * 102170 )
       NEW met1 ( 164450 91290 ) ( 177100 * )
       NEW met1 TAPER ( 177100 91290 ) ( 178710 * )
       NEW met2 ( 164450 88570 ) ( * 91290 )
@@ -322,14 +321,14 @@ NETS 8 ;
       NEW met1 ( 154790 148070 ) ( 155710 * )
       NEW met2 ( 156170 129370 ) ( * 147730 )
       NEW li1 TAPER ( 205850 96390 ) L1M1_PR_R
-      NEW met1 ( 199410 96390 ) M1M2_PR_R
-      NEW met1 ( 199410 91290 ) M1M2_PR_R
+      NEW met1 ( 199870 96390 ) M1M2_PR_R
+      NEW met1 ( 199870 91290 ) M1M2_PR_R
       NEW li1 TAPER ( 206310 112710 ) L1M1_PR_R
-      NEW met1 ( 199410 112710 ) M1M2_PR_R
+      NEW met1 ( 199870 112710 ) M1M2_PR_R
       NEW li1 TAPER ( 206310 129030 ) L1M1_PR_R
-      NEW met1 ( 199410 129030 ) M1M2_PR_R
+      NEW met1 ( 199870 129030 ) M1M2_PR_R
+      NEW met1 TAPER ( 199870 137190 ) M1M2_PR_R
       NEW li1 TAPER ( 199410 137190 ) L1M1_PR_R
-      NEW met1 TAPER ( 199410 137190 ) M1M2_PR_R
       NEW li1 TAPER ( 156170 129370 ) L1M1_PR_R
       NEW met1 TAPER ( 156170 129370 ) M1M2_PR_R
       NEW li1 TAPER ( 170430 117810 ) L1M1_PR_R
@@ -359,9 +358,10 @@ NETS 8 ;
       NEW met2 ( 96830 183770 ) ( * 186150 )
       NEW met1 ( 96830 183770 ) ( 107410 * )
       NEW met1 TAPER ( 107410 183770 ) ( 109250 * )
-      NEW met1 ( 96830 151130 ) ( 98210 * )
+      NEW met2 ( 96830 183770 ) ( 97290 * )
+      NEW met1 ( 97290 151130 ) ( 98210 * )
       NEW met1 TAPER ( 98210 151130 ) ( 100050 * )
-      NEW met2 ( 96830 151130 ) ( * 183770 )
+      NEW met2 ( 97290 151130 ) ( * 183770 )
       NEW met1 TAPER ( 137770 210630 ) ( 139610 * )
       NEW met1 ( 139610 210630 ) ( 148810 * )
       NEW met1 TAPER ( 148810 210630 ) ( 150650 * )
@@ -387,7 +387,7 @@ NETS 8 ;
       NEW li1 TAPER ( 96830 186150 ) L1M1_PR_R
       NEW met1 TAPER ( 96830 186150 ) M1M2_PR_R
       NEW met1 ( 96830 183770 ) M1M2_PR_R
-      NEW met1 ( 96830 151130 ) M1M2_PR_R
+      NEW met1 ( 97290 151130 ) M1M2_PR_R
       NEW li1 TAPER ( 100050 151130 ) L1M1_PR_R
       NEW li1 TAPER ( 137770 210630 ) L1M1_PR_R
       NEW li1 TAPER ( 150650 210630 ) L1M1_PR_R

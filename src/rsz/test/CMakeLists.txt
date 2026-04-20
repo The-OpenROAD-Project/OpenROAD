@@ -35,6 +35,7 @@ or_integration_tests(
     pin_swap1
     pinswap_flat
     pinswap_hier
+    swap_pins_dont_touch
     rebuffer1
     rebuffer1_hier
     recover_power_verbose
@@ -150,6 +151,7 @@ or_integration_tests(
     report_floating_nets1
     report_floating_nets2
     report_floating_nets3
+    report_move_tracker
     report_overdriven_nets1
     report_overdriven_nets2
     report_overdriven_nets3

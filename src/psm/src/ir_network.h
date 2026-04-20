@@ -25,14 +25,14 @@ namespace psm {
 template <typename T>
 struct RectIndexableGetter
 {
-  using result_type = odb::Rect;
+  using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
   odb::Rect operator()(const T* t) const { return t->getShape(); }
 };
 
 template <typename T>
 struct PointIndexableGetter
 {
-  using result_type = odb::Point;
+  using result_type = odb::Point;  // NOLINT(readability-identifier-naming)
   odb::Point operator()(const T* t) const { return t->getPoint(); }
 };
 
@@ -44,10 +44,6 @@ class IRNetwork
 
   template <typename T>
   using LayerMap = std::map<odb::dbTechLayer*, T>;
-
-  using Point
-      = boost::geometry::model::d2::point_xy<int,
-                                             boost::geometry::cs::cartesian>;
 
   using TerminalTree
       = boost::geometry::index::rtree<TerminalNode*,
@@ -105,6 +101,8 @@ class IRNetwork
   std::set<odb::dbTechLayer*> getLayers() const;
 
   std::size_t getNodeCount(bool include_iterms = false) const;
+
+  void clearVisitedNodes();
 
   const Connections& getConnections() const { return connections_; }
   NodePtrMap<Connection> getConnectionMap() const;

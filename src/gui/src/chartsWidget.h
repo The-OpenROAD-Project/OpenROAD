@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <qchar.h>
+#include <qstackedbarseries.h>
+
 #include <QComboBox>
 #include <QDockWidget>
 #include <QLabel>
@@ -11,14 +14,12 @@
 #include <QString>
 #include <QWidget>
 #include <QtCharts>
-#include <deque>
-#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
+#include <utility>
 #include <vector>
 
 #include "gui/gui.h"
@@ -34,18 +35,14 @@ class Clock;
 
 namespace gui {
 
-struct SlackHistogramData
-{
-  StaPins constrained_pins;
-  sta::ClockSet clocks;
-};
+using PinBuckets = std::vector<std::vector<const sta::Pin*>>;
 
 struct Buckets
 {
   bool areEmpty() { return positive.empty() && negative.empty(); }
 
-  std::deque<std::vector<const sta::Pin*>> positive;
-  std::deque<std::vector<const sta::Pin*>> negative;
+  PinBuckets positive;
+  PinBuckets negative;
 };
 
 class HistogramView : public QChartView
@@ -59,9 +56,10 @@ class HistogramView : public QChartView
   void setLogger(utl::Logger* logger) { logger_ = logger; }
 
   void clear();
-  void setData(const SlackHistogramData& data);
-  void setData(const EndPointSlackMap& data, sta::ClockSet* clocks);
-
+  void setData(const EndPointSlackMap* data, sta::ClockSet* clocks);
+  void setData(
+      const std::vector<std::pair<std::string, EndPointSlackMap*>>& data_vec,
+      sta::ClockSet* clocks);
   void save(const QString& path);
 
  public slots:
@@ -83,15 +81,11 @@ class HistogramView : public QChartView
   int computeNumberOfDigits(float value);
 
   void populateBins();
-  void populateBuckets(
-      const std::vector<std::vector<const sta::Pin*>>& pin_bins);
+  void populateBuckets(std::unique_ptr<utl::Histogram<float>>& histogram,
+                       const PinBuckets& pin_bins);
   void setVisualConfig();
 
-  std::tuple<QBarSet*, QBarSet*, QBarSet*, QBarSet*> createBarSets();
-  void populateBarSets(QBarSet& neg_set,
-                       QBarSet& pos_set,
-                       QBarSet& neg_set_invisible,
-                       QBarSet& pos_set_invisible);
+  QStackedBarSeries* populateSeries();
 
   void setXAxisConfig(int all_bars_count);
   void setXAxisTitle();
@@ -115,7 +109,12 @@ class HistogramView : public QChartView
   // Data
   sta::ClockSet clocks_;
   Buckets buckets_;
-  std::unique_ptr<utl::Histogram<float>> histogram_;
+  std::unique_ptr<utl::Histogram<float>> all_histogram_;
+
+  // stacked data
+  std::vector<std::unique_ptr<utl::Histogram<float>>> histograms_;
+  std::vector<QString> path_groups_;
+  std::vector<PinBuckets> pins_bucket_;
 
   static constexpr int kDefaultNumberOfBuckets = 10;
 };
@@ -147,6 +146,8 @@ class ChartsWidget : public QDockWidget
   Chart* addChart(const std::string& name,
                   const std::string& x_label,
                   const std::vector<std::string>& y_labels);
+  EndPointSlackMap* getData(const std::string& path_group,
+                            sta::Clock* clock_filter);
 
  signals:
   void endPointsToReport(const std::set<const sta::Pin*>& report_pins,
@@ -158,7 +159,8 @@ class ChartsWidget : public QDockWidget
  private slots:
   void changeMode();
   void updatePathGroupMenuIndexes();
-  void changePathGroupFilter();
+  void updateFilters(QStandardItem* item);
+  void updateFilters();
 
  private:
   void setSlackHistogram();
@@ -166,12 +168,9 @@ class ChartsWidget : public QDockWidget
   void setModeMenu();
   void clearMenus();
 
-  void setData(HistogramView* view,
-               const std::string& path_group,
-               sta::Clock* clock);
+  void setData(HistogramView* view);
 
-  SlackHistogramData fetchSlackHistogramData() const;
-  void removeUnconstrainedPinsAndSetLimits(SlackHistogramData& data) const;
+  EndPointSlackMap fetchSlackHistogramData() const;
 
   utl::Logger* logger_;
   sta::dbSta* sta_;
@@ -181,12 +180,16 @@ class ChartsWidget : public QDockWidget
 
   QComboBox* mode_menu_;
   QComboBox* path_group_menu_;
+  QStandardItemModel* path_group_menu_model_;
+  QStandardItem* path_group_text_;
+  QStandardItem* all_endpoints_item_;
   QComboBox* clock_menu_;
   HistogramView* display_;
   QPushButton* refresh_filters_button_;
 
-  std::string path_group_name_;  // Current selected filter
-  std::map<int, std::string> filter_index_to_path_group_name_;
+  std::vector<std::string> path_groups_names_;  // Current selected filter
+  std::map<std::pair<std::string, sta::Clock*>, EndPointSlackMap>
+      endpoints_cache_;
   std::map<int, sta::Clock*> clock_index_to_clock_;
   sta::ClockSet all_clocks_;
   sta::Clock* clock_filter_;
@@ -194,6 +197,7 @@ class ChartsWidget : public QDockWidget
   bool resetting_menu_;
 
   QLabel* label_;
+  bool updating_ = false;
 };
 
 }  // namespace gui

@@ -13,6 +13,7 @@
 
 #include "DataType.h"
 #include "FastRoute.h"
+#include "Graph2D.h"
 #include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"

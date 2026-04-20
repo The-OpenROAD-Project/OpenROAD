@@ -344,7 +344,7 @@ void Search::updateShapes(odb::dbBlock* block)
           continue;
         }
         odb::dbTechLayer* layer = box->getTechLayer();
-        net_shapes[layer].emplace_back(box->getBox(), BTERM, term->getNet());
+        net_shapes[layer].emplace_back(box->getBox(), kBterm, term->getNet());
       }
     }
   }
@@ -604,14 +604,14 @@ void Search::addVia(
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, kVia, net);
     }
   } else {
     odb::dbVia* via = shape->getVia();
     for (odb::dbBox* box : via->getBoxes()) {
       odb::Rect bbox = box->getBox();
       bbox.moveDelta(x, y);
-      tree_shapes[box->getTechLayer()].emplace_back(bbox, VIA, net);
+      tree_shapes[box->getTechLayer()].emplace_back(bbox, kVia, net);
     }
   }
 }
@@ -660,7 +660,7 @@ void Search::addNet(
     if (s.isVia()) {
       addVia(net, &s, itr.prev_x_, itr.prev_y_, tree_shapes);
     } else {
-      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), WIRE, net);
+      tree_shapes[s.getTechLayer()].emplace_back(s.getBox(), kWire, net);
     }
   }
 }
@@ -1128,13 +1128,13 @@ Search::SnapResult Search::searchNearestEdge(
                              search_box.yMin(),
                              search_box.xMax(),
                              search_box.yMax())) {
-          if (!vis.routing && type == WIRE) {
+          if (!vis.routing && type == kWire) {
             continue;
           }
-          if (!vis.routing && type == VIA) {
+          if (!vis.routing && type == kVia) {
             continue;
           }
-          if (!vis.pins && type == BTERM) {
+          if (!vis.pins && type == kBterm) {
             continue;
           }
           if (vis.isNetVisible(net)) {

@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "color.h"
+#include "json_builder.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 
@@ -37,7 +38,9 @@ struct ColoredRect
 {
   odb::Rect rect;
   Color color;
-  std::string layer;  // empty = draw on all layers
+  std::string layer;    // empty = draw on all layers
+  bool filled = false;  // true = filled rect + outline (DRC markers)
+                        // false = centerline (timing paths)
 };
 
 struct FlightLine
@@ -102,6 +105,7 @@ struct TileVisibility
   bool routing = true;
   bool special_nets = true;
   bool pins = true;
+  bool pin_markers = true;
   bool blockages = true;
 
   // Blockages (dbBlockage / dbObstruction)
@@ -110,7 +114,7 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json_;  // stored for dynamic per-site lookups
+  std::string raw_json;  // stored for dynamic per-site lookups
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)
@@ -139,6 +143,7 @@ class TileGenerator
   sta::dbSta* getSta() const { return sta_; }
 
   odb::Rect getBounds() const;
+  int getPinMaxSize() const;
 
   std::vector<std::string> getLayers() const;
   std::vector<std::string> getSites() const;
@@ -167,6 +172,7 @@ class TileGenerator
                     const std::set<std::string>& visible_layers) const;
 
   odb::dbBlock* getBlock() const;
+  odb::dbChip* getChip() const;
 
   std::vector<unsigned char> generateTile(
       const std::string& layer,
@@ -186,7 +192,36 @@ class TileGenerator
                                                  int x,
                                                  int y) const;
 
+  // Render full design (or region) to a PNG file.  Works without a running
+  // web server.  region in DBU; if zero-area, defaults to die + 5% margin.
+  void saveImage(const std::string& filename,
+                 const odb::Rect& region,
+                 int width_px,
+                 double dbu_per_pixel,
+                 const TileVisibility& vis) const;
+
+  // Render timing path overlay (colored rects + flight lines) to PNG bytes.
+  std::vector<unsigned char> renderOverlayPng(
+      int width_px,
+      const std::vector<ColoredRect>& rects,
+      const std::vector<FlightLine>& lines) const;
+
  private:
+  // Render a single tile into a raw RGBA buffer (pre-PNG-encoding).
+  // Same signature as generateTile but returns raw pixels.
+  std::vector<unsigned char> renderTileBuffer(
+      const std::string& layer,
+      int z,
+      int x,
+      int y,
+      const TileVisibility& vis = {},
+      const std::vector<odb::Rect>& highlight_rects = {},
+      const std::vector<odb::Polygon>& highlight_polys = {},
+      const std::vector<ColoredRect>& colored_rects = {},
+      const std::vector<FlightLine>& flight_lines = {},
+      const std::map<uint32_t, Color>* module_colors = nullptr,
+      const std::set<uint32_t>* focus_net_ids = nullptr,
+      const std::set<uint32_t>* route_guide_net_ids = nullptr) const;
   void setPixel(std::vector<unsigned char>& image,
                 int x,
                 int y,
@@ -205,6 +240,14 @@ class TileGenerator
                              std::string_view text,
                              int scale,
                              const Color& color);
+  // Draw text rotated 90° CCW (reads bottom-to-top).
+  // (x, y) is the bottom-left corner of the rotated text block.
+  static void drawBitmapTextRotated(std::vector<unsigned char>& image,
+                                    int x,
+                                    int y,
+                                    std::string_view text,
+                                    int scale,
+                                    const Color& color);
 
   void drawHighlight(std::vector<unsigned char>& image,
                      const std::vector<odb::Rect>& rects,
@@ -282,5 +325,12 @@ void collectTimingPathShapes(odb::dbBlock* block,
                              const TimingPathSummary& path,
                              std::vector<ColoredRect>& rects,
                              std::vector<FlightLine>& lines);
+
+// ── JSON serialization helpers for TileGenerator responses ──
+
+void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen);
+void serializeBoundsResponse(JsonBuilder& b,
+                             const TileGenerator& gen,
+                             bool shapes_ready);
 
 }  // namespace web
