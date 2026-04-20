@@ -75,6 +75,8 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   std::vector<int> active(active_set.begin(), active_set.end());
 
+  debugPause("Pause before negotiation phase 1.");
+
   // Phase 1 – all active cells rip-up every iteration (isolation point = 0).
   debugPrint(logger_,
              utl::DPL,
@@ -97,12 +99,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     const int phase_1_overflows
         = negotiationIter(active, iter, /*updateHistory=*/true);
     if (phase_1_overflows == 0) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "negotiation",
-                 1,
-                 "Negotiation phase 1 converged at iteration {}.",
-                 iter);
+      logger_->report("Negotiation phase 1 converged at iteration {}.",iter);
       logger_->metric("negotiation__converge__phase_1__iteration", iter);
       debugPause("Pause after convergence at phase 1.");
       return;
@@ -127,13 +124,12 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
 
   debugPause("Pause before negotiation phase 2.");
 
+  if (debug_observer_) {
+    debug_observer_->addNegotiationPhase2Marker(max_iter_neg_);
+  }
+
   // Phase 2 – isolation point active: skip already-legal cells.
-  debugPrint(logger_,
-             utl::DPL,
-             "negotiation",
-             1,
-             "Negotiation phase 2: isolation point active, {} iterations.",
-             kMaxIterNeg2);
+logger_->report("Negotiation phase 2: isolation point active, {} iterations.", kMaxIterNeg2);
 
   prev_overflows = -1;
   stall_count = 0;
@@ -150,12 +146,7 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     const int phase_2_overflows
         = negotiationIter(active, iter + max_iter_neg_, /*updateHistory=*/true);
     if (phase_2_overflows == 0) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "negotiation",
-                 1,
-                 "Negotiation phase 2 converged at iteration {}.",
-                 iter);
+      logger_->report("Negotiation phase 2 converged at iteration {}.", iter);
       logger_->metric("negotiation__converge__phase_2__iteration", iter);
       debugPause("Pause after convergence at phase 2.");
       return;
@@ -387,7 +378,11 @@ int NegotiationLegalizer::negotiationIter(std::vector<int>& activeCells,
 
   logger_->report(
       "Negotiation iteration {}: total overflow {}.", iter, totalOverflow);
-  if (opendp_->iterative_debug_ && debug_observer_) {
+  if (debug_observer_) {
+    debug_observer_->addNegotiationOverflowPoint(iter, totalOverflow);
+  }
+  if (opendp_->iterative_debug_ && debug_observer_
+      && (iter % opendp_->negotiation_debug_interval_ == 0)) {
     setDplPositions();
     pushNegotiationPixels();
     logger_->report("Pause after negotiation iteration {}.", iter);

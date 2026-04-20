@@ -53,6 +53,9 @@ class Graphics : public gui::Renderer, public DplObserver
                                   const odb::Rect& curr_window) override;
   void clearNegotiationSearchWindows() override;
 
+  void addNegotiationOverflowPoint(int iter, int overflow) override;
+  void addNegotiationPhase2Marker(int iter) override;
+
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;
 
@@ -80,6 +83,8 @@ class Graphics : public gui::Renderer, public DplObserver
   // can look up whichever instance the user has selected in the GUI.
   std::unordered_map<odb::dbInst*, std::pair<odb::Rect, odb::Rect>>
       negotiation_search_windows_;
+
+  gui::Chart* overflow_chart_ = nullptr;
 };
 
 }  // namespace dpl

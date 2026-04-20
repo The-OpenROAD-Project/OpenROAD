@@ -112,7 +112,6 @@ void NegotiationLegalizer::legalize()
 
   if (debug_observer_) {
     debug_observer_->startPlacement(db_->getChip()->getBlock());
-    debugPause("Pause after initFromDb.");
   }
 
   {
@@ -134,6 +133,8 @@ void NegotiationLegalizer::legalize()
                             "initFenceRegions: {}");
     initFenceRegions();
   }
+
+  debugPause("Pause after initialization.");
 
   debugPrint(logger_,
              utl::DPL,
@@ -367,6 +368,8 @@ void NegotiationLegalizer::legalize()
              pct(flush_s),
              to_ms(orient_s),
              pct(orient_s));
+
+  debugPause("Pause after legalization complete.");
 }
 
 // ===========================================================================
