@@ -78,6 +78,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Search.hh"
 #include "sta/SearchPred.hh"
 #include "sta/StringUtil.hh"

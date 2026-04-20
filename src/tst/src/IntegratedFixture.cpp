@@ -105,24 +105,20 @@ void IntegratedFixture::initStaDefaultSdc()
     sta::Pin* clk_pin
         = db_network_->findPin(db_network_->topInstance(), clk_port);
 
-    // STA frees the 'clk_pins' after use.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::PinSet* clk_pins = new sta::PinSet(db_network_);
-    clk_pins->insert(clk_pin);
+    sta::PinSet clk_pins(db_network_);
+    clk_pins.insert(clk_pin);
 
     // Clock period = 0.5ns
     double period = sta_->units()->timeUnit()->userToSta(0.5);
-    // STA takes the ownership of 'waveform'.
-    // coverity[RESOURCE_LEAK: FALSE_POSITIVE]
-    sta::FloatSeq* waveform = new sta::FloatSeq;
-    waveform->push_back(0);
-    waveform->push_back(period / 2.0);
+    sta::FloatSeq waveform;
+    waveform.push_back(0);
+    waveform.push_back(period / 2.0);
 
     sta_->makeClock("clk",
-                    *clk_pins,
+                    clk_pins,
                     /*add_to_pins=*/false,
                     /*period=*/period,
-                    *waveform,
+                    waveform,
                     /*comment=*/"",
                     /*mode=*/sta_->cmdMode());
 
