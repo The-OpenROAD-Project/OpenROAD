@@ -3,6 +3,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2022-2026, The OpenROAD Authors
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//test:regression.bzl", "regression_test")
 
@@ -250,4 +251,39 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+)
+
+# Standalone driver that emits a web_save_report HTML fixture. Consumed by
+# :save_report_fixture_html (genrule) to feed the jsdom test below.
+cc_binary(
+    name = "emit_save_report_fixture",
+    testonly = 1,
+    srcs = ["cpp/EmitSaveReportFixture.cpp"],
+    data = [
+        "//test:nangate45_data",
+    ],
+    features = ["-layering_check"],
+    deps = [
+        "//src/odb",
+        "//src/utl",
+        "//src/web",
+        "@bazel_tools//tools/cpp/runfiles",
+    ],
+)
+
+genrule(
+    name = "save_report_fixture_html",
+    testonly = 1,
+    outs = ["save_report_fixture.html"],
+    cmd = "$(location :emit_save_report_fixture) $@",
+    tools = [":emit_save_report_fixture"],
+)
+
+# jsdom-based regression test for issue #10201 — asserts the inline
+# __STATIC_CACHE__ script evaluates and carries real timing/tile payload.
+js_test(
+    name = "save_report_static_cache_test",
+    data = DOM_TEST_DATA + [":save_report_fixture_html"],
+    entry_point = "js/test-save-report-static-cache.js",
+    no_copy_to_bin = JS_FILES,
 )
