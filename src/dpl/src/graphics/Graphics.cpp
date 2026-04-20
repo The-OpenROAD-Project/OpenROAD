@@ -31,6 +31,15 @@ Graphics::Graphics(Opendp* dp,
       paint_negotiation_pixels_(paint_negotiation_pixels)
 {
   gui::Gui::get()->registerRenderer(this);
+
+  gui::Gui* gui = gui::Gui::get();
+  if (overflow_chart_ == nullptr) {
+    overflow_chart_ = gui->addChart(
+        "DPL Negotiation", "Iteration", {"Overflow"});
+    overflow_chart_->setXAxisFormat("%d");
+    overflow_chart_->setYAxisFormats({"%.0f"});
+    overflow_chart_->setYAxisMin({0.0});
+  }
 }
 
 void Graphics::startPlacement(odb::dbBlock* block)
@@ -323,6 +332,20 @@ void Graphics::setNegotiationSearchWindow(odb::dbInst* inst,
 void Graphics::clearNegotiationSearchWindows()
 {
   negotiation_search_windows_.clear();
+}
+
+void Graphics::addNegotiationOverflowPoint(int iter, int overflow)
+{
+  if (overflow_chart_) {
+    overflow_chart_->addPoint(iter, {static_cast<double>(overflow)});
+  }
+}
+
+void Graphics::addNegotiationPhase2Marker(int iter)
+{
+  if (overflow_chart_) {
+    overflow_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  }
 }
 
 /* static */

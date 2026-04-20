@@ -120,6 +120,12 @@ set_debug_cmd(float min_displacement,
   }
 }
 
+void set_negotiation_debug_interval_cmd(int iterative_jump)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugInterval(iterative_jump);
+}
+
 void improve_placement_cmd(int seed,
   int max_displacement_x,
   int max_displacement_y)

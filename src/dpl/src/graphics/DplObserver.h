@@ -66,6 +66,12 @@ class DplObserver
   }
   // Clear all stored search windows (call at the start of each iteration).
   virtual void clearNegotiationSearchWindows() {}
+
+  // Add a data point for the negotiation overflow chart.
+  virtual void addNegotiationOverflowPoint(int iter, int overflow) {}
+
+  // Add a vertical marker at the start of negotiation phase 2.
+  virtual void addNegotiationPhase2Marker(int iter) {}
 };
 
 }  // namespace dpl
