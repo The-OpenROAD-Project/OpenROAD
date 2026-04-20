@@ -203,7 +203,7 @@ void PdnGen::trimShapes()
   std::map<odb::dbTechLayer*, std::unique_ptr<TechLayer>> tech_layers;
 
   for (auto* grid : grids) {
-    if (grid->type() == Grid::Existing) {
+    if (grid->type() == Grid::kExisting) {
       // fixed shapes, so nothing to do
       continue;
     }
@@ -458,10 +458,10 @@ void PdnGen::makeCoreGrid(
     const std::vector<odb::dbTechLayer*>& pad_pin_layers)
 {
   auto grid = std::make_unique<CoreGrid>(
-      domain, name, starts_with == POWER, generate_obstructions);
+      domain, name, starts_with == kPower, generate_obstructions);
   grid->setPinLayers(pin_layers);
 
-  PowerSwitchNetworkType control_network = PowerSwitchNetworkType::DAISY;
+  PowerSwitchNetworkType control_network = PowerSwitchNetworkType::kDaisy;
   if (strlen(powercontrolnetwork) > 0) {
     control_network
         = GridSwitchedPower::fromString(powercontrolnetwork, logger_);
@@ -549,7 +549,7 @@ void PdnGen::makeInstanceGrid(
     grid = std::make_unique<BumpGrid>(domain, name, inst);
   } else {
     grid = std::make_unique<InstanceGrid>(
-        domain, name, starts_with == POWER, inst, generate_obstructions);
+        domain, name, starts_with == kPower, inst, generate_obstructions);
   }
   if (!std::ranges::all_of(halo, [](int v) { return v == 0; })) {
     grid->addHalo(halo);
@@ -599,15 +599,15 @@ void PdnGen::makeRing(Grid* grid,
     ring->setPadOffset(pad_offset);
   }
   ring->setExtendToBoundary(extend);
-  if (starts_with != GRID) {
-    ring->setStartWithPower(starts_with == POWER);
+  if (starts_with != kGrid) {
+    ring->setStartWithPower(starts_with == kPower);
   }
   if (allow_out_of_die) {
     ring->setAllowOutsideDieArea();
   }
   ring->setNets(nets);
   grid->addRing(std::move(ring));
-  if (!pad_pin_layers.empty() && grid->type() == Grid::Core) {
+  if (!pad_pin_layers.empty() && grid->type() == Grid::kCore) {
     auto* core_grid = static_cast<CoreGrid*>(grid);
     core_grid->setupDirectConnect(pad_pin_layers);
     for (const auto& comp : core_grid->getStraps()) {
@@ -649,8 +649,8 @@ void PdnGen::makeStrap(Grid* grid,
   strap->setExtend(extend);
   strap->setOffset(offset);
   strap->setSnapToGrid(snap);
-  if (starts_with != GRID) {
-    strap->setStartWithPower(starts_with == POWER);
+  if (starts_with != kGrid) {
+    strap->setStartWithPower(starts_with == kPower);
   }
   strap->setNets(nets);
   strap->setAllowOutsideCoreArea(allow_out_of_core);
@@ -736,7 +736,7 @@ void PdnGen::updateRenderer(bool reset) const
 
 void PdnGen::createSrouteWires(
     const char* net,
-    const char* outerNet,
+    const char* outer_net,
     odb::dbTechLayer* layer0,
     odb::dbTechLayer* layer1,
     int cut_pitch_x,
@@ -751,7 +751,7 @@ void PdnGen::createSrouteWires(
     const std::vector<odb::dbInst*>& insts)
 {
   sroute_->createSrouteWires(net,
-                             outerNet,
+                             outer_net,
                              layer0,
                              layer1,
                              cut_pitch_x,

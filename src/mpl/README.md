@@ -57,8 +57,8 @@ rtl_macro_placer
 | `-max_num_level` | Maximum depth of physical hierarchical tree. The default value is `2`, and the allowed values are integers `[0, MAX_INT]`. |
 | `-coarsening_ratio` | The larger the coarsening_ratio, the faster the convergence process. The allowed values are floats, and the default value is `10.0`. |
 | `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. The default value is `50`, and the allowed values are integers `[0, MAX_INT]`. |
-| `-halo_width` | **Deprecated: use `set_macro_default_halo` instead.** Horizontal halo around macros (microns). The default value is `0.0`. |
-| `-halo_height` | **Deprecated: use `set_macro_default_halo` instead.** Vertical halo around macros (microns). The default value is `0.0`. |
+| `-halo_width` | **Deprecated: use `set_macro_base_halo` instead.** Horizontal halo around macros (microns). The default value is `0.0`. |
+| `-halo_height` | **Deprecated: use `set_macro_base_halo` instead.** Vertical halo around macros (microns). The default value is `0.0`. |
 | `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. The default values are the core area coordinates). |
 | `-target_util` | Specifies the target utilization. The allowed values are floats and the default value is `0.25`. |
 | `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a `StandardCellCluster` from $[a, \frac{1}{a}]$. The allowed values are floats, and the default value is `0.33`. |
@@ -123,13 +123,13 @@ set_macro_guidance_region
 | `-region` | The lower left corner and upper right corner {lx ly ux uy} of the region in microns. |
 
 
-### Set Macro Default Halo
+### Set Macro Base Halo
 
-Command for setting the default halo around all macros. Per-macro halos set with `set_macro_halo` take precedence.
+Command for setting the base halo around all macros. Per-macro halos set with `set_macro_halo` take precedence.
 
 ```tcl
-set_macro_default_halo left bottom right top
-set_macro_default_halo width height
+set_macro_base_halo left bottom right top
+set_macro_base_halo width height
 ```
 
 #### Arguments

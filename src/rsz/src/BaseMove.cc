@@ -641,9 +641,9 @@ bool BaseMove::replaceCell(sta::Instance* inst,
 
   // Legalize the position of the instance in case it leaves the die
   if (estimate_parasitics_->getParasiticsSrc()
-          == est::ParasiticsSrc::global_routing
+          == est::ParasiticsSrc::kGlobalRouting
       || estimate_parasitics_->getParasiticsSrc()
-             == est::ParasiticsSrc::detailed_routing) {
+             == est::ParasiticsSrc::kDetailedRouting) {
     opendp_->legalCellPos(db_network_->staToDb(inst));
   }
 

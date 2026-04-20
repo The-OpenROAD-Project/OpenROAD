@@ -29,11 +29,11 @@ class Blif
  public:
   Blif(utl::Logger* logger,
        sta::dbSta* sta,
-       const std::string& const0_cell_,
-       const std::string& const0_cell_port_,
-       const std::string& const1_cell_,
-       const std::string& const1_cell_port_,
-       int call_id_);
+       const std::string& const0_cell,
+       const std::string& const0_cell_port,
+       const std::string& const1_cell,
+       const std::string& const1_cell_port,
+       int call_id);
   void setReplaceableInstances(std::set<odb::dbInst*>& insts);
   void addReplaceableInstance(odb::dbInst* inst);
   bool writeBlif(const char* file_name, bool write_arrival_requireds = false);
@@ -41,8 +41,8 @@ class Blif
   bool inspectBlif(const char* file_name, int& num_instances);
   float getRequiredTime(sta::Pin* term, bool is_rise);
   float getArrivalTime(sta::Pin* term, bool is_rise);
-  void addArrival(sta::Pin* pin, const std::string& netName);
-  void addRequired(sta::Pin* pin, const std::string& netName);
+  void addArrival(sta::Pin* pin, const std::string& net_name);
+  void addRequired(sta::Pin* pin, const std::string& net_name);
 
  private:
   std::set<odb::dbInst*> instances_to_optimize_;

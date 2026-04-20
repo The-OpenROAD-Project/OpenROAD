@@ -26,13 +26,13 @@
   const char *str = PyUnicode_AsUTF8AndSize($input, &size);
 
   if (strcasecmp(str, "NONE") == 0) {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   } else if (strcasecmp(str, "EVEN") == 0) {
-    $1 = ifp::RowParity::EVEN;
+    $1 = ifp::RowParity::kEven;
   } else if (strcasecmp(str, "ODD") == 0) {
-    $1 = ifp::RowParity::ODD;
+    $1 = ifp::RowParity::kOdd;
   } else {
-    $1 = ifp::RowParity::NONE;
+    $1 = ifp::RowParity::kNone;
   }
 }
 

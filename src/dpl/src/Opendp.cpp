@@ -206,6 +206,12 @@ void Opendp::detailedPlacement(const int max_displacement_x,
   } else {
     initGrid();
     setFixedGridCells();
+    // Populate pixel->group for each fence region so diamondRecovery's
+    // underlying diamondSearch correctly enforces region constraints.
+    if (!arch_->getRegions().empty()) {
+      groupInitPixels2();
+      groupInitPixels();
+    }
     logger_->info(DPL, 1102, "Legalizing using negotiation legalizer.");
 
     NegotiationLegalizer negotiation(this,

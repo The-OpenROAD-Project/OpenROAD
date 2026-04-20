@@ -17,6 +17,7 @@ def _extract_zip_impl(ctx):
         outputs = [out_dir],
         executable = ctx.executable._zipper,
         arguments = ["x", ctx.file.src.path, "-d", out_dir.path],
+        mnemonic = "ZipExtract",
     )
     return [DefaultInfo(
         files = depset([out_dir]),

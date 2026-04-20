@@ -2381,7 +2381,7 @@ int Rebuffer::rebufferPin(const sta::Pin* drvr_pin)
 
     const bool allow_topology_rewrite
         = (estimate_parasitics_->getParasiticsSrc()
-           == est::ParasiticsSrc::placement);
+           == est::ParasiticsSrc::kPlacement);
 
     for (int i = 0; i < 3; i++) {
       bnet = bufferForTiming(bnet, allow_topology_rewrite);

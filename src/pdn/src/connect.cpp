@@ -620,7 +620,7 @@ void Connect::makeVia(odb::dbSWire* wire,
   }
 
   if (shapes.bottom.empty() && shapes.top.empty()) {
-    addFailedVia(failedViaReason::RECHECK, intersection, wire->getNet());
+    addFailedVia(FailedViaReason::kRecheck, intersection, wire->getNet());
   }
 }
 
@@ -974,7 +974,7 @@ void Connect::printViaReport() const
   }
 }
 
-void Connect::addFailedVia(failedViaReason reason,
+void Connect::addFailedVia(FailedViaReason reason,
                            const odb::Rect& rect,
                            odb::dbNet* net)
 {
@@ -999,22 +999,22 @@ void Connect::recordFailedVias() const
   for (const auto& [reason, shapes] : failed_vias_) {
     std::string reason_str;
     switch (reason) {
-      case failedViaReason::OBSTRUCTED:
+      case FailedViaReason::kObstructed:
         reason_str = "Obstructed";
         break;
-      case failedViaReason::OVERLAPPING:
+      case FailedViaReason::kOverlapping:
         reason_str = "Overlapping";
         break;
-      case failedViaReason::BUILD:
+      case FailedViaReason::kBuild:
         reason_str = "Build";
         break;
-      case failedViaReason::RIPUP:
+      case FailedViaReason::kRipup:
         reason_str = "Ripup";
         break;
-      case failedViaReason::RECHECK:
+      case FailedViaReason::kRecheck:
         // Do not report recheck vias
         continue;
-      case failedViaReason::OTHER:
+      case FailedViaReason::kOther:
         reason_str = "Other";
         break;
     }

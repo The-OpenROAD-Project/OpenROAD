@@ -22,8 +22,8 @@ class IntegratedFixture : public tst::Fixture
  public:
   enum class Technology
   {
-    Nangate45,
-    Sky130hd
+    kNangate45,
+    kSky130hd
   };
 
   IntegratedFixture(Technology tech, const std::string& test_root_path);

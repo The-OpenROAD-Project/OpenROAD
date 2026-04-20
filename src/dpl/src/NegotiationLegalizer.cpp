@@ -23,6 +23,7 @@
 #include "infrastructure/Grid.h"
 #include "infrastructure/Objects.h"
 #include "infrastructure/Padding.h"
+#include "infrastructure/architecture.h"
 #include "infrastructure/network.h"
 #include "odb/db.h"
 #include "odb/geom.h"
@@ -533,17 +534,38 @@ bool NegotiationLegalizer::initFromDb()
   grid_w_ = dpl_grid->getRowSiteCount().v;
   grid_h_ = dpl_grid->getRowCount().v;
 
-  // Assign power-rail types using row-index parity (VSS at even rows).
-  // Replace with explicit LEF pg_pin parsing for advanced PDKs.
+  // Assign power-rail types from DB row orientations.
+  // R0/MY = right-side-up → VSS rail at bottom; MX/R180 = flipped → VDD at
+  // bottom.  Rows missing from the DB default to VSS.
   row_rail_.clear();
-  row_rail_.resize(grid_h_);
-  for (int r = 0; r < grid_h_; ++r) {
-    row_rail_[r] = (r % 2 == 0) ? NLPowerRailType::kVss : NLPowerRailType::kVdd;
+  row_rail_.resize(grid_h_, NLPowerRailType::kVss);
+  for (auto* db_row : block->getRows()) {
+    const int y_dbu = db_row->getOrigin().y() - die_ylo_;
+    if (y_dbu < 0 || y_dbu % row_height_ != 0) {
+      continue;
+    }
+    const int r = y_dbu / row_height_;
+    if (r >= grid_h_) {
+      continue;
+    }
+    const auto orient = db_row->getOrient();
+    row_rail_[r]
+        = (orient == odb::dbOrientType::MX || orient == odb::dbOrientType::R180)
+              ? NLPowerRailType::kVdd
+              : NLPowerRailType::kVss;
   }
 
   // Build NegCell records from all placed instances.
   cells_.clear();
   cells_.reserve(block->getInsts().size());
+
+  // Cache region boundaries converted to grid coordinates, keyed by dbRegion*.
+  struct RegionRectInline
+  {
+    int xlo, ylo, xhi, yhi;
+  };
+  std::unordered_map<odb::dbRegion*, std::vector<RegionRectInline>>
+      region_rect_cache;
 
   for (auto* db_inst : block->getInsts()) {
     const auto status = db_inst->getPlacementStatus();
@@ -624,7 +646,54 @@ bool NegotiationLegalizer::initFromDb()
       // in original DPL.
       //  they achieve the same objective, and the previous is more simple,
       //  consider replacing this.
-      if (!isValidSite(cell.init_x, cell.init_y)) {
+      // For region-constrained cells, collect the region rects in grid
+      // coordinates so the BFS below can verify containment.
+      // initFenceRegions() has not run yet, so we read ODB directly.
+      // Instances reach their region via a GROUP, not via dbInst::region_,
+      // so we must check both paths.
+      odb::dbRegion* odb_region = db_inst->getRegion();
+      if (odb_region == nullptr) {
+        auto* grp = db_inst->getGroup();
+        if (grp != nullptr) {
+          odb_region = grp->getRegion();
+        }
+      }
+      // Look up (or populate) the cache for this region.
+      const std::vector<RegionRectInline>* region_rects_ptr = nullptr;
+      if (odb_region != nullptr) {
+        auto it = region_rect_cache.find(odb_region);
+        if (it == region_rect_cache.end()) {
+          std::vector<RegionRectInline> rects;
+          for (auto* box : odb_region->getBoundaries()) {
+            RegionRectInline r;
+            r.xlo = (box->xMin() - die_xlo_) / site_width_;
+            r.ylo = (box->yMin() - die_ylo_) / row_height_;
+            r.xhi = (box->xMax() - die_xlo_) / site_width_;
+            r.yhi = (box->yMax() - die_ylo_) / row_height_;
+            rects.push_back(r);
+          }
+          it = region_rect_cache.emplace(odb_region, std::move(rects)).first;
+        }
+        region_rects_ptr = &it->second;
+      }
+      // Returns true when (gx,gy) satisfies the region constraint:
+      // region-constrained cells must land inside their region;
+      // unconstrained cells have no restriction here (negotiation handles it).
+      auto isInRegionOk = [&](int gx, int gy) -> bool {
+        if (region_rects_ptr == nullptr) {
+          return true;
+        }
+        for (const auto& r : *region_rects_ptr) {
+          if (gx >= r.xlo && gy >= r.ylo && gx + cell.width <= r.xhi
+              && gy + cell.height <= r.yhi) {
+            return true;
+          }
+        }
+        return false;
+      };
+
+      if (!isValidSite(cell.init_x, cell.init_y)
+          || !isInRegionOk(cell.init_x, cell.init_y)) {
         debugPrint(logger_,
                    utl::DPL,
                    "negotiation",
@@ -666,7 +735,7 @@ bool NegotiationLegalizer::initFromDb()
         while (!pq.empty()) {
           auto [dist, gx, gy] = pq.top();
           pq.pop();
-          if (isValidSite(gx, gy)) {
+          if (isValidSite(gx, gy) && isInRegionOk(gx, gy)) {
             cell.init_x = gx;
             cell.init_y = gy;
             cell.x = cell.init_x;
@@ -680,24 +749,58 @@ bool NegotiationLegalizer::initFromDb()
       }
     }
 
-    cell.rail_type = inferRailType(cell.init_y);
-    // If the instance is currently flipped relative to the row's standard
-    // orientation, its internal rail design is opposite of the row's bottom
-    // rail.
-    auto siteOrient = dpl_grid->getSiteOrientation(
-        GridX{cell.init_x}, GridY{cell.init_y}, master->getSite());
-    if (siteOrient.has_value() && db_inst->getOrient() != siteOrient.value()) {
-      cell.rail_type = (cell.rail_type == NLPowerRailType::kVss)
-                           ? NLPowerRailType::kVdd
-                           : NLPowerRailType::kVss;
+    // Derive power-rail types directly from the LEF geometry stored by the
+    // Network — never infer from the cell's current row or orientation.
+    //
+    // rail_type         = bottom rail in R0 (unflipped) orientation.
+    //                     For most CORE cells this is kVss (VSS at bottom).
+    // rail_type_flipped = bottom rail in MX (flipped) orientation, which
+    //                     equals the TOP rail in R0.  For most cells: kVdd.
+    //                     For symmetric multi-height cells whose VSS appears
+    //                     at both top and bottom (e.g. some double-height
+    //                     flops): kVss — meaning a flip cannot resolve a
+    //                     VDD-bottom row mismatch.
+    {
+      int bot_pwr = Architecture::Row::Power_UNK;
+      int top_pwr = Architecture::Row::Power_UNK;
+      if (network_ != nullptr) {
+        if (Master* dpl_master = network_->getMaster(master)) {
+          bot_pwr = dpl_master->getBottomPowerType();
+          top_pwr = dpl_master->getTopPowerType();
+        }
+      }
+      auto toRailType = [](int pwr, NLPowerRailType fallback) {
+        if (pwr == Architecture::Row::Power_VSS) {
+          return NLPowerRailType::kVss;
+        }
+        if (pwr == Architecture::Row::Power_VDD) {
+          return NLPowerRailType::kVdd;
+        }
+        return fallback;
+      };
+      cell.rail_type = toRailType(bot_pwr, NLPowerRailType::kVss);
+      cell.rail_type_flipped = toRailType(top_pwr, NLPowerRailType::kVdd);
     }
 
     cell.flippable
         = master->getSymmetryX();  // X-symmetry allows vertical flip (MX)
-    if (cell.height % 2 == 1) {
-      // For 1-row cells, we usually assume they are flippable in most PDKs.
+    if (cell.height == 1) {
+      // Consider all single height cells flippable
       cell.flippable = true;
     }
+
+    debugPrint(
+        logger_,
+        utl::DPL,
+        "negotiation",
+        1,
+        "DEBUG cell init: {} height={} flippable={} rail_type={} "
+        "rail_type_flipped={}",
+        db_inst->getName(),
+        cell.height,
+        cell.flippable,
+        cell.rail_type == NLPowerRailType::kVss ? "kVss" : "kVdd",
+        cell.rail_type_flipped == NLPowerRailType::kVss ? "kVss" : "kVdd");
 
     if (padding_ != nullptr) {
       cell.pad_left = padding_->padLeft(db_inst).v;
@@ -710,25 +813,22 @@ bool NegotiationLegalizer::initFromDb()
   return true;
 }
 
-NLPowerRailType NegotiationLegalizer::inferRailType(int rowIdx) const
-{
-  if (rowIdx >= 0 && rowIdx < static_cast<int>(row_rail_.size())) {
-    return row_rail_[rowIdx];
-  }
-  return NLPowerRailType::kVss;
-}
-
 void NegotiationLegalizer::buildGrid()
 {
   Grid* dplGrid = opendp_->grid_.get();
 
-  // Reset all pixels to default negotiation state.
+  // Reset all pixels to default negotiation state.  Also clear any cell
+  // and padding pointers (including dummy_cell_ set by groupInitPixels2 for
+  // region boundaries) — fixed cells and movable cells are re-painted later
+  // by syncAllCellsToDplGrid() before any DRC check runs.
   for (int gy = 0; gy < grid_h_; ++gy) {
     for (int gx = 0; gx < grid_w_; ++gx) {
       Pixel& pixel = dplGrid->pixel(GridY{gy}, GridX{gx});
       pixel.capacity = pixel.is_valid ? 1 : 0;
       pixel.usage = 0;
       pixel.hist_cost = 1.0;
+      pixel.cell = nullptr;
+      pixel.padding_reserved_by = nullptr;
     }
   }
 
@@ -793,11 +893,20 @@ void NegotiationLegalizer::initFenceRegions()
   }
 
   // Map each instance to its fence region (if any).
+  // Instances are assigned to regions via GROUPS in DEF, which sets
+  // dbInst::group_ but NOT dbInst::region_.  We must go through the group.
   for (auto& cell : cells_) {
     if (cell.db_inst == nullptr) {
       continue;
     }
-    auto* region = cell.db_inst->getRegion();
+    // Try direct region first, then group-based region.
+    odb::dbRegion* region = cell.db_inst->getRegion();
+    if (region == nullptr) {
+      auto* grp = cell.db_inst->getGroup();
+      if (grp != nullptr) {
+        region = grp->getRegion();
+      }
+    }
     if (region == nullptr) {
       continue;
     }
@@ -973,14 +1082,29 @@ bool NegotiationLegalizer::isValidRow(int rowIdx,
       return false;
     }
   }
-  const NLPowerRailType rowBot = row_rail_[rowIdx];
-  if (cell.height % 2 == 1) {
-    // Odd-height: bottom rail must match, or cell can be vertically flipped.
-    return cell.flippable || (rowBot == cell.rail_type);
-  }
-  // Even-height: bottom boundary must be the correct rail type, and the
-  // cell may only move by an even number of rows.
-  return rowBot == cell.rail_type;
+  const NLPowerRailType row_bottom_rail = row_rail_[rowIdx];
+  // row and cell rail must match, or cell can be flipped.
+  auto railStr = [](NLPowerRailType r) {
+    return r == NLPowerRailType::kVss ? "kVss" : "kVdd";
+  };
+  bool ret = (row_bottom_rail == cell.rail_type)
+             || (cell.flippable && row_bottom_rail == cell.rail_type_flipped);
+  debugPrint(
+      logger_,
+      utl::DPL,
+      "negotiation",
+      1,
+      "rowIdx: {}, row_bottom_rail: {}, cell: {}, cell.rail_type: {}, "
+      "rail_type_flipped: {}, flippable: {}, rail match: {}, is_valid: {}",
+      rowIdx,
+      railStr(row_bottom_rail),
+      cell.db_inst ? cell.db_inst->getName() : "?",
+      railStr(cell.rail_type),
+      railStr(cell.rail_type_flipped),
+      cell.flippable,
+      (row_bottom_rail == cell.rail_type),
+      ret);
+  return ret;
 }
 
 bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
@@ -998,6 +1122,7 @@ bool NegotiationLegalizer::respectsFence(int cell_idx, int x, int y) const
   return fences_[cell.fence_id].contains(x, y, cell.width, cell.height);
 }
 
+// TODO: remove this function!
 std::pair<int, int> NegotiationLegalizer::snapToLegal(int cell_idx,
                                                       int x,
                                                       int y) const
@@ -1030,7 +1155,7 @@ std::pair<int, int> NegotiationLegalizer::snapToLegal(int cell_idx,
         }
       }
 
-      if (ok) {
+      if (ok && respectsFence(cell_idx, tx, r)) {
         const int dx = std::abs(tx - x);
         if (dx < local_best_dx) {
           local_best_dx = dx;

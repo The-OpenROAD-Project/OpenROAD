@@ -653,8 +653,7 @@ bool GuideProcessor::isValidGuideLayerNum(odb::dbGuide* db_guide,
           = getDesign()->getTopBlock()->getGCellIdx(guide_rect.ll())
             == getDesign()->getTopBlock()->getGCellIdx(guide_rect.ur());
       if (!one_gcell_guide) {
-        // TODO: uncomment this when GRT issue is solved
-        // error = true;  // not a valid via access guide
+        error = true;  // not a valid via access guide
       }
     }
     // else I don't know how many gcells the guide spans
@@ -1201,7 +1200,11 @@ void GuideProcessor::genGuides_split(
         auto end_idx = intv.upper();
         std::set<frCoord> split_indices;
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
-        if (via_access_only && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM) {
+        const bool via_only
+            = layer_num < router_cfg_->BOTTOM_ROUTING_LAYER
+              || (via_access_only
+                  && layer_num <= router_cfg_->VIA_ACCESS_LAYERNUM);
+        if (via_only) {
           // split by pin
           split::splitByPins(pin_helper,
                              layer_num,

@@ -74,7 +74,7 @@ namespace par {
 
 int Cluster::next_id_ = 0;
 
-void PartitionMgr::writeArtNetSpec(const char* fileName)
+void PartitionMgr::writeArtNetSpec(const char* file_name)
 {
   if (!getDbBlock()) {
     logger_->error(PAR, 53, "Design not loaded.");
@@ -83,94 +83,100 @@ void PartitionMgr::writeArtNetSpec(const char* fileName)
     logger_->error(PAR, 55, "Libs not loaded.");
   }
 
-  std::map<std::string, MasterInfo> onlyUseMasters;
+  std::map<std::string, MasterInfo> only_use_masters;
   std::string top_name;
-  int numInsts = 0;
-  int numMacros = 0;
-  int numPIs = 0;
-  int numPOs = 0;
-  int numSeq = 0;
-  int Dmax = -1;
-  int MDmax = -1;
-  float Rratio = 0.0;
+  int num_insts = 0;
+  int num_macros = 0;
+  int num_pi = 0;
+  int num_po = 0;
+  int num_seq = 0;
+  int max_flop_depth = -1;
+  int max_macro_depth = -1;
+  float r_ratio = 0.0;
   float p = 0.0;
   float q = 0.0;
-  float avgK = 0.0;
+  float avg_k = 0.0;
 
-  getFromODB(
-      onlyUseMasters, top_name, numInsts, numMacros, numPIs, numPOs, numSeq);
+  getFromODB(only_use_masters,
+             top_name,
+             num_insts,
+             num_macros,
+             num_pi,
+             num_po,
+             num_seq);
   logger_->report("getFromODB done");
-  getFromSTA(Dmax, MDmax);
+  getFromSTA(max_flop_depth, max_macro_depth);
   logger_->report("getFromSTA done");
-  getFromPAR(Rratio, p, q, avgK);
+  getFromPAR(r_ratio, p, q, avg_k);
   logger_->report("getFromPAR done");
-  writeFile(onlyUseMasters,
+  writeFile(only_use_masters,
             top_name,
-            numInsts,
-            numMacros,
-            numPIs,
-            numPOs,
-            numSeq,
-            Dmax,
-            MDmax,
-            Rratio,
+            num_insts,
+            num_macros,
+            num_pi,
+            num_po,
+            num_seq,
+            max_flop_depth,
+            max_macro_depth,
+            r_ratio,
             p,
             q,
-            avgK,
-            fileName);
+            avg_k,
+            file_name);
 }
 
-void PartitionMgr::getFromODB(std::map<std::string, MasterInfo>& onlyUseMasters,
-                              std::string& top_name,
-                              int& numInsts,
-                              int& numMacros,
-                              int& numPIs,
-                              int& numPOs,
-                              int& numSeq)
+void PartitionMgr::getFromODB(
+    std::map<std::string, MasterInfo>& only_use_masters,
+    std::string& top_name,
+    int& num_insts,
+    int& num_macros,
+    int& num_pi,
+    int& num_po,
+    int& num_seq)
 {
   auto block = getDbBlock();
   odb::dbSet<dbInst> insts = block->getInsts();
   odb::dbSet<dbBTerm> bterms = block->getBTerms();
-  numInsts = insts.size();
+  num_insts = insts.size();
 
   for (auto bterm : bterms) {
     if (bterm->getIoType() == odb::dbIoType::INPUT) {
-      numPIs++;
+      num_pi++;
     }
     if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-      numPOs++;
+      num_po++;
     }
   }
 
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
-    bool isMacro = (master->getType() == dbMasterType::BLOCK ? 1 : 0);
+    bool is_macro = (master->getType() == dbMasterType::BLOCK ? 1 : 0);
     const sta::LibertyCell* lib_cell = db_network_->libertyCell(inst);
     if (!lib_cell) {
       logger_->error(PAR, 56, "Liberty cell not found: {}", inst->getName());
     }
     if (lib_cell->hasSequentials()) {
-      numSeq++;
+      num_seq++;
     }
     auto [it, inserted]
-        = onlyUseMasters.try_emplace(master->getName(), MasterInfo{});
+        = only_use_masters.try_emplace(master->getName(), MasterInfo{});
     MasterInfo& info = it->second;
     ++info.count;
     if (inserted) {
-      info.isMacro = isMacro;
+      info.is_macro = is_macro;
     }
-    if (isMacro) {
-      numMacros++;
+    if (is_macro) {
+      num_macros++;
     }
   }
 }
 
-void PartitionMgr::getFromSTA(int& Dmax, int& MDmax)
+void PartitionMgr::getFromSTA(int& max_flop_depth, int& max_macro_depth)
 {
-  BuildTimingPath(Dmax, MDmax);
+  BuildTimingPath(max_flop_depth, max_macro_depth);
 }
 
-void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
+void PartitionMgr::BuildTimingPath(int& max_flop_depth, int& max_macro_depth)
 {
   sta_->ensureGraph();     // Ensure that the timing graph has been built
   sta_->searchPreamble();  // Make graph and find delays
@@ -239,7 +245,7 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       false);
 
   auto block = getDbBlock();
-  std::map<std::string, int> pathDepthMap;
+  std::map<std::string, int> path_depth_map;
   // check all the timing paths
   for (auto& path_end : path_ends) {
     // Printing timing paths to logger
@@ -247,9 +253,9 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
     auto* path = path_end->path();
 
     int depth = 0;
-    std::string endPointName;
-    std::unordered_set<std::string> visitedInstances;
-    std::unordered_set<std::string> visitedBterms;
+    std::string end_point_name;
+    std::unordered_set<std::string> visited_instances;
+    std::unordered_set<std::string> visited_bterms;
 
     sta::PathExpanded expand(path, sta_);
     for (size_t i = 0; i < expand.size(); i++) {
@@ -266,28 +272,28 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       if (db_network_->isTopLevelPort(pin)) {
         auto bterm = block->findBTerm(db_network_->pathName(pin).c_str());
         name = bterm->getName();
-        if (visitedBterms.insert(name).second) {
+        if (visited_bterms.insert(name).second) {
           depth++;
         }
       } else {
         auto inst = db_network_->instance(pin);
         auto db_inst = block->findInst(db_network_->pathName(inst).c_str());
         name = db_inst->getName();
-        if (visitedInstances.insert(name).second) {
+        if (visited_instances.insert(name).second) {
           depth++;
         }
       }
 
       if (i == expand.size() - 1) {
-        endPointName = name;
-        pathDepthMap[endPointName] = depth;
+        end_point_name = name;
+        path_depth_map[end_point_name] = depth;
       }
     }
   }  // path_end
 
   int ff_max = 0;
   int mac_max = 0;
-  for (const auto& path : pathDepthMap) {
+  for (const auto& path : path_depth_map) {
     auto inst = block->findInst((path.first).c_str());
     if (inst) {
       if (inst->getMaster()->isBlock()) {
@@ -297,31 +303,31 @@ void PartitionMgr::BuildTimingPath(int& Dmax, int& MDmax)
       }
     }
   }
-  Dmax = ff_max;
-  MDmax = mac_max;
+  max_flop_depth = ff_max;
+  max_macro_depth = mac_max;
 }
 
-void PartitionMgr::getFromPAR(float& Rratio, float& p, float& q, float& avgK)
+void PartitionMgr::getFromPAR(float& r_ratio, float& p, float& q, float& avg_k)
 {
-  getRents(Rratio, p, q, avgK);
+  getRents(r_ratio, p, q, avg_k);
 }
 
-void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
+void PartitionMgr::getRents(float& r_ratio, float& p, float& q, float& avg_k)
 {
   auto block = getDbBlock();
-  ModuleMgr modMgr;
+  ModuleMgr mod_mgr;
   SharedClusterVector cv;
   auto c = std::make_shared<Cluster>(0);
   cv.push_back(c);
   auto triton_part
       = std::make_shared<TritonPart>(db_network_, db_, sta_, logger_);
-  double totPins = 0;
+  double tot_pins = 0;
   int id = 0;
   for (dbInst* inst : block->getInsts()) {
     for (dbITerm* inst_iterm : inst->getITerms()) {
       if (inst_iterm->getIoType() == dbIoType::INPUT
           || inst_iterm->getIoType() == dbIoType::OUTPUT) {
-        totPins++;
+        tot_pins++;
       }
     }
     c->addInst(inst);
@@ -329,102 +335,102 @@ void PartitionMgr::getRents(float& Rratio, float& p, float& q, float& avgK)
     ++id;
   }
   if (id != 0) {
-    avgK = totPins / block->getInsts().size();
+    avg_k = tot_pins / block->getInsts().size();
   }
   bool flag = true;
   while (flag) {
-    flag = partitionCluster(triton_part, modMgr, cv);
+    flag = partitionCluster(triton_part, mod_mgr, cv);
   }
 
   if (!block->getInsts().empty() && !block->getBTerms().empty()) {
-    auto m = std::make_shared<Module>(modMgr.getNumModules());
-    m->setAvgK(avgK);
+    auto m = std::make_shared<Module>(mod_mgr.getNumModules());
+    m->setAvgK(avg_k);
     m->setAvgInsts(block->getInsts().size());
     m->setAvgT(block->getBTerms().size());
     m->setSigmaT(0.0);
-    modMgr.addModule(m);
-    linCurvFit(modMgr, Rratio, p, q);
+    mod_mgr.addModule(m);
+    linCurvFit(mod_mgr, r_ratio, p, q);
   }
 }
 
 bool PartitionMgr::partitionCluster(
     const std::shared_ptr<TritonPart>& triton_part,
-    ModuleMgr& modMgr,
+    ModuleMgr& mod_mgr,
     SharedClusterVector& cv)
 {
-  int MIN_GATE_NUM_PER_CLUSTER = 100;
+  int min_gate_num_per_cluster = 100;
   bool flag = true;
-  SharedClusterVector resultCV;
-  int clusterNum = cv.size();
-  double sampleNum = (double) clusterNum * 2.0;
-  double expo = 1.0 / sampleNum;
-  double avgInsts = 0;
-  double avgT = 0;
+  SharedClusterVector result_cv;
+  int cluster_num = cv.size();
+  double sample_num = (double) cluster_num * 2.0;
+  double expo = 1.0 / sample_num;
+  double avg_insts = 0;
+  double avg_t = 0;
   int count = 0;
-  std::vector<double> Tvect;
+  std::vector<double> tvect;
   std::vector<bool> inside;
-  int numInsts = getDbBlock()->getInsts().size();
+  int num_insts = getDbBlock()->getInsts().size();
 
-  for (int i = 0; i < clusterNum; ++i) {
+  for (int i = 0; i < cluster_num; ++i) {
     auto c = cv[i];
-    resultCV.clear();
-    Partitioning(triton_part, c, resultCV);
-    cv.push_back(resultCV[0]);
-    cv.push_back(resultCV[1]);
+    result_cv.clear();
+    Partitioning(triton_part, c, result_cv);
+    cv.push_back(result_cv[0]);
+    cv.push_back(result_cv[1]);
 
     for (int j = 0; j < 2; ++j) {
-      const auto& newC = resultCV[j];
-      int newGateNum = newC->getNumInsts();
-      if (newGateNum < MIN_GATE_NUM_PER_CLUSTER) {
+      const auto& new_c = result_cv[j];
+      int new_gate_num = new_c->getNumInsts();
+      if (new_gate_num < min_gate_num_per_cluster) {
         flag = false;
       }
 
-      inside.assign(numInsts, false);
-      for (int k = 0; k < newGateNum; ++k) {
-        auto inst = newC->getInst(k);
+      inside.assign(num_insts, false);
+      for (int k = 0; k < new_gate_num; ++k) {
+        auto inst = new_c->getInst(k);
         auto inst_prop = odb::dbIntProperty::find(inst, "inst_id");
         const int inst_id = inst_prop->getValue();
         inside[inst_id] = true;
       }
 
-      double sumT = getClusterIONum(inside, newC);
-      double numInsts = newC->getNumInsts();
-      if (numInsts >= 1.0 && sumT >= 1.0) {
-        avgInsts += numInsts * expo;
-        avgT += sumT * expo;
-        Tvect.push_back(sumT);
+      double sum_t = getClusterIONum(inside, new_c);
+      double num_insts = new_c->getNumInsts();
+      if (num_insts >= 1.0 && sum_t >= 1.0) {
+        avg_insts += num_insts * expo;
+        avg_t += sum_t * expo;
+        tvect.push_back(sum_t);
         count++;
       }
     }
   }
 
-  double stdevT = 0.0;
+  double stdev_t = 0.0;
 
-  if (Tvect.size() > 1) {
-    double sumSqrtT = 0.0;
-    for (const double t : Tvect) {
-      sumSqrtT += pow((t - avgT), 2);
+  if (tvect.size() > 1) {
+    double sum_sqrt_t = 0.0;
+    for (const double t : tvect) {
+      sum_sqrt_t += pow((t - avg_t), 2);
     }
-    stdevT = sqrt(sumSqrtT / count);
+    stdev_t = sqrt(sum_sqrt_t / count);
   }
 
-  if (avgInsts >= 1 && avgT >= 1) {
-    auto m = std::make_shared<Module>(modMgr.getNumModules());
-    m->setAvgInsts(avgInsts);
-    m->setAvgT(avgT);
-    m->setSigmaT(stdevT);
-    modMgr.addModule(m);
+  if (avg_insts >= 1 && avg_t >= 1) {
+    auto m = std::make_shared<Module>(mod_mgr.getNumModules());
+    m->setAvgInsts(avg_insts);
+    m->setAvgT(avg_t);
+    m->setSigmaT(stdev_t);
+    mod_mgr.addModule(m);
   }
 
   // erase the first clusterNum elements
-  cv.erase(cv.begin(), cv.begin() + clusterNum);
+  cv.erase(cv.begin(), cv.begin() + cluster_num);
 
   return flag;
 }
 
 void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
                                 const std::shared_ptr<Cluster>& cluster,
-                                SharedClusterVector& resultCV)
+                                SharedClusterVector& result_cv)
 {
   std::vector<odb::dbInst*> insts;
   insts.reserve(cluster->getNumInsts());
@@ -495,8 +501,8 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
   }
 
   const int seed = 0;
-  constexpr float default_balance_constraint = 0.5f;
-  float balance_constraint = default_balance_constraint;
+  constexpr float kDefaultBalanceConstraint = 0.5f;
+  float balance_constraint = kDefaultBalanceConstraint;
   const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
@@ -544,28 +550,28 @@ void PartitionMgr::Partitioning(const std::shared_ptr<TritonPart>& triton_part,
     }
   }
 
-  resultCV.push_back(cluster_part_1);
-  resultCV.push_back(cluster);
+  result_cv.push_back(cluster_part_1);
+  result_cv.push_back(cluster);
 }
 
 int PartitionMgr::getClusterIONum(std::vector<bool>& inside,
                                   const std::shared_ptr<Cluster>& cluster)
 {
-  std::vector<odb::dbInst*> cInsts = cluster->getInsts();
-  std::unordered_set<odb::dbNet*> cNets;
+  std::vector<odb::dbInst*> c_insts = cluster->getInsts();
+  std::unordered_set<odb::dbNet*> c_nets;
 
-  for (odb::dbInst* inst : cInsts) {
+  for (odb::dbInst* inst : c_insts) {
     for (odb::dbITerm* iterm : inst->getITerms()) {
       odb::dbNet* net = iterm->getNet();
       if (!net || net->getSigType() != odb::dbSigType::SIGNAL) {
         continue;
       }
-      cNets.insert(net);
+      c_nets.insert(net);
     }
   }
 
   int terms = 0;
-  for (odb::dbNet* net : cNets) {
+  for (odb::dbNet* net : c_nets) {
     if (!net) {
       continue;
     }
@@ -594,16 +600,16 @@ int PartitionMgr::getClusterIONum(std::vector<bool>& inside,
 }
 
 // from RentCon
-void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
-                              float& Rratio,
+void PartitionMgr::linCurvFit(ModuleMgr& mod_mgr,
+                              float& r_ratio,
                               float& p,
                               float& q)
 {
-  const int n = modMgr.getNumModules();
+  const int n = mod_mgr.getNumModules();
   double* x = new double[n];
   double* y = new double[n];
 
-  auto modules = modMgr.getModules();
+  auto modules = mod_mgr.getModules();
   std::ranges::sort(
       modules,
 
@@ -622,7 +628,7 @@ void PartitionMgr::linCurvFit(ModuleMgr& modMgr,
   auto [ratio, rentP, std_dev] = fitRent(x, y, n);
   delete[] x;
   delete[] y;
-  Rratio = ratio;
+  r_ratio = ratio;
   p = rentP;
   q = std_dev;
 }
@@ -632,37 +638,37 @@ std::tuple<double, double, double> PartitionMgr::fitRent(const double* x,
                                                          const double* y,
                                                          int n)
 {
-  const int minPntNum = (int) (n * 0.75);
-  const int totPoints = n;
-  int bestN = n;
-  double rentP;
+  const int min_pnt_num = (int) (n * 0.75);
+  const int tot_points = n;
+  int best_n = n;
+  double rent_p;
   double cov11;
   double sumsq;
 
-  fit_mul(x, 1, y, 1, n, &rentP, &cov11, &sumsq);
-  double bestRent = rentP;
+  fit_mul(x, 1, y, 1, n, &rent_p, &cov11, &sumsq);
+  double best_rent = rent_p;
 
-  double oldDev = sqrt(sumsq / n);
+  double old_dev = sqrt(sumsq / n);
 
-  while (n > minPntNum) {
+  while (n > min_pnt_num) {
     n--;
-    fit_mul(x, 1, y, 1, n, &rentP, &cov11, &sumsq);
+    fit_mul(x, 1, y, 1, n, &rent_p, &cov11, &sumsq);
     // compute the standard deviation of the residuals
-    const double newDev = sqrt(sumsq / n);
-    if (newDev > oldDev) {
+    const double new_dev = sqrt(sumsq / n);
+    if (new_dev > old_dev) {
       break;
     }
-    oldDev = newDev;
-    bestN = n;
-    bestRent = rentP;
+    old_dev = new_dev;
+    best_n = n;
+    best_rent = rent_p;
   }
-  double Rratio;
-  if (bestN == totPoints) {
-    Rratio = 0.9;
+  double r_ratio;
+  if (best_n == tot_points) {
+    r_ratio = 0.9;
   } else {
-    Rratio = pow(2, bestN - totPoints);
+    r_ratio = pow(2, best_n - tot_points);
   }
-  return std::make_tuple(Rratio, bestRent, oldDev);
+  return std::make_tuple(r_ratio, best_rent, old_dev);
 }
 
 // from gsl library
@@ -708,68 +714,68 @@ void PartitionMgr::fit_mul(const double* x,
 }
 
 void PartitionMgr::writeFile(
-    const std::map<std::string, MasterInfo>& onlyUseMasters,
+    const std::map<std::string, MasterInfo>& only_use_masters,
     const std::string& top_name,
-    const int numInsts,
-    const int numMacros,
-    const int numPIs,
-    const int numPOs,
-    const int numSeq,
-    const int Dmax,
-    const int MDmax,
-    const float Rratio,
+    const int num_insts,
+    const int num_macros,
+    const int num_pi,
+    const int num_po,
+    const int num_seq,
+    const int max_flop_depth,
+    const int max_macro_depth,
+    const float r_ratio,
     const float p,
     const float q,
-    const float avgK,
-    const char* fileName)
+    const float avg_k,
+    const char* file_name)
 {
-  std::ofstream outFile(fileName);
-  if (!outFile.good()) {
+  std::ofstream out_file(file_name);
+  if (!out_file.good()) {
     logger_->error(PAR, 54, "Cannot open file");
     exit(0);
   }
 
-  outFile << "LIBRARY\n";
-  outFile << "NAME lib\n";
+  out_file << "LIBRARY\n";
+  out_file << "NAME lib\n";
 
   // map<string, MasterInfo> --> cellName / cellCount, isMacro
-  for (const auto& [name, info] : onlyUseMasters) {
-    outFile << "ONLY_USE " << name << '\n';
+  for (const auto& [name, info] : only_use_masters) {
+    out_file << "ONLY_USE " << name << '\n';
   }
-  outFile << '\n';
+  out_file << '\n';
 
-  outFile << "CIRCUIT\n";
-  outFile << "NAME " << top_name << '\n';
-  outFile << "LIBRARIES lib" << '\n';
-  outFile << "DISTRIBUTION ";
-  for (const auto& [name, info] : onlyUseMasters) {
-    outFile << info.count << " ";
+  out_file << "CIRCUIT\n";
+  out_file << "NAME " << top_name << '\n';
+  out_file << "LIBRARIES lib" << '\n';
+  out_file << "DISTRIBUTION ";
+  for (const auto& [name, info] : only_use_masters) {
+    out_file << info.count << " ";
   }
-  outFile << '\n';
-  outFile << "SIZE " << int(numInsts * Rratio) << '\n';
-  outFile << "p " << p << '\n';
-  outFile << "q " << q << '\n';
-  outFile << "END\n";
-  outFile << "SIZE " << numInsts << '\n';
-  outFile << "I " << numPIs << '\n';
-  outFile << "O " << numPOs << '\n';
-  outFile << "END\n";
-  outFile.close();
-  float Sratio = 0.0;
-  if (numInsts > 0) {
-    Sratio = float(numSeq) / numInsts;
+  out_file << '\n';
+  out_file << "SIZE " << int(num_insts * r_ratio) << '\n';
+  out_file << "p " << p << '\n';
+  out_file << "q " << q << '\n';
+  out_file << "END\n";
+  out_file << "SIZE " << num_insts << '\n';
+  out_file << "I " << num_pi << '\n';
+  out_file << "O " << num_po << '\n';
+  out_file << "END\n";
+  out_file.close();
+  float sratio = 0.0;
+  if (num_insts > 0) {
+    sratio = float(num_seq) / num_insts;
   }
-  logger_->report("#instances: {}", numInsts);
-  logger_->report("#macros: {}", numMacros);
-  logger_->report("#primary inputs: {}", numPIs);
-  logger_->report("#primary outputs: {}", numPOs);
-  logger_->report("Ratio of Region I: {}", Rratio);
+  logger_->report("#instances: {}", num_insts);
+  logger_->report("#macros: {}", num_macros);
+  logger_->report("#primary inputs: {}", num_pi);
+  logger_->report("#primary outputs: {}", num_po);
+  logger_->report("Ratio of Region I: {}", r_ratio);
   logger_->report("Rent's exponent: {}", p);
-  logger_->report("Average #pins per instances: {}", avgK);
+  logger_->report("Average #pins per instances: {}", avg_k);
   logger_->report("Ratio of #sequential instances to the #instances: {}",
-                  Sratio);
-  logger_->report("Maximum depth of any timing path: {}", Dmax);
-  logger_->report("Maximum depth of macro path: {}", MDmax);
+                  sratio);
+  logger_->report("Maximum depth of any timing path: {}", max_flop_depth);
+  logger_->report("Maximum depth of macro path: {}", max_macro_depth);
 }
 
 }  // namespace par

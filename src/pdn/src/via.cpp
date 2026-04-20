@@ -1146,7 +1146,7 @@ DbVia::ViaLayerShape DbGenerateDummyVia::generate(
                reason_.empty() ? "" : ": ",
                reason_);
   if (add_report_) {
-    connect_->addFailedVia(failedViaReason::BUILD, via_area, wire->getNet());
+    connect_->addFailedVia(FailedViaReason::kBuild, via_area, wire->getNet());
   }
 
   return {};
@@ -2933,7 +2933,7 @@ void Via::writeToDb(odb::dbSWire* wire,
   connect_->makeVia(wire, lower_, upper_, type, shapes);
 
   if (shapes.bottom.empty() && shapes.middle.empty() && shapes.top.empty()) {
-    markFailed(failedViaReason::BUILD);
+    markFailed(FailedViaReason::kBuild);
     return;
   }
 
@@ -3112,7 +3112,7 @@ void Via::writeToDb(odb::dbSWire* wire,
         tech_layer.dbuToMicron(x / ripup_count),
         tech_layer.dbuToMicron(y / ripup_count),
         lower_->getNet()->getName());
-    markFailed(failedViaReason::RIPUP);
+    markFailed(FailedViaReason::kRipup);
   }
 }
 
@@ -3160,7 +3160,7 @@ utl::Logger* Via::getLogger() const
   return getGrid()->getLogger();
 }
 
-void Via::markFailed(failedViaReason reason)
+void Via::markFailed(FailedViaReason reason)
 {
   failed_ = true;
   connect_->addFailedVia(reason, area_, net_);

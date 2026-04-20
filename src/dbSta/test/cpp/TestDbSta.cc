@@ -17,7 +17,7 @@ class TestDbSta : public tst::IntegratedFixture
 {
  protected:
   TestDbSta()
-      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::Nangate45,
+      : tst::IntegratedFixture(tst::IntegratedFixture::Technology::kNangate45,
                                "_main/src/dbSta/test/")
   {
   }

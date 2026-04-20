@@ -39,6 +39,7 @@ B=${0%%.cc}; [ "$B" -nt "$0" ] || c++ -std=c++17 -o"$B" "$0" && exec "$B" "$@";
 #include <unistd.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cerrno>
 #include <cinttypes>
 #include <csignal>
@@ -308,8 +309,14 @@ class ClangTidyRunner
 
     const std::string uniquifier = "." + std::to_string(getpid());
     std::mutex queue_access_lock;
+    std::atomic<bool> fatal_stop{false};
+    std::string fatal_output;
+    std::string fatal_file;
     auto clang_tidy_runner = [&]() {
       for (;;) {
+        if (fatal_stop.load()) {
+          return;
+        }
         filepath_contenthash_t work;
         {
           const std::lock_guard<std::mutex> lock(queue_access_lock);
@@ -328,7 +335,7 @@ class ClangTidyRunner
         // it is easy to find with `ps` or `top`.
         const std::string command = clang_tidy_ + " '" + work.first.string()
                                     + "'" + clang_tidy_args_ + "> '" + tmp_out
-                                    + "' 2>/dev/null";
+                                    + "' 2>&1";
         const int r = system(command.c_str());
 #ifdef WIFSIGNALED
         // NOLINTBEGIN
@@ -340,6 +347,30 @@ class ClangTidyRunner
         }
         // NOLINTEND
 #endif
+        // Detect systemic clang-tidy failure (bad config, missing compile db,
+        // etc.): non-zero exit with no check findings in output. Abort the
+        // run and surface the error instead of silently caching empty output.
+#ifdef WIFEXITED
+        // NOLINTBEGIN
+        if (WIFEXITED(r) && WEXITSTATUS(r) != 0) {
+          // NOLINTEND
+#else
+        if (r != 0) {
+#endif
+          const std::string out = GetContent(tmp_out);
+          static const std::regex check_finding(
+              R"(\[[a-zA-Z0-9.]+-[a-zA-Z0-9.-]+\])");
+          if (!std::regex_search(out, check_finding)) {
+            bool expected = false;
+            if (fatal_stop.compare_exchange_strong(expected, true)) {
+              fatal_output = out;
+              fatal_file = work.first.string();
+            }
+            std::error_code ignored_error;
+            fs::remove(tmp_out, ignored_error);
+            return;
+          }
+        }
         const std::string filter_filename = work.first.filename().string();
         RepairFilenameOccurences(filter_filename, tmp_out, tmp_out);
         fs::rename(tmp_out, final_out);  // atomic replacement
@@ -355,6 +386,12 @@ class ClangTidyRunner
     }
     if (print_progress) {
       fprintf(stderr, "     \n");  // Clean out progress counter.
+    }
+    if (fatal_stop.load()) {
+      std::cerr << "\nclang-tidy failed on " << fatal_file
+                << " (aborting; output below):\n"
+                << fatal_output << "\n";
+      exit(EXIT_FAILURE);
     }
   }
 

@@ -25,14 +25,14 @@ namespace psm {
 template <typename T>
 struct RectIndexableGetter
 {
-  using result_type = odb::Rect;
+  using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
   odb::Rect operator()(const T* t) const { return t->getShape(); }
 };
 
 template <typename T>
 struct PointIndexableGetter
 {
-  using result_type = odb::Point;
+  using result_type = odb::Point;  // NOLINT(readability-identifier-naming)
   odb::Point operator()(const T* t) const { return t->getPoint(); }
 };
 

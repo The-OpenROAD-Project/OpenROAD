@@ -18,23 +18,23 @@ namespace pdn {
 
 enum ExtensionMode
 {
-  CORE,
-  RINGS,
-  BOUNDARY,
-  FIXED
+  kCore,
+  kRings,
+  kBoundary,
+  kFixed
 };
 
 enum StartsWith
 {
-  GRID,
-  POWER,
-  GROUND
+  kGrid,
+  kPower,
+  kGround
 };
 
 enum PowerSwitchNetworkType
 {
-  STAR,
-  DAISY
+  kStar,
+  kDaisy
 };
 
 class VoltageDomain;
@@ -164,7 +164,7 @@ class PdnGen
   void repairVias(const std::set<odb::dbNet*>& nets);
 
   void createSrouteWires(const char* net,
-                         const char* outerNet,
+                         const char* outer_net,
                          odb::dbTechLayer* layer0,
                          odb::dbTechLayer* layer1,
                          int cut_pitch_x,
@@ -174,7 +174,7 @@ class PdnGen
                          int max_rows,
                          int max_columns,
                          const std::vector<odb::dbTechLayer*>& ongrid,
-                         const std::vector<int>& metalWidths,
+                         const std::vector<int>& metal_widths,
                          const std::vector<int>& metalspaces,
                          const std::vector<odb::dbInst*>& insts);
 

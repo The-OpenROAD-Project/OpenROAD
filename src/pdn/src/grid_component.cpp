@@ -47,15 +47,15 @@ VoltageDomain* GridComponent::getDomain() const
 std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
-    case Ring:
+    case kRing:
       return "Ring";
-    case Strap:
+    case kStrap:
       return "Strap";
-    case Followpin:
+    case kFollowpin:
       return "Followpin";
-    case PadConnect:
+    case kPadConnect:
       return "Pad connect";
-    case RepairChannel:
+    case kRepairChannel:
       return "Repair channel";
   }
 

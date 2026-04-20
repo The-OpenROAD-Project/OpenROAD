@@ -20,6 +20,7 @@
 #include "utl/deleter.h"
 
 namespace abc {
+// NOLINTBEGIN(readability-identifier-naming)
 extern Abc_Ntk_t* Abc_NtkMap(Abc_Ntk_t* pNtk,
                              Mio_Library_t* userLib,
                              double DelayTarget,
@@ -37,6 +38,7 @@ extern Abc_Ntk_t* Abc_NtkMap(Abc_Ntk_t* pNtk,
                              int fVerbose);
 extern void Abc_FrameSetLibGen(void* pLib);
 extern void Abc_FrameSetDrivingCell(char* pName);
+// NOLINTEND(readability-identifier-naming)
 }  // namespace abc
 
 namespace rmp {

@@ -51,105 +51,105 @@ const unsigned char* getBitmapGlyph(const char ch)
   // used.
   switch (ch) {
     case '0': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '1': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '2': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
-      return glyph;
+      return kGlyph;
     }
     case '3': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '4': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
-      return glyph;
+      return kGlyph;
     }
     case '5': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '6': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '7': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
-      return glyph;
+      return kGlyph;
     }
     case '8': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '9': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
-      return glyph;
+      return kGlyph;
     }
     case '.': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
-      return glyph;
+      return kGlyph;
     }
     case '-': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
-      return glyph;
+      return kGlyph;
     }
     case '/': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
-      return glyph;
+      return kGlyph;
     }
     case '=': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
-      return glyph;
+      return kGlyph;
     }
       // clang-format off
-    case 'A': case 'a': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x1F,0x11,0x11,0x11}; return g; }
-    case 'B': case 'b': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E}; return g; }
-    case 'C': case 'c': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x10,0x10,0x11,0x0E}; return g; }
-    case 'D': case 'd': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x11,0x11,0x11,0x1E}; return g; }
-    case 'E': case 'e': { static constexpr unsigned char g[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F}; return g; }
-    case 'F': case 'f': { static constexpr unsigned char g[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x10}; return g; }
-    case 'G': case 'g': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x17,0x11,0x11,0x0F}; return g; }
-    case 'H': case 'h': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x1F,0x11,0x11,0x11}; return g; }
-    case 'I': case 'i': { static constexpr unsigned char g[]={0x0E,0x04,0x04,0x04,0x04,0x04,0x0E}; return g; }
-    case 'J': case 'j': { static constexpr unsigned char g[]={0x07,0x02,0x02,0x02,0x02,0x12,0x0C}; return g; }
-    case 'K': case 'k': { static constexpr unsigned char g[]={0x11,0x12,0x14,0x18,0x14,0x12,0x11}; return g; }
-    case 'L': case 'l': { static constexpr unsigned char g[]={0x10,0x10,0x10,0x10,0x10,0x10,0x1F}; return g; }
-    case 'M': case 'm': { static constexpr unsigned char g[]={0x11,0x1B,0x15,0x15,0x11,0x11,0x11}; return g; }
-    case 'N': case 'n': { static constexpr unsigned char g[]={0x11,0x19,0x15,0x13,0x11,0x11,0x11}; return g; }
-    case 'O': case 'o': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x11,0x11,0x11,0x0E}; return g; }
-    case 'P': case 'p': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x10,0x10,0x10}; return g; }
-    case 'Q': case 'q': { static constexpr unsigned char g[]={0x0E,0x11,0x11,0x11,0x15,0x12,0x0D}; return g; }
-    case 'R': case 'r': { static constexpr unsigned char g[]={0x1E,0x11,0x11,0x1E,0x14,0x12,0x11}; return g; }
-    case 'S': case 's': { static constexpr unsigned char g[]={0x0E,0x11,0x10,0x0E,0x01,0x11,0x0E}; return g; }
-    case 'T': case 't': { static constexpr unsigned char g[]={0x1F,0x04,0x04,0x04,0x04,0x04,0x04}; return g; }
-    case 'U': case 'u': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return g; }
-    case 'V': case 'v': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return g; }
-    case 'W': case 'w': { static constexpr unsigned char g[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return g; }
-    case 'X': case 'x': { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return g; }
-    case 'Y': case 'y': { static constexpr unsigned char g[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return g; }
-    case 'Z': case 'z': { static constexpr unsigned char g[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return g; }
-    case '_': { static constexpr unsigned char g[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return g; }
-    case '[': { static constexpr unsigned char g[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return g; }
-    case ']': { static constexpr unsigned char g[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return g; }
+    case 'A': case 'a': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
+    case 'B': case 'b': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E}; return kG; }
+    case 'C': case 'c': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x10,0x10,0x11,0x0E}; return kG; }
+    case 'D': case 'd': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x11,0x11,0x11,0x1E}; return kG; }
+    case 'E': case 'e': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F}; return kG; }
+    case 'F': case 'f': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x10}; return kG; }
+    case 'G': case 'g': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x17,0x11,0x11,0x0F}; return kG; }
+    case 'H': case 'h': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
+    case 'I': case 'i': { static constexpr unsigned char kG[]={0x0E,0x04,0x04,0x04,0x04,0x04,0x0E}; return kG; }
+    case 'J': case 'j': { static constexpr unsigned char kG[]={0x07,0x02,0x02,0x02,0x02,0x12,0x0C}; return kG; }
+    case 'K': case 'k': { static constexpr unsigned char kG[]={0x11,0x12,0x14,0x18,0x14,0x12,0x11}; return kG; }
+    case 'L': case 'l': { static constexpr unsigned char kG[]={0x10,0x10,0x10,0x10,0x10,0x10,0x1F}; return kG; }
+    case 'M': case 'm': { static constexpr unsigned char kG[]={0x11,0x1B,0x15,0x15,0x11,0x11,0x11}; return kG; }
+    case 'N': case 'n': { static constexpr unsigned char kG[]={0x11,0x19,0x15,0x13,0x11,0x11,0x11}; return kG; }
+    case 'O': case 'o': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
+    case 'P': case 'p': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x10,0x10,0x10}; return kG; }
+    case 'Q': case 'q': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x15,0x12,0x0D}; return kG; }
+    case 'R': case 'r': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x14,0x12,0x11}; return kG; }
+    case 'S': case 's': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x0E,0x01,0x11,0x0E}; return kG; }
+    case 'T': case 't': { static constexpr unsigned char kG[]={0x1F,0x04,0x04,0x04,0x04,0x04,0x04}; return kG; }
+    case 'U': case 'u': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
+    case 'V': case 'v': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return kG; }
+    case 'W': case 'w': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return kG; }
+    case 'X': case 'x': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return kG; }
+    case 'Y': case 'y': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return kG; }
+    case 'Z': case 'z': { static constexpr unsigned char kG[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return kG; }
+    case '_': { static constexpr unsigned char kG[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return kG; }
+    case '[': { static constexpr unsigned char kG[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return kG; }
+    case ']': { static constexpr unsigned char kG[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return kG; }
     // clang-format on
     default:
       return nullptr;
@@ -177,7 +177,7 @@ void TileVisibility::parseFromJson(const std::string& json)
 
   // clang-format off
   // NOLINTBEGIN(modernize-use-designated-initializers)
-  static const BoolField fields[] = {
+  static const BoolField kFields[] = {
     {"stdcells",           &TileVisibility::stdcells,           true},
     {"macros",             &TileVisibility::macros,             true},
     {"pad_input",          &TileVisibility::pad_input,          true},
@@ -225,10 +225,10 @@ void TileVisibility::parseFromJson(const std::string& json)
   // NOLINTEND(modernize-use-designated-initializers)
   // clang-format on
 
-  for (const auto& f : fields) {
+  for (const auto& f : kFields) {
     this->*(f.field) = extract_int_or(json, f.key, f.default_val ? 1 : 0);
   }
-  raw_json_ = json;
+  raw_json = json;
 }
 
 bool TileVisibility::isSiteVisible(const std::string& site_name) const
@@ -237,7 +237,7 @@ bool TileVisibility::isSiteVisible(const std::string& site_name) const
     return false;
   }
   const std::string key = "site_" + site_name;
-  return extract_int_or(raw_json_, key, 0);
+  return extract_int_or(raw_json, key, 0);
 }
 
 bool TileVisibility::isNetVisible(odb::dbNet* net) const
@@ -783,8 +783,8 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
     const std::set<uint32_t>* route_guide_net_ids) const
 {
   static_assert(sizeof(Color) == 4);
-  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(buffer_size, 0);
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(kBufferSize, 0);
 
   // No design loaded — return blank tile.
   if (!getBlock()) {
@@ -794,7 +794,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
   }
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
-  static const Color palette[] = {
+  static const Color kPalette[] = {
       // clang-format off
       // NOLINTBEGIN(modernize-use-designated-initializers)
       { 70, 130, 210, 180},  // moderate blue
@@ -808,7 +808,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // NOLINTEND(modernize-use-designated-initializers)
       // clang-format on
   };
-  static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
+  static constexpr int kPaletteSize = sizeof(kPalette) / sizeof(kPalette[0]);
 
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
@@ -821,7 +821,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       layer_index = std::distance(all_layers.begin(), it);
     }
   }
-  const Color color = palette[layer_index % palette_size];
+  const Color color = kPalette[layer_index % kPaletteSize];
   const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
@@ -945,7 +945,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                   all_layers, std::string(pin_layer->getName()));
               if (it != all_layers.end()) {
                 const int idx = std::distance(all_layers.begin(), it);
-                marker_color = palette[idx % palette_size];
+                marker_color = kPalette[idx % kPaletteSize];
                 marker_color.a = 220;
               }
             }
@@ -1024,10 +1024,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             if (draw_pin_names) {
               const std::string name = term->getName();
               const odb::Point anchor_pt = xfm.getOffset();
-              constexpr int text_scale = 2;
-              const int text_w = getBitmapTextWidth(name, text_scale);
-              const int text_h = getBitmapTextHeight(text_scale);
-              const int text_margin_px = text_scale + 1;
+              constexpr int kTextScale = 2;
+              const int text_w = getBitmapTextWidth(name, kTextScale);
+              const int text_h = getBitmapTextHeight(kTextScale);
+              const int text_margin_px = kTextScale + 1;
               const bool rotated = (arg_min == 2 || arg_min == 3);
 
               // For rotated text, width/height swap.
@@ -1067,10 +1067,10 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                                        .a = 255};
                 if (rotated) {
                   drawBitmapTextRotated(
-                      image_buffer, px, py, name, text_scale, text_color);
+                      image_buffer, px, py, name, kTextScale, text_color);
                 } else {
                   drawBitmapText(
-                      image_buffer, px, py, name, text_scale, text_color);
+                      image_buffer, px, py, name, kTextScale, text_color);
                 }
               }
             }
@@ -1405,7 +1405,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
             .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
 
         // Lambda to draw a rectangle outline.
-        auto drawOutline = [&](const odb::Rect& rect) {
+        auto draw_outline = [&](const odb::Rect& rect) {
           const odb::Rect draw = toPixels(scale, rect, dbu_tile);
           for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
             blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
@@ -1428,7 +1428,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
           }
 
           // Always draw the row outline.
-          drawOutline(row_rect);
+          draw_outline(row_rect);
 
           // Draw individual sites when zoomed in enough (site >= 5px).
           // Matches GUI nominalViewableResolution threshold.
@@ -1460,7 +1460,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
                 const odb::Rect site_rect(
                     pt.x(), pt.y(), pt.x() + site_w, pt.y() + site_h);
                 if (site_rect.overlaps(dbu_tile)) {
-                  drawOutline(site_rect);
+                  draw_outline(site_rect);
                 }
                 if (horizontal) {
                   pt.addX(spacing);
@@ -1579,8 +1579,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     const int x,
     int y) const
 {
-  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(buffer_size, 0);
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(kBufferSize, 0);
 
   const double num_tiles_at_zoom = pow(2, z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
@@ -1596,8 +1596,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   const int dbu_y_max = hm_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
   const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
   const double scale = kTileSizeInPixel / tile_dbu_size;
-  constexpr double text_rect_margin = 0.8;
-  constexpr int text_scale = 2;
+  constexpr double kTextRectMargin = 0.8;
+  constexpr int kTextScale = 2;
   const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
@@ -1622,12 +1622,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     }
 
     const std::string text = source.formatValue(map_point.value, false);
-    const int text_width = getBitmapTextWidth(text, text_scale);
-    const int text_height = getBitmapTextHeight(text_scale);
+    const int text_width = getBitmapTextWidth(text, kTextScale);
+    const int text_height = getBitmapTextHeight(kTextScale);
     const double rect_width = map_point.rect.dx() * scale;
     const double rect_height = map_point.rect.dy() * scale;
-    if (text_width >= text_rect_margin * rect_width
-        || text_height >= text_rect_margin * rect_height) {
+    if (text_width >= kTextRectMargin * rect_width
+        || text_height >= kTextRectMargin * rect_height) {
       continue;
     }
 
@@ -1646,7 +1646,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
                    pixel_x - text_width / 2,
                    pixel_y - text_height / 2,
                    text,
-                   text_scale,
+                   kTextScale,
                    text_color);
   }
 
@@ -2543,9 +2543,9 @@ void collectTimingPathShapes(odb::dbBlock* block,
   // Track nets already collected to avoid duplicates
   std::set<odb::dbNet*> seen_nets;
 
-  auto processNodes = [&](const std::vector<TimingNode>& nodes,
-                          const Color& clk_color,
-                          const Color& data_color) {
+  auto process_nodes = [&](const std::vector<TimingNode>& nodes,
+                           const Color& clk_color,
+                           const Color& data_color) {
     for (size_t i = 0; i + 1 < nodes.size(); i++) {
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
@@ -2563,10 +2563,10 @@ void collectTimingPathShapes(odb::dbBlock* block,
   };
 
   // data_nodes: launch clock (is_clock=true) then signal portion
-  processNodes(path.data_nodes, kLaunchClkColor, kSignalColor);
+  process_nodes(path.data_nodes, kLaunchClkColor, kSignalColor);
 
   // capture_nodes: capture clock path
-  processNodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
+  process_nodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
 }
 
 void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)

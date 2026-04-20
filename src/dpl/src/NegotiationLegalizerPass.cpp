@@ -398,9 +398,21 @@ void NegotiationLegalizer::place(int cell_idx, int x, int y)
     const odb::dbInst* debug_inst = debug_observer_->getDebugInstance();
     if (!debug_inst || cells_[cell_idx].db_inst == debug_inst) {
       pushNegotiationPixels();
-      logger_->report("Pause at placing of cell {}.",
-                      cells_[cell_idx].db_inst->getName());
-      debug_observer_->drawSelected(cells_[cell_idx].db_inst, !debug_inst);
+      const NegCell& c = cells_[cell_idx];
+      const int orig_x_dbu = die_xlo_ + c.init_x * site_width_;
+      const int orig_y_dbu = die_ylo_ + c.init_y * row_height_;
+      const int tgt_x_dbu = die_xlo_ + c.x * site_width_;
+      const int tgt_y_dbu = die_ylo_ + c.y * row_height_;
+      logger_->report(
+          "Pause at placing of cell {}. orig=({},{}) target=({},{}) dbu. "
+          "rowidx={}.",
+          c.db_inst->getName(),
+          orig_x_dbu,
+          orig_y_dbu,
+          tgt_x_dbu,
+          tgt_y_dbu,
+          c.y);
+      debug_observer_->drawSelected(c.db_inst, !debug_inst);
     }
   }
 }
@@ -546,6 +558,22 @@ std::pair<int, int> NegotiationLegalizer::findBestLocation(int cell_idx,
       }
     }
   }
+
+  if (best_cost == static_cast<double>(kInfCost)) {
+    // Every candidate in the search window was filtered out (out-of-die,
+    // invalid row, or fence violation).  The cell falls back to its current
+    // position, which may already be illegal — a likely stuck-cell scenario.
+    debugPrint(logger_,
+               utl::DPL,
+               "negotiation",
+               1,
+               "findBestLocation: no valid candidate found for cell '{}' "
+               "(iter {}) — all {} candidates filtered, cell may be stuck.",
+               cell.db_inst->getName(),
+               iter,
+               prof_candidates_filtered_);
+  }
+
   return {best_x, best_y};
 }
 

@@ -114,7 +114,7 @@ struct TileVisibility
 
   // Rows (off by default, matching GUI)
   bool rows = false;
-  std::string raw_json_;  // stored for dynamic per-site lookups
+  std::string raw_json;  // stored for dynamic per-site lookups
   bool isSiteVisible(const std::string& site_name) const;
 
   // Tracks (off by default, matching GUI)

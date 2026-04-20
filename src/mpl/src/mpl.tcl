@@ -109,7 +109,7 @@ proc rtl_macro_placer { args } {
 
   if { [info exists keys(-halo_width)] || [info exists keys(-halo_height)] } {
     utl::warn MPL 74 "-halo_width/-halo_height are deprecated, use\
-                      the set_macro_default_halo command instead."
+                      the set_macro_base_halo command instead."
     set halo_width 0.0
     set halo_height 0.0
 
@@ -125,7 +125,7 @@ proc rtl_macro_placer { args } {
       }
     }
 
-    mpl::set_default_halo $halo_width $halo_height $halo_width $halo_height
+    mpl::set_base_halo $halo_width $halo_height $halo_width $halo_height
   }
 
   if { [info exists keys(-fence_lx)] } {
@@ -298,13 +298,19 @@ proc set_macro_guidance_region { args } {
   mpl::add_guidance_region $macro $x1 $y1 $x2 $y2
 }
 
-sta::define_cmd_args "set_macro_default_halo" { halo }
-proc set_macro_default_halo { args } {
-  sta::parse_key_args "set_macro_default_halo" args \
+sta::define_cmd_args "set_macro_base_halo" { halo }
+proc set_macro_base_halo { args } {
+  sta::parse_key_args "set_macro_base_halo" args \
     keys {} flags {}
 
   lassign [mpl::parse_halo $args] left bottom right top
-  mpl::set_default_halo $left $bottom $right $top
+  mpl::set_base_halo $left $bottom $right $top
+}
+
+proc set_macro_default_halo { args } {
+  utl::warn MPL 75 "set_macro_default_halo is deprecated, use\
+                    set_macro_base_halo instead."
+  set_macro_base_halo {*}$args
 }
 
 sta::define_cmd_args "set_macro_halo" { -macro_name macro_name \
