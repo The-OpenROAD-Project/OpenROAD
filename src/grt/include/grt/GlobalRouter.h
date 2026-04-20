@@ -534,7 +534,7 @@ class GlobalRouter
   int congestion_report_iter_step_;
   bool allow_congestion_;
   bool resistance_aware_{false};
-  int snapshot_batched_width_{16};
+  int snapshot_batched_width_{0};
   int num_threads_;
   std::vector<int> vertical_capacities_;
   std::vector<int> horizontal_capacities_;

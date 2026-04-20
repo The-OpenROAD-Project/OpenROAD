@@ -4,12 +4,12 @@ read_def "gcd.def"
 
 set_thread_count 16
 
-if {[grt::get_snapshot_batched_width] != 16} {
+if {[grt::get_snapshot_batched_width] != 0} {
   utl::error GRT 707 \
-    "FastRoute should start with snapshot_batched_width set to 16."
+    "FastRoute should start with snapshot_batched_width set to 0."
 }
 
-global_route -verbose
+global_route -verbose -snapshot_batched_width 16
 
 if {[grt::get_snapshot_batched_width] != 16} {
   utl::error GRT 708 \
