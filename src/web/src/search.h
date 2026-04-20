@@ -75,7 +75,7 @@ class Search : public odb::dbBlockCallBackObj
   template <typename T>
   struct BBoxIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(T t) const { return t->getBBox()->getBox(); }
     odb::Rect operator()(const SNetValue<T>& t) const
     {
@@ -89,7 +89,7 @@ class Search : public odb::dbBlockCallBackObj
 
   struct FillIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbFill* t) const
     {
       odb::Rect fill;

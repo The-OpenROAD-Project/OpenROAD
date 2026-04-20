@@ -60,12 +60,12 @@ class Shape
   };
   struct RectIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const { return t->getRect(); }
   };
   struct ObstructionIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ShapePtr& t) const
     {
       return t->getObstruction();

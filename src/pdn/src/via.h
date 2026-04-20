@@ -717,7 +717,7 @@ class Via
  public:
   struct ViaIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(const ViaPtr& via) const { return via->getArea(); }
   };
   using ViaTree = bgi::rtree<ViaPtr, bgi::quadratic<16>, ViaIndexableGetter>;
