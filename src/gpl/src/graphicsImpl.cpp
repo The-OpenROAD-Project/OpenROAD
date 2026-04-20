@@ -611,10 +611,10 @@ void GraphicsImpl::addIter(const int iter, const double overflow)
       values.push_back(
           block->dbuAreaToMicrons(nbVec_[0]->getNesterovInstsArea()));
       const double total_tiles = static_cast<double>(rb_->getTotalTilesCount());
-      values.push_back(total_tiles > 0.0
-                           ? (static_cast<double>(rb_->getOverflowedTilesCount())
-                              / total_tiles * 100.0)
-                           : 0.0);
+      values.push_back(total_tiles > 0.0 ? (static_cast<double>(
+                                                rb_->getOverflowedTilesCount())
+                                            / total_tiles * 100.0)
+                                         : 0.0);
       values.push_back((rb_->getTotalRudyOverflow()));
     } else {
       values.push_back(0.0);
