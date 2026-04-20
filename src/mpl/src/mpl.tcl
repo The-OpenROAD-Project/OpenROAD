@@ -341,7 +341,15 @@ proc set_macro_halo { args } {
 
 sta::define_cmd_args "block_macro_channels" {}
 proc block_macro_channels { args } {
+  sta::parse_key_args "block_macro_channels" args \
+    keys {} flags {}
+
   sta::check_argc_eq0 "block_macro_channels" $args
+
+  if { [ord::get_db_block] == "NULL" } {
+    utl::error MPL 77 "Could not block macro channels. No block found."
+  }
+
   mpl::block_macro_channels
 }
 

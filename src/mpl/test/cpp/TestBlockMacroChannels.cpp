@@ -146,8 +146,8 @@ TEST_F(TestBlockMacroChannels, UnplacedMacroSkipped)
 // Placed macros are ignored: MPL can still move them as they're not fixed.
 TEST_F(TestBlockMacroChannels, PlacedMacroSkipped)
 {
-  odb::dbInst* instance = odb::dbInst::create(
-      db_->getChip()->getBlock(), macro_master_, "macro");
+  odb::dbInst* instance
+      = odb::dbInst::create(db_->getChip()->getBlock(), macro_master_, "macro");
   instance->setLocation(macro_x_, macro_y_);
   instance->setPlacementStatus(odb::dbPlacementStatus::PLACED);
 
