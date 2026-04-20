@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -47,6 +48,11 @@
 #include "utl/Logger.h"
 
 namespace rsz {
+class SetupLegacyPolicy;
+struct SlackEstimatorParams;
+}  // namespace rsz
+
+namespace rsz {
 
 // Buffer use classification
 enum class BufferUse
@@ -69,21 +75,10 @@ using PinVector = std::vector<PinPtr>;
 
 class RecoverPower;
 class RepairDesign;
-class RepairSetup;
 class RepairHold;
 class Rebuffer;
 class ResizerObserver;
 class ConcreteSwapArithModules;
-
-class CloneMove;
-class BufferMove;
-class SplitLoadMove;
-class SizeDownMove;
-class SizeUpMove;
-class SwapPinsMove;
-class UnbufferMove;
-class VTSwapSpeedMove;
-class SizeUpMatchMove;
 class RegisterOdbCallbackGuard;
 
 class NetHash
@@ -95,18 +90,18 @@ class NetHash
 using CellTargetLoadMap = std::map<sta::LibertyCell*, float>;
 using TgtSlews = std::array<sta::Slew, sta::RiseFall::index_count>;
 
-enum class MoveType
+enum class MoveType : uint8_t
 {
-  BUFFER,
-  UNBUFFER,
-  SWAP,
-  SIZE,
-  SIZEUP,
-  SIZEDOWN,
-  CLONE,
-  SPLIT,
-  VTSWAP_SPEED,  // VT swap for timing (need VT swap for power also)
-  SIZEUP_MATCH   // sizeup to match drive strength vs. prev stage
+  kBuffer,
+  kClone,
+  kSizeUp,
+  kSizeUpMatch,
+  kSizeDown,
+  kSwapPins,
+  kVtSwap,
+  kUnbuffer,
+  kSplitLoad,
+  kCount
 };
 
 // Voltage Threshold (VT) category identifier
@@ -198,6 +193,21 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double utilization();
   // Maximum utilizable area (core area * utilization)
   double maxArea() const;
+  sta::dbSta* sta() const { return sta_; }
+  const sta::MinMax* maxAnalysisMode() const { return max_; }
+  const sta::StaState* staState() const { return this; }
+  utl::Logger* logger() const { return logger_; }
+  sta::Network* network() const { return network_; }
+  sta::Graph* graph() const { return graph_; }
+  sta::dbNetwork* dbNetwork() const { return db_network_; }
+  odb::dbBlock* block() const { return block_; }
+  est::EstimateParasitics* estimateParasitics() const
+  {
+    return estimate_parasitics_;
+  }
+  bool& matchCellFootprint() { return match_cell_footprint_; }
+  Rebuffer& rebuffer() const { return *rebuffer_; }
+  bool isRegister(sta::Vertex* vertex);
 
   sta::VertexSeq orderedLoadPinVertices();
 
@@ -294,7 +304,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   void setMaxUtilization(double max_utilization);
   // Remove all or selected buffers from the netlist.
-  void removeBuffers(sta::InstanceSeq insts);
+  void removeBuffers(const sta::InstanceSeq& insts);
   void unbufferNet(sta::Net* net);
   void bufferInputs(sta::LibertyCell* buffer_cell = nullptr,
                     bool verbose = false);
@@ -483,18 +493,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::PinSet findFanins(sta::PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
-  sta::dbNetwork* getDbNetwork() { return db_network_; }
-  odb::dbBlock* getDbBlock() { return block_; }
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
   void makeEquivCells();
   VTCategory cellVTType(odb::dbMaster* master);
+  double computeDesignArea();
 
   ////////////////////////////////////////////////////////////////
   void initBlock();
   void journalBeginTest();
   void journalRestoreTest();
-  utl::Logger* logger() const { return logger_; }
   void eliminateDeadLogic(bool clean_nets);
   std::optional<float> cellLeakage(sta::LibertyCell* cell);
   // For debugging - calls getSwappableCells
@@ -506,7 +514,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void getBufferList(sta::LibertyCellSeq& buffer_list);
   void setDebugGraphics(std::shared_ptr<ResizerObserver> graphics);
 
-  static MoveType parseMove(const std::string& s);
   static std::vector<MoveType> parseMoveSequence(const std::string& sequence);
   void fullyRebuffer(sta::Pin* pin);
 
@@ -526,7 +533,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   sta::Slew findDriverSlewForLoad(sta::Pin* drvr_pin,
                                   float load,
-                                  const sta::Scene* corner);
+                                  const sta::Scene* scene);
   bool computeNewDelaysSlews(
       sta::Pin* driver_pin,
       sta::Instance* buffer,
@@ -551,9 +558,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                            const sta::Scene* corner,
                            std::map<const sta::Pin*, float>& load_pin_slew);
 
+  // Any cell insertion or deletion should invalidate vertex ordering.
+  void invalidateVertexOrdering() { level_drvr_vertices_valid_ = false; }
+
  protected:
   void init();
-  double computeDesignArea();
   void initDesignArea();
   sta::Instance* bufferInput(const sta::Pin* top_pin,
                              sta::LibertyCell* buffer_cell,
@@ -571,12 +580,14 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void findBuffers();
   void findBuffersNoPruning();
   void findFastBuffers();
+  static MoveType moveTypeFromString(const std::string& str);
   sta::LibertyCell* selectBufferCell(sta::LibertyCell* buffer_cell = nullptr);
   bool isLinkCell(sta::LibertyCell* cell) const;
   void findTargetLoads();
   void balanceBin(const std::vector<odb::dbInst*>& bin,
                   const std::set<odb::dbSite*>& base_sites);
 
+ public:
   //==============================
   // APIs for gate cloning
   sta::LibertyCell* halfDrivingPowerCell(sta::Instance* inst);
@@ -613,7 +624,9 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
+  void runRepairSetupPreamble();
   sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
+  sta::LibertyCellSeq getFastBufferSizes(sta::LibertyCell* source_cell) const;
   sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 
   bool getCin(const sta::LibertyCell* cell, float& cin);
@@ -631,6 +644,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   int findMaxSteinerDist(sta::Vertex* drvr, const sta::Scene* corner);
   float driveResistance(const sta::Pin* drvr_pin);
   float bufferDriveResistance(const sta::LibertyCell* buffer) const;
+  int vtCategoryCount() const;
   float cellDriveResistance(const sta::LibertyCell* cell) const;
 
   // Max distance from driver to load (in dbu).
@@ -639,21 +653,30 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   double findMaxWireLength1(bool issue_error = true);
   float portFanoutLoad(sta::LibertyPort* port) const;
   float portCapacitance(sta::LibertyPort* input, const sta::Scene* scene) const;
-  void swapPins(sta::Instance* inst,
+  bool swapPins(sta::Instance* inst,
                 sta::LibertyPort* port1,
                 sta::LibertyPort* port2,
-                bool journal);
+                bool journal = true);
   void findSwapPinCandidate(sta::LibertyPort* input_port,
                             sta::LibertyPort* drvr_port,
                             const sta::LibertyPortSet& equiv_ports,
                             float load_cap,
-                            const sta::Scene* corner,
+                            const sta::Scene* scene,
                             const sta::MinMax* min_max,
                             // Return value
                             sta::LibertyPort** swap_port);
+  void findSwapPinCandidate(sta::LibertyPort* input_port,
+                            sta::LibertyPort* drvr_port,
+                            const sta::LibertyPortSeq& equiv_ports,
+                            float load_cap,
+                            const sta::Scene* scene,
+                            const sta::MinMax* min_max,
+                            sta::LibertyPort** swap_port,
+                            sta::ArcDelay* base_delay = nullptr,
+                            sta::ArcDelay* candidate_delay = nullptr);
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
-                  const sta::Scene* corner,
+                  const sta::Scene* scene,
                   const sta::MinMax* min_max,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
@@ -661,7 +684,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   void gateDelays(const sta::LibertyPort* drvr_port,
                   float load_cap,
                   const sta::Slew in_slews[sta::RiseFall::index_count],
-                  const sta::Scene* corner,
+                  const sta::Scene* scene,
                   const sta::MinMax* min_max,
                   // Return values.
                   sta::ArcDelay delays[sta::RiseFall::index_count],
@@ -677,16 +700,16 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                           const sta::MinMax* min_max);
   float bufferDelay(sta::LibertyCell* buffer_cell,
                     float load_cap,
-                    const sta::Scene* corner,
+                    const sta::Scene* scene,
                     const sta::MinMax* min_max);
   float bufferDelay(sta::LibertyCell* buffer_cell,
                     const sta::RiseFall* rf,
                     float load_cap,
-                    const sta::Scene* corner,
+                    const sta::Scene* scene,
                     const sta::MinMax* min_max);
   void bufferDelays(sta::LibertyCell* buffer_cell,
                     float load_cap,
-                    const sta::Scene* corner,
+                    const sta::Scene* scene,
                     const sta::MinMax* min_max,
                     // Return values.
                     sta::ArcDelay delays[sta::RiseFall::index_count],
@@ -698,13 +721,19 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                      // Return values.
                      sta::Delay& delay,
                      sta::Slew& slew);
+
+ protected:
   void makeWireParasitic(sta::Net* net,
                          sta::Pin* drvr_pin,
                          sta::Pin* load_pin,
                          double wire_length,  // meters
-                         const sta::Scene* corner,
+                         const sta::Scene* scene,
                          sta::Parasitics* parasitics);
+
+ public:
   bool overMaxArea();
+
+ protected:
   bool bufferBetweenPorts(sta::Instance* buffer);
   bool hasPort(const sta::Net* net);
   odb::Point location(sta::Instance* inst);
@@ -747,9 +776,10 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                                 SteinerPt pt,
                                 size_t& resistor_id);
 
+ public:
   bool replaceCell(sta::Instance* inst,
                    const sta::LibertyCell* replacement,
-                   bool journal);
+                   bool journal = true);
 
   void findResizeSlacks1();
   sta::Instance* makeInstance(sta::LibertyCell* cell,
@@ -781,19 +811,36 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   sta::LibertyCell* findTargetCell(sta::LibertyCell* cell,
                                    float load_cap,
                                    bool revisiting_inst);
+  bool removeBufferIfPossible(sta::Instance* buffer,
+                              bool honor_dont_touch_fixed);
+  bool replacementPreservesMaxCap(sta::Instance* inst,
+                                  const sta::LibertyCell* replacement);
+  bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta);
+  bool estimateInputSlewImpact(
+      sta::Instance* instance,
+      const sta::Scene* scene,
+      const sta::MinMax* min_max,
+      const std::array<sta::Slew, sta::RiseFall::index_count>& old_in_slew,
+      const std::array<sta::Slew, sta::RiseFall::index_count>& new_in_slew,
+      float delay_adjust,
+      const rsz::SlackEstimatorParams& params,
+      bool accept_if_slack_improves);
+  bool canRemoveBuffer(sta::Instance* buffer, bool honor_dont_touch_fixed);
+  bool removeBuffer(sta::Instance* buffer);
+  bool estimatedSlackOK(const rsz::SlackEstimatorParams& params);
   BufferedNetPtr makeBufferedNet(const sta::Pin* drvr_pin,
-                                 const sta::Scene* corner);
+                                 const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteiner(const sta::Pin* drvr_pin,
-                                        const sta::Scene* corner);
+                                        const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetSteinerOverBnets(
       odb::Point root,
       const std::vector<BufferedNetPtr>& sinks,
-      const sta::Scene* corner);
+      const sta::Scene* scene);
   BufferedNetPtr makeBufferedNetGroute(const sta::Pin* drvr_pin,
-                                       const sta::Scene* corner);
+                                       const sta::Scene* scene);
   float bufferSlew(sta::LibertyCell* buffer_cell,
                    float load_cap,
-                   const sta::Scene* corner,
+                   const sta::Scene* scene,
                    const sta::MinMax* min_max);
   float maxInputSlew(const sta::LibertyPort* input,
                      const sta::Scene* scene) const;
@@ -806,8 +853,11 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                       const sta::Scene*& corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const sta::Instance* inst);
+  // True when an instance is a mutable std-cell with a DB-backed Liberty cell.
+  bool isEditableLogicStdCell(const sta::Instance* inst);
 
   bool okToBufferNet(const sta::Pin* driver_pin) const;
+  sta::LibertyCell* lowestDriveBufferCell() const;
   bool checkAndMarkVTSwappable(sta::Instance* inst,
                                std::unordered_set<sta::Instance*>& notSwappable,
                                sta::LibertyCell*& best_lib_cell);
@@ -817,26 +867,41 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
                              const BufferedNetPtr& inner_tree);
 
   ////////////////////////////////////////////////////////////////
+  // Pure ECO transactions for speculative changes outside the legacy
+  // setup-repair move-accounting flow.
+  // - Do not update ECO move counts
+  void ecoBegin();
+  void ecoCommit();
+  void ecoRestore();
+
+  ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
+  // - Update ECO move counts
   void journalBegin();
   void journalEnd();
   void journalRestore();
   void journalMakeBuffer(sta::Instance* buffer);
+  void initForJournalRestore();
+  void updateParasiticsAndTiming();
+  void invalidateParasitics(sta::Net* net);
+  void addAcceptedLegacyMoveCount(int count);
+  void addRejectedLegacyMoveCount(int count);
+  int acceptedLegacyMoveCount() const;
+  int rejectedLegacyMoveCount() const;
 
+ protected:
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
   sta::VertexSet findFaninFanouts(sta::VertexSet& ends);
   sta::VertexSet findFaninRoots(sta::VertexSet& ends);
   sta::VertexSet findFanouts(sta::VertexSet& reg_outs);
   bool isRegOutput(sta::Vertex* vertex);
-  bool isRegister(sta::Vertex* vertex);
   ////////////////////////////////////////////////////////////////
 
   // Components
   std::unique_ptr<RecoverPower> recover_power_;
   std::unique_ptr<RepairDesign> repair_design_;
-  std::unique_ptr<RepairSetup> repair_setup_;
   std::unique_ptr<RepairHold> repair_hold_;
   std::unique_ptr<ConcreteSwapArithModules> swap_arith_modules_;
   std::unique_ptr<Rebuffer> rebuffer_;
@@ -880,6 +945,8 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
       vt_equiv_cells_cache_;
 
   std::unique_ptr<CellTargetLoadMap> target_load_map_;
+  sta::VertexSeq level_drvr_vertices_;
+  bool level_drvr_vertices_valid_ = false;
   TgtSlews tgt_slews_;
   sta::Scene* tgt_slew_corner_ = nullptr;
   // Instances with multiple output ports that have been resized.
@@ -945,17 +1012,6 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
 
   std::shared_ptr<ResizerObserver> graphics_;
 
-  // Optimization moves
-  // Will eventually be replaced with a getter method and some "recipes"
-  std::unique_ptr<CloneMove> clone_move_;
-  std::unique_ptr<SplitLoadMove> split_load_move_;
-  std::unique_ptr<BufferMove> buffer_move_;
-  std::unique_ptr<SizeDownMove> size_down_move_;
-  std::unique_ptr<SizeUpMove> size_up_move_;
-  std::unique_ptr<SwapPinsMove> swap_pins_move_;
-  std::unique_ptr<UnbufferMove> unbuffer_move_;
-  std::unique_ptr<VTSwapSpeedMove> vt_swap_speed_move_;
-  std::unique_ptr<SizeUpMatchMove> size_up_match_move_;
   int accepted_move_count_ = 0;
   int rejected_move_count_ = 0;
 
@@ -964,23 +1020,13 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   friend class PreChecks;
   friend class RecoverPower;
   friend class RepairDesign;
-  friend class RepairSetup;
   friend class RepairHold;
-  friend class BaseMove;
-  friend class BufferMove;
-  friend class SizeDownMove;
-  friend class SizeUpMove;
-  friend class SplitLoadMove;
-  friend class CloneMove;
-  friend class SwapPinsMove;
-  friend class UnbufferMove;
-  friend class SizeUpMatchMove;
-  friend class VTSwapSpeedMove;
   friend class SwapArithModules;
   friend class ConcreteSwapArithModules;
   friend class Rebuffer;
   friend class OdbCallBack;
-  friend class ViolatorCollector;
+  friend class SetupLegacyPolicy;
+  friend class RepairTargetCollector;
 };
 
 }  // namespace rsz

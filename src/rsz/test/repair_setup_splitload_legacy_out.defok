@@ -1,0 +1,94 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN hi_fanout ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 35000 35000 ) ;
+COMPONENTS 47 ;
+    - drvr DFF_X1 + PLACED ( 1000 1000 ) N ;
+    - load0 DFF_X1 + PLACED ( 0 0 ) N ;
+    - load1 DFF_X1 + PLACED ( 5000 0 ) N ;
+    - load10 DFF_X1 + PLACED ( 20000 5000 ) N ;
+    - load11 DFF_X1 + PLACED ( 25000 5000 ) N ;
+    - load12 DFF_X1 + PLACED ( 0 10000 ) N ;
+    - load13 DFF_X1 + PLACED ( 5000 10000 ) N ;
+    - load14 DFF_X1 + PLACED ( 10000 10000 ) N ;
+    - load15 DFF_X1 + PLACED ( 15000 10000 ) N ;
+    - load16 DFF_X1 + PLACED ( 20000 10000 ) N ;
+    - load17 DFF_X1 + PLACED ( 25000 10000 ) N ;
+    - load18 DFF_X1 + PLACED ( 0 15000 ) N ;
+    - load19 DFF_X1 + PLACED ( 5000 15000 ) N ;
+    - load2 DFF_X1 + PLACED ( 10000 0 ) N ;
+    - load20 DFF_X1 + PLACED ( 10000 15000 ) N ;
+    - load21 DFF_X1 + PLACED ( 15000 15000 ) N ;
+    - load22 DFF_X1 + PLACED ( 20000 15000 ) N ;
+    - load23 DFF_X1 + PLACED ( 25000 15000 ) N ;
+    - load24 DFF_X1 + PLACED ( 0 20000 ) N ;
+    - load25 DFF_X1 + PLACED ( 5000 20000 ) N ;
+    - load26 DFF_X1 + PLACED ( 10000 20000 ) N ;
+    - load27 DFF_X1 + PLACED ( 15000 20000 ) N ;
+    - load28 DFF_X1 + PLACED ( 20000 20000 ) N ;
+    - load29 DFF_X1 + PLACED ( 25000 20000 ) N ;
+    - load3 DFF_X1 + PLACED ( 15000 0 ) N ;
+    - load30 DFF_X1 + PLACED ( 0 25000 ) N ;
+    - load31 DFF_X1 + PLACED ( 5000 25000 ) N ;
+    - load32 DFF_X1 + PLACED ( 10000 25000 ) N ;
+    - load33 DFF_X1 + PLACED ( 15000 25000 ) N ;
+    - load34 DFF_X1 + PLACED ( 20000 25000 ) N ;
+    - load35 DFF_X1 + PLACED ( 25000 25000 ) N ;
+    - load36 DFF_X1 + PLACED ( 0 30000 ) N ;
+    - load37 DFF_X1 + PLACED ( 5000 30000 ) N ;
+    - load38 DFF_X1 + PLACED ( 10000 30000 ) N ;
+    - load39 DFF_X1 + PLACED ( 15000 30000 ) N ;
+    - load4 DFF_X1 + PLACED ( 20000 0 ) N ;
+    - load5 DFF_X1 + PLACED ( 25000 0 ) N ;
+    - load6 DFF_X1 + PLACED ( 0 5000 ) N ;
+    - load7 DFF_X1 + PLACED ( 5000 5000 ) N ;
+    - load8 DFF_X1 + PLACED ( 10000 5000 ) N ;
+    - load9 DFF_X1 + PLACED ( 15000 5000 ) N ;
+    - split BUF_X2 + SOURCE TIMING + PLACED ( 4135 1695 ) N ;
+    - split1 BUF_X2 + SOURCE TIMING + PLACED ( 4135 1695 ) N ;
+    - split2 BUF_X2 + SOURCE TIMING + PLACED ( 4676 2360 ) N ;
+    - split3 BUF_X1 + SOURCE TIMING + PLACED ( 4135 1695 ) N ;
+    - split4 BUF_X1 + SOURCE TIMING + PLACED ( 4676 2360 ) N ;
+    - split5 BUF_X1 + SOURCE TIMING + PLACED ( 4676 2360 ) N ;
+END COMPONENTS
+PINS 1 ;
+    - clk1 + NET clk1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal1 ( -50 -50 ) ( 50 50 )
+        + FIXED ( 1050 1050 ) N ;
+END PINS
+SPECIALNETS 2 ;
+    - VDD ( drvr VDD ) ( load0 VDD ) ( load1 VDD ) ( load2 VDD ) ( load3 VDD ) ( load4 VDD ) ( load5 VDD )
+      ( load6 VDD ) ( load7 VDD ) ( load8 VDD ) ( load9 VDD ) ( load10 VDD ) ( load11 VDD ) ( load12 VDD ) ( load13 VDD )
+      ( load14 VDD ) ( load15 VDD ) ( load16 VDD ) ( load17 VDD ) ( load18 VDD ) ( load19 VDD ) ( load20 VDD ) ( load21 VDD )
+      ( load22 VDD ) ( load23 VDD ) ( load24 VDD ) ( load25 VDD ) ( load26 VDD ) ( load27 VDD ) ( load28 VDD ) ( load29 VDD )
+      ( load30 VDD ) ( load31 VDD ) ( load32 VDD ) ( load33 VDD ) ( load34 VDD ) ( load35 VDD ) ( load36 VDD ) ( load37 VDD )
+      ( load38 VDD ) ( load39 VDD ) + USE POWER ;
+    - VSS ( drvr VSS ) ( load0 VSS ) ( load1 VSS ) ( load2 VSS ) ( load3 VSS ) ( load4 VSS ) ( load5 VSS )
+      ( load6 VSS ) ( load7 VSS ) ( load8 VSS ) ( load9 VSS ) ( load10 VSS ) ( load11 VSS ) ( load12 VSS ) ( load13 VSS )
+      ( load14 VSS ) ( load15 VSS ) ( load16 VSS ) ( load17 VSS ) ( load18 VSS ) ( load19 VSS ) ( load20 VSS ) ( load21 VSS )
+      ( load22 VSS ) ( load23 VSS ) ( load24 VSS ) ( load25 VSS ) ( load26 VSS ) ( load27 VSS ) ( load28 VSS ) ( load29 VSS )
+      ( load30 VSS ) ( load31 VSS ) ( load32 VSS ) ( load33 VSS ) ( load34 VSS ) ( load35 VSS ) ( load36 VSS ) ( load37 VSS )
+      ( load38 VSS ) ( load39 VSS ) + USE GROUND ;
+END SPECIALNETS
+NETS 8 ;
+    - clk1 ( PIN clk1 ) ( drvr CK ) ( load0 CK ) ( load1 CK ) ( load2 CK ) ( load3 CK ) ( load4 CK )
+      ( load5 CK ) ( load6 CK ) ( load7 CK ) ( load8 CK ) ( load9 CK ) ( load10 CK ) ( load11 CK ) ( load12 CK )
+      ( load13 CK ) ( load14 CK ) ( load15 CK ) ( load16 CK ) ( load17 CK ) ( load18 CK ) ( load19 CK ) ( load20 CK )
+      ( load21 CK ) ( load22 CK ) ( load23 CK ) ( load24 CK ) ( load25 CK ) ( load26 CK ) ( load27 CK ) ( load28 CK )
+      ( load29 CK ) ( load30 CK ) ( load31 CK ) ( load32 CK ) ( load33 CK ) ( load34 CK ) ( load35 CK ) ( load36 CK )
+      ( load37 CK ) ( load38 CK ) ( load39 CK ) + USE SIGNAL ;
+    - net ( split4 A ) ( split2 A ) ( load37 D ) ( load36 D ) ( load31 D ) ( load30 D ) ( load24 D )
+      ( split Z ) + USE SIGNAL ;
+    - net0 ( split3 A ) ( split1 A ) ( split A ) ( drvr Q ) ( load23 D ) ( load29 D ) ( load34 D )
+      ( load35 D ) + USE SIGNAL ;
+    - net1 ( split5 A ) ( load28 D ) ( load22 D ) ( load17 D ) ( load16 D ) ( load11 D ) ( split1 Z ) + USE SIGNAL ;
+    - net2 ( load0 D ) ( load1 D ) ( load6 D ) ( load7 D ) ( load8 D ) ( load14 D ) ( load5 D )
+      ( load4 D ) ( load3 D ) ( load2 D ) ( split2 Z ) + USE SIGNAL ;
+    - net3 ( load39 D ) ( load38 D ) ( load33 D ) ( load32 D ) ( load27 D ) ( load26 D ) ( split3 Z ) + USE SIGNAL ;
+    - net4 ( load25 D ) ( load19 D ) ( load18 D ) ( load13 D ) ( load12 D ) ( split4 Z ) + USE SIGNAL ;
+    - net5 ( load21 D ) ( load20 D ) ( load15 D ) ( load10 D ) ( load9 D ) ( split5 Z ) + USE SIGNAL ;
+END NETS
+END DESIGN

@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 
+#include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Delay.hh"
@@ -31,9 +32,20 @@ class Logger;
 
 namespace rsz {
 
+class Resizer;
+
+// === Tracked pin data =======================================================
+
+// Reporting metadata for one driver pin visited during repair setup.
+// Stored in MoveTracker::pin_info_ and used by the final success/failure/
+// missed-opportunity reports.  gate_type, load_delay, and intrinsic_delay
+// let reports show *why* a pin was (or was not) repaired without re-querying
+// STA at report time.
 struct PinInfo
 {
   const sta::Pin* endpoint;
+  std::string pin_name;
+  std::string endpoint_name;
   std::string gate_type;
   float load_delay;
   float intrinsic_delay;
@@ -42,6 +54,8 @@ struct PinInfo
 
   PinInfo()
       : endpoint(nullptr),
+        pin_name("unknown"),
+        endpoint_name("unknown"),
         gate_type("unknown"),
         load_delay(0.0),
         intrinsic_delay(0.0),
@@ -51,12 +65,16 @@ struct PinInfo
   }
 
   PinInfo(const sta::Pin* ep,
+          const std::string& pin_path_name,
+          const std::string& endpoint_path_name,
           const std::string& gt,
           float ld,
           float id,
           float pin_slk,
           float ep_slk)
       : endpoint(ep),
+        pin_name(pin_path_name),
+        endpoint_name(endpoint_path_name),
         gate_type(gt),
         load_delay(ld),
         intrinsic_delay(id),
@@ -66,6 +84,8 @@ struct PinInfo
   }
 };
 
+// === Tracked move event data ===============================================
+
 enum class MoveStateType
 {
   ATTEMPT = 0,
@@ -73,6 +93,9 @@ enum class MoveStateType
   ATTEMPT_COMMIT = 2
 };
 
+// One move-attempt event recorded by the tracker.  Events start in
+// `pending_moves_` and migrate to `moves_` on commitMoves() or are
+// discarded on rejectMoves(), mirroring the ECO journal lifecycle.
 struct MoveStateData
 {
   const sta::Pin* pin;
@@ -100,19 +123,20 @@ struct MoveStateData
 class MoveTracker : public odb::dbBlockCallBackObj
 {
  public:
-  MoveTracker(utl::Logger* logger,
-              sta::Sta* sta,
-              sta::dbNetwork* db_network,
-              odb::dbBlock* block);
+  // === Lifecycle and ODB callbacks =========================================
+  MoveTracker(Resizer& resizer, bool report_enabled);
   ~MoveTracker() override = default;
 
   void inDbITermDestroy(odb::dbITerm* iterm) override;
   void inDbITermCreate(odb::dbITerm* iterm) override;
 
+  bool reportEnabled() const { return report_enabled_; }
+
+  // === Current endpoint and violator tracking ==============================
   // Set the current endpoint being optimized
   void setCurrentEndpoint(const sta::Pin* endpoint_pin);
 
-  // Track all critical pins collected by ViolatorCollector
+  // Track all critical pins collected by RepairTargetCollector
   void trackCriticalPins(const std::vector<const sta::Pin*>& critical_pins);
 
   // Track that a pin was identified as a violator for potential optimization
@@ -126,6 +150,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
                              float pin_slack,
                              float endpoint_slack);
 
+  // === Move event lifecycle ================================================
   // Track an attempted move on a pin
   void trackMove(const sta::Pin* pin,
                  const std::string& move_type,
@@ -137,6 +162,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // Reject all pending moves (mark them as failed)
   void rejectMoves();
 
+  // === Phase and final reports =============================================
   // Print statistics summary for current pass and cumulative totals
   void printMoveSummary(const std::string& title);
 
@@ -157,6 +183,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // Print histogram of path slacks for the most critical endpoint
   void printCriticalEndpointPathHistogram(const std::string& title);
 
+  // === Slack snapshots ======================================================
   // Capture initial slack for all pins (call at start of optimization)
   void captureInitialSlackDistribution();
 
@@ -166,6 +193,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // Capture pre-phase slack for all endpoints (call at start of each phase)
   void capturePrePhaseSlack();
 
+  // === Tracking queries and reset ==========================================
   // Get the visit count for a specific pin
   int getVisitCount(const sta::Pin* pin) const;
 
@@ -178,8 +206,11 @@ class MoveTracker : public odb::dbBlockCallBackObj
   int getTotalRejects() const { return total_reject_count_; }
 
  private:
+  // === Summary maintenance ==================================================
   void clearMoveSummary();
+  std::string pinPathName(const sta::Pin* pin) const;
 
+  // === Report helpers =======================================================
   // Helper function to enumerate paths to an endpoint and count negative slack
   // paths Returns a vector of (path_slack, path_end) pairs for all paths to the
   // endpoint
@@ -193,9 +224,14 @@ class MoveTracker : public odb::dbBlockCallBackObj
                      const std::string& value_label = "Slack (ns)",
                      const std::string& count_label = "Count");
 
+  // === Shared services ======================================================
+  Resizer& resizer_;
   utl::Logger* logger_;
   sta::Sta* sta_;
+  sta::dbNetwork* db_network_;
+  bool report_enabled_{false};
 
+  // === Current phase tracking ==============================================
   // Current endpoint being optimized
   const sta::Pin* current_endpoint_;
 
@@ -205,6 +241,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   std::vector<MoveStateData> moves_;
   std::vector<MoveStateData> pending_moves_;
 
+  // === Cumulative move statistics ==========================================
   // Cumulative statistics across all passes
   int total_move_count_;
   int total_no_attempt_count_;
@@ -213,6 +250,7 @@ class MoveTracker : public odb::dbBlockCallBackObj
   int total_commit_count_;
   std::map<std::string, std::tuple<int, int, int>> total_move_type_counts_;
 
+  // === Endpoint summaries ===================================================
   // Per-endpoint tracking: endpoint_pin -> (attempts, rejects, commits)
   std::map<const sta::Pin*, std::tuple<int, int, int>> endpoint_move_counts_;
 
@@ -223,22 +261,22 @@ class MoveTracker : public odb::dbBlockCallBackObj
   // - post_phase_slack: slack at end of current phase
   std::map<const sta::Pin*, std::tuple<float, float, float>> endpoint_slack_;
 
+  // === Final report data ====================================================
   // Detailed tracking for final reports (persists across clear() calls)
   // Map: pin -> vector of (move_type, state)
   std::map<const sta::Pin*, std::vector<std::pair<std::string, MoveStateType>>>
-      pin_move_history_;
+      pin_move_events_;
 
   // Set of all pins that were visited (even if no moves attempted)
   std::set<const sta::Pin*> all_visited_pins_;
 
-  // Set of all critical pins identified by ViolatorCollector
+  // Set of all critical pins identified by RepairTargetCollector
   std::set<const sta::Pin*> all_critical_pins_;
 
   // Map pin to detailed information (endpoint, gate type, delays)
   std::map<const sta::Pin*, PinInfo> pin_info_;
 
-  sta::dbNetwork* db_network_;
-
+  // === Slack snapshot backup ===============================================
   // Initial slack distribution (captured at start of optimization).
   // Entries are moved to backup maps in inDbITermDestroy() and restored in
   // inDbITermCreate() when ODB recycles the same pointer on undo. Committed

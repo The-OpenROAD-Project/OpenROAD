@@ -16,8 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/ExceptionPath.hh"
 #include "sta/Graph.hh"
@@ -49,23 +51,32 @@ using std::tuple;
 using std::vector;
 using utl::RSZ;
 
-MoveTracker::MoveTracker(utl::Logger* logger,
-                         sta::Sta* sta,
-                         sta::dbNetwork* db_network,
-                         odb::dbBlock* block)
-    : logger_(logger),
-      sta_(sta),
+namespace {
+
+std::string histogramBar(const int count, const int count_per_hash)
+{
+  const int bar_len = count / count_per_hash;
+  return bar_len > 0 ? " " + string(bar_len, '#') : "";
+}
+
+}  // namespace
+
+MoveTracker::MoveTracker(Resizer& resizer, const bool report_enabled)
+    : resizer_(resizer),
+      logger_(resizer.logger()),
+      sta_(resizer.sta()),
+      db_network_(resizer.dbNetwork()),
+      report_enabled_(report_enabled),
       current_endpoint_(nullptr),
       move_count_(0),
       total_move_count_(0),
       total_no_attempt_count_(0),
       total_attempt_count_(0),
       total_reject_count_(0),
-      total_commit_count_(0),
-      db_network_(db_network)
+      total_commit_count_(0)
 {
-  if (block) {
-    addOwner(block);
+  if (report_enabled_ && resizer.block() != nullptr) {
+    addOwner(resizer.block());
   }
 }
 
@@ -153,6 +164,16 @@ void MoveTracker::trackCriticalPins(
         // Only track pins with negative slack
         if (slack_ps < 0.0) {
           all_critical_pins_.insert(pin);
+          if (!pin_info_.contains(pin)) {
+            pin_info_[pin] = PinInfo(nullptr,
+                                     sta_->network()->pathName(pin),
+                                     "unknown",
+                                     "unknown",
+                                     0.0,
+                                     0.0,
+                                     0.0,
+                                     0.0);
+          }
         }
       }
     }
@@ -177,6 +198,15 @@ void MoveTracker::clearMoveSummary()
   visit_count_.clear();
 }
 
+std::string MoveTracker::pinPathName(const sta::Pin* pin) const
+{
+  const auto info_it = pin_info_.find(pin);
+  if (info_it != pin_info_.end()) {
+    return info_it->second.pin_name;
+  }
+  return sta_->network()->pathName(pin);
+}
+
 void MoveTracker::trackViolator(const sta::Pin* pin)
 {
   if (!visit_count_.contains(pin)) {
@@ -188,8 +218,17 @@ void MoveTracker::trackViolator(const sta::Pin* pin)
   all_visited_pins_.insert(pin);
 
   // Track which endpoint this pin was visited on (basic info only)
-  if (current_endpoint_ && !pin_info_.contains(pin)) {
-    pin_info_[pin] = PinInfo(current_endpoint_, "unknown", 0.0, 0.0, 0.0, 0.0);
+  auto info_it = pin_info_.find(pin);
+  if (current_endpoint_
+      && (info_it == pin_info_.end() || info_it->second.endpoint == nullptr)) {
+    pin_info_[pin] = PinInfo(current_endpoint_,
+                             sta_->network()->pathName(pin),
+                             sta_->network()->pathName(current_endpoint_),
+                             "unknown",
+                             0.0,
+                             0.0,
+                             0.0,
+                             0.0);
   }
 }
 
@@ -210,6 +249,8 @@ void MoveTracker::trackViolatorWithInfo(const sta::Pin* pin,
   // Store detailed information
   if (current_endpoint_) {
     pin_info_[pin] = PinInfo(current_endpoint_,
+                             sta_->network()->pathName(pin),
+                             sta_->network()->pathName(current_endpoint_),
                              gate_type,
                              load_delay,
                              intrinsic_delay,
@@ -235,8 +276,8 @@ void MoveTracker::commitMoves()
                         pending_move.move_type,
                         MoveStateType::ATTEMPT_COMMIT);
 
-    // Store in move history for detailed reports
-    pin_move_history_[pending_move.pin].emplace_back(
+    // Store in move event list for detailed reports
+    pin_move_events_[pending_move.pin].emplace_back(
         pending_move.move_type, MoveStateType::ATTEMPT_COMMIT);
   }
 
@@ -258,8 +299,8 @@ void MoveTracker::rejectMoves()
                         pending_move.move_type,
                         MoveStateType::ATTEMPT_REJECT);
 
-    // Store in move history for detailed reports
-    pin_move_history_[pending_move.pin].emplace_back(
+    // Store in move event list for detailed reports
+    pin_move_events_[pending_move.pin].emplace_back(
         pending_move.move_type, MoveStateType::ATTEMPT_REJECT);
   }
 
@@ -821,8 +862,8 @@ void MoveTracker::printSuccessReport(const std::string& title)
 {
   // Collect pins with committed moves
   map<const sta::Pin*, vector<string>> successful_pins;
-  for (const auto& [pin, history] : pin_move_history_) {
-    for (const auto& [move_type, state] : history) {
+  for (const auto& [pin, events] : pin_move_events_) {
+    for (const auto& [move_type, state] : events) {
       if (state == MoveStateType::ATTEMPT_COMMIT) {
         successful_pins[pin].push_back(move_type);
       }
@@ -898,7 +939,7 @@ void MoveTracker::printSuccessReport(const std::string& title)
     if (shown >= max_pins_to_show) {
       break;
     }
-    string pin_name = sta_->network()->pathName(pin);
+    string pin_name = pinPathName(pin);
     const auto& moves = successful_pins[pin];
 
     // Count move types for this pin and sort by frequency
@@ -962,8 +1003,8 @@ void MoveTracker::printFailureReport(const std::string& title)
 {
   // Collect pins with rejected moves
   map<const sta::Pin*, vector<string>> failed_pins;
-  for (const auto& [pin, history] : pin_move_history_) {
-    for (const auto& [move_type, state] : history) {
+  for (const auto& [pin, events] : pin_move_events_) {
+    for (const auto& [move_type, state] : events) {
       if (state == MoveStateType::ATTEMPT_REJECT) {
         failed_pins[pin].push_back(move_type);
       }
@@ -1039,7 +1080,7 @@ void MoveTracker::printFailureReport(const std::string& title)
     if (shown >= max_pins_to_show) {
       break;
     }
-    string pin_name = sta_->network()->pathName(pin);
+    string pin_name = pinPathName(pin);
     const auto& moves = failed_pins[pin];
 
     // Count move types for this pin and sort by frequency
@@ -1109,8 +1150,8 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
   constexpr float slack_threshold = -0.001;  // -1 fs threshold
   vector<const sta::Pin*> visited_no_attempt;
   for (const sta::Pin* pin : all_visited_pins_) {
-    // Check if this pin has any moves in history
-    if (!pin_move_history_.contains(pin) || pin_move_history_[pin].empty()) {
+    // Check if this pin has any tracked moves.
+    if (!pin_move_events_.contains(pin) || pin_move_events_[pin].empty()) {
       // Only include if pin has meaningful negative slack
       auto it = pin_info_.find(pin);
       if (it != pin_info_.end()) {
@@ -1185,7 +1226,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
       if (shown >= max_pins_to_show) {
         break;
       }
-      string pin_name = sta_->network()->pathName(pin);
+      string pin_name = pinPathName(pin);
       if (pin_name.length() > 38) {
         pin_name = pin_name.substr(0, 35) + "...";
       }
@@ -1207,7 +1248,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
           gate_type = gate_type.substr(0, 27) + "...";
         }
         if (info.endpoint) {
-          endpoint_name = sta_->network()->pathName(info.endpoint);
+          endpoint_name = info.endpoint_name;
           if (endpoint_name.length() > 26) {
             endpoint_name = endpoint_name.substr(0, 23) + "...";
           }
@@ -1321,7 +1362,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
       if (shown >= max_pins_to_show) {
         break;
       }
-      string pin_name = sta_->network()->pathName(pin);
+      string pin_name = pinPathName(pin);
       if (pin_name.length() > 38) {
         pin_name = pin_name.substr(0, 35) + "...";
       }
@@ -1347,7 +1388,8 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
                         sta::MinMax::max());
       float pin_slack_ps = sta::delayAsFloat(pin_slack) * 1e12;
 
-      // Calculate effort delays (similar to ViolatorCollector::getEffortDelays)
+      // Calculate effort delays (similar to
+      // RepairTargetCollector::getEffortDelays)
       float load_delay_ps = 0.0;
       float intrinsic_delay_ps = 0.0;
       sta::Vertex* vertex = sta_->graph()->pinDrvrVertex(pin);
@@ -1458,7 +1500,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
              "attempted",
              all_critical_pins_.size(),
              all_visited_pins_.size(),
-             pin_move_history_.size());
+             pin_move_events_.size());
   debugPrint(logger_,
              RSZ,
              "move_tracker",
@@ -1749,13 +1791,12 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
   for (size_t i = 0; i < pre_counts.size(); i++) {
     int count = pre_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
+    const string bar = histogramBar(count, gates_per_hash);
     debugPrint(logger_,
                RSZ,
                "move_tracker",
                1,
-               "{:<18} | {:>6} | {}",
+               "{:<18} | {:>6} |{}",
                bin_labels[i],
                count,
                bar);
@@ -1779,13 +1820,12 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
   for (size_t i = 0; i < post_counts.size(); i++) {
     int count = post_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
+    const string bar = histogramBar(count, gates_per_hash);
     debugPrint(logger_,
                RSZ,
                "move_tracker",
                1,
-               "{:<18} | {:>6} | {}",
+               "{:<18} | {:>6} |{}",
                bin_labels[i],
                count,
                bar);
@@ -1891,13 +1931,12 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
     for (size_t i = 0; i < endpoint_pre_counts.size(); i++) {
       int count = endpoint_pre_counts[i];
-      int bar_len = count / endpoints_per_hash;
-      string bar(bar_len, '#');
+      const string bar = histogramBar(count, endpoints_per_hash);
       debugPrint(logger_,
                  RSZ,
                  "move_tracker",
                  1,
-                 "{:<18} | {:>6} | {}",
+                 "{:<18} | {:>6} |{}",
                  bin_labels[i],
                  count,
                  bar);
@@ -1921,13 +1960,12 @@ void MoveTracker::printSlackDistribution(const std::string& title)
 
     for (size_t i = 0; i < endpoint_post_counts.size(); i++) {
       int count = endpoint_post_counts[i];
-      int bar_len = count / endpoints_per_hash;
-      string bar(bar_len, '#');
+      const string bar = histogramBar(count, endpoints_per_hash);
       debugPrint(logger_,
                  RSZ,
                  "move_tracker",
                  1,
-                 "{:<18} | {:>6} | {}",
+                 "{:<18} | {:>6} |{}",
                  bin_labels[i],
                  count,
                  bar);
@@ -2344,13 +2382,12 @@ void MoveTracker::drawHistogram(const string& title,
 
   for (size_t i = 0; i < bin_counts.size(); i++) {
     int count = bin_counts[i];
-    int bar_len = count / gates_per_hash;
-    string bar(bar_len, '#');
+    const string bar = histogramBar(count, gates_per_hash);
     debugPrint(logger_,
                RSZ,
                "move_tracker",
                1,
-               "{:<18} | {:>6} | {}",
+               "{:<18} | {:>6} |{}",
                bin_labels[i],
                count,
                bar);

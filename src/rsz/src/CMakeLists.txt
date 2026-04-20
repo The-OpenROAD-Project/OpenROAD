@@ -11,27 +11,53 @@ swig_lib(NAME      rsz
 )
 
 add_library(rsz_lib
-    BaseMove.cc
     BufferedNet.cc
-    BufferMove.cc
-    CloneMove.cc
-    MoveTracker.cc
     PreChecks.cc
     RecoverPower.cc
     RepairDesign.cc
     RepairHold.cc
-    RepairSetup.cc
     Rebuffer.cc
-    SizeDownMove.cc
-    SizeUpMove.cc
-    SplitLoadMove.cc
-    SwapPinsMove.cc
-    UnbufferMove.cc
-    VTSwapMove.cc
+    SetupLegacyMtPolicy.cc
+    SetupLegacyPolicy.cc
+    MoveCommitter.cc
+    MoveTracker.cc
+    OptPolicy.cc
+    OptPolicy.hh
+    Optimizer.cc
+    OptimizerTypes.cc
+    MeasuredVtSwapPolicy.cc
+    DelayEstimator.cc
+    SetupMt1Policy.cc
     Resizer.cc
     OdbCallBack.cc
     ConcreteSwapArithModules.cc
-    ViolatorCollector.cc
+    RepairTargetCollector.cc
+
+    move/BufferCandidate.cc
+    move/BufferGenerator.cc
+    move/CloneCandidate.cc
+    move/CloneGenerator.cc
+    move/MeasuredVtSwapCandidate.cc
+    move/MeasuredVtSwapGenerator.cc
+    move/MoveCandidate.cc
+    move/SizeDownCandidate.cc
+    move/SizeDownGenerator.cc
+    move/SizeUpCandidate.cc
+    move/SizeUpGenerator.cc
+    move/SizeUpMatchCandidate.cc
+    move/SizeUpMatchGenerator.cc
+    move/SizeUpMtCandidate.cc
+    move/SizeUpMtGenerator.cc
+    move/SplitLoadCandidate.cc
+    move/SplitLoadGenerator.cc
+    move/SwapPinsCandidate.cc
+    move/SwapPinsGenerator.cc
+    move/UnbufferCandidate.cc
+    move/UnbufferGenerator.cc
+    move/VtSwapCandidate.cc
+    move/VtSwapGenerator.cc
+    move/VtSwapMtCandidate.cc
+    move/VtSwapMtGenerator.cc
 )
 
 target_sources(rsz
@@ -53,6 +79,9 @@ target_include_directories(rsz
 target_include_directories(rsz_lib
   PUBLIC
     ../include
+  PRIVATE
+    .
+    move
 )
 
 target_link_libraries(rsz_lib

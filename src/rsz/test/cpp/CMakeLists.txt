@@ -113,3 +113,30 @@ gtest_discover_tests(TestInsertBuffer
 
 add_dependencies(build_and_test TestInsertBuffer
 )
+
+add_executable(TestResizerMt TestResizerMt.cc)
+target_link_libraries(TestResizerMt
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestResizerMt
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+      ${PROJECT_SOURCE_DIR}/src/rsz/src/move
+)
+
+gtest_discover_tests(TestResizerMt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestResizerMt
+)

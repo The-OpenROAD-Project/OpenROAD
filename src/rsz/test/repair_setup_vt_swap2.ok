@@ -8,7 +8,7 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 470 components and 2159 component-terminals.
 [INFO ODB-0133]     Created 416 nets and 1216 connections.
-[INFO RSZ-0100] Repair move sequence: UnbufferMove VTSwapSpeed SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
+[INFO RSZ-0100] Repair move sequence: UnbufferMove VtSwapMove SizeUpMove SwapPinsMove BufferMove CloneMove SplitLoadMove 
 [INFO RSZ-0094] Found 46 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 46 out of 46 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
