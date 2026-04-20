@@ -28,14 +28,15 @@
 #include "PatternRoute.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "est/ParasiticsService.h"
 #include "geo.h"
 #include "grt/GRoute.h"
 #include "odb/db.h"
 #include "odb/geom.h"
 #include "sta/MinMax.hh"
 #include "stt/SteinerTreeBuilder.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
+#include "utl/ServiceRegistry.h"
 
 using utl::GRT;
 
@@ -43,12 +44,12 @@ namespace grt {
 
 CUGR::CUGR(odb::dbDatabase* db,
            utl::Logger* log,
-           utl::CallBackHandler* callback_handler,
+           utl::ServiceRegistry* service_registry,
            stt::SteinerTreeBuilder* stt_builder,
            sta::dbSta* sta)
     : db_(db),
       logger_(log),
-      callback_handler_(callback_handler),
+      service_registry_(service_registry),
       stt_builder_(stt_builder),
       sta_(sta)
 {
@@ -83,7 +84,9 @@ float CUGR::calculatePartialSlack()
 {
   std::vector<float> slacks;
   slacks.reserve(gr_nets_.size());
-  callback_handler_->triggerOnEstimateParasiticsRequired();
+  if (auto* estimator = service_registry_->find<est::ParasiticsService>()) {
+    estimator->estimateAllGlobalRouteParasitics();
+  }
   for (const auto& net : gr_nets_) {
     float slack = getNetSlack(net->getDbNet());
     slacks.push_back(slack);

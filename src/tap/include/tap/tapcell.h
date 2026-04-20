@@ -100,11 +100,11 @@ class Tapcell
  private:
   enum class EdgeType
   {
-    Left,
-    Top,
-    Right,
-    Bottom,
-    Unknown
+    kLeft,
+    kTop,
+    kRight,
+    kBottom,
+    kUnknown
   };
   struct Edge
   {
@@ -115,15 +115,15 @@ class Tapcell
   };
   enum class CornerType
   {
-    OuterBottomLeft,
-    OuterTopLeft,
-    OuterTopRight,
-    OuterBottomRight,
-    InnerBottomLeft,
-    InnerTopLeft,
-    InnerTopRight,
-    InnerBottomRight,
-    Unknown
+    kOuterBottomLeft,
+    kOuterTopLeft,
+    kOuterTopRight,
+    kOuterBottomRight,
+    kInnerBottomLeft,
+    kInnerTopLeft,
+    kInnerTopRight,
+    kInnerBottomRight,
+    kUnknown
   };
   struct PartialOverlap
   {
@@ -143,7 +143,7 @@ class Tapcell
 
   struct InstIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbInst* inst) const
     {
       return inst->getBBox()->getBox();
