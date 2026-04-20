@@ -196,6 +196,8 @@ void end_incremental()
 void
 global_route()
 {
+  const int num_threads = ord::OpenRoad::openRoad()->getThreadCount();
+  getGlobalRouter()->setNumThreads(num_threads);
   getGlobalRouter()->globalRoute(true);
 }
 

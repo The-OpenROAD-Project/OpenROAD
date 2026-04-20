@@ -163,6 +163,7 @@ void FastRouteCore::resetSnapshotBatchStats()
   snapshot_batch_net_count_ = 0;
   snapshot_batch_wave_count_ = 0;
   snapshot_batch_disabled_for_run_ = false;
+  has_non_soft_ndr_nets_ = false;
 }
 
 void FastRouteCore::clearNets()
@@ -1023,14 +1024,14 @@ int FastRouteCore::resolveSnapshotWaveSize(const int available_batch_count) cons
 
 int FastRouteCore::resolveSnapshotBaseBatchSize(const int net_count) const
 {
-  return std::min(net_count, std::max(32, 2 * kSnapshotSemanticWidth));
+  return std::min(net_count, 2 * kSnapshotSemanticWidth);
 }
 
 bool FastRouteCore::useSnapshotBatchRouting(const int net_count) const
 {
   return snapshot_batched_width_ > 0 && !snapshot_batch_disabled_for_run_
          && !debug_->isOn() && net_count > kMinNetsForSnapshotBatch
-         && !hasNonSoftNdrNets();
+         && !has_non_soft_ndr_nets_;
 }
 
 int FastRouteCore::resolveSnapshotBatchIterationLimit(const int net_count) const
@@ -1706,6 +1707,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   resetSnapshotBatchStats();
+  has_non_soft_ndr_nets_ = hasNonSoftNdrNets();
 
   double total_run_time = 0.0;
   double initial_rsmt_time = 0.0;
@@ -2457,31 +2459,7 @@ void FastRouteCore::computeCongestedNDRnets()
 
 void FastRouteCore::updateSoftNDRNetUsage(const int net_id, const int edge_cost)
 {
-  FrNet* net = nets_[net_id];
-  // Access the routing tree edges for this net
-  std::vector<TreeEdge>& treeedges = sttrees_[net_id].edges;
-  const int num_edges = sttrees_[net_id].num_edges();
-
-  // Iterate through all edges in the net's routing tree
-  for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-    TreeEdge* treeedge = &(treeedges[edgeID]);
-    // Only process edges that have actual routing
-    if (treeedge->len > 0 || treeedge->route.routelen > 0) {
-      int routeLen = treeedge->route.routelen;
-      std::vector<GPoint3D>& grids = treeedge->route.grids;
-
-      // Update route usage
-      for (int i = 0; i < routeLen; i++) {
-        if (grids[i].x == grids[i + 1].x) {  // vertical
-          const int min_y = std::min(grids[i].y, grids[i + 1].y);
-          graph2d_.updateUsageV(grids[i].x, min_y, net, edge_cost);
-        } else {  // horizontal
-          const int min_x = std::min(grids[i].x, grids[i + 1].x);
-          graph2d_.updateUsageH(min_x, grids[i].y, net, edge_cost);
-        }
-      }
-    }
-  }
+  updatePlanarNetUsage(sttrees_[net_id], nets_[net_id], edge_cost);
 }
 
 void FastRouteCore::setVerbose(bool v)

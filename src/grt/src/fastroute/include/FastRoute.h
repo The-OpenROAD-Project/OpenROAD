@@ -815,6 +815,7 @@ class FastRouteCore
   int snapshot_batch_net_count_ = 0;
   int snapshot_batch_wave_count_ = 0;
   bool snapshot_batch_disabled_for_run_ = false;
+  bool has_non_soft_ndr_nets_ = false;
   int detour_penalty_;
 };
 
