@@ -1225,7 +1225,7 @@ float Resizer::driveResistance(const sta::Pin* drvr_pin)
         for (auto rf : sta::RiseFall::range()) {
           const sta::LibertyCell* cell;
           const sta::LibertyPort* from_port;
-          float* from_slews;
+          const sta::DriveCellSlews* from_slews;
           const sta::LibertyPort* to_port;
           drive->driveCell(rf, min_max, cell, from_port, from_slews, to_port);
           if (to_port) {
