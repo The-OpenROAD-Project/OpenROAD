@@ -130,8 +130,10 @@ TEST_F(SaveReportTest, ContainsRequiredHTMLElements)
   EXPECT_TRUE(contains(html, "id=\"gl-container\""));
   EXPECT_TRUE(contains(html, "id=\"menu-bar\""));
   EXPECT_TRUE(contains(html, "id=\"loading-overlay\""));
-  EXPECT_TRUE(contains(html, "leaflet.css"));
-  EXPECT_TRUE(contains(html, "goldenlayout-base.css"));
+  // Leaflet and GoldenLayout CSS are inlined — look for signature
+  // selectors instead of the original filenames.
+  EXPECT_TRUE(contains(html, ".leaflet-container"));
+  EXPECT_TRUE(contains(html, ".lm_goldenlayout"));
 }
 
 TEST_F(SaveReportTest, ContainsStaticCache)
@@ -155,17 +157,25 @@ TEST_F(SaveReportTest, ContainsInlinedJS)
   EXPECT_TRUE(contains(html, "ChartsWidget"));
 }
 
-TEST_F(SaveReportTest, GoldenLayoutFromCDN)
+TEST_F(SaveReportTest, NoLoadTimeCDNReferencesInSelfContainedReport)
 {
-  const std::string path = tempHtml("gl_cdn");
+  const std::string path = tempHtml("no_cdn");
   generateReport(path);
   const std::string html = readFile(path);
 
-  // GoldenLayout loaded via ES module import from CDN.
+  // Issue #10201: no load-time CDN dependency may block the page from
+  // rendering offline. Check the three forms that would do that — ES
+  // module imports from a URL, external <script src=...>, and external
+  // stylesheet <link>.
+  EXPECT_FALSE(contains(html, "import {") && contains(html, "from 'https://"));
+  EXPECT_FALSE(contains(html, "<script src=\"https://"));
+  EXPECT_FALSE(contains(html, "<link rel=\"stylesheet\" href=\"https://"));
+  // Application code is still served as an ES module, but without any
+  // `import` statement — GoldenLayout and LayoutConfig are supplied as
+  // globals by the inlined bundle.
   EXPECT_TRUE(contains(html, "type=\"module\""));
-  EXPECT_TRUE(contains(html, "esm.sh/golden-layout"));
-  // No vendored golden-layout bundle in the HTML.
-  EXPECT_FALSE(contains(html, "goldenlayout.umd"));
+  EXPECT_TRUE(contains(html, "window.GoldenLayout"));
+  EXPECT_TRUE(contains(html, "window.LayoutConfig"));
 }
 
 // ─── Cache JSON Responses ───────────────────────────────────────────────────

@@ -40,11 +40,21 @@ genrule(
         "src/timing-widget.js",
         "src/drc-widget.js",
         "src/main.js",
+        "@web_vendor_leaflet_js//file",
+        "@web_vendor_leaflet_css//file",
+        "@web_vendor_golden_layout_esm//file",
+        "@web_vendor_golden_layout_base_css//file",
+        "@web_vendor_golden_layout_dark_css//file",
     ],
     outs = ["src/report_assets.cpp"],
     cmd = "$(execpath :embed_report_assets)" +
           " --output $@" +
           " --css $(location src/style.css)" +
+          " --leaflet-js $(location @web_vendor_leaflet_js//file)" +
+          " --leaflet-css $(location @web_vendor_leaflet_css//file)" +
+          " --golden-layout-esm $(location @web_vendor_golden_layout_esm//file)" +
+          " --golden-layout-base-css $(location @web_vendor_golden_layout_base_css//file)" +
+          " --golden-layout-dark-css $(location @web_vendor_golden_layout_dark_css//file)" +
           " --js $(location src/theme.js)" +
           " $(location src/coordinates.js)" +
           " $(location src/ui-utils.js)" +

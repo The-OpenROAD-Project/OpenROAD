@@ -247,6 +247,7 @@ use_repo(maven, "maven")
 # --- External archives ---
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_archive(
     name = "circt",
@@ -256,6 +257,47 @@ exports_files(glob(["bin/*"]), visibility = ["//visibility:public"])
     sha256 = "b1b57d1b76ceba2bb37229dab53839d5db6d61394149708c71f6265565991ce6",
     strip_prefix = "firtool-1.108.0",
     url = "https://github.com/llvm/circt/releases/download/firtool-1.108.0/firrtl-bin-linux-x64.tar.gz",
+)
+
+# Web-report vendored third-party assets — inlined into the self-contained
+# HTML emitted by `web_save_report` so the report renders without any live
+# CDN connection (issue #10201). SHAs are pinned; upgrade by fetching fresh
+# and replacing them.
+http_file(
+    name = "web_vendor_leaflet_js",
+    downloaded_file_path = "leaflet.js",
+    sha256 = "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a",
+    url = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+)
+
+http_file(
+    name = "web_vendor_leaflet_css",
+    downloaded_file_path = "leaflet.css",
+    sha256 = "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6",
+    url = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+)
+
+# golden-layout only publishes ESM/CJS on npm; esm.sh serves a pre-bundled
+# immutable ES module with no external imports — ideal for inlining.
+http_file(
+    name = "web_vendor_golden_layout_esm",
+    downloaded_file_path = "golden-layout.mjs",
+    sha256 = "f3ee7ee3278fef62b67fb71194a36c1720a30356a954ca3441d5cf9916468959",
+    url = "https://esm.sh/golden-layout@2.6.0/es2022/golden-layout.mjs",
+)
+
+http_file(
+    name = "web_vendor_golden_layout_base_css",
+    downloaded_file_path = "goldenlayout-base.css",
+    sha256 = "7b47240817e5a2cd1e24fd1f47e0933dee723b8bd99d220f27a352af2f92477b",
+    url = "https://unpkg.com/golden-layout@2.6.0/dist/css/goldenlayout-base.css",
+)
+
+http_file(
+    name = "web_vendor_golden_layout_dark_css",
+    downloaded_file_path = "goldenlayout-dark-theme.css",
+    sha256 = "818c38af69eec4ed9036c11f93cde774908892734a355dd867666aa1a900523e",
+    url = "https://unpkg.com/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css",
 )
 
 # --- Overrides ---

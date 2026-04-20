@@ -1072,6 +1072,13 @@ WebServer::~WebServer() = default;
 // by embed_report_assets.py → report_assets.cpp).
 extern const std::string_view kReportCSS;
 extern const std::string_view kReportJS;
+// Vendored third-party assets inlined so the report renders with no CDN
+// connection (issue #10201).
+extern const std::string_view kLeafletJS;
+extern const std::string_view kLeafletCSS;
+extern const std::string_view kGoldenLayoutJS;
+extern const std::string_view kGoldenLayoutBaseCSS;
+extern const std::string_view kGoldenLayoutDarkCSS;
 
 static std::string serializeToJson(auto serialize_fn)
 {
@@ -1227,21 +1234,38 @@ void WebServer::saveReport(const std::string& filename,
 
   // ── Write the HTML ──
 
-  // HTML head — same CDN deps as index.html.
+  // HTML head — all dependencies inlined so the report opens with no
+  // network access (issue #10201).
   out << R"(<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OpenROAD Timing Report</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/goldenlayout-base.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@2.6.0/dist/css/themes/goldenlayout-dark-theme.css"/>
+<style>
+)" << kLeafletCSS
+      << R"(
+</style>
+<style>
+)" << kGoldenLayoutBaseCSS
+      << R"(
+</style>
+<style>
+)" << kGoldenLayoutDarkCSS
+      << R"(
+</style>
 <style>
 )" << kReportCSS
       << R"(
 </style>
+<script>
+)" << kLeafletJS
+      << R"(
+</script>
+<script>
+)" << kGoldenLayoutJS
+      << R"(
+</script>
 </head>
 <body>
 <div id="menu-bar"></div>
@@ -1316,7 +1340,6 @@ window.__STATIC_CACHE__ = {
 };
 </script>
 <script type="module">
-import { GoldenLayout, LayoutConfig } from 'https://esm.sh/golden-layout@2.6.0';
 )" << kReportJS
       << R"(
 </script>
