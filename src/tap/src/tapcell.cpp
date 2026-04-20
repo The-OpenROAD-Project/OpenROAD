@@ -99,13 +99,13 @@ int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
   const auto areas = getBoundaryAreas();
   auto add_edge = [&edges](const Edge& edge) {
     switch (edge.type) {
-      case EdgeType::Top:
-      case EdgeType::Bottom:
+      case EdgeType::kTop:
+      case EdgeType::kBottom:
         edges.push_back(edge);
         break;
-      case EdgeType::Left:
-      case EdgeType::Right:
-      case EdgeType::Unknown:
+      case EdgeType::kLeft:
+      case EdgeType::kRight:
+      case EdgeType::kUnknown:
         break;
     }
   };
@@ -549,13 +549,13 @@ std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
 
     prev_pt = pt;
 
-    edges.push_back(Edge{EdgeType::Unknown, pt0, pt1});
+    edges.push_back(Edge{EdgeType::kUnknown, pt0, pt1});
   }
 
   // complete the polygon
   const odb::Point pt0(prev_pt.x(), prev_pt.y());
   const odb::Point pt1((*area.begin()).x(), (*area.begin()).y());
-  edges.push_back(Edge{EdgeType::Unknown, pt0, pt1});
+  edges.push_back(Edge{EdgeType::kUnknown, pt0, pt1});
 
   // Assign edge types
   for (size_t i = 0; i < edges.size(); i++) {
@@ -573,38 +573,38 @@ std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
     const int out_delta_y = curr->pt1.getY() - curr->pt0.getY();
 
     if (in_delta_y < 0 && out_delta_x > 0) {
-      curr->type = EdgeType::Bottom;
+      curr->type = EdgeType::kBottom;
     } else if (in_delta_x > 0 && out_delta_y > 0) {
-      curr->type = EdgeType::Right;
+      curr->type = EdgeType::kRight;
     } else if (in_delta_y > 0 && out_delta_x < 0) {
-      curr->type = EdgeType::Top;
+      curr->type = EdgeType::kTop;
     } else if (in_delta_x < 0 && out_delta_y < 0) {
-      curr->type = EdgeType::Left;
+      curr->type = EdgeType::kLeft;
     } else if (in_delta_x < 0 && out_delta_y > 0) {
-      curr->type = EdgeType::Right;
+      curr->type = EdgeType::kRight;
     } else if (in_delta_y < 0 && out_delta_x < 0) {
-      curr->type = EdgeType::Top;
+      curr->type = EdgeType::kTop;
     } else if (in_delta_x > 0 && out_delta_y < 0) {
-      curr->type = EdgeType::Left;
+      curr->type = EdgeType::kLeft;
     } else {
-      curr->type = EdgeType::Bottom;
+      curr->type = EdgeType::kBottom;
     }
 
     if (!outer) {
       switch (curr->type) {
-        case EdgeType::Bottom:
-          curr->type = EdgeType::Top;
+        case EdgeType::kBottom:
+          curr->type = EdgeType::kTop;
           break;
-        case EdgeType::Right:
-          curr->type = EdgeType::Left;
+        case EdgeType::kRight:
+          curr->type = EdgeType::kLeft;
           break;
-        case EdgeType::Top:
-          curr->type = EdgeType::Bottom;
+        case EdgeType::kTop:
+          curr->type = EdgeType::kBottom;
           break;
-        case EdgeType::Left:
-          curr->type = EdgeType::Right;
+        case EdgeType::kLeft:
+          curr->type = EdgeType::kRight;
           break;
-        case EdgeType::Unknown:
+        case EdgeType::kUnknown:
           break;
       }
     }
@@ -630,7 +630,7 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
 
   for (const auto& pt : area) {
     const odb::Point corner(pt.x(), pt.y());
-    corners.push_back(Corner{CornerType::Unknown, corner});
+    corners.push_back(Corner{CornerType::kUnknown, corner});
   }
 
   // Assign corner types
@@ -655,50 +655,50 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
     const int out_delta_y = next->pt.getY() - curr->pt.getY();
 
     if (in_delta_y < 0 && out_delta_x > 0) {
-      curr->type = CornerType::OuterBottomLeft;
+      curr->type = CornerType::kOuterBottomLeft;
     } else if (in_delta_x > 0 && out_delta_y > 0) {
-      curr->type = CornerType::OuterBottomRight;
+      curr->type = CornerType::kOuterBottomRight;
     } else if (in_delta_y > 0 && out_delta_x < 0) {
-      curr->type = CornerType::OuterTopRight;
+      curr->type = CornerType::kOuterTopRight;
     } else if (in_delta_x < 0 && out_delta_y < 0) {
-      curr->type = CornerType::OuterTopLeft;
+      curr->type = CornerType::kOuterTopLeft;
     } else if (in_delta_x < 0 && out_delta_y > 0) {
-      curr->type = CornerType::InnerBottomLeft;
+      curr->type = CornerType::kInnerBottomLeft;
     } else if (in_delta_y < 0 && out_delta_x < 0) {
-      curr->type = CornerType::InnerBottomRight;
+      curr->type = CornerType::kInnerBottomRight;
     } else if (in_delta_x > 0 && out_delta_y < 0) {
-      curr->type = CornerType::InnerTopRight;
+      curr->type = CornerType::kInnerTopRight;
     } else {
-      curr->type = CornerType::InnerTopLeft;
+      curr->type = CornerType::kInnerTopLeft;
     }
 
     if (!outer) {
       switch (curr->type) {
-        case CornerType::InnerBottomLeft:
-          curr->type = CornerType::OuterBottomLeft;
+        case CornerType::kInnerBottomLeft:
+          curr->type = CornerType::kOuterBottomLeft;
           break;
-        case CornerType::InnerBottomRight:
-          curr->type = CornerType::OuterBottomRight;
+        case CornerType::kInnerBottomRight:
+          curr->type = CornerType::kOuterBottomRight;
           break;
-        case CornerType::InnerTopLeft:
-          curr->type = CornerType::OuterTopLeft;
+        case CornerType::kInnerTopLeft:
+          curr->type = CornerType::kOuterTopLeft;
           break;
-        case CornerType::InnerTopRight:
-          curr->type = CornerType::OuterTopRight;
+        case CornerType::kInnerTopRight:
+          curr->type = CornerType::kOuterTopRight;
           break;
-        case CornerType::OuterBottomLeft:
-          curr->type = CornerType::InnerBottomLeft;
+        case CornerType::kOuterBottomLeft:
+          curr->type = CornerType::kInnerBottomLeft;
           break;
-        case CornerType::OuterBottomRight:
-          curr->type = CornerType::InnerBottomRight;
+        case CornerType::kOuterBottomRight:
+          curr->type = CornerType::kInnerBottomRight;
           break;
-        case CornerType::OuterTopLeft:
-          curr->type = CornerType::InnerTopLeft;
+        case CornerType::kOuterTopLeft:
+          curr->type = CornerType::kInnerTopLeft;
           break;
-        case CornerType::OuterTopRight:
-          curr->type = CornerType::InnerTopRight;
+        case CornerType::kOuterTopRight:
+          curr->type = CornerType::kInnerTopRight;
           break;
-        case CornerType::Unknown:
+        case CornerType::kUnknown:
           break;
       }
     }
@@ -719,15 +719,15 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
 std::string Tapcell::toString(Tapcell::EdgeType type) const
 {
   switch (type) {
-    case EdgeType::Bottom:
+    case EdgeType::kBottom:
       return "Bottom";
-    case EdgeType::Right:
+    case EdgeType::kRight:
       return "Right";
-    case EdgeType::Top:
+    case EdgeType::kTop:
       return "Top";
-    case EdgeType::Left:
+    case EdgeType::kLeft:
       return "Left";
-    case EdgeType::Unknown:
+    case EdgeType::kUnknown:
       return "Unknown";
   }
 
@@ -737,23 +737,23 @@ std::string Tapcell::toString(Tapcell::EdgeType type) const
 std::string Tapcell::toString(Tapcell::CornerType type) const
 {
   switch (type) {
-    case CornerType::InnerBottomLeft:
+    case CornerType::kInnerBottomLeft:
       return "InnerBottomLeft";
-    case CornerType::InnerBottomRight:
+    case CornerType::kInnerBottomRight:
       return "InnerBottomRight";
-    case CornerType::InnerTopLeft:
+    case CornerType::kInnerTopLeft:
       return "InnerTopLeft";
-    case CornerType::InnerTopRight:
+    case CornerType::kInnerTopRight:
       return "InnerTopRight";
-    case CornerType::OuterBottomLeft:
+    case CornerType::kOuterBottomLeft:
       return "OuterBottomLeft";
-    case CornerType::OuterBottomRight:
+    case CornerType::kOuterBottomRight:
       return "OuterBottomRight";
-    case CornerType::OuterTopLeft:
+    case CornerType::kOuterTopLeft:
       return "OuterTopLeft";
-    case CornerType::OuterTopRight:
+    case CornerType::kOuterTopRight:
       return "OuterTopRight";
-    case CornerType::Unknown:
+    case CornerType::kUnknown:
       return "Unknown";
   }
 
@@ -817,25 +817,25 @@ odb::dbRow* Tapcell::getRow(const Tapcell::Corner& corner,
     bool accept = false;
     if (row_bbox.intersects(search)) {
       switch (corner.type) {
-        case CornerType::OuterBottomLeft:
-        case CornerType::OuterBottomRight:
-        case CornerType::OuterTopLeft:
-        case CornerType::OuterTopRight:
+        case CornerType::kOuterBottomLeft:
+        case CornerType::kOuterBottomRight:
+        case CornerType::kOuterTopLeft:
+        case CornerType::kOuterTopRight:
           accept = true;
           break;
-        case CornerType::InnerBottomLeft:
-        case CornerType::InnerBottomRight:
+        case CornerType::kInnerBottomLeft:
+        case CornerType::kInnerBottomRight:
           if (row_bbox.yMin() < corner.pt.y()) {
             accept = true;
           }
           break;
-        case CornerType::InnerTopLeft:
-        case CornerType::InnerTopRight:
+        case CornerType::kInnerTopLeft:
+        case CornerType::kInnerTopRight:
           if (row_bbox.yMax() > corner.pt.y()) {
             accept = true;
           }
           break;
-        case CornerType::Unknown:
+        case CornerType::kUnknown:
           break;
       }
 
@@ -920,63 +920,63 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   odb::dbMaster* master = nullptr;
   const auto row_orient = row->getOrient();
   switch (corner.type) {
-    case CornerType::OuterBottomLeft:
+    case CornerType::kOuterBottomLeft:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.left_bottom_corner;
       } else {
         master = options.left_top_corner;
       }
       break;
-    case CornerType::OuterBottomRight:
+    case CornerType::kOuterBottomRight:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_bottom_corner;
       } else {
         master = options.right_top_corner;
       }
       break;
-    case CornerType::OuterTopLeft:
+    case CornerType::kOuterTopLeft:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.left_top_corner;
       } else {
         master = options.left_bottom_corner;
       }
       break;
-    case CornerType::OuterTopRight:
+    case CornerType::kOuterTopRight:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_top_corner;
       } else {
         master = options.right_bottom_corner;
       }
       break;
-    case CornerType::InnerBottomLeft:
+    case CornerType::kInnerBottomLeft:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.left_bottom_edge;
       } else {
         master = options.left_top_edge;
       }
       break;
-    case CornerType::InnerBottomRight:
+    case CornerType::kInnerBottomRight:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_bottom_edge;
       } else {
         master = options.right_top_edge;
       }
       break;
-    case CornerType::InnerTopLeft:
+    case CornerType::kInnerTopLeft:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.left_top_edge;
       } else {
         master = options.left_bottom_edge;
       }
       break;
-    case CornerType::InnerTopRight:
+    case CornerType::kInnerTopRight:
       if (row_orient == odb::dbOrientType::R0) {
         master = options.right_top_edge;
       } else {
         master = options.right_bottom_edge;
       }
       break;
-    case CornerType::Unknown:
+    case CornerType::kUnknown:
       break;
   }
 
@@ -1003,43 +1003,43 @@ Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
   // Adjust placement position
   odb::Point ll = corner.pt;
   switch (corner.type) {
-    case CornerType::OuterBottomLeft:
-    case CornerType::InnerTopRight:
+    case CornerType::kOuterBottomLeft:
+    case CornerType::kInnerTopRight:
       break;
-    case CornerType::OuterBottomRight:
-    case CornerType::InnerTopLeft:
+    case CornerType::kOuterBottomRight:
+    case CornerType::kInnerTopLeft:
       ll.addX(-width);
       break;
-    case CornerType::OuterTopRight:
-    case CornerType::InnerBottomLeft:
+    case CornerType::kOuterTopRight:
+    case CornerType::kInnerBottomLeft:
       ll.addX(-width);
       ll.addY(-height);
       break;
-    case CornerType::OuterTopLeft:
-    case CornerType::InnerBottomRight:
+    case CornerType::kOuterTopLeft:
+    case CornerType::kInnerBottomRight:
       ll.addY(-height);
       break;
-    case CornerType::Unknown:
+    case CornerType::kUnknown:
       break;
   }
 
   // Adjust orientation
   odb::dbOrientType orient = row_orient;
   switch (corner.type) {
-    case CornerType::OuterBottomLeft:
-    case CornerType::OuterTopLeft:
-    case CornerType::InnerBottomRight:
-    case CornerType::InnerTopRight:
+    case CornerType::kOuterBottomLeft:
+    case CornerType::kOuterTopLeft:
+    case CornerType::kInnerBottomRight:
+    case CornerType::kInnerTopRight:
       break;
-    case CornerType::OuterBottomRight:
-    case CornerType::OuterTopRight:
-    case CornerType::InnerBottomLeft:
-    case CornerType::InnerTopLeft:
+    case CornerType::kOuterBottomRight:
+    case CornerType::kOuterTopRight:
+    case CornerType::kInnerBottomLeft:
+    case CornerType::kInnerTopLeft:
       if (master->getSymmetryY()) {
         orient = orient.flipY();
       }
       break;
-    case CornerType::Unknown:
+    case CornerType::kUnknown:
       break;
   }
 
@@ -1068,15 +1068,15 @@ int Tapcell::placeEndcapEdge(const Tapcell::Edge& edge,
                              const EndcapCellOptions& options)
 {
   switch (edge.type) {
-    case EdgeType::Bottom:
-    case EdgeType::Top:
+    case EdgeType::kBottom:
+    case EdgeType::kTop:
       return placeEndcapEdgeHorizontal(edge, corners, options);
       break;
-    case EdgeType::Left:
-    case EdgeType::Right:
+    case EdgeType::kLeft:
+    case EdgeType::kRight:
       return placeEndcapEdgeVertical(edge, corners, options);
       break;
-    case EdgeType::Unknown:
+    case EdgeType::kUnknown:
       break;
   }
 
@@ -1110,7 +1110,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
 
   std::vector<odb::dbMaster*> masters;
   switch (edge.type) {
-    case EdgeType::Top:
+    case EdgeType::kTop:
       if (row->getOrient() == odb::dbOrientType::R0) {
         masters.insert(
             masters.end(), options.top_edge.begin(), options.top_edge.end());
@@ -1120,7 +1120,7 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
                        options.bottom_edge.end());
       }
       break;
-    case EdgeType::Bottom:
+    case EdgeType::kBottom:
       if (row->getOrient() == odb::dbOrientType::R0) {
         masters.insert(masters.end(),
                        options.bottom_edge.begin(),
@@ -1130,9 +1130,9 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
             masters.end(), options.top_edge.begin(), options.top_edge.end());
       }
       break;
-    case EdgeType::Left:
-    case EdgeType::Right:
-    case EdgeType::Unknown:
+    case EdgeType::kLeft:
+    case EdgeType::kRight:
+    case EdgeType::kUnknown:
       break;
   }
 
@@ -1233,15 +1233,15 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
   odb::dbMaster* edge_master = nullptr;
 
   switch (edge.type) {
-    case EdgeType::Left:
+    case EdgeType::kLeft:
       edge_master = options.left_edge;
       break;
-    case EdgeType::Right:
+    case EdgeType::kRight:
       edge_master = options.right_edge;
       break;
-    case EdgeType::Top:
-    case EdgeType::Bottom:
-    case EdgeType::Unknown:
+    case EdgeType::kTop:
+    case EdgeType::kBottom:
+    case EdgeType::kUnknown:
       break;
   }
 
@@ -1260,23 +1260,23 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
       bool skip = false;
       for (odb::dbInst* inst : check_row->second) {
         switch (edge.type) {
-          case EdgeType::Right: {
+          case EdgeType::kRight: {
             if (inst->getBBox()->xMax() == row->getBBox().xMax()) {
               // this edge is already placed
               skip = true;
             }
             break;
           }
-          case EdgeType::Left: {
+          case EdgeType::kLeft: {
             if (inst->getBBox()->xMin() == row->getBBox().xMin()) {
               // this edge is already placed
               skip = true;
             }
             break;
           }
-          case EdgeType::Top:
-          case EdgeType::Bottom:
-          case EdgeType::Unknown:
+          case EdgeType::kTop:
+          case EdgeType::kBottom:
+          case EdgeType::kUnknown:
             break;
         }
         if (skip) {
@@ -1301,7 +1301,7 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
     odb::dbOrientType orient = row->getOrient();
     odb::Point ll;
     switch (edge.type) {
-      case EdgeType::Right:
+      case EdgeType::kRight:
         ll = row->getBBox().lr();
         ll.addX(-width);
         if (options.left_edge == options.right_edge
@@ -1309,12 +1309,12 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
           orient = orient.flipY();
         }
         break;
-      case EdgeType::Left:
+      case EdgeType::kLeft:
         ll = row->getBBox().ll();
         break;
-      case EdgeType::Top:
-      case EdgeType::Bottom:
-      case EdgeType::Unknown:
+      case EdgeType::kTop:
+      case EdgeType::kBottom:
+      case EdgeType::kUnknown:
         break;
     }
 

@@ -119,7 +119,7 @@ class GridSwitchedPower
 
   struct InstIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbInst* inst) const
     {
       return inst->getBBox()->getBox();
@@ -136,7 +136,7 @@ class GridSwitchedPower
 
   struct RowIndexableGetter
   {
-    using result_type = odb::Rect;
+    using result_type = odb::Rect;  // NOLINT(readability-identifier-naming)
     odb::Rect operator()(odb::dbRow* row) const { return row->getBBox(); }
   };
   using RowTree
