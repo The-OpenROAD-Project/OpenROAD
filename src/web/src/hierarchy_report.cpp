@@ -143,7 +143,7 @@ static void emitLeafNodes(odb::dbModule* module,
   leaf.id = leaf_id;
   leaf.parent_id = parent_id;
   leaf.inst_name = "Leaf instances";
-  leaf.node_kind = HierarchyNodeKind::LEAF_GROUP;
+  leaf.node_kind = HierarchyNodeKind::kLeafGroup;
 
   // Aggregate totals for the leaf group
   for (const auto& [name, bucket] : buckets) {
@@ -165,7 +165,7 @@ static void emitLeafNodes(odb::dbModule* module,
     type_node.id = type_id;
     type_node.parent_id = leaf_id;
     type_node.inst_name = type_name;
-    type_node.node_kind = HierarchyNodeKind::TYPE_GROUP;
+    type_node.node_kind = HierarchyNodeKind::kTypeGroup;
     type_node.area = static_cast<double>(bucket.area_dbu2);
     if (bucket.is_macro) {
       type_node.macros = bucket.count;
@@ -185,7 +185,7 @@ static void emitLeafNodes(odb::dbModule* module,
         inst_node.parent_id = type_id;
         inst_node.inst_name = inst->getConstName();
         inst_node.module_name = inst->getMaster()->getConstName();
-        inst_node.node_kind = HierarchyNodeKind::INSTANCE;
+        inst_node.node_kind = HierarchyNodeKind::kInstance;
         inst_node.macros = 1;
         inst_node.local_macros = 1;
         inst_node.area = static_cast<double>(inst->getBBox()->getBox().area());
