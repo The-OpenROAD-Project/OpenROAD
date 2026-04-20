@@ -54,9 +54,9 @@ class Search : public odb::dbBlockCallBackObj
  public:
   enum RouteBoxType
   {
-    WIRE,
-    VIA,
-    BTERM
+    kWire,
+    kVia,
+    kBterm
   };
 
   template <typename T>
