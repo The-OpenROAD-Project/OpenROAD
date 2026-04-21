@@ -3,6 +3,7 @@
 
 #include "dbMPin.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -16,6 +17,7 @@
 #include "dbMaster.h"
 #include "dbPolygonItr.h"
 #include "dbTable.h"
+#include "dbVector.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
 #include "odb/geom.h"
@@ -150,11 +152,13 @@ void dbMPin::clearPinAccess(const int pin_access_idx)
 {
   _dbMPin* pin = (_dbMPin*) this;
   _dbBlock* block = (_dbBlock*) getDb()->getChip()->getBlock();
-  if (pin->aps_.size() <= pin_access_idx) {
+  if (pin_access_idx < 0
+      || pin->aps_.size() <= static_cast<std::size_t>(pin_access_idx)) {
     return;
   }
-  const auto aps = pin->aps_[pin_access_idx];
-  for (const auto& ap : aps) {
+  dbVector<dbId<_dbAccessPoint>> aps;
+  aps.swap(pin->aps_[pin_access_idx]);
+  for (const dbId<_dbAccessPoint>& ap : aps) {
     odb::dbAccessPoint::destroy(
         (odb::dbAccessPoint*) block->ap_tbl_->getPtr(ap));
   }
