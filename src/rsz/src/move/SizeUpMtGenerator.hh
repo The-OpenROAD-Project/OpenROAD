@@ -50,15 +50,6 @@ class SizeUpMtGenerator : public MoveGenerator
       const sta::LibertyPort* drvr_port,
       const sta::Scene* scene,
       const sta::MinMax* min_max) const;
-
-  // === Max-cap and input-cap helpers =======================================
-  bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement) const;
-  float getInputPinCapacitance(sta::Pin* pin,
-                               const sta::LibertyCell* cell) const;
-  bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta) const;
-  bool checkMaxCapViolation(sta::Instance* inst,
-                            const sta::LibertyCell* replacement) const;
 };
 
 }  // namespace rsz

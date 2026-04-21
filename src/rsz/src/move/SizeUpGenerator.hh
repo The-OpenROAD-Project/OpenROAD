@@ -61,14 +61,6 @@ class SizeUpGenerator : public MoveGenerator
                                       const sta::Scene* scene,
                                       const sta::MinMax* min_max) const;
 
-  // === Max-cap and input-cap helpers =======================================
-  bool replacementPreservesMaxCap(sta::Instance* inst,
-                                  const sta::LibertyCell* replacement) const;
-  float getInputPinCapacitance(sta::Pin* pin,
-                               const sta::LibertyCell* cell) const;
-  bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta) const;
-  bool checkMaxCapViolation(sta::Instance* inst,
-                            const sta::LibertyCell* replacement) const;
   sta::LibertyCell* upsizeCell(sta::LibertyPort* in_port,
                                sta::LibertyPort* drvr_port,
                                float load_cap,

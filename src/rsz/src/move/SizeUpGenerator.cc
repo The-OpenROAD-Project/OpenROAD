@@ -23,8 +23,6 @@
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Transition.hh"
 
 namespace rsz {
 
@@ -80,7 +78,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
   sta::LibertyCell* replacement = selectReplacement(
       in_port, drvr_port, load_cap, prev_drive, scene, min_max);
   if (replacement == nullptr
-      || !replacementPreservesMaxCap(inst, replacement)) {
+      || !resizer_.replacementPreservesMaxCap(inst, replacement)) {
     return candidates;
   }
 
@@ -162,100 +160,6 @@ sta::LibertyCell* SizeUpGenerator::selectReplacement(
     const sta::MinMax* min_max) const
 {
   return upsizeCell(in_port, drvr_port, load_cap, prev_drive, scene, min_max);
-}
-
-bool SizeUpGenerator::replacementPreservesMaxCap(
-    sta::Instance* inst,
-    const sta::LibertyCell* replacement) const
-{
-  return replacement != nullptr && checkMaxCapViolation(inst, replacement);
-}
-
-float SizeUpGenerator::getInputPinCapacitance(
-    sta::Pin* pin,
-    const sta::LibertyCell* cell) const
-{
-  sta::LibertyPort* port = resizer_.network()->libertyPort(pin);
-  if (port == nullptr) {
-    return 0.0f;
-  }
-
-  sta::LibertyPort* cell_port = cell->findLibertyPort(port->name());
-  if (cell_port == nullptr) {
-    return 0.0f;
-  }
-
-  float cap = 0.0f;
-  for (const sta::RiseFall* rf : sta::RiseFall::range()) {
-    cap = std::max(cap, cell_port->capacitance(rf, resizer_.maxAnalysisMode()));
-  }
-  return cap;
-}
-
-bool SizeUpGenerator::checkMaxCapOK(const sta::Pin* drvr_pin,
-                                    const float cap_delta) const
-{
-  float cap;
-  float max_cap;
-  float cap_slack;
-  const sta::Scene* corner;
-  const sta::RiseFall* tr;
-  resizer_.sta()->checkCapacitance(drvr_pin,
-                                   resizer_.sta()->scenes(),
-                                   resizer_.maxAnalysisMode(),
-                                   cap,
-                                   max_cap,
-                                   cap_slack,
-                                   tr,
-                                   corner);
-  if (max_cap <= 0.0f || corner == nullptr) {
-    return true;
-  }
-
-  const float new_cap = cap + cap_delta;
-  if (cap_slack < 0.0f) {
-    return new_cap <= cap;
-  }
-  return new_cap <= max_cap;
-}
-
-bool SizeUpGenerator::checkMaxCapViolation(
-    sta::Instance* inst,
-    const sta::LibertyCell* replacement) const
-{
-  // Reject replacements that overload any fanin net of the resized instance.
-  sta::LibertyCell* current_cell = resizer_.network()->libertyCell(inst);
-  if (current_cell == nullptr) {
-    return true;
-  }
-
-  auto pin_iter = std::unique_ptr<sta::InstancePinIterator>(
-      resizer_.network()->pinIterator(inst));
-  while (pin_iter->hasNext()) {
-    sta::Pin* pin = pin_iter->next();
-    if (!resizer_.network()->direction(pin)->isAnyInput()) {
-      continue;
-    }
-
-    sta::PinSet* drivers = resizer_.network()->drivers(pin);
-    if (drivers == nullptr) {
-      continue;
-    }
-
-    const float old_cap = getInputPinCapacitance(pin, current_cell);
-    const float new_cap = getInputPinCapacitance(pin, replacement);
-    const float cap_delta = new_cap - old_cap;
-    if (cap_delta <= 0.0f) {
-      continue;
-    }
-
-    for (const sta::Pin* driver_pin : *drivers) {
-      if (!checkMaxCapOK(driver_pin, cap_delta)) {
-        return false;
-      }
-    }
-  }
-  return true;
 }
 
 sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
