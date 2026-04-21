@@ -5,6 +5,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     computeHistogramLayout,
+    hitTestColumn,
     kLeftMargin, kRightMargin, kTopMargin, kBottomMargin,
 } from '../../src/charts-widget.js';
 
@@ -131,5 +132,60 @@ describe('computeHistogramLayout', () => {
         }, 500, 400);
         assert.ok(result.yMax >= 350);
         assert.ok(result.yTicks.length >= 2);
+    });
+});
+
+describe('hitTestColumn', () => {
+    // Two bars of unequal heights inside a 500x400 chart.
+    const chartArea = { left: 60, right: 480, top: 30, bottom: 350 };
+    const bars = [
+        // Tall bar: covers much of the column height.
+        { x: 100, y: 60, width: 40, height: 290, count: 100,
+          lower: 0, upper: 0.1, negative: false },
+        // Short bar: sits near the bottom, tiny rect.
+        { x: 160, y: 340, width: 40, height: 10, count: 2,
+          lower: 0.1, upper: 0.2, negative: false },
+        // Empty bar: no count, should never match.
+        { x: 220, y: 350, width: 40, height: 0, count: 0,
+          lower: 0.2, upper: 0.3, negative: false },
+    ];
+
+    it('hits when the click lands inside the bar rect (existing behavior)', () => {
+        const hit = hitTestColumn(bars, chartArea, 120, 300);
+        assert.ok(hit);
+        assert.equal(hit.count, 100);
+    });
+
+    it('hits the short bar when clicking above it in the column strip', () => {
+        // Y well above the short bar's top (340), but inside chart area.
+        const hit = hitTestColumn(bars, chartArea, 180, 100);
+        assert.ok(hit);
+        assert.equal(hit.count, 2);
+    });
+
+    it('misses when the click is below the chart area', () => {
+        assert.equal(hitTestColumn(bars, chartArea, 180, 360), null);
+    });
+
+    it('misses when the click is above the chart area', () => {
+        assert.equal(hitTestColumn(bars, chartArea, 180, 20), null);
+    });
+
+    it('misses when the click falls in the x-gap between bars', () => {
+        // x=150 lands between bar 0 (100..140) and bar 1 (160..200).
+        assert.equal(hitTestColumn(bars, chartArea, 150, 200), null);
+    });
+
+    it('never matches a zero-count column', () => {
+        assert.equal(hitTestColumn(bars, chartArea, 240, 200), null);
+    });
+
+    it('returns null when chartArea is null', () => {
+        assert.equal(hitTestColumn(bars, null, 120, 200), null);
+    });
+
+    it('returns null when bars is empty or null', () => {
+        assert.equal(hitTestColumn([], chartArea, 120, 200), null);
+        assert.equal(hitTestColumn(null, chartArea, 120, 200), null);
     });
 });

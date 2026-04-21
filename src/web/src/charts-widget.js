@@ -70,6 +70,21 @@ export function computeHistogramLayout(histogramData, canvasWidth, canvasHeight)
     return { bars, yMax, yTicks, chartArea };
 }
 
+// Hit-test a histogram click/hover: a click anywhere in the column strip
+// above the x-axis for a bin counts as a hit, so low-count bins remain
+// reachable.  Bins with zero count never match.
+export function hitTestColumn(bars, chartArea, mx, my) {
+    if (!bars || !chartArea) return null;
+    if (my < chartArea.top || my > chartArea.bottom) return null;
+    for (const bar of bars) {
+        if (bar.count === 0) continue;
+        if (mx >= bar.x && mx <= bar.x + bar.width) {
+            return bar;
+        }
+    }
+    return null;
+}
+
 // Compute nice Y-axis max and tick values.
 function computeYAxis(maxCount) {
     if (maxCount <= 10) {
@@ -452,17 +467,10 @@ export class ChartsWidget {
     }
 
     _hitTestBar(e) {
-        if (!this._bars) return null;
         const rect = this._canvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        for (const bar of this._bars) {
-            if (mx >= bar.x && mx <= bar.x + bar.width &&
-                my >= bar.y && my <= bar.y + bar.height) {
-                return bar;
-            }
-        }
-        return null;
+        return hitTestColumn(this._bars, this._chartArea, mx, my);
     }
 
     _handleHover(e) {
