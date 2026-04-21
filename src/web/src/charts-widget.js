@@ -503,24 +503,20 @@ export class ChartsWidget {
         const bar = this._hitTestBar(e);
         if (!bar || bar.count === 0) return;
 
-        try {
-            const resp = await this._app.websocketManager.request({
-                type: 'timing_report',
-                is_setup: this._currentTab === 'setup' ? 1 : 0,
-                max_paths: 50,
-                slack_min: bar.lower,
-                slack_max: bar.upper,
-            });
+        const resp = await this._app.websocketManager.request({
+            type: 'timing_report',
+            is_setup: this._currentTab === 'setup' ? 1 : 0,
+            max_paths: 50,
+            slack_min: bar.lower,
+            slack_max: bar.upper,
+        });
 
-            if (this._app.timingWidget) {
-                this._app.timingWidget.showPaths(
-                    this._currentTab, resp.paths || []);
-                if (this._app.focusComponent) {
-                    this._app.focusComponent('TimingWidget');
-                }
+        if (this._app.timingWidget) {
+            this._app.timingWidget.showPaths(
+                this._currentTab, resp.paths || []);
+            if (this._app.focusComponent) {
+                this._app.focusComponent('TimingWidget');
             }
-        } catch (err) {
-            console.error('Charts bar click error:', err);
         }
     }
 }

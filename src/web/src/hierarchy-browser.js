@@ -248,16 +248,10 @@ export class HierarchyBrowser {
             parts.push(`${odbId}:${r},${g},${b},100`);
         }
         const colors = parts.join(';');
-        try {
-            const resp = await this._app.websocketManager.request({
-                type: 'set_module_colors',
-                colors,
-            });
-            console.log('set_module_colors:', resp.count, 'modules,',
-                         parts.length, 'sent');
-        } catch (err) {
-            console.error('set_module_colors failed:', err);
-        }
+        await this._app.websocketManager.request({
+            type: 'set_module_colors',
+            colors,
+        });
 
         // Refresh the modules layer if it exists
         if (this._app.modulesLayer && this._app.map.hasLayer(this._app.modulesLayer)) {

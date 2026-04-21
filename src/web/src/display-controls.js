@@ -377,7 +377,7 @@ export function populateDisplayControls(app, visibility, WebSocketTileLayer,
             if (app.updateHeatMaps) {
                 app.updateHeatMaps(data);
             }
-        }).catch(err => console.error('Heat map update failed', err));
+        });
     }
 
     function renderMapLegend(active) {

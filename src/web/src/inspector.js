@@ -70,26 +70,18 @@ export function createInspectorPanel(app, redrawAllLayers) {
         const action = app.focusNets.has(name) ? 'remove' : 'add';
         if (action === 'add') app.focusNets.add(name);
         else app.focusNets.delete(name);
-        try {
-            await app.websocketManager.request({
-                type: 'set_focus_nets', action, net_name: name,
-            });
-        } catch (err) {
-            console.error('set_focus_nets failed:', err);
-        }
+        await app.websocketManager.request({
+            type: 'set_focus_nets', action, net_name: name,
+        });
         redrawAllLayers();
         if (lastInspectData) updateInspector(lastInspectData);
     }
 
     async function clearFocusNets() {
         app.focusNets.clear();
-        try {
-            await app.websocketManager.request({
-                type: 'set_focus_nets', action: 'clear', net_name: '',
-            });
-        } catch (err) {
-            console.error('set_focus_nets clear failed:', err);
-        }
+        await app.websocketManager.request({
+            type: 'set_focus_nets', action: 'clear', net_name: '',
+        });
         redrawAllLayers();
         if (lastInspectData) updateInspector(lastInspectData);
     }
@@ -98,13 +90,9 @@ export function createInspectorPanel(app, redrawAllLayers) {
         const action = app.routeGuideNets.has(name) ? 'remove' : 'add';
         if (action === 'add') app.routeGuideNets.add(name);
         else app.routeGuideNets.delete(name);
-        try {
-            await app.websocketManager.request({
-                type: 'set_route_guides', action, net_name: name,
-            });
-        } catch (err) {
-            console.error('set_route_guides failed:', err);
-        }
+        await app.websocketManager.request({
+            type: 'set_route_guides', action, net_name: name,
+        });
         redrawAllLayers();
         if (lastInspectData) updateInspector(lastInspectData);
     }
@@ -118,6 +106,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
 
     function clearHoverHighlight() {
         clearClientHoverHighlight();
+        // Hover is fire-and-forget; stale rejections on unmount are expected.
         app.websocketManager.request({ type: 'hover', select_id: -1 })
             .then(() => {})
             .catch(() => {});
@@ -190,6 +179,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             navigateInspector(selectId);
         });
         el.addEventListener('mouseenter', () => {
+            // Hover is fire-and-forget; stale rejections on unmount are expected.
             app.websocketManager.request({ type: 'hover', select_id: selectId })
                 .then(data => {
                     renderHoverRects(data.rects || []);
@@ -221,8 +211,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             .then(data => {
                 pendingInspectId = null;
                 if (data.error) {
-                    console.error('Inspect error:', data.error);
-                    return;
+                    throw new Error('Inspect: ' + data.error);
                 }
                 updateInspector(data);
 
@@ -242,10 +231,6 @@ export function createInspectorPanel(app, redrawAllLayers) {
                 }
                 // Redraw tiles to update instance highlight
                 redrawAllLayers();
-            })
-            .catch(err => {
-                pendingInspectId = null;
-                console.error('Inspect failed:', err);
             });
     }
 
@@ -264,8 +249,7 @@ export function createInspectorPanel(app, redrawAllLayers) {
             .then(data => {
                 pendingInspectId = null;
                 if (data.error) {
-                    console.error('Inspect back error:', data.error);
-                    return;
+                    throw new Error('Inspect back: ' + data.error);
                 }
                 updateInspector(data);
 
@@ -280,10 +264,6 @@ export function createInspectorPanel(app, redrawAllLayers) {
                     highlightBBox(x1, y1, x2, y2);
                 }
                 redrawAllLayers();
-            })
-            .catch(err => {
-                pendingInspectId = null;
-                console.error('Inspect back failed:', err);
             });
     }
 

@@ -309,8 +309,8 @@ export class ClockTreeWidget {
                 this._clockData.length + ' clock' +
                 (this._clockData.length !== 1 ? 's' : '');
         } catch (err) {
-            console.error('Clock tree error:', err);
             this._statusLabel.textContent = 'Error: ' + err.message;
+            throw err;
         }
     }
 

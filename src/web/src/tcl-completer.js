@@ -183,7 +183,8 @@ export class TclCompleter {
                 this._commandCache = data.completions;
             }
             if (data.mode === 'commands' && !this._commandCache) {
-                // Request full list for caching on first non-empty prefix
+                // Request full list for caching on first non-empty prefix.
+                // Cache refresh is opportunistic; next keystroke retries.
                 this._ws.request({
                     type: 'tcl_complete',
                     line: '',
@@ -200,6 +201,7 @@ export class TclCompleter {
                 data.replace_end
             );
         }).catch(() => {
+            // Hide popup when suggestions unavailable.
             this._hidePopup();
         });
     }

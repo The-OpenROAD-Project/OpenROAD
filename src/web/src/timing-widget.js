@@ -193,11 +193,10 @@ export class TimingWidget {
             this._renderPathTable();
             this._renderDetailTable();
             this._clearTimingHighlight();
-        } catch (e) {
-            console.error('Timing fetch failed:', e);
+        } finally {
+            this._updateBtn.disabled = false;
+            this._updateBtn.textContent = 'Update';
         }
-        this._updateBtn.disabled = false;
-        this._updateBtn.textContent = 'Update';
     }
 
     _clearTimingHighlight() {
@@ -222,8 +221,7 @@ export class TimingWidget {
             type: 'timing_highlight',
             path_index: highlightIdx,
             is_setup: this._currentTab === 'setup' ? 1 : 0,
-        }).then(() => this._redrawAllLayers())
-          .catch(err => console.error('timing_highlight error:', err));
+        }).then(() => this._redrawAllLayers());
     }
 
     _renderPathTable() {

@@ -178,6 +178,9 @@ const HeatMapTileLayer = L.GridLayer.extend({
         }).then(blob => {
             tile.src = URL.createObjectURL(blob);
         }).catch(() => {
+            // Blank tile on failure is the intended UX — the server
+            // reports empty regions by rejecting, and a gap in the
+            // grid would be more confusing than a transparent square.
             tile.src = BLANK_TILE;
         });
 
@@ -208,6 +211,7 @@ const HeatMapTileLayer = L.GridLayer.extend({
                 }
                 tile.src = URL.createObjectURL(blob);
             }).catch(() => {
+                // See _createTile: blank tiles on failure are intended.
                 tile.src = BLANK_TILE;
             });
         }
@@ -646,191 +650,183 @@ app.websocketManager.onPush = (msg) => {
 };
 
 app.websocketManager.readyPromise.then(async () => {
-    try {
-        const [techData, boundsData, heatMapData] = await Promise.all([
-            app.websocketManager.request({ type: 'tech' }),
-            app.websocketManager.request({ type: 'bounds' }),
-            app.websocketManager.request({ type: 'heatmaps' }),
-        ]);
-        app.hasLiberty = techData.has_liberty;
-        app.techData = techData;
+    const [techData, boundsData, heatMapData] = await Promise.all([
+        app.websocketManager.request({ type: 'tech' }),
+        app.websocketManager.request({ type: 'bounds' }),
+        app.websocketManager.request({ type: 'heatmaps' }),
+    ]);
+    app.hasLiberty = techData.has_liberty;
+    app.techData = techData;
 
-        // --- Set Bounds ---
-        const designBounds = boundsData.bounds;
+    // --- Set Bounds ---
+    const designBounds = boundsData.bounds;
 
-        const minY = designBounds[0][0];
-        const minX = designBounds[0][1];
-        const maxY = designBounds[1][0];
-        const maxX = designBounds[1][1];
+    const minY = designBounds[0][0];
+    const minX = designBounds[0][1];
+    const maxY = designBounds[1][0];
+    const maxX = designBounds[1][1];
 
-        const designWidth = maxX - minX;
-        const designHeight = maxY - minY;
+    const designWidth = maxX - minX;
+    const designHeight = maxY - minY;
 
-        // No design loaded — skip map setup, let user open a DB via menu.
-        const hasDesign = designWidth > 0 && designHeight > 0;
-        if (hasDesign) {
-            const tileSize = 256;
-            const maxDXDY = Math.max(designWidth, designHeight);
-            const scale = tileSize / maxDXDY;
-            app.designScale = scale;
-            app.designMaxDXDY = maxDXDY;
-            app.designOriginX = minX;
-            app.designOriginY = minY;
+    // No design loaded — skip map setup, let user open a DB via menu.
+    const hasDesign = designWidth > 0 && designHeight > 0;
+    if (hasDesign) {
+        const tileSize = 256;
+        const maxDXDY = Math.max(designWidth, designHeight);
+        const scale = tileSize / maxDXDY;
+        app.designScale = scale;
+        app.designMaxDXDY = maxDXDY;
+        app.designOriginX = minX;
+        app.designOriginY = minY;
 
-            app.fitBounds = [
-                [-maxDXDY * scale, 0],
-                [(designHeight - maxDXDY) * scale, designWidth * scale]
-            ];
-            app.map.fitBounds(app.fitBounds);
+        app.fitBounds = [
+            [-maxDXDY * scale, 0],
+            [(designHeight - maxDXDY) * scale, designWidth * scale]
+        ];
+        app.map.fitBounds(app.fitBounds);
 
-            if (staticCache) {
-                // Lock to the pre-rendered tile zoom level and fit.
-                const cacheZoom = staticCache.zoom;
-                app.map.setMinZoom(cacheZoom);
-                app.map.setMaxZoom(cacheZoom);
-                app.map.fitBounds(app.fitBounds);
-                app.map.scrollWheelZoom.disable();
-                app.map.touchZoom.disable();
-                app.map.boxZoom.disable();
-                app.map.doubleClickZoom.disable();
-
-                // Path highlight overlay image.
-                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
-                    opacity: 1, interactive: false, zIndex: 1000,
-                });
-                staticCache.setPathOverlay = (src) => {
-                    if (src) {
-                        app.pathOverlay.setUrl(src);
-                        app.pathOverlay.addTo(app.map);
-                    } else {
-                        app.map.removeLayer(app.pathOverlay);
-                    }
-                };
-            }
-        }
-
-        // Click-to-select: convert click position to DBU and query server
         if (staticCache) {
-            // Hide loading overlay — shapes are always ready in static mode.
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-        if (!staticCache) app.map.on('click', (e) => {
-            if (!app.designScale) return;
-            if (app.rulerManager && app.rulerManager.isActive()) return;
-            const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
-                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
-                app.designOriginX, app.designOriginY);
+            // Lock to the pre-rendered tile zoom level and fit.
+            const cacheZoom = staticCache.zoom;
+            app.map.setMinZoom(cacheZoom);
+            app.map.setMaxZoom(cacheZoom);
+            app.map.fitBounds(app.fitBounds);
+            app.map.scrollWheelZoom.disable();
+            app.map.touchZoom.disable();
+            app.map.boxZoom.disable();
+            app.map.doubleClickZoom.disable();
 
-            const vf = {};
-            for (const [k, v] of Object.entries(visibility)) {
-                vf[k] = v ? 1 : 0;
-            }
-            app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), visible_layers: [...app.visibleLayers], ...vf })
-                .then(data => {
-                    console.log('Select response:', data, 'at dbu', dbu_x, dbu_y);
-                    app.map.closePopup();
-                    if (data.selected && data.selected.length > 0) {
-                        const inst = data.selected[0];
-                        if (inst.type === 'Inst') {
-                            app.selectedInstanceName = inst.name;
-                            if (app.schematicWidget) {
-                                app.schematicWidget.refresh();
-                            }
-                        }
-                        updateInspector(data);
-                        focusComponent('Inspector');
-                        // Highlight selected instance bbox
-                        if (inst.bbox) {
-                            highlightBBox(inst.bbox[0], inst.bbox[1],
-                                          inst.bbox[2], inst.bbox[3]);
-                        }
-                    } else {
-                        updateInspector(null);
-                        if (app.highlightRect) {
-                            app.map.removeLayer(app.highlightRect);
-                            app.highlightRect = null;
+            // Path highlight overlay image.
+            app.pathOverlay = L.imageOverlay('', app.fitBounds, {
+                opacity: 1, interactive: false, zIndex: 1000,
+            });
+            staticCache.setPathOverlay = (src) => {
+                if (src) {
+                    app.pathOverlay.setUrl(src);
+                    app.pathOverlay.addTo(app.map);
+                } else {
+                    app.map.removeLayer(app.pathOverlay);
+                }
+            };
+        }
+    }
+
+    // Click-to-select: convert click position to DBU and query server
+    if (staticCache) {
+        // Hide loading overlay — shapes are always ready in static mode.
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
+    if (!staticCache) app.map.on('click', (e) => {
+        if (!app.designScale) return;
+        if (app.rulerManager && app.rulerManager.isActive()) return;
+        const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
+
+        const vf = {};
+        for (const [k, v] of Object.entries(visibility)) {
+            vf[k] = v ? 1 : 0;
+        }
+        app.websocketManager.request({ type: 'select', dbu_x, dbu_y, zoom: app.map.getZoom(), visible_layers: [...app.visibleLayers], ...vf })
+            .then(data => {
+                app.map.closePopup();
+                if (data.selected && data.selected.length > 0) {
+                    const inst = data.selected[0];
+                    if (inst.type === 'Inst') {
+                        app.selectedInstanceName = inst.name;
+                        if (app.schematicWidget) {
+                            app.schematicWidget.refresh();
                         }
                     }
-                    redrawAllLayers();
-                })
-                .catch(err => {
-                    console.error('Select failed:', err);
-                });
+                    updateInspector(data);
+                    focusComponent('Inspector');
+                    // Highlight selected instance bbox
+                    if (inst.bbox) {
+                        highlightBBox(inst.bbox[0], inst.bbox[1],
+                                      inst.bbox[2], inst.bbox[3]);
+                    }
+                } else {
+                    updateInspector(null);
+                    if (app.highlightRect) {
+                        app.map.removeLayer(app.highlightRect);
+                        app.highlightRect = null;
+                    }
+                }
+                redrawAllLayers();
+            });
+    });
+
+    // ─── Right-click rubber-band zoom ──────────────────────────────
+    if (!staticCache) {
+        const container = app.map.getContainer();
+        let rbStart = null;   // {x, y} in client coords
+        let rbDiv = null;     // overlay element
+
+        container.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
 
-        // ─── Right-click rubber-band zoom ──────────────────────────────
-        if (!staticCache) {
-            const container = app.map.getContainer();
-            let rbStart = null;   // {x, y} in client coords
-            let rbDiv = null;     // overlay element
+        container.addEventListener('mousedown', (e) => {
+            if (e.button !== 2) return;
+            rbStart = { x: e.clientX, y: e.clientY };
+            app.map.dragging.disable();
+        });
 
-            container.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-            });
+        window.addEventListener('mousemove', (e) => {
+            if (!rbStart) return;
+            const dx = e.clientX - rbStart.x;
+            const dy = e.clientY - rbStart.y;
+            if (!rbDiv && Math.abs(dx) >= 4 && Math.abs(dy) >= 4) {
+                rbDiv = document.createElement('div');
+                rbDiv.className = 'rubber-band';
+                document.body.appendChild(rbDiv);
+            }
+            if (rbDiv) {
+                const left = Math.min(rbStart.x, e.clientX);
+                const top = Math.min(rbStart.y, e.clientY);
+                rbDiv.style.left = left + 'px';
+                rbDiv.style.top = top + 'px';
+                rbDiv.style.width = Math.abs(dx) + 'px';
+                rbDiv.style.height = Math.abs(dy) + 'px';
+            }
+        });
 
-            container.addEventListener('mousedown', (e) => {
-                if (e.button !== 2) return;
-                rbStart = { x: e.clientX, y: e.clientY };
-                app.map.dragging.disable();
-            });
+        window.addEventListener('mouseup', (e) => {
+            if (!rbStart) return;
+            const wasShowing = !!rbDiv;
+            if (rbDiv) {
+                rbDiv.remove();
+                rbDiv = null;
+            }
+            const start = rbStart;
+            rbStart = null;
+            app.map.dragging.enable();
 
-            window.addEventListener('mousemove', (e) => {
-                if (!rbStart) return;
-                const dx = e.clientX - rbStart.x;
-                const dy = e.clientY - rbStart.y;
-                if (!rbDiv && Math.abs(dx) >= 4 && Math.abs(dy) >= 4) {
-                    rbDiv = document.createElement('div');
-                    rbDiv.className = 'rubber-band';
-                    document.body.appendChild(rbDiv);
-                }
-                if (rbDiv) {
-                    const left = Math.min(rbStart.x, e.clientX);
-                    const top = Math.min(rbStart.y, e.clientY);
-                    rbDiv.style.left = left + 'px';
-                    rbDiv.style.top = top + 'px';
-                    rbDiv.style.width = Math.abs(dx) + 'px';
-                    rbDiv.style.height = Math.abs(dy) + 'px';
-                }
-            });
+            if (!wasShowing) return;
 
-            window.addEventListener('mouseup', (e) => {
-                if (!rbStart) return;
-                const wasShowing = !!rbDiv;
-                if (rbDiv) {
-                    rbDiv.remove();
-                    rbDiv = null;
-                }
-                const start = rbStart;
-                rbStart = null;
-                app.map.dragging.enable();
+            // Convert the two screen corners to lat/lng and zoom
+            const rect = container.getBoundingClientRect();
+            const p1 = app.map.containerPointToLatLng([
+                start.x - rect.left, start.y - rect.top]);
+            const p2 = app.map.containerPointToLatLng([
+                e.clientX - rect.left, e.clientY - rect.top]);
+            app.map.fitBounds([
+                [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
+                [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
+            ]);
+        });
+    }
 
-                if (!wasShowing) return;
+    populateDisplayControls(app, visibility, WebSocketTileLayer,
+                            techData, redrawAllLayers, HeatMapTileLayer);
+    updateHeatMaps(heatMapData);
 
-                // Convert the two screen corners to lat/lng and zoom
-                const rect = container.getBoundingClientRect();
-                const p1 = app.map.containerPointToLatLng([
-                    start.x - rect.left, start.y - rect.top]);
-                const p2 = app.map.containerPointToLatLng([
-                    e.clientX - rect.left, e.clientY - rect.top]);
-                app.map.fitBounds([
-                    [Math.min(p1.lat, p2.lat), Math.min(p1.lng, p2.lng)],
-                    [Math.max(p1.lat, p2.lat), Math.max(p1.lng, p2.lng)],
-                ]);
-            });
-        }
-
-        populateDisplayControls(app, visibility, WebSocketTileLayer,
-                                techData, redrawAllLayers, HeatMapTileLayer);
-        updateHeatMaps(heatMapData);
-
-        // Only show the loading overlay if a design is loaded but shapes
-        // aren't ready yet.  On browser reload (without server restart),
-        // shapes are already built so we skip the overlay.
-        if (hasDesign && !boundsData.shapes_ready) {
-            document.getElementById('loading-overlay').style.display = 'flex';
-        }
-    } catch (err) {
-        console.error('Failed to load initial data from server:', err);
+    // Only show the loading overlay if a design is loaded but shapes
+    // aren't ready yet.  On browser reload (without server restart),
+    // shapes are already built so we skip the overlay.
+    if (hasDesign && !boundsData.shapes_ready) {
+        document.getElementById('loading-overlay').style.display = 'flex';
     }
 });
 

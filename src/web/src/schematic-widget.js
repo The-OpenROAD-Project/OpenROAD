@@ -210,7 +210,6 @@ export class SchematicWidget {
     _fetchInspect(instName) {
         const wm = this.appState.websocketManager;
         if (!wm) return;
-        console.log('[Schematic] inspect:', instName);
         wm.request({ type: 'schematic_inspect', inst_name: instName })
             .then(data => {
                 if (this.appState.updateInspector) {
@@ -225,8 +224,8 @@ export class SchematicWidget {
                 }
             })
             .catch(err => {
-                console.error('schematic_inspect failed:', err);
                 this.setStatus(`Inspect error: ${err}`);
+                throw err;
             });
     }
 
@@ -303,10 +302,9 @@ export class SchematicWidget {
             }
             this.skin = skin;
             this._netlistsvgReady = true;
-            console.log('NetlistSVG ready.');
         } catch (err) {
-            console.error('NetlistSVG init failed:', err);
             this.setStatus(`Init error: ${err.message}`);
+            throw err;
         }
     }
 
@@ -425,8 +423,8 @@ export class SchematicWidget {
             const cellCount = Object.keys(yosysJson.modules.top.cells).length;
             this.setStatus(`${cellCount} cell${cellCount !== 1 ? 's' : ''}`);
         } catch (err) {
-            console.error('NetlistSVG render failed:', err);
             this.setStatus(`Render error: ${err.message || err}`);
+            throw err;
         }
     }
 }

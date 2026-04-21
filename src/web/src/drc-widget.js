@@ -83,9 +83,6 @@ export class DrcWidget {
             .then(data => {
                 this._categories = data.categories || [];
                 this._renderCategorySelect();
-            })
-            .catch(err => {
-                console.error('Failed to load DRC categories:', err);
             });
     }
 
@@ -141,7 +138,7 @@ export class DrcWidget {
             errDiv.className = 'drc-error';
             errDiv.textContent = `Error: ${err}`;
             this._treeContainer.appendChild(errDiv);
-            console.error('Failed to load DRC markers:', err);
+            throw err;
         });
     }
 
@@ -320,8 +317,6 @@ export class DrcWidget {
                     this._app.focusComponent('Inspector');
                 }
             }
-        }).catch(err => {
-            console.error('Failed to highlight DRC marker:', err);
         });
     }
 
@@ -357,8 +352,6 @@ export class DrcWidget {
             value: value ? 1 : 0
         }).then(() => {
             this._redrawAllLayers();
-        }).catch(err => {
-            console.error('Failed to update DRC marker:', err);
         });
     }
 
@@ -393,8 +386,6 @@ export class DrcWidget {
                 cb.checked = visible;
             }
             this._redrawAllLayers();
-        }).catch(err => {
-            console.error('Failed to update category visibility:', err);
         });
     }
 
