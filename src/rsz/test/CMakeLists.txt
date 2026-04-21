@@ -59,6 +59,7 @@ or_integration_tests(
     repair_design3_verbose
     repair_design4
     repair_design5
+    repair_design_outside_core
     repair_fanout1
     repair_fanout2
     repair_fanout3
