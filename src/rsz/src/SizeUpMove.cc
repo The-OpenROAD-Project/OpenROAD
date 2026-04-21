@@ -13,6 +13,7 @@
 #include "sta/Liberty.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
+#include "sta/TimingArc.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
