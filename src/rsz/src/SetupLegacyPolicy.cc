@@ -1350,8 +1350,14 @@ bool SetupLegacyPolicy::tryRepairTarget(
                network_->pathName(live_target.driver_pin));
 
     if (allowsBatchRepair(type)) {
-      return trySizeDownBatch(
-          generator, live_target, repairs_per_pass, changed, accepted_type);
+      if (trySizeDownBatch(generator,
+                           live_target,
+                           repairs_per_pass,
+                           changed,
+                           accepted_type)) {
+        return true;
+      }
+      continue;
     }
     if (tryCandidateSequence(
             generator, live_target, repairs_per_pass, changed, accepted_type)) {

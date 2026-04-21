@@ -45,8 +45,26 @@ Estimate SizeUpMtCandidate::estimate()
 
 MoveResult SizeUpMtCandidate::apply()
 {
-  // Commit the chosen replacement directly after the generator has screened
-  // legality.
+  // Re-validate max-cap against state mutated earlier in this commit batch.
+  // Candidates were screened on a pre-batch snapshot, so two accepted
+  // size-ups on different sinks of the same fanin net could each pass
+  // independently yet combine past the driver's max-cap limit.
+  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)) {
+    debugPrint(resizer_.logger(),
+               RSZ,
+               "opt_moves",
+               1,
+               "REJECT size_up_mt1 {}: {} -> {} max-cap re-check failed",
+               logName(),
+               current_cell_->name(),
+               replacement_->name());
+    return {
+        .accepted = false,
+        .type = MoveType::kSizeUp,
+        .touched_instances = {},
+    };
+  }
+
   const bool accepted = resizer_.replaceCell(inst_, replacement_);
   if (accepted) {
     const std::string& current_cell_name = current_cell_->name();
