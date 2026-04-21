@@ -85,6 +85,7 @@ class OptPolicy
   void prewarmTargetLibertyCaches(const std::vector<Target>& targets,
                                   bool prewarm_swappable_cells,
                                   bool prewarm_vt_equiv_cells) const;
+  void prewarmTargetDriverCaches(const std::vector<Target>& targets) const;
 
   // === Run lifecycle helpers ===============================================
   bool hasSetupViolations(const OptimizerRunConfig& config,

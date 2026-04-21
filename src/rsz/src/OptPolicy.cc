@@ -4,6 +4,7 @@
 #include "OptPolicy.hh"
 
 #include <algorithm>
+#include <memory>
 #include <unordered_set>
 
 #include "BufferGenerator.hh"
@@ -24,6 +25,7 @@
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
+#include "sta/PortDirection.hh"
 #include "sta/StaState.hh"
 #include "utl/Logger.h"
 #include "utl/ThreadPool.h"
@@ -142,9 +144,15 @@ Target OptPolicy::prepareTarget(const Target& target) const
 
 void OptPolicy::prewarmTargets(const std::vector<Target>& targets) const
 {
-  prewarmTargetLibertyCaches(targets,
-                             findGenerator(MoveType::kSizeUp) != nullptr,
-                             findGenerator(MoveType::kVtSwap) != nullptr);
+  const bool prewarm_swappable_cells
+      = findGenerator(MoveType::kSizeUp) != nullptr;
+  const bool prewarm_vt_equiv_cells
+      = findGenerator(MoveType::kVtSwap) != nullptr;
+  prewarmTargetLibertyCaches(
+      targets, prewarm_swappable_cells, prewarm_vt_equiv_cells);
+  if (prewarm_swappable_cells || prewarm_vt_equiv_cells) {
+    prewarmTargetDriverCaches(targets);
+  }
 }
 
 bool OptPolicy::targetPrewarmEnabled() const
@@ -238,6 +246,30 @@ bool OptPolicy::hasSetupViolations(const OptimizerRunConfig& config,
 sta::Slack OptPolicy::totalNegativeSlack(const sta::MinMax* max) const
 {
   return resizer_.sta()->totalNegativeSlack(max);
+}
+
+void OptPolicy::prewarmTargetDriverCaches(
+    const std::vector<Target>& targets) const
+{
+  std::unordered_set<const sta::Pin*> pins;
+  for (const Target& target : targets) {
+    sta::Instance* inst = target.inst(resizer_);
+    if (inst == nullptr) {
+      continue;
+    }
+
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network_->pinIterator(inst));
+    while (pin_iter->hasNext()) {
+      pins.insert(pin_iter->next());
+    }
+  }
+
+  // Warm up dbNetwork's net-driver cache on the caller thread so MT workers do
+  // not populate net_drvr_pin_map_ while checking replacement legality.
+  for (const sta::Pin* pin : pins) {
+    static_cast<void>(network_->drivers(pin));
+  }
 }
 
 void OptPolicy::prewarmStaForPrepareStage() const
