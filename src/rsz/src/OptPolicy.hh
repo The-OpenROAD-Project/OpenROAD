@@ -74,17 +74,30 @@ class OptPolicy
 
   PrepareCacheMask accumulatePrepareRequirements() const;
   MoveGenerator* findGenerator(MoveType type) const;
-  virtual void prepareTargets(std::vector<Target>& targets) const;
-  Target prepareTarget(const Target& target) const;
+
+  // Main-thread prewarm stage: populate shared Resizer/dbNetwork lazy caches
+  // before MT workers call generator code that reads those services.
   virtual void prewarmTargets(const std::vector<Target>& targets) const;
   virtual bool targetPrewarmEnabled() const;
   virtual bool generatorEnabled(MoveType type) const;
 
+  // Main-thread prepare stage: capture per-target STA state before MT workers
+  // generate or estimate candidates.
+  virtual void prepareTargets(std::vector<Target>& targets) const;
+  Target prepareTarget(const Target& target) const;
+
+  // Prepare one target according to the aggregated generator requirements.
   void prepareTarget(Target& target, PrepareCacheMask mask) const;
+
+  // Build the immutable arc-delay snapshot consumed by MT-safe candidates.
   void prepareArcDelayState(Target& target) const;
+
+  // Prewarm Liberty-cell caches used by MT generator candidate selection.
   void prewarmTargetLibertyCaches(const std::vector<Target>& targets,
                                   bool prewarm_swappable_cells,
                                   bool prewarm_vt_equiv_cells) const;
+
+  // Prewarm dbNetwork driver caches touched by replacement legality checks.
   void prewarmTargetDriverCaches(const std::vector<Target>& targets) const;
 
   // === Run lifecycle helpers ===============================================
