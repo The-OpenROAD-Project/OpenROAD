@@ -43,7 +43,7 @@ class SwapPinsGenerator : public MoveGenerator
   MoveType type() const override { return MoveType::kSwapPins; }
   PrepareCacheMask prepareRequirements() const override
   {
-    return prepareCacheMask(PrepareCacheKind::kArcDelayState);
+    return kArcDelayStateCache;
   }
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(

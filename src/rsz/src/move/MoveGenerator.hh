@@ -46,13 +46,14 @@ struct GeneratorContext
 // Base class for one move type (Buffer, Clone, SizeUp, VtSwap, ...).
 //
 // Responsibilities:
-//   1. prepareRequirements() -- declare which per-target PrepareCacheKind(s)
-//      this type reads.  The policy aggregates flags from every active
-//      generator into a single mask so OptPolicy only computes what the run
-//      actually reads.  The default says "I need nothing"; override in types
-//      that read prepared Target fields.
-//   2. isApplicable() -- cheap yes/no filter the policy uses to skip this
-//      type for a target before paying for generate().  Must not mutate state.
+//   1. prepareRequirements() -- declare which per-target PrepareCacheMask bits
+//      this type reads.  The policy computes flags per target so OptPolicy
+//      only prepares data for generators that can consume that target.  The
+//      default says "I need nothing"; override in types that read prepared
+//      Target fields.
+//   2. isApplicable() -- caller-facing target filter.  The base method checks
+//      requiredViews(); derived generators call it first, then add
+//      move-specific legality checks.
 //   3. generate() -- expand one Target into zero or more concrete
 //      MoveCandidate objects.  Candidates are owned by unique_ptr and
 //      returned up to the policy which decides which to estimate/commit.
@@ -77,16 +78,28 @@ class MoveGenerator
   virtual const char* name() const { return moveName(type()); }
 
   // === Target preparation and generation ===================================
+  virtual bool isApplicable(const Target& target) const
+  {
+    const TargetViewMask views = requiredViews();
+    return ((views & kPathDriverView) != 0 && target.canBePathDriver())
+           || ((views & kInstanceView) != 0 && target.canBeInstance());
+  }
+
   virtual PrepareCacheMask prepareRequirements() const
   {
-    return prepareCacheMask(PrepareCacheKind::kNone);
+    return kNoPrepareCache;
   }
-  virtual bool isApplicable(const Target& target) const = 0;
   virtual std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target)
       = 0;
 
  protected:
+  // === Target-view requirements ============================================
+
+  // Since kPathDriver is the most common, set it as the default required view.
+  // If a derived MoveGenerator requires other views, override this.
+  virtual TargetViewMask requiredViews() const { return kPathDriverView; }
+
   // === Shared Liberty-cell ordering helpers ================================
   const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
                                         const std::string& port_name,

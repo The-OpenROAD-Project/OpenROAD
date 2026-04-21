@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SizeDownCandidate.hh"
 #include "db_sta/dbSta.hh"
@@ -706,8 +707,7 @@ SizeDownGenerator::SizeDownGenerator(const GeneratorContext& context)
 
 bool SizeDownGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr && target.path_index >= 0;
+  return MoveGenerator::isApplicable(target);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SizeDownGenerator::generate(

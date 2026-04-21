@@ -881,7 +881,6 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
     return targets;
   }
 
-  const sta::Scene* scene = path->scene(sta_);
   sta::PathExpanded expanded(path, sta_);
   targets.reserve(expanded.size());
   for (int index = expanded.startIndex(); index < expanded.size(); ++index) {
@@ -893,15 +892,8 @@ std::vector<Target> RepairTargetCollector::collectPathDriverTargets(
       continue;
     }
 
-    Target target;
-    target.kind = TargetKind::kPathDriver;
-    target.endpoint_path = path;
-    target.driver_path = driver_path;
-    target.scene = scene;
-    target.driver_pin = pin;
-    target.path_index = index;
-    target.slack = path_slack;
-    targets.push_back(target);
+    targets.push_back(
+        makePathDriverTarget(path, expanded, index, path_slack, *resizer_));
   }
 
   return targets;

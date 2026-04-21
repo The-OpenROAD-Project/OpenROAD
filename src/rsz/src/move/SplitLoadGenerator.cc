@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SplitLoadCandidate.hh"
 #include "db_sta/dbNetwork.hh"
@@ -40,8 +41,7 @@ bool resolveDriverPin(Resizer& resizer,
                       sta::Pin*& drvr_pin,
                       sta::Vertex*& drvr_vertex)
 {
-  if (!target.isKind(TargetKind::kPathDriver)
-      || target.endpoint_path == nullptr) {
+  if (!target.canBePathDriver()) {
     return false;
   }
 
@@ -136,8 +136,7 @@ SplitLoadGenerator::SplitLoadGenerator(const GeneratorContext& context)
 
 bool SplitLoadGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr;
+  return MoveGenerator::isApplicable(target);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SplitLoadGenerator::generate(

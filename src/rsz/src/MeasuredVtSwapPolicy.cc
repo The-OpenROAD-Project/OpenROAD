@@ -255,11 +255,15 @@ bool MeasuredVtSwapPolicy::selectLargestStageDelayTarget(sta::Path* path,
   }
 
   target = *largest_target;
-  return target.isValid() && target.vertex(resizer_) != nullptr;
+  return target.canBePathDriver() && target.vertex(resizer_) != nullptr;
 }
 
 bool MeasuredVtSwapPolicy::estimateAndCommitBestCandidate(const Target& target)
 {
+  if (!generator_->isApplicable(target)) {
+    return false;
+  }
+
   auto candidates = generator_->generate(target);
   if (candidates.empty()) {
     return false;

@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "VtSwapCandidate.hh"
 #include "db_sta/dbNetwork.hh"
@@ -15,7 +16,6 @@
 #include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -28,10 +28,14 @@ VtSwapGenerator::VtSwapGenerator(
 
 bool VtSwapGenerator::isApplicable(const Target& target) const
 {
-  return (target.isKind(TargetKind::kPathDriver)
-          && target.endpoint_path != nullptr)
-         || (target.isKind(TargetKind::kInstance) && target.isValid()
-             && not_swappable_ != nullptr);
+  if (!MoveGenerator::isApplicable(target)) {
+    return false;
+  }
+
+  const bool path_target = target.canBePathDriver();
+  const bool instance_target
+      = not_swappable_ != nullptr && target.canBeInstance();
+  return path_target || instance_target;
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> VtSwapGenerator::generate(
@@ -57,10 +61,10 @@ bool VtSwapGenerator::selectBestCell(const Target& target,
                                      sta::LibertyCell*& curr_cell,
                                      sta::LibertyCell*& best_cell) const
 {
-  if (target.isKind(TargetKind::kInstance)) {
-    return selectInstanceBestCell(target, inst, curr_cell, best_cell);
+  if (target.canBePathDriver()) {
+    return selectPathBestCell(target, drvr_pin, inst, curr_cell, best_cell);
   }
-  return selectPathBestCell(target, drvr_pin, inst, curr_cell, best_cell);
+  return selectInstanceBestCell(target, inst, curr_cell, best_cell);
 }
 
 bool VtSwapGenerator::selectPathBestCell(const Target& target,

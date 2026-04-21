@@ -11,6 +11,7 @@
 #include "MeasuredVtSwapCandidate.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -18,7 +19,6 @@
 #include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -30,9 +30,7 @@ MeasuredVtSwapGenerator::MeasuredVtSwapGenerator(
 
 bool MeasuredVtSwapGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr
-         && target.resolvedPin(resizer_) != nullptr
+  return MoveGenerator::isApplicable(target)
          && target.vertex(resizer_) != nullptr;
 }
 

@@ -3,7 +3,6 @@
 
 #include "DelayEstimator.hh"
 
-#include <algorithm>
 #include <cassert>
 #include <optional>
 #include <string>
@@ -279,8 +278,7 @@ std::optional<ArcDelayState> DelayEstimator::buildContext(
 {
   // Capture one active path arc and its electrical state so candidates can be
   // scored without touching shared timing state.
-  assert(target.isKind(TargetKind::kPathDriver));
-  assert(target.isValid());
+  assert(target.canBePathDriver());
 
   sta::Instance* inst = target.inst(resizer);
   if (inst == nullptr) {

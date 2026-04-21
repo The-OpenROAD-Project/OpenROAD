@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <iomanip>
-#include <map>
+#include <ios>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -31,8 +31,10 @@
 #include "odb/db.h"
 #include "sta/Graph.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Scene.hh"
@@ -132,15 +134,8 @@ class TestResizerMt : public tst::IntegratedFixture
       return {};
     }
 
-    Target target;
-    target.kind = TargetKind::kPathDriver;
-    target.endpoint_path = path;
-    target.driver_path = expanded.path(path_index);
-    target.scene = path->scene(sta_.get());
-    target.driver_pin = pin;
-    target.path_index = path_index;
-    target.slack = path->slack(sta_.get());
-    return target;
+    return makePathDriverTarget(
+        path, expanded, path_index, path->slack(sta_.get()), resizer_);
   }
 
   GeneratorContext makeGeneratorContext(
@@ -164,7 +159,7 @@ class TestResizerMt : public tst::IntegratedFixture
   }
 };
 
-std::vector<std::string> evaluationSignature(
+static std::vector<std::string> evaluationSignature(
     const std::vector<TargetEvaluation>& evaluations)
 {
   std::vector<std::string> signature;
@@ -187,7 +182,7 @@ std::vector<std::string> evaluationSignature(
   return signature;
 }
 
-std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
+static std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
     SetupMt1Policy& policy,
     const std::vector<Target>& targets)
 {
@@ -197,7 +192,7 @@ std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
       });
 }
 
-void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
+static void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
 {
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
       network->libertyLibraryIterator());
@@ -215,7 +210,7 @@ void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
   }
 }
 
-std::vector<sta::LibertyCell*> collectLibertyCells(sta::Network* network)
+static std::vector<sta::LibertyCell*> collectLibertyCells(sta::Network* network)
 {
   std::vector<sta::LibertyCell*> cells;
   std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
@@ -230,7 +225,7 @@ std::vector<sta::LibertyCell*> collectLibertyCells(sta::Network* network)
   return cells;
 }
 
-std::vector<sta::Pin*> collectDriverPins(sta::Network* network)
+static std::vector<sta::Pin*> collectDriverPins(sta::Network* network)
 {
   std::vector<sta::Pin*> pins;
   sta::LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
@@ -249,7 +244,8 @@ std::vector<sta::Pin*> collectDriverPins(sta::Network* network)
   return pins;
 }
 
-std::string swappableCellsSignature(Resizer& resizer, sta::LibertyCell* cell)
+static std::string swappableCellsSignature(Resizer& resizer,
+                                           sta::LibertyCell* cell)
 {
   const sta::LibertyCellSeq swappable_cells = resizer.getSwappableCells(cell);
   std::vector<std::string> names;
@@ -267,7 +263,7 @@ std::string swappableCellsSignature(Resizer& resizer, sta::LibertyCell* cell)
   return oss.str();
 }
 
-std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
+static std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
 {
   float cap = 0.0f;
   float max_cap = 0.0f;
@@ -630,6 +626,7 @@ TEST(TestResizerMtThreadPool, FutureRemainsUsableAfterPoolDestruction)
 {
   utl::ThreadPoolFuture<int> future = []() {
     utl::ThreadPool thread_pool(1);
+    // NOLINTNEXTLINE(clang-analyzer-core.StackAddressEscape)
     return thread_pool.submit([]() -> int {
       std::this_thread::sleep_for(std::chrono::milliseconds(5));
       return 7;
@@ -711,7 +708,7 @@ TEST_F(TestResizerMt,
   policy.prepareTargets(targets);
   for (const Target& target : targets) {
     ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(PrepareCacheKind::kArcDelayState));
+    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
   }
 
   // Exercise the same production path: prepared targets are walked serially,
@@ -798,7 +795,7 @@ TEST_F(TestResizerMt,
   policy.prepareTargets(targets);
   for (const Target& target : targets) {
     ASSERT_NE(target.driver_pin, nullptr);
-    ASSERT_TRUE(target.isPrepared(PrepareCacheKind::kArcDelayState));
+    ASSERT_TRUE(target.isPrepared(kArcDelayStateCache));
   }
 
   const std::vector<TargetEvaluation> baseline_evaluations

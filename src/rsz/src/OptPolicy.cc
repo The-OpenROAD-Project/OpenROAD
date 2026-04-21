@@ -6,11 +6,14 @@
 #include <algorithm>
 #include <memory>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include "BufferGenerator.hh"
 #include "CloneGenerator.hh"
 #include "DelayEstimator.hh"
 #include "MoveCommitter.hh"
+#include "OptimizerTypes.hh"
 #include "SizeDownGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
@@ -20,14 +23,15 @@
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Fuzzy.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
+#include "sta/LibertyClass.hh"
 #include "sta/Network.hh"
-#include "sta/PortDirection.hh"
+#include "sta/NetworkClass.hh"
 #include "sta/StaState.hh"
-#include "utl/Logger.h"
 #include "utl/ThreadPool.h"
 
 namespace rsz {
@@ -107,7 +111,7 @@ void OptPolicy::buildMoveGenerators(const std::vector<MoveType>& move_types,
 
 PrepareCacheMask OptPolicy::accumulatePrepareRequirements() const
 {
-  PrepareCacheMask prepare_mask = prepareCacheMask(PrepareCacheKind::kNone);
+  PrepareCacheMask prepare_mask = kNoPrepareCache;
   for (const std::unique_ptr<MoveGenerator>& generator : move_generators_) {
     if (!generatorEnabled(generator->type())) {
       continue;
@@ -167,15 +171,14 @@ bool OptPolicy::generatorEnabled(const MoveType) const
 
 void OptPolicy::prepareTarget(Target& target, const PrepareCacheMask mask) const
 {
-  if (needToCache(mask, PrepareCacheKind::kArcDelayState)) {
+  if ((mask & kArcDelayStateCache) != 0) {
     prepareArcDelayState(target);
   }
 }
 
 void OptPolicy::prepareArcDelayState(Target& target) const
 {
-  if (target.isPrepared(PrepareCacheKind::kArcDelayState)
-      || !target.isKind(TargetKind::kPathDriver) || !target.isValid()) {
+  if (target.isPrepared(kArcDelayStateCache) || !target.canBePathDriver()) {
     return;
   }
 

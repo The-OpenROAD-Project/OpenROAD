@@ -7,7 +7,6 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
-#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_set>
@@ -18,7 +17,6 @@
 #include "MoveTracker.hh"
 #include "OptimizerTypes.hh"
 #include "RepairTargetCollector.hh"
-#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
@@ -27,21 +25,8 @@
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
 #include "sta/Liberty.hh"
-#include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
-#include "sta/PathEnd.hh"
-#include "sta/PathExpanded.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Scene.hh"
-#include "sta/Sdc.hh"
-#include "sta/Search.hh"
-#include "sta/SearchClass.hh"
-#include "sta/Sta.hh"
-#include "sta/StringUtil.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Transition.hh"
 #include "utl/Logger.h"
 
 namespace rsz {
@@ -188,7 +173,7 @@ void MoveCommitter::trackPreparedViolator(const Target& target)
     return;
   }
 
-  if (!target.isPrepared(PrepareCacheKind::kArcDelayState)) {
+  if (!target.arc_delay.has_value() || !target.arc_delay->isValid()) {
     return;
   }
 
@@ -197,7 +182,7 @@ void MoveCommitter::trackPreparedViolator(const Target& target)
     setCurrentEndpoint(endpoint_pin);
   }
 
-  const ArcDelayState& arc_delay = *target.arc_delay;
+  const ArcDelayState& arc_delay = target.arc_delay.value();
   const sta::LibertyCell* current_cell
       = arc_delay.arc.output_port->libertyCell();
   trackViolatorWithInfo(target.driver_pin,

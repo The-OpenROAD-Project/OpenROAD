@@ -11,6 +11,7 @@
 #include "CloneCandidate.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -45,8 +46,7 @@ bool resolveDriverTarget(Resizer& resizer,
 {
   // Keep cloning limited to high-fanout combinational drivers that can absorb
   // the split.
-  if (!target.isKind(TargetKind::kPathDriver)
-      || target.endpoint_path == nullptr) {
+  if (!target.canBePathDriver()) {
     return false;
   }
 
@@ -186,8 +186,7 @@ CloneGenerator::CloneGenerator(const GeneratorContext& context)
 
 bool CloneGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr;
+  return MoveGenerator::isApplicable(target);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> CloneGenerator::generate(

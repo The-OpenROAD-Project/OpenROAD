@@ -10,6 +10,7 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -19,20 +20,16 @@
 #include <utility>
 #include <vector>
 
-#include "BufferGenerator.hh"
-#include "CloneGenerator.hh"
 #include "MoveCandidate.hh"
 #include "MoveCommitter.hh"
 #include "MoveGenerator.hh"
+#include "OptPolicy.hh"
 #include "OptimizerTypes.hh"
 #include "Rebuffer.hh"
 #include "RepairTargetCollector.hh"
-#include "SizeDownGenerator.hh"
 #include "SizeUpGenerator.hh"
 #include "SizeUpMatchGenerator.hh"
-#include "SplitLoadGenerator.hh"
 #include "SwapPinsGenerator.hh"
-#include "UnbufferGenerator.hh"
 #include "VtSwapGenerator.hh"
 #include "db_sta/dbSta.hh"
 #include "est/EstimateParasitics.h"
@@ -41,7 +38,6 @@
 #include "sta/Fuzzy.hh"
 #include "sta/Graph.hh"
 #include "sta/GraphClass.hh"
-#include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
@@ -1237,15 +1233,9 @@ void SetupLegacyPolicy::makePathDriverTarget(const sta::Path* path,
 {
   const sta::Path* drvr_path = expanded.path(drvr_index);
   sta::Vertex* drvr_vertex = drvr_path->vertex(sta_);
-  const sta::Pin* drvr_pin = drvr_vertex->pin();
 
-  target.kind = TargetKind::kPathDriver;
-  target.endpoint_path = path;
-  target.scene = path->scene(sta_);
-  target.driver_path = drvr_path;
-  target.driver_pin = const_cast<sta::Pin*>(drvr_pin);
-  target.path_index = drvr_index;
-  target.slack = path_slack;
+  target = rsz::makePathDriverTarget(
+      path, expanded, drvr_index, path_slack, resizer_);
   target.fanout = fanout(drvr_vertex);
 }
 
@@ -2747,7 +2737,7 @@ bool SetupLegacyPolicy::swapVTCritCells(const RepairSetupParams& params,
       continue;
     }
     Target target;
-    target.kind = TargetKind::kInstance;
+    target.views = kInstanceView;
     target.driver_pin = output_pin;
     target.slack = crit_inst_slack.second;
     if (!generator.isApplicable(target)) {

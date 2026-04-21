@@ -38,10 +38,10 @@ MoveResult VtSwapCandidate::apply()
 
 std::string VtSwapCandidate::logName() const
 {
-  if (target().kind == TargetKind::kInstance) {
-    return resizer_.network()->pathName(inst_);
+  if (drvr_pin_ != nullptr) {
+    return resizer_.network()->pathName(drvr_pin_);
   }
-  return resizer_.network()->pathName(drvr_pin_);
+  return resizer_.network()->pathName(inst_);
 }
 
 MoveResult VtSwapCandidate::applyReplacement()

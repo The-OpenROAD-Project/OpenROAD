@@ -3,11 +3,15 @@
 
 #include "OptimizerTypes.hh"
 
+#include <string>
+
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 #include "sta/Graph.hh"
 #include "sta/MinMax.hh"
 #include "sta/Network.hh"
 #include "sta/Path.hh"
+#include "sta/PathExpanded.hh"
 
 namespace rsz {
 
@@ -65,39 +69,51 @@ bool ArcDelayState::isValid() const
          && arc.input_port != nullptr && arc.output_port != nullptr;
 }
 
-bool Target::isValid() const
+bool Target::canBePathDriver() const
 {
-  switch (kind) {
-    case TargetKind::kPathDriver:
-      return driver_pin != nullptr && endpoint_path != nullptr
-             && driver_path != nullptr && path_index >= 0;
-    case TargetKind::kInstance:
-      return driver_pin != nullptr;
-  }
-  return false;
+  return (views & kPathDriverView) != 0 && driver_pin != nullptr
+         && endpoint_path != nullptr && driver_path != nullptr
+         && path_index >= 0;
 }
 
-bool Target::isPrepared(const PrepareCacheKind kind) const
+bool Target::canBeInstance() const
 {
-  switch (kind) {
-    case PrepareCacheKind::kNone:
-      return true;
-    case PrepareCacheKind::kArcDelayState:
-      return arc_delay.has_value() && arc_delay->isValid();
+  return (views & kInstanceView) != 0 && driver_pin != nullptr;
+}
+
+Target makePathDriverTarget(const sta::Path* endpoint_path,
+                            const sta::PathExpanded& expanded,
+                            const int path_index,
+                            const sta::Slack slack,
+                            const Resizer& resizer)
+{
+  Target target;
+  target.views = kPathDriverView;
+  target.endpoint_path = endpoint_path;
+  target.driver_path = expanded.path(path_index);
+  target.scene = endpoint_path != nullptr
+                     ? endpoint_path->scene(resizer.staState())
+                     : nullptr;
+  target.driver_pin = target.driver_path != nullptr
+                          ? target.driver_path->pin(resizer.staState())
+                          : nullptr;
+  target.path_index = path_index;
+  target.slack = slack;
+  if (resizer.network()->instance(target.driver_pin) != nullptr) {
+    target.views |= kInstanceView;
   }
-  return false;
+  return target;
 }
 
 bool Target::isPrepared(const PrepareCacheMask mask) const
 {
-  constexpr PrepareCacheMask known_mask
-      = prepareCacheMask(PrepareCacheKind::kArcDelayState);
-  if ((mask & ~known_mask) != 0) {
+  if ((mask & ~kArcDelayStateCache) != 0) {
     return false;
   }
-
-  return !needToCache(mask, PrepareCacheKind::kArcDelayState)
-         || isPrepared(PrepareCacheKind::kArcDelayState);
+  if ((mask & kArcDelayStateCache) == 0) {
+    return true;
+  }
+  return arc_delay.has_value() && arc_delay->isValid();
 }
 
 const sta::Pin* Target::endpointPin(const Resizer& resizer) const

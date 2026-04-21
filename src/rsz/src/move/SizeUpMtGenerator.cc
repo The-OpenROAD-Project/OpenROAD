@@ -4,12 +4,12 @@
 #include "SizeUpMtGenerator.hh"
 
 #include <algorithm>
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SizeUpMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
@@ -18,7 +18,6 @@
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/MinMax.hh"
-#include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 
 namespace rsz {
@@ -30,21 +29,20 @@ SizeUpMtGenerator::SizeUpMtGenerator(const GeneratorContext& context)
 
 bool SizeUpMtGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver) && target.isValid()
-         && target.inst(resizer_) != nullptr
-         && target.isPrepared(PrepareCacheKind::kArcDelayState);
+  return MoveGenerator::isApplicable(target) && target.inst(resizer_) != nullptr
+         && target.isPrepared(kArcDelayStateCache);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!isApplicable(target)) {
+  if (!isApplicable(target) || !target.arc_delay.has_value()) {
     return candidates;
   }
 
   sta::Instance* target_inst = target.inst(resizer_);
-  const ArcDelayState& arc_delay = *target.arc_delay;
+  const ArcDelayState& arc_delay = target.arc_delay.value();
   const std::vector<sta::LibertyCell*> replacements = findSizeUpOptions(
       arc_delay.arc.output_port, arc_delay.arc.scene, arc_delay.arc.min_max);
   candidates.reserve(replacements.size());
@@ -91,8 +89,7 @@ std::vector<sta::LibertyCell*> SizeUpMtGenerator::findSizeUpOptions(
         return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
       });
 
-  const sta::LibertyPort* scene_drvr_port
-      = static_cast<const sta::LibertyPort*>(drvr_port)->scenePort(lib_ap);
+  const sta::LibertyPort* scene_drvr_port = drvr_port->scenePort(lib_ap);
   if (scene_drvr_port == nullptr) {
     return replacements;
   }

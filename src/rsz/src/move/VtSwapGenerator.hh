@@ -21,8 +21,8 @@ namespace rsz {
 
 // Legacy single-candidate VT-swap generator.
 //
-// For TargetKind::kPathDriver, selects the fastest VT-equivalent cell for
-// the path driver via selectPathBestCell().  For TargetKind::kInstance,
+// For kPathDriverView, selects the fastest VT-equivalent cell for
+// the path driver via selectPathBestCell().  For kInstanceView,
 // selects the fastest equivalent for a specific instance (used by the
 // critical-cell fanin-cone VT sweep).  Produces at most one
 // VtSwapCandidate.  The optional `not_swappable` set lets the caller
@@ -41,6 +41,13 @@ class VtSwapGenerator : public MoveGenerator
   bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
+
+ protected:
+  // === Target-view requirements ============================================
+  TargetViewMask requiredViews() const override
+  {
+    return kPathDriverView | kInstanceView;
+  }
 
  private:
   // === Candidate-cell selection ============================================

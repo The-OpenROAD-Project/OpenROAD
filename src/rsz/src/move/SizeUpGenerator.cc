@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SizeUpCandidate.hh"
 #include "db_sta/dbSta.hh"
@@ -20,7 +21,6 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
 
 namespace rsz {
 
@@ -31,8 +31,7 @@ SizeUpGenerator::SizeUpGenerator(const GeneratorContext& context)
 
 bool SizeUpGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr;
+  return MoveGenerator::isApplicable(target);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(

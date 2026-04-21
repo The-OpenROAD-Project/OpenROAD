@@ -5,10 +5,10 @@
 
 #include <cstddef>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "MoveCandidate.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "VtSwapMtCandidate.hh"
 #include "db_sta/dbNetwork.hh"
@@ -16,7 +16,6 @@
 #include "sta/Liberty.hh"
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/Path.hh"
 
 namespace rsz {
 
@@ -29,11 +28,11 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!target.isPrepared(PrepareCacheKind::kArcDelayState)) {
+  if (!target.arc_delay.has_value() || !target.arc_delay->isValid()) {
     return candidates;
   }
 
-  const ArcDelayState& arc_delay = *target.arc_delay;
+  const ArcDelayState& arc_delay = target.arc_delay.value();
   sta::LibertyCell* current_cell
       = const_cast<sta::LibertyPort*>(arc_delay.arc.output_port)->libertyCell();
   const std::vector<sta::LibertyCell*> candidate_cells
@@ -56,8 +55,8 @@ bool VtSwapMtGenerator::isApplicable(const Target& target) const
 {
   // Screen out targets that cannot legally change VT in the current library
   // set.
-  if (!target.isKind(TargetKind::kPathDriver) || !target.isValid()
-      || !target.isPrepared(PrepareCacheKind::kArcDelayState)) {
+  if (!MoveGenerator::isApplicable(target)
+      || !target.isPrepared(kArcDelayStateCache)) {
     return false;
   }
 

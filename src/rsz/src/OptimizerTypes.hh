@@ -15,11 +15,13 @@
 #include "sta/Delay.hh"
 
 namespace sta {
+class dbSta;
 class Instance;
 class LibertyCell;
 class LibertyPort;
 class MinMax;
 class Path;
+class PathExpanded;
 class Pin;
 class Pvt;
 class RiseFall;
@@ -40,12 +42,6 @@ namespace rsz {
 inline constexpr int kMsgCloneOutputPinMissing = 100;
 inline constexpr int kMsgRepairSetupExpectedMaxPath = 500;
 inline constexpr int kMsgPolicyCommittedMoves = 2023;
-
-enum class TargetKind : uint8_t
-{
-  kPathDriver,
-  kInstance
-};
 
 enum class FailReason : uint8_t
 {
@@ -82,43 +78,10 @@ const char* failReasonName(FailReason reason);
 
 // === Target preparation flags ==============================================
 
-enum class PrepareCacheKind : uint32_t
-{
-  kNone = 0,
-  kArcDelayState = 1u << 0,
-};
-
 using PrepareCacheMask = uint32_t;
 
-constexpr PrepareCacheMask prepareCacheMask(const PrepareCacheKind kind)
-{
-  return static_cast<PrepareCacheMask>(kind);
-}
-
-constexpr PrepareCacheMask operator|(const PrepareCacheKind lhs,
-                                     const PrepareCacheKind rhs)
-{
-  return prepareCacheMask(lhs) | prepareCacheMask(rhs);
-}
-
-constexpr PrepareCacheMask operator|(const PrepareCacheMask lhs,
-                                     const PrepareCacheKind rhs)
-{
-  return lhs | prepareCacheMask(rhs);
-}
-
-constexpr PrepareCacheMask operator|=(PrepareCacheMask& lhs,
-                                      const PrepareCacheKind rhs)
-{
-  lhs = lhs | rhs;
-  return lhs;
-}
-
-constexpr bool needToCache(const PrepareCacheMask mask,
-                           const PrepareCacheKind kind)
-{
-  return (mask & prepareCacheMask(kind)) != 0;
-}
+inline constexpr PrepareCacheMask kNoPrepareCache = 0;
+inline constexpr PrepareCacheMask kArcDelayStateCache = 1u << 0;
 
 // === Prepared timing data ===================================================
 
@@ -168,25 +131,32 @@ struct DelayEstimate
 // Why lazy resolution: STA objects (Vertex/Instance) become stale every
 // time an ECO is journaled, committed, or restored (pointer invalidation on
 // delete/re-create, re-levelization on buffer insertion, etc.).  The Target
-// keeps a policy-facing identity (kind + path + driver_pin + slack) that
+// keeps a policy-facing identity (views + path + driver_pin + slack) that
 // survives those rebuilds; STA handles are resolved on demand through
 // resolvedPin() / inst() / vertex().  The driver path is the selected stage
 // point on `path`; inputPath() and prevDriverPath() walk backward from it when
 // needed.
 //
-// TargetKind distinguishes:
-//   - kPathDriver : driver of one stage on a timing path (most moves)
-//   - kInstance   : a single instance chosen outside of any path (VT swap of
-//                   a critical cell, etc.). Note that instance is retrieved
-//                   from driver_pin.
+// Target view bits identify each way a target can be consumed by move
+// generators:
+//   - kPathDriverView : driver of one stage on a timing path (most moves)
+//   - kInstanceView   : target instance output pin, usable by instance-level
+//   moves
+// A single target may provide multiple views, for example a path-driver target
+// can also expose the instance reached through driver_pin.
+using TargetViewMask = uint8_t;
+
+inline constexpr TargetViewMask kPathDriverView = 1u << 0;
+inline constexpr TargetViewMask kInstanceView = 1u << 1;
+
 struct Target
 {
   // === Target identity ======================================================
-  TargetKind kind{TargetKind::kPathDriver};
+  TargetViewMask views{kPathDriverView};
 
   // Output-side pin that identifies the move target.
-  // - kPathDriver: target driver output pin
-  // - kInstance: target instance output pin
+  // - kPathDriverView: target driver output pin
+  // - kInstanceView: target instance output pin
   sta::Pin* driver_pin{nullptr};
 
   // Endpoint-side timing path handle.  Expanding this path exposes the full
@@ -205,12 +175,10 @@ struct Target
   std::optional<ArcDelayState> arc_delay;
 
   // === Field validation ====================================================
-  bool isKind(TargetKind target_kind) const { return kind == target_kind; }
-  // Check the identity fields required by the selected TargetKind.
-  bool isValid() const;
+  bool canBePathDriver() const;
+  bool canBeInstance() const;
   // Check whether the per-target fields required by one prepare kind are set.
-  bool isPrepared(PrepareCacheKind kind) const;
-  // Check all per-target fields required by a prepare mask.
+  // Check whether the per-target fields required by a prepare mask are set.
   bool isPrepared(PrepareCacheMask mask) const;
 
   // === Lazy STA/OpenDB resolution ==========================================
@@ -229,6 +197,12 @@ struct Target
   // previous driver of the driver_path
   const sta::Path* prevDriverPath(const Resizer& resizer) const;
 };
+
+Target makePathDriverTarget(const sta::Path* endpoint_path,
+                            const sta::PathExpanded& expanded,
+                            int path_index,
+                            sta::Slack slack,
+                            const Resizer& resizer);
 
 // === Estimation inputs and results =========================================
 

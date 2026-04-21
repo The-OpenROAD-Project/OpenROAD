@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "SwapPinsCandidate.hh"
 #include "db_sta/dbSta.hh"
@@ -27,7 +28,6 @@
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
-#include "sta/PathExpanded.hh"
 #include "sta/PortDirection.hh"
 #include "utl/Logger.h"
 
@@ -42,8 +42,7 @@ SwapPinsGenerator::SwapPinsGenerator(const GeneratorContext& context)
 
 bool SwapPinsGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr && target.path_index > 0;
+  return MoveGenerator::isApplicable(target) && target.path_index > 0;
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::generate(
@@ -53,13 +52,13 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::generate(
     return {};
   }
 
-  if (!target.isPrepared(PrepareCacheKind::kArcDelayState)) {
+  if (!target.arc_delay.has_value() || !target.arc_delay->isValid()) {
     return buildCandidates(
         target, std::nullopt, -std::numeric_limits<double>::infinity());
   }
 
-  return buildCandidates(
-      target, target.arc_delay->load_cap, target.arc_delay->current_delay);
+  const ArcDelayState& arc_delay = target.arc_delay.value();
+  return buildCandidates(target, arc_delay.load_cap, arc_delay.current_delay);
 }
 
 bool SwapPinsGenerator::resolveDriverContext(const Target& target,

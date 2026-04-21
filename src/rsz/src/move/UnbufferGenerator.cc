@@ -3,12 +3,12 @@
 
 #include "UnbufferGenerator.hh"
 
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "MoveCommitter.hh"
+#include "MoveGenerator.hh"
 #include "OptimizerTypes.hh"
 #include "UnbufferCandidate.hh"
 #include "db_sta/dbNetwork.hh"
@@ -67,8 +67,7 @@ bool validTarget(const Target& target)
 {
   // Buffer removal needs one upstream driver stage and one buffer stage on the
   // path.
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr && target.path_index >= 2;
+  return target.canBePathDriver() && target.path_index >= 2;
 }
 
 bool resolveDriverContext(UnbufferSelectionContext& ctx)
@@ -298,8 +297,7 @@ UnbufferGenerator::UnbufferGenerator(const GeneratorContext& context)
 
 bool UnbufferGenerator::isApplicable(const Target& target) const
 {
-  return target.isKind(TargetKind::kPathDriver)
-         && target.endpoint_path != nullptr && target.path_index >= 0;
+  return MoveGenerator::isApplicable(target);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> UnbufferGenerator::generate(
