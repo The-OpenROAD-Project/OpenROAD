@@ -241,7 +241,6 @@ class RepairDesign : sta::dbStaState
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
                     sta::Pin*& repeater_out_pin);
-  sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;

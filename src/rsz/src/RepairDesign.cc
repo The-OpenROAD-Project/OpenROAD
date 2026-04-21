@@ -1738,6 +1738,10 @@ bool RepairDesign::tryUpsizeDriver(const int level,
 
   const float orig_r_drvr = resizer_->driveResistance(drvr_pin_);
 
+  // Driver Resistance that we atleast need to have to fix the slew violation
+  const float reg_r_drvr_approx
+      = max_load_slew_margined / ((c_wire + ref_cap) * getSlewRCFactor());
+
   if (!swappable_cells.empty()) {
     sta::LibertyCell* upsized_driver_cell = nullptr;
     for (sta::LibertyCell* candidate_cell : swappable_cells) {
@@ -1745,6 +1749,22 @@ bool RepairDesign::tryUpsizeDriver(const int level,
           = candidate_cell->findLibertyPort(driver_port_name);
 
       const float candidate_r_drvr = candidate_port->driveResistance();
+
+      if (candidate_r_drvr > reg_r_drvr_approx) {
+        debugPrint(
+            logger_,
+            RSZ,
+            "repair_net",
+            3,
+            "{:{}s}candidate cell {} has drive resistance {} which is higher "
+            "than approx required resistance {}, stopping search",
+            "",
+            level,
+            candidate_cell->name(),
+            units_->resistanceUnit()->asString(candidate_r_drvr, 3),
+            units_->resistanceUnit()->asString(reg_r_drvr_approx, 3));
+        break;
+      }
 
       if (candidate_r_drvr >= orig_r_drvr) {
         debugPrint(
@@ -2412,43 +2432,6 @@ bool RepairDesign::makeRepeater(
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
 
   return true;
-}
-
-sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
-                                                    float load_cap)
-{
-  sta::LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
-  float min_slew = sta::INF;
-  sta::LibertyCellSeq swappable_cells
-      = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
-  if (!swappable_cells.empty()) {
-    std::ranges::sort(swappable_cells,
-                      [this](const sta::LibertyCell* buffer1,
-                             const sta::LibertyCell* buffer2) {
-                        return resizer_->bufferDriveResistance(buffer1)
-                               > resizer_->bufferDriveResistance(buffer2);
-                      });
-    for (sta::LibertyCell* buffer : swappable_cells) {
-      float slew = resizer_->bufferSlew(
-          buffer, load_cap, resizer_->tgt_slew_corner_, resizer_->max_);
-      debugPrint(logger_,
-                 RSZ,
-                 "buffer_under_slew",
-                 1,
-                 "{:{}s}pt ({} {})",
-                 buffer->name(),
-                 units_->timeUnit()->asString(slew));
-      if (slew < max_slew) {
-        return buffer;
-      }
-      if (slew < min_slew) {
-        min_slew_buffer = buffer;
-        min_slew = slew;
-      }
-    }
-  }
-  // Could not find a buffer under max_slew but this is min slew achievable.
-  return min_slew_buffer;
 }
 
 double RepairDesign::dbuToMeters(int dist) const
