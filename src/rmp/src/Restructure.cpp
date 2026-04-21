@@ -727,9 +727,12 @@ bool Restructure::readAbcLog(const std::string& abc_file_name,
 void Restructure::resynthEmap(sta::Scene* scene,
                               bool map_multioutput,
                               bool verbose,
+                              bool create_po_buffers,
+                              bool insert_buffers,
                               char* workdir_name)
 {
-  auto emap = ExtendedTechnologyMapping(scene, map_multioutput, verbose);
+  auto emap = ExtendedTechnologyMapping(
+      scene, map_multioutput, verbose, create_po_buffers, insert_buffers);
 
   emap.map(open_sta_, db_, resizer_, logger_);
 }

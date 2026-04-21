@@ -559,7 +559,9 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
   mockturtle::emap_params ps;
 
   ps.map_multioutput = map_multioutput_;
-  ps.verbose = verbose_;
+  ps.verbose = true;
+  ps.create_po_buffers = create_po_buffers_;
+  ps.insert_buffers = insert_buffers_;
   ps.area_oriented_mapping = true;
 
   // Read genlib

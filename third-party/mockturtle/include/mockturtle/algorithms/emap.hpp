@@ -139,6 +139,10 @@ struct emap_params
   /*! \brief Remove overlapping multi-output cuts */
   bool remove_overlapping_multicuts{ false };
 
+  bool create_po_buffers { false };
+
+  bool insert_buffers { false };
+
   /*! \brief Be verbose. */
   bool verbose{ false };
 };
@@ -870,7 +874,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover_block( res, old2new );
@@ -928,7 +933,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover( res, old2new );
@@ -973,7 +979,8 @@ public:
       return res;
 
     /* insert buffers for POs driven by PIs */
-    insert_buffers();
+    if (ps.insert_buffers)
+      insert_buffers();
 
     /* generate the output network */
     finalize_cover( res, old2new );
@@ -4259,7 +4266,7 @@ private:
       {
         res.create_po( old2new[ntk.node_to_index( ntk.get_node( f ) )][1] );
       }
-      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX )
+      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX && ps.create_po_buffers)
       {
         /* create buffers for POs */
         static uint64_t _buf = 0x2;
@@ -4377,7 +4384,7 @@ private:
       {
         res.create_po( old2new[ntk.node_to_index( ntk.get_node( f ) )][1] );
       }
-      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX )
+      else if ( !ntk.is_constant( ntk.get_node( f ) ) && ntk.is_pi( ntk.get_node( f ) ) && lib_buf_id != UINT32_MAX && ps.create_po_buffers)
       {
         /* create buffers for POs */
         static uint64_t _buf = 0x2;

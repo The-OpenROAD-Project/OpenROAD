@@ -112,6 +112,8 @@ class Restructure
   void resynthEmap(sta::Scene* corner,
                    bool map_multioutput,
                    bool verbose,
+                   bool,
+                   bool,
                    char* workdir_name);
 
  private:

@@ -22,8 +22,14 @@ class ExtendedTechnologyMapping
  public:
   explicit ExtendedTechnologyMapping(sta::Scene* scene,
                                      bool map_multioutput,
-                                     bool verbose)
-      : scene_(scene), map_multioutput_(map_multioutput), verbose_(verbose)
+                                     bool verbose,
+                                     bool create_po_buffers,
+                                     bool insert_buffers)
+      : scene_(scene),
+        map_multioutput_(map_multioutput),
+        verbose_(verbose),
+        create_po_buffers_(create_po_buffers),
+        insert_buffers_(insert_buffers)
   {
   }
   ~ExtendedTechnologyMapping() = default;
@@ -92,6 +98,8 @@ class ExtendedTechnologyMapping
   sta::Scene* scene_;
   bool map_multioutput_;
   bool verbose_;
+  bool insert_buffers_;
+  bool create_po_buffers_;
 
   // Cached const networks for mapped network import
   odb::dbNet* net0_cache_ = nullptr;

@@ -157,17 +157,21 @@ sta::define_cmd_args "resynth_emap" {
                                       [-scene scene]
                                       [-map_multioutput]
                                       [-verbose]
+                                      [-create_po_buffers]
+                                      [-insert_buffers]
                                       [-work_dir workdir_name]
                                     }
 
 proc resynth_emap { args } {
   sta::parse_key_args "resynth_emap" args \
     keys {-scene -work_dir} \
-    flags {-map_multioutput -verbose}
+    flags {-map_multioutput -verbose -create_po_buffers -insert_buffers}
 
   set scene [sta::parse_scene keys]
   set target "area"
   set map_multioutput [info exists flags(-map_multioutput)]
+  set create_po_buffers [info exists flags(-create_po_buffers)]
+  set insert_buffers [info exists flags(-insert_buffers)]
   set verbose [info exists flags(-verbose)]
   set workdir_name "."
 
@@ -175,7 +179,7 @@ proc resynth_emap { args } {
     set workdir_name $keys(-work_dir)
   }
 
-  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $workdir_name
+  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $create_po_buffers $insert_buffers $workdir_name
 }
 
 sta::define_cmd_args "resynth_genetic" {
