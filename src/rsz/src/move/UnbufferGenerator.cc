@@ -295,11 +295,6 @@ UnbufferGenerator::UnbufferGenerator(const GeneratorContext& context)
 {
 }
 
-bool UnbufferGenerator::isApplicable(const Target& target) const
-{
-  return MoveGenerator::isApplicable(target);
-}
-
 std::vector<std::unique_ptr<MoveCandidate>> UnbufferGenerator::generate(
     const Target& target)
 {

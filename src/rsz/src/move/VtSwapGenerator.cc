@@ -28,14 +28,10 @@ VtSwapGenerator::VtSwapGenerator(
 
 bool VtSwapGenerator::isApplicable(const Target& target) const
 {
-  if (!MoveGenerator::isApplicable(target)) {
-    return false;
-  }
-
-  const bool path_target = target.canBePathDriver();
-  const bool instance_target
-      = not_swappable_ != nullptr && target.canBeInstance();
-  return path_target || instance_target;
+  // Base checks both path-driver and instance views via requiredViews().
+  // Instance-only targets additionally need the not_swappable_ tracker.
+  return MoveGenerator::isApplicable(target)
+         && (target.canBePathDriver() || not_swappable_ != nullptr);
 }
 
 std::vector<std::unique_ptr<MoveCandidate>> VtSwapGenerator::generate(

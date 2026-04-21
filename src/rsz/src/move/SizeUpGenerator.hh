@@ -37,7 +37,6 @@ class SizeUpGenerator : public MoveGenerator
 
   // === MoveGenerator API ====================================================
   MoveType type() const override { return MoveType::kSizeUp; }
-  bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 

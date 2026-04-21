@@ -29,7 +29,6 @@ class UnbufferGenerator : public MoveGenerator
 
   // === MoveGenerator API ====================================================
   MoveType type() const override { return MoveType::kUnbuffer; }
-  bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 };

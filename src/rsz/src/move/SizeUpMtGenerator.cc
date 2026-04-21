@@ -37,7 +37,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SizeUpMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!isApplicable(target) || !target.arc_delay.has_value()) {
+  if (!isApplicable(target)) {
     return candidates;
   }
 

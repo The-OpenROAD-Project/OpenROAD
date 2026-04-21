@@ -28,7 +28,7 @@ std::vector<std::unique_ptr<MoveCandidate>> VtSwapMtGenerator::generate(
     const Target& target)
 {
   std::vector<std::unique_ptr<MoveCandidate>> candidates;
-  if (!target.arc_delay.has_value() || !target.arc_delay->isValid()) {
+  if (!target.isPrepared(kArcDelayStateCache)) {
     return candidates;
   }
 

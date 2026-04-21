@@ -177,7 +177,6 @@ struct Target
   // === Field validation ====================================================
   bool canBePathDriver() const;
   bool canBeInstance() const;
-  // Check whether the per-target fields required by one prepare kind are set.
   // Check whether the per-target fields required by a prepare mask are set.
   bool isPrepared(PrepareCacheMask mask) const;
 

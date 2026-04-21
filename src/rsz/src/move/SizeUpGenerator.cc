@@ -29,11 +29,6 @@ SizeUpGenerator::SizeUpGenerator(const GeneratorContext& context)
 {
 }
 
-bool SizeUpGenerator::isApplicable(const Target& target) const
-{
-  return MoveGenerator::isApplicable(target);
-}
-
 std::vector<std::unique_ptr<MoveCandidate>> SizeUpGenerator::generate(
     const Target& target)
 {

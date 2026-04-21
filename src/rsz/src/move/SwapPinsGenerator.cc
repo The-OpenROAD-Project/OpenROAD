@@ -52,7 +52,7 @@ std::vector<std::unique_ptr<MoveCandidate>> SwapPinsGenerator::generate(
     return {};
   }
 
-  if (!target.arc_delay.has_value() || !target.arc_delay->isValid()) {
+  if (!target.isPrepared(kArcDelayStateCache)) {
     return buildCandidates(
         target, std::nullopt, -std::numeric_limits<double>::infinity());
   }

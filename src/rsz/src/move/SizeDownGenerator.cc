@@ -705,11 +705,6 @@ SizeDownGenerator::SizeDownGenerator(const GeneratorContext& context)
 {
 }
 
-bool SizeDownGenerator::isApplicable(const Target& target) const
-{
-  return MoveGenerator::isApplicable(target);
-}
-
 std::vector<std::unique_ptr<MoveCandidate>> SizeDownGenerator::generate(
     const Target& target)
 {

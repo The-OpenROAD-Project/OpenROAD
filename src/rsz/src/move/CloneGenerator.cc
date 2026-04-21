@@ -184,11 +184,6 @@ CloneGenerator::CloneGenerator(const GeneratorContext& context)
 {
 }
 
-bool CloneGenerator::isApplicable(const Target& target) const
-{
-  return MoveGenerator::isApplicable(target);
-}
-
 std::vector<std::unique_ptr<MoveCandidate>> CloneGenerator::generate(
     const Target& target)
 {

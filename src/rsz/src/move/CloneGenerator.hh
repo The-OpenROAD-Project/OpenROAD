@@ -25,7 +25,6 @@ class CloneGenerator : public MoveGenerator
 
   // === MoveGenerator API ====================================================
   MoveType type() const override { return MoveType::kClone; }
-  bool isApplicable(const Target& target) const override;
   std::vector<std::unique_ptr<MoveCandidate>> generate(
       const Target& target) override;
 };

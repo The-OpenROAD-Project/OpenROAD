@@ -134,11 +134,6 @@ SplitLoadGenerator::SplitLoadGenerator(const GeneratorContext& context)
 {
 }
 
-bool SplitLoadGenerator::isApplicable(const Target& target) const
-{
-  return MoveGenerator::isApplicable(target);
-}
-
 std::vector<std::unique_ptr<MoveCandidate>> SplitLoadGenerator::generate(
     const Target& target)
 {
