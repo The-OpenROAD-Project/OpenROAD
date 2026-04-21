@@ -20,6 +20,7 @@ orfs_sweep(
         # Smoketest
         "SWAP_ARITH_OPERATORS": "1",
     },
+    html = True,
     sources = {
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],

@@ -23,6 +23,7 @@ orfs_flow(
         "SETUP_SLACK_MARGIN": "-4000",
         "TAPCELL_TCL": "",
     },
+    html = True,
     sources = {
         "RULES_JSON": [":rules-base.json"],
         "SDC_FILE": [":constraint.sdc"],

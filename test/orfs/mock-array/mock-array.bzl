@@ -99,6 +99,7 @@ def element(name, config):
             # builds, so we want to keep this exact module.
             "SYNTH_KEEP_MODULES": "Multiplier",
         },
+        html = True,
         sources = {
             "IO_CONSTRAINTS": [":mock-array-element-io"],
             "SDC_FILE": [":mock-array-constraints"],
@@ -286,6 +287,7 @@ def mock_array(name, config):
                 "RTLMP_MIN_MACRO": "8",
                 "RTLMP_NOTCH_WT": "0",
             },
+            html = True,
             macros = ["Element_{name}_base_generate_abstract".format(name = name)],
             sources = {
                 "IO_CONSTRAINTS": [":mock-array-io"],
