@@ -212,3 +212,104 @@ describe('TimingWidget._showInspector', () => {
         assert.ok(popovers[0].textContent.includes('U2/A'));
     });
 });
+
+describe('TimingWidget path-table sorting', () => {
+    function endPins(widget) {
+        const rows = widget._pathTable.querySelectorAll('tbody tr');
+        return Array.from(rows, tr => tr.querySelectorAll('td')[9].textContent);
+    }
+
+    it('defaults to Slack ascending', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.5, 'pos'),
+            makePath(-0.2, 'worst'),
+            makePath(0.1, 'small'),
+        ]);
+        assert.deepEqual(endPins(widget), ['worst', 'small', 'pos']);
+    });
+
+    it('clicking the Slack header toggles to descending', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.5, 'pos'),
+            makePath(-0.2, 'worst'),
+            makePath(0.1, 'small'),
+        ]);
+
+        const slackTh = widget._pathTable.querySelectorAll('thead th')[3];
+        slackTh.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+        assert.deepEqual(endPins(widget), ['pos', 'small', 'worst']);
+        // Re-query the header after the re-render triggered by the click.
+        const slackThAfter = widget._pathTable.querySelectorAll('thead th')[3];
+        assert.ok(slackThAfter.textContent.includes('▼'));
+    });
+
+    it('sorts by a different column when its header is clicked', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.0, 'charlie'),
+            makePath(0.0, 'alpha'),
+            makePath(0.0, 'bravo'),
+        ]);
+        const endTh = widget._pathTable.querySelectorAll('thead th')[9];
+        endTh.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        assert.deepEqual(endPins(widget), ['alpha', 'bravo', 'charlie']);
+    });
+
+    it('ignores clicks on the resize grip', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.5, 'pos'),
+            makePath(-0.2, 'worst'),
+        ]);
+
+        // Simulate a click whose target is the grip span.
+        const slackTh = widget._pathTable.querySelectorAll('thead th')[3];
+        const grip = document.createElement('span');
+        grip.className = 'col-resize-grip';
+        slackTh.appendChild(grip);
+        grip.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+        // Still ascending.
+        assert.deepEqual(endPins(widget), ['worst', 'pos']);
+    });
+
+    it('preserves selection across re-sorts (by path object identity)', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.5, 'pos'),
+            makePath(-0.2, 'worst'),
+            makePath(0.1, 'small'),
+        ]);
+        // Default ascending: index 0 → 'worst'.  Select 'small' (row index 1).
+        widget._selectPathRow(1);
+        assert.equal(widget._selectedPathIndex, 1);
+
+        // Click End header: alphabetical ascending → pos, small, worst.
+        const endTh = widget._pathTable.querySelectorAll('thead th')[9];
+        endTh.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+        // 'small' now sits at row index 1 (p < s < w).
+        const rows = widget._pathTable.querySelectorAll('tbody tr');
+        assert.equal(rows[widget._selectedPathIndex].querySelectorAll('td')[9].textContent, 'small');
+    });
+
+    it('header tooltips match Qt wording for Skew / Logic Delay / Logic Depth', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [makePath(0.0, 'a')]);
+        const ths = widget._pathTable.querySelectorAll('thead th');
+        // Columns: Clock(0) Required(1) Arrival(2) Slack(3) Skew(4)
+        //          Logic Delay(5) Logic Depth(6) Fanout(7) Start(8) End(9)
+        assert.ok(ths[4].title.includes('CRPR'), 'skew tooltip');
+        assert.ok(ths[5].title.includes('excluding buffers'), 'logic delay tooltip');
+        assert.ok(ths[6].title.includes('excluding buffers'), 'logic depth tooltip');
+    });
+});

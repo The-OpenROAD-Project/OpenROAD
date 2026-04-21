@@ -18,6 +18,8 @@ export class TimingWidget {
         this._selectedDetailIndex = -1;
         this._inspectorPopover = null;
         this._inspectorCloseHandlers = null;
+        this._pathSort = { key: 'slack', dir: 'asc' };
+        this._detailSort = null;
 
         this._build();
     }
@@ -234,13 +236,23 @@ export class TimingWidget {
         const oldHeaders = this._pathTable.querySelectorAll('thead th');
         const savedWidths = Array.from(oldHeaders, th => th.style.width);
 
+        // Sort in place, tracking the selected path by object identity
+        // so its row index follows the re-sort.
+        const selectedPath = this._selectedPathIndex >= 0
+            ? paths[this._selectedPathIndex] : null;
+        sortRowsInPlace(paths, this._pathSort);
+        if (selectedPath) {
+            this._selectedPathIndex = paths.indexOf(selectedPath);
+        }
+
         this._pathTable.innerHTML = '';
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');
         for (const col of TimingWidget.PATH_COLS) {
-            const th = document.createElement('th');
-            th.textContent = col;
+            const th = makeSortableHeader(col, this._pathSort, () => {
+                this._togglePathSort(col.key);
+            });
             hr.appendChild(th);
         }
         thead.appendChild(hr);
@@ -379,6 +391,25 @@ export class TimingWidget {
         this._inspectorCloseHandlers = { onKeyDown, onMouseDown };
     }
 
+    _togglePathSort(key) {
+        if (this._pathSort && this._pathSort.key === key) {
+            this._pathSort = { key, dir: this._pathSort.dir === 'asc' ? 'desc' : 'asc' };
+        } else {
+            this._pathSort = { key, dir: 'asc' };
+        }
+        this._renderPathTable();
+        this._renderDetailTable();
+    }
+
+    _toggleDetailSort(key) {
+        if (this._detailSort && this._detailSort.key === key) {
+            this._detailSort = { key, dir: this._detailSort.dir === 'asc' ? 'desc' : 'asc' };
+        } else {
+            this._detailSort = { key, dir: 'asc' };
+        }
+        this._renderDetailTable();
+    }
+
     _closeInspector() {
         if (!this._inspectorPopover) return;
         this._inspectorPopover.remove();
@@ -401,13 +432,17 @@ export class TimingWidget {
         if (this._selectedPathIndex < 0 || this._selectedPathIndex >= paths.length) return;
 
         const path = paths[this._selectedPathIndex];
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const nodesSrc = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const nodes = this._detailSort
+            ? sortRowsInPlace([...nodesSrc], this._detailSort)
+            : nodesSrc;
 
         const thead = document.createElement('thead');
         const hr = document.createElement('tr');
         for (const col of TimingWidget.DETAIL_COLS) {
-            const th = document.createElement('th');
-            th.textContent = col;
+            const th = makeSortableHeader(col, this._detailSort, () => {
+                this._toggleDetailSort(col.key);
+            });
             hr.appendChild(th);
         }
         thead.appendChild(hr);
@@ -464,6 +499,80 @@ export function fmtTime(v) {
     return typeof v === 'number' ? v.toFixed(4) : String(v);
 }
 
-TimingWidget.PATH_COLS = ['Clock', 'Required', 'Arrival', 'Slack', 'Skew',
-                          'Logic Delay', 'Logic Depth', 'Fanout', 'Start', 'End'];
-TimingWidget.DETAIL_COLS = ['Pin', 'Fanout', 'R/F', 'Time', 'Delay', 'Slew', 'Load'];
+// Numeric-aware comparison honoring sort direction.
+export function compareValues(a, b, dir) {
+    const mul = dir === 'desc' ? -1 : 1;
+    const na = typeof a === 'number';
+    const nb = typeof b === 'number';
+    if (na && nb) return (a - b) * mul;
+    // Missing values sort last regardless of direction.
+    if (a === undefined || a === null || a === '') return 1;
+    if (b === undefined || b === null || b === '') return -1;
+    return String(a).localeCompare(String(b)) * mul;
+}
+
+// Stable sort of `rows` by `sort = {key, dir}`.  Array.prototype.sort
+// is stable since ES2019 (Node 12+); we rely on that.
+export function sortRowsInPlace(rows, sort) {
+    if (!sort) return rows;
+    rows.sort((a, b) => compareValues(a[sort.key], b[sort.key], sort.dir));
+    return rows;
+}
+
+// Build a <th> with label, click-to-sort, optional tooltip, and sort
+// indicator.  Clicks on the resize grip are ignored so resizing and
+// sorting do not conflict.
+export function makeSortableHeader(col, activeSort, onClick) {
+    const th = document.createElement('th');
+    th.textContent = col.label;
+    if (col.tooltip) th.title = col.tooltip;
+    if (activeSort && activeSort.key === col.key) {
+        const ind = document.createElement('span');
+        ind.className = 'sort-indicator';
+        ind.textContent = activeSort.dir === 'asc' ? ' ▲' : ' ▼';
+        th.appendChild(ind);
+    }
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', (e) => {
+        if (e.target && e.target.classList
+            && e.target.classList.contains('col-resize-grip')) {
+            return;
+        }
+        onClick();
+    });
+    return th;
+}
+
+// Column descriptors: {label, key, tooltip?}.  `key` points at the row
+// object field used for sorting; the Skew / Logic Delay / Logic Depth
+// tooltips mirror staGui.cpp:183–196 for parity with the Qt GUI.
+TimingWidget.PATH_COLS = [
+    { label: 'Clock', key: 'end_clk' },
+    { label: 'Required', key: 'required' },
+    { label: 'Arrival', key: 'arrival' },
+    { label: 'Slack', key: 'slack' },
+    { label: 'Skew', key: 'skew',
+      tooltip: 'The difference in arrival times between\n'
+             + 'source and destination clock pins of a macro/register,\n'
+             + 'adjusted for CRPR and subtracting a clock period.\n'
+             + 'Setup and hold times account for internal clock delays.' },
+    { label: 'Logic Delay', key: 'path_delay',
+      tooltip: 'Path delay from instances (excluding buffers and consecutive '
+             + 'inverter pairs)' },
+    { label: 'Logic Depth', key: 'logic_depth',
+      tooltip: 'Path instances (excluding buffers and consecutive inverter '
+             + 'pairs)' },
+    { label: 'Fanout', key: 'fanout' },
+    { label: 'Start', key: 'start_pin' },
+    { label: 'End', key: 'end_pin' },
+];
+
+TimingWidget.DETAIL_COLS = [
+    { label: 'Pin', key: 'pin' },
+    { label: 'Fanout', key: 'fanout' },
+    { label: 'R/F', key: 'rise' },
+    { label: 'Time', key: 'time' },
+    { label: 'Delay', key: 'delay' },
+    { label: 'Slew', key: 'slew' },
+    { label: 'Load', key: 'load' },
+];
