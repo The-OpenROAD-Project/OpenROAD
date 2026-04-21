@@ -976,7 +976,7 @@ html, body {
     background: var(--bg-panel);
     border: 1px solid var(--border);
     border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 12px var(--shadow);
     padding: 10px 12px 12px;
     z-index: 10;
 }
