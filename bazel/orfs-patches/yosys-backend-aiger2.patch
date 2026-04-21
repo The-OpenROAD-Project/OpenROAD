@@ -1,0 +1,28 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1036,6 +1036,18 @@
+ )
+
+ cc_library(
++    name = "backend_aiger2",
++    srcs = ["backends/aiger2/aiger.cc"],
++    conlyopts = COMMON_COPTS,
++    cxxopts = COMMON_CXXOPTS,
++    local_defines = COMMON_DEFINES,
++    visibility = ["//visibility:public"],
++    deps = [":kernel"],
++    alwayslink = True,
++)
++
++cc_library(
+     name = "backend_json",
+     srcs = ["backends/json/json.cc"],
+     conlyopts = COMMON_COPTS,
+@@ -1087,6 +1099,7 @@
+     visibility = ["//visibility:public"],
+     deps = [
+         ":backend_aiger",
++        ":backend_aiger2",
+         ":backend_json",
+         ":backend_rtlil",
+         ":backend_verilog",

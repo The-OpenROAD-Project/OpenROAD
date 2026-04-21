@@ -82,7 +82,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3", dev_dependency = True)
 bazel_dep(name = "qt-bazel")
 git_override(
     module_name = "qt-bazel",
-    commit = "df022f4ebaa4130713692fffd2f519d49e9d0b97",
+    commit = "886104974c2fd72439f2c33b5deebf0fe4649df7",
     remote = "https://github.com/The-OpenROAD-Project/qt_bazel_prebuilts",
 )
 
@@ -110,8 +110,9 @@ single_version_override(
 bazel_dep(name = "rules_scala", version = "7.1.5", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
+bazel_dep(name = "orfs", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "f5e20547f93729a4f67929902aaa3386d933bad0"
+BAZEL_ORFS_COMMIT = "6226c2e8f66b51013df7d0df709518f85df9b63c"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -127,6 +128,37 @@ git_override(
     commit = BAZEL_ORFS_COMMIT,
     remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "verilog",
+)
+
+# Mirrors the override in bazel-orfs/MODULE.bazel. Needed at root because
+# overrides declared in non-root modules are ignored by Bazel. Patches are
+# copied from bazel-orfs/patches/ because git_override only accepts patches
+# from the main repository.
+git_override(
+    module_name = "orfs",
+    commit = "bdb262792fef3797730e1b8341b946426272dcdc",
+    patch_strip = 1,
+    patches = [
+        "//bazel/orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
+        "//bazel/orfs-patches:orfs-preserve-tool-exe-env.patch",
+    ],
+    remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
+)
+
+# Mirrors the single_version_override in bazel-orfs/MODULE.bazel: non-root
+# overrides are ignored so apply at root. Gives bazel-orfs rules access to
+# @yosys//:yosys_share and exposes the Yosys headers it needs.
+single_version_override(
+    module_name = "yosys",
+    patch_strip = 1,
+    patches = [
+        "//bazel/orfs-patches:yosys-visibility.patch",
+        "//bazel/orfs-patches:yosys-hdrs.patch",
+        # BCR yosys 0.62 ships backends/aiger2/aiger.cc but doesn't compile
+        # it, so yosys aborts on the internal write_xaiger2 call from
+        # abc_new.cc. Wire it into the binary via BUILD.bazel.
+        "//bazel/orfs-patches:yosys-backend-aiger2.patch",
+    ],
 )
 
 # --- Extensions ---
@@ -183,16 +215,11 @@ npm.npm_translate_lock(
 use_repo(npm, "npm")
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
-    # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
-    # Use OpenROAD of this repo instead of from the docker image
+    # Use OpenROAD of this repo instead of from @openroad
     openroad = "//:openroad",
-    sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
+    opensta = "//src/sta:opensta",
 )
-use_repo(orfs, "docker_orfs")
 
 SCALA_VERSION = "2.13.17"
 
