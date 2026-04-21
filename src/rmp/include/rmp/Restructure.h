@@ -114,6 +114,8 @@ class Restructure
                    bool verbose,
                    bool,
                    bool,
+                   double,
+                   double,
                    char* workdir_name);
 
  private:

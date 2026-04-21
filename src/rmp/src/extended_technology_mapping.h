@@ -24,12 +24,16 @@ class ExtendedTechnologyMapping
                                      bool map_multioutput,
                                      bool verbose,
                                      bool create_po_buffers,
-                                     bool insert_buffers)
+                                     bool insert_buffers,
+                                     double min_drive_resistance,
+                                     double max_drive_resistance)
       : scene_(scene),
         map_multioutput_(map_multioutput),
         verbose_(verbose),
         create_po_buffers_(create_po_buffers),
-        insert_buffers_(insert_buffers)
+        insert_buffers_(insert_buffers),
+        min_drive_resistance_(min_drive_resistance),
+        max_drive_resistance_(max_drive_resistance)
   {
   }
   ~ExtendedTechnologyMapping() = default;
@@ -100,6 +104,8 @@ class ExtendedTechnologyMapping
   bool verbose_;
   bool insert_buffers_;
   bool create_po_buffers_;
+  double min_drive_resistance_;
+  double max_drive_resistance_;
 
   // Cached const networks for mapped network import
   odb::dbNet* net0_cache_ = nullptr;

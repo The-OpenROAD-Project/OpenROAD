@@ -159,12 +159,14 @@ sta::define_cmd_args "resynth_emap" {
                                       [-verbose]
                                       [-create_po_buffers]
                                       [-insert_buffers]
+                                      [-min_drive_resistance]
+                                      [-max_drive_resistance]
                                       [-work_dir workdir_name]
                                     }
 
 proc resynth_emap { args } {
   sta::parse_key_args "resynth_emap" args \
-    keys {-scene -work_dir} \
+    keys {-scene -work_dir -min_drive_resistance -max_drive_resistance} \
     flags {-map_multioutput -verbose -create_po_buffers -insert_buffers}
 
   set scene [sta::parse_scene keys]
@@ -178,8 +180,18 @@ proc resynth_emap { args } {
   if { [info exists keys(-work_dir)] } {
     set workdir_name $keys(-work_dir)
   }
+  if { [info exists keys(-min_drive_resistance)] } {
+    set min_drive_resistance $keys(-min_drive_resistance)
+  } else {
+    set min_drive_resistance 0
+  }
+  if { [info exists keys(-max_drive_resistance)] } {
+    set max_drive_resistance $keys(-max_drive_resistance)
+  } else {
+    set max_drive_resistance 0
+  }
 
-  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $create_po_buffers $insert_buffers $workdir_name
+  rmp::resynth_emap_cmd $scene $target $map_multioutput $verbose $create_po_buffers $insert_buffers $min_drive_resistance $max_drive_resistance $workdir_name
 }
 
 sta::define_cmd_args "resynth_genetic" {

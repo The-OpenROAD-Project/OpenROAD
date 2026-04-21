@@ -543,6 +543,104 @@ odb::dbNet* ExtendedTechnologyMapping::getDriverNet(
   return node_out_nets[src_idx][out_pin_idx];
 }
 
+static void filterDriverResistance(std::vector<mockturtle::gate>& gates,
+                                   sta::dbSta* sta,
+                                   utl::Logger* logger,
+                                   double min_drive_resistance)
+{
+  sta::dbNetwork* const network = sta->getDbNetwork();
+  std::erase_if(
+      gates, [network, logger, min_drive_resistance](const auto& gate) {
+        sta::LibertyCell* const cell = network->findLibertyCell(gate.name);
+        if (!cell) {
+          logger->info(utl::RMP, 2221, "Should have found cell {}", gate.name);
+          return false;
+        }
+        sta::LibertyCellPortIterator port_iter(cell);
+        float drive_resistance_sum = 0.0;
+        size_t ports = 0;
+        while (port_iter.hasNext()) {
+          sta::LibertyPort* port = port_iter.next();
+          drive_resistance_sum += port->driveResistance();
+          ++ports;
+        }
+        if (ports == 0) {
+          return false;
+        }
+        const float drive_resistance = drive_resistance_sum / ports;
+        if (drive_resistance >= min_drive_resistance) {
+          logger->info(utl::RMP,
+                       2281,
+                       "Accepting cell {} resistance={}, threshold={}",
+                       gate.name,
+                       drive_resistance,
+                       min_drive_resistance);
+        } else {
+          logger->info(utl::RMP,
+                       2261,
+                       "Rejecting cell {} resistance={}, threshold={}",
+                       gate.name,
+                       drive_resistance,
+                       min_drive_resistance);
+        }
+        return drive_resistance < min_drive_resistance;
+      });
+
+  // Fixup gate ids for mockturtle
+  for (size_t i = 0; i < gates.size(); ++i) {
+    gates[i].id = i;
+  }
+}
+
+static void filterDriverResistanceMax(std::vector<mockturtle::gate>& gates,
+                                      sta::dbSta* sta,
+                                      utl::Logger* logger,
+                                      double max_drive_resistance)
+{
+  sta::dbNetwork* const network = sta->getDbNetwork();
+  std::erase_if(
+      gates, [network, logger, max_drive_resistance](const auto& gate) {
+        sta::LibertyCell* const cell = network->findLibertyCell(gate.name);
+        if (!cell) {
+          logger->info(utl::RMP, 2231, "Should have found cell {}", gate.name);
+          return false;
+        }
+        sta::LibertyCellPortIterator port_iter(cell);
+        float drive_resistance_sum = 0.0;
+        size_t ports = 0;
+        while (port_iter.hasNext()) {
+          sta::LibertyPort* port = port_iter.next();
+          drive_resistance_sum += port->driveResistance();
+          ++ports;
+        }
+        if (ports == 0) {
+          return false;
+        }
+        const float drive_resistance = drive_resistance_sum / ports;
+        if (drive_resistance <= max_drive_resistance) {
+          logger->info(utl::RMP,
+                       2241,
+                       "Accepting cell {} resistance={}, threshold={}",
+                       gate.name,
+                       drive_resistance,
+                       max_drive_resistance);
+        } else {
+          logger->info(utl::RMP,
+                       2251,
+                       "Rejecting cell {} resistance={}, threshold={}",
+                       gate.name,
+                       drive_resistance,
+                       max_drive_resistance);
+        }
+        return drive_resistance >= max_drive_resistance;
+      });
+
+  // Fixup gate ids for mockturtle
+  for (size_t i = 0; i < gates.size(); ++i) {
+    gates[i].id = i;
+  }
+}
+
 void ExtendedTechnologyMapping::map(sta::dbSta* sta,
                                     odb::dbDatabase* db,
                                     rsz::Resizer* resizer,
@@ -626,6 +724,11 @@ void ExtendedTechnologyMapping::map(sta::dbSta* sta,
       logger->report("Error reading genlib file");
       return;
     }
+  }
+  if (min_drive_resistance_ != 0) {
+    filterDriverResistance(gates, sta, logger, min_drive_resistance_);
+  } else if (max_drive_resistance_ != 0) {
+    filterDriverResistanceMax(gates, sta, logger, max_drive_resistance_);
   }
 
   mockturtle::tech_library<9u> tech_lib(gates);

@@ -170,9 +170,9 @@ int blif_read(cut::Blif* blif_, const char* file_name){
   return blif_->readBlif(file_name, getOpenRoad()->getDb()->getChip()->getBlock());
 }
 
-void resynth_emap_cmd(Scene* scene, char* target, bool map_multioutput, bool verbose, bool create_po_buffers, bool insert_buffers, char* workdir_name) {
+void resynth_emap_cmd(Scene* scene, char* target, bool map_multioutput, bool verbose, bool create_po_buffers, bool insert_buffers, double min_drive_resistance, double max_drive_resistance, char* workdir_name) {
   getRestructure()->setMode(target);
-  getRestructure()->resynthEmap(scene, map_multioutput, verbose, create_po_buffers, insert_buffers, workdir_name);
+  getRestructure()->resynthEmap(scene, map_multioutput, verbose, create_po_buffers, insert_buffers, min_drive_resistance, max_drive_resistance, workdir_name);
 }
 
 %}
