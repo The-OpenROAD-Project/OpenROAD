@@ -4,8 +4,10 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <iomanip>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -160,6 +162,57 @@ class TestResizerMt : public tst::IntegratedFixture
   }
 };
 
+std::vector<std::string> evaluationSignature(
+    const std::vector<TargetEvaluation>& evaluations)
+{
+  std::vector<std::string> signature;
+  signature.reserve(evaluations.size());
+  for (const TargetEvaluation& evaluation : evaluations) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(9);
+    oss << "c=" << evaluation.candidates.size();
+    oss << ";e=" << evaluation.estimates.size();
+    oss << ";best=" << evaluation.hasBestCandidate();
+    oss << ";bestLegal=" << evaluation.best_estimate.legal;
+    oss << ";bestScore=" << evaluation.best_estimate.score;
+    for (size_t index = 0; index < evaluation.candidates.size(); ++index) {
+      oss << "|" << moveName(evaluation.candidates[index]->type());
+      oss << ":" << evaluation.estimates[index].legal;
+      oss << ":" << evaluation.estimates[index].score;
+    }
+    signature.push_back(oss.str());
+  }
+  return signature;
+}
+
+std::vector<TargetEvaluation> generateAndEstimateTargetsInParallel(
+    SetupMt1Policy& policy,
+    const std::vector<Target>& targets)
+{
+  return policy.thread_pool_->parallelMap(
+      targets, [&policy](const Target& target) -> TargetEvaluation {
+        return policy.generateAndEstimateTarget(target);
+      });
+}
+
+void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
+{
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* library = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      sta::LibertyCell* cell = cell_iter.next();
+      const sta::LibertyCellSeq swappable_cells
+          = resizer.getSwappableCells(cell);
+      for (sta::LibertyCell* swappable_cell : swappable_cells) {
+        static_cast<void>(resizer.getSwappableCells(swappable_cell));
+      }
+    }
+  }
+}
+
 TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
 {
   Resizer& resizer = resizer_;
@@ -277,6 +330,71 @@ TEST_F(TestResizerMt, Mt1CandidateEstimateUsesSelectedArcAndCachedState)
   const Estimate estimate = candidate.estimate();
   ASSERT_TRUE(estimate.legal);
   EXPECT_GT(estimate.score, 0.0f);
+}
+
+TEST_F(TestResizerMt, ConcurrentMaxCapChecksAfterStaWarmup)
+{
+  struct MaxCapCheckCase
+  {
+    sta::Instance* inst;
+    sta::LibertyCell* replacement;
+    bool expected;
+  };
+
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  sta_->updateTiming(true);
+
+  sta::LibertyCell* strong_buffer = sta_->network()->findLibertyCell("BUF_X16");
+  ASSERT_NE(strong_buffer, nullptr);
+
+  std::vector<const char*> inst_names{"target", "path_side_buf"};
+  std::vector<MaxCapCheckCase> checks;
+  checks.reserve(inst_names.size());
+  for (const char* inst_name : inst_names) {
+    odb::dbInst* db_inst = block_->findInst(inst_name);
+    ASSERT_NE(db_inst, nullptr);
+    sta::Instance* inst = db_network_->dbToSta(db_inst);
+    ASSERT_NE(inst, nullptr);
+    const bool expected
+        = resizer.replacementPreservesMaxCap(inst, strong_buffer);
+    checks.push_back(
+        {.inst = inst, .replacement = strong_buffer, .expected = expected});
+  }
+
+  // Warm up the STA/max-cap query path on the main thread before stressing
+  // concurrent reads.  If this test fails after warmup, the likely root-cause
+  // is live mutable state inside Resizer::replacementPreservesMaxCap(),
+  // Resizer::checkMaxCapOK(), or Sta::checkCapacitance().
+  constexpr int kWarmupChecks = 256;
+  for (int index = 0; index < kWarmupChecks; ++index) {
+    const MaxCapCheckCase& check = checks[index % checks.size()];
+    EXPECT_EQ(resizer.replacementPreservesMaxCap(check.inst, check.replacement),
+              check.expected);
+  }
+
+  constexpr int kThreadedChecks = 8192;
+  std::vector<int> jobs(kThreadedChecks);
+  for (int index = 0; index < kThreadedChecks; ++index) {
+    jobs[index] = index;
+  }
+
+  std::atomic<int> mismatches{0};
+  utl::ThreadPool thread_pool(4);
+  thread_pool.parallelFor(
+      jobs, [&resizer, &checks, &mismatches](const int& job) {
+        const MaxCapCheckCase& check = checks[job % checks.size()];
+        const bool actual
+            = resizer.replacementPreservesMaxCap(check.inst, check.replacement);
+        if (actual != check.expected) {
+          mismatches.fetch_add(1, std::memory_order_relaxed);
+        }
+      });
+
+  EXPECT_EQ(mismatches.load(std::memory_order_relaxed), 0)
+      << "Concurrent max-cap check diverged after STA warmup; inspect "
+         "Resizer::replacementPreservesMaxCap(), Resizer::checkMaxCapOK(), "
+         "and Sta::checkCapacitance().";
 }
 
 TEST(TestResizerMtThreadPool, ParallelForSupportsVoidTasks)
@@ -441,6 +559,10 @@ TEST_F(TestResizerMt,
   targets.push_back(makeTarget("out0", "target", "Z"));
   ASSERT_EQ(targets.size(), 3u);
 
+  // Fully warm up swappable-cell and leakage caches on the main thread before
+  // worker threads perform target-local generation and estimation.
+  warmupAllSwappableCells(resizer, sta_->network());
+  policy.prewarmTargets(targets);
   policy.prepareTargets(targets);
   for (const Target& target : targets) {
     ASSERT_NE(target.driver_pin, nullptr);
@@ -496,6 +618,64 @@ TEST_F(TestResizerMt,
   EXPECT_GE(evaluations_with_candidates, 2);
   EXPECT_GE(evaluations_with_multiple_estimates, 2);
   EXPECT_GE(evaluations_with_legal_best, 1);
+}
+
+TEST_F(TestResizerMt,
+       NestedTargetParallelGenerateEstimateIsDeterministic32Threads)
+{
+  sta_->setThreadCount(33);
+
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  sta_->updateTiming(true);
+
+  MoveCommitter committer(resizer);
+  SetupMt1Policy policy(resizer, committer);
+
+  OptimizerRunConfig config;
+  config.setup_slack_margin = 1.0;
+  policy.start(config);
+
+  ASSERT_NE(policy.thread_pool_, nullptr);
+  ASSERT_EQ(policy.thread_pool_->threadCount(), 32u);
+
+  std::vector<Target> targets;
+  targets.reserve(12);
+  for (int repeat = 0; repeat < 4; ++repeat) {
+    targets.push_back(makeTarget("path_out", "path_pre1", "Z"));
+    targets.push_back(makeTarget("path_out", "path_target", "ZN"));
+    targets.push_back(makeTarget("out0", "target", "Z"));
+  }
+
+  // Match the production Mt1 pipeline: prewarm shared Liberty/cell caches
+  // before worker threads perform target-local generation and estimation.
+  policy.prewarmTargets(targets);
+  policy.prepareTargets(targets);
+  for (const Target& target : targets) {
+    ASSERT_NE(target.driver_pin, nullptr);
+    ASSERT_TRUE(target.isPrepared(PrepareCacheKind::kArcDelayState));
+  }
+
+  const std::vector<TargetEvaluation> baseline_evaluations
+      = generateAndEstimateTargetsInParallel(policy, targets);
+  const std::vector<std::string> baseline_signature
+      = evaluationSignature(baseline_evaluations);
+  ASSERT_EQ(baseline_signature.size(), targets.size());
+
+  constexpr int kRepeatCount = 100;
+  for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
+    const std::vector<TargetEvaluation> evaluations
+        = generateAndEstimateTargetsInParallel(policy, targets);
+    const std::vector<std::string> signature = evaluationSignature(evaluations);
+    EXPECT_EQ(signature, baseline_signature)
+        << "Nested parallel target generate/estimate produced a different "
+           "signature at repeat "
+        << repeat
+        << ". If this fails or crashes, inspect live STA access in "
+           "SizeUpMtGenerator::generate(), VtSwapMtCandidate::estimate(), "
+           "Resizer::replacementPreservesMaxCap(), and "
+           "Sta::checkCapacitance().";
+  }
 }
 
 }  // namespace rsz
