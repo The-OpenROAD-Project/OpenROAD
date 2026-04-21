@@ -20,12 +20,13 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 | Area | Change |
 |---|---|
 | Move implementation | Replaced monolithic `*Move` classes with `MoveGenerator` + `MoveCandidate` pairs. |
-| Policy | Added `OptPolicy` class to provide easily tunable multiple optimization policies. `SetupLegacyPolicy` is the default. Other policies are experimental. |
+| Policy | Added `OptPolicy` class to provide easily tunable multiple optimization policies. `SetupLegacyPolicy` is the default. Other policies are **experimental (early stage; no QoR or runtime benefits yet)**. |
 | MT support | Added common `utl::ThreadPool` and MT-capable policies/generators. |
-| Prewarm stage | Added policy-level Liberty-cell cache warmup before target preparation. |
-| Prepare stage | Added per-target caching for expensive STA-derived data before parallel generation/estimation. |
+| Prewarm stage | Added policy-level Liberty-cell and driver-cache warmup before target preparation. Required to complete lazy updates and ensure thread safety. |
+| Prepare stage | Added per-target `ArcDelayState` caching for expensive STA-derived data before MT generation/estimation. Required to reduce redundant computations by multi-threads. |
 | Scope | The new architecture targets `repair_setup` only. It can be extended to `repair_design`, `repair_hold`, and `recover_power` later. |
 | Compatibility | `SetupLegacyPolicy` is the default path and is kept close to legacy repair behavior. The QoR goal is ORFS design parity. |
+| Target model | `Target` exposes path-driver and instance view bits so generators can share one target representation. New views will be added later. |
 
 **Overall repair_setup flow**
 
@@ -43,25 +44,25 @@ Rearchitected `repair_setup` around a policy-driven optimizer.
 SetupLegacyPolicy:
   select legacy target -> generate -> estimate -> commit first accepted move      <- [ST]
 
-MeasuredVtSwapPolicy:
+MeasuredVtSwapPolicy (EXPERIMENTAL):
   select target -> generate candidates -> measure by ECO journal -> commit best   <- [ST]
 
-SetupLegacyMtPolicy:
+SetupLegacyMtPolicy (EXPERIMENTAL):
   select legacy target
-  prewarm target vector                 <- [ST] Liberty-cell cache warmup
+  prewarm target vector                 <- [ST] Liberty/driver-cache warmup
   prepared_target = prepareTarget(t)    <- [ST] target ArcDelayState build
   candidates = generate(prepared)       <- [ST] legacy-order generation
   estimates = estimate(candidates)      <- [MT] only for VtSwap/SizeUp candidates
   commit(first_or_best_candidate)       <- [ST] apply
 
-SetupMt1Policy:
+SetupMt1Policy (EXPERIMENTAL):
   select target batch
-  prewarm(targets)                      <- [ST] Liberty-cell cache warmup
+  prewarm(targets)                      <- [ST] Liberty/driver-cache warmup
   prepareTargets(targets)               <- [ST] target ArcDelayState build
-  candidates = generate(prepared)       <- [MT] parallel generation
-  estimates = estimate(candidates)      <- [MT] parallel estimation
-  commit(best_candidate)                <- [ST] apply
-  update RC/timing                      <- [ST] RC + [MT] timing
+  for each target                       <- [ST] target-level scheduling
+    candidates = generate(prepared)     <- [MT] parallel move-type fanout
+    estimates = estimate(candidates)    <- [MT] parallel candidate scoring
+  commit(best_candidates)               <- [ST] sequential apply
 ```
 
 **Key components**
@@ -143,7 +144,6 @@ per-target data needed by MT-safe generators.
 ```cpp
 enum class MoveType : uint8_t
 {
-  kUnknown,
   kBuffer,
   kClone,
   kSizeUp,
@@ -159,16 +159,27 @@ enum class MoveType : uint8_t
 
 ### Target
 
-`Target` is the policy-selected object that generators operate on.
+`Target` is the policy-selected object that generators operate on. A target may
+expose multiple **views**. For example, a path-driver target also exposes an
+instance view when its driver pin belongs to a standard-cell instance.
 
 ```cpp
+using TargetViewMask = uint8_t;
+
+inline constexpr TargetViewMask kPathDriverView = 1u << 0;
+inline constexpr TargetViewMask kInstanceView = 1u << 1;
+
 struct Target
 {
-  TargetKind kind{TargetKind::kPathDriver};
+  TargetViewMask views{kPathDriverView};
+
+  // Output-side pin that identifies the move target.
   sta::Pin* driver_pin{nullptr};
+
+  // Path-driver view fields.
   const sta::Path* endpoint_path{nullptr};
-  const sta::Path* driver_path{nullptr};
   int path_index{-1};
+  const sta::Path* driver_path{nullptr};
   int fanout{0};
   sta::Slack slack{0.0};
   const sta::Scene* scene{nullptr};
@@ -176,20 +187,20 @@ struct Target
   // Prepared data for MT generation/estimation.
   std::optional<ArcDelayState> arc_delay;
 
-  bool isValid() const;
-  bool isPrepared(PrepareCacheKind kind) const;
+  bool canBePathDriver() const;
+  bool canBeInstance() const;
   bool isPrepared(PrepareCacheMask mask) const;
 };
 ```
 
-| `TargetKind` | Meaning | Typical use |
+| View bit | Meaning | Typical use |
 |---|---|---|
-| `kPathDriver` | Driver stage on a critical timing path | Buffer, clone, size, swap pins, unbuffer, split load |
-| `kInstance` | Standalone instance target | Critical-cell VT style flows |
+| `kPathDriverView` | Driver stage on a timing path | Buffer, clone, size, swap pins, unbuffer, split load |
+| `kInstanceView` | Target instance output pin | Instance-level VT-swap style flows |
 
-Currently, `Target` points the target instance (or pin) to be optimized.
-It can be extended to represent a net or a sub-graph in the future.
-New cached attributes can also be added to support new move types.
+Currently, `Target` points the target instance or path-driver pin to be
+optimized. It can be extended to represent a net or a sub-graph in the future.
+New prepared attributes can also be added to support new move types.
 
 ## Policy Model
 
@@ -242,7 +253,7 @@ Multiple policies are implemented to show how to implement new policies.
 |---|---|---|---|
 | `SetupLegacyPolicy` | Endpoint-by-endpoint, path-driver targets | Legacy sequence; first accepted move commits | None |
 | `SetupLegacyMtPolicy` | Same as `SetupLegacyPolicy` | Same as `SetupLegacyPolicy` | Prewarm/prepare support plus parallel candidate scoring for `VtSwap` and `SizeUp`; generation and other move types stay serial |
-| `SetupMt1Policy` | Batched bottleneck targets per iteration | `VtSwapMt` and `SizeUpMt` only | Parallel target evaluation, candidate generation, and estimation; commit stays serial |
+| `SetupMt1Policy` | Batched worst-endpoint path-driver targets per iteration | `VtSwapMt` and `SizeUpMt` only | Target loop is serial; move-type fanout and candidate estimation use the shared thread pool; commit stays serial |
 
 
 ### Stage Pipeline
@@ -277,62 +288,54 @@ flowchart LR
 
 ## Prewarm Stage
 
-The prewarm stage fills shared Liberty-cell caches once for a target vector
-before per-target generation starts.  It is intentionally separate from
-`prepareTargets()` because these caches are global to the active policy run, not
-fields stored on each `Target`.
+The prewarm stage fills shared lazy caches before per-target generation starts.
+It is intentionally separate from `prepareTargets()` because these caches are
+owned by `Resizer` / `dbNetwork`, not by individual `Target` objects.
 
 | Prewarm data | Used by | Main reason |
 |---|---|---|
-| Swappable-cell cache | SizeUp MT generation | Avoid repeated `getSwappableCells()` and VT metadata work. |
-| VT-equivalent-cell cache | VtSwap MT generation | Avoid repeated `getVTEquivCells()` and VT metadata work. |
+| Swappable-cell cache | SizeUp and SizeUpMt candidate selection | Avoid repeated `getSwappableCells()` and VT metadata work. |
+| VT-equivalent-cell cache | VtSwap and VtSwapMt candidate selection | Avoid repeated `getVTEquivCells()` and VT metadata work. |
+| Driver-pin cache | MT max-cap checks | Force `dbNetwork::drivers()` lazy cache population on the caller thread before worker-side checks. |
 
-Current policy usage:
+The prewarm stage is a pragmatic guard for experimental MT policies. Some APIs
+look read-only from the caller but can populate internal caches on first use.
+Prewarming keeps that mutation on the main thread.
 
-| Policy | Usage |
-|---|---|
-| `SetupLegacyPolicy` | Disabled. Legacy path calls generators directly. |
-| `SetupLegacyMtPolicy` | Enabled before trying prepared single targets in legacy order. |
-| `SetupMt1Policy` | Enabled once for the full bottleneck-target batch. |
-| `MeasuredVtSwapPolicy` | Disabled. This policy uses measured ECO trials instead of MT generation. |
+Future direction:
+
+> Prewarm stage can be reduced or removed if STA provides easier warmup (complete all lazy updates) API to ensure thread safety before parallel operations.
+
 
 ## Prepare Stage
 
-The prepare stage computes expensive target-local data once before MT-safe generation/estimation.
+The prepare stage computes expensive target-local data once before MT-safe
+generation/estimation.
 
 ```cpp
-// Batch path used by SetupMt1Policy and target-vector precomputation.
+// Batch path used by SetupMt1Policy.
 PrepareCacheMask mask = accumulatePrepareRequirements();
 for (Target& target : targets) {
   prepareTarget(target, mask);
 }
-
-// Single-target path used by SetupLegacyMtPolicy.
-Target prepared_target = prepareTarget(target);
 ```
 
-Generators declare per-target data requirements:
+Generators declare per-target data requirements with mask constants:
 
 ```cpp
 PrepareCacheMask prepareRequirements() const override
 {
-  return prepareCacheMask(PrepareCacheKind::kArcDelayState);
+  return kArcDelayStateCache;
 }
 ```
 
-Current prepare kind:
+Current prepare masks:
 
-| Cache kind | Cached data | Main reason |
+| Mask | Cached data | Main reason |
 |---|---|---|
-| `kArcDelayState` | `Target::arc_delay` | Snapshot timing arc, input slew, load cap, current delay. `DelayEstimator` requires it. |
+| `kNoPrepareCache` | none | Default for generators that do not read prepared target fields. |
+| `kArcDelayStateCache` | `Target::arc_delay` | Snapshot timing arc, input slew, load cap, current delay. `DelayEstimator` requires it. |
 
-`OptPolicyConfig` carries policy-to-generator knobs that are not part of the
-public Tcl API:
-
-| Field | Meaning |
-|---|---|
-| `max_candidate_generation` | Cap for per-target candidate expansion in MT/experimental generators. `0` means the policy must set an explicit value before use. |
-| `max_committed_moves` | Optional cap for policies with bounded commits. `0` means unlimited. |
 
 ### Why prepare stage is needed
 
@@ -388,6 +391,25 @@ Each move type is split into two classes.
 |---|---|---|
 | Generator | `MoveGenerator` derived class | Decide applicability and create candidate objects for one target. |
 | Candidate | `MoveCandidate` derived class | Estimate one concrete ECO proposal and apply it if selected. |
+
+`MoveGenerator::isApplicable()` first checks whether the `Target` provides the
+views required by that generator, then derived classes add move-specific cheap
+checks.
+
+```cpp
+virtual bool isApplicable(const Target& target) const
+{
+  const TargetViewMask views = requiredViews();
+  return ((views & kPathDriverView) != 0 && target.canBePathDriver())
+         || ((views & kInstanceView) != 0 && target.canBeInstance());
+}
+
+protected:
+  virtual TargetViewMask requiredViews() const { return kPathDriverView; }
+```
+
+Most generators use the default `kPathDriverView`. `VtSwapGenerator` overrides
+`requiredViews()` to accept both `kPathDriverView` and `kInstanceView`.
 
 Minimal flow:
 
@@ -448,27 +470,29 @@ thread_pool_->parallelFor(items, [](const Item& item) { ... });
 
 When the pool has zero workers, `submit()` executes the task immediately on the
 caller thread. This keeps policy code uniform while preserving deterministic
-single-thread behavior.
+single-thread behavior (no additional code for single-thread run).
 
 Threading rules:
 
 | Rule | Reason |
 |---|---|
 | Keep the main thread for orchestration and commit | ECO journal, OpenDB mutation, and STA update are serialized. |
-| Use worker threads for MT work with prepared target | Candidate generation/estimation can read prepared target data safely. |
+| Use worker threads for prepared or prewarmed MT work | Candidate generation/estimation should prefer prepared target data; experimental MT paths also rely on explicit prewarm for lazy cache safety. |
 | Support zero worker threads | `ThreadPool::submit()` runs tasks inline when no workers exist, so callers can still use `parallelMap()` / `parallelFor()` without a separate serial branch. |
 | Support nested `parallelMap()` / `parallelFor()` | Worker threads waiting on child tasks help drain the same pool, so nested fork-join work does not self-deadlock. |
 
-Parallelization opportunities now supported by policy implementation:
+Parallelization currently used by policy implementation:
 
 ```text
-multiple targets
-  -> multiple move types per target
-     -> multiple candidates per move type
-        -> estimate candidates in parallel
-```
+SetupLegacyMtPolicy:
+  one target at a time
+    -> selected candidate scoring for VtSwap/SizeUp in parallel
 
-Committed moves still apply on the main thread.
+SetupMt1Policy:
+  targets are iterated serially
+    -> move generators for one target run through ThreadPool
+       -> candidate estimates for that target run through ThreadPool
+```
 
 
 ## File Changes
@@ -496,19 +520,20 @@ Committed moves still apply on the main thread.
 | Added | `OptimizerTypes.cc`, `OptimizerTypes.hh` | Shared target, estimate, config, message IDs, move labels, and prepare-stage data structures. |
 | Added | `DelayEstimator.cc`, `DelayEstimator.hh` | Arc delay state construction and candidate delay estimation helpers. |
 | Added | `MoveCommitter.cc`, `MoveCommitter.hh` | ECO journal, commit, rollback, accounting, and MoveTracker interface. |
+| Added | `src/rsz/src/move/MoveGenerator.cc`, `src/rsz/src/move/MoveGenerator.hh` | Base generator interface and shared generator helpers. |
 | Added | `src/rsz/src/move/*Generator.*` | Move-specific target-to-candidate expansion. |
 | Added | `src/rsz/src/move/*Candidate.*` | Move-specific estimate/apply implementation. |
 | Added | `src/utl/include/utl/env.h` | Common environment-variable parsing helpers. |
 | Added | `src/utl/include/utl/ThreadPool.h`, `src/utl/src/ThreadPool.cpp` | Common nested-safe thread pool used by MT policies. |
 
-## TODO
+## Future Work
 
 1. Architecture
-    a. Apply feedback
+    a. Apply review feedback
     b. Consider moving `MoveTracker` out of `MoveCommitter` for detailed tracking
 2. UI    
     a. Envar or command option
-    b. Merge policies and phases
+    b. Merge optimization policies (new) and phases (old)
 3. Enhance setup optimization QoR and runtime
     a. Enhance VtSwap & SizeUp moves w/ MT
     b. Develop a score metric for fair comparison among different moves
