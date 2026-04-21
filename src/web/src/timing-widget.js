@@ -128,7 +128,6 @@ export class TimingWidget {
 
         // Keyboard navigation — path table
         this._pathTableContainer.setAttribute('tabindex', '0');
-        this._pathTableContainer.style.outline = 'none';
         this._pathTableContainer.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -146,7 +145,6 @@ export class TimingWidget {
 
         // Keyboard navigation — detail table
         this._detailTableContainer.setAttribute('tabindex', '0');
-        this._detailTableContainer.style.outline = 'none';
         this._detailTableContainer.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();

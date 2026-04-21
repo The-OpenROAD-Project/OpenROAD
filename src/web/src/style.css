@@ -902,6 +902,12 @@ html, body {
     border-top: 1px solid var(--border);
 }
 
+.timing-path-table-container:focus-visible,
+.timing-detail-table-container:focus-visible {
+    outline: 2px solid var(--accent-tab);
+    outline-offset: -2px;
+}
+
 .timing-table {
     width: 100%;
     border-collapse: collapse;
