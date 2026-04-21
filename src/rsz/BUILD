@@ -69,6 +69,7 @@ cc_library(
         "src/move/MeasuredVtSwapGenerator.hh",
         "src/move/MoveCandidate.cc",
         "src/move/MoveCandidate.hh",
+        "src/move/MoveGenerator.cc",
         "src/move/MoveGenerator.hh",
         "src/move/SizeDownCandidate.cc",
         "src/move/SizeDownCandidate.hh",

@@ -283,6 +283,13 @@ extra_deps = {
     "repair_setup4_sequence": ["repair_setup4.tcl"],
     "repair_setup6_multi": ["repair_setup6.tcl"],
     "repair_setup7_multi": ["repair_setup7.tcl"],
+    "repair_setup_legacy_mt_tracker": ["report_move_tracker.tcl"],
+    "repair_setup_phase_endpoint_fanin": ["repair_setup1.tcl"],
+    "repair_setup_phase_startpoint_fanout": ["repair_setup1.tcl"],
+    "repair_setup_phase_tns": ["repair_setup1.tcl"],
+    "repair_setup_phase_wns_cone": ["repair_setup1.tcl"],
+    "repair_setup_phase_wns_path": ["repair_setup1.tcl"],
+    "repair_setup_phases_order": ["repair_setup1.tcl"],
 }
 
 BIG_TESTS = [
