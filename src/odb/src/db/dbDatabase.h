@@ -50,7 +50,10 @@ namespace odb {
 inline constexpr uint32_t kSchemaMajor = 0;  // Not used...
 inline constexpr uint32_t kSchemaInitial = 57;
 
-inline constexpr uint32_t kSchemaMinor = 129;  // Current revision number
+inline constexpr uint32_t kSchemaMinor = 130;  // Current revision number
+
+// Revision where dbChip::alignment_marker_tolerance_ was added
+inline constexpr uint32_t kSchemaChipAlignmentMarker = 130;
 
 // Revision where _dbTechLayerAntennaRule was modified to use ARuleRatio for
 // gate_plus_diff

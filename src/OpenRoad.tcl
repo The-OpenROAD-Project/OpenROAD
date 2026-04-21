@@ -236,6 +236,24 @@ proc check_3dblox { args } {
   ord::check_3dblox_cmd
 }
 
+sta::define_cmd_args "set_3dblox_alignment_markers" \
+  {-masters masters [-tolerance tolerance_um]}
+
+proc set_3dblox_alignment_markers { args } {
+  sta::parse_key_args "set_3dblox_alignment_markers" args \
+    keys {-masters -tolerance} flags {}
+  sta::check_argc_eq0 "set_3dblox_alignment_markers" $args
+  if { ![info exists keys(-masters)] } {
+    utl::error ORD 78 "-masters is required"
+  }
+  set tol 0.05
+  if { [info exists keys(-tolerance)] } {
+    set tol $keys(-tolerance)
+    sta::check_positive_float "-tolerance" $tol
+  }
+  ord::set_3dblox_alignment_markers_cmd $keys(-masters) $tol
+}
+
 sta::define_cmd_args "write_db" {filename}
 
 sta::define_cmd_args "read_db" {[-hier] filename}

@@ -395,6 +395,21 @@ check_3dblox_cmd()
 }
 
 void
+set_3dblox_alignment_markers_cmd(vector<const char*> *master_names,
+                                 double tolerance_um)
+{
+  OpenRoad *ord = getOpenRoad();
+  std::vector<std::string> names;
+  if (master_names) {
+    for (const char* s : *master_names) {
+      names.emplace_back(s);
+    }
+    delete master_names;
+  }
+  ord->setAlignmentMarkers(names, tolerance_um);
+}
+
+void
 write_3dbv_cmd(const char *filename)
 {
   OpenRoad *ord = getOpenRoad();

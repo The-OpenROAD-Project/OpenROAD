@@ -5,6 +5,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
 #include <map>
 #include <numeric>
 #include <ranges>
@@ -16,8 +19,10 @@
 #include "odb/db.h"
 #include "odb/dbObject.h"
 #include "odb/geom.h"
+#include "odb/geom_boost.h"
 #include "odb/unfoldedModel.h"
 #include "utl/Logger.h"
+#include "utl/spatialIndex.h"
 #include "utl/unionFind.h"
 
 namespace odb {
@@ -89,6 +94,76 @@ bool isValid(const UnfoldedConnection& conn)
   return (surfaces.top_z - surfaces.bot_z) == conn.connection->getThickness();
 }
 
+using AlignmentMarkerIndex
+    = utl::SpatialIndex<Point, const UnfoldedAlignmentMarker*>;
+
+std::vector<AlignmentMarkerIndex::Value> collectMarkersInRect(
+    const std::deque<UnfoldedAlignmentMarker>& markers,
+    const Rect& rect)
+{
+  std::vector<AlignmentMarkerIndex::Value> out;
+  for (const auto& m : markers) {
+    if (rect.intersects(m.global_position)) {
+      out.emplace_back(m.global_position, &m);
+    }
+  }
+  return out;
+}
+
+using AlignmentViolationReporter
+    = std::function<void(const UnfoldedAlignmentMarker&, const std::string&)>;
+
+void matchMarkersBetweenChips(
+    const std::vector<AlignmentMarkerIndex::Value>& list_a,
+    std::vector<AlignmentMarkerIndex::Value> list_b,
+    const UnfoldedChip& c_a,
+    const UnfoldedChip& c_b,
+    int64_t tolerance_dbu,
+    int64_t tol_sq,
+    const AlignmentViolationReporter& report)
+{
+  AlignmentMarkerIndex index_b(std::move(list_b));
+
+  for (const auto& [pa, a_marker] : list_a) {
+    const Rect qbox(static_cast<int>(pa.x() - tolerance_dbu),
+                    static_cast<int>(pa.y() - tolerance_dbu),
+                    static_cast<int>(pa.x() + tolerance_dbu),
+                    static_cast<int>(pa.y() + tolerance_dbu));
+    auto candidates = index_b.query(qbox);
+    std::erase_if(candidates, [&](const auto& v) {
+      const int64_t dx = static_cast<int64_t>(v.first.x()) - pa.x();
+      const int64_t dy = static_cast<int64_t>(v.first.y()) - pa.y();
+      return dx * dx + dy * dy > tol_sq;
+    });
+
+    if (candidates.empty()) {
+      report(
+          *a_marker,
+          fmt::format("Alignment marker on {} has no counterpart on {} within "
+                      "tolerance",
+                      a_marker->parent_chip->name,
+                      c_b.name));
+    } else if (candidates.size() > 1) {
+      report(
+          *a_marker,
+          fmt::format("Alignment marker on {} has {} candidates on {} within "
+                      "tolerance (ambiguous)",
+                      a_marker->parent_chip->name,
+                      candidates.size(),
+                      c_b.name));
+    } else {
+      index_b.remove(candidates.front());
+    }
+  }
+  for (const auto& [pt, m] : index_b) {
+    report(*m,
+           fmt::format("Alignment marker on {} has no counterpart on {} within "
+                       "tolerance",
+                       m->parent_chip->name,
+                       c_a.name));
+  }
+}
+
 }  // namespace
 
 Checker::Checker(utl::Logger* logger, dbDatabase* db) : logger_(logger), db_(db)
@@ -109,6 +184,7 @@ void Checker::check()
   checkInternalExtUsage(top_cat, model);
   checkConnectionRegions(top_cat, model);
   checkBumpPhysicalAlignment(top_cat, model);
+  checkAlignmentMarkers(top_cat, model);
 }
 
 void Checker::checkFloatingChips(dbMarkerCategory* top_cat,
@@ -324,6 +400,81 @@ void Checker::checkBumpPhysicalAlignment(dbMarkerCategory* top_cat,
 void Checker::checkNetConnectivity(dbMarkerCategory* top_cat,
                                    const UnfoldedModel* model)
 {
+}
+
+void Checker::checkAlignmentMarkers(dbMarkerCategory* top_cat,
+                                    const UnfoldedModel* model)
+{
+  const auto& chips = model->getChips();
+  if (std::ranges::none_of(chips, [](const UnfoldedChip& c) {
+        return !c.alignment_markers.empty();
+      })) {
+    return;
+  }
+
+  const int64_t tolerance_dbu = db_->getChip()->getAlignmentMarkerTolerance();
+  const int64_t tol_sq = tolerance_dbu * tolerance_dbu;
+
+  std::vector<int> sorted(chips.size());
+  std::iota(sorted.begin(), sorted.end(), 0);
+  std::ranges::sort(sorted, [&](int a, int b) {
+    return chips[a].cuboid.xMin() < chips[b].cuboid.xMin();
+  });
+
+  dbMarkerCategory* cat = nullptr;
+  int violation_count = 0;
+  auto report = [&](const UnfoldedAlignmentMarker& m, const std::string& msg) {
+    if (!cat) {
+      cat = dbMarkerCategory::createOrReplace(top_cat, "Alignment Markers");
+    }
+    auto* marker = dbMarker::create(cat);
+    marker->addSource(m.inst);
+    marker->addSource(m.parent_chip->chip_inst_path.back());
+    const Point& p = m.global_position;
+    marker->addShape(Rect(p.x() - kBumpMarkerHalfSize,
+                          p.y() - kBumpMarkerHalfSize,
+                          p.x() + kBumpMarkerHalfSize,
+                          p.y() + kBumpMarkerHalfSize));
+    marker->setComment(msg);
+    violation_count++;
+  };
+
+  for (size_t i = 0; i < sorted.size(); ++i) {
+    const auto& c_a = chips[sorted[i]];
+    if (c_a.alignment_markers.empty()) {
+      continue;
+    }
+    for (size_t j = i + 1; j < sorted.size(); ++j) {
+      const auto& c_b = chips[sorted[j]];
+      if (c_b.cuboid.xMin() >= c_a.cuboid.xMax()) {
+        break;
+      }
+      if (c_b.alignment_markers.empty()) {
+        continue;
+      }
+      if (!c_a.cuboid.intersects(c_b.cuboid)) {
+        continue;
+      }
+
+      const Rect overlap = c_a.cuboid.getEnclosingRect().intersect(
+          c_b.cuboid.getEnclosingRect());
+      auto list_a = collectMarkersInRect(c_a.alignment_markers, overlap);
+      auto list_b = collectMarkersInRect(c_b.alignment_markers, overlap);
+      if (list_a.empty() && list_b.empty()) {
+        continue;
+      }
+
+      matchMarkersBetweenChips(
+          list_a, std::move(list_b), c_a, c_b, tolerance_dbu, tol_sq, report);
+    }
+  }
+
+  if (violation_count > 0) {
+    logger_->warn(utl::ODB,
+                  404,
+                  "Found {} alignment marker violation(s)",
+                  violation_count);
+  }
 }
 
 void Checker::checkLogicalConnectivity(dbMarkerCategory* top_cat,
