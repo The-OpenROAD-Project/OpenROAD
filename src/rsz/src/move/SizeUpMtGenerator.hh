@@ -13,8 +13,10 @@
 namespace sta {
 class LibertyCell;
 class LibertyPort;
+class Pin;
 class MinMax;
 class Scene;
+class Instance;
 }  // namespace sta
 
 namespace rsz {
@@ -24,9 +26,8 @@ namespace rsz {
 //
 // prepareRequirements() requests kArcDelayState so worker threads can read the
 // prepared timing snapshot without touching shared STA state. Produces multiple
-// SizeUpMtCandidate instances (up to max_candidate_generation) so the policy
-// can evaluate them in parallel and pick the best. Main-thread commit still
-// performs the live max-cap check before applying the winning replacement.
+// SizeUpMtCandidate instances (up to max_candidate_generation) so
+// the policy can evaluate them in parallel and pick the best.
 class SizeUpMtGenerator : public MoveGenerator
 {
  public:
@@ -49,6 +50,15 @@ class SizeUpMtGenerator : public MoveGenerator
       const sta::LibertyPort* drvr_port,
       const sta::Scene* scene,
       const sta::MinMax* min_max) const;
+
+  // === Max-cap and input-cap helpers =======================================
+  bool replacementPreservesMaxCap(sta::Instance* inst,
+                                  const sta::LibertyCell* replacement) const;
+  float getInputPinCapacitance(sta::Pin* pin,
+                               const sta::LibertyCell* cell) const;
+  bool checkMaxCapOK(const sta::Pin* drvr_pin, float cap_delta) const;
+  bool checkMaxCapViolation(sta::Instance* inst,
+                            const sta::LibertyCell* replacement) const;
 };
 
 }  // namespace rsz

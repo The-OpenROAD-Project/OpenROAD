@@ -47,22 +47,6 @@ MoveResult SizeUpMtCandidate::apply()
 {
   // Commit the chosen replacement directly after the generator has screened
   // legality.
-  if (!resizer_.replacementPreservesMaxCap(inst_, replacement_)) {
-    debugPrint(resizer_.logger(),
-               RSZ,
-               "opt_moves",
-               1,
-               "REJECT size_up_mt1 {}: {} -> {} violates max capacitance",
-               logName(),
-               current_cell_->name(),
-               replacement_->name());
-    return {
-        .accepted = false,
-        .type = MoveType::kSizeUp,
-        .touched_instances = {},
-    };
-  }
-
   const bool accepted = resizer_.replaceCell(inst_, replacement_);
   if (accepted) {
     const std::string& current_cell_name = current_cell_->name();

@@ -5,12 +5,14 @@
 #include <chrono>
 #include <cstddef>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "DelayEstimator.hh"
@@ -213,6 +215,82 @@ void warmupAllSwappableCells(Resizer& resizer, sta::Network* network)
   }
 }
 
+std::vector<sta::LibertyCell*> collectLibertyCells(sta::Network* network)
+{
+  std::vector<sta::LibertyCell*> cells;
+  std::unique_ptr<sta::LibertyLibraryIterator> lib_iter(
+      network->libertyLibraryIterator());
+  while (lib_iter->hasNext()) {
+    sta::LibertyLibrary* library = lib_iter->next();
+    sta::LibertyCellIterator cell_iter(library);
+    while (cell_iter.hasNext()) {
+      cells.push_back(cell_iter.next());
+    }
+  }
+  return cells;
+}
+
+std::vector<sta::Pin*> collectDriverPins(sta::Network* network)
+{
+  std::vector<sta::Pin*> pins;
+  sta::LeafInstanceIterator* inst_iter = network->leafInstanceIterator();
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    std::unique_ptr<sta::InstancePinIterator> pin_iter(
+        network->pinIterator(inst));
+    while (pin_iter->hasNext()) {
+      sta::Pin* pin = pin_iter->next();
+      if (network->isDriver(pin)) {
+        pins.push_back(pin);
+      }
+    }
+  }
+  delete inst_iter;
+  return pins;
+}
+
+std::string swappableCellsSignature(Resizer& resizer, sta::LibertyCell* cell)
+{
+  const sta::LibertyCellSeq swappable_cells = resizer.getSwappableCells(cell);
+  std::vector<std::string> names;
+  names.reserve(swappable_cells.size());
+  for (sta::LibertyCell* swappable_cell : swappable_cells) {
+    names.push_back(swappable_cell->name());
+  }
+  std::ranges::sort(names);
+
+  std::ostringstream oss;
+  oss << cell->name() << ':' << names.size();
+  for (const std::string& name : names) {
+    oss << ':' << name;
+  }
+  return oss.str();
+}
+
+std::string capacitanceSignature(sta::dbSta* sta, const sta::Pin* pin)
+{
+  float cap = 0.0f;
+  float max_cap = 0.0f;
+  float cap_slack = 0.0f;
+  const sta::RiseFall* tr = nullptr;
+  const sta::Scene* corner = nullptr;
+  sta->checkCapacitance(pin,
+                        sta->scenes(),
+                        sta::MinMax::max(),
+                        cap,
+                        max_cap,
+                        cap_slack,
+                        tr,
+                        corner);
+
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(12);
+  oss << sta->network()->pathName(pin) << ':' << cap << ':' << max_cap << ':'
+      << cap_slack << ':' << (tr != nullptr ? tr->name() : "null") << ':'
+      << (corner != nullptr ? "corner" : "null");
+  return oss.str();
+}
+
 TEST_F(TestResizerMt, BuildArcDelayStateAndEstimateLvtCandidate)
 {
   Resizer& resizer = resizer_;
@@ -395,6 +473,73 @@ TEST_F(TestResizerMt, ConcurrentMaxCapChecksAfterStaWarmup)
       << "Concurrent max-cap check diverged after STA warmup; inspect "
          "Resizer::replacementPreservesMaxCap(), Resizer::checkMaxCapOK(), "
          "and Sta::checkCapacitance().";
+}
+
+TEST_F(TestResizerMt, ConcurrentSwappableCellsAfterFullWarmup)
+{
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  warmupAllSwappableCells(resizer, sta_->network());
+
+  const std::vector<sta::LibertyCell*> cells
+      = collectLibertyCells(sta_->network());
+  ASSERT_FALSE(cells.empty());
+
+  std::vector<std::string> baseline;
+  baseline.reserve(cells.size());
+  for (sta::LibertyCell* cell : cells) {
+    baseline.push_back(swappableCellsSignature(resizer, cell));
+  }
+
+  utl::ThreadPool thread_pool(32);
+  constexpr int kRepeatCount = 100;
+  for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
+    std::vector<std::string> signature = thread_pool.parallelMap(
+        cells, [&resizer](sta::LibertyCell* cell) -> std::string {
+          return swappableCellsSignature(resizer, cell);
+        });
+    EXPECT_EQ(signature, baseline)
+        << "Concurrent getSwappableCells() diverged after full ST warmup at "
+           "repeat "
+        << repeat
+        << ". If this fails or crashes, inspect Resizer::getSwappableCells() "
+           "and Resizer::cellLeakage() cache access.";
+  }
+}
+
+TEST_F(TestResizerMt, ConcurrentCheckCapacitanceAfterWarmup)
+{
+  Resizer& resizer = resizer_;
+  resizer.runRepairSetupPreamble();
+  sta_->checkCapacitancesPreamble(sta_->scenes());
+  sta_->updateTiming(true);
+
+  const std::vector<sta::Pin*> driver_pins = collectDriverPins(sta_->network());
+  ASSERT_FALSE(driver_pins.empty());
+  for (const sta::Pin* pin : driver_pins) {
+    static_cast<void>(sta_->network()->drivers(pin));
+    static_cast<void>(capacitanceSignature(sta_.get(), pin));
+  }
+
+  std::vector<std::string> baseline;
+  baseline.reserve(driver_pins.size());
+  for (const sta::Pin* pin : driver_pins) {
+    baseline.push_back(capacitanceSignature(sta_.get(), pin));
+  }
+
+  utl::ThreadPool thread_pool(32);
+  constexpr int kRepeatCount = 100;
+  for (int repeat = 0; repeat < kRepeatCount; ++repeat) {
+    std::vector<std::string> signature = thread_pool.parallelMap(
+        driver_pins, [this](const sta::Pin* pin) -> std::string {
+          return capacitanceSignature(sta_.get(), pin);
+        });
+    EXPECT_EQ(signature, baseline)
+        << "Concurrent checkCapacitance() diverged after ST warmup at repeat "
+        << repeat
+        << ". If this fails or crashes, inspect Sta::checkCapacitance() and "
+           "GraphDelayCalc/Sdc capacitance query state.";
+  }
 }
 
 TEST(TestResizerMtThreadPool, ParallelForSupportsVoidTasks)

@@ -22,8 +22,7 @@ namespace rsz {
 // ArcDelayState (built on the main thread and stored on Target) and
 // evaluates the Liberty table model locally, making it thread-safe for
 // parallel evaluation on worker threads. apply() still runs on the main
-// thread, where it can perform live max-cap validation before calling
-// Resizer::replaceCell.
+// thread via Resizer::replaceCell.
 class VtSwapMtCandidate : public MoveCandidate
 {
  public:
