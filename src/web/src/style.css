@@ -1446,3 +1446,74 @@ html[data-theme="dark"] .schematic-widget svg {
 .drc-error {
     color: var(--error);
 }
+
+/* ─── Error Banner ─────────────────────────────────────────────────────── */
+
+/* Fixed container for stacked error banners. Appears above GoldenLayout. */
+#error-banner-container {
+    position: fixed;
+    top: 24px;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+}
+
+.error-banner {
+    pointer-events: auto;
+    background: var(--error);
+    color: var(--fg-white);
+    padding: 10px 40px 10px 16px;
+    font: 13px/1.4 monospace;
+    box-shadow: 0 2px 8px var(--shadow-strong);
+    position: relative;
+    border-bottom: 1px solid var(--shadow-strong);
+}
+
+.error-banner-summary {
+    font-weight: bold;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.error-banner details {
+    margin-top: 4px;
+}
+
+.error-banner summary {
+    cursor: pointer;
+    font-weight: normal;
+    opacity: 0.85;
+}
+
+.error-banner-stack {
+    margin: 6px 0 0 0;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    max-height: 240px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12px;
+}
+
+.error-banner-close {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--fg-white);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.error-banner-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}

@@ -16,7 +16,10 @@ import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
 import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
+import { installGlobalErrorHandlers } from './error-banner.js';
 import './theme.js';
+
+installGlobalErrorHandlers();
 
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
