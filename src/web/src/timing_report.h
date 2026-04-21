@@ -26,6 +26,10 @@ struct TimingNode
   float delay = 0.0f;  // incremental
   float slew = 0.0f;
   float load = 0.0f;
+  std::string direction;    // "input" / "output" / "inout" / ""
+  std::string inst_name;    // populated for ITerm pins
+  std::string master_name;  // populated for ITerm pins
+  std::string net_name;     // populated when the pin has a connected net
 };
 
 struct TimingPathSummary

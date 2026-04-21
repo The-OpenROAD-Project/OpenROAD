@@ -836,6 +836,7 @@ html, body {
     font-size: 13px;
     font-family: monospace;
     overflow: hidden;
+    position: relative;
 }
 
 .timing-toolbar {
@@ -964,6 +965,65 @@ html, body {
     white-space: normal;
     word-break: break-all;
     overflow-wrap: break-word;
+}
+
+.timing-inspector-popover {
+    position: absolute;
+    top: 40px;
+    right: 12px;
+    min-width: 260px;
+    max-width: 420px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    padding: 10px 12px 12px;
+    z-index: 10;
+}
+
+.timing-inspector-popover .close-btn {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    color: var(--fg-primary);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.timing-inspector-popover .close-btn:hover {
+    background: var(--bg-hover);
+    border-radius: 2px;
+}
+
+.timing-inspector-title {
+    font-weight: bold;
+    margin-bottom: 6px;
+    padding-right: 20px;
+}
+
+.timing-inspector-popover table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.timing-inspector-popover th,
+.timing-inspector-popover td {
+    text-align: left;
+    vertical-align: top;
+    padding: 2px 6px;
+    word-break: break-all;
+}
+
+.timing-inspector-popover th {
+    color: var(--fg-muted);
+    font-weight: normal;
+    white-space: nowrap;
+    width: 7em;
 }
 
 /* ─── Hierarchy Browser ──────────────────────────────────────────────── */

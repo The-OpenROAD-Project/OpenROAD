@@ -27,6 +27,7 @@
 #include "sta/PathEnd.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/PathGroup.hh"
+#include "sta/PortDirection.hh"
 #include "sta/Scene.hh"
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
@@ -107,10 +108,30 @@ void TimingReport::expandPath(sta::Path* path,
     sta_->getDbNetwork()->staToDb(pin, term, port, moditerm);
 
     std::string pin_name;
+    std::string inst_name;
+    std::string master_name;
+    std::string net_name;
     if (term) {
       pin_name = term->getName();
+      if (auto* inst = term->getInst()) {
+        inst_name = inst->getName();
+        if (auto* master = inst->getMaster()) {
+          master_name = master->getName();
+        }
+      }
+      if (auto* n = term->getNet()) {
+        net_name = n->getName();
+      }
     } else if (port) {
       pin_name = port->getName();
+      if (auto* n = port->getNet()) {
+        net_name = n->getName();
+      }
+    }
+
+    std::string direction;
+    if (auto* dir = network->direction(pin)) {
+      direction = std::string(dir->name());
     }
 
     // Arrival and slew
@@ -140,7 +161,11 @@ void TimingReport::expandPath(sta::Path* path,
                                .time = (arrival_cur + offset) / time_scale,
                                .delay = pin_delay / time_scale,
                                .slew = slew / time_scale,
-                               .load = cap / cap_scale});
+                               .load = cap / cap_scale,
+                               .direction = std::move(direction),
+                               .inst_name = std::move(inst_name),
+                               .master_name = std::move(master_name),
+                               .net_name = std::move(net_name)});
 
     arrival_prev = arrival_cur;
   }
@@ -556,6 +581,18 @@ void serializeTimingNode(JsonBuilder& b, const TimingNode& n)
   b.field("delay", n.delay);
   b.field("slew", n.slew);
   b.field("load", n.load);
+  if (!n.direction.empty()) {
+    b.field("direction", n.direction);
+  }
+  if (!n.inst_name.empty()) {
+    b.field("instance", n.inst_name);
+  }
+  if (!n.master_name.empty()) {
+    b.field("master", n.master_name);
+  }
+  if (!n.net_name.empty()) {
+    b.field("net", n.net_name);
+  }
   b.endObject();
 }
 

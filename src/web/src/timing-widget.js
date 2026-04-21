@@ -16,6 +16,8 @@ export class TimingWidget {
         this._selectedPathIndex = -1;
         this._detailTab = 'data';
         this._selectedDetailIndex = -1;
+        this._inspectorPopover = null;
+        this._inspectorCloseHandlers = null;
 
         this._build();
     }
@@ -309,6 +311,85 @@ export class TimingWidget {
         }).then(() => this._redrawAllLayers());
     }
 
+    _showInspector(idx) {
+        this._closeInspector();
+
+        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
+        const path = paths[this._selectedPathIndex];
+        if (!path) return;
+        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
+        const n = nodes?.[idx];
+        if (!n) return;
+
+        const popover = document.createElement('div');
+        popover.className = 'timing-inspector-popover';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', () => this._closeInspector());
+        popover.appendChild(closeBtn);
+
+        const title = document.createElement('div');
+        title.className = 'timing-inspector-title';
+        title.textContent = 'Pin Inspector';
+        popover.appendChild(title);
+
+        const rows = [
+            ['Pin', n.pin],
+            ['Direction', n.direction],
+            ['Instance', n.instance],
+            ['Master', n.master],
+            ['Net', n.net],
+            ['Fanout', n.fanout],
+            ['Time', fmtTime(n.time)],
+            ['Delay', fmtTime(n.delay)],
+            ['Slew', fmtTime(n.slew)],
+            ['Load', fmtTime(n.load)],
+        ];
+        const table = document.createElement('table');
+        for (const [k, v] of rows) {
+            if (v === undefined || v === null || v === '') continue;
+            const tr = document.createElement('tr');
+            const kth = document.createElement('th');
+            kth.textContent = k;
+            const vtd = document.createElement('td');
+            vtd.textContent = String(v);
+            tr.appendChild(kth);
+            tr.appendChild(vtd);
+            table.appendChild(tr);
+        }
+        popover.appendChild(table);
+
+        this.element.appendChild(popover);
+        this._inspectorPopover = popover;
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Escape') this._closeInspector();
+        };
+        const onMouseDown = (e) => {
+            if (!popover.contains(e.target)) this._closeInspector();
+        };
+        document.addEventListener('keydown', onKeyDown);
+        // Defer outside-click listener so the dblclick that opened us
+        // doesn't instantly close us.
+        setTimeout(() => {
+            document.addEventListener('mousedown', onMouseDown, true);
+        }, 0);
+        this._inspectorCloseHandlers = { onKeyDown, onMouseDown };
+    }
+
+    _closeInspector() {
+        if (!this._inspectorPopover) return;
+        this._inspectorPopover.remove();
+        this._inspectorPopover = null;
+        if (this._inspectorCloseHandlers) {
+            document.removeEventListener('keydown', this._inspectorCloseHandlers.onKeyDown);
+            document.removeEventListener('mousedown', this._inspectorCloseHandlers.onMouseDown, true);
+            this._inspectorCloseHandlers = null;
+        }
+    }
+
     _renderDetailTable() {
         // Preserve column widths across re-renders.
         const oldHeaders = this._detailTable.querySelectorAll('thead th');
@@ -352,6 +433,10 @@ export class TimingWidget {
             }
             tr.style.cursor = 'pointer';
             tr.addEventListener('click', () => this._selectDetailRow(idx));
+            tr.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                this._showInspector(idx);
+            });
             tbody.appendChild(tr);
         });
         this._detailTable.appendChild(tbody);

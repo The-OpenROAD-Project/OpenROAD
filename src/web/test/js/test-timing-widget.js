@@ -109,3 +109,106 @@ describe('TimingWidget._selectPathRow', () => {
             app.requests.filter(r => r.type === 'timing_highlight').length, 0);
     });
 });
+
+describe('TimingWidget._showInspector', () => {
+    function pathWithNode(node) {
+        return makePath(0.0, 'e0', { data_nodes: [node] });
+    }
+
+    const FULL_NODE = {
+        pin: 'U1/A',
+        fanout: 3,
+        rise: true,
+        clk: false,
+        time: 0.12,
+        delay: 0.03,
+        slew: 0.05,
+        load: 0.002,
+        direction: 'input',
+        instance: 'U1',
+        master: 'AND2_X1',
+        net: 'n5',
+    };
+
+    it('renders a popover populated from the node', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
+        widget._selectPathRow(0);
+
+        widget._showInspector(0);
+
+        const pop = widget.element.querySelector('.timing-inspector-popover');
+        assert.ok(pop, 'popover was created');
+        const text = pop.textContent;
+        assert.ok(text.includes('U1/A'), 'shows pin');
+        assert.ok(text.includes('input'), 'shows direction');
+        assert.ok(text.includes('U1'), 'shows instance');
+        assert.ok(text.includes('AND2_X1'), 'shows master');
+        assert.ok(text.includes('n5'), 'shows net');
+    });
+
+    it('omits rows whose value is empty or missing', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        const minimal = {
+            pin: 'TOP_IN', fanout: 0, rise: true, clk: false,
+            time: 0, delay: 0, slew: 0, load: 0,
+            // no direction, instance, master, net
+        };
+        widget.showPaths('setup', [pathWithNode(minimal)]);
+        widget._selectPathRow(0);
+
+        widget._showInspector(0);
+
+        const pop = widget.element.querySelector('.timing-inspector-popover');
+        const headers = Array.from(pop.querySelectorAll('th'), th => th.textContent);
+        assert.ok(!headers.includes('Direction'));
+        assert.ok(!headers.includes('Instance'));
+        assert.ok(!headers.includes('Master'));
+        assert.ok(!headers.includes('Net'));
+        assert.ok(headers.includes('Pin'));
+    });
+
+    it('closes on Escape', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
+        widget._selectPathRow(0);
+        widget._showInspector(0);
+        assert.ok(widget.element.querySelector('.timing-inspector-popover'));
+
+        document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+
+        assert.equal(widget.element.querySelector('.timing-inspector-popover'), null);
+    });
+
+    it('closes on the × button', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
+        widget._selectPathRow(0);
+        widget._showInspector(0);
+
+        const btn = widget.element.querySelector('.timing-inspector-popover .close-btn');
+        btn.click();
+
+        assert.equal(widget.element.querySelector('.timing-inspector-popover'), null);
+    });
+
+    it('closes when opening a new inspector (replaces existing)', () => {
+        const app = createMockApp();
+        const widget = new TimingWidget(app, () => {});
+        widget.showPaths('setup', [
+            makePath(0.0, 'e0', { data_nodes: [FULL_NODE, { ...FULL_NODE, pin: 'U2/A' }] }),
+        ]);
+        widget._selectPathRow(0);
+
+        widget._showInspector(0);
+        widget._showInspector(1);
+
+        const popovers = widget.element.querySelectorAll('.timing-inspector-popover');
+        assert.equal(popovers.length, 1);
+        assert.ok(popovers[0].textContent.includes('U2/A'));
+    });
+});
