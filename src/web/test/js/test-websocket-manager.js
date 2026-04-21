@@ -142,6 +142,20 @@ describe('WebSocketManager.fromCache', () => {
         assert.equal(mgr.socket, null);
     });
 
+    it('supportsInStatic matches the cache allowlist', () => {
+        const mgr = WebSocketManager.fromCache(makeCache());
+        for (const type of ['tile', 'timing_highlight', 'timing_report',
+                            'slack_histogram', 'heatmaps', 'tech', 'bounds',
+                            'chart_filters']) {
+            assert.equal(mgr.supportsInStatic(type), true, type);
+        }
+        for (const type of ['drc_categories', 'drc_markers',
+                            'clock_tree', 'schematic_inspect',
+                            'set_focus_nets', 'select', 'tcl_eval']) {
+            assert.equal(mgr.supportsInStatic(type), false, type);
+        }
+    });
+
     it('readyPromise resolves immediately', async () => {
         const mgr = WebSocketManager.fromCache(makeCache());
         await mgr.readyPromise; // Should not hang.

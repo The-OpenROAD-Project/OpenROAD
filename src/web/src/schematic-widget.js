@@ -4,10 +4,22 @@
 // NetlistsVG is used to render a Yosys-compatible JSON netlist into an SVG.
 // It is loaded via <script> tags in index.html and exposed as window.netlistsvg.
 
+import { buildUnavailableStub } from './ui-utils.js';
+
 export class SchematicWidget {
     constructor(container, appState) {
         this.container = container;
         this.appState = appState;
+
+        if (appState.websocketManager && appState.websocketManager.isStaticMode) {
+            this.element = buildUnavailableStub(
+                'schematic-widget',
+                'Schematic viewing requires the live OpenROAD server.',
+            );
+            this.container.element.appendChild(this.element);
+            appState.schematicWidget = this;
+            return;
+        }
 
         this.element = document.createElement('div');
         this.element.className = 'schematic-widget';

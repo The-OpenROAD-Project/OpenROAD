@@ -4,7 +4,7 @@
 // Hierarchy browser widget — module tree with coloring.
 
 import { CheckboxTreeModel } from './checkbox-tree-model.js';
-import { makeResizableHeaders } from './ui-utils.js';
+import { makeResizableHeaders, buildUnavailableStub } from './ui-utils.js';
 
 const COLS = [
     'Instance', 'Module', 'Instances', 'Macros', 'Modules',
@@ -39,6 +39,16 @@ export class HierarchyBrowser {
 
         // Checkbox tree model for module visibility (tri-state propagation).
         this._checkModel = null;
+
+        if (app.websocketManager.isStaticMode) {
+            const stub = buildUnavailableStub(
+                'hierarchy-widget',
+                'Module hierarchy requires the live OpenROAD server.',
+            );
+            container.element.appendChild(stub);
+            app.hierarchyBrowser = this;
+            return;
+        }
 
         this._build(container);
 

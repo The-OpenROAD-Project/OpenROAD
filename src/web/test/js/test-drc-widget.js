@@ -30,6 +30,26 @@ function createMockApp(responses = {}) {
 }
 
 describe('DrcWidget', () => {
+    describe('static mode', () => {
+        it('renders a disabled stub and makes no requests', () => {
+            const requests = [];
+            const app = {
+                websocketManager: {
+                    isStaticMode: true,
+                    request(msg) { requests.push(msg); return Promise.resolve({}); },
+                },
+            };
+            const widget = new DrcWidget(app, () => {});
+
+            assert.ok(widget.element);
+            assert.ok(widget.element.classList.contains('drc-widget'));
+            const stub = widget.element.querySelector('.widget-unavailable');
+            assert.ok(stub, 'unavailable stub is rendered');
+            assert.match(stub.textContent, /live OpenROAD server/);
+            assert.equal(requests.length, 0, 'no request was fired');
+        });
+    });
+
     describe('construction', () => {
         it('creates the expected DOM structure', () => {
             const app = createMockApp({

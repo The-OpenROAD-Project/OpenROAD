@@ -1443,6 +1443,15 @@ html[data-theme="dark"] .schematic-widget svg {
     color: var(--fg-secondary);
     text-align: center;
 }
+
+/* Neutral "feature not available in this mode" stub. */
+.widget-unavailable {
+    padding: 24px 16px;
+    color: var(--fg-secondary);
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.5;
+}
 .drc-error {
     color: var(--error);
 }

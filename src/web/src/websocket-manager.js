@@ -5,6 +5,21 @@
 // Supports a cache mode for static reports where pre-computed responses
 // are served from window.__STATIC_CACHE__ without a WebSocket connection.
 
+// Request types that _cacheRequest knows how to answer from the
+// embedded cache. Anything else rejects with "Not available in
+// static mode: <type>"; widgets should check supportsInStatic and
+// render a disabled stub rather than issue doomed requests.
+const STATIC_REQUEST_TYPES = new Set([
+    'tile',
+    'timing_highlight',
+    'timing_report',
+    'slack_histogram',
+    'tech',
+    'bounds',
+    'heatmaps',
+    'chart_filters',
+]);
+
 export class WebSocketManager {
     constructor(url, onStatusChange) {
         this.url = url;
@@ -38,6 +53,14 @@ export class WebSocketManager {
 
     get isStaticMode() {
         return !!this._cache;
+    }
+
+    // Whether a request type is serviceable in static mode. Mirrors
+    // the whitelist inside _cacheRequest, so widgets can check up
+    // front and render a disabled stub rather than firing a doomed
+    // request and catching the rejection.
+    supportsInStatic(type) {
+        return STATIC_REQUEST_TYPES.has(type);
     }
 
     connect() {

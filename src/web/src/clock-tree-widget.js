@@ -4,6 +4,7 @@
 // Canvas-based clock tree viewer widget.
 
 import { getThemeColors } from './theme.js';
+import { buildUnavailableStub } from './ui-utils.js';
 
 export const kNodeSpacing = 24;    // pixels between adjacent leaf bins
 export const kNodeSize = 10;       // base node shape size in pixels
@@ -162,6 +163,15 @@ export class ClockTreeWidget {
         this._dragStartY = 0;
         this._dragStartTx = 0;
         this._dragStartTy = 0;
+
+        if (app.websocketManager.isStaticMode) {
+            const stub = buildUnavailableStub(
+                'clock-tree-widget',
+                'Clock tree viewing requires the live OpenROAD server.',
+            );
+            container.appendChild(stub);
+            return;
+        }
 
         this._build(container);
     }

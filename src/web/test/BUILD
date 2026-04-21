@@ -80,7 +80,7 @@ js_test(
 
 js_test(
     name = "clock_tree_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-clock-tree-widget.js",
     no_copy_to_bin = JS_FILES,
 )

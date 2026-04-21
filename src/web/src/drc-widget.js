@@ -5,6 +5,7 @@
 // Matches the capabilities of the Qt GUI DRCWidget.
 
 import { dbuRectToBounds } from './coordinates.js';
+import { buildUnavailableStub } from './ui-utils.js';
 
 export class DrcWidget {
     constructor(app, redrawAllLayers) {
@@ -14,6 +15,14 @@ export class DrcWidget {
         this._activeCategory = '';
         this._markerTree = null;  // server response for current category
         this._expandedNodes = new Set();
+
+        if (app.websocketManager.isStaticMode) {
+            this.element = buildUnavailableStub(
+                'drc-widget',
+                'DRC viewing requires the live OpenROAD server.',
+            );
+            return;
+        }
 
         this._build();
         this._loadCategories();

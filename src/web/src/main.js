@@ -329,16 +329,24 @@ function tclAppend(text, className) {
 function createTclConsole(container) {
     const el = document.createElement('div');
     el.className = 'tcl-console';
+    const staticMode = app.websocketManager.isStaticMode;
+    const placeholder = staticMode
+        ? 'Tcl console requires the live OpenROAD server.'
+        : 'Enter Tcl command...';
     el.innerHTML =
         '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
-        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." />' +
+        `  <input class="tcl-input" type="text" placeholder="${placeholder}" />` +
         '</div>';
     container.element.appendChild(el);
 
     app.tclOutputEl = el.querySelector('.tcl-output');
     const input = el.querySelector('.tcl-input');
+    if (staticMode) {
+        input.disabled = true;
+        return;
+    }
     const completer = new TclCompleter(input, app.websocketManager);
 
     input.addEventListener('keydown', (e) => {

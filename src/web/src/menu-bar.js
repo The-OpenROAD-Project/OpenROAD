@@ -6,9 +6,11 @@ export function createMenuBar(app) {
     const menus = [
         { label: 'File', items: [
             { label: 'Open DB...', action: () => showPathDialog(app, 'Open DB', 'read_db'),
-              enabledWhen: () => !app.designScale },
+              enabledWhen: () => !app.designScale
+                                 && !app.websocketManager.isStaticMode },
             { label: 'Save DB...', action: () => showPathDialog(app, 'Save DB', 'write_db'),
-              enabledWhen: () => !!app.designScale },
+              enabledWhen: () => !!app.designScale
+                                 && !app.websocketManager.isStaticMode },
         ]},
         { label: 'View', items: [
             { label: 'Fit', shortcut: 'F', action: () => { if (app.fitBounds) app.map.fitBounds(app.fitBounds); } },

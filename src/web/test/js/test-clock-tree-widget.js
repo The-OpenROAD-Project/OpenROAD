@@ -1,12 +1,32 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026, The OpenROAD Authors
 
+import './setup-dom.js';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     computeClockTreeLayout,
+    ClockTreeWidget,
     kNodeSpacing, kTopMargin, kBottomMargin, kLeftMargin, kRightMargin,
 } from '../../src/clock-tree-widget.js';
+
+describe('ClockTreeWidget static mode', () => {
+    it('renders a disabled stub and makes no requests', () => {
+        const requests = [];
+        const app = {
+            websocketManager: {
+                isStaticMode: true,
+                request(msg) { requests.push(msg); return Promise.resolve({}); },
+            },
+        };
+        const container = document.createElement('div');
+        new ClockTreeWidget(container, app, () => {});
+        const stub = container.querySelector('.widget-unavailable');
+        assert.ok(stub, 'unavailable stub is rendered');
+        assert.match(stub.textContent, /live OpenROAD server/);
+        assert.equal(requests.length, 0);
+    });
+});
 
 describe('computeClockTreeLayout', () => {
     it('returns empty layout for empty nodes', () => {
