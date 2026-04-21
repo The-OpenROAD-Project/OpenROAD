@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "MoveCandidate.hh"
@@ -14,7 +13,6 @@
 #include "SizeUpCandidate.hh"
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
-#include "sta/Delay.hh"
 #include "sta/GraphDelayCalc.hh"
 #include "sta/Liberty.hh"
 #include "sta/LibertyClass.hh"
@@ -25,22 +23,6 @@
 #include "sta/PathExpanded.hh"
 
 namespace rsz {
-
-namespace {
-
-const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
-                                      const std::string& port_name,
-                                      const int lib_ap)
-{
-  if (cell == nullptr) {
-    return nullptr;
-  }
-
-  const sta::LibertyPort* port = cell->findLibertyPort(port_name);
-  return port != nullptr ? port->scenePort(lib_ap) : nullptr;
-}
-
-}  // namespace
 
 SizeUpGenerator::SizeUpGenerator(const GeneratorContext& context)
     : MoveGenerator(context)
@@ -188,27 +170,9 @@ sta::LibertyCell* SizeUpGenerator::upsizeCell(sta::LibertyPort* in_port,
   std::ranges::sort(
       swappable_cells.begin(),
       swappable_cells.end(),
-      [=, this](const sta::LibertyCell* cell1, const sta::LibertyCell* cell2) {
-        const sta::LibertyPort* port1
-            = findScenePort(cell1, drvr_port_name, lib_ap);
-        const sta::LibertyPort* port2
-            = findScenePort(cell2, drvr_port_name, lib_ap);
-        if ((port1 != nullptr) != (port2 != nullptr)) {
-          return port1 != nullptr;
-        }
-        if (port1 == nullptr) {
-          return cell1->name() < cell2->name();
-        }
-        const float drive1 = port1->driveResistance();
-        const float drive2 = port2->driveResistance();
-        const sta::ArcDelay intrinsic1
-            = port1->intrinsicDelay(resizer_.staState());
-        const sta::ArcDelay intrinsic2
-            = port2->intrinsicDelay(resizer_.staState());
-        const float capacitance1 = port1->capacitance();
-        const float capacitance2 = port2->capacitance();
-        return std::tie(drive2, intrinsic1, capacitance1)
-               < std::tie(drive1, intrinsic2, capacitance2);
+      [this, &drvr_port_name, lib_ap](const sta::LibertyCell* cell1,
+                                      const sta::LibertyCell* cell2) {
+        return strongerCellLess(cell1, cell2, drvr_port_name, lib_ap);
       });
 
   const sta::LibertyPort* scene_drvr_port

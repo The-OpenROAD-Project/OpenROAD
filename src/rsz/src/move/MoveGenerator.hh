@@ -4,10 +4,16 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "MoveCandidate.hh"
 #include "OptimizerTypes.hh"
+
+namespace sta {
+class LibertyCell;
+class LibertyPort;
+}  // namespace sta
 
 namespace rsz {
 
@@ -81,6 +87,15 @@ class MoveGenerator
       = 0;
 
  protected:
+  // === Shared Liberty-cell ordering helpers ================================
+  const sta::LibertyPort* findScenePort(const sta::LibertyCell* cell,
+                                        const std::string& port_name,
+                                        int lib_ap) const;
+  bool strongerCellLess(const sta::LibertyCell* lhs,
+                        const sta::LibertyCell* rhs,
+                        const std::string& drvr_port_name,
+                        int lib_ap) const;
+
   // === Shared generator dependencies =======================================
   Resizer& resizer_;
   MoveCommitter& committer_;
