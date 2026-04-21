@@ -42,9 +42,9 @@ void SetupMt1Policy::start(const OptimizerRunConfig& config)
 {
   OptPolicy::start(config);
   policy_config_.max_candidate_generation
-      = static_cast<int>(utl::readEnvarUint("RSZ_VTSWAP_CANDIDATES", 10));
+      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
   policy_config_.max_committed_moves
-      = static_cast<int>(utl::readEnvarUint("RSZ_VTSWAP_MAX_MOVES", 100));
+      = utl::readEnvarInt("RSZ_VTSWAP_MAX_MOVES", 100);
   move_sequence_.clear();
   if (!config_.skip_vt_swap && resizer_.vtCategoryCount() > 1) {
     move_sequence_.push_back(MoveType::kVtSwap);
@@ -111,7 +111,7 @@ void SetupMt1Policy::iterate()
   const sta::Slack tns_before = totalNegativeSlack(max_);
 
   // Find target cells
-  std::vector<Target> target_pins = findBottleneckTargets();
+  std::vector<Target> target_pins = collectWorstEndpointTargets();
   if (finishIfNoValidTargetPin(target_pins)) {
     return;
   }
@@ -141,11 +141,10 @@ void SetupMt1Policy::iterate()
   ++iteration_index_;
 }
 
-std::vector<Target> SetupMt1Policy::findBottleneckTargets() const
+std::vector<Target> SetupMt1Policy::collectWorstEndpointTargets() const
 {
   rsz::RepairTargetCollector collector(&resizer_);
   collector.init(config_.setup_slack_margin);
-  collector.collectViolatingEndpoints();
   return collector.collectCritPathDriverPinTargets([this](sta::Pin* pin) {
     return resizer_.isEditableLogicStdCell(network_->instance(pin));
   });

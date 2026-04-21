@@ -150,6 +150,7 @@ class MoveCommitter
   static size_t typeIndex(MoveType type) { return static_cast<size_t>(type); }
 
   static constexpr size_t kTypeCount = static_cast<size_t>(MoveType::kCount);
+  inline static std::array<int, kTypeCount> persisted_summary_by_type_{};
 
   // === Shared services ======================================================
   Resizer& resizer_;

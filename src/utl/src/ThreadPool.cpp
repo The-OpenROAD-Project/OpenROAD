@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <utility>
 
@@ -14,7 +15,8 @@ namespace utl {
 // assists never leak across unrelated threads or pools.
 thread_local ThreadPool* ThreadPool::active_pool_ = nullptr;
 
-ThreadPool::ThreadPool(const size_t thread_count) : workers_(thread_count)
+ThreadPool::ThreadPool(const size_t thread_count)
+    : workers_(thread_count), lifetime_(std::make_shared<ThreadPoolLifetime>())
 {
   for (size_t index = 0; index < thread_count; ++index) {
     workers_[index] = std::thread(&ThreadPool::workerLoop, this);
@@ -34,6 +36,8 @@ ThreadPool::~ThreadPool()
       worker.join();
     }
   }
+
+  lifetime_->pool_alive.store(false, std::memory_order_release);
 }
 
 size_t ThreadPool::threadCount() const
@@ -41,9 +45,9 @@ size_t ThreadPool::threadCount() const
   return workers_.size();
 }
 
-bool ThreadPool::isWorkerThread() const
+bool ThreadPool::isWorkerThreadFor(const ThreadPool* pool)
 {
-  return active_pool_ == this;
+  return active_pool_ == pool;
 }
 
 bool ThreadPool::tryRunPendingTask()

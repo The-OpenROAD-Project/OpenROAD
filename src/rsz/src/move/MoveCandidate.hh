@@ -23,7 +23,7 @@ namespace rsz {
 //   estimate() must be pure w.r.t. OpenDB/STA so MT policies can call it
 //   from worker threads using only prepared Target data.  apply() runs under
 //   an open ECO journal on the main thread and is the only place that may
-//   mutate the database.
+//   mutate the database or perform live STA checks that are not worker-safe.
 //
 class MoveCandidate
 {

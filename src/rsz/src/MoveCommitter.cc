@@ -53,9 +53,6 @@ using std::string;
 using std::vector;
 using utl::RSZ;
 
-std::array<int, static_cast<size_t>(MoveType::kCount)>
-    persisted_summary_by_type{};
-
 MoveStateType moveTrackerState(const TrackedMoveStateType state)
 {
   switch (state) {
@@ -80,7 +77,7 @@ void MoveCommitter::init()
   journal_open_ = false;
   std::ranges::fill(summary_carried_by_type_, 0);
   summary_carried_by_type_[typeIndex(MoveType::kSizeUpMatch)]
-      = persisted_summary_by_type[typeIndex(MoveType::kSizeUpMatch)];
+      = persisted_summary_by_type_[typeIndex(MoveType::kSizeUpMatch)];
   std::ranges::fill(pending_by_type_, 0);
   std::ranges::fill(committed_by_type_, 0);
   for (size_t index = 0; index < pending_instances_by_type_.size(); ++index) {
@@ -539,7 +536,7 @@ void MoveCommitter::acceptPendingMoves()
 
   for (size_t index = 0; index < pending_by_type_.size(); ++index) {
     if (index == typeIndex(MoveType::kSizeUpMatch)) {
-      persisted_summary_by_type[index] += pending_by_type_[index];
+      persisted_summary_by_type_[index] += pending_by_type_[index];
     }
     committed_by_type_[index] += pending_by_type_[index];
     pending_by_type_[index] = 0;

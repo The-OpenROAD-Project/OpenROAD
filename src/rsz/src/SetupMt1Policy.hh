@@ -31,9 +31,10 @@ class MoveGenerator;
 // Experimental fully-MT batched setup-repair policy (RSZ_POLICY=mt1).
 //
 // Unlike SetupLegacyMtPolicy (which preserves the legacy per-endpoint loop),
-// SetupMt1Policy processes a *flat batch* of bottleneck targets per iteration:
-//   1. findBottleneckTargets(): collect the worst-violating path-driver
-//      instances across all endpoints.
+// SetupMt1Policy processes a flat batch of prepared path-driver targets per
+// iteration:
+//   1. collectWorstEndpointTargets(): collect unique path-driver pins from
+//      the worst path of each violating endpoint.
 //   2. prepareTargets(): snapshot delay context / load cap on each Target
 //      on the main thread.
 //   3. evaluateTargets(): walk prepared targets serially while dispatching
@@ -70,7 +71,7 @@ class SetupMt1Policy : public OptPolicy
                            const GeneratorContext& context) override;
 
   // === Target selection =====================================================
-  std::vector<Target> findBottleneckTargets() const;
+  std::vector<Target> collectWorstEndpointTargets() const;
 
   // === Parallel generation and scoring =====================================
   std::vector<TargetEvaluation> generateAndEstimateTargets(

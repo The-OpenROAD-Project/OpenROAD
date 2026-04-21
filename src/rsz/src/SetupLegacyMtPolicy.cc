@@ -44,7 +44,7 @@ void SetupLegacyMtPolicy::start(const OptimizerRunConfig& config)
 {
   SetupLegacyPolicy::start(config);
   policy_config_.max_candidate_generation
-      = static_cast<int>(utl::readEnvarUint("RSZ_VTSWAP_CANDIDATES", 10));
+      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
   thread_pool_ = makeWorkerThreadPool();
 }
 

@@ -58,10 +58,6 @@ Estimate VtSwapMtCandidate::estimate()
 {
   // Reuse the pre-built local delay context to score the candidate without
   // mutating the design.
-  if (!resizer_.replacementPreservesMaxCap(inst_, candidate_cell_)) {
-    return makeRejectedEstimate();
-  }
-
   const DelayEstimate delay_est
       = DelayEstimator::estimate(arc_delay_, candidate_cell_);
   if (!delay_est.legal) {
@@ -79,6 +75,22 @@ MoveResult VtSwapMtCandidate::apply()
 {
   // Apply the chosen VT replacement after the policy has selected the best
   // score.
+  if (!resizer_.replacementPreservesMaxCap(inst_, candidate_cell_)) {
+    debugPrint(resizer_.logger(),
+               RSZ,
+               "opt_moves",
+               1,
+               "REJECT vt_swap_mt1 {}: {} -> {} violates max capacitance",
+               getDrvPinName(),
+               current_cell_->name(),
+               candidate_cell_->name());
+    return {
+        .accepted = false,
+        .type = MoveType::kVtSwap,
+        .touched_instances = {},
+    };
+  }
+
   const bool accepted = resizer_.replaceCell(inst_, candidate_cell_);
   debugPrint(resizer_.logger(),
              RSZ,

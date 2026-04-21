@@ -3,14 +3,18 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
+#include <exception>
 #include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -19,6 +23,16 @@
 namespace utl {
 
 class ThreadPool;
+
+// Shared lifetime token for a ThreadPool and any futures produced by it.
+//
+// Futures may outlive the pool object itself, so wait()/get() must be able to
+// detect that the pool has already been destroyed before touching the raw
+// ThreadPool* used for nested-worker assistance.
+struct ThreadPoolLifetime
+{
+  std::atomic<bool> pool_alive{true};
+};
 
 // Wraps std::future so that a worker thread waiting on a nested task can
 // keep draining the same pool's queue instead of blocking.
@@ -34,13 +48,12 @@ class ThreadPoolFuture
 {
  public:
   // === Construction =========================================================
-  // Allow placeholder entries in containers that will be assigned a live
-  // future later.
-  ThreadPoolFuture() = default;
   // Wrap one submitted task together with the pool that should assist nested
   // waits on this future.
-  ThreadPoolFuture(ThreadPool* pool, std::future<T>&& future)
-      : pool_(pool), future_(std::move(future))
+  ThreadPoolFuture(ThreadPool* pool,
+                   std::shared_ptr<ThreadPoolLifetime> lifetime,
+                   std::future<T>&& future)
+      : pool_(pool), lifetime_(std::move(lifetime)), future_(std::move(future))
   {
   }
 
@@ -56,6 +69,7 @@ class ThreadPoolFuture
 
   // === Future state =========================================================
   ThreadPool* pool_{nullptr};
+  std::shared_ptr<ThreadPoolLifetime> lifetime_;
   std::future<T> future_;
 };
 
@@ -70,6 +84,10 @@ class ThreadPoolFuture
 //     single-threaded determinism and making debug builds reproducible.
 //   - *Thread-local pool marker* (active_pool_): each worker records which
 //     pool currently owns it so nested waits only assist the correct pool.
+//   - *Structured completion*: parallelFor() and parallelMap() always wait for
+//     every submitted task before returning or rethrowing an exception, so
+//     worker lambdas cannot outlive the input vectors or caller-owned captures
+//     passed into the batch helper.
 //
 // Tasks are submitted via submit() (single item), parallelMap() (batch with
 // results), or parallelFor() (batch without results). Results are collected by
@@ -95,7 +113,7 @@ class ThreadPool
       // With zero worker threads, run the task immediately on the caller
       // thread instead of enqueueing work that no worker can consume.
       (*packaged_task)();
-      return ThreadPoolFuture<Result>(this, std::move(future));
+      return ThreadPoolFuture<Result>(this, lifetime_, std::move(future));
     }
 
     // Return a pool-aware future so callers can freely compose nested submit /
@@ -105,7 +123,7 @@ class ThreadPool
       tasks_.push([packaged_task]() { (*packaged_task)(); });
     }
     cv_.notify_one();
-    return ThreadPoolFuture<Result>(this, std::move(future));
+    return ThreadPoolFuture<Result>(this, lifetime_, std::move(future));
   }
 
   // === Batch execution ======================================================
@@ -124,14 +142,25 @@ class ThreadPool
         = std::make_shared<Func>(std::forward<F>(func));
     std::vector<ThreadPoolFuture<void>> futures;
     futures.reserve(items.size());
-    for (const Item& item : items) {
-      futures.push_back(submit([shared_func, item_ptr = &item]() {
-        std::invoke(*shared_func, *item_ptr);
-      }));
+    for (size_t index = 0; index < items.size(); ++index) {
+      const Item* item_ptr = &items[index];
+      futures.push_back(submit(
+          [shared_func, item_ptr]() { std::invoke(*shared_func, *item_ptr); }));
     }
 
+    std::exception_ptr first_exception;
     for (ThreadPoolFuture<void>& future : futures) {
-      future.get();
+      try {
+        future.get();
+      } catch (...) {
+        if (first_exception == nullptr) {
+          first_exception = std::current_exception();
+        }
+      }
+    }
+
+    if (first_exception != nullptr) {
+      std::rethrow_exception(first_exception);
     }
   }
 
@@ -155,16 +184,35 @@ class ThreadPool
     futures.reserve(items.size());
     // Keep one future per input item so results can be collected in the same
     // order that the caller provided.
-    for (const Item& item : items) {
-      futures.push_back(submit([shared_func, item_ptr = &item]() -> Result {
+    for (size_t index = 0; index < items.size(); ++index) {
+      const Item* item_ptr = &items[index];
+      futures.push_back(submit([shared_func, item_ptr]() -> Result {
         return std::invoke(*shared_func, *item_ptr);
       }));
     }
 
-    std::vector<Result> results;
-    results.reserve(futures.size());
+    std::vector<std::optional<Result>> staged_results;
+    staged_results.reserve(futures.size());
+    std::exception_ptr first_exception;
     for (ThreadPoolFuture<Result>& future : futures) {
-      results.push_back(future.get());
+      try {
+        staged_results.emplace_back(future.get());
+      } catch (...) {
+        if (first_exception == nullptr) {
+          first_exception = std::current_exception();
+        }
+        staged_results.emplace_back(std::nullopt);
+      }
+    }
+
+    if (first_exception != nullptr) {
+      std::rethrow_exception(first_exception);
+    }
+
+    std::vector<Result> results;
+    results.reserve(staged_results.size());
+    for (std::optional<Result>& staged_result : staged_results) {
+      results.push_back(std::move(*staged_result));
     }
     return results;
   }
@@ -179,7 +227,7 @@ class ThreadPool
 
  private:
   // === Worker execution =====================================================
-  bool isWorkerThread() const;
+  static bool isWorkerThreadFor(const ThreadPool* pool);
   bool tryRunPendingTask();
   void workerLoop();
 
@@ -217,6 +265,7 @@ class ThreadPool
   std::condition_variable cv_;
   std::queue<std::function<void()>> tasks_;
   std::vector<std::thread> workers_;
+  std::shared_ptr<ThreadPoolLifetime> lifetime_;
   bool stop_{false};
   // Keep one active-pool marker per thread so nested waits only assist the
   // pool that currently owns that worker thread.
@@ -247,7 +296,16 @@ void ThreadPoolFuture<T>::wait()
 template <typename T>
 void ThreadPoolFuture<T>::waitUntilReady()
 {
-  if (pool_ != nullptr && pool_->isWorkerThread()) {
+  // Guard against get()/wait() being called more than once, or against a
+  // moved-from future. std::future::wait() on a non-valid future is undefined
+  // behavior, so fail loudly instead.
+  if (!future_.valid()) {
+    throw std::logic_error(
+        "ThreadPoolFuture::get()/wait() called on an invalid future.");
+  }
+
+  if (lifetime_->pool_alive.load(std::memory_order_acquire)
+      && ThreadPool::isWorkerThreadFor(pool_)) {
     // Only workers that already belong to this pool need the nested-threading
     // assist path. External callers can block normally on the wrapped future.
     pool_->helpUntilReady(future_);

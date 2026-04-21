@@ -2,6 +2,7 @@
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -360,6 +361,60 @@ TEST(TestResizerMtThreadPool,
       }
     }
   }
+}
+
+TEST(TestResizerMtThreadPool, FutureRemainsUsableAfterPoolDestruction)
+{
+  utl::ThreadPoolFuture<int> future = []() {
+    utl::ThreadPool thread_pool(1);
+    return thread_pool.submit([]() -> int {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      return 7;
+    });
+  }();
+
+  EXPECT_EQ(future.get(), 7);
+}
+
+TEST(TestResizerMtThreadPool, ParallelForWaitsForAllTasksBeforeRethrow)
+{
+  std::vector<int> items{0, 1, 2, 3};
+  std::atomic<int> completed{0};
+  utl::ThreadPool thread_pool(4);
+
+  EXPECT_THROW(thread_pool.parallelFor(
+                   items,
+                   [&completed](const int& item) {
+                     if (item == 0) {
+                       throw std::runtime_error("parallelFor failure");
+                     }
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                     completed.fetch_add(1, std::memory_order_relaxed);
+                   }),
+               std::runtime_error);
+
+  EXPECT_EQ(completed.load(std::memory_order_relaxed), 3);
+}
+
+TEST(TestResizerMtThreadPool, ParallelMapWaitsForAllTasksBeforeRethrow)
+{
+  std::vector<int> items{0, 1, 2, 3};
+  std::atomic<int> completed{0};
+  utl::ThreadPool thread_pool(4);
+
+  EXPECT_THROW(thread_pool.parallelMap(
+                   items,
+                   [&completed](const int& item) -> int {
+                     if (item == 0) {
+                       throw std::runtime_error("parallelMap failure");
+                     }
+                     std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                     completed.fetch_add(1, std::memory_order_relaxed);
+                     return item;
+                   }),
+               std::runtime_error);
+
+  EXPECT_EQ(completed.load(std::memory_order_relaxed), 3);
 }
 
 TEST_F(TestResizerMt,

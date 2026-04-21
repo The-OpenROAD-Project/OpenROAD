@@ -21,10 +21,11 @@ namespace rsz {
 //
 // Unlike the legacy SizeUpCandidate which queries STA on the fly, this
 // variant receives a state of the timing arc (ArcDelayState) built on
-// the main thread and stored in Target.  estimate() evaluates
-// the Liberty table model purely from that snapshot (thread-safe; no STA
-// mutation), so MT policies can run it on worker threads.  apply() still
-// executes on the main thread via Resizer::replaceCell.
+// the main thread and stored in Target. estimate() evaluates the Liberty table
+// model purely from that snapshot (thread-safe; no STA mutation), so MT
+// policies can run it on worker threads. apply() still executes on the main
+// thread, where it can perform live max-cap validation before calling
+// Resizer::replaceCell.
 class SizeUpMtCandidate : public MoveCandidate
 {
  public:

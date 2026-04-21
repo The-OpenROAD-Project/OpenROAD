@@ -45,9 +45,9 @@ void MeasuredVtSwapPolicy::start(const OptimizerRunConfig& config)
   // Reset the one-move-per-target policy state before the first pass begins.
   OptPolicy::start(config);
   policy_config_.max_candidate_generation
-      = static_cast<int>(utl::readEnvarUint("RSZ_VTSWAP_CANDIDATES", 10));
+      = utl::readEnvarInt("RSZ_VTSWAP_CANDIDATES", 10);
   policy_config_.max_committed_moves
-      = static_cast<int>(utl::readEnvarUint("RSZ_VTSWAP_MAX_MOVES", 100));
+      = utl::readEnvarInt("RSZ_VTSWAP_MAX_MOVES", 100);
   generator_ = std::make_unique<MeasuredVtSwapGenerator>(
       makeGeneratorContext(config_));
   target_collector_ = std::make_unique<rsz::RepairTargetCollector>(&resizer_);

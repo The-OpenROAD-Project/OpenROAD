@@ -165,9 +165,8 @@ void MoveTracker::trackCriticalPins(
         if (slack_ps < 0.0) {
           all_critical_pins_.insert(pin);
           if (!pin_info_.contains(pin)) {
-            pin_info_[pin] = PinInfo(nullptr,
-                                     sta_->network()->pathName(pin),
-                                     "unknown",
+            pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
+                                     "",
                                      "unknown",
                                      0.0,
                                      0.0,
@@ -220,9 +219,9 @@ void MoveTracker::trackViolator(const sta::Pin* pin)
   // Track which endpoint this pin was visited on (basic info only)
   auto info_it = pin_info_.find(pin);
   if (current_endpoint_
-      && (info_it == pin_info_.end() || info_it->second.endpoint == nullptr)) {
-    pin_info_[pin] = PinInfo(current_endpoint_,
-                             sta_->network()->pathName(pin),
+      && (info_it == pin_info_.end()
+          || info_it->second.endpoint_name.empty())) {
+    pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
                              sta_->network()->pathName(current_endpoint_),
                              "unknown",
                              0.0,
@@ -248,8 +247,7 @@ void MoveTracker::trackViolatorWithInfo(const sta::Pin* pin,
 
   // Store detailed information
   if (current_endpoint_) {
-    pin_info_[pin] = PinInfo(current_endpoint_,
-                             sta_->network()->pathName(pin),
+    pin_info_[pin] = PinInfo(sta_->network()->pathName(pin),
                              sta_->network()->pathName(current_endpoint_),
                              gate_type,
                              load_delay,
@@ -1247,7 +1245,7 @@ void MoveTracker::printMissedOpportunitiesReport(const std::string& title)
         if (gate_type.length() > 30) {
           gate_type = gate_type.substr(0, 27) + "...";
         }
-        if (info.endpoint) {
+        if (!info.endpoint_name.empty()) {
           endpoint_name = info.endpoint_name;
           if (endpoint_name.length() > 26) {
             endpoint_name = endpoint_name.substr(0, 23) + "...";

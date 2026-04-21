@@ -38,12 +38,13 @@ class Resizer;
 
 // Reporting metadata for one driver pin visited during repair setup.
 // Stored in MoveTracker::pin_info_ and used by the final success/failure/
-// missed-opportunity reports.  gate_type, load_delay, and intrinsic_delay
-// let reports show *why* a pin was (or was not) repaired without re-querying
-// STA at report time.
+// missed-opportunity reports.  pin_name and endpoint_name snapshot the path
+// names at visit time so reports stay stable even if later ECOs replace or
+// delete the original ITerms. gate_type, load_delay, and intrinsic_delay let
+// reports show *why* a pin was (or was not) repaired without re-querying STA
+// at report time.
 struct PinInfo
 {
-  const sta::Pin* endpoint;
   std::string pin_name;
   std::string endpoint_name;
   std::string gate_type;
@@ -53,9 +54,8 @@ struct PinInfo
   float endpoint_slack;
 
   PinInfo()
-      : endpoint(nullptr),
-        pin_name("unknown"),
-        endpoint_name("unknown"),
+      : pin_name("unknown"),
+        endpoint_name(""),
         gate_type("unknown"),
         load_delay(0.0),
         intrinsic_delay(0.0),
@@ -64,16 +64,14 @@ struct PinInfo
   {
   }
 
-  PinInfo(const sta::Pin* ep,
-          const std::string& pin_path_name,
+  PinInfo(const std::string& pin_path_name,
           const std::string& endpoint_path_name,
           const std::string& gt,
           float ld,
           float id,
           float pin_slk,
           float ep_slk)
-      : endpoint(ep),
-        pin_name(pin_path_name),
+      : pin_name(pin_path_name),
         endpoint_name(endpoint_path_name),
         gate_type(gt),
         load_delay(ld),
