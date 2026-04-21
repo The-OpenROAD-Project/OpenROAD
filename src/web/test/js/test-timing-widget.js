@@ -136,7 +136,7 @@ describe('TimingWidget._showInspector', () => {
         widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
         widget._selectPathRow(0);
 
-        widget._showInspector(0);
+        widget._showInspector(FULL_NODE);
 
         const pop = widget.element.querySelector('.timing-inspector-popover');
         assert.ok(pop, 'popover was created');
@@ -159,7 +159,7 @@ describe('TimingWidget._showInspector', () => {
         widget.showPaths('setup', [pathWithNode(minimal)]);
         widget._selectPathRow(0);
 
-        widget._showInspector(0);
+        widget._showInspector(minimal);
 
         const pop = widget.element.querySelector('.timing-inspector-popover');
         const headers = Array.from(pop.querySelectorAll('th'), th => th.textContent);
@@ -175,7 +175,7 @@ describe('TimingWidget._showInspector', () => {
         const widget = new TimingWidget(app, () => {});
         widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
         widget._selectPathRow(0);
-        widget._showInspector(0);
+        widget._showInspector(FULL_NODE);
         assert.ok(widget.element.querySelector('.timing-inspector-popover'));
 
         document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
@@ -188,7 +188,7 @@ describe('TimingWidget._showInspector', () => {
         const widget = new TimingWidget(app, () => {});
         widget.showPaths('setup', [pathWithNode(FULL_NODE)]);
         widget._selectPathRow(0);
-        widget._showInspector(0);
+        widget._showInspector(FULL_NODE);
 
         const btn = widget.element.querySelector('.timing-inspector-popover .close-btn');
         btn.click();
@@ -199,13 +199,14 @@ describe('TimingWidget._showInspector', () => {
     it('closes when opening a new inspector (replaces existing)', () => {
         const app = createMockApp();
         const widget = new TimingWidget(app, () => {});
+        const NODE_U2 = { ...FULL_NODE, pin: 'U2/A' };
         widget.showPaths('setup', [
-            makePath(0.0, 'e0', { data_nodes: [FULL_NODE, { ...FULL_NODE, pin: 'U2/A' }] }),
+            makePath(0.0, 'e0', { data_nodes: [FULL_NODE, NODE_U2] }),
         ]);
         widget._selectPathRow(0);
 
-        widget._showInspector(0);
-        widget._showInspector(1);
+        widget._showInspector(FULL_NODE);
+        widget._showInspector(NODE_U2);
 
         const popovers = widget.element.querySelectorAll('.timing-inspector-popover');
         assert.equal(popovers.length, 1);

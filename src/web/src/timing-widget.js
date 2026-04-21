@@ -323,15 +323,8 @@ export class TimingWidget {
         }).then(() => this._redrawAllLayers());
     }
 
-    _showInspector(idx) {
+    _showInspector(n) {
         this._closeInspector();
-
-        const paths = this._currentTab === 'setup' ? this._setupPaths : this._holdPaths;
-        const path = paths[this._selectedPathIndex];
-        if (!path) return;
-        const nodes = this._detailTab === 'data' ? path.data_nodes : path.capture_nodes;
-        const n = nodes?.[idx];
-        if (!n) return;
 
         const popover = document.createElement('div');
         popover.className = 'timing-inspector-popover';
@@ -385,10 +378,10 @@ export class TimingWidget {
         document.addEventListener('keydown', onKeyDown);
         // Defer outside-click listener so the dblclick that opened us
         // doesn't instantly close us.
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
             document.addEventListener('mousedown', onMouseDown, true);
         }, 0);
-        this._inspectorCloseHandlers = { onKeyDown, onMouseDown };
+        this._inspectorCloseHandlers = { onKeyDown, onMouseDown, timeoutId };
     }
 
     _togglePathSort(key) {
@@ -415,6 +408,7 @@ export class TimingWidget {
         this._inspectorPopover.remove();
         this._inspectorPopover = null;
         if (this._inspectorCloseHandlers) {
+            clearTimeout(this._inspectorCloseHandlers.timeoutId);
             document.removeEventListener('keydown', this._inspectorCloseHandlers.onKeyDown);
             document.removeEventListener('mousedown', this._inspectorCloseHandlers.onMouseDown, true);
             this._inspectorCloseHandlers = null;
@@ -470,7 +464,7 @@ export class TimingWidget {
             tr.addEventListener('click', () => this._selectDetailRow(idx));
             tr.addEventListener('dblclick', (e) => {
                 e.preventDefault();
-                this._showInspector(idx);
+                this._showInspector(n);
             });
             tbody.appendChild(tr);
         });
@@ -501,6 +495,7 @@ export function fmtTime(v) {
 
 // Numeric-aware comparison honoring sort direction.
 export function compareValues(a, b, dir) {
+    if (a === b) return 0;
     const mul = dir === 'desc' ? -1 : 1;
     const na = typeof a === 'number';
     const nb = typeof b === 'number';
