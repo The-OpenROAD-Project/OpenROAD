@@ -1220,6 +1220,7 @@ bool dbInst::swapMaster(dbMaster* new_master_)
     dbITerm* iterm = (dbITerm*) block->iterm_tbl_->getPtr(iterm_id);
     iterm->clearPrefAccessPoints();
   }
+  inst->pin_access_idx_ = -1;
 
   // remove reference to inst_hdr
   _dbInstHdr* old_inst_hdr

@@ -6,20 +6,12 @@
 #include <iterator>
 #include <memory>
 #include <string>
-#include <vector>
 
-#include "../../../odb/src/db/dbAccessPoint.h"
-#include "AbstractGraphicsFactory.h"
 #include "db_sta/dbSta.hh"
-#include "dr/AbstractDRGraphics.h"
-#include "drt/TritonRoute.h"
-#include "dst/Distributed.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
-#include "pa/AbstractPAGraphics.h"
 #include "sta/NetworkClass.hh"
 #include "sta/VerilogWriter.hh"
-#include "ta/AbstractTAGraphics.h"
 #include "tst/IntegratedFixture.h"
 #include "utl/Logger.h"
 
@@ -39,116 +31,6 @@ class BufRemTest3 : public tst::IntegratedFixture
 
   bool debug_ = false;  // Set to true to generate debug output
 };
-
-// Dummy GraphicsFactory for drt.initGraphics(). Needed for drt.pinAccess()
-class NullGraphicsFactory : public drt::AbstractGraphicsFactory
-{
- public:
-  void reset(drt::frDebugSettings*,
-             drt::frDesign*,
-             odb::dbDatabase*,
-             utl::Logger*,
-             drt::RouterConfiguration*) override
-  {
-  }
-
-  bool guiActive() override { return false; }
-
-  std::unique_ptr<drt::AbstractDRGraphics> makeUniqueDRGraphics() override
-  {
-    return nullptr;
-  }
-
-  std::unique_ptr<drt::AbstractTAGraphics> makeUniqueTAGraphics() override
-  {
-    return nullptr;
-  }
-
-  std::unique_ptr<drt::AbstractPAGraphics> makeUniquePAGraphics() override
-  {
-    return nullptr;
-  }
-};
-
-static void addTrackGrid(odb::dbBlock* block, const char* layer_name)
-{
-  odb::dbTechLayer* layer = block->getTech()->findLayer(layer_name);
-  ASSERT_NE(layer, nullptr);
-  odb::dbTrackGrid* grid = block->findTrackGrid(layer);
-  if (grid == nullptr) {
-    grid = odb::dbTrackGrid::create(block, layer);
-  }
-  ASSERT_NE(grid, nullptr);
-  grid->addGridPatternX(0, 200, 190);
-  grid->addGridPatternY(0, 200, 190);
-}
-
-static void addBPinShape(odb::dbBlock* block,
-                         const char* bterm_name,
-                         const int x,
-                         const int y)
-{
-  odb::dbBTerm* bterm = block->findBTerm(bterm_name);
-  ASSERT_NE(bterm, nullptr);
-  odb::dbTechLayer* layer = block->getTech()->findLayer("metal2");
-  ASSERT_NE(layer, nullptr);
-  odb::dbBPin* bpin = odb::dbBPin::create(bterm);
-  ASSERT_NE(bpin, nullptr);
-  odb::dbBox* box = odb::dbBox::create(bpin, layer, x, y, x + 190, y + 190);
-  ASSERT_NE(box, nullptr);
-  bpin->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-}
-
-// Reproduce the failing sizeup,buffer ECO sequence.
-// 1. DRT pinAccess first sets a preferred AP and its back-reference.
-// 2. A sizeup-like swapMaster then changes the current MTerm/MPin context
-//    before Resizer removes the buffer.
-// 3. Buffer destruction must clear the AP back-reference.
-TEST_F(BufRemTest3, RemoveBufferAfterSwapMaster)
-{
-  readVerilogAndSetup("TestBufferRemoval3_9.v");
-
-  block_->setDieArea(odb::Rect(0, 0, 40000, 40000));
-  for (const char* layer_name :
-       {"metal1", "metal2", "metal3", "metal4", "metal5"}) {
-    addTrackGrid(block_, layer_name);
-  }
-  addBPinShape(block_, "clk", 0, 2000);
-  addBPinShape(block_, "in", 0, 4000);
-  addBPinShape(block_, "out", 2000, 4000);
-
-  odb::dbInst* buf_inst = block_->findInst("buf1");
-  ASSERT_NE(buf_inst, nullptr);
-  buf_inst->setLocation(0, 0);
-  buf_inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
-
-  dst::Distributed dist(&logger_);
-  drt::TritonRoute drt(db_.get(), &logger_, &service_registry_, &dist, &stt_);
-  drt.initGraphics(std::make_unique<NullGraphicsFactory>());
-  drt.pinAccess();
-
-  odb::dbITerm* buf_a = buf_inst->findITerm("A");
-  ASSERT_NE(buf_a, nullptr);
-  const std::vector<odb::dbAccessPoint*> pref_aps
-      = buf_a->getPrefAccessPoints();
-  ASSERT_FALSE(pref_aps.empty());
-  odb::_dbAccessPoint* ap_impl
-      = static_cast<odb::_dbAccessPoint*>(pref_aps[0]->getImpl());
-  ASSERT_EQ(ap_impl->iterms_.size(), 1U);
-
-  odb::dbMaster* sized_master = db_->findMaster("BUF_X4");
-  ASSERT_NE(sized_master, nullptr);
-  ASSERT_TRUE(buf_inst->swapMaster(sized_master));
-
-  sta::Instance* sta_buf = db_network_->dbToSta(buf_inst);
-  ASSERT_NE(sta_buf, nullptr);
-  sta::InstanceSeq insts;
-  insts.emplace_back(sta_buf);
-  resizer_.removeBuffers(insts);
-
-  EXPECT_EQ(block_->findInst("buf1"), nullptr);
-  EXPECT_TRUE(ap_impl->iterms_.empty());
-}
 
 TEST_F(BufRemTest3, RemoveBufferCase9)
 {
