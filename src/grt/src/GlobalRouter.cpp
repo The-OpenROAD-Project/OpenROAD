@@ -3869,7 +3869,8 @@ void GlobalRouter::computeWirelength()
   }
 
   int64_t total_wirelength = 0;
-#pragma omp parallel for num_threads(num_threads_) reduction(+ : total_wirelength)
+#pragma omp parallel for num_threads(num_threads_) \
+    reduction(+ : total_wirelength)
   for (int i = 0; i < static_cast<int>(routed_nets.size()); i++) {
     total_wirelength += computeNetWirelength(routed_nets[i]);
   }
