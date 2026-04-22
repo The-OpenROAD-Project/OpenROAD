@@ -3030,9 +3030,6 @@ void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
   }
 
   if (run_repair_timing) {
-    // Run repair_setup using the pre-repair_design parasitic view.
-    ensureLevelDrvrVertices();
-
     // Conservative repair_timing: only fix worst setup violations.
     repair_setup_->repairSetup(
         /*setup_slack_margin=*/0.0,
@@ -3054,7 +3051,6 @@ void Resizer::findResizeSlacks(bool run_journal_restore, bool run_repair_timing)
 
     // Re-estimate parasitics after repair_setup
     estimate_parasitics_->estimateParasitics(parasitics_src);
-    ensureLevelDrvrVertices();
   }
 
   findResizeSlacks1();
