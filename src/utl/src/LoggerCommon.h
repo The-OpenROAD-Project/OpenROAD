@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #include <cstdint>
+#include <source_location>
 #include <string>
 
 #include "utl/Logger.h"
@@ -10,9 +11,18 @@ namespace utl {
 
 void report(const char* msg);
 void info(utl::ToolId tool, int id, const char* msg);
-void warn(utl::ToolId tool, int id, const char* msg);
-void error(utl::ToolId tool, int id, const char* msg);
-void critical(utl::ToolId tool, int id, const char* msg);
+void warn(utl::ToolId tool,
+          int id,
+          const char* msg,
+          const std::source_location loc = std::source_location::current());
+void error(utl::ToolId tool,
+           int id,
+           const char* msg,
+           const std::source_location loc = std::source_location::current());
+void critical(utl::ToolId tool,
+              int id,
+              const char* msg,
+              const std::source_location loc = std::source_location::current());
 void open_metrics(const char* metrics_filename);
 void close_metrics(const char* metrics_filename);
 void metric(const char* metric, const char* value);

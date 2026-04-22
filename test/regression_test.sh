@@ -5,6 +5,7 @@ set -o pipefail
 
 RESULTS_DIR="${RESULTS_DIR:-results}"
 LOG_FILE="${RESULTS_DIR}/$TEST_NAME-$TEST_EXT.log"
+export DISABLE_SOURCE_LINES=1
 
 mkdir -p ${RESULTS_DIR}
 

@@ -31,6 +31,7 @@ export OPENROAD_EXE={OPENROAD_EXE}
 export REGRESSION_TEST={REGRESSION_TEST}
 export TEST_CHECK_LOG={TEST_CHECK_LOG}
 export TEST_CHECK_PASSFAIL={TEST_CHECK_PASSFAIL}
+export DISABLE_SOURCE_LINES=1
 exec "{bazel_test_sh}" "$@"
 """.format(
             bazel_test_sh = ctx.file.bazel_test_sh.short_path,

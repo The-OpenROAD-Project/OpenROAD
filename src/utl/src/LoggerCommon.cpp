@@ -29,22 +29,31 @@ void info(utl::ToolId tool, int id, const char* msg)
   logger->info(tool, id, "{}", msg);
 }
 
-void warn(utl::ToolId tool, int id, const char* msg)
+void warn(utl::ToolId tool,
+          int id,
+          const char* msg,
+          const std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->warn(tool, id, "{}", msg);
+  logger->warn(tool, id, utl::LogMessage{"{}", loc}, msg);
 }
 
-void error(utl::ToolId tool, int id, const char* msg)
+void error(utl::ToolId tool,
+           int id,
+           const char* msg,
+           const std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->error(tool, id, "{}", msg);
+  logger->error(tool, id, utl::LogMessage{"{}", loc}, msg);
 }
 
-void critical(utl::ToolId tool, int id, const char* msg)
+void critical(utl::ToolId tool,
+              int id,
+              const char* msg,
+              const std::source_location loc)
 {
   Logger* logger = getLogger();
-  logger->critical(tool, id, "{}", msg);
+  logger->critical(tool, id, utl::LogMessage{"{}", loc}, msg);
 }
 
 void open_metrics(const char* metrics_filename)
