@@ -659,6 +659,32 @@ class FastRouteCore
   void applySnapshotBatchRoute(int net_id, StTree&& sttree);
   void updatePlanarNetUsage(const StTree& sttree, FrNet* net, int edge_cost);
   void resetSnapshotBatchStats();
+
+  // Timing data collected during run(), reported via reportRunMetrics().
+  struct RunTimings
+  {
+    double total = 0.0;
+    double initial_rsmt = 0.0;
+    double route_l = 0.0;
+    double congestion_rsmt = 0.0;
+    double new_route_l = 0.0;
+    double spiral = 0.0;
+    double route_z = 0.0;
+    double monotonic = 0.0;
+    double overflow_iterations = 0.0;
+    double finalization = 0.0;
+  };
+  void reportRunMetrics(const RunTimings& timings,
+                        int num_vias,
+                        int final_length);
+
+  // Returns true if the overflow loop should break due to snapshot
+  // convergence patience being exhausted.
+  bool checkSnapshotConvergence(int past_cong,
+                                int& bmfl,
+                                int& bwcnt,
+                                int iter,
+                                int snapshot_batch_count_before);
   int edgeShift(stt::Tree& t, int net);
   int edgeShiftNew(stt::Tree& t, int net);
 
@@ -672,6 +698,25 @@ class FastRouteCore
 
   static const int BIG_INT = 1e9;  // big integer used as infinity
   static const int HCOST = 5000;
+
+  // Snapshot-batched routing constants.
+  // Nets are partitioned into batches and routed in parallel waves against
+  // a frozen graph snapshot.  These constants control when batching is
+  // eligible and how work is sized.
+  //
+  // kSnapshotSemanticWidth: max batches per wave (independent of thread count).
+  // kSnapshotLowOverflowForSerialCleanup /
+  // kSnapshotLowMaxOverflowForSerialCleanup:
+  //   overflow thresholds below which batching is disabled for the run,
+  //   because the design is already near-converged.
+  // kMinNetsForSnapshotBatch: minimum routable nets to attempt batching.
+  // kSnapshotCleanupPatience: how many non-improving iterations to tolerate
+  //   in the snapshot cleanup phase before breaking.
+  static constexpr int kSnapshotSemanticWidth = 16;
+  static constexpr int kSnapshotLowOverflowForSerialCleanup = 1500;
+  static constexpr int kSnapshotLowMaxOverflowForSerialCleanup = 32;
+  static constexpr int kMinNetsForSnapshotBatch = 2 * kSnapshotSemanticWidth;
+  static constexpr int kSnapshotCleanupPatience = 12;
 
   int max_degree_;
   std::vector<int> cap_per_layer_;
@@ -816,6 +861,7 @@ class FastRouteCore
   int snapshot_batch_net_count_ = 0;
   int snapshot_batch_wave_count_ = 0;
   bool snapshot_batch_disabled_for_run_ = false;
+  bool snapshot_cleanup_active_ = false;
   bool has_non_soft_ndr_nets_ = false;
   int detour_penalty_;
 };

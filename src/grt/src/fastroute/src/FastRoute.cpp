@@ -29,18 +29,6 @@ namespace grt {
 using utl::DebugScopedTimer;
 using utl::GRT;
 
-namespace {
-
-// Keep snapshot-batched route semantics pinned to the operating point that
-// benchmarked best, while letting execution width follow the user-requested
-// thread count.
-constexpr int kSnapshotSemanticWidth = 16;
-constexpr int kSnapshotLowOverflowForSerialCleanup = 1500;
-constexpr int kSnapshotLowMaxOverflowForSerialCleanup = 32;
-constexpr int kMinNetsForSnapshotBatch = 2 * kSnapshotSemanticWidth;
-
-}  // namespace
-
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
                              utl::ServiceRegistry* service_registry,
@@ -163,7 +151,89 @@ void FastRouteCore::resetSnapshotBatchStats()
   snapshot_batch_net_count_ = 0;
   snapshot_batch_wave_count_ = 0;
   snapshot_batch_disabled_for_run_ = false;
+  snapshot_cleanup_active_ = false;
   has_non_soft_ndr_nets_ = false;
+}
+
+void FastRouteCore::reportRunMetrics(const RunTimings& timings,
+                                     const int num_vias,
+                                     const int final_length)
+{
+  logger_->metric("global_route__fastroute__run_s", timings.total);
+  logger_->metric("global_route__fastroute__initial_rsmt_s",
+                  timings.initial_rsmt);
+  logger_->metric("global_route__fastroute__route_l_s", timings.route_l);
+  logger_->metric("global_route__fastroute__congestion_rsmt_s",
+                  timings.congestion_rsmt);
+  logger_->metric("global_route__fastroute__new_route_l_s",
+                  timings.new_route_l);
+  logger_->metric("global_route__fastroute__spiral_s", timings.spiral);
+  logger_->metric("global_route__fastroute__route_z_s", timings.route_z);
+  logger_->metric("global_route__fastroute__monotonic_s", timings.monotonic);
+  logger_->metric("global_route__fastroute__overflow_iterations_s",
+                  timings.overflow_iterations);
+  logger_->metric("global_route__fastroute__finalization_s",
+                  timings.finalization);
+  logger_->metric("global_route__fastroute__snapshot_batch_route_s",
+                  snapshot_batch_route_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_apply_s",
+                  snapshot_batch_apply_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_sync_s",
+                  snapshot_batch_sync_time_);
+  logger_->metric("global_route__fastroute__snapshot_batch_count",
+                  snapshot_batch_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_nets",
+                  snapshot_batch_net_count_);
+  logger_->metric("global_route__fastroute__snapshot_batch_wave_count",
+                  snapshot_batch_wave_count_);
+  if (snapshot_batch_count_ > 0) {
+    debugPrint(logger_,
+               GRT,
+               "timer",
+               1,
+               "Snapshot batch totals: sync {} route {} apply {} waves {} "
+               "batches {} nets {}.",
+               snapshot_batch_sync_time_,
+               snapshot_batch_route_time_,
+               snapshot_batch_apply_time_,
+               snapshot_batch_wave_count_,
+               snapshot_batch_count_,
+               snapshot_batch_net_count_);
+  }
+  logger_->metric("global_route__vias", num_vias);
+  if (verbose_) {
+    logger_->info(GRT, 111, "Final number of vias: {}", num_vias);
+    logger_->info(
+        GRT, 112, "Final usage 3D: {}", (final_length + 3 * num_vias));
+  }
+}
+
+bool FastRouteCore::checkSnapshotConvergence(
+    const int past_cong,
+    int& bmfl,
+    int& bwcnt,
+    const int iter,
+    const int snapshot_batch_count_before)
+{
+  snapshot_cleanup_active_
+      = snapshot_cleanup_active_
+        || snapshot_batch_count_ > snapshot_batch_count_before;
+
+  if (snapshot_cleanup_active_ && past_cong < bmfl) {
+    copyRS();
+    bmfl = past_cong;
+    bwcnt = 0;
+  }
+
+  if (snapshot_cleanup_active_
+      && iter > resolveSnapshotBatchIterationLimit(net_ids_.size())) {
+    if (past_cong >= bmfl) {
+      bwcnt++;
+    }
+    return bwcnt > kSnapshotCleanupPatience;
+  }
+
+  return false;
 }
 
 void FastRouteCore::clearNets()
@@ -1711,18 +1781,9 @@ NetRouteMap FastRouteCore::run()
   resetSnapshotBatchStats();
   has_non_soft_ndr_nets_ = hasNonSoftNdrNets();
 
-  double total_run_time = 0.0;
-  double initial_rsmt_time = 0.0;
-  double route_l_time = 0.0;
-  double congestion_rsmt_time = 0.0;
-  double new_route_l_time = 0.0;
-  double spiral_time = 0.0;
-  double route_z_time = 0.0;
-  double monotonic_time = 0.0;
-  double overflow_iterations_time = 0.0;
-  double finalization_time = 0.0;
+  RunTimings timings;
   const DebugScopedTimer total_timer(
-      total_run_time, logger_, GRT, "timer", 1, "FastRoute run: {}");
+      timings.total, logger_, GRT, "timer", 1, "FastRoute run: {}");
 
   graph2d_.clearUsed();
   // Rebuild used grids in graph2d during incremental GRT to account for
@@ -1779,7 +1840,7 @@ NetRouteMap FastRouteCore::run()
   via_cost_ = 0;
   {
     const DebugScopedTimer timer(
-        initial_rsmt_time, logger_, GRT, "timer", 1, "Initial RSMT: {}");
+        timings.initial_rsmt, logger_, GRT, "timer", 1, "Initial RSMT: {}");
     gen_brk_RSMT(false, false, false, false, noADJ);
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -1789,7 +1850,7 @@ NetRouteMap FastRouteCore::run()
   // First time L routing
   {
     const DebugScopedTimer timer(
-        route_l_time, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
+        timings.route_l, logger_, GRT, "timer", 1, "Initial routeLAll: {}");
     routeLAll(true);
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -1798,7 +1859,7 @@ NetRouteMap FastRouteCore::run()
 
   // Congestion-driven rip-up and reroute L
   {
-    const DebugScopedTimer timer(congestion_rsmt_time,
+    const DebugScopedTimer timer(timings.congestion_rsmt,
                                  logger_,
                                  GRT,
                                  "timer",
@@ -1813,8 +1874,12 @@ NetRouteMap FastRouteCore::run()
 
   // New rip-up and reroute L via-guided
   {
-    const DebugScopedTimer timer(
-        new_route_l_time, logger_, GRT, "timer", 1, "Via-guided routeLAll: {}");
+    const DebugScopedTimer timer(timings.new_route_l,
+                                 logger_,
+                                 GRT,
+                                 "timer",
+                                 1,
+                                 "Via-guided routeLAll: {}");
     newrouteLAll(false, true);
   }
   getOverflow2D(&maxOverflow);
@@ -1825,7 +1890,7 @@ NetRouteMap FastRouteCore::run()
   // Rip-up and reroute using spiral route
   {
     const DebugScopedTimer timer(
-        spiral_time, logger_, GRT, "timer", 1, "Spiral routing: {}");
+        timings.spiral, logger_, GRT, "timer", 1, "Spiral routing: {}");
     spiralRouteAll();
   }
   if (logger_->debugCheck(GRT, "grtSteps", 1)) {
@@ -1835,7 +1900,7 @@ NetRouteMap FastRouteCore::run()
   // Rip-up a tree edge according to its ripup type and Z-route it
   {
     const DebugScopedTimer timer(
-        route_z_time, logger_, GRT, "timer", 1, "Initial routeZAll: {}");
+        timings.route_z, logger_, GRT, "timer", 1, "Initial routeZAll: {}");
     newrouteZAll(10);
   }
   int past_cong = getOverflow2D(&maxOverflow);
@@ -1862,7 +1927,7 @@ NetRouteMap FastRouteCore::run()
 
   for (int i = 0; i < LVIter; i++) {
     const DebugScopedTimer timer(
-        monotonic_time, logger_, GRT, "timer", 1, "Monotonic routing: {}");
+        timings.monotonic, logger_, GRT, "timer", 1, "Monotonic routing: {}");
     logistic_coef = 2.0 / (1 + log(maxOverflow));
     debugPrint(logger_,
                GRT,
@@ -1918,10 +1983,6 @@ NetRouteMap FastRouteCore::run()
   SaveLastRouteLen();
 
   const int max_overflow_increases = 25;
-  const int snapshot_iteration_limit
-      = resolveSnapshotBatchIterationLimit(net_ids_.size());
-  const int snapshot_cleanup_patience = 12;
-  bool snapshot_cleanup_active = false;
 
   float slack_th = std::numeric_limits<float>::lowest();
 
@@ -1930,7 +1991,7 @@ NetRouteMap FastRouteCore::run()
   int last_total_overflow = 0;
   float overflow_reduction_percent = -1;
   {
-    const DebugScopedTimer timer(overflow_iterations_time,
+    const DebugScopedTimer timer(timings.overflow_iterations,
                                  logger_,
                                  GRT,
                                  "timer",
@@ -2023,19 +2084,10 @@ NetRouteMap FastRouteCore::run()
 
       int last_cong = past_cong;
       past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-      snapshot_cleanup_active
-          = snapshot_cleanup_active
-            || snapshot_batch_count_ > snapshot_batch_count_before;
 
       if (minofl > past_cong) {
         minofl = past_cong;
         minoflrnd = i;
-      }
-
-      if (snapshot_cleanup_active && past_cong < bmfl) {
-        copyRS();
-        bmfl = past_cong;
-        bwcnt = 0;
       }
 
       if (i == 8) {
@@ -2097,15 +2149,12 @@ NetRouteMap FastRouteCore::run()
         VIA = 0;
       }
 
-      if (snapshot_cleanup_active && i > snapshot_iteration_limit) {
-        if (past_cong >= bmfl) {
-          bwcnt++;
-        }
+      if (checkSnapshotConvergence(
+              past_cong, bmfl, bwcnt, i, snapshot_batch_count_before)) {
+        break;
+      }
 
-        if (bwcnt > snapshot_cleanup_patience) {
-          break;
-        }
-      } else {
+      if (!snapshot_cleanup_active_) {
         if (past_cong < bmfl) {
           bwcnt = 0;
           if (i > 140 || (i > 80 && past_cong < 20)) {
@@ -2266,7 +2315,7 @@ NetRouteMap FastRouteCore::run()
   int numVia = 0;
   {
     const DebugScopedTimer timer(
-        finalization_time, logger_, GRT, "timer", 1, "Finalization: {}");
+        timings.finalization, logger_, GRT, "timer", 1, "Finalization: {}");
     freeRR();
 
     removeLoops();
@@ -2313,49 +2362,7 @@ NetRouteMap FastRouteCore::run()
     ensurePinCoverage();
   }
 
-  logger_->metric("global_route__fastroute__run_s", total_run_time);
-  logger_->metric("global_route__fastroute__initial_rsmt_s", initial_rsmt_time);
-  logger_->metric("global_route__fastroute__route_l_s", route_l_time);
-  logger_->metric("global_route__fastroute__congestion_rsmt_s",
-                  congestion_rsmt_time);
-  logger_->metric("global_route__fastroute__new_route_l_s", new_route_l_time);
-  logger_->metric("global_route__fastroute__spiral_s", spiral_time);
-  logger_->metric("global_route__fastroute__route_z_s", route_z_time);
-  logger_->metric("global_route__fastroute__monotonic_s", monotonic_time);
-  logger_->metric("global_route__fastroute__overflow_iterations_s",
-                  overflow_iterations_time);
-  logger_->metric("global_route__fastroute__finalization_s", finalization_time);
-  logger_->metric("global_route__fastroute__snapshot_batch_route_s",
-                  snapshot_batch_route_time_);
-  logger_->metric("global_route__fastroute__snapshot_batch_apply_s",
-                  snapshot_batch_apply_time_);
-  logger_->metric("global_route__fastroute__snapshot_batch_sync_s",
-                  snapshot_batch_sync_time_);
-  logger_->metric("global_route__fastroute__snapshot_batch_count",
-                  snapshot_batch_count_);
-  logger_->metric("global_route__fastroute__snapshot_batch_nets",
-                  snapshot_batch_net_count_);
-  logger_->metric("global_route__fastroute__snapshot_batch_wave_count",
-                  snapshot_batch_wave_count_);
-  if (snapshot_batch_count_ > 0) {
-    debugPrint(logger_,
-               GRT,
-               "timer",
-               1,
-               "Snapshot batch totals: sync {} route {} apply {} waves {} "
-               "batches {} nets {}.",
-               snapshot_batch_sync_time_,
-               snapshot_batch_route_time_,
-               snapshot_batch_apply_time_,
-               snapshot_batch_wave_count_,
-               snapshot_batch_count_,
-               snapshot_batch_net_count_);
-  }
-  logger_->metric("global_route__vias", numVia);
-  if (verbose_) {
-    logger_->info(GRT, 111, "Final number of vias: {}", numVia);
-    logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
-  }
+  reportRunMetrics(timings, numVia, finallength);
 
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn() && debug_->tree3D) {
