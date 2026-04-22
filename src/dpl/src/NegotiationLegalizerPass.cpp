@@ -92,13 +92,21 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_1_overflows == prev_overflows) {
       ++stall_count;
       if (stall_count == 3) {
+        std::vector<int> illegal_cells;
+        for (int idx : active) {
+          if (!cells_[idx].fixed && !isCellLegal(idx)) {
+            illegal_cells.push_back(idx);
+          }
+        }
         logger_->warn(
             utl::DPL,
             700,
             "Negotiation phase 1: overflow stuck at {} for 3 consecutive "
-            "iterations.\nUsing old diamond search for remaining cells.",
-            phase_1_overflows);
-        diamondRecovery(active);
+            "iterations.\nUsing old diamond search for {} remaining illegal "
+            "cells.",
+            phase_1_overflows,
+            illegal_cells.size());
+        diamondRecovery(illegal_cells);
         break;
       }
     } else {
@@ -145,12 +153,20 @@ void NegotiationLegalizer::runNegotiation(const std::vector<int>& illegalCells)
     if (phase_2_overflows == prev_overflows) {
       ++stall_count;
       if (stall_count == 3) {
+        std::vector<int> illegal_cells;
+        for (int idx : active) {
+          if (!cells_[idx].fixed && !isCellLegal(idx)) {
+            illegal_cells.push_back(idx);
+          }
+        }
         logger_->warn(utl::DPL,
                       702,
                       "Negotiation phase 2: overflow stuck at {} for 3 "
-                      "consecutive iterations.",
-                      phase_2_overflows);
-        diamondRecovery(active);
+                      "consecutive iterations. Using diamond search for {} "
+                      "remaining illegal cells.",
+                      phase_2_overflows,
+                      illegal_cells.size());
+        diamondRecovery(illegal_cells);
         break;
       }
     } else {
@@ -918,10 +934,14 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
         = opendp_->diamondSearch(node, GridX{cell.x}, GridY{cell.y});
     if (pt.pixel) {
       place(idx, pt.x.v, pt.y.v);
-      logger_->report("diamondRecovery: cell {} recovered at ({}, {}).",
-                      cell.db_inst->getName(),
-                      pt.x.v,
-                      pt.y.v);
+      debugPrint(logger_,
+                 utl::DPL,
+                 "negotiation",
+                 1,
+                 "diamondRecovery: cell {} recovered at ({}, {}).",
+                 cell.db_inst->getName(),
+                 pt.x.v,
+                 pt.y.v);
       ++recovered;
     } else {
       // No legal site found — restore at current position so the negotiation
@@ -929,7 +949,7 @@ void NegotiationLegalizer::diamondRecovery(const std::vector<int>& activeCells)
       place(idx, cell.x, cell.y);
     }
   }
-  logger_->report("diamondRecovery: recovered {}/{} stuck cells.",
+  logger_->report("diamond recovery: recovered {}/{} stuck cells.",
                   recovered,
                   activeCells.size());
 }

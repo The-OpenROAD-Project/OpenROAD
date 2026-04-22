@@ -117,11 +117,11 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                                const int max_displacement_y,
                                const std::string& report_file_name,
                                bool incremental,
-                               const bool use_negotiation,
+                               const bool use_old_diamond,
                                const bool run_abacus)
 {
   incremental_ = incremental;
-  use_negotiation_ |= use_negotiation;
+  use_old_diamond_ |= use_old_diamond;
   importDb();
   adjustNodesOrient();
   if (!incremental_) {
@@ -183,7 +183,7 @@ void Opendp::detailedPlacement(const int max_displacement_x,
                 max_displacement_x_,
                 max_displacement_y_);
 
-  if (!use_negotiation_) {
+  if (use_old_diamond_) {
     logger_->info(DPL, 1101, "Legalizing using diamond search.");
     diamondDPL();
     findDisplacementStats();
