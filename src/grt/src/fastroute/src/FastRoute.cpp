@@ -2104,8 +2104,6 @@ NetRouteMap FastRouteCore::run()
       if (maxOverflow < 150) {
         if (i == 20 && past_cong > 200) {
           L = 0;
-          upType = 3;
-          stopDEC = true;
           slope = 5;
           auto cost_params = CostParams(logistic_coef, costheight_, slope);
           mazeRouteMSMD(i,
