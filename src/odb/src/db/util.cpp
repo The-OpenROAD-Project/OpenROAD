@@ -101,8 +101,9 @@ static void cutRow(dbBlock* block,
     const int seg_end
         = makeSiteLoc(blockage.first, site_width, true, start_origin_x);
     segments.emplace_back(start_origin_x, seg_end);
-    start_origin_x
-        = makeSiteLoc(blockage.second, site_width, false, start_origin_x);
+    start_origin_x = std::max(
+        start_origin_x,
+        makeSiteLoc(blockage.second, site_width, false, start_origin_x));
   }
   // Last segment: from after the last blockage to the row's right edge
   segments.emplace_back(start_origin_x, row_bb.xMax());
