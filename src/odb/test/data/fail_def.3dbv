@@ -5,6 +5,6 @@ Header:
 
 ChipletDef:
   TestChiplet:
-    type: die
+    type: hier
     external:
       DEF_file: nonexistent.def

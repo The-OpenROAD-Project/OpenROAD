@@ -1,4 +1,7 @@
+[ERROR ORD-0072] nonexistent_file.3dbx does not exist.
 Caught expected error: main file not found
+[ERROR ODB-0521] Parser Error: 3DBV Parser Error: Cannot open file: data/nonexistent_include.3dbv
 Caught expected error: include file not found
+[ERROR ODB-0557] DEF file does not exist: data/nonexistent.def
 Caught expected error: DEF file not found
 pass
