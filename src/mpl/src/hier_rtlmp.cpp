@@ -2358,11 +2358,118 @@ void HierRTLMP::adjustRealMacroOrientation(const bool& is_vertical_flip)
 
 void HierRTLMP::correctAllMacrosOrientation()
 {
-  // Apply vertical flip if necessary
-  adjustRealMacroOrientation(true);
+  if (!use_full_halo_) {
+    // With pin-aware halos, restrict flips to column and row wise since
+    // flipping macros alone could lead to unaccesible regions inside
+    // a cluster
+    correctMacroOrientationByCluster();
+  } else {
+    // Apply vertical flip if necessary
+    adjustRealMacroOrientation(true);
 
-  // Apply horizontal flip if necessary
-  adjustRealMacroOrientation(false);
+    // Apply horizontal flip if necessary
+    adjustRealMacroOrientation(false);
+  }
+}
+
+void HierRTLMP::correctMacroOrientationByCluster()
+{
+  // Group real (non-virtual, non-fixed) hard macros by their cluster.
+  std::map<Cluster*, std::vector<HardMacro*>> cluster_to_macros;
+  for (const auto& [inst, hard_macro] : tree_->maps.inst_to_hard) {
+    if (!inst || inst->isFixed()) {
+      continue;
+    }
+
+    cluster_to_macros[hard_macro->getCluster()].push_back(hard_macro.get());
+  }
+
+  for (auto& [cluster, macros] : cluster_to_macros) {
+    std::map<int, std::vector<HardMacro*>> cols;
+    std::map<int, std::vector<HardMacro*>> rows;
+    for (HardMacro* macro : macros) {
+      cols[macro->getRealX()].push_back(macro);
+      rows[macro->getRealY()].push_back(macro);
+    }
+
+    for (auto& [x, macros] : cols) {
+      float pre_wirelength = 0;
+      float new_wirelength = 0;
+
+      for (HardMacro* macro : macros) {
+        pre_wirelength += calculateRealMacroWirelength(macro->getInst());
+      }
+
+      for (HardMacro* macro : macros) {
+        odb::dbInst* inst = macro->getInst();
+        flipRealMacro(inst, true);
+        odb::Point loc = macro->getRealLocation();
+        inst->setLocation(loc.getX(), loc.getY());
+      }
+
+      for (HardMacro* macro : macros) {
+        new_wirelength += calculateRealMacroWirelength(macro->getInst());
+      }
+
+      debugPrint(logger_,
+                 MPL,
+                 "flipping",
+                 1,
+                 "Cluster {} column-wise flip (V) at {} orig_WL {} new_WL {}",
+                 cluster->getName(),
+                 x,
+                 pre_wirelength,
+                 new_wirelength);
+
+      if (new_wirelength > pre_wirelength) {
+        for (HardMacro* macro : macros) {
+          odb::dbInst* inst = macro->getInst();
+          flipRealMacro(inst, true);
+          odb::Point loc = macro->getRealLocation();
+          inst->setLocation(loc.getX(), loc.getY());
+        }
+      }
+    }
+
+    for (auto& [y, macros] : rows) {
+      float pre_wirelength = 0;
+      float new_wirelength = 0;
+
+      for (HardMacro* macro : macros) {
+        pre_wirelength += calculateRealMacroWirelength(macro->getInst());
+      }
+
+      for (HardMacro* macro : macros) {
+        odb::dbInst* inst = macro->getInst();
+        flipRealMacro(inst, false);
+        odb::Point loc = macro->getRealLocation();
+        inst->setLocation(loc.getX(), loc.getY());
+      }
+
+      for (HardMacro* macro : macros) {
+        new_wirelength += calculateRealMacroWirelength(macro->getInst());
+      }
+
+      debugPrint(logger_,
+                 MPL,
+                 "flipping",
+                 1,
+                 "Cluster {} row-wise flip (H) at {} orig_WL {} new_WL {}",
+                 cluster->getName(),
+                 y,
+                 pre_wirelength,
+                 new_wirelength);
+
+      if (new_wirelength > pre_wirelength) {
+        for (HardMacro* macro : macros) {
+          odb::dbInst* inst = macro->getInst();
+          flipRealMacro(inst, false);
+          odb::Point loc = macro->getRealLocation();
+          inst->setLocation(loc.getX(), loc.getY());
+        }
+      }
+    }
+  }
 }
 
 void HierRTLMP::updateMacrosOnDb()
