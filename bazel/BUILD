@@ -90,7 +90,7 @@ cc_binary(
 # As long as we support tcl8 (using runfiles) we need this flag.
 bool_flag(
     name = "use_zipfs",
-    build_setting_default = False,  # False until we can use tcl9
+    build_setting_default = True,  # True as we use tcl9 with zipfs feature
 )
 
 config_setting(

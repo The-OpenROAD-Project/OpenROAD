@@ -72,6 +72,7 @@ class HierRTLMP
 
   void init();
   void run();
+  void blockMacroChannels();
 
   // Interfaces functions for setting options
   // Hierarchical Macro Placement Related Options
