@@ -1215,16 +1215,14 @@ void FastRouteCore::mazeRouteMSMDSequential(const int iter,
   const int max_usage_multiplier = 40;
 
   const int max_h_usage = max_usage_multiplier * h_capacity_;
-  h_cost_table_.clear();
-  h_cost_table_.resize(max_h_usage);
+  h_cost_table_.reserve(max_h_usage);
   for (int i = 0; i < max_h_usage; i++) {
-    h_cost_table_[i] = getCost(i, true, cost_params);
+    h_cost_table_.push_back(getCost(i, true, cost_params));
   }
   const int max_v_usage = max_usage_multiplier * v_capacity_;
-  v_cost_table_.clear();
-  v_cost_table_.resize(max_v_usage);
+  v_cost_table_.reserve(max_v_usage);
   for (int i = 0; i < max_v_usage; i++) {
-    v_cost_table_[i] = getCost(i, false, cost_params);
+    v_cost_table_.push_back(getCost(i, false, cost_params));
   }
 
   for (int i = 0; i < y_grid_; i++) {
