@@ -3,9 +3,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -23,7 +24,6 @@
 namespace grt {
 
 using utl::GRT;
-using utl::DebugScopedTimer;
 using utl::Timer;
 
 static int parent_index(int i)
