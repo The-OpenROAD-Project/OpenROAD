@@ -50,38 +50,32 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000010 HPWL: 204308
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 138.05 um^2, Utilization: 0.3%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                      47
-Diamond Move Success:             47 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+Negotiation iteration 0: total overflow 355.
+Negotiation iteration 1: total overflow 37.
+Negotiation iteration 2: total overflow 0.
 Placement Analysis
 ---------------------------------
-total displacement        365.8 u
-average displacement        7.8 u
-max displacement           10.9 u
+total displacement         33.6 u
+average displacement        0.7 u
+max displacement            1.4 u
 original HPWL               6.9 u
-legalized HPWL            287.1 u
-delta HPWL                 4082 %
+legalized HPWL            218.6 u
+delta HPWL                 3084 %
 
-worst slack max -0.68
-tns max -10.567
+worst slack max -0.65
+tns max -10.615
 [INFO RSZ-0100] Repair move sequence: SizeUpMove BufferMove SplitLoadMove 
 [INFO RSZ-0094] Found 26 endpoints with setup violations.
 [INFO RSZ-0099] Repairing 26 out of 26 (100.00%) violating endpoints...
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.676 |       -0.7 |      -10.6 |     26 | u1/r21/D
-     187* |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |       -0.5 |      -10.5 |     26 | u1/r21/D
-    final |       0 |      15 |        4 |      0 |     0 |    +9.4% |   -0.508 |       -0.5 |      -10.5 |     26 | u1/r21/D
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.654 |       -0.7 |      -10.6 |     26 | u1/r21/D
+     169* |       0 |      17 |        6 |      0 |     0 |   +14.5% |   -0.501 |       -0.5 |      -11.8 |     26 | u1/r21/D
+    final |       0 |      17 |        6 |      0 |     0 |   +14.5% |   -0.501 |       -0.5 |      -11.8 |     26 | u1/r21/D
 ------------------------------------------------------------------------------------------------------------------------------
-[INFO RSZ-0045] Inserted 4 buffers, 1 to split loads.
-[INFO RSZ-0051] Resized 15 instances: 15 up, 0 up match, 0 down, 0 VT
+[INFO RSZ-0045] Inserted 6 buffers, 2 to split loads.
+[INFO RSZ-0051] Resized 17 instances: 17 up, 0 up match, 0 down, 0 VT
 [WARNING RSZ-0062] Unable to repair all setup violations.
 No differences found.

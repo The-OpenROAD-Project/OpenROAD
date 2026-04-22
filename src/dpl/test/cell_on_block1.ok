@@ -6,21 +6,20 @@
 [INFO ODB-0133]     Created 2 nets and 0 connections.
 [INFO DPL-0006] Core area: 9607.92 um^2, Instances area: 2503.19 um^2, Utilization: 26.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       4
-Diamond Move Success:              4 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+Negotiation iteration 0: total overflow 28.
+Negotiation iteration 1: total overflow 28.
+Negotiation iteration 2: total overflow 28.
+Negotiation iteration 3: total overflow 28.
+[WARNING DPL-0700] Negotiation phase 1: overflow stuck at 28 for 3 consecutive iterations.
+Using old diamond search for 4 remaining illegal cells.
+diamond recovery: recovered 4/4 stuck cells.
+Negotiation iteration 400: total overflow 0.
 Placement Analysis
 ---------------------------------
-total displacement         62.8 u
-average displacement       12.6 u
-max displacement           16.8 u
+total displacement          4.2 u
+average displacement        0.8 u
+max displacement            1.4 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
