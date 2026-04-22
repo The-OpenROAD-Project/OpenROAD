@@ -51,6 +51,10 @@ bool SizeUpMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
 
   const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
   sta::LibertyPort* in_port = in_arc ? in_arc->from() : nullptr;
+  if (in_port == nullptr) {
+    return false;
+  }
+
   sta::Path* prev_drvr_path = drvr_path->prevPath()->prevPath();
   sta::Pin* prev_drvr_pin
       = prev_drvr_path ? prev_drvr_path->pin(sta_) : nullptr;
@@ -63,9 +67,6 @@ bool SizeUpMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
     }
   }
 
-  if (in_port == nullptr) {
-    return false;
-  }
   sta::Scene* scene = drvr_path->scene(sta_);
   const sta::MinMax* min_max = drvr_path->minMax(sta_);
   const float load_cap = graph_delay_calc_->loadCap(drvr_pin, scene, min_max);

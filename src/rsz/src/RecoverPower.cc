@@ -330,6 +330,9 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
       drvr_pin, drvr_path->scene(sta_), drvr_path->minMax(sta_));
   const sta::TimingArc* in_arc = drvr_path->prevArc(sta_);
   const sta::LibertyPort* in_port = in_arc ? in_arc->from() : nullptr;
+  if (in_port == nullptr) {
+    return false;
+  }
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive = 0.0;
     if (drvr_index >= 2) {
@@ -341,9 +344,6 @@ bool RecoverPower::downsizeDrvr(const sta::Path* drvr_path,
       if (prev_drvr_port) {
         prev_drive = prev_drvr_port->driveResistance();
       }
-    }
-    if (in_port == nullptr) {
-      return false;
     }
     const sta::LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
     const sta::LibertyCell* downsize = downsizeCell(in_port,
