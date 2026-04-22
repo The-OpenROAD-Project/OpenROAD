@@ -1,6 +1,6 @@
 include(openroad)
 
-add_executable(CutGTests TestAbc.cc)
+add_executable(CutGTests TestAbc.cc TestMockturtle.cc)
 target_link_libraries(CutGTests
         OpenSTA
         GTest::gtest

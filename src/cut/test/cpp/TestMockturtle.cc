@@ -1,0 +1,184 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// Copyright (c) 2023-2025, The OpenROAD Authors
+
+#include <string.h>  // NOLINT(modernize-deprecated-headers): for strdup()
+#include <unistd.h>
+
+#include <array>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <map>
+#include <mutex>
+#include <set>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "base/abc/abc.h"
+#include "base/main/abcapis.h"
+#include "cut/abc_library_factory.h"
+#include "cut/logic_cut.h"
+#include "cut/logic_extractor.h"
+#include "db_sta/dbReadVerilog.hh"
+#include "db_sta/dbSta.hh"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "lorina/common.hpp"
+#include "map/mio/mio.h"
+#include "map/scl/sclLib.h"
+#include "misc/vec/vecPtr.h"
+#include "mockturtle/algorithms/emap.hpp"
+#include "mockturtle/io/genlib_reader.hpp"
+#include "mockturtle/networks/aig.hpp"
+#include "mockturtle/networks/block.hpp"
+#include "mockturtle/utils/name_utils.hpp"
+#include "mockturtle/utils/tech_library.hpp"
+#include "mockturtle/views/names_view.hpp"
+#include "mockturtle/views/topo_view.hpp"
+#include "odb/db.h"
+#include "odb/dbSet.h"
+#include "odb/lefin.h"
+#include "sta/Graph.hh"
+#include "sta/Liberty.hh"
+#include "sta/NetworkClass.hh"
+#include "sta/SdcClass.hh"
+#include "sta/Sta.hh"
+#include "sta/Units.hh"
+#include "sta/VerilogReader.hh"
+#include "tst/fixture.h"
+#include "utl/deleter.h"
+#include "utl/unique_name.h"
+
+namespace abc {
+Vec_Str_t* Abc_SclProduceGenlibStr(SC_Lib* p,
+                                   float Slew,
+                                   float Gain,
+                                   int nGatesMin,
+                                   int fUseAll,
+                                   int* pnCellCount);
+}  // namespace abc
+
+namespace cut {
+
+using cut::LogicCut;
+using cut::LogicExtractorFactory;
+using ::testing::Contains;
+
+static std::once_flag init_abc_flag;
+
+static const std::string prefix("_main/src/cut/test/");
+
+class MockturtleTest : public tst::Fixture
+{
+ protected:
+  void SetUp() override
+  {
+    std::call_once(init_abc_flag, []() { abc::Abc_Start(); });
+    library_ = readLiberty(prefix + "Nangate45/Nangate45_typ.lib");
+
+    odb::dbTech* tech
+        = loadTechLef("nangate45", prefix + "Nangate45/Nangate45_tech.lef");
+    loadLibaryLef(
+        tech, "nangate45", prefix + "Nangate45/Nangate45_stdcell.lef");
+
+    sta::Units* units = library_->units();
+    power_unit_ = units->powerUnit();
+  }
+
+  void LoadVerilog(const std::string& file_name, const std::string& top = "top")
+  {
+    // Assumes module name is "top" and clock name is "clk"
+    sta::dbNetwork* network = sta_->getDbNetwork();
+    ord::dbVerilogNetwork verilog_network(sta_.get());
+
+    sta::VerilogReader verilog_reader(&verilog_network);
+    verilog_reader.read(getFilePath(file_name).c_str());
+
+    ord::dbLinkDesign(top.c_str(),
+                      &verilog_network,
+                      db_.get(),
+                      &logger_,
+                      /*hierarchy = */ false);
+
+    sta_->postReadDb(db_.get());
+
+    sta::Cell* top_cell = network->cell(network->topInstance());
+    sta::Port* clk_port = network->findPort(top_cell, "clk");
+    sta::Pin* clk_pin = network->findPin(network->topInstance(), clk_port);
+
+    sta::PinSet* pinset = new sta::PinSet(network);
+    pinset->insert(clk_pin);
+
+    // 0.5ns
+    double period = sta_->units()->timeUnit()->userToSta(0.5);
+    sta::FloatSeq* waveform = new sta::FloatSeq;
+    waveform->push_back(0);
+    waveform->push_back(period / 2.0);
+
+    sta_->makeClock("core_clock",
+                    pinset,
+                    /*add_to_pins=*/false,
+                    /*period=*/period,
+                    waveform,
+                    /*comment=*/"",
+                    /*mode=*/sta_->cmdMode());
+
+    sta_->ensureGraph();
+    sta_->ensureLevelized();
+  }
+
+  sta::Unit* power_unit_;
+  sta::LibertyLibrary* library_;
+};
+
+TEST_F(MockturtleTest, ExtractsAndGateCorrectly)
+{
+  cut::AbcLibraryFactory factory(&logger_);
+  factory.AddDbSta(sta_.get());
+  auto abc_library = factory.BuildScl();
+  auto lib = abc_library.get();
+  int cell_count = 0;
+  auto* genlib_vec = abc::Abc_SclProduceGenlibStr(
+      lib, abc::Abc_SclComputeAverageSlew(lib), 200.0f, 0, true, &cell_count);
+  // ABC ends the file with '.end', but mockturtle doesn't like that
+  for (int i = 0; i < sizeof(".end\n\0"); i++) {
+    abc::Vec_StrPop(genlib_vec);
+  }
+  abc::Vec_StrPush(genlib_vec, '\0');
+  auto* genlib_str = abc::Vec_StrArray(genlib_vec);
+  std::istringstream genlib(genlib_str);
+  abc::Vec_StrFree(genlib_vec);
+
+  std::vector<mockturtle::gate> gates;
+  EXPECT_EQ(lorina::read_genlib(genlib, mockturtle::genlib_reader(gates)),
+            lorina::return_code::success);
+
+  mockturtle::tech_library<9u> tech_lib(gates);
+
+  LoadVerilog(prefix + "simple_and_gate_extract.v");
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  sta::Vertex* flop_input_vertex = nullptr;
+  for (sta::Vertex* vertex : sta_->endpoints()) {
+    if (std::string(vertex->name(network)) == "output_flop/D") {
+      flop_input_vertex = vertex;
+    }
+  }
+  EXPECT_NE(flop_input_vertex, nullptr);
+
+  LogicExtractorFactory logic_extractor(sta_.get(), &logger_);
+  logic_extractor.AppendEndpoint(flop_input_vertex);
+  LogicCut cut = logic_extractor.BuildLogicCut(tech_lib);
+
+  EXPECT_EQ(cut.cut_instances().size(), 1);
+  EXPECT_EQ(std::string(network->name(*cut.cut_instances().begin())), "_403_");
+}
+
+TEST(Cut, T)
+{
+  EXPECT_EQ(1, 2);
+}
+
+}  // namespace cut
