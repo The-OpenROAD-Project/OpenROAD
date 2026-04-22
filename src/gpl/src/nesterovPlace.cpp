@@ -436,7 +436,11 @@ void NesterovPlace::runTimingDriven(int iter,
       nb_gcells_before_td += nb->getGCells().size();
     }
 
-    bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter);
+    bool second = false;
+    if (npVars_.timingDrivenIterCounter == 2) {
+      second = true;
+    }
+    bool shouldTdProceed = tb_->executeTimingDriven(virtual_td_iter, second);
     // TODO remove fillers for TD iterations
     // for (auto& nesterov : nbVec_) {
     //   nesterov->cutFillerCells(nbc_->getDeltaArea());

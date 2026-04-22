@@ -48,7 +48,7 @@ class TimingBase
   // updateNetWeight.
   // True: successfully reweighted gnets
   // False: no slacks found
-  bool executeTimingDriven(bool run_journal_restore);
+  bool executeTimingDriven(bool run_journal_restore, bool second = false);
 
  private:
   grt::GlobalRouter* grt_ = nullptr;
