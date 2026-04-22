@@ -106,3 +106,21 @@ tcl_wrap_cc(
         "//src/odb:swig",
     ],
 )
+
+python_wrap_cc(
+    name = "swig-py",
+    srcs = [
+        "include/syn/synthesis.h",
+        "src/synthesis-py.i",
+        "//:error_swig-py",
+    ],
+    module = "syn_py",
+    root_swig_src = "src/synthesis-py.i",
+    swig_includes = [
+        "include",
+        "src",
+    ],
+    deps = [
+        "//src/odb:swig-py",
+    ],
+)

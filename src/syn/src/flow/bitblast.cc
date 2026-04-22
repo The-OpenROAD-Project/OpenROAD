@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <map>
+#include <optional>
 #include <set>
 #include <utility>
 #include <vector>

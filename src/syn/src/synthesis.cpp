@@ -125,7 +125,7 @@ void Synthesis::dump() const
 void Synthesis::dump(const std::string& filename) const
 {
   if (!graph_) {
-    logger_->error(utl::SYN, 2, "No graph to dump. Run syn::elaborate first.");
+    logger_->error(utl::SYN, 51, "No graph to dump. Run syn::elaborate first.");
     return;
   }
   std::ofstream ofs(filename);
@@ -231,13 +231,13 @@ void Synthesis::dumpFanoutCone(const std::string& net_ref,
                                bool stop_at_stateful) const
 {
   if (!graph_) {
-    logger_->error(utl::SYN, 47, "No graph. Run syn::elaborate first.");
+    logger_->error(utl::SYN, 53, "No graph. Run syn::elaborate first.");
     return;
   }
 
   Net root = resolveNetRef(net_ref);
   if (root == Net::sentinel()) {
-    logger_->error(utl::SYN, 48, "Cannot find net '{}'.", net_ref);
+    logger_->error(utl::SYN, 54, "Cannot find net '{}'.", net_ref);
     return;
   }
 

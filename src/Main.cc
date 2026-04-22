@@ -58,6 +58,12 @@ using std::string;
 
 #ifdef ENABLE_PYTHON3
 
+#ifdef SYN_VERIFIC_SUPPORT
+#define FOREACH_SYN_PYTHON_TOOL(X) X(syn)
+#else
+#define FOREACH_SYN_PYTHON_TOOL(X)
+#endif
+
 #define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
   X(ifp)                                 \
   X(utl)                                 \
@@ -77,7 +83,7 @@ using std::string;
   X(rmp)                                 \
   X(cgt)                                 \
   X(stt)                                 \
-  X(syn)                                 \
+  FOREACH_SYN_PYTHON_TOOL(X)             \
   X(psm)                                 \
   X(pdn)                                 \
   X(rsz)                                 \
@@ -159,6 +165,7 @@ static void initPython()
 #undef X
 #undef FOREACH_TOOL
 #undef FOREACH_TOOL_WITHOUT_OPENROAD
+#undef FOREACH_SYN_PYTHON_TOOL
 
   // Need to separately handle openroad here because we need both
   // the names "openroad_swig" and "openroad".
