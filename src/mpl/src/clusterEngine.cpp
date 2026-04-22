@@ -2216,13 +2216,6 @@ HardMacro::Halo ClusteringEngine::buildMacroHalo(odb::dbInst* inst,
     }
   }
 
-  logger_->report("{} ({} {} {} {})",
-                  inst->getName(),
-                  halo.left,
-                  halo.bottom,
-                  halo.right,
-                  halo.top);
-
   return halo;
 }
 
