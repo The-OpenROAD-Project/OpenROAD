@@ -1,5 +1,4 @@
 load("@bazel-orfs//:openroad.bzl", "orfs_run")
-load("@rules_chisel//chisel:defs.bzl", "chisel_binary")
 load("//test/orfs/asap7:asap7.bzl", "ASAP7_REMOVE_CELLS")
 load(":mock-array.bzl", "config", "element", "mock_array", "verilog")
 
@@ -9,15 +8,11 @@ package(
 
 exports_files(["write_verilog.tcl"])
 
-chisel_binary(
-    name = "generate_verilog",
-    srcs = glob(["src/main/scala/**/*.scala"]),
-    main_class = "GenerateMockArray",
-    resources = glob(["src/main/resources/**/*"]),
+# Amaranth-generated multiplier gate-level Verilog (needs native Yosys frontend)
+filegroup(
+    name = "multiplier_v",
+    srcs = ["src/main/resources/multiplier.v"],
     tags = ["manual"],
-    deps = [
-        "@maven//:com_github_scopt_scopt_2_13",
-    ],
 )
 
 filegroup(
