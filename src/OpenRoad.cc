@@ -571,7 +571,6 @@ void OpenRoad::readDb(std::istream& stream)
 
     // Clear tool-specific cached state to ensure reproducibility
     global_router_->clear();
-    opendp_->importClear();
     detailed_router_->clearDesign();
     replace_->reset();
     tritonCts_->clear();
