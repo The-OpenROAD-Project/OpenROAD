@@ -1202,7 +1202,7 @@ void FastRouteCore::updatePlanarNetUsage(const StTree& sttree,
 void FastRouteCore::applySnapshotBatchRoute(const int net_id, StTree&& sttree)
 {
   FrNet* net = nets_[net_id];
-  const int edge_cost = static_cast<int8_t>(net->getEdgeCost());
+  const int edge_cost = static_cast<unsigned char>(net->getEdgeCost());
   updatePlanarNetUsage(sttrees_[net_id], net, -edge_cost);
   sttrees_[net_id] = std::move(sttree);
   updatePlanarNetUsage(sttrees_[net_id], net, edge_cost);

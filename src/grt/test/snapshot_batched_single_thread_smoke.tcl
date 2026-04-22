@@ -20,7 +20,8 @@ tee -variable output -quiet {
 
 if { [grt::get_snapshot_batched_width] != 16 } {
   utl::error GRT 711 \
-    "global_route -snapshot_batched_width 16 should keep snapshot-batched routing enabled even with one requested thread."
+    "global_route -snapshot_batched_width 16 should keep\
+     snapshot-batched routing enabled even with one requested thread."
 }
 
 set wirelength -1
