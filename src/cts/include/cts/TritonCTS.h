@@ -179,7 +179,8 @@ class TritonCTS
                              int depth,
                              bool fullTree,
                              const std::unordered_set<odb::dbITerm*>& sinks,
-                             const std::unordered_set<odb::dbInst*>& dummies);
+                             const std::unordered_set<odb::dbInst*>& dummies,
+                             std::unordered_set<odb::dbNet*>& visitedNets);
   std::pair<int, int> branchBufferCount(ClockInst* inst,
                                         int bufCounter,
                                         Clock& clockNet);
