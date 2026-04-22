@@ -145,6 +145,11 @@ void DbxParser::parseChipletInstExternal(ChipletInstExternal& external,
   if (external_node["verilog_file"]) {
     std::vector<std::string> verilog_files;
     extractValue(external_node, "verilog_file", verilog_files);
+    if (verilog_files.size() > 1) {
+      logError(
+          "Multiple verilog_file entries for a single chiplet are currently "
+          "unsupported.");
+    }
     if (!verilog_files.empty()) {
       external.verilog_file = resolvePath(verilog_files[0]);
     }
@@ -153,6 +158,11 @@ void DbxParser::parseChipletInstExternal(ChipletInstExternal& external,
   if (external_node["sdc_file"]) {
     std::vector<std::string> sdc_files;
     extractValue(external_node, "sdc_file", sdc_files);
+    if (sdc_files.size() > 1) {
+      logError(
+          "Multiple sdc_file entries for a single chiplet are currently "
+          "unsupported.");
+    }
     if (!sdc_files.empty()) {
       external.sdc_file = resolvePath(sdc_files[0]);
     }
