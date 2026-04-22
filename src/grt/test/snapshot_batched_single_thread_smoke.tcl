@@ -18,7 +18,7 @@ tee -variable output -quiet {
     -congestion_iterations 200 -verbose
 }
 
-if {[grt::get_snapshot_batched_width] != 16} {
+if { [grt::get_snapshot_batched_width] != 16 } {
   utl::error GRT 711 \
     "global_route -snapshot_batched_width 16 should keep snapshot-batched routing enabled even with one requested thread."
 }
