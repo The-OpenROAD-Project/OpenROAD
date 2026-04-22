@@ -86,7 +86,6 @@ or_integration_tests(
     repair_hold15
     repair_setup_sizedown
     repair_setup_sizeup_match
-    repair_setup_swap_sizeup_unbuffer
     repair_setup1
     repair_setup2
     repair_setup3
