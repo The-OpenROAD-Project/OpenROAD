@@ -26,8 +26,8 @@
 
 namespace grt {
 
-using utl::GRT;
 using utl::DebugScopedTimer;
+using utl::GRT;
 
 namespace {
 
@@ -1017,7 +1017,8 @@ int FastRouteCore::resolveSnapshotExecutionThreads(const int work_items) const
   return std::min(work_items, std::max(1, requested_threads));
 }
 
-int FastRouteCore::resolveSnapshotWaveSize(const int available_batch_count) const
+int FastRouteCore::resolveSnapshotWaveSize(
+    const int available_batch_count) const
 {
   return std::min(available_batch_count, kSnapshotSemanticWidth);
 }
@@ -1042,8 +1043,9 @@ int FastRouteCore::resolveSnapshotBatchIterationLimit(const int net_count) const
   return std::max(overflow_scaled_limit, net_scaled_limit);
 }
 
-bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
-                                                        const int net_count) const
+bool FastRouteCore::useSnapshotBatchRoutingForIteration(
+    const int iter,
+    const int net_count) const
 {
   if (!useSnapshotBatchRouting(net_count)) {
     return false;
@@ -1057,7 +1059,7 @@ bool FastRouteCore::useSnapshotBatchRoutingForIteration(const int iter,
 }
 
 int FastRouteCore::resolveSnapshotNetsForBatch(const int iter,
-                                              const int net_count) const
+                                               const int net_count) const
 {
   const int nets_for_batch = resolveSnapshotBaseBatchSize(net_count);
 
@@ -2183,9 +2185,9 @@ NetRouteMap FastRouteCore::run()
 
         std::vector<int> net_ids;
 
-        // If the congestion is not that high (note that the overflow is inflated
-        // by 100x when there is no capacity available for a NDR net in a specific
-        // edge)
+        // If the congestion is not that high (note that the overflow is
+        // inflated by 100x when there is no capacity available for a NDR net in
+        // a specific edge)
         if (total_overflow_ < soft_ndr_overflow_th) {
           // Select one NDR net to be disabled
           int net_id = graph2d_.getOneCongestedNDRnet();
@@ -2322,8 +2324,7 @@ NetRouteMap FastRouteCore::run()
   logger_->metric("global_route__fastroute__monotonic_s", monotonic_time);
   logger_->metric("global_route__fastroute__overflow_iterations_s",
                   overflow_iterations_time);
-  logger_->metric("global_route__fastroute__finalization_s",
-                  finalization_time);
+  logger_->metric("global_route__fastroute__finalization_s", finalization_time);
   logger_->metric("global_route__fastroute__snapshot_batch_route_s",
                   snapshot_batch_route_time_);
   logger_->metric("global_route__fastroute__snapshot_batch_apply_s",

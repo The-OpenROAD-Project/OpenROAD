@@ -808,8 +808,8 @@ bool FastRouteCore::updateRouteType1(const int net_id,
   treeedges[edge_n1A1].len = abs(A1x - E1x) + abs(A1y - E1y);
 
   // reallocate memory for route.gridsX and route.gridsY
-  treeedges[edge_n1A2].route.grids.assign(
-      cnt_n1A1 + cnt_n1A2 - E1_pos - 1, GPoint3D{});
+  treeedges[edge_n1A2].route.grids.assign(cnt_n1A1 + cnt_n1A2 - E1_pos - 1,
+                                          GPoint3D{});
 
   int cnt = 0;
   if (E1x <= A2x) {
@@ -1131,9 +1131,10 @@ bool FastRouteCore::runSnapshotBatchedMazeRoute(const int iter,
     // next wave.
     for (size_t wave_begin = 0; wave_begin < batch_net_ids.size();
          wave_begin += semantic_wave_size) {
-      const int batches_in_wave = std::min(
-          semantic_wave_size,
-          static_cast<int>(batch_net_ids.size()) - static_cast<int>(wave_begin));
+      const int batches_in_wave
+          = std::min(semantic_wave_size,
+                     static_cast<int>(batch_net_ids.size())
+                         - static_cast<int>(wave_begin));
       const int active_threads
           = resolveSnapshotExecutionThreads(batches_in_wave);
       std::vector<BatchResult> batch_results(batches_in_wave);
