@@ -7,21 +7,13 @@
 [WARNING DPL-0003] -disallow_one_site_gaps is deprecated
 [INFO DPL-0006] Core area: 54.26 um^2, Instances area: 6.38 um^2, Utilization: 11.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                       3
-Diamond Move Success:              3 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
+Negotiation iteration 0: total overflow 0.
 Placement Analysis
 ---------------------------------
-total displacement          0.2 u
-average displacement        0.1 u
-max displacement            0.2 u
+total displacement          2.8 u
+average displacement        0.9 u
+max displacement            2.8 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %

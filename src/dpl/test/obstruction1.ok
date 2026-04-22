@@ -4,24 +4,17 @@
 [INFO ODB-0131]     Created 121 components and 621 component-terminals.
 [INFO DPL-0006] Core area: 160139.98 um^2, Instances area: 118.10 um^2, Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1101] Legalizing using diamond search.
-Movements Summary
----------------------------------------
-Total cells:                     117
-Diamond Move Success:            117 (100.00%)
-Diamond Move Failure:              0
-Rip-up and replace Success:        0 (  0.00% of diamond failures)
-Rip-up and replace Failure:        0
-Total Placement Failures:          0
----------------------------------------
+[INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
 ---------------------------------
-total displacement         47.3 u
-average displacement        0.4 u
-max displacement            0.7 u
+total displacement         96.6 u
+average displacement        0.8 u
+max displacement            1.4 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
-[INFO DPL-0001] Placed 19647 filler instances.
-No differences found.
+[INFO DPL-0001] Placed 19644 filler instances.
+Differences found at line 315.
+COMPONENTS 19768 ;
+COMPONENTS 19765 ;
