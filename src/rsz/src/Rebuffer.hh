@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -109,6 +110,7 @@ class Rebuffer : public sta::dbStaState
   int fanout(sta::Vertex* vertex) const;
   int wireLengthLimitImpliedByLoadSlew(sta::LibertyCell*);
   int wireLengthLimitImpliedByMaxCap(sta::LibertyCell*);
+  int wireLengthStepForLayer(int layer);
 
   BufferedNetPtr attemptTopologyRewrite(const BufferedNetPtr& node,
                                         const BufferedNetPtr& left,
@@ -151,6 +153,7 @@ class Rebuffer : public sta::dbStaState
 
   int resizer_max_wire_length_ = 0;
   int wire_length_step_ = 0;
+  std::unordered_map<int, int> layer_wire_length_step_;
 
   double initial_design_area_ = 0.0;
   int print_interval_ = 0;

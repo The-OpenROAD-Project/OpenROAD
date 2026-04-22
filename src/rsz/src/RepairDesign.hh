@@ -239,7 +239,8 @@ class RepairDesign : sta::dbStaState
   void printProgress(int iteration,
                      bool force,
                      bool end,
-                     int repaired_net_count) const;
+                     int repaired_net_count,
+                     int total_vertices) const;
 
   void computeSlewRCFactor();
 
@@ -250,7 +251,7 @@ class RepairDesign : sta::dbStaState
   est::EstimateParasitics* estimate_parasitics_;
   int dbu_ = 0;
   double initial_design_area_ = 0;
-  est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::none;
+  est::ParasiticsSrc parasitics_src_ = est::ParasiticsSrc::kNone;
 
   // Gain buffering
   std::vector<sta::LibertyCell*> buffer_sizes_;

@@ -1,0 +1,88 @@
+name: Fix linting, formatting, and Bazel module lock file
+
+on:
+  push:
+    branches:
+      - 'master'
+
+permissions:
+  contents: write
+
+jobs:
+  auto-format:
+    name: Auto-format on push
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'The-OpenROAD-Project'
+    env:
+      BUILDIFIER_VERSION: v8.2.1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install Python tools
+        run: |
+          python3 -m venv venv
+          venv/bin/pip install tclint==0.7.0 black
+
+      - name: Cache buildifier
+        id: cache-buildifier
+        uses: actions/cache@v5
+        with:
+          path: ./buildifier
+          key: ${{ runner.os }}-buildifier-${{ env.BUILDIFIER_VERSION }}
+
+      - name: Download buildifier
+        if: steps.cache-buildifier.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/bazelbuild/buildtools/releases/download/${BUILDIFIER_VERSION}/buildifier-linux-amd64 -O buildifier
+          chmod +x buildifier
+
+      - name: Auto-format
+        run: |
+          # Skip if the last commit was already an auto-format
+          if git log -1 --format='%s' | grep -qF 'ci: auto-format'; then
+            exit 0
+          fi
+
+          # Get files changed in the full pushed range.
+          changed=$(git diff --name-only "${{ github.event.before }}..${{ github.sha }}")
+
+          # Run clang-format, excluding upstream-managed directories
+          echo "$changed" \
+            | grep -E '\.(h|hh|hpp|hxx|c|cc|cpp|cxx)$' \
+            | grep -v '^src/sta/' \
+            | grep -v '^src/odb/src/codeGenerator/' \
+            | xargs --no-run-if-empty clang-format -i
+
+          # Run black on changed Python files
+          source venv/bin/activate
+          echo "$changed" \
+            | grep -E '\.py$' \
+            | xargs --no-run-if-empty black
+
+          # Run buildifier on changed Bazel files
+          echo "$changed" \
+            | grep -E '(BUILD|WORKSPACE|\.bzl|\.bazel)$' \
+            | xargs --no-run-if-empty ./buildifier -lint=fix
+
+          # Update the Bazel lock file (best-effort)
+          bazelisk mod deps --lockfile_mode=update || true
+
+          # Run tclfmt on changed Tcl files
+          echo "$changed" \
+            | grep -E '\.tcl$' \
+            | grep -v '^src/sta/' \
+            | xargs --no-run-if-empty tclfmt --in-place
+
+          # Commit if any diffs were created
+          if [ -n "$(git diff --name-only)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git diff --name-only | xargs git add --
+            git commit -m "ci: auto-format [skip ci]"
+            git push
+            echo "Auto-format committed fixes and pushed."
+          fi

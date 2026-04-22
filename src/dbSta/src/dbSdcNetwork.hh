@@ -2,6 +2,7 @@
 // Copyright (c) 2019-2025, The OpenROAD Authors
 
 #pragma once
+#include <string_view>
 
 #include "sta/Network.hh"
 #include "sta/NetworkClass.hh"
@@ -13,7 +14,7 @@ class dbSdcNetwork : public SdcNetwork
 {
  public:
   explicit dbSdcNetwork(Network* network);
-  Instance* findInstance(const char* path_name) const override;
+  Instance* findInstance(std::string_view path_name) const override;
   InstanceSeq findInstancesMatching(const Instance* contex,
                                     const PatternMatch* pattern) const override;
   NetSeq findNetsMatching(const Instance*,
@@ -28,7 +29,7 @@ class dbSdcNetwork : public SdcNetwork
   void findMatchingPins(const Instance* instance,
                         const PatternMatch* port_pattern,
                         PinSeq& pins) const;
-  Pin* findPin(const char* path_name) const override;
+  Pin* findPin(std::string_view path_name) const override;
   using SdcNetwork::findPin;
 };
 

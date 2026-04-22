@@ -165,6 +165,7 @@ def add_field_attributes(
                 and not template_class_name.isdigit()
                 and template_class_name not in {"true", "false"}
                 and "no-template" not in field.flags
+                and template_class_name.startswith("_")
                 and klass.name != template_class_name[1:]
                 and klass.name + "::" != template_class_name[: len(klass.name) + 2]
             )

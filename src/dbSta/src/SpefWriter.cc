@@ -50,7 +50,7 @@ static std::string escapeSpecial(const std::string& name)
   return result;
 }
 
-static std::string escapeSpecial(const char* name)
+[[maybe_unused]] static std::string escapeSpecial(const char* name)
 {
   if (!name) {
     return "";

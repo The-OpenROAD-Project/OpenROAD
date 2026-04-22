@@ -3215,7 +3215,6 @@ bool FlexDRWorker::routeNet(drNet* net, std::vector<FlexMazeIdx>& paths)
 
   // Verify if net has jumpers
   const bool route_with_jumpers = net->getFrNet()->hasJumpers();
-
   if (net->getPins().size() <= 1) {
     return true;
   }

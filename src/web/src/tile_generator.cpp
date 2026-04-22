@@ -4,6 +4,7 @@
 #include "tile_generator.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -19,6 +20,7 @@
 #include "color.h"
 #include "db_sta/dbSta.hh"
 #include "gui/heatMap.h"
+#include "json_builder.h"
 #include "lodepng.h"
 #include "odb/db.h"
 #include "odb/dbSet.h"
@@ -39,96 +41,116 @@ constexpr int kBitmapGlyphWidth = 5;
 constexpr int kBitmapGlyphHeight = 7;
 constexpr int kBitmapGlyphSpacing = 1;
 
+constexpr float kPinMarkerSizeRatio = 0.02;
+constexpr int kMinPinMarkerSize = 8;
+constexpr int kMinPinNameSizePixels = 20;
+
 const unsigned char* getBitmapGlyph(const char ch)
 {
   // Minimal 5x7 bitmap font. Each byte is one row, only the low 5 bits are
   // used.
   switch (ch) {
     case '0': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '1': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '2': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x01, 0x06, 0x08, 0x10, 0x1F};
-      return glyph;
+      return kGlyph;
     }
     case '3': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x01, 0x06, 0x01, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '4': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02};
-      return glyph;
+      return kGlyph;
     }
     case '5': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '6': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '7': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08};
-      return glyph;
+      return kGlyph;
     }
     case '8': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E};
-      return glyph;
+      return kGlyph;
     }
     case '9': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C};
-      return glyph;
+      return kGlyph;
     }
     case '.': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C};
-      return glyph;
+      return kGlyph;
     }
     case '-': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00};
-      return glyph;
+      return kGlyph;
     }
     case '/': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10};
-      return glyph;
+      return kGlyph;
     }
     case '=': {
-      static constexpr unsigned char glyph[]
+      static constexpr unsigned char kGlyph[]
           = {0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00};
-      return glyph;
+      return kGlyph;
     }
-    case 'x': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x0A, 0x11};
-      return glyph;
-    }
-    case 'y': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x11, 0x0A, 0x04, 0x04, 0x04};
-      return glyph;
-    }
-    case 'z': {
-      static constexpr unsigned char glyph[]
-          = {0x00, 0x00, 0x1F, 0x02, 0x04, 0x08, 0x1F};
-      return glyph;
-    }
+      // clang-format off
+    case 'A': case 'a': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
+    case 'B': case 'b': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x11,0x11,0x1E}; return kG; }
+    case 'C': case 'c': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x10,0x10,0x11,0x0E}; return kG; }
+    case 'D': case 'd': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x11,0x11,0x11,0x1E}; return kG; }
+    case 'E': case 'e': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x1F}; return kG; }
+    case 'F': case 'f': { static constexpr unsigned char kG[]={0x1F,0x10,0x10,0x1E,0x10,0x10,0x10}; return kG; }
+    case 'G': case 'g': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x17,0x11,0x11,0x0F}; return kG; }
+    case 'H': case 'h': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x1F,0x11,0x11,0x11}; return kG; }
+    case 'I': case 'i': { static constexpr unsigned char kG[]={0x0E,0x04,0x04,0x04,0x04,0x04,0x0E}; return kG; }
+    case 'J': case 'j': { static constexpr unsigned char kG[]={0x07,0x02,0x02,0x02,0x02,0x12,0x0C}; return kG; }
+    case 'K': case 'k': { static constexpr unsigned char kG[]={0x11,0x12,0x14,0x18,0x14,0x12,0x11}; return kG; }
+    case 'L': case 'l': { static constexpr unsigned char kG[]={0x10,0x10,0x10,0x10,0x10,0x10,0x1F}; return kG; }
+    case 'M': case 'm': { static constexpr unsigned char kG[]={0x11,0x1B,0x15,0x15,0x11,0x11,0x11}; return kG; }
+    case 'N': case 'n': { static constexpr unsigned char kG[]={0x11,0x19,0x15,0x13,0x11,0x11,0x11}; return kG; }
+    case 'O': case 'o': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
+    case 'P': case 'p': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x10,0x10,0x10}; return kG; }
+    case 'Q': case 'q': { static constexpr unsigned char kG[]={0x0E,0x11,0x11,0x11,0x15,0x12,0x0D}; return kG; }
+    case 'R': case 'r': { static constexpr unsigned char kG[]={0x1E,0x11,0x11,0x1E,0x14,0x12,0x11}; return kG; }
+    case 'S': case 's': { static constexpr unsigned char kG[]={0x0E,0x11,0x10,0x0E,0x01,0x11,0x0E}; return kG; }
+    case 'T': case 't': { static constexpr unsigned char kG[]={0x1F,0x04,0x04,0x04,0x04,0x04,0x04}; return kG; }
+    case 'U': case 'u': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x11,0x11,0x0E}; return kG; }
+    case 'V': case 'v': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x11,0x0A,0x0A,0x04}; return kG; }
+    case 'W': case 'w': { static constexpr unsigned char kG[]={0x11,0x11,0x11,0x15,0x15,0x1B,0x11}; return kG; }
+    case 'X': case 'x': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x0A,0x11}; return kG; }
+    case 'Y': case 'y': { static constexpr unsigned char kG[]={0x11,0x0A,0x04,0x04,0x04,0x04,0x04}; return kG; }
+    case 'Z': case 'z': { static constexpr unsigned char kG[]={0x1F,0x01,0x02,0x04,0x08,0x10,0x1F}; return kG; }
+    case '_': { static constexpr unsigned char kG[]={0x00,0x00,0x00,0x00,0x00,0x00,0x1F}; return kG; }
+    case '[': { static constexpr unsigned char kG[]={0x0E,0x08,0x08,0x08,0x08,0x08,0x0E}; return kG; }
+    case ']': { static constexpr unsigned char kG[]={0x0E,0x02,0x02,0x02,0x02,0x02,0x0E}; return kG; }
+    // clang-format on
     default:
       return nullptr;
   }
@@ -155,7 +177,7 @@ void TileVisibility::parseFromJson(const std::string& json)
 
   // clang-format off
   // NOLINTBEGIN(modernize-use-designated-initializers)
-  static const BoolField fields[] = {
+  static const BoolField kFields[] = {
     {"stdcells",           &TileVisibility::stdcells,           true},
     {"macros",             &TileVisibility::macros,             true},
     {"pad_input",          &TileVisibility::pad_input,          true},
@@ -191,6 +213,7 @@ void TileVisibility::parseFromJson(const std::string& json)
     {"routing",            &TileVisibility::routing,            true},
     {"special_nets",       &TileVisibility::special_nets,       true},
     {"pins",               &TileVisibility::pins,               true},
+    {"pin_markers",        &TileVisibility::pin_markers,        true},
     {"blockages",              &TileVisibility::blockages,              true},
     {"placement_blockages",    &TileVisibility::placement_blockages,    true},
     {"routing_obstructions",   &TileVisibility::routing_obstructions,   true},
@@ -202,10 +225,10 @@ void TileVisibility::parseFromJson(const std::string& json)
   // NOLINTEND(modernize-use-designated-initializers)
   // clang-format on
 
-  for (const auto& f : fields) {
+  for (const auto& f : kFields) {
     this->*(f.field) = extract_int_or(json, f.key, f.default_val ? 1 : 0);
   }
-  raw_json_ = json;
+  raw_json = json;
 }
 
 bool TileVisibility::isSiteVisible(const std::string& site_name) const
@@ -214,7 +237,7 @@ bool TileVisibility::isSiteVisible(const std::string& site_name) const
     return false;
   }
   const std::string key = "site_" + site_name;
-  return extract_int_or(raw_json_, key, 0);
+  return extract_int_or(raw_json, key, 0);
 }
 
 bool TileVisibility::isNetVisible(odb::dbNet* net) const
@@ -488,8 +511,28 @@ odb::Rect TileGenerator::getBounds() const
   odb::Rect bounds;
   if (odb::dbBlock* block = getBlock()) {
     bounds = block->getBBox()->getBox();
+    // Expand for pin markers that extend outside the die edge.
+    const int margin = getPinMaxSize();
+    if (margin > 0) {
+      bounds.set_xlo(bounds.xMin() - margin);
+      bounds.set_ylo(bounds.yMin() - margin);
+      bounds.set_xhi(bounds.xMax() + margin);
+      bounds.set_yhi(bounds.yMax() + margin);
+    }
   }
   return bounds;
+}
+
+int TileGenerator::getPinMaxSize() const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    return 0;
+  }
+  const odb::Rect die = block->getDieArea();
+  const int die_max_dim = std::max(die.dx(), die.dy());
+  return std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
+                  kMinPinMarkerSize);
 }
 
 std::vector<std::string> TileGenerator::getLayers() const
@@ -676,6 +719,11 @@ odb::dbBlock* TileGenerator::getBlock() const
   return chip ? chip->getBlock() : nullptr;
 }
 
+odb::dbChip* TileGenerator::getChip() const
+{
+  return db_->getChip();
+}
+
 std::vector<unsigned char> TileGenerator::generateTile(
     const std::string& layer,
     const int z,
@@ -690,9 +738,53 @@ std::vector<unsigned char> TileGenerator::generateTile(
     const std::set<uint32_t>* focus_net_ids,
     const std::set<uint32_t>* route_guide_net_ids) const
 {
+  auto image_buffer = renderTileBuffer(layer,
+                                       z,
+                                       x,
+                                       y,
+                                       vis,
+                                       highlight_rects,
+                                       highlight_polys,
+                                       colored_rects,
+                                       flight_lines,
+                                       module_colors,
+                                       focus_net_ids,
+                                       route_guide_net_ids);
+
+  std::vector<unsigned char> png_data;
+  const unsigned error = lodepng::encode(
+      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
+  if (error) {
+    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
+  }
+
+  if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
+    const std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z)
+                                 + "_" + std::to_string(x) + "_"
+                                 + std::to_string(y) + ".png";
+    lodepng::save_file(png_data, filename);
+  }
+
+  return png_data;
+}
+
+std::vector<unsigned char> TileGenerator::renderTileBuffer(
+    const std::string& layer,
+    const int z,
+    const int x,
+    int y,
+    const TileVisibility& vis,
+    const std::vector<odb::Rect>& highlight_rects,
+    const std::vector<odb::Polygon>& highlight_polys,
+    const std::vector<ColoredRect>& colored_rects,
+    const std::vector<FlightLine>& flight_lines,
+    const std::map<uint32_t, Color>* module_colors,
+    const std::set<uint32_t>* focus_net_ids,
+    const std::set<uint32_t>* route_guide_net_ids) const
+{
   static_assert(sizeof(Color) == 4);
-  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(buffer_size, 0);
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(kBufferSize, 0);
 
   // No design loaded — return blank tile.
   if (!getBlock()) {
@@ -702,7 +794,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
   }
 
   // Per-layer colors: routing level 1=blue, 2=red, then distinct hues
-  static const Color palette[] = {
+  static const Color kPalette[] = {
       // clang-format off
       // NOLINTBEGIN(modernize-use-designated-initializers)
       { 70, 130, 210, 180},  // moderate blue
@@ -716,7 +808,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
       // NOLINTEND(modernize-use-designated-initializers)
       // clang-format on
   };
-  static constexpr int palette_size = sizeof(palette) / sizeof(palette[0]);
+  static constexpr int kPaletteSize = sizeof(kPalette) / sizeof(kPalette[0]);
 
   odb::dbTech* tech = db_->getTech();
   odb::dbTechLayer* tech_layer = tech->findLayer(layer.c_str());
@@ -729,18 +821,21 @@ std::vector<unsigned char> TileGenerator::generateTile(
       layer_index = std::distance(all_layers.begin(), it);
     }
   }
-  const Color color = palette[layer_index % palette_size];
+  const Color color = kPalette[layer_index % kPaletteSize];
   const Color obs_color = color.lighter();
 
   // Determine our tile's bounding box in dbu coordinates.
   const double num_tiles_at_zoom = pow(2, z);
   if (x >= 0 && y >= 0 && x < num_tiles_at_zoom && y < num_tiles_at_zoom) {
     y = num_tiles_at_zoom - 1 - y;  // flip
-    const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
-    const int dbu_x_min = x * tile_dbu_size;
-    const int dbu_y_min = y * tile_dbu_size;
-    const int dbu_x_max = std::ceil((x + 1) * tile_dbu_size);
-    const int dbu_y_max = std::ceil((y + 1) * tile_dbu_size);
+    const odb::Rect full_bounds = getBounds();
+    const double tile_dbu_size = full_bounds.maxDXDY() / num_tiles_at_zoom;
+    const int dbu_x_min = full_bounds.xMin() + x * tile_dbu_size;
+    const int dbu_y_min = full_bounds.yMin() + y * tile_dbu_size;
+    const int dbu_x_max
+        = full_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+    const int dbu_y_max
+        = full_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
     const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
     const double scale = kTileSizeInPixel / tile_dbu_size;
 
@@ -781,12 +876,215 @@ std::vector<unsigned char> TileGenerator::generateTile(
       }
     }
 
+    // Special "_pins" layer: draw IO pin direction markers
+    const bool pins_layer = (layer == "_pins");
+    if (pins_layer && vis.pin_markers) {
+      const odb::Rect die_area = block->getDieArea();
+      // Match GUI: scale markers to min(die, viewport) so they shrink
+      // when zoomed in (GUI renderThread.cpp:1598-1602).
+      const int die_max_dim = std::max(die_area.dx(), die_area.dy());
+      const int tile_extent = static_cast<int>(tile_dbu_size);
+      const int effective_dim = std::min(die_max_dim, tile_extent);
+      const int pin_max_size
+          = std::max(static_cast<int>(kPinMarkerSizeRatio * effective_dim),
+                     kMinPinMarkerSize);
+      const int qw = pin_max_size / 4;  // quarter-width of marker
+
+      // Show pin names when the full (die-relative) marker is large enough
+      // in pixels.  pin_max_size shrinks with zoom, but the die-relative
+      // size grows as scale increases, so names appear when zoomed in.
+      const int die_pin_size
+          = std::max(static_cast<int>(kPinMarkerSizeRatio * die_max_dim),
+                     kMinPinMarkerSize);
+      const bool draw_pin_names
+          = (static_cast<int>(die_pin_size * scale) >= kMinPinNameSizePixels);
+
+      // Marker templates (same as GUI renderThread.cpp).
+      // Defined for "top edge" orientation; rotated per actual edge.
+      using Pts = std::vector<odb::Point>;
+      const Pts in_marker{// arrow pointing into block
+                          {qw, pin_max_size},
+                          {0, 0},
+                          {-qw, pin_max_size},
+                          {qw, pin_max_size}};
+      const Pts out_marker{// arrow pointing out of block
+                           {0, pin_max_size},
+                           {-qw, 0},
+                           {qw, 0},
+                           {0, pin_max_size}};
+      const Pts bi_marker{// diamond
+                          {0, 0},
+                          {-qw, pin_max_size / 2},
+                          {0, pin_max_size},
+                          {qw, pin_max_size / 2},
+                          {0, 0}};
+
+      // Determine layer colors for per-layer coloring of markers.
+      const auto all_layers = getLayers();
+
+      // Iterate per-box like the GUI (each dbBox gets its own marker).
+      for (odb::dbBTerm* term : block->getBTerms()) {
+        for (odb::dbBPin* pin : term->getBPins()) {
+          const odb::dbPlacementStatus status = pin->getPlacementStatus();
+          if (status == odb::dbPlacementStatus::NONE
+              || status == odb::dbPlacementStatus::UNPLACED) {
+            continue;
+          }
+
+          for (odb::dbBox* box : pin->getBoxes()) {
+            if (!box) {
+              continue;
+            }
+            const odb::Rect box_rect = box->getBox();
+
+            // Layer color for this box.
+            Color marker_color{.r = 200, .g = 200, .b = 200, .a = 220};
+            odb::dbTechLayer* pin_layer = box->getTechLayer();
+            if (pin_layer) {
+              const auto it = std::ranges::find(
+                  all_layers, std::string(pin_layer->getName()));
+              if (it != all_layers.end()) {
+                const int idx = std::distance(all_layers.begin(), it);
+                marker_color = kPalette[idx % kPaletteSize];
+                marker_color.a = 220;
+              }
+            }
+
+            // Center and edge distances from this specific box.
+            const odb::Point pin_center = box_rect.center();
+
+            const int dist_to_left
+                = std::abs(box_rect.xMin() - die_area.xMin());
+            const int dist_to_right
+                = std::abs(box_rect.xMax() - die_area.xMax());
+            const int dist_to_top = std::abs(box_rect.yMax() - die_area.yMax());
+            const int dist_to_bot = std::abs(box_rect.yMin() - die_area.yMin());
+            const std::array<int, 4> dists{
+                dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
+            const int arg_min = static_cast<int>(
+                std::distance(dists.begin(), std::ranges::min_element(dists)));
+
+            odb::dbTransform xfm(pin_center);
+            if (arg_min == 0) {  // left
+              xfm.setOrient(odb::dbOrientType::R90);
+              if (dist_to_left == 0) {
+                xfm.setOffset({die_area.xMin(), pin_center.y()});
+              }
+            } else if (arg_min == 1) {  // right
+              xfm.setOrient(odb::dbOrientType::R270);
+              if (dist_to_right == 0) {
+                xfm.setOffset({die_area.xMax(), pin_center.y()});
+              }
+            } else if (arg_min == 2) {  // top
+              // No rotation needed.
+              if (dist_to_top == 0) {
+                xfm.setOffset({pin_center.x(), die_area.yMax()});
+              }
+            } else {  // bottom
+              xfm.setOrient(odb::dbOrientType::MX);
+              if (dist_to_bot == 0) {
+                xfm.setOffset({pin_center.x(), die_area.yMin()});
+              }
+            }
+
+            // Select template based on IO direction.
+            const Pts* tmpl = &bi_marker;
+            const auto pin_dir = term->getIoType();
+            if (pin_dir == odb::dbIoType::INPUT) {
+              tmpl = &in_marker;
+            } else if (pin_dir == odb::dbIoType::OUTPUT) {
+              tmpl = &out_marker;
+            }
+
+            // Transform template to final marker polygon.
+            std::vector<odb::Point> marker_pts;
+            marker_pts.reserve(tmpl->size());
+            for (const auto& pt : *tmpl) {
+              odb::Point new_pt = pt;
+              xfm.apply(new_pt);
+              marker_pts.push_back(new_pt);
+            }
+            const odb::Polygon marker_poly(marker_pts);
+
+            // Only draw if marker intersects this tile.
+            const odb::Rect marker_bbox = marker_poly.getEnclosingRect();
+            if (marker_bbox.overlaps(dbu_tile)) {
+              fillPolygon(
+                  image_buffer, marker_poly, dbu_tile, scale, marker_color);
+            }
+
+            // Draw the box rect itself (same as GUI painter.drawRect).
+            if (box_rect.overlaps(dbu_tile)) {
+              const odb::Rect overlap = box_rect.intersect(dbu_tile);
+              const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
+              drawFilledRect(image_buffer, draw, marker_color);
+            }
+
+            // Draw pin name label when zoomed in enough.
+            if (draw_pin_names) {
+              const std::string name = term->getName();
+              const odb::Point anchor_pt = xfm.getOffset();
+              constexpr int kTextScale = 2;
+              const int text_w = getBitmapTextWidth(name, kTextScale);
+              const int text_h = getBitmapTextHeight(kTextScale);
+              const int text_margin_px = kTextScale + 1;
+              const bool rotated = (arg_min == 2 || arg_min == 3);
+
+              // For rotated text, width/height swap.
+              const int block_w = rotated ? text_h : text_w;
+              const int block_h = rotated ? text_w : text_h;
+
+              // Convert anchor to pixel coords.
+              const int anchor_px
+                  = static_cast<int>((anchor_pt.x() - dbu_tile.xMin()) * scale);
+              const int anchor_py_raw
+                  = static_cast<int>((anchor_pt.y() - dbu_tile.yMin()) * scale);
+              const int anchor_py = 255 - anchor_py_raw;
+
+              // Position text beyond the marker, anchored per edge.
+              const int marker_px = static_cast<int>(pin_max_size * scale);
+              int px;
+              int py;
+              if (arg_min == 0) {  // left — right-aligned, left of marker
+                px = anchor_px - marker_px - text_margin_px - text_w;
+                py = anchor_py - text_h / 2;
+              } else if (arg_min == 1) {  // right — left-aligned
+                px = anchor_px + marker_px + text_margin_px;
+                py = anchor_py - text_h / 2;
+              } else if (arg_min == 2) {  // top — rotated, above marker
+                px = anchor_px - block_w / 2;
+                py = anchor_py - marker_px - text_margin_px - block_h;
+              } else {  // bottom — rotated, below marker
+                px = anchor_px - block_w / 2;
+                py = anchor_py + marker_px + text_margin_px;
+              }
+
+              if (px > -block_w && px < kTileSizeInPixel && py > -block_h
+                  && py < kTileSizeInPixel) {
+                const Color text_color{.r = marker_color.r,
+                                       .g = marker_color.g,
+                                       .b = marker_color.b,
+                                       .a = 255};
+                if (rotated) {
+                  drawBitmapTextRotated(
+                      image_buffer, px, py, name, kTextScale, text_color);
+                } else {
+                  drawBitmapText(
+                      image_buffer, px, py, name, kTextScale, text_color);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Special "_instances" layer: only draw instance borders, no routing
     const bool instances_only = (layer == "_instances");
 
-    // "_modules" layer only draws filled module-color rects (already done
-    // above); skip all other drawing (instances, routing, etc.)
-    if (!modules_layer) {
+    // "_modules" and "_pins" layers handle their own drawing above;
+    // skip all other drawing (instances, routing, etc.)
+    if (!modules_layer && !pins_layer) {
       // Draw instances
       for (odb::dbInst* inst : search_->searchInsts(
                block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
@@ -1101,10 +1399,24 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
 
-      // Draw rows as outlines on the _instances layer
+      // Draw rows (and individual sites when zoomed in) on _instances layer.
       if (instances_only && vis.rows) {
         const Color row_color{
             .r = 60, .g = 180, .b = 60, .a = 180};  // green outlines
+
+        // Lambda to draw a rectangle outline.
+        auto draw_outline = [&](const odb::Rect& rect) {
+          const odb::Rect draw = toPixels(scale, rect, dbu_tile);
+          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
+            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
+            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
+          }
+          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
+            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
+            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+          }
+        };
+
         for (const auto& [row_rect, row] : search_->searchRows(
                  block, dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max)) {
           if (!row_rect.overlaps(dbu_tile)) {
@@ -1114,15 +1426,49 @@ std::vector<unsigned char> TileGenerator::generateTile(
           if (site && !vis.isSiteVisible(site->getName())) {
             continue;
           }
-          const odb::Rect draw = toPixels(scale, row_rect, dbu_tile);
-          // Draw outline only (top, bottom, left, right edges)
-          for (int ix = draw.xMin(); ix <= draw.xMax(); ++ix) {
-            blendPixel(image_buffer, ix, 255 - draw.yMin(), row_color);
-            blendPixel(image_buffer, ix, 255 - draw.yMax(), row_color);
-          }
-          for (int iy = draw.yMin(); iy <= draw.yMax(); ++iy) {
-            blendPixel(image_buffer, draw.xMin(), 255 - iy, row_color);
-            blendPixel(image_buffer, draw.xMax(), 255 - iy, row_color);
+
+          // Always draw the row outline.
+          draw_outline(row_rect);
+
+          // Draw individual sites when zoomed in enough (site >= 5px).
+          // Matches GUI nominalViewableResolution threshold.
+          if (site) {
+            int site_w = site->getWidth();
+            int site_h = site->getHeight();
+
+            // Swap dimensions for rotated orientations.
+            switch (row->getOrient().getValue()) {
+              case odb::dbOrientType::R90:
+              case odb::dbOrientType::R270:
+              case odb::dbOrientType::MYR90:
+              case odb::dbOrientType::MXR90:
+                std::swap(site_w, site_h);
+                break;
+              default:
+                break;
+            }
+
+            const int site_w_px = static_cast<int>(site_w * scale);
+            if (site_w_px >= 5) {
+              odb::Point pt = row->getOrigin();
+              const int spacing = row->getSpacing();
+              const int count = row->getSiteCount();
+              const bool horizontal
+                  = (row->getDirection() == odb::dbRowDir::HORIZONTAL);
+
+              for (int i = 0; i < count; ++i) {
+                const odb::Rect site_rect(
+                    pt.x(), pt.y(), pt.x() + site_w, pt.y() + site_h);
+                if (site_rect.overlaps(dbu_tile)) {
+                  draw_outline(site_rect);
+                }
+                if (horizontal) {
+                  pt.addX(spacing);
+                } else {
+                  pt.addY(spacing);
+                }
+              }
+            }
           }
         }
       }
@@ -1202,7 +1548,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
         }
       }
 
-    }  // end if (!modules_layer)
+    }  // end if (!modules_layer && !pins_layer)
 
     if (!highlight_rects.empty() || !highlight_polys.empty()) {
       drawHighlight(
@@ -1224,21 +1570,7 @@ std::vector<unsigned char> TileGenerator::generateTile(
     drawDebugOverlay(image_buffer, z, x, y);
   }
 
-  std::vector<unsigned char> png_data;
-  unsigned error = lodepng::encode(
-      png_data, image_buffer, kTileSizeInPixel, kTileSizeInPixel);
-  if (error) {
-    logger_->report("PNG encoder error: {}", lodepng_error_text(error));
-  }
-
-  if (logger_->debugCheck(utl::WEB, "tile_generator", 1)) {
-    std::string filename = "/tmp/tile_" + layer + "_" + std::to_string(z) + "_"
-                           + std::to_string(x) + "_" + std::to_string(y)
-                           + ".png";
-    lodepng::save_file(png_data, filename);
-  }
-
-  return png_data;
+  return image_buffer;
 }
 
 std::vector<unsigned char> TileGenerator::generateHeatMapTile(
@@ -1247,8 +1579,8 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     const int x,
     int y) const
 {
-  constexpr int buffer_size = kTileSizeInPixel * kTileSizeInPixel * 4;
-  std::vector<unsigned char> image_buffer(buffer_size, 0);
+  constexpr int kBufferSize = kTileSizeInPixel * kTileSizeInPixel * 4;
+  std::vector<unsigned char> image_buffer(kBufferSize, 0);
 
   const double num_tiles_at_zoom = pow(2, z);
   if (x < 0 || y < 0 || x >= num_tiles_at_zoom || y >= num_tiles_at_zoom) {
@@ -1256,15 +1588,16 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   }
 
   y = num_tiles_at_zoom - 1 - y;
-  const double tile_dbu_size = getBounds().maxDXDY() / num_tiles_at_zoom;
-  const int dbu_x_min = x * tile_dbu_size;
-  const int dbu_y_min = y * tile_dbu_size;
-  const int dbu_x_max = std::ceil((x + 1) * tile_dbu_size);
-  const int dbu_y_max = std::ceil((y + 1) * tile_dbu_size);
+  const odb::Rect hm_bounds = getBounds();
+  const double tile_dbu_size = hm_bounds.maxDXDY() / num_tiles_at_zoom;
+  const int dbu_x_min = hm_bounds.xMin() + x * tile_dbu_size;
+  const int dbu_y_min = hm_bounds.yMin() + y * tile_dbu_size;
+  const int dbu_x_max = hm_bounds.xMin() + std::ceil((x + 1) * tile_dbu_size);
+  const int dbu_y_max = hm_bounds.yMin() + std::ceil((y + 1) * tile_dbu_size);
   const odb::Rect dbu_tile(dbu_x_min, dbu_y_min, dbu_x_max, dbu_y_max);
   const double scale = kTileSizeInPixel / tile_dbu_size;
-  constexpr double text_rect_margin = 0.8;
-  constexpr int text_scale = 2;
+  constexpr double kTextRectMargin = 0.8;
+  constexpr int kTextScale = 2;
   const Color text_color{.r = 255, .g = 255, .b = 255, .a = 255};
 
   for (const auto& map_point : source.getVisibleMap(dbu_tile, scale)) {
@@ -1289,12 +1622,12 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
     }
 
     const std::string text = source.formatValue(map_point.value, false);
-    const int text_width = getBitmapTextWidth(text, text_scale);
-    const int text_height = getBitmapTextHeight(text_scale);
+    const int text_width = getBitmapTextWidth(text, kTextScale);
+    const int text_height = getBitmapTextHeight(kTextScale);
     const double rect_width = map_point.rect.dx() * scale;
     const double rect_height = map_point.rect.dy() * scale;
-    if (text_width >= text_rect_margin * rect_width
-        || text_height >= text_rect_margin * rect_height) {
+    if (text_width >= kTextRectMargin * rect_width
+        || text_height >= kTextRectMargin * rect_height) {
       continue;
     }
 
@@ -1313,7 +1646,7 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
                    pixel_x - text_width / 2,
                    pixel_y - text_height / 2,
                    text,
-                   text_scale,
+                   kTextScale,
                    text_color);
   }
 
@@ -1323,6 +1656,339 @@ std::vector<unsigned char> TileGenerator::generateHeatMapTile(
   if (error) {
     logger_->report("PNG encoder error: {}", lodepng_error_text(error));
   }
+  return png_data;
+}
+
+// Alpha-composite src onto dst (Porter-Duff "over").
+static void compositePixel(unsigned char* dst, const unsigned char* src)
+{
+  const int sa = src[3];
+  if (sa == 0) {
+    return;
+  }
+  if (sa == 255 || dst[3] == 0) {
+    std::memcpy(dst, src, 4);
+    return;
+  }
+  const int da = dst[3];
+  const int out_a = sa + da * (255 - sa) / 255;
+  if (out_a == 0) {
+    return;
+  }
+  for (int c = 0; c < 3; ++c) {
+    dst[c] = (src[c] * sa + dst[c] * da * (255 - sa) / 255) / out_a;
+  }
+  dst[3] = out_a;
+}
+
+void TileGenerator::saveImage(const std::string& filename,
+                              const odb::Rect& region,
+                              const int width_px,
+                              const double dbu_per_pixel,
+                              const TileVisibility& vis) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block) {
+    logger_->error(utl::WEB, 20, "No design loaded.");
+    return;
+  }
+
+  // Determine rendering region (DBU).
+  odb::Rect area = region;
+  if (area.dx() == 0 || area.dy() == 0) {
+    area = block->getDieArea();
+    if (area.dx() == 0 || area.dy() == 0) {
+      area = block->getBBox()->getBox();
+    }
+    // Bloat by 5% like GUI headless default.
+    const int margin_x = area.dx() * 5 / 100;
+    const int margin_y = area.dy() * 5 / 100;
+    area.bloat(std::max(margin_x, margin_y), area);
+  }
+
+  // Determine scale (pixels per DBU).
+  double scale = 0;
+  if (width_px > 0) {
+    scale = static_cast<double>(width_px) / area.dx();
+  } else if (dbu_per_pixel > 0) {
+    scale = 1.0 / dbu_per_pixel;
+  } else {
+    // Default: 1024px wide.
+    scale = 1024.0 / area.dx();
+  }
+
+  const int img_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int img_h = static_cast<int>(std::ceil(area.dy() * scale));
+
+  if (img_w <= 0 || img_h <= 0) {
+    logger_->error(utl::WEB, 21, "Invalid image dimensions.");
+    return;
+  }
+
+  // Cap image size at 16k x 16k to prevent excessive memory usage.
+  constexpr int kMaxDim = 16384;
+  if (img_w > kMaxDim || img_h > kMaxDim) {
+    logger_->warn(utl::WEB,
+                  22,
+                  "Image dimensions {}x{} exceed max {}; clamping.",
+                  img_w,
+                  img_h,
+                  kMaxDim);
+    scale = std::min(static_cast<double>(kMaxDim) / area.dx(),
+                     static_cast<double>(kMaxDim) / area.dy());
+  }
+
+  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+
+  // Compute zoom level that gives tile_scale close to our target scale.
+  // tile_scale = kTileSizeInPixel / (maxDXDY / 2^z)
+  // We want tile_scale >= scale, so z = ceil(log2(scale * maxDXDY / 256)).
+  const odb::Rect bounds = getBounds();
+  const double max_dxdy = bounds.maxDXDY();
+  const int z = std::max(0,
+                         static_cast<int>(std::ceil(
+                             std::log2(scale * max_dxdy / kTileSizeInPixel))));
+  const int num_tiles = static_cast<int>(std::pow(2, z));
+  const double tile_dbu_size = max_dxdy / num_tiles;
+  const double tile_scale = kTileSizeInPixel / tile_dbu_size;
+
+  // Determine which tiles overlap our area.
+  const int tx_min = std::max(
+      0, static_cast<int>((area.xMin() - bounds.xMin()) / tile_dbu_size));
+  const int ty_min = std::max(
+      0, static_cast<int>((area.yMin() - bounds.yMin()) / tile_dbu_size));
+  const int tx_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.xMax() - bounds.xMin()) / tile_dbu_size)));
+  const int ty_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
+
+  // Allocate output buffer (RGBA).
+  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
+  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
+
+  // Layers to render (bottom to top): _instances, tech layers, _pins.
+  std::vector<std::string> layers_to_render;
+  layers_to_render.emplace_back("_instances");
+  for (const auto& name : getLayers()) {
+    layers_to_render.push_back(name);
+  }
+  if (vis.pin_markers) {
+    layers_to_render.emplace_back("_pins");
+  }
+
+  // Render each tile, compositing all layers.
+  for (int ty = ty_min; ty <= ty_max; ++ty) {
+    for (int tx = tx_min; tx <= tx_max; ++tx) {
+      // Tile position in the output buffer.
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      // Y is flipped: tile_y in generateTile is bottom-up, output is top-down.
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+
+      // Leaflet-style y coordinate (before the flip in renderTileBuffer).
+      const int leaflet_y = num_tiles - 1 - ty;
+
+      for (const auto& layer : layers_to_render) {
+        auto tile_buf = renderTileBuffer(layer, z, tx, leaflet_y, vis);
+
+        // Composite tile onto output at (out_ox, out_oy).
+        for (int py = 0; py < kTileSizeInPixel; ++py) {
+          for (int px = 0; px < kTileSizeInPixel; ++px) {
+            const int src_idx = (py * kTileSizeInPixel + px) * 4;
+            const int dst_x = out_ox + px;
+            const int dst_y = out_oy + py;
+            if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+              continue;
+            }
+            const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+            compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+          }
+        }
+      }
+    }
+  }
+
+  // Crop to the exact requested area.
+  // The tile span covers a larger region; compute the pixel offset of the
+  // area's origin within the tile span.
+  const int crop_x = static_cast<int>(
+      (area.xMin() - bounds.xMin() - tx_min * tile_dbu_size) * tile_scale);
+  const int crop_y_bottom = static_cast<int>(
+      (area.yMin() - bounds.yMin() - ty_min * tile_dbu_size) * tile_scale);
+  // In the output buffer, y=0 is the top (ty_max), and area.yMin maps
+  // to the bottom.  The crop origin in output coords:
+  const int crop_y
+      = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
+
+  // Resample to exact requested dimensions (nearest-neighbor from tile_scale
+  // to target scale).
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
+  for (int fy = 0; fy < final_h; ++fy) {
+    for (int fx = 0; fx < final_w; ++fx) {
+      // Map final pixel to tile-span pixel.
+      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
+      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
+        const int src_idx = (sy * tile_span_w + sx) * 4;
+        const int dst_idx = (fy * final_w + fx) * 4;
+        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      }
+    }
+  }
+
+  // Encode to PNG and save.
+  std::vector<unsigned char> png_data;
+  const unsigned error = lodepng::encode(png_data, final_buf, final_w, final_h);
+  if (error) {
+    logger_->error(
+        utl::WEB, 23, "PNG encode error: {}", lodepng_error_text(error));
+    return;
+  }
+  lodepng::save_file(png_data, filename);
+  logger_->info(
+      utl::WEB, 24, "Saved {}x{} image to {}", final_w, final_h, filename);
+}
+
+std::vector<unsigned char> TileGenerator::renderOverlayPng(
+    int width_px,
+    const std::vector<ColoredRect>& rects,
+    const std::vector<FlightLine>& lines) const
+{
+  odb::dbBlock* block = getBlock();
+  if (!block || (rects.empty() && lines.empty())) {
+    return {};
+  }
+
+  // Same area computation as renderLayerPng.
+  odb::Rect area = block->getDieArea();
+  if (area.dx() == 0 || area.dy() == 0) {
+    area = block->getBBox()->getBox();
+  }
+  const int margin = area.maxDXDY() * 5 / 100;
+  area.bloat(margin, area);
+
+  if (width_px <= 0) {
+    width_px = 1024;
+  }
+  const double scale = static_cast<double>(width_px) / area.dx();
+  const int final_w = static_cast<int>(std::ceil(area.dx() * scale));
+  const int final_h = static_cast<int>(std::ceil(area.dy() * scale));
+  if (final_w <= 0 || final_h <= 0) {
+    return {};
+  }
+
+  const odb::Rect bounds = getBounds();
+  const double max_dxdy = bounds.maxDXDY();
+  const int z = std::max(0,
+                         static_cast<int>(std::ceil(
+                             std::log2(scale * max_dxdy / kTileSizeInPixel))));
+  const int num_tiles = static_cast<int>(std::pow(2, z));
+  const double tile_dbu_size = max_dxdy / num_tiles;
+  const double tile_scale = kTileSizeInPixel / tile_dbu_size;
+
+  const int tx_min = std::max(
+      0, static_cast<int>((area.xMin() - bounds.xMin()) / tile_dbu_size));
+  const int ty_min = std::max(
+      0, static_cast<int>((area.yMin() - bounds.yMin()) / tile_dbu_size));
+  const int tx_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.xMax() - bounds.xMin()) / tile_dbu_size)));
+  const int ty_max
+      = std::min(num_tiles - 1,
+                 static_cast<int>(
+                     std::ceil((area.yMax() - bounds.yMin()) / tile_dbu_size)));
+
+  const int tile_span_w = (tx_max - tx_min + 1) * kTileSizeInPixel;
+  const int tile_span_h = (ty_max - ty_min + 1) * kTileSizeInPixel;
+  std::vector<unsigned char> output(4UL * tile_span_w * tile_span_h, 0);
+
+  // Render on _instances layer with all visibility off so only overlays draw.
+  TileVisibility vis;
+  vis.stdcells = false;
+  vis.macros = false;
+  vis.pad_input = false;
+  vis.pad_output = false;
+  vis.pad_inout = false;
+  vis.pad_power = false;
+  vis.pad_spacer = false;
+  vis.pad_areaio = false;
+  vis.pad_other = false;
+  vis.phys_fill = false;
+  vis.phys_endcap = false;
+  vis.phys_welltap = false;
+  vis.phys_tie = false;
+  vis.phys_antenna = false;
+  vis.phys_cover = false;
+  vis.phys_bump = false;
+  vis.phys_other = false;
+  vis.std_bufinv = false;
+  vis.std_bufinv_timing = false;
+  vis.std_clock_bufinv = false;
+  vis.std_clock_gate = false;
+  vis.std_level_shift = false;
+  vis.std_sequential = false;
+  vis.std_combinational = false;
+  vis.routing = false;
+  vis.special_nets = false;
+  vis.pins = false;
+  vis.pin_markers = false;
+  vis.blockages = false;
+  vis.placement_blockages = false;
+  vis.routing_obstructions = false;
+
+  for (int ty = ty_min; ty <= ty_max; ++ty) {
+    for (int tx = tx_min; tx <= tx_max; ++tx) {
+      const int out_ox = (tx - tx_min) * kTileSizeInPixel;
+      const int out_oy = (ty_max - ty) * kTileSizeInPixel;
+      const int leaflet_y = num_tiles - 1 - ty;
+
+      auto tile_buf = renderTileBuffer(
+          "_instances", z, tx, leaflet_y, vis, {}, {}, rects, lines);
+
+      for (int py = 0; py < kTileSizeInPixel; ++py) {
+        for (int px = 0; px < kTileSizeInPixel; ++px) {
+          const int src_idx = (py * kTileSizeInPixel + px) * 4;
+          const int dst_x = out_ox + px;
+          const int dst_y = out_oy + py;
+          if (dst_x >= tile_span_w || dst_y >= tile_span_h) {
+            continue;
+          }
+          const int dst_idx = (dst_y * tile_span_w + dst_x) * 4;
+          compositePixel(&output[dst_idx], &tile_buf[src_idx]);
+        }
+      }
+    }
+  }
+
+  // Crop and resample.
+  const int crop_x = static_cast<int>(
+      (area.xMin() - bounds.xMin() - tx_min * tile_dbu_size) * tile_scale);
+  const int crop_y_bottom = static_cast<int>(
+      (area.yMin() - bounds.yMin() - ty_min * tile_dbu_size) * tile_scale);
+  const int crop_y
+      = tile_span_h - crop_y_bottom - static_cast<int>(area.dy() * tile_scale);
+
+  std::vector<unsigned char> final_buf(4UL * final_w * final_h, 0);
+  for (int fy = 0; fy < final_h; ++fy) {
+    for (int fx = 0; fx < final_w; ++fx) {
+      const int sx = crop_x + static_cast<int>(fx * tile_scale / scale);
+      const int sy = crop_y + static_cast<int>(fy * tile_scale / scale);
+      if (sx >= 0 && sx < tile_span_w && sy >= 0 && sy < tile_span_h) {
+        const int src_idx = (sy * tile_span_w + sx) * 4;
+        const int dst_idx = (fy * final_w + fx) * 4;
+        std::memcpy(&final_buf[dst_idx], &output[src_idx], 4);
+      }
+    }
+  }
+
+  std::vector<unsigned char> png_data;
+  lodepng::encode(png_data, final_buf, final_w, final_h);
   return png_data;
 }
 
@@ -1410,6 +2076,51 @@ void TileGenerator::drawBitmapText(std::vector<unsigned char>& image,
     }
 
     cursor_x += getBitmapGlyphAdvance(ch) * scale;
+  }
+}
+
+/* static */
+void TileGenerator::drawBitmapTextRotated(std::vector<unsigned char>& image,
+                                          const int x,
+                                          const int y,
+                                          const std::string_view text,
+                                          const int scale,
+                                          const Color& color)
+{
+  // 90° CW rotation: original (col, row) → (H-1-row, col)
+  // where H = kBitmapGlyphHeight.  Characters stack downward (y increasing).
+  int cursor_y = y;
+  for (const char ch : text) {
+    if (ch == ' ') {
+      cursor_y += getBitmapGlyphAdvance(ch) * scale;
+      continue;
+    }
+
+    const unsigned char* glyph = getBitmapGlyph(ch);
+    if (glyph == nullptr) {
+      cursor_y += getBitmapGlyphAdvance(ch) * scale;
+      continue;
+    }
+
+    // Rotated glyph: width = kBitmapGlyphHeight, height = kBitmapGlyphWidth
+    for (int row = 0; row < kBitmapGlyphHeight; ++row) {
+      const unsigned char bits = glyph[row];
+      for (int col = 0; col < kBitmapGlyphWidth; ++col) {
+        if ((bits & (0x10 >> col)) == 0) {
+          continue;
+        }
+        // 90° CW: (col, row) → screen (x + (H-1-row), cursor_y + col)
+        const int px = x + (kBitmapGlyphHeight - 1 - row) * scale;
+        const int py = cursor_y + col * scale;
+        for (int sy = 0; sy < scale; ++sy) {
+          for (int sx = 0; sx < scale; ++sx) {
+            blendPixel(image, px + sx, py + sy, color);
+          }
+        }
+      }
+    }
+
+    cursor_y += getBitmapGlyphAdvance(ch) * scale;
   }
 }
 
@@ -1553,21 +2264,55 @@ void TileGenerator::drawColoredHighlight(std::vector<unsigned char>& image,
     const odb::Rect overlap = cr.rect.intersect(dbu_tile);
     const odb::Rect draw = toPixels(scale, overlap, dbu_tile);
 
-    // Draw a fixed-width centerline through the shape (cosmetic pen style,
-    // matching the GUI's 2px cosmetic pen approach from dbDescriptors.cpp).
-    // This ensures consistent visibility regardless of zoom level.
-    const int cx = (draw.xMin() + draw.xMax()) / 2;
-    const int cy = (draw.yMin() + draw.yMax()) / 2;
+    if (cr.filled) {
+      // DRC marker style: semi-transparent filled rect with solid outline.
+      // Matches the Qt GUI's DRCRenderer (white pen + white-alpha brush).
 
-    Color line_color = cr.color;
-    line_color.a = 255;
+      // Fill interior
+      const int pxl = std::max(0, draw.xMin());
+      const int pyl = std::max(0, draw.yMin());
+      const int pxh = std::min(255, draw.xMax());
+      const int pyh = std::min(255, draw.yMax());
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        for (int ix = pxl; ix <= pxh; ++ix) {
+          blendPixel(image, ix, 255 - iy, cr.color);
+        }
+      }
 
-    if (draw.dx() >= draw.dy()) {
-      // Horizontal shape: draw horizontal centerline
-      drawLine(image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+      // Solid outline
+      Color outline = cr.color;
+      outline.a = 255;
+      // Bottom edge
+      for (int ix = pxl; ix <= pxh; ++ix) {
+        blendPixel(image, ix, 255 - pyl, outline);
+      }
+      // Top edge
+      for (int ix = pxl; ix <= pxh; ++ix) {
+        blendPixel(image, ix, 255 - pyh, outline);
+      }
+      // Left edge
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        blendPixel(image, pxl, 255 - iy, outline);
+      }
+      // Right edge
+      for (int iy = pyl; iy <= pyh; ++iy) {
+        blendPixel(image, pxh, 255 - iy, outline);
+      }
     } else {
-      // Vertical shape: draw vertical centerline
-      drawLine(image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      // Timing path style: centerline through the shape.
+      const int cx = (draw.xMin() + draw.xMax()) / 2;
+      const int cy = (draw.yMin() + draw.yMax()) / 2;
+
+      Color line_color = cr.color;
+      line_color.a = 255;
+
+      if (draw.dx() >= draw.dy()) {
+        drawLine(
+            image, draw.xMin(), 255 - cy, draw.xMax(), 255 - cy, line_color);
+      } else {
+        drawLine(
+            image, cx, 255 - draw.yMin(), cx, 255 - draw.yMax(), line_color);
+      }
     }
   }
 }
@@ -1798,9 +2543,9 @@ void collectTimingPathShapes(odb::dbBlock* block,
   // Track nets already collected to avoid duplicates
   std::set<odb::dbNet*> seen_nets;
 
-  auto processNodes = [&](const std::vector<TimingNode>& nodes,
-                          const Color& clk_color,
-                          const Color& data_color) {
+  auto process_nodes = [&](const std::vector<TimingNode>& nodes,
+                           const Color& clk_color,
+                           const Color& data_color) {
     for (size_t i = 0; i + 1 < nodes.size(); i++) {
       auto [a_iterm, a_bterm] = resolvePin(block, nodes[i].pin_name);
       auto [b_iterm, b_bterm] = resolvePin(block, nodes[i + 1].pin_name);
@@ -1818,10 +2563,51 @@ void collectTimingPathShapes(odb::dbBlock* block,
   };
 
   // data_nodes: launch clock (is_clock=true) then signal portion
-  processNodes(path.data_nodes, kLaunchClkColor, kSignalColor);
+  process_nodes(path.data_nodes, kLaunchClkColor, kSignalColor);
 
   // capture_nodes: capture clock path
-  processNodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
+  process_nodes(path.capture_nodes, kCaptureClkColor, kCaptureClkColor);
+}
+
+void serializeTechResponse(JsonBuilder& b, const TileGenerator& gen)
+{
+  b.beginObject();
+  b.beginArray("layers");
+  for (const auto& name : gen.getLayers()) {
+    b.value(name);
+  }
+  b.endArray();
+  b.beginArray("sites");
+  for (const auto& name : gen.getSites()) {
+    b.value(name);
+  }
+  b.endArray();
+  b.field("has_liberty", gen.hasSta());
+  if (gen.getBlock()) {
+    b.field("dbu_per_micron", gen.getBlock()->getDbUnitsPerMicron());
+  }
+  b.endObject();
+}
+
+void serializeBoundsResponse(JsonBuilder& b,
+                             const TileGenerator& gen,
+                             bool shapes_ready)
+{
+  const odb::Rect bounds = gen.getBounds();
+  b.beginObject();
+  b.beginArray("bounds");
+  b.beginArray();
+  b.value(bounds.yMin());
+  b.value(bounds.xMin());
+  b.endArray();
+  b.beginArray();
+  b.value(bounds.yMax());
+  b.value(bounds.xMax());
+  b.endArray();
+  b.endArray();
+  b.field("shapes_ready", shapes_ready);
+  b.field("pin_max_size", gen.getPinMaxSize());
+  b.endObject();
 }
 
 }  // namespace web

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "db/infra/frSegStyle.h"

@@ -52,7 +52,31 @@ class FlexWavefrontGrid
     if (zIdx_ != b.zIdx_) {
       return zIdx_ < b.zIdx_;  // prefer upper layer
     }
-    return pathCost_ < b.pathCost_;  // prefer larger pathcost, DFS-style
+    if (pathCost_ != b.pathCost_) {
+      return pathCost_ < b.pathCost_;  // prefer larger pathcost, DFS-style
+    }
+    if (xIdx_ != b.xIdx_) {
+      return xIdx_ > b.xIdx_;  // prefer smaller x for stable tie-breaking
+    }
+    if (yIdx_ != b.yIdx_) {
+      return yIdx_ > b.yIdx_;  // prefer smaller y for stable tie-breaking
+    }
+    if (getLastDir() != b.getLastDir()) {
+      return getLastDir() > b.getLastDir();
+    }
+    if (prevViaUp_ != b.prevViaUp_) {
+      return prevViaUp_ > b.prevViaUp_;
+    }
+    if (tLength_ != b.tLength_) {
+      return tLength_ > b.tLength_;
+    }
+    if (vLengthX_ != b.vLengthX_) {
+      return vLengthX_ > b.vLengthX_;
+    }
+    if (vLengthY_ != b.vLengthY_) {
+      return vLengthY_ > b.vLengthY_;
+    }
+    return backTraceBuffer_.to_ulong() > b.backTraceBuffer_.to_ulong();
   }
   // getters
   frMIdx x() const { return xIdx_; }

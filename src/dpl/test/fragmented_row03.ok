@@ -3,7 +3,9 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
-[INFO DPL-0005] Max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-0006] Core area: 4.79 um^2, Instances area: 1.86 um^2, Utilization: 38.9%
+[INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
+[INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
 ---------------------------------------
 Total cells:                       1
@@ -15,10 +17,10 @@ Total Placement Failures:          1
 ---------------------------------------
 [INFO DPL-0034] Detailed placement failed on the following 1 instances:
 [INFO DPL-0035]  _277_
-[ERROR DPL-0036] Detailed placement failed.
+[ERROR DPL-0036] Detailed placement failed inside DPL.
 DPL-0036
 [WARNING DPL-0006] Site aligned check failed (1).
  _277_
-[ERROR DPL-0033] detailed placement checks failed.
+[ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
 No differences found.

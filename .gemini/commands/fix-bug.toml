@@ -1,0 +1,2 @@
+description = "Fix an OpenROAD bug from a GitHub issue. Analyzes the issue, traces root cause, implements fix, creates tests (CMake + Bazel), and prepares a signed-off commit."
+prompt = "Activate the fix-bug skill and fix the following: {{args}}"

@@ -14,6 +14,7 @@ import { populateDisplayControls } from './display-controls.js';
 import { createMenuBar } from './menu-bar.js';
 import { RulerManager } from './ruler.js';
 import { SchematicWidget } from './schematic-widget.js';
+import { DrcWidget } from './drc-widget.js';
 import { TclCompleter } from './tcl-completer.js';
 import './theme.js';
 
@@ -45,6 +46,8 @@ const app = {
     allLayers: [],
     designScale: null,   // pixels-per-DBU for coordinate conversion
     designMaxDXDY: null, // max(width, height) in DBU for Y-axis mapping
+    designOriginX: 0,    // bounds.xMin() in DBU (tile grid origin)
+    designOriginY: 0,    // bounds.yMin() in DBU (tile grid origin)
     websocketManager: null,     // set after construction below
     goldenLayout: null,  // set after GL init below
     hasLiberty: false,
@@ -55,6 +58,7 @@ const app = {
     hoverHighlightLayer: null,
     hoverHighlightPane: 'hover-highlight-pane',
     modulesLayer: null,
+    pinsLayer: null,
     hierarchyBrowser: null,
     focusNets: new Set(),
     routeGuideNets: new Set(),
@@ -108,6 +112,7 @@ const visibility = {
     routing: true,
     special_nets: true,
     pins: true,
+    pin_markers: true,
     blockages: true,
     // Blockages
     placement_blockages: true,
@@ -234,6 +239,14 @@ function redrawAllLayers() {
             app.map.removeLayer(app.modulesLayer);
         }
     }
+    // Show/hide pin markers layer
+    if (app.pinsLayer) {
+        if (visibility.pin_markers && !app.map.hasLayer(app.pinsLayer)) {
+            app.pinsLayer.addTo(app.map);
+        } else if (!visibility.pin_markers && app.map.hasLayer(app.pinsLayer)) {
+            app.map.removeLayer(app.pinsLayer);
+        }
+    }
     for (const layer of app.allLayers) {
         layer.refreshTiles();
     }
@@ -280,7 +293,8 @@ function createLayoutViewer(container) {
         app.lastMouseLatLng = e.latlng;
         if (!app.designScale) return;
         const { dbuX, dbuY } = latLngToDbu(
-            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+            e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+            app.designOriginX, app.designOriginY);
         const dbuPerUm = app.techData?.dbu_per_micron || 1000;
         const precision = Math.ceil(Math.log10(dbuPerUm));
         const xUm = (dbuX / dbuPerUm).toFixed(precision);
@@ -363,12 +377,13 @@ function createBrowser(container) {
 }
 
 function createTimingWidget(container) {
-    app.timingWidget = new TimingWidget(container, app, redrawAllLayers);
+    app.timingWidget = new TimingWidget(app, redrawAllLayers);
+    container.element.appendChild(app.timingWidget.element);
 }
 
 function createDRCWidget(container) {
-    createStubPanel(container, 'DRC',
-        'Design rule check violations viewer.');
+    app.drcWidget = new DrcWidget(app, redrawAllLayers);
+    container.element.appendChild(app.drcWidget.element);
 }
 
 function createClockWidget(container) {
@@ -376,7 +391,8 @@ function createClockWidget(container) {
 }
 
 function createChartsWidget(container) {
-    app.chartsWidget = new ChartsWidget(container, app, redrawAllLayers);
+    app.chartsWidget = new ChartsWidget(app, redrawAllLayers);
+    container.element.appendChild(app.chartsWidget.element);
 }
 
 function createHelpWidget(container) {
@@ -524,8 +540,13 @@ const LAYOUT_VERSION = 3;
 // Must be created before loadLayout so that components (e.g. SchematicWidget)
 // constructed during layout initialisation can access app.websocketManager.
 
-const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
-app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+const staticCache = window.__STATIC_CACHE__ || null;
+if (staticCache) {
+    app.websocketManager = WebSocketManager.fromCache(staticCache, updateStatus);
+} else {
+    const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
+    app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
+}
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
@@ -638,23 +659,56 @@ app.websocketManager.readyPromise.then(async () => {
         const hasDesign = designWidth > 0 && designHeight > 0;
         if (hasDesign) {
             const tileSize = 256;
-            const scale = tileSize / Math.max(designWidth, designHeight);
+            const maxDXDY = Math.max(designWidth, designHeight);
+            const scale = tileSize / maxDXDY;
             app.designScale = scale;
-            app.designMaxDXDY = Math.max(designWidth, designHeight);
+            app.designMaxDXDY = maxDXDY;
+            app.designOriginX = minX;
+            app.designOriginY = minY;
 
             app.fitBounds = [
-                [-minY * scale, minX * scale],
-                [-maxY * scale, maxX * scale]
+                [-maxDXDY * scale, 0],
+                [(designHeight - maxDXDY) * scale, designWidth * scale]
             ];
             app.map.fitBounds(app.fitBounds);
+
+            if (staticCache) {
+                // Lock to the pre-rendered tile zoom level and fit.
+                const cacheZoom = staticCache.zoom;
+                app.map.setMinZoom(cacheZoom);
+                app.map.setMaxZoom(cacheZoom);
+                app.map.fitBounds(app.fitBounds);
+                app.map.scrollWheelZoom.disable();
+                app.map.touchZoom.disable();
+                app.map.boxZoom.disable();
+                app.map.doubleClickZoom.disable();
+
+                // Path highlight overlay image.
+                app.pathOverlay = L.imageOverlay('', app.fitBounds, {
+                    opacity: 1, interactive: false, zIndex: 1000,
+                });
+                staticCache.setPathOverlay = (src) => {
+                    if (src) {
+                        app.pathOverlay.setUrl(src);
+                        app.pathOverlay.addTo(app.map);
+                    } else {
+                        app.map.removeLayer(app.pathOverlay);
+                    }
+                };
+            }
         }
 
         // Click-to-select: convert click position to DBU and query server
-        app.map.on('click', (e) => {
+        if (staticCache) {
+            // Hide loading overlay — shapes are always ready in static mode.
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+        if (!staticCache) app.map.on('click', (e) => {
             if (!app.designScale) return;
             if (app.rulerManager && app.rulerManager.isActive()) return;
             const { dbuX: dbu_x, dbuY: dbu_y } = latLngToDbu(
-                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY);
+                e.latlng.lat, e.latlng.lng, app.designScale, app.designMaxDXDY,
+                app.designOriginX, app.designOriginY);
 
             const vf = {};
             for (const [k, v] of Object.entries(visibility)) {
@@ -694,7 +748,7 @@ app.websocketManager.readyPromise.then(async () => {
         });
 
         // ─── Right-click rubber-band zoom ──────────────────────────────
-        {
+        if (!staticCache) {
             const container = app.map.getContainer();
             let rbStart = null;   // {x, y} in client coords
             let rbDiv = null;     // overlay element

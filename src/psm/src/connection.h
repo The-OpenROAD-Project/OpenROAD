@@ -84,10 +84,6 @@ class Connection
   Node* node1_;
 
  private:
-  using CompareInformation
-      = std::tuple<Node::CompareInformation, Node::CompareInformation>;
-  CompareInformation compareTuple() const;
-
   template <typename T>
   bool hasNodeOfType() const;
 };

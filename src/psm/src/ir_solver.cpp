@@ -141,27 +141,12 @@ bool IRSolver::check(bool check_bterms)
   return connected_.value();
 }
 
-bool IRSolver::wasNodeVisited(const std::unique_ptr<ITermNode>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const std::unique_ptr<Node>& node) const
-{
-  return wasNodeVisited(node.get());
-}
-
-bool IRSolver::wasNodeVisited(const Node* node) const
-{
-  return visited_.find(node) != visited_.end();
-}
-
 bool IRSolver::checkOpen()
 {
   const utl::DebugScopedTimer timer(
       logger_, utl::PSM, "timer", 1, "Check open: {}");
 
-  visited_.clear();
+  network_->clearVisitedNodes();
   const std::size_t total_nodes = network_->getNodeCount(true);
   const auto connections_map = network_->getConnectionMap();
 
@@ -179,7 +164,7 @@ bool IRSolver::checkOpen()
   while (!queue.empty()) {
     Node* node = queue.front();
     queue.pop();
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       // already been here, so we can continue to next node
       continue;
     }
@@ -196,11 +181,11 @@ bool IRSolver::checkOpen()
                  total_nodes);
     }
 
-    visited_.insert(node);
+    node->setVisited(true);
 
     for (const auto* conn : connections_map.at(node)) {
       Node* next = conn->getOtherNode(node);
-      if (wasNodeVisited(next)) {
+      if (next->isVisited()) {
         // already been here, so we do not need to add it to the queue
         continue;
       }
@@ -210,7 +195,7 @@ bool IRSolver::checkOpen()
 
   for (const auto& [layer, layer_nodes] : network_->getNodes()) {
     for (const auto& node : layer_nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -249,7 +234,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
 
   for (const auto& [layer, nodes] : network_->getNodes()) {
     for (const auto& node : nodes) {
-      if (wasNodeVisited(node)) {
+      if (node->isVisited()) {
         continue;
       }
 
@@ -258,7 +243,7 @@ IRSolver::ConnectivityResults IRSolver::getConnectivityResults() const
   }
 
   for (const auto& node : network_->getITermNodes()) {
-    if (wasNodeVisited(node)) {
+    if (node->isVisited()) {
       continue;
     }
 

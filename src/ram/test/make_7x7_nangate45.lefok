@@ -1,0 +1,225 @@
+VERSION 5.8 ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+UNITS
+    DATABASE MICRONS 2000 ;
+END UNITS
+
+MACRO RAM7x7
+  FOREIGN RAM7x7 0 0 ;
+  CLASS BLOCK ;
+  SIZE 39.52 BY 11.2 ;
+  PIN clk
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  39.45 1.435 39.52 1.505 ;
+    END
+  END clk
+  PIN we[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  39.45 1.715 39.52 1.785 ;
+    END
+  END we[0]
+  PIN addr[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  39.45 2.275 39.52 2.345 ;
+    END
+  END addr[0]
+  PIN addr[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  39.45 3.395 39.52 3.465 ;
+    END
+  END addr[1]
+  PIN addr[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal3 ;
+        RECT  39.45 1.155 39.52 1.225 ;
+    END
+  END addr[2]
+  PIN D[0]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  1.145 11.06 1.285 11.2 ;
+    END
+  END D[0]
+  PIN Q[0]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  3.385 11.06 3.525 11.2 ;
+    END
+  END Q[0]
+  PIN D[1]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  5.065 11.06 5.205 11.2 ;
+    END
+  END D[1]
+  PIN Q[1]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  8.425 11.06 8.565 11.2 ;
+    END
+  END Q[1]
+  PIN D[2]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  10.105 11.06 10.245 11.2 ;
+    END
+  END D[2]
+  PIN Q[2]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  12.905 11.06 13.045 11.2 ;
+    END
+  END Q[2]
+  PIN D[3]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  14.585 11.06 14.725 11.2 ;
+    END
+  END D[3]
+  PIN Q[3]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  17.385 11.06 17.525 11.2 ;
+    END
+  END Q[3]
+  PIN D[4]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  19.625 11.06 19.765 11.2 ;
+    END
+  END D[4]
+  PIN Q[4]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  22.985 11.06 23.125 11.2 ;
+    END
+  END Q[4]
+  PIN D[5]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  24.105 11.06 24.245 11.2 ;
+    END
+  END D[5]
+  PIN Q[5]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  27.465 11.06 27.605 11.2 ;
+    END
+  END Q[5]
+  PIN D[6]
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  29.145 11.06 29.285 11.2 ;
+    END
+  END D[6]
+  PIN Q[6]
+    DIRECTION OUTPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER metal4 ;
+        RECT  32.505 11.06 32.645 11.2 ;
+    END
+  END Q[6]
+  PIN VSS
+    DIRECTION INOUT ;
+    USE GROUND ;
+    PORT
+      LAYER metal4 ;
+        RECT  35.93 11.06 36.07 11.2 ;
+        RECT  35.93 0 36.07 0.14 ;
+        RECT  26.93 11.06 27.07 11.2 ;
+        RECT  26.93 0 27.07 0.14 ;
+        RECT  17.93 11.06 18.07 11.2 ;
+        RECT  17.93 0 18.07 0.14 ;
+        RECT  8.93 11.06 9.07 11.2 ;
+        RECT  8.93 0 9.07 0.14 ;
+      LAYER metal1 ;
+        RECT  39.45 11.16 39.52 11.24 ;
+        RECT  0 11.16 0.07 11.24 ;
+        RECT  39.45 8.36 39.52 8.44 ;
+        RECT  0 8.36 0.07 8.44 ;
+        RECT  39.45 5.56 39.52 5.64 ;
+        RECT  0 5.56 0.07 5.64 ;
+        RECT  39.45 2.76 39.52 2.84 ;
+        RECT  0 2.76 0.07 2.84 ;
+        RECT  39.45 -0.04 39.52 0.04 ;
+        RECT  0 -0.04 0.07 0.04 ;
+    END
+  END VSS
+  PIN VDD
+    DIRECTION INOUT ;
+    USE POWER ;
+    PORT
+      LAYER metal4 ;
+        RECT  31.43 11.06 31.57 11.2 ;
+        RECT  31.43 0 31.57 0.14 ;
+        RECT  22.43 11.06 22.57 11.2 ;
+        RECT  22.43 0 22.57 0.14 ;
+        RECT  13.43 11.06 13.57 11.2 ;
+        RECT  13.43 0 13.57 0.14 ;
+        RECT  4.43 11.06 4.57 11.2 ;
+        RECT  4.43 0 4.57 0.14 ;
+      LAYER metal1 ;
+        RECT  39.45 9.76 39.52 9.84 ;
+        RECT  0 9.76 0.07 9.84 ;
+        RECT  39.45 6.96 39.52 7.04 ;
+        RECT  0 6.96 0.07 7.04 ;
+        RECT  39.45 4.16 39.52 4.24 ;
+        RECT  0 4.16 0.07 4.24 ;
+        RECT  39.45 1.36 39.52 1.44 ;
+        RECT  0 1.36 0.07 1.44 ;
+    END
+  END VDD
+  OBS
+    LAYER metal1 ;
+     RECT  0 -0.07 39.52 11.27 ;
+    LAYER metal2 ;
+     RECT  0 -0.07 39.52 11.27 ;
+    LAYER metal3 ;
+     RECT  0 -0.07 39.52 11.27 ;
+    LAYER metal4 ;
+     RECT  0 -0.07 39.52 11.27 ;
+  END
+END RAM7x7
+END LIBRARY

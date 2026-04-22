@@ -55,3 +55,15 @@ gtest_discover_tests(TestSuppressStdout
 add_dependencies(build_and_test
   TestSuppressStdout
 )
+
+add_executable(TestServiceRegistry TestServiceRegistry.cpp)
+
+target_link_libraries(TestServiceRegistry ${TEST_LIBS})
+
+gtest_discover_tests(TestServiceRegistry
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+add_dependencies(build_and_test
+  TestServiceRegistry
+)

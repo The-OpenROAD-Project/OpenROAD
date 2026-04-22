@@ -8,6 +8,7 @@ or_integration_tests(
     clock_route_alpha
     clock_route_error1
     clock_route_error2
+    colocated_pins
     congestion1
     congestion2
     congestion3

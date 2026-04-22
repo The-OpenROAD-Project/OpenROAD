@@ -13,8 +13,6 @@ package(features = ["layering_check"])
 # From CMakeLists.txt or_integration_tests(TESTS
 COMPULSORY_TESTS = [
     "boundary_push1",
-    "boundary_push2",
-    "boundary_push3",
     "centralization1",
     "clocked_macro",
     "fixed_covers",
@@ -25,6 +23,8 @@ COMPULSORY_TESTS = [
     "guides2",
     "halos1",
     "halos2",
+    "halos3",
+    "halos4",
     "io_constraints1",
     "io_constraints10",
     "io_constraints2",
@@ -44,6 +44,7 @@ COMPULSORY_TESTS = [
     "orientation_improve1",
     "orientation_improve2",
     "orientation_improve3",
+    "placement_blockages1",
     "unfixed_cells_dont_fit_in_core",
 ]
 
@@ -70,14 +71,6 @@ filegroup(
             ] + {
                 "boundary_push1": [
                     "testcases/boundary_push1.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push2": [
-                    "testcases/boundary_push2.def",
-                    "testcases/orientation_improve1.lef",
-                ],
-                "boundary_push3": [
-                    "testcases/boundary_push2.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "centralization1": [
@@ -126,6 +119,14 @@ filegroup(
                 ],
                 "halos2": [
                     "testcases/halos1.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos3": [
+                    "testcases/halo3.def",
+                    "testcases/orientation_improve1.lef",
+                ],
+                "halos4": [
+                    "testcases/halo3.def",
                     "testcases/orientation_improve1.lef",
                 ],
                 "io_constraints1": [
@@ -222,6 +223,10 @@ filegroup(
                 "orientation_improve3": [
                     "testcases/orientation_improve1.def",
                     "testcases/orientation_improve1.lef",
+                ],
+                "placement_blockages1": [
+                    "testcases/macro_only.lef",
+                    "testcases/placement_blockages1.def",
                 ],
                 "unfixed_cells_dont_fit_in_core": [
                     "testcases/macro_only.lef",

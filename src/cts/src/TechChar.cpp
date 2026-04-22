@@ -35,6 +35,7 @@
 #include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/SearchClass.hh"
+#include "sta/StringUtil.hh"
 #include "sta/TableModel.hh"
 #include "sta/TimingArc.hh"
 #include "sta/TimingModel.hh"
@@ -727,15 +728,16 @@ sta::ArcDelay TechChar::computeBufferDelay(const std::string& driver,
         // Only look at rise-rise arcs
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
         }
       }
     }
@@ -780,15 +782,16 @@ sta::ArcDelay TechChar::computeBufferDelay(
         // Only look at rise-rise arcs
         if (model != nullptr && in_rf == sta::RiseFall::rise()
             && out_rf == sta::RiseFall::rise()) {
-          sta::ArcDelay arc_delay;
-          sta::Slew arc_slew;
-          model->gateDelay(pvt, 0.0, load_cap, false, arc_delay, arc_slew);
+          float arc_delay, arc_slew;
+          model->gateDelay(pvt, 0.0, load_cap, arc_delay, arc_slew);
           // Cycle the arc_slew through the gate delay calculator once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
           // and once more
-          model->gateDelay(pvt, arc_slew, load_cap, false, arc_delay, arc_slew);
+          model->gateDelay(pvt, arc_slew, load_cap, arc_delay, arc_slew);
 
-          max_rise_delay = std::max(arc_delay, max_rise_delay);
+          if (delayGreater(arc_delay, max_rise_delay, openSta_)) {
+            max_rise_delay = arc_delay;
+          }
         }
       }
     }
@@ -834,7 +837,7 @@ void TechChar::createDelayBufList()
     while (lib_iter->hasNext()) {
       sta::LibertyLibrary* lib = lib_iter->next();
       // Filter by library name if provided.
-      if (lib_name != nullptr && strcmp(lib->name(), lib_name) != 0) {
+      if (lib_name != nullptr && strcmp(lib->name().c_str(), lib_name) != 0) {
         continue;
       }
 
@@ -843,8 +846,7 @@ void TechChar::createDelayBufList()
             || buffer->isIsolationCell() || buffer->isLevelShifter()) {
           continue;
         }
-        const char* footprint_cstr = buffer->footprint();
-        std::string footprint = footprint_cstr ? footprint_cstr : "";
+        const std::string footprint = buffer->footprint();
         if (isClkDlyCell(footprint)) {
           footprintClkDly.push_back(std::string(buffer->name()));
         }

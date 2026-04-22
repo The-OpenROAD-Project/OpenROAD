@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="349" height="57"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 5 1 1 1 9"/>
+   <polygon points="17 5 9 1 9 9"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_STEP"
+      xlink:title="K_STEP">
+      <rect x="51" y="23" width="66" height="32"/>
+      <rect x="49" y="21" width="66" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="41">K_STEP</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="137" y="23" width="72" height="32"/>
+      <rect x="135" y="21" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="145" y="41">NUMBER</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#NUMBER"
+      xlink:title="NUMBER">
+      <rect x="229" y="23" width="72" height="32"/>
+      <rect x="227" y="21" width="72" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="237" y="41">NUMBER</text>
+   </a>
+   <path class="line"
+         d="m17 5 h2 m20 0 h10 m0 0 h260 m-290 0 h20 m270 0 h20 m-310 0 q10 0 10 10 m290 0 q0 -10 10 -10 m-300 10 v12 m290 0 v-12 m-290 12 q0 10 10 10 m270 0 q10 0 10 -10 m-280 10 h10 m66 0 h10 m0 0 h10 m72 0 h10 m0 0 h10 m72 0 h10 m23 -32 h-3"/>
+   <polygon points="339 5 347 1 347 9"/>
+   <polygon points="339 5 331 1 331 9"/>
+</svg>

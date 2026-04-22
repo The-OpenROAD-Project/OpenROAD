@@ -17,7 +17,6 @@
 
 #include "AbstractGraphicsFactory.h"
 #include "DesignCallBack.h"
-#include "PACallBack.h"
 #include "absl/synchronization/mutex.h"
 #include "boost/asio/post.hpp"
 #include "boost/bind/bind.hpp"
@@ -35,6 +34,7 @@
 #include "distributed/frArchive.h"
 #include "dr/AbstractDRGraphics.h"
 #include "dr/FlexDR.h"
+#include "drt/PinAccessService.h"
 #include "dst/Distributed.h"
 #include "dst/JobMessage.h"
 #include "frBaseTypes.h"
@@ -43,7 +43,6 @@
 #include "frRTree.h"
 #include "gc/FlexGC.h"
 #include "global.h"
-#include "gr/FlexGR.h"
 #include "io/GuideProcessor.h"
 #include "io/io.h"
 #include "odb/db.h"
@@ -58,21 +57,20 @@
 #include "stt/SteinerTreeBuilder.h"
 #include "ta/AbstractTAGraphics.h"
 #include "ta/FlexTA.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/ServiceRegistry.h"
 
 using odb::dbTechLayerType;
 
 namespace drt {
 TritonRoute::TritonRoute(odb::dbDatabase* db,
                          utl::Logger* logger,
-                         utl::CallBackHandler* callback_handler,
+                         utl::ServiceRegistry* service_registry,
                          dst::Distributed* dist,
                          stt::SteinerTreeBuilder* stt_builder)
     : debug_(std::make_unique<frDebugSettings>()),
       db_callback_(std::make_unique<DesignCallBack>(this)),
-      pa_callback_(std::make_unique<PACallBack>(this)),
       router_cfg_(std::make_unique<RouterConfiguration>())
 {
   if (distributed_) {
@@ -80,14 +78,26 @@ TritonRoute::TritonRoute(odb::dbDatabase* db,
   }
   db_ = db;
   logger_ = logger;
+  service_registry_ = service_registry;
   dist_ = dist;
   stt_builder_ = stt_builder;
   design_ = std::make_unique<frDesign>(logger_, router_cfg_.get());
   dist->addCallBack(new RoutingCallBack(this, dist, logger));
-  pa_callback_->setOwner(callback_handler);
+  service_registry_->provide<PinAccessService>(this);
 }
 
-TritonRoute::~TritonRoute() = default;
+TritonRoute::~TritonRoute()
+{
+  service_registry_->withdraw<PinAccessService>(this);
+}
+
+void TritonRoute::updateDirtyPinAccess()
+{
+  if (design_ == nullptr || design_->getTopBlock() == nullptr) {
+    return;
+  }
+  updateDirtyPAData();
+}
 
 void TritonRoute::initGraphics(
     std::unique_ptr<AbstractGraphicsFactory> graphics_factory)
@@ -567,8 +577,6 @@ bool TritonRoute::initGuide()
       getDesign(), db_, logger_, router_cfg_.get());
   bool guideOk = guide_processor.readGuides();
   guide_processor.processGuides();
-  io::Parser parser(db_, getDesign(), logger_, router_cfg_.get());
-  parser.initRPin();
   return guideOk;
 }
 void TritonRoute::initDesign()
@@ -651,12 +659,6 @@ void TritonRoute::prep()
 {
   FlexRP rp(getDesign(), logger_, router_cfg_.get());
   rp.main();
-}
-
-void TritonRoute::gr()
-{
-  FlexGR gr(getDesign(), logger_, stt_builder_, router_cfg_.get());
-  gr.main(db_);
 }
 
 void TritonRoute::ta()
@@ -1059,12 +1061,7 @@ int TritonRoute::main()
                    .getStream());
   }
   if (!initGuide()) {
-    gr();
-    router_cfg_->ENABLE_VIA_GEN = true;
-    io::GuideProcessor guide_processor(
-        getDesign(), db_, logger_, router_cfg_.get());
-    guide_processor.readGuides();
-    guide_processor.processGuides();
+    logger_->error(DRT, 626, "Guide loading failed.");
   }
   prep();
   ta();
@@ -1291,7 +1288,7 @@ void TritonRoute::setUnidirectionalLayer(const std::string& layerName)
                    "Non-routing layer {} can't be set unidirectional",
                    layerName);
   }
-  router_cfg_->unidirectional_layers_.insert(dbLayer);
+  router_cfg_->unidirectional_layer_names_.insert(layerName);
 }
 
 void TritonRoute::setParams(const ParamStruct& params)
@@ -1299,7 +1296,6 @@ void TritonRoute::setParams(const ParamStruct& params)
   router_cfg_->OUT_MAZE_FILE = params.outputMazeFile;
   router_cfg_->DRC_RPT_FILE = params.outputDrcFile;
   router_cfg_->DRC_RPT_ITER_STEP = params.drcReportIterStep;
-  router_cfg_->CMAP_FILE = params.outputCmapFile;
   router_cfg_->GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   router_cfg_->VERBOSE = params.verbose;
   router_cfg_->ENABLE_VIA_GEN = params.enableViaGen;

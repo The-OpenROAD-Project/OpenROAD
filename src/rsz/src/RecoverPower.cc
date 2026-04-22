@@ -151,8 +151,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                  "recover_power",
                  2,
                  "slack = {} worst_slack = {} better = {}",
-                 delayAsString(end_slack_after, sta_, digits),
-                 delayAsString(worst_slack_after, sta_, digits),
+                 sta::delayAsString(end_slack_after, digits, sta_),
+                 sta::delayAsString(worst_slack_after, digits, sta_),
                  better ? "save" : "");
 
       if (better) {
@@ -165,8 +165,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    "{}/{} Resize for power Slack change {} -> {}",
                    end_index,
                    ends_with_slack.size(),
-                   worst_slack_before,
-                   worst_slack_after);
+                   sta::delayAsString(worst_slack_before, digits, sta_),
+                   sta::delayAsString(worst_slack_after, digits, sta_));
         if (resizer_->overMaxArea()) {
           break;
         }
@@ -192,8 +192,8 @@ bool RecoverPower::recoverPower(const float recover_power_percent, bool verbose)
                    "{}/{} Undo resize for power Slack change {} -> {}",
                    end_index,
                    ends_with_slack.size(),
-                   worst_slack_before,
-                   worst_slack_after);
+                   sta::delayAsString(worst_slack_before, digits, sta_),
+                   sta::delayAsString(worst_slack_after, digits, sta_));
       }
     } else {
       resizer_->journalEnd();
@@ -274,7 +274,7 @@ sta::Vertex* RecoverPower::recoverPower(const sta::Path* path,
                    3,
                    "{} load_delay = {}",
                    path_vertex->name(network_),
-                   delayAsString(load_delay, sta_, 3));
+                   delayAsString(load_delay, 3, sta_));
       }
     }
 
@@ -399,8 +399,8 @@ sta::LibertyCell* RecoverPower::downsizeCell(const sta::LibertyPort* in_port,
   constexpr double delay_margin = 1.5;  // Prevent overly aggressive downsizing
 
   if (!swappable_cells.empty()) {
-    const char* in_port_name = in_port->name();
-    const char* drvr_port_name = drvr_port->name();
+    const std::string& in_port_name = in_port->name();
+    const std::string& drvr_port_name = drvr_port->name();
     sta::sort(
         &swappable_cells,
         [=, this](const sta::LibertyCell* cell1,
@@ -493,7 +493,7 @@ void RecoverPower::printProgress(int iteration, bool force, bool end) const
         itr_field,
         area_growth_percent,
         resize_count_,
-        delayAsString(wns, sta_, 3),
+        delayAsString(wns, 3, sta_),
         worst_vertex != nullptr ? worst_vertex->name(network_) : "");
   }
 

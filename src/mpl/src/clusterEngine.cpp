@@ -83,14 +83,11 @@ void ClusteringEngine::setTree(PhysicalHierarchy* tree)
 }
 
 void ClusteringEngine::setHalos(
-    std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
+    const HardMacro::Halo& base_halo,
+    const std::map<odb::dbInst*, HardMacro::Halo>& macro_to_halo)
 {
+  base_halo_ = base_halo;
   macro_to_halo_ = macro_to_halo;
-}
-
-void ClusteringEngine::setUseDefHalo(bool use_def_halo)
-{
-  use_def_halo_ = use_def_halo;
 }
 
 // Check if macro placement is both needed and feasible.
@@ -309,7 +306,7 @@ void ClusteringEngine::reportDesignData()
       "\tArea of std cell instances: {:.2f}\n"
       "\tNumber of macros: {}\n"
       "\tArea of macros: {:.2f}\n"
-      "\tDefault halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
+      "\tBase halo (L, B, R, T): ({:.2f}, {:.2f}, {:.2f}, {:.2f})\n"
       "\tArea of macros with halos: {:.2f}\n"
       "\tArea of std cell instances + Area of macros: {:.2f}\n"
       "\tFloorplan area: {:.2f}\n"
@@ -320,10 +317,10 @@ void ClusteringEngine::reportDesignData()
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()),
       design_metrics_->getNumMacro(),
       block_->dbuAreaToMicrons(design_metrics_->getMacroArea()),
-      block_->dbuToMicrons(tree_->default_halo.left),
-      block_->dbuToMicrons(tree_->default_halo.bottom),
-      block_->dbuToMicrons(tree_->default_halo.right),
-      block_->dbuToMicrons(tree_->default_halo.top),
+      block_->dbuToMicrons(base_halo_.left),
+      block_->dbuToMicrons(base_halo_.bottom),
+      block_->dbuToMicrons(base_halo_.right),
+      block_->dbuToMicrons(base_halo_.top),
       block_->dbuAreaToMicrons(tree_->macro_with_halo_area),
       block_->dbuAreaToMicrons(design_metrics_->getStdCellArea()
                                + design_metrics_->getMacroArea()),
@@ -2082,13 +2079,20 @@ void ClusteringEngine::createHardMacros()
       }
 
       HardMacro::Halo halo;
-
       if (macro_to_halo_.contains(inst)) {
         halo = macro_to_halo_.at(inst);
-      } else if (use_def_halo_ && inst->getHalo() != nullptr) {
-        halo = HardMacro::Halo(inst->getHalo());
+      } else if (inst->getHalo() != nullptr) {
+        odb::Rect inst_halo = inst->getHalo()->getBox();
+        if (inst->getHalo()->isSoft()) {
+          halo = HardMacro::Halo(inst->getHalo());
+        } else {
+          halo = {std::max(inst_halo.xMin(), base_halo_.left),
+                  std::max(inst_halo.yMin(), base_halo_.bottom),
+                  std::max(inst_halo.xMax(), base_halo_.right),
+                  std::max(inst_halo.yMax(), base_halo_.top)};
+        }
       } else {
-        halo = tree_->default_halo;
+        halo = base_halo_;
       }
 
       auto macro = std::make_unique<HardMacro>(inst, halo);

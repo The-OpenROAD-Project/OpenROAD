@@ -307,12 +307,7 @@ bool ConcreteSwapArithModules::doSwapInstances(std::set<dbModInst*>& insts,
                 target);
   logger_->metric("design__instance__count__swapped_arithmetic_operator",
                   swapped_count);
-  bool swapped = swapped_count > 0;
-  if (swapped) {
-    // Invalidate vertex level ordering
-    resizer_->invalidateVertexOrdering();
-  }
-  return swapped;
+  return swapped_count > 0;
 }
 
 void ConcreteSwapArithModules::produceNewModuleName(const std::string& old_name,

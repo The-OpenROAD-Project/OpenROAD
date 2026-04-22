@@ -9,6 +9,18 @@
 
 namespace odb {
 
+struct PathAssertionEntry
+{
+  std::string region;    // e.g. "HBM_1.regions.r1"
+  bool negated = false;  // true when prefixed with "NOT"
+};
+
+struct PathAssertion
+{
+  std::string name;  // e.g. "Path1"
+  std::vector<PathAssertionEntry> entries;
+};
+
 struct Coordinate
 {
   double x, y;
@@ -121,6 +133,7 @@ struct DbxData
   DesignDef design;
   std::map<std::string, ChipletInst> chiplet_instances;
   std::map<std::string, Connection> connections;
+  std::map<std::string, PathAssertion> path_assertions;
 };
 
 struct BumpMapEntry

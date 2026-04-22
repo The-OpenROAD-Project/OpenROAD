@@ -29,7 +29,7 @@ To produce an openroad.tar file with install files
 
     bazelisk build --//:platform=gui //:tarfile
 
-The tarfile is located at bazel-bin/openroad.tar.
+The tarfile is located at bazel-bin/packaging/openroad.tar.
 
 To embed the real git version string, add `--config=release`:
 
@@ -95,9 +95,31 @@ it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 ```
 
+### Only for macOS Setup
+
+On macOS, it is recommended to use a Python virtual environment to isolate dependencies and avoid system conflicts.
+
+1. Create a virtual environment in the OpenROAD directory:
+``` shell
+python3 -m venv .venv
+```
+
+2. Activate the virtual environment:
+``` shell
+source .venv/bin/activate
+```
+
+3. With virtual environment activated, run without `sudo`:
+``` shell
+./etc/DependencyInstaller.sh -base
+./etc/DependencyInstaller.sh -common -local
+```
+
 ### Install Dependencies
 
-You may follow our helper script to install dependencies as follows:
+We recommend using the `setup.sh` script located in the [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts) repository to install all dependencies. `setup.sh` encapsulates the calls to `DependencyInstaller.sh` and ensures the entire flow environment is configured correctly.
+
+Alternatively, if you are building OpenROAD standalone, you may use our helper script:
 ``` shell
 sudo ./etc/DependencyInstaller.sh -base
 ./etc/DependencyInstaller.sh -common -local

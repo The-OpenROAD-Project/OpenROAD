@@ -323,7 +323,7 @@ Descriptor::Properties LibertyCellDescriptor::getProperties(
                    sta::PortDirection::power(),
                    sta::PortDirection::unknown()}) {
     if (!ports[dir->index()].empty()) {
-      std::string direction_str = dir->name();
+      std::string direction_str(dir->name());
       capitalize(direction_str);
       props.push_back(
           {fmt::format("{} Ports", direction_str), ports[dir->index()]});
@@ -476,35 +476,13 @@ Descriptor::Properties LibertyPortDescriptor::getProperties(
     props.push_back({"Member ports", members});
   }
 
-  std::any power_pin;
-  std::any ground_pin;
-  const char* power_pin_name = port->relatedPowerPin();
-  const char* ground_pin_name = port->relatedGroundPin();
-  sta::LibertyCellPortIterator pg_port_iter(port->libertyCell());
-  while (pg_port_iter.hasNext()) {
-    auto* pg_port = pg_port_iter.next();
-    if (!pg_port->isPwrGnd()) {
-      continue;
-    }
-    if (power_pin_name != nullptr
-        && strcmp(pg_port->name(), power_pin_name) == 0) {
-      power_pin = gui->makeSelected(pg_port);
-    } else if (ground_pin_name != nullptr
-               && strcmp(pg_port->name(), ground_pin_name) == 0) {
-      ground_pin = gui->makeSelected(pg_port);
-    }
+  sta::LibertyPort* power_port = port->relatedPowerPort();
+  if (power_port) {
+    props.push_back({"Related power pin", gui->makeSelected(power_port)});
   }
-  if (!power_pin.has_value() && power_pin_name != nullptr) {
-    power_pin = power_pin_name;
-  }
-  if (power_pin.has_value()) {
-    props.push_back({"Related power pin", std::move(power_pin)});
-  }
-  if (!ground_pin.has_value() && ground_pin_name != nullptr) {
-    ground_pin = ground_pin_name;
-  }
-  if (ground_pin.has_value()) {
-    props.push_back({"Related ground pin", std::move(ground_pin)});
+  sta::LibertyPort* ground_port = port->relatedGroundPort();
+  if (ground_port) {
+    props.push_back({"Related ground pin", gui->makeSelected(ground_port)});
   }
 
   return props;
@@ -956,7 +934,7 @@ bool ClockDescriptor::lessThan(const std::any& l, const std::any& r) const
 {
   auto l_clock = std::any_cast<sta::Clock*>(l);
   auto r_clock = std::any_cast<sta::Clock*>(r);
-  return strcmp(l_clock->name(), r_clock->name()) < 0;
+  return l_clock->name() < r_clock->name();
 }
 
 void ClockDescriptor::visitAllObjects(

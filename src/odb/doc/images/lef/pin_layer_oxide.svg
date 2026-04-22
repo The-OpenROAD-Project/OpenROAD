@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg style="background: var(--diagram-bg, #FFFCF0)" xmlns="http://www.w3.org/2000/svg" width="191" height="1401"><style>
+  :root { --diagram-bg: #FFFCF0; }
+</style>
+   <defs>
+      <style type="text/css">
+    @namespace "http://www.w3.org/2000/svg";
+    .line                 {fill: none; stroke: #332900; stroke-width: 1;}
+    .bold-line            {stroke: #141000; shape-rendering: crispEdges; stroke-width: 2;}
+    .thin-line            {stroke: #1F1800; shape-rendering: crispEdges}
+    .filled               {fill: #332900; stroke: none;}
+    text.terminal         {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #141000;
+                            font-weight: bold;
+                          }
+    text.nonterminal      {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1A1400;
+                            font-weight: normal;
+                          }
+    text.regexp           {font-family: Verdana, Sans-serif;
+                            font-size: 12px;
+                            fill: #1F1800;
+                            font-weight: normal;
+                          }
+    rect, circle, polygon {fill: #332900; stroke: #332900;}
+    rect.terminal         {fill: #FFDB4D; stroke: #332900; stroke-width: 1;}
+    rect.nonterminal      {fill: #FFEC9E; stroke: #332900; stroke-width: 1;}
+    rect.text             {fill: none; stroke: none;}
+    polygon.regexp        {fill: #FFF4C7; stroke: #332900; stroke-width: 1;}
+  </style>
+   </defs>
+   <polygon points="9 17 1 13 1 21"/>
+   <polygon points="17 17 9 13 9 21"/>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE1"
+      xlink:title="K_OXIDE1">
+      <rect x="51" y="3" width="84" height="32"/>
+      <rect x="49" y="1" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="21">K_OXIDE1</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE2"
+      xlink:title="K_OXIDE2">
+      <rect x="51" y="47" width="84" height="32"/>
+      <rect x="49" y="45" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="65">K_OXIDE2</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE3"
+      xlink:title="K_OXIDE3">
+      <rect x="51" y="91" width="84" height="32"/>
+      <rect x="49" y="89" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="109">K_OXIDE3</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE4"
+      xlink:title="K_OXIDE4">
+      <rect x="51" y="135" width="84" height="32"/>
+      <rect x="49" y="133" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="153">K_OXIDE4</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE5"
+      xlink:title="K_OXIDE5">
+      <rect x="51" y="179" width="84" height="32"/>
+      <rect x="49" y="177" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="197">K_OXIDE5</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE6"
+      xlink:title="K_OXIDE6">
+      <rect x="51" y="223" width="84" height="32"/>
+      <rect x="49" y="221" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="241">K_OXIDE6</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE7"
+      xlink:title="K_OXIDE7">
+      <rect x="51" y="267" width="84" height="32"/>
+      <rect x="49" y="265" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="285">K_OXIDE7</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE8"
+      xlink:title="K_OXIDE8">
+      <rect x="51" y="311" width="84" height="32"/>
+      <rect x="49" y="309" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="329">K_OXIDE8</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE9"
+      xlink:title="K_OXIDE9">
+      <rect x="51" y="355" width="84" height="32"/>
+      <rect x="49" y="353" width="84" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="373">K_OXIDE9</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE10"
+      xlink:title="K_OXIDE10">
+      <rect x="51" y="399" width="92" height="32"/>
+      <rect x="49" y="397" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="417">K_OXIDE10</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE11"
+      xlink:title="K_OXIDE11">
+      <rect x="51" y="443" width="92" height="32"/>
+      <rect x="49" y="441" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="461">K_OXIDE11</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE12"
+      xlink:title="K_OXIDE12">
+      <rect x="51" y="487" width="92" height="32"/>
+      <rect x="49" y="485" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="505">K_OXIDE12</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE13"
+      xlink:title="K_OXIDE13">
+      <rect x="51" y="531" width="92" height="32"/>
+      <rect x="49" y="529" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="549">K_OXIDE13</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE14"
+      xlink:title="K_OXIDE14">
+      <rect x="51" y="575" width="92" height="32"/>
+      <rect x="49" y="573" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="593">K_OXIDE14</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE15"
+      xlink:title="K_OXIDE15">
+      <rect x="51" y="619" width="92" height="32"/>
+      <rect x="49" y="617" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="637">K_OXIDE15</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE16"
+      xlink:title="K_OXIDE16">
+      <rect x="51" y="663" width="92" height="32"/>
+      <rect x="49" y="661" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="681">K_OXIDE16</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE17"
+      xlink:title="K_OXIDE17">
+      <rect x="51" y="707" width="92" height="32"/>
+      <rect x="49" y="705" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="725">K_OXIDE17</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE18"
+      xlink:title="K_OXIDE18">
+      <rect x="51" y="751" width="92" height="32"/>
+      <rect x="49" y="749" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="769">K_OXIDE18</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE19"
+      xlink:title="K_OXIDE19">
+      <rect x="51" y="795" width="92" height="32"/>
+      <rect x="49" y="793" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="813">K_OXIDE19</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE20"
+      xlink:title="K_OXIDE20">
+      <rect x="51" y="839" width="92" height="32"/>
+      <rect x="49" y="837" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="857">K_OXIDE20</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE21"
+      xlink:title="K_OXIDE21">
+      <rect x="51" y="883" width="92" height="32"/>
+      <rect x="49" y="881" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="901">K_OXIDE21</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE22"
+      xlink:title="K_OXIDE22">
+      <rect x="51" y="927" width="92" height="32"/>
+      <rect x="49" y="925" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="945">K_OXIDE22</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE23"
+      xlink:title="K_OXIDE23">
+      <rect x="51" y="971" width="92" height="32"/>
+      <rect x="49" y="969" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="989">K_OXIDE23</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE24"
+      xlink:title="K_OXIDE24">
+      <rect x="51" y="1015" width="92" height="32"/>
+      <rect x="49" y="1013" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1033">K_OXIDE24</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE25"
+      xlink:title="K_OXIDE25">
+      <rect x="51" y="1059" width="92" height="32"/>
+      <rect x="49" y="1057" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1077">K_OXIDE25</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE26"
+      xlink:title="K_OXIDE26">
+      <rect x="51" y="1103" width="92" height="32"/>
+      <rect x="49" y="1101" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1121">K_OXIDE26</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE27"
+      xlink:title="K_OXIDE27">
+      <rect x="51" y="1147" width="92" height="32"/>
+      <rect x="49" y="1145" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1165">K_OXIDE27</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE28"
+      xlink:title="K_OXIDE28">
+      <rect x="51" y="1191" width="92" height="32"/>
+      <rect x="49" y="1189" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1209">K_OXIDE28</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE29"
+      xlink:title="K_OXIDE29">
+      <rect x="51" y="1235" width="92" height="32"/>
+      <rect x="49" y="1233" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1253">K_OXIDE29</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE30"
+      xlink:title="K_OXIDE30">
+      <rect x="51" y="1279" width="92" height="32"/>
+      <rect x="49" y="1277" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1297">K_OXIDE30</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE31"
+      xlink:title="K_OXIDE31">
+      <rect x="51" y="1323" width="92" height="32"/>
+      <rect x="49" y="1321" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1341">K_OXIDE31</text>
+   </a>
+   <a xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="#K_OXIDE32"
+      xlink:title="K_OXIDE32">
+      <rect x="51" y="1367" width="92" height="32"/>
+      <rect x="49" y="1365" width="92" height="32" class="nonterminal"/>
+      <text class="nonterminal" x="59" y="1385">K_OXIDE32</text>
+   </a>
+   <path class="line"
+         d="m17 17 h2 m20 0 h10 m84 0 h10 m0 0 h8 m-132 0 h20 m112 0 h20 m-152 0 q10 0 10 10 m132 0 q0 -10 10 -10 m-142 10 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m84 0 h10 m0 0 h8 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m-122 -10 v20 m132 0 v-20 m-132 20 v24 m132 0 v-24 m-132 24 q0 10 10 10 m112 0 q10 0 10 -10 m-122 10 h10 m92 0 h10 m23 -1364 h-3"/>
+   <polygon points="181 17 189 13 189 21"/>
+   <polygon points="181 17 173 13 173 21"/>
+</svg>

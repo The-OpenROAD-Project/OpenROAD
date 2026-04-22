@@ -27,6 +27,9 @@ target_include_directories(CUGR
     # Ugly but necessary to get GRoute.h and avoid a circular dependency
     # with FastRoute.  Remove once this data moves to OpenDB
     ../../include
+    # Header-only abstract interface; avoid linking est_lib to prevent a
+    # link-time cycle (est_lib already depends on grt_lib).
+    ../../../est/include
 )
 
 target_link_libraries(CUGR

@@ -8,6 +8,7 @@ sh_binary(
     name = "install",
     srcs = ["//bazel:install.sh"],
     data = [":tarfile"],
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
@@ -15,4 +16,8 @@ pkg_tar(
     srcs = ["//:openroad"],
     include_runfiles = True,
     package_file_name = "openroad.tar",
+    visibility = [
+        "//:__pkg__",
+        "//test:__subpackages__",
+    ],
 )

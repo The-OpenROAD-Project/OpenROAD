@@ -23,7 +23,6 @@ class dbIStream;
 class dbOStream;
 class _dbDatabase;
 class _dbScanPartition;
-class dbScanPin;
 
 class _dbScanChain : public _dbObject
 {

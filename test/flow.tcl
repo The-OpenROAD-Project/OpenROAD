@@ -32,9 +32,9 @@ if { $pre_placed_macros_file != "" } {
 # Macro Placement
 if { [have_macros] } {
   lassign $macro_place_halo halo_x halo_y
+  set_macro_base_halo $halo_x $halo_y
   set report_dir [make_result_file ${design}_${platform}_rtlmp]
-  rtl_macro_placer -halo_width $halo_x -halo_height $halo_y \
-    -report_directory $report_dir
+  rtl_macro_placer -report_directory $report_dir
 }
 
 ################################################################

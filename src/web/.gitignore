@@ -1,4 +1,6 @@
 *~
 test/results
-TAGS
+test/node_modules
 node_modules
+package-lock.json
+TAGS

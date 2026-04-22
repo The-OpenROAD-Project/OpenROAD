@@ -36,7 +36,21 @@ gtest_discover_tests(TestRequestHandler
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
+add_executable(TestSaveReport TestSaveReport.cpp)
+
+target_link_libraries(TestSaveReport ${TEST_LIBS})
+
+target_include_directories(TestSaveReport
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../src
+)
+
+gtest_discover_tests(TestSaveReport
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_dependencies(build_and_test
   TestTileGenerator
   TestRequestHandler
+  TestSaveReport
 )

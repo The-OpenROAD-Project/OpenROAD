@@ -107,7 +107,7 @@ bool SplitLoadMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
                  "SplitLoadMove {}: fanin {} slack_margin = {}",
                  network_->pathName(drvr_pin),
                  network_->pathName(fanout_vertex->pin()),
-                 delayAsString(slack_margin, sta_, 3));
+                 delayAsString(slack_margin, 3, sta_));
       fanout_slacks.emplace_back(fanout_vertex, slack_margin);
     }
   }
@@ -177,9 +177,6 @@ bool SplitLoadMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
   estimate_parasitics_->parasiticsInvalid(db_network_->dbToSta(db_drvr_net));
   sta::Net* out_net = network_->net(buffer_out_pin);
   estimate_parasitics_->parasiticsInvalid(out_net);
-
-  // Invalidate vertex level ordering
-  resizer_->invalidateVertexOrdering();
 
   debugPrint(logger_,
              RSZ,

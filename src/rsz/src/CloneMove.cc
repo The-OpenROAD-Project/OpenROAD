@@ -161,7 +161,7 @@ bool CloneMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
                "CloneMove {}: fanin {} slack_margin = {}",
                network_->pathName(drvr_pin),
                network_->pathName(fanout_vertex->pin()),
-               delayAsString(slack_margin, sta_, 3));
+               delayAsString(slack_margin, 3, sta_));
     fanout_slacks.emplace_back(fanout_vertex, slack_margin);
   }
 
@@ -298,9 +298,6 @@ bool CloneMove::doMove(const sta::Path* drvr_path, float setup_slack_margin)
       }
     }
   }
-
-  // Invalidate vertex level ordering
-  resizer_->invalidateVertexOrdering();
 
   return true;
 }

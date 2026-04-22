@@ -79,16 +79,15 @@
 #include "rsz/MakeResizer.hh"
 #include "rsz/Resizer.hh"
 #include "sta/VerilogReader.hh"
-#include "sta/VerilogWriter.hh"
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "tap/tapcell.h"
 #include "upf/MakeUpf.h"
-#include "utl/CallBackHandler.h"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 #include "utl/Progress.h"
 #include "utl/ScopedTemporaryFile.h"
+#include "utl/ServiceRegistry.h"
 #include "utl/decode.h"
 #include "web/MakeWeb.h"
 #include "web/web.h"
@@ -151,7 +150,7 @@ OpenRoad::~OpenRoad()
   delete web_server_;
   delete logger_;
   delete verilog_reader_;
-  delete callback_handler_;
+  delete service_registry_;
 }
 
 sta::dbNetwork* OpenRoad::getDbNetwork()
@@ -196,7 +195,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   // Make components.
   utl::Progress::setBatchMode(batch_mode);
   logger_ = new utl::Logger(log_filename, metrics_filename);
-  callback_handler_ = new utl::CallBackHandler(logger_);
+  service_registry_ = new utl::ServiceRegistry(logger_);
   db_->setLogger(logger_);
   sta_ = new sta::dbSta(tcl_interp, db_, logger_);
   verilog_network_ = new dbVerilogNetwork(sta_);
@@ -205,7 +204,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   antenna_checker_ = new ant::AntennaChecker(db_, logger_);
   opendp_ = new dpl::Opendp(db_, logger_);
   global_router_ = new grt::GlobalRouter(logger_,
-                                         callback_handler_,
+                                         service_registry_,
                                          stt_builder_,
                                          db_,
                                          sta_,
@@ -214,7 +213,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   grt::initGui(global_router_, db_, logger_);
 
   estimate_parasitics_ = new est::EstimateParasitics(
-      logger_, callback_handler_, db_, sta_, stt_builder_, global_router_);
+      logger_, service_registry_, db_, sta_, stt_builder_, global_router_);
   est::initGui(estimate_parasitics_);
 
   resizer_ = new rsz::Resizer(logger_,
@@ -241,7 +240,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp,
   extractor_ = new rcx::Ext(db_, logger_, getVersion());
   distributer_ = new dst::Distributed(logger_);
   detailed_router_ = new drt::TritonRoute(
-      db_, logger_, callback_handler_, distributer_, stt_builder_);
+      db_, logger_, service_registry_, distributer_, stt_builder_);
   drt::initGui(detailed_router_);
 
   replace_ = new gpl::Replace(db_, sta_, resizer_, global_router_, logger_);

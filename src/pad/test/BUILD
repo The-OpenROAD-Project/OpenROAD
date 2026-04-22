@@ -26,6 +26,7 @@ COMPULSORY_TESTS = [
     "place_bondpad_stagger",
     "place_corners_avoid_bumps",
     "place_corners_avoid_overlap",
+    "place_corners_avoid_overlap_with_overlapobs",
     "place_io_terminals_empty_call",
     "place_pad",
     "place_pad_hv",

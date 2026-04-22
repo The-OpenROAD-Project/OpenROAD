@@ -155,6 +155,10 @@ class JsonBuilder
     buf_ += val ? "true" : "false";
   }
 
+  void field(const std::string& key, const char* val)
+  {
+    field(key.c_str(), val);
+  }
   void field(const std::string& key, int val) { field(key.c_str(), val); }
   void field(const std::string& key, float val) { field(key.c_str(), val); }
   void field(const std::string& key, double val) { field(key.c_str(), val); }

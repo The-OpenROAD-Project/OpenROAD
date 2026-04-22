@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -800,7 +801,9 @@ void dbITerm::setAccessPoint(dbMPin* pin, dbAccessPoint* ap)
   if (ap != nullptr) {
     iterm->aps_[pin->getImpl()->getOID()] = ap->getImpl()->getOID();
     _dbAccessPoint* _ap = (_dbAccessPoint*) ap;
-    _ap->iterms_.push_back(iterm->getOID());
+    auto& iterms = _ap->iterms_;
+    auto pos = std::lower_bound(iterms.begin(), iterms.end(), iterm->getOID());
+    iterms.insert(pos, iterm->getOID());
   } else {
     iterm->aps_[pin->getImpl()->getOID()] = dbId<_dbAccessPoint>();
   }
@@ -860,8 +863,16 @@ std::vector<dbAccessPoint*> dbITerm::getPrefAccessPoints() const
 void dbITerm::clearPrefAccessPoints()
 {
   _dbITerm* iterm = (_dbITerm*) this;
-  // Clear aps_ map instead of destroying dbAccessPoint object to prevent
-  // destroying APs of other iterms.
+  _dbBlock* block = (_dbBlock*) iterm->getOwner();
+  // Remove this iterm from each AP's back-reference list before clearing.
+  for (auto& [pin_id, ap_id] : iterm->aps_) {
+    if (ap_id.isValid()) {
+      auto* ap = block->ap_tbl_->getPtr(ap_id);
+      auto& iterms = ap->iterms_;
+      iterms.erase(std::remove(iterms.begin(), iterms.end(), iterm->getOID()),
+                   iterms.end());
+    }
+  }
   iterm->aps_.clear();
 }
 

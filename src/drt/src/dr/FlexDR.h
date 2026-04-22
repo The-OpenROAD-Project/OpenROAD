@@ -764,7 +764,7 @@ class FlexDRWorker
   void initMazeCost_planarTerm(const frDesign* design);
   void initMazeCost_pin(drNet* net, bool isAddPathCost);
   void initMazeCost_fixedObj(const frDesign* design);
-  void initMazeCost_terms(const std::set<frBlockObject*>& objs,
+  void initMazeCost_terms(const frOrderedIdSet<frBlockObject*>& objs,
                           bool isAddPathCost,
                           bool isSkipVia = false);
   void modBlockedEdgesForMacroPin(frInstTerm* instTerm,
@@ -810,13 +810,13 @@ class FlexDRWorker
   void route_queue_init_queue(std::queue<RouteQueueEntry>& rerouteQueue);
   void route_queue_update_from_marker(
       frMarker* marker,
-      std::set<frBlockObject*>& uniqueVictims,
-      std::set<frBlockObject*>& uniqueAggressors,
+      frOrderedIdSet<frBlockObject*>& uniqueVictims,
+      frOrderedIdSet<frBlockObject*>& uniqueAggressors,
       std::vector<RouteQueueEntry>& checks,
       std::vector<RouteQueueEntry>& routes,
       frBlockObject* checkingObj);
   void getRipUpNetsFromMarker(frMarker* marker,
-                              std::set<drNet*>& nets,
+                              frOrderedIdSet<drNet*>& nets,
                               frCoord bloatDist = 0);
   void route_queue_update_queue(const std::vector<RouteQueueEntry>& checks,
                                 const std::vector<RouteQueueEntry>& routes,

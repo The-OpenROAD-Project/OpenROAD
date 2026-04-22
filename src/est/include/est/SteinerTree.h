@@ -18,7 +18,7 @@
 #include "stt/flute.h"
 #include "utl/Logger.h"
 
-const int SteinerNull = -1;
+const int kSteinerNull = -1;
 
 namespace est {
 
@@ -95,7 +95,7 @@ class SteinerTree
                      const std::vector<SteinerPt>& adj3);
 
   // "Accessors" for SteinerPts.
-  const char* name(SteinerPt pt, const sta::Network* network);
+  std::string name(SteinerPt pt, const sta::Network* network);
   const sta::PinSeq* pins(SteinerPt pt) const;
   const sta::Pin* pin(SteinerPt pt) const;
   odb::Point location(SteinerPt pt) const;
@@ -106,7 +106,7 @@ class SteinerTree
   void locAddPin(const odb::Point& loc, const sta::Pin* pin);
   int getMaxIndex() const;
 
-  static constexpr SteinerPt null_pt = -1;
+  static constexpr SteinerPt kNullPt = -1;
 
  private:
   stt::Tree tree_;

@@ -6,4 +6,4 @@ read_lef read_verilog6.lef
 read_liberty Nangate45/Nangate45_typ.lib
 # uses BUF_X10 (no liberty) and AND2_X10 (no lef or liberty)
 read_verilog read_verilog6.v
-link_design top
+catch { link_design top }

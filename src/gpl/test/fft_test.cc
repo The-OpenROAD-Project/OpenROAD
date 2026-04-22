@@ -32,7 +32,7 @@ float input_data[X_MAX * Y_MAX] = {
 };
 
 // clang-format off
-float output_data_eForce_first[X_MAX * Y_MAX] = {
+float output_data_eField_first[X_MAX * Y_MAX] = {
        -0.81241744756698608398, // 0, 0
        -1.83704113960266113281, // 1, 0
        -1.83704113960266113281, // 2, 0
@@ -51,7 +51,7 @@ float output_data_eForce_first[X_MAX * Y_MAX] = {
        -0.81241744756698608398, // 3, 3
 };
 
-float output_data_eForce_second[X_MAX * Y_MAX] = {
+float output_data_eField_second[X_MAX * Y_MAX] = {
      -415.95773315429687500000, // 0, 0
      -415.95773315429687500000, // 1, 0
      -415.95773315429687500000, // 2, 0
@@ -96,17 +96,17 @@ void print_tables(std::unique_ptr<gpl::FFT>& fft)
   std::stringstream out_ef_2nd;
   std::stringstream out_el_phi;
 
-  out_ef_1st << "float output_data_eForce_first[X_MAX * Y_MAX] = {\n";
-  out_ef_2nd << "float output_data_eForce_second[X_MAX * Y_MAX] = {\n";
+  out_ef_1st << "float output_data_eField_first[X_MAX * Y_MAX] = {\n";
+  out_ef_2nd << "float output_data_eField_second[X_MAX * Y_MAX] = {\n";
   out_el_phi << "float output_data_electroPhi[X_MAX * Y_MAX] = {\n";
   for (int y = 0; y < Y_MAX; y++) {
     for (int x = 0; x < X_MAX; x++) {
-      auto eForce = fft->getElectroForce(x, y);
+      auto eField = fft->getElectroField(x, y);
       auto electroPhi = fft->getElectroPhi(x, y);
       out_ef_1st << fmt::format(
-          "    {: 26.20f}, // {:d}, {:d}\n", eForce.first, x, y);
+          "    {: 26.20f}, // {:d}, {:d}\n", eField.first, x, y);
       out_ef_2nd << fmt::format(
-          "    {: 26.20f}, // {:d}, {:d}\n", eForce.second, x, y);
+          "    {: 26.20f}, // {:d}, {:d}\n", eField.second, x, y);
       out_el_phi << fmt::format(
           "    {: 26.20f}, // {:d}, {:d}\n", electroPhi, x, y);
     }
@@ -136,11 +136,11 @@ TEST(FloatFFTTest, Basic)
 
   for (int y = 0; y < Y_MAX; y++) {
     for (int x = 0; x < X_MAX; x++) {
-      auto eForce = fft->getElectroForce(x, y);
+      auto eField = fft->getElectroField(x, y);
       auto electroPhi = fft->getElectroPhi(x, y);
 
-      EXPECT_EQ(eForce.first, output_data_eForce_first[x + y * Y_MAX]);
-      EXPECT_EQ(eForce.second, output_data_eForce_second[x + y * Y_MAX]);
+      EXPECT_EQ(eField.first, output_data_eField_first[x + y * Y_MAX]);
+      EXPECT_EQ(eField.second, output_data_eField_second[x + y * Y_MAX]);
       EXPECT_EQ(electroPhi, output_data_electroPhi[x + y * Y_MAX]);
     }
   }

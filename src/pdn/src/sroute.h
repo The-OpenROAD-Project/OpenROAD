@@ -39,7 +39,7 @@ class SRoute
                      odb::dbInst* inst,
                      const char* iterm_name,
                      const std::vector<odb::dbSBox*>& ring);
-  std::vector<odb::dbSBox*> findRingShapes(odb::dbNet* net, uint32_t& Hdy);
+  std::vector<odb::dbSBox*> findRingShapes(odb::dbNet* net, uint32_t& h_dy);
   std::vector<VoltageDomain*> getDomains() const;
 
   utl::Logger* logger_;
