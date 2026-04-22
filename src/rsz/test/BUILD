@@ -123,6 +123,7 @@ TESTS = [
     "repair_setup9_hier",
     "repair_setup_sizedown",
     "repair_setup_sizeup_match",
+    "repair_setup_swap_sizeup_unbuffer",
     "repair_setup_undo1",
     "repair_setup_undo2",
     "repair_slew1",
