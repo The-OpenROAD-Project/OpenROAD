@@ -38,6 +38,7 @@
 #include "odb/db.h"
 #include "request_handler.h"
 #include "tcl.h"
+#include "tclDecls.h"
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
