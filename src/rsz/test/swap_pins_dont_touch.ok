@@ -49,16 +49,24 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000001 HPWL: 54373
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 6.92 um^2, Utilization: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                       4
+Diamond Move Success:              4 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement          2.8 u
-average displacement        0.7 u
-max displacement            1.4 u
+total displacement          7.7 u
+average displacement        1.9 u
+max displacement            2.8 u
 original HPWL               9.2 u
-legalized HPWL             25.3 u
-delta HPWL                  173 %
+legalized HPWL             22.1 u
+delta HPWL                  140 %
 
 worst slack max -0.04
 Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
@@ -72,7 +80,7 @@ Iteration |   Area    | Resized | Buffers | Nets repaired | Remaining
    Iter   | Removed | Resized | Inserted | Cloned |  Pin  |   Area   |    WNS   |   StTNS    |   EnTNS    |  Viol  |  Worst  
           | Buffers |  Gates  | Buffers  |  Gates | Swaps |          |          |            |            | Endpts | St/EnPt 
 ------------------------------------------------------------------------------------------------------------------------------
-       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.040 |       -0.1 |       -0.0 |      2 | y2
+       0* |       0 |       0 |        0 |      0 |     0 |    +0.0% |   -0.039 |       -0.1 |       -0.0 |      2 | y2
 [DEBUG RSZ-swap_pins_move] ACCEPT SwapPinsMove U5/ZN: Cell AND2_X4, pins A1 <-> A2
 [DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5
 [DEBUG RSZ-swap_pins_move] REJECT SwapPinsMove U5/ZN: Already swapped U5

@@ -50,23 +50,24 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000011 HPWL: 61445
 [INFO DPL-0006] Core area: 999570.01 um^2, Instances area: 1274.41 um^2, Utilization: 0.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 62499.
-Negotiation iteration 1: total overflow 26019.
-Negotiation iteration 2: total overflow 14416.
-Negotiation iteration 3: total overflow 7721.
-Negotiation iteration 4: total overflow 3928.
-Negotiation iteration 5: total overflow 1438.
-Negotiation iteration 6: total overflow 325.
-Negotiation iteration 7: total overflow 0.
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                     283
+Diamond Move Success:            283 (100.00%)
+Diamond Move Failure:              0
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        0
+Total Placement Failures:          0
+---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement        205.8 u
-average displacement        0.7 u
-max displacement            1.4 u
+total displacement       6732.7 u
+average displacement       23.8 u
+max displacement           35.6 u
 original HPWL               0.9 u
-legalized HPWL            432.8 u
-delta HPWL                49029 %
+legalized HPWL            393.7 u
+delta HPWL                44584 %
 
 [INFO CTS-0050] Root buffer is CLKBUF_X3.
 [INFO CTS-0051] Sink buffer is CLKBUF_X3.
@@ -90,14 +91,14 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(999035, 1946980), (1004355, 1953420)].
-[INFO CTS-0024]  Normalized sink region: [(71.3596, 139.07), (71.7396, 139.53)].
-[INFO CTS-0025]     Width:  0.3800.
-[INFO CTS-0026]     Height: 0.4600.
+[INFO CTS-0023]  Original sink region: [(1003215, 1966190), (1006445, 1982990)].
+[INFO CTS-0024]  Normalized sink region: [(71.6582, 140.442), (71.8889, 141.642)].
+[INFO CTS-0025]     Width:  0.2307.
+[INFO CTS-0026]     Height: 1.2000.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 2
-    Sub-region size: 0.3800 X 0.2300
+    Sub-region size: 0.2307 X 0.6000
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 4.
@@ -108,29 +109,29 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(961590, 1905230), (1030750, 1997970)].
-[INFO CTS-0024]  Normalized sink region: [(68.685, 136.088), (73.625, 142.712)].
-[INFO CTS-0025]     Width:  4.9400.
-[INFO CTS-0026]     Height: 6.6243.
+[INFO CTS-0023]  Original sink region: [(938410, 1933230), (1067610, 1997970)].
+[INFO CTS-0024]  Normalized sink region: [(67.0293, 138.088), (76.2579, 142.712)].
+[INFO CTS-0025]     Width:  9.2286.
+[INFO CTS-0026]     Height: 4.6243.
  Level 1
-    Direction: Vertical
-    Sinks per sub-region: 67
-    Sub-region size: 4.9400 X 3.3121
-[INFO CTS-0034]     Segment length (rounded): 1.
- Level 2
     Direction: Horizontal
+    Sinks per sub-region: 67
+    Sub-region size: 4.6143 X 4.6243
+[INFO CTS-0034]     Segment length (rounded): 2.
+ Level 2
+    Direction: Vertical
     Sinks per sub-region: 34
-    Sub-region size: 2.4700 X 3.3121
+    Sub-region size: 4.6143 X 2.3121
 [INFO CTS-0034]     Segment length (rounded): 1.
  Level 3
-    Direction: Vertical
+    Direction: Horizontal
     Sinks per sub-region: 17
-    Sub-region size: 2.4700 X 1.6561
+    Sub-region size: 2.3071 X 2.3121
 [INFO CTS-0034]     Segment length (rounded): 1.
  Level 4
-    Direction: Horizontal
+    Direction: Vertical
     Sinks per sub-region: 9
-    Sub-region size: 1.2350 X 1.6561
+    Sub-region size: 2.3071 X 1.1561
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 134.
@@ -141,19 +142,19 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(966910, 1905230), (1034930, 1997970)].
-[INFO CTS-0024]  Normalized sink region: [(69.065, 136.088), (73.9236, 142.712)].
-[INFO CTS-0025]     Width:  4.8586.
-[INFO CTS-0026]     Height: 6.6243.
+[INFO CTS-0023]  Original sink region: [(964250, 1955630), (1041770, 1997970)].
+[INFO CTS-0024]  Normalized sink region: [(68.875, 139.688), (74.4121, 142.712)].
+[INFO CTS-0025]     Width:  5.5371.
+[INFO CTS-0026]     Height: 3.0243.
  Level 1
-    Direction: Vertical
+    Direction: Horizontal
     Sinks per sub-region: 18
-    Sub-region size: 4.8586 X 3.3121
+    Sub-region size: 2.7686 X 3.0243
 [INFO CTS-0034]     Segment length (rounded): 1.
  Level 2
-    Direction: Horizontal
+    Direction: Vertical
     Sinks per sub-region: 9
-    Sub-region size: 2.4293 X 3.3121
+    Sub-region size: 2.7686 X 1.5121
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
@@ -164,8 +165,8 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(1006065, 1949390), (1006065, 1949390)].
-[INFO CTS-0024]  Normalized sink region: [(71.8618, 139.242), (71.8618, 139.242)].
+[INFO CTS-0023]  Original sink region: [(1006445, 1987750), (1006445, 1987750)].
+[INFO CTS-0024]  Normalized sink region: [(71.8889, 141.982), (71.8889, 141.982)].
 [INFO CTS-0025]     Width:  0.0000.
 [INFO CTS-0026]     Height: 0.0000.
  Level 1
@@ -182,19 +183,19 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(965770, 1894030), (1030750, 1997970)].
-[INFO CTS-0024]  Normalized sink region: [(68.9836, 135.288), (73.625, 142.712)].
-[INFO CTS-0025]     Width:  4.6414.
-[INFO CTS-0026]     Height: 7.4243.
+[INFO CTS-0023]  Original sink region: [(957790, 1950030), (1048230, 1997970)].
+[INFO CTS-0024]  Normalized sink region: [(68.4136, 139.288), (74.8736, 142.712)].
+[INFO CTS-0025]     Width:  6.4600.
+[INFO CTS-0026]     Height: 3.4243.
  Level 1
-    Direction: Vertical
-    Sinks per sub-region: 18
-    Sub-region size: 4.6414 X 3.7121
-[INFO CTS-0034]     Segment length (rounded): 2.
- Level 2
     Direction: Horizontal
+    Sinks per sub-region: 18
+    Sub-region size: 3.2300 X 3.4243
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 2
+    Direction: Vertical
     Sinks per sub-region: 9
-    Sub-region size: 2.3207 X 3.7121
+    Sub-region size: 3.2300 X 1.7121
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
@@ -205,19 +206,19 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(968050, 1897170), (1037210, 1997970)].
-[INFO CTS-0024]  Normalized sink region: [(69.1464, 135.512), (74.0864, 142.712)].
-[INFO CTS-0025]     Width:  4.9400.
-[INFO CTS-0026]     Height: 7.2000.
+[INFO CTS-0023]  Original sink region: [(983630, 1975570), (1022390, 1997970)].
+[INFO CTS-0024]  Normalized sink region: [(70.2593, 141.112), (73.0279, 142.712)].
+[INFO CTS-0025]     Width:  2.7686.
+[INFO CTS-0026]     Height: 1.6000.
  Level 1
-    Direction: Vertical
-    Sinks per sub-region: 18
-    Sub-region size: 4.9400 X 3.6000
-[INFO CTS-0034]     Segment length (rounded): 2.
- Level 2
     Direction: Horizontal
+    Sinks per sub-region: 18
+    Sub-region size: 1.3843 X 1.6000
+[INFO CTS-0034]     Segment length (rounded): 1.
+ Level 2
+    Direction: Vertical
     Sinks per sub-region: 9
-    Sub-region size: 2.4700 X 3.6000
+    Sub-region size: 1.3843 X 0.8000
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
@@ -228,19 +229,19 @@ delta HPWL                49029 %
 [INFO CTS-0030]  Number of static layers: 1.
 [INFO CTS-0020]  Wire segment unit: 14000  dbu (7 um).
 [INFO CTS-0021]  Distance between buffers: 7 units (100 um).
-[INFO CTS-0023]  Original sink region: [(966910, 1905230), (1030750, 1994830)].
-[INFO CTS-0024]  Normalized sink region: [(69.065, 136.088), (73.625, 142.488)].
-[INFO CTS-0025]     Width:  4.5600.
-[INFO CTS-0026]     Height: 6.4000.
+[INFO CTS-0023]  Original sink region: [(970710, 1964370), (1035310, 1997970)].
+[INFO CTS-0024]  Normalized sink region: [(69.3364, 140.312), (73.9507, 142.712)].
+[INFO CTS-0025]     Width:  4.6143.
+[INFO CTS-0026]     Height: 2.4000.
  Level 1
-    Direction: Vertical
+    Direction: Horizontal
     Sinks per sub-region: 18
-    Sub-region size: 4.5600 X 3.2000
+    Sub-region size: 2.3071 X 2.4000
 [INFO CTS-0034]     Segment length (rounded): 1.
  Level 2
-    Direction: Horizontal
+    Direction: Vertical
     Sinks per sub-region: 9
-    Sub-region size: 2.2800 X 3.2000
+    Sub-region size: 2.3071 X 1.2000
 [INFO CTS-0034]     Segment length (rounded): 1.
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 36.
@@ -254,13 +255,13 @@ delta HPWL                49029 %
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 17 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 4:1, 6:4, 7:1, 8:3, 9:2, 10:3, 12:1, 15:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 4:1, 6:4, 7:2, 8:1, 9:3, 10:2, 11:1, 12:1, 14:1..
 [INFO CTS-0017]     Max level of the clock tree: 4.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 5:1, 8:1, 10:1, 13:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 7:1, 8:1, 9:1, 12:1..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0018]     Created 2 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -272,7 +273,7 @@ delta HPWL                49029 %
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 7:1, 8:1, 9:1, 12:1..
+[INFO CTS-0016]     Fanout distribution for the current clock = 8:2, 10:2..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0018]     Created 5 clock buffers.
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
@@ -284,56 +285,54 @@ delta HPWL                49029 %
 [INFO CTS-0012]     Minimum number of buffers in the clock path: 2.
 [INFO CTS-0013]     Maximum number of buffers in the clock path: 2.
 [INFO CTS-0015]     Created 5 clock nets.
-[INFO CTS-0016]     Fanout distribution for the current clock = 8:2, 10:2..
+[INFO CTS-0016]     Fanout distribution for the current clock = 6:1, 9:1, 10:1, 11:1..
 [INFO CTS-0017]     Max level of the clock tree: 2.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 4
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 39.37 um
+[INFO CTS-0101]  Average sink wire length 26.98 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 0
 [INFO CTS-0098] Clock net "h1\/gclk5"
 [INFO CTS-0099]  Sinks 149
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 26.23 um
+[INFO CTS-0101]  Average sink wire length 27.56 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 15
 [INFO CTS-0098] Clock net "h1\/gclk2"
 [INFO CTS-0099]  Sinks 39
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 28.32 um
+[INFO CTS-0101]  Average sink wire length 19.51 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 3
 [INFO CTS-0124] Clock net "gclk4"
 [INFO CTS-0125]  Sinks 1
 [INFO CTS-0098] Clock net "gclk4_regs"
-[INFO CTS-0099]  Sinks 39
+[INFO CTS-0099]  Sinks 38
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 32.00 um
+[INFO CTS-0101]  Average sink wire length 20.63 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 3
+[INFO CTS-0207]  Dummy loads inserted 2
 [INFO CTS-0098] Clock net "gclk3"
 [INFO CTS-0099]  Sinks 39
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 33.14 um
+[INFO CTS-0101]  Average sink wire length 13.38 um
 [INFO CTS-0102]  Path depth 2 - 2
 [INFO CTS-0207]  Dummy loads inserted 3
 [INFO CTS-0098] Clock net "gclk1"
-[INFO CTS-0099]  Sinks 38
+[INFO CTS-0099]  Sinks 39
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 26.04 um
+[INFO CTS-0101]  Average sink wire length 17.25 um
 [INFO CTS-0102]  Path depth 2 - 2
-[INFO CTS-0207]  Dummy loads inserted 2
+[INFO CTS-0207]  Dummy loads inserted 3
 [INFO CTS-0033] Balancing latency for clock core
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_core is inserted at (1000634 1947061)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (999572 1947143)
-[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_2_core is inserted at (1000975 1941413)
-[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_3_core is inserted at (1000005 1945401)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_core is inserted at (1001944 1954924)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_core is inserted at (1001944 1958424)
-[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1001944 1961924)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_0_core is inserted at (1005383 1975061)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_1_core is inserted at (1004321 1975143)
+[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_2_core is inserted at (1004458 1963273)
+[DEBUG CTS-insertion delay] new delay buffer h1/delaybuf_3_core is inserted at (1003836 1964731)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_4_core is inserted at (1005080 1979315)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_5_core is inserted at (1005080 1982815)
+[DEBUG CTS-insertion delay] new delay buffer delaybuf_6_core is inserted at (1005080 1986315)
 [INFO CTS-0036]  inserted 7 delay buffers
 [INFO CTS-0037] Total number of delay buffers: 7
-Differences found at line 16.
- wire \clknet_4_6__leaf_h1/gclk5 ;
- wire \clknet_4_5__leaf_h1/gclk5 ;
+No differences found.

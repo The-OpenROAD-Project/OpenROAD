@@ -5,32 +5,21 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO DPL-0006] Core area: 4.79 um^2, Instances area: 1.86 um^2, Utilization: 38.9%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
-[INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 8.
-Negotiation iteration 1: total overflow 8.
-Negotiation iteration 2: total overflow 8.
-Negotiation iteration 3: total overflow 8.
-[WARNING DPL-0700] Negotiation phase 1: overflow stuck at 8 for 3 consecutive iterations.
-Using old diamond search for 1 remaining illegal cells.
-diamond recovery: recovered 0/1 stuck cells.
-Negotiation iteration 400: total overflow 8.
-Negotiation iteration 401: total overflow 8.
-Negotiation iteration 402: total overflow 8.
-Negotiation iteration 403: total overflow 8.
-[WARNING DPL-0702] Negotiation phase 2: overflow stuck at 8 for 3 consecutive iterations. Using diamond search for 1 remaining illegal cells.
-diamond recovery: recovered 0/1 stuck cells.
-[WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 1
-Placement Analysis
----------------------------------
-total displacement          0.0 u
-average displacement        0.0 u
-max displacement            0.0 u
-original HPWL              61.5 u
-legalized HPWL             61.3 u
-delta HPWL                    0 %
-
-
-[WARNING DPL-0004] Placed in rows check failed (1).
+[INFO DPL-1101] Legalizing using diamond search.
+Movements Summary
+---------------------------------------
+Total cells:                       1
+Diamond Move Success:              0 (  0.00%)
+Diamond Move Failure:              1
+Rip-up and replace Success:        0 (  0.00% of diamond failures)
+Rip-up and replace Failure:        1
+Total Placement Failures:          1
+---------------------------------------
+[INFO DPL-0034] Detailed placement failed on the following 1 instances:
+[INFO DPL-0035]  _277_
+[ERROR DPL-0036] Detailed placement failed inside DPL.
+DPL-0036
+[WARNING DPL-0006] Site aligned check failed (1).
  _277_
 [ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
