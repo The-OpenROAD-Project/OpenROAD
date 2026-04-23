@@ -274,18 +274,10 @@ void RamGen::makeDecoderColumn(
 {
   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
 
-  // if (num_words == 2) {
-  //   for (int word = 0; word < num_words; ++word) {
-  //     decoder_output_nets[word] = addr_nets[word][0];
-  //   }
-  // }
-
   int layers = std::log2(num_words) - 1;
 
   for (int word = 0; word < num_words; ++word) {
     auto word_cell = std::make_unique<Cell>();
-    // dbNet* word_select_net
-    //     = makeNet(prefix, fmt::format("decoder_out{}", word));
     dbNet* prev_net = decoder_output_nets[word];
     for (int i = 0; i < layers; ++i) {
       dbNet* input_net = nullptr;
@@ -893,14 +885,6 @@ void RamGen::generate(const int mask_size,
   const int slices_per_word = word_size / mask_size;
   const std::string ram_name = fmt::format("RAM{}x{}", num_words, word_size);
 
-  // // error checking for read ports != 1 for current version of RamGen, edit
-  // // later for future changes
-  // if (read_ports != 1) {
-  //   logger_->error(
-  //       RAM, 25, "The ram generator currently only supports 1 read port.");
-  //   return;
-  // }
-
   logger_->info(RAM, 3, "Generating {}", ram_name);
 
   storage_cell_ = storage_cell;
@@ -940,9 +924,12 @@ void RamGen::generate(const int mask_size,
   // input bterms
   int num_inputs = std::ceil(std::log2(num_words));
 
+  // indices for creating BTerms
   int rw_idx = 0;
   int wr_idx = 0;
   int rd_idx = 0;
+
+  // indices for select nets
   int rd_sel_idx = 0;
   int wr_sel_idx = 0;
 
@@ -999,7 +986,6 @@ void RamGen::generate(const int mask_size,
           fmt::format("rw_sel_p{}", p), num_words, RamPortType::ReadWrite);
       read_select_nets[rd_sel_idx++] = write_select_nets[wr_sel_idx];
       ++wr_sel_idx;
-      // ++wr_sel_idx;
     } else if (p < wr_ports) {
       write_select_nets[wr_sel_idx] = makeSelectNets(
           fmt::format("wr_sel_p{}", p), num_words, RamPortType::WriteOnly);
@@ -1033,7 +1019,7 @@ void RamGen::generate(const int mask_size,
   }
 
   for (int row = 0; row < num_words; ++row) {
-    // extra select since we can only have one write port
+    // size of row_selects is total number of read ports plus the write port needed
     vector<dbNet*> row_selects(rd_total + 1);
     for (int p = 0; p < rw_ports + wr_ports; ++p) {
       row_selects[p] = write_select_nets[p][row];
@@ -1070,6 +1056,7 @@ void RamGen::generate(const int mask_size,
     }
   }
 
+  // indices for creating buffers
   int rd_buf_idx = 0;
   int wr_buf_idx = 0;
   // append buffer, decoder, and inverter columns per port
@@ -1080,7 +1067,7 @@ void RamGen::generate(const int mask_size,
                        num_words,
                        decoder_output_nets[p],
                        write_select_nets[wr_buf_idx++]);
-      ++rd_buf_idx;
+      ++rd_buf_idx; // so that next read port doesn't use the rw_select
     } else if (p < wr_ports) {
       makeBufferColumn(fmt::format("sel_buf_wr_p{}", p),
                        num_words,

@@ -13,7 +13,7 @@ generate_ram \
   -mask_size 8 \
   -word_size 8 \
   -num_words 8 \
-  -read_ports 1 \
+  -rw_ports 1 \
   -storage_cell sky130_fd_sc_hd__dfxtp_1 \
   -power_pin VPWR \
   -ground_pin VGND \
