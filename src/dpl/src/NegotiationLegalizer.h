@@ -182,7 +182,8 @@ class NegotiationLegalizer
   void runNegotiation(const std::vector<int>& illegalCells);
   int negotiationIter(std::vector<int>& activeCells,
                       int iter,
-                      bool updateHistory);
+                      bool updateHistory,
+                      bool print_row);
   void ripUp(int cell_idx);
   void place(int cell_idx, int x, int y);
   [[nodiscard]] std::pair<int, int> findBestLocation(int cell_idx,
@@ -269,6 +270,13 @@ class NegotiationLegalizer
   int max_iter_neg_{kMaxIterNeg};
   int horiz_window_{kHorizWindow};
   int current_iter_{0};  // updated at the start of each negotiationIter call
+
+  // Last-iteration stats, kept so runNegotiation can print the final row.
+  int last_iter_{-1};
+  int last_printed_iter_{-1};
+  int last_violations_{0};
+  int last_illegal_cells_{0};
+  int last_illegal_sites_{0};
 
   // Cells that actually changed position during the current negotiation
   // iteration. Passed to the debug observer so cells from prior iterations

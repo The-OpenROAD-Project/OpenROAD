@@ -33,12 +33,12 @@ Graphics::Graphics(Opendp* dp,
   gui::Gui::get()->registerRenderer(this);
 
   gui::Gui* gui = gui::Gui::get();
-  if (overflow_chart_ == nullptr) {
-    overflow_chart_ = gui->addChart(
-        "DPL Negotiation", "Iteration", {"Overflow"});
-    overflow_chart_->setXAxisFormat("%d");
-    overflow_chart_->setYAxisFormats({"%.0f"});
-    overflow_chart_->setYAxisMin({0.0});
+  if (violations_chart_ == nullptr) {
+    violations_chart_ = gui->addChart(
+        "DPL Negotiation", "Iteration", {"Violations", "Illegal Cells", "Illegal Sites"});
+    violations_chart_->setXAxisFormat("%d");
+    violations_chart_->setYAxisFormats({"%.0f", "%.0f", "%.0f"});
+    violations_chart_->setYAxisMin({0.0, 0.0, 0.0});
   }
 }
 
@@ -339,17 +339,23 @@ void Graphics::clearNegotiationSearchWindows()
   negotiation_search_windows_.clear();
 }
 
-void Graphics::addNegotiationOverflowPoint(int iter, int overflow)
+void Graphics::addNegotiationViolationsPoint(int iter,
+                                             int violations,
+                                             int illegal_count,
+                                             int illegal_site_count)
 {
-  if (overflow_chart_) {
-    overflow_chart_->addPoint(iter, {static_cast<double>(overflow)});
+  if (violations_chart_) {
+    violations_chart_->addPoint(iter,
+                                {static_cast<double>(violations),
+                                 static_cast<double>(illegal_count),
+                                 static_cast<double>(illegal_site_count)});
   }
 }
 
 void Graphics::addNegotiationPhase2Marker(int iter)
 {
-  if (overflow_chart_) {
-    overflow_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
+  if (violations_chart_) {
+    violations_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
   }
 }
 
