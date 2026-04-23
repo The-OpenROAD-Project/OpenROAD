@@ -422,16 +422,7 @@ Iteration | Resized | Buffers | Cloned Gates |   Area   |   WNS   |   TNS   | En
        30 |       0 |      69 |            0 |   +10.1% | -68.808 | -1711.372 | ctrl.state.out[2]$_DFF_P_/D
        40 |       0 |     107 |            0 |   +15.6% | -68.808 | -1451.085 | ctrl.state.out[2]$_DFF_P_/D
        50 |       0 |     151 |            0 |   +22.0% | -68.808 | -1451.085 | ctrl.state.out[2]$_DFF_P_/D
-       60 |       0 |      39 |            0 |   +29.3% | -58.289 | -1169.735 | dpath.b_reg.out[1]$_DFFE_PP_/D
-       70 |       0 |      79 |            0 |   +35.1% | -55.042 | -695.836 | dpath.b_reg.out[11]$_DFFE_PP_/D
-       80 |       0 |     131 |            0 |   +42.7% | -29.893 | -316.407 | dpath.a_reg.out[4]$_DFFE_PP_/D
-       90 |       0 |     206 |            0 |   +53.6% | -22.586 | -199.672 | ctrl.state.out[2]$_DFF_P_/D
-      100 |       0 |      10 |            0 |   +59.9% | -22.586 | -199.672 | ctrl.state.out[2]$_DFF_P_/D
-      110 |       0 |      80 |            0 |   +70.1% | -10.084 | -101.509 | dpath.b_reg.out[4]$_DFFE_PP_/D
-      120 |       0 |     160 |            0 |   +81.7% |  -7.518 | -14.716 | dpath.b_reg.out[12]$_DFFE_PP_/D
-      130 |       0 |     264 |            0 |   +96.9% |  41.395 |   0.000 | dpath.a_reg.out[6]$_DFFE_PP_/D
-      140 |       0 |      11 |            0 |  +109.3% |  69.917 |   0.000 | ctrl.state.out[2]$_DFF_P_/D
-    final |       0 |      16 |            0 |  +110.0% |  69.917 |   0.000 | ctrl.state.out[2]$_DFF_P_/D
+    final |       0 |      13 |            0 |   +25.5% | -68.808 | -1451.085 | ctrl.state.out[2]$_DFF_P_/D
 --------------------------------------------------------------------------------------
 [WARNING RSZ-0064] Unable to repair all hold checks within margin.
-[INFO RSZ-0032] Inserted 16 hold buffers.
+[INFO RSZ-0032] Inserted 13 hold buffers.

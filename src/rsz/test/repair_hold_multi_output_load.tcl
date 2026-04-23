@@ -48,8 +48,8 @@ estimate_parasitics -placement
 
 repair_timing -hold -allow_setup_violations \
   -hold_margin 124 \
-  -setup_margin -31000 \
+  -setup_margin -1000 \
   -max_buffer_percent 80 \
-  -max_passes 10000 \
-  -max_iterations 200000 \
+  -max_passes 3 \
+  -max_iterations 3 \
   -verbose
