@@ -124,12 +124,10 @@ git_override(
 bazel_dep(name = "orfs", dev_dependency = True)
 git_override(
     module_name = "orfs",
-    commit = "2f4de31a0f3f6402ca74887f67b75a9303c6e061",
+    commit = "454702182f4907f21c066a730011ac2c49d81f35",
     patch_strip = 1,
     patches = [
         "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
-        "//bazel/bazel-orfs-patches:orfs-preserve-tool-exe-env.patch",
-        "//bazel/bazel-orfs-patches:orfs-log-cmd-clock-fallback.patch",
         "//bazel/bazel-orfs-patches:orfs-variables-add-ARRAY-COLS-ROWS.patch",
         "//bazel/bazel-orfs-patches:orfs-genmetrics-tolerate-non-utf8.patch",
     ],
