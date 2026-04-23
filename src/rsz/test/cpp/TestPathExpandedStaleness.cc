@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
+#include <string>
+
 #include "SizeUpMove.hh"
 #include "ant/AntennaChecker.hh"
 #include "db_sta/dbNetwork.hh"
@@ -10,11 +12,13 @@
 #include "grt/GlobalRouter.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
+#include "odb/dbTypes.h"
 #include "rsz/Resizer.hh"
 #include "sta/Graph.hh"
 #include "sta/NetworkClass.hh"
 #include "sta/Path.hh"
 #include "sta/Sdc.hh"
+#include "sta/SdcClass.hh"
 #include "sta/Sta.hh"
 #include "stt/SteinerTreeBuilder.h"
 #include "tst/nangate45_fixture.h"
@@ -126,11 +130,12 @@ class StalePathTest : public tst::Nangate45Fixture
 // Regression for #10210 (stale Path* dereference).
 //
 // Flow:
-//   1. Capture drvr_path at nd1/ZN (terminal logic cell, stays alive).
+//   1. Capture drvr_path at nd1/ZN and snapshot prevPath() pointer + pin.
 //   2. Delete upstream b1 + updateTiming -> free b1/inv1 Path[] slots.
 //   3. Add new cone + clk2 + updateTiming -> recycle freed slots.
-//   4. Assert drvr_path->prevPath()->pin() now decodes to a stale pin
-//      (not nd1's real input).
+//   4. Assert stale-pointer signature: prevPath() returns the SAME raw
+//      pointer as before but pin() now decodes to different data (slot
+//      was freed + reused without STA refreshing prev_path_).
 //   5. Call SizeUpMove::doMove: pre-fix derefs stale prev -> SIGSEGV;
 //      post-fix reads prev_arc (liberty-stable) -> safe early-return.
 TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
@@ -138,12 +143,16 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
   sta::Network* network = sta_->network();
   sta::Graph* graph = sta_->ensureGraph();
 
-  // 1. Capture drvr_path at nd1/ZN.
+  // 1. Capture drvr_path at nd1/ZN and snapshot prev identity.
   sta::Instance* nd1 = db_network_->dbToSta(block_->findInst("nd1"));
   sta::Path* drvr_path = sta_->vertexWorstArrivalPath(
       graph->pinDrvrVertex(network->findPin(nd1, "ZN")), sta::MinMax::max());
   ASSERT_NE(drvr_path, nullptr);
   ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
+  const sta::Path* prev_before = drvr_path->prevPath();
+  ASSERT_NE(prev_before, nullptr);
+  const std::string prev_pin_before
+      = network->pathName(prev_before->pin(sta_.get()));
 
   // 2. Free upstream Path[] slots.
   sta_->deleteInstance(db_network_->dbToSta(block_->findInst("b1")));
@@ -185,14 +194,17 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
   makeClockOn("clk2", new_bt);
   sta_->updateTiming(true);
 
-  // 4. Drvr still decodes to nd1/ZN (nd1 survived), but prev slot was
-  // recycled: prev_pin is not one of nd1's real inputs (nd1/A1, nd1/A2).
+  // 4. Stale-pointer signature: same raw prev pointer, different decode.
   ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
-  const sta::Path* prev = drvr_path->prevPath();
-  ASSERT_NE(prev, nullptr);
-  const std::string prev_pin = network->pathName(prev->pin(sta_.get()));
-  EXPECT_TRUE(prev_pin != "nd1/A1" && prev_pin != "nd1/A2")
-      << "prev slot should be recycled; got prev_pin=" << prev_pin;
+  const sta::Path* prev_after = drvr_path->prevPath();
+  ASSERT_NE(prev_after, nullptr);
+  EXPECT_EQ(prev_after, prev_before)
+      << "stale raw pointer: prev_path_ should be unchanged in address";
+  const std::string prev_pin_after
+      = network->pathName(prev_after->pin(sta_.get()));
+  EXPECT_NE(prev_pin_after, prev_pin_before)
+      << "but slot content should differ after free+reuse. before="
+      << prev_pin_before << " after=" << prev_pin_after;
 
   // 5. Pre-fix SIGSEGV on stale prev; post-fix safe early-return.
   rsz::SizeUpMove size_up_move(&resizer_);
