@@ -37,6 +37,10 @@ COMPULSORY_TESTS = [
 
 ALL_TESTS = COMPULSORY_TESTS
 
+MEDIUM_TESTS = [
+    "aes_genetic",
+]
+
 filegroup(
     name = "regression_resources",
     # Dependencies could be specified more narrowly per test case,
@@ -124,6 +128,7 @@ filegroup(
 [
     regression_test(
         name = test_name,
+        size = "medium" if test_name in MEDIUM_TESTS else "small",
         data = [":" + test_name + "_resources"],
         tags = [],
         visibility = ["//visibility:public"],
