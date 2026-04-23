@@ -232,7 +232,8 @@ class TileGenerator
   using DebugOverlayCallback
       = std::function<void(std::vector<unsigned char>& image,
                            const odb::Rect& dbu_tile,
-                           double pixels_per_dbu)>;
+                           double pixels_per_dbu,
+                           bool debug_live)>;
   // Install (or clear with `{}`) the debug-overlay callback.  Global
   // process state; installed by WebServer on serve() and cleared on
   // shutdown.
@@ -312,7 +313,8 @@ class TileGenerator
   // above for rationale.
   void drawRendererOverlay(std::vector<unsigned char>& image,
                            const odb::Rect& dbu_tile,
-                           double scale) const;
+                           double scale,
+                           bool debug_live) const;
 
   void drawRouteGuides(std::vector<unsigned char>& image,
                        const std::set<uint32_t>& net_ids,

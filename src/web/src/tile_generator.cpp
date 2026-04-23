@@ -1575,7 +1575,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // the gui::Gui::get() access itself.  Keeping Gui:: references
       // out of tile_generator means test executables that link libweb
       // don't transitively need gui.a / ord.a.
-      drawRendererOverlay(image_buffer, dbu_tile, scale);
+      drawRendererOverlay(image_buffer, dbu_tile, scale, vis.debug_live);
     }
   }
 
@@ -2073,13 +2073,14 @@ void TileGenerator::setDebugOverlayCallback(DebugOverlayCallback callback)
 
 void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
                                         const odb::Rect& dbu_tile,
-                                        const double scale) const
+                                        const double scale,
+                                        const bool debug_live) const
 {
   auto& callback = getDebugOverlayCallback();
   if (!callback) {
     return;
   }
-  callback(image, dbu_tile, scale);
+  callback(image, dbu_tile, scale, debug_live);
 }
 
 // Rasterize a single WebPainter's recorded DrawOps into a pixel buffer.

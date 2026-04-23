@@ -130,7 +130,8 @@ void WebServer::serve(int port, const std::string& doc_root)
         [weak_gen = std::weak_ptr<TileGenerator>(generator_),
          hook = viewer_hook_.get()](std::vector<unsigned char>& image,
                                     const odb::Rect& dbu_tile,
-                                    double scale) {
+                                    double scale,
+                                    bool debug_live) {
           if (hook == nullptr) {
             return;
           }
@@ -138,7 +139,7 @@ void WebServer::serve(int port, const std::string& doc_root)
           if (!gen) {
             return;
           }
-          if (!hook->isPaused()) {
+          if (!debug_live && !hook->isPaused()) {
             return;
           }
           for (gui::Renderer* renderer : gui::Gui::get()->renderers()) {
