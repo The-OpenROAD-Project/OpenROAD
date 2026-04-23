@@ -4,6 +4,7 @@
 #include "LoggerCommon.h"
 
 #include <cstdint>
+#include <source_location>
 #include <string>
 
 #include "utl/Logger.h"
@@ -32,7 +33,7 @@ void info(utl::ToolId tool, int id, const char* msg)
 void warn(utl::ToolId tool,
           int id,
           const char* msg,
-          const std::source_location loc)
+          std::source_location loc)
 {
   Logger* logger = getLogger();
   logger->warn(tool, id, utl::LogMessage{"{}", loc}, msg);
@@ -41,7 +42,7 @@ void warn(utl::ToolId tool,
 void error(utl::ToolId tool,
            int id,
            const char* msg,
-           const std::source_location loc)
+           std::source_location loc)
 {
   Logger* logger = getLogger();
   logger->error(tool, id, utl::LogMessage{"{}", loc}, msg);
@@ -50,7 +51,7 @@ void error(utl::ToolId tool,
 void critical(utl::ToolId tool,
               int id,
               const char* msg,
-              const std::source_location loc)
+              std::source_location loc)
 {
   Logger* logger = getLogger();
   logger->critical(tool, id, utl::LogMessage{"{}", loc}, msg);

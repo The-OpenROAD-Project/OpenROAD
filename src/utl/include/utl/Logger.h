@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "spdlog/common.h"
 #include "spdlog/details/os.h"
 #include "spdlog/fmt/fmt.h"
 #include "spdlog/fmt/ostr.h"
@@ -167,7 +168,10 @@ class Logger
   }
 
   template <typename... Args>
-  void info(ToolId tool, int id, LogMessage log_message, const Args&... args)
+  void info(ToolId tool,
+            int id,
+            const LogMessage& log_message,
+            const Args&... args)
   {
     log(tool,
         spdlog::level::level_enum::info,
@@ -178,7 +182,10 @@ class Logger
   }
 
   template <typename... Args>
-  void warn(ToolId tool, int id, LogMessage log_message, const Args&... args)
+  void warn(ToolId tool,
+            int id,
+            const LogMessage& log_message,
+            const Args&... args)
   {
     warning_count_++;
     log(tool,

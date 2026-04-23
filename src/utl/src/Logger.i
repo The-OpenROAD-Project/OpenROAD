@@ -32,9 +32,9 @@ using ord::getLogger;
 %include "../../Exception.i"
 %include "stdint.i"
 %import <std_string.i>
-%ignore utl::error(utl::ToolId, int, const char*, const std::source_location);
-%ignore utl::warn(utl::ToolId, int, const char*, const std::source_location);
-%ignore utl::critical(utl::ToolId, int, const char*, const std::source_location);
+%ignore utl::error(utl::ToolId, int, const char*, std::source_location);
+%ignore utl::warn(utl::ToolId, int, const char*, std::source_location);
+%ignore utl::critical(utl::ToolId, int, const char*, std::source_location);
 %include "LoggerCommon.h"
 
 %inline %{

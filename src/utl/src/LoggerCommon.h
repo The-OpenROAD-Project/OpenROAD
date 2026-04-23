@@ -14,15 +14,15 @@ void info(utl::ToolId tool, int id, const char* msg);
 void warn(utl::ToolId tool,
           int id,
           const char* msg,
-          const std::source_location loc = std::source_location::current());
+          std::source_location loc = std::source_location::current());
 void error(utl::ToolId tool,
            int id,
            const char* msg,
-           const std::source_location loc = std::source_location::current());
+           std::source_location loc = std::source_location::current());
 void critical(utl::ToolId tool,
               int id,
               const char* msg,
-              const std::source_location loc = std::source_location::current());
+              std::source_location loc = std::source_location::current());
 void open_metrics(const char* metrics_filename);
 void close_metrics(const char* metrics_filename);
 void metric(const char* metric, const char* value);
