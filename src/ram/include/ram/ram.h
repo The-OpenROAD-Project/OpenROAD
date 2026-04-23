@@ -182,6 +182,12 @@ class RamGen
     const std::vector<odb::dbNet*>& read_select_nets, 
     const std::vector<odb::dbNet*>& write_select_nets);
 
+
+void makeBufferColumn(const std::string& prefix,
+                              const int num_words,
+                              const std::vector<odb::dbNet*>& decoder_output_nets,
+                              const std::vector<odb::dbNet*>& select_nets);
+
   std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
                                     int num_word,
                                     int read_port,
@@ -190,6 +196,14 @@ class RamGen
 
   std::vector<odb::dbNet*> selectNets(const std::string& prefix,
                                       int read_ports);
+
+  std::vector<odb::dbNet*> makeDecoderOutputNets(
+    const std::string& prefix,
+    const int num_words);
+
+  
+std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix, const
+  int num_words, RamPortType port_type);
 
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;

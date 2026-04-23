@@ -260,106 +260,127 @@ std::unique_ptr<Layout> RamGen::generateTapColumn(const int num_words,
   return tapcell_layout;
 }
 
-// void RamGen::makeDecoderColumn(
-//     const std::string& prefix,
-//     const int num_words,
-//     const std::vector<std::vector<dbNet*>>& addr_nets, 
-//     const std::vector<dbNet*>& decoder_output_nets)
-// {
-//   auto decoder_layout = std::make_unique<Layout>(odb::vertical);
+void RamGen::makeDecoderColumn(
+    const std::string& prefix,
+    const int num_words,
+    const std::vector<std::vector<dbNet*>>& addr_nets,
+    const std::vector<dbNet*>& decoder_output_nets)
+{
+  auto decoder_layout = std::make_unique<Layout>(odb::vertical);
 
-//   // if (num_words == 2) {
-//   //   for (int word = 0; word < num_words; ++word) {
-//   //     decoder_output_nets[word] = addr_nets[word][0];
-//   //   }
-//   // }
+  // if (num_words == 2) {
+  //   for (int word = 0; word < num_words; ++word) {
+  //     decoder_output_nets[word] = addr_nets[word][0];
+  //   }
+  // }
 
-//   int layers = std::log2(num_words) - 1;
+  int layers = std::log2(num_words) - 1;
 
-//   for (int word = 0; word < num_words; ++word) {
-//     auto word_cell = std::make_unique<Cell>();
-//     // dbNet* word_select_net
-//     //     = makeNet(prefix, fmt::format("decoder_out{}", word));
-//     dbNet* prev_net = decoder_output_nets[word];
-//     for (int i = 0; i < layers; ++i) {
-//       dbNet* input_net = nullptr;
-//       if (i == layers - 1) {
-//         input_net = addr_nets[word][i + 1];
-//       } else {
-//         input_net = makeNet(prefix, fmt::format("layer_in{}", i));
-//       }
-//       makeInst(word_cell.get(),
-//                prefix,
-//                fmt::format("and_layer{}", i),
-//                and2_cell_,
-//                {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][i]},
-//                 {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
-//                 {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
-//       prev_net = input_net;
-//     }
-//     decoder_layout->addCell(std::move(word_cell));
-//   }
-//   ram_grid_.addLayout(std::move(decoder_layout));
-// }
+  for (int word = 0; word < num_words; ++word) {
+    auto word_cell = std::make_unique<Cell>();
+    // dbNet* word_select_net
+    //     = makeNet(prefix, fmt::format("decoder_out{}", word));
+    dbNet* prev_net = decoder_output_nets[word];
+    for (int i = 0; i < layers; ++i) {
+      dbNet* input_net = nullptr;
+      if (i == layers - 1) {
+        input_net = addr_nets[word][i + 1];
+      } else {
+        input_net = makeNet(prefix, fmt::format("layer_in{}", i));
+      }
+      makeInst(word_cell.get(),
+               prefix,
+               fmt::format("and_layer{}", i),
+               and2_cell_,
+               {{and2_ports_[{PortRoleType::DataIn, 0}], addr_nets[word][i]},
+                {and2_ports_[{PortRoleType::DataIn, 1}], input_net},
+                {and2_ports_[{PortRoleType::DataOut, 0}], prev_net}});
+      prev_net = input_net;
+    }
+    decoder_layout->addCell(std::move(word_cell));
+  }
+  ram_grid_.addLayout(std::move(decoder_layout));
+}
 
-// void RamGen::makeSelectColumn(
-//     const std::string& prefix,
-//     const int num_words,
-//     RamPortType port_type,
-//     dbNet* write_enable,
-//     const std::vector<dbNet*>& decoder_output_nets, 
-//     const std::vector<dbNet*>& read_select_nets, 
-//     const std::vector<dbNet*>& write_select_nets)
-// {
-//   auto select_layout = std::make_unique<Layout>(odb::vertical);
-//   if (port_type == RamPortType::ReadOnly) {
-//     for (int word = 0; word < num_words; ++word) {
-//       auto sel_cell = std::make_unique<Cell>();
-//       makeInst(sel_cell.get(),
-//              prefix,
-//              fmt::format("select_inv_{}", word),
-//              inv_cell_,
-//              {{inv_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
-//               {inv_ports_[{PortRoleType::DataOut, 0}], read_select_nets[word]}});
-//       select_layout->addCell(std::move(sel_cell));
-//     }
-//     port_selects.push_back(select_b_nets);
-//   } else if (port_type == RamPortType::WriteOnly) {
-//     for (int word = 0; word < num_words; ++word) {
-//       auto sel_cell = std::make_unique<Cell>();
-//       makeInst(sel_cell.get(),
-//              prefix,
-//              fmt::format("we_and{}", word),
-//              and2_cell_,
-//              {{and2_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
-//             {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
-//             {and2_ports_[{PortRoleType::DataOut, 0}], write_select_nets[word]}});
-//       select_layout->addCell(std::move(sel_cell));
-//     }
-//     port_selects.push_back(we_nets);
+void RamGen::makeBufferColumn(const std::string& prefix,
+                              const int num_words,
+                              const std::vector<dbNet*>& decoder_output_nets,
+                              const std::vector<dbNet*>& select_nets)
+{
+  auto buffer_layout = std::make_unique<Layout>(odb::vertical);
+  for (int word = 0; word < num_words; ++word) {
+    auto buf_cell = std::make_unique<Cell>();
+    makeInst(
+        buf_cell.get(),
+        prefix,
+        fmt::format("sel_buf_{}", word),
+        buffer_cell_,
+        {{buffer_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
+         {buffer_ports_[{PortRoleType::DataOut, 0}], select_nets[word]}});
+    buffer_layout->addCell(std::move(buf_cell));
+  }
+  ram_grid_.addLayout(std::move(buffer_layout));
+}
 
-//   } else if (port_type == RamPortType::ReadWrite) {
-//     for (int word = 0; word < num_words; ++word) {
-//       auto sel_cell = std::make_unique<Cell>();
-//       makeInst(sel_cell.get(),
-//              prefix,
-//              fmt::format("we_and_{}", word),
-//              and2_cell_,
-//              {{and2_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
-//             {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
-//             {and2_ports_[{PortRoleType::DataOut, 0}], write_select_nets[word]}});
-      
-//       makeInst(sel_cell.get(),
-//              prefix,
-//              fmt::format("select_inv_{}", word),
-//              inv_cell_,
-//              {{inv_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
-//               {inv_ports_[{PortRoleType::DataOut, 0}], read_select_nets[word]}});
-//       select_layout->addCell(std::move(sel_cell));
-//     }
-//   }
-//   ram_grid_.addLayout(std::move(select_layout));
-// }
+void RamGen::makeSelectColumn(const std::string& prefix,
+                              const int num_words,
+                              RamPortType port_type,
+                              dbNet* write_enable,
+                              const std::vector<dbNet*>& decoder_output_nets,
+                              const std::vector<dbNet*>& read_select_nets,
+                              const std::vector<dbNet*>& write_select_nets)
+{
+  auto select_layout = std::make_unique<Layout>(odb::vertical);
+  if (port_type == RamPortType::ReadOnly) {
+    for (int word = 0; word < num_words; ++word) {
+      auto sel_cell = std::make_unique<Cell>();
+      makeInst(
+          sel_cell.get(),
+          prefix,
+          fmt::format("select_inv_{}", word),
+          inv_cell_,
+          {{inv_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
+           {inv_ports_[{PortRoleType::DataOut, 0}], read_select_nets[word]}});
+      select_layout->addCell(std::move(sel_cell));
+    }
+  } else if (port_type == RamPortType::WriteOnly) {
+    for (int word = 0; word < num_words; ++word) {
+      auto sel_cell = std::make_unique<Cell>();
+      makeInst(
+          sel_cell.get(),
+          prefix,
+          fmt::format("we_and{}", word),
+          and2_cell_,
+          {{and2_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
+           {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
+           {and2_ports_[{PortRoleType::DataOut, 0}], write_select_nets[word]}});
+      select_layout->addCell(std::move(sel_cell));
+    }
+
+  } else if (port_type == RamPortType::ReadWrite) {
+    for (int word = 0; word < num_words; ++word) {
+      auto sel_cell = std::make_unique<Cell>();
+      makeInst(
+          sel_cell.get(),
+          prefix,
+          fmt::format("we_and_{}", word),
+          and2_cell_,
+          {{and2_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
+           {and2_ports_[{PortRoleType::DataIn, 1}], write_enable},
+           {and2_ports_[{PortRoleType::DataOut, 0}], write_select_nets[word]}});
+
+      makeInst(
+          sel_cell.get(),
+          prefix,
+          fmt::format("select_inv_{}", word),
+          inv_cell_,
+          {{inv_ports_[{PortRoleType::DataIn, 0}], decoder_output_nets[word]},
+           {inv_ports_[{PortRoleType::DataOut, 0}], read_select_nets[word]}});
+      select_layout->addCell(std::move(sel_cell));
+    }
+  }
+  ram_grid_.addLayout(std::move(select_layout));
+}
 
 std::unique_ptr<Cell> RamGen::makeDecoder(
     const std::string& prefix,
@@ -420,14 +441,26 @@ std::vector<dbNet*> RamGen::selectNets(const std::string& prefix,
   return select_nets;
 }
 
-// std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix, const int num_words, RamPortType port_type) {
-//   std::vector<dbNet*> select_nets(num_words);
-//   const std::string net_prefix = (port_type == RamPortType::ReadOnly) ? "rd_select" : "wr_select";
-//   for (int i = 0; i < num_words; ++i) {
-//     select_nets[i] = makeNet(prefix, fmt::format("{}{}", net_prefix, i));
-//   } 
-//   return select_nets;
-// }
+std::vector<dbNet*> RamGen::makeDecoderOutputNets(
+    const std::string& prefix,
+    const int num_words)
+{
+  std::vector<dbNet*> decoder_output_nets(num_words);
+  for (int word = 0; word < num_words; ++word) {
+    decoder_output_nets[word] = makeNet(prefix, fmt::format("w{}", word));
+  }
+  return decoder_output_nets;
+}
+
+std::vector<dbNet*> RamGen::makeSelectNets(const std::string& prefix, const
+int num_words, RamPortType port_type) {
+  std::vector<dbNet*> select_nets(num_words);
+  const std::string net_prefix = (port_type == RamPortType::ReadOnly) ?
+  "rd_select" : "wr_select"; for (int i = 0; i < num_words; ++i) {
+    select_nets[i] = makeNet(prefix, fmt::format("{}{}", net_prefix, i));
+  }
+  return select_nets;
+}
 
 dbMaster* RamGen::findMaster(
     const std::function<bool(sta::LibertyPort*)>& match,
