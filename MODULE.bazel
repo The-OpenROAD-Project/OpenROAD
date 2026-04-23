@@ -131,6 +131,7 @@ git_override(
         "//bazel/bazel-orfs-patches:orfs-preserve-tool-exe-env.patch",
         "//bazel/bazel-orfs-patches:orfs-log-cmd-clock-fallback.patch",
         "//bazel/bazel-orfs-patches:orfs-variables-add-ARRAY-COLS-ROWS.patch",
+        "//bazel/bazel-orfs-patches:orfs-genmetrics-tolerate-non-utf8.patch",
     ],
     remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
 )

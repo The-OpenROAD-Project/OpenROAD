@@ -1,5 +1,8 @@
 """BUILD file for yosys-slang plugin (overlaid on git_repository)."""
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 # --- Generated export header (static build = no-op) ---
@@ -99,7 +102,10 @@ cc_library(
         "third_party/fmt/src/os.cc",
     ],
     hdrs = glob(["third_party/fmt/include/fmt/*.h"]),
-    copts = ["-fPIC", "-std=c++20"],
+    copts = [
+        "-fPIC",
+        "-std=c++20",
+    ],
     includes = ["third_party/fmt/include"],
 )
 
@@ -115,9 +121,9 @@ cc_library(
         ":AllSyntax.cpp",
         ":DiagCode.cpp",
         ":KnownSystemName.cpp",
-        ":VersionInfo.cpp",
         ":SyntaxClone.cpp",
         ":TokenKind.cpp",
+        ":VersionInfo.cpp",
     ],
     hdrs = glob([
         "third_party/slang/include/**/*.h",
@@ -140,13 +146,13 @@ cc_library(
         ":slang/diagnostics/StatementsDiags.h",
         ":slang/diagnostics/SysFuncsDiags.h",
         ":slang/diagnostics/TypesDiags.h",
+        ":slang/parsing/KnownSystemName.h",
+        ":slang/parsing/TokenKind.h",
+        ":slang/slang_export.h",
         ":slang/syntax/AllSyntax.h",
         ":slang/syntax/CSTJsonVisitorGen.h",
         ":slang/syntax/SyntaxFwd.h",
         ":slang/syntax/SyntaxKind.h",
-        ":slang/parsing/TokenKind.h",
-        ":slang/parsing/KnownSystemName.h",
-        ":slang/slang_export.h",
     ],
     copts = [
         "-fPIC",
@@ -161,8 +167,8 @@ cc_library(
         'SLANG_VERSION_HASH=\\"unknown\\"',
     ],
     includes = [
-        "third_party/slang/include",
         "third_party/slang/external",
+        "third_party/slang/include",
         "third_party/slang/source/ast/builtins",
     ],
     deps = [":fmt"],
@@ -182,7 +188,10 @@ HEADER""",
 
 cc_binary(
     name = "slang.so",
-    srcs = glob(["src/*.cc", "src/*.h"]) + [":version.h"],
+    srcs = glob([
+        "src/*.cc",
+        "src/*.h",
+    ]) + [":version.h"],
     copts = [
         "-fPIC",
         "-std=c++20",

@@ -28,7 +28,7 @@ def _merge_yosys_share_impl(ctx):
 merge_yosys_share = rule(
     implementation = _merge_yosys_share_impl,
     attrs = {
-        "share": attr.label(mandatory = True),
         "plugins": attr.label_list(allow_files = True),
+        "share": attr.label(mandatory = True),
     },
 )

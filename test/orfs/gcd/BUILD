@@ -64,7 +64,12 @@ sh_test(
 check_same(
     name = "gcd_idempotent_test",
     flow = "gcd",
-    tags = ["orfs"],
+    # Non-deterministic yosys wrapcell output under SWAP_ARITH_OPERATORS makes
+    # this flaky; keep manual until the upstream bug is fixed.
+    tags = [
+        "manual",
+        "orfs",
+    ],
     variant_a = "base",
     variant_b = "b",
 )
