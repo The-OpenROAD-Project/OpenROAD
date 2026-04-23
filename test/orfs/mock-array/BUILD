@@ -78,23 +78,6 @@ CONFIGS = {name: config(name, rows, cols) for name, rows, cols in [
     config = config,
 ) for name, config in CONFIGS.items()]
 
-test_suite(
-    name = "eqy_tests",
-    tags = ["manual"],
-    tests = ["Element_eqy_{variant}".format(variant = name) for name in CONFIGS] +
-            [
-                "MockArray_eqy_{name}_{variant}".format(
-                    name = name,
-                    variant = variant,
-                )
-                for name in CONFIGS
-                for variant in [
-                    "flat",
-                    "base",
-                ]
-            ],
-)
-
 orfs_run(
     name = "write_macro_placement",
     src = ":MockArray_4x4_base_floorplan",

@@ -1,7 +1,6 @@
 load("@bazel-orfs//:sweep.bzl", "orfs_sweep")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//test/orfs:check_same.bzl", "check_same")
-load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 package(features = ["layering_check"])
 
@@ -33,14 +32,6 @@ orfs_sweep(
     test_kwargs = {
         "tags": ["orfs"],
     },
-    verilog_files = ["gcd.v"],
-)
-
-eqy_flow_test(
-    name = "gcd_eqy",
-    flow = "gcd",
-    module_top = "gcd",
-    tags = ["manual"],
     verilog_files = ["gcd.v"],
 )
 

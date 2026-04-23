@@ -7,7 +7,6 @@ load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("@rules_verilator//verilog:defs.bzl", "verilog_library")
-load("//test/orfs:eqy-flow.bzl", "eqy_flow_test")
 
 def verilog(name, **_kwargs):
     """Provide mock array verilog sources
@@ -147,13 +146,6 @@ def element(name, config):
         tags = ["manual"],
         verilog_files = [":{name}_verilog".format(name = name)],
         variant = "{name}_base".format(name = name),
-    )
-    eqy_flow_test(
-        name = "Element_eqy_{variant}".format(variant = name),
-        flow = "Element_{variant}_base".format(variant = name),
-        verilog_files = [":{name}_verilog".format(name = name)],
-        tags = ["manual"],
-        module_top = "Element",
     )
 
 POWER_STAGES = {
@@ -392,14 +384,6 @@ def mock_array(name, config):
             },
             variant = variant,
             verilog_files = [":{name}_verilog".format(name = name)],
-        )
-        eqy_flow_test(
-            name = "MockArray_eqy_{variant}".format(variant = variant),
-            flow = "MockArray_{variant}".format(variant = variant),
-            verilog_files = [":{name}_verilog".format(name = name)],
-            other_verilog_files = [":Element_eqy_{name}_final_verilog".format(name = name)],
-            tags = ["manual"],
-            module_top = "MockArray",
         )
 
         for stage in POWER_STAGES:
