@@ -75,9 +75,7 @@ ExtendedTechnologyMapping::extractLogicToMockturtle(
 
   cut::LogicExtractorFactory logic_extractor(sta, logger);
   for (sta::Vertex* endpoint : sta->endpoints()) {
-    if (network->direction(endpoint->pin())->isAnyInput()) {
-      logic_extractor.AppendEndpoint(endpoint);
-    }
+    logic_extractor.AppendEndpoint(endpoint);
   }
 
   cut::LogicCut cut = logic_extractor.BuildLogicCut(tech_lib);

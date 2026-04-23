@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
+#include <concepts>
 
 #include "cut/abc_library_factory.h"
 #include "cut/logic_cut.h"
@@ -96,8 +97,13 @@ class LogicExtractorFactory
   std::vector<sta::Vertex*> AddMissingVertices(
       std::vector<sta::Vertex*>& cut_vertices,
       T& library);
-  std::vector<sta::Vertex*> AddMisingPrimaryIO(
-      std::vector<sta::Vertex*>& cut_vertices);
+  template <std::predicate<sta::Pin*> T>
+  std::vector<sta::Pin*> AddMisingTopIO(
+      std::vector<sta::Pin*>& pins, T pred);
+  std::vector<sta::Pin*> AddMisingPrimaryInputs(
+      std::vector<sta::Pin*>& primary_inputs);
+  std::vector<sta::Pin*> AddMisingPrimaryOutputs(
+      std::vector<sta::Pin*>& primary_outputs);
 
   std::vector<sta::Vertex*> endpoints_;
   sta::dbSta* open_sta_;
@@ -185,13 +191,18 @@ LogicCut LogicExtractorFactory::BuildLogicCut(T& library)
   std::vector<sta::Vertex*> cut_vertices = GetCutVertices(supported_cells);
   // Dealing with constant cells 1/0 and disabled timing paths.
   cut_vertices = AddMissingVertices(cut_vertices, library);
-  // calling this here will again result in "[ERROR CUT-0052] Driver pin not
-  // found: ibex_core" cut_vertices = AddMisingPrimaryIO(cut_vertices);
 
   std::vector<sta::Pin*> primary_inputs = GetPrimaryInputs(cut_vertices);
   std::vector<sta::Pin*> primary_outputs = GetPrimaryOutputs(cut_vertices);
   sta::InstanceSet cut_instances
       = GetCutInstances(cut_vertices, supported_cells);
+
+  if constexpr (is_mockturtle_library_v<T>) {
+    // sometimes part of top I/O is missing, causing errors when mockturtle is used
+    primary_inputs = AddMisingPrimaryInputs(primary_inputs);
+    primary_outputs = AddMisingPrimaryOutputs(primary_outputs);
+  }
+  
 
   // Remove primary outputs who are undriven. This can happen when a flop
   // feeds into another flop where the logic cone is essentially just a wire.
@@ -290,6 +301,27 @@ std::vector<sta::Vertex*> LogicExtractorFactory::AddMissingVertices(
       cut_vertex_set.insert(constant_vertex);
     }
   }
+  return result;
+}
+
+template <std::predicate<sta::Pin*> T>
+std::vector<sta::Pin*> LogicExtractorFactory::AddMisingTopIO(
+    std::vector<sta::Pin*>& pins, T pred)
+{
+  std::vector<sta::Pin*> result(pins.begin(), pins.end());
+  std::unordered_set<sta::Pin*> used_pins(pins.begin(), pins.end());
+  auto network = open_sta_->getDbNetwork();
+
+  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
+      network->pinIterator(network->topInstance()));
+  while (pin_iterator->hasNext()) {
+    sta::Pin* pin = pin_iterator->next();
+    if (pred(pin) && !used_pins.contains(pin)) {
+      result.push_back(pin);
+      used_pins.insert(pin);
+    }
+  }
+
   return result;
 }
 

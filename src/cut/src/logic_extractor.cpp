@@ -154,18 +154,6 @@ std::vector<sta::Pin*> LogicExtractorFactory::GetPrimaryInputs(
   }
 
   std::vector<sta::Pin*> primary_inputs;
-
-  // Add top's inputs
-  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
-      open_sta_->getDbNetwork()->pinIterator(
-          open_sta_->getDbNetwork()->topInstance()));
-  while (pin_iterator->hasNext()) {
-    sta::Pin* pin = pin_iterator->next();
-    if (open_sta_->getDbNetwork()->direction(pin)->isAnyInput()) {
-      primary_inputs.push_back(pin);
-    }
-  }
-
   for (sta::Vertex* vertex : cut_vertices) {
     // If the pins in the cutset are primary outputs don't call it
     // a primary input
@@ -340,27 +328,20 @@ std::vector<sta::Net*> LogicExtractorFactory::ConvertIoPinsToNets(
   return result;
 }
 
-std::vector<sta::Vertex*> LogicExtractorFactory::AddMisingPrimaryIO(
-    std::vector<sta::Vertex*>& cut_vertices)
+std::vector<sta::Pin*> LogicExtractorFactory::AddMisingPrimaryInputs(
+    std::vector<sta::Pin*>& primary_inputs)
 {
-  std::vector<sta::Vertex*> result(cut_vertices.begin(), cut_vertices.end());
-  std::unordered_set<sta::Vertex*> used_vertices(cut_vertices.begin(),
-                                                 cut_vertices.end());
-  auto network = open_sta_->getDbNetwork();
+  return AddMisingTopIO(primary_inputs, [&](sta::Pin* pin) {
+    return open_sta_->network()->direction(pin)->isInput();
+  });
+}
 
-  auto pin_iterator = std::unique_ptr<sta::InstancePinIterator>(
-      network->pinIterator(network->topInstance()));
-  while (pin_iterator->hasNext()) {
-    sta::Pin* pin = pin_iterator->next();
-    sta::VertexId vertex_id = network->vertexId(pin);
-    sta::Vertex* vertex = network->graph()->vertex(vertex_id);
-    if (!used_vertices.contains(vertex)) {
-      result.push_back(vertex);
-      used_vertices.insert(vertex);
-    }
-  }
-
-  return result;
+std::vector<sta::Pin*> LogicExtractorFactory::AddMisingPrimaryOutputs(
+    std::vector<sta::Pin*>& primary_outputs)
+{
+  return AddMisingTopIO(primary_outputs, [&](sta::Pin* pin) {
+    return open_sta_->network()->direction(pin)->isOutput();
+  });
 }
 
 }  // namespace cut
