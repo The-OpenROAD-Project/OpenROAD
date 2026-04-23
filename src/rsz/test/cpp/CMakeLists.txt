@@ -28,6 +28,35 @@ gtest_discover_tests(TestBufRem1
 add_dependencies(build_and_test TestBufRem1
 )
 
+add_executable(TestPathExpandedStaleness TestPathExpandedStaleness.cc)
+target_link_libraries(TestPathExpandedStaleness
+        OpenSTA
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        dbSta_lib
+        utl_lib
+        rsz_lib
+        grt_lib
+        dpl_lib
+        stt_lib
+        odb
+        tst
+        ${TCL_LIBRARY}
+)
+
+target_include_directories(TestPathExpandedStaleness
+    PRIVATE
+      ${PROJECT_SOURCE_DIR}/src/rsz/src
+)
+
+gtest_discover_tests(TestPathExpandedStaleness
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
+add_dependencies(build_and_test TestPathExpandedStaleness
+)
+
 add_executable(TestBufferRemoval2 TestBufferRemoval2.cc)
 target_link_libraries(TestBufferRemoval2
         OpenSTA
