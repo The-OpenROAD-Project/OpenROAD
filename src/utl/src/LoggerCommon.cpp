@@ -30,19 +30,13 @@ void info(utl::ToolId tool, int id, const char* msg)
   logger->info(tool, id, "{}", msg);
 }
 
-void warn(utl::ToolId tool,
-          int id,
-          const char* msg,
-          std::source_location loc)
+void warn(utl::ToolId tool, int id, const char* msg, std::source_location loc)
 {
   Logger* logger = getLogger();
   logger->warn(tool, id, utl::LogMessage{"{}", loc}, msg);
 }
 
-void error(utl::ToolId tool,
-           int id,
-           const char* msg,
-           std::source_location loc)
+void error(utl::ToolId tool, int id, const char* msg, std::source_location loc)
 {
   Logger* logger = getLogger();
   logger->error(tool, id, utl::LogMessage{"{}", loc}, msg);
