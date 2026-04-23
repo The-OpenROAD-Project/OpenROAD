@@ -186,7 +186,6 @@ COMPULSORY_TESTS = [
     "read_abstract_lef",
     "read_3dbv",
     "read_3dbx",
-    "read_3dbx-fail",
     "read_db",
     "read_def",
     "read_def58",
@@ -221,6 +220,7 @@ PASSFAIL_TESTS = [
     # NOTE: cpp_tests excluded - it's a CMake-specific wrapper script that expects
     # build directory structure not compatible with Bazel
     # "cpp_tests",
+    "read_3dbx-fail",
     "test_block",
     "test_bterm",
     "test_destroy",
