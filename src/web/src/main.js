@@ -21,16 +21,29 @@ import './theme.js';
 // ─── Status Indicator ───────────────────────────────────────────────────────
 
 const statusDiv = document.getElementById('websocket-status');
+let disconnectTimeout = null;
+const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnection
 
 function updateStatus() {
-    const n = app.websocketManager ? app.websocketManager.pending.size : 0;
-    if (n === 0) {
-        statusDiv.textContent = '';
-        statusDiv.style.display = 'none';
+    const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    
+    if (!isConnected) {
+        // Only show banner after a delay to avoid flashing on page load
+        if (!disconnectTimeout) {
+            disconnectTimeout = setTimeout(() => {
+                if (!app.websocketManager?.isConnected) {
+                    statusDiv.innerHTML = '<div class="disconnected-banner">⚠ OpenROAD disconnected</div>';
+                    statusDiv.style.display = 'block';
+                }
+            }, DISCONNECT_DELAY_MS);
+        }
     } else {
-        statusDiv.textContent = `pending: ${n}`;
-        statusDiv.style.display = '';
-        statusDiv.style.color = n > 20 ? 'var(--error)' : 'var(--fg-bright)';
+        // Connected - clear timeout and hide banner
+        if (disconnectTimeout) {
+            clearTimeout(disconnectTimeout);
+            disconnectTimeout = null;
+        }
+        statusDiv.style.display = 'none';
     }
 }
 
@@ -547,6 +560,9 @@ if (staticCache) {
     const websocketUrl = `ws://${window.location.host || 'localhost:8080'}/ws`;
     app.websocketManager = new WebSocketManager(websocketUrl, updateStatus);
 }
+
+// Check initial connection status
+updateStatus();
 
 // Restore saved layout or use default
 const savedLayout = localStorage.getItem('gl-layout');
