@@ -100,7 +100,7 @@ bazel_dep(name = "verilator", version = "5.036.bcr.3", dev_dependency = True)
 bazel_dep(name = "bazel-orfs", dev_dependency = True)
 bazel_dep(name = "bazel-orfs-verilog", dev_dependency = True)
 
-BAZEL_ORFS_COMMIT = "f5e20547f93729a4f67929902aaa3386d933bad0"
+BAZEL_ORFS_COMMIT = "232b2ea4bea81beb74c37395540d23fd5f00d282"
 
 BAZEL_ORFS_REMOTE = "https://github.com/The-OpenROAD-Project/bazel-orfs.git"
 
@@ -116,6 +116,34 @@ git_override(
     commit = BAZEL_ORFS_COMMIT,
     remote = BAZEL_ORFS_REMOTE,
     strip_prefix = "verilog",
+)
+
+# bazel-orfs pulls in orfs without a version and patches yosys, relying on
+# overrides that only apply when bazel-orfs is the root module. Mirror them
+# here so OpenROAD-as-root can resolve the module graph.
+bazel_dep(name = "orfs", dev_dependency = True)
+git_override(
+    module_name = "orfs",
+    commit = "2f4de31a0f3f6402ca74887f67b75a9303c6e061",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
+        "//bazel/bazel-orfs-patches:orfs-preserve-tool-exe-env.patch",
+        "//bazel/bazel-orfs-patches:orfs-log-cmd-clock-fallback.patch",
+    ],
+    remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
+)
+
+bazel_dep(name = "yosys", version = "0.62", dev_dependency = True)
+single_version_override(
+    module_name = "yosys",
+    patch_strip = 1,
+    patches = [
+        "//bazel/bazel-orfs-patches:yosys-visibility.patch",
+        "//bazel/bazel-orfs-patches:yosys-hdrs.patch",
+        "//bazel/bazel-orfs-patches:yosys-tcl9-mp-to-ubin.patch",
+        "//bazel/bazel-orfs-patches:yosys-backend-aiger2.patch",
+    ],
 )
 
 # --- Extensions ---
@@ -172,16 +200,10 @@ npm.npm_translate_lock(
 use_repo(npm, "npm")
 
 orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dependency = True)
-
-# To bump version, run: bazelisk run @bazel-orfs//:bump
 orfs.default(
-    # Official image https://hub.docker.com/r/openroad/orfs/tags
-    image = "docker.io/openroad/orfs:26Q1-816-gf40d2f346",
-    # Use OpenROAD of this repo instead of from the docker image
+    # Use OpenROAD of this repo instead of the one bundled with @orfs
     openroad = "//:openroad",
-    sha256 = "2b05a14ae8062b4af82b245d648e95fa0293e09b61b57468518b66578744afb8",
 )
-use_repo(orfs, "docker_orfs")
 
 # --- Overrides ---
 

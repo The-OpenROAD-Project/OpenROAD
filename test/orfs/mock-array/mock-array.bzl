@@ -446,11 +446,11 @@ def mock_array(name, config):
                         ))
                         for macro in MACROS
                     ] + [
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_AO_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_INVBUF_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/dff.v",
-                        "@docker_orfs//:OpenROAD-flow-scripts/flow/platforms/asap7/verilog/stdcell/empty.v",
+                        "//test/orfs/asap7:asap7sc7p5t_AO_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_INVBUF_RVT_TT_201020.v",
+                        "//test/orfs/asap7:asap7sc7p5t_SIMPLE_RVT_TT_201020.v",
+                        "//test/orfs/asap7:dff.v",
+                        "//test/orfs/asap7:empty.v",
                     ],
                     tags = ["manual"],
                 )

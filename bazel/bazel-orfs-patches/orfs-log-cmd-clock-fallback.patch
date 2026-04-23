@@ -1,0 +1,36 @@
+log_cmd: skip timing when [clock] is unavailable.
+
+Tcl's clock command lives in clock.tcl, auto-loaded from TCL_LIBRARY.
+BCR yosys (cc_binary against @tcl_lang) doesn't ship tcl_lang's library/
+dir in runfiles, so Tcl_Init fails and `clock` never gets defined.
+
+log_cmd's clock usage is cosmetic — it prints "Took N seconds" when a
+command runs longer than 5s. Guarding it lets log_cmd still run the
+underlying command under yosys even when the clock command is missing.
+--- a/flow/scripts/util.tcl
++++ b/flow/scripts/util.tcl
+@@ -7,11 +7,16 @@ proc log_cmd { cmd args } {
+   # log the command, escape arguments with spaces
+   set log_cmd "$cmd[join [lmap arg $args { format " %s" [expr { [string match {* *} $arg] ? "\"$arg\"" : "$arg" }] }] ""]" ;# tclint-disable-line line-length
+   puts $log_cmd
+-  set start [clock seconds]
++  set has_clock [expr { [info commands clock] ne "" }]
++  if { $has_clock } {
++    set start [clock seconds]
++  }
+   set result [uplevel 1 [list $cmd {*}$args]]
+-  set time [expr { [clock seconds] - $start }]
+-  if { $time >= 5 } {
+-    # Ideally we'd use a single line, but the command can output text
+-    # and we don't want to mix it with the log, so output the time it took afterwards.
+-    puts "Took $time seconds: $log_cmd"
++  if { $has_clock } {
++    set time [expr { [clock seconds] - $start }]
++    if { $time >= 5 } {
++      # Ideally we'd use a single line, but the command can output text
++      # and we don't want to mix it with the log, so output the time it took afterwards.
++      puts "Took $time seconds: $log_cmd"
++    }
+   }
+   return $result
+ }

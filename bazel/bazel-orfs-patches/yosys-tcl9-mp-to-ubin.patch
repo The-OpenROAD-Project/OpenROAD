@@ -1,0 +1,21 @@
+Use mp_to_ubin / mp_ubin_size for Tcl 9 compatibility.
+
+Tcl 9's libtommath stubs no longer export the deprecated
+TclBN_mp_to_unsigned_bin / TclBN_mp_unsigned_bin_size, though
+tclTomMathDecls.h still redirects the unprefixed names to them.
+Switch to the non-deprecated mp_to_ubin / mp_ubin_size which are
+present in both the Tcl 9 stubs and upstream libtommath.
+--- a/kernel/tclapi.cc
++++ b/kernel/tclapi.cc
+@@ -211,8 +211,9 @@ bool mp_int_to_const(mp_int *a, Const &b, bool is_signed)
+ 	}
+
+ 	std::vector<unsigned char> buf;
+-	buf.resize(mp_unsigned_bin_size(a));
+-	mp_to_unsigned_bin(a, buf.data());
++	buf.resize(mp_ubin_size(a));
++	size_t written = 0;
++	mp_to_ubin(a, buf.data(), buf.size(), &written);
+
+ 	Const::Builder b_bits(mp_count_bits(a) + is_signed);
+ 	for (int i = 0; i < mp_count_bits(a);) {

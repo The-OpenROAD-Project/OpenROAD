@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=98yvind=20Harboe?= <oyvind.harboe@zylin.com>
+Date: Wed, 2 Apr 2026 22:00:00 +0200
+Subject: [PATCH] fix: remove non-root overrides from MODULE.bazel
+
+When ORFS is fetched as a non-root dependency, git_override and
+orfs.default() directives are ignored/illegal.  Remove them so
+the module can be used as a dependency without errors.
+
+Signed-off-by: =?UTF-8?q?=C3=98yvind=20Harboe?= <oyvind.harboe@zylin.com>
+---
+ MODULE.bazel | 19 -------------------
+ 1 file changed, 19 deletions(-)
+
+diff --git a/MODULE.bazel b/MODULE.bazel
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -8,13 +8,6 @@
+
+ bazel_dep(name = "bazel-orfs")
+
+-# To bump version, run: bazelisk run @bazel-orfs//:bump
+-git_override(
+-    module_name = "bazel-orfs",
+-    commit = "f8a4b694b37c8f5322323eba9a9ae37f9541ee17",
+-    remote = "https://github.com/The-OpenROAD-Project/bazel-orfs.git",
+-)
+-
+ bazel_dep(name = "rules_python", version = "1.8.5")
+ bazel_dep(name = "rules_shell", version = "0.6.1")
+
+@@ -36,15 +29,3 @@
+ use_repo(pip, "orfs-pip")
+
+ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories")
+-
+-# To bump version, run: bazelisk run @bazel-orfs//:bump
+-orfs.default(
+-    image = "docker.io/openroad/orfs:v3.0-3273-gedf3d6bf",
+-    # Use local files instead of docker image
+-    makefile = "//flow:makefile",
+-    makefile_yosys = "//flow:makefile_yosys",
+-    pdk = "//flow:asap7",
+-    sha256 = "f5692c6325ebcf27cc348e033355ec95c82c35ace1af7e72a0d352624ada143e",
+-)
+-use_repo(orfs, "com_github_nixos_patchelf_download")
+-use_repo(orfs, "docker_orfs")
+--
+2.51.0
+

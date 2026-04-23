@@ -1,0 +1,15 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -691,3 +691,12 @@
+         "passes/cmds/sdc/graph-stubs.sdc:sdc/graph-stubs.sdc",
+     ],
+ )
++
++# Header-only target for building out-of-tree yosys plugins.
++cc_library(
++    name = "hdrs",
++    hdrs = glob(["kernel/*.h", "kernel/*.inc"]),
++    defines = COMMON_DEFINES,
++    includes = ["."],
++    visibility = ["//visibility:public"],
++)
