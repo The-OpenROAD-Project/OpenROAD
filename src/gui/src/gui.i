@@ -507,7 +507,7 @@ void gui_pause(int timeout = 0)
 {
   if (!gui::Gui::enabled()) {
     auto logger = ord::OpenRoad::openRoad()->getLogger();
-    logger->info(GUI, 94, "Command pause is not usable in non-GUI mode");
+    logger->info(GUI, 96, "Command pause is not usable in non-GUI mode");
     return;
   }
   auto gui = gui::Gui::get();
