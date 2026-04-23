@@ -4,20 +4,23 @@
 [INFO ODB-0131]     Created 18 components and 81 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
 [INFO DPL-0006] Core area: 16.49 um^2, Instances area: 14.36 um^2, Utilization: 87.1%
+[INFO DPL-0007] Total instances area (incl. excluded): 14.36 um^2, Utilization: 87.1%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 17.
-Negotiation iteration 1: total overflow 17.
-Negotiation iteration 2: total overflow 17.
-Negotiation iteration 3: total overflow 17.
-[WARNING DPL-0700] Negotiation phase 1: overflow stuck at 17 for 3 consecutive iterations.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         17 |         3 |         8
+        1 |         17 |         3 |         8
+        2 |         17 |         3 |         8
+        3 |         17 |         3 |         8
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 17 for 3 consecutive iterations.
 Using old diamond search for 3 remaining illegal cells.
 diamond recovery: recovered 0/3 stuck cells.
-Negotiation iteration 400: total overflow 17.
-Negotiation iteration 401: total overflow 17.
-Negotiation iteration 402: total overflow 17.
-Negotiation iteration 403: total overflow 17.
-[WARNING DPL-0702] Negotiation phase 2: overflow stuck at 17 for 3 consecutive iterations. Using diamond search for 3 remaining illegal cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |         17 |         3 |         8
+      403 |         17 |         3 |         8
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 17 for 3 consecutive iterations. Using diamond search for 3 remaining illegal cells.
 diamond recovery: recovered 0/3 stuck cells.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 3
 Placement Analysis

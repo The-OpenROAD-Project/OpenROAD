@@ -9,6 +9,7 @@
 [ERROR DPL-0033] detailed placement checks failed during check placement.
 DPL-0033
 [INFO DPL-0006] Core area: 34.05 um^2, Instances area: 1.86 um^2, Utilization: 5.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 1.86 um^2, Utilization: 5.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis

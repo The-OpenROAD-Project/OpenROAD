@@ -5,9 +5,14 @@
 [INFO ODB-0133]     Created 364 nets and 1068 connections.
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
@@ -19,6 +24,7 @@ delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
@@ -32,6 +38,7 @@ delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
@@ -45,6 +52,7 @@ delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
@@ -58,6 +66,7 @@ delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis
@@ -71,6 +80,7 @@ delta HPWL                    0 %
 
 [WARNING DPL-0037] Use remove_fillers before detailed placement.
 [INFO DPL-0006] Core area: 14266.91 um^2, Instances area: 637.60 um^2, Utilization: 4.5%
+[INFO DPL-0007] Total instances area (incl. excluded): 637.60 um^2, Utilization: 4.5%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis

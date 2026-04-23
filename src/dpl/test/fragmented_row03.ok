@@ -4,20 +4,23 @@
 [INFO ODB-0131]     Created 1 components and 4 component-terminals.
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [INFO DPL-0006] Core area: 4.79 um^2, Instances area: 1.86 um^2, Utilization: 38.9%
+[INFO DPL-0007] Total instances area (incl. excluded): 1.86 um^2, Utilization: 38.9%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 8.
-Negotiation iteration 1: total overflow 8.
-Negotiation iteration 2: total overflow 8.
-Negotiation iteration 3: total overflow 8.
-[WARNING DPL-0700] Negotiation phase 1: overflow stuck at 8 for 3 consecutive iterations.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          8 |         1 |         7
+        1 |          8 |         1 |         7
+        2 |          8 |         1 |         7
+        3 |          8 |         1 |         7
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 8 for 3 consecutive iterations.
 Using old diamond search for 1 remaining illegal cells.
 diamond recovery: recovered 0/1 stuck cells.
-Negotiation iteration 400: total overflow 8.
-Negotiation iteration 401: total overflow 8.
-Negotiation iteration 402: total overflow 8.
-Negotiation iteration 403: total overflow 8.
-[WARNING DPL-0702] Negotiation phase 2: overflow stuck at 8 for 3 consecutive iterations. Using diamond search for 1 remaining illegal cells.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          8 |         1 |         7
+      403 |          8 |         1 |         7
+[WARNING DPL-0702] Negotiation phase 2: violations stuck at 8 for 3 consecutive iterations. Using diamond search for 1 remaining illegal cells.
 diamond recovery: recovered 0/1 stuck cells.
 [WARNING DPL-0701] NegotiationLegalizer did not fully converge. Violations remain: 1
 Placement Analysis

@@ -49,11 +49,16 @@ Using 2 tracks default min distance between IO pins.
 [InitialPlace]  Iter: 4 conjugate gradient residual: 0.00000006 HPWL: 34116
 [InitialPlace]  Iter: 5 conjugate gradient residual: 0.00000000 HPWL: 34042
 [INFO DPL-0006] Core area: 47872.02 um^2, Instances area: 162.79 um^2, Utilization: 0.3%
+[INFO DPL-0007] Total instances area (incl. excluded): 162.79 um^2, Utilization: 0.3%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 570.
-Negotiation iteration 1: total overflow 36.
-Negotiation iteration 2: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |        570 |        26 |       442
+        1 |         36 |         2 |        34
+        2 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 2.
 Placement Analysis
 ---------------------------------
 total displacement         25.2 u

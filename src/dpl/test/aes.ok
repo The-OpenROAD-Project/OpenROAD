@@ -4,10 +4,15 @@
 [INFO ODB-0131]     Created 21340 components and 108388 component-terminals.
 [INFO ODB-0133]     Created 19675 nets and 65708 connections.
 [INFO DPL-0006] Core area: 289247.87 um^2, Instances area: 24789.07 um^2, Utilization: 8.6%
+[INFO DPL-0007] Total instances area (incl. excluded): 24789.07 um^2, Utilization: 8.6%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 14.
-Negotiation iteration 1: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |         14 |         4 |        10
+        1 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 1.
 Placement Analysis
 ---------------------------------
 total displacement      13227.2 u

@@ -137,9 +137,14 @@ Dummys used:
 [INFO RSZ-0047] Found 5 long wires.
 [INFO RSZ-0048] Inserted 5 buffers in 5 nets.
 [INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261659.31 um^2, Utilization: 83.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 20261659.31 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement       1983.8 u

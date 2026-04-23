@@ -4,9 +4,14 @@
 [INFO ODB-0130]     Created 6 pins.
 [INFO ODB-0131]     Created 5 components and 25 component-terminals.
 [INFO DPL-0006] Core area: 54.26 um^2, Instances area: 9.58 um^2, Utilization: 17.6%
+[INFO DPL-0007] Total instances area (incl. excluded): 9.58 um^2, Utilization: 17.6%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement         14.2 u

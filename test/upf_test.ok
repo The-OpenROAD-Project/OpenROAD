@@ -145,9 +145,14 @@ Iteration | Overflow |     HPWL (um) |  HPWL(%) |   Penalty | Group
 [INFO GPL-1009]     - For 50% usage of free space: 0.1063
 [INFO GPL-1014] Final placement area: 175.05 (+0.00%)
 [INFO DPL-0006] Core area: 11467.25 um^2, Instances area: 158.90 um^2, Utilization: 1.4%
+[INFO DPL-0007] Total instances area (incl. excluded): 158.90 um^2, Utilization: 1.4%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement         32.6 u

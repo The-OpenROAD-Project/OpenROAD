@@ -6,56 +6,28 @@
 [INFO ODB-0131]     Created 11904 components and 90887 component-terminals.
 [INFO ODB-0133]     Created 31790 nets and 67032 connections.
 [INFO DPL-0006] Core area: 8048318.98 um^2, Instances area: 52327.69 um^2, Utilization: 0.7%
+[INFO DPL-0007] Total instances area (incl. excluded): 7100779.92 um^2, Utilization: 88.2%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 10153.
-Negotiation iteration 1: total overflow 8689.
-Negotiation iteration 2: total overflow 7100.
-Negotiation iteration 3: total overflow 5081.
-Negotiation iteration 4: total overflow 3678.
-Negotiation iteration 5: total overflow 2994.
-Negotiation iteration 6: total overflow 2279.
-Negotiation iteration 7: total overflow 1931.
-Negotiation iteration 8: total overflow 1512.
-Negotiation iteration 9: total overflow 1240.
-Negotiation iteration 10: total overflow 1060.
-Negotiation iteration 11: total overflow 789.
-Negotiation iteration 12: total overflow 735.
-Negotiation iteration 13: total overflow 626.
-Negotiation iteration 14: total overflow 507.
-Negotiation iteration 15: total overflow 412.
-Negotiation iteration 16: total overflow 260.
-Negotiation iteration 17: total overflow 244.
-Negotiation iteration 18: total overflow 208.
-Negotiation iteration 19: total overflow 172.
-Negotiation iteration 20: total overflow 96.
-Negotiation iteration 21: total overflow 93.
-Negotiation iteration 22: total overflow 90.
-Negotiation iteration 23: total overflow 67.
-Negotiation iteration 24: total overflow 90.
-Negotiation iteration 25: total overflow 103.
-Negotiation iteration 26: total overflow 96.
-Negotiation iteration 27: total overflow 96.
-Negotiation iteration 28: total overflow 70.
-Negotiation iteration 29: total overflow 46.
-Negotiation iteration 30: total overflow 48.
-Negotiation iteration 31: total overflow 26.
-Negotiation iteration 32: total overflow 26.
-Negotiation iteration 33: total overflow 38.
-Negotiation iteration 34: total overflow 34.
-Negotiation iteration 35: total overflow 18.
-Negotiation iteration 36: total overflow 45.
-Negotiation iteration 37: total overflow 44.
-Negotiation iteration 38: total overflow 42.
-Negotiation iteration 39: total overflow 18.
-Negotiation iteration 40: total overflow 4.
-Negotiation iteration 41: total overflow 6.
-Negotiation iteration 42: total overflow 6.
-Negotiation iteration 43: total overflow 16.
-Negotiation iteration 44: total overflow 16.
-Negotiation iteration 45: total overflow 10.
-Negotiation iteration 46: total overflow 16.
-Negotiation iteration 47: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |      10153 |       719 |      7561
+        1 |       8689 |       568 |      6376
+        2 |       7100 |       494 |      5443
+        3 |       5081 |       411 |      4154
+        4 |       3678 |       341 |      3259
+        5 |       2994 |       261 |      2485
+        6 |       2279 |       222 |      2021
+        7 |       1931 |       179 |      1710
+        8 |       1512 |       142 |      1364
+        9 |       1240 |       132 |      1075
+       10 |       1060 |       108 |       925
+       20 |         96 |        14 |        82
+       30 |         48 |         6 |        42
+       40 |          4 |         2 |         2
+       47 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 47.
 Placement Analysis
 ---------------------------------
 total displacement       7073.3 u

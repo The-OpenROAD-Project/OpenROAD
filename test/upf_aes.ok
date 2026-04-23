@@ -1124,18 +1124,24 @@ Divergence occured in 2 regions.
 [INFO GPL-1013] Total timing-driven delta area: -27509.56 (-6.55%)
 [INFO GPL-1014] Final placement area: 399199.60 (-4.93%)
 [INFO DPL-0006] Core area: 878902.94 um^2, Instances area: 341319.85 um^2, Utilization: 38.8%
+[INFO DPL-0007] Total instances area (incl. excluded): 341319.85 um^2, Utilization: 38.8%
 [INFO DPL-0005] Diamond search max displacement: +/- 1413 sites horizontally, +/- 238 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 4825.
-Negotiation iteration 1: total overflow 4578.
-Negotiation iteration 2: total overflow 4575.
-Negotiation iteration 3: total overflow 4575.
-Negotiation iteration 4: total overflow 4575.
-Negotiation iteration 5: total overflow 4575.
-[WARNING DPL-0700] Negotiation phase 1: overflow stuck at 4575 for 3 consecutive iterations.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |       4825 |      2515 |      2098
+        1 |       4578 |      2466 |      1900
+        2 |       4575 |      2465 |      1898
+        3 |       4575 |      2465 |      1898
+        4 |       4575 |      2465 |      1898
+        5 |       4575 |      2465 |      1898
+[WARNING DPL-0700] Negotiation phase 1: violations stuck at 4575 for 3 consecutive iterations.
 Using old diamond search for 2465 remaining illegal cells.
 diamond recovery: recovered 2465/2465 stuck cells.
-Negotiation iteration 400: total overflow 0.
+Negotiation phase 2: isolation point active, 1000 iterations.
+      400 |          0 |         0 |         0
+Negotiation phase 2 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement      62309.8 u

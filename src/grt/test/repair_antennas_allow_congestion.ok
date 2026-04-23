@@ -12,9 +12,14 @@
 [INFO GRT-0302] Inserted 0 jumpers for 0 nets.
 [INFO GRT-0012] Found 6 antenna violations.
 [INFO DPL-0006] Core area: 78411.11 um^2, Instances area: 6262.53 um^2, Utilization: 8.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 6262.53 um^2, Utilization: 8.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 [INFO GRT-0015] Inserted 7 diodes.
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.

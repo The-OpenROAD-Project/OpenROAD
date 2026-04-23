@@ -7,6 +7,7 @@
 [INFO ODB-0133]     Created 2 nets and 2 connections.
 [WARNING DPL-0387] BTerm float is unplaced.
 [INFO DPL-0006] Core area: 9576.00 um^2, Instances area: 1.86 um^2, Utilization: 0.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 1.86 um^2, Utilization: 0.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
 Placement Analysis

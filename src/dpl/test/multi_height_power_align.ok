@@ -3,9 +3,14 @@
 [INFO ODB-0128] Design: multi_height_power_align
 [INFO ODB-0131]     Created 2 components and 9 component-terminals.
 [INFO DPL-0006] Core area: 31.92 um^2, Instances area: 3.19 um^2, Utilization: 10.0%
+[INFO DPL-0007] Total instances area (incl. excluded): 3.19 um^2, Utilization: 10.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1102] Legalizing using negotiation legalizer.
-Negotiation iteration 0: total overflow 0.
+          |      Total |  Illegal |  Illegal
+Iteration | Violations |    Cells |    Sites
+---------------------------------------------
+        0 |          0 |         0 |         0
+Negotiation phase 1 converged at iteration 0.
 Placement Analysis
 ---------------------------------
 total displacement          0.0 u
