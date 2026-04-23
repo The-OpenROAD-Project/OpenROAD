@@ -98,8 +98,8 @@ class RamGen
                 int word_size,
                 int num_words,
                 int rw_ports,
-                int rd_ports,
-                int wr_ports,
+                int r_ports,
+                int w_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
@@ -125,7 +125,9 @@ class RamGen
                               int slices_per_word,
                               int mask_size,
                               int word_count,
-                              int read_ports);
+                              int rw_ports,
+                              int r_ports,
+                              int w_ports);
 
  private:
   void findMasters();
@@ -149,8 +151,8 @@ class RamGen
                  int mask_size,
                  int row_idx,
                  int rw_ports,
-                 int rd_ports,
-                 int wr_ports,
+                 int r_ports,
+                 int w_ports,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
                  const std::vector<odb::dbNet*>& selects,
@@ -161,8 +163,8 @@ class RamGen
                 int mask_size,
                 int row_idx,
                 int rw_ports,
-                int rd_ports,
-                int wr_ports,
+                int r_ports,
+                int w_ports,
                 odb::dbNet* clock,
                 std::vector<odb::dbBTerm*>& write_enable,
                 const std::vector<odb::dbNet*>& selects,

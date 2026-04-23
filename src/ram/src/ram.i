@@ -36,8 +36,8 @@ generate_ram_netlist_cmd(int mask_size,
                          const char* tristate_cell_name,
                          const char* inv_cell_name,
                          const int rw_ports,
-                         const int rd_ports,
-                         const int wr_ports,
+                         const int r_ports,
+                         const int w_ports,
                          const char* tapcell_name,
                          const int max_tap_dist)
 {
@@ -89,7 +89,7 @@ generate_ram_netlist_cmd(int mask_size,
     }
   }
 
-  ram_gen->generate(mask_size, word_size, num_words, rw_ports, rd_ports, wr_ports,
+  ram_gen->generate(mask_size, word_size, num_words, rw_ports, r_ports, w_ports,
                     storage_cell, tristate_cell, inv_cell, tapcell,
                     max_tap_dist);
 }
