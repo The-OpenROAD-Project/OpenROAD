@@ -626,11 +626,54 @@ app.toggleTheme = function() {
 
 createMenuBar(app);
 
+// Debug-graphics pause affordance: appended lazily when the first
+// debug_paused push arrives.  Clicking "Continue" tells the server to
+// release the placer thread.
+function ensureDebugContinueButton() {
+    let btn = document.getElementById('debug-continue-btn');
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.id = 'debug-continue-btn';
+    btn.className = 'debug-continue-btn';
+    btn.textContent = 'Continue';
+    btn.title = 'Advance the debugger (gpl, cts, ...)';
+    btn.addEventListener('click', () => {
+        // Fire-and-forget; server's broadcast tells us when the placer
+        // actually resumed.
+        app.websocketManager.request({ type: 'debug_continue' })
+            .catch(() => {});
+    });
+    document.body.appendChild(btn);
+    return btn;
+}
+
 // Handle server-push notifications (e.g. search indices ready)
 app.websocketManager.onPush = (msg) => {
     if (msg.type === 'refresh') {
         document.getElementById('loading-overlay').style.display = 'none';
         redrawAllLayers();
+    } else if (msg.type === 'debug_paused') {
+        ensureDebugContinueButton().style.display = 'block';
+        // Refetch tiles so the user sees the current paused state.
+        redrawAllLayers();
+    } else if (msg.type === 'debug_resumed') {
+        const btn = document.getElementById('debug-continue-btn');
+        if (btn) btn.style.display = 'none';
+    } else if (msg.type === 'debug_refresh') {
+        // Instance positions changed — clear the stale Leaflet highlight
+        // outline (the tile-based highlight updates automatically).
+        if (app.highlightRect) {
+            app.map.removeLayer(app.highlightRect);
+            app.highlightRect = null;
+        }
+        redrawAllLayers();
+    } else if (msg.type === 'log') {
+        // Logger output from the main Tcl thread (e.g. global_placement).
+        // The text already contains \n between lines from the batch; strip
+        // any trailing newline to avoid a blank line at the end.
+        let text = msg.text;
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text) tclAppend(text + '\n', '');
     }
 };
 

@@ -232,6 +232,20 @@ cc_test(
 )
 
 cc_test(
+    name = "debug_graphics_test",
+    srcs = ["cpp/TestDebugGraphics.cpp"],
+    copts = ["-Isrc/web/src"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/gui",
+        "//src/odb",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
     name = "save_report_test",
     srcs = ["cpp/TestSaveReport.cpp"],
     copts = ["-Isrc/web/src"],

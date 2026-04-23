@@ -10,9 +10,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
-#include <exception>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <ios>
 #include <iterator>
 #include <limits>
@@ -27,7 +27,6 @@
 
 #include "boost/asio/io_context.hpp"
 #include "boost/asio/ip/tcp.hpp"
-#include "boost/asio/signal_set.hpp"
 #include "boost/asio/strand.hpp"
 #include "boost/beast/core.hpp"
 #include "boost/beast/http.hpp"
@@ -41,6 +40,8 @@
 #include "tile_generator.h"
 #include "timing_report.h"
 #include "utl/Logger.h"
+#include "web_chart.h"
+#include "web_viewer_hook.h"
 
 namespace web {
 
@@ -190,6 +191,10 @@ static WebSocketRequest parse_web_socket_request(const std::string& msg)
   } else if (type_str == "list_dir") {
     req.type = WebSocketRequest::kListDir;
     req.dir_path = extract_string(msg, "path");
+  } else if (type_str == "debug_continue") {
+    req.type = WebSocketRequest::kDebugContinue;
+  } else if (type_str == "debug_charts") {
+    req.type = WebSocketRequest::kDebugCharts;
   } else {
     req.type = WebSocketRequest::kUnknown;
   }
@@ -346,13 +351,19 @@ class WebSocketSession : public std::enable_shared_from_this<WebSocketSession>
   std::shared_ptr<TileGenerator> generator_;
   std::thread init_thread_;
 
+  // Debug-graphics hook (nullable).  When set, this session registers a
+  // send callback for server-push broadcasts (pause/continue notifications).
+  WebViewerHook* viewer_hook_ = nullptr;
+  std::size_t viewer_token_ = 0;
+
  public:
   WebSocketSession(Tcp::socket&& socket,
                    std::shared_ptr<TileGenerator> generator,
                    std::shared_ptr<TclEvaluator> tcl_eval,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
-                   utl::Logger* logger);
+                   utl::Logger* logger,
+                   WebViewerHook* viewer_hook);
   ~WebSocketSession();
 
   void run(http::request<http::string_body>&& req);
@@ -373,7 +384,8 @@ WebSocketSession::WebSocketSession(
     // NOLINTEND(performance-unnecessary-value-param)
     std::shared_ptr<TimingReport> timing_report,
     std::shared_ptr<ClockTreeReport> clock_report,
-    utl::Logger* logger)
+    utl::Logger* logger,
+    WebViewerHook* viewer_hook)
     : websocket_(std::move(socket)),
       logger_(logger),
       select_handler_(generator, tcl_eval),
@@ -383,7 +395,8 @@ WebSocketSession::WebSocketSession(
       tile_handler_(generator),
       drc_handler_(generator),
       strand_(net::make_strand(websocket_.get_executor())),
-      generator_(std::move(generator))
+      generator_(std::move(generator)),
+      viewer_hook_(viewer_hook)
 {
   if (generator_->getBlock()) {
     tile_handler_.initializeHeatMaps(state_);
@@ -392,6 +405,9 @@ WebSocketSession::WebSocketSession(
 
 WebSocketSession::~WebSocketSession()
 {
+  if (viewer_hook_ != nullptr && viewer_token_ != 0) {
+    viewer_hook_->sessions().remove(viewer_token_);
+  }
   if (init_thread_.joinable()) {
     init_thread_.join();
   }
@@ -412,6 +428,26 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
       websocket::stream_base::decorator([](websocket::response_type& res) {
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
+
+  // Register this session with the viewer hook so debug_paused /
+  // debug_refresh / debug_resumed push messages reach the client.  The
+  // lambda captures a weak_ptr so we never keep the session alive on the
+  // registry's behalf.
+  if (viewer_hook_ != nullptr) {
+    auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
+    viewer_token_
+        = viewer_hook_->sessions().add([weak_self](const std::string& json) {
+            auto self = weak_self.lock();
+            if (!self) {
+              return;
+            }
+            WebSocketResponse resp;
+            resp.id = 0;
+            resp.type = 0;  // JSON
+            resp.payload.assign(json.begin(), json.end());
+            self->queue_response(resp);
+          });
+  }
 
   // Build search indices in the background; tiles render without shapes
   // until ready, then a "refresh" push notification triggers a redraw.
@@ -697,6 +733,66 @@ void WebSocketSession::on_read(beast::error_code ec)
                       self->drc_handler_.handleDRCHighlight(req, self->state_));
                 });
       break;
+    case WebSocketRequest::kDebugContinue: {
+      if (viewer_hook_ != nullptr) {
+        viewer_hook_->continueExecution();
+      }
+      // Send a minimal ack so the client's pending-request map doesn't
+      // leak.  The real state change is broadcast separately via
+      // debug_resumed / debug_refresh push messages.
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = 0;
+      const std::string json = R"({"ok":1})";
+      resp.payload.assign(json.begin(), json.end());
+      queue_response(resp);
+      break;
+    }
+    case WebSocketRequest::kDebugCharts: {
+      WebSocketResponse resp;
+      resp.id = req.id;
+      resp.type = 0;
+      JsonBuilder builder;
+      builder.beginObject();
+      builder.beginArray("charts");
+      if (viewer_hook_ != nullptr) {
+        for (WebChart* chart : viewer_hook_->charts()) {
+          builder.beginObject();
+          builder.field("name", chart->name());
+          builder.field("x_label", chart->xLabel());
+          builder.beginArray("y_labels");
+          for (const auto& lbl : chart->yLabels()) {
+            builder.value(lbl);
+          }
+          builder.endArray();
+          builder.field("x_format", chart->xAxisFormat());
+          builder.beginArray("y_formats");
+          for (const auto& f : chart->yAxisFormats()) {
+            builder.value(f);
+          }
+          builder.endArray();
+          builder.beginArray("points");
+          for (const auto& pt : chart->points()) {
+            builder.beginObject();
+            builder.field("x", pt.x);
+            builder.beginArray("ys");
+            for (double v : pt.ys) {
+              builder.value(v);
+            }
+            builder.endArray();
+            builder.endObject();
+          }
+          builder.endArray();
+          builder.endObject();
+        }
+      }
+      builder.endArray();
+      builder.endObject();
+      const std::string& json = builder.str();
+      resp.payload.assign(json.begin(), json.end());
+      queue_response(resp);
+      break;
+    }
     default:
       net::post(websocket_.get_executor(),
                 [self = std::move(self), req = std::move(req)]() {
@@ -880,6 +976,7 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
   http::request<http::string_body> req_;
   std::string doc_root_;
   utl::Logger* logger_;
+  WebViewerHook* viewer_hook_ = nullptr;
 
  public:
   DetectSession(Tcp::socket&& socket,
@@ -888,7 +985,8 @@ class DetectSession : public std::enable_shared_from_this<DetectSession>
                 std::shared_ptr<TimingReport> timing_report,
                 std::shared_ptr<ClockTreeReport> clock_report,
                 std::string doc_root,
-                utl::Logger* logger);
+                utl::Logger* logger,
+                WebViewerHook* viewer_hook);
 
   void run();
 
@@ -902,14 +1000,16 @@ DetectSession::DetectSession(Tcp::socket&& socket,
                              std::shared_ptr<TimingReport> timing_report,
                              std::shared_ptr<ClockTreeReport> clock_report,
                              std::string doc_root,
-                             utl::Logger* logger)
+                             utl::Logger* logger,
+                             WebViewerHook* viewer_hook)
     : stream_(std::move(socket)),
       generator_(std::move(generator)),
       tcl_eval_(std::move(tcl_eval)),
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
       doc_root_(std::move(doc_root)),
-      logger_(logger)
+      logger_(logger),
+      viewer_hook_(viewer_hook)
 {
 }
 
@@ -940,7 +1040,8 @@ void DetectSession::on_read(beast::error_code ec)
                                              tcl_eval_,
                                              timing_report_,
                                              clock_report_,
-                                             logger_);
+                                             logger_,
+                                             viewer_hook_);
     websocket_session->run(std::move(req_));
   } else {
     // Regular HTTP - hand off to session with already-read request
@@ -964,6 +1065,7 @@ class Listener : public std::enable_shared_from_this<Listener>
   std::shared_ptr<ClockTreeReport> clock_report_;
   std::string doc_root_;
   utl::Logger* logger_;
+  WebViewerHook* viewer_hook_ = nullptr;
 
  public:
   Listener(net::io_context& ioc,
@@ -973,9 +1075,18 @@ class Listener : public std::enable_shared_from_this<Listener>
            std::shared_ptr<TimingReport> timing_report,
            std::shared_ptr<ClockTreeReport> clock_report,
            std::string doc_root,
-           utl::Logger* logger);
+           utl::Logger* logger,
+           WebViewerHook* viewer_hook);
 
   void run() { do_accept(); }
+
+  // Close the acceptor so its destructor doesn't touch a dying
+  // io_context.  Called from WebServer::stop() before ioc_.reset().
+  void close()
+  {
+    beast::error_code ec;
+    acceptor_.close(ec);
+  }
 
  private:
   void do_accept();
@@ -989,7 +1100,8 @@ Listener::Listener(net::io_context& ioc,
                    std::shared_ptr<TimingReport> timing_report,
                    std::shared_ptr<ClockTreeReport> clock_report,
                    std::string doc_root,
-                   utl::Logger* logger)
+                   utl::Logger* logger,
+                   WebViewerHook* viewer_hook)
     : ioc_(ioc),
       acceptor_(ioc),
       generator_(std::move(generator)),
@@ -997,7 +1109,8 @@ Listener::Listener(net::io_context& ioc,
       timing_report_(std::move(timing_report)),
       clock_report_(std::move(clock_report)),
       doc_root_(std::move(doc_root)),
-      logger_(logger)
+      logger_(logger),
+      viewer_hook_(viewer_hook)
 {
   beast::error_code ec;
 
@@ -1048,7 +1161,8 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
                                     timing_report_,
                                     clock_report_,
                                     doc_root_,
-                                    logger_)
+                                    logger_,
+                                    viewer_hook_)
         ->run();
   }
   do_accept();
@@ -1061,12 +1175,50 @@ void Listener::on_accept(beast::error_code ec, Tcp::socket socket)
 WebServer::WebServer(odb::dbDatabase* db,
                      sta::dbSta* sta,
                      utl::Logger* logger,
-                     Tcl_Interp* interp)
-    : db_(db), sta_(sta), logger_(logger), interp_(interp)
+                     Tcl_Interp* interp,
+                     int num_threads)
+    : db_(db),
+      sta_(sta),
+      logger_(logger),
+      interp_(interp),
+      num_threads_(num_threads)
 {
 }
 
-WebServer::~WebServer() = default;
+WebServer::~WebServer()
+{
+  // The destructor fires during Tcl_Exit → atexit → ~OpenRoad chain.
+  // By this point the Tcl interpreter is partially torn down and static
+  // objects may be destroyed.  Calling stop() (which joins 32 threads
+  // and tears down boost::asio's reactor) triggers SIGSEGV because the
+  // reactor's internal state references destroyed statics.
+  //
+  // Since the destructor only runs at process exit, the OS reclaims all
+  // memory and closes all sockets.  We just need to stop the threads so
+  // the process can actually exit:
+  if (ioc_) {
+    ioc_->stop();
+  }
+  for (auto& t : threads_) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+  threads_.clear();
+  // Close the Listener's acceptor and release the shared_ptr to it
+  // before the io_context goes away.
+  if (shutdown_listener_) {
+    shutdown_listener_();
+    shutdown_listener_ = {};
+  }
+  // Release without destroying — ~io_context() crashes because
+  // reactor::shutdown() destroys pending async operations whose
+  // handlers reference the dying reactor.  The OS reclaims at exit.
+  (void) ioc_.release();  // NOLINT(bugprone-unused-return-value)
+  // Also leak viewer_hook_ — it may be referenced by Gui's
+  // headless_viewer_ pointer which outlives us (static singleton).
+  (void) viewer_hook_.release();  // NOLINT(bugprone-unused-return-value)
+}
 
 // Embedded JS/CSS for standalone timing report (generated at build time
 // by embed_report_assets.py → report_assets.cpp).
@@ -1351,75 +1503,28 @@ void WebServer::saveImage(const std::string& filename,
   generator_->saveImage(filename, region, width_px, dbu_per_pixel, vis);
 }
 
-void WebServer::serve(int port, const std::string& doc_root)
+std::function<void()> createAndRunListener(
+    net::io_context& ioc,
+    const Tcp::endpoint& endpoint,
+    std::shared_ptr<TileGenerator> generator,
+    std::shared_ptr<TclEvaluator> tcl_eval,
+    std::shared_ptr<TimingReport> timing_report,
+    std::shared_ptr<ClockTreeReport> clock_report,
+    const std::string& doc_root,
+    utl::Logger* logger,
+    WebViewerHook* viewer_hook)
 {
-  try {
-    generator_ = std::make_shared<TileGenerator>(db_, sta_, logger_);
-    auto timing_report = std::make_shared<TimingReport>(sta_);
-    auto clock_report = std::make_shared<ClockTreeReport>(sta_);
-
-    // Create Tcl evaluator with logger sink for output capture
-    auto tcl_eval = std::make_shared<TclEvaluator>(interp_, logger_);
-
-    auto const address = net::ip::make_address("127.0.0.1");
-    uint16_t const u_port = port;
-    int const num_threads = 32;
-
-    if (!doc_root.empty()) {
-      logger_->info(utl::WEB, 4, "Serving static files from {}", doc_root);
-    }
-
-    const std::string url = "http://localhost:" + std::to_string(port);
-    logger_->info(utl::WEB,
-                  1,
-                  "Server starting on {} with {} threads...",
-                  url,
-                  num_threads);
-
-#if defined(__APPLE__)
-    std::string cmd = "open " + url + " > /dev/null 2>&1";
-#elif defined(_WIN32)
-    std::string cmd = "start " + url + " > nul 2>&1";
-#else
-    std::string cmd = "xdg-open " + url + " > /dev/null 2>&1 &";
-#endif
-    int ret = std::system(cmd.c_str());
-    (void) ret;
-
-    net::io_context ioc{num_threads};
-
-    std::make_shared<Listener>(ioc,
-                               Tcp::endpoint{address, u_port},
-                               generator_,
-                               tcl_eval,
-                               timing_report,
-                               clock_report,
-                               doc_root,
-                               logger_)
-        ->run();
-
-    net::signal_set signals(ioc, SIGINT, SIGTERM);
-    signals.async_wait([&](auto, auto) {
-      logger_->info(utl::WEB, 3, "Shutting down...");
-      ioc.stop();
-    });
-
-    std::vector<std::thread> threads;
-    threads.reserve(num_threads - 1);
-    for (int i = 0; i < num_threads - 1; ++i) {
-      threads.emplace_back([&ioc] { ioc.run(); });
-    }
-
-    ioc.run();
-
-    for (auto& t : threads) {
-      t.join();
-    }
-
-    logger_->info(utl::WEB, 5, "Server stopped.");
-  } catch (std::exception const& e) {
-    logger_->error(utl::WEB, 2, "Server error : {}", e.what());
-  }
+  auto listener = std::make_shared<Listener>(ioc,
+                                             endpoint,
+                                             std::move(generator),
+                                             std::move(tcl_eval),
+                                             std::move(timing_report),
+                                             std::move(clock_report),
+                                             doc_root,
+                                             logger,
+                                             viewer_hook);
+  listener->run();
+  return [listener]() { listener->close(); };
 }
 
 }  // namespace web
