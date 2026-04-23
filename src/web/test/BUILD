@@ -127,6 +127,13 @@ js_test(
     no_copy_to_bin = JS_FILES,
 )
 
+js_test(
+    name = "status_indicator_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-status-indicator.js",
+    no_copy_to_bin = JS_FILES,
+)
+
 cc_test(
     name = "clock_tree_report_test",
     srcs = ["cpp/TestClockTreeReport.cpp"],

@@ -426,16 +426,60 @@ html, body {
 /* Status overlay */
 #websocket-status {
     position: fixed;
+    pointer-events: none;
+    z-index: 10005;
+    display: none;
+}
+
+#websocket-status .disconnected-banner {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--error) 0%, #cc3333 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    animation: slideDown 0.3s ease-out, pulse 2s ease-in-out infinite 0.5s;
+    letter-spacing: 0.5px;
+}
+
+#websocket-status .pending-indicator {
+    position: fixed;
     top: 8px;
     right: 8px;
-    z-index: 10000;
     background: var(--bg-status);
     color: var(--fg-secondary);
     padding: 4px 10px;
     font: 12px monospace;
     border-radius: 4px;
-    pointer-events: none;
-    display: none;
+    display: inline-block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        opacity: 0.8;
+        box-shadow: 0 12px 32px rgba(255, 100, 100, 0.5);
+    }
 }
 
 /* Coordinate readout (bottom-left of layout viewer) */
