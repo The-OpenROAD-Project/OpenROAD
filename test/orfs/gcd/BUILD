@@ -16,8 +16,11 @@ orfs_sweep(
         # Demonstrate clock period specified in arguments, useful
         # for Optuna scripts.
         "ABC_CLOCK_PERIOD_IN_PS": "310.001",
-        # Smoketest
-        "SWAP_ARITH_OPERATORS": "1",
+        # SWAP_ARITH_OPERATORS=1 was set as a smoketest but triggers a
+        # non-deterministic bug in yosys 0.62 WRAPCELL that occasionally
+        # emits a control character (0x1d) inside the generated
+        # *_KOGGE_STONE module name and aborts synthesis. Re-enable once
+        # the upstream yosys bug is fixed.
     },
     sources = {
         "RULES_JSON": [":rules-base.json"],
