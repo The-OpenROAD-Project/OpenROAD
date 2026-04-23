@@ -429,10 +429,30 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
         res.set(http::field::server, "OpenROAD WebSocket Server");
       }));
 
+  websocket_.async_accept(req,
+                          [self = shared_from_this()](beast::error_code ec) {
+                            self->on_accept(ec);
+                          });
+}
+
+void WebSocketSession::on_accept(beast::error_code ec)
+{
+  if (ec) {
+    debugPrint(logger_,
+               utl::WEB,
+               "websocket",
+               1,
+               "websocket accept error: {}",
+               ec.message());
+    return;
+  }
+
   // Register this session with the viewer hook so debug_paused /
   // debug_refresh / debug_resumed push messages reach the client.  The
   // lambda captures a weak_ptr so we never keep the session alive on the
-  // registry's behalf.
+  // registry's behalf.  This must happen AFTER accept completes — writing
+  // before the handshake finishes sends masked (client-role) frames that
+  // browsers reject with "A server must not mask any frames".
   if (viewer_hook_ != nullptr) {
     auto weak_self = std::weak_ptr<WebSocketSession>(shared_from_this());
     viewer_token_
@@ -467,24 +487,6 @@ void WebSocketSession::run(http::request<http::string_body>&& req)
     resp.payload.assign(json.begin(), json.end());
     self->queue_response(resp);
   });
-
-  websocket_.async_accept(req,
-                          [self = shared_from_this()](beast::error_code ec) {
-                            self->on_accept(ec);
-                          });
-}
-
-void WebSocketSession::on_accept(beast::error_code ec)
-{
-  if (ec) {
-    debugPrint(logger_,
-               utl::WEB,
-               "websocket",
-               1,
-               "websocket accept error: {}",
-               ec.message());
-    return;
-  }
 
   do_read();
 }
