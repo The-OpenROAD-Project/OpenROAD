@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -267,6 +268,12 @@ class NegotiationLegalizer
   int max_disp_threshold_{kThDefault};      // th on the paper
   int max_iter_neg_{kMaxIterNeg};
   int horiz_window_{kHorizWindow};
+  int current_iter_{0};  // updated at the start of each negotiationIter call
+
+  // Cells that actually changed position during the current negotiation
+  // iteration. Passed to the debug observer so cells from prior iterations
+  // are rendered in grey while current-iteration movers keep directional colors.
+  std::unordered_set<odb::dbInst*> current_iter_movers_;
   int adj_window_{kAdjWindow};
   int num_threads_{1};
   bool run_abacus_{false};

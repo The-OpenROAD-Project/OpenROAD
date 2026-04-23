@@ -163,10 +163,15 @@ void Graphics::drawObjects(gui::Painter& painter)
                        target_bbox.yMin(),
                        target_bbox.xMin(),
                        target_bbox.yMin() + tag_size * 2);
-    } else if (std::abs(dx) > std::abs(dy)) {
-      line_color = (dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed;
+    } else if (current_iter_movers_.empty()
+               || current_iter_movers_.contains(cell->getDbInst())) {
+      // Moved in the current iteration (or no iteration info yet).
+      line_color = (std::abs(dx) > std::abs(dy))
+                       ? ((dx > 0) ? gui::Painter::kGreen : gui::Painter::kRed)
+                       : ((dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue);
     } else {
-      line_color = (dy > 0) ? gui::Painter::kMagenta : gui::Painter::kBlue;
+      // Moved in a previous iteration — grey to reduce visual noise.
+      line_color = gui::Painter::kGray;
     }
 
     painter.setPen(line_color, /* cosmetic */ true);
@@ -346,6 +351,12 @@ void Graphics::addNegotiationPhase2Marker(int iter)
   if (overflow_chart_) {
     overflow_chart_->addVerticalMarker(iter, gui::Painter::kYellow);
   }
+}
+
+void Graphics::setCurrentIterMovers(
+    const std::unordered_set<odb::dbInst*>& movers)
+{
+  current_iter_movers_ = movers;
 }
 
 /* static */

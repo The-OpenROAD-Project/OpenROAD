@@ -120,6 +120,7 @@ class Opendp
   void setIterativePlacement(bool iterative);
   void setDeepIterativePlacement(bool deep_iterative);
   void setNegotiationDebugInterval(int iterative_jump);
+  void setNegotiationDebugStart(int iterative_start);
 
   // Global padding.
   int padGlobalLeft() const;
@@ -240,6 +241,9 @@ class Opendp
                    GridY y_end) const;
   bool checkMasterSym(unsigned masterSym, unsigned cellOri) const;
   bool checkRowPowerCompatible(const Node* cell, GridY y) const;
+  bool ripUpAndReplace(Node* cell);
+  bool diamondMove(Node* cell);
+  bool diamondMove(Node* cell, const GridPt& grid_pt);
   int distChange(const Node* cell, DbuX x, DbuY y) const;
   bool swapCells(Node* cell1, Node* cell2);
   bool refineMove(Node* cell);
@@ -396,6 +400,7 @@ class Opendp
   bool iterative_debug_ = false;
   bool deep_iterative_debug_ = false;
   int negotiation_debug_interval_ = 1;
+  int negotiation_debug_start_ = 0;
   bool incremental_ = false;
   bool use_old_diamond_ = false;
 
