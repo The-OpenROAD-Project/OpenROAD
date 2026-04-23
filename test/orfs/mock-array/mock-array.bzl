@@ -334,8 +334,6 @@ def mock_array(name, config):
         orfs_flow(
             name = "MockArray",
             arguments = {
-                "ARRAY_COLS": str(config["cols"]),
-                "ARRAY_ROWS": str(config["rows"]),
                 "CORE_AREA": "{} {} {} {}".format(
                     array_spacing_x,
                     array_spacing_y,
@@ -378,6 +376,12 @@ def mock_array(name, config):
             } | ({
                 "IO_CONSTRAINTS": [":write_pin_placement"],
             } if variant == "4x4_flat" else {}),
+            stage_arguments = {
+                "floorplan": {
+                    "ARRAY_COLS": str(config["cols"]),
+                    "ARRAY_ROWS": str(config["rows"]),
+                },
+            },
             tags = ["manual"],
             test_kwargs = {
                 "tags": ["orfs"],
