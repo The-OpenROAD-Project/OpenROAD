@@ -63,6 +63,13 @@ enum class PortRoleType
   Ground
 };
 
+enum class RamPortType
+{
+  ReadOnly,
+  WriteOnly, 
+  ReadWrite
+};
+
 struct PortRole
 {
   PortRoleType type;
@@ -160,9 +167,24 @@ class RamGen
 
   std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
 
+  void makeDecoderColumn(
+    const std::string& prefix,
+    const int num_words,
+    const std::vector<std::vector<odb::dbNet*>>& addr_nets, 
+    const std::vector<odb::dbNet*>& decoder_output_nets);
+
+  void makeSelectColumn(
+    const std::string& prefix,
+    const int num_words,
+    RamPortType port_type,
+    odb::dbNet* write_enable,
+    const std::vector<odb::dbNet*>& decoder_output_nets,
+    const std::vector<odb::dbNet*>& read_select_nets, 
+    const std::vector<odb::dbNet*>& write_select_nets);
+
   std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
                                     int num_word,
-                                    int read_ports,
+                                    int read_port,
                                     const std::vector<odb::dbNet*>& selects,
                                     const std::vector<odb::dbNet*>& addr_nets);
 
