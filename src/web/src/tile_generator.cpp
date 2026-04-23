@@ -2083,6 +2083,16 @@ void TileGenerator::drawRendererOverlay(std::vector<unsigned char>& image,
   callback(image, dbu_tile, scale, debug_live);
 }
 
+// Convert a PenState width to pixel width for rasterization.
+// Cosmetic pens are always 1 screen pixel (matching Qt semantics).
+static int penWidthPx(const PenState& pen, double scale)
+{
+  if (pen.cosmetic) {
+    return 1;
+  }
+  return std::max(1, static_cast<int>(pen.width * scale));
+}
+
 // Rasterize a single WebPainter's recorded DrawOps into a pixel buffer.
 // Exposed so that the WebServer-installed debug-overlay callback can
 // reuse tile_generator's line / polygon / bitmap primitives.
@@ -2107,14 +2117,15 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         }
         if (r->pen.color.a > 0) {
           const Color pen = toTileColor(r->pen.color);
+          const int w = penWidthPx(r->pen, scale);
           const int x0 = px.xMin();
           const int x1 = px.xMax() - 1;
           const int y0 = 255 - px.yMin();
           const int y1 = 255 - (px.yMax() - 1);
-          drawLine(image, x0, y0, x1, y0, pen);
-          drawLine(image, x1, y0, x1, y1, pen);
-          drawLine(image, x1, y1, x0, y1, pen);
-          drawLine(image, x0, y1, x0, y0, pen);
+          drawLine(image, x0, y0, x1, y0, pen, w);
+          drawLine(image, x1, y0, x1, y1, pen, w);
+          drawLine(image, x1, y1, x0, y1, pen, w);
+          drawLine(image, x0, y1, x0, y0, pen, w);
         }
       } else if (const auto* l = std::get_if<DrawLineOp>(&op)) {
         if (l->pen.color.a == 0) {
@@ -2124,7 +2135,13 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         const int y0 = toPxY(l->p1.y(), dbu_tile, scale);
         const int x1 = toPxX(l->p2.x(), dbu_tile, scale);
         const int y1 = toPxY(l->p2.y(), dbu_tile, scale);
-        drawLine(image, x0, y0, x1, y1, toTileColor(l->pen.color));
+        drawLine(image,
+                 x0,
+                 y0,
+                 x1,
+                 y1,
+                 toTileColor(l->pen.color),
+                 penWidthPx(l->pen, scale));
       } else if (const auto* c = std::get_if<DrawCircleOp>(&op)) {
         // Simple midpoint circle (outline only).
         const int cx = toPxX(c->cx, dbu_tile, scale);
@@ -2162,8 +2179,9 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         const int cy = toPxY(xop->cy, dbu_tile, scale);
         const int half = std::max(1, static_cast<int>(xop->size * scale / 2));
         const Color pen = toTileColor(xop->pen.color);
-        drawLine(image, cx - half, cy - half, cx + half, cy + half, pen);
-        drawLine(image, cx - half, cy + half, cx + half, cy - half, pen);
+        const int w = penWidthPx(xop->pen, scale);
+        drawLine(image, cx - half, cy - half, cx + half, cy + half, pen, w);
+        drawLine(image, cx - half, cy + half, cx + half, cy - half, pen, w);
       } else if (const auto* p = std::get_if<DrawPolygonOp>(&op)) {
         if (p->brush.style != gui::Painter::Brush::kNone
             && p->brush.color.a > 0) {
@@ -2178,6 +2196,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
         }
         if (p->pen.color.a > 0) {
           const Color pen = toTileColor(p->pen.color);
+          const int w = penWidthPx(p->pen, scale);
           const int n = static_cast<int>(p->points.size());
           for (int i = 0; i < n; ++i) {
             const odb::Point& a = p->points[i];
@@ -2187,7 +2206,8 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
                      toPxY(a.y(), dbu_tile, scale),
                      toPxX(b.x(), dbu_tile, scale),
                      toPxY(b.y(), dbu_tile, scale),
-                     pen);
+                     pen,
+                     w);
           }
         }
       } else if (const auto* s = std::get_if<DrawStringOp>(&op)) {
@@ -2555,7 +2575,8 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
                              int y0,
                              int x1,
                              int y1,
-                             const Color& c)
+                             const Color& c,
+                             int width)
 {
   // Bresenham's line algorithm
   int dx = std::abs(x1 - x0);
@@ -2563,12 +2584,16 @@ void TileGenerator::drawLine(std::vector<unsigned char>& image,
   int sx = x0 < x1 ? 1 : -1;
   int sy = y0 < y1 ? 1 : -1;
   int err = dx - dy;
+  const int r = (width - 1) / 2;
 
   while (true) {
-    // Draw 3px wide
-    for (int dy2 = -1; dy2 <= 1; dy2++) {
-      for (int dx2 = -1; dx2 <= 1; dx2++) {
-        blendPixel(image, x0 + dx2, y0 + dy2, c);
+    if (r <= 0) {
+      blendPixel(image, x0, y0, c);
+    } else {
+      for (int dy2 = -r; dy2 <= r; dy2++) {
+        for (int dx2 = -r; dx2 <= r; dx2++) {
+          blendPixel(image, x0 + dx2, y0 + dy2, c);
+        }
       }
     }
 

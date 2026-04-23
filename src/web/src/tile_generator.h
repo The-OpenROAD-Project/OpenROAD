@@ -348,7 +348,8 @@ class TileGenerator
                        int y0,
                        int x1,
                        int y1,
-                       const Color& c);
+                       const Color& c,
+                       int width = 3);
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
