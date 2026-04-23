@@ -7,14 +7,16 @@ sta::define_cmd_args "generate_ram_netlist" {-mask_size bits
                                              [-storage_cell name]
                                              [-tristate_cell name]
                                              [-inv_cell name]
-                                             [-read_ports count]
+                                             [-rw_ports count]
+                                             [-rd_ports count]
+                                             [-wr_ports count]
                                              [-tapcell name]
                                              [-max_tap_dist value]}
 
 proc generate_ram_netlist { args } {
   sta::parse_key_args "generate_ram_netlist" args \
     keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell
-      -read_ports -tapcell -max_tap_dist } flags {}
+      -rw_ports -rd_ports -wr_ports -tapcell -max_tap_dist } flags {}
 
   if { [info exists keys(-mask_size)] } {
     set mask_size $keys(-mask_size)
@@ -53,9 +55,27 @@ proc generate_ram_netlist { args } {
     set inv_cell $keys(-inv_cell)
   }
 
-  set read_ports 1
-  if { [info exists keys(-read_ports)] } {
-    set read_ports $keys(-read_ports)
+  set rw_ports 1
+  if { [info exists keys(-rw_ports)] } {
+    set rw_ports $keys(-rw_ports)
+  }
+
+  set rd_ports 0
+  if { [info exists keys(-rd_ports)] } {
+    set rd_ports $keys(-rd_ports)
+  }
+
+  set wr_ports 0
+  if { [info exists keys(-wr_ports)] } {
+    set wr_ports $keys(-wr_ports)
+  }
+
+  if { $rw_ports + $wr_ports != 1 } {
+    utl::error RAM 28 "Must have exactly one read/write port or one write port."
+  }
+
+  if { $rw_ports + $rd_ports < 1 } {
+    utl::error RAM:29 "Must specify at least one read output port"
   }
 
   set tapcell ""
@@ -74,13 +94,15 @@ proc generate_ram_netlist { args } {
   }
 
   ram::generate_ram_netlist_cmd $mask_size $word_size $num_words $storage_cell \
-    $tristate_cell $inv_cell $read_ports $tapcell $max_tap_dist
+    $tristate_cell $inv_cell $rw_ports $rd_ports $wr_ports $tapcell $max_tap_dist
 }
 
 sta::define_cmd_args "generate_ram" {-mask_size bits
                                      -word_size bits
                                      -num_words words
-                                     [-read_ports count]
+                                     [-rw_ports count]
+                                     [-rd_ports count]
+                                     [-wr_ports count]
                                      [-storage_cell name]
                                      [-tristate_cell name]
                                      [-inv_cell name]
@@ -98,8 +120,8 @@ sta::define_cmd_args "generate_ram" {-mask_size bits
 # user arguments for generate ram arguments
 proc generate_ram { args } {
   sta::parse_key_args "generate_ram" args \
-    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell -read_ports
-      -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
+    keys { -mask_size -word_size -num_words -storage_cell -tristate_cell -inv_cell -rw_ports
+      -rd_ports -wr_ports -power_pin -ground_pin -routing_layer -ver_layer -hor_layer -filler_cells
         -tapcell -max_tap_dist -write_behavioral_verilog } flags {}
 
   sta::check_argc_eq0 "generate_ram" $args
@@ -114,8 +136,16 @@ proc generate_ram { args } {
     -word_size $keys(-word_size) \
     -num_words $keys(-num_words)]
 
-  if { [info exists keys(-read_ports)] } {
-    lappend ram_netlist_args -read_ports $keys(-read_ports)
+  if { [info exists keys(-rw_ports)] } {
+    lappend ram_netlist_args -rw_ports $keys(-rw_ports)
+  }
+
+  if { [info exists keys(-rd_ports)] } {
+    lappend ram_netlist_args -rd_ports $keys(-rd_ports)
+  }
+
+  if { [info exists keys(-wr_ports)] } {
+    lappend ram_netlist_args -wr_ports $keys(-wr_ports)
   }
 
   if { [info exists keys(-storage_cell)] } {

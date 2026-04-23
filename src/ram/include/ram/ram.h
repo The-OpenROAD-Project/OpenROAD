@@ -66,7 +66,7 @@ enum class PortRoleType
 enum class RamPortType
 {
   ReadOnly,
-  WriteOnly, 
+  WriteOnly,
   ReadWrite
 };
 
@@ -97,7 +97,9 @@ class RamGen
   void generate(int mask_size,
                 int word_size,
                 int num_words,
-                int read_ports,
+                int rw_ports,
+                int rd_ports,
+                int wr_ports,
                 odb::dbMaster* storage_cell,
                 odb::dbMaster* tristate_cell,
                 odb::dbMaster* inv_cell,
@@ -146,7 +148,9 @@ class RamGen
   void makeSlice(int slice_idx,
                  int mask_size,
                  int row_idx,
-                 int read_ports,
+                 int rw_ports,
+                 int rd_ports,
+                 int wr_ports,
                  odb::dbNet* clock,
                  odb::dbNet* write_enable,
                  const std::vector<odb::dbNet*>& selects,
@@ -156,7 +160,9 @@ class RamGen
   void makeWord(int slices_per_word,
                 int mask_size,
                 int row_idx,
-                int read_ports,
+                int rw_ports,
+                int rd_ports,
+                int wr_ports,
                 odb::dbNet* clock,
                 std::vector<odb::dbBTerm*>& write_enable,
                 const std::vector<odb::dbNet*>& selects,
@@ -167,26 +173,23 @@ class RamGen
 
   std::unique_ptr<Layout> generateTapColumn(int word_count, int tapcell_col);
 
-  void makeDecoderColumn(
-    const std::string& prefix,
-    const int num_words,
-    const std::vector<std::vector<odb::dbNet*>>& addr_nets, 
-    const std::vector<odb::dbNet*>& decoder_output_nets);
+  void makeDecoderColumn(const std::string& prefix,
+                         const int num_words,
+                         const std::vector<std::vector<odb::dbNet*>>& addr_nets,
+                         const std::vector<odb::dbNet*>& decoder_output_nets);
 
-  void makeSelectColumn(
-    const std::string& prefix,
-    const int num_words,
-    RamPortType port_type,
-    odb::dbNet* write_enable,
-    const std::vector<odb::dbNet*>& decoder_output_nets,
-    const std::vector<odb::dbNet*>& read_select_nets, 
-    const std::vector<odb::dbNet*>& write_select_nets);
+  void makeSelectColumn(const std::string& prefix,
+                        const int num_words,
+                        RamPortType port_type,
+                        odb::dbNet* write_enable,
+                        const std::vector<odb::dbNet*>& decoder_output_nets,
+                        const std::vector<odb::dbNet*>& read_select_nets,
+                        const std::vector<odb::dbNet*>& write_select_nets);
 
-
-void makeBufferColumn(const std::string& prefix,
-                              const int num_words,
-                              const std::vector<odb::dbNet*>& decoder_output_nets,
-                              const std::vector<odb::dbNet*>& select_nets);
+  void makeBufferColumn(const std::string& prefix,
+                        const int num_words,
+                        const std::vector<odb::dbNet*>& decoder_output_nets,
+                        const std::vector<odb::dbNet*>& select_nets);
 
   std::unique_ptr<Cell> makeDecoder(const std::string& prefix,
                                     int num_word,
@@ -197,13 +200,12 @@ void makeBufferColumn(const std::string& prefix,
   std::vector<odb::dbNet*> selectNets(const std::string& prefix,
                                       int read_ports);
 
-  std::vector<odb::dbNet*> makeDecoderOutputNets(
-    const std::string& prefix,
-    const int num_words);
+  std::vector<odb::dbNet*> makeDecoderOutputNets(const std::string& prefix,
+                                                 const int num_words);
 
-  
-std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix, const
-  int num_words, RamPortType port_type);
+  std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix,
+                                          const int num_words,
+                                          RamPortType port_type);
 
   sta::dbNetwork* network_;
   odb::dbDatabase* db_;
@@ -230,7 +232,7 @@ std::vector<odb::dbNet*> makeSelectNets(const std::string& prefix, const
   std::map<PortRole, std::string> clock_gate_ports_;
   std::map<PortRole, std::string> buffer_ports_;
 
-  std::vector<odb::dbBTerm*> addr_inputs_;
+  std::vector<std::vector<odb::dbBTerm*>> addr_inputs_;
   std::vector<odb::dbBTerm*> data_inputs_;
   std::vector<std::vector<odb::dbBTerm*>> q_outputs_;
   std::string behavioral_verilog_filename_;
