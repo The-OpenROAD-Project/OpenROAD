@@ -86,6 +86,13 @@ cc_library(
         "src/timing_report.cpp",
         "src/timing_report.h",
         "src/web.cpp",
+        "src/web_chart.cpp",
+        "src/web_chart.h",
+        "src/web_painter.cpp",
+        "src/web_painter.h",
+        "src/web_serve.cpp",
+        "src/web_viewer_hook.cpp",
+        "src/web_viewer_hook.h",
         ":report_assets",
     ],
     hdrs = [
@@ -109,6 +116,7 @@ cc_library(
         "@boost.asio",
         "@boost.beast",
         "@boost.geometry",
+        "@spdlog",
         "@tcl_lang//:tcl",
     ],
 )

@@ -233,12 +233,18 @@ Gui::Gui() : continue_after_close_(false), logger_(nullptr), db_(nullptr)
 
 bool Gui::enabled()
 {
+  Gui* self = Gui::get();
+  return main_window != nullptr || self->headless_viewer_ != nullptr;
+}
+
+bool Gui::hasUI()
+{
   return main_window != nullptr;
 }
 
 void Gui::registerRenderer(Renderer* renderer)
 {
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->getControls()->registerRenderer(renderer);
   }
 
@@ -252,7 +258,7 @@ void Gui::unregisterRenderer(Renderer* renderer)
     return;
   }
 
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->getControls()->unregisterRenderer(renderer);
   }
 
@@ -262,20 +268,42 @@ void Gui::unregisterRenderer(Renderer* renderer)
 
 void Gui::redraw()
 {
-  if (!Gui::enabled()) {
+  if (main_window != nullptr) {
+    main_window->redraw();
     return;
   }
-  main_window->redraw();
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->redraw();
+  }
 }
 
 void Gui::status(const std::string& message)
 {
-  main_window->status(message);
+  if (main_window != nullptr) {
+    main_window->status(message);
+  }
+  // No status surface in headless mode; silently drop.
 }
 
 void Gui::pause(int timeout)
 {
-  main_window->pause(timeout);
+  if (main_window != nullptr) {
+    main_window->pause(timeout);
+    return;
+  }
+  if (headless_viewer_ != nullptr) {
+    headless_viewer_->pause(timeout);
+  }
+}
+
+void Gui::setHeadlessViewer(HeadlessViewer* viewer)
+{
+  headless_viewer_ = viewer;
+}
+
+void Gui::setChartFactory(ChartFactory factory)
+{
+  chart_factory_ = std::move(factory);
 }
 
 Selected Gui::makeSelected(const std::any& object)
@@ -963,7 +991,7 @@ void Gui::registerHeatMap(HeatMapDataSource* heatmap)
       [this](HeatMapDataSource* source) { unregisterHeatMap(source); });
   registerRenderer(renderer.get());
   heat_map_renderers_[heatmap] = std::move(renderer);
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->registerHeatMap(heatmap);
   }
 }
@@ -982,7 +1010,7 @@ void Gui::unregisterHeatMap(HeatMapDataSource* heatmap)
     unregisterRenderer(renderer_itr->second.get());
     heat_map_renderers_.erase(renderer_itr);
   }
-  if (Gui::enabled()) {
+  if (main_window != nullptr) {
     main_window->unregisterHeatMap(heatmap);
   }
   heat_maps_.erase(heatmap);
@@ -1408,7 +1436,13 @@ Chart* Gui::addChart(const std::string& name,
                      const std::string& x_label,
                      const std::vector<std::string>& y_labels)
 {
-  return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+  if (main_window != nullptr) {
+    return main_window->getChartsWidget()->addChart(name, x_label, y_labels);
+  }
+  if (chart_factory_) {
+    return chart_factory_(name, x_label, y_labels);
+  }
+  return nullptr;
 }
 
 void Gui::removeRouteGuides(odb::dbNet* net)

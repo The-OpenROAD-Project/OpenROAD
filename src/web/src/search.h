@@ -6,8 +6,8 @@
 #include <atomic>
 #include <limits>
 #include <map>
-#include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -132,11 +132,11 @@ class Search : public odb::dbBlockCallBackObj
     Iterator begin_;
     Iterator end_;
   };
-  using InstRange = Range<RtreeDBox<odb::dbInst*>>;
+  using InstRange = std::vector<odb::dbInst*>;
   using RoutingRange = Range<RtreeRoutingShapes<odb::dbNet*>>;
   using SNetSBoxRange = Range<RtreeSNetDBoxShapes<odb::dbNet*>>;
   using SNetShapeRange = Range<RtreeSNetShapes<odb::dbNet*>>;
-  using FillRange = Range<RtreeFill>;
+  using FillRange = std::vector<odb::dbFill*>;
   using ObstructionRange = Range<RtreeDBox<odb::dbObstruction*>>;
   using BlockageRange = Range<RtreeDBox<odb::dbBlockage*>>;
   using RowRange = Range<RtreeRect<odb::dbRow*>>;
@@ -325,12 +325,12 @@ class Search : public odb::dbBlockCallBackObj
     RtreeDBox<odb::dbBlockage*> blockages;
     RtreeRect<odb::dbRow*> rows;
 
-    std::mutex shapes_init_mutex;
-    std::mutex fills_init_mutex;
-    std::mutex insts_init_mutex;
-    std::mutex blockages_init_mutex;
-    std::mutex obstructions_init_mutex;
-    std::mutex rows_init_mutex;
+    std::shared_mutex shapes_init_mutex;
+    std::shared_mutex fills_init_mutex;
+    std::shared_mutex insts_init_mutex;
+    std::shared_mutex blockages_init_mutex;
+    std::shared_mutex obstructions_init_mutex;
+    std::shared_mutex rows_init_mutex;
 
     // The net is used for filter shapes by net type
     LayerMap<RtreeRoutingShapes<odb::dbNet*>> box_shapes;
