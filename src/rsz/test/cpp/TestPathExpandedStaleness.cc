@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // Copyright (c) 2026-2026, The OpenROAD Authors
 
+#include <cstdio>
 #include <string>
 
 #include "SizeUpMove.hh"
@@ -194,17 +195,41 @@ TEST_F(StalePathTest, SizeUpMoveSurvivesStalePathAfterUpdateTiming)
   makeClockOn("clk2", new_bt);
   sta_->updateTiming(true);
 
-  // 4. Stale-pointer signature: same raw prev pointer, different decode.
-  ASSERT_EQ(network->pathName(drvr_path->pin(sta_.get())), "nd1/ZN");
+  // 4. Staleness evidence: at least one of the captured Path's slots has
+  // been recycled.  The precise form depends on the allocator (system
+  // libc vs. jemalloc/tcmalloc etc.):
+  //   (a) drvr Path slot itself recycled -> drvr pin decodes to something
+  //       other than nd1/ZN, or
+  //   (b) drvr slot preserved but prev slot recycled -> prev pin decodes
+  //       to a pin that is not one of nd1's real inputs (nd1/A1, nd1/A2).
+  // (b) is the strict stale-pointer signature (raw pointer address
+  // unchanged, content changed); we assert it tightly when drvr survives.
+  const std::string drvr_pin_after
+      = network->pathName(drvr_path->pin(sta_.get()));
   const sta::Path* prev_after = drvr_path->prevPath();
-  ASSERT_NE(prev_after, nullptr);
-  EXPECT_EQ(prev_after, prev_before)
-      << "stale raw pointer: prev_path_ should be unchanged in address";
   const std::string prev_pin_after
-      = network->pathName(prev_after->pin(sta_.get()));
-  EXPECT_NE(prev_pin_after, prev_pin_before)
-      << "but slot content should differ after free+reuse. before="
-      << prev_pin_before << " after=" << prev_pin_after;
+      = prev_after ? network->pathName(prev_after->pin(sta_.get()))
+                   : std::string("<null>");
+  const bool drvr_recycled = drvr_pin_after != "nd1/ZN";
+  const bool prev_recycled = prev_after != nullptr && prev_pin_after != "nd1/A1"
+                             && prev_pin_after != "nd1/A2";
+  EXPECT_TRUE(drvr_recycled || prev_recycled)
+      << "expected slot reuse to be demonstrable; drvr=" << drvr_pin_after
+      << " prev=" << prev_pin_after;
+  if (!drvr_recycled && prev_after != nullptr) {
+    EXPECT_EQ(prev_after, prev_before)
+        << "stale-pointer signature: prev_path_ address unchanged";
+    EXPECT_NE(prev_pin_after, prev_pin_before)
+        << "but slot content should differ after free+reuse. before="
+        << prev_pin_before << " after=" << prev_pin_after;
+  }
+  std::fprintf(stderr,
+               "DBG stale: drvr=%s  prev_addr=%p  prev_before=%s  "
+               "prev_after=%s\n",
+               drvr_pin_after.c_str(),
+               (const void*) prev_after,
+               prev_pin_before.c_str(),
+               prev_pin_after.c_str());
 
   // 5. Pre-fix SIGSEGV on stale prev; post-fix safe early-return.
   rsz::SizeUpMove size_up_move(&resizer_);

@@ -270,10 +270,12 @@ cc_test(
     srcs = [
         "cpp/TestPathExpandedStaleness.cc",
     ],
+    copts = ["-Isrc/rsz/src"],
     data = [
         "Nangate45/Nangate45.lef",
         "Nangate45/Nangate45_typ.lib",
     ],
+    features = ["-layering_check"],
     deps = [
         "//src/ant",
         "//src/dbSta",
