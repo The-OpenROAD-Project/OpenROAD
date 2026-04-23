@@ -54,7 +54,10 @@ class Graphics : public gui::Renderer, public DplObserver
                                   const odb::Rect& curr_window) override;
   void clearNegotiationSearchWindows() override;
 
-  void addNegotiationOverflowPoint(int iter, int overflow) override;
+  void addNegotiationViolationsPoint(int iter,
+                                     int violations,
+                                     int illegal_count,
+                                     int illegal_site_count) override;
   void addNegotiationPhase2Marker(int iter) override;
   void setCurrentIterMovers(
       const std::unordered_set<odb::dbInst*>& movers) override;
@@ -91,7 +94,7 @@ class Graphics : public gui::Renderer, public DplObserver
   // Empty means "no iteration info available" — all movers use directional colors.
   std::unordered_set<odb::dbInst*> current_iter_movers_;
 
-  gui::Chart* overflow_chart_ = nullptr;
+  gui::Chart* violations_chart_ = nullptr;
 };
 
 }  // namespace dpl
