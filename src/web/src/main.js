@@ -330,7 +330,7 @@ function createTclConsole(container) {
         '<div class="tcl-output"></div>' +
         '<div class="tcl-input-row">' +
         '  <span class="tcl-prompt">%</span>' +
-        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." spellcheck="false" />' +
+        '  <input class="tcl-input" type="text" placeholder="Enter Tcl command..." spellcheck="false" autocomplete="off" autocapitalize="none" autocorrect="off"/>' +
         '</div>';
     container.element.appendChild(el);
 
