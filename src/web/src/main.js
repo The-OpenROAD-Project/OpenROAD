@@ -255,6 +255,16 @@ function redrawAllLayers() {
     }
 }
 
+// Debounced wrapper: coalesces back-to-back server pushes (e.g.
+// debug_refresh + debug_paused) into a single redrawAllLayers() call.
+let _redrawRAF = null;
+function scheduleRedrawAllLayers() {
+    if (_redrawRAF !== null) return;
+    _redrawRAF = requestAnimationFrame(() => {
+        _redrawRAF = null;
+        redrawAllLayers();
+    });
+}
 
 function createLayoutViewer(container) {
     const mapDiv = document.createElement('div');
@@ -655,7 +665,9 @@ app.websocketManager.onPush = (msg) => {
     } else if (msg.type === 'debug_paused') {
         ensureDebugContinueButton().style.display = 'block';
         // Refetch tiles so the user sees the current paused state.
-        redrawAllLayers();
+        // Use the debounced version so that a debug_refresh arriving
+        // in the same event-loop turn is coalesced (avoids 2x tiles).
+        scheduleRedrawAllLayers();
     } else if (msg.type === 'debug_resumed') {
         const btn = document.getElementById('debug-continue-btn');
         if (btn) btn.style.display = 'none';
@@ -666,7 +678,7 @@ app.websocketManager.onPush = (msg) => {
             app.map.removeLayer(app.highlightRect);
             app.highlightRect = null;
         }
-        redrawAllLayers();
+        scheduleRedrawAllLayers();
     } else if (msg.type === 'log') {
         // Logger output from the main Tcl thread (e.g. global_placement).
         // The text already contains \n between lines from the batch; strip
