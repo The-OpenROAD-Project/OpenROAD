@@ -26,6 +26,7 @@ const DISCONNECT_DELAY_MS = 2000; // Show banner after 2 seconds of disconnectio
 
 function updateStatus() {
     const isConnected = app.websocketManager && app.websocketManager.isConnected;
+    const pendingCount = app.websocketManager ? app.websocketManager.pending.size : 0;
     
     if (!isConnected) {
         // Only show banner after a delay to avoid flashing on page load
@@ -38,12 +39,20 @@ function updateStatus() {
             }, DISCONNECT_DELAY_MS);
         }
     } else {
-        // Connected - clear timeout and hide banner
+        // Connected - clear timeout and show pending indicator if needed
         if (disconnectTimeout) {
             clearTimeout(disconnectTimeout);
             disconnectTimeout = null;
         }
-        statusDiv.style.display = 'none';
+        
+        if (pendingCount === 0) {
+            statusDiv.style.display = 'none';
+        } else {
+            statusDiv.innerHTML = `<div class="pending-indicator">pending: ${pendingCount}</div>`;
+            statusDiv.style.display = 'block';
+            const color = pendingCount > 20 ? 'var(--error)' : 'var(--fg-bright)';
+            statusDiv.querySelector('.pending-indicator').style.color = color;
+        }
     }
 }
 
