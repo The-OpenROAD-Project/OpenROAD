@@ -1198,7 +1198,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
 
       // Draw routing shapes (wires, vias, bterms) on top of instances
-      if (!instances_only && tech_layer && vis.routing && shapesReady()) {
+      if (!instances_only && tech_layer && vis.routing) {
         for (const auto& shape : search_->searchBoxShapes(block,
                                                           tech_layer,
                                                           dbu_x_min,
@@ -1225,7 +1225,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
 
       // Draw special net shapes (power/ground straps) on top of instances
-      if (!instances_only && tech_layer && vis.special_nets && shapesReady()) {
+      if (!instances_only && tech_layer && vis.special_nets) {
         for (const auto& shape : search_->searchSNetShapes(block,
                                                            tech_layer,
                                                            dbu_x_min,
@@ -1250,7 +1250,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       }
 
       // Draw special net vias — decompose into individual cut boxes
-      if (!instances_only && tech_layer && vis.special_nets && shapesReady()) {
+      if (!instances_only && tech_layer && vis.special_nets) {
         for (const auto& shape : search_->searchSNetViaShapes(block,
                                                               tech_layer,
                                                               dbu_x_min,
@@ -1298,7 +1298,7 @@ std::vector<unsigned char> TileGenerator::renderTileBuffer(
       // rendering a routing layer we look up the cut layers immediately above
       // and below, search for vias there, and draw only the enclosure boxes
       // that belong to the current routing layer.
-      if (!instances_only && tech_layer && vis.special_nets && shapesReady()
+      if (!instances_only && tech_layer && vis.special_nets
           && tech_layer->getType() == odb::dbTechLayerType::ROUTING) {
         odb::dbTechLayer* adj_cuts[2]
             = {tech_layer->getLowerLayer(), tech_layer->getUpperLayer()};
