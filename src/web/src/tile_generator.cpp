@@ -2115,7 +2115,7 @@ void TileGenerator::rasterizeWebPainterOps(std::vector<unsigned char>& image,
             }
           }
         }
-        if (r->pen.color.a > 0) {
+        if (r->pen.color.a > 0 && px.dx() >= 1 && px.dy() >= 1) {
           const Color pen = toTileColor(r->pen.color);
           const int w = penWidthPx(r->pen, scale);
           const int x0 = px.xMin();

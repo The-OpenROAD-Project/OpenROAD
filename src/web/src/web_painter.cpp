@@ -83,6 +83,14 @@ void WebPainter::drawOctagon(const odb::Oct& oct)
 
 void WebPainter::drawRect(const odb::Rect& rect, int round_x, int round_y)
 {
+  // Skip shapes outside the tile or sub-pixel at current zoom.
+  if (!rect.overlaps(getBounds())) {
+    return;
+  }
+  const double ppd = getPixelsPerDBU();
+  if (rect.dx() * ppd < 1.0 && rect.dy() * ppd < 1.0) {
+    return;
+  }
   ops_.emplace_back(DrawRectOp{.rect = rect,
                                .round_x = round_x,
                                .round_y = round_y,
@@ -92,11 +100,29 @@ void WebPainter::drawRect(const odb::Rect& rect, int round_x, int round_y)
 
 void WebPainter::drawLine(const odb::Point& p1, const odb::Point& p2)
 {
+  // Skip lines completely outside the tile bounds.
+  const odb::Rect& bounds = getBounds();
+  const int lx = std::min(p1.x(), p2.x());
+  const int ly = std::min(p1.y(), p2.y());
+  const int ux = std::max(p1.x(), p2.x());
+  const int uy = std::max(p1.y(), p2.y());
+  if (ux < bounds.xMin() || lx > bounds.xMax() || uy < bounds.yMin()
+      || ly > bounds.yMax()) {
+    return;
+  }
   ops_.emplace_back(DrawLineOp{.p1 = p1, .p2 = p2, .pen = pen_});
 }
 
 void WebPainter::drawCircle(int x, int y, int r)
 {
+  const odb::Rect& bounds = getBounds();
+  if (x + r < bounds.xMin() || x - r > bounds.xMax() || y + r < bounds.yMin()
+      || y - r > bounds.yMax()) {
+    return;
+  }
+  if (r * getPixelsPerDBU() < 0.5) {
+    return;
+  }
   ops_.emplace_back(
       DrawCircleOp{.cx = x, .cy = y, .r = r, .pen = pen_, .brush = brush_});
 }
