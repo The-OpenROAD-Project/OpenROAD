@@ -776,6 +776,33 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//bazel:yosys_slang.bzl%yosys_slang": {
+      "general": {
+        "bzlTransitiveDigest": "qCNUcZBzthg13jJqyYBLhBVpkPBa4RGEo4vjc7xoRcg=",
+        "usagesDigest": "WQE3Kt1t8f+4N1tx03L0lY6DzY6SclbjDc3Qk5FPoM8=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "yosys-slang": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:git.bzl%git_repository",
+            "attributes": {
+              "remote": "https://github.com/povik/yosys-slang.git",
+              "commit": "4e53d772996184b07e9bfe784060f96e6cb0a267",
+              "init_submodules": true,
+              "build_file": "@@//bazel:yosys_slang.BUILD.bazel"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "",
+            "bazel_tools",
+            "bazel_tools"
+          ]
+        ]
+      }
+    },
     "@@apple_rules_lint+//lint:extensions.bzl%linter": {
       "general": {
         "bzlTransitiveDigest": "g7izj5kLCmsajh8IospHh4ZQ35dyM0FIrA8D4HapAsM=",
@@ -829,7 +856,7 @@
     "@@bazel-orfs+//:extension.bzl%orfs_repositories": {
       "general": {
         "bzlTransitiveDigest": "6Ivbltc2jNkRm28+htORm7l73RA1stBJbjVqGMlLH38=",
-        "usagesDigest": "55+kXwqa/N3sa0Ai7J7dcx8wqWQnkPuosl+NDXxqLa4=",
+        "usagesDigest": "soAMgay9LNtulwEhEb2Uj2PGOaK0ZivZ2zgLntW/CwM=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -854,7 +881,7 @@
               "pdk": "@@orfs+//flow:asap7",
               "yosys": "@@yosys+//:yosys",
               "yosys_abc": "@@abc+//:abc_bin",
-              "yosys_share": "@@yosys+//:yosys_share"
+              "yosys_share": "@@//:yosys_share_with_slang"
             }
           },
           "orfs_variable_metadata": {

@@ -204,7 +204,13 @@ orfs = use_extension("@bazel-orfs//:extension.bzl", "orfs_repositories", dev_dep
 orfs.default(
     # Use OpenROAD of this repo instead of the one bundled with @orfs
     openroad = "//:openroad",
+    # Merged yosys share dir that includes the slang plugin, so
+    # SYNTH_HDL_FRONTEND=slang works in mock-array and other tests.
+    yosys_share = "//:yosys_share_with_slang",
 )
+
+yosys_slang_ext = use_extension("//bazel:yosys_slang.bzl", "yosys_slang", dev_dependency = True)
+use_repo(yosys_slang_ext, "yosys-slang")
 
 # --- Overrides ---
 

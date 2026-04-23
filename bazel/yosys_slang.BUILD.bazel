@@ -1,0 +1,201 @@
+"""BUILD file for yosys-slang plugin (overlaid on git_repository)."""
+
+package(default_visibility = ["//visibility:public"])
+
+# --- Generated export header (static build = no-op) ---
+
+genrule(
+    name = "slang_export_h",
+    outs = ["slang/slang_export.h"],
+    cmd = """cat > $@ << 'HEADER'
+#pragma once
+#define SLANG_EXPORT
+#define SLANG_NO_EXPORT
+HEADER""",
+)
+
+genrule(
+    name = "slang_version_cpp",
+    srcs = ["third_party/slang/source/util/VersionInfo.cpp.in"],
+    outs = ["VersionInfo.cpp"],
+    cmd = """sed \
+        -e 's/@SLANG_VERSION_MAJOR@/10/' \
+        -e 's/@SLANG_VERSION_MINOR@/0/' \
+        -e 's/@SLANG_VERSION_PATCH@/0/' \
+        -e 's/@SLANG_VERSION_HASH@/unknown/' \
+        $(location third_party/slang/source/util/VersionInfo.cpp.in) > $@""",
+)
+
+# --- Code generation for slang ---
+
+genrule(
+    name = "slang_diag_gen",
+    srcs = [
+        "third_party/slang/scripts/diagnostic_gen.py",
+        "third_party/slang/scripts/diagnostics.txt",
+    ] + glob([
+        "third_party/slang/source/**/*.cpp",
+        "third_party/slang/include/slang/**/*.h",
+    ]),
+    outs = [
+        "DiagCode.cpp",
+        "slang/diagnostics/AllDiags.h",
+        "slang/diagnostics/AnalysisDiags.h",
+        "slang/diagnostics/CompilationDiags.h",
+        "slang/diagnostics/ConstEvalDiags.h",
+        "slang/diagnostics/DeclarationsDiags.h",
+        "slang/diagnostics/ExpressionsDiags.h",
+        "slang/diagnostics/GeneralDiags.h",
+        "slang/diagnostics/LexerDiags.h",
+        "slang/diagnostics/LookupDiags.h",
+        "slang/diagnostics/MetaDiags.h",
+        "slang/diagnostics/NumericDiags.h",
+        "slang/diagnostics/ParserDiags.h",
+        "slang/diagnostics/PreprocessorDiags.h",
+        "slang/diagnostics/StatementsDiags.h",
+        "slang/diagnostics/SysFuncsDiags.h",
+        "slang/diagnostics/TypesDiags.h",
+    ],
+    cmd = """
+        python3 $(location third_party/slang/scripts/diagnostic_gen.py) \
+            --outDir $(@D) \
+            --srcDir $$(dirname $(location third_party/slang/source/parsing/Parser.cpp))/.. \
+            --incDir $$(dirname $(location third_party/slang/include/slang/diagnostics/Diagnostics.h))/.. \
+            --diagnostics $(location third_party/slang/scripts/diagnostics.txt)
+    """,
+)
+
+genrule(
+    name = "slang_syntax_gen",
+    srcs = glob(["third_party/slang/scripts/*.txt"]) + [
+        "third_party/slang/scripts/syntax_gen.py",
+    ],
+    outs = [
+        "AllSyntax.cpp",
+        "KnownSystemName.cpp",
+        "SyntaxClone.cpp",
+        "TokenKind.cpp",
+        "slang/syntax/AllSyntax.h",
+        "slang/syntax/CSTJsonVisitorGen.h",
+        "slang/syntax/SyntaxFwd.h",
+        "slang/syntax/SyntaxKind.h",
+        "slang/parsing/TokenKind.h",
+        "slang/parsing/KnownSystemName.h",
+    ],
+    cmd = """
+        SCRIPTS=$$(dirname $(location third_party/slang/scripts/syntax_gen.py)) && \
+        python3 $(location third_party/slang/scripts/syntax_gen.py) \
+            --dir $(@D) \
+            --syntax $$SCRIPTS/syntax.txt
+    """,
+)
+
+# --- fmt (vendored in third_party/fmt) ---
+
+cc_library(
+    name = "fmt",
+    srcs = [
+        "third_party/fmt/src/format.cc",
+        "third_party/fmt/src/os.cc",
+    ],
+    hdrs = glob(["third_party/fmt/include/fmt/*.h"]),
+    copts = ["-fPIC", "-std=c++20"],
+    includes = ["third_party/fmt/include"],
+)
+
+# --- slang (vendored in third_party/slang) ---
+
+cc_library(
+    name = "slang",
+    srcs = glob(
+        ["third_party/slang/source/**/*.cpp"],
+    ) + glob(
+        ["third_party/slang/source/**/*.h"],
+    ) + [
+        ":AllSyntax.cpp",
+        ":DiagCode.cpp",
+        ":KnownSystemName.cpp",
+        ":VersionInfo.cpp",
+        ":SyntaxClone.cpp",
+        ":TokenKind.cpp",
+    ],
+    hdrs = glob([
+        "third_party/slang/include/**/*.h",
+        "third_party/slang/external/**/*.hpp",
+        "third_party/slang/external/ieee1800/**",
+    ]) + [
+        ":slang/diagnostics/AllDiags.h",
+        ":slang/diagnostics/AnalysisDiags.h",
+        ":slang/diagnostics/CompilationDiags.h",
+        ":slang/diagnostics/ConstEvalDiags.h",
+        ":slang/diagnostics/DeclarationsDiags.h",
+        ":slang/diagnostics/ExpressionsDiags.h",
+        ":slang/diagnostics/GeneralDiags.h",
+        ":slang/diagnostics/LexerDiags.h",
+        ":slang/diagnostics/LookupDiags.h",
+        ":slang/diagnostics/MetaDiags.h",
+        ":slang/diagnostics/NumericDiags.h",
+        ":slang/diagnostics/ParserDiags.h",
+        ":slang/diagnostics/PreprocessorDiags.h",
+        ":slang/diagnostics/StatementsDiags.h",
+        ":slang/diagnostics/SysFuncsDiags.h",
+        ":slang/diagnostics/TypesDiags.h",
+        ":slang/syntax/AllSyntax.h",
+        ":slang/syntax/CSTJsonVisitorGen.h",
+        ":slang/syntax/SyntaxFwd.h",
+        ":slang/syntax/SyntaxKind.h",
+        ":slang/parsing/TokenKind.h",
+        ":slang/parsing/KnownSystemName.h",
+        ":slang/slang_export.h",
+    ],
+    copts = [
+        "-fPIC",
+        "-std=c++20",
+        "-Wno-unused-parameter",
+    ],
+    defines = [
+        "SLANG_BOOST_SINGLE_HEADER",
+        "SLANG_VERSION_MAJOR=10",
+        "SLANG_VERSION_MINOR=0",
+        "SLANG_VERSION_PATCH=0",
+        'SLANG_VERSION_HASH=\\"unknown\\"',
+    ],
+    includes = [
+        "third_party/slang/include",
+        "third_party/slang/external",
+        "third_party/slang/source/ast/builtins",
+    ],
+    deps = [":fmt"],
+)
+
+genrule(
+    name = "version_h",
+    outs = ["version.h"],
+    cmd = """cat > $@ << 'HEADER'
+#pragma once
+#define YOSYS_SLANG_REVISION "unknown"
+#define SLANG_REVISION "unknown"
+HEADER""",
+)
+
+# --- yosys-slang plugin (shared library) ---
+
+cc_binary(
+    name = "slang.so",
+    srcs = glob(["src/*.cc", "src/*.h"]) + [":version.h"],
+    copts = [
+        "-fPIC",
+        "-std=c++20",
+        "-Wno-unused-parameter",
+    ],
+    defines = [
+        'YOSYS_SLANG_REVISION=\\"unknown\\"',
+        'SLANG_REVISION=\\"unknown\\"',
+    ],
+    linkopts = ["-shared"],
+    linkshared = True,
+    deps = [
+        ":slang",
+        "@yosys//:hdrs",
+    ],
+)

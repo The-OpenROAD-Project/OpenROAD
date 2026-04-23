@@ -7,6 +7,7 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_python//python:defs.bzl", "py_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//bazel:merge_share.bzl", "merge_yosys_share")
 load("//bazel:notification.bzl", "notification_rule")
 load("//bazel:python_wrap_cc.bzl", "PYTHON_EXTENSION_LINKOPTS", "PYTHON_STABLE_API_DEFINE", "python_wrap_cc")
 load("//bazel:tcl_encode_or.bzl", "tcl_encode")
@@ -45,6 +46,16 @@ exports_files([
     "src/Exception.i",
     "src/options.i",
 ])
+
+# Merge BCR yosys_share with the slang plugin built from source so
+# yosys can load it via `plugin -i slang` at synthesis time. This
+# target is wired into bazel-orfs via `orfs.default(yosys_share=...)`.
+merge_yosys_share(
+    name = "yosys_share_with_slang",
+    plugins = ["@yosys-slang//:slang.so"],
+    share = "@yosys//:yosys_share",
+    visibility = ["//visibility:public"],
+)
 
 string_flag(
     name = "platform",
