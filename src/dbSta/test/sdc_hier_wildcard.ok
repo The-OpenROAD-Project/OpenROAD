@@ -1,0 +1,28 @@
+[INFO ODB-0227] LEF file: liberty1.lef, created 2 layers, 6 library cells
+[WARNING ORD-0011] Hierarchical flow (-hier) is currently in development and may cause multiple issues. Do not use in production environments.
+[WARNING ORD-2056] The following 11 liberty cell(s) do not have LEF masters and will be marked as dont-use:
+  snl_ff2x1
+  snl_invx2
+  snl_lenqnx1
+  snl_lqx1
+  snl_mux21x1
+  snl_nand02x1
+  snl_nand02x2
+  snl_oa012x1
+  snl_or02x1
+  snl_tbufx1
+  snl_xor2x1
+--- b1/* ---
+b1/r1
+b1/u1
+b1/u2
+--- b2/u* ---
+b2/u1
+b2/u2
+--- no_such/* (prefix miss -- expect empty) ---
+count=0
+--- */r1 (leading wildcard, full DFS) ---
+b1/r1
+b2/r1
+--- b1/r1 (fully literal) ---
+b1/r1

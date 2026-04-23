@@ -66,6 +66,39 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
+  // Anchor DFS at the deepest literal prefix to avoid walking the whole design.
+  Instance* anchor = topInstance();
+  fmt::memory_buffer path_buffer;
+  if (!pattern->isRegexp()) {
+    const std::string_view pat = pattern->pattern();
+    const char divider = pathDivider();
+    const char escape = pathEscape();
+    size_t prefix_end = std::string_view::npos;
+    for (size_t i = 0; i < pat.size(); i++) {
+      const char c = pat[i];
+      if (c == escape && i + 1 < pat.size()) {
+        i++;
+        continue;
+      }
+      if (c == '*' || c == '?') {
+        break;
+      }
+      if (c == divider) {
+        prefix_end = i;
+      }
+    }
+    // In flat mode leaf names like "b1/r1" can contain dividers; only anchor
+    // when the prefix resolves to a non-leaf, else fall through to full DFS.
+    if (prefix_end != std::string_view::npos) {
+      const std::string_view prefix = pat.substr(0, prefix_end);
+      Instance* prefix_inst = findInstance(prefix);
+      if (prefix_inst != nullptr && !isLeaf(prefix_inst)) {
+        anchor = prefix_inst;
+        path_buffer.append(prefix);
+      }
+    }
+  }
+
   // A recursive lambda to traverse the design hierarchy with a depth-first
   // search (DFS).
   // It builds the hierarchical path incrementally using fmt::memory_buffer to
@@ -104,9 +137,7 @@ void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
     }
   };
 
-  // Start the search from the top-level instance.
-  fmt::memory_buffer path_buffer;
-  dfs_search(topInstance(), path_buffer);
+  dfs_search(anchor, path_buffer);
 }
 
 NetSeq dbSdcNetwork::findNetsMatching(const Instance*,

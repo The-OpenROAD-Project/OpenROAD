@@ -53,6 +53,7 @@ ALL_TESTS = [
     "report_timing_histogram",
     "report_logic_depth_histogram",
     "sdc_get1",
+    "sdc_hier_wildcard",
     "sdc_names1",
     "sdc_names2",
     "sta1",
@@ -193,6 +194,9 @@ filegroup(
                 "example1_slow.lib",
                 "example1.def",
                 "example1.lef",
+            ],
+            "sdc_hier_wildcard": [
+                "hier1.v",
             ],
             "sdc_names1": [
                 "hier1.def",
