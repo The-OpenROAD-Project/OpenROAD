@@ -51,6 +51,11 @@ bool gui::Gui::enabled()
   return Gui::get()->getHeadlessViewer() != nullptr;
 }
 
+bool gui::Gui::hasUI()
+{
+  return false;
+}
+
 void gui::Gui::registerRenderer(gui::Renderer* renderer)
 {
   renderers_.insert(renderer);

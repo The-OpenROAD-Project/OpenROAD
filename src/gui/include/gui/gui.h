@@ -1029,8 +1029,15 @@ class Gui
   // returns the Gui singleton
   static Gui* get();
 
-  // Will return true if the GUI is active, false otherwise
+  // Will return true if any GUI backend is active (Qt or headless).
+  // Tool renderers should use this to decide whether debug graphics
+  // are available.
   static bool enabled();
+
+  // Will return true only when the Qt main window is running.
+  // Tcl commands that need Qt widgets (selection, zoom, labels, …)
+  // should gate on this rather than enabled().
+  static bool hasUI();
 
   // Install / inspect a HeadlessViewer (used when the Qt GUI is not
   // running).  See the HeadlessViewer class comment for semantics.

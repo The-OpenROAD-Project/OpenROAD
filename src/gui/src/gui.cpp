@@ -237,6 +237,11 @@ bool Gui::enabled()
   return main_window != nullptr || self->headless_viewer_ != nullptr;
 }
 
+bool Gui::hasUI()
+{
+  return main_window != nullptr;
+}
+
 void Gui::registerRenderer(Renderer* renderer)
 {
   if (main_window != nullptr) {
