@@ -262,6 +262,7 @@ cc_test(
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
+    env = {"DISABLE_SOURCE_LINES":"1"},
 )
 
 cc_test(

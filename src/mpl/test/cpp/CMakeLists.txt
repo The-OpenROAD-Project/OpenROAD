@@ -14,7 +14,11 @@ set(TEST_LIBS
 
 add_executable(TestSnapper TestSnapper.cpp)
 target_link_libraries(TestSnapper ${TEST_LIBS})
-gtest_discover_tests(TestSnapper WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+gtest_discover_tests(TestSnapper 
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  PROPERTIES 
+    ENVIRONMENT "DISABLE_SOURCE_LINES=1"
+)
 
 add_executable(TestBlockMacroChannels TestBlockMacroChannels.cpp)
 target_link_libraries(TestBlockMacroChannels ${TEST_LIBS})
