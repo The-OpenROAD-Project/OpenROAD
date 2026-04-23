@@ -647,7 +647,7 @@ BnetPtr Rebuffer::bufferForTiming(const BnetPtr& tree,
                 }
               }
 
-              if (head) {
+              if (head && wire_cap > 0.0) {
                 bool inserted_buffer = false;
 
                 while (true) {
@@ -1587,6 +1587,12 @@ void Rebuffer::findLongWireAsymptotics(int layer, Rebuffer::BufferSize& size)
         corner_,
         wire_res,
         wire_cap);
+  }
+
+  // Without parasitics the RC products are zero; skip to avoid NaN in the
+  // iterative length estimate (0 * inf = NaN when passed to gateDelays).
+  if (wire_res <= 0.0 || wire_cap <= 0.0) {
+    return;
   }
 
   float length = 0;
