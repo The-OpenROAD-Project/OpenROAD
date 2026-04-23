@@ -580,7 +580,7 @@ void RepairHold::repairEndHold(sta::Vertex* end_vertex,
               if (load_pin == nullptr) {
                 continue;
               }
-              if (network_->direction(load_pin)->isAnyOutput()
+              if (!network_->direction(load_pin)->isAnyInput()
                   && !network_->isTopLevelPort(load_pin)) {
                 continue;
               }
