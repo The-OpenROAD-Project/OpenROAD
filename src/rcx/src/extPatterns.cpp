@@ -307,20 +307,20 @@ float extPattern::init(dbCreateNetUtil* net_util)
   db_net_util = net_util;
   dbTechLayer* layer = db_net_util->getRoutingLayer()[met];
   // const char *name= layer->getConstName();
-  _minWidth = layer->getWidth();
+  min_width_dbu = layer->getWidth();
   // if (met==6)
   //     fprintf(stdout, "M6 getWidth= %d  getMinWidth=%d \n",
   //     layer->getWidth(), layer->getMinWidth());
 
   // _minWidth = layer->getMinWidth() ;
-  minWidth = _minWidth * uu;
+  min_width_um = min_width_dbu * uu;
   int pitch = layer->getPitch();
   int minSpace = layer->getSpacing();
-  int s = pitch - _minWidth;
+  int s = pitch - min_width_dbu;
   s = std::min(s, minSpace);
 
-  _minSpacing = s;
-  minSpacing = s * uu;
+  min_spacing_dbu = s;
+  min_spacing_um = s * uu;
 
   // TODO: debug why not working dir = layer->getDirection() ==
   // dbTechLayerDir::HORIZONTAL ? 1 : 0;
@@ -337,7 +337,7 @@ float extPattern::init(dbCreateNetUtil* net_util)
 
   _cnt = 0;
   _totEnumerationCnt = 0;
-  return minSpacing;
+  return min_spacing_um;
 }
 uint32_t extPattern::CreatePattern(int org[2],
                                    int MAX_UR[2],
@@ -615,7 +615,7 @@ void extPattern::PatternEnd(extWirePattern* mainp,
                             const int max_ur[2],
                             uint32_t spacingMult)
 {
-  _pattern_separation = _minSpacing * spacingMult;
+  _pattern_separation = min_spacing_dbu * spacingMult;
   _origin[dir] = max_ur[dir] + _pattern_separation;
   delete mainp;
   _cnt++;
@@ -852,7 +852,7 @@ extWirePattern* extPattern::MainPattern(float mw,
   bool dbg_p = true;
 
   extWirePattern* wp
-      = new extWirePattern(this, dir, _minWidth, _minSpacing, opt);
+      = new extWirePattern(this, dir, min_width_dbu, min_spacing_dbu, opt);
 
   fprintf(patternLog, "Origin %d %d\n", _origin[0], _origin[1]);
   // if (msL>8 && msR==1.5)
@@ -1115,7 +1115,7 @@ int extPattern::ContextPatternParallel(extWirePattern* main,
   int w;
   extWirePattern* wp = GetWireParttern(this, dir1, mw, ms, met1, w, s);
 
-  float offs = mid_offset * minWidth;
+  float offs = mid_offset * min_width_um;
   int f = 1000 * offs;
   int n1 = f / 10;
   int off = n1 * 10;
