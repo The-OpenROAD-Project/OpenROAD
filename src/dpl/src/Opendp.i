@@ -126,6 +126,12 @@ void set_negotiation_debug_interval_cmd(int iterative_jump)
   opendp->setNegotiationDebugInterval(iterative_jump);
 }
 
+void set_negotiation_debug_start_cmd(int iterative_start)
+{
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  opendp->setNegotiationDebugStart(iterative_start);
+}
+
 void improve_placement_cmd(int seed,
   int max_displacement_x,
   int max_displacement_y)

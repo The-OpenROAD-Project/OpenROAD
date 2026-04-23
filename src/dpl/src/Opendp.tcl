@@ -303,7 +303,7 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-    keys {-instance -min_displacement -jump_moves -iterative_jump} \
+    keys {-instance -min_displacement -jump_moves -iterative_jump -iterative_start} \
     flags {-iterative -deep_iterative -paint_pixels -paint_negotiation_pixels} ;# checker off
 
 
@@ -336,10 +336,17 @@ proc detailed_placement_debug { args } {
     sta::check_positive_integer "-iterative_jump" $iterative_jump
   }
 
+  set iterative_start 0
+  if { [info exists keys(-iterative_start)] } {
+    set iterative_start $keys(-iterative_start)
+    sta::check_positive_integer "-iterative_start" $iterative_start
+  }
+
   dpl::set_debug_cmd $min_displacement $debug_instance $jump_moves \
     [info exists flags(-iterative)] [info exists flags(-deep_iterative)] \
     [info exists flags(-paint_pixels)] [info exists flags(-paint_negotiation_pixels)]
   dpl::set_negotiation_debug_interval_cmd $iterative_jump
+  dpl::set_negotiation_debug_start_cmd $iterative_start
 }
 
 proc get_masters_arg { arg_name arg } {

@@ -108,6 +108,11 @@ void Opendp::setNegotiationDebugInterval(const int iterative_jump)
   negotiation_debug_interval_ = std::max(1, iterative_jump);
 }
 
+void Opendp::setNegotiationDebugStart(const int iterative_start)
+{
+  negotiation_debug_start_ = std::max(0, iterative_start);
+}
+
 void Opendp::setJournal(Journal* journal)
 {
   journal_ = journal;
