@@ -3,6 +3,8 @@
 
 #include <unistd.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -378,15 +380,16 @@ TEST_F(BufRemTest, ExpandedPathPointerGoesStaleAfterCellReplace)
   // provably outside the live range.
   const uintptr_t snap_addr = reinterpret_cast<uintptr_t>(snapshot);
   const uintptr_t base_after = reinterpret_cast<uintptr_t>(v_paths_after);
-  const uintptr_t max_live = base_after + 256 * sizeof(sta::Path);
+  const std::size_t live_bytes = 256 * sizeof(sta::Path);
+  const uintptr_t max_live = base_after + live_bytes;
   if (snap_addr >= base_after && snap_addr < max_live) {
     GTEST_SKIP() << "Snapshot pointer aliases into the new paths range; "
                     "cannot prove staleness without UB dereference.";
   }
   EXPECT_TRUE(snap_addr < base_after || snap_addr >= max_live)
       << "Stale pointer demonstrated: expanded.path(" << target_index
-      << ") = " << snapshot << " is outside v->paths() = [" << v_paths_after
-      << ", " << reinterpret_cast<void*>(max_live) << ")";
+      << ") = " << snapshot << " is outside v->paths() base " << v_paths_after
+      << " + " << live_bytes << "B";
 }
 
 }  // namespace rsz
