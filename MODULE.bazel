@@ -130,6 +130,7 @@ git_override(
         "//bazel/bazel-orfs-patches:0035-fix-remove-non-root-overrides-from-MODULE.bazel.patch",
         "//bazel/bazel-orfs-patches:orfs-preserve-tool-exe-env.patch",
         "//bazel/bazel-orfs-patches:orfs-log-cmd-clock-fallback.patch",
+        "//bazel/bazel-orfs-patches:orfs-variables-add-ARRAY-COLS-ROWS.patch",
     ],
     remote = "https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git",
 )

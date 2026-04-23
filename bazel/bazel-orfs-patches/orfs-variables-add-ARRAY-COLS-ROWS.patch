@@ -1,0 +1,23 @@
+docs: add ARRAY_COLS and ARRAY_ROWS to variables.yaml
+
+Used by the mock-array test to parameterize the N x N Element grid
+(MACRO_PLACEMENT_TCL, macro check, power reports). Declaring them
+in variables.yaml lets bazel-orfs build-time validation accept
+them as known arguments instead of rejecting as unknown.
+
+--- a/flow/scripts/variables.yaml
++++ b/flow/scripts/variables.yaml
+@@ -1562,3 +1562,13 @@
+     for generating Circuit Description Language output.
+   stages:
+     - final
++ARRAY_COLS:
++  description: >
++    Mock-array test: number of Element macro columns in the N x N grid.
++  stages:
++    - floorplan
++ARRAY_ROWS:
++  description: >
++    Mock-array test: number of Element macro rows in the N x N grid.
++  stages:
++    - floorplan
