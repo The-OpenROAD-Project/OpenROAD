@@ -42,7 +42,6 @@ or_integration_tests(
     read_abstract_lef
     read_3dbv
     read_3dbx
-    read_3dbx-fail
     read_db
     read_def
     read_def58
@@ -71,6 +70,7 @@ or_integration_tests(
     write_lef_polygon
     write_macro_placement
   PASSFAIL_TESTS
+    read_3dbx-fail
     cpp_tests
     test_block
     test_bterm
