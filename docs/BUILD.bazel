@@ -22,7 +22,12 @@ py_test(
             "_readthedocs/**",
             "main/**",
         ],
-    ),
+    ) + [
+        # Staged at the runfiles workspace root so conf.py's setup(app)
+        # can resolve ../README.md and main/README.md through the
+        # `main -> ..` symlink it creates.
+        "//:README.md",
+    ],
     tags = [
         "doc_check",
         "local",

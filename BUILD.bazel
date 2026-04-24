@@ -41,6 +41,7 @@ exports_files([
     "BUILD.bazel",
     "LICENSE",
     "MODULE.bazel",
+    "README.md",
     "src/Design.i",
     "src/Exception.i",
     "src/options.i",
