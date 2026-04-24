@@ -121,7 +121,7 @@
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 42 long wires.
 [INFO RSZ-0048] Inserted 92 buffers in 42 nets.
-[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261660.91 um^2, Utilization: 83.0%
+[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261662.50 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
@@ -138,7 +138,7 @@ Placement Analysis
 total displacement       3754.4 u
 average displacement        1.2 u
 max displacement          141.1 u
-original HPWL          193681.5 u
+original HPWL          193681.4 u
 legalized HPWL         194510.2 u
 delta HPWL                    0 %
 

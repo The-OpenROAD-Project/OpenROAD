@@ -122,7 +122,7 @@
 [INFO RSZ-0058] Using max wire length 693um.
 [INFO RSZ-0047] Found 40 long wires.
 [INFO RSZ-0048] Inserted 88 buffers in 40 nets.
-[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261654.79 um^2, Utilization: 83.0%
+[INFO DPL-0006] Core area: 24399648.00 um^2, Instances area: 20261656.39 um^2, Utilization: 83.0%
 [INFO DPL-0005] Diamond search max displacement: +/- 500 sites horizontally, +/- 100 rows vertically.
 [INFO DPL-1101] Legalizing using diamond search.
 Movements Summary
@@ -136,11 +136,11 @@ Total Placement Failures:          0
 ---------------------------------------
 Placement Analysis
 ---------------------------------
-total displacement       3742.1 u
+total displacement       3741.8 u
 average displacement        1.2 u
 max displacement          140.5 u
-original HPWL          192183.9 u
-legalized HPWL         193028.3 u
+original HPWL          192183.7 u
+legalized HPWL         193026.7 u
 delta HPWL                    0 %
 
 Clock clk
@@ -160,13 +160,13 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
    0.00    0.00 ^ clk (in)
-   0.05    0.05 ^ wire7/Z (BUF_X16)
-   0.05    0.10 ^ wire6/Z (BUF_X16)
-   0.06    0.15 ^ wire5/Z (BUF_X8)
-   0.03    0.18 ^ wire4/Z (BUF_X16)
-   0.07    0.25 ^ wire3/Z (BUF_X32)
-   0.07    0.32 ^ wire2/Z (BUF_X32)
-   0.07    0.38 ^ wire1/Z (BUF_X32)
+   0.05    0.05 ^ wire_slew7/Z (BUF_X16)
+   0.05    0.10 ^ wire_slew6/Z (BUF_X16)
+   0.06    0.15 ^ wire_length5/Z (BUF_X8)
+   0.03    0.18 ^ wire_slew4/Z (BUF_X16)
+   0.07    0.25 ^ wire_slew3/Z (BUF_X32)
+   0.07    0.32 ^ wire_slew2/Z (BUF_X32)
+   0.07    0.38 ^ wire_slew1/Z (BUF_X32)
    0.06    0.45 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    0.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    0.52 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
@@ -183,7 +183,7 @@ Path Type: max
    0.03    0.91 ^ clkbuf_3_0_2_clk/Z (BUF_X4)
    0.04    0.95 ^ clkbuf_4_0_0_clk/Z (BUF_X4)
    0.05    1.00 ^ clkbuf_4_0_1_clk/Z (BUF_X4)
-   0.04    1.04 ^ wire9/Z (BUF_X8)
+   0.04    1.04 ^ wire_length9/Z (BUF_X8)
    0.04    1.09 ^ max_length8/Z (BUF_X8)
    0.05    1.14 ^ clkbuf_leaf_0_clk/Z (BUF_X4)
    0.00    1.15 ^ inst_1_1/clk (array_tile)
@@ -194,13 +194,13 @@ Path Type: max
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
    0.00    5.00 ^ clk (in)
-   0.05    5.05 ^ wire7/Z (BUF_X16)
-   0.05    5.10 ^ wire6/Z (BUF_X16)
-   0.06    5.15 ^ wire5/Z (BUF_X8)
-   0.03    5.18 ^ wire4/Z (BUF_X16)
-   0.07    5.25 ^ wire3/Z (BUF_X32)
-   0.07    5.32 ^ wire2/Z (BUF_X32)
-   0.07    5.38 ^ wire1/Z (BUF_X32)
+   0.05    5.05 ^ wire_slew7/Z (BUF_X16)
+   0.05    5.10 ^ wire_slew6/Z (BUF_X16)
+   0.06    5.15 ^ wire_length5/Z (BUF_X8)
+   0.03    5.18 ^ wire_slew4/Z (BUF_X16)
+   0.07    5.25 ^ wire_slew3/Z (BUF_X32)
+   0.07    5.32 ^ wire_slew2/Z (BUF_X32)
+   0.07    5.38 ^ wire_slew1/Z (BUF_X32)
    0.06    5.45 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    5.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    5.52 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
@@ -240,13 +240,13 @@ Path Type: max
    0.00    0.00   clock clk (rise edge)
    0.00    0.00   clock source latency
    0.00    0.00 ^ clk (in)
-   0.05    0.05 ^ wire7/Z (BUF_X16)
-   0.05    0.10 ^ wire6/Z (BUF_X16)
-   0.06    0.15 ^ wire5/Z (BUF_X8)
-   0.03    0.18 ^ wire4/Z (BUF_X16)
-   0.07    0.25 ^ wire3/Z (BUF_X32)
-   0.07    0.32 ^ wire2/Z (BUF_X32)
-   0.07    0.38 ^ wire1/Z (BUF_X32)
+   0.05    0.05 ^ wire_slew7/Z (BUF_X16)
+   0.05    0.10 ^ wire_slew6/Z (BUF_X16)
+   0.06    0.15 ^ wire_length5/Z (BUF_X8)
+   0.03    0.18 ^ wire_slew4/Z (BUF_X16)
+   0.07    0.25 ^ wire_slew3/Z (BUF_X32)
+   0.07    0.32 ^ wire_slew2/Z (BUF_X32)
+   0.07    0.38 ^ wire_slew1/Z (BUF_X32)
    0.06    0.45 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    0.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    0.52 ^ clkbuf_1_0_1_clk/Z (BUF_X4)
@@ -273,13 +273,13 @@ Path Type: max
    5.00    5.00   clock clk (rise edge)
    0.00    5.00   clock source latency
    0.00    5.00 ^ clk (in)
-   0.05    5.05 ^ wire7/Z (BUF_X16)
-   0.05    5.10 ^ wire6/Z (BUF_X16)
-   0.06    5.15 ^ wire5/Z (BUF_X8)
-   0.03    5.18 ^ wire4/Z (BUF_X16)
-   0.07    5.25 ^ wire3/Z (BUF_X32)
-   0.07    5.32 ^ wire2/Z (BUF_X32)
-   0.07    5.38 ^ wire1/Z (BUF_X32)
+   0.05    5.05 ^ wire_slew7/Z (BUF_X16)
+   0.05    5.10 ^ wire_slew6/Z (BUF_X16)
+   0.06    5.15 ^ wire_length5/Z (BUF_X8)
+   0.03    5.18 ^ wire_slew4/Z (BUF_X16)
+   0.07    5.25 ^ wire_slew3/Z (BUF_X32)
+   0.07    5.32 ^ wire_slew2/Z (BUF_X32)
+   0.07    5.38 ^ wire_slew1/Z (BUF_X32)
    0.06    5.45 ^ clkbuf_0_clk/Z (BUF_X4)
    0.04    5.48 ^ clkbuf_1_0_0_clk/Z (BUF_X4)
    0.04    5.52 ^ clkbuf_1_0_1_clk/Z (BUF_X4)

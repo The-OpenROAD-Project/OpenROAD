@@ -613,6 +613,7 @@ class Resizer : public sta::dbStaState, public sta::dbNetworkObserver
   bool hasMultipleOutputs(const sta::Instance* inst);
 
   void resizePreamble();
+  void clearSwappableCellsCache();
   sta::LibertyCellSeq getSwappableCells(sta::LibertyCell* source_cell);
   sta::LibertyCellSeq getVTEquivCells(sta::LibertyCell* source_cell);
 

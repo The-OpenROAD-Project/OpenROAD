@@ -25,7 +25,7 @@ foreach net_name {in1 n1 n2 out1} {
 repair_clock_nets -max_wire_length 600
 
 puts "\n# All nets in the path should be CLOCK type."
-foreach pin_name {u1/A u1/Z u2/Z wire3/Z wire2/Z wire1/Z u3/Z} {
+foreach pin_name {u1/A u1/Z u2/Z wire_slew3/Z wire_slew2/Z wire_slew1/Z u3/Z} {
   set net [get_net -of_object [get_pins $pin_name]]
   set net_name [get_name $net]
   puts "$net_name: [[sta::sta_to_db_net $net] getSigType]"
@@ -41,9 +41,9 @@ proc location { inst_name args } {
 
 puts "\n# Check new buffer locations."
 location u2
-location wire3
-location wire2
-location wire1
+location wire_slew3
+location wire_slew2
+location wire_slew1
 location u3
 
 puts "\n# Call sta::network_changed. Timing should be the same."
@@ -51,7 +51,7 @@ estimate_parasitics -placement
 report_checks -unconstrained -fields {input slew cap} -rise_to out1
 
 puts "\n# All nets in the path should be CLOCK type after network_changed."
-foreach pin_name {u1/A u1/Z u2/Z wire3/Z wire2/Z wire1/Z u3/Z} {
+foreach pin_name {u1/A u1/Z u2/Z wire_slew3/Z wire_slew2/Z wire_slew1/Z u3/Z} {
   set net [get_net -of_object [get_pins $pin_name]]
   set net_name [get_name $net]
   puts "$net_name: [[sta::sta_to_db_net $net] getSigType]"

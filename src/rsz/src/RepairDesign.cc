@@ -1075,6 +1075,8 @@ void RepairDesign::repairNet(sta::Net* net,
     estimate_parasitics_->ensureWireParasitic(drvr_pin, net);
     graph_delay_calc_->findDelays(drvr);
 
+    drvr_resized_ = false;
+
     if (check_slew) {
       bool slew_violation = false;
 
@@ -1096,7 +1098,7 @@ void RepairDesign::repairNet(sta::Net* net,
 
         slew_violation = true;
         if (repairDriverSlew(corner1, drvr_pin)) {
-          resize_count_++;
+          drvr_resized_ = true;
           estimate_parasitics_->updateParasitics();
           sta_->findDelays(drvr);
           checkSlew(drvr_pin, slew1, max_slew1, slew_slack1, corner1);
@@ -1179,6 +1181,10 @@ void RepairDesign::repairNet(sta::Net* net,
           repairNet(bnet, drvr_pin, max_cap, max_length, corner);
         }
       }
+    }
+
+    if (drvr_resized_) {
+      resize_count_++;
     }
 
     if (repaired_net) {
@@ -1397,9 +1403,8 @@ void RepairDesign::repairNetVia(const BufferedNetPtr& bnet,
   bnet->setCapacitance(bnet->ref()->cap());
   bnet->setFanout(bnet->ref()->fanout());
   float r_via = bnet->viaResistance(corner_, resizer_, estimate_parasitics_);
-  assert(slew_rc_factor_.has_value());
   bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
-                       - (r_via * bnet->ref()->cap() * (*slew_rc_factor_)));
+                       - (r_via * bnet->ref()->cap() * getSlewRCFactor()));
 }
 
 void RepairDesign::repairNetWire(
@@ -1459,10 +1464,9 @@ void RepairDesign::repairNetWire(
   double r_wire = length1 * wire_res;
   double c_wire = length1 * wire_cap;
 
-  assert(slew_rc_factor_.has_value());
   double load_slew
       = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap + r_wire * c_wire / 2)
-        * (*slew_rc_factor_);
+        * getSlewRCFactor();
 
   debugPrint(logger_,
              RSZ,
@@ -1485,9 +1489,8 @@ void RepairDesign::repairNetWire(
 
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-  bnet->setMaxLoadSlew(
-      bnet->ref()->maxLoadSlew()
-      - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+  bnet->setMaxLoadSlew(bnet->ref()->maxLoadSlew()
+                       - (r_wire * (c_wire / 2 + ref_cap) * getSlewRCFactor()));
 
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
@@ -1499,6 +1502,7 @@ void RepairDesign::repairNetWire(
     // offset from instance origin to pin and detailed placement movement.
     constexpr double length_margin = .05;
     bool split_wire = false;
+    const char* split_reason = "";
     // Distance from repeater to ref_.
     //              length
     // from----------------------------to/ref
@@ -1518,6 +1522,7 @@ void RepairDesign::repairNetWire(
                  units_->distanceUnit()->asString(dbuToMeters(max_length_), 1));
       split_length = min(max(max_length_ - wire_length_ref, 0), length / 2);
       split_wire = true;
+      split_reason = "wire_length";
     }
     if (wire_cap > 0.0 && load_cap > max_cap_) {
       debugPrint(logger_,
@@ -1532,6 +1537,7 @@ void RepairDesign::repairNetWire(
       split_length = min(split_length,
                          max(metersToDbu((max_cap_ - ref_cap) / wire_cap), 0));
       split_wire = true;
+      split_reason = "wire_cap";
     }
     if (load_slew > max_load_slew_margined) {
       debugPrint(logger_,
@@ -1543,44 +1549,53 @@ void RepairDesign::repairNetWire(
                  level,
                  delayAsString(load_slew, 3, this),
                  delayAsString(max_load_slew_margined, 3, this));
-      // We are inserting a buffer to cut this wire segment short.
-      // The slew at the end of the wire segment is a quadratic polynomial
-      // in terms of the wire segment's length (in Elmore approx.).
-      //
-      // We solve a quadratic eq. to find the maximum conforming length.
-      float a = wire_res * wire_cap / 2;
-      float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
-      float c
-          = (r_drvr * ref_cap) - (max_load_slew_margined / (*slew_rc_factor_));
-      float l = 0.0;
-      if (a > 1e-12) {  // Quadratic case
-        const float discriminant = b * b - 4 * a * c;
-        if (discriminant >= 0.0) {
-          l = (-b + sqrt(discriminant)) / (2 * a);
+
+      // Check if we can upsize the driver to meet the slew requirement without
+      // inserting a buffer. Don't bother if we anyways insert a buffer for
+      // length or capacitance reasons.
+      if (split_wire
+          || !tryUpsizeDriver(
+              level, ref_cap, c_wire, r_wire, max_load_slew_margined)) {
+        // We are inserting a buffer to cut this wire segment short.
+        // The slew at the end of the wire segment is a quadratic polynomial
+        // in terms of the wire segment's length (in Elmore approx.).
+        //
+        // We solve a quadratic eq. to find the maximum conforming length.
+        float a = wire_res * wire_cap / 2;
+        float b = (r_drvr * wire_cap) + (wire_res * ref_cap);
+        float c
+            = (r_drvr * ref_cap) - (max_load_slew_margined / getSlewRCFactor());
+        float l = 0.0;
+        if (a > 1e-12) {  // Quadratic case
+          const float discriminant = b * b - 4 * a * c;
+          if (discriminant >= 0.0) {
+            l = (-b + sqrt(discriminant)) / (2 * a);
+          }
+        } else if (b > 1e-12) {
+          // a * l^2 + b * l + c = 0 becomes
+          // b * l + c = 0 when a is very small
+          l = -c / b;
         }
-      } else if (b > 1e-12) {
-        // a * l^2 + b * l + c = 0 becomes
-        // b * l + c = 0 when a is very small
-        l = -c / b;
+        if (l >= 0.0) {
+          split_length = min(split_length, metersToDbu(l));
+        } else {
+          split_length = 0;
+        }
+        split_wire = true;
+        split_reason = "wire_slew";
       }
-      if (l >= 0.0) {
-        split_length = min(split_length, metersToDbu(l));
-      } else {
-        split_length = 0;
-      }
-      split_wire = true;
     }
 
     if (split_wire) {
-      debugPrint(
-          logger_,
-          RSZ,
-          "repair_net",
-          3,
-          "{:{}s}split length={}",
-          "",
-          level,
-          units_->distanceUnit()->asString(dbuToMeters(split_length), 1));
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_net",
+                 3,
+                 "{:{}s}split length={} reason={}",
+                 "",
+                 level,
+                 units_->distanceUnit()->asString(dbuToMeters(split_length), 1),
+                 split_reason);
       // Distance from to_pt to repeater backward toward from_pt.
       // Note that split_length can be longer than the wire length
       // because it is the maximum value that satisfies max slew/cap.
@@ -1593,7 +1608,7 @@ void RepairDesign::repairNetWire(
       int buf_x = to_x + d * dx;
       int buf_y = to_y + d * dy;
       float repeater_cap, repeater_fanout;
-      if (!makeRepeater("wire",
+      if (!makeRepeater(split_reason,
                         odb::Point(buf_x, buf_y),
                         buffer_cell,
                         /* resize= */ true,
@@ -1626,7 +1641,7 @@ void RepairDesign::repairNetWire(
       c_wire = length1 * wire_cap;
       load_slew = (r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
                    + r_wire * c_wire / 2)
-                  * (*slew_rc_factor_);
+                  * getSlewRCFactor();
       buffer_cell = resizer_->findTargetCell(
           resizer_->buffer_lowest_drive_, load_cap, false);
 
@@ -1634,7 +1649,7 @@ void RepairDesign::repairNetWire(
       bnet->setFanout(repeater_fanout);
       bnet->setMaxLoadSlew(
           max_load_slew
-          - (r_wire * (c_wire / 2 + ref_cap) * (*slew_rc_factor_)));
+          - (r_wire * (c_wire / 2 + ref_cap) * getSlewRCFactor()));
 
       debugPrint(logger_,
                  RSZ,
@@ -1654,6 +1669,192 @@ void RepairDesign::repairNetWire(
 float RepairDesign::maxSlewMargined(float max_slew)
 {
   return max_slew * (1.0 - slew_margin_ / 100.0);
+}
+
+void RepairDesign::clearDriverCellsCache()
+{
+  driver_cells_cache_.clear();
+}
+
+// Returns swappable drivers sorted by drive resistance (low to high)
+sta::LibertyCellSeq RepairDesign::getDriverCells(
+    sta::LibertyCell* driver_cell,
+    const std::string& driver_port_name)
+{
+  if (driver_cells_cache_.find(driver_cell) != driver_cells_cache_.end()) {
+    if (driver_cells_cache_[driver_cell].find(driver_port_name)
+        != driver_cells_cache_[driver_cell].end()) {
+      return driver_cells_cache_[driver_cell][driver_port_name];
+    }
+  } else {
+    driver_cells_cache_[driver_cell] = {};
+  }
+
+  sta::LibertyCellSeq swappable_cells
+      = resizer_->getSwappableCells(driver_cell);
+
+  std::ranges::sort(
+      swappable_cells,
+      [driver_port_name](sta::LibertyCell* a, sta::LibertyCell* b) {
+        sta::LibertyPort* port_a = a->findLibertyPort(driver_port_name);
+        sta::LibertyPort* port_b = b->findLibertyPort(driver_port_name);
+        return port_a->driveResistance() < port_b->driveResistance();
+      });
+
+  driver_cells_cache_[driver_cell][driver_port_name] = swappable_cells;
+  return swappable_cells;
+}
+
+bool RepairDesign::tryUpsizeDriver(const int level,
+                                   const double ref_cap,
+                                   const double c_wire,
+                                   const double r_wire,
+                                   const float max_load_slew_margined)
+{
+  if (network_->isTopLevelPort(drvr_pin_)) {
+    return false;
+  }
+
+  sta::Instance* driver_inst = network_->instance(drvr_pin_);
+  if (resizer_->dontTouch(driver_inst)) {
+    return false;
+  }
+
+  debugPrint(
+      logger_,
+      RSZ,
+      "repair_net",
+      3,
+      "{:{}s}considering resizing driver {} to meet slew/cap requirement "
+      "without buffering",
+      "",
+      level,
+      network_->pathName(drvr_pin_));
+
+  sta::LibertyCell* driver_cell = network_->libertyCell(driver_inst);
+  std::string driver_port_name = network_->portName(drvr_pin_);
+  sta::LibertyCellSeq swappable_cells
+      = getDriverCells(driver_cell, driver_port_name);
+
+  const float orig_r_drvr = resizer_->driveResistance(drvr_pin_);
+
+  // Driver Resistance that we atleast need to have to fix the slew violation
+  const float reg_r_drvr_approx
+      = max_load_slew_margined / ((c_wire + ref_cap) * getSlewRCFactor());
+
+  if (!swappable_cells.empty()) {
+    sta::LibertyCell* upsized_driver_cell = nullptr;
+    for (sta::LibertyCell* candidate_cell : swappable_cells) {
+      sta::LibertyPort* candidate_port
+          = candidate_cell->findLibertyPort(driver_port_name);
+
+      const float candidate_r_drvr = candidate_port->driveResistance();
+
+      if (candidate_r_drvr > reg_r_drvr_approx) {
+        debugPrint(
+            logger_,
+            RSZ,
+            "repair_net",
+            3,
+            "{:{}s}candidate cell {} has drive resistance {} which is higher "
+            "than approx required resistance {}, stopping search",
+            "",
+            level,
+            candidate_cell->name(),
+            units_->resistanceUnit()->asString(candidate_r_drvr, 3),
+            units_->resistanceUnit()->asString(reg_r_drvr_approx, 3));
+        break;
+      }
+
+      if (candidate_r_drvr >= orig_r_drvr) {
+        debugPrint(
+            logger_,
+            RSZ,
+            "repair_net",
+            3,
+            "{:{}s}candidate cell {} has drive resistance {} which is not "
+            "lower than current driver resistance {}, stopping search",
+            "",
+            level,
+            candidate_cell->name(),
+            units_->resistanceUnit()->asString(candidate_r_drvr, 3),
+            units_->resistanceUnit()->asString(orig_r_drvr, 3));
+        break;
+      }
+
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_net",
+                 3,
+                 "{:{}s}considering candidate cell {} with drive resistance {}",
+                 "",
+                 level,
+                 candidate_cell->name(),
+                 units_->resistanceUnit()->asString(candidate_r_drvr, 3));
+
+      const double candidate_load_slew
+          = (candidate_r_drvr * (c_wire + ref_cap) + r_wire * ref_cap
+             + r_wire * c_wire / 2)
+            * getSlewRCFactor();
+
+      // Check that we do not violate the max output slew of the driver.
+      float candidate_max_output_slew = sta::INF;
+      {
+        float max_output_slew = sta::INF;
+        bool exists;
+        candidate_port->slewLimit(max_, max_output_slew, exists);
+        if (exists) {
+          candidate_max_output_slew = maxSlewMargined(max_output_slew);
+        }
+      }
+
+      if (candidate_load_slew > max_load_slew_margined) {
+        // Break as remaining candidates all have higher drive resistance
+        break;
+      }
+
+      if (candidate_load_slew <= candidate_max_output_slew) {
+        debugPrint(
+            logger_,
+            RSZ,
+            "repair_net",
+            3,
+            "{:{}s}resizing driver to {} meets slew requirement with estimated "
+            "load slew {} <= {} and max output slew {} <= {}",
+            "",
+            level,
+            candidate_cell->name(),
+            delayAsString(candidate_load_slew, 3, this),
+            delayAsString(max_load_slew_margined, 3, this),
+            delayAsString(candidate_load_slew, 3, this),
+            delayAsString(candidate_max_output_slew, 3, this));
+        upsized_driver_cell = candidate_cell;
+      }
+    }
+
+    if (upsized_driver_cell) {
+      // We found a candidate cell that can be swapped to that meets the
+      // slew requirement
+      debugPrint(logger_,
+                 RSZ,
+                 "repair_net",
+                 3,
+                 "{:{}s}resizing driver from {} to {} to meet slew requirement "
+                 "without buffering",
+                 "",
+                 level,
+                 driver_cell->name(),
+                 upsized_driver_cell->name());
+      resizer_->replaceCell(driver_inst, upsized_driver_cell, true);
+
+      // Update drvr_pin_ to point to the new cell's output pin
+      drvr_pin_ = network_->findPin(driver_inst, driver_port_name);
+      drvr_resized_ = true;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void RepairDesign::repairNetJunc(
@@ -1727,8 +1928,7 @@ void RepairDesign::repairNetJunc(
 
   // Calculate estimated slew based on RC
   float r_drvr = resizer_->driveResistance(drvr_pin_);
-  assert(slew_rc_factor_.has_value());
-  float load_slew = r_drvr * load_cap * (*slew_rc_factor_);
+  float load_slew = r_drvr * load_cap * getSlewRCFactor();
   bool load_slew_violation = load_slew > max_load_slew_margined;
 
   const char* repeater_reason = nullptr;
@@ -1743,9 +1943,9 @@ void RepairDesign::repairNetJunc(
                level,
                delayAsString(load_slew, 3, this),
                delayAsString(max_load_slew_margined, 3, this));
-    double slew_left = r_drvr * cap_left * (*slew_rc_factor_);
+    double slew_left = r_drvr * cap_left * getSlewRCFactor();
     double slew_slack_left = maxSlewMargined(max_load_slew_left) - slew_left;
-    double slew_right = r_drvr * cap_right * (*slew_rc_factor_);
+    double slew_right = r_drvr * cap_right * getSlewRCFactor();
     double slew_slack_right = maxSlewMargined(max_load_slew_right) - slew_right;
     debugPrint(logger_,
                RSZ,
@@ -1756,15 +1956,20 @@ void RepairDesign::repairNetJunc(
                level,
                delayAsString(slew_slack_left, 3, this),
                delayAsString(slew_slack_right, 3, this));
-    // Isolate the branch with the smaller slack.
-    if (slew_slack_left < slew_slack_right) {
-      repeater_left = true;
-    } else {
-      repeater_right = true;
+
+    // Check if we can upsize the driver to meet the slew requirement without
+    // inserting a buffer.
+    if (!tryUpsizeDriver(level, load_cap, 0.0, 0.0, max_load_slew_margined)) {
+      // Isolate the branch with the smaller slack.
+      if (slew_slack_left < slew_slack_right) {
+        repeater_left = true;
+      } else {
+        repeater_right = true;
+      }
+      repeater_reason = "load_slew";
     }
-    repeater_reason = "load_slew";
   }
-  bool cap_violation = (cap_left + cap_right) > max_cap_;
+  bool cap_violation = load_cap > max_cap_;
   if (cap_violation) {
     debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}cap violation", "", level);
     if (cap_left > cap_right) {
@@ -2227,43 +2432,6 @@ bool RepairDesign::makeRepeater(
   repeater_max_slew = bufferInputMaxSlew(buffer_cell, corner_);
 
   return true;
-}
-
-sta::LibertyCell* RepairDesign::findBufferUnderSlew(float max_slew,
-                                                    float load_cap)
-{
-  sta::LibertyCell* min_slew_buffer = resizer_->buffer_lowest_drive_;
-  float min_slew = sta::INF;
-  sta::LibertyCellSeq swappable_cells
-      = resizer_->getSwappableCells(resizer_->buffer_lowest_drive_);
-  if (!swappable_cells.empty()) {
-    std::ranges::sort(swappable_cells,
-                      [this](const sta::LibertyCell* buffer1,
-                             const sta::LibertyCell* buffer2) {
-                        return resizer_->bufferDriveResistance(buffer1)
-                               > resizer_->bufferDriveResistance(buffer2);
-                      });
-    for (sta::LibertyCell* buffer : swappable_cells) {
-      float slew = resizer_->bufferSlew(
-          buffer, load_cap, resizer_->tgt_slew_corner_, resizer_->max_);
-      debugPrint(logger_,
-                 RSZ,
-                 "buffer_under_slew",
-                 1,
-                 "{:{}s}pt ({} {})",
-                 buffer->name(),
-                 units_->timeUnit()->asString(slew));
-      if (slew < max_slew) {
-        return buffer;
-      }
-      if (slew < min_slew) {
-        min_slew_buffer = buffer;
-        min_slew = slew;
-      }
-    }
-  }
-  // Could not find a buffer under max_slew but this is min slew achievable.
-  return min_slew_buffer;
 }
 
 double RepairDesign::dbuToMeters(int dist) const

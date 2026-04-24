@@ -5,6 +5,8 @@
 
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "BufferedNet.hh"
@@ -174,6 +176,14 @@ class RepairDesign : sta::dbStaState
                      // Return values.
                      int& wire_length,
                      sta::PinSeq& load_pins);
+  void clearDriverCellsCache();
+  sta::LibertyCellSeq getDriverCells(sta::LibertyCell* driver_cell,
+                                     const std::string& driver_port_name);
+  bool tryUpsizeDriver(int level,
+                       double ref_cap,
+                       double c_wire,
+                       double r_wire,
+                       float max_load_slew_margined);
   float maxSlewMargined(float max_slew);
   double findSlewLoadCap(sta::LibertyPort* drvr_port,
                          double slew,
@@ -231,7 +241,6 @@ class RepairDesign : sta::dbStaState
                     sta::Net*& out_net,
                     sta::Pin*& repeater_in_pin,
                     sta::Pin*& repeater_out_pin);
-  sta::LibertyCell* findBufferUnderSlew(float max_slew, float load_cap);
   bool hasInputPort(const sta::Net* net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -256,8 +265,14 @@ class RepairDesign : sta::dbStaState
   // Gain buffering
   std::vector<sta::LibertyCell*> buffer_sizes_;
 
+  // Swappable driver cells sorted by drive resistance (low to high)
+  std::unordered_map<sta::LibertyCell*,
+                     std::unordered_map<std::string, sta::LibertyCellSeq>>
+      driver_cells_cache_;
+
   // Implicit arguments to repairNet bnet recursion.
   const sta::Pin* drvr_pin_ = nullptr;
+  bool drvr_resized_ = false;
   float max_cap_ = 0;
   int max_length_ = 0;
   double slew_margin_ = 0;
