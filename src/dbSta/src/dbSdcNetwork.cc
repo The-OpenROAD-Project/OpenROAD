@@ -66,6 +66,11 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
 void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
                                           InstanceSeq& insts) const
 {
+  // if the pattern is a glob with no * or ? wildcards, and is not in regex
+  // mode, return immediately without walking the hierarchy.
+  if (!pattern->isRegexp() && !pattern->hasWildcards()) {
+    return;
+  }
   // A recursive lambda to traverse the design hierarchy with a depth-first
   // search (DFS).
   // It builds the hierarchical path incrementally using fmt::memory_buffer to
