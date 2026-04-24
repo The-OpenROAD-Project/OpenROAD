@@ -380,6 +380,50 @@ void RamGen::makeSelectColumn(const std::string& prefix,
   ram_grid_.addLayout(std::move(select_layout));
 }
 
+std::unique_ptr<Layout> RamGen::makeInverterColumn(
+    const int num_words,
+    const int num_inputs,
+    const int start_port,
+    const int end_port,
+    const std::vector<std::vector<dbNet*>>& inv_addr_nets)
+{
+  auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
+  int ports_in_col = end_port - start_port;
+
+  // number of inverters per bit group (one per port in this column)
+  // fillers evenly space each bit group within the column
+  int fillers_per_group = (num_words / num_inputs) - ports_in_col;
+  // ensures we don't go negative for small rams
+  fillers_per_group = std::max(0, fillers_per_group);
+
+  for (int bit = num_inputs - 1; bit >= 0; --bit) {
+    for (int p = start_port; p < end_port; ++p) {
+      auto inv_grid_cell = std::make_unique<Cell>();
+      makeInst(
+          inv_grid_cell.get(),
+          fmt::format("decoder_p{}", p),
+          fmt::format("inv_p{}_a{}", p, bit),
+          inv_cell_,
+          {{inv_ports_[{PortRoleType::DataIn, 0}],
+            addr_inputs_[p][bit]->getNet()},
+           {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][bit]}});
+      cell_inv_layout->addCell(std::move(inv_grid_cell));
+    }
+    // add fillers between bit groups
+    for (int f = 0; f < fillers_per_group; ++f) {
+      cell_inv_layout->addCell(nullptr);
+    }
+  }
+
+  // pad any remaining rows
+  int total_placed = (ports_in_col + fillers_per_group) * num_inputs;
+  for (int f = total_placed; f < num_words; ++f) {
+    cell_inv_layout->addCell(nullptr);
+  }
+
+  return cell_inv_layout;
+}
+
 std::unique_ptr<Cell> RamGen::makeDecoder(
     const std::string& prefix,
     const int num_word,
@@ -981,6 +1025,7 @@ void RamGen::generate(const int mask_size,
     decoder_output_nets[p]
         = makeDecoderOutputNets(fmt::format("decoder_p{}", p), num_words);
     // output nets of each decoder buffers
+    // write-capable ports to index 0 since there can only be 1
     if (p < rw_ports) {
       write_select_nets[w_sel_idx] = makeSelectNets(
           fmt::format("rw_sel_p{}", p), num_words, RamPortType::ReadWrite);
@@ -1019,8 +1064,7 @@ void RamGen::generate(const int mask_size,
   }
 
   for (int row = 0; row < num_words; ++row) {
-    // size of row_selects is total number of read ports plus the write port
-    // needed
+    // size of row_selects is write prot and total num read ports
     vector<dbNet*> row_selects(r_total + 1);
     for (int p = 0; p < rw_ports + w_ports; ++p) {
       row_selects[p] = write_select_nets[p][row];
@@ -1063,6 +1107,7 @@ void RamGen::generate(const int mask_size,
   // append buffer, decoder, and inverter columns per port
   for (int p = 0; p < total_ports; ++p) {
     // buffer column
+    // keeping convention of write-capable ports at index 0
     if (p < rw_ports) {
       makeBufferColumn(fmt::format("sel_buf_rw_p{}", p),
                        num_words,
@@ -1088,38 +1133,70 @@ void RamGen::generate(const int mask_size,
                       decoder_input_nets[p],
                       decoder_output_nets[p]);
 
-    // inverter layout
-    auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
-    if (num_inputs > 1) {
-      for (int i = num_inputs - 1; i >= 0; --i) {
-        auto inv_grid_cell = std::make_unique<Cell>();
-        makeInst(
-            inv_grid_cell.get(),
-            fmt::format("decoder_p{}", p),
-            fmt::format("inv_{}", i),
-            inv_cell_,
-            {{inv_ports_[{PortRoleType::DataIn, 0}],
-              addr_inputs_[p][i]->getNet()},
-             {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][i]}});
-        cell_inv_layout->addCell(std::move(inv_grid_cell));
-        for (int filler_count = 0; filler_count < num_inputs - 1;
-             ++filler_count) {
-          cell_inv_layout->addCell(nullptr);
-        }
-      }
-    } else {
-      auto inv_grid_cell = std::make_unique<Cell>();
-      makeInst(inv_grid_cell.get(),
-               fmt::format("decoder_p{}", p),
-               fmt::format("inv_{}", 0),
-               inv_cell_,
-               {{inv_ports_[{PortRoleType::DataIn, 0}],
-                 addr_inputs_[p][0]->getNet()},
-                {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][0]}});
-      cell_inv_layout->addCell(std::move(inv_grid_cell));
-    }
-    ram_grid_.addLayout(std::move(cell_inv_layout));
+    // // inverter layout
+    // auto cell_inv_layout = std::make_unique<Layout>(odb::vertical);
+    // if (num_inputs > 1) {
+    //   for (int i = num_inputs - 1; i >= 0; --i) {
+    //     auto inv_grid_cell = std::make_unique<Cell>();
+    //     makeInst(
+    //         inv_grid_cell.get(),
+    //         fmt::format("decoder_p{}", p),
+    //         fmt::format("inv_{}", i),
+    //         inv_cell_,
+    //         {{inv_ports_[{PortRoleType::DataIn, 0}],
+    //           addr_inputs_[p][i]->getNet()},
+    //          {inv_ports_[{PortRoleType::DataOut, 0}], inv_addr_nets[p][i]}});
+    //     cell_inv_layout->addCell(std::move(inv_grid_cell));
+    //     for (int filler_count = 0; filler_count < num_inputs - 1;
+    //          ++filler_count) {
+    //       cell_inv_layout->addCell(nullptr);
+    //     }
+    //   }
+    // } else {
+    //   auto inv_grid_cell = std::make_unique<Cell>();
+    //   makeInst(inv_grid_cell.get(),
+    //            fmt::format("decoder_p{}", p),
+    //            fmt::format("inv_{}", 0),
+    //            inv_cell_,
+    //            {{inv_ports_[{PortRoleType::DataIn, 0}],
+    //              addr_inputs_[p][0]->getNet()},
+    //             {inv_ports_[{PortRoleType::DataOut, 0}],
+    //             inv_addr_nets[p][0]}});
+    //   cell_inv_layout->addCell(std::move(inv_grid_cell));
+    // }
+    // ram_grid_.addLayout(std::move(cell_inv_layout));
   }
+  // int total_inv_cells = total_ports * num_inputs;
+  // int inv_col_count = std::ceil((float)(total_ports * num_inputs) /
+  // num_words);
+
+  // determining how many inverters can fit in one column
+  int ports_per_col = num_words / num_inputs;
+  int inv_col_count = std::ceil((float) total_ports / ports_per_col);
+
+  // building out inverter columns
+  for (int col = 0; col < inv_col_count; ++col) {
+    int start_port = col * ports_per_col;
+    int end_port = std::min(start_port + ports_per_col, total_ports);
+    ram_grid_.addLayout(makeInverterColumn(
+        num_words, num_inputs, start_port, end_port, inv_addr_nets));
+  }
+  // // inverter column
+  // for (int p = 0; p < total_ports; ++p) {
+  //   for (int bit = num_inputs - 1; bit >= 0; --bit) {
+  //     auto inv_grid_cell = std::make_unique<Cell>();
+  //     makeInst(inv_grid_cell.get(),
+  //             fmt::format("decoder_p{}", p),
+  //             fmt::format("inv_p{}_a{}", p, bit),
+  //             inv_cell_,
+  //             {{inv_ports_[{PortRoleType::DataIn, 0}],
+  //               addr_inputs_[p][bit]->getNet()},
+  //               {inv_ports_[{PortRoleType::DataOut, 0}],
+  //               inv_addr_nets[p][bit]}});
+  //     cell_inv_layout->addCell(std::move(inv_grid_cell));
+  //   }
+  // }
+  // ram_grid_.addLayout(std::move(cell_inv_layout));
 
   auto ram_origin(odb::Point(0, 0));
 
