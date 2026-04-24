@@ -25,6 +25,7 @@ class dbNetwork;
 
 namespace stt {
 class SteinerTreeBuilder;
+struct Tree;
 }  // namespace stt
 
 namespace utl {
@@ -34,10 +35,17 @@ class ServiceRegistry;
 
 namespace grt {
 
+class AbstractFastRouteRenderer;
 class Design;
 class GridGraph;
 class GRNet;
 class BoxT;
+
+struct StTree;
+struct FrNet;
+
+// DebugSetting is defined in fastroute/include/FastRoute.h
+struct DebugSetting;
 
 struct Constants
 {
@@ -95,6 +103,19 @@ class CUGR
   void updateNet(odb::dbNet* net);
   void routeIncremental();
 
+  // Debug functions 
+  void setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer); 
+  void setDebugNet(const odb::dbNet* net);
+  void setDebugSteinerTree(bool steinerTree);
+  void setDebugRectilinearSTree(bool rectilinearSTree); 
+  void setDebugTree2D(bool tree2D); 
+  void setDebugTree3D(bool tree3D);
+  void setSttInputFilename(const char* file_name);
+  std::string getSttInputFileName();
+  AbstractFastRouteRenderer* getDebugRenderer() const;
+  const odb::dbNet* getDebugNet();
+  bool hasSaveSttInput();
+
  private:
   float calculatePartialSlack();
   float getNetSlack(odb::dbNet* net);
@@ -107,6 +128,12 @@ class CUGR
   void getGuides(const GRNet* net,
                  std::vector<std::pair<int, grt::BoxT>>& guides);
   void printStatistics() const;
+
+  void steinerTreeVisualization(const stt::Tree& stree, GRNet* net);
+  void StTreeVisualization(const StTree& stree,
+                           GRNet* net,
+                           bool is3DVisualization);
+  void FrNetInit(GRNet* net, FrNet* frnet);
 
   std::unique_ptr<Design> design_;
   std::unique_ptr<GridGraph> grid_graph_;
@@ -129,6 +156,8 @@ class CUGR
   float critical_nets_percentage_ = 0;
 
   std::vector<int> nets_to_route_;
+
+  std::unique_ptr<DebugSetting> debug_;
 };
 
 }  // namespace grt

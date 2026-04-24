@@ -11,6 +11,8 @@
 #include "GRTree.h"
 #include "GridGraph.h"
 #include "geo.h"
+#include "stt/SteinerTreeBuilder.h"
+
 
 namespace grt {
 
@@ -167,6 +169,9 @@ class PatternRoute
     return routing_dag_;
   }
 
+  const stt::Tree& getSttTree() const { return stt_tree_; }
+  bool hasSttTree() const { return stt_tree_valid_; }
+
  private:
   void constructPaths(std::shared_ptr<PatternRoutingNode>& start,
                       std::shared_ptr<PatternRoutingNode>& end,
@@ -183,6 +188,9 @@ class PatternRoute
   std::shared_ptr<SteinerTreeNode> steiner_tree_;
   std::shared_ptr<PatternRoutingNode> routing_dag_;
   std::vector<std::vector<int>> gridlines_;
+
+  stt::Tree stt_tree_;
+  bool stt_tree_valid_{false};
 
   Constants constants_;
   const int flute_accuracy_ = 3;

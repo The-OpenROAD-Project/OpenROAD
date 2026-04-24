@@ -38,6 +38,10 @@
 #include "utl/Logger.h"
 #include "utl/ServiceRegistry.h"
 
+#include "../../fastroute/include/FastRoute.h"
+#include "../../fastroute/include/AbstractFastRouteRenderer.h"
+#include "../../fastroute/include/DataType.h"
+
 using utl::GRT;
 
 namespace grt {
@@ -51,7 +55,8 @@ CUGR::CUGR(odb::dbDatabase* db,
       logger_(log),
       service_registry_(service_registry),
       stt_builder_(stt_builder),
-      sta_(sta)
+      sta_(sta),
+      debug_(std::make_unique<DebugSetting>())
 {
 }
 
@@ -160,6 +165,14 @@ void CUGR::patternRoute(std::vector<int>& net_indices)
                                constants_,
                                logger_);
     pattern_route.constructSteinerTree();
+    
+    GRNet* net = gr_nets_[net_index].get();
+    if  (debug_->isOn() && debug_->steinerTree && net->getDbNet() == debug_->net && pattern_route.hasSttTree()) {
+                
+                steinerTreeVisualization(pattern_route.getSttTree(), net);
+
+        } 
+
     pattern_route.constructRoutingDAG();
     pattern_route.run();
     grid_graph_->addTreeUsage(gr_nets_[net_index]->getRoutingTree());
@@ -261,6 +274,22 @@ void CUGR::route()
     for (const auto& net : gr_nets_) {
       net_indices.push_back(net->getIndex());
     }
+  }
+
+  if (debug_->isOn()) {
+    const int x_corner = grid_graph_->getGridline(0, 0);
+    const int y_corner = grid_graph_->getGridline(1, 0);
+    int tile_size = 0;
+    if (grid_graph_->getXSize() > 0) {
+      tile_size = grid_graph_->getGridline(0, 1) - x_corner;
+    }
+    if (tile_size <= 0 && grid_graph_->getYSize() > 0) {
+      tile_size = grid_graph_->getGridline(1, 1) - y_corner;
+    }
+    if (tile_size <= 0) {
+      tile_size = std::max(1, grid_graph_->getM2Pitch());
+    }
+    debug_->renderer->setGridVariables(tile_size, x_corner, y_corner);
   }
 
   patternRoute(net_indices);
@@ -696,6 +725,124 @@ void CUGR::routeIncremental()
   }
 
   printStatistics();
+}
+//debug functions 
+void CUGR::setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer) 
+{
+  debug_->renderer = std::move(renderer);
+}
+void CUGR::setDebugNet(const odb::dbNet* net) 
+{
+  debug_->net = net;
+}
+void CUGR::setDebugSteinerTree(bool steinerTree) 
+{
+  debug_->steinerTree = steinerTree;
+}
+void CUGR::setDebugRectilinearSTree(bool rectilinearSTree)
+{
+  debug_->rectilinearSTree = rectilinearSTree;
+}
+void CUGR::setDebugTree2D(bool tree2D)
+{
+  debug_->tree2D = tree2D;
+}
+void CUGR::setDebugTree3D(bool tree3D)
+{
+  debug_->tree3D = tree3D;
+}
+void CUGR::setSttInputFilename(const char* file_name) 
+{
+  debug_->sttInputFileName = std::string(file_name);
+}
+
+AbstractFastRouteRenderer* CUGR::getDebugRenderer() const
+{
+  if (debug_ && debug_->renderer) {
+    return debug_->renderer.get();
+  }
+  return nullptr;
+}
+std::string CUGR::getSttInputFileName()
+{
+  return debug_->sttInputFileName;
+}
+const odb::dbNet* CUGR::getDebugNet()
+{
+  return debug_->net;
+}
+bool CUGR::hasSaveSttInput()
+{
+  return !debug_->sttInputFileName.empty();
+}
+
+void CUGR::steinerTreeVisualization(const stt::Tree& stree, GRNet* net) 
+{
+  if (!debug_->isOn()) {
+    return;
+  }
+
+  // Create FrNet wrapper as renderer expects FrNet*
+  FrNet frnet;
+  bool is_clock = (net->getDbNet()->getSigType() == odb::dbSigType::CLOCK);
+
+  frnet.reset(net->getDbNet(),
+              is_clock,
+              0,
+              0,
+              constants_.min_routing_layer,
+              grid_graph_->getNumLayers() - 1,
+              0.0,
+              nullptr);
+
+  FrNetInit(net, &frnet);
+  
+  debug_->renderer->highlight(&frnet);
+  debug_->renderer->setIs3DVisualization(false);
+  debug_->renderer->setSteinerTree(stree);
+  debug_->renderer->setTreeStructure(grt::TreeStructure::steinerTreeByStt);
+  debug_->renderer->redrawAndPause();
+  debug_->renderer->highlight(nullptr);
+
+}
+
+void CUGR::StTreeVisualization(const StTree& stree, GRNet* net, bool is3DVisualization)
+{
+  if (!debug_->isOn()) {
+    return;
+  }
+  
+  // Create FrNet wrapper as renderer expects FrNet*
+  FrNet frnet;
+  bool is_clock = (net->getDbNet()->getSigType() == odb::dbSigType::CLOCK);
+
+  frnet.reset(net->getDbNet(),
+              is_clock,
+              0,
+              0,
+              constants_.min_routing_layer,
+              grid_graph_->getNumLayers() - 1,
+              0.0,
+              nullptr);
+
+  FrNetInit(net, &frnet);
+
+  debug_->renderer->highlight(&frnet);
+  debug_->renderer->setIs3DVisualization(is3DVisualization);
+  debug_->renderer->setStTreeValues(stree);
+  debug_->renderer->setTreeStructure(grt::TreeStructure::steinerTreeByFastroute);
+  debug_->renderer->redrawAndPause();
+  debug_->renderer->highlight(nullptr);
+}
+
+void CUGR::FrNetInit(GRNet* net, FrNet* frnet)
+{
+  for (const auto& pin_aps : net->getPinAccessPoints()) {
+    if (!pin_aps.empty()) {
+      const auto& ap = pin_aps[0];
+      frnet->addPin(ap.x(), ap.y(), ap.getLayerIdx());
+    }
+  }
 }
 
 }  // namespace grt
