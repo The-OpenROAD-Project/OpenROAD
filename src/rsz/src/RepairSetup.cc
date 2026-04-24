@@ -1041,12 +1041,7 @@ bool RepairSetup::terminateProgress(const int iteration,
       // Window is full; compare oldest sample (the one we are about to
       // overwrite on the next call) to the best (largest, i.e. least
       // negative) slack observed in the window.
-      sta::Slack window_best = wns_history_[0];
-      for (size_t i = 1; i < window; ++i) {
-        if (wns_history_[i] > window_best) {
-          window_best = wns_history_[i];
-        }
-      }
+      sta::Slack window_best = *std::max_element(wns_history_.begin(), wns_history_.end());
       const sta::Slack window_oldest = wns_history_[wns_history_head_];
       const float threshold
           = std::max(wns_stagnation_abs_tol_,
