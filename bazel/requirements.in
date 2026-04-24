@@ -1,14 +1,18 @@
+# Pinned dependencies for the Bazel Python toolchain (Python 3.13).
+# Compiled into bazel/requirements_lock_3_13.txt via
+#   bazel run //bazel:requirements.update
+
 tclint==0.7.0
 
 # Sphinx documentation build (replicates ReadTheDocs CI check)
 # See: https://github.com/The-OpenROAD-Project/OpenROAD/issues/9885
-sphinx
-sphinx-book-theme
-sphinx-copybutton
+sphinx==5.3.0
+sphinx-book-theme==1.1.3
+sphinx-copybutton==0.5.2
 sphinx-external-toc==0.3.1
-sphinx-tabs
-sphinxcontrib-mermaid
-myst-parser
+sphinx-tabs==3.4.7
+sphinxcontrib-mermaid==2.0.1
+myst-parser==1.0.0
 # imghdr was removed from the Python 3.13 stdlib; sphinx.builders.epub3 still
 # imports it. The standard-imghdr backport restores the module.
-standard-imghdr
+standard-imghdr==3.13.0
