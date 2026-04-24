@@ -1037,7 +1037,7 @@ bool RepairSetup::terminateProgress(const int iteration,
     wns_history_head_ = (wns_history_head_ + 1) % window;
     if (wns_history_count_ < window) {
       wns_history_count_++;
-    } else if (iteration > 1000) {
+    } else if (iteration > wns_stagnation_warmup_iterations_) {
       // Window is full; compare oldest sample (the one we are about to
       // overwrite on the next call) to the best (largest, i.e. least
       // negative) slack observed in the window.

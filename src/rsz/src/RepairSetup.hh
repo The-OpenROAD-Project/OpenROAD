@@ -2,9 +2,11 @@
 // Copyright (c) 2022-2025, The OpenROAD Authors
 
 #pragma once
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -262,6 +264,9 @@ class RepairSetup : public sta::dbStaState
   static constexpr int wns_stagnation_window_passes_ = 200;
   static constexpr float wns_stagnation_abs_tol_ = 1.0e-12f;  // 1 ps
   static constexpr float wns_stagnation_rel_tol_ = 0.005f;    // 0.5% of |init|
+  // Warmup: skip the gate until this many passes have elapsed, so normal
+  // repair progress on ordinary designs is not short-circuited.
+  static constexpr int wns_stagnation_warmup_iterations_ = 1000;
 
   // Per-phase WNS history (ring buffer).
   std::vector<sta::Slack> wns_history_;
