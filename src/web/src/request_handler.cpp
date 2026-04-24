@@ -1820,6 +1820,18 @@ void TileHandler::initializeHeatMaps(SessionState& state)
 WebSocketResponse TileHandler::handleTile(const WebSocketRequest& req,
                                           SessionState& state)
 {
+  // When debug renderers are active, instance positions change between
+  // frames.  Re-derive highlight shapes from the current inspected
+  // object so the selection tracks the moving instance.
+  if (req.vis.debug_renderers) {
+    std::lock_guard<std::mutex> lock(state.selection_mutex);
+    if (state.current_inspected) {
+      collectHighlightShapes(state.current_inspected,
+                             state.highlight_rects,
+                             state.highlight_polys);
+    }
+  }
+
   // Snapshot current highlight state
   std::vector<odb::Rect> rects;
   std::vector<odb::Polygon> polys;

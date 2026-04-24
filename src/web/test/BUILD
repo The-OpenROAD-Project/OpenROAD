@@ -87,7 +87,7 @@ js_test(
 
 js_test(
     name = "charts_widget_test",
-    data = JS_FILES,
+    data = DOM_TEST_DATA,
     entry_point = "js/test-charts-widget.js",
     no_copy_to_bin = JS_FILES,
 )
@@ -124,6 +124,13 @@ js_test(
     name = "drc_widget_test",
     data = DOM_TEST_DATA,
     entry_point = "js/test-drc-widget.js",
+    no_copy_to_bin = JS_FILES,
+)
+
+js_test(
+    name = "status_indicator_test",
+    data = DOM_TEST_DATA,
+    entry_point = "js/test-status-indicator.js",
     no_copy_to_bin = JS_FILES,
 )
 
@@ -225,6 +232,20 @@ cc_test(
         "//src/tst",
         "//src/tst:nangate45_fixture",
         "//src/utl",
+        "//src/web",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "debug_graphics_test",
+    srcs = ["cpp/TestDebugGraphics.cpp"],
+    copts = ["-Isrc/web/src"],
+    features = ["-layering_check"],
+    deps = [
+        "//src/gui",
+        "//src/odb",
         "//src/web",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
